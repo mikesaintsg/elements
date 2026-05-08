@@ -35,6 +35,4 @@ export const events = {
 
 // Walks the (currently empty) events tree to derive a string-literal union of
 // every event name. Once events are populated, EventName narrows automatically.
-export type EventName = typeof events extends Record<string, Record<string, infer V>>
-	? V
-	: never
+export type EventName = typeof events extends Record<string, Record<string, infer V>> ? V : never

@@ -39,10 +39,16 @@
 	// Variant context tokens — neutral fallback when no .{variant} is active.
 	// `--set-variant-border-width: 0` keeps bare elements borderless; a variant
 	// modifier sets it to 1px so the variant's border-color shows.
+	//
+	// `--set-variant-color` defaults to `currentColor` so an element whose
+	// color chain falls through to it stays text-colored when no variant is
+	// active. `--set-variant-background-color` and `--set-variant-border-color`
+	// are intentionally left undeclared — that way an element using them in a
+	// `var(…, fallback)` chain receives the fallback (transparent / current /
+	// any element-specific default) rather than an explicit `transparent` that
+	// would silently steal a per-element default like `currentColor`.
 	// --------------------------------------------------------------------------
 	--set-variant-color: currentColor;
-	--set-variant-background-color: transparent;
-	--set-variant-border-color: transparent;
 	--set-variant-border-width: 0;
 
 	// --------------------------------------------------------------------------

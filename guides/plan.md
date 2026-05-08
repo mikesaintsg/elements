@@ -8,24 +8,31 @@ The architectural plan-of-record lives at `~/.claude/plans/i-want-to-make-nifty-
 
 ## Foundation phase — complete
 
-| Concern | Status | File(s) |
-|---|---|---|
-| Tailwind v4 dependency + Vite plugin | ✅ | [package.json](../package.json), [vite.config.ts](../vite.config.ts) |
-| `@layer` order declared (`theme, base, elements, components, surfaces, modifiers, utilities`) | ✅ | [tests/setup.css](../tests/setup.css), [app/browser/styles/main.scss](../app/browser/styles/main.scss) |
-| Token surface (`--set-*` + `@theme` variants) | ✅ | [src/styles/_tokens.scss](../src/styles/_tokens.scss), [src/styles/_theme.scss](../src/styles/_theme.scss) |
-| Mixins registry (`reduced-motion`, `transition`, `focus-ring`, `$variants`/`$sizes`/`$shapes`/`$styles`/`$states`) | ✅ | [src/styles/_mixins.scss](../src/styles/_mixins.scss) |
-| Modifier system — four dimensions (variant / size / style / state) | ✅ | [src/styles/modifiers/](../src/styles/modifiers/) |
-| Element baseline — button | ✅ | [src/styles/elements/_button.scss](../src/styles/elements/_button.scss) |
-| Empty barrels for `components/` and `surfaces/` | ✅ | [src/styles/components/index.scss](../src/styles/components/index.scss), [src/styles/surfaces/index.scss](../src/styles/surfaces/index.scss) |
-| TS contract layer (4 files) | ✅ | [src/browser/](../src/browser/) |
-| Bidirectional parity tests (tokens, modifiers, elements, events) | ✅ | merged into [tests/src/browser/](../tests/src/browser/) shape tests — one test file per surface |
-| Modifier behavior tests | ✅ | [tests/src/styles/modifiers/](../tests/src/styles/modifiers/) |
-| Button cascade tests | ✅ | [tests/src/styles/elements/_button.test.ts](../tests/src/styles/elements/_button.test.ts) |
-| Tailwind interop test | ✅ | [tests/src/styles/integration.test.ts](../tests/src/styles/integration.test.ts) |
-| Showcase app — HomePage placeholder, ButtonPage demos | ✅ | [app/browser/pages/](../app/browser/pages/) |
+| Concern                                                                                                                             | Status | File(s)                                                                                                                                                |
+| ----------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tailwind v4 dependency + Vite plugin                                                                                                | ✅     | [package.json](../package.json), [vite.config.ts](../vite.config.ts)                                                                                   |
+| `@layer` order declared (`theme, base, elements, components, surfaces, modifiers, utilities`)                                       | ✅     | [tests/setup.css](../tests/setup.css), [app/browser/styles/main.scss](../app/browser/styles/main.scss)                                                 |
+| Token surface (`--set-*` + `@theme` variants)                                                                                       | ✅     | [src/styles/\_tokens.scss](../src/styles/_tokens.scss), [src/styles/\_theme.scss](../src/styles/_theme.scss)                                           |
+| Mixins registry (`reduced-motion`, `transition`, `focus-ring`, `$variants`/`$sizes`/`$shapes`/`$styles`/`$states`)                  | ✅     | [src/styles/\_mixins.scss](../src/styles/_mixins.scss)                                                                                                 |
+| Modifier system — four dimensions (variant / size / style / state)                                                                  | ✅     | [src/styles/modifiers/](../src/styles/modifiers/)                                                                                                      |
+| Element baseline — button                                                                                                           | ✅     | [src/styles/elements/\_button.scss](../src/styles/elements/_button.scss)                                                                               |
+| Element baseline — anchor                                                                                                           | ✅     | [src/styles/elements/\_a.scss](../src/styles/elements/_a.scss)                                                                                         |
+| Element baseline — input                                                                                                            | ✅     | [src/styles/elements/\_input.scss](../src/styles/elements/_input.scss)                                                                                 |
+| Element baseline — textarea                                                                                                         | ✅     | [src/styles/elements/\_textarea.scss](../src/styles/elements/_textarea.scss)                                                                           |
+| Element baseline — select                                                                                                           | ✅     | [src/styles/elements/\_select.scss](../src/styles/elements/_select.scss)                                                                               |
+| Element baseline — dialog (+ `::backdrop` surface)                                                                                  | ✅     | [src/styles/elements/\_dialog.scss](../src/styles/elements/_dialog.scss), [src/styles/surfaces/\_backdrop.scss](../src/styles/surfaces/_backdrop.scss) |
+| Element baseline — table & friends                                                                                                  | ✅     | [src/styles/elements/\_table.scss](../src/styles/elements/_table.scss)                                                                                 |
+| Empty barrels for `components/` and `surfaces/`                                                                                     | ✅     | [src/styles/components/index.scss](../src/styles/components/index.scss), [src/styles/surfaces/index.scss](../src/styles/surfaces/index.scss)           |
+| TS contract layer (4 files)                                                                                                         | ✅     | [src/browser/](../src/browser/)                                                                                                                        |
+| Bidirectional parity tests (tokens, modifiers, elements, events)                                                                    | ✅     | merged into [tests/src/browser/](../tests/src/browser/) shape tests — one test file per surface                                                        |
+| Modifier behavior tests                                                                                                             | ✅     | [tests/src/styles/modifiers/](../tests/src/styles/modifiers/)                                                                                          |
+| Button cascade tests                                                                                                                | ✅     | [tests/src/styles/elements/\_button.test.ts](../tests/src/styles/elements/_button.test.ts)                                                             |
+| Tailwind interop test                                                                                                               | ✅     | [tests/src/styles/integration.test.ts](../tests/src/styles/integration.test.ts)                                                                        |
+| Showcase app — HomePage placeholder, ButtonPage / AnchorPage / InputPage / TextareaPage / SelectPage / DialogPage / TablePage demos | ✅     | [app/browser/pages/](../app/browser/pages/)                                                                                                            |
 
 **Verification (run `npm test && npm run check` to reproduce):**
-- 147/147 tests pass across `src:core`, `src:browser`, `src:styles`, `app:core`, `app:browser`.
+
+- 303/303 tests pass across `src:core`, `src:browser`, `src:styles`, `app:core`, `app:browser`.
 - 0 oxlint warnings/errors.
 - 0 vue-tsc errors.
 
@@ -33,18 +40,7 @@ The architectural plan-of-record lives at `~/.claude/plans/i-want-to-make-nifty-
 
 ## Next-up — element coverage
 
-The same modifier cascade that works on `<button>` works on any element that consumes the context-token chain. Bringing up a new element means: refactor its `_{tag}.scss` to use the cascade, add the tag to [`src/browser/elements.ts`](../src/browser/elements.ts), and write its element test.
-
-Priority order is below. Each entry links to its checklist row in [elements.md](elements.md). "Modifier-shaped" means the element renders meaningfully under variant / size / shape / style / state. "Pure-reset" means we just want UA normalization and don't expect modifier behavior.
-
-| Element | Shape | Why next |
-|---|---|---|
-| `<a>` | Modifier-shaped | The natural next step after button — links share variant + size semantics. Validates that the cascade works without overriding `appearance: none`. |
-| `<input>` | Modifier-shaped | All `type` variants share the same chrome contract — tests the cascade against form-control UA quirks (`font: inherit`, `appearance: none`, `:focus-visible`). |
-| `<select>` | Modifier-shaped | Drives the `appearance: base-select` opt-in path that the [surfaces.md](surfaces.md) `::picker(select)` work depends on. |
-| `<textarea>` | Modifier-shaped | Same contract as `<input>` plus `field-sizing: content` and `resize: …`. |
-| `<dialog>` | Modifier-shaped + surface | Brings up `::backdrop` styling alongside, which earns `surfaces/_backdrop.scss`. |
-| `<table>` and friends | Modifier-shaped | Variant / size on rows; consumed by data-dense pages. |
+The five planned modifier-shaped elements (`<input>`, `<select>`, `<textarea>`, `<dialog>` + `::backdrop`, `<table>` & friends) are all up. The same modifier cascade that works on `<button>` works on any element that consumes the context-token chain — bringing up additional elements means refactoring its `_{tag}.scss` to use the cascade, adding the tag to [`src/browser/elements.ts`](../src/browser/elements.ts), and writing its element test.
 
 The 80+ remaining elements are tracked as **pure-reset** in [elements.md](elements.md) and don't warrant individual planning slots — most need only a UA-normalization comment. The checklist there is the single source of truth for status.
 
@@ -66,6 +62,7 @@ Items the foundation-phase deliberately doesn't include. Each becomes its own pl
 ## Update protocol
 
 Every commit that materially advances the framework updates **two** places:
+
 1. The matching guide (token surface change → `tokens.md`; new element → `elements.md`; new mixin → `mixins.md`; etc.).
 2. This file's tables, so the at-a-glance status is current.
 

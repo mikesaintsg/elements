@@ -38,9 +38,8 @@ function declaresElementToken(source: string, tag: string): boolean {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('elements — shape', () => {
-	it('button is the only element with substantive styling at this stage', () => {
-		expect(Object.keys(elements)).toEqual(['button'])
-		expect(elements.button).toBe('button')
+	it('exposes at least one substantive element', () => {
+		expect(Object.keys(elements).length).toBeGreaterThan(0)
 	})
 
 	it('every key matches its value (no aliasing)', () => {

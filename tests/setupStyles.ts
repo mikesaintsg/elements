@@ -206,7 +206,9 @@ export async function tabTo(element: HTMLElement): Promise<void> {
 /** True when the element type takes part in the sequential focus order natively. */
 export function isNativelyFocusable(element: HTMLElement): boolean {
 	const tag = element.tagName
-	return tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA'
+	return (
+		tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA'
+	)
 }
 
 // ── Stylesheet introspection ───────────────────────────────────────────────
@@ -434,7 +436,9 @@ export function colorRows(): readonly { readonly color: BsColor }[] {
 }
 
 /** Same as `colorRows()` but excludes the named colors. */
-export function colorRowsExcept(...excluded: readonly BsColor[]): readonly { readonly color: BsColor }[] {
+export function colorRowsExcept(
+	...excluded: readonly BsColor[]
+): readonly { readonly color: BsColor }[] {
 	const skip = new Set(excluded)
 	return BS_COLORS.filter((c) => !skip.has(c)).map((color) => ({ color }))
 }
@@ -459,7 +463,6 @@ export function colorRowsWith<T extends Record<string, unknown>>(
 //  `create{Entity}Element` naming as `setupBrowser.ts`. Factories never call
 //  `mount()` themselves — the test composes the parent fixture and decides
 //  what to mount.
-
 
 /** `<span class="badge {extra}">…</span>` */
 export function createBadgeElement(extra = '', text = '1'): HTMLSpanElement {
@@ -541,9 +544,11 @@ export function createTagElement(extra = '', text = 'tag'): HTMLSpanElement {
 }
 
 /** `<nav><ol class="breadcrumb"><li class="breadcrumb-item">…</li>…</ol></nav>` */
-export function createBreadcrumbElement(
-	labels: readonly string[] = ['Home', 'Library', 'Data'],
-): { nav: HTMLElement; ol: HTMLOListElement; items: readonly HTMLLIElement[] } {
+export function createBreadcrumbElement(labels: readonly string[] = ['Home', 'Library', 'Data']): {
+	nav: HTMLElement
+	ol: HTMLOListElement
+	items: readonly HTMLLIElement[]
+} {
 	const nav = build('nav')
 	nav.setAttribute('aria-label', 'breadcrumb')
 	const ol = build('ol', 'breadcrumb')
@@ -559,9 +564,11 @@ export function createBreadcrumbElement(
 }
 
 /** `<ul class="pagination"><li class="page-item"><a class="page-link">…</a></li>…</ul>` */
-export function createPaginationElement(
-	count = 3,
-): { ul: HTMLUListElement; items: readonly HTMLLIElement[]; links: readonly HTMLAnchorElement[] } {
+export function createPaginationElement(count = 3): {
+	ul: HTMLUListElement
+	items: readonly HTMLLIElement[]
+	links: readonly HTMLAnchorElement[]
+} {
 	const ul = build('ul', 'pagination')
 	const items: HTMLLIElement[] = []
 	const links: HTMLAnchorElement[] = []
@@ -607,9 +614,7 @@ export function createStatElement(extra = ''): HTMLDivElement {
  * Each item is composed of a dot + label pair. The caller can set
  * `.active` / `.completed` on individual items to test the state rules.
  */
-export function createStepperElement(
-	count = 3,
-): {
+export function createStepperElement(count = 3): {
 	root: HTMLOListElement
 	items: readonly HTMLLIElement[]
 	dots: readonly HTMLSpanElement[]
@@ -639,9 +644,7 @@ export function createStepperElement(
  * Each item is composed of a marker + content pair. The marker accepts an
  * optional `markerExtra` per item (e.g. `'timeline-marker-success'`).
  */
-export function createTimelineElement(
-	count = 3,
-): {
+export function createTimelineElement(count = 3): {
 	root: HTMLUListElement
 	items: readonly HTMLLIElement[]
 	markers: readonly HTMLSpanElement[]
@@ -663,5 +666,3 @@ export function createTimelineElement(
 	}
 	return { root, items, markers, contents }
 }
-
-

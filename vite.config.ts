@@ -45,7 +45,7 @@ export function createBrowserProvider() {
 
 const resolve = {
 	alias: Object.entries(tsconfig.compilerOptions.paths).reduce(
-		(a, [k, v]) => Object.assign(a, { [k]: v[0] }),
+		(a, [k, v]) => Object.assign(a, { [k]: resolveWorkspacePath(v[0]) }),
 		{},
 	),
 }

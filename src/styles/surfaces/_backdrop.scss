@@ -1,0 +1,35 @@
+// ============================================================================
+// ::backdrop — UA-rendered surface behind a top-layer element.
+//
+// `::backdrop` paints the area behind a modal <dialog> (opened via
+// `.showModal()`), a fullscreen element, or a top-layer popover. It exists
+// only while the host element is in the top layer; styling targets the
+// pseudo-element off the host selector.
+//
+// Tokens: --set-backdrop-* live on `:root` because ::backdrop is generated
+// outside the normal DOM tree and cannot inherit element-scoped tokens
+// declared on the host. Consumers override on :root or per host:
+//   dialog#confirm::backdrop { --set-backdrop-background-color: …; }
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer surfaces {
+	:root {
+		--set-backdrop-background-color: color-mix(in srgb, black 50%, transparent);
+		--set-backdrop-backdrop-filter: blur(2px);
+		--set-backdrop-transition-duration: var(--set-transition-duration);
+	}
+
+	dialog::backdrop {
+		background-color: var(--set-backdrop-background-color);
+		backdrop-filter: var(--set-backdrop-backdrop-filter);
+
+		@include transition(
+			(
+				background-color var(--set-backdrop-transition-duration),
+				backdrop-filter var(--set-backdrop-transition-duration)
+			)
+		);
+	}
+}

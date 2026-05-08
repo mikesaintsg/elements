@@ -3,6 +3,12 @@ import type { Component, ComputedRef, Ref } from 'vue'
 
 import HomePage from './pages/HomePage.vue'
 import ButtonPage from './pages/ButtonPage.vue'
+import AnchorPage from './pages/AnchorPage.vue'
+import DialogPage from './pages/DialogPage.vue'
+import InputPage from './pages/InputPage.vue'
+import SelectPage from './pages/SelectPage.vue'
+import TablePage from './pages/TablePage.vue'
+import TextareaPage from './pages/TextareaPage.vue'
 
 export interface Route {
 	readonly id: string
@@ -17,7 +23,13 @@ export const routes: readonly Route[] = [
 	HOME,
 
 	// Elements
+	{ id: 'anchor', title: 'Anchor', group: 'Elements', page: AnchorPage },
 	{ id: 'button', title: 'Button', group: 'Elements', page: ButtonPage },
+	{ id: 'dialog', title: 'Dialog', group: 'Elements', page: DialogPage },
+	{ id: 'input', title: 'Input', group: 'Elements', page: InputPage },
+	{ id: 'select', title: 'Select', group: 'Elements', page: SelectPage },
+	{ id: 'table', title: 'Table', group: 'Elements', page: TablePage },
+	{ id: 'textarea', title: 'Textarea', group: 'Elements', page: TextareaPage },
 ]
 
 export const EXAMPLES_GROUP = 'Examples'

@@ -1,9 +1,72 @@
-// <dialog> – Modal or non-modal dialog box
-// Browser defaults: display: block; position: absolute; left: 0; right: 0; margin: auto;
-//   border: solid; padding: 1em; background: Canvas; color: CanvasText
-// Open via .showModal() (modal, traps focus, adds backdrop) or .show() (non-modal)
-// Quirk: modal dialogs use the browser's top-layer — nothing can be z-indexed above them
-// Quirk: style the backdrop with dialog::backdrop {}
-// <form method="dialog"> natively closes the dialog on submit
+// ============================================================================
+// dialog — Modal or non-modal dialog box.
+//
+// Architecture:
+//   1. Element-scoped --set-dialog-* tokens. The fallback chain mirrors
+//      <button> for the colored chrome and adds dialog-specific shadow,
+//      max-inline-size, and gap tokens.
+//   2. UA defaults position the dialog absolutely inside its containing
+//      block; we keep that behavior. .showModal() promotes the dialog to
+//      the top-layer and triggers ::backdrop — see surfaces/_backdrop.scss.
+//   3. The bare <dialog open> renders centered with margin: auto plus our
+//      padding/border-radius/shadow. Variant + size + style modifiers route
+//      through the same context tokens as buttons and inputs.
+//
+// Quirks:
+//   - <dialog> without `open` is hidden (display: none) by UA. Setting any
+//     framework rule cannot override that — the consumer must call
+//     .show() or .showModal() (or set the `open` attribute) to render.
+//   - Top-layer stacking ignores z-index — only ::backdrop and the dialog
+//     itself paint above sibling content when modal.
+//   - <form method="dialog"> closes the dialog on submit without page nav.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight + UA defaults handle this.
+@use '../mixins' as *;
+
+@layer elements {
+	dialog {
+		--set-dialog-color: var(--set-style-color, CanvasText);
+		--set-dialog-background-color: var(--set-style-background-color, Canvas);
+		--set-dialog-border-color: var(
+			--set-variant-background-color,
+			color-mix(in srgb, currentColor 15%, transparent)
+		);
+		--set-dialog-border-width: 1px;
+		--set-dialog-border-radius: var(--set-size-border-radius, var(--radius-lg));
+		--set-dialog-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 6));
+		--set-dialog-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 5));
+		--set-dialog-font-size: var(--set-size-font-size, var(--text-base));
+		--set-dialog-line-height: var(--leading-normal);
+		--set-dialog-max-inline-size: min(90vw, calc(var(--spacing) * 120));
+		--set-dialog-max-block-size: 85vh;
+		--set-dialog-box-shadow:
+			0 10px 25px -5px color-mix(in srgb, black 25%, transparent),
+			0 8px 10px -6px color-mix(in srgb, black 15%, transparent);
+		--set-dialog-transition-duration: var(--set-transition-duration);
+
+		max-inline-size: var(--set-dialog-max-inline-size);
+		max-block-size: var(--set-dialog-max-block-size);
+		padding-inline: var(--set-dialog-padding-inline);
+		padding-block: var(--set-dialog-padding-block);
+
+		border-color: var(--set-dialog-border-color);
+		border-style: solid;
+		border-width: var(--set-dialog-border-width);
+		border-radius: var(--set-dialog-border-radius);
+
+		font-size: var(--set-dialog-font-size);
+		line-height: var(--set-dialog-line-height);
+
+		color: var(--set-dialog-color);
+		background-color: var(--set-dialog-background-color);
+		box-shadow: var(--set-dialog-box-shadow);
+
+		@include transition(
+			(
+				color var(--set-dialog-transition-duration),
+				background-color var(--set-dialog-transition-duration),
+				border-color var(--set-dialog-transition-duration)
+			)
+		);
+	}
+}

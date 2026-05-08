@@ -6,12 +6,12 @@ A modifier class is a **token-setter**, never a property-setter. The class decla
 
 The four dimensions are orthogonal: an element takes at most one value per dimension. They compose without conflict.
 
-| Dimension | Values | Sets these tokens |
-|---|---|---|
+| Dimension                       | Values                                                                            | Sets these tokens                                                                                                   |
+| ------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | **Variant** (semantic identity) | `primary`, `secondary`, `tertiary`, `success`, `warning`, `danger`, `information` | `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`, `--set-variant-border-width` |
-| **Size** (physical scale) | `small`, `large` | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius` |
-| **Style** (fill treatment) | `ghost`, `filled` | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`, `--set-style-border-width` |
-| **State** (interaction state) | `disabled`, `active`, `loading` | (mostly element-owned; states declare universal cursor + pointer-events at the modifier level) |
+| **Size** (physical scale)       | `small`, `large`                                                                  | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius`         |
+| **Style** (fill treatment)      | `ghost`, `filled`                                                                 | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`, `--set-style-border-width`         |
+| **State** (interaction state)   | `disabled`, `active`, `loading`                                                   | (mostly element-owned; states declare universal cursor + pointer-events at the modifier level)                      |
 
 **Why no shape dimension?** Tailwind v4 ships `.rounded-{none|sm|md|lg|xl|2xl|3xl|full}` utilities that cover every corner-radius value the framework would want a modifier for — `.pill` ≡ `.rounded-full`, `.square` ≡ `.rounded-none`, intermediate steps map directly. Shipping a shape modifier dimension would just duplicate Tailwind's vocabulary under different names. Consumers reach for `.rounded-full` and friends directly.
 
@@ -50,7 +50,7 @@ Each variant chooses its own contrast text color. White on saturated colors (pri
 .information  { --set-variant-color: black; ... }
 ```
 
-The variant's identity color (used by outline / ghost / focus-ring) is `--set-variant-background-color` — the same token that fills the background in the filled state. No separate "base" token needed; the background color *is* the variant's color.
+The variant's identity color (used by outline / ghost / focus-ring) is `--set-variant-background-color` — the same token that fills the background in the filled state. No separate "base" token needed; the background color _is_ the variant's color.
 
 `--set-variant-border-width: 1px` bumps the border width on a variant'd element so its border-color shows. Bare elements default to `0`, keeping them borderless.
 
@@ -63,16 +63,16 @@ Two coarse steps: small and large. Bare element renders at the default size (dec
 ```scss
 /* src/styles/modifiers/_sizes.scss */
 .small {
-  --set-size-padding-inline: calc(var(--spacing) * 2);   /* 0.5rem  / 8px  */
-  --set-size-padding-block:  calc(var(--spacing) * 1);   /* 0.25rem / 4px  */
-  --set-size-font-size:      var(--text-xs);             /* 0.75rem / 12px */
-  --set-size-border-radius:  var(--radius-sm);           /* 0.25rem / 4px  */
+	--set-size-padding-inline: calc(var(--spacing) * 2); /* 0.5rem  / 8px  */
+	--set-size-padding-block: calc(var(--spacing) * 1); /* 0.25rem / 4px  */
+	--set-size-font-size: var(--text-xs); /* 0.75rem / 12px */
+	--set-size-border-radius: var(--radius-sm); /* 0.25rem / 4px  */
 }
 .large {
-  --set-size-padding-inline: calc(var(--spacing) * 4);   /* 1rem    / 16px */
-  --set-size-padding-block:  calc(var(--spacing) * 2);   /* 0.5rem  / 8px  */
-  --set-size-font-size:      var(--text-base);           /* 1rem    / 16px */
-  --set-size-border-radius:  var(--radius-lg);           /* 0.5rem  / 8px  */
+	--set-size-padding-inline: calc(var(--spacing) * 4); /* 1rem    / 16px */
+	--set-size-padding-block: calc(var(--spacing) * 2); /* 0.5rem  / 8px  */
+	--set-size-font-size: var(--text-base); /* 1rem    / 16px */
+	--set-size-border-radius: var(--radius-lg); /* 0.5rem  / 8px  */
 }
 ```
 
@@ -89,23 +89,23 @@ The size context **does not** override font-weight or line-height — those inhe
 ```scss
 /* src/styles/modifiers/_styles.scss */
 .ghost {
-  --set-style-color:            var(--set-variant-background-color);
-  --set-style-background-color: transparent;
-  --set-style-border-color:     transparent;
-  --set-style-border-width:     0;
+	--set-style-color: var(--set-variant-background-color);
+	--set-style-background-color: transparent;
+	--set-style-border-color: transparent;
+	--set-style-border-width: 0;
 }
 .filled {
-  --set-style-color:            var(--set-variant-color);
-  --set-style-background-color: var(--set-variant-background-color);
-  --set-style-border-color:     var(--set-variant-border-color);
-  --set-style-border-width:     1px;
+	--set-style-color: var(--set-variant-color);
+	--set-style-background-color: var(--set-variant-background-color);
+	--set-style-border-color: var(--set-variant-border-color);
+	--set-style-border-width: 1px;
 }
 ```
 
-| Style | Color | Background | Border | Use case |
-|---|---|---|---|---|
-| `.ghost` | variant identity | transparent | transparent, 0 | tertiary / inline action |
-| `.filled` | variant text | variant identity | variant border | primary CTA (also the implicit default when only a variant is applied) |
+| Style     | Color            | Background       | Border         | Use case                                                               |
+| --------- | ---------------- | ---------------- | -------------- | ---------------------------------------------------------------------- |
+| `.ghost`  | variant identity | transparent      | transparent, 0 | tertiary / inline action                                               |
+| `.filled` | variant text     | variant identity | variant border | primary CTA (also the implicit default when only a variant is applied) |
 
 **`.filled` is mostly redundant** when you're already applying a variant — the cascade resolves to filled-style rendering by default. `.filled` exists for the case where a parent context applied `.ghost` and a child needs to opt back in.
 
@@ -120,12 +120,16 @@ State modifiers describe an interaction state distinct from native DOM attribute
 ```scss
 /* src/styles/modifiers/_states.scss */
 .disabled {
-  cursor: not-allowed;
-  pointer-events: none;
-  opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
+	opacity: 0.5;
 }
-.active   { /* element files own the visual treatment */ }
-.loading  { cursor: progress; }
+.active {
+	/* element files own the visual treatment */
+}
+.loading {
+	cursor: progress;
+}
 ```
 
 States are different from variant/size/style: they declare **CSS properties directly** (cursor, opacity), not context tokens. The behavior is universal — `cursor: not-allowed` on `.disabled` is correct on every element, whether it consumes the modifier cascade or not. Element files own the visual treatment of `.active` (e.g., button's `&.active` rule darkens the background).
@@ -141,17 +145,23 @@ Element files declare element-scoped tokens with fallback chains. `<button>`'s c
 ```scss
 /* src/styles/elements/_button.scss (excerpt) */
 button {
-  --set-button-color:            var(--set-style-color, var(--set-variant-color, currentColor));
-  --set-button-background-color: var(--set-style-background-color, var(--set-variant-background-color, transparent));
-  --set-button-border-color:     var(--set-style-border-color, var(--set-variant-border-color, transparent));
-  --set-button-border-width:     var(--set-style-border-width, var(--set-variant-border-width, 0));
-  --set-button-border-radius:    var(--set-size-border-radius, var(--radius-md));
-  --set-button-padding-inline:   var(--set-size-padding-inline, calc(var(--spacing) * 3));
-  --set-button-padding-block:    var(--set-size-padding-block,  calc(var(--spacing) * 1.5));
-  --set-button-font-size:        var(--set-size-font-size, var(--text-sm));
-  --set-button-font-weight:      var(--font-weight-normal);
-  --set-button-line-height:      var(--leading-normal);
-  /* ... */
+	--set-button-color: var(--set-style-color, var(--set-variant-color, currentColor));
+	--set-button-background-color: var(
+		--set-style-background-color,
+		var(--set-variant-background-color, transparent)
+	);
+	--set-button-border-color: var(
+		--set-style-border-color,
+		var(--set-variant-border-color, transparent)
+	);
+	--set-button-border-width: var(--set-style-border-width, var(--set-variant-border-width, 0));
+	--set-button-border-radius: var(--set-size-border-radius, var(--radius-md));
+	--set-button-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
+	--set-button-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
+	--set-button-font-size: var(--set-size-font-size, var(--text-sm));
+	--set-button-font-weight: var(--font-weight-normal);
+	--set-button-line-height: var(--leading-normal);
+	/* ... */
 }
 ```
 
@@ -203,8 +213,8 @@ Object.values(modifiers.variant).forEach(name => /* ... */)
 
 One file guards the modifier surface from drift, plus per-dimension behavior tests. All run in real Chromium (Playwright).
 
-| Test | Project | What it checks |
-|---|---|---|
+| Test                                                        | Project       | What it checks                                                                                                                                                                                                                                                          |
+| ----------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [modifiers.test.ts](../tests/src/browser/modifiers.test.ts) | `src:browser` | **Shape:** four dimensions present, expected keys per dimension, every leaf string equals its key. **TS → CSS:** every leaf has a `.{name}` rule via `findRule()`. **SCSS → TS:** every `.X { … }` declared in `modifiers/_*.scss` appears as a leaf in `modifiers.ts`. |
 
 Plus per-dimension behavior tests in [tests/src/styles/modifiers/](../tests/src/styles/modifiers/) that mount an element and verify each modifier sets the expected context tokens.
@@ -219,10 +229,10 @@ A new modifier dimension is a real architectural decision — not the same as ad
 
 Example: a fourth size step `.tiny`.
 
-1. Declare `.tiny { --set-size-* : … }` in [_sizes.scss](../src/styles/modifiers/_sizes.scss).
+1. Declare `.tiny { --set-size-* : … }` in [\_sizes.scss](../src/styles/modifiers/_sizes.scss).
 2. Add `tiny: 'tiny'` to `modifiers.size` in [modifiers.ts](../src/browser/modifiers.ts).
-3. Update the `$sizes` Sass list in [_mixins.scss](../src/styles/_mixins.scss) (e.g., `(small, medium, large)` if reintroducing a `medium` step).
-4. Add the value to the test in [_sizes.test.ts](../tests/src/styles/modifiers/_sizes.test.ts).
+3. Update the `$sizes` Sass list in [\_mixins.scss](../src/styles/_mixins.scss) (e.g., `(small, medium, large)` if reintroducing a `medium` step).
+4. Add the value to the test in [\_sizes.test.ts](../tests/src/styles/modifiers/_sizes.test.ts).
 5. Update the table in §3 of this guide.
 
 The parity tests catch any drift automatically — TS without a CSS rule fails; CSS without a TS leaf fails.
@@ -234,7 +244,7 @@ Example: a `density` dimension (compact / cozy / spacious).
 1. Decide the context-token namespace (`--set-density-*`).
 2. Author `src/styles/modifiers/_densities.scss` with each class setting the context tokens.
 3. Add a `density` group to [modifiers.ts](../src/browser/modifiers.ts) and a derived `Density` type.
-4. Add `$densities` to [_mixins.scss](../src/styles/_mixins.scss) Sass lists.
+4. Add `$densities` to [\_mixins.scss](../src/styles/_mixins.scss) Sass lists.
 5. **Update every element file that wants to consume the dimension** — add a `--set-{tag}-* : var(--set-density-*, …)` link in their fallback chains.
 6. Add `_densities.test.ts` to verify each class sets its context tokens.
 7. Update the parity test if its grouping logic needs to know about the new dimension.

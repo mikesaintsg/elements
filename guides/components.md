@@ -12,11 +12,11 @@ The folder exists with an empty barrel ([index.scss](../src/styles/components/in
 
 Three categories, three folders. Any new partial slots into exactly one.
 
-| Category | Folder | What it is | Example |
-|---|---|---|---|
-| **Element** | [src/styles/elements/](../src/styles/elements/) | One file per real HTML tag. Token-driven baseline + UA reset. | `<button>`, `<input>`, `<table>` |
-| **Component** | [src/styles/components/](../src/styles/components/) | Composed widget built from elements. Has a class root (`.card`, `.alert`). Opt-in. | `.card`, `.alert`, `.modal`, `.dropdown` |
-| **Surface** | [src/styles/surfaces/](../src/styles/surfaces/) | CSS for browser-rendered chrome that isn't a tag or composition: `[popover]`, `::backdrop`, `::placeholder`, view transitions, scrollbar styling. | `[popover]`, `dialog::backdrop`, `::picker(select)` |
+| Category      | Folder                                              | What it is                                                                                                                                        | Example                                             |
+| ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| **Element**   | [src/styles/elements/](../src/styles/elements/)     | One file per real HTML tag. Token-driven baseline + UA reset.                                                                                     | `<button>`, `<input>`, `<table>`                    |
+| **Component** | [src/styles/components/](../src/styles/components/) | Composed widget built from elements. Has a class root (`.card`, `.alert`). Opt-in.                                                                | `.card`, `.alert`, `.modal`, `.dropdown`            |
+| **Surface**   | [src/styles/surfaces/](../src/styles/surfaces/)     | CSS for browser-rendered chrome that isn't a tag or composition: `[popover]`, `::backdrop`, `::placeholder`, view transitions, scrollbar styling. | `[popover]`, `dialog::backdrop`, `::picker(select)` |
 
 A pull request that proposes "a button-shaped thing" almost always belongs in `elements/` (refactor `<button>`'s baseline) or stays as a usage of existing modifiers. Reach for `components/` when the thing genuinely composes elements — a card has a header + body + footer, a dropdown has a trigger + a menu.
 
@@ -109,6 +109,7 @@ If a slot's name overlaps with another component's slot, that's fine — `.card-
 ```
 
 **Conventions enforced:**
+
 - Wrap rules in `@layer components`.
 - Use the modifier cascade. Don't hand-roll `&.primary`, `&.large`, etc. — let the variant/size/shape/style modifiers cascade through `--set-{component}-*` tokens just like elements do.
 - Element-scoped tokens declare on the component's root selector, not on `:root`.
@@ -144,22 +145,22 @@ Example sketch (when modal lands):
 ```scss
 /* src/styles/components/_modal.scss */
 .modal {
-  /* tokens, layout, transition */
-  @include transition(opacity var(--set-modal-transition-duration));
+	/* tokens, layout, transition */
+	@include transition(opacity var(--set-modal-transition-duration));
 
-  &:not([open]) {
-    /* hidden state */
-  }
+	&:not([open]) {
+		/* hidden state */
+	}
 }
 ```
 
 ```ts
 // src/browser/composables/useModal.ts (future)
 export const events = {
-  modal: {
-    open:  'elements:modal:open'  as const,
-    close: 'elements:modal:close' as const,
-  },
+	modal: {
+		open: 'elements:modal:open' as const,
+		close: 'elements:modal:close' as const,
+	},
 }
 ```
 
@@ -170,7 +171,7 @@ The composable adds/removes attributes on the element (`open`, `aria-hidden`); t
 ## 6. Catalog
 
 | Component | Status | Root selector | Slots | Composable |
-|---|---|---|---|---|
+| --------- | ------ | ------------- | ----- | ---------- |
 
 (empty)
 

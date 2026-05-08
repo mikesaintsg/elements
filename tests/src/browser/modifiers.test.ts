@@ -11,13 +11,7 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import {
-	modifiers,
-	type Size,
-	type State,
-	type Style,
-	type Variant,
-} from '@src/browser'
+import { modifiers, type Size, type State, type Style, type Variant } from '@src/browser'
 import { findRule } from '../../setupStyles.ts'
 
 import variantsScss from '../../../src/styles/modifiers/_variants.scss?raw'

@@ -38,8 +38,8 @@ A `.primary` class doesn't declare colors — it sets `--set-variant-*` tokens. 
 
 ```scss
 --set-button-background-color: var(
-  --set-style-background-color,
-  var(--set-variant-background-color, transparent)
+	--set-style-background-color,
+	var(--set-variant-background-color, transparent)
 );
 ```
 
@@ -48,6 +48,7 @@ This means: any modifier dimension (variant / size / style / state) works on any
 ### 1.4 Tailwind v4 is the base
 
 Tailwind owns:
+
 - The full color palette ramps (`--color-blue-500`, `--color-slate-100`, …).
 - Scale tokens (`--spacing`, `--radius-{step}`, `--text-{step}`, `--font-weight-{step}`, `--shadow-{step}`).
 - Utility classes (`.bg-blue-500`, `.p-4`, `.rounded-md`, `.text-lg`, `.shadow-lg`, `.m-4`, …).
@@ -59,12 +60,12 @@ We don't redeclare any of that. Modifier and utility classes compose freely on t
 
 The framework is dual-distribution: CSS + TypeScript. Anything a consumer programmatically reaches for has a TypeScript mirror.
 
-| Surface | TS file | Why |
-|---|---|---|
-| CSS variable names | [tokens.ts](../src/browser/tokens.ts) | `getComputedStyle().getPropertyValue()` / `style.setProperty()` |
-| Modifier class names | [modifiers.ts](../src/browser/modifiers.ts) | `classList.add()`, typed component props, test factories |
-| Styled HTML tags | [elements.ts](../src/browser/elements.ts) | enumerate which elements have framework styling |
-| Namespaced event names | [events.ts](../src/browser/events.ts) | typed event listeners (when composables arrive) |
+| Surface                | TS file                                     | Why                                                             |
+| ---------------------- | ------------------------------------------- | --------------------------------------------------------------- |
+| CSS variable names     | [tokens.ts](../src/browser/tokens.ts)       | `getComputedStyle().getPropertyValue()` / `style.setProperty()` |
+| Modifier class names   | [modifiers.ts](../src/browser/modifiers.ts) | `classList.add()`, typed component props, test factories        |
+| Styled HTML tags       | [elements.ts](../src/browser/elements.ts)   | enumerate which elements have framework styling                 |
+| Namespaced event names | [events.ts](../src/browser/events.ts)       | typed event listeners (when composables arrive)                 |
 
 Each TS file is paired with a bidirectional parity test against its CSS-side source — TS leaf without a CSS rule fails the test, and vice versa. See [tokens.md](tokens.md), [modifiers.md](modifiers.md), and [elements.md](elements.md) for each surface's contract.
 
@@ -73,12 +74,13 @@ Each TS file is paired with a bidirectional parity test against its CSS-side sou
 Class names, modifier values, token segments — all spelled out. `information`, not `info`. `large`, not `lg`. `background-color`, not `bg`. Verbosity buys greppability, zero translation overhead between markup and stylesheet, and a single rule a contributor never has to relearn.
 
 The two exceptions that aren't really exceptions:
+
 - **Tailwind utilities use Tailwind's vocabulary** (`bg-blue-500`, not `background-color-blue-500`). That's Tailwind's contract, not ours.
 - **Format-hint suffix `-hsl`** indicates an HSL triplet form on palette tokens (when we ship them; current scope uses `hsl()`-wrapped values).
 
 ### 1.7 Reduced motion
 
-Every rule that declares a `transition` follows it with a `@media (prefers-reduced-motion: reduce) { transition: none; }` guard. The canonical syntax is `@include transition($value)` from [_mixins.scss](../src/styles/_mixins.scss) — it emits both lines in one call. Animations use `@include reduced-motion { animation: none; }` directly.
+Every rule that declares a `transition` follows it with a `@media (prefers-reduced-motion: reduce) { transition: none; }` guard. The canonical syntax is `@include transition($value)` from [\_mixins.scss](../src/styles/_mixins.scss) — it emits both lines in one call. Animations use `@include reduced-motion { animation: none; }` directly.
 
 ---
 
@@ -119,15 +121,15 @@ theme < base < elements < components < surfaces < modifiers < utilities
 
 Layers later in the list win. Unlayered rules win against any layered rule. Tokens stay unlayered so a consumer can re-declare them at any specificity.
 
-| Layer | Owner | Responsibility |
-|---|---|---|
-| `theme` | Tailwind | `@theme` blocks expand into `:root` CSS variables |
-| `base` | Tailwind | preflight (UA reset, `font-family: inherit` on form controls, `box-sizing: border-box`, …) |
-| `elements` | us | element baselines under `_{tag}.scss` |
-| `components` | us | composed widgets (future) |
-| `surfaces` | us | browser-surface styling (future) |
-| `modifiers` | us | `.primary`, `.large`, `.ghost`, … set context tokens |
-| `utilities` | Tailwind | `.bg-blue-500`, `.p-4`, `.rounded-md`, … (highest, win when explicitly applied) |
+| Layer        | Owner    | Responsibility                                                                             |
+| ------------ | -------- | ------------------------------------------------------------------------------------------ |
+| `theme`      | Tailwind | `@theme` blocks expand into `:root` CSS variables                                          |
+| `base`       | Tailwind | preflight (UA reset, `font-family: inherit` on form controls, `box-sizing: border-box`, …) |
+| `elements`   | us       | element baselines under `_{tag}.scss`                                                      |
+| `components` | us       | composed widgets (future)                                                                  |
+| `surfaces`   | us       | browser-surface styling (future)                                                           |
+| `modifiers`  | us       | `.primary`, `.large`, `.ghost`, … set context tokens                                       |
+| `utilities`  | Tailwind | `.bg-blue-500`, `.p-4`, `.rounded-md`, … (highest, win when explicitly applied)            |
 
 ### Why `_tokens.scss` carries the layer-order comment
 
@@ -135,16 +137,16 @@ The actual `@layer` declaration that establishes order lives in the consumer's e
 
 ### Naming summary
 
-| Kind | Pattern | Example |
-|---|---|---|
-| Element partial | `_{tag}.scss` (singular) | `_button.scss`, `_input.scss` |
-| Modifier partial | `_{dimension}.scss` (plural) | `_variants.scss`, `_sizes.scss` |
-| Sass `@use` | `'{name}'` (no underscore) | `@use 'tokens'`, `@use 'mixins' as *` |
-| CSS variable | `--set-[scope-]property[-modifier]` | `--set-button-padding-inline`, `--set-variant-color` |
-| Modifier class | spelled-out semantic adjective | `.primary`, `.large`, `.ghost` |
-| Utility class | Tailwind | `.bg-blue-500`, `.p-4` |
-| Element scope token | `--set-{element}-{css-property}` | `--set-button-background-color` |
-| Context scope token | `--set-{context}-{css-property}` | `--set-variant-color`, `--set-size-padding-inline` |
+| Kind                | Pattern                             | Example                                              |
+| ------------------- | ----------------------------------- | ---------------------------------------------------- |
+| Element partial     | `_{tag}.scss` (singular)            | `_button.scss`, `_input.scss`                        |
+| Modifier partial    | `_{dimension}.scss` (plural)        | `_variants.scss`, `_sizes.scss`                      |
+| Sass `@use`         | `'{name}'` (no underscore)          | `@use 'tokens'`, `@use 'mixins' as *`                |
+| CSS variable        | `--set-[scope-]property[-modifier]` | `--set-button-padding-inline`, `--set-variant-color` |
+| Modifier class      | spelled-out semantic adjective      | `.primary`, `.large`, `.ghost`                       |
+| Utility class       | Tailwind                            | `.bg-blue-500`, `.p-4`                               |
+| Element scope token | `--set-{element}-{css-property}`    | `--set-button-background-color`                      |
+| Context scope token | `--set-{context}-{css-property}`    | `--set-variant-color`, `--set-size-padding-inline`   |
 
 ---
 
@@ -157,7 +159,7 @@ When you reach for a new partial — element, component, surface, or modifier �
 - **Tag-shaped (`<dialog>`, `<input>`, `<table>`)** → `src/styles/elements/_{tag}.scss`. Substantive partials get a `--set-{tag}-*` token block and an entry in [elements.ts](../src/browser/elements.ts).
 - **Composed widget (card, modal, dropdown)** → `src/styles/components/_{name}.scss`. Future. See [components.md](components.md) for the convention.
 - **Browser-surface styling (`[popover]`, `::backdrop`, `::placeholder`, view transitions)** → `src/styles/surfaces/_{name}.scss`. Future. See [surfaces.md](surfaces.md).
-- **Modifier dimension (only if a real new dimension surfaces)** → `src/styles/modifiers/_{dimension}.scss`. Update [modifiers.ts](../src/browser/modifiers.ts), the `$variants`/`$sizes`/etc. constants in [_mixins.scss](../src/styles/_mixins.scss), and the parity test.
+- **Modifier dimension (only if a real new dimension surfaces)** → `src/styles/modifiers/_{dimension}.scss`. Update [modifiers.ts](../src/browser/modifiers.ts), the `$variants`/`$sizes`/etc. constants in [\_mixins.scss](../src/styles/_mixins.scss), and the parity test.
 
 ### B. Tokens before declarations
 
@@ -204,7 +206,7 @@ When you reach for a new partial — element, component, surface, or modifier �
 
 ### Local development
 
-`npm run dev` boots the showcase app via `configs/app/vite.browser.config.ts`. The app entry [app/browser/styles/main.scss](../app/browser/styles/main.scss) declares the layer order, imports Tailwind, sets `@source` paths, and `@import`s the framework SCSS. The framework's own [_theme.scss](../src/styles/_theme.scss) registers the seven semantic variants via `@theme`; consumers can add a sibling `@theme` block to override. Tailwind v4 ships through `@tailwindcss/postcss` (configured under `css.postcss.plugins` in `vite.config.ts`) so it runs *after* Vite's Sass step — the plugin sees the Sass-compiled output and expands every `@theme` block into `:root` custom properties. Using `@tailwindcss/vite` instead would skip Sass-compiled files entirely, leaving `@theme default {…}` as a literal at-rule the browser ignores.
+`npm run dev` boots the showcase app via `configs/app/vite.browser.config.ts`. The app entry [app/browser/styles/main.scss](../app/browser/styles/main.scss) declares the layer order, imports Tailwind, sets `@source` paths, and `@import`s the framework SCSS. The framework's own [\_theme.scss](../src/styles/_theme.scss) registers the seven semantic variants via `@theme`; consumers can add a sibling `@theme` block to override. Tailwind v4 ships through `@tailwindcss/postcss` (configured under `css.postcss.plugins` in `vite.config.ts`) so it runs _after_ Vite's Sass step — the plugin sees the Sass-compiled output and expands every `@theme` block into `:root` custom properties. Using `@tailwindcss/vite` instead would skip Sass-compiled files entirely, leaving `@theme default {…}` as a literal at-rule the browser ignores.
 
 ### Tests
 
@@ -234,10 +236,10 @@ A downstream consumer brings their own Tailwind v4 setup, declares the layer ord
 @import 'tailwindcss';
 
 @theme {
-  /* the consumer redeclares variants here; otherwise the framework's defaults apply */
-  --color-primary: hsl(211 100% 50%);
-  --color-secondary: hsl(210 11% 71%);
-  /* ... */
+	/* the consumer redeclares variants here; otherwise the framework's defaults apply */
+	--color-primary: hsl(211 100% 50%);
+	--color-secondary: hsl(210 11% 71%);
+	/* ... */
 }
 
 @import '@elements/styles';

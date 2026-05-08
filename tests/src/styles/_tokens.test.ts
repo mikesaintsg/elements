@@ -36,9 +36,13 @@ describe(':root — framework-specific --set-* tokens', () => {
 	})
 
 	it('declares neutral variant context fallbacks', () => {
+		// Only --set-variant-color and --set-variant-border-width have neutral
+		// :root defaults (currentColor / 0). --set-variant-background-color and
+		// --set-variant-border-color are intentionally undeclared at :root —
+		// elements consume them via `var(…, fallback)` chains, and leaving them
+		// unset preserves per-element defaults like `currentColor` (anchor) or
+		// `transparent` (button) instead of forcing an explicit override.
 		expect(rootToken('--set-variant-color')).not.toBe('')
-		expect(rootToken('--set-variant-background-color')).not.toBe('')
-		expect(rootToken('--set-variant-border-color')).not.toBe('')
 		expect(rootToken('--set-variant-border-width')).not.toBe('')
 	})
 })

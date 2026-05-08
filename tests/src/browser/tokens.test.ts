@@ -16,8 +16,13 @@ import { tokens } from '@src/browser'
 import { render, rootToken, token } from '../../setupStyles.ts'
 
 import tokensScss from '../../../src/styles/_tokens.scss?raw'
-import buttonScss from '../../../src/styles/elements/_button.scss?raw'
 import themeScss from '../../../src/styles/_theme.scss?raw'
+
+const elementSources = import.meta.glob('../../../src/styles/elements/_*.scss', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+}) as Record<string, string>
 
 const VARIANTS = [
 	'primary',
@@ -51,6 +56,25 @@ function declarationsIn(source: string): readonly string[] {
 	}
 	return out
 }
+
+function tagFromPath(path: string): string {
+	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
+	if (!match || !match[1]) throw new Error(`Cannot extract tag from ${path}`)
+	return match[1]
+}
+
+// {tag → source} for every element partial that declares its element-scoped tokens.
+const SUBSTANTIVE_PARTIALS: ReadonlyMap<string, string> = (() => {
+	const map = new Map<string, string>()
+	for (const [path, source] of Object.entries(elementSources)) {
+		const tag = tagFromPath(path)
+		if (tag.includes('-')) continue
+		if (new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`, 'i').test(source)) {
+			map.set(tag, source)
+		}
+	}
+	return map
+})()
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Shape
@@ -91,26 +115,33 @@ describe('tokens — shape', () => {
 describe('TS → CSS: every TS leaf resolves at runtime', () => {
 	// Modifier-context tokens only resolve on elements wearing a modifier class.
 	const MODIFIER_CLASS_BY_GROUP: Record<string, string> = {
+		variant: 'primary',
 		size: 'small',
 		style: 'filled',
 	}
 
+	const elementTags = Array.from(SUBSTANTIVE_PARTIALS.keys())
+	const elementPrefixes = new Set(elementTags.map((t) => `--set-${t}-`))
+
 	const globalLeaves = TS_LEAVES.filter((leaf) => {
-		if (leaf.startsWith('--set-button-')) return false
+		for (const prefix of elementPrefixes) if (leaf.startsWith(prefix)) return false
+		if (leaf.startsWith('--set-variant-')) return false
 		if (leaf.startsWith('--set-size-')) return false
-		return !leaf.startsWith('--set-style-');
+		return !leaf.startsWith('--set-style-')
 	})
 
 	it.each(globalLeaves)('%s resolves on :root', (name) => {
 		expect(rootToken(name)).not.toBe('')
 	})
 
-	const buttonLeaves = TS_LEAVES.filter((leaf) => leaf.startsWith('--set-button-'))
-
-	it.each(buttonLeaves)('%s resolves on a button', (name) => {
-		const btn = render('button', '')
-		expect(token(btn, name)).not.toBe('')
-	})
+	for (const tag of elementTags) {
+		const tagLeaves = TS_LEAVES.filter((leaf) => leaf.startsWith(`--set-${tag}-`))
+		// Render the matching element. `tag` always refers to a real HTML tag.
+		it.each(tagLeaves)(`%s resolves on a <${tag}>`, (name) => {
+			const el = render(tag as keyof HTMLElementTagNameMap, '')
+			expect(token(el, name)).not.toBe('')
+		})
+	}
 
 	for (const [group, klass] of Object.entries(MODIFIER_CLASS_BY_GROUP)) {
 		const groupLeaves = TS_LEAVES.filter((leaf) => leaf.startsWith(`--set-${group}-`))
@@ -141,14 +172,15 @@ describe('SCSS / CSS → TS: every framework declaration is mirrored', () => {
 		}
 	})
 
-	it('every --set-button-* in _button.scss is in tokens.button', () => {
-		const declarations = declarationsIn(buttonScss).filter((name) =>
-			name.startsWith('--set-button-'),
-		)
-		for (const name of declarations) {
-			expect(TS_SET, `${name} declared in _button.scss but missing in tokens.button`).toContain(
-				name,
-			)
-		}
-	})
+	for (const [tag, source] of SUBSTANTIVE_PARTIALS) {
+		it(`every --set-${tag}-* in _${tag}.scss is in tokens.${tag}`, () => {
+			const declarations = declarationsIn(source).filter((name) => name.startsWith(`--set-${tag}-`))
+			expect(declarations.length).toBeGreaterThan(0)
+			for (const name of declarations) {
+				expect(TS_SET, `${name} declared in _${tag}.scss but missing in tokens.${tag}`).toContain(
+					name,
+				)
+			}
+		})
+	}
 })

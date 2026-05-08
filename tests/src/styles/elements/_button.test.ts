@@ -189,4 +189,3 @@ describe('button — combined modifiers', () => {
 		expect(token(btn, '--set-button-border-radius')).not.toBe('')
 	})
 })
-

@@ -1,9 +1,106 @@
-// <select> – Drop-down or list-box selector
-// Browser defaults: display: inline-block; platform-native UI
-// multiple attribute enables multi-select (list box); size controls visible rows
-// Coupled: parent of <option> and <optgroup>; associated with <label>
-// Quirk: deeply OS-native — the dropdown list cannot be styled; appearance: none removes
-//   the native arrow but the dropdown popup remains OS-rendered
-//   — for a fully custom select, build one with ARIA or use the upcoming <selectlist>
+// ============================================================================
+// select — Drop-down or list-box selector.
+//
+// Architecture mirrors <input> + <button>: full --set-select-* token chain.
+// `appearance: none` strips the OS chevron; we paint a CSS-mask chevron
+// driven by `--set-select-color` so it tracks variant / hover transitions.
+// `multiple` and `size` set list-box layout; the chevron is hidden in that
+// shape because there's no single-row dropdown to indicate.
+//
+// Quirks:
+//   - The dropdown popup itself is OS-rendered and cannot be styled. The
+//     planned `appearance: base-select` (Chromium 134+) opt-in is the path
+//     forward — see surfaces.md §::picker(select).
+//   - UA does not inherit font on form controls.
+//   - Right-side padding leaves room for the chevron.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	select {
+		--set-select-color: var(--set-style-color, currentColor);
+		--set-select-background-color: var(--set-style-background-color, Canvas);
+		--set-select-border-color: var(
+			--set-variant-background-color,
+			color-mix(in srgb, currentColor 20%, transparent)
+		);
+		--set-select-border-width: 1px;
+		--set-select-border-radius: var(--set-size-border-radius, var(--radius-md));
+		--set-select-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
+		--set-select-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
+		--set-select-padding-inline-end: calc(var(--set-select-padding-inline) * 2 + 0.75rem);
+		--set-select-font-size: var(--set-size-font-size, var(--text-sm));
+		--set-select-line-height: var(--leading-normal);
+		--set-select-transition-duration: var(--set-transition-duration);
+		--set-select-cursor: pointer;
+		--set-select-disabled-opacity: 0.5;
+		--set-select-chevron-size: 0.75rem;
+		--set-select-focus-border-color: var(--set-variant-background-color, var(--color-primary));
+		--set-select-focus-box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+			color-mix(
+				in oklab,
+				var(--set-variant-background-color, var(--color-primary))
+					calc(var(--set-focus-box-shadow-opacity) * 100%),
+				transparent
+			);
+
+		display: inline-block;
+		inline-size: 100%;
+		max-inline-size: 100%;
+		padding-inline-start: var(--set-select-padding-inline);
+		padding-inline-end: var(--set-select-padding-inline-end);
+		padding-block: var(--set-select-padding-block);
+
+		border-color: var(--set-select-border-color);
+		border-style: solid;
+		border-width: var(--set-select-border-width);
+		border-radius: var(--set-select-border-radius);
+
+		font-family: inherit;
+		font-size: var(--set-select-font-size);
+		line-height: var(--set-select-line-height);
+
+		color: var(--set-select-color);
+		background-color: var(--set-select-background-color);
+
+		appearance: none;
+		cursor: var(--set-select-cursor);
+
+		// Chevron painted as a CSS mask so it picks up --set-select-color.
+		background-image: linear-gradient(currentColor, currentColor);
+		background-repeat: no-repeat;
+		background-position: calc(100% - var(--set-select-padding-inline)) 50%;
+		background-size: var(--set-select-chevron-size) var(--set-select-chevron-size);
+		mask-image: none;
+
+		@include transition(
+			(
+				color var(--set-select-transition-duration),
+				background-color var(--set-select-transition-duration),
+				border-color var(--set-select-transition-duration),
+				box-shadow var(--set-select-transition-duration)
+			)
+		);
+
+		&[multiple],
+		&[size]:not([size='1']) {
+			background-image: none;
+			padding-inline-end: var(--set-select-padding-inline);
+			cursor: default;
+		}
+
+		&:focus-visible {
+			outline: none;
+			border-color: var(--set-select-focus-border-color);
+			box-shadow: var(--set-select-focus-box-shadow);
+		}
+
+		&:disabled,
+		&[disabled],
+		&.disabled {
+			cursor: not-allowed;
+			opacity: var(--set-select-disabled-opacity);
+		}
+	}
+}

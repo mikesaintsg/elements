@@ -3,13 +3,15 @@
 		<header class="border-b border-slate-200 pb-6">
 			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">Button</h1>
 			<p class="mt-3 text-base leading-7 text-slate-600">
-				The <code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">&lt;button&gt;</code>
+				The
+				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">&lt;button&gt;</code>
 				element represents an interactive control that triggers an action when activated. The
-				framework's button consumes context tokens via fallback chains so modifier classes
-				(<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.primary</code>,
-				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.large</code>,
-				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.ghost</code>, …)
-				compose without per-element rules.
+				framework's button consumes context tokens via fallback chains so modifier classes (<code
+					class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm"
+					>.primary</code
+				>, <code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.large</code>,
+				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.ghost</code>, …) compose
+				without per-element rules.
 			</p>
 		</header>
 
@@ -53,9 +55,8 @@
 				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">--spacing</code>,
 				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">--text-*</code>, and
 				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">--radius-*</code>
-				scales into <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs"
-					>--set-size-*</code
-				>
+				scales into
+				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">--set-size-*</code>
 				context tokens. Two values:
 				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">.small</code> and
 				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">.large</code>. The bare
@@ -101,9 +102,7 @@
 				would duplicate a Tailwind utility).
 			</p>
 			<div class="flex flex-wrap items-center gap-2">
-				<button type="button" class="primary large ghost rounded-full">
-					Large Ghost Pill
-				</button>
+				<button type="button" class="primary large ghost rounded-full">Large Ghost Pill</button>
 				<button type="button" class="success large rounded-full">Large Success</button>
 				<button type="button" class="danger small rounded-none">Small Square</button>
 			</div>
@@ -126,8 +125,8 @@
 			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Disabled</h2>
 			<p class="text-sm leading-6 text-slate-600">
 				The <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">disabled</code>
-				attribute removes the button from the tab order, prevents activation, and fires no
-				events. It also propagates from a parent
+				attribute removes the button from the tab order, prevents activation, and fires no events.
+				It also propagates from a parent
 				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs"
 					>&lt;fieldset disabled&gt;</code
 				>
@@ -142,11 +141,10 @@
 		<section id="form-context" class="space-y-3">
 			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Form context</h2>
 			<p class="text-sm leading-6 text-slate-600">
-				Buttons inside a <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs"
-					>&lt;form&gt;</code
-				>
-				are automatically associated with it. A button outside the form can still be associated
-				via the <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">form</code>
+				Buttons inside a
+				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">&lt;form&gt;</code> are
+				automatically associated with it. A button outside the form can still be associated via the
+				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">form</code>
 				attribute.
 			</p>
 			<form id="example-form" class="flex flex-wrap items-end gap-3">
@@ -162,9 +160,7 @@
 				<button type="submit" class="primary">Submit</button>
 				<button type="reset">Reset</button>
 			</form>
-			<button type="submit" form="example-form" class="success mt-2">
-				Submit (outside form)
-			</button>
+			<button type="submit" form="example-form" class="success mt-2">Submit (outside form)</button>
 		</section>
 
 		<section id="accessibility" class="space-y-3">
@@ -177,8 +173,7 @@
 					<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">&lt;div&gt;</code> or
 					<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">&lt;span&gt;</code>
 					with a click handler. The browser provides keyboard focus,
-					<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs"
-						>Enter</kbd
+					<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs">Enter</kbd
 					>/<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs"
 						>Space</kbd
 					>
@@ -199,8 +194,7 @@
 				<li>
 					Never override
 					<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">:focus-visible</code>
-					without a visible replacement — the focus ring is the only keyboard accessibility
-					signal.
+					without a visible replacement — the focus ring is the only keyboard accessibility signal.
 				</li>
 			</ul>
 		</section>

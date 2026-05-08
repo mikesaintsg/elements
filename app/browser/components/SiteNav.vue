@@ -58,12 +58,7 @@ const onKeydown = (event: KeyboardEvent): void => {
 </script>
 
 <template>
-	<nav
-		ref="navRef"
-		aria-label="Documentation navigation"
-		class="space-y-5"
-		@keydown="onKeydown"
-	>
+	<nav ref="navRef" aria-label="Documentation navigation" class="space-y-5" @keydown="onKeydown">
 		<template v-for="g in groups" :key="g.name">
 			<div>
 				<h2 class="px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">

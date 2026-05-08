@@ -9,10 +9,8 @@
 
 		<section class="space-y-3 text-base leading-7 text-slate-700">
 			<p>
-				Styles flow outward from element semantics through token-driven custom properties.
-				Modifier classes (<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm"
-					>.primary</code
-				>,
+				Styles flow outward from element semantics through token-driven custom properties. Modifier
+				classes (<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.primary</code>,
 				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.large</code>,
 				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.ghost</code>) set
 				context tokens that elements consume via fallback chains. Tailwind v4 ships the palette,

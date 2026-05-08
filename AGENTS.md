@@ -311,6 +311,24 @@ Type names are the one place suffixes are required — they encode the type's **
 
 When multiple packages or surfaces exist, shared logic belongs in a central core/shared layer. Every cross-surface concept consolidates here. Other surfaces import from core; core never imports from them.
 
+### 5.1 Project Layout (this repo)
+
+This is a CSS framework over semantic HTML elements layered on Tailwind v4. The project is dual-distribution: a SCSS bundle and a TypeScript public API that mirrors every CSS identifier consumers programmatically reach for.
+
+| Path                     | Holds                                                                                                                                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/browser/`           | TypeScript public API. Frozen object trees + derived string-literal-union types. Files: `tokens.ts`, `modifiers.ts`, `elements.ts`, `events.ts`, `index.ts` (sole barrel).                            |
+| `src/styles/`            | SCSS source. `_tokens.scss`, `_theme.scss`, `_mixins.scss`, `index.scss`, plus four subfolders: `elements/`, `modifiers/`, `components/`, `surfaces/`.                                                |
+| `src/styles/elements/`   | One partial per HTML tag (e.g. `_button.scss`, `_a.scss`, `_p.scss`). Most are comment-only placeholders — only ship a rule when Tailwind preflight + UA defaults aren't enough.                      |
+| `src/styles/modifiers/`  | One partial per modifier dimension: `_variants.scss`, `_sizes.scss`, `_styles.scss`, `_states.scss`. Each declares `.{name}` rules that set `--set-{dimension}-*` tokens.                             |
+| `src/styles/components/` | Composed widgets built from elements (future).                                                                                                                                                        |
+| `src/styles/surfaces/`   | Pseudo-element / attribute / at-rule surfaces — `[popover]`, `::backdrop`, `::placeholder`, view transitions, scrollbars, anchor positioning (future).                                                |
+| `app/browser/`           | Vue 3 showcase app. `app/browser/styles/main.scss` is the integration point: layer-order declaration → `@import 'tailwindcss'` → framework SCSS import.                                               |
+| `tests/`                 | Test suite. `tests/setup.css` (Tailwind import + `@source` paths), `tests/setupBrowser.ts`, `tests/setupStyles.ts` (CSS-aware helpers), and `tests/src/{browser,styles}/` mirroring source.           |
+| `guides/`                | Long-form architecture documentation: `plan.md`, `styles.md`, `tokens.md`, `modifiers.md`, `mixins.md`, `elements.md`, `components.md`, `surfaces.md`. Update these whenever the architecture shifts. |
+
+**TS ↔ SCSS parity is enforced by tests.** Every TS leaf in `src/browser/*.ts` must have a matching CSS rule / custom property declaration in `src/styles/`, and vice versa. The parity tests in `tests/src/browser/*.test.ts` use `?raw` SCSS imports + `findRule()` introspection to enforce the contract bidirectionally. See §21 for the full SCSS conventions.
+
 ---
 
 ## 6. Barrel Export Rules
@@ -630,90 +648,190 @@ Update the relevant guide `.md` file with new types, methods, and behavior.
 
 The styles layer mirrors the TypeScript centralization principles. Every rule here has a TypeScript analogue — read the parallel section first to understand the intent.
 
+This framework is layered on **Tailwind v4**. Tailwind owns the palette (`--color-blue-500`, …), scales (`--spacing-*`, `--radius-*`, `--text-*`), the reset, and utility classes. The framework owns element baselines, semantic modifiers, composed widgets, browser-surface styles, and a TS-mirrored API for everything it authors. The compile pipeline is **Sass → PostCSS** with the `@tailwindcss/postcss` plugin (not the Vite plugin) so Tailwind sees the post-Sass CSS and tree-shakes correctly.
+
 ### 21.1 Centralized files (the §5 analogue for SCSS)
 
-| TypeScript                    | SCSS                                                                    |
-| ----------------------------- | ----------------------------------------------------------------------- |
-| `helpers.ts` — pure functions | `_mixins.scss` — `@function` (returns a value) and `@mixin` (emits CSS) |
-| `constants.ts` — UPPER_SNAKE  | `_tokens.scss` — `--bs-*` custom properties + `--bs-*-hsl` triplets     |
-| `*.errors.ts` — error classes | _(no analogue)_                                                         |
-| `*/index.ts` — sole barrel    | `index.scss` — sole compilation barrel                                  |
+| TypeScript                    | SCSS                                                                               |
+| ----------------------------- | ---------------------------------------------------------------------------------- |
+| `helpers.ts` — pure functions | `_mixins.scss` — `@function` (returns a value) and `@mixin` (emits CSS)            |
+| `constants.ts` — UPPER_SNAKE  | `_tokens.scss` — framework `--set-*` custom properties + cascade-layer ordering    |
+| `*/index.ts` — sole barrel    | `index.scss` — sole compilation barrel                                             |
+| _(no analogue)_               | `_theme.scss` — default `@theme` block registering semantic variants with Tailwind |
 
-`_mixins.scss` is the **mixin / function registry**. It emits no top-level CSS — every consumer `@use 'mixins'` and calls `mixins.foo()` / reads `mixins.$bar`. Never `@use 'mixins'` from `index.scss`.
+`_mixins.scss` is the **mixin / function registry**. It emits no top-level CSS — every consumer writes `@use '../mixins' as *;` and then calls `transition(...)` / reads `$variants`. Never `@use 'mixins'` from `index.scss`.
 
-`_tokens.scss` is the **token source of truth**. Theme overrides in `_theme.scss` retune tokens; partials never override tokens.
+`_tokens.scss` declares the cascade layer order at the top of the compiled output and ships the small set of `--set-*` defaults Tailwind doesn't cover. Adding a new token there is allowed; renaming or removing one is a breaking change to the public API (it's mirrored in `src/browser/tokens.ts` and policed by parity tests).
 
-### 21.2 The "extract once duplicated" rule (§5 / §22 in spirit)
+`_theme.scss` registers semantic variant colors with Tailwind via `@theme { --color-primary: …; }`. Theme overrides ship inline oklch literals, not `var(--color-blue-500)` references — Tailwind would tree-shake unused palette swatches before our `_theme.scss` is processed.
 
-Same threshold as TypeScript: when a mixin / function / pattern would be used by **≥2 partials**, lift it to `_mixins.scss`. A pattern that appears in only one partial stays inline. Adding a mixin for a single caller is over-abstraction.
+### 21.2 Architectural layout
 
-When a partial declares the same shape with different per-color values (e.g. `.text-bg-primary` … `.text-bg-dark`), collapse it into a single `@each` loop over a shared color list with the new mixin/function as the inner expression.
+```
+┌────────────────────────────────────────────────────────────────┐
+│ Tailwind v4 (external)                                         │
+│   palette · scales · preflight · utilities · @theme machinery  │
+└────────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ semantic variants we register via @theme
+                              │ become utilities Tailwind generates for us
+┌────────────────────────────────────────────────────────────────┐
+│ Framework (this repo, src/styles/)                             │
+│   _tokens.scss   → @layer order + :root --set-* defaults       │
+│   _theme.scss    → @theme { --color-{variant}: oklch(...) }    │
+│   _mixins.scss   → $variants/$sizes/$styles/$states + helpers  │
+│   elements/      → one _{tag}.scss per HTML element            │
+│   modifiers/     → _variants.scss · _sizes.scss · _styles.scss │
+│                    · _states.scss                              │
+│   components/    → composed widgets (future)                   │
+│   surfaces/      → pseudo-elements, [popover], etc. (future)   │
+└────────────────────────────────────────────────────────────────┘
+```
 
-### 21.3 Functions vs mixins vs placeholders — three tools, three roles
+### 21.3 The token namespace pattern
 
-- **`@function`** — when you need a _value_ you can plug into a property. Pure, no side effects, returns a single CSS value. Examples: `tint($name, $alpha)` returns an `hsla()` expression.
-- **`@mixin`** — when you need to _emit declarations_. May take `@content`. Examples: `transition($value)` emits `transition: $value;` plus the matching `reduced-motion` guard. `focus-ring($name, $alpha, $inset)` emits the canonical focus `box-shadow:`.
-- **`%placeholder`** — only for sharing _within a single partial_. Sass placeholders are NOT reachable across `@use` boundaries; if you need cross-file sharing, use `@mixin` (the trade-off: N copies in compiled output rather than one).
+**Pattern**: `--set-[scope-]property[-modifier]` — three slots, last segment is a real CSS property key whenever one exists.
 
-### 21.4 The current `_mixins.scss` registry
+| Slot       | Source                                             | Examples                                                                                                         |
+| ---------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `scope`    | empty (global) · element name · modifier dimension | `button`, `input`, `variant`, `size`, `style`, `focus`                                                           |
+| `property` | a real CSS property key whenever one applies       | `color`, `background-color`, `border-radius`, `padding-inline`, `font-size`, `box-shadow`, `transition-duration` |
+| `modifier` | scale step / state                                 | `hover`, `active`, `disabled`                                                                                    |
 
-| Member                                           | Kind     | Purpose                                                              |
-| ------------------------------------------------ | -------- | -------------------------------------------------------------------- |
-| `$breakpoints`                                   | variable | Bootstrap breakpoint scale (sm 576 … xxl 1400). Drives every `@each` |
-| `$placements`                                    | variable | Bootstrap `Placement` → `position-area` map. Drives `native()`       |
-| `tint($name, $alpha)`                            | function | `hsla(var(--bs-{name}-hsl), $alpha)` — the canonical color tint      |
-| `reduced-motion`                                 | mixin    | Wraps `@content` in `prefers-reduced-motion: reduce`                 |
-| `transition($value)`                             | mixin    | Emits `transition:` plus the matching `reduced-motion` guard         |
-| `focus-ring($name, $alpha, $inset)`              | mixin    | Emits the canonical focus-ring `box-shadow:`                         |
-| `fade-state`                                     | mixin    | Emits `&:not(.show) { display: none; }`                              |
-| `truncate`                                       | mixin    | Single-line ellipsis trio                                            |
-| `native($component)`                             | mixin    | Emits the native popover / tooltip placement class family            |
-| `floating-bounds($component, $width-prop)`       | mixin    | Viewport-safe size budget for floating panels                        |
-| `floating-side-insets($component, $padding-var)` | mixin    | Per-side `--bs-*-inset-*` blending placement padding × safe-area     |
+The `--set-*` namespace is reserved for what the framework authors. **Never** redeclare what Tailwind already exports — no `--set-color-blue-500`, no `--set-spacing-4`. Tailwind's tokens are referenced under their native names.
 
-### 21.5 Naming
+| Token shape                          | Owner    | Where declared                                |
+| ------------------------------------ | -------- | --------------------------------------------- |
+| `--color-blue-500`, `--spacing-4`, … | Tailwind | (consumer entry imports `tailwindcss`)        |
+| `--color-{variant}` (semantic)       | Us       | `_theme.scss` `@theme { … }`                  |
+| `--set-{scope}-{property}` global    | Us       | `_tokens.scss` `:root { … }`                  |
+| `--set-{element}-{property}`         | Us       | `elements/_{tag}.scss` element selector       |
+| `--set-{dimension}-{property}`       | Us       | `modifiers/_{dimension}.scss` `.{name}` rules |
 
-| Kind             | Casing                                                                           | Pattern                       | Examples                                     |
-| ---------------- | -------------------------------------------------------------------------------- | ----------------------------- | -------------------------------------------- |
-| Function         | lowercase, kebab-case                                                            | `{verb}` or `{noun}`          | `tint`, `clamp`                              |
-| Mixin            | lowercase, kebab-case                                                            | verb / verb-noun              | `reduced-motion`, `focus-ring`               |
-| Sass `$variable` | lowercase, kebab-case                                                            | `$breakpoints`, `$placements` | (use `!default` if downstream-overridable)   |
-| Custom property  | `--bs-{component}-{property}` for component-scoped, `--bs-{semantic}` for global |                               | `--bs-alert-padding-y`, `--bs-border-radius` |
-| Modifier class   | `.{entity}-{variant}`                                                            |                               | `.alert-info`, `.btn-lg`                     |
-| State class      | bare adjective                                                                   |                               | `.show`, `.active`, `.disabled`              |
+### 21.4 The four modifier dimensions
 
-### 21.6 Tokens are the public contract
+The modifier system is closed: four orthogonal dimensions, each living in its own partial under `src/styles/modifiers/`. The Sass list constants in `_mixins.scss` (`$variants`, `$sizes`, `$styles`, `$states`) match the dimension names exactly so loops read uniformly.
 
-- Token names in `_tokens.scss` are part of the **public API**. Renaming a token is a breaking change. Adding a new token is allowed; removing one is not without a migration path.
-- Per-component tokens live on the component selector (`.alert { --bs-alert-padding-y: …; }`). They are **not** declared globally.
-- Theme overrides in `_theme.scss` redeclare tokens under `[data-bs-theme='dark']` / `[data-bs-core='*']`. They do not modify partials.
-- `_tokens.scss` and `_theme.scss` are the **only** files where raw `hsla(var(--bs-{name}-hsl), $alpha)` is the convention. Component partials use `mixins.tint($name, $alpha)`. The reason: tokens.scss IS the source of truth — using a function that wraps the same expression there would invert the dependency.
+| Dimension | Values                                                                            | Partial          | Sets context tokens                                                                                         |
+| --------- | --------------------------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| variant   | `primary`, `secondary`, `tertiary`, `success`, `warning`, `danger`, `information` | `_variants.scss` | `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`                       |
+| size      | `small`, `large` (default size is bare-element)                                   | `_sizes.scss`    | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius` |
+| style     | `ghost`, `filled` (no `outline` — Tailwind owns that name)                        | `_styles.scss`   | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`                             |
+| state     | `disabled`, `active`, `loading`                                                   | `_states.scss`   | (typically toggles existing element rules; no dedicated context tokens)                                     |
 
-### 21.7 The transition + reduced-motion contract
+Naming rules: spelled out, never abbreviated (`information` not `info`, `large` not `lg`); singular adjectives or nouns; values distinct across dimensions (no shape modifier named `rounded` because Tailwind already ships `.rounded`).
 
-Every `transition:` declaration must be paired with a `prefers-reduced-motion: reduce` opt-out. Use `@include mixins.transition($value)` — it emits both lines. Hand-writing the pair is a code smell — the mixin owns the boilerplate.
+### 21.5 Cascade layer order (load-bearing)
 
-Animations (`animation:`) use `@include mixins.reduced-motion { animation: none; }` directly — the `transition` mixin only handles transitions.
+Layer order is declared once in the consumer's entry CSS — `tests/setup.css` and `app/browser/styles/main.scss` — **before** `@import 'tailwindcss'`:
 
-### 21.8 The fade-state contract
+```css
+@layer theme, base, elements, components, surfaces, modifiers, utilities;
+@import 'tailwindcss';
+@import '../../../src/styles/index';
+```
 
-Floating components (popover, tooltip, toast) hide via `&:not(.show) { display: none; }` — collapse this to `@include mixins.fade-state;`. The `.fade` opacity transition itself lives once in `_collapse.scss` and is consumed by class name.
+Layers later in the list win. Tailwind's own `@layer theme, base, components, utilities` declaration merges as a no-op against this wider order. The practical consequences:
 
-### 21.9 What partials must never do
+- **Element rules must be wrapped in `@layer elements { … }`** — otherwise an unlayered rule would beat any utility, defeating Tailwind composition.
+- **Modifier classes sit in `@layer modifiers`**, beating element baselines but losing to explicit utilities. (Modifier partials currently emit unlayered class rules — they win over layered element rules by virtue of being unlayered, which has the same practical effect; tighten this if a conflict surfaces.)
+- **Utilities always win** when the consumer writes `<button class="primary m-4 shadow-lg">`.
 
-Mirrors §20:
+### 21.6 The element-rule philosophy
 
-- **Never invent a new token** without checking `_tokens.scss` for an existing one. New tokens belong in `_tokens.scss`, not in the partial.
-- **Never write a literal HSL color**. Every color flows through a `var(--bs-*)` token. For alpha tints, use `mixins.tint($name, $alpha)`.
-- **Never write a hand-rolled per-color block** when the structure is shared. Use `@each $color in $bs-colors` with the new mixin/function.
+`src/styles/elements/` contains one partial per HTML tag (~93 files). The vast majority are **comment-only placeholders**. Only ship a CSS rule when Tailwind's preflight + UA defaults aren't already covering the desired baseline. Today only seven partials emit rules: `_a.scss`, `_abbr.scss`, `_address.scss`, `_button.scss`, `_fieldset.scss`, `_mark.scss`, `_p.scss`.
+
+The substantive partial pattern (button is the reference):
+
+```scss
+@use '../mixins' as *;
+
+@layer elements {
+	button {
+		/* element-scoped tokens — fallback chain: style → variant → element default */
+		--set-button-color: var(--set-style-color, var(--set-variant-color, currentColor));
+		--set-button-background-color: var(
+			--set-style-background-color,
+			var(--set-variant-background-color, transparent)
+		);
+		/* …rest of token resolution… */
+
+		/* baseline rules consume the tokens */
+		color: var(--set-button-color);
+		background-color: var(--set-button-background-color);
+		@include transition(
+			(color var(--set-transition-duration), background-color var(--set-transition-duration))
+		);
+	}
+}
+```
+
+Modifier classes are **token-setters only** — they declare `--set-{dimension}-*` values. The element file consumes them through `var(…, fallback)` chains. This is what makes `<button class="primary large filled">` work with zero per-element variant/size/style code.
+
+The "substantive partial" marker is **declares at least one `--set-{tag}-*` token**. The TS↔SCSS parity test for elements (`tests/src/browser/elements.test.ts`) uses this marker to determine which partials must appear in `src/browser/elements.ts`.
+
+### 21.7 The `_mixins.scss` registry
+
+| Member               | Kind      | Purpose                                                                                   |
+| -------------------- | --------- | ----------------------------------------------------------------------------------------- |
+| `$variants`          | Sass list | `(primary, secondary, tertiary, success, warning, danger, information)` — drives `@each`  |
+| `$sizes`             | Sass list | `(small, large)`                                                                          |
+| `$styles`            | Sass list | `(ghost, filled)`                                                                         |
+| `$states`            | Sass list | `(disabled, active, loading)`                                                             |
+| `reduced-motion`     | mixin     | Wraps `@content` in `@media (prefers-reduced-motion: reduce)`                             |
+| `transition($value)` | mixin     | Emits `transition: $value` plus the matching `reduced-motion { transition: none; }` guard |
+| `focus-ring($alpha)` | mixin     | Emits the canonical focus `box-shadow:` consuming `--set-variant-background-color`        |
+
+Each list constant is `!default` so a downstream consumer can override it before `@use`. The list names match the modifier-dimension partial names exactly (`$variants` ↔ `_variants.scss` ↔ `modifiers.variant` in TS).
+
+### 21.8 The transition + reduced-motion contract
+
+Every `transition:` declaration must be paired with a `prefers-reduced-motion: reduce` opt-out. Use `@include transition($value)` — it emits both lines. Hand-writing the pair is a code smell — the mixin owns the boilerplate.
+
+Animations (`animation:`) use `@include reduced-motion { animation: none; }` directly — the `transition` mixin only handles transitions.
+
+### 21.9 The TS ↔ SCSS parity contract
+
+`src/browser/{tokens,modifiers,elements,events}.ts` are public-API mirrors of the CSS-side surface. Every leaf is a frozen string literal; every group is a frozen object; every union type is derived. The contract is enforced bidirectionally by tests in `tests/src/browser/`:
+
+| TS file        | Tests against                                                                                                                                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tokens.ts`    | Each leaf resolves at runtime via `getComputedStyle()` (`:root`, on a button, or on a modifier-classed element). Each `--set-*` declared in any SCSS partial appears as a TS leaf. Each `--color-{variant}` in `_theme.scss`'s `@theme` block appears in `tokens.color`. |
+| `modifiers.ts` | Each leaf has a `.{name}` rule in the loaded cascade (via `findRule`). Each `.{name}` declared in `modifiers/_*.scss` appears as a TS leaf.                                                                                                                              |
+| `elements.ts`  | Each TS key has an `elements/_{tag}.scss` partial that declares at least one `--set-{tag}-*` token. Each substantive partial appears in TS.                                                                                                                              |
+| `events.ts`    | Each value matches `elements:{source}:{verb}` where `{verb}` is from the lifecycle vocabulary in §11. (Initial scope ships an empty events object — composables come later.)                                                                                             |
+
+When a CSS-side identifier changes, the TS mirror **must** be updated in the same change. The parity tests fail loudly when drift occurs — that is the system working as designed, not a test to suppress.
+
+### 21.10 Naming summary
+
+| Kind             | Casing                | Pattern                             | Examples                                                        |
+| ---------------- | --------------------- | ----------------------------------- | --------------------------------------------------------------- |
+| Function         | lowercase, kebab-case | `{verb}` or `{noun}`                | (none currently — registry is mixin-heavy)                      |
+| Mixin            | lowercase, kebab-case | verb / verb-noun                    | `reduced-motion`, `transition`, `focus-ring`                    |
+| Sass `$variable` | lowercase, kebab-case | dimension name (plural)             | `$variants`, `$sizes`, `$styles`, `$states`                     |
+| Custom property  | `--set-*` namespace   | `--set-[scope-]property[-modifier]` | `--set-button-padding-inline`, `--set-variant-background-color` |
+| Modifier class   | bare adjective/noun   | `.{name}` (no dimension prefix)     | `.primary`, `.large`, `.filled`, `.disabled`                    |
+| Element rule     | bare HTML tag         | wrapped in `@layer elements { … }`  | `button { … }`                                                  |
+
+### 21.11 Anti-patterns
+
+Mirrors §20 in spirit:
+
+- **Never redeclare a Tailwind-owned token.** No `--set-color-blue-500`, no `--set-spacing-4`. Reference Tailwind's tokens directly: `var(--color-blue-500)`, `var(--spacing-4)`.
+- **Never invent a modifier class name that clashes with a Tailwind utility.** Tailwind already ships `.rounded`, `.outline`, `.huge`-equivalent (`.text-xl` etc.) — those names are off-limits as modifiers.
+- **Never invent a new `--set-*` token without checking `_tokens.scss` and the relevant element/modifier partial first.** New global tokens go in `_tokens.scss`; new element-scoped tokens go on the element selector inside `elements/_{tag}.scss`.
+- **Never wrap `var(...)` references inside `_theme.scss`'s `@theme` block.** Tailwind processes `@theme` before tree-shaking its palette — `var(--color-blue-500)` references will resolve to nothing. Use inline `oklch(...)` literals tuned to match the palette.
+- **Never write an unlayered element rule.** `@layer elements { … }` is required so utilities win. If an unlayered rule is needed, it has to be justified.
+- **Never write a literal hex/rgb color in a partial.** Colors flow through tokens — `var(--color-{variant})`, `var(--set-{scope}-color)`, or a `color-mix()` of those.
 - **Never duplicate logic across partials.** If a pattern appears in two partials, lift it to `_mixins.scss`.
 - **Never `@extend` across partials.** Sass `@extend` collapses selectors at compile time; sharing flows through tokens and mixins, not Sass inheritance.
+- **Never abbreviate** dimension or modifier names (`info` → `information`, `lg` → `large`, `bg` → `background-color`).
+- **Never add a TS leaf without a CSS counterpart, or a CSS rule without a TS leaf.** The parity tests will fail; that's the contract.
 
-### 21.10 The composable ↔ partial contract
+### 21.12 Build pipeline note
 
-A partial owns visual chrome (color, layout, sizing, transitions). A composable owns interactivity state (which class is on the element right now, when transitions fire, what `aria-*` attributes are set). They meet at the **class name** and the **transition token** — both are stable contracts.
-
-State class names use the §11 lifecycle vocabulary: `.show` (visible), `.active` (current), `.disabled` (input-blocking). The composable hardcodes these strings (in `*/constants.ts`); the partial styles them.
+Tailwind v4 ships two integrations: the Vite plugin (`@tailwindcss/vite`) and the PostCSS plugin (`@tailwindcss/postcss`). The Vite plugin only processes `.css` files reachable from the entry. We use the **PostCSS plugin** so Tailwind runs on the post-Sass output and sees every `var(--text-sm)` reference our modifiers emit. Switching back to the Vite plugin will tree-shake those references away. `@source` directives in the entry CSS (`tests/setup.css`, `app/browser/styles/main.scss`) tell Tailwind which files to scan for utility class names.
 
 ---
 

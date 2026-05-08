@@ -12,7 +12,13 @@
 // ============================================================================
 
 export const elements = {
+	a: 'a',
 	button: 'button',
+	dialog: 'dialog',
+	input: 'input',
+	select: 'select',
+	table: 'table',
+	textarea: 'textarea',
 } as const
 
 export type Element = (typeof elements)[keyof typeof elements]

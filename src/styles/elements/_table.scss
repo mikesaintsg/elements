@@ -1,9 +1,95 @@
-// <table> – Data table
-// Browser defaults: display: table; border-collapse: separate; border-spacing: 2px; border-color: gray
-// Never use tables for layout — only for tabular data
-// Recommended child order: <caption>, <colgroup>, <thead>, <tbody>, <tfoot>
-// Quirk: browsers auto-insert <tbody> around bare <tr> children — breaks "table > tr" CSS selectors
-// Quirk: table-layout: auto (default) makes column widths content-driven and render-blocking
-//   — use table-layout: fixed + explicit width for predictable, faster rendering
+// ============================================================================
+// table — Tabular data container.
+//
+// Architecture:
+//   1. Element-scoped --set-table-* tokens declared on `table`. The size
+//      modifier routes cell padding + font-size; the variant modifier
+//      routes the divider color so a `.primary` table renders with primary-
+//      tinted dividers.
+//   2. Cell rules (`th`, `td`) consume the table's tokens via inheritance.
+//      `_th.scss` / `_td.scss` declare no element-scoped tokens of their
+//      own — they're "override" partials in elements.md, not "done", because
+//      every styled property comes from `table`.
+//   3. `border-collapse: collapse` is the framework default — the UA's
+//      `separate` + `border-spacing: 2px` is almost always wrong for modern
+//      tables and incompatible with `border-block-end`-only dividers.
+//
+// Quirks:
+//   - <tr> can't carry a border in `border-collapse: separate` mode, so we
+//     attach dividers to `td` / `th` `border-block-end`.
+//   - Browsers auto-insert <tbody> around bare <tr> children of <table> —
+//     `table > tr` selectors don't match. The cell selectors below avoid
+//     that pitfall by targeting `th` / `td` directly.
+//   - `caption-side: top` is the UA default; consumers flip with
+//     `caption-side: bottom` when designing data-grid pagers.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	table {
+		--set-table-color: var(--set-style-color, currentColor);
+		--set-table-background-color: var(--set-style-background-color, transparent);
+		--set-table-border-color: var(
+			--set-variant-background-color,
+			color-mix(in srgb, currentColor 15%, transparent)
+		);
+		--set-table-border-width: 1px;
+		--set-table-cell-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
+		--set-table-cell-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 2));
+		--set-table-font-size: var(--set-size-font-size, var(--text-sm));
+		--set-table-line-height: var(--leading-normal);
+		--set-table-header-font-weight: 600;
+		--set-table-header-background-color: color-mix(
+			in srgb,
+			var(--set-table-border-color) 40%,
+			transparent
+		);
+		--set-table-row-hover-background-color: color-mix(
+			in srgb,
+			var(--set-table-border-color) 25%,
+			transparent
+		);
+		--set-table-transition-duration: var(--set-transition-duration);
+
+		inline-size: 100%;
+		border-collapse: collapse;
+		color: var(--set-table-color);
+		background-color: var(--set-table-background-color);
+		font-size: var(--set-table-font-size);
+		line-height: var(--set-table-line-height);
+
+		caption {
+			padding-block: var(--set-table-cell-padding-block);
+			text-align: start;
+			caption-side: top;
+		}
+
+		th,
+		td {
+			padding-inline: var(--set-table-cell-padding-inline);
+			padding-block: var(--set-table-cell-padding-block);
+			border-block-end: var(--set-table-border-width) solid var(--set-table-border-color);
+			text-align: start;
+			vertical-align: middle;
+		}
+
+		th {
+			font-weight: var(--set-table-header-font-weight);
+			background-color: var(--set-table-header-background-color);
+		}
+
+		tbody tr {
+			@include transition(background-color var(--set-table-transition-duration));
+		}
+
+		tbody tr:hover {
+			background-color: var(--set-table-row-hover-background-color);
+		}
+
+		tbody tr:last-child > th,
+		tbody tr:last-child > td {
+			border-block-end: 0;
+		}
+	}
+}

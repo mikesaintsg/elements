@@ -1,8 +1,141 @@
-// <input> – Form input control (void element)
-// Browser defaults: display: inline-block (most types); varies enormously by type and OS
-// Quirk: browsers do not inherit font on inputs by default — always set font: inherit
-// Quirk: appearance: none is required before custom styling to remove native widget rendering
-// Quirk: type="file" is very hard to style — typically hidden and triggered by a styled <label>
-// Quirk: type="number" spinner arrows need: input[type=number]::-webkit-inner-spin-button { display: none }
+// ============================================================================
+// input — Form text input control (text-like types only).
+//
+// Architecture:
+//   1. Element-scoped --set-input-* tokens declared on a selector that targets
+//      every text-like type. Non-text types (checkbox, radio, range, color,
+//      file, hidden, image, submit, reset, button) are intentionally excluded
+//      so the cascade doesn't fight UA chrome that the framework can't
+//      meaningfully restyle.
+//   2. The fallback chain mirrors button:
+//        background  → style → element default (Canvas system color)
+//        border      → variant identity → muted currentColor
+//        text        → style → currentColor
+//        chrome      → size → element-natural
+//      Bare <input> renders neutral (Canvas fill, muted border); a variant
+//      modifier swaps the border color to the variant identity; .filled
+//      additionally fills the background; size modifiers route padding /
+//      font-size / radius from the size context tokens.
+//   3. :focus-visible drops the outline and replaces it with a variant-
+//      colored border + focus ring.
+//
+// Quirks:
+//   - UA does not inherit font on form controls — set font-family: inherit.
+//   - appearance: none is required so the native widget chrome (date pickers,
+//     spinner buttons on number, etc.) is removed before we paint our own.
+//   - fieldset[disabled] cascades :disabled to descendant inputs — covered.
+//   - Type-specific UA pseudo-elements (::-webkit-inner-spin-button,
+//     ::-webkit-search-cancel-button) are left alone here; consumers can
+//     compose Tailwind utilities or extend per-type partials.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
+			[type='file']
+		):not([type='hidden']):not([type='image']):not([type='submit']):not([type='reset']):not(
+			[type='button']
+		) {
+		// ----------------------------------------------------------------------
+		// Element-scoped tokens — fallback chains let any modifier override.
+		// ----------------------------------------------------------------------
+		--set-input-color: var(--set-style-color, currentColor);
+		--set-input-background-color: var(--set-style-background-color, Canvas);
+		--set-input-border-color: var(
+			--set-variant-background-color,
+			color-mix(in srgb, currentColor 20%, transparent)
+		);
+		--set-input-border-width: 1px;
+		--set-input-border-radius: var(--set-size-border-radius, var(--radius-md));
+		--set-input-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
+		--set-input-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
+		--set-input-font-size: var(--set-size-font-size, var(--text-sm));
+		--set-input-line-height: var(--leading-normal);
+		--set-input-transition-duration: var(--set-transition-duration);
+		--set-input-cursor: text;
+		--set-input-disabled-opacity: 0.5;
+		--set-input-placeholder-opacity: 0.6;
+		--set-input-focus-border-color: var(--set-variant-background-color, var(--color-primary));
+		--set-input-focus-box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+			color-mix(
+				in oklab,
+				var(--set-variant-background-color, var(--color-primary))
+					calc(var(--set-focus-box-shadow-opacity) * 100%),
+				transparent
+			);
+
+		// ----------------------------------------------------------------------
+		// Layout
+		// ----------------------------------------------------------------------
+		display: inline-block;
+		inline-size: 100%;
+		max-inline-size: 100%;
+		padding-inline: var(--set-input-padding-inline);
+		padding-block: var(--set-input-padding-block);
+
+		// ----------------------------------------------------------------------
+		// Border
+		// ----------------------------------------------------------------------
+		border-color: var(--set-input-border-color);
+		border-style: solid;
+		border-width: var(--set-input-border-width);
+		border-radius: var(--set-input-border-radius);
+
+		// ----------------------------------------------------------------------
+		// Typography — UA does not inherit font on form controls.
+		// ----------------------------------------------------------------------
+		font-family: inherit;
+		font-size: var(--set-input-font-size);
+		line-height: var(--set-input-line-height);
+
+		// ----------------------------------------------------------------------
+		// Colors
+		// ----------------------------------------------------------------------
+		color: var(--set-input-color);
+		background-color: var(--set-input-background-color);
+
+		// ----------------------------------------------------------------------
+		// Interaction
+		// ----------------------------------------------------------------------
+		appearance: none;
+		cursor: var(--set-input-cursor);
+
+		@include transition(
+			(
+				color var(--set-input-transition-duration),
+				background-color var(--set-input-transition-duration),
+				border-color var(--set-input-transition-duration),
+				box-shadow var(--set-input-transition-duration)
+			)
+		);
+
+		// ----------------------------------------------------------------------
+		// Placeholder
+		// ----------------------------------------------------------------------
+		&::placeholder {
+			color: currentColor;
+			opacity: var(--set-input-placeholder-opacity);
+		}
+
+		// ----------------------------------------------------------------------
+		// States
+		// ----------------------------------------------------------------------
+		&:focus-visible {
+			outline: none;
+			border-color: var(--set-input-focus-border-color);
+			box-shadow: var(--set-input-focus-box-shadow);
+		}
+
+		&:disabled,
+		&[disabled],
+		&.disabled {
+			cursor: not-allowed;
+			opacity: var(--set-input-disabled-opacity);
+		}
+
+		&:invalid:not(:placeholder-shown):not(:focus) {
+			border-color: var(--color-danger);
+		}
+	}
+}

@@ -1,19 +1,134 @@
-// <a> – Hyperlink / download anchor
-// Browser defaults: color: -webkit-link (blue); text-decoration: underline; cursor: pointer
-// :visited defaults to purple
-// Use rel="noopener noreferrer" with target="_blank" to prevent tab-napping
+// ============================================================================
+// a — Hyperlink / download anchor.
 //
-// Tailwind preflight already sets `color: inherit` and `text-decoration: inherit`
-// on bare anchors. The framework re-asserts the underline so links remain a
-// visible affordance by default; consumers can drop it with `no-underline`.
-// `:visited` color: inherit is needed because the UA default is purple.
+// Architecture:
+//   1. Element-scoped --set-a-* tokens declared on the anchor selector. Each
+//      one resolves via a fallback chain that prefers, in order:
+//        a. style-context tokens   (set by .ghost / .filled)
+//        b. variant-context tokens (set by .primary / .secondary / …)
+//        c. size-context tokens    (set by .small / .large)
+//        d. anchor-natural defaults — bare <a> stays an inline underlined
+//           link with `color: currentColor`. The chrome (padding,
+//           border-radius, background) collapses to zero when no modifier
+//           is present, so the cascade is invisible until a modifier opts in.
+//   2. Modifier-aware text-decoration: bare anchors and ghost variants keep
+//      the underline; .filled drops it because the fill itself signals
+//      affordance and an underline on a filled surface looks wrong.
+//   3. :visited reuses --set-a-color so a primary link doesn't degrade to
+//      browser purple after visiting.
+//
+// Quirks:
+//   - UA `color: -webkit-link` (~blue) and `:visited` purple are both
+//     overridden so the variant cascade owns color identity.
+//   - Tailwind preflight already strips text-decoration; the framework
+//     re-asserts underline as the default link affordance.
+//   - Custom-property fallbacks must be real value tokens — `inherit`
+//     triggers Invalid-At-Computed-Value-Time on a custom property, so
+//     the fallbacks use `currentColor`, `1em`, `0`, `transparent`.
+// ============================================================================
+
+@use '../mixins' as *;
 
 @layer elements {
 	a {
-		text-decoration: underline;
+		// ----------------------------------------------------------------------
+		// Element-scoped tokens — fallback chains let any modifier override.
+		// ----------------------------------------------------------------------
+		--set-a-color: var(--set-style-color, var(--set-variant-background-color, currentColor));
+		--set-a-background-color: var(--set-style-background-color, transparent);
+		--set-a-border-color: var(--set-style-border-color, transparent);
+		--set-a-border-width: var(--set-style-border-width, 0);
+		--set-a-border-radius: var(--set-size-border-radius, 0);
+		--set-a-padding-inline: var(--set-size-padding-inline, 0);
+		--set-a-padding-block: var(--set-size-padding-block, 0);
+		--set-a-font-size: var(--set-size-font-size, 1em);
+		--set-a-text-decoration: underline;
+		--set-a-transition-duration: var(--set-transition-duration);
+		--set-a-cursor: pointer;
+		--set-a-disabled-opacity: 0.5;
+		--set-a-focus-box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+			color-mix(
+				in oklab,
+				var(--set-variant-background-color, var(--color-primary))
+					calc(var(--set-focus-box-shadow-opacity) * 100%),
+				transparent
+			);
 
+		// ----------------------------------------------------------------------
+		// Box — collapses to inline text when no size modifier is applied.
+		// ----------------------------------------------------------------------
+		padding-inline: var(--set-a-padding-inline);
+		padding-block: var(--set-a-padding-block);
+		border-color: var(--set-a-border-color);
+		border-style: solid;
+		border-width: var(--set-a-border-width);
+		border-radius: var(--set-a-border-radius);
+
+		// ----------------------------------------------------------------------
+		// Typography
+		// ----------------------------------------------------------------------
+		font-size: var(--set-a-font-size);
+		text-decoration: var(--set-a-text-decoration);
+
+		// ----------------------------------------------------------------------
+		// Colors
+		// ----------------------------------------------------------------------
+		color: var(--set-a-color);
+		background-color: var(--set-a-background-color);
+
+		// ----------------------------------------------------------------------
+		// Interaction
+		// ----------------------------------------------------------------------
+		cursor: var(--set-a-cursor);
+
+		@include transition(
+			(
+				color var(--set-a-transition-duration),
+				background-color var(--set-a-transition-duration),
+				border-color var(--set-a-transition-duration),
+				text-decoration-color var(--set-a-transition-duration),
+				box-shadow var(--set-a-transition-duration)
+			)
+		);
+
+		// ----------------------------------------------------------------------
+		// Filled style drops the underline — the fill carries the affordance.
+		// Element-local because text-decoration is anchor-specific; the style
+		// modifier dimension stays focused on color/background/border tokens.
+		// ----------------------------------------------------------------------
+		&.filled {
+			--set-a-text-decoration: none;
+		}
+
+		// ----------------------------------------------------------------------
+		// :visited keeps the variant color (UA defaults to purple).
+		// ----------------------------------------------------------------------
 		&:visited {
-			color: inherit;
+			color: var(--set-a-color);
+		}
+
+		// ----------------------------------------------------------------------
+		// States
+		// ----------------------------------------------------------------------
+		&:hover {
+			color: color-mix(in srgb, var(--set-a-color) 80%, black);
+		}
+
+		&:active,
+		&.active {
+			color: color-mix(in srgb, var(--set-a-color) 65%, black);
+		}
+
+		&:focus-visible {
+			outline: none;
+			box-shadow: var(--set-a-focus-box-shadow);
+		}
+
+		&[aria-disabled='true'],
+		&.disabled {
+			cursor: not-allowed;
+			pointer-events: none;
+			opacity: var(--set-a-disabled-opacity);
 		}
 	}
 }

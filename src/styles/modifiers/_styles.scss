@@ -21,16 +21,16 @@
 
 @layer modifiers {
 	.ghost {
-		--set-style-color: var(--set-variant-background-color);
+		--set-style-color: var(--set-variant-background-color, currentColor);
 		--set-style-background-color: transparent;
 		--set-style-border-color: transparent;
 		--set-style-border-width: 0;
 	}
 
 	.filled {
-		--set-style-color: var(--set-variant-color);
-		--set-style-background-color: var(--set-variant-background-color);
-		--set-style-border-color: var(--set-variant-border-color);
+		--set-style-color: var(--set-variant-color, currentColor);
+		--set-style-background-color: var(--set-variant-background-color, transparent);
+		--set-style-border-color: var(--set-variant-border-color, transparent);
 		--set-style-border-width: 1px;
 	}
 }

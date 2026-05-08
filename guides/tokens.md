@@ -1,6 +1,6 @@
 # Tokens
 
-> Public theming surface. CSS source: [src/styles/_tokens.scss](../src/styles/_tokens.scss). TS mirror: [src/browser/tokens.ts](../src/browser/tokens.ts). Bidirectional parity tests live alongside the shape tests in [tests/src/browser/tokens.test.ts](../tests/src/browser/tokens.test.ts).
+> Public theming surface. CSS source: [src/styles/\_tokens.scss](../src/styles/_tokens.scss). TS mirror: [src/browser/tokens.ts](../src/browser/tokens.ts). Bidirectional parity tests live alongside the shape tests in [tests/src/browser/tokens.test.ts](../tests/src/browser/tokens.test.ts).
 
 The token surface has two halves:
 
@@ -17,26 +17,26 @@ Renaming or removing a token is a breaking change for consumers. Read this guide
 
 Three slots, applied in order:
 
-| Slot | Source | Examples |
-|---|---|---|
-| `scope` | empty (global) or HTML element name or context name | `button`, `input`, `variant`, `size`, `style`, `shape` |
+| Slot       | Source                                                              | Examples                                                                                                                         |
+| ---------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `scope`    | empty (global) or HTML element name or context name                 | `button`, `input`, `variant`, `size`, `style`, `shape`                                                                           |
 | `property` | a real CSS property key when one exists, else a CSS-resolvable noun | `color`, `background-color`, `border-color`, `border-radius`, `padding-inline`, `font-size`, `box-shadow`, `transition-duration` |
-| `modifier` | scale step / palette swatch / state | `hover`, `active`, `disabled`, `focus` |
+| `modifier` | scale step / palette swatch / state                                 | `hover`, `active`, `disabled`, `focus`                                                                                           |
 
 The last segment is **always a CSS-property-keyed noun** when CSS supplies one. Scope/context segments (`variant`, `size`, `style`, `shape`, `button`, …) are framework concepts and do not need to be CSS keys.
 
 ### Anti-examples
 
-| ❌ | ✅ | Why |
-|---|---|---|
-| `--set-radius` | `--set-border-radius` | CSS uses `border-radius` |
-| `--set-shadow` | `--set-box-shadow` | CSS uses `box-shadow` |
-| `--set-bg` | `--set-background-color` | CSS uses `background-color` |
-| `--set-padding-x` | `--set-padding-inline` | Modern CSS uses logical `padding-inline` |
-| `--set-easing` | `--set-transition-timing-function` | CSS property name |
-| `--set-button-bg-color` | `--set-button-background-color` | element-scoped also follows the rule |
-| `--set-color-blue-500` | `var(--color-blue-500)` (Tailwind) | don't redeclare what Tailwind ships |
-| `--set-spacing-4` | `calc(var(--spacing) * 4)` | Tailwind ships `--spacing` as a single base, not per-step |
+| ❌                      | ✅                                 | Why                                                       |
+| ----------------------- | ---------------------------------- | --------------------------------------------------------- |
+| `--set-radius`          | `--set-border-radius`              | CSS uses `border-radius`                                  |
+| `--set-shadow`          | `--set-box-shadow`                 | CSS uses `box-shadow`                                     |
+| `--set-bg`              | `--set-background-color`           | CSS uses `background-color`                               |
+| `--set-padding-x`       | `--set-padding-inline`             | Modern CSS uses logical `padding-inline`                  |
+| `--set-easing`          | `--set-transition-timing-function` | CSS property name                                         |
+| `--set-button-bg-color` | `--set-button-background-color`    | element-scoped also follows the rule                      |
+| `--set-color-blue-500`  | `var(--color-blue-500)` (Tailwind) | don't redeclare what Tailwind ships                       |
+| `--set-spacing-4`       | `calc(var(--spacing) * 4)`         | Tailwind ships `--spacing` as a single base, not per-step |
 
 ---
 
@@ -49,13 +49,13 @@ The framework ships a **default theme** at [`src/styles/_theme.scss`](../src/sty
 ```scss
 /* src/styles/_theme.scss — the framework's default theme */
 @theme {
-  --color-primary:     oklch(62.3% 0.214 259.815);  /* Tailwind blue-500   */
-  --color-secondary:   oklch(70.4% 0.04  256.788);  /* Tailwind slate-400  */
-  --color-tertiary:    oklch(60.6% 0.25  292.717);  /* Tailwind violet-500 */
-  --color-success:     oklch(69.6% 0.17  162.48 );  /* Tailwind emerald-500 */
-  --color-warning:     oklch(82.8% 0.189 84.429 );  /* Tailwind amber-400  */
-  --color-danger:      oklch(63.7% 0.237 25.331 );  /* Tailwind red-500    */
-  --color-information: oklch(71.5% 0.143 215.221);  /* Tailwind cyan-500   */
+	--color-primary: oklch(62.3% 0.214 259.815); /* Tailwind blue-500   */
+	--color-secondary: oklch(70.4% 0.04 256.788); /* Tailwind slate-400  */
+	--color-tertiary: oklch(60.6% 0.25 292.717); /* Tailwind violet-500 */
+	--color-success: oklch(69.6% 0.17 162.48); /* Tailwind emerald-500 */
+	--color-warning: oklch(82.8% 0.189 84.429); /* Tailwind amber-400  */
+	--color-danger: oklch(63.7% 0.237 25.331); /* Tailwind red-500    */
+	--color-information: oklch(71.5% 0.143 215.221); /* Tailwind cyan-500   */
 }
 ```
 
@@ -71,18 +71,19 @@ The framework ships a **default theme** at [`src/styles/_theme.scss`](../src/sty
    const probe = document.createElement('div')
    probe.style.color = 'var(--color-primary)'
    document.body.appendChild(probe)
-   const resolved = getComputedStyle(probe).color  // browser-formatted resolved color
+   const resolved = getComputedStyle(probe).color // browser-formatted resolved color
    probe.remove()
    ```
    Browsers serialize the computed value in the original color function; convert to hex with a small helper if your library requires it.
 3. **Read the declared string.** `getComputedStyle(document.documentElement).getPropertyValue('--color-primary')` returns the literal declared string (`oklch(...)`, `#ff8800`, `var(...)`, etc., depending on what was set). The browser does NOT auto-convert the declared form.
 
 **Customizing variants.** A consumer-side `@theme {…}` block in their entry CSS overrides the framework's defaults — Tailwind aggregates @theme blocks and later declarations win:
+
 ```css
 /* consumer's entry CSS, after @import 'tailwindcss' */
 @theme {
-  --color-primary: #2563eb;          /* hex — works */
-  --color-success: hsl(150 70% 40%); /* hsl — works */
+	--color-primary: #2563eb; /* hex — works */
+	--color-success: hsl(150 70% 40%); /* hsl — works */
 }
 @import '@elements/styles';
 ```
@@ -93,34 +94,34 @@ The framework ships a **default theme** at [`src/styles/_theme.scss`](../src/sty
 
 Declared in [`src/styles/_tokens.scss`](../src/styles/_tokens.scss) `:root` block.
 
-| Token | Default | Purpose |
-|---|---|---|
-| `--set-focus-box-shadow-width` | `0.25rem` | Width of the focus ring drawn by [`focus-ring`](mixins.md#focus-ring) |
-| `--set-focus-box-shadow-opacity` | `0.35` | Alpha for the focus ring's `color-mix` blend |
-| `--set-variant-color` | `currentColor` | Variant context — text color when a variant fills a surface |
-| `--set-variant-background-color` | `transparent` | Variant context — fill color (also read by `.ghost` for text + by focus-ring) |
-| `--set-variant-border-color` | `transparent` | Variant context — paired border color |
-| `--set-variant-border-width` | `0` | Variant context — bumps border to 1px when a variant is active so its color shows |
-| `--set-transition-duration` | `150ms` | Default transition duration (Tailwind v4 doesn't ship a single duration token) |
+| Token                            | Default        | Purpose                                                                           |
+| -------------------------------- | -------------- | --------------------------------------------------------------------------------- |
+| `--set-focus-box-shadow-width`   | `0.25rem`      | Width of the focus ring drawn by [`focus-ring`](mixins.md#focus-ring)             |
+| `--set-focus-box-shadow-opacity` | `0.35`         | Alpha for the focus ring's `color-mix` blend                                      |
+| `--set-variant-color`            | `currentColor` | Variant context — text color when a variant fills a surface                       |
+| `--set-variant-background-color` | `transparent`  | Variant context — fill color (also read by `.ghost` for text + by focus-ring)     |
+| `--set-variant-border-color`     | `transparent`  | Variant context — paired border color                                             |
+| `--set-variant-border-width`     | `0`            | Variant context — bumps border to 1px when a variant is active so its color shows |
+| `--set-transition-duration`      | `150ms`        | Default transition duration (Tailwind v4 doesn't ship a single duration token)    |
 
 ### 2.3 Modifier-context tokens (set by modifier classes)
 
 These tokens are NOT declared on `:root` — they're only set on elements that wear a modifier class, then consumed by the element via fallback chains.
 
-| Token | Set by | Consumed by |
-|---|---|---|
-| `--set-variant-color` | `.primary`, `.secondary`, `.tertiary`, `.success`, `.warning`, `.danger`, `.information` | element-scoped `--set-{tag}-color` |
-| `--set-variant-background-color` | (same as above) | element-scoped `--set-{tag}-background-color` + ghost text + focus-ring |
-| `--set-variant-border-color` | (same as above) | element-scoped `--set-{tag}-border-color` |
-| `--set-variant-border-width` | (same as above) | element-scoped `--set-{tag}-border-width` |
-| `--set-size-padding-inline` | `.small`, `.large` | element-scoped `--set-{tag}-padding-inline` |
-| `--set-size-padding-block` | (same as above) | element-scoped `--set-{tag}-padding-block` |
-| `--set-size-font-size` | (same as above) | element-scoped `--set-{tag}-font-size` |
-| `--set-size-border-radius` | (same as above) | element-scoped `--set-{tag}-border-radius` |
-| `--set-style-color` | `.ghost`, `.filled` | element-scoped `--set-{tag}-color` (highest priority in the chain) |
-| `--set-style-background-color` | (same as above) | element-scoped `--set-{tag}-background-color` |
-| `--set-style-border-color` | (same as above) | element-scoped `--set-{tag}-border-color` |
-| `--set-style-border-width` | (same as above) | element-scoped `--set-{tag}-border-width` |
+| Token                            | Set by                                                                                   | Consumed by                                                             |
+| -------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `--set-variant-color`            | `.primary`, `.secondary`, `.tertiary`, `.success`, `.warning`, `.danger`, `.information` | element-scoped `--set-{tag}-color`                                      |
+| `--set-variant-background-color` | (same as above)                                                                          | element-scoped `--set-{tag}-background-color` + ghost text + focus-ring |
+| `--set-variant-border-color`     | (same as above)                                                                          | element-scoped `--set-{tag}-border-color`                               |
+| `--set-variant-border-width`     | (same as above)                                                                          | element-scoped `--set-{tag}-border-width`                               |
+| `--set-size-padding-inline`      | `.small`, `.large`                                                                       | element-scoped `--set-{tag}-padding-inline`                             |
+| `--set-size-padding-block`       | (same as above)                                                                          | element-scoped `--set-{tag}-padding-block`                              |
+| `--set-size-font-size`           | (same as above)                                                                          | element-scoped `--set-{tag}-font-size`                                  |
+| `--set-size-border-radius`       | (same as above)                                                                          | element-scoped `--set-{tag}-border-radius`                              |
+| `--set-style-color`              | `.ghost`, `.filled`                                                                      | element-scoped `--set-{tag}-color` (highest priority in the chain)      |
+| `--set-style-background-color`   | (same as above)                                                                          | element-scoped `--set-{tag}-background-color`                           |
+| `--set-style-border-color`       | (same as above)                                                                          | element-scoped `--set-{tag}-border-color`                               |
+| `--set-style-border-width`       | (same as above)                                                                          | element-scoped `--set-{tag}-border-width`                               |
 
 See [modifiers.md](modifiers.md) for which class sets which tokens to which values, and the precedence chain elements use to resolve them.
 
@@ -128,24 +129,24 @@ See [modifiers.md](modifiers.md) for which class sets which tokens to which valu
 
 Declared **on the element selector**, not on `:root`. Currently only `<button>` ships substantive element-scoped tokens.
 
-`button { … }` (in [_button.scss](../src/styles/elements/_button.scss)):
+`button { … }` (in [\_button.scss](../src/styles/elements/_button.scss)):
 
-| Token | Source of fallback |
-|---|---|
-| `--set-button-color` | `--set-style-color` → `--set-variant-color` → `currentColor` |
-| `--set-button-background-color` | `--set-style-background-color` → `--set-variant-background-color` → `transparent` |
-| `--set-button-border-color` | `--set-style-border-color` → `--set-variant-border-color` → `transparent` |
-| `--set-button-border-width` | `--set-style-border-width` → `--set-variant-border-width` → `0` |
-| `--set-button-border-radius` | `--set-size-border-radius` → `var(--radius-md)` |
-| `--set-button-padding-inline` | `--set-size-padding-inline` → `calc(var(--spacing) * 3)` (12px) |
-| `--set-button-padding-block` | `--set-size-padding-block` → `calc(var(--spacing) * 1.5)` (6px) |
-| `--set-button-font-size` | `--set-size-font-size` → `var(--text-sm)` (14px — mailbox-aligned) |
-| `--set-button-font-weight` | `var(--font-weight-normal)` (400) |
-| `--set-button-line-height` | `var(--leading-normal)` (1.5) |
-| `--set-button-transition-duration` | `--set-transition-duration` |
-| `--set-button-cursor` | `pointer` (literal — element default) |
-| `--set-button-disabled-opacity` | `0.5` (literal) |
-| `--set-button-focus-box-shadow` | composed from `--set-variant-background-color` + `--set-focus-box-shadow-{width,opacity}` |
+| Token                              | Source of fallback                                                                        |
+| ---------------------------------- | ----------------------------------------------------------------------------------------- |
+| `--set-button-color`               | `--set-style-color` → `--set-variant-color` → `currentColor`                              |
+| `--set-button-background-color`    | `--set-style-background-color` → `--set-variant-background-color` → `transparent`         |
+| `--set-button-border-color`        | `--set-style-border-color` → `--set-variant-border-color` → `transparent`                 |
+| `--set-button-border-width`        | `--set-style-border-width` → `--set-variant-border-width` → `0`                           |
+| `--set-button-border-radius`       | `--set-size-border-radius` → `var(--radius-md)`                                           |
+| `--set-button-padding-inline`      | `--set-size-padding-inline` → `calc(var(--spacing) * 3)` (12px)                           |
+| `--set-button-padding-block`       | `--set-size-padding-block` → `calc(var(--spacing) * 1.5)` (6px)                           |
+| `--set-button-font-size`           | `--set-size-font-size` → `var(--text-sm)` (14px — mailbox-aligned)                        |
+| `--set-button-font-weight`         | `var(--font-weight-normal)` (400)                                                         |
+| `--set-button-line-height`         | `var(--leading-normal)` (1.5)                                                             |
+| `--set-button-transition-duration` | `--set-transition-duration`                                                               |
+| `--set-button-cursor`              | `pointer` (literal — element default)                                                     |
+| `--set-button-disabled-opacity`    | `0.5` (literal)                                                                           |
+| `--set-button-focus-box-shadow`    | composed from `--set-variant-background-color` + `--set-focus-box-shadow-{width,opacity}` |
 
 **Pattern when adding a new element:** declare element-scoped tokens with the same fallback chains. The cascade gives you variant / size / shape / style for free.
 
@@ -175,13 +176,13 @@ The mirror covers exactly the tokens we author. Tailwind's full surface (`--colo
 CSS kebab-case → TS camelCase. Element + state grouping is preserved as nested objects:
 
 ```ts
-tokens.color.primary           // '--color-primary'
-tokens.focus.boxShadowWidth    // '--set-focus-box-shadow-width'
+tokens.color.primary // '--color-primary'
+tokens.focus.boxShadowWidth // '--set-focus-box-shadow-width'
 tokens.variant.backgroundColor // '--set-variant-background-color'
-tokens.size.paddingInline      // '--set-size-padding-inline'
-tokens.button.borderRadius     // '--set-button-border-radius'
+tokens.size.paddingInline // '--set-size-padding-inline'
+tokens.button.borderRadius // '--set-button-border-radius'
 tokens.button.disabled.opacity // '--set-button-disabled-opacity'
-tokens.button.focus.boxShadow  // '--set-button-focus-box-shadow'
+tokens.button.focus.boxShadow // '--set-button-focus-box-shadow'
 ```
 
 ---
@@ -190,10 +191,10 @@ tokens.button.focus.boxShadow  // '--set-button-focus-box-shadow'
 
 Two test files guard the token surface from drift between SCSS source and TS mirror. Both run in real Chromium (Playwright).
 
-| Test | Project | What it checks |
-|---|---|---|
-| [tokens.test.ts](../tests/src/browser/tokens.test.ts) | `src:browser` | **Shape:** every leaf is a `--*` string; framework-authored tokens use the `--set-*` namespace; the button group declares the expected slots. **TS → CSS:** every leaf in `tokens` resolves on the appropriate element (`:root`, button, or modifier-classed element). **SCSS / CSS → TS:** every `--set-*` declaration in `_tokens.scss` + `_button.scss` and every `--color-{variant}` in `_theme.scss`'s `@theme` block appears as a leaf in `tokens.ts`. |
-| [_tokens.test.ts](../tests/src/styles/_tokens.test.ts) | `src:styles` | Resolution sanity — every framework token resolves at runtime; HSL triplets are valid; Tailwind's `--spacing` is shipped. Some redundancy with the `src:browser` test; this one stays under styles to verify the `setupStyles.ts` pipeline specifically. |
+| Test                                                    | Project       | What it checks                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [tokens.test.ts](../tests/src/browser/tokens.test.ts)   | `src:browser` | **Shape:** every leaf is a `--*` string; framework-authored tokens use the `--set-*` namespace; the button group declares the expected slots. **TS → CSS:** every leaf in `tokens` resolves on the appropriate element (`:root`, button, or modifier-classed element). **SCSS / CSS → TS:** every `--set-*` declaration in `_tokens.scss` + `_button.scss` and every `--color-{variant}` in `_theme.scss`'s `@theme` block appears as a leaf in `tokens.ts`. |
+| [\_tokens.test.ts](../tests/src/styles/_tokens.test.ts) | `src:styles`  | Resolution sanity — every framework token resolves at runtime; HSL triplets are valid; Tailwind's `--spacing` is shipped. Some redundancy with the `src:browser` test; this one stays under styles to verify the `setupStyles.ts` pipeline specifically.                                                                                                                                                                                                     |
 
 **A failing parity test is the contract enforcement.** When a TS leaf doesn't resolve, either the SCSS forgot to declare it or the TS has a stale name. When a SCSS declaration is missing from TS, either the TS export needs updating or the declaration is dead code. The test names the missing token in the failure message.
 
@@ -202,8 +203,8 @@ Two test files guard the token surface from drift between SCSS source and TS mir
 ## 5. Adding a new token
 
 1. **Decide the layer.**
-   - **`--color-{variant}`** semantic variant addition → add to the framework default theme at [src/styles/_theme.scss](../src/styles/_theme.scss) `@theme {…}` block. Tailwind auto-generates utilities (`.bg-{name}`, `.text-{name}`, `.border-{name}`); consumers can override in their own entry CSS.
-   - **`--set-*` global** (focus ring, default fallback for a context) → `:root` block in [_tokens.scss](../src/styles/_tokens.scss).
+   - **`--color-{variant}`** semantic variant addition → add to the framework default theme at [src/styles/\_theme.scss](../src/styles/_theme.scss) `@theme {…}` block. Tailwind auto-generates utilities (`.bg-{name}`, `.text-{name}`, `.border-{name}`); consumers can override in their own entry CSS.
+   - **`--set-*` global** (focus ring, default fallback for a context) → `:root` block in [\_tokens.scss](../src/styles/_tokens.scss).
    - **`--set-*` element-scoped** → on the element selector inside its `_{tag}.scss` partial.
 2. **Mirror in TS.** Add the leaf to [tokens.ts](../src/browser/tokens.ts) under the matching group. Use the camelCase form of the CSS property as the key.
 3. **Run the parity test.** `npm run test:src:browser -- tokens.test.ts` — bidirectional check passes when both sides are in sync.
@@ -220,9 +221,9 @@ To keep `--set-size-*` and `--set-shape-*` reliable across environments, modifie
 ```scss
 // modifiers/_sizes.scss
 .small {
-  --set-size-padding-inline: calc(var(--spacing) * 2);  // --spacing IS shipped
-  --set-size-font-size: 0.875rem;                       // Tailwind --text-sm tree-shaken
-  --set-size-border-radius: 0.25rem;                    // Tailwind --radius-sm tree-shaken
+	--set-size-padding-inline: calc(var(--spacing) * 2); // --spacing IS shipped
+	--set-size-font-size: 0.875rem; // Tailwind --text-sm tree-shaken
+	--set-size-border-radius: 0.25rem; // Tailwind --radius-sm tree-shaken
 }
 ```
 
@@ -234,9 +235,9 @@ Consumers retune via `--set-size-*` directly. If Tailwind ever ships an `@theme 
 
 ## Reference
 
-- [_tokens.scss](../src/styles/_tokens.scss) — canonical CSS source
+- [\_tokens.scss](../src/styles/_tokens.scss) — canonical CSS source
 - [tokens.ts](../src/browser/tokens.ts) — TS mirror
 - [tokens.test.ts](../tests/src/browser/tokens.test.ts) — bidirectional parity contract (subsumes the old `tokens.parity.test.ts`)
 - [modifiers.md](modifiers.md) — which classes set which context tokens
-- [_theme.scss](../src/styles/_theme.scss) — framework default theme (`@theme` registration of the seven semantic variants)
+- [\_theme.scss](../src/styles/_theme.scss) — framework default theme (`@theme` registration of the seven semantic variants)
 - [setup.css](../tests/setup.css) and [main.scss](../app/browser/styles/main.scss) — canonical Tailwind import + framework consumption pattern

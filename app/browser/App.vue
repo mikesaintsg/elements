@@ -188,9 +188,7 @@ const goHome = (event: MouseEvent): void => {
 			id="toc"
 			class="sticky top-0 hidden h-screen overflow-y-auto border-l border-slate-200 bg-slate-50 p-4 xl:block"
 		>
-			<header
-				class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500"
-			>
+			<header class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
 				On this page
 			</header>
 			<Toc :scroller="scrollerRef" />

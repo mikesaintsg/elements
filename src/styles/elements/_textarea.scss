@@ -1,8 +1,96 @@
-// <textarea> – Multi-line text input
-// Browser defaults: display: inline-block; resize: both; font-family: monospace; white-space: pre-wrap
-// rows and cols attributes set the default visible size
-// Quirk: whitespace/newlines between the opening and closing tags become the initial value
-// Quirk: resizable by the user by default (resize handle bottom-right) — control with the resize property
-// Coupled: associated with <label>; child of <form> or linked via form attribute
+// ============================================================================
+// textarea — Multi-line text input.
+//
+// Architecture mirrors <input>: same --set-textarea-* token chain, same
+// fallback priority. The difference is multi-line ergonomics:
+//   - resize: vertical (UA default `both` causes layout flicker; horizontal
+//     resize collides with form-grid layouts).
+//   - field-sizing: content (Chromium 123+, Firefox 142+) auto-grows the
+//     control to fit content; UA still respects rows when set explicitly.
+//   - white-space: pre-wrap so newlines render as newlines.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	textarea {
+		--set-textarea-color: var(--set-style-color, currentColor);
+		--set-textarea-background-color: var(--set-style-background-color, Canvas);
+		--set-textarea-border-color: var(
+			--set-variant-background-color,
+			color-mix(in srgb, currentColor 20%, transparent)
+		);
+		--set-textarea-border-width: 1px;
+		--set-textarea-border-radius: var(--set-size-border-radius, var(--radius-md));
+		--set-textarea-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
+		--set-textarea-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
+		--set-textarea-font-size: var(--set-size-font-size, var(--text-sm));
+		--set-textarea-line-height: var(--leading-normal);
+		--set-textarea-min-block-size: calc(var(--spacing) * 20);
+		--set-textarea-transition-duration: var(--set-transition-duration);
+		--set-textarea-cursor: text;
+		--set-textarea-disabled-opacity: 0.5;
+		--set-textarea-placeholder-opacity: 0.6;
+		--set-textarea-focus-border-color: var(--set-variant-background-color, var(--color-primary));
+		--set-textarea-focus-box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+			color-mix(
+				in oklab,
+				var(--set-variant-background-color, var(--color-primary))
+					calc(var(--set-focus-box-shadow-opacity) * 100%),
+				transparent
+			);
+
+		display: block;
+		inline-size: 100%;
+		max-inline-size: 100%;
+		min-block-size: var(--set-textarea-min-block-size);
+		padding-inline: var(--set-textarea-padding-inline);
+		padding-block: var(--set-textarea-padding-block);
+
+		border-color: var(--set-textarea-border-color);
+		border-style: solid;
+		border-width: var(--set-textarea-border-width);
+		border-radius: var(--set-textarea-border-radius);
+
+		font-family: inherit;
+		font-size: var(--set-textarea-font-size);
+		line-height: var(--set-textarea-line-height);
+		white-space: pre-wrap;
+
+		color: var(--set-textarea-color);
+		background-color: var(--set-textarea-background-color);
+
+		appearance: none;
+		cursor: var(--set-textarea-cursor);
+		resize: vertical;
+		field-sizing: content;
+
+		@include transition(
+			(
+				color var(--set-textarea-transition-duration),
+				background-color var(--set-textarea-transition-duration),
+				border-color var(--set-textarea-transition-duration),
+				box-shadow var(--set-textarea-transition-duration)
+			)
+		);
+
+		&::placeholder {
+			color: currentColor;
+			opacity: var(--set-textarea-placeholder-opacity);
+		}
+
+		&:focus-visible {
+			outline: none;
+			border-color: var(--set-textarea-focus-border-color);
+			box-shadow: var(--set-textarea-focus-box-shadow);
+		}
+
+		&:disabled,
+		&[disabled],
+		&.disabled {
+			cursor: not-allowed;
+			opacity: var(--set-textarea-disabled-opacity);
+			resize: none;
+		}
+	}
+}
