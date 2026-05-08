@@ -1,0 +1,103 @@
+// ============================================================================
+// Global Token System
+//
+// All design decisions live here as CSS custom properties. Override any token
+// in :root (global), a component selector (scoped), or a theme rule ([data-theme]).
+//
+// Naming convention:
+//   --{semantic}[-{property}]       global / cross-component
+//   --{component}-{property}        component-scoped (lives on the component rule)
+//
+// Color values are HSL triplets (no `hsl()` wrapper) so consumers can compose
+// alpha variants: hsl(var(--primary-hsl) / 0.5)
+// ============================================================================
+
+:root {
+	// --------------------------------------------------------------------------
+	// Semantic Color Roles — HSL triplets
+	// --------------------------------------------------------------------------
+	--primary-hsl: 211 98% 52%;      // blue   #0d6efd
+	--secondary-hsl: 208 7% 46%;     // gray   #6c757d
+	--success-hsl: 152 69% 31%;      // green  #198754
+	--danger-hsl: 354 70% 54%;       // red    #dc3545
+	--warning-hsl: 45 100% 51%;      // amber  #ffc107
+	--info-hsl: 188 78% 41%;         // cyan   #0dcaf0
+	--light-hsl: 210 17% 98%;        // off-white  #f8f9fa
+	--dark-hsl: 210 11% 15%;         // near-black #212529
+
+	// --------------------------------------------------------------------------
+	// Foreground on Each Semantic Background
+	// Swap these per theme if a color role changes (e.g. high-contrast).
+	// --------------------------------------------------------------------------
+	--primary-foreground: hsl(0 0% 100%);
+	--secondary-foreground: hsl(0 0% 100%);
+	--success-foreground: hsl(0 0% 100%);
+	--danger-foreground: hsl(0 0% 100%);
+	--warning-foreground: hsl(var(--dark-hsl));   // amber needs dark text
+	--info-foreground: hsl(var(--dark-hsl));       // cyan needs dark text
+	--light-foreground: hsl(var(--dark-hsl));
+	--dark-foreground: hsl(0 0% 100%);
+
+	// --------------------------------------------------------------------------
+	// Body / Surface
+	// --------------------------------------------------------------------------
+	--body-color: hsl(var(--dark-hsl));
+	--body-background: hsl(0 0% 100%);
+	--muted-color: hsl(var(--secondary-hsl));
+	--link-color: hsl(var(--primary-hsl));
+	--link-hover-color: color-mix(in srgb, hsl(var(--primary-hsl)) 80%, black);
+
+	// --------------------------------------------------------------------------
+	// Typography
+	// --------------------------------------------------------------------------
+	--font-sans: system-ui, -apple-system, 'Segoe UI', roboto, 'Helvetica Neue', arial, sans-serif;
+	--font-mono: 'SFMono-Regular', menlo, monaco, consolas, 'Liberation Mono', 'Courier New', monospace;
+	--font-size: 1rem;
+	--font-size-sm: 0.875rem;
+	--font-size-lg: 1.25rem;
+	--font-weight: 400;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+	--line-height: 1.5;
+
+	// --------------------------------------------------------------------------
+	// Spacing
+	// --------------------------------------------------------------------------
+	--space: 1rem;
+	--space-xs: 0.25rem;
+	--space-sm: 0.5rem;
+	--space-md: 1rem;
+	--space-lg: 1.5rem;
+	--space-xl: 3rem;
+
+	// --------------------------------------------------------------------------
+	// Border
+	// --------------------------------------------------------------------------
+	--radius: 0.375rem;
+	--radius-sm: 0.25rem;
+	--radius-lg: 0.5rem;
+	--radius-pill: 50rem;
+	--border-width: 1px;
+	--border-color: hsl(214 32% 91%);
+
+	// --------------------------------------------------------------------------
+	// Focus Ring
+	// --------------------------------------------------------------------------
+	--focus-width: 0.25rem;
+	--focus-opacity: 0.25;
+
+	// --------------------------------------------------------------------------
+	// Shadow
+	// --------------------------------------------------------------------------
+	--shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.05);
+	--shadow: 0 2px 4px hsl(0 0% 0% / 0.1);
+	--shadow-lg: 0 8px 16px hsl(0 0% 0% / 0.15);
+
+	// --------------------------------------------------------------------------
+	// Transition
+	// --------------------------------------------------------------------------
+	--duration: 150ms;
+	--duration-slow: 300ms;
+	--easing: ease-in-out;
+}
+

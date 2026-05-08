@@ -1,4 +1,5 @@
-// Elements - base styles for each HTML element, one partial per element, alphabetical order.
+// Elements - design tokens first, then one partial per HTML element, alphabetical order.
+@use 'tokens';
 @use 'elements/a';
 @use 'elements/abbr';
 @use 'elements/address';

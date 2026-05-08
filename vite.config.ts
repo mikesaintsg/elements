@@ -1,0 +1,179 @@
+import type { UserConfig } from 'vite'
+import { defineConfig, mergeConfig } from 'vitest/config'
+import tsconfig from './tsconfig.json' with { type: 'json' }
+import { fileURLToPath, URL } from 'node:url'
+import { playwright } from '@vitest/browser-playwright'
+import vue from '@vitejs/plugin-vue'
+
+export function resolveWorkspacePath(relativePath: string): string {
+	return fileURLToPath(new URL(relativePath, import.meta.url))
+}
+
+// Provider precedence:
+//   1. PLAYWRIGHT_EXECUTABLE_PATH — explicit binary (CI / local dev with a
+//      pinned browser).
+//   2. PLAYWRIGHT_WS_ENDPOINT     — CDP / WebSocket connection to an already-
+//      running browser instance (remote debugging, browser-tools MCP, etc.).
+//   3. PLAYWRIGHT_CHANNEL         — explicit channel (`chrome`, `msedge`,
+//      `chromium`, etc.) for local dev loops.
+//   4. Platform default — pre-installed system browser by OS:
+//        Windows  → `msedge`   ships with the OS and never collides with a
+//                              foreground Chrome instance. System Chrome
+//                              invoked from Node with
+//                              `--remote-debugging-pipe` plus a fresh
+//                              `--user-data-dir` can be refused with
+//                              `spawn UNKNOWN` on machines where Chrome
+//                              is also running interactively (Defender /
+//                              SmartScreen / profile lock interaction);
+//                              Edge has no equivalent constraint.
+//        macOS / Linux → `chrome` — system Chrome is the conventional
+//                                   dev browser on those platforms.
+//      Override via PLAYWRIGHT_CHANNEL when the platform default isn't
+//      installed (e.g., `PLAYWRIGHT_CHANNEL=chromium` after
+//      `npx playwright install chromium`).
+export function createBrowserProvider() {
+	const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH
+	if (executablePath) return playwright({ launchOptions: { executablePath } })
+	const wsEndpoint = process.env.PLAYWRIGHT_WS_ENDPOINT
+	if (wsEndpoint) return playwright({ connectOptions: { wsEndpoint } })
+	const channel = process.env.PLAYWRIGHT_CHANNEL
+	if (channel) return playwright({ launchOptions: { channel } })
+	const defaultChannel = process.platform === 'win32' ? 'msedge' : 'chrome'
+	return playwright({ launchOptions: { channel: defaultChannel } })
+}
+
+const resolve = {
+	alias: Object.entries(tsconfig.compilerOptions.paths).reduce(
+		(a, [k, v]) => Object.assign(a, { [k]: v[0] }),
+		{},
+	),
+}
+
+// Base: shared resolve + build defaults + src:core tests.
+export const srcCore = (config?: UserConfig): UserConfig =>
+	mergeConfig(
+		{
+			resolve,
+			build: {
+				emptyOutDir: true,
+				sourcemap: true,
+				minify: false,
+			},
+			test: {
+				name: { label: 'src:core', color: 'magenta' },
+				include: ['tests/src/core/**/*.test.ts'],
+				setupFiles: ['./tests/setup.ts'],
+				environment: 'node',
+				browser: { enabled: false },
+			},
+		},
+		config ?? {},
+	)
+
+// Extends srcCore: adds Vue + ES lib build + browser tests.
+export const srcBrowser = (config?: UserConfig): UserConfig =>
+	srcCore(
+		mergeConfig(
+			{
+				plugins: [vue()],
+				build: {
+					lib: {
+						entry: resolveWorkspacePath('src/browser/index.ts'),
+						formats: ['es'],
+						fileName: () => 'index.js',
+					},
+					outDir: 'dist/src/browser',
+				},
+				test: {
+					name: { label: 'src:browser', color: 'yellow' },
+					include: ['tests/src/browser/**/*.test.ts'],
+					exclude: ['tests/src/core/**/*.test.ts'],
+					setupFiles: ['./tests/setupBrowser.ts'],
+					browser: {
+						enabled: true,
+						provider: createBrowserProvider(),
+						instances: [{ browser: 'chromium', headless: true }],
+					},
+					fileParallelism: false,
+				},
+			},
+			config ?? {},
+		),
+	)
+
+// Standalone: SCSS to CSS lib build + real-browser style assertion tests.
+//
+// Style tests render Bootstrap-class elements into a real Chromium document,
+// let Vite compile `src/styles/index.scss` through the Sass pipeline, and
+// assert against `getComputedStyle(...)`. The setup file owns the single
+// `import '../src/styles/index.scss'` side-effect that wires the cascade.
+export const srcStyles = (config?: UserConfig): UserConfig =>
+	mergeConfig(
+		{
+			resolve,
+			build: {
+				emptyOutDir: true,
+				sourcemap: false,
+				minify: false,
+				cssCodeSplit: false,
+			},
+			test: {
+				name: { label: 'src:styles', color: 'gray' },
+				include: ['tests/src/styles/**/*.test.ts'],
+				setupFiles: ['./tests/setup.ts', './tests/setupStyles.ts'],
+				browser: {
+					enabled: true,
+					provider: createBrowserProvider(),
+					instances: [{ browser: 'chromium', headless: true }],
+				},
+				fileParallelism: false,
+			},
+		},
+		config ?? {},
+	)
+
+// Standalone: app:core tests only, no build config.
+export const appCore = (config?: UserConfig): UserConfig =>
+	mergeConfig(
+		{
+			resolve,
+			test: {
+				name: { label: 'app:core', color: 'cyan' },
+				include: ['tests/app/core/**/*.test.ts'],
+				setupFiles: ['./tests/setup.ts'],
+				environment: 'node',
+				browser: { enabled: false },
+			},
+		},
+		config ?? {},
+	)
+
+// Extends srcBrowser: switches to the app browser root/build/tests.
+export const appBrowser = (config?: UserConfig): UserConfig =>
+	srcBrowser(
+		mergeConfig(
+			{
+				root: resolveWorkspacePath('app/browser'),
+				build: {
+					lib: false,
+					outDir: resolveWorkspacePath('dist/app/browser'),
+				},
+				test: {
+					name: { label: 'app:browser', color: 'blue' },
+					root: resolveWorkspacePath('.'),
+					dir: resolveWorkspacePath('.'),
+					include: ['tests/app/browser/**/*.test.ts'],
+					exclude: ['tests/src/browser/**/*.test.ts', 'tests/src/core/**/*.test.ts'],
+					setupFiles: ['./tests/setupBrowser.ts'],
+				},
+			},
+			config ?? {},
+		),
+	)
+
+export default defineConfig({
+	resolve,
+	test: {
+		projects: [srcCore, srcBrowser, srcStyles, appCore, appBrowser],
+	},
+})

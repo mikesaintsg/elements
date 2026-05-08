@@ -1,0 +1,9 @@
+{
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
+		"rootDir": "../../app",
+		"types": ["vite/client", "vue"]
+	},
+	"include": ["../../app/browser/**/*.ts", "../../app/browser/**/*.vue", "../../app/core/**/*.ts"]
+}
