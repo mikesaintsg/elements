@@ -1,0 +1,8 @@
+// <bdo> – Bidirectional override
+// Browser defaults: unicode-bidi: bidi-override
+// Forces text rendering direction to match the dir attribute (ltr or rtl)
+// Must carry a dir attribute to be meaningful
+
+bdo {
+  unicode-bidi: bidi-override;
+}

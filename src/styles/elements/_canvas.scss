@@ -1,0 +1,10 @@
+// <canvas> – Bitmap drawing surface
+// Browser defaults: display: inline; width: 300px; height: 150px
+// Quirk: CSS size scales the element but not the internal pixel grid —
+//   always set both the width/height attributes and CSS dimensions together for sharp HiDPI output
+// Quirk: like <img>, sits on the text baseline — a gap appears below in a block container
+
+canvas {
+  display: block; // remove baseline gap
+  max-width: 100%;
+}

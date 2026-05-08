@@ -1,0 +1,9 @@
+// <details> – Native disclosure widget
+// Browser defaults: display: block
+// Coupled: must contain <summary> as its first child (browser inserts "Details" if omitted)
+// Quirk: animating the open/close height transition requires JS or the newer interpolate-size CSS property
+// The open attribute controls visibility; the toggle event fires on state change
+
+details {
+  display: block;
+}

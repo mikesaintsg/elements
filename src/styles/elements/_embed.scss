@@ -1,0 +1,8 @@
+// <embed> – External application / plugin embed (void element)
+// Browser defaults: display: inline (inline-replaced)
+// type (MIME) and src are required; no fallback mechanism — use <object> if fallback is needed
+
+embed {
+  display: block;
+  max-width: 100%;
+}

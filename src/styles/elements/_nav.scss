@@ -1,0 +1,9 @@
+// <nav> – Navigation landmark
+// Browser defaults: display: block
+// Use for major navigation groups (primary site nav, ToC, breadcrumb, pagination)
+// Minor link clusters (footer legal links) do not need <nav>
+// Multiple <nav> elements are fine — differentiate with aria-label
+
+nav {
+  display: block;
+}

@@ -1,0 +1,8 @@
+// <hgroup> – Heading with subordinate content
+// Browser defaults: display: block
+// Groups one primary <h1>–<h6> with adjacent metadata <p> elements (taglines, subtitles)
+// Only one heading allowed inside <hgroup>; the heading drives the document outline
+
+hgroup {
+  display: block;
+}

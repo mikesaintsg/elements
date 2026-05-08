@@ -1,0 +1,8 @@
+// <search> – Search / filter landmark
+// Browser defaults: display: block
+// Introduced in HTML 5.3 (widely supported 2023+)
+// Automatically provides the ARIA search landmark role without needing role="search" on a <div>
+
+search {
+  display: block;
+}

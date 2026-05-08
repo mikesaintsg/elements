@@ -1,0 +1,9 @@
+// <section> – Generic document section
+// Browser defaults: display: block
+// A thematic grouping of content, typically with its own heading
+// Quirk: <section> does not reset heading rank — <h1> inside a nested <section> is still h1
+// If the content has no heading and is just a layout region, prefer <div>
+
+section {
+  display: block;
+}

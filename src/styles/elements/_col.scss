@@ -1,0 +1,8 @@
+// <col> – Column styling hook (void element)
+// Browser defaults: none
+// Must appear inside <colgroup>; the span attribute covers multiple columns
+// Quirk: only border, background, width, and visibility work on <col>
+//   — padding, margin, text-align, and color are ignored; apply those to <td>/<th>
+// Coupled: child of <colgroup>
+
+// No styles placed here — apply column-specific background/width via selector in a component

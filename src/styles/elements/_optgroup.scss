@@ -1,0 +1,9 @@
+// <optgroup> – Option group within a select
+// Browser defaults: platform-native rendering
+// label attribute is required and displayed as the non-selectable group header
+// Coupled: child of <select>; parent of <option>
+
+optgroup {
+  font: inherit;
+  font-weight: bold;
+}

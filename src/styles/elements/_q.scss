@@ -1,0 +1,8 @@
+// <q> – Inline quotation
+// Browser defaults: display: inline; opening/closing quotes auto-inserted via ::before/::after content
+// Quirk: never add quote characters manually inside <q> — the browser adds them
+// The quotes property customises which characters are used; the lang attribute drives the defaults
+
+q {
+  quotes: auto; // use language-appropriate quotation marks based on the lang attribute
+}

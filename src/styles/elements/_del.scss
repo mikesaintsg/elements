@@ -1,0 +1,8 @@
+// <del> – Deleted text (edit history)
+// Browser defaults: text-decoration: line-through
+// Use for content explicitly removed from a living document; use <s> for merely outdated content
+// cite attribute: URL explaining the edit; datetime attribute: when it occurred
+
+del {
+  text-decoration: line-through;
+}

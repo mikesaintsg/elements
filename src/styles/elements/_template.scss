@@ -1,0 +1,7 @@
+// <template> – Inert HTML template (not rendered)
+// Browser defaults: display: none
+// Content is parsed but not rendered and not executed (scripts, images, styles are inert)
+// Access content via element.content (returns a DocumentFragment) in JS, then clone and insert
+// Used in Web Components and JS-driven rendering
+
+// No styles applicable

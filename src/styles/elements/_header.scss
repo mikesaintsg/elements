@@ -1,0 +1,8 @@
+// <header> – Introductory content for a section or document
+// Browser defaults: display: block
+// A <header> directly inside <body> gets the banner landmark role
+// Quirk: <header> inside <article>, <section>, etc. loses its banner landmark role
+
+header {
+  display: block;
+}

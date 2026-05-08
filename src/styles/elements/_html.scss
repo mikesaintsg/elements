@@ -1,0 +1,15 @@
+// <html> – Root element
+// Browser defaults: display: block
+// Always set the lang attribute (e.g. lang="en") for screen readers and search engines
+// box-sizing: border-box is the standard reset applied here
+
+html {
+  box-sizing: border-box;
+  -webkit-text-size-adjust: 100%; // prevent font scaling in landscape on iOS
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}

@@ -1,0 +1,8 @@
+// <bdi> – Bidirectional text isolation
+// Browser defaults: unicode-bidi: isolate
+// Visually identical to <span> — the difference is purely in the bidi rendering algorithm
+// Prevents user-supplied text of unknown direction from distorting surrounding punctuation
+
+bdi {
+  unicode-bidi: isolate;
+}

@@ -1,0 +1,9 @@
+// <output> – Calculation result display
+// Browser defaults: display: inline
+// Live region — screen readers announce updated values (aria-live="polite")
+// for attribute lists space-separated IDs of the controlling inputs
+// Coupled: related to <form> controls listed in the for attribute
+
+output {
+  display: inline;
+}

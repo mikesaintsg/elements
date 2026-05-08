@@ -1,0 +1,17 @@
+// <a> – Hyperlink / download anchor
+// Browser defaults: color: -webkit-link (blue); text-decoration: underline; cursor: pointer
+// :visited defaults to purple
+// Use rel="noopener noreferrer" with target="_blank" to prevent tab-napping
+
+a {
+  color: inherit;
+  text-decoration: underline;
+
+  &:visited {
+    color: inherit;
+  }
+
+  &:hover {
+    text-decoration: none;
+  }
+}

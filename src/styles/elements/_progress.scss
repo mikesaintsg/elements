@@ -1,0 +1,10 @@
+// <progress> – Task progress indicator
+// Browser defaults: display: inline-block; platform-native rendering
+// Without value: indeterminate (animated); with value + max: determinate bar
+// Do not use for scalar measurements within a known range — use <meter> instead
+// Quirk: native styling requires vendor pseudo-elements (::-webkit-progress-bar, ::-moz-progress-bar)
+//   — for full custom design use <div role="progressbar" aria-valuenow aria-valuemin aria-valuemax>
+
+progress {
+  // Minimal styling surface without appearance: none + vendor pseudo-elements
+}

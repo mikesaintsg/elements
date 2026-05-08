@@ -1,0 +1,11 @@
+// <svg> – Inline SVG graphics container
+// Browser defaults: display: inline (inline-replaced)
+// Unlike <img src="…svg">, inline SVG exposes its internal DOM to CSS and JS
+// Quirk: SVG without explicit width/height or a viewBox may render at 0×0
+// Quirk: default overflow: hidden can clip content outside the viewBox
+// fill="currentColor" on SVG paths enables CSS color theming via the color property
+
+svg {
+  display: block; // remove baseline gap
+  overflow: visible; // allow content outside the viewBox to render if needed
+}

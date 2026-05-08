@@ -1,0 +1,12 @@
+// <iframe> – Inline nested browsing context
+// Browser defaults: display: inline; border: 2px inset; width: 300px; height: 150px
+// Quirk: does not inherit parent CSS — a completely separate document context
+// Quirk: width: 100%; height: auto is insufficient for responsive aspect ratios
+//   — use the aspect-ratio CSS property or a padding-top percentage wrapper
+// Cross-origin iframes are subject to the Same-Origin Policy
+
+iframe {
+  display: block; // prevent baseline gap
+  border: none; // remove the default inset border
+  max-width: 100%;
+}

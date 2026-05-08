@@ -1,0 +1,11 @@
+// <ol> – Ordered list
+// Browser defaults: display: block; list-style-type: decimal; padding-inline-start: 40px; margin-block: 1em
+// Use when item order has meaning (steps, rankings)
+// type attribute: 1, a, A, i, I; start attribute overrides starting number; reversed reverses the count
+// Coupled: direct children must be <li> elements
+
+ol {
+  list-style-type: decimal;
+  padding-inline-start: 1.5rem; // more proportional than the browser's fixed 40px
+  margin-block: 0;
+}

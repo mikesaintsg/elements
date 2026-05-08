@@ -1,0 +1,9 @@
+// <dt> – Term / name in a description list
+// Browser defaults: display: block
+// Quirk: browsers do not bold <dt> by default — style it yourself
+// Multiple <dt> elements before a <dd> associate all those terms with the same description
+// Coupled: must appear inside <dl>; precedes <dd>
+
+dt {
+  font-weight: bold;
+}

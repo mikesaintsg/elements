@@ -1,0 +1,7 @@
+// <link> – External resource relationship (void element, not rendered)
+// Browser defaults: none
+// Lives in <head>; rel attribute is required (stylesheet, icon, preload, etc.)
+// Quirk: rel="preload" fetches early but does not apply — always include the as attribute
+// Quirk: rel="stylesheet" blocks rendering until loaded
+
+// No styles applicable

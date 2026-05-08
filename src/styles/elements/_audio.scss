@@ -1,0 +1,14 @@
+// <audio> – Embedded audio player
+// Browser defaults: display: inline (no controls); inline-block control bar (with controls)
+// Coupled: <source> children (media URLs), <track> children (captions/subtitles)
+// Quirk: native control bar is OS-styled — full customisation requires hiding it and building a JS UI
+
+audio {
+  display: block;
+  max-width: 100%;
+
+  // Hide audio elements that have no controls attribute — they produce no useful UI
+  &:not([controls]) {
+    display: none;
+  }
+}

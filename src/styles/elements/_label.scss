@@ -1,0 +1,9 @@
+// <label> – Form control label
+// Browser defaults: display: inline
+// Coupling methods: explicit (for="input-id") or implicit (wraps the control)
+// Clicking the label activates/focuses the associated control, increasing hit area
+// Coupled: paired with <input>, <select>, <textarea>, <button>, <meter>, <output>, <progress>
+
+label {
+  cursor: pointer;
+}

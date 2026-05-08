@@ -1,0 +1,10 @@
+// <legend> – Caption for a <fieldset>
+// Browser defaults: display: block; padding-inline: 2px
+// Coupled: must be the first child of <fieldset>
+// Quirk: the notch-into-border effect is UA-rendered; legend does not follow normal block flow
+//   — reproducing the exact notch in a custom design is non-trivial
+
+legend {
+  padding-inline: 0;
+  font-weight: bold;
+}

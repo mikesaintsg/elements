@@ -1,0 +1,9 @@
+// <figure> – Self-contained referenced content
+// Browser defaults: display: block; margin-block: 1em; margin-inline: 40px
+// Wraps content referenced from the main flow that could be moved without breaking the narrative
+// Coupled: optional <figcaption> child (first or last) provides a label
+
+figure {
+  margin-block: 1em;
+  margin-inline: 0; // reset default 40px side margins
+}

@@ -1,0 +1,18 @@
+// <button> – Clickable button
+// Browser defaults: display: inline-block; cursor: default; browser-specific border/background/padding
+// Quirk: browsers do not inherit font on buttons by default — always set font: inherit
+// type="submit" (default) submits the nearest form; use type="button" for JS-only actions
+// Coupled: typically inside <form> or associated via form attribute
+
+button {
+  display: inline-block;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  line-height: inherit;
+  appearance: none;
+}

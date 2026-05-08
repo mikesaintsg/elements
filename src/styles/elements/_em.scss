@@ -1,0 +1,9 @@
+// <em> – Stress emphasis
+// Browser defaults: font-style: italic
+// Changes the meaning of a sentence based on which word is stressed (like vocal inflection)
+// Nesting <em> increases the stress level
+// Do not use purely for italics — use <i> or CSS font-style: italic for stylistic italics
+
+em {
+  font-style: italic;
+}

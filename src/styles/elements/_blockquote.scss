@@ -1,0 +1,11 @@
+// <blockquote> – Extended block quotation
+// Browser defaults: display: block; margin-block: 1em; margin-inline: 40px
+// Quirk: do not use purely for indentation — use CSS margin for that
+// cite attribute holds source URL; pair with a visible <cite> inside for human-readable attribution
+
+blockquote {
+  margin-block: 1em;
+  margin-inline: 0; // reset the default 40px side margins
+  padding-inline-start: 1rem;
+  border-inline-start: 4px solid currentColor;
+}

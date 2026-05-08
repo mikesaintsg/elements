@@ -1,0 +1,9 @@
+// <code> – Inline computer code
+// Browser defaults: font-family: monospace
+// Quirk: monospace glyphs are wider — font-size often needs reducing in prose contexts
+// For multi-line code blocks, nest inside <pre>: <pre><code>…</code></pre>
+
+code {
+  font-family: monospace, monospace; // double declaration fixes inheritance in some browsers
+  font-size: 0.9em;
+}

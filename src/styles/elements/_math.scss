@@ -1,0 +1,10 @@
+// <math> – MathML mathematical formula
+// Browser defaults: display: inline (display="inline"); display: block; text-align: center (display="block")
+// Natively supported in all major browsers (Chrome 109+, Firefox, Safari) — no JS library required
+// Quirk: renders best with a dedicated math font (STIX Two Math, Latin Modern Math)
+//   — plain system fonts often produce incorrect operator/symbol glyphs
+
+math {
+  // Math fonts are loaded separately — no visual reset applied here
+  // Use display="block" attribute for centred block-level equations
+}

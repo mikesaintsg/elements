@@ -1,0 +1,13 @@
+// <video> – Embedded video player
+// Browser defaults: display: inline (inline-replaced element)
+// Coupled: <source> children (media URLs), <track> children (captions/subtitles)
+// controls renders browser-native UI; autoplay requires muted on most browsers
+// poster shows an image before playback; playsinline prevents fullscreen on iOS
+// Quirk: native control bar is OS-styled — full customisation requires removing controls
+//   and building a custom JS/HTML overlay
+
+video {
+  display: block; // remove baseline gap
+  max-width: 100%;
+  height: auto;
+}

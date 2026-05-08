@@ -1,0 +1,11 @@
+// <th> – Table header cell
+// Browser defaults: display: table-cell; font-weight: bold; text-align: center; padding: 1px
+// Use scope attribute (col/row/colgroup/rowgroup) to explicitly define which cells a header covers
+// Coupled: child of <tr>; typically in <thead> but can appear in <tbody>/<tfoot> for row headers
+
+th {
+  padding: 0.5rem;
+  font-weight: bold;
+  text-align: start; // override the centered browser default for most designs
+  vertical-align: bottom;
+}

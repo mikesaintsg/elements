@@ -1,0 +1,8 @@
+// <script> – Embedded or external script (not rendered)
+// Browser defaults: display: none
+// Without async/defer, a src script blocks HTML parsing — use defer or place before </body>
+// defer: executes after parsing in source order; async: executes as soon as downloaded (out-of-order)
+// type="module" treats as ES module (defer by default)
+// Quirk: inline content must not contain </script> literally — escape as <\/script>
+
+// No styles applicable

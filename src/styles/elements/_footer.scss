@@ -1,0 +1,9 @@
+// <footer> – Footer for a section or document
+// Browser defaults: display: block
+// Contains info about nearest sectioning ancestor: authorship, copyright, related links
+// A <footer> directly inside <body> gets the contentinfo landmark role
+// Quirk: <footer> nested inside another <footer> or <header> loses its landmark role
+
+footer {
+  display: block;
+}

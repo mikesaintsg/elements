@@ -1,0 +1,7 @@
+// <s> – Inaccurate / no-longer-relevant text
+// Browser defaults: text-decoration: line-through
+// Use for outdated content (e.g. crossed-out price) — use <del> for edit-history removals
+
+s {
+  text-decoration: line-through;
+}

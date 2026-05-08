@@ -1,0 +1,8 @@
+// <tbody> – Table body row group
+// Browser defaults: display: table-row-group
+// Multiple <tbody> elements are allowed (useful for visual row grouping)
+// Coupled: child of <table>; parent of <tr>
+// Quirk: browsers auto-insert <tbody> around bare <tr> in <table> source
+//   — this implicit <tbody> will break "table > tr" CSS selectors
+
+// No visual reset needed beyond table-level styles

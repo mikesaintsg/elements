@@ -1,0 +1,10 @@
+// <meter> – Scalar gauge within a known range
+// Browser defaults: display: inline-block; browser-native gauge widget (~5em × 1em)
+// Use for disk usage, relevance scores, battery levels (known range) — not for progress (<progress>)
+// Attributes: value (required), min, max, low, high, optimum
+// Quirk: styling is severely limited — only ::-webkit-meter-* vendor pseudo-elements in Blink/WebKit
+//   — for full custom styling use <div role="meter" aria-valuenow aria-valuemin aria-valuemax>
+
+meter {
+  // Minimal styling surface without appearance: none + vendor pseudo-elements
+}

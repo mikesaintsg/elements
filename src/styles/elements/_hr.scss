@@ -1,0 +1,11 @@
+// <hr> – Thematic break
+// Browser defaults: display: block; border-style: inset; border-width: 1px; margin-block: 0.5em
+// Quirk: exact border appearance (inset/outset, 1–2px) varies widely across browsers
+//   — always reset instead of relying on the default
+
+hr {
+  border: none;
+  border-block-start: 1px solid currentColor;
+  margin-block: 1em;
+  color: inherit;
+}

@@ -1,0 +1,10 @@
+// <summary> – Disclosure summary / toggle label
+// Browser defaults: display: list-item; cursor: default
+// Coupled: must be the first child of <details> — clicking toggles the open attribute
+// Quirk: the disclosure triangle is a list-item marker — remove or restyle with:
+//   list-style: none  OR  summary::marker { content: '▶'; }
+
+summary {
+  display: list-item;
+  cursor: pointer;
+}

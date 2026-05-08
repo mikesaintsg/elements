@@ -1,0 +1,8 @@
+// <address> – Contact information block
+// Browser defaults: display: block; font-style: italic
+// Provides contact details for the nearest <article> or <body> ancestor
+// Quirk: the italic is almost always something you need to explicitly reset
+
+address {
+  font-style: normal;
+}

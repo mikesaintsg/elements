@@ -1,0 +1,8 @@
+// <b> – Stylistically offset text without extra importance
+// Browser defaults: font-weight: bold
+// Use for keywords, product names, lead sentences — not for actual importance (use <strong>)
+// or emphasis (use <em>) or headings (use <h1>–<h6>)
+
+b {
+  font-weight: bold;
+}

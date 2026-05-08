@@ -1,0 +1,13 @@
+// <select> – Drop-down or list-box selector
+// Browser defaults: display: inline-block; platform-native UI
+// multiple attribute enables multi-select (list box); size controls visible rows
+// Coupled: parent of <option> and <optgroup>; associated with <label>
+// Quirk: deeply OS-native — the dropdown list cannot be styled; appearance: none removes
+//   the native arrow but the dropdown popup remains OS-rendered
+//   — for a fully custom select, build one with ARIA or use the upcoming <selectlist>
+
+select {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}

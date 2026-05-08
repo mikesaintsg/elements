@@ -1,0 +1,8 @@
+// <rp> – Ruby parenthesis fallback
+// Browser defaults: display: none (in browsers with ruby support)
+// Contains parentheses around <rt> so that browsers without ruby show the annotation in parens
+// Coupled: direct child of <ruby>, flanking <rt>
+
+rp {
+  display: none; // shown only by browsers that lack ruby layout support
+}

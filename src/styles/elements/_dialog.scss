@@ -1,0 +1,18 @@
+// <dialog> – Modal or non-modal dialog box
+// Browser defaults: display: block; position: absolute; left: 0; right: 0; margin: auto;
+//   border: solid; padding: 1em; background: Canvas; color: CanvasText
+// Open via .showModal() (modal, traps focus, adds backdrop) or .show() (non-modal)
+// Quirk: modal dialogs use the browser's top-layer — nothing can be z-indexed above them
+// Quirk: style the backdrop with dialog::backdrop {}
+// <form method="dialog"> natively closes the dialog on submit
+
+dialog {
+  border: none;
+  border-radius: 0.25rem;
+  padding: 1.5rem;
+  max-width: min(90vw, 40rem);
+
+  &::backdrop {
+    background: rgb(0 0 0 / 50%);
+  }
+}

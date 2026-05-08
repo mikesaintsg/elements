@@ -1,0 +1,15 @@
+// <mark> – Highlighted / marked text
+// Browser defaults: background-color: yellow; color: black
+// Use for search result highlights or reference highlights — not for general emphasis (<em>)
+// Quirk: yellow background clashes in dark mode — override with prefers-color-scheme
+// Quirk: screen readers don't announce highlights by default; add visually-hidden labels if meaningful
+
+mark {
+  background-color: mark; // system highlight colour (falls back to yellow)
+  color: marktext;
+
+  @media (prefers-color-scheme: dark) {
+    background-color: highlight;
+    color: highlighttext;
+  }
+}

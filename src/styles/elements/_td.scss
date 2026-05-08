@@ -1,0 +1,11 @@
+// <td> – Table data cell
+// Browser defaults: display: table-cell; padding: 1px; vertical-align: inherit
+// colspan and rowspan span the cell across multiple columns/rows
+// headers attribute associates the cell with <th> IDs for complex accessibility
+// Coupled: child of <tr>; sibling of <th>
+
+td {
+  padding: 0.5rem;
+  vertical-align: top;
+  text-align: start;
+}

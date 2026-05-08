@@ -1,0 +1,13 @@
+// <p> – Paragraph
+// Browser defaults: display: block; margin-block: 1em
+// Quirk: nesting block elements inside <p> is invalid — browsers auto-close the <p> tag
+//   causing unpredictable split rendering
+
+p {
+  margin-block: 0;
+
+  // Only add spacing between consecutive paragraphs (avoids top/bottom whitespace at container edges)
+  & + & {
+    margin-block-start: 1em;
+  }
+}

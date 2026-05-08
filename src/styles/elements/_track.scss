@@ -1,0 +1,8 @@
+// <track> – Timed text track for media (void element, not rendered)
+// Browser defaults: display: none
+// Provides subtitles, captions, chapters, descriptions, or metadata for <video> or <audio>
+// kind attribute: subtitles, captions, descriptions, chapters, metadata
+// src points to a .vtt (WebVTT) file; default attribute makes the track enabled by default
+// Coupled: child of <video> or <audio>
+
+// No styles applicable

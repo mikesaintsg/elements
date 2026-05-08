@@ -1,0 +1,8 @@
+// <dl> – Description list
+// Browser defaults: display: block; margin-block: 1em
+// Use for glossaries, metadata key/value pairs, FAQs
+// Coupled: parent of <dt> (term) and <dd> (description)
+
+dl {
+  margin-block: 0;
+}

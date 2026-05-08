@@ -1,0 +1,8 @@
+// <dd> – Description / value in a description list
+// Browser defaults: display: block; margin-inline-start: 40px
+// Coupled: must appear inside <dl>, immediately following <dt>
+// Multiple <dd> elements may follow one <dt>
+
+dd {
+  margin-inline-start: 0; // reset the default 40px browser indent
+}

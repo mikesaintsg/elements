@@ -1,0 +1,9 @@
+// <option> – Single option in a select list or datalist
+// Browser defaults: platform-native rendering — minimal CSS styling possible
+// value attribute is submitted to server (defaults to text content if omitted)
+// selected attribute marks the default selection
+// Coupled: child of <select>, <optgroup>, or <datalist>
+
+option {
+  font: inherit;
+}

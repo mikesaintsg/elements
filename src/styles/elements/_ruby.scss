@@ -1,0 +1,9 @@
+// <ruby> – Ruby annotation container
+// Browser defaults: display: ruby
+// East Asian typography annotations (e.g. furigana for Japanese kanji)
+// Coupled: contains base text nodes, <rt> (annotation), <rp> (parenthesis fallback)
+// Quirk: shifts surrounding text to accommodate the annotation — account for increased line-height
+
+ruby {
+  display: ruby;
+}

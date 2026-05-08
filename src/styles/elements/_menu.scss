@@ -1,0 +1,9 @@
+// <menu> – Unordered list (semantic variant for command/option lists)
+// Browser defaults: display: block; list-style-type: disc; padding-inline-start: 40px; margin-block: 1em
+// Functionally identical to <ul> but semantically implies a list of commands or toolbar items
+
+menu {
+  list-style: none;
+  margin-block: 0;
+  padding-inline-start: 0;
+}

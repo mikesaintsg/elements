@@ -1,0 +1,13 @@
+// <img> – Image embed (void element)
+// Browser defaults: display: inline (inline-replaced element)
+// Quirk: sits on the text baseline — a gap appears below when inside a block container
+//   — fix with display: block or vertical-align: bottom
+// Always set width and height attributes to prevent layout shift (CLS)
+// Use alt="" for decorative images; a meaningful alt is required for informative images
+// Coupled: can be child of <picture> (with <source> siblings); paired with <map> via usemap
+
+img {
+  display: block; // remove baseline gap
+  max-width: 100%;
+  height: auto; // maintain aspect ratio when max-width constrains width
+}

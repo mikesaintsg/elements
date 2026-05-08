@@ -1,0 +1,15 @@
+// <textarea> – Multi-line text input
+// Browser defaults: display: inline-block; resize: both; font-family: monospace; white-space: pre-wrap
+// rows and cols attributes set the default visible size
+// Quirk: whitespace/newlines between the opening and closing tags become the initial value
+// Quirk: resizable by the user by default (resize handle bottom-right) — control with the resize property
+// Coupled: associated with <label>; child of <form> or linked via form attribute
+
+textarea {
+  font: inherit; // reset the monospace default
+  color: inherit;
+  resize: vertical; // allow only vertical resizing (safer for layout)
+  border: none;
+  padding: 0;
+  margin: 0;
+}

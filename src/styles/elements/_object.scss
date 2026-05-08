@@ -1,0 +1,10 @@
+// <object> – General embedded object
+// Browser defaults: display: inline (inline-replaced)
+// Embeds external resources (PDFs, SVG, legacy plugin content); content inside is fallback
+// Coupled: <param> children pass named parameters to the embedded plugin
+// Largely superseded by <img>, <embed>, <video>, <iframe>, <svg> for specific use cases
+
+object {
+  display: block;
+  max-width: 100%;
+}

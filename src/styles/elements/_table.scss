@@ -1,0 +1,14 @@
+// <table> – Data table
+// Browser defaults: display: table; border-collapse: separate; border-spacing: 2px; border-color: gray
+// Never use tables for layout — only for tabular data
+// Recommended child order: <caption>, <colgroup>, <thead>, <tbody>, <tfoot>
+// Quirk: browsers auto-insert <tbody> around bare <tr> children — breaks "table > tr" CSS selectors
+// Quirk: table-layout: auto (default) makes column widths content-driven and render-blocking
+//   — use table-layout: fixed + explicit width for predictable, faster rendering
+
+table {
+  border-collapse: collapse; // remove cell spacing and merge borders
+  border-spacing: 0;
+  width: 100%;
+  table-layout: fixed;
+}

@@ -1,0 +1,8 @@
+// <datalist> – Option suggestions for inputs
+// Browser defaults: display: none
+// Coupled: <input list="id"> → <datalist id="id"> → <option> children
+// Quirk: browser UI for datalist varies enormously; the dropdown cannot be reliably styled
+
+datalist {
+  display: none; // reinforcing the default
+}
