@@ -197,13 +197,31 @@ Catalog of browser-rendered surfaces that could earn a partial. Use this as a me
 
 ## 6. Catalog (built surfaces)
 
-| Surface | Status | What it covers | Composable |
-| ------- | ------ | -------------- | ---------- |
-| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss) | ✅ done | `dialog::backdrop` + `[popover]::backdrop` — top-layer backdrop color, blur, transition | _(none yet)_ |
-| [`_popover.scss`](../src/styles/surfaces/_popover.scss) | ✅ done | `[popover]` panel chrome + `:popover-open` entry/exit transition (`transition-behavior: allow-discrete` + `@starting-style`) | _(future `usePopover`)_ |
-| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss) | ✅ done | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root` | _(none — purely declarative)_ |
+| Surface                                                     | Status  | What it covers                                                                                                               | Composable                    |
+| ----------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)   | ✅ done | `dialog::backdrop` + `[popover]::backdrop` — top-layer backdrop color, blur, transition                                      | _(none yet)_                  |
+| [`_popover.scss`](../src/styles/surfaces/_popover.scss)     | ✅ done | `[popover]` panel chrome + `:popover-open` entry/exit transition (`transition-behavior: allow-discrete` + `@starting-style`) | _(future `usePopover`)_       |
+| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss) | ✅ done | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`                                                 | _(none — purely declarative)_ |
 
 When the next surface lands, add a row above.
+
+### 6.1 Gotcha — Tailwind layout utilities on `[popover]` elements
+
+The UA hides closed popovers with `[popover]:not(:popover-open) { display: none; }`. That UA rule sits in the lowest cascade tier, so any author rule (including a Tailwind utility) wins. Putting `class="grid"`, `class="flex"`, or `class="block"` directly on a `[popover]` element forces `display: grid|flex|block` even when the popover is closed — the panel renders flat in document flow until first opened.
+
+**Fix:** wrap the popover's content in a child div that takes the layout utility, leave the popover element itself layout-utility-free.
+
+```html
+<!-- ✗ Wrong — `.grid` defeats the UA's hide-when-closed rule -->
+<div popover="auto" class="grid gap-2">…</div>
+
+<!-- ✓ Right — popover element keeps UA-controlled display, child handles layout -->
+<div popover="auto" style="max-inline-size: 24rem">
+	<div class="grid gap-2">…</div>
+</div>
+```
+
+A future `_popover.scss` enhancement could re-assert `display: revert-layer` for closed popovers in `@layer surfaces`, but the current trade-off (predictable cascade, simple author rule) is preferred — let utilities follow the layer order without exceptions.
 
 ---
 

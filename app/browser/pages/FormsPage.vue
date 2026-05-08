@@ -76,14 +76,7 @@ const optimum = ref(0.7)
 			<div class="grid gap-3">
 				<label>
 					Disk usage ({{ used }} / {{ total }} GB)
-					<meter
-						:min="0"
-						:max="total"
-						:low="40"
-						:high="80"
-						:optimum="20"
-						:value="used"
-					></meter>
+					<meter :min="0" :max="total" :low="40" :high="80" :optimum="20" :value="used"></meter>
 				</label>
 				<input v-model.number="used" type="range" :min="0" :max="total" />
 			</div>
@@ -98,13 +91,7 @@ const optimum = ref(0.7)
 			<div class="flex flex-wrap items-center gap-3">
 				<label class="flex items-center gap-2">
 					Optimum
-					<input
-						v-model.number="optimum"
-						type="range"
-						:min="0"
-						:max="1"
-						step="0.05"
-					/>
+					<input v-model.number="optimum" type="range" :min="0" :max="1" step="0.05" />
 				</label>
 				<output>raw: {{ optimum.toFixed(2) }}</output>
 				<output class="filled primary">primary: {{ optimum.toFixed(2) }}</output>
@@ -113,4 +100,3 @@ const optimum = ref(0.7)
 		</section>
 	</article>
 </template>
-

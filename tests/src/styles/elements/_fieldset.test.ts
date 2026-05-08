@@ -66,4 +66,3 @@ describe('legend — typography', () => {
 		)
 	})
 })
-

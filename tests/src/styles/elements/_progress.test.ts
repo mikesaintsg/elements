@@ -38,4 +38,3 @@ describe('progress — variant cascade', () => {
 		expect(token(p, '--set-progress-fill-color').trim()).toBe(expected)
 	})
 })
-

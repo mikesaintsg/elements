@@ -5,7 +5,10 @@
 import { describe, expect, it } from 'vitest'
 import { build, mount, pixels, style, token } from '../../../setupStyles'
 
-function buildDetails(classes = '', open = false): {
+function buildDetails(
+	classes = '',
+	open = false,
+): {
 	details: HTMLDetailsElement
 	summary: HTMLElement
 } {
@@ -63,4 +66,3 @@ describe('summary — chrome', () => {
 		expect(parseInt(style(summary, 'font-weight'), 10)).toBe(600)
 	})
 })
-

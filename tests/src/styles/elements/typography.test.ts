@@ -135,5 +135,3 @@ describe('dl — grid layout', () => {
 		expect(pixels(dd, 'margin-left')).toBe(0)
 	})
 })
-
-

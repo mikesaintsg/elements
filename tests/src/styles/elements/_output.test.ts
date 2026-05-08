@@ -40,4 +40,3 @@ describe('output — filled style', () => {
 		expect(pixels(o, 'padding-left')).toBeGreaterThan(0)
 	})
 })
-

@@ -45,4 +45,3 @@ describe('meter — semantic colors', () => {
 		)
 	})
 })
-

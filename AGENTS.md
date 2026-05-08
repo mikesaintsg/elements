@@ -323,7 +323,7 @@ This is a CSS framework over semantic HTML elements layered on Tailwind v4. The 
 | `src/styles/modifiers/`  | One partial per modifier dimension: `_variants.scss`, `_sizes.scss`, `_styles.scss`, `_states.scss`. Each declares `.{name}` rules that set `--set-{dimension}-*` tokens.                             |
 | `src/styles/components/` | Composed widgets built from elements (future).                                                                                                                                                        |
 | `src/styles/surfaces/`   | Pseudo-element / attribute / at-rule surfaces — `[popover]`, `::backdrop`, `::placeholder`, view transitions, scrollbars, anchor positioning (future).                                                |
-| `app/browser/`           | Vue 3 showcase app. `app/browser/styles/main.css` is the integration point: layer-order declaration → `@import 'tailwindcss'` → framework SCSS import.                                               |
+| `app/browser/`           | Vue 3 showcase app. `app/browser/styles/main.css` is the integration point: layer-order declaration → `@import 'tailwindcss'` → framework SCSS import.                                                |
 | `tests/`                 | Test suite. `tests/setup.css` (Tailwind import + `@source` paths), `tests/setupBrowser.ts`, `tests/setupStyles.ts` (CSS-aware helpers), and `tests/src/{browser,styles}/` mirroring source.           |
 | `guides/`                | Long-form architecture documentation: `plan.md`, `styles.md`, `tokens.md`, `modifiers.md`, `mixins.md`, `elements.md`, `components.md`, `surfaces.md`. Update these whenever the architecture shifts. |
 

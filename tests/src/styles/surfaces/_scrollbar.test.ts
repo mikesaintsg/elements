@@ -33,4 +33,3 @@ describe('scrollbar — applied properties', () => {
 		expect(style(document.documentElement, 'scrollbar-gutter')).not.toBe('')
 	})
 })
-

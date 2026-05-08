@@ -50,4 +50,3 @@ describe('label — disabled state', () => {
 		expect(parseFloat(style(label, 'opacity'))).toBeLessThan(1)
 	})
 })
-

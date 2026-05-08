@@ -40,16 +40,14 @@
 				<code>&lt;hr class="primary"&gt;</code> — variant-tracked stroke.
 			</p>
 			<hr class="danger" />
-			<p class="text-sm text-slate-600">
-				<code>&lt;hr class="danger"&gt;</code> — danger stroke.
-			</p>
+			<p class="text-sm text-slate-600"><code>&lt;hr class="danger"&gt;</code> — danger stroke.</p>
 		</section>
 
 		<section id="blockquote" class="space-y-3">
 			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Blockquote</h2>
 			<blockquote>
-				The framework adds an inline-start bar in the variant color and italics. Bare quotes get
-				a neutral bar; class-tinted ones light up.
+				The framework adds an inline-start bar in the variant color and italics. Bare quotes get a
+				neutral bar; class-tinted ones light up.
 			</blockquote>
 			<blockquote class="success">
 				A success-tinted quote. Use sparingly — the bar carries semantic weight.
@@ -90,4 +88,3 @@ const tokens = {
 		</section>
 	</article>
 </template>
-

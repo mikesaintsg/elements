@@ -46,7 +46,7 @@ describe('select — chevron is token-driven', () => {
 		const el = render('select', '')
 		const tokenValue = token(el, '--set-select-background-image').trim()
 		expect(tokenValue).toMatch(/^url\(/)
-		expect(tokenValue).toContain("data:image/svg+xml")
+		expect(tokenValue).toContain('data:image/svg+xml')
 	})
 
 	it('overriding --set-select-background-image swaps the chevron asset', () => {

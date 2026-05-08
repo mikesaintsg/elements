@@ -55,4 +55,3 @@ describe('popover — open chrome', () => {
 		el.hidePopover()
 	})
 })
-
