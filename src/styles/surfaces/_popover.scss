@@ -1,0 +1,79 @@
+// ============================================================================
+// [popover] — top-layer popover surface.
+//
+// Browser support: Chrome 114+, Edge 114+, Safari 17+, Firefox 125+.
+//
+// Surfaces covered by this partial:
+//   [popover]                   the popover panel itself
+//   [popover]:popover-open      the open state (UA promotes it to top-layer)
+//   [popovertarget]             buttons that toggle a popover by id
+//
+// Quirks:
+//   - `[popover]` is `display: none` until opened. UA flips display when the
+//     popover is shown via `.showPopover()` or `[popovertarget]`. Use
+//     `transition-behavior: allow-discrete` + `@starting-style` to animate
+//     the entry, otherwise the element pops in instantly.
+//   - The popover element renders inside the top-layer; z-index has no
+//     effect. Stacking is managed by the browser.
+//   - `[popover=auto]` (default) is light-dismissable (Esc, click-outside);
+//     `[popover=manual]` requires explicit `.hidePopover()`. The framework
+//     surface treats both identically — styling is shape, not behavior.
+//   - Backdrop styling for `[popover]::backdrop` lives in `_backdrop.scss`
+//     alongside `dialog::backdrop`.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer surfaces {
+	:root {
+		--set-popover-color: currentColor;
+		--set-popover-background-color: var(--color-white, #fff);
+		--set-popover-border-color: color-mix(in srgb, currentColor 15%, transparent);
+		--set-popover-border-width: 1px;
+		--set-popover-border-radius: 0.5rem;
+		--set-popover-padding-inline: 1rem;
+		--set-popover-padding-block: 0.75rem;
+		--set-popover-box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15), 0 4px 6px -2px rgb(0 0 0 / 0.08);
+		--set-popover-transition-duration: var(--set-transition-duration);
+	}
+
+	[popover] {
+		color: var(--set-popover-color);
+		background-color: var(--set-popover-background-color);
+		border: var(--set-popover-border-width) solid var(--set-popover-border-color);
+		border-radius: var(--set-popover-border-radius);
+		padding-inline: var(--set-popover-padding-inline);
+		padding-block: var(--set-popover-padding-block);
+		box-shadow: var(--set-popover-box-shadow);
+
+		// Allow `display: none ↔ block` to participate in transitions so the
+		// open/close states can fade. Pair with `@starting-style` below.
+		transition-behavior: allow-discrete;
+
+		@include transition(
+			(
+				opacity var(--set-popover-transition-duration),
+				transform var(--set-popover-transition-duration),
+				overlay var(--set-popover-transition-duration) allow-discrete,
+				display var(--set-popover-transition-duration) allow-discrete
+			)
+		);
+
+		opacity: 0;
+		transform: scale(0.98);
+	}
+
+	[popover]:popover-open {
+		opacity: 1;
+		transform: none;
+	}
+
+	@starting-style {
+		[popover]:popover-open {
+			opacity: 0;
+			transform: scale(0.98);
+		}
+	}
+}
+
+

@@ -163,6 +163,92 @@ export const tokens = {
 		},
 	},
 
+	// Element-scoped tokens declared on `label` itself.
+	label: {
+		color: '--set-label-color',
+		fontSize: '--set-label-font-size',
+		fontWeight: '--set-label-font-weight',
+		lineHeight: '--set-label-line-height',
+		cursor: '--set-label-cursor',
+		transitionDuration: '--set-label-transition-duration',
+		disabled: { opacity: '--set-label-disabled-opacity' },
+	},
+
+	// Element-scoped tokens declared on `fieldset` itself.
+	fieldset: {
+		color: '--set-fieldset-color',
+		backgroundColor: '--set-fieldset-background-color',
+		borderColor: '--set-fieldset-border-color',
+		borderWidth: '--set-fieldset-border-width',
+		borderRadius: '--set-fieldset-border-radius',
+		paddingInline: '--set-fieldset-padding-inline',
+		paddingBlock: '--set-fieldset-padding-block',
+		transitionDuration: '--set-fieldset-transition-duration',
+		disabled: { opacity: '--set-fieldset-disabled-opacity' },
+	},
+
+	// Element-scoped tokens declared on `legend` itself.
+	legend: {
+		color: '--set-legend-color',
+		fontSize: '--set-legend-font-size',
+		fontWeight: '--set-legend-font-weight',
+		paddingInline: '--set-legend-padding-inline',
+	},
+
+	// Element-scoped tokens declared on `details` itself.
+	details: {
+		color: '--set-details-color',
+		backgroundColor: '--set-details-background-color',
+		borderColor: '--set-details-border-color',
+		borderWidth: '--set-details-border-width',
+		borderRadius: '--set-details-border-radius',
+		paddingInline: '--set-details-padding-inline',
+		paddingBlock: '--set-details-padding-block',
+		transitionDuration: '--set-details-transition-duration',
+	},
+
+	// Element-scoped tokens declared on `summary` itself.
+	summary: {
+		color: '--set-summary-color',
+		fontSize: '--set-summary-font-size',
+		fontWeight: '--set-summary-font-weight',
+		cursor: '--set-summary-cursor',
+		markerSize: '--set-summary-marker-size',
+		transitionDuration: '--set-summary-transition-duration',
+	},
+
+	// Element-scoped tokens declared on `progress` itself.
+	progress: {
+		blockSize: '--set-progress-block-size',
+		borderRadius: '--set-progress-border-radius',
+		trackColor: '--set-progress-track-color',
+		fillColor: '--set-progress-fill-color',
+		transitionDuration: '--set-progress-transition-duration',
+	},
+
+	// Element-scoped tokens declared on `meter` itself. Three fill colors
+	// map to the UA's optimum / sub-optimum / even-less-good classifications.
+	meter: {
+		blockSize: '--set-meter-block-size',
+		borderRadius: '--set-meter-border-radius',
+		trackColor: '--set-meter-track-color',
+		optimumColor: '--set-meter-optimum-color',
+		suboptimumColor: '--set-meter-suboptimum-color',
+		evenLessGoodColor: '--set-meter-even-less-good-color',
+	},
+
+	// Element-scoped tokens declared on `output` itself.
+	output: {
+		color: '--set-output-color',
+		backgroundColor: '--set-output-background-color',
+		borderRadius: '--set-output-border-radius',
+		paddingInline: '--set-output-padding-inline',
+		paddingBlock: '--set-output-padding-block',
+		fontFamily: '--set-output-font-family',
+		fontSize: '--set-output-font-size',
+		transitionDuration: '--set-output-transition-duration',
+	},
+
 	// Element-scoped tokens declared on `dialog` itself.
 	dialog: {
 		color: '--set-dialog-color',
@@ -207,5 +293,26 @@ export const tokens = {
 		backgroundColor: '--set-backdrop-background-color',
 		backdropFilter: '--set-backdrop-backdrop-filter',
 		transitionDuration: '--set-backdrop-transition-duration',
+	},
+
+	// Surface tokens — `[popover]` top-layer panel.
+	popover: {
+		color: '--set-popover-color',
+		backgroundColor: '--set-popover-background-color',
+		borderColor: '--set-popover-border-color',
+		borderWidth: '--set-popover-border-width',
+		borderRadius: '--set-popover-border-radius',
+		paddingInline: '--set-popover-padding-inline',
+		paddingBlock: '--set-popover-padding-block',
+		boxShadow: '--set-popover-box-shadow',
+		transitionDuration: '--set-popover-transition-duration',
+	},
+
+	// Surface tokens — UA scrollbar styling.
+	scrollbar: {
+		thumbColor: '--set-scrollbar-thumb-color',
+		trackColor: '--set-scrollbar-track-color',
+		width: '--set-scrollbar-width',
+		gutter: '--set-scrollbar-gutter',
 	},
 } as const

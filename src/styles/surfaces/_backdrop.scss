@@ -21,7 +21,8 @@
 		--set-backdrop-transition-duration: var(--set-transition-duration);
 	}
 
-	dialog::backdrop {
+	dialog::backdrop,
+	[popover]::backdrop {
 		background-color: var(--set-backdrop-background-color);
 		backdrop-filter: var(--set-backdrop-backdrop-filter);
 

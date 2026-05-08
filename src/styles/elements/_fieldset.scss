@@ -1,16 +1,68 @@
-// <fieldset> – Form control group
-// Browser defaults: display: block; border: 2px groove; padding: 0.35em 0.625em 0.75em;
-//   min-inline-size: min-content
-// Coupled: first child must be <legend> for a labelled border notch
-// Quirk: display: flex or grid breaks <legend> positioning — wrap contents in a <div> instead
+// ============================================================================
+// fieldset — Form-control group with optional <legend> caption.
 //
-// Tailwind preflight handles border, padding, margin via the universal
-// `* { margin: 0; padding: 0; border: 0 solid }` rule. Only `min-inline-size: 0`
-// remains: UA default `min-content` prevents fieldset from shrinking inside
-// flex/grid layouts; this resets it.
+// Architecture (full cascade):
+//   1. Element-scoped --set-fieldset-* tokens chain through style → variant
+//      → size → fieldset-default. Bare <fieldset> ships a 1px neutral
+//      border + breathing-room padding so grouped sections render as a
+//      visual cluster without explicit theming.
+//   2. The `<legend>` caption is positioned by the UA into a notch in the
+//      fieldset's top border; the framework styles the legend typography
+//      but doesn't fight the UA notch behavior.
+//   3. The standing `min-inline-size: 0` reset stays — UA `min-content`
+//      blocks shrinking inside flex/grid containers and that's still wrong.
+//
+// Quirks:
+//   - `display: flex` / `display: grid` on <fieldset> breaks the legend
+//     notch entirely. Consumers wrapping fieldset contents in a flex/grid
+//     <div> avoid this.
+//   - Tailwind preflight zeroes border/padding/margin on every element via
+//     `* { … }`. The framework re-asserts both via the `--set-fieldset-*`
+//     token chain.
+// ============================================================================
+
+@use '../mixins' as *;
 
 @layer elements {
 	fieldset {
 		min-inline-size: 0;
+
+		// ----------------------------------------------------------------------
+		// Element-scoped tokens — fallback chain identical to <button>.
+		// ----------------------------------------------------------------------
+		--set-fieldset-color: var(--set-style-color, var(--set-variant-color, currentColor));
+		--set-fieldset-background-color: var(
+			--set-style-background-color,
+			var(--set-variant-background-color, transparent)
+		);
+		--set-fieldset-border-color: var(
+			--set-style-border-color,
+			var(--set-variant-background-color, color-mix(in srgb, currentColor 20%, transparent))
+		);
+		--set-fieldset-border-width: var(--set-style-border-width, 1px);
+		--set-fieldset-border-radius: var(--set-size-border-radius, 0.5rem);
+		--set-fieldset-padding-inline: var(--set-size-padding-inline, 1rem);
+		--set-fieldset-padding-block: var(--set-size-padding-block, 0.75rem);
+		--set-fieldset-transition-duration: var(--set-transition-duration);
+		--set-fieldset-disabled-opacity: 0.6;
+
+		color: var(--set-fieldset-color);
+		background-color: var(--set-fieldset-background-color);
+		border: var(--set-fieldset-border-width) solid var(--set-fieldset-border-color);
+		border-radius: var(--set-fieldset-border-radius);
+		padding-inline: var(--set-fieldset-padding-inline);
+		padding-block: var(--set-fieldset-padding-block);
+
+		@include transition(
+			(
+				color var(--set-fieldset-transition-duration),
+				background-color var(--set-fieldset-transition-duration),
+				border-color var(--set-fieldset-transition-duration)
+			)
+		);
+
+		&:disabled {
+			opacity: var(--set-fieldset-disabled-opacity);
+		}
 	}
 }

@@ -1,7 +1,57 @@
-// <details> – Native disclosure widget
-// Browser defaults: display: block
-// Coupled: must contain <summary> as its first child (browser inserts "Details" if omitted)
-// Quirk: animating the open/close height transition requires JS or the newer interpolate-size CSS property
-// The open attribute controls visibility; the toggle event fires on state change
+// ============================================================================
+// details — Native disclosure widget.
+//
+// Architecture (full cascade):
+//   1. Element-scoped --set-details-* tokens give the closed/open box the
+//      same chrome contract as <fieldset>: 1px border, breathing-room
+//      padding, transition on color shifts.
+//   2. The state attribute `[open]` is the open signal — no `.open`
+//      modifier; consumers don't toggle a class. Internal padding-block
+//      shifts when open so the disclosed content gets vertical rhythm.
+//   3. Summary chrome (cursor, marker normalization) lives in
+//      `_summary.scss`. Details owns the box, summary owns the toggle.
+//
+// Quirks:
+//   - Native height-animation requires `interpolate-size: allow-keywords`
+//     (Chromium 129+). The framework opts in on `:root` so a transitioned
+//     `block-size: auto ↔ 0` works for consumers who want it; we don't
+//     animate the disclosure ourselves to avoid surprising layouts.
+//   - Tailwind preflight zeroes border/padding/margin universally — the
+//     framework re-asserts both via the token chain.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	details {
+		--set-details-color: var(--set-style-color, var(--set-variant-color, currentColor));
+		--set-details-background-color: var(
+			--set-style-background-color,
+			var(--set-variant-background-color, transparent)
+		);
+		--set-details-border-color: var(
+			--set-style-border-color,
+			var(--set-variant-background-color, color-mix(in srgb, currentColor 15%, transparent))
+		);
+		--set-details-border-width: var(--set-style-border-width, 1px);
+		--set-details-border-radius: var(--set-size-border-radius, 0.5rem);
+		--set-details-padding-inline: var(--set-size-padding-inline, 0.875rem);
+		--set-details-padding-block: var(--set-size-padding-block, 0.625rem);
+		--set-details-transition-duration: var(--set-transition-duration);
+
+		color: var(--set-details-color);
+		background-color: var(--set-details-background-color);
+		border: var(--set-details-border-width) solid var(--set-details-border-color);
+		border-radius: var(--set-details-border-radius);
+		padding-inline: var(--set-details-padding-inline);
+		padding-block: var(--set-details-padding-block);
+
+		@include transition(
+			(
+				color var(--set-details-transition-duration),
+				background-color var(--set-details-transition-duration),
+				border-color var(--set-details-transition-duration)
+			)
+		);
+	}
+}

@@ -1,8 +1,62 @@
-// <progress> – Task progress indicator
-// Browser defaults: display: inline-block; platform-native rendering
-// Without value: indeterminate (animated); with value + max: determinate bar
-// Do not use for scalar measurements within a known range — use <meter> instead
-// Quirk: native styling requires vendor pseudo-elements (::-webkit-progress-bar, ::-moz-progress-bar)
-//   — for full custom design use <div role="progressbar" aria-valuenow aria-valuemin aria-valuemax>
+// ============================================================================
+// progress — Task progress indicator (determinate or indeterminate).
+//
+// Architecture (full cascade):
+//   1. The host `<progress>` element gets a flat baseline: fixed height,
+//      rounded ends, and a track tinted from variant context. UA chrome
+//      is normalized via `appearance: none`.
+//   2. The fill is rendered through vendor pseudos —
+//      `::-webkit-progress-bar` (track) + `::-webkit-progress-value` (fill)
+//      on Chromium/WebKit, `::-moz-progress-bar` on Firefox. The framework
+//      paints both so the determinate bar shows in every evergreen.
+//   3. Without `value`, UA renders an animated indeterminate bar — we
+//      accept that animation untouched (forcing it on the value pseudo
+//      would break determinate rendering).
+//
+// Quirks:
+//   - `appearance: none` is required to make any of the pseudo-element
+//     styling apply; without it Chromium ignores `::-webkit-progress-bar`.
+//   - `--set-progress-fill-color` doesn't go through the normal `style →
+//     variant → size` chain because vendor pseudos can't read element-
+//     scoped tokens declared on the host. Tokens are reasserted on the
+//     pseudos directly.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	progress {
+		--set-progress-block-size: 0.625rem;
+		--set-progress-border-radius: 9999px;
+		--set-progress-track-color: color-mix(in srgb, currentColor 12%, transparent);
+		--set-progress-fill-color: var(--set-variant-background-color, currentColor);
+		--set-progress-transition-duration: var(--set-transition-duration);
+
+		appearance: none;
+		inline-size: 100%;
+		block-size: var(--set-progress-block-size);
+		border: 0;
+		border-radius: var(--set-progress-border-radius);
+		overflow: hidden;
+		background-color: var(--set-progress-track-color);
+		color: var(--set-progress-fill-color);
+
+		// WebKit / Chromium track + value pseudos.
+		&::-webkit-progress-bar {
+			background-color: var(--set-progress-track-color);
+			border-radius: var(--set-progress-border-radius);
+		}
+
+		&::-webkit-progress-value {
+			background-color: var(--set-progress-fill-color);
+			border-radius: var(--set-progress-border-radius);
+			@include transition((inline-size var(--set-progress-transition-duration)));
+		}
+
+		// Firefox value pseudo.
+		&::-moz-progress-bar {
+			background-color: var(--set-progress-fill-color);
+			border-radius: var(--set-progress-border-radius);
+		}
+	}
+}

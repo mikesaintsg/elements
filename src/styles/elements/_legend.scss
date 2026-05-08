@@ -1,7 +1,28 @@
-// <legend> – Caption for a <fieldset>
-// Browser defaults: display: block; padding-inline: 2px
-// Coupled: must be the first child of <fieldset>
-// Quirk: the notch-into-border effect is UA-rendered; legend does not follow normal block flow
-//   — reproducing the exact notch in a custom design is non-trivial
+// ============================================================================
+// legend — Caption for a <fieldset>.
+//
+// Architecture (light cascade):
+//   Element-scoped --set-legend-* tokens — typography only. Legend reads
+//   `--set-fieldset-color` so a colored fieldset cascades into its legend
+//   automatically. The UA notch positioning is preserved; the framework
+//   never `position`s the legend or sets `display`.
+//
+// Quirks:
+//   - Legend only earns the notch effect when it is the first child of
+//     <fieldset> and the parent uses block layout. flex/grid on the
+//     parent breaks the notch entirely (see `_fieldset.scss` header).
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight + UA defaults handle this.
+@layer elements {
+	legend {
+		--set-legend-color: var(--set-fieldset-color, currentColor);
+		--set-legend-font-size: var(--set-size-font-size, 1em);
+		--set-legend-font-weight: 600;
+		--set-legend-padding-inline: 0.375rem;
+
+		color: var(--set-legend-color);
+		font-size: var(--set-legend-font-size);
+		font-weight: var(--set-legend-font-weight);
+		padding-inline: var(--set-legend-padding-inline);
+	}
+}

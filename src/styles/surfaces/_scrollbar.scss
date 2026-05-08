@@ -1,0 +1,35 @@
+// ============================================================================
+// Scrollbar — UA-rendered scrollbar styling.
+//
+// Browser support: scrollbar-color & scrollbar-width Chrome 121+, Firefox 64+,
+// Safari 18.2+. scrollbar-gutter Chrome 94+, Firefox 97+, Safari 14.1+.
+//
+// Surfaces covered by this partial:
+//   scrollbar-color         track + thumb color
+//   scrollbar-width         auto | thin | none
+//   scrollbar-gutter        reserve space so layout doesn't shift on overflow
+//
+// Quirks:
+//   - `scrollbar-color` is a single shorthand: `<thumb> <track>`. We expose
+//     two separate tokens and compose them at the application site.
+//   - In Chromium-only `::-webkit-scrollbar*` is also supported but is being
+//     phased out in favor of the standard properties; we don't author it.
+//   - Safari < 18.2 ignores `scrollbar-color` / `scrollbar-width`. The native
+//     iOS overlay scrollbar is the fallback — acceptable.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer surfaces {
+	:root {
+		--set-scrollbar-thumb-color: color-mix(in srgb, currentColor 25%, transparent);
+		--set-scrollbar-track-color: transparent;
+		--set-scrollbar-width: thin;
+		--set-scrollbar-gutter: stable;
+
+		scrollbar-color: var(--set-scrollbar-thumb-color) var(--set-scrollbar-track-color);
+		scrollbar-width: var(--set-scrollbar-width);
+		scrollbar-gutter: var(--set-scrollbar-gutter);
+	}
+}
+

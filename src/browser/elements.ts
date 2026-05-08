@@ -14,9 +14,17 @@
 export const elements = {
 	a: 'a',
 	button: 'button',
+	details: 'details',
 	dialog: 'dialog',
+	fieldset: 'fieldset',
 	input: 'input',
+	label: 'label',
+	legend: 'legend',
+	meter: 'meter',
+	output: 'output',
+	progress: 'progress',
 	select: 'select',
+	summary: 'summary',
 	table: 'table',
 	textarea: 'textarea',
 } as const

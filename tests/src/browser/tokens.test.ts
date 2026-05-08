@@ -24,6 +24,12 @@ const elementSources = import.meta.glob('../../../src/styles/elements/_*.scss', 
 	eager: true,
 }) as Record<string, string>
 
+const surfaceSources = import.meta.glob('../../../src/styles/surfaces/_*.scss', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+}) as Record<string, string>
+
 const VARIANTS = [
 	'primary',
 	'secondary',
@@ -71,6 +77,19 @@ const SUBSTANTIVE_PARTIALS: ReadonlyMap<string, string> = (() => {
 		if (tag.includes('-')) continue
 		if (new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`, 'i').test(source)) {
 			map.set(tag, source)
+		}
+	}
+	return map
+})()
+
+// {surface → source} for every surfaces/_{name}.scss partial that declares
+// `--set-{name}-*` tokens. Mirrors the element-partial scan above.
+const SURFACE_PARTIALS: ReadonlyMap<string, string> = (() => {
+	const map = new Map<string, string>()
+	for (const [path, source] of Object.entries(surfaceSources)) {
+		const name = tagFromPath(path)
+		if (new RegExp(`--set-${name}-[a-z0-9-]+\\s*:`, 'i').test(source)) {
+			map.set(name, source)
 		}
 	}
 	return map
@@ -180,6 +199,21 @@ describe('SCSS / CSS → TS: every framework declaration is mirrored', () => {
 				expect(TS_SET, `${name} declared in _${tag}.scss but missing in tokens.${tag}`).toContain(
 					name,
 				)
+			}
+		})
+	}
+
+	for (const [name, source] of SURFACE_PARTIALS) {
+		it(`every --set-${name}-* in surfaces/_${name}.scss is in tokens.${name}`, () => {
+			const declarations = declarationsIn(source).filter((decl) =>
+				decl.startsWith(`--set-${name}-`),
+			)
+			expect(declarations.length).toBeGreaterThan(0)
+			for (const decl of declarations) {
+				expect(
+					TS_SET,
+					`${decl} declared in surfaces/_${name}.scss but missing in tokens.${name}`,
+				).toContain(decl)
 			}
 		})
 	}

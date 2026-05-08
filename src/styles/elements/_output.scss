@@ -1,7 +1,52 @@
-// <output> – Calculation result display
-// Browser defaults: display: inline
-// Live region — screen readers announce updated values (aria-live="polite")
-// for attribute lists space-separated IDs of the controlling inputs
-// Coupled: related to <form> controls listed in the for attribute
+// ============================================================================
+// output — Calculation result display.
+//
+// Architecture (light cascade):
+//   Element-scoped --set-output-* tokens for typography only. Bare
+//   <output> stays inline phrasing. Style-modifier `.filled` opts into a
+//   subtle tinted pill shape so a visible result chip is one class away.
+//
+// Quirks:
+//   - <output> is a live region by default (`role="status"` per ARIA);
+//     screen readers announce updated values without extra markup.
+//   - The `for=` attribute lists controlling input IDs; relationships
+//     are advisory and don't trigger any visual change on their own.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	output {
+		--set-output-color: var(--set-style-color, var(--set-variant-background-color, currentColor));
+		--set-output-background-color: var(--set-style-background-color, transparent);
+		--set-output-border-radius: var(--set-size-border-radius, 0.375rem);
+		--set-output-padding-inline: var(--set-size-padding-inline, 0);
+		--set-output-padding-block: var(--set-size-padding-block, 0);
+		--set-output-font-family:
+			ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+			monospace;
+		--set-output-font-size: var(--set-size-font-size, 0.9375em);
+		--set-output-transition-duration: var(--set-transition-duration);
+
+		color: var(--set-output-color);
+		background-color: var(--set-output-background-color);
+		border-radius: var(--set-output-border-radius);
+		padding-inline: var(--set-output-padding-inline);
+		padding-block: var(--set-output-padding-block);
+		font-family: var(--set-output-font-family);
+		font-size: var(--set-output-font-size);
+
+		@include transition(
+			(
+				color var(--set-output-transition-duration),
+				background-color var(--set-output-transition-duration)
+			)
+		);
+
+		// Filled style adds breathing room so the chip shape reads visually.
+		&.filled {
+			padding-inline: 0.5em;
+			padding-block: 0.125em;
+		}
+	}
+}

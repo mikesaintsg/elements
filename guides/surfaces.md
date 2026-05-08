@@ -1,6 +1,6 @@
 # Surfaces
 
-> Browser-rendered chrome that isn't a tag or a composition. Folder: [src/styles/surfaces/](../src/styles/surfaces/). **Status: scaffolded; no entries yet.**
+> Browser-rendered chrome that isn't a tag or a composition. Folder: [src/styles/surfaces/](../src/styles/surfaces/). **Status: three surfaces shipped (`_backdrop.scss`, `_popover.scss`, `_scrollbar.scss`).**
 
 A **surface** is a CSS hook into a UA-controlled feature: pseudo-elements, attribute APIs, at-rules, UA-behavior properties. Things like `[popover]`, `dialog::backdrop`, `::placeholder`, view transitions, scrollbar styling, anchor positioning. Distinct from elements (which name HTML tags) and components (which compose elements) — these name **a seam in the browser itself**.
 
@@ -199,10 +199,11 @@ Catalog of browser-rendered surfaces that could earn a partial. Use this as a me
 
 | Surface | Status | What it covers | Composable |
 | ------- | ------ | -------------- | ---------- |
+| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss) | ✅ done | `dialog::backdrop` + `[popover]::backdrop` — top-layer backdrop color, blur, transition | _(none yet)_ |
+| [`_popover.scss`](../src/styles/surfaces/_popover.scss) | ✅ done | `[popover]` panel chrome + `:popover-open` entry/exit transition (`transition-behavior: allow-discrete` + `@starting-style`) | _(future `usePopover`)_ |
+| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss) | ✅ done | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root` | _(none — purely declarative)_ |
 
-(empty)
-
-When the first surface lands, this table is the at-a-glance reference.
+When the next surface lands, add a row above.
 
 ---
 
@@ -210,11 +211,11 @@ When the first surface lands, this table is the at-a-glance reference.
 
 When time comes to add surfaces, the first three are likely:
 
-1. **`_popover.scss`** — `[popover]` + `:popover-open` + the placement / `position-area` / `anchor-name` integration. Pairs with a future `usePopover` composable for show/hide lifecycle. Unlocks tooltip, dropdown, menu patterns.
-2. **`_backdrop.scss`** — `dialog::backdrop` + `[popover]::backdrop`. Small surface; one or two color/blur declarations. Earned alongside `<dialog>`'s element promotion.
-3. **`_scrollbar.scss`** — `scrollbar-color` + `scrollbar-width` + `scrollbar-gutter` defaults. Theme-friendly and unobtrusive; can be authored without composable support.
+1. **`_popover.scss`** — `[popover]` + `:popover-open` + the placement / `position-area` / `anchor-name` integration. Pairs with a future `usePopover` composable for show/hide lifecycle. Unlocks tooltip, dropdown, menu patterns. **(✅ shipped — placement / `anchor-name` integration deferred.)**
+2. **`_backdrop.scss`** — `dialog::backdrop` + `[popover]::backdrop`. Small surface; one or two color/blur declarations. Earned alongside `<dialog>`'s element promotion. **(✅ shipped.)**
+3. **`_scrollbar.scss`** — `scrollbar-color` + `scrollbar-width` + `scrollbar-gutter` defaults. Theme-friendly and unobtrusive; can be authored without composable support. **(✅ shipped.)**
 
-These three cover the most common "browser surface" gaps in app UI. View transitions, anchor positioning, and `::picker(select)` follow as the framework's component layer earns them.
+Next up after these three: view transitions, anchor positioning, and `::picker(select)` follow as the framework's component layer earns them.
 
 ---
 

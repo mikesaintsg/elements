@@ -1,7 +1,60 @@
-// <label> – Form control label
-// Browser defaults: display: inline
-// Coupling methods: explicit (for="input-id") or implicit (wraps the control)
-// Clicking the label activates/focuses the associated control, increasing hit area
-// Coupled: paired with <input>, <select>, <textarea>, <button>, <meter>, <output>, <progress>
+// ============================================================================
+// label — Form-control label.
+//
+// Architecture (light cascade):
+//   1. Element-scoped --set-label-* tokens for typography only — color,
+//      font-size, font-weight, line-height. No border, padding, or
+//      background — labels are inline phrasing that pair with a control;
+//      the control owns the chrome.
+//   2. Variant cascade reaches `--set-label-color` so `<label class="primary">`
+//      tints the label without affecting the paired control.
+//   3. Size cascade reaches `--set-label-font-size` so a `.small` /
+//      `.large` label tracks the size of its associated control.
+//
+// Quirks:
+//   - UA renders <label> as `display: inline` and provides no implicit
+//     vertical alignment with form controls. The framework leaves layout
+//     to the consumer (Tailwind utilities or a wrapping flex/grid).
+//   - `cursor: pointer` only applies when the label is associated with a
+//     control (via `for=` or wrapping). Bare `<label>` elements remain
+//     `cursor: text` per UA — but most labels are interactive so the
+//     framework defaults to pointer.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight + UA defaults handle this.
+@use '../mixins' as *;
+
+@layer elements {
+	label {
+		// ----------------------------------------------------------------------
+		// Element-scoped tokens — variant/size context first, then defaults.
+		// ----------------------------------------------------------------------
+		--set-label-color: var(--set-variant-background-color, currentColor);
+		--set-label-font-size: var(--set-size-font-size, 1em);
+		--set-label-font-weight: 500;
+		--set-label-line-height: 1.4;
+		--set-label-cursor: pointer;
+		--set-label-transition-duration: var(--set-transition-duration);
+		--set-label-disabled-opacity: 0.6;
+
+		// ----------------------------------------------------------------------
+		// Baseline rules.
+		// ----------------------------------------------------------------------
+		color: var(--set-label-color);
+		font-size: var(--set-label-font-size);
+		font-weight: var(--set-label-font-weight);
+		line-height: var(--set-label-line-height);
+		cursor: var(--set-label-cursor);
+
+		@include transition((color var(--set-label-transition-duration)));
+
+		// Disabled when a parent fieldset is disabled, or the label opts in
+		// via aria/state. Keep cursor neutral so users get the "not
+		// interactive" signal.
+		&[aria-disabled='true'],
+		&.disabled,
+		fieldset:disabled & {
+			cursor: not-allowed;
+			opacity: var(--set-label-disabled-opacity);
+		}
+	}
+}
