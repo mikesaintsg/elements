@@ -288,6 +288,114 @@ export const tokens = {
 		},
 	},
 
+	// ── Phase 3 typographic overrides ──────────────────────────────────────
+
+	hr: {
+		color: '--set-hr-color',
+		opacity: '--set-hr-opacity',
+	},
+
+	blockquote: {
+		color: '--set-blockquote-color',
+		barWidth: '--set-blockquote-bar-width',
+		paddingInline: '--set-blockquote-padding-inline',
+	},
+
+	code: {
+		color: '--set-code-color',
+		backgroundColor: '--set-code-background-color',
+		paddingInline: '--set-code-padding-inline',
+		paddingBlock: '--set-code-padding-block',
+		borderRadius: '--set-code-border-radius',
+		fontSize: '--set-code-font-size',
+	},
+
+	kbd: {
+		color: '--set-kbd-color',
+		backgroundColor: '--set-kbd-background-color',
+		borderColor: '--set-kbd-border-color',
+		paddingInline: '--set-kbd-padding-inline',
+		paddingBlock: '--set-kbd-padding-block',
+		borderRadius: '--set-kbd-border-radius',
+		fontSize: '--set-kbd-font-size',
+	},
+
+	samp: {
+		color: '--set-samp-color',
+		backgroundColor: '--set-samp-background-color',
+		paddingInline: '--set-samp-padding-inline',
+		paddingBlock: '--set-samp-padding-block',
+		borderRadius: '--set-samp-border-radius',
+		fontSize: '--set-samp-font-size',
+	},
+
+	var: {
+		color: '--set-var-color',
+		backgroundColor: '--set-var-background-color',
+		paddingInline: '--set-var-padding-inline',
+		borderRadius: '--set-var-border-radius',
+		fontSize: '--set-var-font-size',
+	},
+
+	pre: {
+		color: '--set-pre-color',
+		backgroundColor: '--set-pre-background-color',
+		borderColor: '--set-pre-border-color',
+		paddingInline: '--set-pre-padding-inline',
+		paddingBlock: '--set-pre-padding-block',
+		borderRadius: '--set-pre-border-radius',
+		fontSize: '--set-pre-font-size',
+		lineHeight: '--set-pre-line-height',
+	},
+
+	dl: {
+		rowGap: '--set-dl-row-gap',
+		columnGap: '--set-dl-column-gap',
+	},
+
+	dt: {
+		color: '--set-dt-color',
+		fontWeight: '--set-dt-font-weight',
+	},
+
+	dd: {
+		color: '--set-dd-color',
+	},
+
+	// ── Phase 4 media overrides ─────────────────────────────────────────────
+
+	figure: {
+		gap: '--set-figure-gap',
+	},
+
+	figcaption: {
+		color: '--set-figcaption-color',
+		fontSize: '--set-figcaption-font-size',
+		lineHeight: '--set-figcaption-line-height',
+	},
+
+	video: {
+		borderRadius: '--set-video-border-radius',
+		backgroundColor: '--set-video-background-color',
+	},
+
+	audio: {
+		inlineSize: '--set-audio-inline-size',
+	},
+
+	iframe: {
+		borderWidth: '--set-iframe-border-width',
+		maxInlineSize: '--set-iframe-max-inline-size',
+	},
+
+	embed: {
+		maxInlineSize: '--set-embed-max-inline-size',
+	},
+
+	object: {
+		maxInlineSize: '--set-object-max-inline-size',
+	},
+
 	// Surface tokens — declared on :root for ::backdrop (top-layer pseudo).
 	backdrop: {
 		backgroundColor: '--set-backdrop-background-color',

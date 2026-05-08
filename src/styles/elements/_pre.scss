@@ -1,7 +1,37 @@
-// <pre> – Preformatted text
-// Browser defaults: display: block; white-space: pre; font-family: monospace; margin-block: 1em
-// Preserves all whitespace (spaces, tabs, newlines) as-is
-// Quirk: wide content overflows its container — use overflow-x: auto or white-space: pre-wrap
-// Commonly wraps <code> for multi-line code blocks: <pre><code>…</code></pre>
+// ============================================================================
+// pre — Preformatted text block (typically wraps <code>).
+//
+// Override — block code chrome: subtle tinted background + padding +
+// border-radius + horizontal overflow scrolling. Inline `<code>` chrome
+// (in `_code.scss`) is suppressed when nested inside `<pre>` so the
+// block owns the visual weight.
+//
+// Quirks:
+//   - White-space: pre is the UA default — preserved so newlines and
+//     indentation render as written.
+//   - `overflow-x: auto` keeps wide lines from blowing out the layout;
+//     scrollbar styling comes from `surfaces/_scrollbar.scss`.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	pre {
+		--set-pre-color: currentColor;
+		--set-pre-background-color: color-mix(in srgb, currentColor 6%, transparent);
+		--set-pre-border-color: color-mix(in srgb, currentColor 12%, transparent);
+		--set-pre-padding-inline: 1rem;
+		--set-pre-padding-block: 0.875rem;
+		--set-pre-border-radius: 0.5rem;
+		--set-pre-font-size: 0.875em;
+		--set-pre-line-height: 1.6;
+
+		color: var(--set-pre-color);
+		background-color: var(--set-pre-background-color);
+		border: 1px solid var(--set-pre-border-color);
+		border-radius: var(--set-pre-border-radius);
+		padding-inline: var(--set-pre-padding-inline);
+		padding-block: var(--set-pre-padding-block);
+		font-size: var(--set-pre-font-size);
+		line-height: var(--set-pre-line-height);
+		overflow-x: auto;
+	}
+}

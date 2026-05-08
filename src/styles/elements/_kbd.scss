@@ -1,5 +1,28 @@
-// <kbd> – Keyboard input / user input
-// Browser defaults: font-family: monospace
-// Nesting <kbd> inside <kbd> is the pattern for key combinations: <kbd><kbd>Ctrl</kbd>+<kbd>C</kbd></kbd>
+// ============================================================================
+// kbd — Keyboard input.
+//
+// Override — pill-shaped chrome resembling a physical key cap. Border +
+// subtle background tint + reduced font-size make a key visually distinct
+// from surrounding prose. Nested kbd (e.g. `<kbd><kbd>Ctrl</kbd>+<kbd>C</kbd></kbd>`)
+// stays legible because the chrome composes naturally.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	kbd {
+		--set-kbd-color: currentColor;
+		--set-kbd-background-color: color-mix(in srgb, currentColor 6%, transparent);
+		--set-kbd-border-color: color-mix(in srgb, currentColor 20%, transparent);
+		--set-kbd-padding-inline: 0.375em;
+		--set-kbd-padding-block: 0.0625em;
+		--set-kbd-border-radius: 0.25em;
+		--set-kbd-font-size: 0.875em;
+
+		color: var(--set-kbd-color);
+		background-color: var(--set-kbd-background-color);
+		border: 1px solid var(--set-kbd-border-color);
+		border-radius: var(--set-kbd-border-radius);
+		padding-inline: var(--set-kbd-padding-inline);
+		padding-block: var(--set-kbd-padding-block);
+		font-size: var(--set-kbd-font-size);
+	}
+}

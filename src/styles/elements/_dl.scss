@@ -1,6 +1,19 @@
-// <dl> – Description list
-// Browser defaults: display: block; margin-block: 1em
-// Use for glossaries, metadata key/value pairs, FAQs
-// Coupled: parent of <dt> (term) and <dd> (description)
+// ============================================================================
+// dl — Description list (term/description pairs).
+//
+// Override — Tailwind preflight zeroes margin universally; this restores
+// vertical rhythm between key/value pairs via `gap` on a grid layout.
+// Sibling <dt> and <dd> partials inherit the rhythm via the parent grid.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	dl {
+		--set-dl-row-gap: 0.5rem;
+		--set-dl-column-gap: 1rem;
+
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		row-gap: var(--set-dl-row-gap);
+		column-gap: var(--set-dl-column-gap);
+	}
+}

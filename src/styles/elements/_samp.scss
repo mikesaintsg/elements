@@ -1,5 +1,25 @@
-// <samp> – Computer program sample output
-// Browser defaults: font-family: monospace
-// Represents output produced by a program: error messages, log lines, terminal responses
+// ============================================================================
+// samp — Sample output from a program.
+//
+// Override — same shape as <code> (subtle tinted background + monospace
+// font-size adjustment) but semantically distinct: code is source,
+// samp is a program's textual output.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	samp {
+		--set-samp-color: currentColor;
+		--set-samp-background-color: color-mix(in srgb, currentColor 8%, transparent);
+		--set-samp-padding-inline: 0.25em;
+		--set-samp-padding-block: 0.125em;
+		--set-samp-border-radius: 0.25em;
+		--set-samp-font-size: 0.9em;
+
+		color: var(--set-samp-color);
+		background-color: var(--set-samp-background-color);
+		padding-inline: var(--set-samp-padding-inline);
+		padding-block: var(--set-samp-padding-block);
+		border-radius: var(--set-samp-border-radius);
+		font-size: var(--set-samp-font-size);
+	}
+}

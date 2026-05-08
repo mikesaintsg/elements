@@ -1,6 +1,17 @@
-// <figure> – Self-contained referenced content
-// Browser defaults: display: block; margin-block: 1em; margin-inline: 40px
-// Wraps content referenced from the main flow that could be moved without breaking the narrative
-// Coupled: optional <figcaption> child (first or last) provides a label
+// ============================================================================
+// figure — Self-contained referenced content (image + optional caption).
+//
+// Override — flex column with gap so figcaption sits cleanly under the
+// figure's content. Tailwind preflight zeroes margin universally; the
+// framework keeps it zeroed and uses `gap` for vertical rhythm.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	figure {
+		--set-figure-gap: 0.5rem;
+
+		display: flex;
+		flex-direction: column;
+		gap: var(--set-figure-gap);
+	}
+}

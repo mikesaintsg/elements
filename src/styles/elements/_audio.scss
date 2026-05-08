@@ -1,6 +1,15 @@
-// <audio> – Embedded audio player
-// Browser defaults: display: inline (no controls); inline-block control bar (with controls)
-// Coupled: <source> children (media URLs), <track> children (captions/subtitles)
-// Quirk: native control bar is OS-styled — full customisation requires hiding it and building a JS UI
+// ============================================================================
+// audio — Embedded audio player.
+//
+// Override — width 100% so the player fills its container instead of
+// the UA's default ~300px fixed width. The OS control bar is preserved.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	audio {
+		--set-audio-inline-size: 100%;
+
+		display: block;
+		inline-size: var(--set-audio-inline-size);
+	}
+}

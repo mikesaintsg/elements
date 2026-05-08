@@ -1,6 +1,25 @@
-// <blockquote> – Extended block quotation
-// Browser defaults: display: block; margin-block: 1em; margin-inline: 40px
-// Quirk: do not use purely for indentation — use CSS margin for that
-// cite attribute holds source URL; pair with a visible <cite> inside for human-readable attribution
+// ============================================================================
+// blockquote — Extended block quotation.
+//
+// Override — leading vertical bar in the variant color, plus padding and
+// italics. No cascade beyond color: blockquotes are prose furniture, not
+// chrome-bearing widgets.
+//
+// Quirks:
+//   - Tailwind preflight zeroes margin universally and strips the UA
+//     curly-quote pseudo content. The framework keeps both off (the bar
+//     is the affordance signal; quotes inside the prose belong to <q>).
+//   - The bar uses `border-inline-start` so it flips for RTL automatically.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight + UA defaults handle this.
+@layer elements {
+	blockquote {
+		--set-blockquote-color: var(--set-variant-background-color, currentColor);
+		--set-blockquote-bar-width: 0.25rem;
+		--set-blockquote-padding-inline: 1rem;
+
+		border-inline-start: var(--set-blockquote-bar-width) solid var(--set-blockquote-color);
+		padding-inline-start: var(--set-blockquote-padding-inline);
+		font-style: italic;
+	}
+}

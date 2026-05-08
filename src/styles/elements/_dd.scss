@@ -1,6 +1,17 @@
-// <dd> – Description / value in a description list
-// Browser defaults: display: block; margin-inline-start: 40px
-// Coupled: must appear inside <dl>, immediately following <dt>
-// Multiple <dd> elements may follow one <dt>
+// ============================================================================
+// dd — Description in a description list.
+//
+// Override — UA ships `margin-inline-start: 40px`. Tailwind preflight
+// zeroes that. The framework keeps it zeroed and lets the parent <dl>
+// grid handle alignment (column 2). Color tokens read currentColor by
+// default so the description blends with surrounding prose.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	dd {
+		--set-dd-color: var(--color-slate-600, currentColor);
+
+		color: var(--set-dd-color);
+		margin-inline-start: 0;
+	}
+}

@@ -10,6 +10,7 @@ import SelectPage from './pages/SelectPage.vue'
 import TablePage from './pages/TablePage.vue'
 import TextareaPage from './pages/TextareaPage.vue'
 import FormsPage from './pages/FormsPage.vue'
+import TypographyPage from './pages/TypographyPage.vue'
 import SurfacesPage from './pages/SurfacesPage.vue'
 
 export interface Route {
@@ -35,6 +36,7 @@ export const routes: readonly Route[] = [
 
 	// Forms — composed Phase 2 elements (label / fieldset / details / progress / meter / output)
 	{ id: 'forms', title: 'Forms', group: 'Patterns', page: FormsPage },
+	{ id: 'typography', title: 'Typography', group: 'Patterns', page: TypographyPage },
 
 	// Surfaces
 	{ id: 'surfaces', title: 'Surfaces', group: 'Surfaces', page: SurfacesPage },

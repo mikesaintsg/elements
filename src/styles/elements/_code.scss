@@ -1,6 +1,39 @@
-// <code> – Inline computer code
-// Browser defaults: font-family: monospace
-// Quirk: monospace glyphs are wider — font-size often needs reducing in prose contexts
-// For multi-line code blocks, nest inside <pre>: <pre><code>…</code></pre>
+// ============================================================================
+// code — Inline computer code.
+//
+// Override — monospace font + subtle tinted background tinted from the
+// surrounding text color so it blends into any theme. Inline only;
+// `<pre><code>` blocks are styled by `_pre.scss` with no extra chrome
+// from `<code>` because the code element doesn't need its own background
+// once it's inside a styled block.
+//
+// Quirks:
+//   - Tailwind preflight ships `font-family: theme(--default-mono-font-family)`
+//     which is correct — the framework only adds size + background tint.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	code {
+		--set-code-color: currentColor;
+		--set-code-background-color: color-mix(in srgb, currentColor 8%, transparent);
+		--set-code-padding-inline: 0.25em;
+		--set-code-padding-block: 0.125em;
+		--set-code-border-radius: 0.25em;
+		--set-code-font-size: 0.9em;
+
+		color: var(--set-code-color);
+		background-color: var(--set-code-background-color);
+		padding-inline: var(--set-code-padding-inline);
+		padding-block: var(--set-code-padding-block);
+		border-radius: var(--set-code-border-radius);
+		font-size: var(--set-code-font-size);
+
+		// Inside a <pre>, drop the chrome — the block owns the background.
+		pre & {
+			background: transparent;
+			padding: 0;
+			border-radius: 0;
+			font-size: inherit;
+		}
+	}
+}

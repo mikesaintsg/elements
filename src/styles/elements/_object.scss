@@ -1,7 +1,13 @@
-// <object> – General embedded object
-// Browser defaults: display: inline (inline-replaced)
-// Embeds external resources (PDFs, SVG, legacy plugin content); content inside is fallback
-// Coupled: <param> children pass named parameters to the embedded plugin
-// Largely superseded by <img>, <embed>, <video>, <iframe>, <svg> for specific use cases
+// ============================================================================
+// object — General embedded object (PDF, SVG, plugin fallback container).
+//
+// Override — same shape as iframe / embed: max-width 100%.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	object {
+		--set-object-max-inline-size: 100%;
+
+		max-inline-size: var(--set-object-max-inline-size);
+	}
+}

@@ -1,8 +1,17 @@
-// <iframe> – Inline nested browsing context
-// Browser defaults: display: inline; border: 2px inset; width: 300px; height: 150px
-// Quirk: does not inherit parent CSS — a completely separate document context
-// Quirk: width: 100%; height: auto is insufficient for responsive aspect ratios
-//   — use the aspect-ratio CSS property or a padding-top percentage wrapper
-// Cross-origin iframes are subject to the Same-Origin Policy
+// ============================================================================
+// iframe — Inline nested browsing context.
+//
+// Override — strip UA `border: 2px inset` and constrain to container
+// width. Aspect-ratio sits with consumers because each embed source has
+// different conventions; the framework only ensures it doesn't blow out.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	iframe {
+		--set-iframe-border-width: 0;
+		--set-iframe-max-inline-size: 100%;
+
+		border: var(--set-iframe-border-width) solid transparent;
+		max-inline-size: var(--set-iframe-max-inline-size);
+	}
+}

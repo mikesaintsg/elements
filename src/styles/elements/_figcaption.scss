@@ -1,6 +1,18 @@
-// <figcaption> – Caption for a <figure>
-// Browser defaults: display: block
-// Coupled: must be the first or last child of <figure>; only one per <figure>
-// Provides an accessible label for the entire figure content
+// ============================================================================
+// figcaption — Caption for a <figure>.
+//
+// Override — smaller font + muted color so the caption reads as
+// secondary content under the figure's main payload.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	figcaption {
+		--set-figcaption-color: color-mix(in srgb, currentColor 65%, transparent);
+		--set-figcaption-font-size: 0.875em;
+		--set-figcaption-line-height: 1.4;
+
+		color: var(--set-figcaption-color);
+		font-size: var(--set-figcaption-font-size);
+		line-height: var(--set-figcaption-line-height);
+	}
+}

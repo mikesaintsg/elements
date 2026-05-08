@@ -1,12 +1,65 @@
-// <h1>–<h6> – Section headings (levels 1–6)
-// Browser defaults (approximate UA stylesheet):
-//   h1: font-size: 2em;    font-weight: bold; margin-block: 0.67em
-//   h2: font-size: 1.5em;  font-weight: bold; margin-block: 0.83em
-//   h3: font-size: 1.17em; font-weight: bold; margin-block: 1em
-//   h4: font-size: 1em;    font-weight: bold; margin-block: 1.33em
-//   h5: font-size: 0.83em; font-weight: bold; margin-block: 1.67em
-//   h6: font-size: 0.67em; font-weight: bold; margin-block: 2.33em
-// Quirk: heading rank is always determined by the tag number, not nesting depth in sections
-// Use headings in order without skipping levels (important for screen-reader navigation)
+// ============================================================================
+// h1–h6 — Section headings.
+//
+// Architecture (full cascade, shared partial):
+//   1. Element-scoped --set-heading-* tokens are declared on the shared
+//      `:where(h1, h2, h3, h4, h5, h6)` selector — `:where` keeps the
+//      specificity at zero so consumer rules and Tailwind utilities win
+//      effortlessly.
+//   2. Per-level font-size scales chain through the size-context tokens
+//      so `<h2 class="small">` and `<h2 class="large">` track the size
+//      modifier independently of the bare-element scale.
+//   3. Variant cascade reaches `--set-heading-color` so a colored heading
+//      (`<h2 class="primary">`) tints itself without spilling onto siblings.
+//   4. UA per-level font-sizes are re-asserted because Tailwind preflight
+//      collapses every heading to `font-size: inherit; font-weight: inherit`.
+//      The framework re-establishes a sensible heading scale.
+//
+// Quirks:
+//   - Tailwind preflight zeroes margin universally; the framework keeps it
+//     zero by default and lets layout (Tailwind utilities, parent grid/flex
+//     gap) own vertical rhythm. Headings ship `text-wrap: balance` so they
+//     wrap evenly without manual line breaks (Chrome 114+, Safari 17.5+).
+//   - The `:where()` selector lowers specificity to 0; pair with `@layer
+//     elements` so utilities still beat the rule.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	:where(h1, h2, h3, h4, h5, h6) {
+		--set-heading-color: var(--set-variant-background-color, currentColor);
+		--set-heading-font-weight: 600;
+		--set-heading-line-height: 1.2;
+		--set-heading-letter-spacing: -0.01em;
+		--set-heading-transition-duration: var(--set-transition-duration);
+
+		color: var(--set-heading-color);
+		font-weight: var(--set-heading-font-weight);
+		line-height: var(--set-heading-line-height);
+		letter-spacing: var(--set-heading-letter-spacing);
+		text-wrap: balance;
+
+		@include transition((color var(--set-heading-transition-duration)));
+	}
+
+	// Per-level font-size — size-context tokens win when a modifier is set.
+	:where(h1) {
+		font-size: var(--set-size-font-size, 2.25rem);
+	}
+	:where(h2) {
+		font-size: var(--set-size-font-size, 1.875rem);
+	}
+	:where(h3) {
+		font-size: var(--set-size-font-size, 1.5rem);
+	}
+	:where(h4) {
+		font-size: var(--set-size-font-size, 1.25rem);
+	}
+	:where(h5) {
+		font-size: var(--set-size-font-size, 1.125rem);
+	}
+	:where(h6) {
+		font-size: var(--set-size-font-size, 1rem);
+	}
+}

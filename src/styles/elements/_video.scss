@@ -1,9 +1,20 @@
-// <video> – Embedded video player
-// Browser defaults: display: inline (inline-replaced element)
-// Coupled: <source> children (media URLs), <track> children (captions/subtitles)
-// controls renders browser-native UI; autoplay requires muted on most browsers
-// poster shows an image before playback; playsinline prevents fullscreen on iOS
-// Quirk: native control bar is OS-styled — full customisation requires removing controls
-//   and building a custom JS/HTML overlay
+// ============================================================================
+// video — Embedded video player.
+//
+// Override — block-level + max-width 100% so embedded video respects
+// container width. Optional border-radius via token so consumers can
+// match the surrounding card chrome without per-instance utilities.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	video {
+		--set-video-border-radius: 0;
+		--set-video-background-color: black;
+
+		display: block;
+		max-inline-size: 100%;
+		block-size: auto;
+		border-radius: var(--set-video-border-radius);
+		background-color: var(--set-video-background-color);
+	}
+}

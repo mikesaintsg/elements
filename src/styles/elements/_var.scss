@@ -1,5 +1,24 @@
-// <var> – Variable in math/programming context
-// Browser defaults: font-style: italic
-// Denotes a placeholder rather than a literal value — often used inside <pre><code> blocks
+// ============================================================================
+// var — Variable in math / programming context.
+//
+// Override — keep UA italic and add monospace + subtle tint so a variable
+// reads as "placeholder" rather than literal value, even inline.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	var {
+		--set-var-color: currentColor;
+		--set-var-background-color: color-mix(in srgb, currentColor 6%, transparent);
+		--set-var-padding-inline: 0.25em;
+		--set-var-border-radius: 0.25em;
+		--set-var-font-size: 0.95em;
+
+		color: var(--set-var-color);
+		background-color: var(--set-var-background-color);
+		padding-inline: var(--set-var-padding-inline);
+		border-radius: var(--set-var-border-radius);
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-size: var(--set-var-font-size);
+		font-style: italic;
+	}
+}

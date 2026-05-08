@@ -1,6 +1,25 @@
-// <hr> – Thematic break
-// Browser defaults: display: block; border-style: inset; border-width: 1px; margin-block: 0.5em
-// Quirk: exact border appearance (inset/outset, 1–2px) varies widely across browsers
-//   — always reset instead of relying on the default
+// ============================================================================
+// hr — Thematic break.
+//
+// Override only — no cascade. The variant-context color tracks so
+// `<hr class="primary">` paints a primary divider; bare `<hr>` stays
+// neutral via `currentColor` faded to ~20% opacity. The framework owns
+// border-color + opacity; everything else flows through utilities or
+// inherits Tailwind preflight.
+//
+// Quirks:
+//   - UA `border-style: inset; border-width: 1px` varies subtly across
+//     browsers. The framework re-asserts `border: 0; border-top: 1px solid`
+//     so the line is consistently a single solid stroke.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight + UA defaults handle this.
+@layer elements {
+	hr {
+		--set-hr-color: var(--set-variant-background-color, currentColor);
+		--set-hr-opacity: 0.2;
+
+		border: 0;
+		border-block-start: 1px solid var(--set-hr-color);
+		opacity: var(--set-hr-opacity);
+	}
+}

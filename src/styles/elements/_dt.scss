@@ -1,7 +1,18 @@
-// <dt> – Term / name in a description list
-// Browser defaults: display: block
-// Quirk: browsers do not bold <dt> by default — style it yourself
-// Multiple <dt> elements before a <dd> associate all those terms with the same description
-// Coupled: must appear inside <dl>; precedes <dd>
+// ============================================================================
+// dt — Term in a description list.
+//
+// Override — UA renders <dt> at normal weight, but visually it should
+// read as a label paired with its <dd> value. The framework adds a
+// medium font-weight so the term contrasts with the description.
+// Lives in the dl grid (column 1) thanks to the parent's grid-template.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	dt {
+		--set-dt-color: currentColor;
+		--set-dt-font-weight: 600;
+
+		color: var(--set-dt-color);
+		font-weight: var(--set-dt-font-weight);
+	}
+}
