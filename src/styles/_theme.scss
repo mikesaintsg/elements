@@ -1,0 +1,46 @@
+// ============================================================================
+// Default theme — semantic variants in oklch, matching Tailwind palette colors.
+//
+// Each `--color-{variant}` is set to the literal oklch value of the matching
+// Tailwind palette color (blue-500, slate-400, etc.). Inlining the values
+// (rather than using `var(--color-blue-500)`) makes the theme work in any
+// environment without depending on Tailwind's palette tokens being present
+// on :root — Tailwind v4 tree-shakes palette tokens that aren't used by
+// generated utilities, so a `var(--color-blue-500)` reference would resolve
+// to empty whenever the test entry CSS doesn't carry matching utility usage.
+//
+// The values match Tailwind's defaults exactly — Tailwind's identity carries
+// through visually. A consumer who wants to retune any variant overrides
+// `--color-{variant}` directly with any color value (oklch, hsl, hex, rgb,
+// named colors — all valid).
+//
+// Color format note: oklch() is color-space-correct (perceptually uniform)
+// and is what Tailwind v4 ships natively. A JS library that needs hex can
+// either:
+//   (a) override `--color-{variant}` with a hex value (the variable accepts
+//       any format),
+//   (b) apply the variable to a CSS property and read the computed value —
+//       browsers serialize that as `oklch(...)` or `rgb(...)` depending on
+//       cascade context, both trivially convertible to hex via a small
+//       color-conversion helper.
+//
+// Tailwind's PostCSS plugin processes this @theme block when the framework
+// SCSS compiles, expanding it into :root variables alongside its own theme.
+// ============================================================================
+
+@theme {
+	// Tailwind blue-500
+	--color-primary: oklch(62.3% 0.214 259.815);
+	// Tailwind slate-400
+	--color-secondary: oklch(70.4% 0.04 256.788);
+	// Tailwind violet-500
+	--color-tertiary: oklch(60.6% 0.25 292.717);
+	// Tailwind emerald-500
+	--color-success: oklch(69.6% 0.17 162.48);
+	// Tailwind amber-400
+	--color-warning: oklch(82.8% 0.189 84.429);
+	// Tailwind red-500
+	--color-danger: oklch(63.7% 0.237 25.331);
+	// Tailwind cyan-500
+	--color-information: oklch(71.5% 0.143 215.221);
+}

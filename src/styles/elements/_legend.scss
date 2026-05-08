@@ -4,7 +4,4 @@
 // Quirk: the notch-into-border effect is UA-rendered; legend does not follow normal block flow
 //   — reproducing the exact notch in a custom design is non-trivial
 
-legend {
-  padding-inline: 0;
-  font-weight: bold;
-}
+// No framework rules — Tailwind v4 preflight + UA defaults handle this.

@@ -4,6 +4,4 @@
 // for attribute lists space-separated IDs of the controlling inputs
 // Coupled: related to <form> controls listed in the for attribute
 
-output {
-  display: inline;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

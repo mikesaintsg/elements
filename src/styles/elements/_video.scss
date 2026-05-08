@@ -6,8 +6,4 @@
 // Quirk: native control bar is OS-styled — full customisation requires removing controls
 //   and building a custom JS/HTML overlay
 
-video {
-  display: block; // remove baseline gap
-  max-width: 100%;
-  height: auto;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

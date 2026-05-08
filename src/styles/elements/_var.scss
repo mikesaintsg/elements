@@ -2,6 +2,4 @@
 // Browser defaults: font-style: italic
 // Denotes a placeholder rather than a literal value — often used inside <pre><code> blocks
 
-var {
-  font-style: italic;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

@@ -3,6 +3,4 @@
 // Contains parentheses around <rt> so that browsers without ruby show the annotation in parens
 // Coupled: direct child of <ruby>, flanking <rt>
 
-rp {
-  display: none; // shown only by browsers that lack ruby layout support
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

@@ -3,7 +3,4 @@
 // Phonetic guide, translation, or annotation displayed above (or below) the base text
 // Coupled: direct child of <ruby>
 
-rt {
-  font-size: 0.5em;
-  line-height: 1;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

@@ -4,9 +4,4 @@
 // Quirk: vertical-align: sub and reduced font-size can increase the line-height of mixed lines
 //   — use line-height: 0 + position: relative to avoid this
 
-sub {
-  vertical-align: sub;
-  font-size: 0.75em;
-  line-height: 0; // prevent sub from expanding the parent's line-height
-  position: relative;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

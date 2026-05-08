@@ -5,8 +5,4 @@
 //   — use the aspect-ratio CSS property or a padding-top percentage wrapper
 // Cross-origin iframes are subject to the Same-Origin Policy
 
-iframe {
-  display: block; // prevent baseline gap
-  border: none; // remove the default inset border
-  max-width: 100%;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

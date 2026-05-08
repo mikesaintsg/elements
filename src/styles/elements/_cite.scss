@@ -3,6 +3,4 @@
 // Use for book titles, films, songs, papers, artworks — not for people's names
 // Quirk: attributing a quote's author with <cite> is spec-incorrect (use <q> / <blockquote> instead)
 
-cite {
-  font-style: italic;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

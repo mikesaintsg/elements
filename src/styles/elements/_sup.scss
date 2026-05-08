@@ -3,9 +3,4 @@
 // Use for footnote references, ordinal indicators (1ˢᵗ), mathematical exponents
 // Same line-height quirk as <sub> — use line-height: 0 + position: relative to avoid it
 
-sup {
-  vertical-align: super;
-  font-size: 0.75em;
-  line-height: 0; // prevent sup from expanding the parent's line-height
-  position: relative;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

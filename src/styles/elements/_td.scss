@@ -4,8 +4,4 @@
 // headers attribute associates the cell with <th> IDs for complex accessibility
 // Coupled: child of <tr>; sibling of <th>
 
-td {
-  padding: 0.5rem;
-  vertical-align: top;
-  text-align: start;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

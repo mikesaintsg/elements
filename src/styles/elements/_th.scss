@@ -3,9 +3,4 @@
 // Use scope attribute (col/row/colgroup/rowgroup) to explicitly define which cells a header covers
 // Coupled: child of <tr>; typically in <thead> but can appear in <tbody>/<tfoot> for row headers
 
-th {
-  padding: 0.5rem;
-  font-weight: bold;
-  text-align: start; // override the centered browser default for most designs
-  vertical-align: bottom;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

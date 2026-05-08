@@ -5,6 +5,4 @@
 // Quirk: native styling requires vendor pseudo-elements (::-webkit-progress-bar, ::-moz-progress-bar)
 //   — for full custom design use <div role="progressbar" aria-valuenow aria-valuemin aria-valuemax>
 
-progress {
-  // Minimal styling surface without appearance: none + vendor pseudo-elements
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

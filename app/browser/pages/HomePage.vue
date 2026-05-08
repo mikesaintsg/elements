@@ -1,27 +1,27 @@
 <template>
 	<article>
-		<header>
-			<h1>elements</h1>
-			<p>
-				A semantic-first CSS framework. One partial per HTML element — styles flow from element
-				semantics outward through token-driven custom properties. Classes are modifiers, never the
-				foundation.
+		<header class="mb-8 border-b border-slate-200 pb-6">
+			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">elements</h1>
+			<p class="mt-3 text-base text-slate-600">
+				A semantic-first CSS framework on Tailwind v4. Pages hydrate as the framework grows.
 			</p>
 		</header>
 
-		<section id="tokens">
-			<h2>Tokens</h2>
+		<section class="space-y-3 text-base leading-7 text-slate-700">
 			<p>
-				Every visual decision is a CSS custom property defined in <code>:root</code>. Override any
-				token globally, per component, or per theme without touching framework source.
+				Styles flow outward from element semantics through token-driven custom properties.
+				Modifier classes (<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm"
+					>.primary</code
+				>,
+				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.large</code>,
+				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.ghost</code>) set
+				context tokens that elements consume via fallback chains. Tailwind v4 ships the palette,
+				scales, and reset; the framework adds element baselines, modifier semantics, and a TS
+				surface for typed component props.
 			</p>
-		</section>
-
-		<section id="modifiers">
-			<h2>Modifiers</h2>
 			<p>
-				Modifier classes set component-scoped custom properties. The element's base rule consumes
-				them — no specificity battles, no <code>!important</code>.
+				Use the navigation on the left to explore. Each element page demonstrates the modifier
+				cascade in action.
 			</p>
 		</section>
 	</article>

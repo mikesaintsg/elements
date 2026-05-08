@@ -3,6 +3,4 @@
 // Only one visible <main> per page (others must have hidden attribute)
 // Maps to the main ARIA landmark — screen-reader users use it to skip to content
 
-main {
-  display: block; // explicit for older browser compatibility
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

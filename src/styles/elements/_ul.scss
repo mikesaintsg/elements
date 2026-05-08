@@ -4,16 +4,4 @@
 // Nested bullet default progression: disc → circle → square
 // Coupled: direct children must be <li> elements
 
-ul {
-  list-style-type: disc;
-  padding-inline-start: 1.5rem; // more proportional than the browser's fixed 40px
-  margin-block: 0;
-
-  ul {
-    list-style-type: circle;
-
-    ul {
-      list-style-type: square;
-    }
-  }
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

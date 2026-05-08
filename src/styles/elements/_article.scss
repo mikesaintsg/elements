@@ -3,6 +3,4 @@
 // Reusable, independently distributable content (blog post, news story, product card)
 // Nesting is valid — inner article is related to outer
 
-article {
-  display: block;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

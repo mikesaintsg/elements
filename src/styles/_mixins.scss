@@ -1,0 +1,41 @@
+// ============================================================================
+// Mixin & Function Registry
+//
+// Emits no top-level CSS. Consumers `@use 'mixins' as *;` to bring helpers
+// into scope. Sass list constants live here so loops in modifier/element
+// partials read uniformly across the codebase.
+// ============================================================================
+
+// Modifier dimension lists — names match the modifiers.ts groupings exactly.
+$variants: (primary, secondary, tertiary, success, warning, danger, information) !default;
+$sizes: (small, large) !default;
+$styles: (ghost, filled) !default;
+$states: (disabled, active, loading) !default;
+
+// prefers-reduced-motion guard.
+@mixin reduced-motion {
+	@media (prefers-reduced-motion: reduce) {
+		@content;
+	}
+}
+
+// Apply a transition declaration with a paired reduced-motion guard.
+@mixin transition($value) {
+	transition: $value;
+
+	@include reduced-motion {
+		transition: none;
+	}
+}
+
+// Canonical focus ring — color tracks --set-variant-background-color so the
+// ring inherits the active variant; falls back to --color-primary when no
+// variant is applied.
+@mixin focus-ring($alpha: 0.35) {
+	box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+		color-mix(
+			in oklab,
+			var(--set-variant-background-color, var(--color-primary)) calc(#{$alpha} * 100%),
+			transparent
+		);
+}

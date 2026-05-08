@@ -3,6 +3,4 @@
 // Visually identical to <span> — the difference is purely in the bidi rendering algorithm
 // Prevents user-supplied text of unknown direction from distorting surrounding punctuation
 
-bdi {
-  unicode-bidi: isolate;
-}
+// No framework rules — Tailwind v4 preflight + UA defaults handle this.

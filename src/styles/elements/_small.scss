@@ -2,6 +2,4 @@
 // Browser defaults: font-size: 0.8em (smaller than parent)
 // Use for legal notices, disclaimers, copyright, licensing — not just for making text smaller
 
-small {
-  font-size: 0.8em;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

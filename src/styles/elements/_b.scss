@@ -3,6 +3,4 @@
 // Use for keywords, product names, lead sentences — not for actual importance (use <strong>)
 // or emphasis (use <em>) or headings (use <h1>–<h6>)
 
-b {
-  font-weight: bold;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

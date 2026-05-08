@@ -3,6 +3,4 @@
 // Use for glossaries, metadata key/value pairs, FAQs
 // Coupled: parent of <dt> (term) and <dd> (description)
 
-dl {
-  margin-block: 0;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

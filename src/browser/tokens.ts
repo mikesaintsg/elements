@@ -1,136 +1,80 @@
 // ============================================================================
-// Token Registry — CSS custom property names for every design token.
+// Token Surface (TS mirror)
 //
-// Use these constants instead of bare strings when reading or writing tokens
-// from JavaScript, so rename refactors propagate and typos surface at build time.
+// Mirrors the framework's --set-* CSS custom properties plus the semantic
+// variant colors we register with Tailwind v4 via @theme. Every leaf is a
+// CSS variable name, suitable for getComputedStyle().getPropertyValue() or
+// Element.style.setProperty().
+//
+// Tailwind's full token surface (--color-blue-500, --spacing-4, --radius-md,
+// --text-base, --duration-150, …) is intentionally NOT mirrored here —
+// Tailwind's own docs and IntelliSense are the source of truth.
 //
 // Usage:
 //   const value = getComputedStyle(el).getPropertyValue(tokens.color.primary)
-//   el.style.setProperty(tokens.color.primary, '200 100% 50%')
+//   el.style.setProperty(tokens.color.primary, 'hsl(150 70% 40%)')
 // ============================================================================
 
 export const tokens = {
-	// Color — HSL triplets (no `hsl()` wrapper; compose alpha with hsl(var(...) / 0.5))
+	// Semantic variants (registered in @theme; Tailwind generates utilities).
 	color: {
-		primary: '--primary-hsl',
-		secondary: '--secondary-hsl',
-		success: '--success-hsl',
-		danger: '--danger-hsl',
-		warning: '--warning-hsl',
-		info: '--info-hsl',
-		light: '--light-hsl',
-		dark: '--dark-hsl',
+		primary: '--color-primary',
+		secondary: '--color-secondary',
+		tertiary: '--color-tertiary',
+		success: '--color-success',
+		warning: '--color-warning',
+		danger: '--color-danger',
+		information: '--color-information',
 	},
 
-	// Foreground — text color that pairs with each semantic background
-	foreground: {
-		primary: '--primary-foreground',
-		secondary: '--secondary-foreground',
-		success: '--success-foreground',
-		danger: '--danger-foreground',
-		warning: '--warning-foreground',
-		info: '--info-foreground',
-		light: '--light-foreground',
-		dark: '--dark-foreground',
-	},
+	// Framework defaults that have no Tailwind equivalent.
+	transitionDuration: '--set-transition-duration',
 
-	// Body / surface defaults
-	body: {
-		color: '--body-color',
-		background: '--body-background',
-		muted: '--muted-color',
-	},
-
-	// Links
-	link: {
-		color: '--link-color',
-		hover: '--link-hover-color',
-	},
-
-	// Typography
-	font: {
-		sans: '--font-sans',
-		mono: '--font-mono',
-		size: '--font-size',
-		small: '--font-size-sm',
-		large: '--font-size-lg',
-		weight: '--font-weight',
-		semibold: '--font-weight-semibold',
-		bold: '--font-weight-bold',
-		height: '--line-height',
-	},
-
-	// Spacing scale
-	space: {
-		base: '--space',
-		xs: '--space-xs',
-		sm: '--space-sm',
-		md: '--space-md',
-		lg: '--space-lg',
-		xl: '--space-xl',
-	},
-
-	// Border
-	border: {
-		radius: '--radius',
-		radiusSm: '--radius-sm',
-		radiusLg: '--radius-lg',
-		radiusPill: '--radius-pill',
-		width: '--border-width',
-		color: '--border-color',
-	},
-
-	// Focus ring
+	// Focus ring sub-tokens.
 	focus: {
-		width: '--focus-width',
-		opacity: '--focus-opacity',
+		boxShadowWidth: '--set-focus-box-shadow-width',
+		boxShadowOpacity: '--set-focus-box-shadow-opacity',
 	},
 
-	// Shadows
-	shadow: {
-		sm: '--shadow-sm',
-		base: '--shadow',
-		lg: '--shadow-lg',
+	// Variant context — set by .primary / .secondary / … modifier classes.
+	variant: {
+		color: '--set-variant-color',
+		backgroundColor: '--set-variant-background-color',
+		borderColor: '--set-variant-border-color',
+		borderWidth: '--set-variant-border-width',
 	},
 
-	// Transition
-	transition: {
-		duration: '--duration',
-		slow: '--duration-slow',
-		easing: '--easing',
+	// Size context — set by .small / .large.
+	size: {
+		paddingInline: '--set-size-padding-inline',
+		paddingBlock: '--set-size-padding-block',
+		fontSize: '--set-size-font-size',
+		borderRadius: '--set-size-border-radius',
 	},
 
-	// Button component tokens (set on the button element; overridden by modifiers)
+	// Style context — set by .ghost / .filled.
+	style: {
+		color: '--set-style-color',
+		backgroundColor: '--set-style-background-color',
+		borderColor: '--set-style-border-color',
+		borderWidth: '--set-style-border-width',
+	},
+
+	// Element-scoped tokens declared on `button` itself.
 	button: {
-		color: '--button-color',
-		background: '--button-background',
-		border: '--button-border-color',
-		width: '--button-border-width',
-		radius: '--button-radius',
-		size: '--button-font-size',
-		weight: '--button-font-weight',
-		height: '--button-line-height',
-		duration: '--button-duration',
-		padding: {
-			x: '--button-padding-x',
-			y: '--button-padding-y',
-		},
-		hover: {
-			color: '--button-hover-color',
-			background: '--button-hover-background',
-			border: '--button-hover-border-color',
-		},
-		active: {
-			color: '--button-active-color',
-			background: '--button-active-background',
-			border: '--button-active-border-color',
-		},
-		disabled: {
-			opacity: '--button-disabled-opacity',
-		},
-		focus: {
-			shadow: '--button-focus-shadow',
-		},
+		color: '--set-button-color',
+		backgroundColor: '--set-button-background-color',
+		borderColor: '--set-button-border-color',
+		borderWidth: '--set-button-border-width',
+		borderRadius: '--set-button-border-radius',
+		paddingInline: '--set-button-padding-inline',
+		paddingBlock: '--set-button-padding-block',
+		fontSize: '--set-button-font-size',
+		fontWeight: '--set-button-font-weight',
+		lineHeight: '--set-button-line-height',
+		transitionDuration: '--set-button-transition-duration',
+		cursor: '--set-button-cursor',
+		disabled: { opacity: '--set-button-disabled-opacity' },
+		focus: { boxShadow: '--set-button-focus-box-shadow' },
 	},
 } as const
-

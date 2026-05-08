@@ -5,7 +5,4 @@
 // Quirk: default overflow: hidden can clip content outside the viewBox
 // fill="currentColor" on SVG paths enables CSS color theming via the color property
 
-svg {
-  display: block; // remove baseline gap
-  overflow: visible; // allow content outside the viewBox to render if needed
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

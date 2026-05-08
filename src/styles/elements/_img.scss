@@ -6,8 +6,4 @@
 // Use alt="" for decorative images; a meaningful alt is required for informative images
 // Coupled: can be child of <picture> (with <source> siblings); paired with <map> via usemap
 
-img {
-  display: block; // remove baseline gap
-  max-width: 100%;
-  height: auto; // maintain aspect ratio when max-width constrains width
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

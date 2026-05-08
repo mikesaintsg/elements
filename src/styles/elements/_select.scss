@@ -6,8 +6,4 @@
 //   the native arrow but the dropdown popup remains OS-rendered
 //   — for a fully custom select, build one with ARIA or use the upcoming <selectlist>
 
-select {
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

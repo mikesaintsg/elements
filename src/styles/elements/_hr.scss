@@ -3,9 +3,4 @@
 // Quirk: exact border appearance (inset/outset, 1–2px) varies widely across browsers
 //   — always reset instead of relying on the default
 
-hr {
-  border: none;
-  border-block-start: 1px solid currentColor;
-  margin-block: 1em;
-  color: inherit;
-}
+// No framework rules — Tailwind v4 preflight + UA defaults handle this.

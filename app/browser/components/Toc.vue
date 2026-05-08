@@ -63,6 +63,7 @@ watch(
 		mutationObs.observe(root, { childList: true, subtree: true })
 		collect()
 	},
+	{ immediate: true },
 )
 
 onUnmounted(() => {
@@ -79,9 +80,19 @@ const goto = (id: string): void => {
 
 <template>
 	<nav v-if="entries.length" aria-label="Table of contents">
-		<ol>
-			<li v-for="e in entries" :key="e.id" :data-level="e.level">
-				<a :href="`#${e.id}`" @click.prevent="goto(e.id)">{{ e.label }}</a>
+		<ol class="space-y-0.5 border-l border-slate-200">
+			<li
+				v-for="e in entries"
+				:key="e.id"
+				:data-level="e.level"
+				:class="e.level === 3 ? 'pl-6' : 'pl-3'"
+			>
+				<a
+					:href="`#${e.id}`"
+					class="-ml-px block border-l border-transparent py-1 text-sm text-slate-600 no-underline transition-colors hover:border-slate-400 hover:text-slate-900"
+					@click.prevent="goto(e.id)"
+					>{{ e.label }}</a
+				>
 			</li>
 		</ol>
 	</nav>

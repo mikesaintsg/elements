@@ -3,6 +3,4 @@
 // Sidebar material: pull quotes, related links, glossary terms, ads
 // Do not use as a generic side-column if the content is integral to the page narrative
 
-aside {
-  display: block;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

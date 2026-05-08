@@ -4,7 +4,4 @@
 // Coupled: <param> children pass named parameters to the embedded plugin
 // Largely superseded by <img>, <embed>, <video>, <iframe>, <svg> for specific use cases
 
-object {
-  display: block;
-  max-width: 100%;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

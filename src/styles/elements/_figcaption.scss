@@ -3,6 +3,4 @@
 // Coupled: must be the first or last child of <figure>; only one per <figure>
 // Provides an accessible label for the entire figure content
 
-figcaption {
-  font-size: 0.875em;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

@@ -4,6 +4,4 @@
 // Minor link clusters (footer legal links) do not need <nav>
 // Multiple <nav> elements are fine — differentiate with aria-label
 
-nav {
-  display: block;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

@@ -4,8 +4,4 @@
 // Quirk: caption-side controls visual position (top/bottom) but source order must always be first
 // Only one <caption> per table
 
-caption {
-  caption-side: top;
-  text-align: start; // override default center for most designs
-  padding-block-end: 0.5em;
-}
+// No framework rules — Tailwind v4 preflight + UA defaults handle this.

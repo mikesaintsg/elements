@@ -1,8 +1,14 @@
 // <address> – Contact information block
 // Browser defaults: display: block; font-style: italic
 // Provides contact details for the nearest <article> or <body> ancestor
-// Quirk: the italic is almost always something you need to explicitly reset
+//
+// Tailwind preflight doesn't touch font-style. The framework explicitly
+// resets address from italic to normal — the italic-by-default behavior
+// is widely considered an unwanted UA quirk and most design systems undo it.
+// Consumers who do want italic addresses can re-add `font-italic` via utility.
 
-address {
-  font-style: normal;
+@layer elements {
+	address {
+		font-style: normal;
+	}
 }

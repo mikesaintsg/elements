@@ -1,15 +1,23 @@
 // <mark> – Highlighted / marked text
 // Browser defaults: background-color: yellow; color: black
-// Use for search result highlights or reference highlights — not for general emphasis (<em>)
-// Quirk: yellow background clashes in dark mode — override with prefers-color-scheme
+// Use for search-result highlights or reference highlights — not for general emphasis (<em>)
+// Quirk: hardcoded yellow clashes in dark mode and ignores user color preference
 // Quirk: screen readers don't announce highlights by default; add visually-hidden labels if meaningful
+//
+// Tailwind preflight doesn't touch <mark>. The framework swaps the UA's
+// hardcoded yellow/black for the system `mark` / `marktext` keywords (which
+// honor user color preferences and forced-colors mode), with an explicit
+// dark-mode override that uses the more visible `highlight` / `highlighttext`
+// system colors.
 
-mark {
-  background-color: mark; // system highlight colour (falls back to yellow)
-  color: marktext;
+@layer elements {
+	mark {
+		background-color: mark;
+		color: marktext;
 
-  @media (prefers-color-scheme: dark) {
-    background-color: highlight;
-    color: highlighttext;
-  }
+		@media (prefers-color-scheme: dark) {
+			background-color: highlight;
+			color: highlighttext;
+		}
+	}
 }

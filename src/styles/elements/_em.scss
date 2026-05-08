@@ -4,6 +4,4 @@
 // Nesting <em> increases the stress level
 // Do not use purely for italics — use <i> or CSS font-style: italic for stylistic italics
 
-em {
-  font-style: italic;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

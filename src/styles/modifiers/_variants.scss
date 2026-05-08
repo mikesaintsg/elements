@@ -1,0 +1,67 @@
+// ============================================================================
+// Variant modifiers
+//
+// Each .{variant} class sets the four --set-variant-* context tokens. The
+// variant chooses its own contrast text color (white on saturated colors,
+// black on light ones). Element files consume these tokens via fallback
+// chains; nothing here applies CSS properties directly.
+//
+// --set-variant-color            text color when the variant fills a surface
+// --set-variant-background-color the variant's identity color (used for fill
+//                                AND for outline border / focus ring color)
+// --set-variant-border-color     paired border color
+// --set-variant-border-width     bumps the border to 1px so the variant's
+//                                border-color is actually visible (bare
+//                                elements default to width 0)
+// ============================================================================
+
+@layer modifiers {
+	.primary {
+		--set-variant-color: white;
+		--set-variant-background-color: var(--color-primary);
+		--set-variant-border-color: var(--color-primary);
+		--set-variant-border-width: 1px;
+	}
+
+	.secondary {
+		--set-variant-color: black;
+		--set-variant-background-color: var(--color-secondary);
+		--set-variant-border-color: var(--color-secondary);
+		--set-variant-border-width: 1px;
+	}
+
+	.tertiary {
+		--set-variant-color: white;
+		--set-variant-background-color: var(--color-tertiary);
+		--set-variant-border-color: var(--color-tertiary);
+		--set-variant-border-width: 1px;
+	}
+
+	.success {
+		--set-variant-color: white;
+		--set-variant-background-color: var(--color-success);
+		--set-variant-border-color: var(--color-success);
+		--set-variant-border-width: 1px;
+	}
+
+	.warning {
+		--set-variant-color: black;
+		--set-variant-background-color: var(--color-warning);
+		--set-variant-border-color: var(--color-warning);
+		--set-variant-border-width: 1px;
+	}
+
+	.danger {
+		--set-variant-color: white;
+		--set-variant-background-color: var(--color-danger);
+		--set-variant-border-color: var(--color-danger);
+		--set-variant-border-width: 1px;
+	}
+
+	.information {
+		--set-variant-color: black;
+		--set-variant-background-color: var(--color-information);
+		--set-variant-border-color: var(--color-information);
+		--set-variant-border-width: 1px;
+	}
+}

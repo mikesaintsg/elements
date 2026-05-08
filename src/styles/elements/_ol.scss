@@ -4,8 +4,4 @@
 // type attribute: 1, a, A, i, I; start attribute overrides starting number; reversed reverses the count
 // Coupled: direct children must be <li> elements
 
-ol {
-  list-style-type: decimal;
-  padding-inline-start: 1.5rem; // more proportional than the browser's fixed 40px
-  margin-block: 0;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

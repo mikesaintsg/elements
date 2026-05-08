@@ -4,6 +4,7 @@ import tsconfig from './tsconfig.json' with { type: 'json' }
 import { fileURLToPath, URL } from 'node:url'
 import { playwright } from '@vitest/browser-playwright'
 import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/postcss'
 
 export function resolveWorkspacePath(relativePath: string): string {
 	return fileURLToPath(new URL(relativePath, import.meta.url))
@@ -70,12 +71,18 @@ export const srcCore = (config?: UserConfig): UserConfig =>
 		config ?? {},
 	)
 
+// PostCSS pipeline. `@tailwindcss/postcss` runs after Vite's Sass step so it
+// sees Sass-compiled output — required for the showcase's main.scss to flow
+// through Tailwind's @theme expansion.
+const postcss = { plugins: [tailwindcss()] }
+
 // Extends srcCore: adds Vue + ES lib build + browser tests.
 export const srcBrowser = (config?: UserConfig): UserConfig =>
 	srcCore(
 		mergeConfig(
 			{
 				plugins: [vue()],
+				css: { postcss },
 				build: {
 					lib: {
 						entry: resolveWorkspacePath('src/browser/index.ts'),
@@ -111,6 +118,7 @@ export const srcStyles = (config?: UserConfig): UserConfig =>
 	mergeConfig(
 		{
 			resolve,
+			css: { postcss },
 			build: {
 				emptyOutDir: true,
 				sourcemap: false,

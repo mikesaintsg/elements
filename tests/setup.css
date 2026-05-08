@@ -1,0 +1,19 @@
+/* Test environment CSS setup.
+ *
+ * Imported first by setupStyles.ts AND setupBrowser.ts so Tailwind's PostCSS
+ * plugin processes both Tailwind's own theme AND our framework's semantic
+ * variant registrations in a single pass. The plugin expands every @theme
+ * block found here (and across @import-chained files) into :root custom
+ * properties.
+ *
+ * The default-variant palette ships in src/styles/_theme.scss — this file
+ * doesn't need to register variants. To override a variant for a specific
+ * test scope, add a `@theme {…}` block before importing the framework.
+ */
+
+@layer theme, base, elements, components, surfaces, modifiers, utilities;
+
+@import 'tailwindcss';
+
+@source '../src/styles';
+@source '../tests';

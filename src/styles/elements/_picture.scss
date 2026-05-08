@@ -3,6 +3,4 @@
 // Coupled: <source> children (conditions) evaluated in order + one required <img> (last child, fallback)
 // Quirk: alt, width, height, and loading attributes belong on <img>, not on <source>
 
-picture {
-  display: block; // commonly used as a block container
-}
+// No framework rules — Tailwind v4 preflight + UA defaults handle this.

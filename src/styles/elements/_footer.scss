@@ -4,6 +4,4 @@
 // A <footer> directly inside <body> gets the contentinfo landmark role
 // Quirk: <footer> nested inside another <footer> or <header> loses its landmark role
 
-footer {
-  display: block;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

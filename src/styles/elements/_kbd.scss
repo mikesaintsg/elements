@@ -2,7 +2,4 @@
 // Browser defaults: font-family: monospace
 // Nesting <kbd> inside <kbd> is the pattern for key combinations: <kbd><kbd>Ctrl</kbd>+<kbd>C</kbd></kbd>
 
-kbd {
-  font-family: monospace, monospace;
-  font-size: 0.875em;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

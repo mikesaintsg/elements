@@ -3,6 +3,4 @@
 // Coupled: must appear inside <dl>, immediately following <dt>
 // Multiple <dd> elements may follow one <dt>
 
-dd {
-  margin-inline-start: 0; // reset the default 40px browser indent
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

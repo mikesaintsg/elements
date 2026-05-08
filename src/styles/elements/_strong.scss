@@ -4,6 +4,4 @@
 // Nesting increases the level of importance
 // Do not use for stylistic bold — use <b> or CSS font-weight for that
 
-strong {
-  font-weight: bold;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

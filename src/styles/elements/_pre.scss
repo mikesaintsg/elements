@@ -4,10 +4,4 @@
 // Quirk: wide content overflows its container — use overflow-x: auto or white-space: pre-wrap
 // Commonly wraps <code> for multi-line code blocks: <pre><code>…</code></pre>
 
-pre {
-  white-space: pre-wrap; // wrap long lines rather than overflow by default
-  overflow-x: auto; // allow horizontal scroll when wrapping must not occur
-  font-family: monospace, monospace;
-  font-size: 0.9em;
-  margin-block: 0;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

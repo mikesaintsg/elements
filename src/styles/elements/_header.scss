@@ -3,6 +3,4 @@
 // A <header> directly inside <body> gets the banner landmark role
 // Quirk: <header> inside <article>, <section>, etc. loses its banner landmark role
 
-header {
-  display: block;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

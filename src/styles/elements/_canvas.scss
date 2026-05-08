@@ -4,7 +4,4 @@
 //   always set both the width/height attributes and CSS dimensions together for sharp HiDPI output
 // Quirk: like <img>, sits on the text baseline — a gap appears below in a block container
 
-canvas {
-  display: block; // remove baseline gap
-  max-width: 100%;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

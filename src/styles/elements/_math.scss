@@ -4,7 +4,4 @@
 // Quirk: renders best with a dedicated math font (STIX Two Math, Latin Modern Math)
 //   — plain system fonts often produce incorrect operator/symbol glyphs
 
-math {
-  // Math fonts are loaded separately — no visual reset applied here
-  // Use display="block" attribute for centred block-level equations
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

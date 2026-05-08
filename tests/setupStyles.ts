@@ -13,6 +13,7 @@
 
 import { afterEach } from 'vitest'
 import { userEvent } from 'vitest/browser'
+import './setup.css'
 import '../src/styles/index.scss'
 
 // ── Re-exports ─────────────────────────────────────────────────────────────

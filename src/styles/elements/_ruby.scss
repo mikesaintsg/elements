@@ -4,6 +4,4 @@
 // Coupled: contains base text nodes, <rt> (annotation), <rp> (parenthesis fallback)
 // Quirk: shifts surrounding text to accommodate the annotation — account for increased line-height
 
-ruby {
-  display: ruby;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

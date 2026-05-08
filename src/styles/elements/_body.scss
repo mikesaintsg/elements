@@ -2,6 +2,4 @@
 // Browser defaults: display: block; margin: 8px
 // Quirk: the 8px margin is one of the most commonly reset values in any stylesheet
 
-body {
-  margin: 0;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

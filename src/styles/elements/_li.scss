@@ -4,6 +4,4 @@
 // In <ol>, the value attribute overrides the sequential counter from that item onward
 // List marker (bullet/number) is controlled with list-style-* on the parent or the <li> itself
 
-li {
-  // No base reset — marker styling is controlled on the parent (ol/ul/menu)
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

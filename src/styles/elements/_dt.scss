@@ -4,6 +4,4 @@
 // Multiple <dt> elements before a <dd> associate all those terms with the same description
 // Coupled: must appear inside <dl>; precedes <dd>
 
-dt {
-  font-weight: bold;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

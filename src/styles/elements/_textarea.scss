@@ -5,11 +5,4 @@
 // Quirk: resizable by the user by default (resize handle bottom-right) — control with the resize property
 // Coupled: associated with <label>; child of <form> or linked via form attribute
 
-textarea {
-  font: inherit; // reset the monospace default
-  color: inherit;
-  resize: vertical; // allow only vertical resizing (safer for layout)
-  border: none;
-  padding: 0;
-  margin: 0;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

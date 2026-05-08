@@ -4,7 +4,4 @@
 // Quirk: the disclosure triangle is a list-item marker — remove or restyle with:
 //   list-style: none  OR  summary::marker { content: '▶'; }
 
-summary {
-  display: list-item;
-  cursor: pointer;
-}
+// No framework rules — Tailwind v4 preflight + UA defaults handle this.

@@ -1,0 +1,31 @@
+// ============================================================================
+// State modifiers
+//
+// .disabled / .active / .loading — interaction-state classes. Element files
+// own their own state behavior (button uses &.disabled and &.active). These
+// declarations register the class names with the cascade so the modifier
+// parity test can find them; element-specific state behavior overrides via
+// higher specificity / token cascades.
+// ============================================================================
+
+@layer modifiers {
+	.disabled {
+		// Mirrors the [disabled] / :disabled UA semantics for elements that
+		// don't carry a native disabled attribute (e.g. an <a> intended to
+		// look disabled). Use aria-disabled="true" for accessibility.
+		cursor: not-allowed;
+		pointer-events: none;
+		opacity: 0.5;
+	}
+
+	.active {
+		// Marker class — element files (button) provide visual treatment
+		// via `&.active` rules. No declarations needed at the modifier level.
+	}
+
+	.loading {
+		// Marker class — element files / future composables provide spinners
+		// or loading indicators. The cursor hint is a sensible default.
+		cursor: progress;
+	}
+}

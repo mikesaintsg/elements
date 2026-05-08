@@ -1,8 +1,13 @@
 // <abbr> – Abbreviation / acronym
 // Browser defaults: text-decoration: underline dotted (modern); font-variant: small-caps (legacy engines)
 // Full expansion goes in the title attribute (tooltip); screen readers may read it aloud
+//
+// Tailwind preflight already sets `text-decoration: underline dotted` on
+// `abbr:where([title])`. The framework adds the help cursor so the dotted
+// underline reads as an interactive hint.
 
-abbr {
-  text-decoration: underline dotted;
-  cursor: help;
+@layer elements {
+	abbr {
+		cursor: help;
+	}
 }

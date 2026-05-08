@@ -9,13 +9,4 @@
 // Quirk: heading rank is always determined by the tag number, not nesting depth in sections
 // Use headings in order without skipping levels (important for screen-reader navigation)
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: bold;
-  line-height: 1.2;
-  margin-block: 0;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

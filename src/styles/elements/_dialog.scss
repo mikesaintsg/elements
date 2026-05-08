@@ -6,13 +6,4 @@
 // Quirk: style the backdrop with dialog::backdrop {}
 // <form method="dialog"> natively closes the dialog on submit
 
-dialog {
-  border: none;
-  border-radius: 0.25rem;
-  padding: 1.5rem;
-  max-width: min(90vw, 40rem);
-
-  &::backdrop {
-    background: rgb(0 0 0 / 50%);
-  }
-}
+// No framework rules — Tailwind v4 preflight + UA defaults handle this.

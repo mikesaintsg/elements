@@ -3,11 +3,14 @@
 //   min-inline-size: min-content
 // Coupled: first child must be <legend> for a labelled border notch
 // Quirk: display: flex or grid breaks <legend> positioning — wrap contents in a <div> instead
-// Quirk: min-inline-size: min-content prevents normal shrinking — reset to 0
+//
+// Tailwind preflight handles border, padding, margin via the universal
+// `* { margin: 0; padding: 0; border: 0 solid }` rule. Only `min-inline-size: 0`
+// remains: UA default `min-content` prevents fieldset from shrinking inside
+// flex/grid layouts; this resets it.
 
-fieldset {
-  border: none;
-  padding: 0;
-  margin: 0;
-  min-inline-size: 0;
+@layer elements {
+	fieldset {
+		min-inline-size: 0;
+	}
 }

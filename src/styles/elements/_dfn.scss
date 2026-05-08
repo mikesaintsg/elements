@@ -3,6 +3,4 @@
 // The title attribute overrides the term name for machine-readable purposes
 // Pair with a nearby <abbr> when the defined term is also an abbreviation
 
-dfn {
-  font-style: italic;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

@@ -4,6 +4,4 @@
 // Quirk: animating the open/close height transition requires JS or the newer interpolate-size CSS property
 // The open attribute controls visibility; the toggle event fires on state change
 
-details {
-  display: block;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

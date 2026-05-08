@@ -58,19 +58,29 @@ const onKeydown = (event: KeyboardEvent): void => {
 </script>
 
 <template>
-	<nav ref="navRef" aria-label="Documentation navigation" @keydown="onKeydown">
+	<nav
+		ref="navRef"
+		aria-label="Documentation navigation"
+		class="space-y-5"
+		@keydown="onKeydown"
+	>
 		<template v-for="g in groups" :key="g.name">
-			<h2>{{ g.name }}</h2>
-			<ul>
-				<li v-for="item in g.items" :key="item.id">
-					<a
-						:href="`#/${item.id}`"
-						:aria-current="route === item.id ? 'page' : undefined"
-						@click.prevent="onClick(item.id)"
-						>{{ item.title }}</a
-					>
-				</li>
-			</ul>
+			<div>
+				<h2 class="px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+					{{ g.name }}
+				</h2>
+				<ul class="mt-1.5 space-y-0.5">
+					<li v-for="item in g.items" :key="item.id">
+						<a
+							:href="`#/${item.id}`"
+							:aria-current="route === item.id ? 'page' : undefined"
+							class="block rounded-md px-2 py-1.5 text-sm text-slate-700 no-underline transition-colors hover:bg-slate-100 hover:text-slate-900 aria-[current=page]:bg-primary/10 aria-[current=page]:font-medium aria-[current=page]:text-primary"
+							@click.prevent="onClick(item.id)"
+							>{{ item.title }}</a
+						>
+					</li>
+				</ul>
+			</div>
 		</template>
 	</nav>
 </template>

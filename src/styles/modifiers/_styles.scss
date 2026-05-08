@@ -1,0 +1,36 @@
+// ============================================================================
+// Style modifiers (fill treatment)
+//
+// .ghost / .filled — read variant context tokens and route them into
+// --set-style-* context tokens. Element files prefer --set-style-* over raw
+// --set-variant-* so a style modifier always wins when applied.
+//
+// .ghost      transparent background, transparent border; variant color
+//             only for text — for tertiary / inline actions
+// .filled     explicit filled state — useful when overriding an inherited
+//             style modifier from an ancestor (the bare-variant default
+//             already renders filled, so applying .filled is mostly a
+//             readability hint)
+//
+// An `.outline` modifier was intentionally dropped because Tailwind ships
+// its own `.outline` utility (`outline-style: solid`) which would stack a
+// separate outline alongside our border. Consumers who want an outlined
+// button compose with Tailwind border utilities + variant: e.g.
+// `<button class="primary bg-transparent text-primary border border-primary">`.
+// ============================================================================
+
+@layer modifiers {
+	.ghost {
+		--set-style-color: var(--set-variant-background-color);
+		--set-style-background-color: transparent;
+		--set-style-border-color: transparent;
+		--set-style-border-width: 0;
+	}
+
+	.filled {
+		--set-style-color: var(--set-variant-color);
+		--set-style-background-color: var(--set-variant-background-color);
+		--set-style-border-color: var(--set-variant-border-color);
+		--set-style-border-width: 1px;
+	}
+}

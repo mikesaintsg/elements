@@ -2,257 +2,140 @@
 // button — Interactive control that triggers an action when activated.
 //
 // Architecture:
-//   1. Component tokens defined on `button` establish defaults for every state.
-//   2. Base styles consume those tokens so all properties are overridable.
-//   3. Variant modifier classes (.primary, .secondary, …) set two local vars:
-//        --variant-hsl        the semantic color's HSL triplet
-//        --variant-foreground the paired foreground color
-//      A shared filled-variant rule consumes those locals to compute all button
-//      token values — hover/active darken via color-mix(), focus uses alpha.
-//   4. .outline overrides the filled rules using higher selector specificity.
-//   5. Size modifiers (.small, .large) adjust the size sub-tokens only.
-//   6. Shape modifiers (.pill, .block) adjust geometry only.
+//   1. Element-scoped --set-button-* tokens declared on the button selector.
+//      Each one resolves via a fallback chain that prefers, in order:
+//        a. style-context tokens   (set by .ghost / .filled)
+//        b. variant-context tokens (set by .primary / .secondary / …)
+//        c. size-context tokens    (set by .small / .large)
+//        d. element-natural defaults (mailbox-aligned: 14px font, 6px/12px
+//           padding, 6px radius — every value maps to a Tailwind theme
+//           token so a consumer overriding the token cascades into the
+//           bare button automatically)
+//   2. Base styles consume the element-scoped tokens. Bare <button> renders
+//      compact and neutral; modifier classes change the cascade with zero
+//      per-element variant/size/style rules.
 //
 // Quirks:
-//   - UA does not inherit font on form controls — use `font: inherit`.
-//   - UA `color` on buttons is system-color, not inherited — must be explicit.
-//   - `type="submit"` is the default; always set type="button" for JS actions.
-//   - fieldset[disabled] propagates disabled state to all descendant buttons.
+//   - UA does not inherit font on form controls — set font-family: inherit.
+//   - UA `color` on buttons is system-color, not inherited — set explicitly.
+//   - fieldset[disabled] propagates disabled state to descendant buttons.
+//   - type="submit" is the UA default; always set type="button" for JS actions.
 // ============================================================================
 
-button {
-	// --------------------------------------------------------------------------
-	// Component tokens — defaults (modifiers override these)
-	// Using 'inherit' / literal keywords allows bare buttons to behave naturally.
-	// --------------------------------------------------------------------------
+@use '../mixins' as *;
 
-	// Color state — bare (no modifier): inherits from parent like a normal element
-	--button-color: inherit;
-	--button-background: transparent;
-	--button-border-color: transparent;
-	--button-border-width: 0;
+@layer elements {
+	button {
+		// ----------------------------------------------------------------------
+		// Element-scoped tokens — fallback chains let any modifier override.
+		// ----------------------------------------------------------------------
+		--set-button-color: var(--set-style-color, var(--set-variant-color, currentColor));
+		--set-button-background-color: var(
+			--set-style-background-color,
+			var(--set-variant-background-color, transparent)
+		);
+		--set-button-border-color: var(
+			--set-style-border-color,
+			var(--set-variant-border-color, transparent)
+		);
+		--set-button-border-width: var(--set-style-border-width, var(--set-variant-border-width, 0));
+		--set-button-border-radius: var(--set-size-border-radius, var(--radius-md));
+		--set-button-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
+		--set-button-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
+		--set-button-font-size: var(--set-size-font-size, var(--text-sm));
+		--set-button-font-weight: var(--font-weight-normal);
+		--set-button-line-height: var(--leading-normal);
+		--set-button-transition-duration: var(--set-transition-duration);
+		--set-button-cursor: pointer;
+		--set-button-disabled-opacity: 0.5;
+		--set-button-focus-box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+			color-mix(
+				in oklab,
+				var(--set-variant-background-color, var(--color-primary))
+					calc(var(--set-focus-box-shadow-opacity) * 100%),
+				transparent
+			);
 
-	// Color state — hover (falls back to base values when not set by a modifier)
-	--button-hover-color: var(--button-color);
-	--button-hover-background: var(--button-background);
-	--button-hover-border-color: var(--button-border-color);
+		// ----------------------------------------------------------------------
+		// Layout
+		// ----------------------------------------------------------------------
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: calc(var(--spacing) * 2);
+		padding-inline: var(--set-button-padding-inline);
+		padding-block: var(--set-button-padding-block);
+		vertical-align: middle;
 
-	// Color state — active
-	--button-active-color: var(--button-hover-color);
-	--button-active-background: var(--button-hover-background);
-	--button-active-border-color: var(--button-hover-border-color);
+		// ----------------------------------------------------------------------
+		// Border
+		// ----------------------------------------------------------------------
+		border-color: var(--set-button-border-color);
+		border-style: solid;
+		border-width: var(--set-button-border-width);
+		border-radius: var(--set-button-border-radius);
 
-	// Other states
-	--button-disabled-opacity: 0.65;
-	--button-focus-shadow: 0 0 0 var(--focus-width) hsl(var(--primary-hsl) / var(--focus-opacity));
-
-	// Sizing
-	--button-padding-x: 0.75em;
-	--button-padding-y: 0.375em;
-	--button-font-size: var(--font-size, 1rem);
-	--button-font-weight: var(--font-weight, 400);
-	--button-line-height: var(--line-height, 1.5);
-	--button-radius: var(--radius, 0.375rem);
-	--button-duration: var(--duration, 150ms);
-
-	// --------------------------------------------------------------------------
-	// Layout
-	// --------------------------------------------------------------------------
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.375em;
-	padding: var(--button-padding-y) var(--button-padding-x);
-	vertical-align: middle;
-
-	// --------------------------------------------------------------------------
-	// Border
-	// --------------------------------------------------------------------------
-	border-width: var(--button-border-width);
-	border-style: solid;
-	border-color: var(--button-border-color);
-	border-radius: var(--button-radius);
-
-	// --------------------------------------------------------------------------
-	// Typography — must be explicit; UA does not inherit font on form controls
-	// --------------------------------------------------------------------------
-	font-family: inherit;
-	font-size: var(--button-font-size);
-	font-weight: var(--button-font-weight);
-	line-height: var(--button-line-height);
-	text-align: center;
-	text-decoration: none;
-	white-space: nowrap;
-
-	// --------------------------------------------------------------------------
-	// Colors
-	// --------------------------------------------------------------------------
-	color: var(--button-color);
-	background-color: var(--button-background);
-
-	// --------------------------------------------------------------------------
-	// Interaction
-	// --------------------------------------------------------------------------
-	appearance: none;
-	cursor: pointer;
-	user-select: none;
-
-	// --------------------------------------------------------------------------
-	// Transition — each property named explicitly so reduced-motion zeroes all
-	// --------------------------------------------------------------------------
-	transition:
-		color var(--button-duration) var(--easing, ease-in-out),
-		background-color var(--button-duration) var(--easing, ease-in-out),
-		border-color var(--button-duration) var(--easing, ease-in-out),
-		box-shadow var(--button-duration) var(--easing, ease-in-out),
-		opacity var(--button-duration) var(--easing, ease-in-out);
-
-	@media (prefers-reduced-motion: reduce) {
-		transition: none;
-	}
-
-	// --------------------------------------------------------------------------
-	// States
-	// --------------------------------------------------------------------------
-	&:hover {
+		// ----------------------------------------------------------------------
+		// Typography — UA does not inherit font on form controls.
+		// ----------------------------------------------------------------------
+		font-family: inherit;
+		font-size: var(--set-button-font-size);
+		font-weight: var(--set-button-font-weight);
+		line-height: var(--set-button-line-height);
+		text-align: center;
 		text-decoration: none;
-		color: var(--button-hover-color);
-		background-color: var(--button-hover-background);
-		border-color: var(--button-hover-border-color);
-	}
+		white-space: nowrap;
 
-	&:active,
-	&.active {
-		color: var(--button-active-color);
-		background-color: var(--button-active-background);
-		border-color: var(--button-active-border-color);
-	}
+		// ----------------------------------------------------------------------
+		// Colors
+		// ----------------------------------------------------------------------
+		color: var(--set-button-color);
+		background-color: var(--set-button-background-color);
 
-	&:focus-visible {
-		outline: none;
-		box-shadow: var(--button-focus-shadow);
-	}
+		// ----------------------------------------------------------------------
+		// Interaction
+		// ----------------------------------------------------------------------
+		appearance: none;
+		cursor: var(--set-button-cursor);
+		user-select: none;
 
-	&:disabled,
-	&[disabled],
-	&.disabled {
-		cursor: not-allowed;
-		pointer-events: none;
-		opacity: var(--button-disabled-opacity);
-	}
+		// ----------------------------------------------------------------------
+		// Transition — every animated property listed so reduced-motion zeroes
+		// them all at once via the @include transition() guard below.
+		// ----------------------------------------------------------------------
+		@include transition(
+			(
+				color var(--set-button-transition-duration),
+				background-color var(--set-button-transition-duration),
+				border-color var(--set-button-transition-duration),
+				box-shadow var(--set-button-transition-duration),
+				opacity var(--set-button-transition-duration)
+			)
+		);
 
-	// --------------------------------------------------------------------------
-	// Size modifiers
-	// --------------------------------------------------------------------------
-	&.small {
-		--button-padding-x: 0.5em;
-		--button-padding-y: 0.25em;
-		--button-font-size: var(--font-size-sm, 0.875rem);
-		--button-radius: var(--radius-sm, 0.25rem);
-	}
-
-	&.large {
-		--button-padding-x: 1em;
-		--button-padding-y: 0.5em;
-		--button-font-size: var(--font-size-lg, 1.25rem);
-		--button-radius: var(--radius-lg, 0.5rem);
-	}
-
-	// --------------------------------------------------------------------------
-	// Shape modifiers
-	// --------------------------------------------------------------------------
-	&.pill {
-		--button-radius: var(--radius-pill, 50rem);
-	}
-
-	&.block {
-		display: flex;
-		width: 100%;
-	}
-
-	// --------------------------------------------------------------------------
-	// Variant locals — each color modifier sets two local vars consumed below.
-	// Locals are private to the button scope; never used outside this file.
-	// --------------------------------------------------------------------------
-	&.primary   { --variant-hsl: var(--primary-hsl);   --variant-fg: var(--primary-foreground);   }
-	&.secondary { --variant-hsl: var(--secondary-hsl); --variant-fg: var(--secondary-foreground); }
-	&.success   { --variant-hsl: var(--success-hsl);   --variant-fg: var(--success-foreground);   }
-	&.danger    { --variant-hsl: var(--danger-hsl);    --variant-fg: var(--danger-foreground);    }
-	&.warning   { --variant-hsl: var(--warning-hsl);   --variant-fg: var(--warning-foreground);   }
-	&.info      { --variant-hsl: var(--info-hsl);      --variant-fg: var(--info-foreground);      }
-	&.light     { --variant-hsl: var(--light-hsl);     --variant-fg: var(--light-foreground);     }
-	&.dark      { --variant-hsl: var(--dark-hsl);      --variant-fg: var(--dark-foreground);      }
-
-	// --------------------------------------------------------------------------
-	// Filled variant — shared rule consumes the locals set above.
-	// Hover/active darken via color-mix(); focus uses alpha on the same hue.
-	// Specificity matches the per-variant locals so source order is irrelevant —
-	// they set different custom properties and never conflict.
-	// --------------------------------------------------------------------------
-	&.primary,
-	&.secondary,
-	&.success,
-	&.danger,
-	&.warning,
-	&.info,
-	&.light,
-	&.dark {
-		--button-color: var(--variant-fg);
-		--button-background: hsl(var(--variant-hsl));
-		--button-border-color: hsl(var(--variant-hsl));
-		--button-border-width: var(--border-width, 1px);
-
-		--button-hover-color: var(--variant-fg);
-		--button-hover-background: color-mix(in srgb, hsl(var(--variant-hsl)) 85%, black);
-		--button-hover-border-color: color-mix(in srgb, hsl(var(--variant-hsl)) 85%, black);
-
-		--button-active-color: var(--variant-fg);
-		--button-active-background: color-mix(in srgb, hsl(var(--variant-hsl)) 75%, black);
-		--button-active-border-color: color-mix(in srgb, hsl(var(--variant-hsl)) 75%, black);
-
-		--button-focus-shadow: 0 0 0 var(--focus-width) hsl(var(--variant-hsl) / var(--focus-opacity));
-	}
-
-	// --------------------------------------------------------------------------
-	// Outline variant — compound selector (.outline.{color}) wins specificity
-	// over the filled rule above, overriding background and text color only.
-	// The variant locals (--variant-hsl, --variant-fg) are inherited from the
-	// lower-specificity per-variant rules — no duplication needed here.
-	// --------------------------------------------------------------------------
-	&.outline {
-		&.primary,
-		&.secondary,
-		&.success,
-		&.danger,
-		&.warning,
-		&.info,
-		&.light,
-		&.dark {
-			--button-color: hsl(var(--variant-hsl));
-			--button-background: transparent;
-			--button-border-color: hsl(var(--variant-hsl));
-			--button-border-width: var(--border-width, 1px);
-
-			--button-hover-color: var(--variant-fg);
-			--button-hover-background: hsl(var(--variant-hsl));
-			--button-hover-border-color: hsl(var(--variant-hsl));
-
-			--button-active-color: var(--variant-fg);
-			--button-active-background: color-mix(in srgb, hsl(var(--variant-hsl)) 85%, black);
-			--button-active-border-color: color-mix(in srgb, hsl(var(--variant-hsl)) 85%, black);
+		// ----------------------------------------------------------------------
+		// States
+		// ----------------------------------------------------------------------
+		&:hover {
+			background-color: color-mix(in srgb, var(--set-button-background-color) 88%, black);
 		}
-	}
 
-	// --------------------------------------------------------------------------
-	// Link variant — transparent, underlined, inherits link color
-	// --------------------------------------------------------------------------
-	&.link {
-		--button-color: var(--link-color);
-		--button-background: transparent;
-		--button-border-color: transparent;
-		--button-hover-color: var(--link-hover-color);
-		--button-hover-background: transparent;
-		--button-hover-border-color: transparent;
-		text-decoration: underline;
+		&:active,
+		&.active {
+			background-color: color-mix(in srgb, var(--set-button-background-color) 78%, black);
+		}
+
+		&:focus-visible {
+			outline: none;
+			box-shadow: var(--set-button-focus-box-shadow);
+		}
+
+		&:disabled,
+		&[disabled],
+		&.disabled {
+			cursor: not-allowed;
+			pointer-events: none;
+			opacity: var(--set-button-disabled-opacity);
+		}
 	}
 }

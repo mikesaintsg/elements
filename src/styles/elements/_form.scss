@@ -3,6 +3,4 @@
 // action (URL), method (get/post), enctype (multipart/form-data for file uploads)
 // Controls can live outside <form> via the form="id" attribute on the control
 
-form {
-  // No visual reset needed — styles are on descendant controls
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

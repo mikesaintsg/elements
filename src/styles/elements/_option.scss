@@ -4,6 +4,4 @@
 // selected attribute marks the default selection
 // Coupled: child of <select>, <optgroup>, or <datalist>
 
-option {
-  font: inherit;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

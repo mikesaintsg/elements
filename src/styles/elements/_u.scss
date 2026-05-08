@@ -4,6 +4,4 @@
 // Quirk: looks identical to a hyperlink — use sparingly and visually distinguish from <a>
 //   e.g. text-decoration-color: red or a different text-decoration-style
 
-u {
-  text-decoration: underline;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

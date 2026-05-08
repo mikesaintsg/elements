@@ -4,6 +4,4 @@
 // Quirk: <section> does not reset heading rank — <h1> inside a nested <section> is still h1
 // If the content has no heading and is just a layout region, prefer <div>
 
-section {
-  display: block;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

@@ -2,16 +2,18 @@
 // Browser defaults: color: -webkit-link (blue); text-decoration: underline; cursor: pointer
 // :visited defaults to purple
 // Use rel="noopener noreferrer" with target="_blank" to prevent tab-napping
+//
+// Tailwind preflight already sets `color: inherit` and `text-decoration: inherit`
+// on bare anchors. The framework re-asserts the underline so links remain a
+// visible affordance by default; consumers can drop it with `no-underline`.
+// `:visited` color: inherit is needed because the UA default is purple.
 
-a {
-  color: inherit;
-  text-decoration: underline;
+@layer elements {
+	a {
+		text-decoration: underline;
 
-  &:visited {
-    color: inherit;
-  }
-
-  &:hover {
-    text-decoration: none;
-  }
+		&:visited {
+			color: inherit;
+		}
+	}
 }

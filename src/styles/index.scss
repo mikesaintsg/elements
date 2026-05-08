@@ -1,5 +1,19 @@
-// Elements - design tokens first, then one partial per HTML element, alphabetical order.
+// ============================================================================
+// Framework entrypoint.
+//
+// `_tokens.scss` declares the cascade layer order (reset < elements <
+// components < surfaces < modifiers < utilities) at the top of its emitted
+// CSS so the ordering is established before any layered rules land.
+// `_mixins.scss` emits no top-level CSS.
+// ============================================================================
+
 @use 'tokens';
+@use 'theme';
+@use 'mixins';
+
+// Element partials — alphabetical. Each substantive partial wraps its rules
+// in `@layer elements { ... }`; placeholder partials are unlayered for now
+// and will be folded into the layer as they gain real styling.
 @use 'elements/a';
 @use 'elements/abbr';
 @use 'elements/address';
@@ -93,3 +107,7 @@
 @use 'elements/ul';
 @use 'elements/var';
 @use 'elements/video';
+
+@use 'modifiers';
+@use 'components';
+@use 'surfaces';

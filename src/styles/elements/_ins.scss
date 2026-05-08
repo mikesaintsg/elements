@@ -2,6 +2,4 @@
 // Browser defaults: text-decoration: underline
 // cite attribute: URL explaining the reason; datetime attribute: when it was inserted
 
-ins {
-  text-decoration: underline;
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.

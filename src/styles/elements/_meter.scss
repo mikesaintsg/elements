@@ -5,6 +5,4 @@
 // Quirk: styling is severely limited — only ::-webkit-meter-* vendor pseudo-elements in Blink/WebKit
 //   — for full custom styling use <div role="meter" aria-valuenow aria-valuemin aria-valuemax>
 
-meter {
-  // Minimal styling surface without appearance: none + vendor pseudo-elements
-}
+// No framework rules — Tailwind v4 preflight handles UA reset.
