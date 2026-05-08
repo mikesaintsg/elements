@@ -16,11 +16,11 @@
 // files reachable from its CSS entry, so registering them in our own SCSS
 // would leave the @theme as a literal browser-ignored at-rule. The
 // canonical pattern lives in tests/setup.css and
-// app/browser/styles/main.scss.
+// app/browser/styles/main.css.
 // ============================================================================
 
 // Layer order is declared in the consumer's entry CSS (tests/setup.css or
-// app/browser/styles/main.scss) so it precedes `@import 'tailwindcss'` —
+// app/browser/styles/main.css) so it precedes `@import 'tailwindcss'` —
 // Tailwind's own `@layer theme, base, components, utilities` declaration then
 // merges as a no-op against the wider order:
 //

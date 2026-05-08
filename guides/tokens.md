@@ -240,4 +240,4 @@ Consumers retune via `--set-size-*` directly. If Tailwind ever ships an `@theme 
 - [tokens.test.ts](../tests/src/browser/tokens.test.ts) — bidirectional parity contract (subsumes the old `tokens.parity.test.ts`)
 - [modifiers.md](modifiers.md) — which classes set which context tokens
 - [\_theme.scss](../src/styles/_theme.scss) — framework default theme (`@theme` registration of the seven semantic variants)
-- [setup.css](../tests/setup.css) and [main.scss](../app/browser/styles/main.scss) — canonical Tailwind import + framework consumption pattern
+- [setup.css](../tests/setup.css) and [main.css](../app/browser/styles/main.css) — canonical Tailwind import + framework consumption pattern

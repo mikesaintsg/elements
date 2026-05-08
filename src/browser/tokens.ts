@@ -142,6 +142,9 @@ export const tokens = {
 	select: {
 		color: '--set-select-color',
 		backgroundColor: '--set-select-background-color',
+		// Chevron asset — defaults to an inline SVG data URL. Override to swap
+		// the chevron (color, shape, asset) or set to `none` to remove it.
+		backgroundImage: '--set-select-background-image',
 		borderColor: '--set-select-border-color',
 		borderWidth: '--set-select-border-width',
 		borderRadius: '--set-select-border-radius',

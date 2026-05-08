@@ -5,12 +5,24 @@
 //   1. Element-scoped --set-dialog-* tokens. The fallback chain mirrors
 //      <button> for the colored chrome and adds dialog-specific shadow,
 //      max-inline-size, and gap tokens.
-//   2. UA defaults position the dialog absolutely inside its containing
-//      block; we keep that behavior. .showModal() promotes the dialog to
-//      the top-layer and triggers ::backdrop — see surfaces/_backdrop.scss.
-//   3. The bare <dialog open> renders centered with margin: auto plus our
-//      padding/border-radius/shadow. Variant + size + style modifiers route
-//      through the same context tokens as buttons and inputs.
+//   2. Modal dialogs (`.showModal()` or `:modal`) get explicit viewport
+//      centering. The UA's own `position: absolute` puts the dialog at the
+//      nearest positioned ancestor instead — fine for modal because the
+//      top-layer reparents it, but we re-state the centering as `position:
+//      fixed; inset-block-start: 50%; inset-inline-start: 50%; transform:
+//      translate(-50%, -50%)` so the modal centers on the viewport
+//      regardless of containing block. ::backdrop styling lives in
+//      surfaces/_backdrop.scss.
+//   3. Non-modal dialogs (`.show()` — no top-layer promotion) flow inline
+//      in document order. The UA default `position: absolute` would send
+//      them to the top of the nearest positioned ancestor, which usually
+//      means somewhere off-screen above the trigger. We override with
+//      `position: static; margin: 0` so the dialog renders at its source
+//      position. Future surfaces work will introduce an opt-in placement
+//      vocabulary (akin to popover anchoring) — for now, "where you put
+//      it" is the placement contract for non-modal dialogs.
+//   4. Variant + size + style modifiers route through the same context
+//      tokens as buttons and inputs.
 //
 // Quirks:
 //   - <dialog> without `open` is hidden (display: none) by UA. Setting any
@@ -68,5 +80,31 @@
 				border-color var(--set-dialog-transition-duration)
 			)
 		);
+
+		// ----------------------------------------------------------------------
+		// Modal — center on the viewport. The top-layer rendering already takes
+		// the dialog out of normal flow; we just need to anchor it to the
+		// viewport center regardless of containing-block geometry.
+		// ----------------------------------------------------------------------
+		&:modal {
+			position: fixed;
+			inset-block-start: 50%;
+			inset-inline-start: 50%;
+			inset-block-end: auto;
+			inset-inline-end: auto;
+			margin: 0;
+			translate: -50% -50%;
+		}
+
+		// ----------------------------------------------------------------------
+		// Non-modal — flow inline at the dialog's source position. The UA
+		// default `position: absolute` would send it to the top-of-page;
+		// `static` puts it back into document order so it renders next to the
+		// trigger button.
+		// ----------------------------------------------------------------------
+		&[open]:not(:modal) {
+			position: static;
+			margin: 0;
+		}
 	}
 }

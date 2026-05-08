@@ -2,15 +2,28 @@
 // select — Drop-down or list-box selector.
 //
 // Architecture mirrors <input> + <button>: full --set-select-* token chain.
-// `appearance: none` strips the OS chevron; we paint a CSS-mask chevron
-// driven by `--set-select-color` so it tracks variant / hover transitions.
+// `appearance: none` strips the OS chevron; we paint a replacement via the
+// `--set-select-background-image` token. The default value is an inline SVG
+// data URL so the chevron renders on every browser without an asset request,
+// with the stroke hardcoded to slate-500 — embedded SVGs in CSS background-
+// images do NOT resolve `currentColor` against the host element across all
+// browsers, so a hardcoded neutral is the only reliable default. Consumers
+// who want a different chevron (color, shape, asset) override the token:
+//
+//   :root { --set-select-background-image: url('/my-chevron.svg'); }
+//   .my-select { --set-select-background-image: none; }
+//
 // `multiple` and `size` set list-box layout; the chevron is hidden in that
-// shape because there's no single-row dropdown to indicate.
+// shape because there's no single-row dropdown to indicate — done by
+// re-setting `--set-select-background-image: none` on those selectors so
+// the same token controls both the default and the suppressed state.
 //
 // Quirks:
 //   - The dropdown popup itself is OS-rendered and cannot be styled. The
 //     planned `appearance: base-select` (Chromium 134+) opt-in is the path
-//     forward — see surfaces.md §::picker(select).
+//     forward — see surfaces.md §::picker(select). When that ships
+//     framework-wide, `--set-select-background-image` collapses into a
+//     real chevron pseudo-element that can track variant color.
 //   - UA does not inherit font on form controls.
 //   - Right-side padding leaves room for the chevron.
 // ============================================================================
@@ -36,6 +49,10 @@
 		--set-select-cursor: pointer;
 		--set-select-disabled-opacity: 0.5;
 		--set-select-chevron-size: 0.75rem;
+		// Default chevron — inline SVG data URL with slate-500 stroke. Override
+		// `--set-select-background-image` (globally on :root, on a parent
+		// selector, or per-element via `style="..."`) to swap the asset.
+		--set-select-background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
 		--set-select-focus-border-color: var(--set-variant-background-color, var(--color-primary));
 		--set-select-focus-box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
 			color-mix(
@@ -67,12 +84,13 @@
 		appearance: none;
 		cursor: var(--set-select-cursor);
 
-		// Chevron painted as a CSS mask so it picks up --set-select-color.
-		background-image: linear-gradient(currentColor, currentColor);
+		// Chevron — token-driven so consumers can swap the asset. See file
+		// header for the customization pattern + why the default's stroke
+		// color is hardcoded.
+		background-image: var(--set-select-background-image);
 		background-repeat: no-repeat;
 		background-position: calc(100% - var(--set-select-padding-inline)) 50%;
 		background-size: var(--set-select-chevron-size) var(--set-select-chevron-size);
-		mask-image: none;
 
 		@include transition(
 			(
@@ -83,9 +101,12 @@
 			)
 		);
 
+		// List-box mode — no single-row dropdown, so suppress the chevron and
+		// recover the right-side padding. Driving this through the same token
+		// keeps the chevron contract single-sourced.
 		&[multiple],
 		&[size]:not([size='1']) {
-			background-image: none;
+			--set-select-background-image: none;
 			padding-inline-end: var(--set-select-padding-inline);
 			cursor: default;
 		}

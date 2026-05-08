@@ -41,6 +41,30 @@ describe('select — multiple/list-box mode', () => {
 	})
 })
 
+describe('select — chevron is token-driven', () => {
+	it('exposes --set-select-background-image with the default chevron URL', () => {
+		const el = render('select', '')
+		const tokenValue = token(el, '--set-select-background-image').trim()
+		expect(tokenValue).toMatch(/^url\(/)
+		expect(tokenValue).toContain("data:image/svg+xml")
+	})
+
+	it('overriding --set-select-background-image swaps the chevron asset', () => {
+		const el = render('select', '')
+		el.style.setProperty(
+			'--set-select-background-image',
+			"url('https://example.com/my-chevron.svg')",
+		)
+		expect(style(el, 'background-image')).toContain('example.com/my-chevron.svg')
+	})
+
+	it('setting the token to none removes the chevron', () => {
+		const el = render('select', '')
+		el.style.setProperty('--set-select-background-image', 'none')
+		expect(style(el, 'background-image')).toBe('none')
+	})
+})
+
 describe('select — variant cascade', () => {
 	it('.primary moves the border to the primary color', () => {
 		const el = render('select', 'primary')

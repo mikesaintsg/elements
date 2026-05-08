@@ -1,5 +1,11 @@
 import { createApp } from 'vue'
-import './styles/main.scss'
+// Plain-CSS entry: layer order, Tailwind import, @source directives. Stays
+// CSS so Sass never sees Tailwind's `@import 'tailwindcss'` (which would
+// trigger Dart-Sass-3.0 deprecation warnings on every reload).
+import './styles/main.css'
+// Framework SCSS bundle — Vite's Sass plugin compiles it; the result is
+// post-processed by `@tailwindcss/postcss` along with main.css.
+import '../../src/styles/index.scss'
 import App from './App.vue'
 
 createApp(App).mount('#app')

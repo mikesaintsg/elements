@@ -113,7 +113,7 @@ src/styles/
 
 ### Cascade layer order
 
-Declared in [tests/setup.css](../tests/setup.css) and [app/browser/styles/main.scss](../app/browser/styles/main.scss) **before** `@import "tailwindcss"` so Tailwind's own `@layer theme, base, components, utilities` declaration merges as a no-op against the wider order:
+Declared in [tests/setup.css](../tests/setup.css) and [app/browser/styles/main.css](../app/browser/styles/main.css) **before** `@import "tailwindcss"` so Tailwind's own `@layer theme, base, components, utilities` declaration merges as a no-op against the wider order:
 
 ```
 theme < base < elements < components < surfaces < modifiers < utilities
@@ -206,7 +206,7 @@ When you reach for a new partial — element, component, surface, or modifier �
 
 ### Local development
 
-`npm run dev` boots the showcase app via `configs/app/vite.browser.config.ts`. The app entry [app/browser/styles/main.scss](../app/browser/styles/main.scss) declares the layer order, imports Tailwind, sets `@source` paths, and `@import`s the framework SCSS. The framework's own [\_theme.scss](../src/styles/_theme.scss) registers the seven semantic variants via `@theme`; consumers can add a sibling `@theme` block to override. Tailwind v4 ships through `@tailwindcss/postcss` (configured under `css.postcss.plugins` in `vite.config.ts`) so it runs _after_ Vite's Sass step — the plugin sees the Sass-compiled output and expands every `@theme` block into `:root` custom properties. Using `@tailwindcss/vite` instead would skip Sass-compiled files entirely, leaving `@theme default {…}` as a literal at-rule the browser ignores.
+`npm run dev` boots the showcase app via `configs/app/vite.browser.config.ts`. The app entry [app/browser/styles/main.css](../app/browser/styles/main.css) declares the layer order, imports Tailwind, sets `@source` paths, and `@import`s the framework SCSS. The framework's own [\_theme.scss](../src/styles/_theme.scss) registers the seven semantic variants via `@theme`; consumers can add a sibling `@theme` block to override. Tailwind v4 ships through `@tailwindcss/postcss` (configured under `css.postcss.plugins` in `vite.config.ts`) so it runs _after_ Vite's Sass step — the plugin sees the Sass-compiled output and expands every `@theme` block into `:root` custom properties. Using `@tailwindcss/vite` instead would skip Sass-compiled files entirely, leaving `@theme default {…}` as a literal at-rule the browser ignores.
 
 ### Tests
 
@@ -247,7 +247,7 @@ A downstream consumer brings their own Tailwind v4 setup, declares the layer ord
 
 Tailwind's plugin processes the chain in one pass: its own theme + ours + the framework's `:root` declarations all expand into `:root` CSS variables; modifier classes and element rules cascade through their layers.
 
-The showcase app's [app/browser/styles/main.scss](../app/browser/styles/main.scss) is the canonical reference for the import sequence — copy it.
+The showcase app's [app/browser/styles/main.css](../app/browser/styles/main.css) is the canonical reference for the import sequence — copy it.
 
 ---
 

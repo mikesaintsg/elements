@@ -323,7 +323,7 @@ This is a CSS framework over semantic HTML elements layered on Tailwind v4. The 
 | `src/styles/modifiers/`  | One partial per modifier dimension: `_variants.scss`, `_sizes.scss`, `_styles.scss`, `_states.scss`. Each declares `.{name}` rules that set `--set-{dimension}-*` tokens.                             |
 | `src/styles/components/` | Composed widgets built from elements (future).                                                                                                                                                        |
 | `src/styles/surfaces/`   | Pseudo-element / attribute / at-rule surfaces — `[popover]`, `::backdrop`, `::placeholder`, view transitions, scrollbars, anchor positioning (future).                                                |
-| `app/browser/`           | Vue 3 showcase app. `app/browser/styles/main.scss` is the integration point: layer-order declaration → `@import 'tailwindcss'` → framework SCSS import.                                               |
+| `app/browser/`           | Vue 3 showcase app. `app/browser/styles/main.css` is the integration point: layer-order declaration → `@import 'tailwindcss'` → framework SCSS import.                                               |
 | `tests/`                 | Test suite. `tests/setup.css` (Tailwind import + `@source` paths), `tests/setupBrowser.ts`, `tests/setupStyles.ts` (CSS-aware helpers), and `tests/src/{browser,styles}/` mirroring source.           |
 | `guides/`                | Long-form architecture documentation: `plan.md`, `styles.md`, `tokens.md`, `modifiers.md`, `mixins.md`, `elements.md`, `components.md`, `surfaces.md`. Update these whenever the architecture shifts. |
 
@@ -723,7 +723,7 @@ Naming rules: spelled out, never abbreviated (`information` not `info`, `large` 
 
 ### 21.5 Cascade layer order (load-bearing)
 
-Layer order is declared once in the consumer's entry CSS — `tests/setup.css` and `app/browser/styles/main.scss` — **before** `@import 'tailwindcss'`:
+Layer order is declared once in the consumer's entry CSS — `tests/setup.css` and `app/browser/styles/main.css` — **before** `@import 'tailwindcss'`:
 
 ```css
 @layer theme, base, elements, components, surfaces, modifiers, utilities;
@@ -831,7 +831,7 @@ Mirrors §20 in spirit:
 
 ### 21.12 Build pipeline note
 
-Tailwind v4 ships two integrations: the Vite plugin (`@tailwindcss/vite`) and the PostCSS plugin (`@tailwindcss/postcss`). The Vite plugin only processes `.css` files reachable from the entry. We use the **PostCSS plugin** so Tailwind runs on the post-Sass output and sees every `var(--text-sm)` reference our modifiers emit. Switching back to the Vite plugin will tree-shake those references away. `@source` directives in the entry CSS (`tests/setup.css`, `app/browser/styles/main.scss`) tell Tailwind which files to scan for utility class names.
+Tailwind v4 ships two integrations: the Vite plugin (`@tailwindcss/vite`) and the PostCSS plugin (`@tailwindcss/postcss`). The Vite plugin only processes `.css` files reachable from the entry. We use the **PostCSS plugin** so Tailwind runs on the post-Sass output and sees every `var(--text-sm)` reference our modifiers emit. Switching back to the Vite plugin will tree-shake those references away. `@source` directives in the entry CSS (`tests/setup.css`, `app/browser/styles/main.css`) tell Tailwind which files to scan for utility class names.
 
 ---
 
