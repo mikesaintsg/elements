@@ -32,7 +32,7 @@
 		--set-details-background-color: var(--set-style-background-color, transparent);
 		--set-details-border-color: var(
 			--set-style-border-color,
-			var(--set-variant-background-color, color-mix(in srgb, currentColor 15%, transparent))
+			var(--set-variant-background-color, var(--color-border))
 		);
 		--set-details-border-width: var(--set-style-border-width, 1px);
 		--set-details-border-radius: var(--set-size-border-radius, 0.5rem);

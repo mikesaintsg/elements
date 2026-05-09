@@ -42,10 +42,7 @@
 		// ----------------------------------------------------------------------
 		--set-input-color: var(--set-style-color, currentColor);
 		--set-input-background-color: var(--set-style-background-color, Canvas);
-		--set-input-border-color: var(
-			--set-variant-background-color,
-			color-mix(in srgb, currentColor 20%, transparent)
-		);
+		--set-input-border-color: var(--set-variant-background-color, var(--color-border-strong));
 		--set-input-border-width: 1px;
 		--set-input-border-radius: var(--set-size-border-radius, var(--radius-md));
 		--set-input-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));

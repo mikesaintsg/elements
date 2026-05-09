@@ -16,8 +16,8 @@
 @layer elements {
 	pre {
 		--set-pre-color: currentColor;
-		--set-pre-background-color: color-mix(in srgb, currentColor 6%, transparent);
-		--set-pre-border-color: color-mix(in srgb, currentColor 12%, transparent);
+		--set-pre-background-color: var(--color-surface-raised);
+		--set-pre-border-color: var(--color-border);
 		--set-pre-padding-inline: 1rem;
 		--set-pre-padding-block: 0.875rem;
 		--set-pre-border-radius: 0.5rem;

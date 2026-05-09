@@ -52,7 +52,7 @@
 		--set-article-background-color: var(--set-style-background-color, var(--color-surface, Canvas));
 		--set-article-border-color: var(
 			--set-style-border-color,
-			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))
+			var(--set-variant-background-color, var(--color-border))
 		);
 		--set-article-border-width: 1px;
 		--set-article-border-radius: var(--set-size-border-radius, var(--radius-lg));
@@ -61,9 +61,10 @@
 		--set-article-gap: calc(var(--spacing) * 4);
 		--set-article-font-size: var(--set-size-font-size, var(--text-base));
 		--set-article-line-height: var(--leading-normal);
-		--set-article-box-shadow:
-			0 1px 2px 0 color-mix(in srgb, currentColor 6%, transparent),
-			0 2px 4px -1px color-mix(in srgb, currentColor 5%, transparent);
+		// Shadows always paint darker than the surface — use a fixed black
+		// alpha rather than `currentColor` so dark mode keeps depth (in dark
+		// mode `currentColor` is light text, which would invert the shadow).
+		--set-article-box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.08), 0 2px 4px -1px rgb(0 0 0 / 0.06);
 		--set-article-transition-duration: var(--set-transition-duration);
 		--set-article-disabled-opacity: 0.5;
 
@@ -176,7 +177,7 @@
 		margin-inline: calc(var(--set-article-padding-inline) * -1);
 		padding-inline: var(--set-article-padding-inline);
 		padding-block: calc(var(--set-article-padding-block) * 0.625);
-		background-color: color-mix(in srgb, currentColor 4%, transparent);
+		background-color: var(--color-surface-raised);
 	}
 
 	article > header:first-child {

@@ -28,7 +28,7 @@
 	progress {
 		--set-progress-block-size: 0.625rem;
 		--set-progress-border-radius: 9999px;
-		--set-progress-track-color: color-mix(in srgb, currentColor 12%, transparent);
+		--set-progress-track-color: var(--color-border);
 		--set-progress-fill-color: var(--set-variant-background-color, currentColor);
 		--set-progress-transition-duration: var(--set-transition-duration);
 

@@ -28,11 +28,11 @@
 
 @layer components {
 	footer {
-		--set-footer-color: var(--set-style-color, color-mix(in srgb, currentColor 70%, transparent));
+		--set-footer-color: var(--set-style-color, var(--color-text-muted));
 		--set-footer-background-color: var(--set-style-background-color, var(--color-surface, Canvas));
 		--set-footer-border-color: var(
 			--set-style-border-color,
-			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))
+			var(--set-variant-background-color, var(--color-border))
 		);
 		--set-footer-border-width: 1px;
 		--set-footer-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));

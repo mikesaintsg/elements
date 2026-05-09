@@ -9,7 +9,7 @@
 @layer elements {
 	samp {
 		--set-samp-color: currentColor;
-		--set-samp-background-color: color-mix(in srgb, currentColor 8%, transparent);
+		--set-samp-background-color: var(--color-surface-raised);
 		--set-samp-padding-inline: 0.25em;
 		--set-samp-padding-block: 0.125em;
 		--set-samp-border-radius: 0.25em;

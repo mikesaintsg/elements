@@ -39,10 +39,7 @@
 	dialog {
 		--set-dialog-color: var(--set-style-color, CanvasText);
 		--set-dialog-background-color: var(--set-style-background-color, Canvas);
-		--set-dialog-border-color: var(
-			--set-variant-background-color,
-			color-mix(in srgb, currentColor 15%, transparent)
-		);
+		--set-dialog-border-color: var(--set-variant-background-color, var(--color-border));
 		--set-dialog-border-width: 1px;
 		--set-dialog-border-radius: var(--set-size-border-radius, var(--radius-lg));
 		--set-dialog-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 6));

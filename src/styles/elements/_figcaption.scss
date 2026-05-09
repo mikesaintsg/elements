@@ -7,7 +7,7 @@
 
 @layer elements {
 	figcaption {
-		--set-figcaption-color: color-mix(in srgb, currentColor 65%, transparent);
+		--set-figcaption-color: var(--color-text-muted);
 		--set-figcaption-font-size: 0.875em;
 		--set-figcaption-line-height: 1.4;
 

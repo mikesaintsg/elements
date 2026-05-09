@@ -15,7 +15,7 @@
 @layer elements {
 	code {
 		--set-code-color: currentColor;
-		--set-code-background-color: color-mix(in srgb, currentColor 8%, transparent);
+		--set-code-background-color: var(--color-surface-raised);
 		--set-code-padding-inline: 0.25em;
 		--set-code-padding-block: 0.125em;
 		--set-code-border-radius: 0.25em;

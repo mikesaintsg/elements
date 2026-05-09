@@ -10,8 +10,8 @@
 @layer elements {
 	kbd {
 		--set-kbd-color: currentColor;
-		--set-kbd-background-color: color-mix(in srgb, currentColor 6%, transparent);
-		--set-kbd-border-color: color-mix(in srgb, currentColor 20%, transparent);
+		--set-kbd-background-color: var(--color-surface-raised);
+		--set-kbd-border-color: var(--color-border-strong);
 		--set-kbd-padding-inline: 0.375em;
 		--set-kbd-padding-block: 0.0625em;
 		--set-kbd-border-radius: 0.25em;

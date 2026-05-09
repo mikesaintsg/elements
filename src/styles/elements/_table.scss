@@ -30,10 +30,7 @@
 	table {
 		--set-table-color: var(--set-style-color, currentColor);
 		--set-table-background-color: var(--set-style-background-color, transparent);
-		--set-table-border-color: var(
-			--set-variant-background-color,
-			color-mix(in srgb, currentColor 15%, transparent)
-		);
+		--set-table-border-color: var(--set-variant-background-color, var(--color-border));
 		--set-table-border-width: 1px;
 		--set-table-cell-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
 		--set-table-cell-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 2));

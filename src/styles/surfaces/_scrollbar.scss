@@ -22,7 +22,7 @@
 
 @layer surfaces {
 	:root {
-		--set-scrollbar-thumb-color: color-mix(in srgb, currentColor 25%, transparent);
+		--set-scrollbar-thumb-color: var(--color-border-strong);
 		--set-scrollbar-track-color: transparent;
 		--set-scrollbar-width: thin;
 		--set-scrollbar-gutter: stable;

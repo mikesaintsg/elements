@@ -45,7 +45,7 @@
 		--set-nav-background-color: var(--set-style-background-color, var(--color-surface, Canvas));
 		--set-nav-border-color: var(
 			--set-style-border-color,
-			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))
+			var(--set-variant-background-color, var(--color-border))
 		);
 		--set-nav-border-width: 1px;
 		--set-nav-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));
@@ -218,7 +218,7 @@
 	:root {
 		--set-tablist-color: currentColor;
 		--set-tablist-background-color: transparent;
-		--set-tablist-border-color: color-mix(in srgb, currentColor 12%, transparent);
+		--set-tablist-border-color: var(--color-border);
 		--set-tablist-border-width: 1px;
 		--set-tablist-gap: calc(var(--spacing) * 1);
 		--set-tablist-padding-inline: 0;

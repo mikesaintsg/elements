@@ -34,7 +34,7 @@
 		--set-header-background-color: var(--set-style-background-color, var(--color-surface, Canvas));
 		--set-header-border-color: var(
 			--set-style-border-color,
-			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))
+			var(--set-variant-background-color, var(--color-border))
 		);
 		--set-header-border-width: 1px;
 		--set-header-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));

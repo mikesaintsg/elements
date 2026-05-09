@@ -54,7 +54,7 @@
 	:root {
 		--set-toast-color: currentColor;
 		--set-toast-background-color: var(--color-white, Canvas);
-		--set-toast-border-color: color-mix(in srgb, currentColor 15%, transparent);
+		--set-toast-border-color: var(--color-border);
 		--set-toast-border-width: 1px;
 		--set-toast-border-radius: 0.5rem;
 		--set-toast-padding-inline: calc(var(--spacing) * 4);

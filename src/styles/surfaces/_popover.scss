@@ -28,7 +28,7 @@
 	:root {
 		--set-popover-color: currentColor;
 		--set-popover-background-color: var(--color-white, #fff);
-		--set-popover-border-color: color-mix(in srgb, currentColor 15%, transparent);
+		--set-popover-border-color: var(--color-border);
 		--set-popover-border-width: 1px;
 		--set-popover-border-radius: 0.5rem;
 		--set-popover-padding-inline: 1rem;

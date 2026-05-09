@@ -26,7 +26,7 @@
 	meter {
 		--set-meter-block-size: 0.625rem;
 		--set-meter-border-radius: 9999px;
-		--set-meter-track-color: color-mix(in srgb, currentColor 12%, transparent);
+		--set-meter-track-color: var(--color-border);
 		--set-meter-optimum-color: var(--color-success, #16a34a);
 		--set-meter-suboptimum-color: var(--color-warning, #d97706);
 		--set-meter-even-less-good-color: var(--color-danger, #dc2626);
