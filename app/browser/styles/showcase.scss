@@ -1,0 +1,321 @@
+// ============================================================================
+//  Showcase chrome — the layout primitives App.vue needs that go beyond what
+//  the framework's bare-element styles already provide.
+//
+//  Three concerns:
+//    1. Mobile drawer behaviour for the sidebar `<nav>`. The framework's
+//       `_nav.scss` handles desktop chrome (rail width, padding, scroll); the
+//       drawer transform + backdrop are showcase-only and live here.
+//    2. The mobile page banner `<header>` (hidden on desktop because the
+//       sidebar carries the brand on wide viewports).
+//    3. Page content scaffolding — content max-width, gutter, vertical
+//       rhythm — that the framework's `_main.scss` deliberately doesn't
+//       prescribe.
+//
+//  Everything else (colours, typography scale, focus rings, border radii,
+//  spacing scale) flows through the framework's tokens. Authors who consume
+//  the framework directly never see this file.
+// ============================================================================
+
+@use '../../../src/styles/mixins' as *;
+
+// ── Sidebar drawer (mobile) ────────────────────────────────────────────────
+
+$showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
+
+.showcase-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
+	background-color: rgb(0 0 0 / 0.4);
+	@media (min-width: $showcase-breakpoint) {
+		display: none;
+	}
+}
+
+// Mobile-only page banner. Desktop hides it because the sidebar carries
+// the brand inline. Bare `<header>` styling already comes from
+// `src/styles/components/_header.scss`; we add only the layered modifiers.
+.showcase-banner {
+	z-index: 30;
+	background-color: var(--color-canvas);
+
+	@media (min-width: $showcase-breakpoint) {
+		display: none;
+	}
+}
+
+// Sidebar drawer. Desktop is a static rail (handled by `_nav.scss`); mobile
+// turns the rail into a fixed-position drawer that slides in from the left.
+.showcase-sidebar {
+	@media (max-width: ($showcase-breakpoint - 0.001rem)) {
+		position: fixed;
+		inset-block: 0;
+		inset-inline-start: 0;
+		z-index: 50;
+		transform: translateX(-100%);
+		box-shadow: var(--set-shadow-lg, 0 10px 25px -5px rgb(0 0 0 / 0.1));
+
+		@include transition(transform var(--set-transition-duration, 0.2s));
+
+		&[data-sidebar-open] {
+			transform: translateX(0);
+		}
+	}
+}
+
+// In-rail header: brand + close button.
+.showcase-rail-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--spacing-2);
+
+	// Override the framework header chrome inside the rail. The bare
+	// `<header>` rule paints global page-banner chrome that doesn't fit
+	// inside a sidebar — strip it.
+	&,
+	&[class] {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+	}
+}
+
+.showcase-brand {
+	font-size: var(--text-base);
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	color: var(--color-text);
+	text-decoration: none;
+
+	&:hover {
+		color: var(--color-primary);
+	}
+}
+
+// "Press / to focus" hint under the search input.
+.showcase-hint {
+	margin-block-start: calc(var(--spacing-1) * -1);
+	font-size: var(--text-xs);
+	color: var(--color-text-muted, color-mix(in oklab, var(--color-text) 60%, transparent));
+
+	kbd {
+		padding-inline: var(--spacing-1);
+		border: 1px solid var(--color-border, color-mix(in oklab, var(--color-text) 12%, transparent));
+		border-radius: var(--radius-sm);
+		background-color: var(--color-canvas, white);
+		font-family: var(--font-mono, ui-monospace, monospace);
+		font-size: 0.65rem;
+	}
+}
+
+// Empty-state when the filter matches nothing.
+.showcase-empty {
+	font-size: var(--text-sm);
+	color: var(--color-text-muted, color-mix(in oklab, var(--color-text) 60%, transparent));
+}
+
+// ── Main content scroller ──────────────────────────────────────────────────
+
+.showcase-page {
+	margin-inline: auto;
+	inline-size: 100%;
+	max-inline-size: 48rem;
+	padding-inline: var(--spacing-4);
+	padding-block: var(--spacing-8);
+
+	@media (min-width: $showcase-breakpoint) {
+		padding-inline: var(--spacing-8);
+		padding-block: var(--spacing-12);
+	}
+
+	// Vertical rhythm — every direct sectioning child gets a margin-block-start
+	// derived from the spacing scale. Authors can override per page.
+	> :is(section, article) + :is(section, article) {
+		margin-block-start: var(--spacing-10);
+	}
+}
+
+// ── Sidebar rail content (groups + links) ──────────────────────────────────
+
+.showcase-rail-groups {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-4);
+	flex: 1;
+	overflow-y: auto;
+}
+
+.showcase-rail-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-1);
+}
+
+.showcase-rail-group-title {
+	margin: 0;
+	padding-inline: var(--spacing-2);
+	font-size: 0.6875rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--color-text-muted, color-mix(in oklab, var(--color-text) 55%, transparent));
+}
+
+.showcase-rail-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+
+	> li {
+		margin: 0;
+	}
+}
+
+.showcase-rail-link {
+	display: block;
+	padding-inline: var(--spacing-2);
+	padding-block: var(--spacing-1);
+	border-radius: var(--radius-md);
+	font-size: var(--text-sm);
+	color: var(--color-text);
+	text-decoration: none;
+
+	@include transition(
+		(
+			color var(--set-transition-duration, 0.15s),
+			background-color var(--set-transition-duration, 0.15s)
+		)
+	);
+
+	&:hover {
+		background-color: color-mix(in oklab, var(--color-text) 6%, transparent);
+		color: var(--color-text);
+	}
+
+	&[aria-current='page'] {
+		background-color: color-mix(in oklab, var(--color-primary) 12%, transparent);
+		color: var(--color-primary);
+		font-weight: 500;
+	}
+}
+
+// ── Right-side TOC ─────────────────────────────────────────────────────────
+
+#toc {
+	display: none;
+
+	@media (min-width: 80rem) {
+		display: block;
+	}
+}
+
+.showcase-toc-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-inline-start: 1px solid
+		var(--color-border, color-mix(in oklab, var(--color-text) 12%, transparent));
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-1);
+
+	> li {
+		padding-inline-start: var(--spacing-3);
+		font-size: var(--text-sm);
+
+		&[data-level='3'] {
+			padding-inline-start: var(--spacing-6);
+		}
+
+		> a {
+			color: var(--color-text-muted, color-mix(in oklab, var(--color-text) 60%, transparent));
+			text-decoration: none;
+
+			&:hover {
+				color: var(--color-text);
+			}
+		}
+	}
+}
+
+.showcase-toc-header {
+	margin-block-end: var(--spacing-3);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--color-text-muted, color-mix(in oklab, var(--color-text) 55%, transparent));
+}
+
+// ── Showcase common patterns ───────────────────────────────────────────────
+//
+// Helpers used across the per-page demos. Kept narrow — anything that's
+// reusable across consumers belongs in a framework partial, not here.
+
+// A row of demo widgets with consistent gap.
+.showcase-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--spacing-3);
+	align-items: center;
+}
+
+// A vertical stack with consistent gap.
+.showcase-stack {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-3);
+}
+
+// A 2-column grid, collapses to 1 column under 32rem.
+.showcase-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: var(--spacing-4);
+
+	@media (min-width: 32rem) {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+// Code-fence block. Framework `<pre>` styling handles the chrome; this
+// adds rhythm.
+.showcase-code {
+	margin-block: var(--spacing-3);
+}
+
+// Subdued caption text under demos.
+.showcase-caption {
+	font-size: var(--text-sm);
+	color: var(--color-text-muted, color-mix(in oklab, var(--color-text) 55%, transparent));
+}
+
+// Definition list — what-ships-today / spec table on HomePage.
+.showcase-spec {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: var(--spacing-3);
+	margin-block-start: var(--spacing-4);
+
+	@media (min-width: 32rem) {
+		grid-template-columns: max-content 1fr;
+		column-gap: var(--spacing-6);
+	}
+
+	dt {
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	dd {
+		margin: 0;
+		font-size: var(--text-sm);
+		color: var(--color-text-muted, color-mix(in oklab, var(--color-text) 70%, transparent));
+	}
+}

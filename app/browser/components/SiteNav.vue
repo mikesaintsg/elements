@@ -4,10 +4,10 @@
  *
  * Renders inside an outer `<nav aria-label="Primary">` (provided by App.vue),
  * so this component does NOT add another `<nav>` — that would create a
- * nested-landmark situation we don't need. We render the groups directly: a
- * stack of `<h2>` group headings + `<ul>` link lists. The visual register
- * is compact-rail (mailbox-inspired): small-caps section headings, full-
- * width tappable rows, current-route highlight via aria-current=page.
+ * nested-landmark situation we don't need. We render the groups directly
+ * with semantic `<h2>` group headings + `<ul>` link lists; visual chrome
+ * comes from the framework's nav-rail rules plus the small set of
+ * `showcase-rail-*` helpers in `app/browser/styles/showcase.scss`.
  */
 import { computed, ref } from 'vue'
 import type { Route } from '../router.js'
@@ -62,24 +62,22 @@ const onKeydown = (event: KeyboardEvent): void => {
 </script>
 
 <template>
-	<div ref="navRef" class="flex flex-1 flex-col gap-4 overflow-y-auto" @keydown="onKeydown">
+	<div ref="navRef" class="showcase-rail-groups" @keydown="onKeydown">
 		<template v-for="g in groups" :key="g.name">
-			<div class="space-y-1.5">
-				<h2 class="px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-					{{ g.name }}
-				</h2>
-				<ul class="m-0 list-none space-y-0.5 p-0">
-					<li v-for="item in g.items" :key="item.id" class="m-0">
+			<section class="showcase-rail-group">
+				<h2 class="showcase-rail-group-title">{{ g.name }}</h2>
+				<ul class="showcase-rail-list">
+					<li v-for="item in g.items" :key="item.id">
 						<a
 							:href="`#/${item.id}`"
 							:aria-current="route === item.id ? 'page' : undefined"
-							class="block rounded-md px-2 py-1.5 text-sm text-slate-700 no-underline transition-colors hover:bg-slate-100 hover:text-slate-900 aria-[current=page]:bg-primary/10 aria-[current=page]:font-medium aria-[current=page]:text-primary"
+							class="showcase-rail-link"
 							@click.prevent="onClick(item.id)"
 							>{{ item.title }}</a
 						>
 					</li>
 				</ul>
-			</div>
+			</section>
 		</template>
 	</div>
 </template>

@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 /**
- * Toc — right sidebar listing the section headings inside the current page
- * article. Reads the DOM after each route change via MutationObserver so that
+ * Toc — right sidebar listing the section headings inside the current page.
+ * Reads the DOM after each route change via MutationObserver so that
  * async-rendered content is picked up, then smooth-scrolls on click.
  *
- * @remarks `useScrollSpy` will be wired here once the composable is built
- * in `src/browser`. For now active-section tracking is omitted.
+ * Hook-up to `useNav` (the renamed scroll-spy composable) is deferred — the
+ * page-section list is shallow enough that observation is cheap and the
+ * active-section highlight will flow through later.
  */
 import { onUnmounted, ref, watch } from 'vue'
 import { route } from '../router.js'
@@ -29,10 +30,6 @@ const collect = (): void => {
 		entries.value = []
 		return
 	}
-	// Pages now use <section> as their root wrapper (not <article>) — page wrappers
-	// are docs sections, not self-contained syndicatable compositions. The wrapper
-	// has no id; only inner demo sections have ids, so a bare `section[id]` selector
-	// matches exactly what we want regardless of wrapper element.
 	const sections = Array.from(root.querySelectorAll<HTMLElement>('section[id]'))
 	const list: Entry[] = []
 	for (const sec of sections) {
@@ -91,13 +88,8 @@ const goto = (id: string): void => {
 	  list wants.
 	-->
 	<nav v-if="entries.length" aria-label="Table of contents">
-		<ol class="m-0 list-none border-l border-slate-200 p-0">
-			<li
-				v-for="e in entries"
-				:key="e.id"
-				:data-level="e.level"
-				:class="e.level === 3 ? 'pl-6' : 'pl-3'"
-			>
+		<ol class="showcase-toc-list">
+			<li v-for="e in entries" :key="e.id" :data-level="e.level">
 				<a :href="`#${e.id}`" @click.prevent="goto(e.id)">{{ e.label }}</a>
 			</li>
 		</ol>

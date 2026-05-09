@@ -71,9 +71,11 @@ export const srcCore = (config?: UserConfig): UserConfig =>
 		config ?? {},
 	)
 
-// PostCSS pipeline. `@tailwindcss/postcss` runs after Vite's Sass step so it
-// sees Sass-compiled output — required for the showcase's main.scss to flow
-// through Tailwind's @theme expansion.
+// PostCSS pipeline. Tailwind is kept available so showcase pages and
+// downstream consumers can lean on its utility classes for one-off
+// tweaks — but the framework + the chrome SCSS deliberately don't depend
+// on it. Authors can drop Tailwind from their own builds without
+// breaking any framework-shipped surface.
 const postcss = { plugins: [tailwindcss()] }
 
 // Extends srcCore: adds Vue + ES lib build + browser tests.
