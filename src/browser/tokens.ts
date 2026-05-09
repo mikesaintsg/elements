@@ -633,5 +633,6 @@ export const tokens = {
 		gap: '--set-anchor-gap',
 		positionTryFallbacks: '--set-anchor-position-try-fallbacks',
 		positionArea: '--set-anchor-position-area',
+		viewportInset: '--set-anchor-viewport-inset',
 	},
 } as const

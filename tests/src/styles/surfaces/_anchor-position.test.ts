@@ -20,6 +20,7 @@ describe('anchor-position — token surface', () => {
 		expect(rootToken('--set-anchor-gap').trim()).not.toBe('')
 		expect(rootToken('--set-anchor-position-area').trim()).not.toBe('')
 		expect(rootToken('--set-anchor-position-try-fallbacks').trim()).not.toBe('')
+		expect(rootToken('--set-anchor-viewport-inset').trim()).not.toBe('')
 	})
 
 	it('default position-area places below the anchor (block-end)', () => {
@@ -27,6 +28,55 @@ describe('anchor-position — token surface', () => {
 		// flips automatically in vertical / RTL writing modes.
 		const value = rootToken('--set-anchor-position-area').trim()
 		expect(value).toBe('block-end')
+	})
+})
+
+describe('anchor-position — boundary-detection recipe', () => {
+	it('a popover declares `position-visibility: anchors-visible`', () => {
+		// Auto-hide when the trigger scrolls offscreen — without this, a
+		// dropdown left open in a scrolled list would float untethered at
+		// its computed position, pointing at nothing.
+		const div = build('div')
+		div.setAttribute('popover', '')
+		div.id = 'anchor-vis'
+		mount(div)
+		expect(style(div, 'position-visibility')).toBe('anchors-visible')
+	})
+
+	it('a popover gets a viewport-aware max-block-size budget', () => {
+		// 100dvh minus a safe-area inset on each block-axis side. The
+		// popover shrinks before overflowing; if it still doesn't fit,
+		// `position-try-fallbacks` flips to the opposite side.
+		const div = build('div')
+		div.setAttribute('popover', '')
+		div.id = 'anchor-block'
+		mount(div)
+		const value = style(div, 'max-block-size').trim()
+		// Browsers serialize the resolved calc() to a px value. Just
+		// assert it's bounded (not `none` / unset).
+		expect(value).not.toBe('none')
+		expect(value).not.toBe('')
+	})
+
+	it('a popover gets a viewport-aware max-inline-size budget', () => {
+		const div = build('div')
+		div.setAttribute('popover', '')
+		div.id = 'anchor-inline'
+		mount(div)
+		const value = style(div, 'max-inline-size').trim()
+		expect(value).not.toBe('none')
+		expect(value).not.toBe('')
+	})
+
+	it('a popover overflows scrollable when content exceeds the budget', () => {
+		// `overflow: auto` is what makes the size budget actually clamp
+		// the content — without it the popover would just bleed past the
+		// max-size declarations.
+		const div = build('div')
+		div.setAttribute('popover', '')
+		div.id = 'anchor-overflow'
+		mount(div)
+		expect(style(div, 'overflow-y')).toBe('auto')
 	})
 })
 

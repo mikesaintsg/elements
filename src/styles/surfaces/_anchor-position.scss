@@ -69,7 +69,14 @@
 		--set-anchor-gap: calc(var(--spacing) * 1);
 
 		// Default `position-try-fallbacks` value — the browser tries each
-		// fallback in order until one fits. Authors can override per-host:
+		// fallback in order, IN DECLARATION ORDER, and commits to the first
+		// one that doesn't overflow. Combined with the spec-default
+		// `position-try-order: normal`, this means the popover PREFERS the
+		// requested side and only flips when the requested side genuinely
+		// can't host the popover's size — even if the opposite side has
+		// more room. (Mailbox's dropdown uses the same defaults; the
+		// alternative `most-block-size` was found to flip prematurely.)
+		// Authors can override per-host:
 		//   #my-popover { position-try-fallbacks: flip-block; }
 		--set-anchor-position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
 
@@ -78,6 +85,13 @@
 		// modes. Authors override per-host via `.top` / `.bottom-start` /
 		// etc. (see modifiers/_placements.scss).
 		--set-anchor-position-area: block-end;
+
+		// Viewport-edge safety margin — minimum gap between a popover
+		// and the viewport edge (or the safe-area-inset on notched
+		// devices, whichever is larger). Used by the `max-block-size` /
+		// `max-inline-size` budget below so popovers never overflow the
+		// viewport even on tiny mobile viewports.
+		--set-anchor-viewport-inset: calc(var(--spacing) * 2);
 	}
 
 	// --------------------------------------------------------------------------
@@ -106,5 +120,40 @@
 		// otherwise center the popover. Logical-axis margin keeps RTL flowing.
 		margin: 0;
 		margin-block: var(--set-anchor-gap);
+
+		// `anchors-visible` ties the popover's visibility to the trigger's
+		// visibility — when the anchor scrolls offscreen (e.g. inside a
+		// scrolling container), the popover hides too. Without this, a
+		// dropdown left open in a scrolled list would float untethered at
+		// its computed position, pointing at nothing.
+		position-visibility: anchors-visible;
+
+		// Viewport-edge safety budget. The popover's max size is the
+		// smaller of (a) the consumer's own per-host max, if any, and
+		// (b) the viewport size minus a safe gap on each side. The
+		// `env(safe-area-inset-*)` fallbacks add iOS notch / Android
+		// gesture-bar clearance. With this in place a popover anchored
+		// near a viewport edge will *shrink* before overflowing — and
+		// when even the shrunk popover doesn't fit, `position-try-
+		// fallbacks` (flip-block, flip-inline) flips it to the opposite
+		// side automatically. Together they form the boundary-detection
+		// recipe: shrink → flip → shrink-after-flip.
+		max-block-size: calc(
+			100dvh - max(var(--set-anchor-viewport-inset), env(safe-area-inset-top, 0px)) - max(
+					var(--set-anchor-viewport-inset),
+					env(safe-area-inset-bottom, 0px)
+				)
+		);
+		max-inline-size: calc(
+			100dvw - max(var(--set-anchor-viewport-inset), env(safe-area-inset-left, 0px)) - max(
+					var(--set-anchor-viewport-inset),
+					env(safe-area-inset-right, 0px)
+				)
+		);
+
+		// When the popover's natural size exceeds the viewport budget,
+		// scroll the overflow rather than truncate it. Inline scrolling
+		// is rare for popovers but harmless to enable.
+		overflow: auto;
 	}
 }
