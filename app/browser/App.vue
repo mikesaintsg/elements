@@ -26,7 +26,7 @@ const filteredRoutes = computed(() => {
 
 /* ── Scroller ────────────────────────────────────────────────────────────────
    The scrollable region between the topbar and footer. Toc reads
-   `article section[id]` inside it to build the on-this-page list. */
+   `section[id]` inside it to build the on-this-page list. */
 const scrollerRef = ref<HTMLElement | null>(null)
 
 /* ── Scroll on route change ──────────────────────────────────────────────────
@@ -76,22 +76,26 @@ const goHome = (event: MouseEvent): void => {
 </script>
 
 <template>
-	<!-- Bare-element layout shell. <body> is the framework's CSS-grid root
-	     (see src/styles/components/_body.scss); these top-level sectioning
-	     children are placed into named grid areas automatically:
+	<!--
+	  Bare-element layout shell. <body> is the framework's CSS-grid root
+	  (see src/styles/components/_body.scss). These top-level sectioning
+	  children are placed into named grid areas automatically:
 
-	         ┌─ header ──────────────────────────────┐
-	         │ (mobile-only topbar; lg:hidden)       │
-	         ├─ nav ─┬─ main ──────────────┬─ aside ─┤
-	         │ left  │ scrollable content  │  toc    │
-	         │ rail  │ (overflow-y: auto)  │  rail   │
-	         └───────┴─────────────────────┴─────────┘
+	      ┌─ header ──────────────────────────────────────┐
+	      │  brand + global search + (mobile menu btn)   │
+	      ├─ nav ──┬─ main ────────────────┬─ aside ─────┤
+	      │ route  │ scrollable content    │ on-this-    │
+	      │ rail   │ (overflow-y: auto)    │ page TOC    │
+	      └────────┴───────────────────────┴─────────────┘
+	      └─ footer ──────────────────────────────────────┘
 
-	     <main> gets `overflow-y: auto` from _main.scss so it scrolls
-	     independently of the surrounding chrome. No wrapper divs needed —
-	     the framework's CSS owns the layout. -->
+	  Header vs nav per HTML LS + ARIA APG: the page banner is a <header>
+	  containing introductory aids (brand, search, mobile menu trigger).
+	  The route list is a separate <nav aria-label="Primary"> in the rail
+	  beneath. The TOC is a labelled <nav> inside the right <aside>.
+	-->
 
-	<!-- ── MOBILE DRAWER BACKDROP ────────────────────────────────────────────
+	<!-- ── MOBILE DRAWER BACKDROP ─────────────────────────────────────────────
 	     position: fixed pulls this out of the body grid; ignored on lg+. -->
 	<div
 		v-if="sidebarOpen"
@@ -100,103 +104,91 @@ const goHome = (event: MouseEvent): void => {
 		@click="sidebarOpen = false"
 	/>
 
-	<!-- ── MOBILE TOPBAR ─────────────────────────────────────────────────────
-	     Bare <header> in body shell → framework `_header.scss` provides
-	     flex / gap / padding / border-bottom / bg / font-size. Tailwind
-	     adds the translucent-blur look + behavior modifiers (z-index,
-	     mobile-only visibility). -->
-	<header id="topbar" class="z-30 bg-white/80 backdrop-blur lg:hidden">
+	<!-- ── PAGE BANNER ────────────────────────────────────────────────────────
+	     Bare <header> direct child of body shell → framework `_header.scss`
+	     gives flex / gap / padding / border-bottom / bg / font-size. The
+	     translucent-blur look is a Tailwind override on top. -->
+	<header class="z-30 bg-white/85 backdrop-blur">
 		<button
 			type="button"
-			class="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-			aria-label="Open sidebar"
+			class="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+			aria-label="Open navigation"
 			@click="sidebarOpen = true"
 		>
 			Menu
 		</button>
 		<a
 			href="#/home"
-			id="topbar-brand"
 			class="text-base font-semibold tracking-tight text-slate-900 no-underline hover:text-primary"
 			@click="goHome"
 			>elements</a
 		>
+		<!--
+		  Global filter sits in the page banner. The framework styles bare
+		  <search> as a flex row; the <input> grows to fill via flex: 1.
+		  This is the "ship-the-search-as-the-page-banner" pattern from
+		  Tailwind UI / Vue docs / Material Docs.
+		-->
+		<search class="ml-auto max-w-md flex-1 lg:max-w-sm">
+			<input
+				id="sidebar-filter"
+				v-model="filterQuery"
+				type="search"
+				placeholder="Filter pages…"
+				aria-label="Filter pages"
+				autocomplete="off"
+			/>
+			<kbd
+				class="hidden rounded border border-slate-200 bg-slate-50 px-1.5 font-mono text-[10px] text-slate-500 sm:inline-block"
+				>/</kbd
+			>
+		</search>
 	</header>
 
-	<!-- ── LEFT NAV (primary navigation rail) ────────────────────────────────
-	     Bare <nav> in body shell → framework `_nav.scss` provides flex-column
-	     layout, inline-size (16rem), padding, border-inline-end, overflow-y,
-	     bg, font-size. Tailwind only adds the mobile-drawer behavior
-	     (fixed positioning + slide transform) and the lg-static override. -->
+	<!-- ── PRIMARY NAVIGATION RAIL ────────────────────────────────────────────
+	     Bare <nav aria-label="Primary"> direct child of body shell → framework
+	     `_nav.scss` paints the rail chrome (16rem inline-size, padding,
+	     border-inline-end, scroll, flex column with gap). On mobile, Tailwind
+	     turns it into a slide-in drawer via fixed positioning + transform. -->
 	<nav
 		id="sidebar"
+		aria-label="Primary"
 		:class="[
 			'fixed inset-y-0 left-0 z-50 shadow-xl transition-transform duration-200',
 			'lg:static lg:shadow-none lg:transition-none lg:translate-x-0',
 			sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
 		]"
 	>
-		<header class="!flex items-center justify-between !p-0 !border-0 !bg-transparent">
-			<a
-				href="#/home"
-				class="text-base font-semibold tracking-tight text-slate-900 no-underline hover:text-primary"
-				@click="goHome"
-				>elements</a
-			>
-			<button
-				type="button"
-				class="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
-				aria-label="Close sidebar"
-				@click="sidebarOpen = false"
-			>
-				Close
-			</button>
-		</header>
-
-		<!-- <search> is the HTML5 landmark for filter / search inputs.
-		     The framework's `_search.scss` lays out the input as a flex row;
-		     the <input> already styles itself per `_input.scss`. -->
-		<search>
-			<input
-				id="sidebar-filter"
-				v-model="filterQuery"
-				type="search"
-				placeholder="Search…"
-				aria-label="Search navigation"
-				autocomplete="off"
-			/>
-		</search>
-		<small class="-mt-1 text-xs text-slate-500"
-			>Press
-			<kbd
-				class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-[10px] text-slate-600"
-				>/</kbd
-			>
-			to focus</small
+		<button
+			type="button"
+			class="self-end rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+			aria-label="Close navigation"
+			@click="sidebarOpen = false"
 		>
+			Close
+		</button>
 
-		<div class="flex-1 overflow-y-auto">
-			<SiteNav :routes="filteredRoutes" @navigate="sidebarOpen = false" />
-			<p v-if="filteredRoutes.length === 0" class="mt-4 text-sm text-slate-500">
-				No results for "{{ filterQuery }}"
-			</p>
-		</div>
+		<SiteNav :routes="filteredRoutes" @navigate="sidebarOpen = false" />
+
+		<p v-if="filteredRoutes.length === 0" class="text-sm text-slate-500">
+			No results for "{{ filterQuery }}"
+		</p>
 	</nav>
 
-	<!-- ── MAIN CONTENT ──────────────────────────────────────────────────────
-	     The framework's _main.scss gives this overflow-y: auto when it's a
-	     direct child of body. Toc observes this element for headings. -->
+	<!-- ── MAIN CONTENT ───────────────────────────────────────────────────────
+	     Bare <main> in body shell → framework `_main.scss` gives overflow-y:
+	     auto + scroll containment. Toc observes this element for headings. -->
 	<main ref="scrollerRef" class="bg-slate-50 text-slate-900">
 		<div class="mx-auto w-full max-w-3xl px-4 py-8 lg:px-8 lg:py-12">
 			<component :is="current.page" :key="current.id" />
 		</div>
 	</main>
 
-	<!-- ── RIGHT TOC SIDEBAR ─────────────────────────────────────────────────
-	     Bare <aside> in body shell → framework `_aside.scss` provides
-	     inline-size / padding / border-inline-start / overflow-y / bg /
-	     font-size. Tailwind adds the responsive-show/hide and the slate-50
-	     bg override (subtly different from framework Canvas default). -->
+	<!-- ── ON-THIS-PAGE TOC ───────────────────────────────────────────────────
+	     Bare <aside> in body shell → framework `_aside.scss` gives a fixed
+	     14rem rail with leading-edge separator. Inside, <Toc> renders a
+	     labelled <nav aria-label="Table of contents"> with the page's section
+	     headings. -->
 	<aside id="toc" class="hidden bg-slate-50 xl:block">
 		<header class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
 			On this page
@@ -204,10 +196,9 @@ const goHome = (event: MouseEvent): void => {
 		<Toc :scroller="scrollerRef" />
 	</aside>
 
-	<!-- ── PAGE FOOTER ───────────────────────────────────────────────────────
-	     Bare <footer> in body shell → framework `_footer.scss` provides
-	     flex / gap / padding / border-top / bg / font-size. Tailwind only
-	     bumps the inline padding on lg+ for visual balance with main. -->
+	<!-- ── PAGE FOOTER ────────────────────────────────────────────────────────
+	     Bare <footer> in body shell → framework `_footer.scss` gives flex /
+	     padding / top-border / bg / font-size. -->
 	<footer class="lg:px-8">
 		<p class="m-0">© 2026 elements</p>
 	</footer>

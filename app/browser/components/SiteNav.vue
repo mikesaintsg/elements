@@ -1,9 +1,13 @@
 <script lang="ts" setup>
 /**
- * SiteNav — left sidebar listing every documentation page, grouped by section.
- * Highlights the current route and navigates by updating the URL hash.
- * Accepts an optional pre-filtered route list so the parent can drive
- * filtering without coupling SiteNav to the filter UI.
+ * SiteNav — primary nav rail content (groups of route links).
+ *
+ * Renders inside an outer `<nav aria-label="Primary">` (provided by App.vue),
+ * so this component does NOT add another `<nav>` — that would create a
+ * nested-landmark situation we don't need. We render the groups directly: a
+ * stack of `<h2>` group headings + `<ul>` link lists. The visual register
+ * is compact-rail (mailbox-inspired): small-caps section headings, full-
+ * width tappable rows, current-route highlight via aria-current=page.
  */
 import { computed, ref } from 'vue'
 import type { Route } from '../router.js'
@@ -58,14 +62,14 @@ const onKeydown = (event: KeyboardEvent): void => {
 </script>
 
 <template>
-	<nav ref="navRef" aria-label="Documentation navigation" class="space-y-5" @keydown="onKeydown">
+	<div ref="navRef" class="flex flex-1 flex-col gap-4 overflow-y-auto" @keydown="onKeydown">
 		<template v-for="g in groups" :key="g.name">
-			<div>
-				<h2 class="px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+			<div class="space-y-1.5">
+				<h2 class="px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
 					{{ g.name }}
 				</h2>
-				<ul class="mt-1.5 space-y-0.5">
-					<li v-for="item in g.items" :key="item.id">
+				<ul class="m-0 list-none space-y-0.5 p-0">
+					<li v-for="item in g.items" :key="item.id" class="m-0">
 						<a
 							:href="`#/${item.id}`"
 							:aria-current="route === item.id ? 'page' : undefined"
@@ -77,5 +81,5 @@ const onKeydown = (event: KeyboardEvent): void => {
 				</ul>
 			</div>
 		</template>
-	</nav>
+	</div>
 </template>

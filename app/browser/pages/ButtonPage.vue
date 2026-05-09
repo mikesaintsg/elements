@@ -147,20 +147,19 @@
 				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">form</code>
 				attribute.
 			</p>
-			<form id="example-form" class="flex flex-wrap items-end gap-3">
-				<label for="name" class="flex flex-col gap-1 text-sm">
-					<span class="text-slate-600">Name</span>
-					<input
-						id="name"
-						type="text"
-						name="name"
-						class="rounded-md border border-slate-200 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-					/>
+			<!-- The framework styles bare <form> as a vertical stack and labels as
+			     flex-columns; .inline flips to a wrapping row + intrinsic-width
+			     inputs so a single-line filter / quick-action shape composes
+			     without extra Tailwind utilities. -->
+			<form id="example-form" class="inline">
+				<label for="name">
+					Name
+					<input id="name" type="text" name="name" />
 				</label>
 				<button type="submit" class="primary">Submit</button>
 				<button type="reset">Reset</button>
 			</form>
-			<button type="submit" form="example-form" class="success mt-2">Submit (outside form)</button>
+			<button type="submit" form="example-form" class="success">Submit (outside form)</button>
 		</section>
 
 		<section id="accessibility" class="space-y-3">

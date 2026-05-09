@@ -83,20 +83,22 @@ const goto = (id: string): void => {
 </script>
 
 <template>
+	<!--
+	  TOC nav — labelled landmark per WAI-ARIA APG (multi-nav pages must
+	  disambiguate with aria-label). The framework's nav>ol auto-flex is
+	  opt-in for `aria-label="Breadcrumb"|"Pagination"|"Primary"|"Secondary"`;
+	  "Table of contents" stays vertical block flow, which is what a section
+	  list wants.
+	-->
 	<nav v-if="entries.length" aria-label="Table of contents">
-		<ol class="space-y-0.5 border-l border-slate-200">
+		<ol class="m-0 list-none border-l border-slate-200 p-0">
 			<li
 				v-for="e in entries"
 				:key="e.id"
 				:data-level="e.level"
 				:class="e.level === 3 ? 'pl-6' : 'pl-3'"
 			>
-				<a
-					:href="`#${e.id}`"
-					class="-ml-px block border-l border-transparent py-1 text-sm text-slate-600 no-underline transition-colors hover:border-slate-400 hover:text-slate-900"
-					@click.prevent="goto(e.id)"
-					>{{ e.label }}</a
-				>
+				<a :href="`#${e.id}`" @click.prevent="goto(e.id)">{{ e.label }}</a>
 			</li>
 		</ol>
 	</nav>

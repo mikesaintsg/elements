@@ -28,13 +28,18 @@
 		min-inline-size: 0;
 
 		// ----------------------------------------------------------------------
-		// Element-scoped tokens — fallback chain identical to <button>.
+		// Element-scoped tokens.
+		//
+		// Fieldsets are containers, not action surfaces — so the variant cascade
+		// only reaches the BORDER by default. To fill the fieldset's body with
+		// the variant color you opt in via `.filled` (which sets the style
+		// tokens). This deliberately differs from <button>'s cascade, where a
+		// bare `.primary` button is filled-by-default because buttons ARE
+		// action surfaces. Form-control groups stay neutral; only `.filled`
+		// paints the body.
 		// ----------------------------------------------------------------------
-		--set-fieldset-color: var(--set-style-color, var(--set-variant-color, currentColor));
-		--set-fieldset-background-color: var(
-			--set-style-background-color,
-			var(--set-variant-background-color, transparent)
-		);
+		--set-fieldset-color: var(--set-style-color, currentColor);
+		--set-fieldset-background-color: var(--set-style-background-color, transparent);
 		--set-fieldset-border-color: var(
 			--set-style-border-color,
 			var(--set-variant-background-color, color-mix(in srgb, currentColor 20%, transparent))

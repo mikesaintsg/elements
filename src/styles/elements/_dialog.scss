@@ -106,5 +106,16 @@
 			position: static;
 			margin: 0;
 		}
+
+		// ----------------------------------------------------------------------
+		// Mobile padding — reduce inline + block padding on narrow viewports
+		// so the dialog content gets more horizontal breathing room. The
+		// `min(90vw, …)` max-inline-size already constrains width on mobile;
+		// here we also tighten padding so the content area isn't squeezed.
+		// ----------------------------------------------------------------------
+		@media (max-width: 480px) {
+			--set-dialog-padding-inline: calc(var(--spacing) * 4);
+			--set-dialog-padding-block: calc(var(--spacing) * 4);
+		}
 	}
 }

@@ -75,8 +75,8 @@ describe('nav — body-shell rail', () => {
 	})
 })
 
-describe('nav — inner list (nav > ol / nav > ul) is a horizontal flex with no markers', () => {
-	it('inner <ol> renders as a horizontal flex with no list markers', () => {
+describe('nav — inner list defaults to vertical block; horizontal flex is opt-in via aria-label', () => {
+	it('plain <nav><ol> stays in vertical block flow (TOC, sub-nav, etc.)', () => {
 		const nav = build('nav')
 		const ol = build('ol')
 		ol.appendChild(build('li', '', 'Home'))
@@ -85,12 +85,13 @@ describe('nav — inner list (nav > ol / nav > ul) is a horizontal flex with no 
 		nav.appendChild(ol)
 		mount(nav)
 
-		expect(style(ol, 'display')).toBe('flex')
+		// Block flow — markers stripped, padding zeroed, but no flex / wrap.
+		expect(style(ol, 'display')).toBe('block')
 		expect(style(ol, 'list-style-type')).toBe('none')
 		expect(pixels(ol, 'padding-left')).toBe(0)
 	})
 
-	it('inner <ul> renders the same way (navbar pattern)', () => {
+	it('plain <nav><ul> stays vertical too', () => {
 		const nav = build('nav')
 		const ul = build('ul')
 		ul.appendChild(build('li', '', 'About'))
@@ -98,8 +99,37 @@ describe('nav — inner list (nav > ol / nav > ul) is a horizontal flex with no 
 		nav.appendChild(ul)
 		mount(nav)
 
-		expect(style(ul, 'display')).toBe('flex')
+		expect(style(ul, 'display')).toBe('block')
 		expect(style(ul, 'list-style-type')).toBe('none')
+	})
+
+	it('aria-label="Primary" navbar opts into horizontal flex', () => {
+		const nav = build('nav')
+		nav.setAttribute('aria-label', 'Primary')
+		const ul = build('ul')
+		ul.appendChild(build('li', '', 'About'))
+		ul.appendChild(build('li', '', 'Contact'))
+		nav.appendChild(ul)
+		mount(nav)
+
+		expect(style(ul, 'display')).toBe('flex')
+		expect(style(ul, 'flex-wrap')).toBe('wrap')
+	})
+
+	it('aria-label="Pagination" opts into horizontal flex without chevrons', () => {
+		const nav = build('nav')
+		nav.setAttribute('aria-label', 'Pagination')
+		const ol = build('ol')
+		const first = build('li', '', '1')
+		const second = build('li', '', '2')
+		ol.appendChild(first)
+		ol.appendChild(second)
+		nav.appendChild(ol)
+		mount(nav)
+
+		expect(style(ol, 'display')).toBe('flex')
+		// No chevron pseudo content for pagination.
+		expect(globalThis.getComputedStyle(second, '::before').content).toBe('none')
 	})
 })
 

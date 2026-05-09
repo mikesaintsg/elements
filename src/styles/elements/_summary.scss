@@ -3,18 +3,22 @@
 //
 // Architecture (light cascade):
 //   Element-scoped --set-summary-* tokens for typography + cursor only.
-//   The disclosure marker is normalized — UA defaults vary widely between
-//   Chromium / WebKit / Gecko on the triangle character and rotation
-//   behavior. The framework keeps the marker (it's the affordance signal)
-//   but normalizes it to a single character + rotates it on `:open`.
+//   The disclosure marker is rendered as a CSS-painted chevron SVG masked
+//   by the summary's text color — same pattern as <select>'s chevron.
+//   This avoids the unicode-triangle font-rendering inconsistencies across
+//   Chromium / WebKit / Gecko (some fonts ship a colored emoji glyph
+//   rather than a clean geometric triangle).
 //
 // Quirks:
 //   - `summary` ships UA `display: list-item; cursor: default`. The
-//     framework keeps `list-item` so the marker shows but switches cursor
-//     to pointer because the entire summary is the click target.
-//   - The `[open]` state on the parent <details> controls marker rotation
-//     via the modern `:has(> details[open])` selector — every evergreen
-//     browser supports it as of Chromium 105 / Safari 15.4 / Firefox 121.
+//     framework switches the marker off (`list-style: none`) and paints
+//     its own chevron via flex layout + a mask-image pseudo-element —
+//     this is the most reliable way to get a clean geometric chevron
+//     that tracks the summary's text color.
+//   - The `[open]` state on the parent <details> rotates the chevron
+//     90deg via a `details[open] > summary::before` rotate.
+//   - Webkit ships a separate ::-webkit-details-marker pseudo that
+//     renders alongside ::marker — hide it so we don't paint two markers.
 // ============================================================================
 
 @use '../mixins' as *;
@@ -25,29 +29,46 @@
 		--set-summary-font-size: var(--set-size-font-size, 1em);
 		--set-summary-font-weight: 600;
 		--set-summary-cursor: pointer;
-		--set-summary-marker-size: 0.625em;
+		--set-summary-marker-size: 0.75em;
+		--set-summary-marker-gap: calc(var(--spacing) * 2);
 		--set-summary-transition-duration: var(--set-transition-duration);
+
+		display: flex;
+		align-items: center;
+		gap: var(--set-summary-marker-gap);
 
 		color: var(--set-summary-color);
 		font-size: var(--set-summary-font-size);
 		font-weight: var(--set-summary-font-weight);
 		cursor: var(--set-summary-cursor);
 
-		// Replace the UA marker character with a consistent triangle and
-		// animate its rotation when the parent details opens.
-		&::marker {
-			content: '▶';
-			font-size: var(--set-summary-marker-size);
-		}
+		// Suppress the UA marker; we paint our own as a ::before pseudo so
+		// it can track text color via mask + currentColor reliably.
+		list-style: none;
 
-		// Webkit ships a separate ::-webkit-details-marker pseudo that
-		// renders alongside ::marker — hide it so we don't paint two markers.
 		&::-webkit-details-marker {
 			display: none;
 		}
+
+		&::before {
+			content: '';
+			flex: none;
+			inline-size: var(--set-summary-marker-size);
+			block-size: var(--set-summary-marker-size);
+			background-color: currentColor;
+			// Right-pointing chevron — mask drives the shape, background-color
+			// drives the visible color (which inherits the summary's color
+			// token, so variants tint cleanly).
+			mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 4 4 4-4 4'/%3E%3C/svg%3E");
+			mask-repeat: no-repeat;
+			mask-position: center;
+			mask-size: contain;
+
+			@include transition((rotate var(--set-summary-transition-duration)));
+		}
 	}
 
-	details[open] > summary::marker {
-		content: '▼';
+	details[open] > summary::before {
+		rotate: 90deg;
 	}
 }

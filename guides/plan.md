@@ -76,6 +76,34 @@ Phase 1 (foundation), Phase 2 (form controls), Phase 3 (typography), Phase 4 (me
 | `[popover]` panel + entry/exit transition    | ✅     | [\_popover.scss](../src/styles/surfaces/_popover.scss)     |
 | Scrollbar (`scrollbar-color/-width/-gutter`) | ✅     | [\_scrollbar.scss](../src/styles/surfaces/_scrollbar.scss) |
 
+### App-shell refactor + framework polish (2026-05-09)
+
+A semantic + visual audit pass driven by issues caught while using the app. Findings + fixes:
+
+**`<header>` vs `<nav>` decision rule** — added research-backed checklist (HTML LS + WAI-ARIA APG):
+
+1. `<nav>` = "major navigation block." Always labeled with `aria-label` when more than one exists. Footer link rows aren't `<nav>`.
+2. `<header>` = "introductory band of the sectioning element you're inside." `body > header` = banner landmark; everywhere else = structural hook.
+3. `<aside>` = catch-all for tangential rails. Pure nav rails → `<nav>`; nav + non-nav content → `<aside>` containing a labelled `<nav>`.
+
+**App.vue refactor**: the page now has a real `<header>` page banner (always-visible, contains brand + global search + mobile menu trigger). The left sidebar is `<nav aria-label="Primary">` containing the SiteNav rail directly (no nested nav). The right TOC is `<aside>` containing `<nav aria-label="Table of contents">`. The `<small>Press / to focus</small>` hint moved into the `<search>` itself as a trailing `<kbd>` element.
+
+**`nav > ol/ul` flex default → opt-in** — the previous rule made every list-shaped `<nav>` a horizontal flex row, which broke TOC (vertical list) and SiteNav-style grouped rails (sub-headings + ULs). Horizontal flex is now opt-in via WAI-ARIA standard labels (`aria-label="Breadcrumb"|"Pagination"|"Primary"|"Secondary"|"Page navigation"`). Plain `<nav><ul>` and `<nav aria-label="Table of contents"><ol>` stay vertical block flow — what their use cases actually want.
+
+**Body-shell rail rule was missing `display: flex`** — the `flex-direction: column` was set without `display: flex`, so the rail children fell back to block flow. Fixed; sidebar is now a real flex column with gap.
+
+**Container variant cascades stay neutral** — `<fieldset class="primary">` and `<details class="primary">` had the same auto-fill bug `<article>` had earlier: variant cascade reached `--set-{tag}-background-color` and filled the surface. Fix: variant tints BORDER only by default; `.filled` opts into surface fill. Containers stay neutral; action surfaces (button, anchor) auto-fill.
+
+**Article size scale** — `.small` / `.large` modifier values were tuned for buttons (8px / 16px padding), making `.large article` SMALLER than the default article (20px). Per-element overrides in `_article.scss`: small 12/12, default 20/20, large 32/32 — now visibly small → default → large.
+
+**Heading color cascade** — `<article class="primary filled">` headings disappeared into the primary surface because `_h1-h6.scss` resolved `--set-heading-color` from `--set-variant-background-color`. Updated cascade prefers `--set-style-color` (the variant's CONTRAST color, set by `.filled`); bare `.primary` headings still tint to variant identity.
+
+**`<summary>` chevron** — replaced unicode `▶` / `▼` with a CSS-painted SVG mask (same pattern as the select chevron). Tracks `currentColor` via `mask-image` + `background-color`, rotates 90° on `[open]`. No more font-rendering inconsistencies.
+
+**Dialog mobile padding** — added `@media (max-width: 480px)` reduction to `--set-dialog-padding-{inline,block}` so content gets more breathing room on phones.
+
+**ButtonPage Form context** — was using `class="flex flex-wrap items-end gap-3"` which didn't include `flex-row`, so our framework's `form { flex-direction: column }` won. Switched to `<form class="inline">` (the framework's horizontal form modifier).
+
 ### Naming & coverage audit (2026-05-08)
 
 A second audit pass enforced the "element IS the component" rule consistently across the showcase + fixed two visual bugs.

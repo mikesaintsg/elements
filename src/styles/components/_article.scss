@@ -118,6 +118,31 @@
 			opacity: var(--set-article-disabled-opacity);
 			pointer-events: none;
 		}
+
+		// ----------------------------------------------------------------------
+		// Per-element size overrides.
+		//
+		// A single set of size modifier values can't serve every element well
+		// (a button's "small" is wildly different from an article's "small").
+		// Buttons consume the global `--set-size-*` tokens directly; articles
+		// override them per-instance so the visual progression actually feels
+		// like small → default → large rather than collapsing to button-scale.
+		// ----------------------------------------------------------------------
+		&.small {
+			--set-article-padding-inline: calc(var(--spacing) * 3);
+			--set-article-padding-block: calc(var(--spacing) * 3);
+			--set-article-gap: calc(var(--spacing) * 2);
+			--set-article-font-size: var(--text-sm);
+			--set-article-border-radius: var(--radius-md);
+		}
+
+		&.large {
+			--set-article-padding-inline: calc(var(--spacing) * 8);
+			--set-article-padding-block: calc(var(--spacing) * 8);
+			--set-article-gap: calc(var(--spacing) * 6);
+			--set-article-font-size: var(--text-lg);
+			--set-article-border-radius: var(--radius-xl);
+		}
 	}
 
 	// --------------------------------------------------------------------------

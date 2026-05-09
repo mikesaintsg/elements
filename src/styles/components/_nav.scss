@@ -84,9 +84,11 @@
 	// --------------------------------------------------------------------------
 	body:has(main) > nav,
 	body:has(main) > * > nav {
+		display: flex;
 		flex-direction: column;
 		flex-wrap: nowrap;
 		align-items: stretch;
+		gap: var(--set-nav-gap);
 
 		inline-size: var(--set-nav-inline-size);
 		padding-inline: var(--set-nav-padding-inline);
@@ -121,40 +123,62 @@
 	// Inner list — `<nav><ol>...</ol></nav>` or `<nav><ul>...</ul></nav>`.
 	//
 	// The browser would normally render the inner list with decimal markers
-	// and vertical padding. We override to a horizontal flow with no markers
-	// — the `<nav>` containing it implies these are navigation links, not a
-	// content list.
+	// and vertical padding. We strip those defaults so the list reads as a
+	// stack of nav links, not a content list. The DEFAULT layout is vertical
+	// (block flow) — that's the most common case (sidebar nav, table of
+	// contents, sub-nav rails). Horizontal layouts (navbar, breadcrumb,
+	// pagination) are opt-in via aria-label so the framework can recognize
+	// them; the WAI-ARIA Authoring Practices Guide already requires those
+	// labels for accessibility, so we get the visual disambiguation for free.
 	//
-	// This base layout is shared by every list-shaped nav: navbar with a UL
-	// of links, breadcrumb, pagination, table-of-contents, etc.
+	// Vertical default avoids the "all links staggered into a flex-wrap row"
+	// regression that happens when a TOC or grouped sidebar nav unexpectedly
+	// gets row-flexed.
 	// --------------------------------------------------------------------------
 	nav > ol,
 	nav > ul {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: calc(var(--spacing) * 2);
 		list-style: none;
 		margin: 0;
 		padding: 0;
 	}
 
-	nav > ol > li,
-	nav > ul > li {
+	// --------------------------------------------------------------------------
+	// Horizontal-list opt-in — recognized aria-labels.
+	//
+	// WAI-ARIA APG-recommended labels for navigation-bar-shaped nav patterns.
+	// Listing them explicitly keeps the matching surface narrow and predictable
+	// — any other aria-label leaves the inner list in vertical block flow.
+	// --------------------------------------------------------------------------
+	:is(
+			nav[aria-label='Breadcrumb'],
+			nav[aria-label='Pagination'],
+			nav[aria-label='Page navigation'],
+			nav[aria-label='Primary'],
+			nav[aria-label='Secondary']
+		)
+		> :is(ol, ul) {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: calc(var(--spacing) * 2);
+	}
+
+	:is(
+			nav[aria-label='Breadcrumb'],
+			nav[aria-label='Pagination'],
+			nav[aria-label='Page navigation'],
+			nav[aria-label='Primary'],
+			nav[aria-label='Secondary']
+		)
+		> :is(ol, ul)
+		> li {
 		display: inline-flex;
 		align-items: center;
 		gap: calc(var(--spacing) * 2);
 	}
 
 	// --------------------------------------------------------------------------
-	// Breadcrumb — explicit opt-in via `aria-label="Breadcrumb"`.
-	//
-	// The WAI-ARIA Authoring Practices Guide recommends labeling breadcrumbs
-	// with `aria-label="Breadcrumb"` on the surrounding nav. We use that label
-	// as the disambiguator so the framework only paints chevron separators
-	// when the markup explicitly says "this is a breadcrumb." Pagination,
-	// TOCs, sequential step indicators — all `<nav><ol>` patterns — keep
-	// their natural gap-only layout.
+	// Breadcrumb — chevron separators between siblings.
 	// --------------------------------------------------------------------------
 	nav[aria-label='Breadcrumb'] > ol > li:not(:first-child)::before {
 		content: '';

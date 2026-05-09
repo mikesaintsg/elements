@@ -24,11 +24,12 @@
 
 @layer elements {
 	details {
-		--set-details-color: var(--set-style-color, var(--set-variant-color, currentColor));
-		--set-details-background-color: var(
-			--set-style-background-color,
-			var(--set-variant-background-color, transparent)
-		);
+		// Disclosure widgets are containers — variant cascade tints the BORDER
+		// only by default; `.filled` opts in to surface fill. Same rule as
+		// <article>, <aside>, <fieldset>: containers stay neutral; action
+		// surfaces (button, anchor) auto-fill with their variant.
+		--set-details-color: var(--set-style-color, currentColor);
+		--set-details-background-color: var(--set-style-background-color, transparent);
 		--set-details-border-color: var(
 			--set-style-border-color,
 			var(--set-variant-background-color, color-mix(in srgb, currentColor 15%, transparent))

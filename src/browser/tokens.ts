@@ -214,6 +214,7 @@ export const tokens = {
 		fontWeight: '--set-summary-font-weight',
 		cursor: '--set-summary-cursor',
 		markerSize: '--set-summary-marker-size',
+		markerGap: '--set-summary-marker-gap',
 		transitionDuration: '--set-summary-transition-duration',
 	},
 
