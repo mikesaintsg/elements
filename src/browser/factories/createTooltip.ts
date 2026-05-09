@@ -1,0 +1,248 @@
+import type {
+	CreateTooltipElements,
+	CreateTooltipInstance,
+	CreateTooltipOptions,
+	Placement,
+} from '../types.js'
+import { effectScope, readonly, ref } from '@vue/reactivity'
+import { DEFAULT_FLOATING_OFFSET, TOOLTIP_EVENTS } from '../constants.js'
+import {
+	areaForPopoverPlacement,
+	bindEventMap,
+	dispatch,
+	emit,
+	generateId,
+	resolvePopoverSide,
+	runTransition,
+	sideOf,
+} from '../helpers.js'
+
+/**
+ * Framework-agnostic tooltip factory. Hover + focus triggers are always
+ * on (the canonical tooltip UX); programmatic `show` / `hide` / `toggle`
+ * remain available alongside.
+ *
+ * Same chrome model as `createPopover`:
+ *   - `panel.popover = 'manual'` for top-layer rendering.
+ *   - Inline `position-area` drives placement; `position-try-fallbacks`
+ *     (declared on the surface rule) flips on overflow.
+ *   - `dataset.tooltipSide` carries the resolved side for chrome that
+ *     follows it (arrow rotation, callout edge gradient).
+ *   - No `.show` / `.fade` / `.tooltip-{side}` classes.
+ *
+ * Element gating: any `HTMLElement` works as the panel — every element
+ * supports the popover API. The `useTooltip` composable narrows further
+ * to `[role="tooltip"]` if authors want a stricter contract.
+ */
+export function createTooltip(
+	elements: CreateTooltipElements,
+	options: CreateTooltipOptions = {},
+): CreateTooltipInstance {
+	const { anchor, panel } = elements
+	const strategy = options.strategy ?? 'absolute'
+	const offset = options.offset ?? DEFAULT_FLOATING_OFFSET
+	const dismissEscape = options.dismiss?.escape ?? true
+	const showDelay = options.delay?.show ?? 0
+	const hideDelay = options.delay?.hide ?? 0
+
+	let placementOpt: false | Placement = options.placement ?? 'bottom'
+	let placed = placementOpt !== false
+
+	const scope = effectScope()
+	const refs = scope.run(() => ({
+		visible: ref(false),
+		placement: ref<Placement>(placed && placementOpt !== false ? placementOpt : 'bottom'),
+	}))
+	if (!refs) throw new Error('createTooltip: failed to initialize reactive scope')
+	const visible = refs.visible
+	const placement = refs.placement
+
+	let showTimer: ReturnType<typeof setTimeout> | null = null
+	let hideTimer: ReturnType<typeof setTimeout> | null = null
+	let transition: (() => void) | null = null
+	let frame: number | null = null
+
+	const clearTimers = (): void => {
+		if (showTimer) {
+			clearTimeout(showTimer)
+			showTimer = null
+		}
+		if (hideTimer) {
+			clearTimeout(hideTimer)
+			hideTimer = null
+		}
+	}
+	const cancelTransition = (): void => {
+		transition?.()
+		transition = null
+	}
+	const cancelFrame = (): void => {
+		if (frame === null) return
+		cancelAnimationFrame(frame)
+		frame = null
+	}
+
+	const applyPlacement = (): void => {
+		if (!placed || placementOpt === false) return
+		panel.style.positionArea = areaForPopoverPlacement(placementOpt)
+		panel.dataset.tooltipSide = sideOf(placementOpt)
+		panel.dataset.tooltipStrategy = strategy
+		panel.dataset.tooltipOffset = String(offset)
+	}
+
+	const syncResolvedSide = (): void => {
+		if (!placed || !visible.value) return
+		panel.dataset.tooltipSide = resolvePopoverSide(anchor, panel)
+	}
+	const scheduleResolvedSide = (): void => {
+		if (typeof window === 'undefined') return
+		cancelFrame()
+		frame = requestAnimationFrame(() => {
+			frame = null
+			syncResolvedSide()
+		})
+	}
+
+	const clearPanel = (): void => {
+		delete panel.dataset.tooltipSide
+		delete panel.dataset.tooltipStrategy
+		delete panel.dataset.tooltipOffset
+		panel.style.positionArea = ''
+		if (panel.matches(':popover-open')) panel.hidePopover()
+	}
+
+	const hasTransition = (): boolean => {
+		if (typeof getComputedStyle === 'undefined') return false
+		const raw = getComputedStyle(panel).transitionDuration
+		if (!raw) return false
+		return raw.split(',').some((v) => parseFloat(v.trim()) > 0)
+	}
+
+	const finishOpen = (): void => {
+		cancelTransition()
+		if (!hasTransition()) {
+			emit(anchor, TOOLTIP_EVENTS.open)
+			return
+		}
+		transition = runTransition(panel, () => {
+			transition = null
+			emit(anchor, TOOLTIP_EVENTS.open)
+		})
+	}
+	const finishClose = (): void => {
+		cancelTransition()
+		if (!hasTransition()) {
+			emit(anchor, TOOLTIP_EVENTS.close)
+			return
+		}
+		transition = runTransition(panel, () => {
+			transition = null
+			emit(anchor, TOOLTIP_EVENTS.close)
+		})
+	}
+
+	const doShow = (): void => {
+		if (visible.value) return
+		showTimer = null
+		if (!dispatch(anchor, TOOLTIP_EVENTS.show)) return
+		visible.value = true
+		update()
+		panel.showPopover({ source: anchor })
+		scheduleResolvedSide()
+		finishOpen()
+	}
+
+	const doHide = (): void => {
+		if (!visible.value) return
+		if (!dispatch(anchor, TOOLTIP_EVENTS.hide)) return
+		visible.value = false
+		if (panel.matches(':popover-open')) panel.hidePopover()
+		finishClose()
+	}
+
+	const update = (next?: { readonly placement?: false | Placement }): void => {
+		if (next && 'placement' in next) {
+			placementOpt = next.placement ?? 'bottom'
+			placed = next.placement !== false
+		}
+		const target: Placement = placementOpt === false ? 'bottom' : placementOpt
+		placement.value = target
+		applyPlacement()
+		scheduleResolvedSide()
+		if (placed) emit(anchor, TOOLTIP_EVENTS.place, { placement: placement.value })
+	}
+
+	const show = (): void => {
+		clearTimers()
+		if (showDelay) showTimer = setTimeout(doShow, showDelay)
+		else doShow()
+	}
+	const hide = (): void => {
+		clearTimers()
+		if (hideDelay) hideTimer = setTimeout(doHide, hideDelay)
+		else doHide()
+	}
+	const toggle = (): void => (visible.value ? hide() : show())
+
+	const onEnter = (): void => show()
+	const onLeave = (): void => hide()
+
+	const onDocKeydown = (event: KeyboardEvent): void => {
+		if (!visible.value || !dismissEscape) return
+		if (event.key !== 'Escape') return
+		event.preventDefault()
+		hide()
+	}
+	const onViewportChange = (): void => scheduleResolvedSide()
+
+	panel.popover = 'manual'
+	const anchorName = `--elements-anchor-${generateId('t')}`
+	const previousAnchor = anchor.style.anchorName
+	const previousPositionAnchor = panel.style.positionAnchor
+	anchor.style.anchorName = anchorName
+	panel.style.positionAnchor = anchorName
+	panel.setAttribute('role', 'tooltip')
+	update()
+
+	const offBound = bindEventMap(anchor, TOOLTIP_EVENTS, options.on)
+	anchor.addEventListener('mouseenter', onEnter)
+	anchor.addEventListener('mouseleave', onLeave)
+	anchor.addEventListener('focusin', onEnter)
+	anchor.addEventListener('focusout', onLeave)
+	document.addEventListener('keydown', onDocKeydown)
+	document.addEventListener('scroll', onViewportChange, true)
+	window.addEventListener('resize', onViewportChange)
+
+	let destroyed = false
+	const destroy = (): void => {
+		if (!destroyed) {
+			destroyed = true
+			offBound()
+			anchor.removeEventListener('mouseenter', onEnter)
+			anchor.removeEventListener('mouseleave', onLeave)
+			anchor.removeEventListener('focusin', onEnter)
+			anchor.removeEventListener('focusout', onLeave)
+			document.removeEventListener('keydown', onDocKeydown)
+			document.removeEventListener('scroll', onViewportChange, true)
+			window.removeEventListener('resize', onViewportChange)
+			scope.stop()
+		}
+		clearTimers()
+		cancelFrame()
+		cancelTransition()
+		clearPanel()
+		anchor.style.anchorName = previousAnchor
+		panel.style.positionAnchor = previousPositionAnchor
+		visible.value = false
+	}
+
+	return {
+		visible: readonly(visible),
+		placement: readonly(placement),
+		show,
+		hide,
+		toggle,
+		update,
+		destroy,
+	}
+}

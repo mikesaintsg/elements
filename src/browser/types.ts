@@ -452,3 +452,285 @@ export interface UsePopoverReturn {
 	readonly update: () => void
 	readonly destroy: () => void
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// useDialog (← useModal). Bound to the native `<dialog>` element.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseDialogEventMap {
+	readonly show: (event: CustomEvent) => void
+	readonly open: (event: CustomEvent) => void
+	readonly hide: (event: CustomEvent) => void
+	readonly close: (event: CustomEvent) => void
+	/** Fired when a dismiss attempt is blocked by `dismiss.backdrop: 'static'`. */
+	readonly prevent: (event: CustomEvent) => void
+}
+
+export interface CreateDialogOptions {
+	/** `false` calls `dialog.show()` (non-modal). Default `true`. */
+	readonly modal?: boolean
+	readonly dismiss?: {
+		/** `true` dismiss on `::backdrop` click. `'static'` fires `prevent`. */
+		readonly backdrop?: boolean | 'static'
+		readonly escape?: boolean
+	}
+	readonly scroll?: {
+		/** Lock body scroll when `modal: false` (modal dialogs already lock natively). */
+		readonly lock?: boolean
+	}
+	readonly on?: Partial<UseDialogEventMap>
+}
+
+export interface CreateDialogInstance {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	readonly destroy: () => void
+}
+
+export interface UseDialogOptions extends CreateDialogOptions {}
+
+export interface UseDialogReturn {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useDetails (← useCollapse). Bound to the native `<details>` element.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseDetailsEventMap {
+	readonly show: (event: CustomEvent) => void
+	readonly open: (event: CustomEvent) => void
+	readonly hide: (event: CustomEvent) => void
+	readonly close: (event: CustomEvent) => void
+	readonly deactivate: (event: CustomEvent) => void
+}
+
+export interface CreateDetailsOptions {
+	/** Open on mount. Default `false`. */
+	readonly initial?: boolean
+	/** Optional accordion container — opening one panel closes its open siblings. */
+	readonly accordion?: HTMLElement | null
+	readonly on?: Partial<UseDetailsEventMap>
+}
+
+export interface CreateDetailsInstance {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	readonly destroy: () => void
+}
+
+export interface UseDetailsOptions {
+	readonly initial?: boolean
+	readonly accordion?: Ref<HTMLElement | null>
+	readonly on?: Partial<UseDetailsEventMap>
+}
+
+export interface UseDetailsReturn {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useAside (← useOffcanvas). Bound to the native `<aside>` element.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseAsideEventMap {
+	readonly show: (event: CustomEvent) => void
+	readonly open: (event: CustomEvent) => void
+	readonly hide: (event: CustomEvent) => void
+	readonly close: (event: CustomEvent) => void
+	readonly prevent: (event: CustomEvent) => void
+}
+
+export interface CreateAsideOptions {
+	readonly dismiss?: {
+		readonly backdrop?: boolean | 'static'
+		readonly escape?: boolean
+	}
+	readonly scroll?: {
+		readonly lock?: boolean
+	}
+	readonly on?: Partial<UseAsideEventMap>
+}
+
+export interface CreateAsideInstance {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	readonly destroy: () => void
+}
+
+export interface UseAsideOptions extends CreateAsideOptions {}
+
+export interface UseAsideReturn {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useTooltip
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseTooltipEventMap {
+	readonly show: (event: CustomEvent) => void
+	readonly open: (event: CustomEvent) => void
+	readonly hide: (event: CustomEvent) => void
+	readonly close: (event: CustomEvent) => void
+	readonly place: (event: CustomEvent) => void
+}
+
+export interface CreateTooltipElements {
+	readonly anchor: HTMLElement
+	readonly panel: HTMLElement
+	readonly arrow?: HTMLElement | null
+}
+
+export interface CreateTooltipOptions {
+	readonly placement?: false | Placement
+	readonly strategy?: Strategy
+	readonly offset?: number
+	readonly delay?: { readonly show?: number; readonly hide?: number }
+	readonly dismiss?: { readonly escape?: boolean }
+	readonly on?: Partial<UseTooltipEventMap>
+}
+
+export interface CreateTooltipInstance {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly placement: Readonly<Ref<Placement>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	readonly update: (options?: { readonly placement?: false | Placement }) => void
+	readonly destroy: () => void
+}
+
+export interface UseTooltipOptions {
+	readonly anchor: Ref<HTMLElement | null>
+	readonly panel: Ref<HTMLElement | null>
+	readonly arrow?: Ref<HTMLElement | null>
+	readonly placement?: false | Placement | Ref<Placement>
+	readonly strategy?: Strategy
+	readonly offset?: number
+	readonly delay?: { readonly show?: number; readonly hide?: number }
+	readonly dismiss?: { readonly escape?: boolean }
+	readonly on?: Partial<UseTooltipEventMap>
+}
+
+export interface UseTooltipReturn {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly placement: Readonly<Ref<Placement>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	readonly update: () => void
+	readonly destroy: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useMenu (← useDropdown). Bound to the native `<menu>` element.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseMenuEventMap {
+	readonly show: (event: CustomEvent) => void
+	readonly open: (event: CustomEvent) => void
+	readonly hide: (event: CustomEvent) => void
+	readonly close: (event: CustomEvent) => void
+}
+
+export interface CreateMenuElements {
+	readonly toggle: HTMLElement
+	readonly menu: HTMLMenuElement
+}
+
+export interface CreateMenuOptions {
+	readonly placement?: Placement
+	readonly strategy?: Strategy
+	readonly offset?: number
+	/** Min item-rows the requested side must hold before the menu commits.
+	 *  `0` opts out — surplus rows scroll inside the panel. Default 5. */
+	readonly flip?: number
+	readonly dismiss?: {
+		readonly outside?: boolean
+		readonly escape?: boolean
+		readonly inside?: boolean
+	}
+	readonly on?: Partial<UseMenuEventMap>
+}
+
+export interface CreateMenuInstance {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	readonly update: (options?: { readonly placement?: Placement }) => void
+	readonly destroy: () => void
+}
+
+export interface UseMenuOptions {
+	readonly placement?: Placement | Ref<Placement>
+	readonly strategy?: Strategy
+	readonly offset?: number
+	readonly flip?: number
+	readonly dismiss?: {
+		readonly outside?: boolean
+		readonly escape?: boolean
+		readonly inside?: boolean
+	}
+	readonly on?: Partial<UseMenuEventMap>
+}
+
+export interface UseMenuReturn {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	readonly update: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useToast. Bound to the native `<output>` element.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseToastEventMap {
+	readonly show: (event: CustomEvent) => void
+	readonly open: (event: CustomEvent) => void
+	readonly hide: (event: CustomEvent) => void
+	readonly close: (event: CustomEvent) => void
+}
+
+export interface CreateToastOptions {
+	/** `false` keeps the toast sticky. Object enables auto-hide with optional delay. */
+	readonly autohide?: false | { readonly delay?: number }
+	readonly on?: Partial<UseToastEventMap>
+}
+
+export interface CreateToastInstance {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly pause: () => void
+	readonly resume: () => void
+	readonly destroy: () => void
+}
+
+export interface UseToastOptions extends CreateToastOptions {}
+
+export interface UseToastReturn {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly pause: () => void
+	readonly resume: () => void
+}
