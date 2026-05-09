@@ -632,6 +632,7 @@ export const tokens = {
 	anchor: {
 		gap: '--set-anchor-gap',
 		positionTryFallbacks: '--set-anchor-position-try-fallbacks',
+		positionTryOrder: '--set-anchor-position-try-order',
 		positionArea: '--set-anchor-position-area',
 		viewportInset: '--set-anchor-viewport-inset',
 	},

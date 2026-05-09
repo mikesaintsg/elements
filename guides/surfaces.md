@@ -232,32 +232,34 @@ A dropdown that prefers to drop down but flips up when the trigger is near the b
 
 **The four primitives:**
 
-| Property                                                                                        | What it buys                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `position-area: var(--set-anchor-position-area)`                                                | The requested side. Defaults to `block-end` (below); placement modifiers (`.top`, `.bottom-start`, …) override.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `position-try-fallbacks: flip-inline` (block-axis flip OFF by default)                          | Fallback list — INLINE only. We deliberately omit `flip-block` because Chromium re-evaluates fallbacks only on layout change; once block-axis flips at open time, scrolling won't unstick it. Mailbox's `createDropdown.ts` opts out the same way (`flipThreshold === 0` → `position-try-fallbacks: flip-inline`) for plain dropdowns. The popover ALWAYS keeps the requested block-axis side and stays there as the anchor moves on scroll — predictable, no surprises. Consumers who want `flip-block` opt in per-host: `#my-popover { position-try-fallbacks: flip-block, flip-inline; }`. |
-| `max-block-size` + `max-inline-size` clamped to `100dvh` / `100dvw` minus a viewport-edge inset | The **demanded space**. Without an explicit max-size, the browser uses the popover's intrinsic content size — which on a tiny mobile viewport could exceed the viewport itself. Clamping to `100dvh - 2 * --set-anchor-viewport-inset` (or `safe-area-inset-*`, whichever's larger) means the popover _shrinks before overflowing_.                                                                                                                                                                                                                                                           |
-| `overflow: auto`                                                                                | Scrolls the popover's content when the demanded size still exceeds what fits — the cap doesn't truncate the menu, it scrolls it.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `position-visibility: anchors-visible`                                                          | Auto-hides the popover when the anchor scrolls offscreen. Without this, a dropdown left open in a scrolling list floats untethered at its computed position, pointing at nothing.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Property                                                                                                     | What it buys                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `position-area: var(--set-anchor-position-area)`                                                             | The requested side. Defaults to `block-end` (below); placement modifiers (`.top`, `.bottom-start`, …) override.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline` + `position-try-order: most-width` | Mailbox's popover / `useSelect` recipe: full block-axis flip enabled, with `most-width` ordering so the browser prefers the side with most inline-axis room when multiple fallbacks fit. The `max-block-size` cap (next row) is the _demanded space_ the browser compares against — without it, flip-block can't decide if the requested side fits. With both in place, a popover near the viewport bottom flips up cleanly (no overlap with the trigger); a popover mid-page drops down naturally. Mailbox's `useDropdown` overrides this default to `flip-inline` only (`DEFAULT_DROPDOWN_FLIP === 0`) for navigational menus where flipping is disorienting; consumers can do the same per-host: `#my-dropdown { position-try-fallbacks: flip-inline; }`. |
+| `max-block-size` + `max-inline-size` clamped to `100dvh` / `100dvw` minus a viewport-edge inset              | The **demanded space**. Without an explicit max-size, the browser uses the popover's intrinsic content size — which on a tiny mobile viewport could exceed the viewport itself. Clamping to `100dvh - 2 * --set-anchor-viewport-inset` (or `safe-area-inset-*`, whichever's larger) means the popover _shrinks before overflowing_.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `overflow: auto`                                                                                             | Scrolls the popover's content when the demanded size still exceeds what fits — the cap doesn't truncate the menu, it scrolls it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `position-visibility: anchors-visible`                                                                       | Auto-hides the popover when the anchor scrolls offscreen. Without this, a dropdown left open in a scrolling list floats untethered at its computed position, pointing at nothing.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
-**The recipe in action.** Imagine a dropdown anchored to a button near the bottom of the viewport:
+**The recipe in action.** Imagine a popover anchored to a button near the bottom of the viewport:
 
 1. The browser plans the popover at `position-area: block-end` (below the button).
-2. The popover's natural height is 264 px; only 12 px of viewport remain below the button.
-3. **No block-axis flip.** With our default `position-try-fallbacks: flip-inline` (no `flip-block`), the popover stays committed to `block-end`. It DOESN'T flip up to `block-start`.
-4. **Chromium auto-shifts to fit.** When the popover overflows its requested side, the UA shifts the popover up to fit within the viewport — the popover may overlap the trigger in this edge case. This is rare in practice (most dropdowns open with plenty of room below); when it matters, the consumer either opts in to `flip-block` per-host or sets a smaller `max-block-size` so the menu naturally fits + scrolls its content.
-5. **Direction stays consistent on scroll.** Because we don't flip, scrolling the page doesn't change which side the popover is on. The popover always opens below the trigger and stays below it for the entire session — even when the anchor moves into space that would have allowed flipping in either direction.
+2. The popover's natural height is 264 px; only 37 px of viewport remain below the button.
+3. **Demanded space caps the height first.** `max-block-size: calc(100dvh - inset)` resolves to ~541 px — the popover's intrinsic 264 px fits within that, so no shrinking yet.
+4. **`flip-block` kicks in.** The popover at 264 px doesn't fit in the 37 px below the button. The browser walks `position-try-fallbacks` and commits to `block-start span-inline-end` (above the trigger, start-aligned) — there's ~440 px above the trigger, plenty of room. `position-try-order: most-width` favours the side with most inline-axis room when multiple fallbacks fit.
+5. **No overlap with the trigger.** Verified live: with the new default the popover lands at y=339-480, trigger at y=484-519 → popover ends 4 px above trigger top, exactly the configured `--set-anchor-gap`.
+6. **Mid-page popovers drop down.** When there's room below, the requested side wins (no fallback fires). Verified: trigger at y=296, popover at y=335 — clean drop-down.
 
 All of this happens in the layout pass, before paint — there's no flicker, no JS observer, no re-positioning event.
 
 **Tokens consumers can override.**
 
-| Token                                 | Default                    | Notes                                                                                                                                                                                                   |
-| ------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--set-anchor-gap`                    | `calc(var(--spacing) * 1)` | Distance between anchor and popover (the gap below a dropdown).                                                                                                                                         |
-| `--set-anchor-position-area`          | `block-end`                | Default placement; placement modifiers override.                                                                                                                                                        |
-| `--set-anchor-position-try-fallbacks` | `flip-inline`              | Default fallback chain. Block-axis flip OFF by default to dodge the in-session-stickiness gotcha. Override per-host to opt back in: `#my-popover { position-try-fallbacks: flip-block, flip-inline; }`. |
-| `--set-anchor-viewport-inset`         | `calc(var(--spacing) * 2)` | Minimum gap between popover and viewport edge. The framework takes the larger of this and `safe-area-inset-*` so notched / rounded-corner phones keep clearance even when the consumer asked for `p-0`. |
+| Token                                 | Default                                           | Notes                                                                                                                                                                                                            |
+| ------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--set-anchor-gap`                    | `calc(var(--spacing) * 1)`                        | Distance between anchor and popover (the gap below a dropdown).                                                                                                                                                  |
+| `--set-anchor-position-area`          | `block-end`                                       | Default placement; placement modifiers override.                                                                                                                                                                 |
+| `--set-anchor-position-try-fallbacks` | `flip-block, flip-inline, flip-block flip-inline` | Default fallback chain — block + inline flip enabled. Mailbox's popover/select recipe. Override per-host to opt out (e.g. for a navigational dropdown): `#my-dropdown { position-try-fallbacks: flip-inline; }`. |
+| `--set-anchor-position-try-order`     | `most-width`                                      | Mailbox's popover default. The browser prefers the side with most inline-axis room when multiple fallbacks fit. Authors can override per-host with `normal` or `most-block-size`.                                |
+| `--set-anchor-viewport-inset`         | `calc(var(--spacing) * 2)`                        | Minimum gap between popover and viewport edge. The framework takes the larger of this and `safe-area-inset-*` so notched / rounded-corner phones keep clearance even when the consumer asked for `p-0`.          |
 
 **What the framework intentionally does NOT use.**
 
@@ -302,6 +304,57 @@ function observeAnchorScroll(popover: HTMLElement): () => void {
 ```
 
 Until Phase 6 ships, the in-session stickiness is documented behaviour: open ⇒ commit ⇒ live until closed. Closing and re-opening always re-evaluates correctly, so the practical impact is small — most dropdown / popover sessions don't span a meaningful scroll.
+
+#### The popover-overlaps-trigger edge case
+
+Same family of CSS-anchor-positioning limitations, different symptom. With our default `position-try-fallbacks: flip-inline` (block-axis flip OFF), a popover anchored near the viewport bottom can't flip up — but its natural height may exceed the available space below the trigger. Chromium's last-resort behaviour is to **shift the popover up to fit the viewport**, which means it visually overlaps the trigger.
+
+We exhaustively tested CSS-only ways to clamp the popover's height to the actual space-below-anchor:
+
+| Approach                                                                                        | Result                                                                                                  |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `max-block-size: calc(100dvh - anchor(bottom) - inset)` with explicit `position-anchor: --name` | `anchor()` is not allowed in size properties per spec; the calc resolves to fallback (the viewport cap) |
+| `max-block-size: anchor-size(self-block)`                                                       | Returns the anchor's OWN block-size (the trigger's height), not space-around-anchor                     |
+| `align-self: stretch` + `min-block-size: 0`                                                     | Popover's intrinsic content size still wins; auto-fit shifts it up                                      |
+| `inset-block-end: var(--inset)` (try to pin both ends so size = available space)                | `position-area` already governs the cell; explicit inset-\* properties are ignored on anchored popovers |
+| `@position-try` named block with size constraint                                                | Named try blocks accept `position-area` and inset properties but `anchor()` in size is still rejected   |
+
+**Mailbox accepts the same limitation.** Their `_dropdown.scss` has only one `anchor-size()` call — `width: anchor-size(width)` for the `.w-100` utility, which ties menu width to trigger width. They never clamp height to space-below-anchor; the SAME overflow case happens for plain dropdowns there too.
+
+The Phase 6 composable layer fixes this with a JS-set max-block-size derived from `getBoundingClientRect`:
+
+```ts
+// Phase 6 sketch — clamp menu to space below the anchor
+function clampToAvailableSpace(anchor: HTMLElement, popover: HTMLElement): () => void {
+	const update = () => {
+		const a = anchor.getBoundingClientRect()
+		const inset = parseFloat(
+			getComputedStyle(document.documentElement).getPropertyValue('--set-anchor-viewport-inset') ||
+				'8',
+		)
+		const spaceBelow = window.innerHeight - a.bottom - inset
+		const spaceAbove = a.top - inset
+		// Whichever side has more room wins; the popover doesn't flip but
+		// shrinks to that space. `overflow: auto` on the popover (already
+		// declared) makes the surplus content scroll inside the menu.
+		popover.style.maxBlockSize = `${Math.max(spaceBelow, spaceAbove)}px`
+	}
+	update()
+	document.addEventListener('scroll', update, { capture: true, passive: true })
+	window.addEventListener('resize', update)
+	return () => {
+		document.removeEventListener('scroll', update, true)
+		window.removeEventListener('resize', update)
+	}
+}
+```
+
+The same observer that bridges the sticky-flip gap (above) can run this clamp — it's the same `scroll` capture listener, just doing two things per tick (toggle to force re-eval + write the actual computed max-block-size). Both fixes land together when `useMenu` / `usePopover` ship.
+
+For now, consumers who hit the overlap case in their UI have two workarounds:
+
+1. **Explicit `max-block-size`** per host: `#my-popover { max-block-size: 12rem; }` — caps the popover so it always fits some reasonable space + scrolls overflow. Mailbox's selects do this via `--bs-dropdown-flip * --bs-dropdown-row-height = ~180px`.
+2. **Opt back in to `flip-block`** per host: `#my-popover { position-try-fallbacks: flip-block, flip-inline; }` — accepts the in-session-stickiness trade-off in exchange for proper boundary handling at open time.
 
 ---
 
