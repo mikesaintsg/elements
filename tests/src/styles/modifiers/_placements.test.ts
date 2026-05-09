@@ -101,6 +101,27 @@ describe('placements — edge classes hug the anchor via align-self / justify-se
 		expect(a.align).toBe('anchor-center')
 		expect(a.justify).toBe('start')
 	})
+
+	it('.top-start hugs anchor block-end + start-aligns inline', () => {
+		const a = alignment('top-start')
+		expect(a.align).toBe('end')
+		expect(a.justify).toBe('start')
+	})
+	it('.top-end hugs anchor block-end + end-aligns inline', () => {
+		const a = alignment('top-end')
+		expect(a.align).toBe('end')
+		expect(a.justify).toBe('end')
+	})
+	it('.bottom-start hugs anchor block-start + start-aligns inline', () => {
+		const a = alignment('bottom-start')
+		expect(a.align).toBe('start')
+		expect(a.justify).toBe('start')
+	})
+	it('.bottom-end hugs anchor block-start + end-aligns inline', () => {
+		const a = alignment('bottom-end')
+		expect(a.align).toBe('start')
+		expect(a.justify).toBe('end')
+	})
 })
 
 describe('placements — manual popovers are excluded', () => {

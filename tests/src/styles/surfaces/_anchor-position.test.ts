@@ -30,7 +30,7 @@ describe('anchor-position — token surface', () => {
 	})
 })
 
-describe('anchor-position — applies to non-manual popovers', () => {
+describe('anchor-position — applies to every popover flavour', () => {
 	it('a `[popover]` (auto, the default) consumes the position-area token', () => {
 		const div = build('div')
 		div.setAttribute('popover', '')
@@ -49,19 +49,32 @@ describe('anchor-position — applies to non-manual popovers', () => {
 		mount(div)
 		expect(style(div, 'position-area').trim()).not.toBe('')
 	})
+
+	it('a `[popover=manual]` ALSO gets anchor-positioning (same as auto)', () => {
+		// Manual popovers used to be excluded; that meant a bare
+		// `<div popover="manual">` defaulted to UA top-left placement,
+		// which is awful UX. Now they consume the same anchor surface as
+		// auto / hint. The toast component overrides this via @layer
+		// components (selector `output[popover]`); see the toast test
+		// below for the override path.
+		const div = build('div')
+		div.setAttribute('popover', 'manual')
+		div.id = 'manual-anchor'
+		mount(div)
+		expect(style(div, 'position-area').trim()).not.toBe('')
+	})
 })
 
-describe('anchor-position — excludes manual popovers (toasts)', () => {
-	it('an `output[popover=manual]` does NOT receive the anchor position-area', () => {
+describe('anchor-position — toast (output[popover]) overrides via @layer components', () => {
+	it('an `output[popover=manual]` ends up `position: fixed` from toast component layer', () => {
 		const out = build('output')
 		out.setAttribute('popover', 'manual')
-		out.id = 'manual-anchor'
+		out.id = 'toast-anchor'
 		mount(out)
-		// Manual popovers are excluded by selector; `position-area` should
-		// resolve to empty / `none`.
-		const positionArea = style(out, 'position-area').trim()
-		// Different browsers serialize "no position-area" differently —
-		// either an empty string or "none". Accept both.
-		expect(positionArea === '' || positionArea === 'none').toBe(true)
+		// Toast component (components/_output.scss) sets `position: fixed`
+		// + viewport-corner inset-* values; the components layer beats the
+		// surfaces layer regardless of selector specificity, so the toast
+		// wins even though the surface rule sets position-area.
+		expect(style(out, 'position').trim()).toBe('fixed')
 	})
 })

@@ -18,20 +18,26 @@
 //   .bottom-end    below the anchor, aligned to the anchor's inline-end edge
 //
 // Scope:
-//   These rules apply to popovers (auto / hint variants) — that's the
-//   universe of anchor-positioned elements the framework currently ships.
-//   Manual popovers (`[popover='manual']`) are excluded because they use
-//   viewport-fixed positioning (see components/_output.scss for toasts);
-//   setting `position-area` on them would re-enter anchor-positioning mode
-//   and fight the explicit inset-* values.
+//   These rules apply to every `[popover]` — auto / manual / hint. The
+//   browser sets up an implicit anchor for any popover invoked via
+//   `popovertarget`, regardless of mode, so the same placement vocabulary
+//   covers all three.
 //
-//   The `.start` / `.end` / `.top` / `.bottom` class names are NOT scoped
-//   to this modifier alone — `<aside>`, `<nav>`, and toast (`output[popover
-//   ='manual']`) already use the same names for their own placement
-//   semantics (border-edge flipping, viewport-corner picking). Those
-//   contexts don't anchor-position, so the `position-area` declaration in
-//   this file has no effect on them — `position-area` is a no-op on
-//   non-anchored elements.
+//   Toasts (`output[popover]`) are an exception in PRACTICE — they need
+//   viewport-fixed corner placement, not anchor-positioning. The toast
+//   component partial (`components/_output.scss`) overrides position
+//   with explicit `position: fixed; inset-*` values, and `@layer
+//   components` beats `@layer modifiers`, so the toast wins regardless
+//   of which `.top` / `.bottom-start` etc. modifier is also on the
+//   element.
+//
+//   The `.start` / `.end` / `.top` / `.bottom` class names are NOT
+//   scoped to this modifier alone — `<aside>`, `<nav>`, and toast
+//   (`output[popover='manual']`) already use the same names for their
+//   own placement semantics (border-edge flipping, viewport-corner
+//   picking). Those contexts don't anchor-position, so the
+//   `position-area` declaration in this file has no effect on them
+//   — `position-area` is a no-op on non-anchored elements.
 //
 // Logical axes:
 //   `position-area` keywords use logical axes (`block-start`, `inline-end`,
@@ -59,28 +65,28 @@
 	// (Mailbox's `.popover-top { position-area: top; align-self: end; …` is
 	// the canonical recipe — the alignment is what turns a "somewhere in
 	// that band" placement into a "kissing the anchor edge" placement.)
-	[popover]:not([popover='manual']).top {
+	[popover].top {
 		position-area: block-start;
 		align-self: end;
 		justify-self: anchor-center;
 	}
-	[popover]:not([popover='manual']).bottom {
+	[popover].bottom {
 		position-area: block-end;
 		align-self: start;
 		justify-self: anchor-center;
 	}
-	[popover]:not([popover='manual']).start {
+	[popover].start {
 		position-area: inline-start;
 		align-self: anchor-center;
 		justify-self: end;
 	}
-	[popover]:not([popover='manual']).end {
+	[popover].end {
 		position-area: inline-end;
 		align-self: anchor-center;
 		justify-self: start;
 	}
 
-	// Corner placements — the four diagonals. We use the SPAN syntax
+	// Corner placements — the four diagonals. We use SPAN syntax
 	// (`block-end span-inline-end`) rather than two-cell pairing
 	// (`block-end inline-start`). The difference matters:
 	//
@@ -100,16 +106,44 @@
 	//
 	// `.bottom-start` reads "below the anchor, aligned to its start edge"
 	// → popover's start hugs anchor's start → spans toward inline-end.
-	[popover]:not([popover='manual']).top-start {
+	//
+	// Each corner ALSO sets `align-self` + `justify-self` explicitly so it
+	// fully overrides the surface default (`align-self: start; justify-
+	// self: anchor-center`). Without the override:
+	//   .top-start (no align-self) inherits `align-self: start` from the
+	//   surface default. For a `block-start` row, that means "align to the
+	//   start of the row's available space" — the TOP of the viewport,
+	//   miles away from the anchor. The popover ends up at y=0 instead of
+	//   just above the trigger. The fix is to set `align-self: end` so the
+	//   popover hugs the row's bottom edge — kissing the anchor's top edge.
+	//
+	// Inline alignment for spans:
+	//   span-inline-end → area extends from anchor's inline-START edge to
+	//                      inline-END side. `justify-self: start` puts the
+	//                      popover's start at the area's start = anchor's
+	//                      start edge. Bootstrap-style start alignment.
+	//   span-inline-start → area extends from inline-START side to anchor's
+	//                        inline-END edge. `justify-self: end` puts the
+	//                        popover's end at the area's end = anchor's
+	//                        end edge.
+	[popover].top-start {
 		position-area: block-start span-inline-end;
+		align-self: end;
+		justify-self: start;
 	}
-	[popover]:not([popover='manual']).top-end {
+	[popover].top-end {
 		position-area: block-start span-inline-start;
+		align-self: end;
+		justify-self: end;
 	}
-	[popover]:not([popover='manual']).bottom-start {
+	[popover].bottom-start {
 		position-area: block-end span-inline-end;
+		align-self: start;
+		justify-self: start;
 	}
-	[popover]:not([popover='manual']).bottom-end {
+	[popover].bottom-end {
 		position-area: block-end span-inline-start;
+		align-self: start;
+		justify-self: end;
 	}
 }

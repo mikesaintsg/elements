@@ -1,17 +1,13 @@
 <script lang="ts" setup>
 import { useTemplateRef } from 'vue'
 
+// Auto popover demo retains a programmatic-open hidden button as a reference
+// for the JS API. Manual popover now drives entirely through the
+// `popovertarget` attribute pair (no JS handler needed).
 const auto = useTemplateRef<HTMLElement>('auto')
-const manual = useTemplateRef<HTMLElement>('manual')
 
 const showAuto = (): void => {
 	auto.value?.showPopover()
-}
-const showManual = (): void => {
-	manual.value?.showPopover()
-}
-const hideManual = (): void => {
-	manual.value?.hidePopover()
 }
 </script>
 
@@ -58,13 +54,17 @@ const hideManual = (): void => {
 			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Popover — manual</h2>
 			<p class="text-sm leading-6 text-slate-600">
 				<code>[popover=manual]</code> ignores light-dismiss — only an explicit
-				<code>.hidePopover()</code> closes it. Same chrome, different lifecycle.
+				<code>.hidePopover()</code> (or another invoke of the trigger) closes it. Same chrome, same
+				auto-anchor placement, different lifecycle. The framework treats manual popovers identically
+				to auto for positioning — both consume the anchor-positioning surface.
 			</p>
 			<div class="flex gap-2">
-				<button type="button" class="success" @click="showManual">Open manual</button>
-				<button type="button" @click="hideManual">Close manual</button>
+				<button type="button" class="success" popovertarget="manual-pop">Open manual</button>
+				<button type="button" popovertarget="manual-pop" popovertargetaction="hide">
+					Close manual
+				</button>
 			</div>
-			<div ref="manual" id="manual-pop" popover="manual" style="max-inline-size: 24rem">
+			<div id="manual-pop" popover="manual" style="max-inline-size: 24rem">
 				<div class="grid gap-2">
 					<strong>Manual popover</strong>
 					<p class="m-0 text-sm text-slate-600">
@@ -116,9 +116,11 @@ const hideManual = (): void => {
 				<code>inline-end</code>, so a popover placed <code>.bottom-start</code> in LTR flips to
 				<code>.top-end</code>-equivalent in <code>vertical-rl</code> writing modes. The framework
 				re-uses these same class names on bare <code>&lt;aside&gt;</code> /
-				<code>&lt;nav&gt;</code> / toast for per-element placement semantics — manual popovers
-				(toasts) are intentionally excluded from the anchor-positioning rules so the two positioning
-				models don't fight.
+				<code>&lt;nav&gt;</code> / toast for per-element placement semantics — and they all map to
+				<code>position-area</code> the same way for any anchor-positioned host. Toasts
+				(<code>output[popover]</code>) are the one exception: their component-layer rules pin them
+				to a viewport corner via <code>position: fixed</code>, beating the surface defaults via
+				cascade-layer order.
 			</p>
 		</section>
 

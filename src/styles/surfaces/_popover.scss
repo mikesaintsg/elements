@@ -82,17 +82,30 @@
 	// tooltip-style popovers. It behaves like `auto` for light-dismiss but
 	// is hierarchically nested under any open auto popover (so a tooltip
 	// inside an open menu doesn't kill the menu when shown). The visual
-	// variant is smaller, less padded, and inverted so it reads as a
-	// transient label rather than a full panel.
+	// variant is smaller, less padded, and INVERTED — light text on a dark
+	// background — so it reads as a transient label distinct from a full
+	// panel.
 	//
 	// Per WAI-ARIA 1.2, tooltips are also exposable via `role="tooltip"`
 	// — the framework styles `[role="tooltip"]` the same way so a
 	// non-popover tooltip (CSS-only, anchor-positioned) gets identical
 	// chrome.
+	//
+	// Inversion subtlety:
+	//   The hint color tokens are static (white text, dark bg) rather than
+	//   referencing `currentColor`. The popover sets `color` and
+	//   `background-color` on the same selector, so a `currentColor`
+	//   reference inside `background-color` would resolve to the popover's
+	//   own (just-set) color → white-on-white. Static values dodge the
+	//   chicken-and-egg problem; consumers theme via the tokens directly.
 	// --------------------------------------------------------------------------
 	:root {
 		--set-popover-hint-color: var(--color-white, #fff);
-		--set-popover-hint-background-color: color-mix(in srgb, currentColor 88%, transparent);
+		// Dark inverted background — uses an explicit dark literal so the
+		// tooltip renders correctly even when the surrounding text color
+		// is the same shade (would otherwise produce white-on-white via
+		// `currentColor`). Authors override per-host or globally for theme.
+		--set-popover-hint-background-color: rgb(15 23 42 / 0.92);
 		--set-popover-hint-border-color: transparent;
 		--set-popover-hint-padding-inline: calc(var(--spacing) * 2);
 		--set-popover-hint-padding-block: calc(var(--spacing) * 1);

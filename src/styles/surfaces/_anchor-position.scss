@@ -9,7 +9,7 @@
 // default fixed top-of-viewport rendering).
 //
 // Surfaces covered by this partial:
-//   [popover]:not([popover='manual'])   default placement + flip fallbacks
+//   [popover]                            default placement + flip fallbacks
 //   --set-anchor-*                       gap / fallback tokens on :root
 //
 // Why this is its own partial (not folded into surfaces/_popover.scss):
@@ -22,23 +22,30 @@
 // Auto-anchor behavior:
 //   When a popover is invoked via `<button popovertarget="…">`, the browser
 //   sets up an *implicit* anchor relationship between the invoker and the
-//   popover. No `anchor-name` / `position-anchor` boilerplate is required —
-//   we only need to declare the placement (position-area) on the popover.
-//   This makes `<button popovertarget="menu"><menu popover id="menu">` a
-//   complete dropdown with no JS, no anchor-name plumbing.
+//   popover — regardless of the popover's mode (auto / manual / hint). No
+//   `anchor-name` / `position-anchor` boilerplate is required; we only
+//   declare placement (position-area) on the popover and the browser
+//   handles the rest. This makes `<button popovertarget="menu"><menu popover
+//   id="menu">` a complete dropdown with no JS, no anchor-name plumbing —
+//   and the same shape works for `popover="manual"` (e.g. for forms that
+//   need the manual lifecycle but the same anchor placement).
 //
 // Placement vocabulary lives in `modifiers/_placements.scss` — `.top`,
 // `.bottom`, `.start`, `.end`, `.top-start`, etc. map to `position-area`
-// keywords. This file declares the default (bottom span-inline-end) so a
-// bare `[popover]:not([popover='manual'])` lands somewhere sensible
-// without extra classes.
+// keywords. This file declares the default (`block-end` = below the anchor)
+// so a bare popover lands somewhere sensible without extra classes.
+//
+// What about toasts?
+//   Toasts are `output[popover='manual']` and want viewport-fixed corner
+//   placement, not anchor-positioning. The toast component partial
+//   (`components/_output.scss`) overrides position with explicit
+//   `position: fixed; inset-*` values; @layer components beats @layer
+//   surfaces so the toast wins regardless of selector specificity.
+//   Manual popovers that aren't toasts (e.g. a `<div popover="manual">`
+//   tied to a `<button popovertarget>`) get the standard anchor-position
+//   behavior — exactly what consumers expect.
 //
 // Quirks:
-//   - `[popover='manual']` (toasts) is intentionally excluded — manual
-//     popovers use viewport-fixed placement via explicit `inset-*`
-//     properties (see components/_output.scss). Setting position-area on
-//     them would re-enter anchor-positioning mode and fight the inset-*
-//     placements.
 //   - `position-try-fallbacks` lets the browser flip the popover to the
 //     opposite side of the anchor when there isn't room. We supply the
 //     three common flips (block, inline, both) so a popover anchored at
@@ -74,10 +81,10 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// Default placement — applied to every popover that isn't manual. The
-	// invoking `<button popovertarget>` is automatically the anchor; the
-	// position-area + alignment recipe makes the popover hug the anchor's
-	// bottom edge and stay centered horizontally on it.
+	// Default placement — applied to every popover. The invoking
+	// `<button popovertarget>` is automatically the anchor; the position-
+	// area + alignment recipe makes the popover hug the anchor's bottom
+	// edge and stay centered horizontally on it.
 	//
 	// align-self: start  → hug the anchor's block-end edge (don't drift
 	//                       toward the bottom of the viewport's bottom row)
@@ -85,8 +92,12 @@
 	//
 	// Placement modifiers (.top / .bottom-start / etc.) override the area
 	// + alignment per-host without re-stating the gap or fallback list.
+	//
+	// Toasts (`output[popover]`) override this entirely with `position:
+	// fixed` + viewport corner insets via the components-layer rule — that
+	// rule wins because @layer components beats @layer surfaces.
 	// --------------------------------------------------------------------------
-	[popover]:not([popover='manual']) {
+	[popover] {
 		position-area: var(--set-anchor-position-area);
 		position-try-fallbacks: var(--set-anchor-position-try-fallbacks);
 		align-self: start;
@@ -95,27 +106,5 @@
 		// otherwise center the popover. Logical-axis margin keeps RTL flowing.
 		margin: 0;
 		margin-block: var(--set-anchor-gap);
-	}
-
-	// --------------------------------------------------------------------------
-	// Manual popovers without a popovertarget invoker — the auto-anchor
-	// machinery doesn't kick in, and consumers may not have set explicit
-	// inset-* properties. Default to viewport-centered so a bare
-	// `<div popover="manual">` opens somewhere sensible instead of jumping
-	// to the UA-default top-left corner.
-	//
-	// The toast component (`output[popover='manual']`) overrides this with
-	// fixed-corner positioning via inset-* — its rules win on specificity.
-	// --------------------------------------------------------------------------
-	[popover='manual']:not(output) {
-		position: fixed;
-		inset: 0;
-		margin: auto;
-		// Constrain to a sensible default size so `inset: 0; margin: auto`
-		// can do the centering. Authors override per-host.
-		max-inline-size: min(90vw, 32rem);
-		max-block-size: min(90vh, 32rem);
-		block-size: fit-content;
-		inline-size: fit-content;
 	}
 }
