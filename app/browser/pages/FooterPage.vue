@@ -2,15 +2,15 @@
 
 <template>
 	<section class="space-y-10">
-		<header class="border-b border-slate-200 pb-6">
-			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">
+		<header class="border-b border-[color:var(--color-border)] pb-6">
+			<h1 class="text-3xl font-semibold tracking-tight">
 				<code class="font-mono">&lt;footer&gt;</code>
 			</h1>
-			<p class="mt-3 text-base leading-7 text-slate-600">
+			<p class="mt-3 text-base leading-7">
 				The HTML <em>footer</em> element — "a footer for its nearest ancestor sectioning content
 				element, or for the body." The framework styles two contexts:
 			</p>
-			<ul class="mt-3 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-600">
+			<ul class="mt-3 list-disc space-y-1 pl-5 text-sm leading-6">
 				<li>
 					<code>body &gt; footer</code> → page-level <strong>page footer</strong> (compact, top
 					border separator).
@@ -23,16 +23,16 @@
 		</header>
 
 		<section id="card-footer" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Card footer (in article)</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Card footer (in article)</h2>
+			<p class="text-sm leading-6">
 				Direct <code>&lt;footer&gt;</code> child of <code>&lt;article&gt;</code> picks up the
 				card-footer band — typically used for action buttons and metadata.
 			</p>
 			<article>
 				<header>
-					<h3 class="m-0 text-lg font-semibold text-slate-900">Confirm action</h3>
+					<h3 class="m-0 text-lg font-semibold">Confirm action</h3>
 				</header>
-				<p class="m-0 text-sm text-slate-700">
+				<p class="m-0 text-sm">
 					Card body content sits between the header and footer slots. The footer chrome bleeds to
 					the inner edge with the bottom radius matched to the outer card.
 				</p>
@@ -44,8 +44,8 @@
 		</section>
 
 		<section id="metadata-footer" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Metadata footer pattern</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Metadata footer pattern</h2>
+			<p class="text-sm leading-6">
 				A common card-footer use: timestamp + tag row + secondary action.
 			</p>
 			<article class="primary">
@@ -64,10 +64,8 @@
 		</section>
 
 		<section id="page-footer" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">
-				Page footer (in body shell)
-			</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Page footer (in body shell)</h2>
+			<p class="text-sm leading-6">
 				When <code>&lt;footer&gt;</code> is a direct child of the layout-shell
 				<code>&lt;body&gt;</code>, it becomes the page's footer — spans the full bottom row of the
 				body grid with a top separator. This app's "© 2026 elements" line at the bottom of the

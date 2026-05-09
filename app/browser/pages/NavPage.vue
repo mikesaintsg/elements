@@ -6,11 +6,11 @@ const activeTab = ref<'profile' | 'account' | 'security'>('profile')
 
 <template>
 	<section class="space-y-10">
-		<header class="border-b border-slate-200 pb-6">
-			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">
+		<header class="border-b border-[color:var(--color-border)] pb-6">
+			<h1 class="text-3xl font-semibold tracking-tight">
 				<code class="font-mono">&lt;nav&gt;</code>
 			</h1>
-			<p class="mt-3 text-base leading-7 text-slate-600">
+			<p class="mt-3 text-base leading-7">
 				The HTML <em>nav</em> element — "a section of a page that links to other pages or to parts
 				within the page." The framework defaults bare <code>&lt;nav&gt;</code> to block flow and
 				lets descendant content semantics drive the visual variant — no class on the nav itself.
@@ -18,8 +18,8 @@ const activeTab = ref<'profile' | 'account' | 'security'>('profile')
 		</header>
 
 		<section id="navbar" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Navbar (with inner list)</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Navbar (with inner list)</h2>
+			<p class="text-sm leading-6">
 				A <code>&lt;nav&gt;&lt;ul&gt;</code> renders as a horizontal flex row with no list markers —
 				the natural shape for a top-bar nav.
 			</p>
@@ -34,8 +34,8 @@ const activeTab = ref<'profile' | 'account' | 'security'>('profile')
 		</section>
 
 		<section id="breadcrumb" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Breadcrumb</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Breadcrumb</h2>
+			<p class="text-sm leading-6">
 				Opt-in via <code>aria-label="Breadcrumb"</code> on the nav (the WAI-ARIA Authoring Practices
 				recommendation). Chevron separators appear between siblings; only this explicit pattern
 				triggers them — pagination, table-of-contents, and other
@@ -51,8 +51,8 @@ const activeTab = ref<'profile' | 'account' | 'security'>('profile')
 		</section>
 
 		<section id="pagination" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Pagination</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Pagination</h2>
+			<p class="text-sm leading-6">
 				A <code>&lt;nav aria-label="Pagination"&gt;&lt;ol&gt;</code> with numbered links — the
 				framework lays out the inner list horizontally without separators, leaving consumers free to
 				add their own visual treatment for previous/next, current page highlighting, etc.
@@ -70,8 +70,8 @@ const activeTab = ref<'profile' | 'account' | 'security'>('profile')
 		</section>
 
 		<section id="tabs" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Tabs</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Tabs</h2>
+			<p class="text-sm leading-6">
 				A <code>&lt;nav role="tablist"&gt;</code> with <code>role="tab"</code> children is the
 				canonical tab pattern — tabs DO navigate between sibling content panels of the same page,
 				which is the HTML LS definition of a <em>nav</em>. The framework styles the role attribute
@@ -79,7 +79,7 @@ const activeTab = ref<'profile' | 'account' | 'security'>('profile')
 				<code>&lt;div role="tablist"&gt;</code> work too for in-card / in-widget tabs where a
 				<em>nav</em> landmark would be unwanted noise.
 			</p>
-			<p class="text-sm leading-6 text-slate-600">
+			<p class="text-sm leading-6">
 				Active tab paints an underline in the variant color; the indicator overlaps the tablist's
 				bottom-border track pixel-perfectly via a negative margin.
 			</p>
@@ -122,7 +122,7 @@ const activeTab = ref<'profile' | 'account' | 'security'>('profile')
 				aria-labelledby="tab-profile"
 				:hidden="activeTab !== 'profile'"
 			>
-				<p class="text-sm text-slate-700">
+				<p class="text-sm">
 					Profile settings — display name, avatar, bio. The panel content is whatever HTML you want;
 					framework just paints block-direction padding so the panel separates from the tablist
 					track.
@@ -134,7 +134,7 @@ const activeTab = ref<'profile' | 'account' | 'security'>('profile')
 				aria-labelledby="tab-account"
 				:hidden="activeTab !== 'account'"
 			>
-				<p class="text-sm text-slate-700">
+				<p class="text-sm">
 					Account settings — email, billing, plan. Switch tabs and the indicator slides to the new
 					selection.
 				</p>
@@ -145,30 +145,35 @@ const activeTab = ref<'profile' | 'account' | 'security'>('profile')
 				aria-labelledby="tab-security"
 				:hidden="activeTab !== 'security'"
 			>
-				<p class="text-sm text-slate-700">
+				<p class="text-sm">
 					Security settings — password, 2FA, devices. Keyboard navigation (<kbd
-						class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs"
+						class="rounded border border-[color:var(--color-border)] px-1 font-mono text-xs"
 						>←</kbd
 					>
-					<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs">→</kbd>
-					<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs">Home</kbd>
-					<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs">End</kbd>)
-					arrives with the
-					<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">useTabs</code>
+					<kbd class="rounded border border-[color:var(--color-border)] px-1 font-mono text-xs"
+						>→</kbd
+					>
+					<kbd class="rounded border border-[color:var(--color-border)] px-1 font-mono text-xs"
+						>Home</kbd
+					>
+					<kbd class="rounded border border-[color:var(--color-border)] px-1 font-mono text-xs"
+						>End</kbd
+					>) arrives with the
+					<code class="rounded px-1 py-0.5 font-mono text-xs">useTabs</code>
 					composable in Phase 6.
 				</p>
 			</section>
 		</section>
 
 		<section id="rail" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Primary navigation rail</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Primary navigation rail</h2>
+			<p class="text-sm leading-6">
 				When <code>&lt;nav&gt;</code> is a direct child of the layout-shell
 				<code>&lt;body&gt;</code>, it becomes the page's primary navigation rail — vertical column,
 				fixed inline-size, padded, scrollable, with a separator border. The navigation panel on the
 				left of this app is exactly that.
 			</p>
-			<p class="text-sm leading-6 text-slate-600">
+			<p class="text-sm leading-6">
 				Use <code>&lt;nav class="end"&gt;</code> to flip the border to the leading edge for rails
 				placed on the trailing column.
 			</p>

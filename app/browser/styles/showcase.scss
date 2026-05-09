@@ -147,10 +147,30 @@ $showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
 		padding-block: calc(var(--spacing) * 12);
 	}
 
-	// Vertical rhythm — every direct sectioning child gets a margin-block-
-	// start derived from the spacing scale. Authors can override per page.
-	> :is(section, article) + :is(section, article) {
+	// Vertical rhythm — sectioning siblings (at any depth inside the page
+	// wrapper) get a margin-block-start derived from the spacing scale. Pages
+	// typically wrap their content in a single outer `<section>` containing a
+	// banner `<header>` plus several sibling subsections; we want air between
+	// every adjacent sectioning pair regardless of nesting depth. Authors who
+	// prefer Tailwind's `space-y-*` utilities can opt out by adding the
+	// utility — Tailwind utilities live in a higher layer and win.
+	:is(section, article) + :is(section, article),
+	header + :is(section, article) {
 		margin-block-start: calc(var(--spacing) * 10);
+	}
+
+	// Heading-to-content rhythm inside a subsection — `<h2>` / `<h3>` ship
+	// margin: 0 from the framework (preflight zeroes everything; the
+	// framework deliberately keeps it that way so layout owns rhythm), so we
+	// add a modest gap between a subsection heading and its first piece of
+	// flow content here in the showcase.
+	:is(section, article) > :is(h2, h3) + * {
+		margin-block-start: calc(var(--spacing) * 3);
+	}
+
+	// Inside-subsection paragraph-to-paragraph rhythm.
+	:is(section, article) > p + :is(p, ul, ol, dl, aside, pre, figure, blockquote) {
+		margin-block-start: calc(var(--spacing) * 3);
 	}
 }
 

@@ -1,10 +1,10 @@
 <template>
 	<section class="space-y-10">
-		<header class="border-b border-slate-200 pb-6">
-			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">Table</h1>
-			<p class="mt-3 text-base leading-7 text-slate-600">
+		<header class="border-b border-[color:var(--color-border)] pb-6">
+			<h1 class="text-3xl font-semibold tracking-tight">Table</h1>
+			<p class="mt-3 text-base leading-7">
 				The
-				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">&lt;table&gt;</code>
+				<code class="rounded px-1.5 py-0.5 font-mono text-sm">&lt;table&gt;</code>
 				element is for tabular data only — never layout. The framework forces
 				<code>border-collapse: collapse</code>, paints subtle row dividers via
 				<code>border-block-end</code> on cells (so single-row tables stay clean), and routes the
@@ -13,9 +13,9 @@
 		</header>
 
 		<section id="bare" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Bare</h2>
+			<h2 class="text-xl font-semibold tracking-tight">Bare</h2>
 			<table>
-				<caption class="text-sm text-slate-500">
+				<caption class="text-sm">
 					Q1 product launches
 				</caption>
 				<thead>
@@ -51,8 +51,8 @@
 		</section>
 
 		<section id="variants" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Variants</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Variants</h2>
+			<p class="text-sm leading-6">
 				The variant modifier moves the divider color to the variant identity, tinted to stay
 				readable.
 			</p>
@@ -81,7 +81,7 @@
 		</section>
 
 		<section id="sizes" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Sizes</h2>
+			<h2 class="text-xl font-semibold tracking-tight">Sizes</h2>
 			<table class="small">
 				<thead>
 					<tr>

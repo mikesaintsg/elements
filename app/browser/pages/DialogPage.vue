@@ -25,11 +25,11 @@ const toggleInline = (): void => {
 
 <template>
 	<section class="space-y-10">
-		<header class="border-b border-slate-200 pb-6">
-			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">Dialog</h1>
-			<p class="mt-3 text-base leading-7 text-slate-600">
+		<header class="border-b border-[color:var(--color-border)] pb-6">
+			<h1 class="text-3xl font-semibold tracking-tight">Dialog</h1>
+			<p class="mt-3 text-base leading-7">
 				The
-				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">&lt;dialog&gt;</code>
+				<code class="rounded px-1.5 py-0.5 font-mono text-sm">&lt;dialog&gt;</code>
 				element is a modal or non-modal dialog box. <code>showModal()</code> promotes it to the
 				top-layer with a <code>::backdrop</code>; <code>show()</code> renders inline without
 				trapping focus. The framework styles both the dialog chrome and the backdrop surface.
@@ -37,12 +37,10 @@ const toggleInline = (): void => {
 		</header>
 
 		<section id="modal" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Modal</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Modal</h2>
+			<p class="text-sm leading-6">
 				The Escape key closes the dialog;
-				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs"
-					>&lt;form method="dialog"&gt;</code
-				>
+				<code class="rounded px-1 py-0.5 font-mono text-xs">&lt;form method="dialog"&gt;</code>
 				closes on submit without page navigation.
 			</p>
 			<button type="button" class="primary" @click="openModal">Open modal</button>
@@ -50,11 +48,11 @@ const toggleInline = (): void => {
 			<dialog ref="modal">
 				<form method="dialog" class="grid gap-4">
 					<header>
-						<h3 class="text-lg font-semibold text-slate-900">Confirm action</h3>
-						<p class="mt-1 text-sm text-slate-600">
+						<h3 class="text-lg font-semibold">Confirm action</h3>
+						<p class="mt-1 text-sm">
 							This is a real
 							<code class="font-mono text-xs">&lt;dialog&gt;</code> in the browser top-layer. Press
-							<kbd class="rounded border border-slate-200 bg-slate-50 px-1 text-xs">Esc</kbd>
+							<kbd class="rounded border border-[color:var(--color-border)] px-1 text-xs">Esc</kbd>
 							or click Cancel to dismiss.
 						</p>
 					</header>
@@ -67,8 +65,8 @@ const toggleInline = (): void => {
 		</section>
 
 		<section id="non-modal" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Non-modal</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Non-modal</h2>
+			<p class="text-sm leading-6">
 				<code>show()</code> renders the dialog inline at its source position with no backdrop, no
 				top-layer promotion, and no focus trap.
 			</p>
@@ -82,8 +80,8 @@ const toggleInline = (): void => {
 		</section>
 
 		<section id="variants" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Variants</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Variants</h2>
+			<p class="text-sm leading-6">
 				A variant modifier swaps the dialog's border to the variant identity. Below the dialogs are
 				inline (with the <code>open</code> attribute) so they render in flow.
 			</p>

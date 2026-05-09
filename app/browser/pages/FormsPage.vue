@@ -19,9 +19,9 @@ const showToast = (): void => {
 
 <template>
 	<section class="space-y-10">
-		<header class="border-b border-slate-200 pb-6">
-			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">Forms</h1>
-			<p class="mt-3 text-base leading-7 text-slate-600">
+		<header class="border-b border-[color:var(--color-border)] pb-6">
+			<h1 class="text-3xl font-semibold tracking-tight">Forms</h1>
+			<p class="mt-3 text-base leading-7">
 				Phase 2 promotions: <code>&lt;label&gt;</code>, <code>&lt;fieldset&gt;</code> +
 				<code>&lt;legend&gt;</code>, <code>&lt;details&gt;</code> + <code>&lt;summary&gt;</code>,
 				<code>&lt;progress&gt;</code>, <code>&lt;meter&gt;</code>, <code>&lt;output&gt;</code>.
@@ -30,7 +30,7 @@ const showToast = (): void => {
 		</header>
 
 		<section id="fieldset" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Fieldset + label</h2>
+			<h2 class="text-xl font-semibold tracking-tight">Fieldset + label</h2>
 			<fieldset class="grid gap-3">
 				<legend>Account</legend>
 				<label for="account-name">Name <input id="account-name" type="text" /></label>
@@ -51,25 +51,25 @@ const showToast = (): void => {
 		</section>
 
 		<section id="details" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Details + summary</h2>
+			<h2 class="text-xl font-semibold tracking-tight">Details + summary</h2>
 			<details>
 				<summary>What's a disclosure?</summary>
-				<p class="m-0 mt-2 text-sm text-slate-600">
+				<p class="m-0 mt-2 text-sm">
 					A native widget for collapsible content. The framework adds chrome (border + padding +
 					radius) and normalizes the marker triangle across browsers.
 				</p>
 			</details>
 			<details open class="success">
 				<summary>Initially open + variant</summary>
-				<p class="m-0 mt-2 text-sm text-slate-600">
+				<p class="m-0 mt-2 text-sm">
 					The <code>[open]</code> attribute is the open signal — no <code>.open</code> class.
 				</p>
 			</details>
 		</section>
 
 		<section id="accordion" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Accordion group</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Accordion group</h2>
+			<p class="text-sm leading-6">
 				A stack of sibling <code>&lt;details&gt;</code> elements is an accordion. Add the
 				<code>name</code> attribute to enable HTML5's exclusive-accordion behavior (opening one
 				auto-closes the others); the framework spaces the siblings vertically so they read as one
@@ -77,21 +77,21 @@ const showToast = (): void => {
 			</p>
 			<details name="faq" open>
 				<summary>How are accordions different from disclosures?</summary>
-				<p class="m-0 mt-2 text-sm text-slate-600">
+				<p class="m-0 mt-2 text-sm">
 					Same element. An accordion is just multiple <code>&lt;details&gt;</code> siblings —
 					optionally with the same <code>name</code> for exclusive open. No new markup vocabulary.
 				</p>
 			</details>
 			<details name="faq">
 				<summary>Does this require JavaScript?</summary>
-				<p class="m-0 mt-2 text-sm text-slate-600">
+				<p class="m-0 mt-2 text-sm">
 					No. The browser handles open/close state via the <code>[open]</code> attribute. The Phase
 					6 <code>useDetails</code> composable adds events for animation hooks but isn't required.
 				</p>
 			</details>
 			<details name="faq">
 				<summary>Can I animate the disclosure height?</summary>
-				<p class="m-0 mt-2 text-sm text-slate-600">
+				<p class="m-0 mt-2 text-sm">
 					Yes — the framework opts in to <code>interpolate-size: allow-keywords</code> on
 					<code>:root</code>, so a <code>transition: block-size 200ms</code> on
 					<code>::details-content</code> animates the open/close.
@@ -100,8 +100,8 @@ const showToast = (): void => {
 		</section>
 
 		<section id="progress" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Progress</h2>
-			<p class="text-sm text-slate-600">Determinate bars track the variant fill color.</p>
+			<h2 class="text-xl font-semibold tracking-tight">Progress</h2>
+			<p class="text-sm">Determinate bars track the variant fill color.</p>
 			<div class="grid gap-3">
 				<progress :value="0.3" max="1"></progress>
 				<progress class="primary" :value="0.6" max="1"></progress>
@@ -111,8 +111,8 @@ const showToast = (): void => {
 		</section>
 
 		<section id="meter" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Meter</h2>
-			<p class="text-sm text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Meter</h2>
+			<p class="text-sm">
 				Disk usage gauge — color tracks the UA's optimum / sub-optimum / even-less-good
 				classification driven by <code>low</code>, <code>high</code>, <code>optimum</code>.
 			</p>
@@ -126,8 +126,8 @@ const showToast = (): void => {
 		</section>
 
 		<section id="output" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Output</h2>
-			<p class="text-sm text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Output</h2>
+			<p class="text-sm">
 				Inline result chip. Bare <code>&lt;output&gt;</code> stays inline; <code>.filled</code>
 				gives it pill chrome.
 			</p>
@@ -143,8 +143,8 @@ const showToast = (): void => {
 		</section>
 
 		<section id="toast" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Toast / status banner</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Toast / status banner</h2>
+			<p class="text-sm leading-6">
 				<code>&lt;output&gt;</code> already carries <code>role="status"</code> implicitly (per ARIA,
 				it's a polite live region) — the perfect root for a toast. Promote it to
 				<code>popover="manual"</code> and the browser lifts it into the top layer with no z-index
@@ -156,15 +156,15 @@ const showToast = (): void => {
 					✓ Document saved
 				</output>
 			</div>
-			<p class="text-sm leading-6 text-slate-600">
+			<p class="text-sm leading-6">
 				The
-				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">useToast</code>
+				<code class="rounded px-1 py-0.5 font-mono text-xs">useToast</code>
 				composable (Phase 6) will own the autohide timer + stack management; here we wire
 				<code>showPopover()</code> + a 3-second <code>setTimeout</code> inline so the demo works
 				without a composable dependency. Default placement is bottom-end; flip with
 				<code>.start</code> / <code>.top</code> modifiers.
 			</p>
-			<p class="text-sm leading-6 text-slate-600">
+			<p class="text-sm leading-6">
 				For an in-flow status banner (no top-layer, no popover), drop the attribute and use
 				<code>&lt;output role="status"&gt;</code> directly:
 			</p>
@@ -174,8 +174,8 @@ const showToast = (): void => {
 		</section>
 
 		<section id="form" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Form stack</h2>
-			<p class="text-sm text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Form stack</h2>
+			<p class="text-sm">
 				Bare <code>&lt;form&gt;</code> stacks its children vertically with consistent gap — the most
 				common form pattern, no extra <code>&lt;div&gt;</code> wrappers needed.
 			</p>
@@ -199,8 +199,8 @@ const showToast = (): void => {
 				<button type="submit" class="primary">Send</button>
 			</form>
 
-			<h3 class="mt-6 text-base font-semibold tracking-tight text-slate-900">Row form</h3>
-			<p class="text-sm text-slate-600">
+			<h3 class="mt-6 text-base font-semibold tracking-tight">Row form</h3>
+			<p class="text-sm">
 				<code>&lt;form class="row"&gt;</code> flips to a horizontal flex row — useful for a
 				single-line filter or quick-action input.
 			</p>

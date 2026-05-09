@@ -105,13 +105,13 @@
 		--color-canvas: oklch(12.9% 0.042 264.695);
 		--color-surface: oklch(20.8% 0.042 265.755);
 		--color-surface-raised: oklch(27.9% 0.041 260.031);
-		--color-text: oklch(98.4% 0.003 247.858);
-		--color-text-strong: oklch(100% 0 0);
+		--color-text: oklch(86.9% 0.022 252.894);
+		--color-text-strong: oklch(98.4% 0.003 247.858);
 		--color-text-muted: oklch(70.4% 0.04 256.788);
 		--color-text-subtle: oklch(55.4% 0.046 257.417);
-		--color-border: oklch(27.9% 0.041 260.031);
-		--color-border-strong: oklch(37.2% 0.044 257.287);
-		--color-border-subtle: oklch(20.8% 0.042 265.755);
+		--color-border: oklch(37.2% 0.044 257.287);
+		--color-border-strong: oklch(44.6% 0.043 257.281);
+		--color-border-subtle: oklch(27.9% 0.041 260.031);
 	}
 }
 
@@ -129,14 +129,21 @@
 [data-theme='dark'] {
 	color-scheme: dark;
 
+	// Mailbox dark-mode palette (sable hue 216 / saturation 20%) ported to
+	// the closest Tailwind v4 oklch swatches — see git log for the per-
+	// token mapping. The shift from white text to slate-300 is the most
+	// impactful change: dark UIs that paint pure-white text feel harsh and
+	// fatiguing; 87% lightness body text matches mailbox's calibration and
+	// reads softer while keeping AAA contrast against the slate-950 canvas.
+
 	--color-canvas: oklch(12.9% 0.042 264.695);
 	--color-surface: oklch(20.8% 0.042 265.755);
 	--color-surface-raised: oklch(27.9% 0.041 260.031);
-	--color-text: oklch(98.4% 0.003 247.858);
-	--color-text-strong: oklch(100% 0 0);
+	--color-text: oklch(86.9% 0.022 252.894);
+	--color-text-strong: oklch(98.4% 0.003 247.858);
 	--color-text-muted: oklch(70.4% 0.04 256.788);
 	--color-text-subtle: oklch(55.4% 0.046 257.417);
-	--color-border: oklch(27.9% 0.041 260.031);
-	--color-border-strong: oklch(37.2% 0.044 257.287);
-	--color-border-subtle: oklch(20.8% 0.042 265.755);
+	--color-border: oklch(37.2% 0.044 257.287);
+	--color-border-strong: oklch(44.6% 0.043 257.281);
+	--color-border-subtle: oklch(27.9% 0.041 260.031);
 }

@@ -13,9 +13,9 @@ const showAuto = (): void => {
 
 <template>
 	<section class="space-y-10">
-		<header class="border-b border-slate-200 pb-6">
-			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">Surfaces</h1>
-			<p class="mt-3 text-base leading-7 text-slate-600">
+		<header class="border-b border-[color:var(--color-border)] pb-6">
+			<h1 class="text-3xl font-semibold tracking-tight">Surfaces</h1>
+			<p class="mt-3 text-base leading-7">
 				Browser-rendered chrome that isn't a tag or a composition: <code>[popover]</code>,
 				<code>::backdrop</code>, scrollbar styling, and friends. The framework gives every surface a
 				token-driven default that consumers can theme by overriding
@@ -24,8 +24,8 @@ const showAuto = (): void => {
 		</header>
 
 		<section id="popover-auto" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Popover — auto</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Popover — auto</h2>
+			<p class="text-sm leading-6">
 				<code>[popover=auto]</code> is the default — light-dismissable (Escape, click outside). The
 				framework styles the panel chrome plus the entry/exit transition (opacity + scale) using
 				<code>transition-behavior: allow-discrete</code> and <code>@starting-style</code>.
@@ -40,10 +40,10 @@ const showAuto = (): void => {
 			<div ref="auto" id="auto-pop" popover="auto" style="max-inline-size: 24rem">
 				<div class="grid gap-2">
 					<strong>Auto popover</strong>
-					<p class="m-0 text-sm text-slate-600">
+					<p class="m-0 text-sm">
 						Click anywhere outside, or press
-						<kbd class="rounded border border-slate-200 bg-slate-50 px-1 text-xs">Esc</kbd>, to
-						dismiss.
+						<kbd class="rounded border border-[color:var(--color-border)] px-1 text-xs">Esc</kbd>,
+						to dismiss.
 					</p>
 				</div>
 			</div>
@@ -51,8 +51,8 @@ const showAuto = (): void => {
 		</section>
 
 		<section id="popover-manual" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Popover — manual</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Popover — manual</h2>
+			<p class="text-sm leading-6">
 				<code>[popover=manual]</code> ignores light-dismiss — only an explicit
 				<code>.hidePopover()</code> (or another invoke of the trigger) closes it. Same chrome, same
 				auto-anchor placement, different lifecycle. The framework treats manual popovers identically
@@ -67,7 +67,7 @@ const showAuto = (): void => {
 			<div id="manual-pop" popover="manual" style="max-inline-size: 24rem">
 				<div class="grid gap-2">
 					<strong>Manual popover</strong>
-					<p class="m-0 text-sm text-slate-600">
+					<p class="m-0 text-sm">
 						Esc and outside-click do nothing here — close me with the button.
 					</p>
 				</div>
@@ -75,20 +75,18 @@ const showAuto = (): void => {
 		</section>
 
 		<section id="anchor-position" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Anchor positioning</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Anchor positioning</h2>
+			<p class="text-sm leading-6">
 				Pairing a <code>&lt;button popovertarget&gt;</code> with a <code>[popover]</code> sets up an
 				<strong>implicit anchor</strong> — the browser positions the popover relative to its invoker
 				via <code>position-area</code> with no <code>anchor-name</code> /
 				<code>position-anchor</code> boilerplate. The framework's
-				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs"
-					>surfaces/_anchor-position.scss</code
-				>
+				<code class="rounded px-1 py-0.5 font-mono text-xs">surfaces/_anchor-position.scss</code>
 				declares the default placement (<code>block-end</code>, i.e. directly below the anchor) and
 				wires <code>position-try-fallbacks</code> so the popover flips automatically when there
 				isn't room.
 			</p>
-			<p class="text-sm leading-6 text-slate-600">
+			<p class="text-sm leading-6">
 				Override the default with placement modifiers — eight values, four edges and four corners.
 				Try each one below; the popover lands relative to its trigger.
 			</p>
@@ -110,7 +108,7 @@ const showAuto = (): void => {
 			<aside popover id="place-top-end" class="top-end">Above + end corner.</aside>
 			<aside popover id="place-bottom-start" class="bottom-start">Below + start corner.</aside>
 			<aside popover id="place-bottom-end" class="bottom-end">Below + end corner.</aside>
-			<p class="text-sm leading-6 text-slate-600">
+			<p class="text-sm leading-6">
 				Logical-axis vocabulary — the class names are English directions but resolve to
 				<code>block-start</code> / <code>block-end</code> / <code>inline-start</code> /
 				<code>inline-end</code>, so a popover placed <code>.bottom-start</code> in LTR flips to
@@ -125,8 +123,8 @@ const showAuto = (): void => {
 		</section>
 
 		<section id="tooltip" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Tooltip</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Tooltip</h2>
+			<p class="text-sm leading-6">
 				<code>[popover=hint]</code> is the new HTML attribute value reserved for tooltip-style
 				popovers. It behaves like <code>auto</code> for light-dismiss but is hierarchically nested
 				under any open auto popover (so a tooltip inside an open menu doesn't kill the menu when
@@ -140,24 +138,26 @@ const showAuto = (): void => {
 				</button>
 				<aside popover="hint" id="copy-hint">Copies the value to your clipboard.</aside>
 			</div>
-			<p class="text-sm leading-6 text-slate-600">
+			<p class="text-sm leading-6">
 				Native hover-driven tooltips arrive with the
-				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">useTooltip</code>
+				<code class="rounded px-1 py-0.5 font-mono text-xs">useTooltip</code>
 				composable in Phase 6 — until then, the framework paints chrome and the consumer wires
 				show/hide via the popover API.
 			</p>
 		</section>
 
 		<section id="scrollbar" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Scrollbar</h2>
-			<p class="text-sm leading-6 text-slate-600">
+			<h2 class="text-xl font-semibold tracking-tight">Scrollbar</h2>
+			<p class="text-sm leading-6">
 				The framework sets <code>scrollbar-color</code>, <code>scrollbar-width</code>, and
 				<code>scrollbar-gutter</code> on <code>:root</code>. Override
 				<code>--set-scrollbar-thumb-color</code> / <code>--set-scrollbar-track-color</code> to
 				retheme. The container below has fixed height + overflow so the styled scrollbar shows.
 			</p>
-			<div class="h-40 max-w-md overflow-y-auto rounded border border-slate-200 p-3">
-				<p v-for="n in 30" :key="n" class="m-0 py-1 text-sm text-slate-700">
+			<div
+				class="h-40 max-w-md overflow-y-auto rounded border border-[color:var(--color-border)] p-3"
+			>
+				<p v-for="n in 30" :key="n" class="m-0 py-1 text-sm">
 					Scrollable line {{ n }} — keep scrolling to see the themed thumb.
 				</p>
 			</div>
