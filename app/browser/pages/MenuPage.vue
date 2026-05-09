@@ -71,9 +71,20 @@
 				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs">Esc</kbd>
 				or click-outside (because <code>popover</code> defaults to <code>auto</code>).
 			</p>
+			<p class="text-sm leading-6 text-slate-600">
+				The popover is auto-anchored to its invoking button via the
+				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">popovertarget</code>
+				/ <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">popover</code>
+				attribute pair. The framework's
+				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs"
+					>surfaces/_anchor-position.scss</code
+				>
+				places the menu directly below the button by default; add a placement modifier
+				(<code>.bottom-start</code>, <code>.top-end</code>, etc.) to flip the corner.
+			</p>
 			<div class="flex items-center gap-3">
 				<button type="button" class="primary" popovertarget="account-dropdown">Account ▾</button>
-				<menu popover id="account-dropdown">
+				<menu popover id="account-dropdown" class="bottom-start">
 					<li><button type="button">Profile</button></li>
 					<li><button type="button">Settings</button></li>
 					<li><button type="button">Sign out</button></li>

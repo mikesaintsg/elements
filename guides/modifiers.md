@@ -1,17 +1,18 @@
 # Modifiers
 
-> Four orthogonal dimensions, all spelled-out semantic English. CSS source: [src/styles/modifiers/](../src/styles/modifiers/). TS mirror: [src/browser/modifiers.ts](../src/browser/modifiers.ts). Bidirectional parity tests live alongside the shape tests in [tests/src/browser/modifiers.test.ts](../tests/src/browser/modifiers.test.ts).
+> Five orthogonal dimensions, all spelled-out semantic English. CSS source: [src/styles/modifiers/](../src/styles/modifiers/). TS mirror: [src/browser/modifiers.ts](../src/browser/modifiers.ts). Bidirectional parity tests live alongside the shape tests in [tests/src/browser/modifiers.test.ts](../tests/src/browser/modifiers.test.ts).
 
 A modifier class is a **token-setter**, never a property-setter. The class declares the values of context tokens (`--set-variant-*`, `--set-size-*`, `--set-style-*`); element files consume those tokens via fallback chains. This is what makes `<button class="primary large ghost">` Just Work — every modifier carries no element-specific code, and every element that consumes the cascade gets all modifiers for free.
 
-The four dimensions are orthogonal: an element takes at most one value per dimension. They compose without conflict.
+The five dimensions are orthogonal: an element takes at most one value per dimension. They compose without conflict.
 
-| Dimension                       | Values                                                                            | Sets these tokens                                                                                                   |
-| ------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Variant** (semantic identity) | `primary`, `secondary`, `tertiary`, `success`, `warning`, `danger`, `information` | `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`, `--set-variant-border-width` |
-| **Size** (physical scale)       | `small`, `large`                                                                  | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius`         |
-| **Style** (fill treatment)      | `ghost`, `filled`                                                                 | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`, `--set-style-border-width`         |
-| **State** (interaction state)   | `disabled`, `active`, `loading`                                                   | (mostly element-owned; states declare universal cursor + pointer-events at the modifier level)                      |
+| Dimension                       | Values                                                                                | Sets these tokens                                                                                                   |
+| ------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Variant** (semantic identity) | `primary`, `secondary`, `tertiary`, `success`, `warning`, `danger`, `information`     | `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`, `--set-variant-border-width` |
+| **Size** (physical scale)       | `small`, `large`                                                                      | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius`         |
+| **Style** (fill treatment)      | `ghost`, `filled`                                                                     | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`, `--set-style-border-width`         |
+| **State** (interaction state)   | `disabled`, `active`, `loading`                                                       | (mostly element-owned; states declare universal cursor + pointer-events at the modifier level)                      |
+| **Placement** (anchor position) | `top`, `bottom`, `start`, `end`, `top-start`, `top-end`, `bottom-start`, `bottom-end` | Sets `position-area` directly on anchor-positioned elements (popovers); see §6.                                     |
 
 **Why no shape dimension?** Tailwind v4 ships `.rounded-{none|sm|md|lg|xl|2xl|3xl|full}` utilities that cover every corner-radius value the framework would want a modifier for — `.pill` ≡ `.rounded-full`, `.square` ≡ `.rounded-none`, intermediate steps map directly. Shipping a shape modifier dimension would just duplicate Tailwind's vocabulary under different names. Consumers reach for `.rounded-full` and friends directly.
 
@@ -138,7 +139,56 @@ For native disabled state, prefer the attribute (`disabled`, `aria-disabled="tru
 
 ---
 
-## 6. The cascade — how an element resolves a modifier stack
+## 6. Placement — where a floating element lands
+
+Eight values describe where an anchor-positioned element appears relative to its anchor: four edges (top/bottom/start/end) and four corners (top-start, top-end, bottom-start, bottom-end). The class translates directly to a `position-area` keyword.
+
+```scss
+/* src/styles/modifiers/_placements.scss (excerpt) */
+[popover]:not([popover='manual']).top {
+	position-area: block-start;
+}
+[popover]:not([popover='manual']).bottom {
+	position-area: block-end;
+}
+[popover]:not([popover='manual']).start {
+	position-area: inline-start;
+}
+[popover]:not([popover='manual']).end {
+	position-area: inline-end;
+}
+[popover]:not([popover='manual']).top-start {
+	position-area: block-start inline-start;
+}
+[popover]:not([popover='manual']).top-end {
+	position-area: block-start inline-end;
+}
+[popover]:not([popover='manual']).bottom-start {
+	position-area: block-end inline-start;
+}
+[popover]:not([popover='manual']).bottom-end {
+	position-area: block-end inline-end;
+}
+```
+
+Like state modifiers, placement modifiers declare a CSS property directly (`position-area`) rather than a context token — there's only one consumer (the anchor-positioned element itself), so the indirection of a context token would only obscure the rule.
+
+**Logical-axis vocabulary.** Class names use English directional words (`top`, `bottom`, `start`, `end`) but the rules resolve to logical CSS keywords (`block-start`, `block-end`, `inline-start`, `inline-end`). RTL pages and vertical writing modes flip placement automatically — a `<menu popover class="bottom-start">` that drops down + start-aligned in LTR becomes drops-up + end-aligned in `vertical-rl`.
+
+**Why scoped to non-manual popovers.** Manual popovers (`[popover='manual']`) carry their own viewport-fixed positioning (toasts pin to a corner via `inset-*` properties — see [`components/_output.scss`](../src/styles/components/_output.scss)). Setting `position-area` on them would re-enter anchor-positioning mode and fight the explicit insets. The selector excludes them; the toast's own `.start` / `.top` rules (which mean "flip the corner") keep working.
+
+The rest of the framework reuses these names too:
+
+- `<aside class="start">` (in body shell) flips its border to the trailing edge.
+- `<nav class="end">` flips its rail border.
+
+These bare-element rules don't anchor-position, so the modifier's `position-area` declaration is a no-op — the cohabitation is clean.
+
+The anchor-positioning _defaults_ (gap, fallback-try chain, default placement-area) live in [`surfaces/_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss). The modifier is the override layer.
+
+---
+
+## 7. The cascade — how an element resolves a modifier stack
 
 Element files declare element-scoped tokens with fallback chains. `<button>`'s chain:
 
@@ -184,7 +234,7 @@ This is what `<button class="primary large ghost">` resolves to:
 
 ---
 
-## 7. TypeScript mirror
+## 8. TypeScript mirror
 
 [`src/browser/modifiers.ts`](../src/browser/modifiers.ts) exports a frozen `modifiers` object plus derived string-literal-union types for typed component props.
 
@@ -209,19 +259,19 @@ Object.values(modifiers.variant).forEach(name => /* ... */)
 
 ---
 
-## 8. Parity tests
+## 9. Parity tests
 
 One file guards the modifier surface from drift, plus per-dimension behavior tests. All run in real Chromium (Playwright).
 
 | Test                                                        | Project       | What it checks                                                                                                                                                                                                                                                          |
 | ----------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [modifiers.test.ts](../tests/src/browser/modifiers.test.ts) | `src:browser` | **Shape:** four dimensions present, expected keys per dimension, every leaf string equals its key. **TS → CSS:** every leaf has a `.{name}` rule via `findRule()`. **SCSS → TS:** every `.X { … }` declared in `modifiers/_*.scss` appears as a leaf in `modifiers.ts`. |
+| [modifiers.test.ts](../tests/src/browser/modifiers.test.ts) | `src:browser` | **Shape:** five dimensions present, expected keys per dimension, every leaf string equals its key. **TS → CSS:** every leaf has a `.{name}` rule via `findRule()`. **SCSS → TS:** every `.X { … }` declared in `modifiers/_*.scss` appears as a leaf in `modifiers.ts`. |
 
 Plus per-dimension behavior tests in [tests/src/styles/modifiers/](../tests/src/styles/modifiers/) that mount an element and verify each modifier sets the expected context tokens.
 
 ---
 
-## 9. Adding a new modifier
+## 10. Adding a new modifier
 
 A new modifier dimension is a real architectural decision — not the same as adding a value to an existing dimension. Follow the smaller path first.
 

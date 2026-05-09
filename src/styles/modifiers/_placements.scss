@@ -1,0 +1,83 @@
+// ============================================================================
+// Placement modifiers — `.top`, `.bottom`, `.start`, `.end`, `.top-start`,
+// `.top-end`, `.bottom-start`, `.bottom-end`.
+//
+// Eight values describe where an anchor-positioned element lands relative
+// to its anchor. The class name is the spelled-out direction; the rule
+// translates it to a `position-area` keyword.
+//
+// Vocabulary:
+//
+//   .top           anchor's top edge,    centered along the inline axis
+//   .bottom        anchor's bottom edge, centered along the inline axis
+//   .start         anchor's inline-start edge, centered along the block axis
+//   .end           anchor's inline-end edge,   centered along the block axis
+//   .top-start     above the anchor, aligned to the anchor's inline-start edge
+//   .top-end       above the anchor, aligned to the anchor's inline-end edge
+//   .bottom-start  below the anchor, aligned to the anchor's inline-start edge
+//   .bottom-end    below the anchor, aligned to the anchor's inline-end edge
+//
+// Scope:
+//   These rules apply to popovers (auto / hint variants) — that's the
+//   universe of anchor-positioned elements the framework currently ships.
+//   Manual popovers (`[popover='manual']`) are excluded because they use
+//   viewport-fixed positioning (see components/_output.scss for toasts);
+//   setting `position-area` on them would re-enter anchor-positioning mode
+//   and fight the explicit inset-* values.
+//
+//   The `.start` / `.end` / `.top` / `.bottom` class names are NOT scoped
+//   to this modifier alone — `<aside>`, `<nav>`, and toast (`output[popover
+//   ='manual']`) already use the same names for their own placement
+//   semantics (border-edge flipping, viewport-corner picking). Those
+//   contexts don't anchor-position, so the `position-area` declaration in
+//   this file has no effect on them — `position-area` is a no-op on
+//   non-anchored elements.
+//
+// Logical axes:
+//   `position-area` keywords use logical axes (`block-start`, `inline-end`,
+//   `span-inline-start`, …) so RTL and vertical-writing-mode pages flip
+//   automatically. We use `top` / `bottom` for block axis and `start` /
+//   `end` for inline axis to match the rest of the framework's naming —
+//   these get translated to logical position-area keywords inside.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer modifiers {
+	// Edge placements — the four cardinal directions, logical-axis-mapped
+	// so writing-mode / direction flips Just Work. `.top` resolves to
+	// `block-start` (the top edge in LTR top-to-bottom; the right edge in
+	// vertical-rl writing modes) and so on. The framework already uses
+	// logical axis names everywhere else (margin-block, inset-inline-*).
+	[popover]:not([popover='manual']).top {
+		position-area: block-start;
+	}
+	[popover]:not([popover='manual']).bottom {
+		position-area: block-end;
+	}
+	[popover]:not([popover='manual']).start {
+		position-area: inline-start;
+	}
+	[popover]:not([popover='manual']).end {
+		position-area: inline-end;
+	}
+
+	// Corner placements — the four diagonals. Each corner maps to one cell
+	// of the position-area 3×3 grid. We pair logical block / inline axis
+	// keywords (the spec rejects mixing physical `top` with logical
+	// `inline-start` — both must be from the same family). Chromium 125+
+	// computes these to symmetric short forms (`start`, `end`, `start end`,
+	// `end start`) which is identical placement in any writing mode.
+	[popover]:not([popover='manual']).top-start {
+		position-area: block-start inline-start;
+	}
+	[popover]:not([popover='manual']).top-end {
+		position-area: block-start inline-end;
+	}
+	[popover]:not([popover='manual']).bottom-start {
+		position-area: block-end inline-start;
+	}
+	[popover]:not([popover='manual']).bottom-end {
+		position-area: block-end inline-end;
+	}
+}

@@ -45,9 +45,15 @@ function classNamesIn(source: string): readonly string[] {
 //  Shape
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('modifiers — four orthogonal dimensions', () => {
+describe('modifiers — five orthogonal dimensions', () => {
 	it('exposes the expected dimensions', () => {
-		expect(Object.keys(modifiers).sort()).toEqual(['size', 'state', 'style', 'variant'])
+		expect(Object.keys(modifiers).sort()).toEqual([
+			'placement',
+			'size',
+			'state',
+			'style',
+			'variant',
+		])
 	})
 
 	it('variant has all 7 semantic names', () => {
@@ -72,6 +78,19 @@ describe('modifiers — four orthogonal dimensions', () => {
 
 	it('state has disabled/active/loading', () => {
 		expect(Object.keys(modifiers.state).sort()).toEqual(['active', 'disabled', 'loading'])
+	})
+
+	it('placement has 4 edges + 4 corners (top/bottom/start/end + corners)', () => {
+		expect(Object.keys(modifiers.placement).sort()).toEqual([
+			'bottom',
+			'bottom-end',
+			'bottom-start',
+			'end',
+			'start',
+			'top',
+			'top-end',
+			'top-start',
+		])
 	})
 
 	it('every leaf is its own key (string === key)', () => {

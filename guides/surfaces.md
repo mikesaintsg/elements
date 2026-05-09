@@ -1,6 +1,6 @@
 # Surfaces
 
-> Browser-rendered chrome that isn't a tag or a composition. Folder: [src/styles/surfaces/](../src/styles/surfaces/). **Status: three surfaces shipped (`_backdrop.scss`, `_popover.scss`, `_scrollbar.scss`).**
+> Browser-rendered chrome that isn't a tag or a composition. Folder: [src/styles/surfaces/](../src/styles/surfaces/). **Status: four surfaces shipped — `_anchor-position.scss`, `_backdrop.scss`, `_popover.scss`, `_scrollbar.scss`.**
 
 A **surface** is a CSS hook into a UA-controlled feature: pseudo-elements, attribute APIs, at-rules, UA-behavior properties. Things like `[popover]`, `dialog::backdrop`, `::placeholder`, view transitions, scrollbar styling, anchor positioning. Distinct from elements (which name HTML tags) and components (which compose elements) — these name **a seam in the browser itself**.
 
@@ -197,11 +197,12 @@ Catalog of browser-rendered surfaces that could earn a partial. Use this as a me
 
 ## 6. Catalog (built surfaces)
 
-| Surface                                                     | Status  | What it covers                                                                                                               | Composable                    |
-| ----------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)   | ✅ done | `dialog::backdrop` + `[popover]::backdrop` — top-layer backdrop color, blur, transition                                      | _(none yet)_                  |
-| [`_popover.scss`](../src/styles/surfaces/_popover.scss)     | ✅ done | `[popover]` panel chrome + `:popover-open` entry/exit transition (`transition-behavior: allow-discrete` + `@starting-style`) | _(future `usePopover`)_       |
-| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss) | ✅ done | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`                                                 | _(none — purely declarative)_ |
+| Surface                                                                 | Status  | What it covers                                                                                                                                                                                                                   | Composable                             |
+| ----------------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) | ✅ done | Auto-anchored placement for non-manual popovers via `position-area` + `position-try-fallbacks`. Default places the popover below the anchor (`block-end`); placement modifiers (`.top` / `.bottom-start` / …) override per-host. | _(future `usePopover` / `useTooltip`)_ |
+| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)               | ✅ done | `dialog::backdrop` + `[popover]::backdrop` — top-layer backdrop color, blur, transition                                                                                                                                          | _(none yet)_                           |
+| [`_popover.scss`](../src/styles/surfaces/_popover.scss)                 | ✅ done | `[popover]` panel chrome + `:popover-open` entry/exit transition (`transition-behavior: allow-discrete` + `@starting-style`) + `[popover=hint]` / `[role=tooltip]` smaller-variant chrome.                                       | _(future `usePopover` / `useTooltip`)_ |
+| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss)             | ✅ done | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`                                                                                                                                                     | _(none — purely declarative)_          |
 
 When the next surface lands, add a row above.
 

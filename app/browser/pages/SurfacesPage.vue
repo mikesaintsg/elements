@@ -74,6 +74,54 @@ const hideManual = (): void => {
 			</div>
 		</section>
 
+		<section id="anchor-position" class="space-y-3">
+			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Anchor positioning</h2>
+			<p class="text-sm leading-6 text-slate-600">
+				Pairing a <code>&lt;button popovertarget&gt;</code> with a <code>[popover]</code> sets up an
+				<strong>implicit anchor</strong> — the browser positions the popover relative to its invoker
+				via <code>position-area</code> with no <code>anchor-name</code> /
+				<code>position-anchor</code> boilerplate. The framework's
+				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs"
+					>surfaces/_anchor-position.scss</code
+				>
+				declares the default placement (<code>block-end</code>, i.e. directly below the anchor) and
+				wires <code>position-try-fallbacks</code> so the popover flips automatically when there
+				isn't room.
+			</p>
+			<p class="text-sm leading-6 text-slate-600">
+				Override the default with placement modifiers — eight values, four edges and four corners.
+				Try each one below; the popover lands relative to its trigger.
+			</p>
+			<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+				<button type="button" popovertarget="place-top">.top</button>
+				<button type="button" popovertarget="place-bottom">.bottom</button>
+				<button type="button" popovertarget="place-start">.start</button>
+				<button type="button" popovertarget="place-end">.end</button>
+				<button type="button" popovertarget="place-top-start">.top-start</button>
+				<button type="button" popovertarget="place-top-end">.top-end</button>
+				<button type="button" popovertarget="place-bottom-start">.bottom-start</button>
+				<button type="button" popovertarget="place-bottom-end">.bottom-end</button>
+			</div>
+			<aside popover id="place-top" class="top">Above the trigger.</aside>
+			<aside popover id="place-bottom" class="bottom">Below the trigger.</aside>
+			<aside popover id="place-start" class="start">Inline-start of the trigger.</aside>
+			<aside popover id="place-end" class="end">Inline-end of the trigger.</aside>
+			<aside popover id="place-top-start" class="top-start">Above + start corner.</aside>
+			<aside popover id="place-top-end" class="top-end">Above + end corner.</aside>
+			<aside popover id="place-bottom-start" class="bottom-start">Below + start corner.</aside>
+			<aside popover id="place-bottom-end" class="bottom-end">Below + end corner.</aside>
+			<p class="text-sm leading-6 text-slate-600">
+				Logical-axis vocabulary — the class names are English directions but resolve to
+				<code>block-start</code> / <code>block-end</code> / <code>inline-start</code> /
+				<code>inline-end</code>, so a popover placed <code>.bottom-start</code> in LTR flips to
+				<code>.top-end</code>-equivalent in <code>vertical-rl</code> writing modes. The framework
+				re-uses these same class names on bare <code>&lt;aside&gt;</code> /
+				<code>&lt;nav&gt;</code> / toast for per-element placement semantics — manual popovers
+				(toasts) are intentionally excluded from the anchor-positioning rules so the two positioning
+				models don't fight.
+			</p>
+		</section>
+
 		<section id="tooltip" class="space-y-3">
 			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Tooltip</h2>
 			<p class="text-sm leading-6 text-slate-600">

@@ -623,4 +623,15 @@ export const tokens = {
 		width: '--set-scrollbar-width',
 		gutter: '--set-scrollbar-gutter',
 	},
+
+	// Surface tokens — CSS anchor positioning. The defaults here flow into
+	// every popover (auto / hint variants); placement modifiers (.top /
+	// .bottom / .start / .end / corners) override `--set-anchor-position-area`
+	// per-host. Manual popovers are excluded by selector — see
+	// surfaces/_anchor-position.scss for the rationale.
+	anchor: {
+		gap: '--set-anchor-gap',
+		positionTryFallbacks: '--set-anchor-position-try-fallbacks',
+		positionArea: '--set-anchor-position-area',
+	},
 } as const

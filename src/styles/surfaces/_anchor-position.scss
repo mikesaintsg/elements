@@ -1,0 +1,89 @@
+// ============================================================================
+// anchor-position — CSS anchor positioning surface for popovers, tooltips,
+// and any element that wants to be placed relative to another.
+//
+// Browser support: Chromium 125+ (Edge / Chrome). Safari + Firefox shipping
+// in 2025–2026. The framework feature-detects via `@supports` for the
+// position-area property; non-supporting browsers fall back to whatever
+// positioning the consumer applies directly (or the popover surface's
+// default fixed top-of-viewport rendering).
+//
+// Surfaces covered by this partial:
+//   [popover]:not([popover='manual'])   default placement + flip fallbacks
+//   --set-anchor-*                       gap / fallback tokens on :root
+//
+// Why this is its own partial (not folded into surfaces/_popover.scss):
+//   Popover chrome (border, padding, shadow, transition) is one concern;
+//   placement is another. Tooltip-on-hover (CSS-only, no popover API) and
+//   future anchored-dropdown patterns will reuse the same anchor-positioning
+//   tokens — keeping placement separate lets those consumers compose
+//   without inheriting popover chrome.
+//
+// Auto-anchor behavior:
+//   When a popover is invoked via `<button popovertarget="…">`, the browser
+//   sets up an *implicit* anchor relationship between the invoker and the
+//   popover. No `anchor-name` / `position-anchor` boilerplate is required —
+//   we only need to declare the placement (position-area) on the popover.
+//   This makes `<button popovertarget="menu"><menu popover id="menu">` a
+//   complete dropdown with no JS, no anchor-name plumbing.
+//
+// Placement vocabulary lives in `modifiers/_placements.scss` — `.top`,
+// `.bottom`, `.start`, `.end`, `.top-start`, etc. map to `position-area`
+// keywords. This file declares the default (bottom span-inline-end) so a
+// bare `[popover]:not([popover='manual'])` lands somewhere sensible
+// without extra classes.
+//
+// Quirks:
+//   - `[popover='manual']` (toasts) is intentionally excluded — manual
+//     popovers use viewport-fixed placement via explicit `inset-*`
+//     properties (see components/_output.scss). Setting position-area on
+//     them would re-enter anchor-positioning mode and fight the inset-*
+//     placements.
+//   - `position-try-fallbacks` lets the browser flip the popover to the
+//     opposite side of the anchor when there isn't room. We supply the
+//     three common flips (block, inline, both) so a popover anchored at
+//     the top of the viewport can flip to bottom, etc., without manual
+//     fallback declarations.
+//   - The gap between anchor and popover is `margin-block` painted on the
+//     popover. We use logical-axis margin so RTL / vertical writing modes
+//     resolve correctly.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer surfaces {
+	// --------------------------------------------------------------------------
+	// Tokens — declared on :root so they resolve everywhere a placement-aware
+	// element renders. Authors override globally via :root or per-host.
+	// --------------------------------------------------------------------------
+	:root {
+		// Distance between the anchor and the positioned element along the
+		// block axis (the gap you see between a button and its dropdown menu).
+		--set-anchor-gap: calc(var(--spacing) * 1);
+
+		// Default `position-try-fallbacks` value — the browser tries each
+		// fallback in order until one fits. Authors can override per-host:
+		//   #my-popover { position-try-fallbacks: flip-block; }
+		--set-anchor-position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+
+		// Default `position-area` — `block-end` = below the anchor in LTR
+		// top-to-bottom; flips automatically in vertical / RTL writing
+		// modes. Authors override per-host via `.top` / `.bottom-start` /
+		// etc. (see modifiers/_placements.scss).
+		--set-anchor-position-area: block-end;
+	}
+
+	// --------------------------------------------------------------------------
+	// Default placement — applied to every popover that isn't manual. The
+	// invoking `<button popovertarget>` is automatically the anchor; we just
+	// declare the area.
+	// --------------------------------------------------------------------------
+	[popover]:not([popover='manual']) {
+		position-area: var(--set-anchor-position-area);
+		position-try-fallbacks: var(--set-anchor-position-try-fallbacks);
+		// Reset top-layer defaults — the browser's auto-position would
+		// otherwise center the popover. Logical-axis margin keeps RTL flowing.
+		margin: 0;
+		margin-block: var(--set-anchor-gap);
+	}
+}

@@ -4,7 +4,7 @@
 
 A **component** is a UI pattern bigger than one element — a card, a sidebar, a modal, a toolbar, a filter bar. In a class-heavy framework these are class roots (`.card`, `.modal`, `.btn-toolbar`). In _elements_ they're, wherever possible, **bare HTML tags**: `<article>` IS a card, `<aside>` IS a sidebar, `<dialog>` IS a modal. The HTML tag carries the identity; modifier classes (variant / size / style / state / placement) carry the variations.
 
-Class-root patterns (`.skeleton`, `.spinner`, `.badge`) appear only when there's no semantic HTML home — they're the explicit fallback, not the default path. The current ratio: 12 element-driven components plus role-driven attribute selectors (`[role="tablist"]`, `[role="tab"]`, `[role="tabpanel"]`, `[popover=hint]`), versus 1 class-root partial (`<div>` for `.stack` / `.cluster`).
+Class-root patterns (`.skeleton`, `.spinner`, `.badge`) appear only when there's no semantic HTML home — they're the explicit fallback, not the default path. The current ratio: 12 element-driven components plus role-driven attribute selectors (`[role="tablist"]`, `[role="tab"]`, `[role="tabpanel"]`, `[popover=hint]`), versus 1 class-root partial (`<div>` for `.stack` / `.cluster`). Anchor-positioning is its own surface; placement is its own modifier dimension (`.top` / `.bottom` / `.start` / `.end` + corners), shared across every floating component.
 
 ---
 
@@ -184,15 +184,17 @@ Twelve element-driven component partials plus one class-root partial for layout 
 
 These ship in [`src/styles/elements/`](../src/styles/elements/) or [`src/styles/surfaces/`](../src/styles/surfaces/) and complete a UI pattern without needing a separate `components/` partial.
 
-| Tag / surface               | UI pattern                                    | Notes                                                                                                                                                                                             |
-| --------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `<dialog>`                  | Modal + non-modal dialog                      | `:modal` centers + uses `::backdrop`; `[open]:not(:modal)` flows inline. Footer row painted as flex-end with gap.                                                                                 |
-| `<details>` + sibling group | Disclosure / accordion item / accordion group | Single `<details>` is a disclosure. Sibling `<details>` get a small block-start margin so a stack reads as one accordion group; `[name="…"]` makes the group exclusive (HTML5).                   |
-| `<table>`                   | Data table                                    | `<caption>`, `<thead>`, `<tbody>`, `<tfoot>`, `<tr>`, `<th>`, `<td>` all styled via [`_table.scss`](../src/styles/elements/_table.scss).                                                          |
-| `<form>` family             | Form controls                                 | `<input>`, `<textarea>`, `<select>`, `<button>`, `<label>`, `<fieldset>`, `<legend>`, `<output>`, `<progress>`, `<meter>`. Each has a substantive partial.                                        |
-| `<figure>` + `<figcaption>` | Captioned media                               | Pairs with `<img>` / `<video>` / `<audio>` baselines.                                                                                                                                             |
-| `<blockquote>` + `<cite>`   | Pull-quote                                    | `<cite>` styled inline; `<blockquote>` paints the leading bar.                                                                                                                                    |
-| `[popover]` (surface)       | Floating panel                                | Top-layer panel with entry transition; `[popover=hint]` / `[role=tooltip]` paints a smaller, inverted tooltip variant. Lives in [`surfaces/_popover.scss`](../src/styles/surfaces/_popover.scss). |
+| Tag / surface                | UI pattern                                       | Notes                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<dialog>`                   | Modal + non-modal dialog                         | `:modal` centers + uses `::backdrop`; `[open]:not(:modal)` flows inline. Footer row painted as flex-end with gap.                                                                                                                                                                                                                                                                               |
+| `<details>` + sibling group  | Disclosure / accordion item / accordion group    | Single `<details>` is a disclosure. Sibling `<details>` get a small block-start margin so a stack reads as one accordion group; `[name="…"]` makes the group exclusive (HTML5).                                                                                                                                                                                                                 |
+| `<table>`                    | Data table                                       | `<caption>`, `<thead>`, `<tbody>`, `<tfoot>`, `<tr>`, `<th>`, `<td>` all styled via [`_table.scss`](../src/styles/elements/_table.scss).                                                                                                                                                                                                                                                        |
+| `<form>` family              | Form controls                                    | `<input>`, `<textarea>`, `<select>`, `<button>`, `<label>`, `<fieldset>`, `<legend>`, `<output>`, `<progress>`, `<meter>`. Each has a substantive partial.                                                                                                                                                                                                                                      |
+| `<figure>` + `<figcaption>`  | Captioned media                                  | Pairs with `<img>` / `<video>` / `<audio>` baselines.                                                                                                                                                                                                                                                                                                                                           |
+| `<blockquote>` + `<cite>`    | Pull-quote                                       | `<cite>` styled inline; `<blockquote>` paints the leading bar.                                                                                                                                                                                                                                                                                                                                  |
+| `[popover]` (surface)        | Floating panel                                   | Top-layer panel with entry transition; `[popover=hint]` / `[role=tooltip]` paints a smaller, inverted tooltip variant. Lives in [`surfaces/_popover.scss`](../src/styles/surfaces/_popover.scss).                                                                                                                                                                                               |
+| Anchor positioning (surface) | Implicit-anchored placement                      | `[popover]:not([popover='manual'])` is auto-anchored to its `popovertarget` invoker via `position-area`. Default: `block-end` (below). `position-try-fallbacks` flips when there's no room. Lives in [`surfaces/_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss).                                                                                                          |
+| Placement modifiers          | `.top` / `.bottom` / `.start` / `.end` + corners | Eight values map to `position-area` keywords (logical axes: edges → `block-start` / `block-end` / `inline-start` / `inline-end`; corners → logical block + inline pairs). Scoped to non-manual popovers so existing per-element `.start` / `.end` semantics on `<aside>` / `<nav>` / toast aren't disrupted. Lives in [`modifiers/_placements.scss`](../src/styles/modifiers/_placements.scss). |
 
 ### Element baselines that already act as their own components
 
@@ -217,11 +219,7 @@ Mapped against the bare-element-IS-component philosophy and gap-checked against 
 
 These need ONE small partial because the element baseline + a bit of context-specific chrome covers the pattern. Keyboard / show-hide behavior arrives with the Phase 6 composables.
 
-| Pattern             | Root                                              | What's still missing                                                                                                                                                                                                                                | Rough effort      |
-| ------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| Hero / banner       | `<section class="hero">` (or any element)         | **Skipped intentionally** — Tailwind utilities (`py-24 text-center`, optional gradient) cover this in two classes. Adding a `.hero` modifier would duplicate utilities for marginal value. Document and revisit if a real consumer pattern emerges. | —                 |
-| Anchor positioning  | `[popover]` + `[popovertarget]`, `<dialog>:modal` | `anchor-name` + `position-area` defaults. Foundation for tooltip / dropdown placement vocabulary (currently both default to viewport-fixed positioning).                                                                                            | Surface partial.  |
-| Placement modifiers | any element                                       | `.top`, `.bottom`, `.start`, `.end`, `.top-start`, etc. mapped to `position-area`. Used by tooltip / dropdown / toast.                                                                                                                              | Modifier partial. |
+(Anchor positioning + placement modifiers shipped as of 2026-05-09 — see §6 catalog.)
 
 ### Element baselines still placeholder (block component plans)
 
@@ -268,21 +266,19 @@ These earn a class root only because no element fits. They live in `_div.scss`, 
 
 ### Surfaces still planned
 
-| Surface                                        | Status     | Notes                                                                                                       |
-| ---------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
-| `_anchor-positioning.scss`                     | ⏳ pending | `anchor-name` + `position-area` defaults. Foundation for tooltip / dropdown / popover placement vocabulary. |
-| `_placeholder.scss` (for `::placeholder`)      | ⏳ pending | Currently `<input>` / `<textarea>` paint placeholder inline. Extract when more elements need it.            |
-| `_marker.scss` (for `::marker`)                | ⏳ pending | `_summary.scss` paints its own marker today. Extract when `<details>` isn't the only consumer.              |
-| `_picker-select.scss` (for `::picker(select)`) | ⏳ pending | Awaiting Firefox + Safari `appearance: base-select`.                                                        |
-| `_view-transition.scss`                        | ⏳ pending | `::view-transition-old/new/group(*)` for cross-page transitions on `<a>` navigation.                        |
-| `_selection.scss` (for `::selection`)          | ⏳ pending | Variant-tinted selection color.                                                                             |
+| Surface                                        | Status     | Notes                                                                                            |
+| ---------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------ |
+| `_placeholder.scss` (for `::placeholder`)      | ⏳ pending | Currently `<input>` / `<textarea>` paint placeholder inline. Extract when more elements need it. |
+| `_marker.scss` (for `::marker`)                | ⏳ pending | `_summary.scss` paints its own marker today. Extract when `<details>` isn't the only consumer.   |
+| `_picker-select.scss` (for `::picker(select)`) | ⏳ pending | Awaiting Firefox + Safari `appearance: base-select`.                                             |
+| `_view-transition.scss`                        | ⏳ pending | `::view-transition-old/new/group(*)` for cross-page transitions on `<a>` navigation.             |
+| `_selection.scss` (for `::selection`)          | ⏳ pending | Variant-tinted selection color.                                                                  |
 
 ### Modifier partials still planned
 
-| Partial                                     | What it adds                                                                                                                                                             |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `modifiers/_placements.scss`                | `.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end` mapping to `position-area`. Used by tooltip / dropdown / popover surfaces. |
-| Density modifier (`.compact` / `.spacious`) | Adjusts `--set-{tag}-padding-*` + `--set-{tag}-font-size`. Defer until a real need appears (most pages run fine on the default size).                                    |
+| Partial                                     | What it adds                                                                                                                          |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Density modifier (`.compact` / `.spacious`) | Adjusts `--set-{tag}-padding-*` + `--set-{tag}-font-size`. Defer until a real need appears (most pages run fine on the default size). |
 
 ---
 
