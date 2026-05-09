@@ -197,12 +197,12 @@ Catalog of browser-rendered surfaces that could earn a partial. Use this as a me
 
 ## 6. Catalog (built surfaces)
 
-| Surface                                                                 | Status  | What it covers                                                                                                                                                                                                                                                                                                                                                                                                                                 | Composable                             |
-| ----------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) | ✅ done | Auto-anchored placement for every `[popover]` via `position-area` + `position-try-fallbacks` + viewport-aware size bounds. Default places the popover below the anchor (`block-end`); placement modifiers (`.top` / `.bottom-start` / …) override per-host. Boundary detection: shrink → flip → shrink-after-flip via `max-block-size`, `position-try-fallbacks`, and `position-visibility: anchors-visible`. See §"Boundary detection" below. | _(future `usePopover` / `useTooltip`)_ |
-| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)               | ✅ done | `dialog:modal::backdrop` only — dim + blur scrim. Popovers (`auto` / `manual` / `hint`) intentionally keep the UA-default transparent backdrop so non-modal floating panels don't dim the page.                                                                                                                                                                                                                                                | _(none yet)_                           |
-| [`_popover.scss`](../src/styles/surfaces/_popover.scss)                 | ✅ done | `[popover]` panel chrome + `:popover-open` entry/exit transition (`transition-behavior: allow-discrete` + `@starting-style`) + `[popover=hint]` / `[role=tooltip]` smaller-variant chrome.                                                                                                                                                                                                                                                     | _(future `usePopover` / `useTooltip`)_ |
-| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss)             | ✅ done | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`                                                                                                                                                                                                                                                                                                                                                                   | _(none — purely declarative)_          |
+| Surface                                                                 | Status  | What it covers                                                                                                                                                                                                                                                                                                                                                                                                                                 | Composable                            |
+| ----------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) | ✅ done | Auto-anchored placement for every `[popover]` via `position-area` + `position-try-fallbacks` + viewport-aware size bounds. Default places the popover below the anchor (`block-end`); placement modifiers (`.top` / `.bottom-start` / …) override per-host. Boundary detection: shrink → flip → shrink-after-flip via `max-block-size`, `position-try-fallbacks`, and `position-visibility: anchors-visible`. See §"Boundary detection" below. | `usePopover` / `useTooltip` (shipped) |
+| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)               | ✅ done | `dialog:modal::backdrop` only — dim + blur scrim. Popovers (`auto` / `manual` / `hint`) intentionally keep the UA-default transparent backdrop so non-modal floating panels don't dim the page.                                                                                                                                                                                                                                                | _(none yet)_                          |
+| [`_popover.scss`](../src/styles/surfaces/_popover.scss)                 | ✅ done | `[popover]` panel chrome + `:popover-open` entry/exit transition (`transition-behavior: allow-discrete` + `@starting-style`) + `[popover=hint]` / `[role=tooltip]` smaller-variant chrome.                                                                                                                                                                                                                                                     | `usePopover` / `useTooltip` (shipped) |
+| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss)             | ✅ done | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`                                                                                                                                                                                                                                                                                                                                                                   | _(none — purely declarative)_         |
 
 When the next surface lands, add a row above.
 
@@ -283,19 +283,19 @@ What CSS CANNOT do today is **re-flip a still-open popover when its anchor scrol
 
 Mailbox lives with the same limitation in its CSS layer: their JS composables observe where Chromium placed the panel (to update an arrow-side class) but don't force re-flip either. The honest answer is that Chromium's anchor-positioning needs a layout invalidation hook that fires on anchor scroll — and until that lands, the gap is JS-shaped.
 
-The Phase 6 composable layer (`useMenu` / `usePopover` / `useTooltip`) closes this gap with a small recipe:
+The Phase 6 composable layer (`useMenu` / `usePopover` / `useTooltip`) is shipped, but does NOT currently force a re-flip on anchor scroll — the composables match mailbox's behaviour: scroll listeners only update the resolved-side dataset attribute (so chrome that follows the resolved side stays accurate) and don't nudge the popover's layout. The in-session stickiness is documented behaviour: open ⇒ commit ⇒ live until closed. Closing and re-opening always re-evaluates correctly, so the practical impact is small — most dropdown / popover sessions don't span a meaningful scroll.
+
+Authors who need forced re-flip can write a small observer themselves:
 
 ```ts
-// Phase 6 sketch — not shipped yet
+// Force a layout invalidation when the anchor scrolls inside a nested scroller.
+// Toggle `max-block-size` by an inert value to make Chromium re-run
+// `position-try-fallbacks` against the anchor's current position.
 function observeAnchorScroll(popover: HTMLElement): () => void {
 	let frame = 0
 	const tick = () => {
 		cancelAnimationFrame(frame)
 		frame = requestAnimationFrame(() => {
-			// Toggle max-block-size by 1 sub-pixel to force layout invalidation;
-			// Chromium re-runs position-try-fallbacks against the anchor's
-			// current position. Confirmed via manual testing that this is the
-			// minimum nudge that re-evaluates the flip.
 			const previous = popover.style.maxBlockSize
 			popover.style.maxBlockSize = previous === '' ? '99999px' : ''
 		})
@@ -304,8 +304,6 @@ function observeAnchorScroll(popover: HTMLElement): () => void {
 	return () => document.removeEventListener('scroll', tick, true)
 }
 ```
-
-Until Phase 6 ships, the in-session stickiness is documented behaviour: open ⇒ commit ⇒ live until closed. Closing and re-opening always re-evaluates correctly, so the practical impact is small — most dropdown / popover sessions don't span a meaningful scroll.
 
 #### The popover-overlaps-trigger edge case
 
@@ -323,52 +321,27 @@ We exhaustively tested CSS-only ways to clamp the popover's height to the actual
 
 **Mailbox accepts the same limitation.** Their `_dropdown.scss` has only one `anchor-size()` call — `width: anchor-size(width)` for the `.w-100` utility, which ties menu width to trigger width. They never clamp height to space-below-anchor; the SAME overflow case happens for plain dropdowns there too.
 
-The Phase 6 composable layer fixes this with a JS-set max-block-size derived from `getBoundingClientRect`:
+The shipped composable layer (`useMenu`) takes a different approach: instead of computing `max-block-size` from the anchor rect, the factory writes the inline `--set-menu-flip` custom property the surface CSS reads to cap height (`max-block-size: calc(var(--set-menu-flip) * row-height)`), and lets the browser's `position-try-fallbacks` flip the menu when the requested side has fewer than N rows. `flip: 0` opts out and lets surplus rows scroll inside the panel.
 
-```ts
-// Phase 6 sketch — clamp menu to space below the anchor
-function clampToAvailableSpace(anchor: HTMLElement, popover: HTMLElement): () => void {
-	const update = () => {
-		const a = anchor.getBoundingClientRect()
-		const inset = parseFloat(
-			getComputedStyle(document.documentElement).getPropertyValue('--set-anchor-viewport-inset') ||
-				'8',
-		)
-		const spaceBelow = window.innerHeight - a.bottom - inset
-		const spaceAbove = a.top - inset
-		// Whichever side has more room wins; the popover doesn't flip but
-		// shrinks to that space. `overflow: auto` on the popover (already
-		// declared) makes the surplus content scroll inside the menu.
-		popover.style.maxBlockSize = `${Math.max(spaceBelow, spaceAbove)}px`
-	}
-	update()
-	document.addEventListener('scroll', update, { capture: true, passive: true })
-	window.addEventListener('resize', update)
-	return () => {
-		document.removeEventListener('scroll', update, true)
-		window.removeEventListener('resize', update)
-	}
-}
-```
+Consumers who want a tighter clamp than `useMenu`'s row-count threshold can either:
 
-The same observer that bridges the sticky-flip gap (above) can run this clamp — it's the same `scroll` capture listener, just doing two things per tick (toggle to force re-eval + write the actual computed max-block-size). Both fixes land together when `useMenu` / `usePopover` ship.
-
-For now, consumers who hit the overlap case in their UI have two workarounds:
-
-1. **Explicit `max-block-size`** per host: `#my-popover { max-block-size: 12rem; }` — caps the popover so it always fits some reasonable space + scrolls overflow. Mailbox's selects do this via `--bs-dropdown-flip * --bs-dropdown-row-height = ~180px`.
-2. **Opt back in to `flip-block`** per host: `#my-popover { position-try-fallbacks: flip-block, flip-inline; }` — accepts the in-session-stickiness trade-off in exchange for proper boundary handling at open time.
+1. **Explicit `max-block-size`** per host: `#my-popover { max-block-size: 12rem; }` — caps the popover so it always fits some reasonable space + scrolls overflow.
+2. **Opt back in to a richer `position-try-fallbacks` chain** per host: `#my-popover { position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline; }` — accepts in-session stickiness in exchange for proper boundary handling at open time. This is what the surface-level default ships.
+3. **Ship a tiny observer** like the `clampToAvailableSpace` recipe above — drive `max-block-size` directly from `getBoundingClientRect` if you need height to track viewport-edge proximity continuously.
 
 ---
 
 ## 7. First candidates
 
-When time comes to add surfaces, the first three are likely:
+The four shipped surfaces (`_anchor-position.scss`, `_backdrop.scss`, `_popover.scss`, `_scrollbar.scss`) cover what the framework's element + component layer needs today. The composable layer pairs into the popover surface (`usePopover` / `useTooltip` / `useMenu` / `useSelect` / `useToast` all consume `[popover]:not(output)`).
 
-1. **`_popover.scss`** — `[popover]` + `:popover-open` + the placement / `position-area` / `anchor-name` integration. Pairs with a future `usePopover` composable for show/hide lifecycle. Unlocks tooltip, dropdown, menu patterns. **(✅ shipped — placement / `anchor-name` integration deferred.)**
-2. **`_backdrop.scss`** — `dialog::backdrop` + `[popover]::backdrop`. Small surface; one or two color/blur declarations. Earned alongside `<dialog>`'s element promotion. **(✅ shipped.)**
-3. **`_scrollbar.scss`** — `scrollbar-color` + `scrollbar-width` + `scrollbar-gutter` defaults. Theme-friendly and unobtrusive; can be authored without composable support. **(✅ shipped.)**
+Next candidates as the framework's component layer earns them:
 
-Next up after these three: view transitions, anchor positioning, and `::picker(select)` follow as the framework's component layer earns them.
+- **`_view-transition.scss`** — `::view-transition-old/new/group(*)` for cross-page transitions on `<a>` navigation.
+- **`_picker-select.scss`** — `::picker(select)` once Firefox + Safari ship `appearance: base-select` (Chromium 134+ only today).
+- **`_placeholder.scss`** — extract `::placeholder` chrome from `_input.scss` / `_textarea.scss` once a third element needs it.
+- **`_marker.scss`** — extract `::marker` chrome from `_summary.scss` once `<details>` isn't the only consumer.
+- **`_selection.scss`** — variant-tinted `::selection` color.
 
 ---
 

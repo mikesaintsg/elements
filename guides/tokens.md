@@ -104,6 +104,32 @@ Declared in [`src/styles/_tokens.scss`](../src/styles/_tokens.scss) `:root` bloc
 | `--set-variant-border-width`     | `0`            | Variant context — bumps border to 1px when a variant is active so its color shows |
 | `--set-transition-duration`      | `150ms`        | Default transition duration (Tailwind v4 doesn't ship a single duration token)    |
 
+#### Surface-layer + composable-driven `--set-*` tokens
+
+Set by the surface partials and / or read inline by the composable factories. Shipped today:
+
+| Token                                 | Default                                           | Set by / read by                                                                                                                                                                                                             |
+| ------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--set-anchor-gap`                    | `calc(var(--spacing) * 1)`                        | Surface: gap between anchored popover and its trigger.                                                                                                                                                                       |
+| `--set-anchor-position-area`          | `block-end`                                       | Surface: default `position-area` for non-manual popovers. Inline overrides written by `usePopover` / `useTooltip` win.                                                                                                       |
+| `--set-anchor-position-try-fallbacks` | `flip-block, flip-inline, flip-block flip-inline` | Surface: how the browser flips placement on overflow.                                                                                                                                                                        |
+| `--set-anchor-position-try-order`     | `normal`                                          | Surface: spec default — prefer the requested side.                                                                                                                                                                           |
+| `--set-anchor-viewport-inset`         | (declared in `_anchor-position.scss`)             | Safe-area inset reserved on each block-axis side.                                                                                                                                                                            |
+| `--set-anchor-max-block-size`         | `18rem`                                           | Cap on popover block-size (drives `position-try-order: most-block-size` flip behavior).                                                                                                                                      |
+| `--set-anchor-max-inline-size`        | `28rem`                                           | Cap on popover inline-size.                                                                                                                                                                                                  |
+| `--set-menu-flip`                     | (per-instance, written inline)                    | `useMenu` writes the flip-threshold inline; the surface rule caps `max-block-size: calc(var(--set-menu-flip) * row-height)` so the browser flips the menu when the requested side has fewer than N rows. `flip: 0` opts out. |
+| `--set-tabs-indicator-x`              | (per-tablist, written inline)                     | `useTabs` paints the active-tab indicator coordinates on the tablist group.                                                                                                                                                  |
+| `--set-tabs-indicator-y`              | (per-tablist, written inline)                     | (same)                                                                                                                                                                                                                       |
+| `--set-tabs-indicator-width`          | (per-tablist, written inline)                     | (same)                                                                                                                                                                                                                       |
+| `--set-tabs-indicator-height`         | (per-tablist, written inline)                     | (same)                                                                                                                                                                                                                       |
+| `--set-toast-spacing`                 | (consumer-set)                                    | `createToast` reads this to compute the linear-stack offset between toasts.                                                                                                                                                  |
+| `--set-toast-stack-depth`             | (consumer-set; default `3`)                       | Read by `createToast` deck mode to decide how many cards stay visible.                                                                                                                                                       |
+| `--set-toast-stack-index`             | (per-toast, written inline)                       | Per-toast deck index — drives transform / opacity gradient in toast CSS.                                                                                                                                                     |
+| `--set-toast-stack-offset`            | (per-toast, written inline)                       | Linear-mode cumulative pixel offset.                                                                                                                                                                                         |
+| `--set-toast-front-height`            | (per-deck, written inline)                        | Deck-mode shared height so all peeking cards line up.                                                                                                                                                                        |
+
+These tokens are NOT registered with Tailwind via `@theme` because they're framework-internal — consumers that want to override them write a `:root` override directly. The composable factories that write the inline-style tokens preserve any caller-set values across `destroy()` so the host element returns to its original state.
+
 ### 2.3 Modifier-context tokens (set by modifier classes)
 
 These tokens are NOT declared on `:root` — they're only set on elements that wear a modifier class, then consumed by the element via fallback chains.
@@ -127,7 +153,7 @@ See [modifiers.md](modifiers.md) for which class sets which tokens to which valu
 
 ### 2.4 Element-scoped tokens
 
-Declared **on the element selector**, not on `:root`. Currently only `<button>` ships substantive element-scoped tokens.
+Declared **on the element selector**, not on `:root`. The mature element baselines (`<button>`, `<a>`, `<input>`, `<textarea>`, `<select>`, `<dialog>`, `<details>`, `<table>`, the `<form>` family) all ship the same shape — a `--set-{tag}-*` triplet of color / background / border tokens that fall back through `--set-style-*` → `--set-variant-*` → element-default, plus size / radius / font-size tokens that fall back through `--set-size-*`. The reference walk-through below uses `<button>`; new elements follow the identical pattern.
 
 `button { … }` (in [\_button.scss](../src/styles/elements/_button.scss)):
 

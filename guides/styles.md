@@ -1,8 +1,8 @@
 # Styles — Top-Level Architecture
 
-> SCSS partials in `src/styles/` · Tailwind v4 base · Token-driven · TS-mirrored API surface
+> SCSS partials in `src/styles/` · Tailwind v4 base · Token-driven · TS-mirrored API surface · 20 Vue composables in `src/browser/`
 
-This document is the entry point to the styling system. It explains the framework's philosophy, the file layout, the cascade order, and the contract every partial follows. Deep-dives live alongside it: [tokens.md](tokens.md), [modifiers.md](modifiers.md), [mixins.md](mixins.md), [elements.md](elements.md), [components.md](components.md), [surfaces.md](surfaces.md). Implementation status is tracked in [plan.md](plan.md).
+This document is the entry point to the styling system. It explains the framework's philosophy, the file layout, the cascade order, and the contract every partial follows. Deep-dives live alongside it: [tokens.md](tokens.md), [modifiers.md](modifiers.md), [mixins.md](mixins.md), [elements.md](elements.md), [components.md](components.md), [surfaces.md](surfaces.md). The dynamic / behavioural layer is documented in [components.md §8](./components.md#8-composable-pairings-phase-6----shipped) — 20 Vue composables paired with framework-agnostic factories under [`src/browser/`](../src/browser/), each gated to its semantically-correct host element via `assertElement`. Implementation status is tracked in [plan.md](plan.md).
 
 It has four parts:
 

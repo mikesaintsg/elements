@@ -11,7 +11,7 @@ The checklist columns:
 
 - **Tag** â€” the HTML element.
 - **Status**:
-  - `âœ… done` â€” substantive `_{tag}.scss` partial with token-driven cascade + TS entry + tests (only `<button>` so far).
+  - `âœ… done` â€” substantive `_{tag}.scss` partial with token-driven cascade + TS entry + tests. Substantive baselines today: `<a>`, `<button>`, `<details>`, `<dialog>`, `<fieldset>`, `<input>`, `<label>`, `<legend>`, `<meter>`, `<output>`, `<progress>`, `<select>`, `<summary>`, `<table>`, `<textarea>`. Many also pair with a Vue composable / framework-agnostic factory under [`src/browser/`](../src/browser/) â€” see [components.md Â§8](./components.md#8-composable-pairings-phase-6----shipped) for the dynamic-layer map.
   - `ðŸŸ¡ override` â€” partial keeps a small framework-essential rule that Tailwind preflight + UA defaults don't cover (e.g., underline on `<a>`, `cursor: help` on `<abbr>`, `min-inline-size: 0` on `<fieldset>`).
   - `ðŸš« n/a` â€” partial is comment-only documentation; no rules emitted. Tailwind v4 preflight + UA defaults handle everything semantic. The vast majority of elements fall here.
 - **Description** â€” semantics, browser defaults, and styling quirks. Edit when you bring up an element so the entry reflects what we actually ship, not just what the spec says.
@@ -24,9 +24,9 @@ The checklist columns:
 - `<fieldset>` zeroes `min-inline-size` (UA `min-content` blocks shrinking inside flex/grid).
 - `<mark>` swaps UA hardcoded `yellow`/`black` for the system `mark`/`marktext` keywords + a dark-mode override using `highlight`/`highlighttext` (accessibility + forced-colors compat).
 - `<p>` adds `p + p { margin-block-start: 1em }` to restore inter-paragraph rhythm (preflight's universal `* { margin: 0 }` strips paragraph spacing).
-- `<button>` is the substantive baseline â€” full token-driven cascade (variant / size / style / state).
+- `<button>` is the reference implementation of the modifier cascade â€” variant / size / style / state. Many other elements (`<a>`, `<details>`, `<dialog>`, `<fieldset>`, `<input>`, `<label>`, `<legend>`, `<meter>`, `<output>`, `<progress>`, `<select>`, `<summary>`, `<table>`, `<textarea>`) now also have substantive partials, and most pair with a Vue composable + framework-agnostic factory under [`src/browser/`](../src/browser/) for behaviour (show/hide, validation, sort/select, focus trap, etc.) â€” see [components.md Â§8](./components.md#8-composable-pairings-phase-6----shipped).
 
-Every other element file is a comment-only placeholder. If a future element needs framework rules, this is the test: **does Tailwind preflight already do it?** If yes, no partial rules. If no, but it's just an opinionated style choice, no rules â€” let consumers add utilities. If no, AND it's a real semantic gap (UA quirk needing reset, or semantic affordance neither preflight nor browser provides) â€” then a framework rule earns its place.
+Every remaining element file is a comment-only placeholder. If a future element needs framework rules, this is the test: **does Tailwind preflight already do it?** If yes, no partial rules. If no, but it's just an opinionated style choice, no rules â€” let consumers add utilities. If no, AND it's a real semantic gap (UA quirk needing reset, or semantic affordance neither preflight nor browser provides) â€” then a framework rule earns its place.
 
 ---
 

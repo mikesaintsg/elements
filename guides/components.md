@@ -1,6 +1,6 @@
 # Components
 
-> Higher-level UI patterns that compose elements. Folder: [src/styles/components/](../src/styles/components/). **Status: Phase 5 (sectioning components) shipped; widgets + composable-driven components planned.**
+> Higher-level UI patterns that compose elements. Folder: [src/styles/components/](../src/styles/components/). **Status: Phase 5 (sectioning components) shipped; Phase 6 (composables) shipped — 20 Vue adapters + paired factories under [`src/browser/`](../src/browser/); class-root widgets (skeleton, badge, dot, stepper, …) still planned.**
 
 A **component** is a UI pattern bigger than one element — a card, a sidebar, a modal, a toolbar, a filter bar. In a class-heavy framework these are class roots (`.card`, `.modal`, `.btn-toolbar`). In _elements_ they're, wherever possible, **bare HTML tags**: `<article>` IS a card, `<aside>` IS a sidebar, `<dialog>` IS a modal. The HTML tag carries the identity; modifier classes (variant / size / style / state / placement) carry the variations.
 
@@ -282,25 +282,35 @@ These earn a class root only because no element fits. They live in `_div.scss`, 
 
 ---
 
-## 8. Composable pairings (Phase 6)
+## 8. Composable pairings (Phase 6) — ✅ shipped
 
-Components that need JS interactivity pair with a composable in `src/browser/composables/`. Naming mirrors the element: `useDialog` ↔ `<dialog>`, `useDetails` ↔ `<details>`, `useAside` ↔ `<aside>`. The plan-of-record list lives in [plan.md §Phase 6](./plan.md#phase-6--composables-lift-from-mailbox-adapted); the abridged map below shows which component each composable powers.
+Components that need JS interactivity pair with a composable in [`src/browser/composables/`](../src/browser/composables/). Naming mirrors the element: `useDialog` ↔ `<dialog>`, `useDetails` ↔ `<details>`, `useAside` ↔ `<aside>`. The shipped surface (20 composables) is detailed in [plan.md §Phase 6](./plan.md#phase-6--composables-lift-from-mailbox-adapted--shipped); the abridged map below shows which component each composable powers.
 
-| Component              | Composable                                                               | Notes                                                                                               |
-| ---------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| Modal                  | `useDialog` (wraps `<dialog>`)                                           | Covers what mailbox calls `useModal`. Populates `events.ts` with `elements:dialog:open` / `:close`. |
-| Accordion / disclosure | `useDetails` (wraps `<details>`)                                         | Covers what mailbox calls `useCollapse`.                                                            |
-| Tooltip / popover      | `usePopover` (attribute-bound to `[popover]`) + `useTooltip` (primitive) | Two primitives; consumed by tooltip + dropdown.                                                     |
-| Dropdown               | `useMenu` (wraps `<menu>`) + `usePopover`                                | Covers what mailbox calls `useDropdown`. Under our rule, a dropdown IS a `<menu>`.                  |
-| Sidebar / drawer       | `useAside` (wraps `<aside>`)                                             | Covers what mailbox calls `useOffcanvas`.                                                           |
-| Tabs                   | `useTabs` (primitive — keyboard ARIA-tablist)                            | Independent of `<nav>` so it works on `<ol>` / `<div>` too.                                         |
-| Toast                  | `useToast` (primitive — no clean element home)                           | May later fold into `useOutput` once `<output role="status">` is the canonical root.                |
-| Form                   | `useForm` (wraps `<form>`)                                               | Constraint-validation API wrapper.                                                                  |
-| Table                  | `useTable` (wraps `<table>`)                                             | Sort / paginate / select / expand / focus / resize.                                                 |
-| Carousel               | `useCarousel` (primitive)                                                | No element home; primitive with slide nav.                                                          |
-| Splitter               | `useDrag` + `usePointer` primitives                                      | Resizable two-pane layout.                                                                          |
+| Component              | Composable                     | Wrapped element / contract                                                                                                 |
+| ---------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Modal                  | `useDialog` (← `useModal`)     | `<dialog>` — gated; layers `elements:dialog:show / open / hide / close` over native `showModal()` / `close()`.             |
+| Accordion / disclosure | `useDetails` (← `useCollapse`) | `<details>` — gated; flips `[open]` synchronously, listens to native `toggle` for external mutations.                      |
+| Popover surface        | `usePopover` (attribute-bound) | `[popover]` — sets `popover="manual"` itself; consumed by tooltip / menu / select / toast.                                 |
+| Tooltip                | `useTooltip`                   | Hover + focus triggers; sets `role="tooltip"`. Composes `usePopover`.                                                      |
+| Dropdown               | `useMenu` (← `useDropdown`)    | `<menu>` panel gated; ARIA `aria-expanded` + `aria-haspopup="menu"`; arrow-key roving + Home / End. Composes `usePopover`. |
+| Sidebar / drawer       | `useAside` (← `useOffcanvas`)  | `<aside>` — gated; popover-API top layer + `[data-aside-open]` mirror; scroll lock + Escape dismiss.                       |
+| Toast                  | `useToast`                     | `<output>` — gated (matches the `output[popover]` toast surface scope). Stack-deck layout via `[data-toast-stack]`.        |
+| Tabs                   | `useTabs` (← `useTab`)         | One trigger / one pane within a `[role="tablist"]` group; ARIA roles auto-applied.                                         |
+| Nav / scroll-spy       | `useNav` (← `useScrollSpy`)    | `<nav>` ref gated; `IntersectionObserver` toggles `aria-current="location"` on the matching link.                          |
+| Form                   | `useForm`                      | `<form>` — gated; constraint-validation pipeline + `[data-form-validated]` + `aria-invalid` mirrors.                       |
+| Select / combobox      | `useSelect`                    | `<menu>` panel; ARIA listbox / combobox / multi-select / autocomplete modes.                                               |
+| Table                  | `useTable`                     | `<table>` — gated; sort, paginate, select, expand (with optional height-transition), focus, resize.                        |
+| Carousel               | `useCarousel`                  | Slide nav + autoplay + keyboard / touch / swipe.                                                                           |
+| Drag / drop            | `useDrag` + `useDrop`          | HTML5 DnD pipeline on `[data-index]` rows + drop-target with `relatedTarget`-aware `over` tracking.                        |
+| Pointer                | `usePointer`                   | `pointerdown → pointermove* → pointerup` with body cursor lock. Foundation for drag / slider / splitter.                   |
+| Focus                  | `useFocus`                     | Tab-trap with `activate()` / `deactivate()` lifecycle. Extracted from mailbox's `createModal` focus-trap loop.             |
+| Theme                  | `useTheme`                     | Singleton theme controller — `data-theme` + `data-core` attributes; `prefers-color-scheme` reactive follow.                |
+| Button                 | `useButton`                    | `<button>` — gated; toggle state + `aria-pressed` + `elements:button:toggle`.                                              |
+| Alert                  | `useAlert`                     | `[role="alert"]` / `[role="status"]` host; `[data-alert-open]` + `[data-alert-dismiss]` descendant.                        |
 
-The composable owns **state** (open/closed, active/inactive, transitions). The component partial owns **chrome** (color, layout, sizing). Event names follow `elements:{element-or-component}:{verb}` per [src/browser/events.ts](../src/browser/events.ts).
+Each composable has a paired framework-agnostic factory under [`src/browser/factories/`](../src/browser/factories/) so non-Vue consumers can drop the Vue adapter and call `createDialog(el, opts)` directly. The composable owns **state** (open/closed, active/inactive, transitions). The component partial owns **chrome** (color, layout, sizing). Event names follow `elements:{element-or-component}:{verb}` per [src/browser/events.ts](../src/browser/events.ts).
+
+Showcase pages live under [`app/browser/pages/Use*Page.vue`](../app/browser/pages/) — one per composable — and demonstrate the API surface end-to-end on real DOM.
 
 ---
 
