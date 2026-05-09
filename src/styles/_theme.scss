@@ -1,31 +1,37 @@
 // ============================================================================
 //  Default theme — semantic palette + surface / text / border tokens with
-//  light + dark variants.
+//  light + dark variants. Colors ported directly from the mailbox project's
+//  Bootstrap-derived sable palette (hue 216, saturation 20%) so consumers
+//  who lift this theme get the exact Mailbox look without rederiving values.
 //
 //  Two concerns in this file:
 //
-//    1. Semantic palette via `@theme` — `--color-{primary|secondary|…}`
-//       lifted from matching Tailwind palette swatches as inlined oklch
-//       values. Inlining (rather than `var(--color-blue-500)`) keeps the
-//       seven variants stable even when Tailwind tree-shakes palette
-//       tokens that aren't used by generated utilities. Tailwind's `@theme`
-//       plugin sees these and emits both `:root { --color-* }` and the
-//       matching `.bg-primary` / `.text-success` / etc. utility classes.
+//    1. Semantic palette via `@theme` — `--color-{primary|secondary|…}`.
+//       Tailwind's `@theme` plugin sees these and emits both `:root
+//       { --color-* }` and the matching `.bg-primary` / `.text-success`
+//       / etc. utility classes. Light values live in `@theme`; dark
+//       overrides ride the `[data-theme='dark']` block below (where the
+//       palette legitimately shifts — mailbox swaps primary from a
+//       blue-violet `hsl(235 85% 50%)` in light to a brighter cyan
+//       `hsl(198 100% 50%)` in dark; the rest stay constant).
 //
 //    2. Surface / text / border tokens via plain `:root` blocks — declared
 //       OUTSIDE `@theme` because `@theme` doesn't extract these for
 //       utility-class generation. The light defaults land directly in
-//       `:root`; the `[data-theme="dark"]` block below overrides them with
+//       `:root`; the `[data-theme='dark']` block overrides them with
 //       dark values. We use this pattern instead of `light-dark()`
-//       because Chromium 122 has a known bug where `light-dark()` values
+//       because Chromium has a known bug where `light-dark()` values
 //       stored in custom properties don't re-resolve against a child
 //       element's `color-scheme` when consumed via `var()` — they
 //       resolve against the `color-scheme` of the declaring element
 //       (`:root`), which short-circuits scoped theme switching for any
-//       token consumed indirectly through another `var()`. The explicit
-//       attribute selectors below sidestep that resolution quirk: each
-//       `[data-theme]` arm directly overrides the resolved color, so any
-//       descendant (no matter how deep) reads the right value.
+//       token consumed indirectly through another `var()`. Explicit
+//       attribute overrides sidestep that resolution quirk.
+//
+//  Color format: HSL values lifted verbatim from mailbox's
+//  `_default-theme.scss` (Bootstrap variable map). `hsl()` is the
+//  canonical web color space; consumers can override any `--color-*`
+//  token with any color value (oklch, hsl, hex, rgb, named).
 //
 //  The `:root` block also advertises `color-scheme: light dark` so UA
 //  chrome (form controls, scrollbars) honors `prefers-color-scheme` until
@@ -33,66 +39,72 @@
 //
 //  Authoring rule for downstream partials and the showcase: read these
 //  tokens (`var(--color-canvas)`, `var(--color-text)`) instead of inlining
-//  Tailwind palette swatches. That keeps the surface-attribute swap cheap
-//  — flipping `data-theme` retunes the whole UI without re-rendering.
-//
-//  Color format note: oklch() is color-space-correct (perceptually uniform)
-//  and is what Tailwind v4 ships natively. Consumers can override any
-//  `--color-*` token with any color value (oklch, hsl, hex, rgb, named).
+//  palette swatches. That keeps the surface-attribute swap cheap — flipping
+//  `data-theme` retunes the whole UI without re-rendering.
 // ============================================================================
 
 @theme {
 	// ── Semantic variants — Tailwind-utility-generated ────────────────────
-	// Each variant is the literal oklch value of the matching Tailwind
-	// palette color so the theme works without depending on Tailwind's
-	// palette tokens being present on :root.
+	// Each variant is a literal HSL value lifted from mailbox's default
+	// theme so the framework works without depending on Tailwind's palette
+	// tokens being present on `:root`. Light values here; dark overrides
+	// in the `[data-theme='dark']` block (only `--color-primary` actually
+	// shifts between modes — the rest stay constant per mailbox's spec).
 
-	// Tailwind blue-500
-	--color-primary: oklch(62.3% 0.214 259.815);
-	// Tailwind slate-400
-	--color-secondary: oklch(70.4% 0.04 256.788);
-	// Tailwind violet-500
+	// Mailbox primary — light: blue-violet, calm against white surface.
+	--color-primary: hsl(235 85% 50%);
+	// Mailbox secondary — neutral slate at mid-lightness; pairs with both
+	// light and dark canvases.
+	--color-secondary: hsl(216 20% 45%);
+	// Tertiary — mailbox doesn't ship one; we keep Tailwind's violet here
+	// so consumers who want a third accent get a sensible default.
 	--color-tertiary: oklch(60.6% 0.25 292.717);
-	// Tailwind emerald-500
-	--color-success: oklch(69.6% 0.17 162.48);
-	// Tailwind amber-400
-	--color-warning: oklch(82.8% 0.189 84.429);
-	// Tailwind red-500
-	--color-danger: oklch(63.7% 0.237 25.331);
-	// Tailwind cyan-500
-	--color-information: oklch(71.5% 0.143 215.221);
+	// Mailbox success — desaturated forest green; works on both modes.
+	--color-success: hsl(145 52% 34%);
+	// Mailbox warning — saturated yellow; legible on both modes.
+	--color-warning: hsl(50 93% 50%);
+	// Mailbox danger — saturated crimson; legible on both modes.
+	--color-danger: hsl(0 67.5% 50%);
+	// Mailbox info (we name it `information`) — saturated azure.
+	--color-information: hsl(216 100% 50%);
 }
 
 // ── Light defaults on :root ──────────────────────────────────────────────────
 // `:root` declares `color-scheme: light dark` so UA chrome follows
-// `prefers-color-scheme`; the surface tokens here are the LIGHT defaults that
-// `[data-theme='dark']` overrides further down.
+// `prefers-color-scheme`; the surface / text / border tokens below are the
+// LIGHT defaults that `[data-theme='dark']` overrides further down.
+//
+// All sable values share hue 216 / saturation 20% — the mailbox calibration.
+// Lightness steps:
+//   100  → page canvas
+//   98.75 → card surface (cards are subtly tinted off-white in light mode)
+//   97.5  → raised surface (code / kbd / pre tints)
+//   90    → subtle border
+//   80    → default border
+//   70    → strong border
+//   65    → subtle text (placeholders, disabled)
+//   40    → muted text (captions, hints)
+//   15    → body text
+//   0     → strong text (headings, emphasis)
 
 :root {
 	color-scheme: light dark;
 
-	// Canvas — body background. slate-50.
-	--color-canvas: oklch(98.4% 0.003 247.858);
-	// Surface — cards, popovers, dropdowns, dialog content. white.
-	--color-surface: oklch(100% 0 0);
-	// Surface raised — popover-on-surface, hover-active state. slate-50.
-	--color-surface-raised: oklch(98.4% 0.003 247.858);
+	// Surfaces (canvas → surface → raised; sable hue 216, saturation 20%)
+	--color-canvas: hsl(0 0% 100%);
+	--color-surface: hsl(216 20% 98.75%);
+	--color-surface-raised: hsl(216 20% 97.5%);
 
-	// Text — default body color. slate-900.
-	--color-text: oklch(20.8% 0.042 265.755);
-	// Text strong — headings, emphasized copy. slate-950.
-	--color-text-strong: oklch(12.9% 0.042 264.695);
-	// Text muted — secondary copy, captions, hints. slate-500.
-	--color-text-muted: oklch(55.4% 0.046 257.417);
-	// Text subtle — placeholders, disabled labels. slate-400.
-	--color-text-subtle: oklch(70.4% 0.04 256.788);
+	// Text scale — strong ↔ subtle
+	--color-text: hsl(216 20% 15%);
+	--color-text-strong: hsl(0 0% 0%);
+	--color-text-muted: hsl(216 20% 40%);
+	--color-text-subtle: hsl(216 20% 65%);
 
-	// Border — default divider. slate-200.
-	--color-border: oklch(92.9% 0.013 255.508);
-	// Border strong — emphasized divider. slate-300.
-	--color-border-strong: oklch(86.9% 0.022 252.894);
-	// Border subtle — barely-there divider. slate-100.
-	--color-border-subtle: oklch(96.8% 0.007 247.896);
+	// Border scale — strong ↔ subtle
+	--color-border: hsl(216 20% 80%);
+	--color-border-strong: hsl(216 20% 70%);
+	--color-border-subtle: hsl(216 20% 90%);
 }
 
 // ── prefers-color-scheme follow ─────────────────────────────────────────────
@@ -102,16 +114,28 @@
 
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme]) {
-		--color-canvas: oklch(12.9% 0.042 264.695);
-		--color-surface: oklch(20.8% 0.042 265.755);
-		--color-surface-raised: oklch(27.9% 0.041 260.031);
-		--color-text: oklch(86.9% 0.022 252.894);
-		--color-text-strong: oklch(98.4% 0.003 247.858);
-		--color-text-muted: oklch(70.4% 0.04 256.788);
-		--color-text-subtle: oklch(55.4% 0.046 257.417);
-		--color-border: oklch(37.2% 0.044 257.287);
-		--color-border-strong: oklch(44.6% 0.043 257.281);
-		--color-border-subtle: oklch(27.9% 0.041 260.031);
+		// Surfaces — mailbox dark goes deep (lightness 11) and raises by 2pt
+		// per surface step rather than flipping to lighter slates.
+		--color-canvas: hsl(216 20% 11%);
+		--color-surface: hsl(216 20% 13%);
+		--color-surface-raised: hsl(216 20% 15%);
+
+		// Text — soft slate-300 body (85%) reads gentler than pure white;
+		// strong-emphasis (headings) climbs to true white.
+		--color-text: hsl(216 20% 85%);
+		--color-text-strong: hsl(0 0% 100%);
+		--color-text-muted: hsl(216 20% 60%);
+		--color-text-subtle: hsl(216 20% 35%);
+
+		// Borders — distinctly visible against the deep canvas; strong climbs
+		// further; subtle stays just above the surface for low-contrast dividers.
+		--color-border: hsl(216 20% 30%);
+		--color-border-strong: hsl(216 20% 40%);
+		--color-border-subtle: hsl(216 20% 22%);
+
+		// Variant override — mailbox shifts primary from blue-violet (235) to
+		// bright cyan (198) in dark to keep AA contrast against the deep canvas.
+		--color-primary: hsl(198 100% 50%);
 	}
 }
 
@@ -119,8 +143,8 @@
 // `useTheme` (composable) writes `data-theme="light"` or `data-theme="dark"`
 // on `<html>` based on user choice. Both selectors below pin
 // `color-scheme` so UA chrome (form controls, native scrollbars in dark)
-// follows the explicit choice; the `dark` arm also overrides the surface
-// tokens declared on `:root`.
+// follows the explicit choice; the `dark` arm also overrides every surface
+// / text / border token plus `--color-primary`.
 
 [data-theme='light'] {
 	color-scheme: light;
@@ -129,21 +153,18 @@
 [data-theme='dark'] {
 	color-scheme: dark;
 
-	// Mailbox dark-mode palette (sable hue 216 / saturation 20%) ported to
-	// the closest Tailwind v4 oklch swatches — see git log for the per-
-	// token mapping. The shift from white text to slate-300 is the most
-	// impactful change: dark UIs that paint pure-white text feel harsh and
-	// fatiguing; 87% lightness body text matches mailbox's calibration and
-	// reads softer while keeping AAA contrast against the slate-950 canvas.
+	--color-canvas: hsl(216 20% 11%);
+	--color-surface: hsl(216 20% 13%);
+	--color-surface-raised: hsl(216 20% 15%);
 
-	--color-canvas: oklch(12.9% 0.042 264.695);
-	--color-surface: oklch(20.8% 0.042 265.755);
-	--color-surface-raised: oklch(27.9% 0.041 260.031);
-	--color-text: oklch(86.9% 0.022 252.894);
-	--color-text-strong: oklch(98.4% 0.003 247.858);
-	--color-text-muted: oklch(70.4% 0.04 256.788);
-	--color-text-subtle: oklch(55.4% 0.046 257.417);
-	--color-border: oklch(37.2% 0.044 257.287);
-	--color-border-strong: oklch(44.6% 0.043 257.281);
-	--color-border-subtle: oklch(27.9% 0.041 260.031);
+	--color-text: hsl(216 20% 85%);
+	--color-text-strong: hsl(0 0% 100%);
+	--color-text-muted: hsl(216 20% 60%);
+	--color-text-subtle: hsl(216 20% 35%);
+
+	--color-border: hsl(216 20% 30%);
+	--color-border-strong: hsl(216 20% 40%);
+	--color-border-subtle: hsl(216 20% 22%);
+
+	--color-primary: hsl(198 100% 50%);
 }
