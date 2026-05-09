@@ -1,7 +1,7 @@
 <script lang="ts" setup></script>
 
 <template>
-	<article class="space-y-10 !block !shadow-none !border-0 !p-0 !bg-transparent">
+	<section class="space-y-10">
 		<!--
 			This page's outer wrapper is itself an <article> — but we strip the
 			card chrome with utilities (`!block !shadow-none …`) so it acts as a
@@ -170,5 +170,5 @@
 				</footer>
 			</article>
 		</section>
-	</article>
+	</section>
 </template>

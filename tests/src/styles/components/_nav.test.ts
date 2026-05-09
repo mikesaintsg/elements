@@ -75,7 +75,7 @@ describe('nav — body-shell rail', () => {
 	})
 })
 
-describe('nav — breadcrumb (nav > ol)', () => {
+describe('nav — inner list (nav > ol / nav > ul) is a horizontal flex with no markers', () => {
 	it('inner <ol> renders as a horizontal flex with no list markers', () => {
 		const nav = build('nav')
 		const ol = build('ol')
@@ -90,8 +90,38 @@ describe('nav — breadcrumb (nav > ol)', () => {
 		expect(pixels(ol, 'padding-left')).toBe(0)
 	})
 
-	it('non-first <li> in nav > ol gets a chevron separator pseudo-element', () => {
+	it('inner <ul> renders the same way (navbar pattern)', () => {
 		const nav = build('nav')
+		const ul = build('ul')
+		ul.appendChild(build('li', '', 'About'))
+		ul.appendChild(build('li', '', 'Contact'))
+		nav.appendChild(ul)
+		mount(nav)
+
+		expect(style(ul, 'display')).toBe('flex')
+		expect(style(ul, 'list-style-type')).toBe('none')
+	})
+})
+
+describe('nav — breadcrumb is opt-in via aria-label="Breadcrumb"', () => {
+	it('plain `<nav><ol>` does NOT get chevron separators (could be pagination, TOC, etc.)', () => {
+		const nav = build('nav')
+		const ol = build('ol')
+		const first = build('li', '', '1')
+		const second = build('li', '', '2')
+		ol.appendChild(first)
+		ol.appendChild(second)
+		nav.appendChild(ol)
+		mount(nav)
+
+		const before = globalThis.getComputedStyle(second, '::before').content
+		// No pseudo-element content set — `none` is the empty default.
+		expect(before).toBe('none')
+	})
+
+	it('`<nav aria-label="Breadcrumb"><ol>` paints chevrons between siblings', () => {
+		const nav = build('nav')
+		nav.setAttribute('aria-label', 'Breadcrumb')
 		const ol = build('ol')
 		const first = build('li', '', 'Home')
 		const second = build('li', '', 'Library')
@@ -100,9 +130,11 @@ describe('nav — breadcrumb (nav > ol)', () => {
 		nav.appendChild(ol)
 		mount(nav)
 
-		// The ::before content is the chevron.
 		const before = globalThis.getComputedStyle(second, '::before').content
-		// Just check that a ::before exists with a non-empty content value.
+		// The chevron's `content: ''` resolves to a quoted empty string.
 		expect(before).not.toBe('none')
+		// First-child is excluded.
+		const firstBefore = globalThis.getComputedStyle(first, '::before').content
+		expect(firstBefore).toBe('none')
 	})
 })

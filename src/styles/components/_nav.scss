@@ -118,13 +118,15 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// Breadcrumb — `<nav><ol>...</ol></nav>` pattern.
+	// Inner list — `<nav><ol>...</ol></nav>` or `<nav><ul>...</ul></nav>`.
 	//
-	// The browser would normally render the <ol> with decimal markers and
-	// vertical padding. We override to a horizontal flow with chevron
-	// separators painted via `::before` on each non-first item. Outside a body
-	// shell (where rails dominate), this keeps `<nav><ol>` ergonomic for
-	// breadcrumb usage.
+	// The browser would normally render the inner list with decimal markers
+	// and vertical padding. We override to a horizontal flow with no markers
+	// — the `<nav>` containing it implies these are navigation links, not a
+	// content list.
+	//
+	// This base layout is shared by every list-shaped nav: navbar with a UL
+	// of links, breadcrumb, pagination, table-of-contents, etc.
 	// --------------------------------------------------------------------------
 	nav > ol,
 	nav > ul {
@@ -144,10 +146,17 @@
 		gap: calc(var(--spacing) * 2);
 	}
 
-	// Chevron separator between siblings — only on `<ol>` (numeric/ordered =
-	// breadcrumb-shaped). Bare `<ul>` lists stay separator-free for things
-	// like top-bar link rows.
-	nav > ol > li:not(:first-child)::before {
+	// --------------------------------------------------------------------------
+	// Breadcrumb — explicit opt-in via `aria-label="Breadcrumb"`.
+	//
+	// The WAI-ARIA Authoring Practices Guide recommends labeling breadcrumbs
+	// with `aria-label="Breadcrumb"` on the surrounding nav. We use that label
+	// as the disambiguator so the framework only paints chevron separators
+	// when the markup explicitly says "this is a breadcrumb." Pagination,
+	// TOCs, sequential step indicators — all `<nav><ol>` patterns — keep
+	// their natural gap-only layout.
+	// --------------------------------------------------------------------------
+	nav[aria-label='Breadcrumb'] > ol > li:not(:first-child)::before {
 		content: '';
 		display: inline-block;
 		inline-size: 0.4em;

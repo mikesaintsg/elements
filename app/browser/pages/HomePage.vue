@@ -1,5 +1,5 @@
 <template>
-	<article>
+	<section>
 		<header class="mb-8 border-b border-slate-200 pb-6">
 			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">elements</h1>
 			<p class="mt-3 text-base text-slate-600">
@@ -22,5 +22,5 @@
 				cascade in action.
 			</p>
 		</section>
-	</article>
+	</section>
 </template>

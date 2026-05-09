@@ -1,7 +1,7 @@
 <script lang="ts" setup></script>
 
 <template>
-	<article class="space-y-10">
+	<section class="space-y-10">
 		<header class="border-b border-slate-200 pb-6">
 			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">Typography</h1>
 			<p class="mt-3 text-base leading-7 text-slate-600">
@@ -86,5 +86,5 @@ const tokens = {
 				<dd>Interaction state (disabled, active, loading). Toggles existing element rules.</dd>
 			</dl>
 		</section>
-	</article>
+	</section>
 </template>

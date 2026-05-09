@@ -76,6 +76,20 @@ Phase 1 (foundation), Phase 2 (form controls), Phase 3 (typography), Phase 4 (me
 | `[popover]` panel + entry/exit transition    | ✅     | [\_popover.scss](../src/styles/surfaces/_popover.scss)     |
 | Scrollbar (`scrollbar-color/-width/-gutter`) | ✅     | [\_scrollbar.scss](../src/styles/surfaces/_scrollbar.scss) |
 
+### Semantic audit (2026-05-08)
+
+After Threads A + B landed, an audit caught four element-vs-spec mismatches that needed correcting:
+
+1. **Showcase pages were wrapping content in `<article>`.** Per spec, `<article>` is "a self-contained composition... independently distributable, e.g., in syndication." A documentation page is a _section of a docs site_, not a syndicatable article. The framework's bare-`<article>` = card chrome was incidentally being applied to every page wrapper, surfacing the conflict. Fix: every page (HomePage, ButtonPage, AnchorPage, DialogPage, InputPage, SelectPage, TablePage, TextareaPage, CardPage, FormsPage, TypographyPage, SurfacesPage) now uses `<section>` as its root wrapper — semantically correct, no chrome conflict. The CardPage in particular dropped its `!block !shadow-none !border-0 !p-0 !bg-transparent` overrides — that anti-pattern was itself the smell flagging the wrong tag choice.
+
+2. **`nav > ol` auto-applied breadcrumb chevrons to every list-shaped nav.** Pagination, table-of-contents, sequential-step indicators all use `<nav><ol>` and were getting unwanted chevron separators. The WAI-ARIA Authoring Practices Guide explicitly recommends `aria-label="Breadcrumb"` on the breadcrumb's nav, so we use that label as the disambiguator. Fix: chevron is now scoped to `nav[aria-label="Breadcrumb"] > ol`. Plain `<nav><ol>` stays separator-free; consumers opt in via the aria attribute.
+
+3. **Toc.vue selector `article section[id]` would have broken when wrappers became `<section>`.** Fix: use `section[id]` (the wrapper has no id, only inner demo sections do).
+
+4. **FormsPage didn't actually demo a `<form>`.** The page name is "Forms" but it only showed individual form controls (`<fieldset>`, `<input>`, `<details>`, `<progress>`, `<meter>`, `<output>`). The framework's `_form.scss` was unexercised in the showcase. Fix: added a real `<form>` demo (vertical stack) and a `<form class="inline">` demo (horizontal row).
+
+A new `tests/src/styles/components/_section.test.ts` locks in the "section has no chrome" decision so future contributors don't accidentally add styling to bare `<section>` and break consumers.
+
 ### Recent fixes (2026-05-08)
 
 - `<select>` chevron: tokenized as `--set-select-background-image` so consumers can swap or remove it without touching the framework partial. Default is an inline SVG (slate-500 stroke, hardcoded because CSS background-image SVGs don't reliably resolve `currentColor`).

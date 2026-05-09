@@ -7,7 +7,7 @@ const optimum = ref(0.7)
 </script>
 
 <template>
-	<article class="space-y-10">
+	<section class="space-y-10">
 		<header class="border-b border-slate-200 pb-6">
 			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">Forms</h1>
 			<p class="mt-3 text-base leading-7 text-slate-600">
@@ -98,5 +98,45 @@ const optimum = ref(0.7)
 				<output class="filled success">success: {{ optimum.toFixed(2) }}</output>
 			</div>
 		</section>
-	</article>
+
+		<section id="form" class="space-y-3">
+			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Form stack</h2>
+			<p class="text-sm text-slate-600">
+				Bare <code>&lt;form&gt;</code> stacks its children vertically with consistent gap — the most
+				common form pattern, no extra <code>&lt;div&gt;</code> wrappers needed.
+			</p>
+			<form @submit.prevent>
+				<label for="form-name">
+					Name
+					<input id="form-name" type="text" placeholder="Ada Lovelace" />
+				</label>
+				<label for="form-email">
+					Email
+					<input id="form-email" type="email" placeholder="ada@example.com" />
+				</label>
+				<label for="form-message">
+					Message
+					<textarea
+						id="form-message"
+						rows="3"
+						placeholder="Tell us what's on your mind…"
+					></textarea>
+				</label>
+				<button type="submit" class="primary">Send</button>
+			</form>
+
+			<h3 class="mt-6 text-base font-semibold tracking-tight text-slate-900">Inline form</h3>
+			<p class="text-sm text-slate-600">
+				<code>&lt;form class="inline"&gt;</code> flips to a horizontal flex row — useful for a
+				single-line filter or quick-action input.
+			</p>
+			<form class="inline" @submit.prevent>
+				<label for="filter-q">
+					Filter
+					<input id="filter-q" type="search" placeholder="search…" />
+				</label>
+				<button type="submit" class="primary">Apply</button>
+			</form>
+		</section>
+	</section>
 </template>

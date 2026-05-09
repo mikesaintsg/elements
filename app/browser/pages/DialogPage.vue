@@ -24,7 +24,7 @@ const toggleInline = (): void => {
 </script>
 
 <template>
-	<article class="space-y-10">
+	<section class="space-y-10">
 		<header class="border-b border-slate-200 pb-6">
 			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">Dialog</h1>
 			<p class="mt-3 text-base leading-7 text-slate-600">
@@ -96,5 +96,5 @@ const toggleInline = (): void => {
 				</dialog>
 			</div>
 		</section>
-	</article>
+	</section>
 </template>

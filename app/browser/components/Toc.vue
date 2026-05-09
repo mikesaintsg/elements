@@ -29,7 +29,11 @@ const collect = (): void => {
 		entries.value = []
 		return
 	}
-	const sections = Array.from(root.querySelectorAll<HTMLElement>('article section[id]'))
+	// Pages now use <section> as their root wrapper (not <article>) — page wrappers
+	// are docs sections, not self-contained syndicatable compositions. The wrapper
+	// has no id; only inner demo sections have ids, so a bare `section[id]` selector
+	// matches exactly what we want regardless of wrapper element.
+	const sections = Array.from(root.querySelectorAll<HTMLElement>('section[id]'))
 	const list: Entry[] = []
 	for (const sec of sections) {
 		const heading = sec.querySelector<HTMLElement>('h2, h3')
