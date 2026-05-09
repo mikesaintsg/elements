@@ -113,7 +113,7 @@ const goHome = (event: MouseEvent): void => {
 			<a href="#/home" class="showcase-brand" @click="goHome">elements</a>
 			<button
 				type="button"
-				class="ghost small"
+				class="ghost small showcase-close"
 				aria-label="Close navigation"
 				@click="sidebarOpen = false"
 			>
