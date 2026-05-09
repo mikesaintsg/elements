@@ -58,7 +58,7 @@ const ev = usePointer(evRef, {
 				:style="{
 					position: 'relative',
 					blockSize: '0.5rem',
-					background: 'color-mix(in oklab, currentColor 12%, transparent)',
+					background: 'var(--color-border)',
 					borderRadius: '0.25rem',
 					maxInlineSize: '24rem',
 				}"
