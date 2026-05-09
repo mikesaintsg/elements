@@ -74,6 +74,30 @@ const hideManual = (): void => {
 			</div>
 		</section>
 
+		<section id="tooltip" class="space-y-3">
+			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Tooltip</h2>
+			<p class="text-sm leading-6 text-slate-600">
+				<code>[popover=hint]</code> is the new HTML attribute value reserved for tooltip-style
+				popovers. It behaves like <code>auto</code> for light-dismiss but is hierarchically nested
+				under any open auto popover (so a tooltip inside an open menu doesn't kill the menu when
+				shown). The framework styles it as a smaller, inverted, less-padded variant of the popover
+				surface — and applies the same chrome to <code>[role=tooltip]</code> for CSS-only
+				anchor-positioned tooltips.
+			</p>
+			<div class="flex items-center gap-4">
+				<button type="button" popovertarget="copy-hint" popovertargetaction="show">
+					Hover the tooltip
+				</button>
+				<aside popover="hint" id="copy-hint">Copies the value to your clipboard.</aside>
+			</div>
+			<p class="text-sm leading-6 text-slate-600">
+				Native hover-driven tooltips arrive with the
+				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">useTooltip</code>
+				composable in Phase 6 — until then, the framework paints chrome and the consumer wires
+				show/hide via the popover API.
+			</p>
+		</section>
+
 		<section id="scrollbar" class="space-y-3">
 			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Scrollbar</h2>
 			<p class="text-sm leading-6 text-slate-600">

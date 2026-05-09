@@ -70,6 +70,32 @@
 			</article>
 		</section>
 
+		<section id="alert" class="space-y-3">
+			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Alert / status banner</h2>
+			<p class="text-sm leading-6 text-slate-600">
+				<code>&lt;aside role="alert"&gt;</code> is the third context this partial covers: a flex-row
+				banner with leading variant bar, body content, and an optional trailing dismiss
+				<code>&lt;button&gt;</code>. Per ARIA, <code>role="alert"</code> is an assertive live region
+				(announces immediately) — use it for time-sensitive or error states. For polite
+				notifications use <code>role="status"</code>; for inline form-validation messages tied to a
+				control, prefer <code>&lt;output role="alert"&gt;</code>.
+			</p>
+			<aside role="alert" class="danger">
+				<span><strong>Heads up.</strong> Your session expires in 2 minutes.</span>
+				<button type="button" aria-label="Dismiss">×</button>
+			</aside>
+			<aside role="alert" class="warning">
+				<span> <strong>Unsaved changes.</strong> Leaving this page will discard your draft. </span>
+				<button type="button" aria-label="Dismiss">×</button>
+			</aside>
+			<aside role="alert" class="success">
+				<span><strong>Saved.</strong> Your profile is up to date.</span>
+			</aside>
+			<aside role="alert" class="information">
+				<span> <strong>FYI.</strong> Enter your team's domain to enable single sign-on. </span>
+			</aside>
+		</section>
+
 		<section id="sidebar" class="space-y-3">
 			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Sidebar (in body shell)</h2>
 			<p class="text-sm leading-6 text-slate-600">

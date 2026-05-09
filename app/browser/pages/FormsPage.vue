@@ -1,9 +1,20 @@
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, useTemplateRef } from 'vue'
 
 const total = 100
 const used = ref(45)
 const optimum = ref(0.7)
+
+// Toast demo — open the popover-toast and auto-hide after 3s. The Phase 6
+// `useToast` composable will own this lifecycle; here we wire it inline so
+// the showcase demo works without a composable dependency.
+const toastEl = useTemplateRef<HTMLOutputElement>('toastEl')
+const showToast = (): void => {
+	const el = toastEl.value
+	if (!el) return
+	el.showPopover()
+	setTimeout(() => el.hidePopover(), 3000)
+}
 </script>
 
 <template>
@@ -56,6 +67,38 @@ const optimum = ref(0.7)
 			</details>
 		</section>
 
+		<section id="accordion" class="space-y-3">
+			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Accordion group</h2>
+			<p class="text-sm leading-6 text-slate-600">
+				A stack of sibling <code>&lt;details&gt;</code> elements is an accordion. Add the
+				<code>name</code> attribute to enable HTML5's exclusive-accordion behavior (opening one
+				auto-closes the others); the framework spaces the siblings vertically so they read as one
+				coherent block whether the group is exclusive or independent.
+			</p>
+			<details name="faq" open>
+				<summary>How are accordions different from disclosures?</summary>
+				<p class="m-0 mt-2 text-sm text-slate-600">
+					Same element. An accordion is just multiple <code>&lt;details&gt;</code> siblings —
+					optionally with the same <code>name</code> for exclusive open. No new markup vocabulary.
+				</p>
+			</details>
+			<details name="faq">
+				<summary>Does this require JavaScript?</summary>
+				<p class="m-0 mt-2 text-sm text-slate-600">
+					No. The browser handles open/close state via the <code>[open]</code> attribute. The Phase
+					6 <code>useDetails</code> composable adds events for animation hooks but isn't required.
+				</p>
+			</details>
+			<details name="faq">
+				<summary>Can I animate the disclosure height?</summary>
+				<p class="m-0 mt-2 text-sm text-slate-600">
+					Yes — the framework opts in to <code>interpolate-size: allow-keywords</code> on
+					<code>:root</code>, so a <code>transition: block-size 200ms</code> on
+					<code>::details-content</code> animates the open/close.
+				</p>
+			</details>
+		</section>
+
 		<section id="progress" class="space-y-3">
 			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Progress</h2>
 			<p class="text-sm text-slate-600">Determinate bars track the variant fill color.</p>
@@ -97,6 +140,37 @@ const optimum = ref(0.7)
 				<output class="filled primary">primary: {{ optimum.toFixed(2) }}</output>
 				<output class="filled success">success: {{ optimum.toFixed(2) }}</output>
 			</div>
+		</section>
+
+		<section id="toast" class="space-y-3">
+			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Toast / status banner</h2>
+			<p class="text-sm leading-6 text-slate-600">
+				<code>&lt;output&gt;</code> already carries <code>role="status"</code> implicitly (per ARIA,
+				it's a polite live region) — the perfect root for a toast. Promote it to
+				<code>popover="manual"</code> and the browser lifts it into the top layer with no z-index
+				wars.
+			</p>
+			<div class="flex flex-wrap items-center gap-3">
+				<button type="button" class="primary" @click="showToast">Show top-layer toast</button>
+				<output ref="toastEl" popover="manual" id="save-toast" class="success">
+					✓ Document saved
+				</output>
+			</div>
+			<p class="text-sm leading-6 text-slate-600">
+				The
+				<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">useToast</code>
+				composable (Phase 6) will own the autohide timer + stack management; here we wire
+				<code>showPopover()</code> + a 3-second <code>setTimeout</code> inline so the demo works
+				without a composable dependency. Default placement is bottom-end; flip with
+				<code>.start</code> / <code>.top</code> modifiers.
+			</p>
+			<p class="text-sm leading-6 text-slate-600">
+				For an in-flow status banner (no top-layer, no popover), drop the attribute and use
+				<code>&lt;output role="status"&gt;</code> directly:
+			</p>
+			<output role="status" class="information">
+				<span> <strong>Connecting…</strong> waiting for the upstream service. </span>
+			</output>
 		</section>
 
 		<section id="form" class="space-y-3">

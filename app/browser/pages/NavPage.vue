@@ -1,4 +1,8 @@
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import { ref } from 'vue'
+
+const activeTab = ref<'profile' | 'account' | 'security'>('profile')
+</script>
 
 <template>
 	<section class="space-y-10">
@@ -63,6 +67,97 @@
 					<li><a href="#next">Next ›</a></li>
 				</ol>
 			</nav>
+		</section>
+
+		<section id="tabs" class="space-y-3">
+			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Tabs</h2>
+			<p class="text-sm leading-6 text-slate-600">
+				A <code>&lt;nav role="tablist"&gt;</code> with <code>role="tab"</code> children is the
+				canonical tab pattern — tabs DO navigate between sibling content panels of the same page,
+				which is the HTML LS definition of a <em>nav</em>. The framework styles the role attribute
+				directly so <code>&lt;menu role="tablist"&gt;</code> or
+				<code>&lt;div role="tablist"&gt;</code> work too for in-card / in-widget tabs where a
+				<em>nav</em> landmark would be unwanted noise.
+			</p>
+			<p class="text-sm leading-6 text-slate-600">
+				Active tab paints an underline in the variant color; the indicator overlaps the tablist's
+				bottom-border track pixel-perfectly via a negative margin.
+			</p>
+
+			<nav aria-label="Account settings" role="tablist">
+				<button
+					type="button"
+					role="tab"
+					:aria-selected="activeTab === 'profile' ? 'true' : 'false'"
+					aria-controls="tabpanel-profile"
+					id="tab-profile"
+					@click="activeTab = 'profile'"
+				>
+					Profile
+				</button>
+				<button
+					type="button"
+					role="tab"
+					:aria-selected="activeTab === 'account' ? 'true' : 'false'"
+					aria-controls="tabpanel-account"
+					id="tab-account"
+					@click="activeTab = 'account'"
+				>
+					Account
+				</button>
+				<button
+					type="button"
+					role="tab"
+					:aria-selected="activeTab === 'security' ? 'true' : 'false'"
+					aria-controls="tabpanel-security"
+					id="tab-security"
+					@click="activeTab = 'security'"
+				>
+					Security
+				</button>
+			</nav>
+			<section
+				id="tabpanel-profile"
+				role="tabpanel"
+				aria-labelledby="tab-profile"
+				:hidden="activeTab !== 'profile'"
+			>
+				<p class="text-sm text-slate-700">
+					Profile settings — display name, avatar, bio. The panel content is whatever HTML you want;
+					framework just paints block-direction padding so the panel separates from the tablist
+					track.
+				</p>
+			</section>
+			<section
+				id="tabpanel-account"
+				role="tabpanel"
+				aria-labelledby="tab-account"
+				:hidden="activeTab !== 'account'"
+			>
+				<p class="text-sm text-slate-700">
+					Account settings — email, billing, plan. Switch tabs and the indicator slides to the new
+					selection.
+				</p>
+			</section>
+			<section
+				id="tabpanel-security"
+				role="tabpanel"
+				aria-labelledby="tab-security"
+				:hidden="activeTab !== 'security'"
+			>
+				<p class="text-sm text-slate-700">
+					Security settings — password, 2FA, devices. Keyboard navigation (<kbd
+						class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs"
+						>←</kbd
+					>
+					<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs">→</kbd>
+					<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs">Home</kbd>
+					<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs">End</kbd>)
+					arrives with the
+					<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">useTabs</code>
+					composable in Phase 6.
+				</p>
+			</section>
 		</section>
 
 		<section id="rail" class="space-y-3">

@@ -56,6 +56,31 @@
 			</article>
 		</section>
 
+		<section id="dropdown" class="space-y-3">
+			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Dropdown menu</h2>
+			<p class="text-sm leading-6 text-slate-600">
+				Pair a <code>&lt;button popovertarget&gt;</code> with a
+				<code>&lt;menu popover&gt;</code> and you have a native dropdown — no JavaScript, no
+				<code>.dropdown</code> class. The popover surface paints the panel chrome (border, radius,
+				shadow, entry transition); menu flips its default horizontal toolbar layout into a vertical
+				command column when it IS the popover panel (or sits inside one).
+			</p>
+			<p class="text-sm leading-6 text-slate-600">
+				Click the trigger below — the browser opens the menu in the top layer with a fade-in, closes
+				on
+				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs">Esc</kbd>
+				or click-outside (because <code>popover</code> defaults to <code>auto</code>).
+			</p>
+			<div class="flex items-center gap-3">
+				<button type="button" class="primary" popovertarget="account-dropdown">Account ▾</button>
+				<menu popover id="account-dropdown">
+					<li><button type="button">Profile</button></li>
+					<li><button type="button">Settings</button></li>
+					<li><button type="button">Sign out</button></li>
+				</menu>
+			</div>
+		</section>
+
 		<section id="bare-buttons" class="space-y-3">
 			<h2 class="text-xl font-semibold tracking-tight text-slate-900">
 				Direct button children (no &lt;li&gt; wrappers)
