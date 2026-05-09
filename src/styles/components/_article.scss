@@ -121,19 +121,40 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// Card header slot — first <header> child of <article>.
+	// Card header / footer slot — first / last <header> / <footer> child of
+	// <article>.
 	//
-	// Bleeds to the article's inner edge via negative margins, paints a subtle
-	// tint band, separates from the body with a single bottom border, and
-	// rounds to match the outer card radius minus the border width.
+	// We zero the article's edge padding (top when a <header> is first; bottom
+	// when a <footer> is last) instead of pulling the slot up with a negative
+	// margin. Why: Tailwind's `.space-y-*` utility writes `margin-block-start:
+	// 0` on every non-last child via `@layer utilities`, which sits AFTER our
+	// `@layer components` in the cascade — so any negative margin we set on
+	// `article > header` is clobbered the moment a consumer puts `space-y-10`
+	// on the article. Moving the bleed mechanism to the article's own padding
+	// (via `:has(> header:first-child)`) keeps the slot's `margin-block-start`
+	// at 0 (the natural value the utility wants) and the header still ends up
+	// flush with the article's inner edge.
+	//
+	// The slot itself paints the tinted band, separator border, and inner
+	// radius matched to the outer card edge.
 	// --------------------------------------------------------------------------
-	article > header {
-		margin-block-start: calc(var(--set-article-padding-block) * -1);
+	article:has(> header:first-child) {
+		padding-block-start: 0;
+	}
+
+	article:has(> footer:last-child) {
+		padding-block-end: 0;
+	}
+
+	article > header:first-child,
+	article > footer:last-child {
 		margin-inline: calc(var(--set-article-padding-inline) * -1);
 		padding-inline: var(--set-article-padding-inline);
 		padding-block: calc(var(--set-article-padding-block) * 0.625);
-
 		background-color: color-mix(in srgb, currentColor 4%, transparent);
+	}
+
+	article > header:first-child {
 		border-block-end: var(--set-article-border-width) solid var(--set-article-border-color);
 		border-start-start-radius: calc(
 			var(--set-article-border-radius) - var(--set-article-border-width)
@@ -143,17 +164,7 @@
 		);
 	}
 
-	// --------------------------------------------------------------------------
-	// Card footer slot — last <footer> child of <article>. Same pattern as the
-	// header but bottom-anchored.
-	// --------------------------------------------------------------------------
-	article > footer {
-		margin-block-end: calc(var(--set-article-padding-block) * -1);
-		margin-inline: calc(var(--set-article-padding-inline) * -1);
-		padding-inline: var(--set-article-padding-inline);
-		padding-block: calc(var(--set-article-padding-block) * 0.625);
-
-		background-color: color-mix(in srgb, currentColor 4%, transparent);
+	article > footer:last-child {
 		border-block-start: var(--set-article-border-width) solid var(--set-article-border-color);
 		border-end-start-radius: calc(
 			var(--set-article-border-radius) - var(--set-article-border-width)

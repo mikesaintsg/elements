@@ -36,16 +36,14 @@ describe('nav — token surface', () => {
 	})
 })
 
-describe('nav — bare flex container', () => {
-	it('renders as a wrapping horizontal flex row', () => {
+describe('nav — bare element is block flow', () => {
+	it('a bare <nav> is block-level, not auto-flex (so nested navs do not stagger)', () => {
+		// We deliberately do NOT default <nav> to flex, because nested
+		// `<nav><nav>...</nav></nav>` patterns (sub-nav inside a primary nav
+		// rail) would wrap horizontally and stagger items on narrow viewports.
+		// Specific contexts (`body > nav`, `nav > ol`) add their own layouts.
 		const el = render('nav', '')
-		expect(style(el, 'display')).toBe('flex')
-		expect(style(el, 'flex-wrap')).toBe('wrap')
-	})
-
-	it('has a default gap', () => {
-		const el = render('nav', '')
-		expect(pixels(el, 'gap')).toBeGreaterThan(0)
+		expect(style(el, 'display')).toBe('block')
 	})
 })
 

@@ -88,15 +88,19 @@ describe('article — descendant <header>/<footer> get card slot chrome', () => 
 		expect(pixels(footer, 'border-top-width')).toBe(1)
 	})
 
-	it('article > header bleeds to the article inner edge via negative margins', () => {
+	it('article > header bleeds to the inner edge: inline negative margin + zeroed top padding', () => {
 		const article = build('article')
 		const header = build('header', '', 'Title')
 		article.appendChild(header)
 		mount(article)
-		// Negative inline margin pulls the header outward to the article's
-		// inner padding edge. We just assert it's < 0.
+		// Inline negative margins pull the header to the article's inner
+		// padding edge (left/right).
 		expect(pixels(header, 'margin-left')).toBeLessThan(0)
 		expect(pixels(header, 'margin-right')).toBeLessThan(0)
+		// Vertical bleed is handled by zeroing the article's top padding when
+		// a header is the first child (instead of a negative margin on the
+		// header — which Tailwind's space-y-* utility would clobber).
+		expect(pixels(article, 'padding-top')).toBe(0)
 	})
 
 	it('a non-direct-descendant <header> is NOT styled as a card slot', () => {

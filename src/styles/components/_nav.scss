@@ -58,17 +58,22 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// Bare nav — minimal horizontal flex container.
+	// Bare nav — block-flow container by default.
 	//
-	// Default shape for in-prose navs (top-bar links, footer link rows, card
-	// action groups). No chrome that would conflict with a page sidebar.
+	// We deliberately do NOT default to `display: flex` because nested navs
+	// are common (a primary <nav> rail containing a child <nav> for sub-
+	// navigation, a sidebar nav containing grouped links, etc.) and a default
+	// flex-wrap would cause the inner content to lay out horizontally and
+	// stagger on narrow viewports — exactly the bug we hit when SiteNav was
+	// nested inside the sidebar nav rail.
+	//
+	// Specific contexts add their own layout:
+	//   - body > nav → vertical rail (declared below).
+	//   - nav > ol / nav > ul → horizontal flex inside the inner list.
+	//   - In-prose navbars with bare <a> children → consumer adds the flex
+	//     utility (`<nav class="flex flex-wrap gap-3">`) since "flat row of
+	//     links" is one shape among many a <nav> can take, not the default.
 	// --------------------------------------------------------------------------
-	nav {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--set-nav-gap);
-	}
 
 	// --------------------------------------------------------------------------
 	// Page navigation rail — child of the layout shell.
