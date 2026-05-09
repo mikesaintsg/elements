@@ -63,13 +63,21 @@
 		transform: scale(0.98);
 	}
 
+	// Nest `@starting-style` INSIDE `[popover]:popover-open` so the
+	// starting-state rule inherits the same `@layer surfaces` membership
+	// as its parent. Declared as a sibling at-rule, the compiled output
+	// hoists `@starting-style` to top-level and the contained selector
+	// becomes UNLAYERED — unlayered styles beat layered ones in the
+	// cascade, so the unlayered `opacity: 0` would override the layered
+	// `opacity: 1` permanently (not just at transition start), leaving
+	// the popover stuck transparent on open. Nesting keeps the
+	// `[popover]:popover-open` selector inside the surfaces layer where
+	// the open-state transition target wins.
 	[popover]:popover-open {
 		opacity: 1;
 		transform: none;
-	}
 
-	@starting-style {
-		[popover]:popover-open {
+		@starting-style {
 			opacity: 0;
 			transform: scale(0.98);
 		}
