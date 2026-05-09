@@ -138,9 +138,13 @@ const goHome = (event: MouseEvent): void => {
 				aria-label="Filter pages"
 				autocomplete="off"
 			/>
-			<kbd
-				class="hidden rounded border border-slate-200 bg-slate-50 px-1.5 font-mono text-[10px] text-slate-500 sm:inline-block"
-				>/</kbd
+			<small class="-mt-1 text-xs text-slate-500"
+				>Press
+				<kbd
+					class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-[10px] text-slate-600"
+					>/</kbd
+				>
+				to focus</small
 			>
 		</search>
 	</header>

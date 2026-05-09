@@ -31,6 +31,14 @@
 		--set-summary-cursor: pointer;
 		--set-summary-marker-size: 0.75em;
 		--set-summary-marker-gap: calc(var(--spacing) * 2);
+		// The marker asset is a token so consumers can swap it (a different
+		// chevron, a plus-sign, a custom icon) without touching the framework
+		// partial. Same pattern as `--set-select-background-image`. The mask
+		// drives the SHAPE; the color comes from `currentColor` via
+		// `background-color` on the pseudo, so variant tints flow naturally.
+		// Default: a clean right-pointing chevron that rotates 90° on [open].
+		--set-summary-marker-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 4 4 4-4 4'/%3E%3C/svg%3E");
+		--set-summary-marker-open-rotate: 90deg;
 		--set-summary-transition-duration: var(--set-transition-duration);
 
 		display: flex;
@@ -56,10 +64,7 @@
 			inline-size: var(--set-summary-marker-size);
 			block-size: var(--set-summary-marker-size);
 			background-color: currentColor;
-			// Right-pointing chevron — mask drives the shape, background-color
-			// drives the visible color (which inherits the summary's color
-			// token, so variants tint cleanly).
-			mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 4 4 4-4 4'/%3E%3C/svg%3E");
+			mask-image: var(--set-summary-marker-image);
 			mask-repeat: no-repeat;
 			mask-position: center;
 			mask-size: contain;
@@ -69,6 +74,6 @@
 	}
 
 	details[open] > summary::before {
-		rotate: 90deg;
+		rotate: var(--set-summary-marker-open-rotate);
 	}
 }

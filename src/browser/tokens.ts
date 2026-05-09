@@ -215,6 +215,10 @@ export const tokens = {
 		cursor: '--set-summary-cursor',
 		markerSize: '--set-summary-marker-size',
 		markerGap: '--set-summary-marker-gap',
+		// Marker glyph asset — defaults to an inline SVG chevron data URL.
+		// Override to swap a different chevron, plus-sign, or custom icon.
+		markerImage: '--set-summary-marker-image',
+		markerOpenRotate: '--set-summary-marker-open-rotate',
 		transitionDuration: '--set-summary-transition-duration',
 	},
 
@@ -282,6 +286,11 @@ export const tokens = {
 		fontSize: '--set-nav-font-size',
 		lineHeight: '--set-nav-line-height',
 		transitionDuration: '--set-nav-transition-duration',
+		// Breadcrumb separator glyph — defaults to an inline SVG chevron data
+		// URL. Override to swap a different chevron, slash, or custom glyph.
+		breadcrumbSeparatorImage: '--set-nav-breadcrumb-separator-image',
+		breadcrumbSeparatorSize: '--set-nav-breadcrumb-separator-size',
+		breadcrumbSeparatorOpacity: '--set-nav-breadcrumb-separator-opacity',
 	},
 
 	// Component tokens declared on bare `<search>` (search bar).
