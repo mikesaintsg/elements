@@ -734,3 +734,145 @@ export interface UseToastReturn {
 	readonly pause: () => void
 	readonly resume: () => void
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// useDrag
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseDragEventMap {
+	readonly tap: (event: CustomEvent) => void
+	readonly start: (event: CustomEvent) => void
+	readonly over: (event: CustomEvent) => void
+	readonly drop: (event: CustomEvent) => void
+	readonly end: (event: CustomEvent) => void
+	readonly reorder: (event: CustomEvent) => void
+}
+
+/** Mutable list accessor used by the factory in place of a Vue ref. */
+export interface CreateDragList<T> {
+	readonly read: () => T[]
+	readonly splice: (start: number, deleteCount: number, ...items: T[]) => T[]
+}
+
+export interface CreateDragOptions<T = unknown> {
+	readonly source?: boolean
+	readonly target?: boolean
+	readonly list?: CreateDragList<T>
+	readonly items?: () => readonly T[]
+	readonly axis?: 'vertical' | 'horizontal'
+	readonly auto?: boolean
+	readonly effect?: {
+		readonly allowed?: DataTransfer['effectAllowed']
+		readonly drop?: DataTransfer['dropEffect']
+	}
+	readonly select?: boolean
+	readonly types?: readonly string[]
+	readonly resolve?: {
+		readonly zone?: (row: HTMLElement, event: DragEvent) => DropPosition | null
+		readonly indices?: (startIndex: number) => ReadonlySet<number>
+	}
+	readonly on?: Partial<UseDragEventMap>
+}
+
+export interface CreateDragInstance {
+	readonly dragging: Readonly<Ref<boolean>>
+	readonly indices: Readonly<Ref<ReadonlySet<number>>>
+	readonly selected: Readonly<Ref<ReadonlySet<number>>>
+	readonly target: Readonly<Ref<number | null>>
+	readonly position: Readonly<Ref<DropPosition | null>>
+	readonly select: (index: number, event?: MouseEvent | KeyboardEvent | PointerEvent) => void
+	readonly tap: (index: number, event?: MouseEvent | KeyboardEvent | PointerEvent) => void
+	readonly clear: () => void
+	readonly destroy: () => void
+}
+
+export interface UseDragOptions<T = unknown> {
+	readonly source?: boolean
+	readonly target?: boolean
+	readonly list?: Ref<T[]>
+	readonly items?: Ref<readonly T[]>
+	readonly axis?: 'vertical' | 'horizontal'
+	readonly auto?: boolean
+	readonly effect?: {
+		readonly allowed?: DataTransfer['effectAllowed']
+		readonly drop?: DataTransfer['dropEffect']
+	}
+	readonly select?: boolean
+	readonly types?: readonly string[]
+	readonly resolve?: {
+		readonly zone?: (row: HTMLElement, event: DragEvent) => DropPosition | null
+		readonly indices?: (startIndex: number) => ReadonlySet<number>
+	}
+	readonly on?: Partial<UseDragEventMap>
+}
+
+export interface UseDragReturn {
+	readonly dragging: Readonly<Ref<boolean>>
+	readonly indices: Readonly<Ref<ReadonlySet<number>>>
+	readonly selected: Readonly<Ref<ReadonlySet<number>>>
+	readonly target: Readonly<Ref<number | null>>
+	readonly position: Readonly<Ref<DropPosition | null>>
+	readonly select: (index: number, event?: MouseEvent | KeyboardEvent | PointerEvent) => void
+	readonly tap: (index: number, event?: MouseEvent | KeyboardEvent | PointerEvent) => void
+	readonly clear: () => void
+	readonly destroy: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useDrop
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseDropEventMap {
+	readonly dragenter: (event: DragEvent) => void
+	readonly dragover: (event: DragEvent) => void
+	readonly dragleave: (event: DragEvent) => void
+	readonly drop: (event: DragEvent) => void
+}
+
+export interface CreateDropOptions {
+	readonly effect?: {
+		readonly allowed?: DataTransfer['effectAllowed']
+		readonly drop?: DataTransfer['dropEffect']
+	}
+	readonly accept?: readonly string[]
+	readonly on?: Partial<UseDropEventMap>
+}
+
+export interface CreateDropInstance {
+	readonly over: Readonly<Ref<boolean>>
+	readonly destroy: () => void
+}
+
+export interface UseDropOptions extends CreateDropOptions {}
+
+export interface UseDropReturn {
+	readonly over: Readonly<Ref<boolean>>
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useFocusTrap (new — extracted from mailbox's useModal)
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface CreateFocusTrapOptions {
+	/** Element (or selector function) to focus on activate. Defaults to the
+	 *  first focusable descendant. */
+	readonly initial?: HTMLElement | ((host: HTMLElement) => HTMLElement | null)
+	/** Restore focus to the previously-focused element on deactivate.
+	 *  Default `true`. */
+	readonly restore?: boolean
+}
+
+export interface CreateFocusTrapInstance {
+	readonly active: Readonly<Ref<boolean>>
+	readonly activate: () => void
+	readonly deactivate: () => void
+	readonly destroy: () => void
+}
+
+export interface UseFocusTrapOptions extends CreateFocusTrapOptions {}
+
+export interface UseFocusTrapReturn {
+	readonly active: Readonly<Ref<boolean>>
+	readonly activate: () => void
+	readonly deactivate: () => void
+}
