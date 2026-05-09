@@ -46,6 +46,18 @@
 @use '../mixins' as *;
 
 @layer components {
+	// --------------------------------------------------------------------------
+	// Canvas + text — every body picks up the framework's theme tokens so
+	// flipping `data-theme` on `<html>` retunes the whole UI. `--color-canvas`
+	// and `--color-text` resolve via `light-dark()` per the active
+	// `color-scheme` (declared on `:root` by `_theme.scss`), so the surface
+	// follows `prefers-color-scheme` until the consumer pins it.
+	// --------------------------------------------------------------------------
+	body {
+		background-color: var(--color-canvas);
+		color: var(--color-text);
+	}
+
 	body:has(main) {
 		display: grid;
 		block-size: 100dvh;

@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // nav — Navigation. Element IS the component, content shape determines variant.
 //
 // `<nav>` lives in multiple contexts. The framework paints them all from one
@@ -42,7 +42,7 @@
 	// --------------------------------------------------------------------------
 	nav {
 		--set-nav-color: var(--set-style-color, currentColor);
-		--set-nav-background-color: var(--set-style-background-color, Canvas);
+		--set-nav-background-color: var(--set-style-background-color, var(--color-surface, Canvas));
 		--set-nav-border-color: var(
 			--set-style-border-color,
 			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))

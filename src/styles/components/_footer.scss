@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // footer — Page footer inside the layout shell.
 //
 // `<footer>` lives in two contexts:
@@ -29,7 +29,7 @@
 @layer components {
 	footer {
 		--set-footer-color: var(--set-style-color, color-mix(in srgb, currentColor 70%, transparent));
-		--set-footer-background-color: var(--set-style-background-color, Canvas);
+		--set-footer-background-color: var(--set-style-background-color, var(--color-surface, Canvas));
 		--set-footer-border-color: var(
 			--set-style-border-color,
 			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))

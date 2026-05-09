@@ -1,34 +1,52 @@
 // ============================================================================
-// Default theme — semantic variants in oklch, matching Tailwind palette colors.
+//  Default theme — semantic palette + surface / text / border tokens with
+//  light + dark variants.
 //
-// Each `--color-{variant}` is set to the literal oklch value of the matching
-// Tailwind palette color (blue-500, slate-400, etc.). Inlining the values
-// (rather than using `var(--color-blue-500)`) makes the theme work in any
-// environment without depending on Tailwind's palette tokens being present
-// on :root — Tailwind v4 tree-shakes palette tokens that aren't used by
-// generated utilities, so a `var(--color-blue-500)` reference would resolve
-// to empty whenever the test entry CSS doesn't carry matching utility usage.
+//  Two concerns in this file:
 //
-// The values match Tailwind's defaults exactly — Tailwind's identity carries
-// through visually. A consumer who wants to retune any variant overrides
-// `--color-{variant}` directly with any color value (oklch, hsl, hex, rgb,
-// named colors — all valid).
+//    1. Semantic palette via `@theme` — `--color-{primary|secondary|…}`
+//       lifted from matching Tailwind palette swatches as inlined oklch
+//       values. Inlining (rather than `var(--color-blue-500)`) keeps the
+//       seven variants stable even when Tailwind tree-shakes palette
+//       tokens that aren't used by generated utilities. Tailwind's `@theme`
+//       plugin sees these and emits both `:root { --color-* }` and the
+//       matching `.bg-primary` / `.text-success` / etc. utility classes.
 //
-// Color format note: oklch() is color-space-correct (perceptually uniform)
-// and is what Tailwind v4 ships natively. A JS library that needs hex can
-// either:
-//   (a) override `--color-{variant}` with a hex value (the variable accepts
-//       any format),
-//   (b) apply the variable to a CSS property and read the computed value —
-//       browsers serialize that as `oklch(...)` or `rgb(...)` depending on
-//       cascade context, both trivially convertible to hex via a small
-//       color-conversion helper.
+//    2. Surface / text / border tokens via plain `:root` blocks — declared
+//       OUTSIDE `@theme` because `@theme` doesn't extract these for
+//       utility-class generation. The light defaults land directly in
+//       `:root`; the `[data-theme="dark"]` block below overrides them with
+//       dark values. We use this pattern instead of `light-dark()`
+//       because Chromium 122 has a known bug where `light-dark()` values
+//       stored in custom properties don't re-resolve against a child
+//       element's `color-scheme` when consumed via `var()` — they
+//       resolve against the `color-scheme` of the declaring element
+//       (`:root`), which short-circuits scoped theme switching for any
+//       token consumed indirectly through another `var()`. The explicit
+//       attribute selectors below sidestep that resolution quirk: each
+//       `[data-theme]` arm directly overrides the resolved color, so any
+//       descendant (no matter how deep) reads the right value.
 //
-// Tailwind's PostCSS plugin processes this @theme block when the framework
-// SCSS compiles, expanding it into :root variables alongside its own theme.
+//  The `:root` block also advertises `color-scheme: light dark` so UA
+//  chrome (form controls, scrollbars) honors `prefers-color-scheme` until
+//  the consumer pins it via `data-theme="light"` / `data-theme="dark"`.
+//
+//  Authoring rule for downstream partials and the showcase: read these
+//  tokens (`var(--color-canvas)`, `var(--color-text)`) instead of inlining
+//  Tailwind palette swatches. That keeps the surface-attribute swap cheap
+//  — flipping `data-theme` retunes the whole UI without re-rendering.
+//
+//  Color format note: oklch() is color-space-correct (perceptually uniform)
+//  and is what Tailwind v4 ships natively. Consumers can override any
+//  `--color-*` token with any color value (oklch, hsl, hex, rgb, named).
 // ============================================================================
 
 @theme {
+	// ── Semantic variants — Tailwind-utility-generated ────────────────────
+	// Each variant is the literal oklch value of the matching Tailwind
+	// palette color so the theme works without depending on Tailwind's
+	// palette tokens being present on :root.
+
 	// Tailwind blue-500
 	--color-primary: oklch(62.3% 0.214 259.815);
 	// Tailwind slate-400
@@ -43,4 +61,82 @@
 	--color-danger: oklch(63.7% 0.237 25.331);
 	// Tailwind cyan-500
 	--color-information: oklch(71.5% 0.143 215.221);
+}
+
+// ── Light defaults on :root ──────────────────────────────────────────────────
+// `:root` declares `color-scheme: light dark` so UA chrome follows
+// `prefers-color-scheme`; the surface tokens here are the LIGHT defaults that
+// `[data-theme='dark']` overrides further down.
+
+:root {
+	color-scheme: light dark;
+
+	// Canvas — body background. slate-50.
+	--color-canvas: oklch(98.4% 0.003 247.858);
+	// Surface — cards, popovers, dropdowns, dialog content. white.
+	--color-surface: oklch(100% 0 0);
+	// Surface raised — popover-on-surface, hover-active state. slate-50.
+	--color-surface-raised: oklch(98.4% 0.003 247.858);
+
+	// Text — default body color. slate-900.
+	--color-text: oklch(20.8% 0.042 265.755);
+	// Text strong — headings, emphasized copy. slate-950.
+	--color-text-strong: oklch(12.9% 0.042 264.695);
+	// Text muted — secondary copy, captions, hints. slate-500.
+	--color-text-muted: oklch(55.4% 0.046 257.417);
+	// Text subtle — placeholders, disabled labels. slate-400.
+	--color-text-subtle: oklch(70.4% 0.04 256.788);
+
+	// Border — default divider. slate-200.
+	--color-border: oklch(92.9% 0.013 255.508);
+	// Border strong — emphasized divider. slate-300.
+	--color-border-strong: oklch(86.9% 0.022 252.894);
+	// Border subtle — barely-there divider. slate-100.
+	--color-border-subtle: oklch(96.8% 0.007 247.896);
+}
+
+// ── prefers-color-scheme follow ─────────────────────────────────────────────
+// When the user hasn't explicitly pinned a theme via `data-theme`, follow
+// the OS preference. The `:not([data-theme])` guard makes the explicit
+// attribute selectors below win when set.
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme]) {
+		--color-canvas: oklch(12.9% 0.042 264.695);
+		--color-surface: oklch(20.8% 0.042 265.755);
+		--color-surface-raised: oklch(27.9% 0.041 260.031);
+		--color-text: oklch(98.4% 0.003 247.858);
+		--color-text-strong: oklch(100% 0 0);
+		--color-text-muted: oklch(70.4% 0.04 256.788);
+		--color-text-subtle: oklch(55.4% 0.046 257.417);
+		--color-border: oklch(27.9% 0.041 260.031);
+		--color-border-strong: oklch(37.2% 0.044 257.287);
+		--color-border-subtle: oklch(20.8% 0.042 265.755);
+	}
+}
+
+// ── Theme attribute pins ────────────────────────────────────────────────────
+// `useTheme` (composable) writes `data-theme="light"` or `data-theme="dark"`
+// on `<html>` based on user choice. Both selectors below pin
+// `color-scheme` so UA chrome (form controls, native scrollbars in dark)
+// follows the explicit choice; the `dark` arm also overrides the surface
+// tokens declared on `:root`.
+
+[data-theme='light'] {
+	color-scheme: light;
+}
+
+[data-theme='dark'] {
+	color-scheme: dark;
+
+	--color-canvas: oklch(12.9% 0.042 264.695);
+	--color-surface: oklch(20.8% 0.042 265.755);
+	--color-surface-raised: oklch(27.9% 0.041 260.031);
+	--color-text: oklch(98.4% 0.003 247.858);
+	--color-text-strong: oklch(100% 0 0);
+	--color-text-muted: oklch(70.4% 0.04 256.788);
+	--color-text-subtle: oklch(55.4% 0.046 257.417);
+	--color-border: oklch(27.9% 0.041 260.031);
+	--color-border-strong: oklch(37.2% 0.044 257.287);
+	--color-border-subtle: oklch(20.8% 0.042 265.755);
 }

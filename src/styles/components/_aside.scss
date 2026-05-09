@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // aside — Two contexts, one partial.
 //
 // `<aside>` lives in two distinct semantic contexts and the framework paints
@@ -36,7 +36,7 @@
 	// --------------------------------------------------------------------------
 	aside {
 		--set-aside-color: var(--set-style-color, currentColor);
-		--set-aside-background-color: var(--set-style-background-color, Canvas);
+		--set-aside-background-color: var(--set-style-background-color, var(--color-surface, Canvas));
 		--set-aside-border-color: var(
 			--set-style-border-color,
 			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))

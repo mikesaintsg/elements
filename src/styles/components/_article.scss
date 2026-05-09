@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // article — Card composition (the framework's flagship "element IS component"
 // proof point).
 //
@@ -49,7 +49,7 @@
 		// surfaces. Cards stay neutral; only `.filled` paints the body.
 		// ----------------------------------------------------------------------
 		--set-article-color: var(--set-style-color, currentColor);
-		--set-article-background-color: var(--set-style-background-color, Canvas);
+		--set-article-background-color: var(--set-style-background-color, var(--color-surface, Canvas));
 		--set-article-border-color: var(
 			--set-style-border-color,
 			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))

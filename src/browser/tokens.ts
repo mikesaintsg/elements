@@ -17,6 +17,9 @@
 
 export const tokens = {
 	// Semantic variants (registered in @theme; Tailwind generates utilities).
+	// Surface / text / border tokens declared in `:root` next to the variants
+	// (outside `@theme` so we can dual-resolve them via the `[data-theme]`
+	// attribute selector — see _theme.scss for why).
 	color: {
 		primary: '--color-primary',
 		secondary: '--color-secondary',
@@ -25,6 +28,16 @@ export const tokens = {
 		warning: '--color-warning',
 		danger: '--color-danger',
 		information: '--color-information',
+		canvas: '--color-canvas',
+		surface: '--color-surface',
+		surfaceRaised: '--color-surface-raised',
+		text: '--color-text',
+		textStrong: '--color-text-strong',
+		textMuted: '--color-text-muted',
+		textSubtle: '--color-text-subtle',
+		border: '--color-border',
+		borderStrong: '--color-border-strong',
+		borderSubtle: '--color-border-subtle',
 	},
 
 	// Framework defaults that have no Tailwind equivalent.

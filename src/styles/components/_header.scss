@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // header — Page app bar inside the layout shell.
 //
 // `<header>` lives in two contexts. The framework paints both:
@@ -31,7 +31,7 @@
 @layer components {
 	header {
 		--set-header-color: var(--set-style-color, currentColor);
-		--set-header-background-color: var(--set-style-background-color, Canvas);
+		--set-header-background-color: var(--set-style-background-color, var(--color-surface, Canvas));
 		--set-header-border-color: var(
 			--set-style-border-color,
 			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))
