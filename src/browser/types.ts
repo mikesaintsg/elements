@@ -876,3 +876,148 @@ export interface UseFocusTrapReturn {
 	readonly activate: () => void
 	readonly deactivate: () => void
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// useButton. Bound to native `<button>`.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseButtonEventMap {
+	/** Fired after toggle. `event.detail` is `ButtonToggleDetail`. */
+	readonly toggle: (event: CustomEvent) => void
+}
+
+export interface CreateButtonOptions {
+	readonly on?: Partial<UseButtonEventMap>
+}
+
+export interface CreateButtonInstance {
+	readonly active: Readonly<Ref<boolean>>
+	readonly toggle: () => void
+	readonly destroy: () => void
+}
+
+export interface UseButtonOptions extends CreateButtonOptions {}
+
+export interface UseButtonReturn {
+	readonly active: Readonly<Ref<boolean>>
+	readonly toggle: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useAlert. Bound to any element carrying `[role="alert"]` / `[role="status"]`.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseAlertEventMap {
+	readonly show: (event: CustomEvent) => void
+	readonly open: (event: CustomEvent) => void
+	readonly hide: (event: CustomEvent) => void
+	readonly close: (event: CustomEvent) => void
+}
+
+export interface CreateAlertOptions {
+	readonly on?: Partial<UseAlertEventMap>
+}
+
+export interface CreateAlertInstance {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	readonly destroy: () => void
+}
+
+export type UseAlertOptions = CreateAlertOptions
+
+export interface UseAlertReturn {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useTabs (← useTab). Operates on one tab/pane pair within a tablist group.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseTabsEventMap {
+	readonly show: (event: CustomEvent) => void
+	readonly open: (event: CustomEvent) => void
+	readonly hide: (event: CustomEvent) => void
+	readonly close: (event: CustomEvent) => void
+	readonly deactivate: (event: CustomEvent) => void
+}
+
+export interface CreateTabsElements {
+	readonly trigger: HTMLElement
+	readonly pane: HTMLElement
+	readonly group: HTMLElement
+}
+
+export interface CreateTabsOptions {
+	readonly on?: Partial<UseTabsEventMap>
+}
+
+export interface CreateTabsInstance {
+	readonly active: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	readonly destroy: () => void
+}
+
+export interface UseTabsOptions {
+	readonly pane: Ref<HTMLElement | null>
+	readonly group: Ref<HTMLElement | null>
+	readonly on?: Partial<UseTabsEventMap>
+}
+
+export interface UseTabsReturn {
+	readonly active: Readonly<Ref<boolean>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useNav (← useScrollSpy). Bound to native `<nav>`.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseNavEventMap {
+	/** `event.detail` is `NavActivateDetail`. */
+	readonly activate: (event: CustomEvent) => void
+}
+
+export interface CreateNavElements {
+	readonly container: HTMLElement
+	readonly nav?: HTMLElement | null
+}
+
+export interface CreateNavOptions {
+	readonly intersection?: {
+		readonly offset?: number
+		readonly margin?: string
+		readonly threshold?: number | readonly number[]
+	}
+	readonly on?: Partial<UseNavEventMap>
+}
+
+export interface CreateNavInstance {
+	readonly active: Readonly<Ref<string | null>>
+	readonly refresh: () => void
+	readonly destroy: () => void
+}
+
+export interface UseNavOptions {
+	readonly nav?: Ref<HTMLElement | null>
+	readonly intersection?: {
+		readonly offset?: number
+		readonly margin?: string
+		readonly threshold?: number | readonly number[]
+	}
+	readonly on?: Partial<UseNavEventMap>
+}
+
+export interface UseNavReturn {
+	readonly active: Readonly<Ref<string | null>>
+	readonly refresh: () => void
+}
