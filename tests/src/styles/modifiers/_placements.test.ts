@@ -36,25 +36,70 @@ describe('placements — edge classes set position-area to a single logical edge
 	})
 })
 
-describe('placements — corner classes pair logical block + inline axes', () => {
-	// Chromium serializes the logical pair to symmetric short forms:
-	//   block-start inline-start → "start"
-	//   block-start inline-end   → "start end"
-	//   block-end   inline-start → "end start"
-	//   block-end   inline-end   → "end"
-	// We assert the computed forms directly so a regression in keyword
-	// resolution (e.g. a downgrade to physical-only) fails loudly.
-	it('.top-start computes to `start` (block-start + inline-start cell)', () => {
-		expect(placement('top-start')).toBe('start')
+describe('placements — corner classes use span- syntax for dropdown alignment', () => {
+	// Corner placements use the position-area `span-` modifier so the
+	// popover hugs the anchor's matching edge instead of sitting in a
+	// single corner cell of the 3×3 grid (which would place the popover
+	// OUTSIDE the anchor's inline bounds — wrong for a dropdown).
+	//
+	// `.bottom-start` reads "below the anchor, aligned to its start edge"
+	//   → popover's start edge sits at anchor's start edge
+	//   → the popover area extends from there toward inline-end
+	//   → CSS: `block-end span-inline-end` → Chromium computed: `end span-end`
+	//
+	// `.bottom-end` reads "below, aligned to anchor's end edge"
+	//   → popover ends at anchor's end edge, extends back toward start
+	//   → CSS: `block-end span-inline-start` → computed: `end span-start`
+	it('.top-start computes to `start span-end` (above, start-aligned)', () => {
+		expect(placement('top-start')).toBe('start span-end')
 	})
-	it('.top-end computes to `start end` (block-start + inline-end cell)', () => {
-		expect(placement('top-end')).toBe('start end')
+	it('.top-end computes to `start span-start` (above, end-aligned)', () => {
+		expect(placement('top-end')).toBe('start span-start')
 	})
-	it('.bottom-start computes to `end start` (block-end + inline-start cell)', () => {
-		expect(placement('bottom-start')).toBe('end start')
+	it('.bottom-start computes to `end span-end` (below, start-aligned)', () => {
+		expect(placement('bottom-start')).toBe('end span-end')
 	})
-	it('.bottom-end computes to `end` (block-end + inline-end cell)', () => {
-		expect(placement('bottom-end')).toBe('end')
+	it('.bottom-end computes to `end span-start` (below, end-aligned)', () => {
+		expect(placement('bottom-end')).toBe('end span-start')
+	})
+})
+
+describe('placements — edge classes hug the anchor via align-self / justify-self', () => {
+	// The position-area alone places the popover SOMEWHERE in the matching
+	// row / column of the 3×3 grid — but without `align-self` / `justify-
+	// self` it floats in the middle of that band rather than pressing
+	// against the anchor edge. The modifier rule supplies both alignments.
+	function alignment(klass: string): { align: string; justify: string } {
+		const div = build('div')
+		div.setAttribute('popover', '')
+		div.classList.add(klass)
+		div.id = `align-${klass}`
+		mount(div)
+		return {
+			align: style(div, 'align-self').trim(),
+			justify: style(div, 'justify-self').trim(),
+		}
+	}
+
+	it('.top hugs the anchor block-end + inline-centers', () => {
+		const a = alignment('top')
+		expect(a.align).toBe('end')
+		expect(a.justify).toBe('anchor-center')
+	})
+	it('.bottom hugs the anchor block-start + inline-centers', () => {
+		const a = alignment('bottom')
+		expect(a.align).toBe('start')
+		expect(a.justify).toBe('anchor-center')
+	})
+	it('.start centers vertically + hugs anchor inline-end', () => {
+		const a = alignment('start')
+		expect(a.align).toBe('anchor-center')
+		expect(a.justify).toBe('end')
+	})
+	it('.end centers vertically + hugs anchor inline-start', () => {
+		const a = alignment('end')
+		expect(a.align).toBe('anchor-center')
+		expect(a.justify).toBe('start')
 	})
 })
 

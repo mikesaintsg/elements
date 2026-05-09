@@ -75,15 +75,47 @@
 
 	// --------------------------------------------------------------------------
 	// Default placement — applied to every popover that isn't manual. The
-	// invoking `<button popovertarget>` is automatically the anchor; we just
-	// declare the area.
+	// invoking `<button popovertarget>` is automatically the anchor; the
+	// position-area + alignment recipe makes the popover hug the anchor's
+	// bottom edge and stay centered horizontally on it.
+	//
+	// align-self: start  → hug the anchor's block-end edge (don't drift
+	//                       toward the bottom of the viewport's bottom row)
+	// justify-self: anchor-center → stay centered on the anchor inline-axis
+	//
+	// Placement modifiers (.top / .bottom-start / etc.) override the area
+	// + alignment per-host without re-stating the gap or fallback list.
 	// --------------------------------------------------------------------------
 	[popover]:not([popover='manual']) {
 		position-area: var(--set-anchor-position-area);
 		position-try-fallbacks: var(--set-anchor-position-try-fallbacks);
+		align-self: start;
+		justify-self: anchor-center;
 		// Reset top-layer defaults — the browser's auto-position would
 		// otherwise center the popover. Logical-axis margin keeps RTL flowing.
 		margin: 0;
 		margin-block: var(--set-anchor-gap);
+	}
+
+	// --------------------------------------------------------------------------
+	// Manual popovers without a popovertarget invoker — the auto-anchor
+	// machinery doesn't kick in, and consumers may not have set explicit
+	// inset-* properties. Default to viewport-centered so a bare
+	// `<div popover="manual">` opens somewhere sensible instead of jumping
+	// to the UA-default top-left corner.
+	//
+	// The toast component (`output[popover='manual']`) overrides this with
+	// fixed-corner positioning via inset-* — its rules win on specificity.
+	// --------------------------------------------------------------------------
+	[popover='manual']:not(output) {
+		position: fixed;
+		inset: 0;
+		margin: auto;
+		// Constrain to a sensible default size so `inset: 0; margin: auto`
+		// can do the centering. Authors override per-host.
+		max-inline-size: min(90vw, 32rem);
+		max-block-size: min(90vh, 32rem);
+		block-size: fit-content;
+		inline-size: fit-content;
 	}
 }

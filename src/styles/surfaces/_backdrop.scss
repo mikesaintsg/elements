@@ -1,10 +1,21 @@
 // ============================================================================
 // ::backdrop — UA-rendered surface behind a top-layer element.
 //
-// `::backdrop` paints the area behind a modal <dialog> (opened via
-// `.showModal()`), a fullscreen element, or a top-layer popover. It exists
-// only while the host element is in the top layer; styling targets the
-// pseudo-element off the host selector.
+// `::backdrop` exists for every top-layer host (modal `<dialog>`,
+// fullscreen elements, every flavour of `[popover]`), but visually only
+// modal dialogs need the dim-and-blur scrim. Tooltips, dropdowns, toasts,
+// and auto popovers should be light-dismissable WITHOUT covering the
+// page — their backdrop must stay transparent.
+//
+// Mailbox solves this with an exclusion-list approach (opt OTHER popovers
+// IN to the backdrop, never the four named families). Our framework is
+// simpler: only modal `<dialog>` gets the dim scrim, period. All popover
+// flavours keep the UA-default transparent backdrop, which is exactly
+// what a non-modal floating panel wants.
+//
+// If a future use-case needs a backdropped popover (e.g. a confirm-style
+// modal-popover hybrid), the consumer opts in per-host:
+//   #my-popover::backdrop { background-color: var(--set-backdrop-background-color); }
 //
 // Tokens: --set-backdrop-* live on `:root` because ::backdrop is generated
 // outside the normal DOM tree and cannot inherit element-scoped tokens
@@ -21,8 +32,10 @@
 		--set-backdrop-transition-duration: var(--set-transition-duration);
 	}
 
-	dialog::backdrop,
-	[popover]::backdrop {
+	// Only modal `<dialog>` (opened via .showModal()) gets the dim-and-blur
+	// scrim. Non-modal dialogs and every popover flavour keep the UA-default
+	// transparent backdrop — exactly what a non-blocking floating panel wants.
+	dialog:modal::backdrop {
 		background-color: var(--set-backdrop-background-color);
 		backdrop-filter: var(--set-backdrop-backdrop-filter);
 

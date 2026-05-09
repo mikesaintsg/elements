@@ -147,29 +147,43 @@ Eight values describe where an anchor-positioned element appears relative to its
 /* src/styles/modifiers/_placements.scss (excerpt) */
 [popover]:not([popover='manual']).top {
 	position-area: block-start;
+	align-self: end;
+	justify-self: anchor-center;
 }
 [popover]:not([popover='manual']).bottom {
 	position-area: block-end;
+	align-self: start;
+	justify-self: anchor-center;
 }
 [popover]:not([popover='manual']).start {
 	position-area: inline-start;
+	align-self: anchor-center;
+	justify-self: end;
 }
 [popover]:not([popover='manual']).end {
 	position-area: inline-end;
+	align-self: anchor-center;
+	justify-self: start;
 }
+/* Corners use `span-` syntax so the popover's edge aligns with the
+   anchor's matching edge — not a single corner cell of the 3×3 grid. */
 [popover]:not([popover='manual']).top-start {
-	position-area: block-start inline-start;
+	position-area: block-start span-inline-end;
 }
 [popover]:not([popover='manual']).top-end {
-	position-area: block-start inline-end;
+	position-area: block-start span-inline-start;
 }
 [popover]:not([popover='manual']).bottom-start {
-	position-area: block-end inline-start;
+	position-area: block-end span-inline-end;
 }
 [popover]:not([popover='manual']).bottom-end {
-	position-area: block-end inline-end;
+	position-area: block-end span-inline-start;
 }
 ```
+
+**Why edges need alignment.** `position-area: block-start` selects the entire row above the anchor — but without `align-self: end`, the popover floats in the middle of that row's available space (could drift toward the top of the viewport). `align-self: end` makes it press against the row's bottom edge — kissing the anchor's top edge. Likewise, `justify-self: anchor-center` keeps the popover horizontally centered on the trigger no matter how wide the available row is.
+
+**Why corners need `span-`.** Two-keyword pairs like `block-end inline-start` select a single corner cell of the 3×3 grid — the cell BELOW and to the LEFT of the anchor (outside the anchor's inline bounds). That's wrong for a dropdown, which should sit DIRECTLY BELOW the anchor with its start edge aligned to the anchor's start edge. The `span-inline-end` modifier expands the area to span from the anchor's start edge toward inline-end — the popover's start edge naturally aligns with the anchor's start, and the panel extends toward the end side. Same recipe applied across all four corners.
 
 Like state modifiers, placement modifiers declare a CSS property directly (`position-area`) rather than a context token — there's only one consumer (the anchor-positioned element itself), so the indirection of a context token would only obscure the rule.
 

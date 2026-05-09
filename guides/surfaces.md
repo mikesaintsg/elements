@@ -32,7 +32,7 @@ Filename: `_{surface}.scss`. The `{surface}` segment names the underlying featur
 
 ```
 src/styles/surfaces/_popover.scss          /* covers [popover], :popover-open, [popovertarget] */
-src/styles/surfaces/_backdrop.scss         /* covers ::backdrop on dialog and popover */
+src/styles/surfaces/_backdrop.scss         /* covers ::backdrop on modal dialog only */
 src/styles/surfaces/_view-transition.scss  /* covers ::view-transition-* family + @view-transition */
 src/styles/surfaces/_scrollbar.scss        /* covers scrollbar-color, scrollbar-width, scrollbar-gutter */
 src/styles/surfaces/_placeholder.scss      /* covers ::placeholder on inputs */
@@ -200,7 +200,7 @@ Catalog of browser-rendered surfaces that could earn a partial. Use this as a me
 | Surface                                                                 | Status  | What it covers                                                                                                                                                                                                                   | Composable                             |
 | ----------------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
 | [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) | ✅ done | Auto-anchored placement for non-manual popovers via `position-area` + `position-try-fallbacks`. Default places the popover below the anchor (`block-end`); placement modifiers (`.top` / `.bottom-start` / …) override per-host. | _(future `usePopover` / `useTooltip`)_ |
-| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)               | ✅ done | `dialog::backdrop` + `[popover]::backdrop` — top-layer backdrop color, blur, transition                                                                                                                                          | _(none yet)_                           |
+| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)               | ✅ done | `dialog:modal::backdrop` only — dim + blur scrim. Popovers (`auto` / `manual` / `hint`) intentionally keep the UA-default transparent backdrop so non-modal floating panels don't dim the page.                                  | _(none yet)_                           |
 | [`_popover.scss`](../src/styles/surfaces/_popover.scss)                 | ✅ done | `[popover]` panel chrome + `:popover-open` entry/exit transition (`transition-behavior: allow-discrete` + `@starting-style`) + `[popover=hint]` / `[role=tooltip]` smaller-variant chrome.                                       | _(future `usePopover` / `useTooltip`)_ |
 | [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss)             | ✅ done | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`                                                                                                                                                     | _(none — purely declarative)_          |
 
