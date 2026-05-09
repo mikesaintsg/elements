@@ -126,7 +126,10 @@ export interface ButtonToggleDetail {
 	readonly active: boolean
 }
 
-export type CarouselDirection = 'next' | 'prev'
+/** Slide direction for carousel transitions. `'left'` = forwards (next),
+ *  `'right'` = backwards (prev). LTR-physical naming because the
+ *  transition classes use the same axis. */
+export type CarouselDirection = 'left' | 'right'
 
 export interface CarouselSlideDetail {
 	readonly direction: CarouselDirection
@@ -1020,4 +1023,147 @@ export interface UseNavOptions {
 export interface UseNavReturn {
 	readonly active: Readonly<Ref<string | null>>
 	readonly refresh: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useCarousel
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface UseCarouselEventMap {
+	readonly slide: (event: CustomEvent) => void
+	readonly change: (event: CustomEvent) => void
+	readonly pause: (event: CustomEvent) => void
+	readonly resume: (event: CustomEvent) => void
+}
+
+export interface CreateCarouselOptions {
+	readonly autoplay?: {
+		readonly interval?: number
+		readonly pause?: 'hover' | false
+		readonly ride?: 'mount' | 'interaction' | false
+	}
+	readonly keyboard?: boolean
+	readonly wrap?: boolean
+	readonly touch?: boolean
+	readonly on?: Partial<UseCarouselEventMap>
+}
+
+export interface CreateCarouselInstance {
+	readonly index: Readonly<Ref<number>>
+	readonly cycling: Readonly<Ref<boolean>>
+	readonly next: () => void
+	readonly prev: () => void
+	readonly to: (index: number) => void
+	readonly start: () => void
+	readonly stop: () => void
+	readonly pause: () => void
+	readonly resume: () => void
+	readonly destroy: () => void
+}
+
+export interface UseCarouselOptions extends CreateCarouselOptions {}
+
+export interface UseCarouselReturn {
+	readonly index: Readonly<Ref<number>>
+	readonly cycling: Readonly<Ref<boolean>>
+	readonly next: () => void
+	readonly prev: () => void
+	readonly to: (index: number) => void
+	readonly start: () => void
+	readonly stop: () => void
+	readonly pause: () => void
+	readonly resume: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// useForm. Bound to native `<form>`.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface FormDataDetail {
+	readonly formData: FormData
+}
+export interface FormInvalidDetail {
+	readonly field: string | null
+	readonly message: string
+	readonly validity: ValidityState | null
+}
+export interface FormResetDetail {
+	readonly data: readonly FormEntry[]
+}
+
+export interface FormEventMap {
+	readonly change: (event: CustomEvent) => void
+	readonly formdata: (event: CustomEvent) => void
+	readonly input: (event: CustomEvent) => void
+	readonly invalid: (event: CustomEvent) => void
+	readonly reset: (event: CustomEvent) => void
+	readonly submit: (event: CustomEvent) => void
+	readonly validate: (event: CustomEvent) => void
+}
+
+export interface CreateFormOptions {
+	readonly submit?: { readonly invalid?: boolean }
+	readonly validate?: {
+		readonly input?: boolean
+		readonly mount?: boolean
+		readonly submit?: boolean
+	}
+	readonly on?: Partial<FormEventMap>
+}
+
+export interface FormFieldsInterface {
+	readonly items: Readonly<Ref<readonly FormFieldElement[]>>
+	readonly names: Readonly<Ref<readonly string[]>>
+	readonly field: (name: string) => FormFieldElement | null
+	readonly fields: (name?: string) => readonly FormFieldElement[]
+	readonly has: (name: string) => boolean
+	readonly focus: (name: string) => boolean
+	readonly enable: (name: string) => void
+	readonly disable: (name: string) => void
+}
+
+export interface FormValidityInterface {
+	readonly errors: Readonly<Ref<readonly FormError[]>>
+	readonly field: (name: string) => ValidityState | null
+	readonly message: (name: string) => string | null
+	readonly mark: (name: string, message: string) => boolean
+	readonly clear: (name?: string) => void
+}
+
+export interface CreateFormInstance {
+	readonly element: HTMLFormElement
+	readonly data: Readonly<Ref<readonly FormEntry[]>>
+	readonly dirty: Readonly<Ref<boolean>>
+	readonly touched: Readonly<Ref<ReadonlySet<string>>>
+	readonly valid: Readonly<Ref<boolean>>
+	readonly validated: Readonly<Ref<boolean>>
+	readonly fields: FormFieldsInterface
+	readonly validity: FormValidityInterface
+	readonly refresh: () => void
+	readonly check: () => boolean
+	readonly report: () => boolean
+	readonly submit: () => void
+	readonly reset: () => void
+	readonly clear: () => void
+	readonly destroy: () => void
+}
+
+export interface UseFormOptions extends CreateFormOptions {}
+
+export interface UseFormReturn {
+	readonly element: Readonly<Ref<HTMLFormElement | null>>
+	readonly data: Readonly<Ref<readonly FormEntry[]>>
+	readonly dirty: Readonly<Ref<boolean>>
+	readonly touched: Readonly<Ref<ReadonlySet<string>>>
+	readonly valid: Readonly<Ref<boolean>>
+	readonly validated: Readonly<Ref<boolean>>
+	readonly fields: FormFieldsInterface
+	readonly validity: FormValidityInterface
+	readonly refresh: () => void
+	readonly check: () => boolean
+	readonly report: () => boolean
+	readonly submit: () => void
+	readonly reset: () => void
+	readonly clear: () => void
+	readonly destroy: () => void
 }
