@@ -30,6 +30,28 @@ import TypographyPage from './pages/TypographyPage.vue'
 // Surfaces (browser-rendered chrome)
 import SurfacesPage from './pages/SurfacesPage.vue'
 
+// Composables — Vue adapters over framework factories.
+import UseAlertPage from './pages/UseAlertPage.vue'
+import UseAsidePage from './pages/UseAsidePage.vue'
+import UseButtonPage from './pages/UseButtonPage.vue'
+import UseCarouselPage from './pages/UseCarouselPage.vue'
+import UseDetailsPage from './pages/UseDetailsPage.vue'
+import UseDialogPage from './pages/UseDialogPage.vue'
+import UseDragPage from './pages/UseDragPage.vue'
+import UseDropPage from './pages/UseDropPage.vue'
+import UseFocusPage from './pages/UseFocusPage.vue'
+import UseFormPage from './pages/UseFormPage.vue'
+import UseMenuPage from './pages/UseMenuPage.vue'
+import UseNavPage from './pages/UseNavPage.vue'
+import UsePointerPage from './pages/UsePointerPage.vue'
+import UsePopoverPage from './pages/UsePopoverPage.vue'
+import UseSelectPage from './pages/UseSelectPage.vue'
+import UseTablePage from './pages/UseTablePage.vue'
+import UseTabsPage from './pages/UseTabsPage.vue'
+import UseThemePage from './pages/UseThemePage.vue'
+import UseToastPage from './pages/UseToastPage.vue'
+import UseTooltipPage from './pages/UseTooltipPage.vue'
+
 export interface Route {
 	readonly id: string
 	readonly title: string
@@ -74,6 +96,28 @@ export const routes: readonly Route[] = [
 
 	// Surfaces — browser-rendered chrome (popover, scrollbar, …).
 	{ id: 'surfaces', title: 'Surfaces', group: 'Surfaces', page: SurfacesPage },
+
+	// Composables — Vue adapters over framework factories. One page per `use*`.
+	{ id: 'use-alert', title: 'useAlert', group: 'Composables', page: UseAlertPage },
+	{ id: 'use-aside', title: 'useAside', group: 'Composables', page: UseAsidePage },
+	{ id: 'use-button', title: 'useButton', group: 'Composables', page: UseButtonPage },
+	{ id: 'use-carousel', title: 'useCarousel', group: 'Composables', page: UseCarouselPage },
+	{ id: 'use-details', title: 'useDetails', group: 'Composables', page: UseDetailsPage },
+	{ id: 'use-dialog', title: 'useDialog', group: 'Composables', page: UseDialogPage },
+	{ id: 'use-drag', title: 'useDrag', group: 'Composables', page: UseDragPage },
+	{ id: 'use-drop', title: 'useDrop', group: 'Composables', page: UseDropPage },
+	{ id: 'use-focus', title: 'useFocus', group: 'Composables', page: UseFocusPage },
+	{ id: 'use-form', title: 'useForm', group: 'Composables', page: UseFormPage },
+	{ id: 'use-menu', title: 'useMenu', group: 'Composables', page: UseMenuPage },
+	{ id: 'use-nav', title: 'useNav', group: 'Composables', page: UseNavPage },
+	{ id: 'use-pointer', title: 'usePointer', group: 'Composables', page: UsePointerPage },
+	{ id: 'use-popover', title: 'usePopover', group: 'Composables', page: UsePopoverPage },
+	{ id: 'use-select', title: 'useSelect', group: 'Composables', page: UseSelectPage },
+	{ id: 'use-table', title: 'useTable', group: 'Composables', page: UseTablePage },
+	{ id: 'use-tabs', title: 'useTabs', group: 'Composables', page: UseTabsPage },
+	{ id: 'use-theme', title: 'useTheme', group: 'Composables', page: UseThemePage },
+	{ id: 'use-toast', title: 'useToast', group: 'Composables', page: UseToastPage },
+	{ id: 'use-tooltip', title: 'useTooltip', group: 'Composables', page: UseTooltipPage },
 ]
 
 export const EXAMPLES_GROUP = 'Examples'
