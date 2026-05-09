@@ -90,6 +90,11 @@ export const srcBrowser = (config?: UserConfig): UserConfig =>
 						template: { compilerOptions: { isCustomElement: (tag) => tag === 'search' } },
 					}),
 				],
+				// Pre-bundle Vue + reactivity so the first browser-test run
+				// doesn't trigger a mid-suite Vite reload (fixes the
+				// "unexpectedly reloaded a test" flake when composables first
+				// pull in vue / @vue/reactivity).
+				optimizeDeps: { include: ['vue', '@vue/reactivity'] },
 				css: { postcss },
 				build: {
 					lib: {

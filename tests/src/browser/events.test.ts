@@ -1,29 +1,67 @@
 // ============================================================================
 // Event surface — TS-side shape validation.
 //
-// Initial scope ships an empty events object — composables come later. This
-// test pins the shape contract so future additions follow it:
-//   elements:{source}:{verb}    where {verb} is in the lifecycle vocabulary.
+// Validates that every event name in the populated events tree follows
+//   elements:{source}:{verb}
+// where {verb} is in the lifecycle vocabulary, and {source} matches the
+// outer key of the tree.
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
 import { events } from '@src/browser'
 
+/** Lifecycle verb vocabulary — every third segment of every event name
+ *  must appear here. Adding a verb is a deliberate framework-wide
+ *  decision; bump this list and document it in events.ts. */
 const LIFECYCLE_VERBS = new Set([
-	'open',
-	'close',
+	// Visible-state pre/post pairs
 	'show',
+	'open',
 	'hide',
+	'close',
+	'prevent',
+	// Long-running operations
 	'start',
 	'stop',
 	'pause',
 	'resume',
 	'abort',
 	'destroy',
+	// Two-state flips
+	'toggle',
+	// Selection
 	'select',
 	'deselect',
+	'clear',
+	// Focus / activation
 	'focus',
 	'blur',
+	'activate',
+	'deactivate',
+	// Reactive data changes
+	'change',
+	'input',
+	'create',
+	'formdata',
+	'invalid',
+	'reset',
+	'submit',
+	'validate',
+	// Positional / animated
+	'slide',
+	'place',
+	// Drag pipeline
+	'tap',
+	'over',
+	'drop',
+	'end',
+	'reorder',
+	// Hierarchical / table actions
+	'expand',
+	'collapse',
+	'move',
+	'sort',
+	'paginate',
 ])
 
 const EVENT_PATTERN = /^elements:[a-z][a-z-]*:[a-z]+$/
@@ -35,17 +73,35 @@ function eventValues(node: unknown): readonly string[] {
 }
 
 describe('events — shape', () => {
-	it('initial scope is empty (composables come later)', () => {
-		expect(Object.keys(events)).toEqual([])
+	it('exposes one entry per composable source', () => {
+		expect(Object.keys(events).length).toBeGreaterThan(0)
 	})
 
-	it('any future entry follows the elements:{source}:{verb} pattern', () => {
-		// When entries get added, the regex + vocabulary checks below catch
-		// drift from the convention. Empty for now — these loops are no-ops.
+	it('every event matches elements:{source}:{verb}', () => {
 		for (const value of eventValues(events)) {
 			expect(value).toMatch(EVENT_PATTERN)
-			const verb = value.split(':')[2]
-			expect(LIFECYCLE_VERBS.has(verb!)).toBe(true)
 		}
+	})
+
+	it('every verb is in the lifecycle vocabulary', () => {
+		for (const value of eventValues(events)) {
+			const verb = value.split(':')[2]!
+			expect(LIFECYCLE_VERBS.has(verb), `unknown verb \"${verb}\" in ${value}`).toBe(true)
+		}
+	})
+
+	it("every event's source segment matches its tree key", () => {
+		for (const [source, group] of Object.entries(events)) {
+			for (const value of Object.values(group as Record<string, string>)) {
+				const segment = value.split(':')[1]
+				expect(segment, `${value} should be under \"${source}\"`).toBe(source)
+			}
+		}
+	})
+
+	it('event names are unique across the tree', () => {
+		const all = eventValues(events)
+		const set = new Set(all)
+		expect(set.size).toBe(all.length)
 	})
 })
