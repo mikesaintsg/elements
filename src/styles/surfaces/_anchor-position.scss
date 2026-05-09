@@ -55,38 +55,31 @@
 //     popover. We use logical-axis margin so RTL / vertical writing modes
 //     resolve correctly.
 //
-// What's CSS-handled vs. JS-handled (a real Chromium limitation):
-//   The flip side of the recipe is committed at OPEN TIME. Each fresh
-//   open re-evaluates `position-try-fallbacks` cleanly — a popover that
-//   opens near the viewport bottom flips up; close it, scroll the trigger
-//   into the middle of the viewport, re-open, and it drops down again
-//   (verified live).
+// Default-no-block-flip — why:
+//   Chromium re-evaluates `position-try-fallbacks` only when the popover's
+//   layout changes (size, containing block). Scrolling the anchor inside a
+//   nested scroll container does NOT trigger that re-evaluation, so a
+//   popover that flips up at open time stays up forever — even if the
+//   anchor moves into space where dropping down would now fit. Tested
+//   every CSS-only workaround we could find (`position-try-order:
+//   most-block-size`, scroll-driven animations on the popover, scroll-
+//   driven animations on `<main>` propagating a custom property, none
+//   re-trigger the popover's layout). Mailbox accepts the same limitation
+//   in their CSS layer.
 //
-//   What CSS CANNOT do: re-flip a still-open popover when its anchor
-//   scrolls inside a nested scroll container. Chromium re-evaluates
-//   `position-try-fallbacks` only when the popover's own layout changes
-//   (size, containing block) — scrolling the anchor's parent does not
-//   trigger that. We tested every CSS-only workaround we could find:
-//     - `position-try-order: most-block-size` (greedier flip)  → no help
-//     - scroll-driven animations on `[popover]` (`scroll(nearest)`) →
-//       no help: top-layer popovers' nearest scroller resolves to
-//       the viewport, not the inner scroller
-//     - scroll-driven animations on the inner scroller propagating a
-//       custom property to the popover → no help: the property changes
-//       but doesn't trigger the popover's layout invalidation
-//   Mailbox lives with the same limitation in its CSS layer; their JS
-//   composables only observe where Chromium placed the panel (to update
-//   the arrow's side class) — they don't force re-flip either.
+//   Mailbox's escape: their default dropdown opts OUT of block-axis flip.
+//   `position-try-fallbacks: flip-inline` only; the `max-block-size` cap
+//   + `overflow: auto` shrink-and-scroll the menu when it doesn't fit.
+//   The dropdown ALWAYS drops on the requested side and stays there.
+//   We adopt the same default: predictable side, no flip-direction
+//   surprises on scroll.
 //
-//   The Phase 6 composable layer (`useMenu` / `usePopover` /
-//   `useTooltip`) will close this gap by listening to capture-phase
-//   `scroll` events on document and toggling a sub-pixel CSS property
-//   to force the popover's layout to re-evaluate. The single-pixel
-//   `max-block-size` toggle has been verified to trigger Chromium's
-//   `position-try-fallbacks` re-evaluation, so the JS bridge is small
-//   (one rAF-debounced listener per open popover). Until then, the
-//   in-session stickiness is the documented behaviour: open ⇒ commit ⇒
-//   live until closed.
+//   Consumers who WANT block-axis flip (e.g. a tooltip near the bottom
+//   that should flip up) override per-host:
+//     #my-popover { position-try-fallbacks: flip-block, flip-inline; }
+//   The flip will still be committed at open time, but at least the
+//   author opts in explicitly and accepts the in-session-stickiness
+//   trade-off for that case.
 // ============================================================================
 
 @use '../mixins' as *;
@@ -101,17 +94,37 @@
 		// block axis (the gap you see between a button and its dropdown menu).
 		--set-anchor-gap: calc(var(--spacing) * 1);
 
-		// Default `position-try-fallbacks` value — the browser tries each
-		// fallback in order, IN DECLARATION ORDER, and commits to the first
-		// one that doesn't overflow. Combined with the spec-default
-		// `position-try-order: normal`, this means the popover PREFERS the
-		// requested side and only flips when the requested side genuinely
-		// can't host the popover's size — even if the opposite side has
-		// more room. (Mailbox's dropdown uses the same defaults; the
-		// alternative `most-block-size` was found to flip prematurely.)
-		// Authors can override per-host:
-		//   #my-popover { position-try-fallbacks: flip-block; }
-		--set-anchor-position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+		// Default `position-try-fallbacks` — only `flip-inline`. We
+		// deliberately DON'T flip on the block axis by default.
+		//
+		// Why: Chromium re-evaluates `position-try-fallbacks` only when
+		// the popover's layout changes (size, containing block). Scrolling
+		// an anchor inside a nested scroll container doesn't trigger that
+		// re-evaluation — the popover stays committed to whichever side it
+		// flipped to at OPEN time, even if the anchor moves into space
+		// where the original side now fits. Mailbox calls this out
+		// explicitly in their `createDropdown.ts`: their default mode opts
+		// OUT of block-axis flip (`flipThreshold === 0` → `max-block-size:
+		// none; position-try-fallbacks: flip-inline`) precisely to avoid
+		// the sticky-flip UX gotcha.
+		//
+		// We adopt the same default. The popover keeps the requested
+		// block-axis side; if the popover would overflow that side, the
+		// `max-block-size` viewport budget (below) clamps it and
+		// `overflow: auto` scrolls the surplus content. The popover
+		// always opens on the requested side AND stays there as the
+		// anchor moves on scroll — predictable, no surprises.
+		//
+		// Inline-axis flip stays on because there's no analogous gotcha:
+		// if the popover would overflow inline-end, flipping to
+		// inline-start commits cleanly because most layouts don't scroll
+		// horizontally inside nested containers.
+		//
+		// Consumers who WANT block-axis flip (e.g. for an unusually
+		// short menu where flipping reads better than scrolling) can
+		// override per-host:
+		//   #my-popover { position-try-fallbacks: flip-block, flip-inline; }
+		--set-anchor-position-try-fallbacks: flip-inline;
 
 		// Default `position-area` — `block-end` = below the anchor in LTR
 		// top-to-bottom; flips automatically in vertical / RTL writing
