@@ -1167,3 +1167,338 @@ export interface UseFormReturn {
 	readonly clear: () => void
 	readonly destroy: () => void
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// useTable
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Per-column schema entry — drives sortable / filterable behavior. */
+export interface TableColumn {
+	readonly key: string
+	readonly title?: string
+	readonly sortable?: boolean
+	readonly filterable?: boolean
+	/** Custom sort comparator. Receives cell `textContent` from two rows. */
+	readonly sort?: (a: string, b: string) => number
+	/** Custom filter predicate. */
+	readonly filter?: (value: string, query: string) => boolean
+}
+
+export interface TableChangeDetail {
+	readonly part: TablePart
+	readonly action: TableAction
+}
+
+export interface TableSelectDetail {
+	readonly ids: ReadonlySet<string>
+}
+
+export interface TablePaginateDetail {
+	readonly page: number
+	readonly offset: number
+	readonly size: number
+}
+
+export interface TableFocusDetail {
+	readonly cell: TableCell | null
+}
+
+export interface TableSortDetail {
+	readonly columns: readonly TableSortEntry[]
+}
+
+export interface TableExpansionDetail {
+	readonly id: string
+}
+
+export interface TableEventMap {
+	readonly change: (event: CustomEvent) => void
+	readonly focus: (event: CustomEvent) => void
+	readonly select: (event: CustomEvent) => void
+	readonly sort: (event: CustomEvent) => void
+	readonly expand: (event: CustomEvent) => void
+	readonly collapse: (event: CustomEvent) => void
+	readonly paginate: (event: CustomEvent) => void
+}
+
+export interface CreateTableOptions {
+	readonly caption?: string
+	readonly footer?: TableInputRow
+	readonly focus?: {
+		readonly keyboard?: boolean
+		readonly wrap?: boolean
+	}
+	readonly headers?: TableInputRow
+	readonly id?: () => string
+	readonly on?: Partial<TableEventMap>
+	readonly rows?: readonly TableInputRow[]
+	/** Per-column schema — drives sort/filter and column key discovery. */
+	readonly columns?: readonly TableColumn[]
+	/** Property name read from row data for stable identity (written as `data-id`). */
+	readonly value?: string
+	/** 1-based index of the first visible row in the full dataset (drives `aria-rowindex`). */
+	readonly offset?: number | Ref<number>
+	/** Total row count written as `aria-rowcount` on the `<table>` element. */
+	readonly total?: number | Ref<number>
+	readonly pagination?: {
+		/**
+		 * Rows per page — drives `pagination.page` / `pagination.count`
+		 * derivations. When omitted the body row count at the time of access
+		 * is used (the rendered page IS the page).
+		 */
+		readonly size?: number | Ref<number>
+	}
+	readonly sort?: {
+		/** Allow multi-column sort. Default `false`. */
+		readonly multiple?: boolean
+		/** Prevent clearing sort (cycles asc→desc→asc). Default `false`. */
+		readonly mandate?: boolean
+		/** Direction on first click. Default `'asc'`. */
+		readonly order?: 'asc' | 'desc'
+	}
+	readonly expansion?: {
+		/** Allow multiple rows expanded simultaneously. Default `true`. */
+		readonly multiple?: boolean
+		/** Row ids to expand at construction (stale ids silently ignored). */
+		readonly initial?: readonly string[]
+	}
+	readonly selection?: {
+		/** Scope for select-all operations. Default `'page'`. */
+		readonly strategy?: TableStrategy
+		/** Predicate — return `false` to prevent a row from being selected. */
+		readonly selectable?: (row: HTMLTableRowElement) => boolean
+		/**
+		 * When `true` (default), `createTable` listens for clicks on body rows
+		 * and applies the canonical desktop selection model:
+		 *  - plain click replaces the selection with that row
+		 *  - Ctrl / ⌘ click toggles that row in or out of the selection
+		 *  - Shift click extends from the anchor to the clicked row
+		 *  - clicking outside the table with an active selection clears it
+		 *
+		 * Clicks whose target is interactive (`input`, `button`, `a`, `select`,
+		 * `textarea`, `label`, or any descendant of `[data-no-select]`) are
+		 * skipped so checkboxes / row actions still work.
+		 *
+		 * Set to `false` when driving selection entirely from custom UI.
+		 */
+		readonly click?: boolean
+	}
+	/** Column resize configuration. Absent = no resize handles. */
+	readonly resize?: {
+		/** Minimum column width in pixels. Default `40`. */
+		readonly min?: number
+		/** Maximum column width in pixels. Default `Infinity`. */
+		readonly max?: number
+	}
+}
+
+export interface CreateTableInstance {
+	readonly element: HTMLTableElement
+	readonly ready: Readonly<Ref<boolean>>
+	readonly data: Readonly<Ref<readonly TableRow[]>>
+	readonly caption: TableCaptionInterface
+	readonly headers: TableHeadersInterface
+	readonly rows: TableRowsInterface
+	readonly cells: TableCellsInterface
+	readonly footer: TableFooterInterface
+	readonly sort: TableSortManagerInterface
+	readonly expansion: TableExpansionManagerInterface
+	readonly selection: TableSelectionManagerInterface
+	readonly resize: TableResizeManagerInterface | null
+	readonly focus: TableFocusInterface
+	readonly pagination: TablePaginationInterface
+	/** Column schema (structural, not reactive). */
+	readonly columns: readonly TableColumn[]
+	/** Reactive total ref — reflects `options.total`. */
+	readonly total: Readonly<Ref<number>>
+	readonly refresh: () => void
+	readonly clear: () => void
+	readonly destroy: () => void
+}
+
+export interface UseTableOptions extends CreateTableOptions {}
+
+export interface TableCaptionInterface {
+	readonly value: Readonly<Ref<string | null>>
+	readonly caption: () => HTMLTableCaptionElement | null
+	readonly set: (value: string) => void
+	readonly clear: () => void
+}
+
+export interface TableHeadersInterface {
+	readonly count: Readonly<Ref<number>>
+	readonly values: Readonly<Ref<readonly string[]>>
+	readonly headers: () => readonly HTMLTableCellElement[]
+	readonly header: (index: number) => HTMLTableCellElement | null
+	readonly set: (values: TableInputRow) => void
+	readonly append: (value: TableInput) => void
+	readonly insert: (index: number, value: TableInput) => void
+	readonly update: (index: number, value: TableInput) => boolean
+	readonly remove: (index: number) => string | null
+	readonly clear: () => void
+}
+
+export interface TableRowsInterface {
+	readonly count: Readonly<Ref<number>>
+	readonly ids: Readonly<Ref<readonly string[]>>
+	readonly rows: () => readonly HTMLTableRowElement[]
+	readonly row: (index: number) => HTMLTableRowElement | null
+	readonly id: (index: number) => string | null
+	readonly has: (index: number) => boolean
+	readonly append: (values: TableInputRow, id?: string) => HTMLTableRowElement | null
+	readonly prepend: (values: TableInputRow, id?: string) => HTMLTableRowElement | null
+	readonly insert: (index: number, values: TableInputRow, id?: string) => HTMLTableRowElement | null
+	readonly update: (index: number, values: TableInputRow) => boolean
+	readonly remove: (index: number) => TableRow | null
+	readonly move: (from: number, to: number) => boolean
+	readonly swap: (first: number, second: number) => boolean
+	readonly clear: () => void
+}
+
+export interface TableCellsInterface {
+	readonly cell: (cell: TableCell) => HTMLTableCellElement | null
+	readonly read: (cell: TableCell) => string | null
+	readonly update: (cell: TableCell, value: TableInput) => boolean
+	readonly clear: (cell: TableCell) => boolean
+}
+
+export interface TableFooterInterface {
+	readonly count: Readonly<Ref<number>>
+	readonly values: Readonly<Ref<readonly string[]>>
+	readonly footers: () => readonly HTMLTableCellElement[]
+	readonly footer: (index: number) => HTMLTableCellElement | null
+	readonly set: (values: TableInputRow) => void
+	readonly append: (value: TableInput) => void
+	readonly insert: (index: number, value: TableInput) => void
+	readonly update: (index: number, value: TableInput) => boolean
+	readonly remove: (index: number) => string | null
+	readonly clear: () => void
+}
+
+export interface TableSortManagerInterface {
+	/** Active sort entries in priority order. */
+	readonly columns: Readonly<Ref<readonly TableSortEntry[]>>
+	/** Toggle sort direction for a column key. */
+	readonly toggle: (key: string) => void
+	/** Sort direction for a column key. */
+	readonly direction: (key: string) => TableSortDirection
+	/** Sort priority (0-based) for a column key in multi-sort; `-1` if unsorted. */
+	readonly priority: (key: string) => number
+	/** Clear all sort state. */
+	readonly clear: () => void
+}
+
+export interface TableSelectionManagerInterface {
+	/** Currently selected row ids. */
+	readonly ids: ReadonlySet<string>
+	/** Whether all selectable rows in strategy scope are selected. */
+	readonly all: Readonly<Ref<boolean>>
+	/** Whether some but not all selectable rows in strategy scope are selected. */
+	readonly mixed: Readonly<Ref<boolean>>
+	/** Active strategy (read from options). */
+	readonly strategy: TableStrategy
+	readonly select: {
+		(): void
+		(id: string): void
+		(ids: string[]): void
+	}
+	readonly clear: {
+		(): void
+		(id: string): void
+		(ids: string[]): void
+	}
+	readonly toggle: {
+		(): void
+		(id: string): void
+		(ids: string[]): void
+	}
+	/** Whether a row can be selected (based on `selection.selectable` option). */
+	readonly selectable: (row: HTMLTableRowElement) => boolean
+}
+
+export interface TableExpansionManagerInterface {
+	/** Currently expanded row ids (`shallowReactive` Set — reactive in templates). */
+	readonly expanded: ReadonlySet<string>
+	readonly expand: {
+		(): void
+		(id: string): void
+		(ids: string[]): void
+	}
+	readonly collapse: {
+		(): void
+		(id: string): void
+		(ids: string[]): void
+	}
+	readonly toggle: {
+		(): void
+		(id: string): void
+		(ids: string[]): void
+	}
+	/**
+	 * Replace the entire expanded set atomically (for state restoration).
+	 *
+	 * @remarks Stale ids (no matching body row) are silently ignored.
+	 * Respects `expansion.multiple: false` — only first id is kept when false.
+	 */
+	readonly set: (ids: readonly string[]) => void
+}
+
+export interface TablePaginationInterface {
+	/** Rows per page — caller-supplied or rendered body row count. */
+	readonly size: Readonly<Ref<number>>
+	/** 1-based current page number (1 when offset and size are 0). */
+	readonly page: Readonly<Ref<number>>
+	/** Total page count (1 minimum, even for empty datasets). */
+	readonly count: Readonly<Ref<number>>
+	/**
+	 * Emit an `elements:table:paginate` event with the requested page (clamped
+	 * to `[1, count]`) and the corresponding 1-based offset. Caller listens
+	 * to apply the navigation — the factory does not mutate caller-owned
+	 * `offset` or `data`.
+	 */
+	readonly to: (page: number) => void
+	/** Sugar for `to(page + 1)`. */
+	readonly next: () => void
+	/** Sugar for `to(page - 1)`. */
+	readonly prev: () => void
+}
+
+export interface TableResizeManagerInterface {
+	/** True while a column resize drag is active. */
+	readonly active: Readonly<Ref<boolean>>
+	/** Current width of column at `index` (reads `offsetWidth`). */
+	readonly width: (index: number) => number
+	/** Programmatically set a column width in pixels. */
+	readonly set: (index: number, width: number) => void
+	/** Reset all columns to natural (content-driven) widths. */
+	readonly clear: () => void
+}
+
+export interface TableFocusInterface {
+	readonly cell: Readonly<Ref<TableCell | null>>
+	readonly focus: (cell: TableCell) => boolean
+	readonly move: (direction: TableDirection) => boolean
+	readonly clear: () => void
+}
+
+export interface UseTableReturn {
+	readonly element: Readonly<Ref<HTMLTableElement | null>>
+	readonly ready: Readonly<Ref<boolean>>
+	readonly data: Readonly<Ref<readonly TableRow[]>>
+	readonly caption: TableCaptionInterface
+	readonly headers: TableHeadersInterface
+	readonly rows: TableRowsInterface
+	readonly cells: TableCellsInterface
+	readonly footer: TableFooterInterface
+	readonly sort: TableSortManagerInterface
+	readonly expansion: TableExpansionManagerInterface
+	readonly selection: TableSelectionManagerInterface
+	readonly resize: TableResizeManagerInterface | null
+	readonly focus: TableFocusInterface
+	readonly pagination: TablePaginationInterface
+	readonly columns: readonly TableColumn[]
+	readonly total: Readonly<Ref<number>>
+	readonly refresh: () => void
+	readonly clear: () => void
+	readonly destroy: () => void
+}
