@@ -254,6 +254,71 @@ export const tokens = {
 		transitionDuration: '--set-output-transition-duration',
 	},
 
+	// Component tokens declared on `<output>` when promoted to a toast
+	// (popover or standalone status banner). Lives in components/_output.scss
+	// alongside the calc-chip element baseline. Edge-inset is the distance
+	// from the viewport corner; placement modifiers `.start` / `.top` flip
+	// the corner.
+	toast: {
+		color: '--set-toast-color',
+		backgroundColor: '--set-toast-background-color',
+		borderColor: '--set-toast-border-color',
+		borderWidth: '--set-toast-border-width',
+		borderRadius: '--set-toast-border-radius',
+		paddingInline: '--set-toast-padding-inline',
+		paddingBlock: '--set-toast-padding-block',
+		gap: '--set-toast-gap',
+		minInlineSize: '--set-toast-min-inline-size',
+		maxInlineSize: '--set-toast-max-inline-size',
+		fontSize: '--set-toast-font-size',
+		edgeInset: '--set-toast-edge-inset',
+	},
+
+	// Tablist + tab + tabpanel — chrome painted on `[role=tablist]` /
+	// `[role=tab]` / `[role=tabpanel]` (lives in components/_nav.scss
+	// alongside the breadcrumb / pagination patterns).
+	tablist: {
+		color: '--set-tablist-color',
+		backgroundColor: '--set-tablist-background-color',
+		borderColor: '--set-tablist-border-color',
+		borderWidth: '--set-tablist-border-width',
+		gap: '--set-tablist-gap',
+		paddingInline: '--set-tablist-padding-inline',
+		paddingBlock: '--set-tablist-padding-block',
+		transitionDuration: '--set-tablist-transition-duration',
+	},
+
+	tab: {
+		color: '--set-tab-color',
+		backgroundColor: '--set-tab-background-color',
+		activeColor: '--set-tab-active-color',
+		activeIndicatorSize: '--set-tab-active-indicator-size',
+		paddingInline: '--set-tab-padding-inline',
+		paddingBlock: '--set-tab-padding-block',
+		fontSize: '--set-tab-font-size',
+		fontWeight: '--set-tab-font-weight',
+		transitionDuration: '--set-tab-transition-duration',
+	},
+
+	tabpanel: {
+		paddingBlock: '--set-tabpanel-padding-block',
+	},
+
+	// Alert / status banner — chrome painted on `<aside role=alert>`
+	// (and optionally `<aside role=status>`) inside main-flow content.
+	// Lives in components/_aside.scss alongside the sidebar + callout
+	// rules.
+	alert: {
+		color: '--set-alert-color',
+		backgroundColor: '--set-alert-background-color',
+		borderColor: '--set-alert-border-color',
+		barWidth: '--set-alert-bar-width',
+		paddingInline: '--set-alert-padding-inline',
+		paddingBlock: '--set-alert-padding-block',
+		gap: '--set-alert-gap',
+		borderRadius: '--set-alert-border-radius',
+	},
+
 	// Element-scoped tokens declared on `dialog` itself.
 	dialog: {
 		color: '--set-dialog-color',
@@ -538,6 +603,17 @@ export const tokens = {
 		paddingBlock: '--set-popover-padding-block',
 		boxShadow: '--set-popover-box-shadow',
 		transitionDuration: '--set-popover-transition-duration',
+		// Tooltip variant — `[popover=hint]` / `[role=tooltip]`. Smaller,
+		// inverted, less-padded subset of the popover surface.
+		hint: {
+			color: '--set-popover-hint-color',
+			backgroundColor: '--set-popover-hint-background-color',
+			borderColor: '--set-popover-hint-border-color',
+			paddingInline: '--set-popover-hint-padding-inline',
+			paddingBlock: '--set-popover-hint-padding-block',
+			fontSize: '--set-popover-hint-font-size',
+			maxInlineSize: '--set-popover-hint-max-inline-size',
+		},
 	},
 
 	// Surface tokens — UA scrollbar styling.

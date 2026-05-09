@@ -118,4 +118,80 @@
 		background-color: transparent;
 		overflow: visible;
 	}
+
+	// Alert tokens declare on `:root` so they resolve globally; the
+	// `aside[role="alert"]` rule below consumes them.
+	:root {
+		--set-alert-color: currentColor;
+		--set-alert-background-color: transparent;
+		--set-alert-border-color: color-mix(in srgb, currentColor 25%, transparent);
+		--set-alert-bar-width: 4px;
+		--set-alert-padding-inline: calc(var(--spacing) * 4);
+		--set-alert-padding-block: calc(var(--spacing) * 3);
+		--set-alert-gap: calc(var(--spacing) * 3);
+		--set-alert-border-radius: 0.375rem;
+	}
+
+	// --------------------------------------------------------------------------
+	// Alert / status banner — `<aside role="alert">` (or `role="status"`).
+	//
+	// `<aside>` is "tangentially-related content" and per ARIA, `role="alert"`
+	// makes it an assertive live region (announces immediately) while
+	// `role="status"` makes it polite (announces when idle). Both share the
+	// same banner chrome — only the live-region politeness differs.
+	//
+	// Markup contract:
+	//   <aside role="alert" class="danger">
+	//     <strong>Heads up.</strong> Your session expires in 2 minutes.
+	//     <button aria-label="Dismiss">×</button>
+	//   </aside>
+	//
+	// Variant cascade tints the LEADING BAR (a thicker inline-start border)
+	// rather than the full surface, so an alert reads as a banner with an
+	// accent bar — same convention as the article callout above. `.filled`
+	// is the explicit opt-in for tinted-surface alerts.
+	//
+	// The banner shape is flex-row: leading content grows to fill, optional
+	// trailing dismiss `<button>` is intrinsic-width. Composition pairs
+	// naturally with `<button aria-label="Dismiss">` for the close affordance.
+	//
+	// Note: alerts are meant to sit inside `<main>` (or any container that
+	// isn't the body-shell sidebar slot). An `<aside role="alert">` placed
+	// as a direct child of `<body>` would inherit the sidebar chrome and
+	// fight this layout — consumers should use a different parent (a
+	// `<section>` inside main, or wrap in a `<div>` if no semantic option
+	// fits). For inline form-validation messages tied to an input, prefer
+	// `<output role="alert">` instead.
+	// --------------------------------------------------------------------------
+	aside[role='alert'] {
+		display: flex;
+		align-items: center;
+		gap: var(--set-alert-gap);
+
+		padding-inline: var(--set-alert-padding-inline);
+		padding-block: var(--set-alert-padding-block);
+		// Surface fill is opt-in via `.filled`; default is a transparent
+		// background with a leading variant bar. Border-inline-start gives
+		// the bar; the rest of the perimeter stays unbordered so the alert
+		// sits cleanly inside its container's surface.
+		background-color: var(--set-alert-background-color);
+		color: var(--set-alert-color);
+		border-inline-start: var(--set-alert-bar-width) solid var(--set-alert-border-color);
+		border-radius: var(--set-alert-border-radius);
+
+		// Reset sidebar-context properties so an `<aside role="alert">` that
+		// happens to sit inside the body shell still reads as an alert
+		// (banner row), not a column rail.
+		inline-size: auto;
+		overflow: visible;
+		min-block-size: 0;
+
+		// Trailing dismiss: any direct-child button with `aria-label`
+		// matching common dismiss verbs sits at the inline-end edge with
+		// `margin-inline-start: auto`. We don't require a specific class —
+		// the button's own role + label do the talking.
+		& > button:last-child {
+			margin-inline-start: auto;
+		}
+	}
 }

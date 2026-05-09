@@ -55,4 +55,24 @@
 			)
 		);
 	}
+
+	// --------------------------------------------------------------------------
+	// Accordion group — consecutive `<details>` siblings.
+	//
+	// Per the HTML5 standards-track update, `<details name="…">` puts the
+	// group into "exclusive accordion" mode: opening one auto-closes the
+	// others. Browsers handle the open/close machinery; the framework only
+	// needs to space the siblings vertically so the group reads as one
+	// coherent block. The selector intentionally targets ALL adjacent
+	// `<details>` pairs (with or without `name=`), so a non-exclusive
+	// accordion (a stack of independent disclosures) gets the same spacing.
+	//
+	// We use `margin-block-start` (not gap) because <details> doesn't have
+	// a flex/grid parent we control — the consumer's container could be
+	// anything (<section>, <div>, <article>). Logical-axis margin works
+	// regardless of writing mode.
+	// --------------------------------------------------------------------------
+	details + details {
+		margin-block-start: calc(var(--spacing) * 2);
+	}
 }

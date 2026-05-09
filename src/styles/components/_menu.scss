@@ -95,4 +95,33 @@
 		flex-direction: column;
 		align-items: stretch;
 	}
+
+	// --------------------------------------------------------------------------
+	// Dropdown menu — `<menu popover>` paired with a `<button popovertarget>`.
+	//
+	// Markup contract:
+	//   <button popovertarget="account-actions">Account ▾</button>
+	//   <menu popover id="account-actions">
+	//     <li><button>Profile</button></li>
+	//     <li><button>Sign out</button></li>
+	//   </menu>
+	//
+	// The popover surface (`surfaces/_popover.scss`) paints the panel
+	// chrome (background, border, radius, shadow, entry transition) on
+	// `[popover]`. This rule re-orients the menu inside that panel: when a
+	// `<menu>` IS the popover panel (or lives inside one), its children
+	// stack vertically as a column of commands rather than the bare-tag
+	// horizontal toolbar. We also drop the menu's own padding because the
+	// popover surface already supplies inline / block padding — having
+	// both would double-pad.
+	// --------------------------------------------------------------------------
+	menu[popover],
+	[popover] menu,
+	[popover] > menu {
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+		padding-inline: 0;
+		padding-block: 0;
+	}
 }

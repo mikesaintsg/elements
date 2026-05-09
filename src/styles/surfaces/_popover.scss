@@ -74,4 +74,43 @@
 			transform: scale(0.98);
 		}
 	}
+
+	// --------------------------------------------------------------------------
+	// `[popover=hint]` — tooltip-shaped popover.
+	//
+	// `popover=hint` is the new HTML attribute value reserved for
+	// tooltip-style popovers. It behaves like `auto` for light-dismiss but
+	// is hierarchically nested under any open auto popover (so a tooltip
+	// inside an open menu doesn't kill the menu when shown). The visual
+	// variant is smaller, less padded, and inverted so it reads as a
+	// transient label rather than a full panel.
+	//
+	// Per WAI-ARIA 1.2, tooltips are also exposable via `role="tooltip"`
+	// — the framework styles `[role="tooltip"]` the same way so a
+	// non-popover tooltip (CSS-only, anchor-positioned) gets identical
+	// chrome.
+	// --------------------------------------------------------------------------
+	:root {
+		--set-popover-hint-color: var(--color-white, #fff);
+		--set-popover-hint-background-color: color-mix(in srgb, currentColor 88%, transparent);
+		--set-popover-hint-border-color: transparent;
+		--set-popover-hint-padding-inline: calc(var(--spacing) * 2);
+		--set-popover-hint-padding-block: calc(var(--spacing) * 1);
+		--set-popover-hint-font-size: var(--text-xs, 0.75rem);
+		--set-popover-hint-max-inline-size: 16rem;
+	}
+
+	[popover='hint'],
+	[role='tooltip'] {
+		color: var(--set-popover-hint-color);
+		background-color: var(--set-popover-hint-background-color);
+		border-color: var(--set-popover-hint-border-color);
+		padding-inline: var(--set-popover-hint-padding-inline);
+		padding-block: var(--set-popover-hint-padding-block);
+		font-size: var(--set-popover-hint-font-size);
+		max-inline-size: var(--set-popover-hint-max-inline-size);
+		// Tooltips are transient; a smaller shadow keeps them visually
+		// lighter than a full menu / dropdown panel.
+		box-shadow: 0 4px 8px -2px rgb(0 0 0 / 0.18);
+	}
 }

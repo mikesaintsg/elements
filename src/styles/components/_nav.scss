@@ -189,6 +189,142 @@
 	}
 
 	// --------------------------------------------------------------------------
+	// Tabs — `<nav role="tablist">` (or any element with `role="tablist"`).
+	//
+	// Why `<nav>` is the canonical host: per the HTML LS, `<nav>` is "a
+	// section of a page that links to other pages or to parts within the
+	// page." Tabs DO navigate between sibling content panels of the same
+	// page, so a tablist IS navigation. The role-based selector below also
+	// matches `<menu role="tablist">` or `<div role="tablist">` for tabs
+	// nested inside cards / widgets where a `<nav>` landmark would be
+	// unwanted noise.
+	//
+	// Markup contract:
+	//   <nav role="tablist" aria-label="Settings">
+	//     <button role="tab" aria-selected="true"  aria-controls="p-1" id="t-1">Profile</button>
+	//     <button role="tab" aria-selected="false" aria-controls="p-2" id="t-2">Account</button>
+	//   </nav>
+	//   <section role="tabpanel" id="p-1" aria-labelledby="t-1">…</section>
+	//   <section role="tabpanel" id="p-2" aria-labelledby="t-2" hidden>…</section>
+	//
+	// Visual chrome: a horizontal flex row with a continuous bottom-border
+	// track; the active tab paints a coloured indicator that overlaps the
+	// track. Keyboard navigation (Left/Right/Home/End) lives in `useTabs`
+	// (Phase 6 composable) — this partial paints the chrome only.
+	// --------------------------------------------------------------------------
+	// Tablist / tab / tabpanel tokens declare on `:root` so they're
+	// globally resolvable — the role-based selectors below could land on
+	// any HTML element, so per-element token declarations would scatter.
+	:root {
+		--set-tablist-color: currentColor;
+		--set-tablist-background-color: transparent;
+		--set-tablist-border-color: color-mix(in srgb, currentColor 12%, transparent);
+		--set-tablist-border-width: 1px;
+		--set-tablist-gap: calc(var(--spacing) * 1);
+		--set-tablist-padding-inline: 0;
+		--set-tablist-padding-block: 0;
+		--set-tablist-transition-duration: var(--set-transition-duration);
+
+		--set-tab-color: currentColor;
+		--set-tab-background-color: transparent;
+		--set-tab-active-color: var(--color-primary);
+		--set-tab-active-indicator-size: 2px;
+		--set-tab-padding-inline: calc(var(--spacing) * 3);
+		--set-tab-padding-block: calc(var(--spacing) * 2);
+		--set-tab-font-size: var(--text-sm);
+		--set-tab-font-weight: 500;
+		--set-tab-transition-duration: var(--set-transition-duration);
+
+		--set-tabpanel-padding-block: calc(var(--spacing) * 4);
+	}
+
+	[role='tablist'] {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: stretch;
+		gap: var(--set-tablist-gap);
+
+		// The continuous track sits 1px below the row; tabs overlap it with
+		// a same-colour underline so the active indicator paints OVER the
+		// track without leaving a visible double-line.
+		border-block-end: var(--set-tablist-border-width) solid var(--set-tablist-border-color);
+		padding-inline: var(--set-tablist-padding-inline);
+		padding-block: var(--set-tablist-padding-block);
+
+		color: var(--set-tablist-color);
+		background-color: var(--set-tablist-background-color);
+
+		// Strip UA list-shape when tablist is on a `<nav>` with inner `<ol>`
+		// or `<ul>` (the breadcrumb / pagination paths above don't apply to
+		// tablist). Direct list children disappear into the tab row.
+		& > :is(ol, ul) {
+			display: contents;
+		}
+	}
+
+	[role='tab'] {
+		display: inline-flex;
+		align-items: center;
+		gap: calc(var(--spacing) * 1.5);
+
+		padding-inline: var(--set-tab-padding-inline);
+		padding-block: var(--set-tab-padding-block);
+		// The tab paints its own bottom-border that overlaps the tablist
+		// track. Default: transparent (so the tablist's track shows through);
+		// active: the variant colour. The negative margin pulls the indicator
+		// down by exactly the track width so the two overlap pixel-perfectly.
+		margin-block-end: calc(-1 * var(--set-tablist-border-width, 1px));
+		border-block-end: var(--set-tab-active-indicator-size) solid transparent;
+
+		color: var(--set-tab-color);
+		background-color: var(--set-tab-background-color);
+		font-size: var(--set-tab-font-size);
+		font-weight: var(--set-tab-font-weight);
+
+		// Reset UA chrome when the tab is a `<button>` (the recommended
+		// element per ARIA APG). Buttons inside tablists shouldn't paint
+		// the framework's button background — they're inline tab labels.
+		appearance: none;
+		border-inline: 0;
+		border-block-start: 0;
+		cursor: pointer;
+
+		@include transition(
+			(
+				color var(--set-tab-transition-duration),
+				border-color var(--set-tab-transition-duration),
+				background-color var(--set-tab-transition-duration)
+			)
+		);
+
+		&:hover {
+			color: var(--set-tab-active-color);
+		}
+
+		&[aria-selected='true'] {
+			color: var(--set-tab-active-color);
+			border-block-end-color: var(--set-tab-active-color);
+		}
+
+		&[aria-disabled='true'],
+		&[disabled] {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+	}
+
+	[role='tabpanel'] {
+		padding-block: var(--set-tabpanel-padding-block);
+
+		// Hide inactive panels. Composable toggles `[hidden]`. We don't
+		// rely on `aria-hidden` because UA already hides `[hidden]` and
+		// removes it from the tab order.
+		&[hidden] {
+			display: none;
+		}
+	}
+
+	// --------------------------------------------------------------------------
 	// Breadcrumb — chevron separators between siblings.
 	//
 	// Uses the same mask-image + currentColor pattern as <summary>'s marker

@@ -1,0 +1,126 @@
+// ============================================================================
+// output (toast / status banner) — `<output>` promoted to a notification.
+//
+// `<output>` already carries `role="status"` implicitly (per ARIA's "calc
+// result" semantics, which is a polite live region) — that's the perfect
+// root for a toast / status announcement: screen-readers pick up changes
+// without `aria-live` boilerplate. The element baseline in
+// `elements/_output.scss` styles bare `<output>` as an inline calculation
+// chip; this component layer extends two specific shapes on top:
+//
+//   1. `<output popover>` (preferred for toasts) — top-layer floating
+//      banner. `popover="manual"` gives the consumer full control of
+//      open/close (no light-dismiss); the framework adopts it without
+//      caring which value the consumer picked. Position is fixed at the
+//      configured corner via the placement modifier (.start / .end /
+//      .top / .bottom — bottom-end is the conventional default).
+//
+//   2. `<output role="status">` without `popover` — in-flow banner that
+//      reads inside the page rather than floating. Useful for inline
+//      success / info messages (e.g. inside an `<aside>` rail or beneath
+//      a form). Same banner layout, no top-layer adoption.
+//
+// Markup contract:
+//   <output popover="manual" id="save-toast" class="end">
+//     ✓ Document saved
+//   </output>
+//   <button popovertarget="save-toast">Save</button>
+//
+// Composable wiring (Phase 6 `useToast`): the composable opens / closes
+// via `showPopover()` / `hidePopover()`, manages the autohide timer, and
+// stacks multiple toasts into a corner. The framework's job here is the
+// chrome only.
+//
+// Quirks:
+//   - When `<output>` is `popover`-promoted, browsers replace its
+//     in-flow display with the top-layer rendering. We only paint the
+//     banner shape; positioning + display are governed by the popover
+//     surface (`surfaces/_popover.scss`).
+//   - `padding`, `border-radius`, `box-shadow` come from the popover
+//     surface defaults; we override only what's notification-specific
+//     (max-inline-size, banner flex layout, fixed positioning when
+//     placement modifiers are present).
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	// Toast tokens declare on `:root` so they're globally resolvable —
+	// `<output popover>` consumers may sit anywhere in the DOM. The
+	// element-scoped chrome below consumes these defaults; modifier
+	// cascades (variant / size / style) thread through normally because
+	// the rule consumes `var(--set-style-…, var(--set-variant-…, fallback))`
+	// chains via the toast token defaults.
+	:root {
+		--set-toast-color: currentColor;
+		--set-toast-background-color: var(--color-white, Canvas);
+		--set-toast-border-color: color-mix(in srgb, currentColor 15%, transparent);
+		--set-toast-border-width: 1px;
+		--set-toast-border-radius: 0.5rem;
+		--set-toast-padding-inline: calc(var(--spacing) * 4);
+		--set-toast-padding-block: calc(var(--spacing) * 3);
+		--set-toast-gap: calc(var(--spacing) * 3);
+		--set-toast-min-inline-size: 16rem;
+		--set-toast-max-inline-size: 28rem;
+		--set-toast-font-size: var(--text-sm, 0.875rem);
+		--set-toast-edge-inset: calc(var(--spacing) * 4);
+	}
+
+	// --------------------------------------------------------------------------
+	// Toast root — `<output popover>` OR `<output role="status">` standalone
+	// (i.e. NOT the inline calc-chip case from `_output.scss`).
+	// --------------------------------------------------------------------------
+	output[popover],
+	output[role='status']:not(.filled) {
+		display: flex;
+		align-items: center;
+		gap: var(--set-toast-gap);
+
+		min-inline-size: var(--set-toast-min-inline-size);
+		max-inline-size: var(--set-toast-max-inline-size);
+
+		// Reset the calc-chip default (`font-family: monospace`) so the toast
+		// reads as body text. Consumers wanting a code-style toast can flip
+		// font-family back via a utility.
+		font-family: inherit;
+		font-size: var(--set-toast-font-size);
+
+		color: var(--set-toast-color);
+		background-color: var(--set-toast-background-color);
+		// Re-state border because the popover surface uses currentColor-mix
+		// border by default; toasts often want the variant identity.
+		border: var(--set-toast-border-width) solid var(--set-toast-border-color);
+		border-radius: var(--set-toast-border-radius);
+		padding-inline: var(--set-toast-padding-inline);
+		padding-block: var(--set-toast-padding-block);
+	}
+
+	// --------------------------------------------------------------------------
+	// Top-layer placement — when `popover` is set, the toast is fixed at a
+	// viewport corner. The framework resolves `bottom-end` as the default
+	// (the most conventional placement for non-blocking notifications);
+	// placement modifiers `.start`, `.end`, `.top`, `.bottom` flip the
+	// corner without classes specific to "toast".
+	// --------------------------------------------------------------------------
+	output[popover] {
+		position: fixed;
+		// Reset top-layer adoption insets so our explicit edges win.
+		inset: auto;
+		// Default corner: bottom-end. Logical-axis insets keep RTL working.
+		inset-block-end: var(--set-toast-edge-inset);
+		inset-inline-end: var(--set-toast-edge-inset);
+		// Don't let popover surface pad twice — the toast's own padding
+		// values above are the ones that should apply.
+		margin: 0;
+
+		&.top {
+			inset-block-start: var(--set-toast-edge-inset);
+			inset-block-end: auto;
+		}
+
+		&.start {
+			inset-inline-start: var(--set-toast-edge-inset);
+			inset-inline-end: auto;
+		}
+	}
+}
