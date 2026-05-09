@@ -1,0 +1,156 @@
+// ============================================================================
+// nav — Navigation. Element IS the component, content shape determines variant.
+//
+// `<nav>` lives in multiple contexts. The framework paints them all from one
+// partial; the visual variant comes from **descendant content**, never from a
+// class on `<nav>` itself:
+//
+//   1. body > nav  (or body > * > nav via display: contents wrapper)
+//      → primary navigation rail. Vertical column alongside <main> in the
+//        layout shell. Same chrome shape as <aside>: bordered edge, padded,
+//        scrollable, fixed inline-size.
+//
+//   2. nav > ol  (or nav > ul)
+//      → list-shaped navigation: a horizontal flow of items separated by
+//        chevron-style markers (the breadcrumb pattern). Browsers don't
+//        render the list marker since `display: flex` overrides it.
+//
+//   3. nav > [role="tablist"]
+//      → keyboard-tablist behaviors will land in `useTabs` later. The
+//        framework doesn't paint tab chrome yet — placeholder bullet for the
+//        future composable phase.
+//
+//   4. article > nav  /  article nav
+//      → in-card action group. Inline horizontal flex row, no separators.
+//        Pairs naturally with bare `<button>` children.
+//
+//   5. anywhere else
+//      → bare `<nav>` is a flex row with gap. Useful for top-bar nav links,
+//        breadcrumbs that aren't in a list, etc. Defaults stay minimal.
+//
+// Token declarations vs chrome rules:
+//   Tokens declared on bare `<nav>` so they always resolve. Body-shell rail
+//   chrome is scoped to `body:has(main) > nav` so `<nav>` outside the shell
+//   isn't auto-painted as a 14rem column.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	// --------------------------------------------------------------------------
+	// Tokens — declared on bare nav.
+	// --------------------------------------------------------------------------
+	nav {
+		--set-nav-color: var(--set-style-color, currentColor);
+		--set-nav-background-color: var(--set-style-background-color, Canvas);
+		--set-nav-border-color: var(
+			--set-style-border-color,
+			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))
+		);
+		--set-nav-border-width: 1px;
+		--set-nav-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));
+		--set-nav-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 4));
+		--set-nav-inline-size: 16rem;
+		--set-nav-gap: calc(var(--spacing) * 2);
+		--set-nav-font-size: var(--set-size-font-size, var(--text-sm));
+		--set-nav-line-height: var(--leading-normal);
+		--set-nav-transition-duration: var(--set-transition-duration);
+	}
+
+	// --------------------------------------------------------------------------
+	// Bare nav — minimal horizontal flex container.
+	//
+	// Default shape for in-prose navs (top-bar links, footer link rows, card
+	// action groups). No chrome that would conflict with a page sidebar.
+	// --------------------------------------------------------------------------
+	nav {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--set-nav-gap);
+	}
+
+	// --------------------------------------------------------------------------
+	// Page navigation rail — child of the layout shell.
+	//
+	// Vertical column alongside <main>. Same shape language as <aside>: padded
+	// + bordered edge + scrollable. Border on the inline-end edge (the rail
+	// sits to the leading side of <main>, so border separates from main).
+	// --------------------------------------------------------------------------
+	body:has(main) > nav,
+	body:has(main) > * > nav {
+		flex-direction: column;
+		flex-wrap: nowrap;
+		align-items: stretch;
+
+		inline-size: var(--set-nav-inline-size);
+		padding-inline: var(--set-nav-padding-inline);
+		padding-block: var(--set-nav-padding-block);
+		overflow-y: auto;
+		min-block-size: 0;
+
+		border-inline-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
+
+		font-size: var(--set-nav-font-size);
+		line-height: var(--set-nav-line-height);
+		color: var(--set-nav-color);
+		background-color: var(--set-nav-background-color);
+
+		@include transition(
+			(
+				color var(--set-nav-transition-duration),
+				background-color var(--set-nav-transition-duration),
+				border-color var(--set-nav-transition-duration)
+			)
+		);
+
+		// Placement modifier: `.end` flips the border to the leading edge for
+		// rails placed on the trailing side of the layout (rare).
+		&.end {
+			border-inline-end: 0;
+			border-inline-start: var(--set-nav-border-width) solid var(--set-nav-border-color);
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Breadcrumb — `<nav><ol>...</ol></nav>` pattern.
+	//
+	// The browser would normally render the <ol> with decimal markers and
+	// vertical padding. We override to a horizontal flow with chevron
+	// separators painted via `::before` on each non-first item. Outside a body
+	// shell (where rails dominate), this keeps `<nav><ol>` ergonomic for
+	// breadcrumb usage.
+	// --------------------------------------------------------------------------
+	nav > ol,
+	nav > ul {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: calc(var(--spacing) * 2);
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	nav > ol > li,
+	nav > ul > li {
+		display: inline-flex;
+		align-items: center;
+		gap: calc(var(--spacing) * 2);
+	}
+
+	// Chevron separator between siblings — only on `<ol>` (numeric/ordered =
+	// breadcrumb-shaped). Bare `<ul>` lists stay separator-free for things
+	// like top-bar link rows.
+	nav > ol > li:not(:first-child)::before {
+		content: '';
+		display: inline-block;
+		inline-size: 0.4em;
+		block-size: 0.4em;
+		border-block-start: 1px solid currentColor;
+		border-inline-end: 1px solid currentColor;
+		opacity: 0.4;
+		rotate: 45deg;
+		margin-inline-end: calc(var(--spacing) * 2);
+	}
+}

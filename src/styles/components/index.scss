@@ -1,2 +1,22 @@
-// Composed widgets built from elements. Opt-in, treeshakeable.
-// Populated as components arrive (e.g. _card.scss, _modal.scss).
+// ============================================================================
+// Components barrel.
+//
+// Each partial styles a single root HTML element as a component (`<article>`
+// → card, `<aside>` → sidebar, etc.) per the "element IS component" rule —
+// no naming classes. Generic-box partials (`_div.scss`, `_span.scss`) host
+// the few class-keyed primitives where no semantic root exists.
+//
+// Files mirror `src/styles/elements/_{tag}.scss` naming. Alphabetical.
+// ============================================================================
+
+@use 'article';
+@use 'aside';
+@use 'body';
+@use 'div';
+@use 'footer';
+@use 'form';
+@use 'header';
+@use 'main';
+@use 'menu';
+@use 'nav';
+@use 'search';

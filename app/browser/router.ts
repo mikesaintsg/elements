@@ -9,6 +9,7 @@ import InputPage from './pages/InputPage.vue'
 import SelectPage from './pages/SelectPage.vue'
 import TablePage from './pages/TablePage.vue'
 import TextareaPage from './pages/TextareaPage.vue'
+import CardPage from './pages/CardPage.vue'
 import FormsPage from './pages/FormsPage.vue'
 import TypographyPage from './pages/TypographyPage.vue'
 import SurfacesPage from './pages/SurfacesPage.vue'
@@ -33,6 +34,9 @@ export const routes: readonly Route[] = [
 	{ id: 'select', title: 'Select', group: 'Elements', page: SelectPage },
 	{ id: 'table', title: 'Table', group: 'Elements', page: TablePage },
 	{ id: 'textarea', title: 'Textarea', group: 'Elements', page: TextareaPage },
+
+	// Components — bare-element compositions (Phase 5: "the element IS the component")
+	{ id: 'card', title: 'Card (article)', group: 'Components', page: CardPage },
 
 	// Forms — composed Phase 2 elements (label / fieldset / details / progress / meter / output)
 	{ id: 'forms', title: 'Forms', group: 'Patterns', page: FormsPage },

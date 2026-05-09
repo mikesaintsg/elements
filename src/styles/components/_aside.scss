@@ -1,0 +1,121 @@
+// ============================================================================
+// aside — Two contexts, one partial.
+//
+// `<aside>` lives in two distinct semantic contexts and the framework paints
+// each one differently — disambiguated entirely by ancestry, no naming class:
+//
+//   1. body > aside  (or body > * > aside via display: contents wrappers)
+//      → page-level sidebar. A persistent column of tangentially-related
+//        content alongside <main> in the layout shell. Gets a bordered
+//        edge, scoped padding, fixed inline-size, vertical scroll.
+//
+//   2. article aside
+//      → inline pull-quote / callout / sidenote inside a card. Gets a
+//        leading vertical bar (in the variant color), italic body, and
+//        inline-start padding. Same shape as a blockquote, different
+//        semantic intent (the aside is *tangentially related*; a
+//        blockquote *quotes from another source*).
+//
+// Modifier cascade reaches both: `<aside class="primary">` tints the
+// border / leading bar through --set-variant-background-color. Style and
+// size modifiers compose normally.
+//
+// Token declarations vs chrome rules:
+//   Tokens are declared on bare `<aside>` so they resolve everywhere the
+//   element exists (parity tests verify this). Chrome rules are scoped to
+//   the layout-shell context (`body:has(main) > aside`) so a hero/landing
+//   page that uses `<aside>` outside a shell isn't auto-styled as a
+//   sidebar — only shell-context asides get chrome.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	// --------------------------------------------------------------------------
+	// Tokens — declared on bare aside; available wherever the element renders.
+	// --------------------------------------------------------------------------
+	aside {
+		--set-aside-color: var(--set-style-color, currentColor);
+		--set-aside-background-color: var(--set-style-background-color, Canvas);
+		--set-aside-border-color: var(
+			--set-style-border-color,
+			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))
+		);
+		--set-aside-border-width: 1px;
+		--set-aside-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));
+		--set-aside-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 4));
+		--set-aside-inline-size: 14rem;
+		--set-aside-font-size: var(--set-size-font-size, var(--text-sm));
+		--set-aside-line-height: var(--leading-normal);
+		--set-aside-transition-duration: var(--set-transition-duration);
+	}
+
+	// --------------------------------------------------------------------------
+	// Page sidebar chrome — scoped to the layout-shell context.
+	// --------------------------------------------------------------------------
+	body:has(main) > aside,
+	body:has(main) > * > aside {
+		inline-size: var(--set-aside-inline-size);
+		padding-inline: var(--set-aside-padding-inline);
+		padding-block: var(--set-aside-padding-block);
+		overflow-y: auto;
+		min-block-size: 0;
+
+		// Default border on the inline-start edge — the aside sits to the
+		// trailing side of <main> in the body grid, so the border separates
+		// it from main. `.start` modifier flips the border to the inline-end
+		// edge for asides placed on the leading side (rare).
+		border-inline-start: var(--set-aside-border-width) solid var(--set-aside-border-color);
+
+		font-size: var(--set-aside-font-size);
+		line-height: var(--set-aside-line-height);
+		color: var(--set-aside-color);
+		background-color: var(--set-aside-background-color);
+
+		@include transition(
+			(
+				color var(--set-aside-transition-duration),
+				background-color var(--set-aside-transition-duration),
+				border-color var(--set-aside-transition-duration)
+			)
+		);
+
+		&.start {
+			border-inline-start: 0;
+			border-inline-end: var(--set-aside-border-width) solid var(--set-aside-border-color);
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Article callout — descendant of <article>.
+	//
+	// Inline pull-quote / sidenote inside a card. A small bordered bar on the
+	// leading side, italic body, modest indent. Visually distinct from the
+	// page sidebar; semantically still an aside. Uses a separate `callout`
+	// token namespace because the chrome shape is fundamentally different.
+	// --------------------------------------------------------------------------
+	article aside {
+		--set-callout-color: var(--set-style-color, currentColor);
+		--set-callout-bar-width: 4px;
+		--set-callout-bar-color: var(
+			--set-variant-background-color,
+			color-mix(in srgb, currentColor 25%, transparent)
+		);
+		--set-callout-padding-inline: calc(var(--spacing) * 4);
+		--set-callout-padding-block: calc(var(--spacing) * 1);
+		--set-callout-font-style: italic;
+
+		display: block;
+		padding-inline-start: var(--set-callout-padding-inline);
+		padding-block: var(--set-callout-padding-block);
+		border-inline-start: var(--set-callout-bar-width) solid var(--set-callout-bar-color);
+		color: var(--set-callout-color);
+		font-style: var(--set-callout-font-style);
+
+		// Reset any sidebar bits that descendant inheritance might surface;
+		// callouts are inline content, not a column.
+		inline-size: auto;
+		background-color: transparent;
+		overflow: visible;
+	}
+}

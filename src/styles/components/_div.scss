@@ -1,0 +1,64 @@
+// ============================================================================
+// div — Layout primitives + widgets without a semantic root.
+//
+// `<div>` and `<span>` are the deliberate fallback for components that have
+// no semantic HTML home. The framework still prefers the semantic alternative
+// when one exists (`<output>` over `.badge`, `<mark>` over `.highlight`,
+// `<article>` over `<div>`, …) — these classes apply ONLY when none does.
+//
+// First-round primitives:
+//   - `.stack`   — vertical flow with consistent gap between children. The
+//                  most common composition pattern; what you reach for in
+//                  CSS the moment a column needs even spacing.
+//   - `.cluster` — horizontal wrap with gap. Tags, button rows, chip lists.
+//
+// Skipped intentionally:
+//   - `.container` — clashes with Tailwind v4's `.container` utility.
+//                    Consumers should use Tailwind's container directly.
+//   - `.center`   — Tailwind covers it cheaply (`grid place-items-center`).
+//
+// Defer to a future round (when the showcase actually needs them):
+//   `.spinner`, `.skeleton`, `.placeholder`, `.empty-state`, `.stat`,
+//   `.timeline`, `.stepper`, `.rating`, `.splitter`, `.tooltip-body`,
+//   `.popover-body`. Mailbox has implementations for each — lift on demand.
+//
+// Quirks:
+//   - The selectors target `div` directly (`div.stack`, not `.stack`) so the
+//     class can't be accidentally applied to a more semantic element where
+//     it would shadow that element's intended behavior. If you find yourself
+//     wanting `.stack` on `<article>` or `<aside>`, reach for the bare
+//     element's gap behavior instead — it's already there.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	// --------------------------------------------------------------------------
+	// .stack — vertical flow, consistent gap.
+	//
+	// Override `--set-stack-gap` per-instance for tighter or looser spacing.
+	// --------------------------------------------------------------------------
+	div.stack {
+		--set-stack-gap: calc(var(--spacing) * 4);
+
+		display: flex;
+		flex-direction: column;
+		gap: var(--set-stack-gap);
+	}
+
+	// --------------------------------------------------------------------------
+	// .cluster — horizontal wrap with gap.
+	//
+	// Default alignment is `center` so chip rows look right; override
+	// `--set-cluster-align` for top-aligned button rows etc.
+	// --------------------------------------------------------------------------
+	div.cluster {
+		--set-cluster-gap: calc(var(--spacing) * 3);
+		--set-cluster-align: center;
+
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--set-cluster-gap);
+		align-items: var(--set-cluster-align);
+	}
+}

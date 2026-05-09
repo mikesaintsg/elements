@@ -1,0 +1,98 @@
+// ============================================================================
+// menu — Toolbar / command row.
+//
+// Per the HTML spec, `<menu>` is "a toolbar consisting of an unordered list
+// of items, each of which represents a command the user can perform or
+// activate." The framework leans on that — bare `<menu>` is a horizontal
+// flex row designed to host `<button>` (or `<a>`-as-button) children.
+//
+// Three contexts, all handled:
+//
+//   1. Bare <menu>
+//      → page-level toolbar / action row. Horizontal flex, visible row.
+//
+//   2. article menu  (inside a card)
+//      → card action row. Same horizontal layout but typically pushed to
+//        the right (justify-content flex-end) because card actions
+//        conventionally trail the body. The user can override via
+//        `--set-menu-justify-content` per-instance.
+//
+//   3. nav > menu  /  body > nav menu
+//      → menu inside a navigation rail. Becomes vertical to match the rail
+//        orientation, mirroring how mailbox's sidebar-nav builds out
+//        clickable command columns.
+//
+// `<menu>` is content-equivalent to `<ul>` (must contain `<li>`s per spec),
+// but in practice it's frequently used with `<button>` children directly.
+// The framework supports both: `<menu><li><button>...</button></li></menu>`
+// and `<menu><button>...</button></menu>` render identically.
+//
+// Quirks:
+//   - `list-style: none` and zero margin/padding strips the UA list shape;
+//     the menu reads as a button row, not a bulleted list.
+//   - When children are `<li>` wrappers, they get `display: contents` so
+//     the buttons inside become direct flex items of the menu (no extra
+//     box layer to fight).
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	menu {
+		--set-menu-color: var(--set-style-color, currentColor);
+		--set-menu-background-color: var(--set-style-background-color, transparent);
+		--set-menu-gap: calc(var(--spacing) * 2);
+		--set-menu-padding-inline: 0;
+		--set-menu-padding-block: 0;
+		--set-menu-justify-content: flex-start;
+		--set-menu-transition-duration: var(--set-transition-duration);
+
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: var(--set-menu-justify-content);
+		gap: var(--set-menu-gap);
+
+		// Strip UA list defaults so the menu reads as a toolbar.
+		list-style: none;
+		margin: 0;
+		padding-inline: var(--set-menu-padding-inline);
+		padding-block: var(--set-menu-padding-block);
+
+		color: var(--set-menu-color);
+		background-color: var(--set-menu-background-color);
+
+		@include transition(
+			(
+				color var(--set-menu-transition-duration),
+				background-color var(--set-menu-transition-duration)
+			)
+		);
+
+		// `<li>` wrappers should disappear into the flex layout so buttons
+		// become the visible items. Without `display: contents`, each `<li>`
+		// would add its own box and the gap math would feel wrong.
+		& > li {
+			display: contents;
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Card action row — menu inside an article.
+	// Push actions to the trailing edge by default (Bootstrap / Material both
+	// converge on this convention).
+	// --------------------------------------------------------------------------
+	article menu {
+		--set-menu-justify-content: flex-end;
+	}
+
+	// --------------------------------------------------------------------------
+	// Nav-rail menu — menu inside a primary navigation rail.
+	// Vertical layout to match the column orientation of the rail.
+	// --------------------------------------------------------------------------
+	body:has(main) > nav menu,
+	body:has(main) > * > nav menu {
+		flex-direction: column;
+		align-items: stretch;
+	}
+}

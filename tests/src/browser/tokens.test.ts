@@ -24,6 +24,12 @@ const elementSources = import.meta.glob('../../../src/styles/elements/_*.scss', 
 	eager: true,
 }) as Record<string, string>
 
+const componentSources = import.meta.glob('../../../src/styles/components/_*.scss', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+}) as Record<string, string>
+
 const surfaceSources = import.meta.glob('../../../src/styles/surfaces/_*.scss', {
 	query: '?raw',
 	import: 'default',
@@ -69,16 +75,25 @@ function tagFromPath(path: string): string {
 	return match[1]
 }
 
-// {tag → source} for every element partial that declares its element-scoped tokens.
+// {tag → source} for every element / component partial that declares its
+// element-scoped tokens. Both elements/_X.scss (bare-tag baseline) and
+// components/_X.scss (bare-tag-as-component, e.g. <article> as card) target
+// the same selector — `X { ... }` — so they share the same parity check.
+// When both layers declare tokens for the same tag, sources are concatenated.
 const SUBSTANTIVE_PARTIALS: ReadonlyMap<string, string> = (() => {
 	const map = new Map<string, string>()
-	for (const [path, source] of Object.entries(elementSources)) {
-		const tag = tagFromPath(path)
-		if (tag.includes('-')) continue
-		if (new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`, 'i').test(source)) {
-			map.set(tag, source)
+	const collect = (sources: Record<string, string>) => {
+		for (const [path, source] of Object.entries(sources)) {
+			const tag = tagFromPath(path)
+			if (tag.includes('-')) continue
+			if (new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`, 'i').test(source)) {
+				const existing = map.get(tag)
+				map.set(tag, existing ? `${existing}\n${source}` : source)
+			}
 		}
 	}
+	collect(elementSources)
+	collect(componentSources)
 	return map
 })()
 

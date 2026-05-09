@@ -1,0 +1,88 @@
+// ============================================================================
+// body — Application layout shell.
+//
+// Architecture: when `<body>` has a `<main>` descendant, the framework
+// promotes it to a CSS-grid template-area layout. Sectioning children (header,
+// nav, main, aside, footer) get placed automatically without classes:
+//
+//   ┌─ header ────────────────────────────────┐
+//   │                                         │
+//   ├─ nav ─┬─ main ────────────────┬─ aside ─┤
+//   │       │                       │         │
+//   ├───────┴───────────────────────┴─────────┤
+//   │                 footer                  │
+//   └─────────────────────────────────────────┘
+//
+// The 3 × 3 grid is fixed. Missing children just leave their tracks at
+// intrinsic size — the grid auto-collapses. Every Vue / React / Solid /
+// Svelte app gets a working layout from semantic markup alone — no
+// `.layout` / `.shell` class.
+//
+// Vue / React mount-point integration: frameworks typically mount into a
+// `<div id="app">` (or `#root`, `#main`, …) inside `<body>`. Two CSS rules
+// are needed for those wrappers:
+//
+//   1. `display: contents` on the wrapper — keeps it out of the layout tree
+//      so its children become real grid items of <body>'s grid. The showcase
+//      does this in its `main.css` for `#app`.
+//   2. The grid-area rules below match BOTH direct children of <body> AND
+//      once-removed grandchildren — so a wrapper between body and the
+//      sectioning element doesn't break placement. Sectioning elements
+//      nested deeper (e.g. <header> inside <article>) are unaffected because
+//      `grid-area` only takes effect on real grid items.
+//
+// Quirks:
+//   - `:has(main)` (descendant, not direct child) scopes the rule so apps
+//     using a wrapper still match. Non-app pages (no <main> anywhere) keep
+//     their default body behavior.
+//   - `block-size: 100dvh; overflow: hidden` viewport-locks the layout so
+//     <main> can scroll independently inside its grid track. Use a future
+//     state modifier (`<body class="scroll">`) to opt out into a flowing
+//     document model.
+//   - The grid uses logical-axis property names (`inline-`, `block-`) so
+//     RTL and vertical-writing-mode pages flip naturally.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	body:has(main) {
+		display: grid;
+		block-size: 100dvh;
+		overflow: hidden;
+		margin: 0;
+
+		grid-template-rows: auto 1fr auto;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		grid-template-areas:
+			'header header header'
+			'nav    main   aside'
+			'footer footer footer';
+	}
+
+	// Place sectioning children — direct OR once-removed via a `display: contents`
+	// wrapper. The once-removed match only takes effect when the wrapper is
+	// `display: contents` (otherwise the wrapper itself is the grid item and
+	// these rules apply to non-grid-items, which is harmless).
+	body:has(main) > header,
+	body:has(main) > * > header {
+		grid-area: header;
+	}
+	body:has(main) > nav,
+	body:has(main) > * > nav {
+		grid-area: nav;
+	}
+	body:has(main) > main,
+	body:has(main) > * > main {
+		grid-area: main;
+		min-inline-size: 0;
+	}
+	body:has(main) > aside,
+	body:has(main) > * > aside {
+		grid-area: aside;
+	}
+	body:has(main) > footer,
+	body:has(main) > * > footer {
+		grid-area: footer;
+	}
+}

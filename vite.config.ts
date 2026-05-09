@@ -81,7 +81,15 @@ export const srcBrowser = (config?: UserConfig): UserConfig =>
 	srcCore(
 		mergeConfig(
 			{
-				plugins: [vue()],
+				plugins: [
+					vue({
+						// `<search>` is a Baseline-2023 HTML landmark element that
+						// Vue's compiler doesn't yet have in its native-tag list.
+						// Tell it explicitly so `<search>` renders as a real DOM
+						// element and not as an unresolved component.
+						template: { compilerOptions: { isCustomElement: (tag) => tag === 'search' } },
+					}),
+				],
 				css: { postcss },
 				build: {
 					lib: {

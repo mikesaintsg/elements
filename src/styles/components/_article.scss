@@ -1,0 +1,163 @@
+// ============================================================================
+// article — Card composition (the framework's flagship "element IS component"
+// proof point).
+//
+// Architecture mirrors `<button>` and `<a>`:
+//   1. Element-scoped --set-article-* tokens declared on `article`. Each
+//      resolves via the modifier cascade — style → variant → element default.
+//   2. Bare <article> is a self-contained surface: padding, radius, subtle
+//      border, soft shadow, vertical gap between children. The shape that
+//      "looks like a card" without any class.
+//   3. Modifier classes layer on top of the same modifier vocabulary used
+//      everywhere else in the framework: `.primary` / `.success` / etc tint
+//      the surface; `.ghost` / `.filled` swap fill treatment; `.small` /
+//      `.large` size the chrome; `.disabled` dims it.
+//   4. Descendant `<header>` and `<footer>` (when direct children) get
+//      card-header / card-footer chrome — subtle tinted band, separator
+//      border, inner radius matched to the outer radius minus the border.
+//      The slot system requires no extra classes; the consumer just writes
+//      `<article><header>Title</header>…<footer>Actions</footer></article>`.
+//
+// Container query: the article registers as a size-container named `article`
+// so consumers can write `@container article (min-inline-size: 24rem) { … }`
+// to adapt internal layout to the card's actual width — independent of
+// viewport. Lifted from mailbox's _card.scss pattern.
+//
+// Quirks:
+//   - Inner descendant chrome uses `calc(var(--set-article-border-radius) -
+//     var(--set-article-border-width))` so the inner band's radius matches
+//     the visible inner edge of the outer border. Ditto mailbox.
+//   - Using negative margins on inner header/footer to bleed the band to
+//     the article's inner edge (matches Bootstrap card chrome pattern).
+//   - Variant border-color tracks the variant background so a `.primary`
+//     card has a primary-tinted edge; without a variant the border defaults
+//     to a low-opacity currentColor.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	article {
+		// ----------------------------------------------------------------------
+		// Element-scoped tokens.
+		//
+		// Articles are containers, not action surfaces — so the variant cascade
+		// only reaches the BORDER by default. To fill the surface with the
+		// variant color you opt in via `.filled` (which sets the style tokens).
+		// This differs deliberately from <button>'s cascade, where a bare
+		// `.primary` button is filled-by-default because buttons ARE action
+		// surfaces. Cards stay neutral; only `.filled` paints the body.
+		// ----------------------------------------------------------------------
+		--set-article-color: var(--set-style-color, currentColor);
+		--set-article-background-color: var(--set-style-background-color, Canvas);
+		--set-article-border-color: var(
+			--set-style-border-color,
+			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))
+		);
+		--set-article-border-width: 1px;
+		--set-article-border-radius: var(--set-size-border-radius, var(--radius-lg));
+		--set-article-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 5));
+		--set-article-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 5));
+		--set-article-gap: calc(var(--spacing) * 4);
+		--set-article-font-size: var(--set-size-font-size, var(--text-base));
+		--set-article-line-height: var(--leading-normal);
+		--set-article-box-shadow:
+			0 1px 2px 0 color-mix(in srgb, currentColor 6%, transparent),
+			0 2px 4px -1px color-mix(in srgb, currentColor 5%, transparent);
+		--set-article-transition-duration: var(--set-transition-duration);
+		--set-article-disabled-opacity: 0.5;
+
+		// ----------------------------------------------------------------------
+		// Container query — consumers can adapt internal layout to the card's
+		// width, not the viewport's.
+		// ----------------------------------------------------------------------
+		container-type: inline-size;
+		container-name: article;
+
+		// ----------------------------------------------------------------------
+		// Layout — flex column with consistent vertical gap between children.
+		// ----------------------------------------------------------------------
+		display: flex;
+		flex-direction: column;
+		gap: var(--set-article-gap);
+		padding-inline: var(--set-article-padding-inline);
+		padding-block: var(--set-article-padding-block);
+
+		// ----------------------------------------------------------------------
+		// Border + radius
+		// ----------------------------------------------------------------------
+		border-color: var(--set-article-border-color);
+		border-style: solid;
+		border-width: var(--set-article-border-width);
+		border-radius: var(--set-article-border-radius);
+
+		// ----------------------------------------------------------------------
+		// Typography + colors
+		// ----------------------------------------------------------------------
+		font-size: var(--set-article-font-size);
+		line-height: var(--set-article-line-height);
+		color: var(--set-article-color);
+		background-color: var(--set-article-background-color);
+		box-shadow: var(--set-article-box-shadow);
+
+		@include transition(
+			(
+				color var(--set-article-transition-duration),
+				background-color var(--set-article-transition-duration),
+				border-color var(--set-article-transition-duration),
+				box-shadow var(--set-article-transition-duration),
+				opacity var(--set-article-transition-duration)
+			)
+		);
+
+		// ----------------------------------------------------------------------
+		// Disabled — same opacity dim as buttons / inputs.
+		// ----------------------------------------------------------------------
+		&.disabled,
+		&[aria-disabled='true'] {
+			opacity: var(--set-article-disabled-opacity);
+			pointer-events: none;
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Card header slot — first <header> child of <article>.
+	//
+	// Bleeds to the article's inner edge via negative margins, paints a subtle
+	// tint band, separates from the body with a single bottom border, and
+	// rounds to match the outer card radius minus the border width.
+	// --------------------------------------------------------------------------
+	article > header {
+		margin-block-start: calc(var(--set-article-padding-block) * -1);
+		margin-inline: calc(var(--set-article-padding-inline) * -1);
+		padding-inline: var(--set-article-padding-inline);
+		padding-block: calc(var(--set-article-padding-block) * 0.625);
+
+		background-color: color-mix(in srgb, currentColor 4%, transparent);
+		border-block-end: var(--set-article-border-width) solid var(--set-article-border-color);
+		border-start-start-radius: calc(
+			var(--set-article-border-radius) - var(--set-article-border-width)
+		);
+		border-start-end-radius: calc(
+			var(--set-article-border-radius) - var(--set-article-border-width)
+		);
+	}
+
+	// --------------------------------------------------------------------------
+	// Card footer slot — last <footer> child of <article>. Same pattern as the
+	// header but bottom-anchored.
+	// --------------------------------------------------------------------------
+	article > footer {
+		margin-block-end: calc(var(--set-article-padding-block) * -1);
+		margin-inline: calc(var(--set-article-padding-inline) * -1);
+		padding-inline: var(--set-article-padding-inline);
+		padding-block: calc(var(--set-article-padding-block) * 0.625);
+
+		background-color: color-mix(in srgb, currentColor 4%, transparent);
+		border-block-start: var(--set-article-border-width) solid var(--set-article-border-color);
+		border-end-start-radius: calc(
+			var(--set-article-border-radius) - var(--set-article-border-width)
+		);
+		border-end-end-radius: calc(var(--set-article-border-radius) - var(--set-article-border-width));
+	}
+}

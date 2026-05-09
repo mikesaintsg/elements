@@ -1,0 +1,68 @@
+// ============================================================================
+// footer — Page footer inside the layout shell.
+//
+// `<footer>` lives in two contexts:
+//
+//   1. body > footer  (or body > * > footer via display: contents wrapper)
+//      → page-level footer. Spans the bottom row of the body grid. Top
+//        border separating it from <main>. Same compact register as the
+//        page header.
+//
+//   2. article > footer
+//      → card footer. Styled in `_article.scss` as part of the card chrome
+//        (subtle band, top separator, inner radius). The article-rooted
+//        rule and the body-rooted rule here don't compete — different
+//        ancestor selectors.
+//
+// Modifier cascade reaches both: `<footer class="primary">` tints the
+// border / chrome via --set-variant-background-color.
+//
+// Token declarations vs chrome rules:
+//   Tokens are declared on bare `<footer>` so they resolve everywhere the
+//   element exists. Chrome rules are scoped to the layout-shell context
+//   (`body:has(main) > footer`) so a long-form page using `<footer>` for
+//   article-level credits isn't auto-styled as a page footer.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	footer {
+		--set-footer-color: var(--set-style-color, color-mix(in srgb, currentColor 70%, transparent));
+		--set-footer-background-color: var(--set-style-background-color, Canvas);
+		--set-footer-border-color: var(
+			--set-style-border-color,
+			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))
+		);
+		--set-footer-border-width: 1px;
+		--set-footer-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));
+		--set-footer-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 2));
+		--set-footer-font-size: var(--set-size-font-size, var(--text-sm));
+		--set-footer-line-height: var(--leading-normal);
+		--set-footer-transition-duration: var(--set-transition-duration);
+	}
+
+	body:has(main) > footer,
+	body:has(main) > * > footer {
+		display: flex;
+		align-items: center;
+		gap: calc(var(--spacing) * 3);
+		padding-inline: var(--set-footer-padding-inline);
+		padding-block: var(--set-footer-padding-block);
+
+		border-block-start: var(--set-footer-border-width) solid var(--set-footer-border-color);
+
+		font-size: var(--set-footer-font-size);
+		line-height: var(--set-footer-line-height);
+		color: var(--set-footer-color);
+		background-color: var(--set-footer-background-color);
+
+		@include transition(
+			(
+				color var(--set-footer-transition-duration),
+				background-color var(--set-footer-transition-duration),
+				border-color var(--set-footer-transition-duration)
+			)
+		);
+	}
+}

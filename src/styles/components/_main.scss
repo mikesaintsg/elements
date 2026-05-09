@@ -1,0 +1,38 @@
+// ============================================================================
+// main — Primary content area inside the body layout shell.
+//
+// When `<main>` is a direct child of `<body>` (the layout shell from
+// `_body.scss`), it gets placed in the central `main` grid area and gains
+// `overflow-y: auto` so the content region scrolls independently of the
+// surrounding chrome (header / nav / aside / footer stay pinned).
+//
+// `min-block-size: 0` is required inside CSS Grid for `overflow: auto` to
+// take effect — without it the track stretches to fit content and never
+// produces a scrollbar.
+//
+// Outside the layout shell (a bare `<main>` not under a `<body>` with grid
+// applied) this rule has no effect — the placement bits don't apply, and
+// `<main>` falls back to its default block behavior. Authors of long-form
+// documents (no header/aside) get untouched main behavior; authors of app
+// shells get scroll containment.
+//
+// Quirks:
+//   - The `body:has(> main) > main` selector is paired with the rule in
+//     `_body.scss` so they always co-trigger. Don't promote `main` styling
+//     here without the body grid being active.
+//   - `overscroll-behavior: contain` prevents scroll chaining to the
+//     parent — wheel events at the top of `<main>` don't bubble to body.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	// Match both direct and once-removed-via-`display: contents`-wrapper main
+	// elements (mirrors the placement rules in `_body.scss`).
+	body:has(main) > main,
+	body:has(main) > * > main {
+		overflow-y: auto;
+		min-block-size: 0;
+		overscroll-behavior: contain;
+	}
+}

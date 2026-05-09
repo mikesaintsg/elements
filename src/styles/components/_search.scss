@@ -1,0 +1,60 @@
+// ============================================================================
+// search — Search bar / filter input row.
+//
+// `<search>` is the HTML Living Standard's landmark for search/filter UI
+// (Baseline October 2023). The framework treats bare `<search>` as a
+// horizontal flex container that lays out an `<input>` plus optional submit
+// button + suggestion slot. The element IS the component; no `.searchbar`
+// class.
+//
+// Pairs cleanly with the framework's already-styled `<input>` (focus ring,
+// border, padding) — `<search>` provides the row chrome, `<input>` provides
+// the field chrome.
+//
+// Quirks:
+//   - The `<input>` inside a `<search>` is given `flex: 1` so the field
+//     fills the available space. Submit buttons keep their natural size.
+//   - The element doesn't paint border/background of its own by default —
+//     the `<input>` carries the visible chrome. Override
+//     `--set-search-background-color` to add a card-shell wrapper, etc.
+//   - Inside the body-shell context (`body > nav > search`, etc.), the
+//     search bar inherits the surrounding font-size and shrinks naturally.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	search {
+		--set-search-color: var(--set-style-color, currentColor);
+		--set-search-background-color: var(--set-style-background-color, transparent);
+		--set-search-padding-inline: 0;
+		--set-search-padding-block: 0;
+		--set-search-gap: calc(var(--spacing) * 2);
+		--set-search-transition-duration: var(--set-transition-duration);
+
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--set-search-gap);
+
+		padding-inline: var(--set-search-padding-inline);
+		padding-block: var(--set-search-padding-block);
+
+		color: var(--set-search-color);
+		background-color: var(--set-search-background-color);
+
+		@include transition(
+			(
+				color var(--set-search-transition-duration),
+				background-color var(--set-search-transition-duration)
+			)
+		);
+
+		// Let the input field grow to fill the row; descendant submit / clear
+		// buttons stay at their intrinsic size.
+		& > input {
+			flex: 1 1 auto;
+			min-inline-size: 0;
+		}
+	}
+}

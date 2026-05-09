@@ -22,3 +22,14 @@
 
 @source '../../../src/styles';
 @source '../../../app';
+
+/* Vue mounts into <div id="app"> by default. The framework's body-as-layout-
+ * shell rule (`body:has(> main) { display: grid; … }`) places sectioning
+ * children of <body> into named grid areas — but Vue's #app wrapper would
+ * sit between them and break the grid. `display: contents` makes #app
+ * invisible to the parent's layout while still rendering its descendants,
+ * so App.vue's <header>/<nav>/<main>/<aside>/<footer> become direct grid
+ * items of <body> as if Vue weren't in the way. */
+#app {
+	display: contents;
+}

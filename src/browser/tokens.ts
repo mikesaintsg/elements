@@ -266,6 +266,118 @@ export const tokens = {
 		transitionDuration: '--set-dialog-transition-duration',
 	},
 
+	// Component tokens declared on bare `<nav>`. Body-shell rail chrome
+	// (sidebar/rail) consumes them; the breadcrumb / generic-row variants
+	// pick up gap + font-size only.
+	nav: {
+		color: '--set-nav-color',
+		backgroundColor: '--set-nav-background-color',
+		borderColor: '--set-nav-border-color',
+		borderWidth: '--set-nav-border-width',
+		paddingInline: '--set-nav-padding-inline',
+		paddingBlock: '--set-nav-padding-block',
+		inlineSize: '--set-nav-inline-size',
+		gap: '--set-nav-gap',
+		fontSize: '--set-nav-font-size',
+		lineHeight: '--set-nav-line-height',
+		transitionDuration: '--set-nav-transition-duration',
+	},
+
+	// Component tokens declared on bare `<search>` (search bar).
+	search: {
+		color: '--set-search-color',
+		backgroundColor: '--set-search-background-color',
+		paddingInline: '--set-search-padding-inline',
+		paddingBlock: '--set-search-padding-block',
+		gap: '--set-search-gap',
+		transitionDuration: '--set-search-transition-duration',
+	},
+
+	// Component tokens declared on bare `<menu>` (toolbar / action row).
+	menu: {
+		color: '--set-menu-color',
+		backgroundColor: '--set-menu-background-color',
+		gap: '--set-menu-gap',
+		paddingInline: '--set-menu-padding-inline',
+		paddingBlock: '--set-menu-padding-block',
+		justifyContent: '--set-menu-justify-content',
+		transitionDuration: '--set-menu-transition-duration',
+	},
+
+	// Component tokens declared on bare `<form>` (form stack).
+	form: {
+		gap: '--set-form-gap',
+		inlineGap: '--set-form-inline-gap',
+		transitionDuration: '--set-form-transition-duration',
+	},
+
+	// Component tokens declared on bare `<aside>` when it's a child of the
+	// body layout shell (the framework's sidebar). The article-aside callout
+	// uses a separate `--set-callout-*` namespace declared inline in
+	// components/_aside.scss; not mirrored here because it's class-keyed
+	// internal state, not a public override point.
+	aside: {
+		color: '--set-aside-color',
+		backgroundColor: '--set-aside-background-color',
+		borderColor: '--set-aside-border-color',
+		borderWidth: '--set-aside-border-width',
+		paddingInline: '--set-aside-padding-inline',
+		paddingBlock: '--set-aside-padding-block',
+		inlineSize: '--set-aside-inline-size',
+		fontSize: '--set-aside-font-size',
+		lineHeight: '--set-aside-line-height',
+		transitionDuration: '--set-aside-transition-duration',
+	},
+
+	// Component tokens declared on bare `<header>` when it's a child of the
+	// body layout shell (page app bar). Card-header chrome (article > header)
+	// shares the article token surface and isn't mirrored here.
+	header: {
+		color: '--set-header-color',
+		backgroundColor: '--set-header-background-color',
+		borderColor: '--set-header-border-color',
+		borderWidth: '--set-header-border-width',
+		paddingInline: '--set-header-padding-inline',
+		paddingBlock: '--set-header-padding-block',
+		fontSize: '--set-header-font-size',
+		lineHeight: '--set-header-line-height',
+		transitionDuration: '--set-header-transition-duration',
+	},
+
+	// Component tokens declared on bare `<footer>` when it's a child of the
+	// body layout shell (page footer). Card-footer chrome (article > footer)
+	// shares the article token surface.
+	footer: {
+		color: '--set-footer-color',
+		backgroundColor: '--set-footer-background-color',
+		borderColor: '--set-footer-border-color',
+		borderWidth: '--set-footer-border-width',
+		paddingInline: '--set-footer-padding-inline',
+		paddingBlock: '--set-footer-padding-block',
+		fontSize: '--set-footer-font-size',
+		lineHeight: '--set-footer-line-height',
+		transitionDuration: '--set-footer-transition-duration',
+	},
+
+	// Component tokens declared on bare `<article>` (the framework's card).
+	// Lives under components/_article.scss; the parity test scans that file
+	// alongside the elements partials.
+	article: {
+		color: '--set-article-color',
+		backgroundColor: '--set-article-background-color',
+		borderColor: '--set-article-border-color',
+		borderWidth: '--set-article-border-width',
+		borderRadius: '--set-article-border-radius',
+		paddingInline: '--set-article-padding-inline',
+		paddingBlock: '--set-article-padding-block',
+		gap: '--set-article-gap',
+		fontSize: '--set-article-font-size',
+		lineHeight: '--set-article-line-height',
+		boxShadow: '--set-article-box-shadow',
+		transitionDuration: '--set-article-transition-duration',
+		disabled: { opacity: '--set-article-disabled-opacity' },
+	},
+
 	// Element-scoped tokens declared on `table` itself.
 	table: {
 		color: '--set-table-color',

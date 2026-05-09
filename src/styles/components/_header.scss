@@ -1,0 +1,70 @@
+// ============================================================================
+// header — Page app bar inside the layout shell.
+//
+// `<header>` lives in two contexts. The framework paints both:
+//
+//   1. body > header  (or body > * > header via display: contents wrapper)
+//      → page-level app bar. Spans the top row of the body grid. Subtle
+//        bottom border separating it from <main> / <nav>. Compact padding,
+//        small font; designed for a brand + nav-toggle row, not for hero
+//        chrome.
+//
+//   2. article > header
+//      → card header. Already styled in `_article.scss` via the
+//        descendant-of-article rule (subtle band, separator, inner radius).
+//        That rule is more specific than the body-rooted one here, so the
+//        two coexist cleanly.
+//
+// Modifier cascade reaches both contexts: `<header class="primary">` tints
+// the border via --set-variant-background-color, etc.
+//
+// Token declarations vs chrome rules:
+//   Tokens are declared on bare `<header>` so they always resolve when the
+//   element exists. Chrome rules are scoped to the layout-shell context
+//   (`body:has(main) > header`) so a hero/landing page that uses `<header>`
+//   outside a shell isn't auto-styled as a compact app bar — heroes should
+//   stay free-form.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	header {
+		--set-header-color: var(--set-style-color, currentColor);
+		--set-header-background-color: var(--set-style-background-color, Canvas);
+		--set-header-border-color: var(
+			--set-style-border-color,
+			var(--set-variant-background-color, color-mix(in srgb, currentColor 12%, transparent))
+		);
+		--set-header-border-width: 1px;
+		--set-header-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));
+		--set-header-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 2));
+		--set-header-font-size: var(--set-size-font-size, var(--text-sm));
+		--set-header-line-height: var(--leading-normal);
+		--set-header-transition-duration: var(--set-transition-duration);
+	}
+
+	body:has(main) > header,
+	body:has(main) > * > header {
+		display: flex;
+		align-items: center;
+		gap: calc(var(--spacing) * 3);
+		padding-inline: var(--set-header-padding-inline);
+		padding-block: var(--set-header-padding-block);
+
+		border-block-end: var(--set-header-border-width) solid var(--set-header-border-color);
+
+		font-size: var(--set-header-font-size);
+		line-height: var(--set-header-line-height);
+		color: var(--set-header-color);
+		background-color: var(--set-header-background-color);
+
+		@include transition(
+			(
+				color var(--set-header-transition-duration),
+				background-color var(--set-header-transition-duration),
+				border-color var(--set-header-transition-duration)
+			)
+		);
+	}
+}
