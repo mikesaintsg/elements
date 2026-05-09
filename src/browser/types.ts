@@ -853,10 +853,10 @@ export interface UseDropReturn {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// useFocusTrap (new — extracted from mailbox's useModal)
+// useFocus (extracted from mailbox's useModal focus-trap loop)
 // ─────────────────────────────────────────────────────────────────────────
 
-export interface CreateFocusTrapOptions {
+export interface CreateFocusOptions {
 	/** Element (or selector function) to focus on activate. Defaults to the
 	 *  first focusable descendant. */
 	readonly initial?: HTMLElement | ((host: HTMLElement) => HTMLElement | null)
@@ -865,16 +865,16 @@ export interface CreateFocusTrapOptions {
 	readonly restore?: boolean
 }
 
-export interface CreateFocusTrapInstance {
+export interface CreateFocusInstance {
 	readonly active: Readonly<Ref<boolean>>
 	readonly activate: () => void
 	readonly deactivate: () => void
 	readonly destroy: () => void
 }
 
-export interface UseFocusTrapOptions extends CreateFocusTrapOptions {}
+export interface UseFocusOptions extends CreateFocusOptions {}
 
-export interface UseFocusTrapReturn {
+export interface UseFocusReturn {
 	readonly active: Readonly<Ref<boolean>>
 	readonly activate: () => void
 	readonly deactivate: () => void
@@ -1261,6 +1261,12 @@ export interface CreateTableOptions {
 		readonly multiple?: boolean
 		/** Row ids to expand at construction (stale ids silently ignored). */
 		readonly initial?: readonly string[]
+		/** Animate the inner panel between `0` and `scrollHeight`. Default
+		 *  `false`. When true, the factory drives a height-transition on the
+		 *  `[data-table-expansion-panel]` element via the `[data-collapsing]`
+		 *  attribute (mirrors `createDetails` semantics). When false, the
+		 *  panel toggles `hidden` synchronously. */
+		readonly animate?: boolean
 	}
 	readonly selection?: {
 		/** Scope for select-all operations. Default `'page'`. */

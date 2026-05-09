@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { createFocusTrap } from '@src/browser'
+import { createFocus } from '@src/browser'
 import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
-function createTrapHost(): {
+function createFocusHost(): {
 	readonly host: HTMLDivElement
 	readonly buttons: readonly HTMLButtonElement[]
 } {
@@ -18,24 +18,24 @@ function createTrapHost(): {
 	return { host, buttons }
 }
 
-describe('createFocusTrap', () => {
+describe('createFocus', () => {
 	it('starts inactive', () => {
-		const { host } = createTrapHost()
-		const [api] = createFactoryFixture(() => createFocusTrap(host))
+		const { host } = createFocusHost()
+		const [api] = createFactoryFixture(() => createFocus(host))
 		expect(api.active.value).toBe(false)
 	})
 
 	it('activate focuses the first focusable descendant', () => {
-		const { host, buttons } = createTrapHost()
-		const [api] = createFactoryFixture(() => createFocusTrap(host))
+		const { host, buttons } = createFocusHost()
+		const [api] = createFactoryFixture(() => createFocus(host))
 		api.activate()
 		expect(api.active.value).toBe(true)
 		expect(document.activeElement).toBe(buttons[0])
 	})
 
 	it('Tab on the last focusable wraps back to the first', () => {
-		const { host, buttons } = createTrapHost()
-		const [api] = createFactoryFixture(() => createFocusTrap(host))
+		const { host, buttons } = createFocusHost()
+		const [api] = createFactoryFixture(() => createFocus(host))
 		api.activate()
 		buttons[buttons.length - 1]?.focus()
 		const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
@@ -44,8 +44,8 @@ describe('createFocusTrap', () => {
 	})
 
 	it('Shift+Tab on the first wraps to the last', () => {
-		const { host, buttons } = createTrapHost()
-		const [api] = createFactoryFixture(() => createFocusTrap(host))
+		const { host, buttons } = createFocusHost()
+		const [api] = createFactoryFixture(() => createFocus(host))
 		api.activate()
 		buttons[0]?.focus()
 		const event = new KeyboardEvent('keydown', {
@@ -62,8 +62,8 @@ describe('createFocusTrap', () => {
 		const previous = buildElement('button')
 		previous.type = 'button'
 		previous.focus()
-		const { host } = createTrapHost()
-		const [api] = createFactoryFixture(() => createFocusTrap(host))
+		const { host } = createFocusHost()
+		const [api] = createFactoryFixture(() => createFocus(host))
 		api.activate()
 		api.deactivate()
 		expect(api.active.value).toBe(false)
@@ -71,13 +71,13 @@ describe('createFocusTrap', () => {
 	})
 
 	it('initial accepts an explicit element to focus first', () => {
-		const { host, buttons } = createTrapHost()
-		const [api] = createFactoryFixture(() => createFocusTrap(host, { initial: buttons[2] }))
+		const { host, buttons } = createFocusHost()
+		const [api] = createFactoryFixture(() => createFocus(host, { initial: buttons[2] }))
 		api.activate()
 		expect(document.activeElement).toBe(buttons[2])
 	})
 
 	it('destroy reverses every listener', () => {
-		assertCleanDispose(() => createFocusTrap(buildElement('div')))
+		assertCleanDispose(() => createFocus(buildElement('div')))
 	})
 })

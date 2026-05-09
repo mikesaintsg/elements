@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { createTable, TABLE_EVENTS } from '@src/browser'
+import { createTable, TABLE_EVENTS, TRANSITION_FALLBACK_MS } from '@src/browser'
 import {
 	assertCleanDispose,
 	buildElement,
 	createFactoryFixture,
 	createRecorder,
+	fireTransitionEnd,
 } from '../../../setupBrowser'
 
 function buildTable(): HTMLTableElement {
@@ -115,6 +116,109 @@ describe('createTable', () => {
 		api.rows.append(['b'])
 		api.rows.remove(0)
 		expect(change.count).toBeGreaterThanOrEqual(2)
+	})
+
+	it('expansion.expand / collapse toggles [data-table-expanded] + [hidden] panel', () => {
+		const table = buildTable()
+		const [api] = createFactoryFixture(() => {
+			const instance = createTable(table, { rows: [['a'], ['b']] })
+			const rows = instance.rows.rows()
+			rows[0]!.dataset.id = 'r0'
+			rows[1]!.dataset.id = 'r1'
+			// Inject expansion detail rows after each data row so the
+			// factory can find them via `findDetailRow`.
+			for (const row of rows) {
+				const detail = document.createElement('tr')
+				detail.setAttribute('data-table-expansion', '')
+				const cell = document.createElement('td')
+				const panel = document.createElement('div')
+				panel.setAttribute('data-table-expansion-panel', '')
+				panel.setAttribute('hidden', '')
+				panel.textContent = `Detail for ${row.dataset.id}`
+				cell.appendChild(panel)
+				detail.appendChild(cell)
+				row.parentElement?.insertBefore(detail, row.nextSibling)
+			}
+			instance.refresh()
+			return instance
+		})
+		api.expansion.expand('r0')
+		const row0 = api.rows.row(0)!
+		expect(row0.hasAttribute('data-table-expanded')).toBe(true)
+		const detail0 = row0.nextElementSibling as HTMLElement
+		const panel0 = detail0.querySelector<HTMLElement>('[data-table-expansion-panel]')!
+		expect(panel0.hasAttribute('hidden')).toBe(false)
+
+		api.expansion.collapse('r0')
+		expect(row0.hasAttribute('data-table-expanded')).toBe(false)
+		expect(panel0.hasAttribute('hidden')).toBe(true)
+	})
+
+	it('expansion.multiple:false keeps only one row open at a time', async () => {
+		const table = buildTable()
+		const [api] = createFactoryFixture(() => {
+			const instance = createTable(table, {
+				rows: [['a'], ['b']],
+				expansion: { multiple: false },
+			})
+			const rows = instance.rows.rows()
+			rows[0]!.dataset.id = 'r0'
+			rows[1]!.dataset.id = 'r1'
+			instance.refresh()
+			return instance
+		})
+		api.expansion.expand('r0')
+		expect(api.expansion.expanded.has('r0')).toBe(true)
+		api.expansion.expand('r1')
+		// `expansion.multiple: false` awaits the prior collapse via the
+		// async expand/collapse pipeline. Even on the non-animated path
+		// the await creates a microtask boundary; flush it before asserting.
+		await Promise.resolve()
+		expect(api.expansion.expanded.has('r1')).toBe(true)
+		expect(api.expansion.expanded.has('r0')).toBe(false)
+	})
+
+	it('expansion.animate:true drives a height transition via [data-collapsing]', async () => {
+		const table = buildTable()
+		const [api] = createFactoryFixture(() => {
+			const instance = createTable(table, {
+				rows: [['a']],
+				expansion: { animate: true },
+			})
+			const row = instance.rows.row(0)!
+			row.dataset.id = 'r0'
+			const detail = document.createElement('tr')
+			detail.setAttribute('data-table-expansion', '')
+			const cell = document.createElement('td')
+			const panel = document.createElement('div')
+			panel.setAttribute('data-table-expansion-panel', '')
+			panel.setAttribute('hidden', '')
+			panel.textContent = 'Detail'
+			cell.appendChild(panel)
+			detail.appendChild(cell)
+			row.parentElement?.insertBefore(detail, row.nextSibling)
+			instance.refresh()
+			return instance
+		})
+		const row0 = api.rows.row(0)!
+		const panel = (row0.nextElementSibling as HTMLElement).querySelector<HTMLElement>(
+			'[data-table-expansion-panel]',
+		)!
+		// Kick off the animated open. While pending, the panel carries
+		// `[data-collapsing]` and an inline height; both clear on the
+		// `transitionend` callback.
+		const opening = api.expansion.expand('r0')
+		await Promise.resolve()
+		expect(panel.hasAttribute('data-collapsing')).toBe(true)
+		// Fire transitionend manually to settle the runTransition wait.
+		fireTransitionEnd(panel)
+		await opening
+		expect(api.expansion.expanded.has('r0')).toBe(true)
+		expect(panel.hasAttribute('data-collapsing')).toBe(false)
+		expect(panel.hasAttribute('hidden')).toBe(false)
+		expect(panel.style.height).toBe('')
+		// Sanity: the runTransition fallback timer is bounded.
+		expect(TRANSITION_FALLBACK_MS).toBeGreaterThan(0)
 	})
 
 	it('destroy reverses every listener and ARIA', () => {

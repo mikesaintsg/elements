@@ -113,7 +113,7 @@ export const COMBO_ITEM_SELECTOR = ':where(li, a, button)'
 export const SELECT_ITEM_SELECTOR = MENU_ITEM_SELECTOR
 
 /** Focus-trap candidate selector. Used by `useDialog`, `useAside`, and
- *  `useFocusTrap`. */
+ *  `useFocus`. */
 export const FOCUSABLE_SELECTOR =
 	'[autofocus], input:not([disabled]), button:not([disabled]), a[href], select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 

@@ -1,16 +1,18 @@
-import type { CreateFocusTrapInstance, CreateFocusTrapOptions } from '../types.js'
+import type { CreateFocusInstance, CreateFocusOptions } from '../types.js'
 import { effectScope, readonly, ref } from '@vue/reactivity'
 import { FOCUSABLE_SELECTOR } from '../constants.js'
 import { attachListeners } from '../helpers.js'
 
 /**
- * Framework-agnostic focus-trap factory. Confines Tab navigation to
- * focusable descendants of the host element while active.
+ * Framework-agnostic focus management factory. Confines `Tab` navigation
+ * to focusable descendants of the host element while active and restores
+ * the previous focus on deactivation — a focus trap with explicit
+ * `activate()` / `deactivate()` lifecycle.
  *
  * Lifecycle:
- *   - `activate()`  stores the currently focused element, then focuses
- *                   the first focusable descendant (or `initial`, when
- *                   supplied).
+ *   - `activate()`   stores the currently focused element, then focuses
+ *                    the first focusable descendant (or `initial`, when
+ *                    supplied).
  *   - `deactivate()` restores focus to whatever was focused before
  *                    activation (skipped if `restore: false`).
  *
@@ -23,19 +25,19 @@ import { attachListeners } from '../helpers.js'
  * `activate()` is a no-op (consumers should style the trap container
  * with `tabindex="-1"` and call `host.focus()` themselves).
  *
- * @remarks This factory is intentionally minimal — the modal / aside
+ * @remarks This factory is intentionally minimal — the dialog / aside
  * factories layer their own ARIA / scroll-lock concerns on top.
  */
-export function createFocusTrap(
+export function createFocus(
 	element: HTMLElement,
-	options: CreateFocusTrapOptions = {},
-): CreateFocusTrapInstance {
+	options: CreateFocusOptions = {},
+): CreateFocusInstance {
 	const restore = options.restore ?? true
 	const initialOpt = options.initial
 
 	const scope = effectScope()
 	const active = scope.run(() => ref(false))
-	if (!active) throw new Error('createFocusTrap: failed to initialize reactive scope')
+	if (!active) throw new Error('createFocus: failed to initialize reactive scope')
 
 	let previousFocus: Element | null = null
 

@@ -1,35 +1,35 @@
 import type { Ref } from 'vue'
-import type { CreateFocusTrapInstance, UseFocusTrapOptions, UseFocusTrapReturn } from '../types.js'
+import type { CreateFocusInstance, UseFocusOptions, UseFocusReturn } from '../types.js'
 import { computed, shallowRef, watch } from 'vue'
-import { createFocusTrap } from '../factories/createFocusTrap.js'
+import { createFocus } from '../factories/createFocus.js'
 
 /**
- * Focus-trap composable. Vue adapter over `createFocusTrap`. Confines
+ * Focus-management composable. Vue adapter over `createFocus`. Confines
  * `Tab` navigation to focusable descendants of the host element while
  * active and restores the previous focus on deactivation.
  *
  * Designed to be opt-in for layouts that need a focus boundary outside
- * of `<dialog>` (which has its own native trap). Authors compose it
- * with their own visibility pipeline — call `activate()` on open,
- * `deactivate()` on close.
+ * of `<dialog>` (which has its own native trap when shown via
+ * `showModal()`). Authors compose it with their own visibility pipeline
+ * — call `activate()` on open, `deactivate()` on close.
  *
  * Element-agnostic — pair with any container that has at least one
  * focusable descendant.
  *
- * @see src/browser/factories/createFocusTrap.ts
+ * @see src/browser/factories/createFocus.ts
  */
-export function useFocusTrap(
+export function useFocus(
 	elementRef: Ref<HTMLElement | null>,
-	options: UseFocusTrapOptions = {},
-): UseFocusTrapReturn {
-	const factory = shallowRef<CreateFocusTrapInstance | null>(null)
+	options: UseFocusOptions = {},
+): UseFocusReturn {
+	const factory = shallowRef<CreateFocusInstance | null>(null)
 	const active = computed<boolean>(() => factory.value?.active.value ?? false)
 
 	watch(
 		() => elementRef.value,
 		(el, _previous, onCleanup) => {
 			if (typeof window === 'undefined' || !el) return
-			const instance = createFocusTrap(el, options)
+			const instance = createFocus(el, options)
 			factory.value = instance
 			onCleanup(() => {
 				instance.destroy()

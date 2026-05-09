@@ -58,6 +58,7 @@ import {
 	readTableFooter,
 	readTableHeaders,
 	readTableRows,
+	runTransition,
 	tableBody,
 	tableFooterRow,
 	tableHeaderRow,
@@ -115,6 +116,7 @@ export function createTable(
 	const sortOrder: 'asc' | 'desc' = options.sort?.order ?? 'asc'
 
 	const expansionMultiple = options.expansion?.multiple ?? true
+	const expansionAnimate = options.expansion?.animate ?? false
 
 	const selectionStrategy: TableStrategy = options.selection?.strategy ?? 'page'
 	const selectablePredicate = options.selection?.selectable
@@ -931,10 +933,20 @@ export function createTable(
 
 	// ── Expansion sub-domain ─────────────────────────────────────────────
 	// The data row carries `[data-table-expanded]` when open. The detail
-	// `<tr>` carries `[data-table-expansion]`; its inner panel
-	// `[data-table-expansion-panel]` is hidden via `hidden` attribute on
-	// close (callers can layer their own height transition on top —
-	// the factory keeps the lifecycle simple).
+	// `<tr>` carries `[data-table-expansion]`; its inner
+	// `[data-table-expansion-panel]` element owns visibility (and the
+	// optional height transition).
+	//
+	// Animation contract (when `expansion.animate: true`):
+	//   1. show: clear `hidden`, set `[data-collapsing]`, height '0',
+	//      reflow, height = scrollHeight, await transitionend, drop
+	//      `[data-collapsing]`, clear inline height. Final state has the
+	//      panel un-hidden with no inline height (CSS `auto`).
+	//   2. hide: pin scrollHeight, reflow, set `[data-collapsing]` +
+	//      height '0', await transitionend, set `hidden`, drop
+	//      `[data-collapsing]`, clear inline height.
+	// When `animate: false` (default), `hidden` toggles synchronously and
+	// authors layer their own CSS transition on `[data-table-expanded]`.
 	function syncExpansion(): void {
 		for (const row of bodyRows()) {
 			const id = extractRowId(row)
@@ -945,6 +957,8 @@ export function createTable(
 			if (!detail) continue
 			const panel = panelOf(detail)
 			if (!panel) continue
+			panel.removeAttribute('data-collapsing')
+			panel.style.height = ''
 			if (open) panel.removeAttribute('hidden')
 			else panel.setAttribute('hidden', '')
 		}
@@ -958,24 +972,72 @@ export function createTable(
 	const panelOf = (detail: HTMLTableRowElement): HTMLElement | null =>
 		detail.querySelector<HTMLElement>(PANEL_SELECTOR)
 
-	const expandOne = (id: string): void => {
+	// In-flight transition cancellers, keyed by row id so a rapid
+	// expand/collapse cycle cancels its predecessor cleanly.
+	const expansionTransitions = new Map<string, () => void>()
+
+	const cancelExpansionTransition = (id: string): void => {
+		const cancel = expansionTransitions.get(id)
+		if (cancel) {
+			cancel()
+			expansionTransitions.delete(id)
+		}
+	}
+
+	const expandOne = async (id: string): Promise<void> => {
 		if (!id) return
 		const row = findRowById(id)
 		if (!row) return
 		if (!expansionMultiple) {
-			for (const other of Array.from(expandedIds)) if (other !== id) collapseOne(other)
+			for (const other of Array.from(expandedIds)) {
+				if (other !== id) await collapseOne(other)
+			}
 		}
 		if (expandedIds.has(id)) return
 		expandedIds.add(id)
 		row.setAttribute(TABLE_EXPANDED_ATTR, '')
 		const detail = findDetailRow(row)
 		const panel = detail ? panelOf(detail) : null
-		if (panel) panel.removeAttribute('hidden')
+		if (!panel) {
+			emitExpand(id)
+			emitChange('expansion', 'update')
+			return
+		}
+		cancelExpansionTransition(id)
+		if (!expansionAnimate) {
+			panel.removeAttribute('data-collapsing')
+			panel.removeAttribute('hidden')
+			panel.style.height = ''
+			emitExpand(id)
+			emitChange('expansion', 'update')
+			return
+		}
+		// Animated show:
+		// 1. Un-hide the panel (it was `display: none` while hidden).
+		// 2. Force reflow with height '0', then animate to scrollHeight.
+		// 3. On transitionend, drop the collapsing flag and inline height.
+		panel.removeAttribute('hidden')
+		panel.setAttribute('data-collapsing', '')
+		panel.style.height = '0'
+		void panel.offsetHeight
+		panel.style.height = `${panel.scrollHeight}px`
+		await new Promise<void>((resolve) => {
+			const cancel = runTransition(panel, () => {
+				expansionTransitions.delete(id)
+				panel.removeAttribute('data-collapsing')
+				panel.style.height = ''
+				resolve()
+			})
+			expansionTransitions.set(id, () => {
+				cancel()
+				resolve()
+			})
+		})
 		emitExpand(id)
 		emitChange('expansion', 'update')
 	}
 
-	const collapseOne = (id: string): void => {
+	const collapseOne = async (id: string): Promise<void> => {
 		if (!id) return
 		if (!expandedIds.has(id)) return
 		const row = findRowById(id)
@@ -983,7 +1045,38 @@ export function createTable(
 		if (row) row.removeAttribute(TABLE_EXPANDED_ATTR)
 		const detail = row ? findDetailRow(row) : null
 		const panel = detail ? panelOf(detail) : null
-		if (panel) panel.setAttribute('hidden', '')
+		if (!panel) {
+			emitCollapse(id)
+			emitChange('expansion', 'update')
+			return
+		}
+		cancelExpansionTransition(id)
+		if (!expansionAnimate) {
+			panel.removeAttribute('data-collapsing')
+			panel.setAttribute('hidden', '')
+			panel.style.height = ''
+			emitCollapse(id)
+			emitChange('expansion', 'update')
+			return
+		}
+		// Animated hide: pin scrollHeight, reflow, animate to 0.
+		panel.style.height = `${panel.scrollHeight}px`
+		void panel.offsetHeight
+		panel.setAttribute('data-collapsing', '')
+		panel.style.height = '0'
+		await new Promise<void>((resolve) => {
+			const cancel = runTransition(panel, () => {
+				expansionTransitions.delete(id)
+				panel.removeAttribute('data-collapsing')
+				panel.setAttribute('hidden', '')
+				panel.style.height = ''
+				resolve()
+			})
+			expansionTransitions.set(id, () => {
+				cancel()
+				resolve()
+			})
+		})
 		emitCollapse(id)
 		emitChange('expansion', 'update')
 	}
@@ -998,11 +1091,14 @@ export function createTable(
 	function expansionExpand(ids: string[]): void
 	function expansionExpand(arg?: string | string[]): void {
 		if (arg === undefined) {
-			for (const id of allBodyRowIds()) expandOne(id)
+			void Promise.all(allBodyRowIds().map((id) => expandOne(id)))
 			return
 		}
-		if (Array.isArray(arg)) for (const id of arg) expandOne(id)
-		else expandOne(arg)
+		if (Array.isArray(arg)) {
+			void Promise.all(arg.map((id) => expandOne(id)))
+			return
+		}
+		void expandOne(arg)
 	}
 
 	function expansionCollapse(): void
@@ -1010,11 +1106,14 @@ export function createTable(
 	function expansionCollapse(ids: string[]): void
 	function expansionCollapse(arg?: string | string[]): void {
 		if (arg === undefined) {
-			for (const id of Array.from(expandedIds)) collapseOne(id)
+			void Promise.all(Array.from(expandedIds).map((id) => collapseOne(id)))
 			return
 		}
-		if (Array.isArray(arg)) for (const id of arg) collapseOne(id)
-		else collapseOne(arg)
+		if (Array.isArray(arg)) {
+			void Promise.all(arg.map((id) => collapseOne(id)))
+			return
+		}
+		void collapseOne(arg)
 	}
 
 	function expansionToggle(): void
@@ -1030,8 +1129,8 @@ export function createTable(
 		}
 		const list = Array.isArray(arg) ? arg : [arg]
 		for (const id of list) {
-			if (expandedIds.has(id)) collapseOne(id)
-			else expandOne(id)
+			if (expandedIds.has(id)) void collapseOne(id)
+			else void expandOne(id)
 		}
 	}
 
@@ -1334,14 +1433,21 @@ export function createTable(
 			return
 		}
 		destroyed = true
-		// Reset any expanded rows synchronously.
+		// Cancel any in-flight expand/collapse transitions, then reset
+		// expanded rows synchronously.
+		for (const cancel of expansionTransitions.values()) cancel()
+		expansionTransitions.clear()
 		for (const id of Array.from(expandedIds)) {
 			const row = findRowById(id)
 			if (row) {
 				row.removeAttribute(TABLE_EXPANDED_ATTR)
 				const detail = findDetailRow(row)
 				const panel = detail ? panelOf(detail) : null
-				if (panel) panel.setAttribute('hidden', '')
+				if (panel) {
+					panel.removeAttribute('data-collapsing')
+					panel.style.height = ''
+					panel.setAttribute('hidden', '')
+				}
 			}
 		}
 		expandedIds.clear()
