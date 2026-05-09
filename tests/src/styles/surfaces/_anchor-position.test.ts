@@ -115,16 +115,17 @@ describe('anchor-position — applies to every popover flavour', () => {
 	})
 })
 
-describe('anchor-position — toast (output[popover]) overrides via @layer components', () => {
-	it('an `output[popover=manual]` ends up `position: fixed` from toast component layer', () => {
+describe('anchor-position — toast (output[popover]) excluded from surface defaults', () => {
+	it('an `output[popover=manual]` keeps the toast component-layer `position: fixed`', () => {
 		const out = build('output')
 		out.setAttribute('popover', 'manual')
 		out.id = 'toast-anchor'
 		mount(out)
-		// Toast component (components/_output.scss) sets `position: fixed`
-		// + viewport-corner inset-* values; the components layer beats the
-		// surfaces layer regardless of selector specificity, so the toast
-		// wins even though the surface rule sets position-area.
+		// The surface rule scopes itself with `:not(output)` so toast's
+		// component-layer `position: fixed` resolves cleanly. Without the
+		// scope, the surface `[popover] { position: absolute }` would
+		// win because surfaces layer beats components in our cascade
+		// order (theme < base < elements < components < surfaces).
 		expect(style(out, 'position').trim()).toBe('fixed')
 	})
 })

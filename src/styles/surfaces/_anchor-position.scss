@@ -188,39 +188,58 @@
 	// fixed` + viewport corner insets via the components-layer rule — that
 	// rule wins because @layer components beats @layer surfaces.
 	// --------------------------------------------------------------------------
-	[popover] {
+	// `:not(output)` scopes the surface defaults to anchor-anchored
+	// popovers and tooltips. Toasts (`<output popover>`) need viewport-
+	// fixed corner placement, so their component-layer rule sets
+	// `position: fixed` + explicit insets — and our cascade order
+	// (theme < base < elements < components < surfaces < modifiers <
+	// utilities) means the SURFACES layer wins over components when
+	// selectors collide. Excluding `output` here lets the toast
+	// component rule resolve cleanly without requiring `!important`
+	// or layer reshuffling.
+	[popover]:not(output) {
+		// Take the panel out of normal flow. Top-layer popovers default
+		// to `position: fixed` (pinned to viewport coordinates), which
+		// means scrolling a nested ancestor doesn't relayout the popover.
+		// `position: absolute` puts the popover's layout in its containing
+		// block's coordinate space — which lets the browser re-evaluate
+		// `position-try-fallbacks` when the anchor's surroundings change.
+		// Mailbox's `_dropdown.scss` uses `position: absolute` for the
+		// same reason; their `_mixins.scss native()` mixin emits it on
+		// every popover/tooltip placement class.
+		position: absolute;
+		inset: auto;
+		margin: 0;
+		margin-block: var(--set-anchor-gap);
+
 		position-area: var(--set-anchor-position-area);
 		position-try-fallbacks: var(--set-anchor-position-try-fallbacks);
 		position-try-order: var(--set-anchor-position-try-order);
 		align-self: start;
 		justify-self: anchor-center;
-		// Reset top-layer defaults — the browser's auto-position would
-		// otherwise center the popover. Logical-axis margin keeps RTL flowing.
-		margin: 0;
-		margin-block: var(--set-anchor-gap);
 
 		// `anchors-visible` ties the popover's visibility to the trigger's
-		// visibility — when the anchor scrolls offscreen (e.g. inside a
-		// scrolling container), the popover hides too. Without this, a
-		// dropdown left open in a scrolled list would float untethered at
-		// its computed position, pointing at nothing.
+		// visibility — when the anchor scrolls offscreen, the popover
+		// hides too. Without this, a dropdown left open in a scrolled
+		// list would float untethered, pointing at nothing.
 		position-visibility: anchors-visible;
 
 		// Demanded space — fixed cap, not viewport-relative. This is the
-		// other half of the dynamic flip-block recipe: the browser uses
-		// `max-block-size` as the popover's demanded size when evaluating
-		// `position-try-fallbacks`. Mailbox uses a fixed row-count cap
-		// (~180 px) for dropdowns; we use a generic 18 rem default.
-		// Consumers tighten the cap per-host (e.g. for select-style menus
+		// load-bearing half of the dynamic flip-block recipe: the browser
+		// uses `max-block-size` as the popover's demanded size when
+		// evaluating `position-try-fallbacks`. Mailbox uses a fixed
+		// row-count cap (~180 px) for dropdowns; we use a generic 18 rem
+		// default. Consumers tighten per-host (e.g. for select-style menus
 		// with known row counts), or override to viewport-relative for
 		// big-content popovers:
 		//   #my-popover { max-block-size: calc(100dvh - 2rem); }
 		max-block-size: var(--set-anchor-max-block-size);
 		max-inline-size: var(--set-anchor-max-inline-size);
 
-		// When the popover's natural size exceeds the cap, scroll the
-		// overflow rather than truncate it. Inline scrolling is rare
-		// for popovers but harmless to enable.
+		// Long content scrolls inside the popover (overscroll-contain
+		// stops scroll-chaining to the document when the menu hits its
+		// bounds). Mailbox's `_dropdown.scss` uses the same pair.
 		overflow: auto;
+		overscroll-behavior: contain;
 	}
 }
