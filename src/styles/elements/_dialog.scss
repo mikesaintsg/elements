@@ -50,7 +50,10 @@
 		--set-dialog-font-size: var(--set-size-font-size, var(--text-base));
 		--set-dialog-line-height: var(--leading-normal);
 		--set-dialog-max-inline-size: min(90vw, calc(var(--spacing) * 120));
-		--set-dialog-max-block-size: 85vh;
+		--set-dialog-max-block-size: 85dvh;
+		// Footer-action gap — tokenized so consumers can dial it for dense
+		// vs. roomy. Default matches the cross-element `.row` form gap.
+		--set-dialog-footer-gap: calc(var(--spacing) * 2);
 		--set-dialog-box-shadow:
 			0 10px 25px -5px color-mix(in srgb, black 25%, transparent),
 			0 8px 10px -6px color-mix(in srgb, black 15%, transparent);
@@ -108,14 +111,31 @@
 		}
 
 		// ----------------------------------------------------------------------
-		// Mobile padding — reduce inline + block padding on narrow viewports
-		// so the dialog content gets more horizontal breathing room. The
-		// `min(90vw, …)` max-inline-size already constrains width on mobile;
-		// here we also tighten padding so the content area isn't squeezed.
+		// Mobile padding & sizing — on narrow viewports we tighten padding so
+		// the content area isn't squeezed AND let the dialog breathe to the
+		// viewport edges (calc(100vw - 2rem)) so a 360px phone doesn't end
+		// up with a cramped 290px-wide modal. Using `dvh` keeps the
+		// max-block-size honest when the URL bar shows / hides.
 		// ----------------------------------------------------------------------
 		@media (max-width: 480px) {
+			--set-dialog-max-inline-size: calc(100vw - calc(var(--spacing) * 6));
 			--set-dialog-padding-inline: calc(var(--spacing) * 4);
 			--set-dialog-padding-block: calc(var(--spacing) * 4);
 		}
+	}
+
+	// Card-like footer inside <dialog> — actions usually live in a <footer>
+	// (or `<form method="dialog">` with a footer). The framework gives the
+	// row a sensible gap so consumers don't have to add `class="flex gap-2"`
+	// every time. On narrow viewports the row wraps cleanly so two buttons
+	// never collide; the `flex-end` justify keeps the affirmative action
+	// trailing — same convention as the platform default.
+	dialog > footer,
+	dialog > form > footer {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: var(--set-dialog-footer-gap);
+		margin: 0;
 	}
 }

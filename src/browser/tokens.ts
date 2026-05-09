@@ -267,6 +267,7 @@ export const tokens = {
 		lineHeight: '--set-dialog-line-height',
 		maxInlineSize: '--set-dialog-max-inline-size',
 		maxBlockSize: '--set-dialog-max-block-size',
+		footerGap: '--set-dialog-footer-gap',
 		boxShadow: '--set-dialog-box-shadow',
 		transitionDuration: '--set-dialog-transition-duration',
 	},
@@ -317,7 +318,7 @@ export const tokens = {
 	// Component tokens declared on bare `<form>` (form stack).
 	form: {
 		gap: '--set-form-gap',
-		inlineGap: '--set-form-inline-gap',
+		rowGap: '--set-form-row-gap',
 		labelGap: '--set-form-label-gap',
 		transitionDuration: '--set-form-transition-duration',
 	},

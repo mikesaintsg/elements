@@ -18,8 +18,8 @@ const filter = ref('')
 				<code>&lt;div&gt;</code>s, no <code>.form-group</code> classes.
 			</p>
 			<p class="mt-2 text-sm leading-6 text-slate-600">
-				The <code>.inline</code> modifier flips the form to a horizontal flex row for filter bars
-				and quick-input scenarios.
+				The <code>.row</code> modifier flips the form to a horizontal flex row for filter bars and
+				quick-input scenarios.
 			</p>
 		</header>
 
@@ -51,14 +51,14 @@ const filter = ref('')
 			</form>
 		</section>
 
-		<section id="inline" class="space-y-3">
-			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Inline form</h2>
+		<section id="row" class="space-y-3">
+			<h2 class="text-xl font-semibold tracking-tight text-slate-900">Row form</h2>
 			<p class="text-sm leading-6 text-slate-600">
-				<code>&lt;form class="inline"&gt;</code> flips to a wrapping flex row. Labels stay stacked
+				<code>&lt;form class="row"&gt;</code> flips to a wrapping flex row. Labels stay stacked
 				(text on top, control below), but the label+control pairs flow horizontally. Inputs sit at
 				their intrinsic width so multiple fields fit on one row.
 			</p>
-			<form class="inline" @submit.prevent>
+			<form class="row" @submit.prevent>
 				<label for="filter-q">
 					Filter
 					<input id="filter-q" v-model="filter" type="search" placeholder="search…" />

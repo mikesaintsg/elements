@@ -12,8 +12,11 @@
 // (action), `<fieldset>` / `<legend>` (grouping).
 //
 // Variants via modifier:
-//   `<form class="inline">` → flex row; label sits beside its control on the
+//   `<form class="row">` → flex row; label sits beside its control on the
 //   same baseline. Useful for compact filter forms or inline-edit patterns.
+//   (We avoid `.inline` here because Tailwind owns that class as the
+//   `display: inline` utility — utilities sit in a later cascade layer than
+//   components, so a `.inline` modifier would lose every cascade fight.)
 //
 // Token declarations:
 //   Tokens declared on bare `<form>`. The chrome rules apply to bare `<form>`
@@ -27,7 +30,7 @@
 @layer components {
 	form {
 		--set-form-gap: calc(var(--spacing) * 4);
-		--set-form-inline-gap: calc(var(--spacing) * 3);
+		--set-form-row-gap: calc(var(--spacing) * 3);
 		--set-form-label-gap: calc(var(--spacing) * 1.5);
 		--set-form-transition-duration: var(--set-transition-duration);
 
@@ -37,12 +40,15 @@
 
 		@include transition((gap var(--set-form-transition-duration)));
 
-		// .inline modifier — label + control + submit on one row.
-		&.inline {
+		// .row modifier — label + control + submit on one wrapping row. Each
+		// label keeps its column layout (text on top, control below); only the
+		// outer flex direction flips so multiple label+control pairs flow
+		// horizontally and wrap on overflow.
+		&.row {
 			flex-direction: row;
 			flex-wrap: wrap;
 			align-items: end;
-			gap: var(--set-form-inline-gap);
+			gap: var(--set-form-row-gap);
 		}
 	}
 
@@ -74,12 +80,16 @@
 		inline-size: 100%;
 	}
 
-	// .inline form: keep labels as flex-column (text-on-top), but the
+	// .row form: keep labels as flex-column (text-on-top), but the
 	// label+input pair flows inline with siblings. Don't force inputs to 100%
 	// — they should sit at their intrinsic width so multiple fields can fit
-	// on one row.
-	form.inline > label > :is(input, textarea, select),
-	form.inline > :is(input, textarea, select) {
+	// on one row, and don't let `align-items: stretch` (the column-flex
+	// default inside the label) blow them up to the label's width either.
+	form.row > label {
+		align-items: start;
+	}
+	form.row > label > :is(input, textarea, select),
+	form.row > :is(input, textarea, select) {
 		inline-size: auto;
 	}
 }

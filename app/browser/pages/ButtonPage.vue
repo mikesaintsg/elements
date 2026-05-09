@@ -148,10 +148,10 @@
 				attribute.
 			</p>
 			<!-- The framework styles bare <form> as a vertical stack and labels as
-			     flex-columns; .inline flips to a wrapping row + intrinsic-width
+			     flex-columns; .row flips to a wrapping row + intrinsic-width
 			     inputs so a single-line filter / quick-action shape composes
 			     without extra Tailwind utilities. -->
-			<form id="example-form" class="inline">
+			<form id="example-form" class="row">
 				<label for="name">
 					Name
 					<input id="name" type="text" name="name" />

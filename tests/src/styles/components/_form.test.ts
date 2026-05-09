@@ -1,6 +1,7 @@
 // ============================================================================
 //  components/_form.scss — bare <form> as a vertical stack with gap.
-//  `.inline` modifier flips to horizontal.
+//  `.row` modifier flips to horizontal. (Was `.inline` before — renamed to
+//  avoid the cascade fight with Tailwind's own `.inline` display utility.)
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
@@ -10,7 +11,7 @@ describe('form — token surface', () => {
 	it('exposes --set-form-* tokens on a bare <form>', () => {
 		const el = render('form', '')
 		expect(token(el, '--set-form-gap').trim()).not.toBe('')
-		expect(token(el, '--set-form-inline-gap').trim()).not.toBe('')
+		expect(token(el, '--set-form-row-gap').trim()).not.toBe('')
 	})
 })
 
@@ -23,15 +24,15 @@ describe('form — vertical stack by default', () => {
 	})
 })
 
-describe('form — .inline modifier', () => {
+describe('form — .row modifier', () => {
 	it('flips to a wrapping flex row', () => {
-		const el = render('form', 'inline')
+		const el = render('form', 'row')
 		expect(style(el, 'flex-direction')).toBe('row')
 		expect(style(el, 'flex-wrap')).toBe('wrap')
 	})
 
 	it('aligns items to baseline (end) so labels + inputs sit on the same line', () => {
-		const el = render('form', 'inline')
+		const el = render('form', 'row')
 		expect(style(el, 'align-items')).toBe('end')
 	})
 })

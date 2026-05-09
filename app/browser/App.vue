@@ -104,14 +104,15 @@ const goHome = (event: MouseEvent): void => {
 		@click="sidebarOpen = false"
 	/>
 
-	<!-- ── PAGE BANNER ────────────────────────────────────────────────────────
-	     Bare <header> direct child of body shell → framework `_header.scss`
-	     gives flex / gap / padding / border-bottom / bg / font-size. The
-	     translucent-blur look is a Tailwind override on top. -->
-	<header class="z-30 bg-white/85 backdrop-blur">
+	<!-- ── MOBILE PAGE BANNER ────────────────────────────────────────────────
+	     Bare <header> in body shell → framework `_header.scss` paints flex /
+	     gap / padding / border-bottom / bg / font-size. We hide it on lg+
+	     because the sidebar carries the brand + filter on desktop (the
+	     mailbox layout pattern: chrome lives in the rail, not in a banner). -->
+	<header class="z-30 bg-white/85 backdrop-blur lg:hidden">
 		<button
 			type="button"
-			class="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+			class="rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
 			aria-label="Open navigation"
 			@click="sidebarOpen = true"
 		>
@@ -123,37 +124,15 @@ const goHome = (event: MouseEvent): void => {
 			@click="goHome"
 			>elements</a
 		>
-		<!--
-		  Global filter sits in the page banner. The framework styles bare
-		  <search> as a flex row; the <input> grows to fill via flex: 1.
-		  This is the "ship-the-search-as-the-page-banner" pattern from
-		  Tailwind UI / Vue docs / Material Docs.
-		-->
-		<search class="ml-auto max-w-md flex-1 lg:max-w-sm">
-			<input
-				id="sidebar-filter"
-				v-model="filterQuery"
-				type="search"
-				placeholder="Filter pages…"
-				aria-label="Filter pages"
-				autocomplete="off"
-			/>
-			<small class="-mt-1 text-xs text-slate-500"
-				>Press
-				<kbd
-					class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-[10px] text-slate-600"
-					>/</kbd
-				>
-				to focus</small
-			>
-		</search>
 	</header>
 
 	<!-- ── PRIMARY NAVIGATION RAIL ────────────────────────────────────────────
 	     Bare <nav aria-label="Primary"> direct child of body shell → framework
 	     `_nav.scss` paints the rail chrome (16rem inline-size, padding,
-	     border-inline-end, scroll, flex column with gap). On mobile, Tailwind
-	     turns it into a slide-in drawer via fixed positioning + transform. -->
+	     border-inline-end, scroll, flex column with gap). Inside the rail we
+	     stack: a header (brand + close on mobile), a <search> filter, the
+	     filter-focus hint, and the route list. On mobile, Tailwind turns the
+	     whole rail into a slide-in drawer via fixed positioning + transform. -->
 	<nav
 		id="sidebar"
 		aria-label="Primary"
@@ -163,14 +142,44 @@ const goHome = (event: MouseEvent): void => {
 			sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
 		]"
 	>
-		<button
-			type="button"
-			class="self-end rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
-			aria-label="Close navigation"
-			@click="sidebarOpen = false"
+		<header class="!flex items-center justify-between !p-0 !border-0 !bg-transparent">
+			<a
+				href="#/home"
+				class="text-base font-semibold tracking-tight text-slate-900 no-underline hover:text-primary"
+				@click="goHome"
+				>elements</a
+			>
+			<button
+				type="button"
+				class="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+				aria-label="Close navigation"
+				@click="sidebarOpen = false"
+			>
+				Close
+			</button>
+		</header>
+
+		<!-- <search> is the HTML5 landmark for filter / search inputs. The
+		     framework's `_search.scss` paints the bare element as a flex row;
+		     the <input> already styles itself per `_input.scss`. -->
+		<search>
+			<input
+				id="sidebar-filter"
+				v-model="filterQuery"
+				type="search"
+				placeholder="Filter pages…"
+				aria-label="Filter pages"
+				autocomplete="off"
+			/>
+		</search>
+		<small class="-mt-1 text-xs text-slate-500"
+			>Press
+			<kbd
+				class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-[10px] text-slate-600"
+				>/</kbd
+			>
+			to focus</small
 		>
-			Close
-		</button>
 
 		<SiteNav :routes="filteredRoutes" @navigate="sidebarOpen = false" />
 

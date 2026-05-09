@@ -125,12 +125,12 @@ const optimum = ref(0.7)
 				<button type="submit" class="primary">Send</button>
 			</form>
 
-			<h3 class="mt-6 text-base font-semibold tracking-tight text-slate-900">Inline form</h3>
+			<h3 class="mt-6 text-base font-semibold tracking-tight text-slate-900">Row form</h3>
 			<p class="text-sm text-slate-600">
-				<code>&lt;form class="inline"&gt;</code> flips to a horizontal flex row — useful for a
+				<code>&lt;form class="row"&gt;</code> flips to a horizontal flex row — useful for a
 				single-line filter or quick-action input.
 			</p>
-			<form class="inline" @submit.prevent>
+			<form class="row" @submit.prevent>
 				<label for="filter-q">
 					Filter
 					<input id="filter-q" type="search" placeholder="search…" />
