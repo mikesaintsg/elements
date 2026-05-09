@@ -1255,6 +1255,13 @@ export interface CreateTableOptions {
 		readonly mandate?: boolean
 		/** Direction on first click. Default `'asc'`. */
 		readonly order?: 'asc' | 'desc'
+		/**
+		 * Reorder `<tbody>` rows in place when sort state changes.
+		 * Default `true`. Set `false` for server-paged datasets where
+		 * the consumer refetches in response to the
+		 * `elements:table:sort` event.
+		 */
+		readonly auto?: boolean
 	}
 	readonly expansion?: {
 		/** Allow multiple rows expanded simultaneously. Default `true`. */

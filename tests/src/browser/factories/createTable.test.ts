@@ -83,6 +83,147 @@ describe('createTable', () => {
 		expect(sortRecorder.count).toBe(3)
 	})
 
+	it('sortable headers seed `aria-sort="none"` and `tabindex="0"` so AT users see them as sortable', () => {
+		const table = buildTable()
+		createFactoryFixture(() =>
+			createTable(table, {
+				headers: ['Name', 'Age'],
+				rows: [['a', '1']],
+				columns: [
+					{ key: 'name', sortable: true },
+					{ key: 'age' }, // not sortable
+				],
+			}),
+		)
+		const nameTh = table.querySelector<HTMLTableCellElement>('thead th[data-key="name"]')
+		const ageTh = table.querySelector<HTMLTableCellElement>('thead th[data-key="age"]')
+		expect(nameTh?.getAttribute('aria-sort')).toBe('none')
+		expect(nameTh?.getAttribute('tabindex')).toBe('0')
+		// Non-sortable columns get neither attribute.
+		expect(ageTh?.hasAttribute('aria-sort')).toBe(false)
+		expect(ageTh?.hasAttribute('tabindex')).toBe(false)
+	})
+
+	it('clicking a sortable column header cycles sort direction', () => {
+		const table = buildTable()
+		const [api] = createFactoryFixture(() =>
+			createTable(table, {
+				headers: ['Name'],
+				rows: [['a']],
+				columns: [{ key: 'name', sortable: true }],
+			}),
+		)
+		const head = table.querySelector<HTMLTableCellElement>('thead th[data-key="name"]')
+		expect(head).toBeTruthy()
+		head!.click()
+		expect(api.sort.direction('name')).toBe('asc')
+		expect(head!.getAttribute('aria-sort')).toBe('ascending')
+		head!.click()
+		expect(api.sort.direction('name')).toBe('desc')
+		head!.click()
+		expect(api.sort.direction('name')).toBe('none')
+	})
+
+	it('Enter / Space on a focused sortable header drives the same cycle as click', () => {
+		const table = buildTable()
+		const [api] = createFactoryFixture(() =>
+			createTable(table, {
+				headers: ['Name'],
+				rows: [['a']],
+				columns: [{ key: 'name', sortable: true }],
+			}),
+		)
+		const head = table.querySelector<HTMLTableCellElement>('thead th[data-key="name"]')!
+		head.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+		expect(api.sort.direction('name')).toBe('asc')
+		head.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
+		expect(api.sort.direction('name')).toBe('desc')
+	})
+
+	it('sort.auto (default) physically reorders <tbody> rows on sort', () => {
+		const table = buildTable()
+		const [api] = createFactoryFixture(() =>
+			createTable(table, {
+				headers: ['Fruit', 'Quantity'],
+				rows: [
+					['Banana', '5'],
+					['Apple', '12'],
+					['Cherry', '20'],
+				],
+				columns: [
+					{ key: 'fruit', sortable: true },
+					{ key: 'qty', sortable: true },
+				],
+			}),
+		)
+		// Initial: insertion order
+		const before = [...table.querySelectorAll('tbody tr')].map((r) => r.cells[0]!.textContent)
+		expect(before).toEqual(['Banana', 'Apple', 'Cherry'])
+		// Sort fruit asc (alphabetical)
+		api.sort.toggle('fruit')
+		const afterAsc = [...table.querySelectorAll('tbody tr')].map((r) => r.cells[0]!.textContent)
+		expect(afterAsc).toEqual(['Apple', 'Banana', 'Cherry'])
+		// Sort fruit desc
+		api.sort.toggle('fruit')
+		const afterDesc = [...table.querySelectorAll('tbody tr')].map((r) => r.cells[0]!.textContent)
+		expect(afterDesc).toEqual(['Cherry', 'Banana', 'Apple'])
+	})
+
+	it('sort.auto comparator sorts numeric columns numerically (not lexicographically)', () => {
+		const table = buildTable()
+		const [api] = createFactoryFixture(() =>
+			createTable(table, {
+				headers: ['Fruit', 'Quantity'],
+				rows: [
+					['Apple', '12'],
+					['Banana', '5'],
+					['Cherry', '20'],
+				],
+				columns: [
+					{ key: 'fruit', sortable: true },
+					{ key: 'qty', sortable: true },
+				],
+			}),
+		)
+		api.sort.toggle('qty')
+		// Lexicographic would give ['12', '20', '5']; numeric gives ['5', '12', '20'].
+		const after = [...table.querySelectorAll('tbody tr')].map((r) => r.cells[1]!.textContent)
+		expect(after).toEqual(['5', '12', '20'])
+	})
+
+	it('sort.auto: false keeps row order even when sort state changes', () => {
+		const table = buildTable()
+		const [api] = createFactoryFixture(() =>
+			createTable(table, {
+				headers: ['Fruit'],
+				rows: [['Banana'], ['Apple'], ['Cherry']],
+				columns: [{ key: 'fruit', sortable: true }],
+				sort: { auto: false },
+			}),
+		)
+		api.sort.toggle('fruit')
+		// sort state updated...
+		expect(api.sort.direction('fruit')).toBe('asc')
+		// ...but row order untouched (consumer drives reorder).
+		const rows = [...table.querySelectorAll('tbody tr')].map((r) => r.cells[0]!.textContent)
+		expect(rows).toEqual(['Banana', 'Apple', 'Cherry'])
+	})
+
+	it('clicking a non-sortable header does NOT toggle sort', () => {
+		const table = buildTable()
+		const [api] = createFactoryFixture(() =>
+			createTable(table, {
+				headers: ['Name', 'Age'],
+				rows: [['a', '1']],
+				columns: [{ key: 'name', sortable: true }, { key: 'age' }],
+			}),
+		)
+		const ageTh = table.querySelector<HTMLTableCellElement>('thead th[data-key="age"]')!
+		ageTh.click()
+		expect(api.sort.direction('age')).toBe('none')
+		expect(api.sort.columns.value.length).toBe(0)
+	})
+
 	it('selection.select toggles aria-selected on rows by id', () => {
 		const table = buildTable()
 		const [api] = createFactoryFixture(() => {

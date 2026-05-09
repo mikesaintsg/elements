@@ -114,6 +114,11 @@ export function createTable(
 	const sortMultiple = options.sort?.multiple ?? false
 	const sortMandate = options.sort?.mandate ?? false
 	const sortOrder: 'asc' | 'desc' = options.sort?.order ?? 'asc'
+	// `sort.auto` (default: true) reorders the `<tbody>` rows in place
+	// whenever sort state changes. Consumers driving sort against a
+	// remote / server-paged dataset opt out (`sort.auto: false`) and
+	// listen to the `elements:table:sort` event to refetch.
+	const sortAuto = options.sort?.auto ?? true
 
 	const expansionMultiple = options.expansion?.multiple ?? true
 	const expansionAnimate = options.expansion?.animate ?? false
@@ -328,13 +333,29 @@ export function createTable(
 		}
 		if (options.footer) writeTableFooterRow(el, options.footer)
 		// Tag header cells with data-key from schema (in column order) so sort indicators apply.
+		// For sortable columns, also seed the click + keyboard affordance:
+		//   - `aria-sort="none"` advertises the column as sortable to AT users
+		//     and gives consumer CSS a hook for sort indicators (▲▼ caret).
+		//   - `tabindex="0"` makes the cell keyboard-focusable so Enter / Space
+		//     can drive the same sort cycle as clicking.
+		// The actual click + keydown handlers live on the `<table>` itself
+		// (delegated) and are wired further down — see `onSortClick` /
+		// `onSortKeydown`.
 		if (schema.length > 0) {
 			const head = el.tHead?.rows[0]
 			if (head) {
 				for (let i = 0; i < schema.length && i < head.cells.length; i++) {
 					const col = schema[i]
-					if (col && !head.cells[i]?.dataset.key) {
-						head.cells[i]!.dataset.key = col.key
+					const cell = head.cells[i]
+					if (!col || !cell) continue
+					if (!cell.dataset.key) cell.dataset.key = col.key
+					if (col.sortable === true) {
+						if (!cell.hasAttribute(TABLE_ARIA_SORT)) {
+							cell.setAttribute(TABLE_ARIA_SORT, 'none')
+						}
+						if (!cell.hasAttribute('tabindex')) {
+							cell.setAttribute('tabindex', '0')
+						}
 					}
 				}
 			}
@@ -734,6 +755,51 @@ export function createTable(
 		return idx < 0 ? -1 : idx
 	}
 
+	// Physically reorder `<tbody>` rows to match the active sort state.
+	// Only runs when `sort.auto: true` (default). Works on the rendered
+	// DOM rather than re-rendering from a data array — keeps existing
+	// row references / event listeners intact.
+	const applySortToDOM = (): void => {
+		if (!sortAuto) return
+		const el = table()
+		if (!el) return
+		const tbody = el.tBodies[0]
+		if (!tbody) return
+		if (sortKeys.length === 0) return // No sort active — leave rows as-is.
+
+		// Map column key → cell index in the row (look up once per pass).
+		const head = el.tHead?.rows[0]
+		if (!head) return
+		const indexByKey = new Map<string, number>()
+		for (let i = 0; i < head.cells.length; i++) {
+			const key = head.cells[i]?.dataset.key
+			if (key) indexByKey.set(key, i)
+		}
+
+		// Capture current order with stable ordinal so equal keys keep
+		// their relative position (a stable sort across multiple keys).
+		const entries = Array.from(tbody.rows).map((row, ordinal) => ({ row, ordinal }))
+
+		entries.sort((a, b) => {
+			for (const key of sortKeys) {
+				const direction = sortDirection.get(key)
+				if (!direction) continue
+				const cellIndex = indexByKey.get(key)
+				if (cellIndex === undefined) continue
+				const av = a.row.cells[cellIndex]?.textContent ?? ''
+				const bv = b.row.cells[cellIndex]?.textContent ?? ''
+				const cmp = compareCellValues(av, bv)
+				if (cmp !== 0) return direction === 'asc' ? cmp : -cmp
+			}
+			return a.ordinal - b.ordinal
+		})
+
+		// Re-append rows in sorted order. Because each row is already in
+		// `tbody`, `appendChild` MOVES rather than clones — no listener
+		// detachment, no row id churn.
+		for (const { row } of entries) tbody.appendChild(row)
+	}
+
 	const sortClear = (): void => {
 		if (sortDirection.size === 0 && sortKeys.length === 0) return
 		sortDirection.clear()
@@ -777,6 +843,7 @@ export function createTable(
 			}
 		}
 		recomputeSortColumns()
+		applySortToDOM()
 		emitSort()
 		emitChange('sort', 'update')
 	}
@@ -1290,6 +1357,38 @@ export function createTable(
 		if (focusDomain.move(direction)) event.preventDefault()
 	}
 
+	// ── Sort click / keyboard handlers ────────────────────────────────────
+	// Delegated on the `<table>` element so consumers don't need to wire
+	// per-header listeners. A click on a `thead th[data-key]` whose schema
+	// has `sortable: true` cycles `none → asc → desc → none` (or
+	// `none → asc ↔ desc` when `sort.mandate: true`). Same effect on
+	// Enter / Space when the header has focus.
+	const sortableHeaderFor = (target: EventTarget | null): HTMLTableCellElement | null => {
+		if (!(target instanceof Element)) return null
+		const th = target.closest<HTMLTableCellElement>('thead th[data-key]')
+		if (!th) return null
+		if (th.closest('table') !== element) return null
+		const key = th.dataset.key
+		if (!key) return null
+		const col = schemaByKey.get(key)
+		return col?.sortable === true ? th : null
+	}
+
+	const onSortClick = (event: Event): void => {
+		const th = sortableHeaderFor(event.target)
+		if (!th || !th.dataset.key) return
+		sortToggle(th.dataset.key)
+	}
+
+	const onSortKeydown = (event: Event): void => {
+		if (!(event instanceof KeyboardEvent)) return
+		if (event.key !== 'Enter' && event.key !== ' ') return
+		const th = sortableHeaderFor(event.target)
+		if (!th || !th.dataset.key) return
+		event.preventDefault()
+		sortToggle(th.dataset.key)
+	}
+
 	// ── Selection click handler (shift / ctrl / click-away) ──────────────
 	let selectionAnchor: string | null = null
 
@@ -1457,6 +1556,8 @@ export function createTable(
 			element.removeEventListener('pointerdown', onSelectionPointerDown)
 			document.removeEventListener('pointerdown', onDocumentSelectionDown, true)
 		}
+		element.removeEventListener('click', onSortClick)
+		element.removeEventListener('keydown', onSortKeydown)
 		selectionAnchor = null
 		offBound()
 		scope.stop()
@@ -1497,6 +1598,11 @@ export function createTable(
 		element.addEventListener('pointerdown', onSelectionPointerDown)
 		document.addEventListener('pointerdown', onDocumentSelectionDown, true)
 	}
+	// Sort delegation runs unconditionally — `sortableHeaderFor()` no-ops
+	// for non-sortable headers, so this costs nothing on tables that don't
+	// declare any `sortable: true` columns.
+	element.addEventListener('click', onSortClick)
+	element.addEventListener('keydown', onSortKeydown)
 	if (options.expansion?.initial && options.expansion.initial.length > 0) {
 		expansionSet(options.expansion.initial)
 	}
@@ -1529,4 +1635,27 @@ export function createTable(
 function cssEscape(value: string): string {
 	if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value)
 	return value.replace(/(["\\\][])/g, '\\$1')
+}
+
+/**
+ * Smart-compare two cell text values. Numeric-looking strings are
+ * compared numerically; otherwise we fall back to a locale-aware
+ * collator (`numeric: true` so "row 9" sorts before "row 10"; case
+ * insensitive so "B" doesn't always trail "a"). Returns `<0`, `0`,
+ * or `>0` per `Array.sort` convention.
+ */
+const sortCollator =
+	typeof Intl !== 'undefined'
+		? new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+		: null
+function compareCellValues(a: string, b: string): number {
+	const at = a.trim()
+	const bt = b.trim()
+	const an = Number(at)
+	const bn = Number(bt)
+	if (at !== '' && bt !== '' && Number.isFinite(an) && Number.isFinite(bn)) {
+		return an - bn
+	}
+	if (sortCollator) return sortCollator.compare(at, bt)
+	return at < bt ? -1 : at > bt ? 1 : 0
 }

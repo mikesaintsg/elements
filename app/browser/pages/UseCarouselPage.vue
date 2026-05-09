@@ -58,33 +58,26 @@ const logged = useCarousel(logRef, {
 			<p class="showcase-caption">
 				Hover to pause, leave to resume. Arrow keys (when focused) and touch swipes also navigate.
 			</p>
-			<div
+			<section
 				ref="carouselRef"
-				class="carousel"
+				role="region"
+				aria-roledescription="carousel"
 				tabindex="0"
-				style="border: 1px solid var(--color-border, #ddd); border-radius: 0.5rem; overflow: hidden"
+				class="showcase-carousel"
 			>
-				<div class="carousel-inner" style="block-size: 12rem">
-					<article
+				<ol role="list">
+					<li
 						v-for="(s, i) in slides"
 						:key="s.title"
-						class="carousel-item"
+						role="listitem"
 						:class="[s.variant, { active: i === car.index.value }]"
-						:style="{
-							display: i === car.index.value ? 'flex' : 'none',
-							alignItems: 'center',
-							justifyContent: 'center',
-							blockSize: '100%',
-							padding: '2rem',
-						}"
+						:aria-hidden="i === car.index.value ? 'false' : 'true'"
 					>
-						<div>
-							<h3>{{ s.title }}</h3>
-							<p>{{ s.text }}</p>
-						</div>
-					</article>
-				</div>
-			</div>
+						<h3>{{ s.title }}</h3>
+						<p>{{ s.text }}</p>
+					</li>
+				</ol>
+			</section>
 			<div class="showcase-row">
 				<button type="button" class="primary outline small" @click="car.prev()">prev</button>
 				<button type="button" class="primary outline small" @click="car.next()">next</button>
@@ -103,29 +96,25 @@ const logged = useCarousel(logRef, {
 				<code>slide</code> fires before the transition (cancelable). <code>change</code> fires
 				after. <code>pause</code> / <code>resume</code> fire only via their named methods.
 			</p>
-			<div
+			<section
 				ref="logRef"
-				class="carousel"
+				role="region"
+				aria-roledescription="carousel"
 				tabindex="0"
-				style="border: 1px solid var(--color-border, #ddd); border-radius: 0.5rem; overflow: hidden"
+				class="showcase-carousel showcase-carousel-compact"
 			>
-				<div class="carousel-inner" style="block-size: 8rem">
-					<article
+				<ol role="list">
+					<li
 						v-for="(s, i) in slides"
 						:key="s.title"
-						class="carousel-item"
+						role="listitem"
 						:class="[s.variant, { active: i === logged.index.value }]"
-						:style="{
-							display: i === logged.index.value ? 'flex' : 'none',
-							alignItems: 'center',
-							justifyContent: 'center',
-							blockSize: '100%',
-						}"
+						:aria-hidden="i === logged.index.value ? 'false' : 'true'"
 					>
 						<strong>{{ s.title }}</strong>
-					</article>
-				</div>
-			</div>
+					</li>
+				</ol>
+			</section>
 			<div class="showcase-row">
 				<button type="button" class="small" @click="logged.prev()">prev()</button>
 				<button type="button" class="small" @click="logged.next()">next()</button>
