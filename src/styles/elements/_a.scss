@@ -34,7 +34,15 @@
 		// ----------------------------------------------------------------------
 		// Element-scoped tokens — fallback chains let any modifier override.
 		// ----------------------------------------------------------------------
-		--set-a-color: var(--set-style-color, var(--set-variant-background-color, currentColor));
+		// Bare <a> defaults to the primary variant color so links read as
+		// links — matches Bootstrap's `--bs-link-color` convention and the
+		// mailbox showcase. Authors who want anchors that blend into body
+		// copy can override with `currentColor` per host. Style and variant
+		// modifiers still take precedence via the cascade.
+		--set-a-color: var(
+			--set-style-color,
+			var(--set-variant-background-color, var(--color-primary))
+		);
 		--set-a-background-color: var(--set-style-background-color, transparent);
 		--set-a-border-color: var(--set-style-border-color, transparent);
 		--set-a-border-width: var(--set-style-border-width, 0);

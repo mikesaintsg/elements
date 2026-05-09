@@ -11,7 +11,16 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { colorEqual, mount, pixels, render, rgba, style, token } from '../../../setupStyles'
+import {
+	colorEqual,
+	mount,
+	pixels,
+	render,
+	rgba,
+	rootToken,
+	style,
+	token,
+} from '../../../setupStyles'
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Bare-anchor baseline
@@ -45,14 +54,21 @@ describe('a — bare baseline', () => {
 		expect(bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)').toBe(true)
 	})
 
-	it('inherits color from its parent (no variant context)', () => {
+	it('paints the primary variant color by default (Bootstrap link-color convention)', () => {
+		// Bare `<a>` falls back to `--color-primary` so links read as
+		// links — matches Bootstrap's `--bs-link-color` and the mailbox
+		// showcase. Authors who want anchors to blend into body copy
+		// override per-host with `color: currentColor` (or `inherit`).
+		// The test asserts the bare anchor IGNORES parent color in favor
+		// of the framework primary, even when the parent sets a color.
 		const parent = document.createElement('div')
 		parent.style.color = 'rgb(20, 200, 50)'
 		const a = document.createElement('a')
 		a.href = '#'
 		parent.appendChild(a)
 		mount(parent)
-		expect(style(a, 'color')).toBe('rgb(20, 200, 50)')
+		const primary = rootToken('color-primary')
+		expect(colorEqual(style(a, 'color'), primary)).toBe(true)
 	})
 })
 

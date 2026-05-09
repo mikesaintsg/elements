@@ -40,18 +40,24 @@
 		// variant-background-color → currentColor).
 		// Color cascade: a `.{style}` modifier wins via `--set-style-color`;
 		// otherwise a variant tints to its background-color (so a colored
-		// heading reads as the variant); otherwise the strong-text token
-		// from the active theme (slate-950 light / white dark). We do NOT
-		// use `currentColor` as the final fallback because Chromium has a
-		// resolution quirk where `currentColor` inside a nested var()
-		// chain on the `color` property resolves to the cascaded value's
-		// origin element, not the consuming element — that breaks scoped
-		// theme switching. `--color-text-strong` always resolves to a
-		// concrete color (set on `:root` for light, overridden under
-		// `[data-theme="dark"]`), so the chain has no circular issue.
+		// heading reads as the variant); otherwise headings render at the
+		// body-text color. We deliberately fall back to `--color-text`
+		// rather than `--color-text-strong` to match the Bootstrap / mailbox
+		// convention — headings INHERIT the body's tone so the page reads
+		// as a coherent text mass instead of pure-black / pure-white
+		// headings popping out of soft body copy. Authors who want a
+		// "shouty" heading opt in via `<strong>` or a `.text-emphasis`
+		// utility. We avoid `currentColor` as the final fallback because
+		// Chromium has a resolution quirk where `currentColor` inside a
+		// nested var() chain on the `color` property resolves to the
+		// cascaded value's origin element, not the consuming element —
+		// that breaks scoped theme switching. `--color-text` always
+		// resolves to a concrete color (set on `:root` for light,
+		// overridden under `[data-theme="dark"]`), so the chain has no
+		// circular issue.
 		--set-heading-color: var(
 			--set-style-color,
-			var(--set-variant-background-color, var(--color-text-strong))
+			var(--set-variant-background-color, var(--color-text))
 		);
 		--set-heading-font-weight: 600;
 		--set-heading-line-height: 1.2;
