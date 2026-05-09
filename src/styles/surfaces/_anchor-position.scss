@@ -54,6 +54,39 @@
 //   - The gap between anchor and popover is `margin-block` painted on the
 //     popover. We use logical-axis margin so RTL / vertical writing modes
 //     resolve correctly.
+//
+// What's CSS-handled vs. JS-handled (a real Chromium limitation):
+//   The flip side of the recipe is committed at OPEN TIME. Each fresh
+//   open re-evaluates `position-try-fallbacks` cleanly — a popover that
+//   opens near the viewport bottom flips up; close it, scroll the trigger
+//   into the middle of the viewport, re-open, and it drops down again
+//   (verified live).
+//
+//   What CSS CANNOT do: re-flip a still-open popover when its anchor
+//   scrolls inside a nested scroll container. Chromium re-evaluates
+//   `position-try-fallbacks` only when the popover's own layout changes
+//   (size, containing block) — scrolling the anchor's parent does not
+//   trigger that. We tested every CSS-only workaround we could find:
+//     - `position-try-order: most-block-size` (greedier flip)  → no help
+//     - scroll-driven animations on `[popover]` (`scroll(nearest)`) →
+//       no help: top-layer popovers' nearest scroller resolves to
+//       the viewport, not the inner scroller
+//     - scroll-driven animations on the inner scroller propagating a
+//       custom property to the popover → no help: the property changes
+//       but doesn't trigger the popover's layout invalidation
+//   Mailbox lives with the same limitation in its CSS layer; their JS
+//   composables only observe where Chromium placed the panel (to update
+//   the arrow's side class) — they don't force re-flip either.
+//
+//   The Phase 6 composable layer (`useMenu` / `usePopover` /
+//   `useTooltip`) will close this gap by listening to capture-phase
+//   `scroll` events on document and toggling a sub-pixel CSS property
+//   to force the popover's layout to re-evaluate. The single-pixel
+//   `max-block-size` toggle has been verified to trigger Chromium's
+//   `position-try-fallbacks` re-evaluation, so the JS bridge is small
+//   (one rAF-debounced listener per open popover). Until then, the
+//   in-session stickiness is the documented behaviour: open ⇒ commit ⇒
+//   live until closed.
 // ============================================================================
 
 @use '../mixins' as *;

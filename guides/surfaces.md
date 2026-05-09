@@ -264,6 +264,45 @@ All of this happens in the layout pass, before paint — there's no flicker, no 
 - `position-try-order: most-width` (or `most-height`) is rejected. It's greedier — flips the moment the opposite side has even one pixel more room — which produces the "dropdown snaps up even when there's plenty of space below" symptom that mailbox debugged out of their dropdown.
 - A separate JS Floating-UI / Floating-DOM dependency. The four primitives above cover the patterns we ship; a composable layer (Phase 6 `usePopover` / `useTooltip`) only adds keyboard nav, ARIA state writes, and arrow-side detection for tooltips — placement and boundary handling stay CSS.
 
+#### What CSS handles vs. what JS handles
+
+The flip side of the recipe runs at OPEN TIME. Each fresh open re-evaluates `position-try-fallbacks` cleanly — a popover that opens near the viewport bottom flips up; close it, scroll the trigger into the middle of the viewport, re-open, and it drops down again. Verified live: open near bottom → flipped up; close → scroll up → re-open → dropped down.
+
+What CSS CANNOT do today is **re-flip a still-open popover when its anchor scrolls inside a nested scroll container**. Chromium re-evaluates `position-try-fallbacks` only when the popover's own layout changes (size or containing block). Scrolling an anchor's parent doesn't trigger that. We exhaustively tested CSS-only workarounds:
+
+| Approach                                                                       | Result                                                                                                                   |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `position-try-order: most-block-size` (greedier flip)                          | No effect — sticky flip persists                                                                                         |
+| `animation-timeline: scroll(nearest)` on `[popover]`                           | Doesn't run — top-layer popover's nearest scroller resolves to the viewport, not the inner scroller                      |
+| `animation-timeline: scroll(self)` on `<main>` propagating a custom property   | Property changes correctly, but its presence in the popover's `max-block-size` calc doesn't trigger layout re-evaluation |
+| Animating `max-block-size` directly via scroll-driven animation on the popover | Same — animation doesn't run for top-layer hosts                                                                         |
+
+Mailbox lives with the same limitation in its CSS layer: their JS composables observe where Chromium placed the panel (to update an arrow-side class) but don't force re-flip either. The honest answer is that Chromium's anchor-positioning needs a layout invalidation hook that fires on anchor scroll — and until that lands, the gap is JS-shaped.
+
+The Phase 6 composable layer (`useMenu` / `usePopover` / `useTooltip`) closes this gap with a small recipe:
+
+```ts
+// Phase 6 sketch — not shipped yet
+function observeAnchorScroll(popover: HTMLElement): () => void {
+	let frame = 0
+	const tick = () => {
+		cancelAnimationFrame(frame)
+		frame = requestAnimationFrame(() => {
+			// Toggle max-block-size by 1 sub-pixel to force layout invalidation;
+			// Chromium re-runs position-try-fallbacks against the anchor's
+			// current position. Confirmed via manual testing that this is the
+			// minimum nudge that re-evaluates the flip.
+			const previous = popover.style.maxBlockSize
+			popover.style.maxBlockSize = previous === '' ? '99999px' : ''
+		})
+	}
+	document.addEventListener('scroll', tick, { capture: true, passive: true })
+	return () => document.removeEventListener('scroll', tick, true)
+}
+```
+
+Until Phase 6 ships, the in-session stickiness is documented behaviour: open ⇒ commit ⇒ live until closed. Closing and re-opening always re-evaluates correctly, so the practical impact is small — most dropdown / popover sessions don't span a meaningful scroll.
+
 ---
 
 ## 7. First candidates
