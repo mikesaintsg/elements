@@ -635,5 +635,7 @@ export const tokens = {
 		positionTryOrder: '--set-anchor-position-try-order',
 		positionArea: '--set-anchor-position-area',
 		viewportInset: '--set-anchor-viewport-inset',
+		maxBlockSize: '--set-anchor-max-block-size',
+		maxInlineSize: '--set-anchor-max-inline-size',
 	},
 } as const

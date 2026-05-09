@@ -129,16 +129,33 @@
 		// closed. Closing and re-opening always re-evaluates correctly.
 		--set-anchor-position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
 
-		// `position-try-order: most-width` is mailbox's popover / tooltip
-		// default. It tells the browser to prefer the side with the most
-		// inline-axis room when multiple fallbacks fit — useful when an
-		// anchor is near a viewport edge and either side technically fits
-		// the popover, but one has more room to grow. Mailbox's dropdown
-		// uses the spec-default `normal` instead because flipping a
-		// dropdown menu is more disorienting than just shrinking it; we
-		// follow the popover convention since this surface paints every
-		// popover flavour, not just dropdowns.
-		--set-anchor-position-try-order: most-width;
+		// `position-try-order` left at the spec default (`normal`).
+		// Mailbox tested both `most-width` and `most-block-size` and
+		// rejected them — they're too greedy. With `most-block-size` a
+		// dropdown anchored mid-viewport with plenty of room both ways
+		// would flip to whichever side had ONE pixel more room, instead
+		// of staying on the requested side. The spec-default `normal`
+		// walks the fallbacks in declaration order and commits to the
+		// first one that fits — the browser tries the requested side
+		// FIRST, only flips when it genuinely can't host the demanded
+		// space. (Token left in place so consumers can opt in per-host
+		// to a `most-*` ordering if their use case wants it.)
+		--set-anchor-position-try-order: normal;
+
+		// Demanded space — `max-block-size` cap. This is the OTHER half
+		// of the dynamic re-evaluation recipe (mailbox calls it the
+		// "demanded space" in `_dropdown.scss`). The browser uses this
+		// to decide whether the requested side fits: if the cap doesn't
+		// fit, `flip-block` fires; if the anchor moves (scrolls) into
+		// space where the cap once again fits the requested side, the
+		// browser unflips. Mailbox uses a fixed row-count × row-height
+		// cap (~180 px); we use the same generic `--set-anchor-max-
+		// block-size` token (default 18 rem ≈ 288 px) because we don't
+		// have a row-count concept at the framework layer. Consumers
+		// override per-host (e.g. dropdowns with custom row heights):
+		//   #my-dropdown { --set-anchor-max-block-size: 12rem; }
+		--set-anchor-max-block-size: 18rem;
+		--set-anchor-max-inline-size: 28rem;
 
 		// Default `position-area` — `block-end` = below the anchor in LTR
 		// top-to-bottom; flips automatically in vertical / RTL writing
@@ -189,32 +206,21 @@
 		// its computed position, pointing at nothing.
 		position-visibility: anchors-visible;
 
-		// Viewport-edge safety budget. The popover's max size is the
-		// smaller of (a) the consumer's own per-host max, if any, and
-		// (b) the viewport size minus a safe gap on each side. The
-		// `env(safe-area-inset-*)` fallbacks add iOS notch / Android
-		// gesture-bar clearance. With this in place a popover anchored
-		// near a viewport edge will *shrink* before overflowing — and
-		// when even the shrunk popover doesn't fit, `position-try-
-		// fallbacks` (flip-block, flip-inline) flips it to the opposite
-		// side automatically. Together they form the boundary-detection
-		// recipe: shrink → flip → shrink-after-flip.
-		max-block-size: calc(
-			100dvh - max(var(--set-anchor-viewport-inset), env(safe-area-inset-top, 0px)) - max(
-					var(--set-anchor-viewport-inset),
-					env(safe-area-inset-bottom, 0px)
-				)
-		);
-		max-inline-size: calc(
-			100dvw - max(var(--set-anchor-viewport-inset), env(safe-area-inset-left, 0px)) - max(
-					var(--set-anchor-viewport-inset),
-					env(safe-area-inset-right, 0px)
-				)
-		);
+		// Demanded space — fixed cap, not viewport-relative. This is the
+		// other half of the dynamic flip-block recipe: the browser uses
+		// `max-block-size` as the popover's demanded size when evaluating
+		// `position-try-fallbacks`. Mailbox uses a fixed row-count cap
+		// (~180 px) for dropdowns; we use a generic 18 rem default.
+		// Consumers tighten the cap per-host (e.g. for select-style menus
+		// with known row counts), or override to viewport-relative for
+		// big-content popovers:
+		//   #my-popover { max-block-size: calc(100dvh - 2rem); }
+		max-block-size: var(--set-anchor-max-block-size);
+		max-inline-size: var(--set-anchor-max-inline-size);
 
-		// When the popover's natural size exceeds the viewport budget,
-		// scroll the overflow rather than truncate it. Inline scrolling
-		// is rare for popovers but harmless to enable.
+		// When the popover's natural size exceeds the cap, scroll the
+		// overflow rather than truncate it. Inline scrolling is rare
+		// for popovers but harmless to enable.
 		overflow: auto;
 	}
 }
