@@ -2,21 +2,18 @@
 
 <template>
 	<section class="space-y-10">
-		<!--
-			This page's outer wrapper is itself an <article> — but we strip the
-			card chrome with utilities (`!block !shadow-none …`) so it acts as a
-			plain prose container. Every <article> inside (the demos below) wears
-			the bare-element card chrome by default.
-		-->
-
-		<header class="border-b border-slate-200 pb-6 !m-0 !p-0 !bg-transparent !border-0">
-			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">Card</h1>
+		<header class="border-b border-slate-200 pb-6">
+			<h1 class="text-3xl font-semibold tracking-tight text-slate-900">
+				<code class="font-mono">&lt;article&gt;</code>
+			</h1>
 			<p class="mt-3 text-base leading-7 text-slate-600">
-				The framework's flagship "element IS component" proof point. Bare
+				The HTML <em>article</em> element — "a self-contained composition... independently
+				distributable, e.g., in syndication." In this framework, bare
 				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">&lt;article&gt;</code>
-				renders as a card — no <code>.card</code> class. Variant / size / style / state modifiers
-				cascade through <code>--set-article-*</code> tokens the same way they do for
-				<code>&lt;button&gt;</code> or <code>&lt;a&gt;</code>. Direct child
+				renders as a card. The element IS the component — no
+				<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm">.card</code> class.
+				Variant / size / style / state modifiers cascade through <code>--set-article-*</code> tokens
+				the same way they do for <code>&lt;button&gt;</code> or <code>&lt;a&gt;</code>. Direct child
 				<code>&lt;header&gt;</code> and <code>&lt;footer&gt;</code> elements get card-header /
 				card-footer chrome via descendant selectors — also no classes needed.
 			</p>

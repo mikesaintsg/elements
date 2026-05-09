@@ -308,6 +308,7 @@ export const tokens = {
 	form: {
 		gap: '--set-form-gap',
 		inlineGap: '--set-form-inline-gap',
+		labelGap: '--set-form-label-gap',
 		transitionDuration: '--set-form-transition-duration',
 	},
 

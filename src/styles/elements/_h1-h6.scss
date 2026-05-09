@@ -28,7 +28,17 @@
 
 @layer elements {
 	:where(h1, h2, h3, h4, h5, h6) {
-		--set-heading-color: var(--set-variant-background-color, currentColor);
+		// Heading color cascade: prefer the active style's contrast color
+		// (`--set-style-color`, which a `.filled` modifier sets to the
+		// variant's contrast color — e.g. white on a primary-blue surface)
+		// over the variant background. Without this priority, a heading
+		// inside a `.filled` card would inherit the variant background as
+		// its color AND sit on a surface that's also the variant background,
+		// blending text into background. With this priority, filled-context
+		// headings stay readable; bare-variant headings still tint to the
+		// variant identity color (style-color is unset → falls through to
+		// variant-background-color → currentColor).
+		--set-heading-color: var(--set-style-color, var(--set-variant-background-color, currentColor));
 		--set-heading-font-weight: 600;
 		--set-heading-line-height: 1.2;
 		--set-heading-letter-spacing: -0.01em;

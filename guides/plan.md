@@ -76,6 +76,35 @@ Phase 1 (foundation), Phase 2 (form controls), Phase 3 (typography), Phase 4 (me
 | `[popover]` panel + entry/exit transition    | ✅     | [\_popover.scss](../src/styles/surfaces/_popover.scss)     |
 | Scrollbar (`scrollbar-color/-width/-gutter`) | ✅     | [\_scrollbar.scss](../src/styles/surfaces/_scrollbar.scss) |
 
+### Naming & coverage audit (2026-05-08)
+
+A second audit pass enforced the "element IS the component" rule consistently across the showcase + fixed two visual bugs.
+
+**Naming consistency** — the only page named after a _component concept_ rather than its _element_ was CardPage. Renamed to **ArticlePage** (route `/article`, title `<article> (card)`). Every component group page now follows `tag → ElementPage.vue` naming. Pages reference the spec's element name first, the common-name role parenthesized when helpful (e.g. `aside (sidebar / callout)`, `header (app bar)`, `menu (toolbar)`).
+
+**Showcase coverage** — added pages for the 8 components that didn't have a dedicated demo: AsidePage, HeaderPage, FooterPage, NavPage, SearchPage, MenuPage, FormPage, DivPage. Each page demos the element's variants in the contexts the framework styles (e.g. NavPage shows the breadcrumb opt-in via `aria-label="Breadcrumb"` alongside pagination, navbar-with-`<ul>`, and the body-shell rail).
+
+**Heading color bug fix** — `<article class="primary filled">` had a contrast collapse: card body filled with primary-blue, but headings inside still resolved `--set-heading-color` to `--set-variant-background-color` (also primary-blue) → heading text disappeared into the surface. Fix in `_h1-h6.scss`: prefer `--set-style-color` (the variant's _contrast_ color, set by `.filled`) over `--set-variant-background-color`. Bare `.primary` headings still tint to the variant identity (style-color is unset → falls through to variant-background-color); only filled-context headings flip to the contrast color.
+
+**Form spacing** — bare `<form>` now provides label-on-top stacking for every direct `<label>` child, plus full-width inputs / textareas / selects:
+
+```scss
+form > label {
+	display: flex;
+	flex-direction: column;
+	gap: var(--set-form-label-gap);
+}
+form > label > :is(input, textarea, select),
+form > :is(input, textarea, select) {
+	inline-size: 100%;
+}
+form.inline > label > :is(input, textarea, select) {
+	inline-size: auto; /* intrinsic in the inline variant */
+}
+```
+
+The flex-column structure adapts cleanly to mobile widths without viewport-specific rules — inputs at `inline-size: 100%` fit whatever parent width the form has.
+
 ### Semantic audit (2026-05-08)
 
 After Threads A + B landed, an audit caught four element-vs-spec mismatches that needed correcting:

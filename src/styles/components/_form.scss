@@ -28,6 +28,7 @@
 	form {
 		--set-form-gap: calc(var(--spacing) * 4);
 		--set-form-inline-gap: calc(var(--spacing) * 3);
+		--set-form-label-gap: calc(var(--spacing) * 1.5);
 		--set-form-transition-duration: var(--set-transition-duration);
 
 		display: flex;
@@ -43,5 +44,42 @@
 			align-items: end;
 			gap: var(--set-form-inline-gap);
 		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Label-on-top pattern.
+	//
+	// Inside a <form>, treat each <label> as a vertical stack: text on top,
+	// control underneath, with a small consistent gap. This is the common
+	// pattern almost every form uses — without this rule, the consumer would
+	// need to wrap every label+input pair in their own <div class="stack">.
+	// On mobile, this pattern collapses cleanly because each label is already
+	// a flex column.
+	//
+	// The rule scopes to direct-child <label> only so a label nested inside,
+	// e.g., a <fieldset><label> structure inherits the stack from the form
+	// without recursing into nested radio/checkbox label groupings (those
+	// usually want inline layout).
+	// --------------------------------------------------------------------------
+	form > label {
+		display: flex;
+		flex-direction: column;
+		gap: var(--set-form-label-gap);
+	}
+
+	// Inputs / textareas / selects inside a form fill the available width so
+	// the form looks like a column even on narrow viewports.
+	form > label > :is(input, textarea, select),
+	form > :is(input, textarea, select) {
+		inline-size: 100%;
+	}
+
+	// .inline form: keep labels as flex-column (text-on-top), but the
+	// label+input pair flows inline with siblings. Don't force inputs to 100%
+	// — they should sit at their intrinsic width so multiple fields can fit
+	// on one row.
+	form.inline > label > :is(input, textarea, select),
+	form.inline > :is(input, textarea, select) {
+		inline-size: auto;
 	}
 }
