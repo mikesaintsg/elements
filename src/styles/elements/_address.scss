@@ -9,6 +9,10 @@
 
 @layer elements {
 	address {
+		--set-address-margin-block-end: 1rem;
+
 		font-style: normal;
+		line-height: inherit;
+		margin-block-end: var(--set-address-margin-block-end);
 	}
 }

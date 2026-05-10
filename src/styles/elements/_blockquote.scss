@@ -17,9 +17,11 @@
 		--set-blockquote-color: var(--set-variant-background-color, currentColor);
 		--set-blockquote-bar-width: 0.25rem;
 		--set-blockquote-padding-inline: 1rem;
+		--set-blockquote-margin-block-end: 1rem;
 
 		border-inline-start: var(--set-blockquote-bar-width) solid var(--set-blockquote-color);
 		padding-inline-start: var(--set-blockquote-padding-inline);
+		margin-block-end: var(--set-blockquote-margin-block-end);
 		font-style: italic;
 	}
 }

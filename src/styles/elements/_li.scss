@@ -1,7 +1,203 @@
-// <li> – List item
-// Browser defaults: display: list-item
-// Must be a direct child of <ol>, <ul>, or <menu>
-// In <ol>, the value attribute overrides the sequential counter from that item onward
-// List marker (bullet/number) is controlled with list-style-* on the parent or the <li> itself
+// ============================================================================
+// <li> – List item.
+//
+// Browser defaults: display: list-item. Must be a direct child of <ol>, <ul>,
+// or <menu>. Tailwind v4 preflight leaves list-item alone.
+//
+// Bare `<li>` has no framework chrome — only `<li>` that is a direct child of
+// `<ul class="group">` or `<ol class="group">` picks up row chrome (padding,
+// per-row border, hover, variant tint).
+//
+// Variant tint per row
+// ---------------------------------------------------------------------------
+// `<li class="primary">` (or any other variant) consumes the shared
+// `--set-variant-background-color` token through `--color-{variant}-bg-subtle`
+// — the same subtle/emphasis/border-subtle triplet declared in `_theme.scss`
+// — so the row gets a pale tinted background, a saturated text-emphasis
+// colour, and a matching subtle border. Mirrors mailbox's
+// `.list-group-item-{color}` behaviour without a separate class per variant.
+//
+// Actionable row — <a> inside <li>
+// ---------------------------------------------------------------------------
+// When the row contains an `<a>` (or button) as its only flow child, the
+// child stretches to fill the row's padding box and the row gains hover /
+// active backgrounds. Implemented via `:has(> a)` so consumers don't add a
+// class; mailbox's `.list-group-item-action` is implicit here.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	ul.group > li,
+	ol.group > li {
+		position: relative;
+		display: block;
+		padding-inline: var(--set-group-item-padding-inline);
+		padding-block: var(--set-group-item-padding-block);
+		color: inherit;
+		text-decoration: none;
+		background-color: transparent;
+		border: var(--set-group-border-width) solid var(--set-group-border-color);
+
+		@include transition(
+			(
+				color var(--set-transition-duration),
+				background-color var(--set-transition-duration),
+				border-color var(--set-transition-duration)
+			)
+		);
+	}
+
+	// Inter-item border collapse — vertical default: top border on item N+1
+	// hides because item N already paints a bottom border.
+	ul.group > li + li,
+	ol.group > li + li {
+		border-block-start-width: 0;
+	}
+
+	// Inherit the group's radius so the first / last item's outer corners
+	// match the group's rounded corners exactly.
+	ul.group > li:first-child,
+	ol.group > li:first-child {
+		border-start-start-radius: inherit;
+		border-start-end-radius: inherit;
+	}
+
+	ul.group > li:last-child,
+	ol.group > li:last-child {
+		border-end-end-radius: inherit;
+		border-end-start-radius: inherit;
+	}
+
+	// --------------------------------------------------------------------------
+	// Actionable row — `<li>` containing a flow-child anchor / button. The
+	// `:has(> a, > button)` guard means a row with an anchor lights up; rows
+	// with bare text content stay static.
+	// --------------------------------------------------------------------------
+	ul.group > li:has(> a, > button),
+	ol.group > li:has(> a, > button) {
+		cursor: pointer;
+	}
+
+	ul.group > li:has(> a, > button):hover,
+	ul.group > li:has(> a, > button):focus-within,
+	ol.group > li:has(> a, > button):hover,
+	ol.group > li:has(> a, > button):focus-within {
+		background-color: var(--set-group-action-hover-background-color);
+	}
+
+	ul.group > li:has(> a, > button):active,
+	ol.group > li:has(> a, > button):active {
+		background-color: var(--set-group-action-active-background-color);
+	}
+
+	// The inner anchor stretches to the row's padding box and inherits color,
+	// so the entire row is the click target.
+	ul.group > li > a,
+	ul.group > li > button,
+	ol.group > li > a,
+	ol.group > li > button {
+		display: block;
+		margin: calc(var(--set-group-item-padding-block) * -1)
+			calc(var(--set-group-item-padding-inline) * -1);
+		padding-block: var(--set-group-item-padding-block);
+		padding-inline: var(--set-group-item-padding-inline);
+		color: inherit;
+		text-decoration: none;
+		background-color: transparent;
+		border: 0;
+		width: calc(100% + var(--set-group-item-padding-inline) * 2);
+		text-align: inherit;
+	}
+
+	// --------------------------------------------------------------------------
+	// Disabled row — drops to muted text and ignores pointer events. Class
+	// + ARIA-aware so consumers can express the state semantically.
+	// --------------------------------------------------------------------------
+	ul.group > li.disabled,
+	ul.group > li[aria-disabled='true'],
+	ol.group > li.disabled,
+	ol.group > li[aria-disabled='true'] {
+		color: var(--set-group-disabled-color);
+		pointer-events: none;
+	}
+
+	// --------------------------------------------------------------------------
+	// .active — current item. Uses the variant cascade so consumers can mark
+	// the active item against any variant identity (`<li class="primary
+	// active">`); bare `.active` defaults to the primary identity through
+	// `--set-variant-background-color`.
+	// --------------------------------------------------------------------------
+	ul.group > li.active,
+	ol.group > li.active,
+	ul.group > li[aria-current='true'],
+	ol.group > li[aria-current='true'] {
+		z-index: 1;
+		color: var(--set-group-active-color);
+		background-color: var(--set-group-active-background-color);
+		border-color: var(--set-group-active-background-color);
+	}
+
+	// --------------------------------------------------------------------------
+	// Variant tint per row — consumes the same `--color-{variant}-bg-subtle`
+	// triplet that powers tinted surfaces elsewhere in the framework. The
+	// `--set-variant-background-color` chain is set by the modifier classes
+	// in `modifiers/_variants.scss`; we re-route that into the row by
+	// preferring the subtle-bg colour when present. To stay readable on the
+	// tint, text shifts to the variant's text-emphasis colour.
+	//
+	// Implementation: rather than @each-ing through every variant (which the
+	// SCSS port would do), we read directly from
+	// `--color-{variant}-bg-subtle` via a single attribute selector loop in
+	// pure CSS. Each class drives its own subtle colour because the values
+	// already exist as tokens.
+	// --------------------------------------------------------------------------
+	ul.group > li.primary,
+	ol.group > li.primary {
+		background-color: var(--color-primary-bg-subtle);
+		color: var(--color-primary-text-emphasis);
+		border-color: var(--color-primary-border-subtle);
+	}
+
+	ul.group > li.secondary,
+	ol.group > li.secondary {
+		background-color: var(--color-secondary-bg-subtle);
+		color: var(--color-secondary-text-emphasis);
+		border-color: var(--color-secondary-border-subtle);
+	}
+
+	ul.group > li.tertiary,
+	ol.group > li.tertiary {
+		background-color: var(--color-tertiary-bg-subtle);
+		color: var(--color-tertiary-text-emphasis);
+		border-color: var(--color-tertiary-border-subtle);
+	}
+
+	ul.group > li.success,
+	ol.group > li.success {
+		background-color: var(--color-success-bg-subtle);
+		color: var(--color-success-text-emphasis);
+		border-color: var(--color-success-border-subtle);
+	}
+
+	ul.group > li.warning,
+	ol.group > li.warning {
+		background-color: var(--color-warning-bg-subtle);
+		color: var(--color-warning-text-emphasis);
+		border-color: var(--color-warning-border-subtle);
+	}
+
+	ul.group > li.danger,
+	ol.group > li.danger {
+		background-color: var(--color-danger-bg-subtle);
+		color: var(--color-danger-text-emphasis);
+		border-color: var(--color-danger-border-subtle);
+	}
+
+	ul.group > li.information,
+	ol.group > li.information {
+		background-color: var(--color-information-bg-subtle);
+		color: var(--color-information-text-emphasis);
+		border-color: var(--color-information-border-subtle);
+	}
+}

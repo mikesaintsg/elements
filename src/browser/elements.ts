@@ -13,6 +13,7 @@
 
 export const elements = {
 	a: 'a',
+	address: 'address',
 	audio: 'audio',
 	blockquote: 'blockquote',
 	button: 'button',
@@ -32,6 +33,7 @@ export const elements = {
 	kbd: 'kbd',
 	label: 'label',
 	legend: 'legend',
+	mark: 'mark',
 	meter: 'meter',
 	object: 'object',
 	output: 'output',
@@ -39,6 +41,8 @@ export const elements = {
 	progress: 'progress',
 	samp: 'samp',
 	select: 'select',
+	small: 'small',
+	strong: 'strong',
 	summary: 'summary',
 	table: 'table',
 	textarea: 'textarea',

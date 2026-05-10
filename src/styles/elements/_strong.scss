@@ -3,5 +3,18 @@
 // Use for genuinely important, serious, or urgent content (warnings, critical info)
 // Nesting increases the level of importance
 // Do not use for stylistic bold — use <b> or CSS font-weight for that
+//
+// Tailwind preflight ships `font-weight: bolder` on `b, strong`. The framework
+// bumps to 700 (bold) explicitly and pairs with the body-text-strong color so
+// strong terms pop slightly against muted body copy. Bootstrap / mailbox both
+// use the same "bolder" convention.
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	strong {
+		--set-strong-color: var(--color-text-strong);
+		--set-strong-font-weight: 700;
+
+		color: var(--set-strong-color);
+		font-weight: var(--set-strong-font-weight);
+	}
+}

@@ -1,5 +1,19 @@
 // <body> – Document body
 // Browser defaults: display: block; margin: 8px
 // Quirk: the 8px margin is one of the most commonly reset values in any stylesheet
+//
+// Tailwind preflight zeroes margin and provides font-family. The framework
+// additionally:
+//   - Paints the canvas + body text colors from the theme tokens so a bare
+//     <body> reads as themed without per-page background utilities.
+//   - Disables the iOS tap highlight (the grey flash that lands on every
+//     touched interactive element) — replaced by the framework's own focus
+//     ring + active states.
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	body {
+		background-color: var(--color-canvas);
+		color: var(--color-text);
+		-webkit-tap-highlight-color: transparent;
+	}
+}

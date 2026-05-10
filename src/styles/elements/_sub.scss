@@ -3,5 +3,18 @@
 // Use for chemical formulae (H₂O), mathematical subscripts, footnote markers
 // Quirk: vertical-align: sub and reduced font-size can increase the line-height of mixed lines
 //   — use line-height: 0 + position: relative to avoid this
+//
+// Tailwind preflight already sets the offset; we re-implement with
+// `position: relative + line-height: 0` to suppress the line-height bump that
+// the UA's `vertical-align: sub` causes on mixed-content lines. Bootstrap /
+// mailbox use the same recipe.
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	sub {
+		position: relative;
+		font-size: 0.75em;
+		line-height: 0;
+		vertical-align: baseline;
+		bottom: -0.25em;
+	}
+}

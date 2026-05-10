@@ -1,0 +1,56 @@
+// ============================================================================
+// spinner — rotating loading indicator.
+//
+// Markup contract: `<span role="status" class="spinner"><span class="visually-
+// hidden">Loading…</span></span>`. The `role="status"` is the semantic carrier;
+// `.spinner` is the visual primitive. Variant tinting reads through
+// `currentColor` so `<span class="spinner primary">` produces a primary-toned
+// ring without per-variant overrides.
+//
+// Architecture:
+//   1. Element-scoped `--set-spinner-*` tokens on `.spinner`.
+//   2. The ring is painted with a 3/4 border (one side transparent) plus a
+//      rotation animation — Bootstrap's canonical pattern.
+//   3. `prefers-reduced-motion` slows the animation rather than removing it
+//      (per WAI: a spinner with zero motion conveys nothing). Mailbox does
+//      the same — bumps duration from 0.75s to 1.5s.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	@keyframes spinner-rotate {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.spinner {
+		--set-spinner-size: 2em;
+		--set-spinner-border-width: 0.2em;
+		--set-spinner-color: var(--set-variant-background-color, currentColor);
+		--set-spinner-duration: 0.75s;
+
+		display: inline-block;
+		inline-size: var(--set-spinner-size);
+		block-size: var(--set-spinner-size);
+		vertical-align: -0.125em;
+		border: var(--set-spinner-border-width) solid var(--set-spinner-color);
+		border-inline-end-color: transparent;
+		border-radius: 50%;
+		animation: spinner-rotate var(--set-spinner-duration) linear infinite;
+
+		@include reduced-motion {
+			--set-spinner-duration: 1.5s;
+		}
+	}
+
+	// Size modifiers.
+	.spinner.small {
+		--set-spinner-size: 1em;
+		--set-spinner-border-width: 0.15em;
+	}
+	.spinner.large {
+		--set-spinner-size: 3em;
+	}
+}

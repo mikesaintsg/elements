@@ -1,0 +1,82 @@
+// ============================================================================
+// dot — small circular status indicator.
+//
+// Markup contract: `<span class="dot"></span>` (often paired with an
+// `aria-label` when used as a standalone status signal). Like `.badge`,
+// the class is the layout primitive — no HTML element semantically means
+// "colored circle", so `<span>` is the fallback root.
+//
+// Architecture:
+//   1. Element-scoped `--set-dot-*` tokens on `.dot`. Fill color resolves
+//      through `--set-variant-background-color` first, so layering `.success`
+//      paints the dot green; otherwise it falls back to a neutral text-muted.
+//   2. `.dot.small` / `.dot.large` retune the diameter via the size cascade.
+//   3. `.dot.pulse` adds a halo animation via an `::after` overlay; honors
+//      `prefers-reduced-motion` (animation removed, halo hidden).
+//
+// Quirks:
+//   - `display: inline-block` so the dot sits on the text baseline; pair it
+//     with `vertical-align: middle` overrides at the call site if needed.
+//   - `flex-shrink: 0` keeps the dot circular inside a flex row.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	.dot {
+		--set-dot-size: 0.5rem;
+		--set-dot-background-color: var(--set-variant-background-color, var(--color-text-muted));
+		--set-dot-pulse-duration: 1.6s;
+		--set-dot-pulse-easing: ease-out;
+
+		display: inline-block;
+		flex-shrink: 0;
+		inline-size: var(--set-dot-size);
+		block-size: var(--set-dot-size);
+		border-radius: 50%;
+		background-color: var(--set-dot-background-color);
+		vertical-align: baseline;
+	}
+
+	.dot.small {
+		--set-dot-size: 0.375rem;
+	}
+
+	.dot.large {
+		--set-dot-size: 0.75rem;
+	}
+
+	// Pulse — halo overlay that scales out and fades. Mirrors mailbox
+	// `.dot-pulse`. The `::after` inherits the dot's bg so the halo color
+	// always matches whatever variant is active.
+	.dot.pulse {
+		position: relative;
+
+		&::after {
+			content: '';
+			display: block;
+			position: absolute;
+			inset: 0;
+			border-radius: inherit;
+			background-color: inherit;
+			animation: dot-pulse var(--set-dot-pulse-duration) var(--set-dot-pulse-easing) infinite;
+		}
+	}
+
+	@keyframes dot-pulse {
+		0% {
+			transform: scale(1);
+			opacity: 0.6;
+		}
+		100% {
+			transform: scale(2.4);
+			opacity: 0;
+		}
+	}
+
+	@include reduced-motion {
+		.dot.pulse::after {
+			animation: none;
+		}
+	}
+}

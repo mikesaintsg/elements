@@ -2,5 +2,16 @@
 // Browser defaults: vertical-align: super; font-size: 0.83em
 // Use for footnote references, ordinal indicators (1ˢᵗ), mathematical exponents
 // Same line-height quirk as <sub> — use line-height: 0 + position: relative to avoid it
+//
+// Same `position: relative + line-height: 0` recipe as <sub> — suppresses the
+// line-height bump from `vertical-align: super` on mixed-content lines.
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	sup {
+		position: relative;
+		font-size: 0.75em;
+		line-height: 0;
+		vertical-align: baseline;
+		top: -0.5em;
+	}
+}

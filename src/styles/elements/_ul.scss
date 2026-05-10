@@ -1,7 +1,161 @@
-// <ul> – Unordered list
-// Browser defaults: display: block; list-style-type: disc; padding-inline-start: 40px; margin-block: 1em
-// Use when item order is not meaningful
-// Nested bullet default progression: disc → circle → square
-// Coupled: direct children must be <li> elements
+// ============================================================================
+// <ul> – Unordered list.
+//
+// Browser defaults: display: block; list-style-type: disc;
+// padding-inline-start: 40px; margin-block: 1em (Tailwind v4 preflight zeroes
+// these; the partial adds nothing for bare <ul>).
+//
+// Opt-in chrome — `.group` modifier
+// ---------------------------------------------------------------------------
+// `<ul class="group">` adopts the framework's list-group chrome (bordered
+// vertical stack of <li> rows with shared radius and collapsed inter-item
+// borders). The class name `.group` was chosen over `.list-group` so the
+// modifier reads as a generic English word ("group these list items") and
+// stays consistent with the framework's "no naming classes" rule — the
+// element ALREADY says "list" by being `<ul>`. Same modifier works on
+// `<ol class="group">`, where the browser's numeric list-style is preserved
+// (numbered list-group "for free" — no separate class).
+//
+// Composable modifiers:
+//   .flush         — no outer border / radius (drops chrome into a card edge)
+//   .horizontal    — flip rows to columns (responsive container-query safe)
+//   .{variant}     — applied to `<li>`, tints that row using the existing
+//                    --color-{variant}-bg-subtle token triplet
+//
+// Hover state for actionable rows: `<li><a>…</a></li>` lifts the anchor to
+// fill the row and gains a hover background; styled in `_li.scss`.
+//
+// Cascade: the partial wraps rules in `@layer elements`, matching the spec
+// that all list partials live in that layer (chrome included).
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	// ── Bare <ul> / <ol> ────────────────────────────────────────────────────
+	// Tailwind preflight zeroes padding-inline-start AND list-style. Restore
+	// both so a bare list still reads as a list — matches Bootstrap / mailbox
+	// (2rem inline indent). Authors who want a bullet-less / indent-less list
+	// reach for `list-none` + `pl-0` utilities.
+	ul:not(.group) {
+		padding-inline-start: 2rem;
+		list-style-type: disc;
+	}
+
+	// Nested unordered lists progress disc → circle → square (UA default).
+	ul:not(.group) ul {
+		list-style-type: circle;
+	}
+
+	ul:not(.group) ul ul {
+		list-style-type: square;
+	}
+
+	ul.group,
+	ol.group {
+		// --------------------------------------------------------------------
+		// Element-scoped tokens — every visual value below reads from one of
+		// these so consumers can retune without touching the partial.
+		// --------------------------------------------------------------------
+		--set-group-color: var(--color-text);
+		--set-group-background-color: var(--color-canvas);
+		--set-group-border-color: var(--color-border);
+		--set-group-border-width: 1px;
+		--set-group-border-radius: var(--radius-md);
+		--set-group-item-padding-inline: calc(var(--spacing) * 4);
+		--set-group-item-padding-block: calc(var(--spacing) * 2);
+		--set-group-action-hover-background-color: color-mix(in oklab, currentColor 6%, transparent);
+		--set-group-action-active-background-color: color-mix(in oklab, currentColor 10%, transparent);
+		--set-group-disabled-color: var(--color-text-subtle);
+		--set-group-active-color: var(--set-variant-color, var(--color-text));
+		--set-group-active-background-color: var(--set-variant-background-color, var(--color-primary));
+
+		// Reset preflight ul/ol padding + bullets so the group looks like a
+		// chrome panel.
+		display: flex;
+		flex-direction: column;
+		padding-inline-start: 0;
+		margin-block: 0;
+		list-style: none;
+		border-radius: var(--set-group-border-radius);
+		color: var(--set-group-color);
+		background-color: var(--set-group-background-color);
+	}
+
+	// `<ol class="group">` keeps numeric markers (the chrome doesn't strip
+	// them on ordered lists) — implemented with counters so the marker can
+	// live inline with row padding rather than the UA's outside position.
+	ol.group {
+		counter-reset: group-item;
+	}
+
+	ol.group > li::before {
+		content: counter(group-item) '. ';
+		counter-increment: group-item;
+		margin-inline-end: 0.5ch;
+		color: var(--color-text-muted);
+	}
+
+	// --------------------------------------------------------------------------
+	// .flush — drops outer border / radius (used when the group sits inside
+	// another bordered surface like a card; the surface's edge becomes the
+	// group's edge).
+	// --------------------------------------------------------------------------
+	ul.group.flush,
+	ol.group.flush {
+		border-radius: 0;
+	}
+
+	ul.group.flush > li,
+	ol.group.flush > li {
+		border-inline-width: 0;
+	}
+
+	ul.group.flush > li:first-child,
+	ol.group.flush > li:first-child {
+		border-block-start-width: 0;
+	}
+
+	ul.group.flush > li:last-child,
+	ol.group.flush > li:last-child {
+		border-block-end-width: 0;
+	}
+
+	// --------------------------------------------------------------------------
+	// .horizontal — rows become columns. Inter-item border collapses on the
+	// inline-start edge instead of the block-start edge so the visual rhythm
+	// stays the same just rotated 90°.
+	// --------------------------------------------------------------------------
+	ul.group.horizontal,
+	ol.group.horizontal {
+		flex-direction: row;
+	}
+
+	ul.group.horizontal > li,
+	ol.group.horizontal > li {
+		flex: 1 1 0;
+	}
+
+	ul.group.horizontal > li + li,
+	ol.group.horizontal > li + li {
+		border-block-start-width: var(--set-group-border-width);
+		border-inline-start-width: 0;
+	}
+
+	// Corner radii flip from block-axis to inline-axis when horizontal.
+	ul.group.horizontal > li:first-child,
+	ol.group.horizontal > li:first-child {
+		border-start-start-radius: var(--set-group-border-radius);
+		border-end-start-radius: var(--set-group-border-radius);
+		border-start-end-radius: 0;
+		border-end-end-radius: 0;
+	}
+
+	ul.group.horizontal > li:last-child,
+	ol.group.horizontal > li:last-child {
+		border-start-end-radius: var(--set-group-border-radius);
+		border-end-end-radius: var(--set-group-border-radius);
+		border-start-start-radius: 0;
+		border-end-start-radius: 0;
+	}
+}

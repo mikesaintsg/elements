@@ -1,7 +1,23 @@
-// <ol> – Ordered list
-// Browser defaults: display: block; list-style-type: decimal; padding-inline-start: 40px; margin-block: 1em
-// Use when item order has meaning (steps, rankings)
-// type attribute: 1, a, A, i, I; start attribute overrides starting number; reversed reverses the count
-// Coupled: direct children must be <li> elements
+// ============================================================================
+// <ol> – Ordered list.
+//
+// Browser defaults: display: block; list-style-type: decimal;
+// padding-inline-start: 40px; margin-block: 1em. Tailwind v4 preflight zeroes
+// list-style and padding; the partial leaves bare <ol> alone.
+//
+// Opt-in chrome — `.group` modifier
+// ---------------------------------------------------------------------------
+// `<ol class="group">` adopts the framework's list-group chrome (see
+// `_ul.scss` for the full architecture note). On ordered lists the chrome
+// renders the numeric marker inline (via CSS counters) so it sits inside the
+// row padding rather than outside it — that's the "numbered list group" that
+// Bootstrap exposes as a separate `.list-group-numbered` class. Here the
+// behaviour is implicit: ordered + grouped → numbered.
+//
+// The actual selectors live in `_ul.scss` (shared with `ul.group` to keep
+// the chrome single-sourced). This file stays a tag-pure partial so other
+// element files don't need to chase the .group rules across two locations
+// when reading the cascade.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+// No <ol>-only chrome — see `_ul.scss` for `.group` rules shared with `<ol>`.

@@ -11,8 +11,10 @@
 
 @use 'article';
 @use 'aside';
+@use 'badge';
 @use 'body';
 @use 'div';
+@use 'dot';
 @use 'footer';
 @use 'form';
 @use 'header';
@@ -22,3 +24,6 @@
 @use 'output';
 @use 'role-group';
 @use 'search';
+@use 'skeleton';
+@use 'spinner';
+@use 'tag';

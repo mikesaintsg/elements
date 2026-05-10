@@ -1,5 +1,16 @@
 // <small> – Fine print / side comment
 // Browser defaults: font-size: 0.8em (smaller than parent)
 // Use for legal notices, disclaimers, copyright, licensing — not just for making text smaller
+//
+// Tailwind preflight collapses <small> to inherit. The framework re-asserts a
+// scale-based reduction (87.5%) — matches Bootstrap / mailbox's
+// `--bs-relative-font-size-sm` so a <small> inside body copy renders at the
+// "caption" size without per-call utilities.
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	small {
+		--set-small-font-size: 0.875em;
+
+		font-size: var(--set-small-font-size);
+	}
+}

@@ -12,12 +12,21 @@
 
 @layer elements {
 	mark {
-		background-color: mark;
-		color: marktext;
+		--set-mark-color: marktext;
+		--set-mark-background-color: mark;
+		--set-mark-padding-inline: 0.1875em;
+		--set-mark-padding-block: 0;
+		--set-mark-border-radius: 0.1875em;
+
+		color: var(--set-mark-color);
+		background-color: var(--set-mark-background-color);
+		padding-inline: var(--set-mark-padding-inline);
+		padding-block: var(--set-mark-padding-block);
+		border-radius: var(--set-mark-border-radius);
 
 		@media (prefers-color-scheme: dark) {
-			background-color: highlight;
-			color: highlighttext;
+			--set-mark-color: highlighttext;
+			--set-mark-background-color: highlight;
 		}
 	}
 }

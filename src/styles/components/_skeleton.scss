@@ -1,0 +1,88 @@
+// ============================================================================
+// skeleton — shimmering loading placeholder.
+//
+// Markup contract: `<div class="skeleton" aria-hidden="true"></div>` — a
+// block-level placeholder masking content during loading. The shimmer is a
+// sliding gradient highlight over a tinted bg; consumers size the box with
+// inline styles (`style="block-size: 2rem"`) or width utilities.
+//
+// Architecture:
+//   1. Element-scoped `--set-skeleton-*` tokens on `.skeleton`. The
+//      highlight color is derived from `--color-text` mixed into the bg so
+//      it tracks the theme automatically (light: pale tint; dark: subtle
+//      lift). No separate `--bs-skeleton-highlight` token needed.
+//   2. The shimmer animates `background-position` across a 200%-wide
+//      gradient — Bootstrap / mailbox canonical pattern.
+//   3. `prefers-reduced-motion` strips the animation AND the gradient so
+//      what's left is a flat tinted block — never a frozen mid-sweep.
+//
+// Shape helpers:
+//   `.skeleton.text`   — inline-block text line height.
+//   `.skeleton.circle` — round (avatar / icon placeholder).
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	@keyframes skeleton-shimmer {
+		0% {
+			background-position: 200% 0;
+		}
+		100% {
+			background-position: -200% 0;
+		}
+	}
+
+	.skeleton {
+		--set-skeleton-background-color: var(--color-border-subtle);
+		--set-skeleton-highlight-color: color-mix(
+			in oklab,
+			var(--color-text) 6%,
+			var(--set-skeleton-background-color)
+		);
+		--set-skeleton-border-radius: 0.375rem;
+		--set-skeleton-duration: 1.5s;
+		--set-skeleton-line-block-size: 0.75em;
+		--set-skeleton-line-gap: 0.5em;
+
+		display: block;
+		inline-size: 100%;
+		min-block-size: 1em;
+		background-color: var(--set-skeleton-background-color);
+		background-image: linear-gradient(
+			90deg,
+			transparent 0%,
+			var(--set-skeleton-highlight-color) 50%,
+			transparent 100%
+		);
+		background-size: 200% 100%;
+		background-repeat: no-repeat;
+		border-radius: var(--set-skeleton-border-radius);
+		animation: skeleton-shimmer var(--set-skeleton-duration) ease-in-out infinite;
+		color: transparent;
+		user-select: none;
+		pointer-events: none;
+	}
+
+	// Shape helpers.
+	.skeleton.text {
+		display: inline-block;
+		block-size: var(--set-skeleton-line-block-size);
+
+		& + & {
+			margin-block-start: var(--set-skeleton-line-gap);
+		}
+	}
+
+	.skeleton.circle {
+		border-radius: 50%;
+		aspect-ratio: 1 / 1;
+	}
+
+	@include reduced-motion {
+		.skeleton {
+			animation: none;
+			background-image: none;
+		}
+	}
+}

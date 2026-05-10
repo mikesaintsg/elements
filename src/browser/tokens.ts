@@ -275,6 +275,98 @@ export const tokens = {
 		transitionDuration: '--set-summary-transition-duration',
 	},
 
+	// Element-scoped tokens declared on `address` itself. Ported from mailbox's
+	// `<address>` reboot — restores the `margin-block-end: 1rem` Tailwind
+	// preflight strips.
+	address: {
+		marginBlockEnd: '--set-address-margin-block-end',
+	},
+
+	// Element-scoped tokens declared on `mark` itself. Mailbox's reboot adds
+	// padding + rounded corners around the highlight so the tinted background
+	// reads as a chip rather than a flat backsplash.
+	mark: {
+		color: '--set-mark-color',
+		backgroundColor: '--set-mark-background-color',
+		paddingInline: '--set-mark-padding-inline',
+		paddingBlock: '--set-mark-padding-block',
+		borderRadius: '--set-mark-border-radius',
+	},
+
+	// Element-scoped tokens declared on `small` itself. Restores Tailwind
+	// preflight's collapse-to-inherit by re-asserting Bootstrap / mailbox's
+	// `--bs-relative-font-size-sm` (0.875em).
+	small: {
+		fontSize: '--set-small-font-size',
+	},
+
+	// Element-scoped tokens declared on `strong` itself. The variant cascade
+	// reaches text-strong + 700 weight so emphasized terms pop slightly
+	// against muted body copy without per-call utilities.
+	strong: {
+		color: '--set-strong-color',
+		fontWeight: '--set-strong-font-weight',
+	},
+
+	// Component tokens declared on `.badge` (class-based — no semantic root for
+	// "inline pill"). Lives in components/_badge.scss.
+	badge: {
+		color: '--set-badge-color',
+		backgroundColor: '--set-badge-background-color',
+		borderRadius: '--set-badge-border-radius',
+		paddingInline: '--set-badge-padding-inline',
+		paddingBlock: '--set-badge-padding-block',
+		fontSize: '--set-badge-font-size',
+		fontWeight: '--set-badge-font-weight',
+		lineHeight: '--set-badge-line-height',
+	},
+
+	// Component tokens declared on `.dot` (class-based — no semantic root for
+	// "colored circle"). Lives in components/_dot.scss.
+	dot: {
+		size: '--set-dot-size',
+		backgroundColor: '--set-dot-background-color',
+		pulseDuration: '--set-dot-pulse-duration',
+		pulseEasing: '--set-dot-pulse-easing',
+	},
+
+	// Component tokens declared on `.tag` (class-based — chip-shape inline
+	// label). Lives in components/_tag.scss.
+	tag: {
+		color: '--set-tag-color',
+		backgroundColor: '--set-tag-background-color',
+		borderColor: '--set-tag-border-color',
+		borderWidth: '--set-tag-border-width',
+		borderRadius: '--set-tag-border-radius',
+		paddingInline: '--set-tag-padding-inline',
+		paddingBlock: '--set-tag-padding-block',
+		fontSize: '--set-tag-font-size',
+		fontWeight: '--set-tag-font-weight',
+		lineHeight: '--set-tag-line-height',
+		gap: '--set-tag-gap',
+		transitionDuration: '--set-tag-transition-duration',
+	},
+
+	// Component tokens declared on `.spinner` (class-based — `<span
+	// role="status">` carrier). Lives in components/_spinner.scss.
+	spinner: {
+		size: '--set-spinner-size',
+		borderWidth: '--set-spinner-border-width',
+		color: '--set-spinner-color',
+		duration: '--set-spinner-duration',
+	},
+
+	// Component tokens declared on `.skeleton` (class-based — loading
+	// placeholder). Lives in components/_skeleton.scss.
+	skeleton: {
+		backgroundColor: '--set-skeleton-background-color',
+		highlightColor: '--set-skeleton-highlight-color',
+		borderRadius: '--set-skeleton-border-radius',
+		duration: '--set-skeleton-duration',
+		lineBlockSize: '--set-skeleton-line-block-size',
+		lineGap: '--set-skeleton-line-gap',
+	},
+
 	// Element-scoped tokens declared on `progress` itself.
 	progress: {
 		blockSize: '--set-progress-block-size',
@@ -452,6 +544,23 @@ export const tokens = {
 		breadcrumbSeparatorImage: '--set-nav-breadcrumb-separator-image',
 		breadcrumbSeparatorSize: '--set-nav-breadcrumb-separator-size',
 		breadcrumbSeparatorOpacity: '--set-nav-breadcrumb-separator-opacity',
+		breadcrumbActiveColor: '--set-nav-breadcrumb-active-color',
+
+		// Pagination chrome — bordered button row inside
+		// `<nav aria-label="Pagination">`. See `components/_nav.scss`.
+		paginationColor: '--set-nav-pagination-color',
+		paginationBackgroundColor: '--set-nav-pagination-background-color',
+		paginationBorderColor: '--set-nav-pagination-border-color',
+		paginationBorderWidth: '--set-nav-pagination-border-width',
+		paginationBorderRadius: '--set-nav-pagination-border-radius',
+		paginationPaddingInline: '--set-nav-pagination-padding-inline',
+		paginationPaddingBlock: '--set-nav-pagination-padding-block',
+		paginationMinSize: '--set-nav-pagination-min-size',
+		paginationHoverBackgroundColor: '--set-nav-pagination-hover-background-color',
+		paginationActiveColor: '--set-nav-pagination-active-color',
+		paginationActiveBackgroundColor: '--set-nav-pagination-active-background-color',
+		paginationActiveBorderColor: '--set-nav-pagination-active-border-color',
+		paginationDisabledOpacity: '--set-nav-pagination-disabled-opacity',
 	},
 
 	// Component tokens declared on bare `<search>` (search bar).
@@ -596,6 +705,7 @@ export const tokens = {
 		color: '--set-blockquote-color',
 		barWidth: '--set-blockquote-bar-width',
 		paddingInline: '--set-blockquote-padding-inline',
+		marginBlockEnd: '--set-blockquote-margin-block-end',
 	},
 
 	code: {

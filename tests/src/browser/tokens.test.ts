@@ -179,7 +179,7 @@ describe('TS → CSS: every TS leaf resolves at runtime', () => {
 	// HTML element (e.g. `_carousel.scss` styles `.carousel`, not a
 	// `<carousel>` tag). For those, the token resolution test renders
 	// `<div class="{tag}">` instead of `<{tag}>`.
-	const CLASS_BASED_COMPONENTS = new Set(['carousel'])
+	const CLASS_BASED_COMPONENTS = new Set(['carousel', 'badge', 'dot', 'tag', 'spinner', 'skeleton'])
 
 	for (const tag of elementTags) {
 		const tagLeaves = TS_LEAVES.filter((leaf) => leaf.startsWith(`--set-${tag}-`))

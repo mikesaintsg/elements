@@ -197,4 +197,74 @@
 		);
 		border-end-end-radius: calc(var(--set-article-border-radius) - var(--set-article-border-width));
 	}
+
+	// --------------------------------------------------------------------------
+	// Card image — first / last <img> or <picture> child of <article>.
+	//
+	// Mailbox exposes this via `.card-img-top` and `.card-img-bottom` classes;
+	// here it's tag-driven. Bleeds the image to the article's outer edge by
+	// neutralising padding on that side and pinning the appropriate corners
+	// to the article's outer radius (minus border).
+	// --------------------------------------------------------------------------
+	article:has(> img:first-child),
+	article:has(> picture:first-child) {
+		padding-block-start: 0;
+	}
+
+	article:has(> img:last-child),
+	article:has(> picture:last-child) {
+		padding-block-end: 0;
+	}
+
+	article > img:first-child,
+	article > picture:first-child {
+		margin-inline: calc(var(--set-article-padding-inline) * -1);
+		width: calc(100% + var(--set-article-padding-inline) * 2);
+		max-width: none;
+		border-start-start-radius: calc(
+			var(--set-article-border-radius) - var(--set-article-border-width)
+		);
+		border-start-end-radius: calc(
+			var(--set-article-border-radius) - var(--set-article-border-width)
+		);
+	}
+
+	article > img:last-child,
+	article > picture:last-child {
+		margin-inline: calc(var(--set-article-padding-inline) * -1);
+		width: calc(100% + var(--set-article-padding-inline) * 2);
+		max-width: none;
+		border-end-start-radius: calc(
+			var(--set-article-border-radius) - var(--set-article-border-width)
+		);
+		border-end-end-radius: calc(var(--set-article-border-radius) - var(--set-article-border-width));
+	}
+
+	// --------------------------------------------------------------------------
+	// Embedded list-group — when an article wraps a `<ul class="group">` or
+	// `<ol class="group">`, the group bleeds to the article's inner edge and
+	// drops its own outer border (the article's border is the panel edge).
+	// Mailbox exposes this as `.card > .list-group` with hand-tuned border
+	// overrides; here it's automatic via a descendant selector.
+	// --------------------------------------------------------------------------
+	article > ul.group,
+	article > ol.group {
+		margin-inline: calc(var(--set-article-padding-inline) * -1);
+		border-radius: 0;
+	}
+
+	article > ul.group > li:first-child,
+	article > ol.group > li:first-child {
+		border-block-start-width: 0;
+	}
+
+	article > ul.group > li:last-child,
+	article > ol.group > li:last-child {
+		border-block-end-width: 0;
+	}
+
+	article > ul.group > li,
+	article > ol.group > li {
+		border-inline-width: 0;
+	}
 }

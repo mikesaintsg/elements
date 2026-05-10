@@ -1,0 +1,107 @@
+// ============================================================================
+// badge — small inline pill for counts, labels, status keywords.
+//
+// Markup contract: `<span class="badge">99+</span>`. The class is acceptable
+// here because no HTML element corresponds to "inline pill" semantically —
+// `<span>` is the deliberate fallback when no semantic root exists (see
+// components/_div.scss for the same rule applied to layout primitives).
+//
+// Architecture:
+//   1. Element-scoped `--set-badge-*` tokens declared on `.badge`. The
+//      cascade resolves these via fallback chains — variant context first
+//      (when `.primary` / `.success` / … is layered on), then the badge
+//      default (neutral subtle bg).
+//   2. Bare `.badge` is a neutral chip — tinted bg, body text. Layering a
+//      variant class repaints with the variant's bg-subtle + text-emphasis
+//      triplet (subtle by default, matching mailbox's `.tag-{name}` mode).
+//   3. The `.filled` style modifier flips to a saturated fill using the
+//      variant's identity color — mirrors mailbox's `.tag-solid-{name}`.
+//
+// Quirks:
+//   - `:empty { display: none }` mirrors mailbox: an empty badge is a
+//     count-of-zero placeholder, hidden so the slot reflows cleanly.
+//   - Used inside a `<button>`, the badge gets a small upward nudge so it
+//     visually centers against the button's baseline (matches mailbox).
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	.badge {
+		--set-badge-color: var(--set-variant-color, var(--color-text-emphasis, var(--color-text)));
+		--set-badge-background-color: var(--set-variant-background-color, var(--color-border-subtle));
+		--set-badge-border-radius: 0.375rem;
+		--set-badge-padding-inline: 0.5em;
+		--set-badge-padding-block: 0.25em;
+		--set-badge-font-size: 0.75em;
+		--set-badge-font-weight: 500;
+		--set-badge-line-height: 1;
+
+		display: inline-block;
+		padding: var(--set-badge-padding-block) var(--set-badge-padding-inline);
+		color: var(--set-badge-color);
+		background-color: var(--set-badge-background-color);
+		border-radius: var(--set-badge-border-radius);
+		font-size: var(--set-badge-font-size);
+		font-weight: var(--set-badge-font-weight);
+		line-height: var(--set-badge-line-height);
+		text-align: center;
+		white-space: nowrap;
+		vertical-align: baseline;
+
+		&:empty {
+			display: none;
+		}
+	}
+
+	// Variant subtle — tinted bg + saturated text (the default badge mode).
+	// Reads through the same `--color-{variant}-{bg-subtle, text-emphasis}`
+	// triplet used by alert / aside / toast.
+	.badge.primary {
+		--set-badge-background-color: var(--color-primary-bg-subtle);
+		--set-badge-color: var(--color-primary-text-emphasis);
+	}
+	.badge.secondary {
+		--set-badge-background-color: var(--color-secondary-bg-subtle);
+		--set-badge-color: var(--color-secondary-text-emphasis);
+	}
+	.badge.tertiary {
+		--set-badge-background-color: var(--color-tertiary-bg-subtle);
+		--set-badge-color: var(--color-tertiary-text-emphasis);
+	}
+	.badge.success {
+		--set-badge-background-color: var(--color-success-bg-subtle);
+		--set-badge-color: var(--color-success-text-emphasis);
+	}
+	.badge.warning {
+		--set-badge-background-color: var(--color-warning-bg-subtle);
+		--set-badge-color: var(--color-warning-text-emphasis);
+	}
+	.badge.danger {
+		--set-badge-background-color: var(--color-danger-bg-subtle);
+		--set-badge-color: var(--color-danger-text-emphasis);
+	}
+	.badge.information {
+		--set-badge-background-color: var(--color-information-bg-subtle);
+		--set-badge-color: var(--color-information-text-emphasis);
+	}
+
+	// Filled — saturated bg, white-on-color (uses variant context tokens set
+	// by `.{variant}.filled`). Falls through to the variant identity color
+	// when `.filled` is paired with a variant class.
+	.badge.filled {
+		--set-badge-background-color: var(--set-variant-background-color);
+		--set-badge-color: var(--set-variant-color);
+	}
+
+	// Pill shape modifier — match mailbox's `.tag` chip default.
+	.badge.pill {
+		--set-badge-border-radius: 9999px;
+	}
+
+	// Button containing a badge — small upward nudge to optical center.
+	button .badge {
+		position: relative;
+		inset-block-start: -1px;
+	}
+}

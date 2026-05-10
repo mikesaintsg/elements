@@ -12,5 +12,15 @@
 @layer elements {
 	html {
 		interpolate-size: allow-keywords;
+
+		// Anchor-jump / scroll-snap offset so a sticky toolbar (set per app via
+		// `--set-sticky-offset`) never covers the target. Defaults to 0 so apps
+		// without sticky chrome get unmodified UA behaviour.
+		scroll-padding-block-start: var(--set-sticky-offset, 0px);
+
+		// Stop iOS Safari from inflating font sizes once the page exceeds the
+		// viewport-width heuristic.
+		-webkit-text-size-adjust: 100%;
+		text-size-adjust: 100%;
 	}
 }

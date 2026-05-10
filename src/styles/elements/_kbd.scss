@@ -25,4 +25,16 @@
 		padding-block: var(--set-kbd-padding-block);
 		font-size: var(--set-kbd-font-size);
 	}
+
+	// ── Nested <kbd> ─────────────────────────────────────────────────────────
+	// Multi-key combos written as <kbd><kbd>Ctrl</kbd>+<kbd>C</kbd></kbd> would
+	// double-stack chrome (outer chip wrapping inner chips). The inner chips
+	// drop their padding and reset to 1em so the outer chip reads as a single
+	// "combo" cell — mailbox and Bootstrap use the same recipe.
+	kbd kbd {
+		padding: 0;
+		font-size: 1em;
+		background-color: transparent;
+		border: 0;
+	}
 }

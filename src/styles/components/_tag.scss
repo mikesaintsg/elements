@@ -1,0 +1,185 @@
+// ============================================================================
+// tag — chip-shape inline label (interactive or static, removable or not).
+//
+// Markup contract:
+//   <span class="tag">Label</span>                       — static
+//   <button class="tag">Label</button>                   — interactive chip
+//   <span class="tag">Label <button class="remove">×</button></span> — removable
+//
+// Distinct from `.badge`:
+//   - `.tag` is pill-shaped by default (chip aesthetic); `.badge` is small
+//     rounded-rect (count / status keyword).
+//   - `.tag` can be interactive (hover + active state-layer); `.badge` is
+//     always static.
+//   - `.tag` ships with `.tag-group` (wrap container) and a remove glyph
+//     pattern; `.badge` does not.
+//
+// Variants follow the same `--color-{variant}-{bg-subtle, text-emphasis,
+// border-subtle}` triplet as the rest of the framework. Three style modes
+// — subtle (default), filled, outline — mirror mailbox's three tag modes.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	.tag {
+		--set-tag-color: var(--set-variant-color, var(--color-text));
+		--set-tag-background-color: var(--set-variant-background-color, var(--color-border-subtle));
+		--set-tag-border-color: var(--set-variant-border-color, transparent);
+		--set-tag-border-width: 1px;
+		--set-tag-border-radius: 9999px;
+		--set-tag-padding-inline: 0.5rem;
+		--set-tag-padding-block: 0.25rem;
+		--set-tag-font-size: 0.75rem;
+		--set-tag-font-weight: 500;
+		--set-tag-line-height: 1;
+		--set-tag-gap: 0.25rem;
+		--set-tag-transition-duration: var(--set-transition-duration);
+
+		display: inline-flex;
+		align-items: center;
+		gap: var(--set-tag-gap);
+		padding: var(--set-tag-padding-block) var(--set-tag-padding-inline);
+		color: var(--set-tag-color);
+		background-color: var(--set-tag-background-color);
+		border: var(--set-tag-border-width) solid var(--set-tag-border-color);
+		border-radius: var(--set-tag-border-radius);
+		font-size: var(--set-tag-font-size);
+		font-weight: var(--set-tag-font-weight);
+		line-height: var(--set-tag-line-height);
+		white-space: nowrap;
+		vertical-align: middle;
+	}
+
+	// Variant subtle — tinted bg + emphasis text + matching subtle border.
+	.tag.primary {
+		--set-tag-background-color: var(--color-primary-bg-subtle);
+		--set-tag-color: var(--color-primary-text-emphasis);
+		--set-tag-border-color: var(--color-primary-border-subtle);
+	}
+	.tag.secondary {
+		--set-tag-background-color: var(--color-secondary-bg-subtle);
+		--set-tag-color: var(--color-secondary-text-emphasis);
+		--set-tag-border-color: var(--color-secondary-border-subtle);
+	}
+	.tag.tertiary {
+		--set-tag-background-color: var(--color-tertiary-bg-subtle);
+		--set-tag-color: var(--color-tertiary-text-emphasis);
+		--set-tag-border-color: var(--color-tertiary-border-subtle);
+	}
+	.tag.success {
+		--set-tag-background-color: var(--color-success-bg-subtle);
+		--set-tag-color: var(--color-success-text-emphasis);
+		--set-tag-border-color: var(--color-success-border-subtle);
+	}
+	.tag.warning {
+		--set-tag-background-color: var(--color-warning-bg-subtle);
+		--set-tag-color: var(--color-warning-text-emphasis);
+		--set-tag-border-color: var(--color-warning-border-subtle);
+	}
+	.tag.danger {
+		--set-tag-background-color: var(--color-danger-bg-subtle);
+		--set-tag-color: var(--color-danger-text-emphasis);
+		--set-tag-border-color: var(--color-danger-border-subtle);
+	}
+	.tag.information {
+		--set-tag-background-color: var(--color-information-bg-subtle);
+		--set-tag-color: var(--color-information-text-emphasis);
+		--set-tag-border-color: var(--color-information-border-subtle);
+	}
+
+	// Filled — saturated bg using variant identity color.
+	.tag.filled {
+		--set-tag-background-color: var(--set-variant-background-color);
+		--set-tag-color: var(--set-variant-color);
+		--set-tag-border-color: var(--set-variant-background-color);
+	}
+
+	// Ghost / outline — transparent bg, colored border + text.
+	.tag.ghost {
+		--set-tag-background-color: transparent;
+	}
+
+	// Size modifiers.
+	.tag.small {
+		--set-tag-padding-inline: 0.375rem;
+		--set-tag-padding-block: 0.125rem;
+		--set-tag-font-size: 0.6875rem;
+	}
+	.tag.large {
+		--set-tag-padding-inline: 0.75rem;
+		--set-tag-padding-block: 0.375rem;
+		--set-tag-font-size: 0.875rem;
+	}
+
+	// Square corners — opt out of pill shape.
+	.tag.square {
+		--set-tag-border-radius: 0.25rem;
+	}
+
+	// Interactive chip — `<button class="tag">` already inherits button reset
+	// from the elements layer; this rule supplies the hover/active state layer.
+	button.tag {
+		cursor: pointer;
+		@include transition(
+			(
+				background-color var(--set-tag-transition-duration),
+				color var(--set-tag-transition-duration),
+				border-color var(--set-tag-transition-duration)
+			)
+		);
+
+		&:hover {
+			background-color: color-mix(in oklab, var(--color-text) 8%, var(--set-tag-background-color));
+		}
+		&:active {
+			background-color: color-mix(in oklab, var(--color-text) 16%, var(--set-tag-background-color));
+		}
+		&:focus-visible {
+			outline: 0;
+			@include focus-ring();
+		}
+	}
+
+	// Remove glyph — descendant `<button class="remove">` inside a `.tag`.
+	.tag .remove {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 1em;
+		block-size: 1em;
+		padding: 0;
+		margin-inline-start: 0.125rem;
+		background: transparent;
+		border: 0;
+		border-radius: 50%;
+		color: inherit;
+		opacity: 0.65;
+		cursor: pointer;
+		font-size: 1em;
+		line-height: 1;
+		@include transition(
+			(
+				opacity var(--set-tag-transition-duration),
+				background-color var(--set-tag-transition-duration)
+			)
+		);
+
+		&:hover,
+		&:focus-visible {
+			opacity: 1;
+			background-color: color-mix(in oklab, var(--color-text) 12%, transparent);
+		}
+		&:focus-visible {
+			outline: 0;
+		}
+	}
+
+	// Group container — horizontal wrap for a row of tags.
+	.tag-group {
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		align-items: center;
+	}
+}
