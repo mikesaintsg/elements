@@ -261,10 +261,24 @@
 		display: flex;
 		flex-direction: column;
 		gap: calc(var(--spacing) * 4);
-		inline-size: min(20rem, 100dvw);
-		max-inline-size: 100dvw;
-		block-size: 100dvh;
-		max-block-size: 100dvh;
+		// Match Bootstrap / mailbox `--bs-offcanvas-width` (350px) for
+		// the start / end drawer; capped at viewport width so phones
+		// don't horizontal-scroll. `!important` because the popover
+		// surface in `@layer surfaces` ships
+		// `[popover]:not(output) { max-inline-size: var(--set-anchor-
+		// max-block-size) }` — same layer-cascade reason as the
+		// position override above.
+		inline-size: min(21.875rem, 100dvw) !important;
+		max-inline-size: 100dvw !important;
+		// Full viewport height — `inset-block: 0` already stretches
+		// to the viewport edges, but the popover surface caps
+		// `max-block-size` to `--set-anchor-max-block-size` (a
+		// menu-sized clamp around 288px) so a drawer would render at
+		// menu height. `!important` lifts the cap so the drawer fills
+		// the viewport edge-to-edge like a Bootstrap offcanvas.
+		block-size: 100dvh !important;
+		max-block-size: 100dvh !important;
+		min-block-size: 100dvh !important;
 		margin: 0 !important;
 		overflow-y: auto;
 		// Drawer needs a higher stacking context than the body grid +
