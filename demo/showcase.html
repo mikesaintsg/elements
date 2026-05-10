@@ -4131,7 +4131,7 @@
 				Yo = `data-hidden`,
 				Xo = `data-value`,
 				Zo = `:where(li, a, button):not([disabled]):not([aria-disabled="true"])`,
-				Qo = Zo,
+				Qo = `[${Xo}]:not([disabled]):not([aria-disabled="true"])`,
 				$o = `[autofocus], input:not([disabled]), button:not([disabled]), a[href], select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])`,
 				es = `[id]`,
 				ts = `[role="tab"]`,
@@ -22531,6 +22531,10 @@ toast.destroy()</code></pre>`,
 				}
 			}
 			@layer composables {
+				aside[popover] {
+					transition-property: opacity, overlay, display;
+					transform: none;
+				}
 				aside[popover][data-aside-open],
 				aside[popover][data-aside-closing] {
 					gap: calc(var(--spacing) * 4);
@@ -22998,6 +23002,9 @@ toast.destroy()</code></pre>`,
 					flex: 1;
 					min-inline-size: 0;
 					overflow: hidden;
+				}
+				.select [data-hidden] {
+					display: none;
 				}
 				.select > .select-menu {
 					inline-size: anchor-size(width, 100%);
