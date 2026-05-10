@@ -61,7 +61,17 @@
 		--set-toast-padding-block: calc(var(--spacing) * 3);
 		--set-toast-gap: calc(var(--spacing) * 3);
 		--set-toast-min-inline-size: 16rem;
-		--set-toast-max-inline-size: 28rem;
+		// Viewport-aware design width — `min(<design-cap>, dvw - 2× edge-
+		// inset)` so a 360px phone never paints a toast wider than its
+		// viewport minus the placement padding on both sides. Mailbox
+		// calls this the "floater-bounds" pattern (their
+		// `mixins.floater-bounds('toast', 'width')` mixin); we inline it
+		// here because it's a single token and the formula is the same
+		// for every floater. Without this clamp, the bare 28rem max plus
+		// the 16px inset on the trailing edge pushed past the viewport
+		// edge on narrow mobile screens, causing the close button to
+		// fall off-screen.
+		--set-toast-max-inline-size: min(28rem, calc(100dvw - 2 * var(--set-toast-edge-inset)));
 		--set-toast-font-size: var(--text-sm, 0.875rem);
 		--set-toast-edge-inset: calc(var(--spacing) * 4);
 		--set-toast-box-shadow: 0 6px 24px -6px rgb(0 0 0 / 0.18);
@@ -127,6 +137,50 @@
 		padding-inline: var(--set-toast-padding-inline);
 		padding-block: var(--set-toast-padding-block);
 		box-shadow: var(--set-toast-box-shadow);
+	}
+
+	// --------------------------------------------------------------------------
+	// Variant tinting — mirror mailbox's `.toast-{color}` contextual chrome.
+	// Each variant paints a SUBTLE tinted background (~10% of the variant
+	// color mixed into canvas) plus a same-variant text color and a
+	// medium-strength border. We can't reuse the saturated `--set-variant-
+	// background-color` token directly because filled buttons use it as a
+	// SOLID background — toasts want a softer, tinted shape so the message
+	// reads without competing with the page's primary action surfaces.
+	//
+	// Driven by an `@each` over the framework variant set so adding a new
+	// variant in `_variants.scss` (or removing one) automatically retunes
+	// the toast's variant chrome without a follow-up edit here.
+	// --------------------------------------------------------------------------
+	@each $variant in (primary, secondary, tertiary, success, warning, danger, information) {
+		output[popover].#{$variant},
+		output[role='status'].#{$variant}:not(.filled) {
+			--set-toast-color: var(--color-#{$variant});
+			--set-toast-background-color: color-mix(
+				in oklab,
+				var(--color-#{$variant}) 15%,
+				var(--color-canvas)
+			);
+			--set-toast-border-color: color-mix(in oklab, var(--color-#{$variant}) 40%, transparent);
+		}
+
+		// Dark-mode tuning. Bumping the mix to 25% over the slightly-
+		// lighter `--color-surface` (vs canvas) lets the variant identity
+		// read against the deep canvas — the light-mode 15-over-canvas
+		// formula dissolves at low surface lightness. The text colour is
+		// re-mixed toward `--color-text` so the variant chroma stays in
+		// the foreground without dragging the contrast into AAA-fail
+		// territory.
+		[data-theme='dark'] output[popover].#{$variant},
+		[data-theme='dark'] output[role='status'].#{$variant}:not(.filled) {
+			--set-toast-color: color-mix(in oklab, var(--color-#{$variant}) 60%, var(--color-text));
+			--set-toast-background-color: color-mix(
+				in oklab,
+				var(--color-#{$variant}) 25%,
+				var(--color-surface)
+			);
+			--set-toast-border-color: color-mix(in oklab, var(--color-#{$variant}) 55%, transparent);
+		}
 	}
 
 	// --------------------------------------------------------------------------

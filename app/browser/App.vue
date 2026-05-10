@@ -1,8 +1,20 @@
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useTheme } from '@src/browser'
 import { current, navigate, route, routes, section } from './router.js'
 import SiteNav from './components/SiteNav.vue'
 import Toc from './components/Toc.vue'
+
+/* ── Theme toggle ────────────────────────────────────────────────────────────
+   Banner-mounted dark/light switch driven by the singleton `useTheme`
+   factory. `toggle()` cycles between explicit `light` / `dark` / `system`
+   settings; the chip label and aria-state mirror the resolved theme
+   (`theme.value`) so a system-following user can see the current paint.
+
+   This is here on App.vue so it's available on every page — particularly
+   for the showcase audit work where light↔dark swap parity is part of the
+   contract. */
+const themeCtl = useTheme()
 
 /* ── Sidebar drawer (mobile) ─────────────────────────────────────────────────
    Below the layout breakpoint the sidebar is off-screen; a toggle reveals it.
@@ -101,6 +113,16 @@ const goHome = (event: MouseEvent): void => {
 			Menu
 		</button>
 		<a href="#/home" class="showcase-brand" @click="goHome">elements</a>
+		<button
+			type="button"
+			class="ghost small showcase-theme-toggle"
+			:aria-label="`Toggle theme — currently ${themeCtl.theme.value}`"
+			:title="`Theme: ${themeCtl.setting.value} (resolved ${themeCtl.theme.value})`"
+			@click="themeCtl.toggle()"
+		>
+			<span aria-hidden="true">{{ themeCtl.theme.value === 'dark' ? '☾' : '☼' }}</span>
+			<small>{{ themeCtl.setting.value }}</small>
+		</button>
 	</header>
 
 	<nav
@@ -111,6 +133,16 @@ const goHome = (event: MouseEvent): void => {
 	>
 		<header class="showcase-rail-header">
 			<a href="#/home" class="showcase-brand" @click="goHome">elements</a>
+			<button
+				type="button"
+				class="ghost small showcase-theme-toggle"
+				:aria-label="`Toggle theme — currently ${themeCtl.theme.value}`"
+				:title="`Theme: ${themeCtl.setting.value} (resolved ${themeCtl.theme.value})`"
+				@click="themeCtl.toggle()"
+			>
+				<span aria-hidden="true">{{ themeCtl.theme.value === 'dark' ? '☾' : '☼' }}</span>
+				<small>{{ themeCtl.setting.value }}</small>
+			</button>
 			<button
 				type="button"
 				class="ghost small showcase-close"

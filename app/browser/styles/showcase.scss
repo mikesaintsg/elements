@@ -111,6 +111,25 @@ $showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
 	}
 }
 
+// Theme toggle chip — banner-mounted on mobile, rail-header-mounted on
+// desktop. The icon swaps between sun (☼ when light) and moon (☾ when
+// dark) so a glance tells the user the resolved paint, while the small
+// caption surfaces the setting (`light` / `dark` / `system`) so a
+// system-following user can see the difference between "auto-dark" and
+// "explicit dark".
+.showcase-theme-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: calc(var(--spacing) * 1);
+	margin-inline-start: auto;
+	font-variant-numeric: tabular-nums;
+
+	> small {
+		opacity: 0.7;
+		font-size: 0.7em;
+	}
+}
+
 // "Press / to focus" hint under the search input.
 .showcase-hint {
 	margin-block-start: calc(var(--spacing) * -1);

@@ -93,6 +93,26 @@
 			inset-block-start: calc(var(--set-toast-edge-inset) + var(--set-toast-stack-offset));
 			inset-block-end: auto;
 		}
+
+		// Trailing-edge close button — the last direct-child `<button>` of
+		// a toast is treated as the dismiss control and pushed to the
+		// trailing inline edge. Mirrors mailbox's `.toast > .btn-close`
+		// rule. The selector keys off `:last-child` rather than a class
+		// or aria-label so the framework remains markup-agnostic: any
+		// trailing button works (`.ghost.small`, a bare `<button>`, an
+		// inline-svg icon button) without consumers reaching for a
+		// project-specific `.toast-close` modifier. `flex-shrink: 0`
+		// stops the button from collapsing if the toast text is long
+		// enough to consume the row's free space; `align-self: center`
+		// keeps the close vertically centered when the toast wraps to
+		// multiple lines (`align-items: center` on the parent only
+		// centers single-line content; per-item alignment beats it on
+		// wrapped flex rows).
+		> button:last-child {
+			margin-inline-start: auto;
+			flex-shrink: 0;
+			align-self: center;
+		}
 	}
 
 	// ── Deck stacking mode ────────────────────────────────────────────────────

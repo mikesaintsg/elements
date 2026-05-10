@@ -425,7 +425,11 @@ toast.destroy()</code></pre>
 			   deck exceeds `--set-toast-stack-depth`. `aria-live="polite"`
 			   announces count changes.
 			-->
-			<div class="showcase-toast-container start" :data-toast-stack="deckEnabled ? '' : null">
+			<div
+				class="showcase-toast-container start"
+				data-toast-position="start"
+				:data-toast-stack="deckEnabled ? '' : null"
+			>
 				<span data-toast-indicator aria-live="polite" aria-atomic="true">
 					+{{ deckHiddenCount }} hidden — hover to expand
 				</span>
