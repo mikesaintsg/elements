@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
+import type { Placement } from '@src/browser'
 import { useMenu } from '@src/browser'
 
 const basicToggle = ref<HTMLElement | null>(null)
@@ -28,6 +29,23 @@ const eventMenu = useMenu(eventToggle, eventMenuRef, {
 		close: () => log.value.unshift({ at: stamp(), kind: 'close' }),
 	},
 })
+
+// Sectioned menu — grouped commands separated by `<hr>` dividers.
+const sectionedToggle = ref<HTMLElement | null>(null)
+const sectionedMenu = ref<HTMLMenuElement | null>(null)
+useMenu(sectionedToggle, sectionedMenu, { placement: 'bottom-start' })
+
+// Placement-cycled menu — same composable, four placements.
+const placementToggle = ref<HTMLElement | null>(null)
+const placementMenu = ref<HTMLMenuElement | null>(null)
+const placement = ref<Placement>('bottom-start')
+const placedMenu = useMenu(placementToggle, placementMenu, {
+	placement: 'bottom-start',
+})
+const choosePlacement = (p: Placement): void => {
+	placement.value = p
+	placedMenu.update({ placement: p })
+}
 </script>
 
 <template>
@@ -75,6 +93,49 @@ const eventMenu = useMenu(eventToggle, eventMenuRef, {
 				<li><button type="button" @click="choose('Apple')">Apple</button></li>
 				<li><button type="button" @click="choose('Banana')">Banana</button></li>
 				<li><button type="button" @click="choose('Cherry')">Cherry</button></li>
+			</menu>
+		</section>
+
+		<section id="sectioned">
+			<h2>Sectioned menu</h2>
+			<p class="showcase-caption">
+				Group commands with <code>&lt;hr&gt;</code> dividers — keyboard nav skips them naturally,
+				click-dismiss only fires on item buttons.
+			</p>
+			<button ref="sectionedToggle" type="button">Workspace</button>
+			<menu ref="sectionedMenu" popover>
+				<li><button type="button">Switch workspace…</button></li>
+				<li><button type="button">Manage members</button></li>
+				<hr />
+				<li><button type="button">Settings</button></li>
+				<li><button type="button">Billing</button></li>
+				<hr />
+				<li><button type="button">Sign out</button></li>
+			</menu>
+		</section>
+
+		<section id="placements">
+			<h2>Placements</h2>
+			<p class="showcase-caption">
+				The <code>placement</code> option drives where the menu opens relative to the toggle. Pick
+				one — the menu re-anchors via <code>placedMenu.update()</code>.
+			</p>
+			<div class="showcase-row">
+				<button
+					v-for="p in ['top-start', 'top-end', 'bottom-start', 'bottom-end'] as const"
+					:key="p"
+					type="button"
+					:class="{ primary: placement === p }"
+					@click="choosePlacement(p)"
+				>
+					{{ p }}
+				</button>
+			</div>
+			<button ref="placementToggle" type="button">Open at {{ placement }}</button>
+			<menu ref="placementMenu" popover>
+				<li><button type="button">First</button></li>
+				<li><button type="button">Second</button></li>
+				<li><button type="button">Third</button></li>
 			</menu>
 		</section>
 

@@ -44,6 +44,70 @@ const ev = usePopover({
 		place: () => log.value.unshift({ at: stamp(), kind: 'place' }),
 	},
 })
+
+// Variant popovers — same composable, different `<aside class>` per
+// variant for tinted chrome (variants come from the framework's
+// shared modifier vocabulary).
+const variantAnchors = {
+	primary: ref<HTMLElement | null>(null),
+	success: ref<HTMLElement | null>(null),
+	warning: ref<HTMLElement | null>(null),
+	danger: ref<HTMLElement | null>(null),
+}
+const variantPanels = {
+	primary: ref<HTMLElement | null>(null),
+	success: ref<HTMLElement | null>(null),
+	warning: ref<HTMLElement | null>(null),
+	danger: ref<HTMLElement | null>(null),
+}
+usePopover({
+	anchor: variantAnchors.primary,
+	panel: variantPanels.primary,
+	placement: 'top',
+	trigger: { click: true },
+})
+usePopover({
+	anchor: variantAnchors.success,
+	panel: variantPanels.success,
+	placement: 'top',
+	trigger: { click: true },
+})
+usePopover({
+	anchor: variantAnchors.warning,
+	panel: variantPanels.warning,
+	placement: 'top',
+	trigger: { click: true },
+})
+usePopover({
+	anchor: variantAnchors.danger,
+	panel: variantPanels.danger,
+	placement: 'top',
+	trigger: { click: true },
+})
+
+// Manual show / hide — `trigger: {}` opts out of auto-binding so the
+// only way to open / close is via the API.
+const manualAnchor = ref<HTMLElement | null>(null)
+const manualPanel = ref<HTMLElement | null>(null)
+const manual = usePopover({
+	anchor: manualAnchor,
+	panel: manualPanel,
+	placement: 'top',
+	trigger: {},
+})
+
+// Dismiss-on-outside disabled — clicks outside the panel don't close it.
+// Useful when the popover hosts a confirmation flow that the user must
+// commit to via an explicit button.
+const stickyAnchor = ref<HTMLElement | null>(null)
+const stickyPanel = ref<HTMLElement | null>(null)
+const sticky = usePopover({
+	anchor: stickyAnchor,
+	panel: stickyPanel,
+	placement: 'top',
+	trigger: { click: true },
+	dismiss: { outside: false },
+})
 </script>
 
 <template>
@@ -93,6 +157,107 @@ const ev = usePopover({
 			<button ref="placedAnchor" type="button">Placement test</button>
 			<aside ref="placedPanel" popover :class="placement">
 				<strong>Placement: {{ placement }}</strong>
+			</aside>
+		</section>
+
+		<section id="variants">
+			<h2>Contextual variants</h2>
+			<p class="showcase-caption">
+				The popover panel is just an <code>&lt;aside&gt;</code> — variant classes tint it to match
+				the framework's shared colour vocabulary.
+			</p>
+			<div class="showcase-row">
+				<button
+					:ref="(el) => (variantAnchors.primary.value = el as HTMLElement | null)"
+					type="button"
+				>
+					Primary
+				</button>
+				<button
+					:ref="(el) => (variantAnchors.success.value = el as HTMLElement | null)"
+					type="button"
+				>
+					Success
+				</button>
+				<button
+					:ref="(el) => (variantAnchors.warning.value = el as HTMLElement | null)"
+					type="button"
+				>
+					Warning
+				</button>
+				<button
+					:ref="(el) => (variantAnchors.danger.value = el as HTMLElement | null)"
+					type="button"
+				>
+					Danger
+				</button>
+			</div>
+			<aside
+				:ref="(el) => (variantPanels.primary.value = el as HTMLElement | null)"
+				popover
+				class="primary top"
+			>
+				<strong>Primary</strong>
+				<p>Tinted to the primary variant.</p>
+			</aside>
+			<aside
+				:ref="(el) => (variantPanels.success.value = el as HTMLElement | null)"
+				popover
+				class="success top"
+			>
+				<strong>Success</strong>
+				<p>Done.</p>
+			</aside>
+			<aside
+				:ref="(el) => (variantPanels.warning.value = el as HTMLElement | null)"
+				popover
+				class="warning top"
+			>
+				<strong>Warning</strong>
+				<p>Heads up.</p>
+			</aside>
+			<aside
+				:ref="(el) => (variantPanels.danger.value = el as HTMLElement | null)"
+				popover
+				class="danger top"
+			>
+				<strong>Danger</strong>
+				<p>Stop.</p>
+			</aside>
+		</section>
+
+		<section id="manual">
+			<h2>Manual show / hide</h2>
+			<p class="showcase-caption">
+				<code>trigger: {}</code> opts out of auto-binding — the only way to open / close is via the
+				composable API.
+			</p>
+			<div class="showcase-row">
+				<button ref="manualAnchor" type="button">Anchor</button>
+				<button type="button" @click="manual.show()">show()</button>
+				<button type="button" @click="manual.hide()">hide()</button>
+				<button type="button" @click="manual.toggle()">toggle()</button>
+			</div>
+			<aside ref="manualPanel" popover class="top">
+				Opens / closes only via the API — outside clicks still dismiss (use the rule below to
+				disable that too).
+			</aside>
+		</section>
+
+		<section id="dismiss-disabled">
+			<h2>Dismiss-on-outside disabled</h2>
+			<p class="showcase-caption">
+				<code>dismiss: { outside: false }</code> — clicks outside the panel don't close it. Useful
+				for confirmation flows that must be committed via an explicit button.
+			</p>
+			<button ref="stickyAnchor" type="button">Open sticky popover</button>
+			<aside ref="stickyPanel" popover class="warning top">
+				<strong>Confirm deletion</strong>
+				<p>This action can't be undone.</p>
+				<div class="showcase-row">
+					<button type="button" @click="sticky.hide()">Cancel</button>
+					<button type="button" class="danger" @click="sticky.hide()">Delete</button>
+				</div>
 			</aside>
 		</section>
 
