@@ -86,8 +86,22 @@
 		// Default to 0 so a single toast falls back to the corner inset.
 		--set-toast-stack-offset: 0px;
 		inset-block-end: calc(var(--set-toast-edge-inset) + var(--set-toast-stack-offset));
+
+		// Re-paint the toast's chrome here in the composables layer (which
+		// beats surfaces) so the variant tint set by `.success` /
+		// `.warning` / etc. on `<output popover>` actually reaches the
+		// rendered element. Without this re-paint, `surfaces/_popover.scss`
+		// wins on `background-color` / `border` / `padding` (it paints
+		// `[popover]` directly, not via the toast token chain), and every
+		// toast renders in the default popover canvas regardless of
+		// variant class.
+		color: var(--set-toast-color);
+		background-color: var(--set-toast-background-color);
+		border: var(--set-toast-border-width) solid var(--set-toast-border-color);
+		border-radius: var(--set-toast-border-radius);
 		padding-inline: var(--set-toast-padding-inline);
 		padding-block: var(--set-toast-padding-block);
+		box-shadow: var(--set-toast-box-shadow);
 
 		&.top {
 			inset-block-start: calc(var(--set-toast-edge-inset) + var(--set-toast-stack-offset));

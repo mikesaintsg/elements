@@ -38,6 +38,35 @@ export const tokens = {
 		border: '--color-border',
 		borderStrong: '--color-border-strong',
 		borderSubtle: '--color-border-subtle',
+		// Variant subtle scale — tinted backgrounds, saturated text, and
+		// medium-strength borders derived from the seven variants.
+		// Mirrors mailbox's `--bs-{color}-bg-subtle` /
+		// `--bs-{color}-text-emphasis` / `--bs-{color}-border-subtle`
+		// triplets — every theme-aware component (toast, alert, banner,
+		// chip, …) reads through these so a consumer who retunes a
+		// variant identity gets the matching subtle/emphasis chrome
+		// without a follow-up edit per partial.
+		primaryBgSubtle: '--color-primary-bg-subtle',
+		primaryTextEmphasis: '--color-primary-text-emphasis',
+		primaryBorderSubtle: '--color-primary-border-subtle',
+		secondaryBgSubtle: '--color-secondary-bg-subtle',
+		secondaryTextEmphasis: '--color-secondary-text-emphasis',
+		secondaryBorderSubtle: '--color-secondary-border-subtle',
+		tertiaryBgSubtle: '--color-tertiary-bg-subtle',
+		tertiaryTextEmphasis: '--color-tertiary-text-emphasis',
+		tertiaryBorderSubtle: '--color-tertiary-border-subtle',
+		successBgSubtle: '--color-success-bg-subtle',
+		successTextEmphasis: '--color-success-text-emphasis',
+		successBorderSubtle: '--color-success-border-subtle',
+		warningBgSubtle: '--color-warning-bg-subtle',
+		warningTextEmphasis: '--color-warning-text-emphasis',
+		warningBorderSubtle: '--color-warning-border-subtle',
+		dangerBgSubtle: '--color-danger-bg-subtle',
+		dangerTextEmphasis: '--color-danger-text-emphasis',
+		dangerBorderSubtle: '--color-danger-border-subtle',
+		informationBgSubtle: '--color-information-bg-subtle',
+		informationTextEmphasis: '--color-information-text-emphasis',
+		informationBorderSubtle: '--color-information-border-subtle',
 	},
 
 	// Framework defaults that have no Tailwind equivalent.

@@ -20374,8 +20374,9 @@ toast.destroy()</code></pre>`,
 					--set-toast-padding-inline: calc(var(--spacing) * 4);
 					--set-toast-padding-block: calc(var(--spacing) * 3);
 					--set-toast-gap: calc(var(--spacing) * 3);
+					--set-toast-inline-size: 22rem;
 					--set-toast-min-inline-size: 16rem;
-					--set-toast-max-inline-size: min(28rem, calc(100dvw - 2 * var(--set-toast-edge-inset)));
+					--set-toast-max-inline-size: 28rem;
 					--set-toast-font-size: var(--text-sm, 0.875rem);
 					--set-toast-edge-inset: calc(var(--spacing) * 4);
 					--set-toast-box-shadow: 0 6px 24px -6px #0000002e;
@@ -20394,6 +20395,7 @@ toast.destroy()</code></pre>`,
 				output[role='status']:not(.filled) {
 					align-items: center;
 					gap: var(--set-toast-gap);
+					inline-size: min(var(--set-toast-inline-size), 100dvw - 2 * var(--set-toast-edge-inset));
 					min-inline-size: var(--set-toast-min-inline-size);
 					max-inline-size: var(--set-toast-max-inline-size);
 					font-family: inherit;
@@ -20409,424 +20411,45 @@ toast.destroy()</code></pre>`,
 				}
 				output[popover].primary,
 				output[role='status'].primary:not(.filled) {
-					--set-toast-color: var(--color-primary);
-					--set-toast-background-color: #1325ec;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].primary,
-					output[role='status'].primary:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-primary) 15%,
-							var(--color-canvas)
-						);
-					}
-				}
-				output[popover].primary,
-				output[role='status'].primary:not(.filled) {
-					--set-toast-border-color: #1325ec66;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].primary,
-					output[role='status'].primary:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
-					}
-				}
-				[data-theme='dark'] output[popover].primary,
-				[data-theme='dark'] output[role='status'].primary:not(.filled) {
-					--set-toast-color: #1325ec;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].primary,
-					[data-theme='dark'] output[role='status'].primary:not(.filled) {
-						--set-toast-color: color-mix(in oklab, var(--color-primary) 60%, var(--color-text));
-					}
-				}
-				[data-theme='dark'] output[popover].primary,
-				[data-theme='dark'] output[role='status'].primary:not(.filled) {
-					--set-toast-background-color: #1325ec;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].primary,
-					[data-theme='dark'] output[role='status'].primary:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-primary) 25%,
-							var(--color-surface)
-						);
-					}
-				}
-				[data-theme='dark'] output[popover].primary,
-				[data-theme='dark'] output[role='status'].primary:not(.filled) {
-					--set-toast-border-color: #1325ec8c;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].primary,
-					[data-theme='dark'] output[role='status'].primary:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-primary) 55%, transparent);
-					}
+					--set-toast-color: var(--color-primary-text-emphasis);
+					--set-toast-background-color: var(--color-primary-bg-subtle);
+					--set-toast-border-color: var(--color-primary-border-subtle);
 				}
 				output[popover].secondary,
 				output[role='status'].secondary:not(.filled) {
-					--set-toast-color: var(--color-secondary);
-					--set-toast-background-color: #5c6e8a;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].secondary,
-					output[role='status'].secondary:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-secondary) 15%,
-							var(--color-canvas)
-						);
-					}
-				}
-				output[popover].secondary,
-				output[role='status'].secondary:not(.filled) {
-					--set-toast-border-color: #5c6e8a66;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].secondary,
-					output[role='status'].secondary:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-secondary) 40%, transparent);
-					}
-				}
-				[data-theme='dark'] output[popover].secondary,
-				[data-theme='dark'] output[role='status'].secondary:not(.filled) {
-					--set-toast-color: #5c6e8a;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].secondary,
-					[data-theme='dark'] output[role='status'].secondary:not(.filled) {
-						--set-toast-color: color-mix(in oklab, var(--color-secondary) 60%, var(--color-text));
-					}
-				}
-				[data-theme='dark'] output[popover].secondary,
-				[data-theme='dark'] output[role='status'].secondary:not(.filled) {
-					--set-toast-background-color: #5c6e8a;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].secondary,
-					[data-theme='dark'] output[role='status'].secondary:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-secondary) 25%,
-							var(--color-surface)
-						);
-					}
-				}
-				[data-theme='dark'] output[popover].secondary,
-				[data-theme='dark'] output[role='status'].secondary:not(.filled) {
-					--set-toast-border-color: #5c6e8a8c;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].secondary,
-					[data-theme='dark'] output[role='status'].secondary:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-secondary) 55%, transparent);
-					}
+					--set-toast-color: var(--color-secondary-text-emphasis);
+					--set-toast-background-color: var(--color-secondary-bg-subtle);
+					--set-toast-border-color: var(--color-secondary-border-subtle);
 				}
 				output[popover].tertiary,
 				output[role='status'].tertiary:not(.filled) {
-					--set-toast-color: var(--color-tertiary);
-					--set-toast-background-color: oklch(60.6% 0.25 292.717);
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].tertiary,
-					output[role='status'].tertiary:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-tertiary) 15%,
-							var(--color-canvas)
-						);
-					}
-				}
-				output[popover].tertiary,
-				output[role='status'].tertiary:not(.filled) {
-					--set-toast-border-color: #8d54ff66;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].tertiary,
-					output[role='status'].tertiary:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-tertiary) 40%, transparent);
-					}
-				}
-				[data-theme='dark'] output[popover].tertiary,
-				[data-theme='dark'] output[role='status'].tertiary:not(.filled) {
-					--set-toast-color: oklch(60.6% 0.25 292.717);
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].tertiary,
-					[data-theme='dark'] output[role='status'].tertiary:not(.filled) {
-						--set-toast-color: color-mix(in oklab, var(--color-tertiary) 60%, var(--color-text));
-					}
-				}
-				[data-theme='dark'] output[popover].tertiary,
-				[data-theme='dark'] output[role='status'].tertiary:not(.filled) {
-					--set-toast-background-color: oklch(60.6% 0.25 292.717);
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].tertiary,
-					[data-theme='dark'] output[role='status'].tertiary:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-tertiary) 25%,
-							var(--color-surface)
-						);
-					}
-				}
-				[data-theme='dark'] output[popover].tertiary,
-				[data-theme='dark'] output[role='status'].tertiary:not(.filled) {
-					--set-toast-border-color: #8d54ff8c;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].tertiary,
-					[data-theme='dark'] output[role='status'].tertiary:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-tertiary) 55%, transparent);
-					}
+					--set-toast-color: var(--color-tertiary-text-emphasis);
+					--set-toast-background-color: var(--color-tertiary-bg-subtle);
+					--set-toast-border-color: var(--color-tertiary-border-subtle);
 				}
 				output[popover].success,
 				output[role='status'].success:not(.filled) {
-					--set-toast-color: var(--color-success);
-					--set-toast-background-color: #2a844f;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].success,
-					output[role='status'].success:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-success) 15%,
-							var(--color-canvas)
-						);
-					}
-				}
-				output[popover].success,
-				output[role='status'].success:not(.filled) {
-					--set-toast-border-color: #2a844f66;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].success,
-					output[role='status'].success:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-success) 40%, transparent);
-					}
-				}
-				[data-theme='dark'] output[popover].success,
-				[data-theme='dark'] output[role='status'].success:not(.filled) {
-					--set-toast-color: #2a844f;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].success,
-					[data-theme='dark'] output[role='status'].success:not(.filled) {
-						--set-toast-color: color-mix(in oklab, var(--color-success) 60%, var(--color-text));
-					}
-				}
-				[data-theme='dark'] output[popover].success,
-				[data-theme='dark'] output[role='status'].success:not(.filled) {
-					--set-toast-background-color: #2a844f;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].success,
-					[data-theme='dark'] output[role='status'].success:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-success) 25%,
-							var(--color-surface)
-						);
-					}
-				}
-				[data-theme='dark'] output[popover].success,
-				[data-theme='dark'] output[role='status'].success:not(.filled) {
-					--set-toast-border-color: #2a844f8c;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].success,
-					[data-theme='dark'] output[role='status'].success:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-success) 55%, transparent);
-					}
+					--set-toast-color: var(--color-success-text-emphasis);
+					--set-toast-background-color: var(--color-success-bg-subtle);
+					--set-toast-border-color: var(--color-success-border-subtle);
 				}
 				output[popover].warning,
 				output[role='status'].warning:not(.filled) {
-					--set-toast-color: var(--color-warning);
-					--set-toast-background-color: #f6cf09;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].warning,
-					output[role='status'].warning:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-warning) 15%,
-							var(--color-canvas)
-						);
-					}
-				}
-				output[popover].warning,
-				output[role='status'].warning:not(.filled) {
-					--set-toast-border-color: #f6cf0966;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].warning,
-					output[role='status'].warning:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-warning) 40%, transparent);
-					}
-				}
-				[data-theme='dark'] output[popover].warning,
-				[data-theme='dark'] output[role='status'].warning:not(.filled) {
-					--set-toast-color: #f6cf09;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].warning,
-					[data-theme='dark'] output[role='status'].warning:not(.filled) {
-						--set-toast-color: color-mix(in oklab, var(--color-warning) 60%, var(--color-text));
-					}
-				}
-				[data-theme='dark'] output[popover].warning,
-				[data-theme='dark'] output[role='status'].warning:not(.filled) {
-					--set-toast-background-color: #f6cf09;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].warning,
-					[data-theme='dark'] output[role='status'].warning:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-warning) 25%,
-							var(--color-surface)
-						);
-					}
-				}
-				[data-theme='dark'] output[popover].warning,
-				[data-theme='dark'] output[role='status'].warning:not(.filled) {
-					--set-toast-border-color: #f6cf098c;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].warning,
-					[data-theme='dark'] output[role='status'].warning:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-warning) 55%, transparent);
-					}
+					--set-toast-color: var(--color-warning-text-emphasis);
+					--set-toast-background-color: var(--color-warning-bg-subtle);
+					--set-toast-border-color: var(--color-warning-border-subtle);
 				}
 				output[popover].danger,
 				output[role='status'].danger:not(.filled) {
-					--set-toast-color: var(--color-danger);
-					--set-toast-background-color: #d62929;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].danger,
-					output[role='status'].danger:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-danger) 15%,
-							var(--color-canvas)
-						);
-					}
-				}
-				output[popover].danger,
-				output[role='status'].danger:not(.filled) {
-					--set-toast-border-color: #d6292966;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].danger,
-					output[role='status'].danger:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-danger) 40%, transparent);
-					}
-				}
-				[data-theme='dark'] output[popover].danger,
-				[data-theme='dark'] output[role='status'].danger:not(.filled) {
-					--set-toast-color: #d62929;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].danger,
-					[data-theme='dark'] output[role='status'].danger:not(.filled) {
-						--set-toast-color: color-mix(in oklab, var(--color-danger) 60%, var(--color-text));
-					}
-				}
-				[data-theme='dark'] output[popover].danger,
-				[data-theme='dark'] output[role='status'].danger:not(.filled) {
-					--set-toast-background-color: #d62929;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].danger,
-					[data-theme='dark'] output[role='status'].danger:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-danger) 25%,
-							var(--color-surface)
-						);
-					}
-				}
-				[data-theme='dark'] output[popover].danger,
-				[data-theme='dark'] output[role='status'].danger:not(.filled) {
-					--set-toast-border-color: #d629298c;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].danger,
-					[data-theme='dark'] output[role='status'].danger:not(.filled) {
-						--set-toast-border-color: color-mix(in oklab, var(--color-danger) 55%, transparent);
-					}
+					--set-toast-color: var(--color-danger-text-emphasis);
+					--set-toast-background-color: var(--color-danger-bg-subtle);
+					--set-toast-border-color: var(--color-danger-border-subtle);
 				}
 				output[popover].information,
 				output[role='status'].information:not(.filled) {
-					--set-toast-color: var(--color-information);
-					--set-toast-background-color: #06f;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].information,
-					output[role='status'].information:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-information) 15%,
-							var(--color-canvas)
-						);
-					}
-				}
-				output[popover].information,
-				output[role='status'].information:not(.filled) {
-					--set-toast-border-color: #06f6;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					output[popover].information,
-					output[role='status'].information:not(.filled) {
-						--set-toast-border-color: color-mix(
-							in oklab,
-							var(--color-information) 40%,
-							transparent
-						);
-					}
-				}
-				[data-theme='dark'] output[popover].information,
-				[data-theme='dark'] output[role='status'].information:not(.filled) {
-					--set-toast-color: #06f;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].information,
-					[data-theme='dark'] output[role='status'].information:not(.filled) {
-						--set-toast-color: color-mix(in oklab, var(--color-information) 60%, var(--color-text));
-					}
-				}
-				[data-theme='dark'] output[popover].information,
-				[data-theme='dark'] output[role='status'].information:not(.filled) {
-					--set-toast-background-color: #06f;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].information,
-					[data-theme='dark'] output[role='status'].information:not(.filled) {
-						--set-toast-background-color: color-mix(
-							in oklab,
-							var(--color-information) 25%,
-							var(--color-surface)
-						);
-					}
-				}
-				[data-theme='dark'] output[popover].information,
-				[data-theme='dark'] output[role='status'].information:not(.filled) {
-					--set-toast-border-color: #0066ff8c;
-				}
-				@supports (color: color-mix(in lab, red, red)) {
-					[data-theme='dark'] output[popover].information,
-					[data-theme='dark'] output[role='status'].information:not(.filled) {
-						--set-toast-border-color: color-mix(
-							in oklab,
-							var(--color-information) 55%,
-							transparent
-						);
-					}
+					--set-toast-color: var(--color-information-text-emphasis);
+					--set-toast-background-color: var(--color-information-bg-subtle);
+					--set-toast-border-color: var(--color-information-border-subtle);
 				}
 				output[popover] {
 					margin: 0;
@@ -21484,8 +21107,13 @@ toast.destroy()</code></pre>`,
 				}
 				output[popover] {
 					--set-toast-stack-offset: 0px;
+					color: var(--set-toast-color);
+					background-color: var(--set-toast-background-color);
+					border: var(--set-toast-border-width) solid var(--set-toast-border-color);
+					border-radius: var(--set-toast-border-radius);
 					padding-inline: var(--set-toast-padding-inline);
 					padding-block: var(--set-toast-padding-block);
+					box-shadow: var(--set-toast-box-shadow);
 					inset-block-end: calc(var(--set-toast-edge-inset) + var(--set-toast-stack-offset));
 				}
 				output[popover].top {
@@ -22717,12 +22345,264 @@ toast.destroy()</code></pre>`,
 				--color-border: #c2cad6;
 				--color-border-strong: #a3afc2;
 				--color-border-subtle: #e0e4eb;
+				--color-primary-bg-subtle: #1325ec;
 			}
 			@media (prefers-color-scheme: dark) {
 				:root {
 					--lightningcss-light: ;
 					--lightningcss-dark: initial;
 				}
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-primary-bg-subtle: color-mix(
+						in oklab,
+						var(--color-primary) 12%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-primary-text-emphasis: #1325ec;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-primary-text-emphasis: color-mix(
+						in oklab,
+						var(--color-primary) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			:root {
+				--color-primary-border-subtle: #1325ec;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-primary-border-subtle: color-mix(
+						in oklab,
+						var(--color-primary) 35%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-secondary-bg-subtle: #5c6e8a;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-secondary-bg-subtle: color-mix(
+						in oklab,
+						var(--color-secondary) 12%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-secondary-text-emphasis: #5c6e8a;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-secondary-text-emphasis: color-mix(
+						in oklab,
+						var(--color-secondary) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			:root {
+				--color-secondary-border-subtle: #5c6e8a;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-secondary-border-subtle: color-mix(
+						in oklab,
+						var(--color-secondary) 35%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-tertiary-bg-subtle: oklch(60.6% 0.25 292.717);
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-tertiary-bg-subtle: color-mix(
+						in oklab,
+						var(--color-tertiary) 12%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-tertiary-text-emphasis: oklch(60.6% 0.25 292.717);
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-tertiary-text-emphasis: color-mix(
+						in oklab,
+						var(--color-tertiary) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			:root {
+				--color-tertiary-border-subtle: oklch(60.6% 0.25 292.717);
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-tertiary-border-subtle: color-mix(
+						in oklab,
+						var(--color-tertiary) 35%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-success-bg-subtle: #2a844f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-success-bg-subtle: color-mix(
+						in oklab,
+						var(--color-success) 12%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-success-text-emphasis: #2a844f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-success-text-emphasis: color-mix(
+						in oklab,
+						var(--color-success) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			:root {
+				--color-success-border-subtle: #2a844f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-success-border-subtle: color-mix(
+						in oklab,
+						var(--color-success) 35%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-warning-bg-subtle: #f6cf09;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-warning-bg-subtle: color-mix(
+						in oklab,
+						var(--color-warning) 18%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-warning-text-emphasis: #f6cf09;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-warning-text-emphasis: color-mix(
+						in oklab,
+						var(--color-warning) 80%,
+						var(--color-text)
+					);
+				}
+			}
+			:root {
+				--color-warning-border-subtle: #f6cf09;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-warning-border-subtle: color-mix(
+						in oklab,
+						var(--color-warning) 45%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-danger-bg-subtle: #d62929;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-danger-bg-subtle: color-mix(
+						in oklab,
+						var(--color-danger) 12%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-danger-text-emphasis: #d62929;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-danger-text-emphasis: color-mix(
+						in oklab,
+						var(--color-danger) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			:root {
+				--color-danger-border-subtle: #d62929;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-danger-border-subtle: color-mix(
+						in oklab,
+						var(--color-danger) 35%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-information-bg-subtle: #06f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-information-bg-subtle: color-mix(
+						in oklab,
+						var(--color-information) 12%,
+						var(--color-canvas)
+					);
+				}
+			}
+			:root {
+				--color-information-text-emphasis: #06f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-information-text-emphasis: color-mix(
+						in oklab,
+						var(--color-information) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			:root {
+				--color-information-border-subtle: #06f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				:root {
+					--color-information-border-subtle: color-mix(
+						in oklab,
+						var(--color-information) 35%,
+						var(--color-canvas)
+					);
+				}
+			}
+			@media (prefers-color-scheme: dark) {
 				:root:not([data-theme]) {
 					--color-canvas: #161b22;
 					--color-surface: #1b2028;
@@ -22735,6 +22615,256 @@ toast.destroy()</code></pre>`,
 					--color-border-strong: #52627a;
 					--color-border-subtle: #2d3643;
 					--color-primary: #00b2ff;
+					--color-primary-bg-subtle: #1325ec;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-primary-bg-subtle: color-mix(
+							in oklab,
+							var(--color-primary) 22%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-primary-text-emphasis: #1325ec;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-primary-text-emphasis: color-mix(
+							in oklab,
+							var(--color-primary) 70%,
+							var(--color-text)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-primary-border-subtle: #1325ec;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-primary-border-subtle: color-mix(
+							in oklab,
+							var(--color-primary) 50%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-secondary-bg-subtle: #5c6e8a;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-secondary-bg-subtle: color-mix(
+							in oklab,
+							var(--color-secondary) 22%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-secondary-text-emphasis: #5c6e8a;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-secondary-text-emphasis: color-mix(
+							in oklab,
+							var(--color-secondary) 70%,
+							var(--color-text)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-secondary-border-subtle: #5c6e8a;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-secondary-border-subtle: color-mix(
+							in oklab,
+							var(--color-secondary) 50%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-tertiary-bg-subtle: oklch(60.6% 0.25 292.717);
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-tertiary-bg-subtle: color-mix(
+							in oklab,
+							var(--color-tertiary) 22%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-tertiary-text-emphasis: oklch(60.6% 0.25 292.717);
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-tertiary-text-emphasis: color-mix(
+							in oklab,
+							var(--color-tertiary) 70%,
+							var(--color-text)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-tertiary-border-subtle: oklch(60.6% 0.25 292.717);
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-tertiary-border-subtle: color-mix(
+							in oklab,
+							var(--color-tertiary) 50%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-success-bg-subtle: #2a844f;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-success-bg-subtle: color-mix(
+							in oklab,
+							var(--color-success) 22%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-success-text-emphasis: #2a844f;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-success-text-emphasis: color-mix(
+							in oklab,
+							var(--color-success) 70%,
+							var(--color-text)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-success-border-subtle: #2a844f;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-success-border-subtle: color-mix(
+							in oklab,
+							var(--color-success) 50%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-warning-bg-subtle: #f6cf09;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-warning-bg-subtle: color-mix(
+							in oklab,
+							var(--color-warning) 28%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-warning-text-emphasis: #f6cf09;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-warning-text-emphasis: color-mix(
+							in oklab,
+							var(--color-warning) 80%,
+							var(--color-text)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-warning-border-subtle: #f6cf09;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-warning-border-subtle: color-mix(
+							in oklab,
+							var(--color-warning) 55%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-danger-bg-subtle: #d62929;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-danger-bg-subtle: color-mix(
+							in oklab,
+							var(--color-danger) 22%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-danger-text-emphasis: #d62929;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-danger-text-emphasis: color-mix(
+							in oklab,
+							var(--color-danger) 70%,
+							var(--color-text)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-danger-border-subtle: #d62929;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-danger-border-subtle: color-mix(
+							in oklab,
+							var(--color-danger) 50%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-information-bg-subtle: #06f;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-information-bg-subtle: color-mix(
+							in oklab,
+							var(--color-information) 22%,
+							var(--color-surface)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-information-text-emphasis: #06f;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-information-text-emphasis: color-mix(
+							in oklab,
+							var(--color-information) 70%,
+							var(--color-text)
+						);
+					}
+				}
+				:root:not([data-theme]) {
+					--color-information-border-subtle: #06f;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root:not([data-theme]) {
+						--color-information-border-subtle: color-mix(
+							in oklab,
+							var(--color-information) 50%,
+							var(--color-surface)
+						);
+					}
 				}
 			}
 			[data-theme='light'] {
@@ -22757,6 +22887,256 @@ toast.destroy()</code></pre>`,
 				--color-border-strong: #52627a;
 				--color-border-subtle: #2d3643;
 				--color-primary: #00b2ff;
+				--color-primary-bg-subtle: #1325ec;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-primary-bg-subtle: color-mix(
+						in oklab,
+						var(--color-primary) 22%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-primary-text-emphasis: #1325ec;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-primary-text-emphasis: color-mix(
+						in oklab,
+						var(--color-primary) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-primary-border-subtle: #1325ec;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-primary-border-subtle: color-mix(
+						in oklab,
+						var(--color-primary) 50%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-secondary-bg-subtle: #5c6e8a;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-secondary-bg-subtle: color-mix(
+						in oklab,
+						var(--color-secondary) 22%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-secondary-text-emphasis: #5c6e8a;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-secondary-text-emphasis: color-mix(
+						in oklab,
+						var(--color-secondary) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-secondary-border-subtle: #5c6e8a;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-secondary-border-subtle: color-mix(
+						in oklab,
+						var(--color-secondary) 50%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-tertiary-bg-subtle: oklch(60.6% 0.25 292.717);
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-tertiary-bg-subtle: color-mix(
+						in oklab,
+						var(--color-tertiary) 22%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-tertiary-text-emphasis: oklch(60.6% 0.25 292.717);
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-tertiary-text-emphasis: color-mix(
+						in oklab,
+						var(--color-tertiary) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-tertiary-border-subtle: oklch(60.6% 0.25 292.717);
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-tertiary-border-subtle: color-mix(
+						in oklab,
+						var(--color-tertiary) 50%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-success-bg-subtle: #2a844f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-success-bg-subtle: color-mix(
+						in oklab,
+						var(--color-success) 22%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-success-text-emphasis: #2a844f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-success-text-emphasis: color-mix(
+						in oklab,
+						var(--color-success) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-success-border-subtle: #2a844f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-success-border-subtle: color-mix(
+						in oklab,
+						var(--color-success) 50%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-warning-bg-subtle: #f6cf09;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-warning-bg-subtle: color-mix(
+						in oklab,
+						var(--color-warning) 28%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-warning-text-emphasis: #f6cf09;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-warning-text-emphasis: color-mix(
+						in oklab,
+						var(--color-warning) 80%,
+						var(--color-text)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-warning-border-subtle: #f6cf09;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-warning-border-subtle: color-mix(
+						in oklab,
+						var(--color-warning) 55%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-danger-bg-subtle: #d62929;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-danger-bg-subtle: color-mix(
+						in oklab,
+						var(--color-danger) 22%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-danger-text-emphasis: #d62929;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-danger-text-emphasis: color-mix(
+						in oklab,
+						var(--color-danger) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-danger-border-subtle: #d62929;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-danger-border-subtle: color-mix(
+						in oklab,
+						var(--color-danger) 50%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-information-bg-subtle: #06f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-information-bg-subtle: color-mix(
+						in oklab,
+						var(--color-information) 22%,
+						var(--color-surface)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-information-text-emphasis: #06f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-information-text-emphasis: color-mix(
+						in oklab,
+						var(--color-information) 70%,
+						var(--color-text)
+					);
+				}
+			}
+			[data-theme='dark'] {
+				--color-information-border-subtle: #06f;
+			}
+			@supports (color: color-mix(in lab, red, red)) {
+				[data-theme='dark'] {
+					--color-information-border-subtle: color-mix(
+						in oklab,
+						var(--color-information) 50%,
+						var(--color-surface)
+					);
+				}
 			}
 			.showcase-backdrop {
 				z-index: 40;

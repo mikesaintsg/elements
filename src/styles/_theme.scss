@@ -105,6 +105,75 @@
 	--color-border: hsl(216 20% 80%);
 	--color-border-strong: hsl(216 20% 70%);
 	--color-border-subtle: hsl(216 20% 90%);
+
+	// Variant subtle scale — light tinted backgrounds, saturated text,
+	// medium-strength borders. Mirrors mailbox's `--bs-{color}-bg-subtle`,
+	// `--bs-{color}-text-emphasis`, and `--bs-{color}-border-subtle` token
+	// triplet (every Bootstrap-derived themed component reads through these).
+	// Each triplet is derived from the saturated `--color-{variant}` token
+	// via `color-mix()` so a consumer who retunes the variant identity
+	// (e.g. swaps `--color-primary` for a brand colour) automatically gets
+	// matching subtle / emphasis / border-subtle without redeclaring.
+	//
+	// Light-mode formula:
+	//   bg-subtle      = mix(variant 12%, canvas)   pale tinted bg
+	//   text-emphasis  = mix(variant 70%, text)     readable text on tinted bg
+	//   border-subtle  = mix(variant 35%, canvas)   visible border at low ink
+	//
+	// Dark-mode override (in `[data-theme='dark']` block below) bumps the
+	// percentages and switches the base to `--color-surface` so the tint
+	// reads against the deep canvas.
+	--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 12%, var(--color-canvas));
+	--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
+	--color-primary-border-subtle: color-mix(in oklab, var(--color-primary) 35%, var(--color-canvas));
+
+	--color-secondary-bg-subtle: color-mix(in oklab, var(--color-secondary) 12%, var(--color-canvas));
+	--color-secondary-text-emphasis: color-mix(
+		in oklab,
+		var(--color-secondary) 70%,
+		var(--color-text)
+	);
+	--color-secondary-border-subtle: color-mix(
+		in oklab,
+		var(--color-secondary) 35%,
+		var(--color-canvas)
+	);
+
+	--color-tertiary-bg-subtle: color-mix(in oklab, var(--color-tertiary) 12%, var(--color-canvas));
+	--color-tertiary-text-emphasis: color-mix(in oklab, var(--color-tertiary) 70%, var(--color-text));
+	--color-tertiary-border-subtle: color-mix(
+		in oklab,
+		var(--color-tertiary) 35%,
+		var(--color-canvas)
+	);
+
+	--color-success-bg-subtle: color-mix(in oklab, var(--color-success) 12%, var(--color-canvas));
+	--color-success-text-emphasis: color-mix(in oklab, var(--color-success) 70%, var(--color-text));
+	--color-success-border-subtle: color-mix(in oklab, var(--color-success) 35%, var(--color-canvas));
+
+	--color-warning-bg-subtle: color-mix(in oklab, var(--color-warning) 18%, var(--color-canvas));
+	--color-warning-text-emphasis: color-mix(in oklab, var(--color-warning) 80%, var(--color-text));
+	--color-warning-border-subtle: color-mix(in oklab, var(--color-warning) 45%, var(--color-canvas));
+
+	--color-danger-bg-subtle: color-mix(in oklab, var(--color-danger) 12%, var(--color-canvas));
+	--color-danger-text-emphasis: color-mix(in oklab, var(--color-danger) 70%, var(--color-text));
+	--color-danger-border-subtle: color-mix(in oklab, var(--color-danger) 35%, var(--color-canvas));
+
+	--color-information-bg-subtle: color-mix(
+		in oklab,
+		var(--color-information) 12%,
+		var(--color-canvas)
+	);
+	--color-information-text-emphasis: color-mix(
+		in oklab,
+		var(--color-information) 70%,
+		var(--color-text)
+	);
+	--color-information-border-subtle: color-mix(
+		in oklab,
+		var(--color-information) 35%,
+		var(--color-canvas)
+	);
 }
 
 // ── prefers-color-scheme follow ─────────────────────────────────────────────
@@ -136,6 +205,88 @@
 		// Variant override — mailbox shifts primary from blue-violet (235) to
 		// bright cyan (198) in dark to keep AA contrast against the deep canvas.
 		--color-primary: hsl(198 100% 50%);
+
+		// Variant subtle — re-derived against the dark surface (see
+		// `[data-theme='dark']` block below for the rationale and formula).
+		--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 22%, var(--color-surface));
+		--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
+		--color-primary-border-subtle: color-mix(
+			in oklab,
+			var(--color-primary) 50%,
+			var(--color-surface)
+		);
+
+		--color-secondary-bg-subtle: color-mix(
+			in oklab,
+			var(--color-secondary) 22%,
+			var(--color-surface)
+		);
+		--color-secondary-text-emphasis: color-mix(
+			in oklab,
+			var(--color-secondary) 70%,
+			var(--color-text)
+		);
+		--color-secondary-border-subtle: color-mix(
+			in oklab,
+			var(--color-secondary) 50%,
+			var(--color-surface)
+		);
+
+		--color-tertiary-bg-subtle: color-mix(
+			in oklab,
+			var(--color-tertiary) 22%,
+			var(--color-surface)
+		);
+		--color-tertiary-text-emphasis: color-mix(
+			in oklab,
+			var(--color-tertiary) 70%,
+			var(--color-text)
+		);
+		--color-tertiary-border-subtle: color-mix(
+			in oklab,
+			var(--color-tertiary) 50%,
+			var(--color-surface)
+		);
+
+		--color-success-bg-subtle: color-mix(in oklab, var(--color-success) 22%, var(--color-surface));
+		--color-success-text-emphasis: color-mix(in oklab, var(--color-success) 70%, var(--color-text));
+		--color-success-border-subtle: color-mix(
+			in oklab,
+			var(--color-success) 50%,
+			var(--color-surface)
+		);
+
+		--color-warning-bg-subtle: color-mix(in oklab, var(--color-warning) 28%, var(--color-surface));
+		--color-warning-text-emphasis: color-mix(in oklab, var(--color-warning) 80%, var(--color-text));
+		--color-warning-border-subtle: color-mix(
+			in oklab,
+			var(--color-warning) 55%,
+			var(--color-surface)
+		);
+
+		--color-danger-bg-subtle: color-mix(in oklab, var(--color-danger) 22%, var(--color-surface));
+		--color-danger-text-emphasis: color-mix(in oklab, var(--color-danger) 70%, var(--color-text));
+		--color-danger-border-subtle: color-mix(
+			in oklab,
+			var(--color-danger) 50%,
+			var(--color-surface)
+		);
+
+		--color-information-bg-subtle: color-mix(
+			in oklab,
+			var(--color-information) 22%,
+			var(--color-surface)
+		);
+		--color-information-text-emphasis: color-mix(
+			in oklab,
+			var(--color-information) 70%,
+			var(--color-text)
+		);
+		--color-information-border-subtle: color-mix(
+			in oklab,
+			var(--color-information) 50%,
+			var(--color-surface)
+		);
 	}
 }
 
@@ -167,4 +318,80 @@
 	--color-border-subtle: hsl(216 20% 22%);
 
 	--color-primary: hsl(198 100% 50%);
+
+	// Variant subtle — re-derived against the dark surface. The light-mode
+	// 12-over-canvas formula dissolves at low surface lightness; bumping
+	// to ~22% over `--color-surface` keeps the variant identity readable
+	// against the deep canvas. Text-emphasis flips its mix base from
+	// `--color-text` (dark in light mode) to `--color-text` (light in
+	// dark mode) — same token reference, the value just shifts with the
+	// theme attribute. Border-subtle uses the same ~50% mix to stay
+	// visible without competing with the message text.
+	--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 22%, var(--color-surface));
+	--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
+	--color-primary-border-subtle: color-mix(
+		in oklab,
+		var(--color-primary) 50%,
+		var(--color-surface)
+	);
+
+	--color-secondary-bg-subtle: color-mix(
+		in oklab,
+		var(--color-secondary) 22%,
+		var(--color-surface)
+	);
+	--color-secondary-text-emphasis: color-mix(
+		in oklab,
+		var(--color-secondary) 70%,
+		var(--color-text)
+	);
+	--color-secondary-border-subtle: color-mix(
+		in oklab,
+		var(--color-secondary) 50%,
+		var(--color-surface)
+	);
+
+	--color-tertiary-bg-subtle: color-mix(in oklab, var(--color-tertiary) 22%, var(--color-surface));
+	--color-tertiary-text-emphasis: color-mix(in oklab, var(--color-tertiary) 70%, var(--color-text));
+	--color-tertiary-border-subtle: color-mix(
+		in oklab,
+		var(--color-tertiary) 50%,
+		var(--color-surface)
+	);
+
+	--color-success-bg-subtle: color-mix(in oklab, var(--color-success) 22%, var(--color-surface));
+	--color-success-text-emphasis: color-mix(in oklab, var(--color-success) 70%, var(--color-text));
+	--color-success-border-subtle: color-mix(
+		in oklab,
+		var(--color-success) 50%,
+		var(--color-surface)
+	);
+
+	--color-warning-bg-subtle: color-mix(in oklab, var(--color-warning) 28%, var(--color-surface));
+	--color-warning-text-emphasis: color-mix(in oklab, var(--color-warning) 80%, var(--color-text));
+	--color-warning-border-subtle: color-mix(
+		in oklab,
+		var(--color-warning) 55%,
+		var(--color-surface)
+	);
+
+	--color-danger-bg-subtle: color-mix(in oklab, var(--color-danger) 22%, var(--color-surface));
+	--color-danger-text-emphasis: color-mix(in oklab, var(--color-danger) 70%, var(--color-text));
+	--color-danger-border-subtle: color-mix(in oklab, var(--color-danger) 50%, var(--color-surface));
+
+	--color-information-bg-subtle: color-mix(
+		in oklab,
+		var(--color-information) 22%,
+		var(--color-surface)
+	);
+	--color-information-text-emphasis: color-mix(
+		in oklab,
+		var(--color-information) 70%,
+		var(--color-text)
+	);
+	--color-information-border-subtle: color-mix(
+		in oklab,
+		var(--color-information) 50%,
+		var(--color-surface)
+	);
 }

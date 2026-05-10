@@ -60,18 +60,18 @@
 		--set-toast-padding-inline: calc(var(--spacing) * 4);
 		--set-toast-padding-block: calc(var(--spacing) * 3);
 		--set-toast-gap: calc(var(--spacing) * 3);
+		// Design width — toasts TAKE this size (not just be capped by it),
+		// so a single-line toast and a multi-line toast share the same
+		// inline measure for a uniform stack rhythm. Mirrors mailbox's
+		// `--bs-toast-max-width: 21.875rem` (350px) consumed by their
+		// `floater-bounds('toast', 'width')` mixin. Setting `inline-size`
+		// to `min(design, viewport-budget)` clamps to the viewport on
+		// narrow screens — the toast fills the viewport minus the edge
+		// gutter on either side instead of overflowing or staying
+		// stranded at its design width.
+		--set-toast-inline-size: 22rem;
 		--set-toast-min-inline-size: 16rem;
-		// Viewport-aware design width — `min(<design-cap>, dvw - 2× edge-
-		// inset)` so a 360px phone never paints a toast wider than its
-		// viewport minus the placement padding on both sides. Mailbox
-		// calls this the "floater-bounds" pattern (their
-		// `mixins.floater-bounds('toast', 'width')` mixin); we inline it
-		// here because it's a single token and the formula is the same
-		// for every floater. Without this clamp, the bare 28rem max plus
-		// the 16px inset on the trailing edge pushed past the viewport
-		// edge on narrow mobile screens, causing the close button to
-		// fall off-screen.
-		--set-toast-max-inline-size: min(28rem, calc(100dvw - 2 * var(--set-toast-edge-inset)));
+		--set-toast-max-inline-size: 28rem;
 		--set-toast-font-size: var(--text-sm, 0.875rem);
 		--set-toast-edge-inset: calc(var(--spacing) * 4);
 		--set-toast-box-shadow: 0 6px 24px -6px rgb(0 0 0 / 0.18);
@@ -119,6 +119,14 @@
 		align-items: center;
 		gap: var(--set-toast-gap);
 
+		// Floater-bounds — TAKE the smaller of the design width and the
+		// viewport budget (dvw minus the edge gutter on each side). On
+		// desktop the toast lands at its design width (consistent across
+		// short / long messages); on mobile it shrinks to fill the
+		// viewport minus the gutters so the close button never gets
+		// pushed off-screen. `dvw` keeps the budget honest when mobile
+		// browser chrome (Safari address bar) shows / hides.
+		inline-size: min(var(--set-toast-inline-size), calc(100dvw - 2 * var(--set-toast-edge-inset)));
 		min-inline-size: var(--set-toast-min-inline-size);
 		max-inline-size: var(--set-toast-max-inline-size);
 
@@ -155,31 +163,9 @@
 	@each $variant in (primary, secondary, tertiary, success, warning, danger, information) {
 		output[popover].#{$variant},
 		output[role='status'].#{$variant}:not(.filled) {
-			--set-toast-color: var(--color-#{$variant});
-			--set-toast-background-color: color-mix(
-				in oklab,
-				var(--color-#{$variant}) 15%,
-				var(--color-canvas)
-			);
-			--set-toast-border-color: color-mix(in oklab, var(--color-#{$variant}) 40%, transparent);
-		}
-
-		// Dark-mode tuning. Bumping the mix to 25% over the slightly-
-		// lighter `--color-surface` (vs canvas) lets the variant identity
-		// read against the deep canvas — the light-mode 15-over-canvas
-		// formula dissolves at low surface lightness. The text colour is
-		// re-mixed toward `--color-text` so the variant chroma stays in
-		// the foreground without dragging the contrast into AAA-fail
-		// territory.
-		[data-theme='dark'] output[popover].#{$variant},
-		[data-theme='dark'] output[role='status'].#{$variant}:not(.filled) {
-			--set-toast-color: color-mix(in oklab, var(--color-#{$variant}) 60%, var(--color-text));
-			--set-toast-background-color: color-mix(
-				in oklab,
-				var(--color-#{$variant}) 25%,
-				var(--color-surface)
-			);
-			--set-toast-border-color: color-mix(in oklab, var(--color-#{$variant}) 55%, transparent);
+			--set-toast-color: var(--color-#{$variant}-text-emphasis);
+			--set-toast-background-color: var(--color-#{$variant}-bg-subtle);
+			--set-toast-border-color: var(--color-#{$variant}-border-subtle);
 		}
 	}
 

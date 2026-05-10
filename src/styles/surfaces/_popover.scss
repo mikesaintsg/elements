@@ -42,6 +42,15 @@
 		--set-popover-transition-duration: var(--set-transition-duration);
 	}
 
+	// Chrome paint applies to every `[popover]` including `<output popover>`
+	// toasts. Toast-specific chrome (variant tint, viewport-clamped width,
+	// banner-row layout) is repainted in `composables/_toast.scss` —
+	// composables sits after surfaces in our cascade, so the toast rules
+	// beat these defaults without a `:not(output)` filter here. Filtering
+	// would break the `[popover='hint']` variant's smaller padding because
+	// `[popover]:not(output)` (specificity 0,2,0) outranks `[popover='hint']`
+	// (specificity 0,1,0) — the hint rule would never reach its smaller
+	// `--set-popover-hint-padding-inline` against the default 1rem.
 	[popover] {
 		color: var(--set-popover-color);
 		background-color: var(--set-popover-background-color);
