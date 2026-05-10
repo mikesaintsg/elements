@@ -43,6 +43,16 @@ const setRadioRef = (i: number, el: unknown): void => {
 	if (!slot) return
 	slot.value = el instanceof HTMLElement ? el : null
 }
+
+// Social actions — same composable, three distinct visual treatments.
+// Proves the composable does no presentation work; the page chooses
+// label + class per state.
+const likeRef = ref<HTMLElement | null>(null)
+const bookmarkRef = ref<HTMLElement | null>(null)
+const followRef = ref<HTMLElement | null>(null)
+const like = useButton(likeRef)
+const bookmark = useButton(bookmarkRef)
+const follow = useButton(followRef)
 </script>
 
 <template>
@@ -105,6 +115,38 @@ const setRadioRef = (i: number, el: unknown): void => {
 					{{ label }}
 				</button>
 			</menu>
+		</section>
+
+		<section id="social">
+			<h2>Social actions</h2>
+			<p class="showcase-caption">
+				Same composable, three distinct visual treatments — the composable does no presentation
+				work, the page chooses label + class per state. Each button toggles its own state and
+				rewords its label.
+			</p>
+			<div class="showcase-row">
+				<button
+					ref="likeRef"
+					type="button"
+					:class="like.active.value ? ['danger', 'filled'] : ['danger', 'outline']"
+				>
+					{{ like.active.value ? '♥ Liked' : '♡ Like' }}
+				</button>
+				<button
+					ref="bookmarkRef"
+					type="button"
+					:class="bookmark.active.value ? ['warning', 'filled'] : ['warning', 'outline']"
+				>
+					{{ bookmark.active.value ? '★ Saved' : '☆ Save' }}
+				</button>
+				<button
+					ref="followRef"
+					type="button"
+					:class="follow.active.value ? ['success', 'filled'] : ['success', 'outline']"
+				>
+					{{ follow.active.value ? '✓ Following' : '+ Follow' }}
+				</button>
+			</div>
 		</section>
 
 		<section id="api">

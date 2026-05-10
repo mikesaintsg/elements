@@ -29,6 +29,22 @@ const sections = [
 const scrollTo = (id: string): void => {
 	scrollerRef.value?.querySelector(`#${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
+
+// Threshold variant — `intersection.threshold` controls when a section
+// is considered "in view". A higher threshold means the section must
+// be MORE visible before it activates (so the user has to scroll
+// further before the link highlights). Default 0; this demo uses 0.5.
+const thresholdScrollerRef = ref<HTMLElement | null>(null)
+const thresholdNavRef = ref<HTMLElement | null>(null)
+useNav(thresholdScrollerRef, {
+	nav: thresholdNavRef,
+	intersection: { threshold: 0.5 },
+})
+const scrollThresholdTo = (id: string): void => {
+	thresholdScrollerRef.value
+		?.querySelector(`#thr-${id}`)
+		?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 </script>
 
 <template>
@@ -72,6 +88,32 @@ const scrollTo = (id: string): void => {
 					"
 				>
 					<section v-for="s in sections" :id="s.id" :key="s.id">
+						<h3>{{ s.title }}</h3>
+						<p v-for="i in 5" :key="i">Lorem ipsum paragraph {{ i }} for {{ s.title }}.</p>
+					</section>
+				</div>
+			</div>
+		</section>
+
+		<section id="threshold">
+			<h2>Intersection threshold</h2>
+			<p class="showcase-caption">
+				<code>intersection.threshold</code> controls how visible a section must be before it
+				activates. Default <code>0</code> activates the moment any pixel is visible; a higher value
+				(this demo uses <code>0.5</code>) waits until the section is at least 50% in view. Useful
+				when you want the link to highlight only when the user is reading the section, not just
+				glancing past.
+			</p>
+			<div class="showcase-grid">
+				<nav ref="thresholdNavRef" aria-label="Sections (threshold demo)">
+					<menu>
+						<li v-for="s in sections" :key="s.id">
+							<a :href="`#thr-${s.id}`" @click.prevent="scrollThresholdTo(s.id)">{{ s.title }}</a>
+						</li>
+					</menu>
+				</nav>
+				<div ref="thresholdScrollerRef" style="block-size: 14rem; overflow-y: auto">
+					<section v-for="s in sections" :id="`thr-${s.id}`" :key="s.id">
 						<h3>{{ s.title }}</h3>
 						<p v-for="i in 5" :key="i">Lorem ipsum paragraph {{ i }} for {{ s.title }}.</p>
 					</section>

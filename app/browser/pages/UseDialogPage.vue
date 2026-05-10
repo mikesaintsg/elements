@@ -36,6 +36,18 @@ const eventDialog = useDialog(eventRef, {
 		close: () => log.value.unshift({ at: stamp(), kind: 'close' }),
 	},
 })
+
+const smallRef = ref<HTMLDialogElement | null>(null)
+const small = useDialog(smallRef)
+
+const largeRef = ref<HTMLDialogElement | null>(null)
+const large = useDialog(largeRef)
+
+const fullscreenRef = ref<HTMLDialogElement | null>(null)
+const fullscreen = useDialog(fullscreenRef)
+
+const scrollableRef = ref<HTMLDialogElement | null>(null)
+const scrollable = useDialog(scrollableRef)
 </script>
 
 <template>
@@ -69,6 +81,79 @@ const eventDialog = useDialog(eventRef, {
 				<footer>
 					<button type="button" @click="basic.hide()">Cancel</button>
 					<button type="button" class="primary" @click="basic.hide()">Confirm</button>
+				</footer>
+			</dialog>
+		</section>
+
+		<section id="sizes">
+			<h2>Sizes</h2>
+			<p class="showcase-caption">
+				The <code>.small</code> and <code>.large</code> modifier classes override the default width
+				— small caps to <code>20rem</code>, large stretches to <code>48rem</code>. Both clamp to
+				viewport width on phones so neither produces horizontal scroll.
+			</p>
+			<div class="showcase-row">
+				<button type="button" class="primary" @click="small.show()">Open small</button>
+				<button type="button" class="primary" @click="large.show()">Open large</button>
+			</div>
+			<dialog ref="smallRef" class="small">
+				<header><h3>Small dialog</h3></header>
+				<p>Capped at 20rem — useful for confirms and tight prompts.</p>
+				<footer>
+					<button type="button" class="primary" @click="small.hide()">OK</button>
+				</footer>
+			</dialog>
+			<dialog ref="largeRef" class="large">
+				<header><h3>Large dialog</h3></header>
+				<p>
+					Stretches to 48rem — useful for forms with multiple columns or a richer wizard step.
+					Plenty of room for a two-column layout, a preview pane, or a comparison table.
+				</p>
+				<footer>
+					<button type="button" @click="large.hide()">Cancel</button>
+					<button type="button" class="primary" @click="large.hide()">Save</button>
+				</footer>
+			</dialog>
+		</section>
+
+		<section id="fullscreen">
+			<h2>Fullscreen</h2>
+			<p class="showcase-caption">
+				<code>.fullscreen</code> stretches the dialog edge-to-edge with zero border-radius — the
+				standard mobile sheet pattern.
+			</p>
+			<button type="button" class="primary" @click="fullscreen.show()">Open fullscreen</button>
+			<dialog ref="fullscreenRef" class="fullscreen">
+				<header><h3>Fullscreen sheet</h3></header>
+				<p>
+					Edge-to-edge, no border-radius. Often paired with a back arrow / close button in the
+					header on mobile.
+				</p>
+				<footer>
+					<button type="button" class="primary" @click="fullscreen.hide()">Close</button>
+				</footer>
+			</dialog>
+		</section>
+
+		<section id="scrollable">
+			<h2>Scrollable body</h2>
+			<p class="showcase-caption">
+				<code>.scrollable</code> turns a child <code>&lt;section&gt;</code> into a scroll container
+				that grows / shrinks within the dialog's <code>max-block-size</code> cap. Header and footer
+				stay pinned outside the scroll.
+			</p>
+			<button type="button" class="primary" @click="scrollable.show()">Open scrollable</button>
+			<dialog ref="scrollableRef" class="scrollable">
+				<header><h3>Long content</h3></header>
+				<section>
+					<p v-for="i in 30" :key="i">
+						Paragraph {{ i }} — this content scrolls inside the dialog while the header and footer
+						stay pinned. Useful for terms-of-service, change-logs, long forms.
+					</p>
+				</section>
+				<footer>
+					<button type="button" @click="scrollable.hide()">Close</button>
+					<button type="button" class="primary" @click="scrollable.hide()">Accept</button>
 				</footer>
 			</dialog>
 		</section>

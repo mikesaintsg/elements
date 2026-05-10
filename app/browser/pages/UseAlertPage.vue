@@ -26,6 +26,9 @@ const cancelable = useAlert(cancelRef, {
 		},
 	},
 })
+
+const placementRef = ref<HTMLElement | null>(null)
+const placement = useAlert(placementRef)
 </script>
 
 <template>
@@ -110,6 +113,25 @@ const cancelable = useAlert(cancelRef, {
 					<code>{{ e.kind }}</code> — {{ e.at }}
 				</li>
 			</ul>
+		</section>
+
+		<section id="in-flow">
+			<h2>In-flow guarantee</h2>
+			<p class="showcase-caption">
+				Alert is <strong>not</strong> a floating component — <code>useAlert</code> never sets the
+				<code>popover</code> attribute, never elevates the alert to the browser top layer, and never
+				assigns a placement class. Inspect the alert below at any point in its lifecycle to confirm:
+				it remains a regular flow-positioned <code>&lt;aside role="alert"&gt;</code>
+				inside this section.
+			</p>
+			<aside ref="placementRef" role="alert" class="information">
+				<span>This alert lives in the document flow — no popover, no top layer.</span>
+			</aside>
+			<div class="showcase-row">
+				<button type="button" @click="placement.show()">show()</button>
+				<button type="button" @click="placement.hide()">hide()</button>
+				<button type="button" @click="placement.toggle()">toggle()</button>
+			</div>
 		</section>
 
 		<section id="api">

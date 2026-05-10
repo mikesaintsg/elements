@@ -36,6 +36,16 @@ const logged = useCarousel(logRef, {
 		resume: () => log.value.unshift({ at: stamp(), kind: 'resume' }),
 	},
 })
+
+// Manual variant — no autoplay timer, no keyboard handler, no touch
+// swipe. The composable still manages the index + slide animation, but
+// every transition is consumer-driven via `next()` / `prev()` / `to()`.
+const minimalRef = ref<HTMLElement | null>(null)
+const minimal = useCarousel(minimalRef, {
+	keyboard: false,
+	touch: false,
+	wrap: true,
+})
 </script>
 
 <template>
@@ -117,6 +127,40 @@ const logged = useCarousel(logRef, {
 				<small>
 					slide <code>{{ car.index.value + 1 }}/{{ slides.length }}</code> ·
 					<code>{{ car.cycling.value ? 'cycling' : 'paused' }}</code>
+				</small>
+			</div>
+		</section>
+
+		<section id="manual">
+			<h2>Manual carousel (no autoplay, no keyboard)</h2>
+			<p class="showcase-caption">
+				When <code>autoplay</code> is omitted, the timer never starts.
+				<code>keyboard: false</code> and <code>touch: false</code> reduce the carousel to plain
+				index management — every transition is consumer-driven.
+			</p>
+			<section
+				ref="minimalRef"
+				role="region"
+				aria-roledescription="carousel"
+				tabindex="0"
+				class="carousel carousel-compact"
+			>
+				<ol role="list">
+					<li
+						v-for="(s, i) in slides.slice(0, 3)"
+						:key="s.title"
+						role="listitem"
+						:class="[s.variant, { active: i === minimal.index.value }]"
+					>
+						<strong>{{ s.title }}</strong>
+					</li>
+				</ol>
+			</section>
+			<div class="showcase-row">
+				<button type="button" class="primary outline small" @click="minimal.prev()">prev</button>
+				<button type="button" class="primary outline small" @click="minimal.next()">next</button>
+				<small>
+					slide <code>{{ minimal.index.value + 1 }}/3</code>
 				</small>
 			</div>
 		</section>
