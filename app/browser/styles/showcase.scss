@@ -355,6 +355,31 @@ $showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
 		position: relative;
 	}
 
+	// Carousel items — Bootstrap-pattern slide transitions.
+	//
+	// `useCarousel` orchestrates the lifecycle in four stages:
+	//
+	//   1. INCOMING gets `.carousel-item-next` (slide from end) OR
+	//      `.carousel-item-prev` (slide from start) — places it
+	//      off-screen at the leading edge.
+	//   2. Forced reflow.
+	//   3. Both INCOMING and OUTGOING (`.active`) get
+	//      `.carousel-item-start` (going next) OR `.carousel-item-end`
+	//      (going prev) — kicks off the synchronised slide:
+	//        • OUTGOING (`.active.carousel-item-start`) slides off
+	//          to translateX(-100%).
+	//        • INCOMING (`.carousel-item-next.carousel-item-start`)
+	//          slides into view to translateX(0).
+	//   4. After `transitionend`, all transition classes are removed
+	//      and INCOMING gets `.active`. OUTGOING returns to the
+	//      neutral / hidden state.
+	//
+	// Critical: the OUTGOING and INCOMING slides MUST animate together.
+	// In a "fade" variant we'd cross-fade with one stacked on top, but
+	// the slide variant needs them side-by-side mid-transition. The
+	// rules below match that — both slides are `position: absolute;
+	// inset: 0` so they stack, but the transform offsets keep them
+	// adjacent during the slide rather than overlapping.
 	> ol > li {
 		position: absolute;
 		inset: 0;
@@ -366,15 +391,11 @@ $showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
 		padding: calc(var(--spacing) * 6);
 		text-align: center;
 
-		// Off-screen by default. The active slide overrides to translate(0).
-		// Mailbox uses the same `transform: translateX(±100%)` pattern with
-		// a smooth ease — feels closer to swiping a deck than fading.
-		opacity: 0;
-		transform: translateX(100%);
+		// Bare resting state for non-active, non-transitioning slides:
+		// off-screen, invisible, ignoring pointer.
+		visibility: hidden;
+		transform: translateX(0);
 		pointer-events: none;
-		transition:
-			opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-			transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 
 		// Variant-tinted backgrounds — read framework variant tokens so
 		// colours track the active theme. Each variant resolves through
@@ -395,30 +416,62 @@ $showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
 			background-color: color-mix(in oklab, var(--color-information) 12%, transparent);
 		}
 
+		// ── Active steady state ─────────────────────────────────────────
+		// The currently-shown slide sits centred and visible.
 		&.active {
-			opacity: 1;
+			visibility: visible;
 			transform: translateX(0);
 			pointer-events: auto;
 			z-index: 1;
 		}
 
-		// Mid-transition classes from `useCarousel`. The factory adds
-		// `.carousel-item-next` / `.carousel-item-prev` to the INCOMING
-		// item before adding `.active`, and `.carousel-item-start` /
-		// `.carousel-item-end` to drive the slide axis. Map them to the
-		// directional translate so left-arrow vs right-arrow nav reads
-		// as a directional swipe rather than a generic fade.
-		&.carousel-item-next {
+		// ── Slide-in / slide-out lifecycle ─────────────────────────────
+		// The four states match Bootstrap's exact selector logic so the
+		// `useCarousel` factory's class additions drive the right
+		// transform pair without further coordination from the page.
+		//
+		// `:where(...)` keeps the slide-axis selectors at zero
+		// specificity so future overrides (e.g. a `.carousel-fade`
+		// variant) can win without `!important`.
+
+		// INCOMING starts off-screen at the OPPOSITE edge from where
+		// it'll arrive. `.carousel-item-next` enters from the end (right
+		// in LTR); `.carousel-item-prev` enters from the start (left).
+		// These rules apply ONLY when the slide hasn't yet been told to
+		// move — once `.carousel-item-start` / `.carousel-item-end` is
+		// added, the rules below take over.
+		&.carousel-item-next:not(.carousel-item-start),
+		&.active.carousel-item-end {
+			visibility: visible;
 			transform: translateX(100%);
-			opacity: 0;
+			z-index: 1;
 		}
-		&.carousel-item-prev {
+
+		&.carousel-item-prev:not(.carousel-item-end),
+		&.active.carousel-item-start {
+			visibility: visible;
 			transform: translateX(-100%);
-			opacity: 0;
+			z-index: 1;
 		}
-		&.carousel-item-start {
+
+		// MID-TRANSITION — slide axis active. The transition itself is
+		// declared on the `.carousel-item-start` / `.carousel-item-end`
+		// classes (not on the bare item) so the snap-to-position when
+		// the lifecycle classes are removed doesn't animate.
+		&.carousel-item-start,
+		&.carousel-item-end {
+			transition: transform 0.6s cubic-bezier(0.32, 0.72, 0, 1);
+		}
+
+		// INCOMING's slide-into-view target — the `.carousel-item-start`
+		// or `.carousel-item-end` class arrives second on the incoming
+		// item, kicking off the slide from the off-screen position
+		// declared above to centred (translateX(0)).
+		&.carousel-item-next.carousel-item-start,
+		&.carousel-item-prev.carousel-item-end {
+			visibility: visible;
 			transform: translateX(0);
-			opacity: 1;
+			z-index: 1;
 		}
 	}
 

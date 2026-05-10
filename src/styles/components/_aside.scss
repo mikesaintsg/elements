@@ -240,7 +240,7 @@
 	//     thumb-strip of underlying canvas visible on phones — same
 	//     reading hint Bootstrap / mailbox use.
 	// --------------------------------------------------------------------------
-	aside[popover]:popover-open {
+	aside[popover][data-aside-open]:popover-open {
 		// Drawer geometry only applies in the open state. The popover
 		// surface in `surfaces/_popover.scss` already handles closed
 		// `display: none` via the platform default, so listing these
@@ -281,6 +281,14 @@
 		min-block-size: 100dvh !important;
 		margin: 0 !important;
 		overflow-y: auto;
+		// Suppress the popover surface's `@starting-style { opacity: 0;
+		// transform: scale(0.98) }` fade-in. The drawer wants ONE
+		// motion — a slide from the edge — not a fade-and-scale on
+		// top of the slide, which produced the twitch the user
+		// reported (two transforms competing during the same frame).
+		// `opacity: 1` is the steady state; the drawer paints fully
+		// opaque from the moment it enters the top layer.
+		opacity: 1 !important;
 		// Drawer needs a higher stacking context than the body grid +
 		// any sticky chrome, but lower than dialogs (which use the
 		// platform top layer via `showModal()`). 50 matches the showcase
@@ -301,34 +309,47 @@
 	// our slide-in target also resolves to `translateX(0)` — they
 	// agree on the steady state. The `@starting-style` clones provide
 	// the off-screen FROM state for the slide-in transition.
-	aside[popover].start:popover-open {
+	// All drawer rules are gated on `[data-aside-open]` so they only
+	// apply to `useAside`-managed asides (the factory toggles that
+	// attribute synchronously with `showPopover()`). Other composables
+	// — `usePopover`, `useTooltip`, etc. — happily target `<aside>` as
+	// their popover panel without inheriting drawer chrome.
+	// All drawer @starting-style rules pin BOTH transform AND opacity.
+	// Pinning opacity to 1 in the from-state defeats the popover
+	// surface's `@starting-style { opacity: 0 }`, which would otherwise
+	// fade the drawer in alongside the slide and produce a visible
+	// double-motion twitch.
+	aside[popover][data-aside-open].start:popover-open {
 		inset-inline-start: 0 !important;
 		inset-inline-end: auto !important;
 		border-inline-end: 1px solid var(--color-border);
 		transform: translateX(0);
 		@starting-style {
 			transform: translateX(-100%);
+			opacity: 1;
 		}
 	}
 
-	aside[popover].end:popover-open {
+	aside[popover][data-aside-open].end:popover-open {
 		inset-inline-start: auto !important;
 		inset-inline-end: 0 !important;
 		border-inline-start: 1px solid var(--color-border);
 		transform: translateX(0);
 		@starting-style {
 			transform: translateX(100%);
+			opacity: 1;
 		}
 	}
 
 	// Default placement (no `.start` / `.end`) — slide from end.
-	aside[popover]:not(.start):not(.end):popover-open {
+	aside[popover][data-aside-open]:not(.start):not(.end):popover-open {
 		inset-inline-start: auto !important;
 		inset-inline-end: 0 !important;
 		border-inline-start: 1px solid var(--color-border);
 		transform: translateX(0);
 		@starting-style {
 			transform: translateX(100%);
+			opacity: 1;
 		}
 	}
 
