@@ -72,6 +72,22 @@ export const tokens = {
 	// Framework defaults that have no Tailwind equivalent.
 	transitionDuration: '--set-transition-duration',
 
+	// Density + radius factors — global multipliers consumers can set at
+	// `:root` to retune the framework's spacing rhythm and corner
+	// roundness without touching any per-component tokens. Mirrors
+	// mailbox's `--bs-density-factor` and `--bs-radius-factor`.
+	densityFactor: '--set-density-factor',
+	radiusFactor: '--set-radius-factor',
+
+	// Elevation scale — three distinct "lift" levels for floating surfaces
+	// (popovers, toasts, dialogs, drawers). Mirrors mailbox's
+	// `--bs-box-shadow-{sm,base,lg}`.
+	boxShadow: {
+		sm: '--set-box-shadow-sm',
+		base: '--set-box-shadow',
+		lg: '--set-box-shadow-lg',
+	},
+
 	// Focus ring sub-tokens.
 	focus: {
 		boxShadowWidth: '--set-focus-box-shadow-width',

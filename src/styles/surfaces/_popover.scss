@@ -39,12 +39,11 @@
 		--set-popover-padding-inline: 0.75rem;
 		--set-popover-padding-block: 0.75rem;
 		// Floating-panel shadow — two-layer recipe ported from mailbox's
-		// `--bs-content-floating-box-shadow`. Diffuse main lift (12px blur)
-		// with a tighter contact shadow (3px blur) reads as a discrete
-		// floating layer rather than an inflated drop shadow.
-		--set-popover-box-shadow:
-			0 4px 12px color-mix(in srgb, black 8%, transparent),
-			0 1px 3px color-mix(in srgb, black 6%, transparent);
+		// `--bs-content-floating-box-shadow`. Pulls from the framework's
+		// shared `--set-box-shadow` (base level) so a host-page elevation
+		// theme retunes popovers in lockstep with menus, dropdowns, and
+		// other base-elevation surfaces.
+		--set-popover-box-shadow: var(--set-box-shadow);
 		--set-popover-transition-duration: var(--set-transition-duration);
 		// Default max-width — mirrors mailbox's `--bs-popover-max-width:
 		// 17.25rem`. Authors can override per-host; the anchor surface's

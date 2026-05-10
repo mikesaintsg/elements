@@ -57,6 +57,48 @@
 	--set-transition-duration: 150ms;
 
 	// --------------------------------------------------------------------------
+	// Density + radius factors — global multipliers consumers can set at
+	// `:root` to retune the framework's spacing rhythm and corner roundness
+	// without touching any per-component tokens. Mirrors mailbox's
+	// `--bs-density-factor` and `--bs-radius-factor`. Component partials
+	// that opt in wrap their padding / radius math in the corresponding
+	// `calc(value * var(--set-{factor}))` so the shift propagates from a
+	// single host-page declaration.
+	//
+	//   --set-density-factor: 0.75 → compact (mailbox-style desktop)
+	//   --set-density-factor: 1    → default (current elements rhythm)
+	//   --set-density-factor: 1.25 → spacious (touch-first)
+	//
+	//   --set-radius-factor: 0     → sharp / angular (editorial, technical)
+	//   --set-radius-factor: 1     → default medium roundness
+	//   --set-radius-factor: 1.5   → very rounded (consumer, soft)
+	// --------------------------------------------------------------------------
+	--set-density-factor: 1;
+	--set-radius-factor: 1;
+
+	// --------------------------------------------------------------------------
+	// Elevation scale — three distinct "lift" levels for floating surfaces.
+	// Mirrors mailbox's `--bs-box-shadow-{sm,base,lg}` and the curated
+	// `--bs-content-floating-box-shadow`. Each level layers a diffuse main
+	// drop with a tighter contact shadow so the surface reads as a discrete
+	// floating layer rather than an inflated drop.
+	//
+	//   sm  — list-group hover, dropdown items, subtle action panels
+	//   base — popover panels, dropdown menus
+	//   lg   — modal dialogs, toasts, drawer chrome
+	//
+	// Consumer override at `:root` (eg sharper monochrome shadows on a
+	// brutalist theme) retunes every floating surface at once.
+	// --------------------------------------------------------------------------
+	--set-box-shadow-sm: 0 0.125rem 0.25rem color-mix(in srgb, black 7.5%, transparent);
+	--set-box-shadow:
+		0 0.25rem 0.75rem color-mix(in srgb, black 8%, transparent),
+		0 0.0625rem 0.1875rem color-mix(in srgb, black 6%, transparent);
+	--set-box-shadow-lg:
+		0 0.5rem 2rem color-mix(in srgb, black 18%, transparent),
+		0 0.125rem 0.375rem color-mix(in srgb, black 10%, transparent);
+
+	// --------------------------------------------------------------------------
 	// Floater viewport budget — single source of truth for how a top-layer /
 	// native popover panel (popover, tooltip, toast, dropdown, drawer)
 	// respects the viewport edge on every form factor. Mirrors mailbox's

@@ -19092,7 +19092,7 @@ toast.destroy()</code></pre>`,
 					--set-dialog-max-inline-size: min(90vw, calc(var(--spacing) * 120));
 					--set-dialog-max-block-size: min(85dvh, calc(100dvh - calc(var(--spacing) * 4)));
 					--set-dialog-footer-gap: calc(var(--spacing) * 2);
-					--set-dialog-box-shadow: 0 8px 32px #0000002e, 0 2px 6px #0000001a;
+					--set-dialog-box-shadow: var(--set-box-shadow-lg);
 					--set-dialog-transition-duration: var(--set-transition-duration);
 					inline-size: var(--set-dialog-inline-size);
 					max-inline-size: var(--set-dialog-max-inline-size);
@@ -21951,7 +21951,7 @@ toast.destroy()</code></pre>`,
 					--set-toast-max-inline-size: 28rem;
 					--set-toast-font-size: var(--text-sm, 0.875rem);
 					--set-toast-edge-inset: calc(var(--spacing) * 4);
-					--set-toast-box-shadow: 0 6px 24px -6px #0000002e;
+					--set-toast-box-shadow: var(--set-box-shadow-lg);
 					--set-toast-spacing: calc(var(--spacing) * 3);
 					--set-toast-stack-offset: 0px;
 					--set-toast-stack-index: 0;
@@ -22455,7 +22455,7 @@ toast.destroy()</code></pre>`,
 					--set-popover-border-radius: 0.5rem;
 					--set-popover-padding-inline: 0.75rem;
 					--set-popover-padding-block: 0.75rem;
-					--set-popover-box-shadow: 0 4px 12px #00000014, 0 1px 3px #0000000f;
+					--set-popover-box-shadow: var(--set-box-shadow);
 					--set-popover-transition-duration: var(--set-transition-duration);
 					--set-popover-max-inline-size: 17.25rem;
 				}
@@ -24321,6 +24321,11 @@ toast.destroy()</code></pre>`,
 				--set-variant-color: currentColor;
 				--set-variant-border-width: 0;
 				--set-transition-duration: 0.15s;
+				--set-density-factor: 1;
+				--set-radius-factor: 1;
+				--set-box-shadow-sm: 0 0.125rem 0.25rem #00000013;
+				--set-box-shadow: 0 0.25rem 0.75rem #00000014, 0 0.0625rem 0.1875rem #0000000f;
+				--set-box-shadow-lg: 0 0.5rem 2rem #0000002e, 0 0.125rem 0.375rem #0000001a;
 				--set-floater-gutter: 1rem;
 				--set-floater-inset-top: max(var(--set-floater-gutter), env(safe-area-inset-top, 0px));
 				--set-floater-inset-bottom: max(

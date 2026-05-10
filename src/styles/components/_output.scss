@@ -74,7 +74,11 @@
 		--set-toast-max-inline-size: 28rem;
 		--set-toast-font-size: var(--text-sm, 0.875rem);
 		--set-toast-edge-inset: calc(var(--spacing) * 4);
-		--set-toast-box-shadow: 0 6px 24px -6px rgb(0 0 0 / 0.18);
+		// Toasts use the framework's `lg` elevation level (the curated drop
+		// shadow declared in `_tokens.scss`). Pulling from the shared scale
+		// means a host-page elevation theme retunes toasts in lockstep with
+		// modals, drawers, and other lifted surfaces.
+		--set-toast-box-shadow: var(--set-box-shadow-lg);
 		// Linear stack rhythm — the gap between the bottom of one toast
 		// and the bottom of the next when multiple toasts share a
 		// `<Teleport>` container without `[data-toast-stack]`. The factory

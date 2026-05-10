@@ -64,13 +64,10 @@
 		--set-dialog-footer-gap: calc(var(--spacing) * 2);
 		// Modal shadow — modal sits on top of a `::backdrop` scrim so it
 		// can carry a heavier elevation than a tooltip / popover without
-		// dominating the page. Mirrors mailbox's `--bs-content-box-shadow`
-		// recipe (deeper main lift than the popover's
-		// `--bs-content-floating-box-shadow`, but shallower than a 25%
-		// black drop).
-		--set-dialog-box-shadow:
-			0 8px 32px color-mix(in srgb, black 18%, transparent),
-			0 2px 6px color-mix(in srgb, black 10%, transparent);
+		// dominating the page. Pulls from the framework's `--set-box-
+		// shadow-lg` so a host-page elevation theme retunes dialogs in
+		// lockstep with toasts and other lifted surfaces.
+		--set-dialog-box-shadow: var(--set-box-shadow-lg);
 		--set-dialog-transition-duration: var(--set-transition-duration);
 
 		inline-size: var(--set-dialog-inline-size);
