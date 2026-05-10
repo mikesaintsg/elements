@@ -29,6 +29,27 @@
 // suppress the popover surface's `@starting-style { opacity: 0;
 // transform: scale(0.98) }` fade-and-scale so the drawer plays ONE
 // motion (a slide from the edge) instead of competing transforms.
+//
+// @starting-style specificity workaround (Chrome 148+ bleed-through):
+// Each placement's `@starting-style` block targets the BARE
+// `aside[popover].{placement}` selector (specificity 0,2,1) rather
+// than the open-state `aside[popover][data-aside-open].{placement}`
+// selector (specificity 0,3,1). If we'd nested @starting-style inside
+// the open-state rule, the compiled output would be
+// `@starting-style { aside[popover][data-aside-open].start { ... } }`
+// — same specificity as the regular `translateX(0)` rule. Chrome 148+
+// has a regression where the @starting-style body competes in the
+// normal cascade tier when transitions don't fully engage; equal
+// specificity + later source order means the off-screen transform
+// wins permanently, leaving the drawer stuck off-screen on open
+// (visible to the user as "something floats in the opposite
+// direction"). Targeting the bare selector keeps the starting-state
+// body one specificity step below the in-state rule, so the open
+// transform wins regardless. The element still matches the bare
+// `aside[popover].{placement}` selector when open (the popover +
+// class attributes don't disappear), so @starting-style still
+// resolves the from-state values it needs at the transition's first
+// frame. Same fix as `surfaces/_popover.scss`.
 // ============================================================================
 
 @use '../mixins' as *;
@@ -102,7 +123,12 @@
 	}
 	aside[popover][data-aside-open].start {
 		transform: translateX(0);
-		@starting-style {
+	}
+	// Starting-state for `.start` — targets bare `aside[popover].start`
+	// (0,2,1) so the open-state rule above (0,3,1) wins by specificity
+	// even if Chrome's @starting-style cascade tier leaks. See header.
+	@starting-style {
+		aside[popover].start {
 			transform: translateX(-100%);
 			opacity: 1;
 		}
@@ -125,7 +151,9 @@
 	}
 	aside[popover][data-aside-open].end {
 		transform: translateX(0);
-		@starting-style {
+	}
+	@starting-style {
+		aside[popover].end {
 			transform: translateX(100%);
 			opacity: 1;
 		}
@@ -147,7 +175,9 @@
 	}
 	aside[popover][data-aside-open].top {
 		transform: translateY(0);
-		@starting-style {
+	}
+	@starting-style {
+		aside[popover].top {
 			transform: translateY(-100%);
 			opacity: 1;
 		}
@@ -169,7 +199,9 @@
 	}
 	aside[popover][data-aside-open].bottom {
 		transform: translateY(0);
-		@starting-style {
+	}
+	@starting-style {
+		aside[popover].bottom {
 			transform: translateY(100%);
 			opacity: 1;
 		}
@@ -192,7 +224,13 @@
 	}
 	aside[popover][data-aside-open]:not(.start):not(.end):not(.top):not(.bottom) {
 		transform: translateX(0);
-		@starting-style {
+	}
+	// Default placement starting-state — bare `aside[popover]:not(...)`
+	// (0,5,1: 1 element + 1 attr + 4 pseudo-class `:not()`) is still one
+	// step below the open-state rule (0,6,1, adds `[data-aside-open]`),
+	// preserving the specificity gap that lets the open transform win.
+	@starting-style {
+		aside[popover]:not(.start):not(.end):not(.top):not(.bottom) {
 			transform: translateX(100%);
 			opacity: 1;
 		}
