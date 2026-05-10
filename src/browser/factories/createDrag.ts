@@ -112,9 +112,21 @@ export function createDrag<T = unknown>(
 			row.classList.toggle('drop-indicator-before', hovered && position.value === 'before')
 			row.classList.toggle('drop-indicator-after', hovered && position.value === 'after')
 			if (isSource && auto) {
-				row.draggable = true
-				for (const handle of row.querySelectorAll<HTMLElement>('.drag-handle')) {
-					handle.draggable = true
+				// When the row contains a `.drag-handle`, only the handle
+				// gets `draggable`. Authors using handles want the rest of
+				// the row to behave normally — buttons inside still click,
+				// text inside still selects, scroll still gestures — and a
+				// drag attempt outside the handle should be a no-op rather
+				// than a cancelled-with-flicker. Without this guard the
+				// row is `draggable` too, the platform fires `dragstart`
+				// for grabs anywhere in the row, and `canStartFrom`
+				// cancels the drag mid-flight (jumpy preview, weird focus).
+				const handles = row.querySelectorAll<HTMLElement>('.drag-handle')
+				if (handles.length > 0) {
+					row.draggable = false
+					for (const handle of handles) handle.draggable = true
+				} else {
+					row.draggable = true
 				}
 			}
 		}

@@ -421,6 +421,128 @@ $showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
 			opacity: 1;
 		}
 	}
+
+	// Side carets — the prev / next buttons sit absolutely on the
+	// inline-start / inline-end edges. The button's own CSS paints a
+	// transparent column; a centred `::before` paints the round arrow
+	// chip. Hidden until hover / focus on pointer-fine devices, always
+	// visible on coarse-pointer (touch) screens where hover is fickle.
+	> .showcase-carousel-control {
+		position: absolute;
+		inset-block: 0;
+		inline-size: 15%;
+		min-inline-size: 3rem;
+		border: 0;
+		background: transparent;
+		color: var(--color-text-strong);
+		cursor: pointer;
+		z-index: 2;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: 0;
+		transition:
+			opacity 0.2s ease-out,
+			background-color 0.2s ease-out;
+
+		&::before {
+			content: '';
+			display: block;
+			inline-size: 2.25rem;
+			block-size: 2.25rem;
+			border-radius: 50%;
+			background-color: rgb(255 255 255 / 0.85);
+			background-position: center;
+			background-repeat: no-repeat;
+			background-size: 1rem 1rem;
+			box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+		}
+
+		&:hover {
+			opacity: 1;
+			background-color: rgb(0 0 0 / 0.06);
+		}
+
+		&:focus-visible {
+			opacity: 1;
+			outline: 2px solid var(--color-primary);
+			outline-offset: -2px;
+		}
+	}
+
+	// Reveal the carets on hover anywhere over the carousel.
+	&:hover > .showcase-carousel-control {
+		opacity: 1;
+	}
+
+	// Coarse-pointer (touch) — keep arrows always visible. Hover doesn't
+	// fire reliably on touch-only screens.
+	@media (hover: none) {
+		> .showcase-carousel-control {
+			opacity: 0.85;
+		}
+	}
+
+	> .showcase-carousel-prev {
+		inset-inline-start: 0;
+
+		&::before {
+			background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='10 3 5 8 10 13'/></svg>");
+		}
+	}
+
+	> .showcase-carousel-next {
+		inset-inline-end: 0;
+
+		&::before {
+			background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 3 11 8 6 13'/></svg>");
+		}
+	}
+
+	// Indicator dots — Bootstrap-style row of pills along the bottom.
+	// Active dot stretches to a wider pill so the current slide is
+	// obvious at a glance; resting dots are translucent.
+	> .showcase-carousel-indicators {
+		position: absolute;
+		inset-block-end: calc(var(--spacing) * 3);
+		inset-inline: 0;
+		z-index: 3;
+		display: flex;
+		justify-content: center;
+		gap: calc(var(--spacing) * 1);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		pointer-events: none;
+
+		> li {
+			margin: 0;
+			pointer-events: auto;
+		}
+
+		> li > button {
+			display: block;
+			inline-size: calc(var(--spacing) * 4);
+			block-size: calc(var(--spacing) * 1);
+			padding: 0;
+			border: 0;
+			border-radius: 999px;
+			background-color: rgb(255 255 255 / 0.5);
+			cursor: pointer;
+			transition:
+				background-color 0.2s ease-out,
+				inline-size 0.2s ease-out;
+
+			&:hover {
+				background-color: rgb(255 255 255 / 0.8);
+			}
+
+			&[aria-selected='true'] {
+				inline-size: calc(var(--spacing) * 8);
+				background-color: rgb(255 255 255);
+			}
+		}
+	}
 }
 
 // useDrag / useDrop demo styles.
@@ -611,20 +733,39 @@ $showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
 
 // useForm validation — once the form has been submitted (the
 // composable adds `[data-form-validated]`), invalid required fields
-// show a danger-tinted border so the user can see which field is
-// blocking submission.
+// show a danger-tinted border + a subtle red glow + a leading status
+// icon. The valid fields get a quiet success tint so the user can
+// see which fields cleared validation. Both states track the active
+// theme via the existing `--color-{success,danger}` tokens.
 form[data-form-validated] :where(input, select, textarea):invalid {
 	border-color: var(--color-danger);
-	background-color: color-mix(in oklab, var(--color-danger) 6%, var(--color-canvas));
+	border-width: 2px;
+	background-color: color-mix(in oklab, var(--color-danger) 8%, var(--color-canvas));
+	box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-danger) 35%, transparent);
 }
 
 form[data-form-validated] :where(input, select, textarea):invalid:focus-visible {
-	box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
-		color-mix(
-			in oklab,
-			var(--color-danger) calc(var(--set-focus-box-shadow-opacity) * 100%),
-			transparent
-		);
+	outline: none;
+	box-shadow:
+		0 0 0 1px var(--color-danger),
+		0 0 0 var(--set-focus-box-shadow-width)
+			color-mix(
+				in oklab,
+				var(--color-danger) calc(var(--set-focus-box-shadow-opacity) * 100%),
+				transparent
+			);
+}
+
+form[data-form-validated] :where(input, select, textarea):valid {
+	border-color: color-mix(in oklab, var(--color-success) 60%, var(--color-border));
+	background-color: color-mix(in oklab, var(--color-success) 4%, var(--color-canvas));
+}
+
+// Highlight the label of an invalid field so the user can tell which
+// field broke even if the input is offscreen / scrolled.
+form[data-form-validated] label:has(:invalid) {
+	color: var(--color-danger);
+	font-weight: 600;
 }
 
 // useToast deck — sonner-style stack. Up to three toasts visible at

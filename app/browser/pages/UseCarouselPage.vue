@@ -77,6 +77,37 @@ const logged = useCarousel(logRef, {
 						<p>{{ s.text }}</p>
 					</li>
 				</ol>
+
+				<!-- Side carets — vertical bars whose ::before paints a circular
+				     button + arrow icon. Hidden visually until hover so the slide
+				     content stays uncluttered, but still keyboard-reachable. -->
+				<button
+					type="button"
+					class="showcase-carousel-control showcase-carousel-prev"
+					aria-label="Previous slide"
+					@click="car.prev()"
+				></button>
+				<button
+					type="button"
+					class="showcase-carousel-control showcase-carousel-next"
+					aria-label="Next slide"
+					@click="car.next()"
+				></button>
+
+				<!-- Indicator dots at the bottom — one per slide; click jumps
+				     directly to that slide. The active dot expands; resting
+				     dots are translucent. -->
+				<menu class="showcase-carousel-indicators" role="tablist">
+					<li v-for="(s, i) in slides" :key="`dot-${s.title}`">
+						<button
+							type="button"
+							role="tab"
+							:aria-selected="i === car.index.value"
+							:aria-label="`Go to slide ${i + 1}: ${s.title}`"
+							@click="car.to(i)"
+						></button>
+					</li>
+				</menu>
 			</section>
 			<div class="showcase-row">
 				<button type="button" class="primary outline small" @click="car.prev()">prev</button>

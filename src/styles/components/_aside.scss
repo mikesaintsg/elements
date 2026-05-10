@@ -240,9 +240,24 @@
 	//     thumb-strip of underlying canvas visible on phones — same
 	//     reading hint Bootstrap / mailbox use.
 	// --------------------------------------------------------------------------
-	aside[popover] {
-		position: fixed;
-		inset-block: 0;
+	aside[popover]:popover-open {
+		// Drawer geometry only applies in the open state. The popover
+		// surface in `surfaces/_popover.scss` already handles closed
+		// `display: none` via the platform default, so listing these
+		// properties here (instead of on the bare `aside[popover]`) keeps
+		// the closed aside out of the layout entirely until shown — which
+		// matters on mobile where a closed `position: fixed` block can
+		// still capture pointer events at the leading edge.
+		//
+		// `!important` on `position` and the `inset-*` family overrides
+		// the surface-layer popover defaults (`[popover]:not(output) {
+		// position: absolute }`). The popover surface lives in
+		// `@layer surfaces` which sits after `@layer components` in the
+		// cascade, so without the explicit override the drawer would
+		// inherit absolute positioning + the surface's auto-centered
+		// inset, breaking the edge-pinned drawer geometry.
+		position: fixed !important;
+		inset-block: 0 !important;
 		display: flex;
 		flex-direction: column;
 		gap: calc(var(--spacing) * 4);
@@ -250,54 +265,65 @@
 		max-inline-size: 100dvw;
 		block-size: 100dvh;
 		max-block-size: 100dvh;
-		margin: 0;
+		margin: 0 !important;
 		overflow-y: auto;
-		// Override the popover-layer's centered margin (`auto`) so the
-		// drawer sits flush with the configured edge.
-		inset-inline: auto;
+		// Drawer needs a higher stacking context than the body grid +
+		// any sticky chrome, but lower than dialogs (which use the
+		// platform top layer via `showModal()`). 50 matches the showcase
+		// sidebar drawer convention.
+		z-index: 50;
+	}
 
-		&.start {
-			inset-inline-start: 0;
-			border-inline-end: 1px solid var(--color-border);
+	// Edge placement + slide-in transform — applied to BOTH the popover-
+	// open state (steady) and a `@starting-style`-scoped clone so the
+	// transition has both endpoints. Without nesting `@starting-style`
+	// inside the `:popover-open` rule the contained selector escapes
+	// `@layer components` (same hoisting bug `_popover.scss` had) and
+	// the unlayered starting-style would override the steady state.
+	// Edge placement — `!important` on the inset overrides the popover-
+	// surface's auto centring (same layer-cascade reason as the base
+	// drawer block above). `transform` doesn't need `!important`
+	// because the open-state rule there sets `transform: none`, and
+	// our slide-in target also resolves to `translateX(0)` — they
+	// agree on the steady state. The `@starting-style` clones provide
+	// the off-screen FROM state for the slide-in transition.
+	aside[popover].start:popover-open {
+		inset-inline-start: 0 !important;
+		inset-inline-end: auto !important;
+		border-inline-end: 1px solid var(--color-border);
+		transform: translateX(0);
+		@starting-style {
 			transform: translateX(-100%);
-			@starting-style {
-				&:popover-open {
-					transform: translateX(-100%);
-				}
-			}
 		}
+	}
 
-		&.end {
-			inset-inline-end: 0;
-			border-inline-start: 1px solid var(--color-border);
+	aside[popover].end:popover-open {
+		inset-inline-start: auto !important;
+		inset-inline-end: 0 !important;
+		border-inline-start: 1px solid var(--color-border);
+		transform: translateX(0);
+		@starting-style {
 			transform: translateX(100%);
-			@starting-style {
-				&:popover-open {
-					transform: translateX(100%);
-				}
-			}
 		}
+	}
 
-		// Default placement (no `.start` / `.end`) — slide from end.
-		&:not(.start):not(.end) {
-			inset-inline-end: 0;
-			border-inline-start: 1px solid var(--color-border);
+	// Default placement (no `.start` / `.end`) — slide from end.
+	aside[popover]:not(.start):not(.end):popover-open {
+		inset-inline-start: auto !important;
+		inset-inline-end: 0 !important;
+		border-inline-start: 1px solid var(--color-border);
+		transform: translateX(0);
+		@starting-style {
 			transform: translateX(100%);
-			@starting-style {
-				&:popover-open {
-					transform: translateX(100%);
-				}
-			}
 		}
+	}
 
-		&:popover-open {
-			transform: none;
-		}
-
-		// `useCarousel`-style transition is already wired by the
-		// surface-layer popover rule, but we override here to include
-		// `transform` (drawer's signature animation) at a slightly
-		// longer duration that feels right for a panel.
+	// Transition list — includes `display` + `overlay` with
+	// `allow-discrete` so the open / close lifecycle plays through
+	// instead of snapping instantly. Applied to the bare `aside[popover]`
+	// so the closing transition (where `:popover-open` is no longer
+	// matched) still uses these timings.
+	aside[popover] {
 		@include transition(
 			(
 				transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),

@@ -47,7 +47,18 @@
 		--set-menu-justify-content: flex-start;
 		--set-menu-transition-duration: var(--set-transition-duration);
 
-		display: flex;
+		// `display: flex` only on the bare-menu shape (toolbar / command
+		// row). Popover-mode menus (`<menu popover>`) MUST inherit the UA
+		// `display: none` for closed popovers — overriding that here
+		// would force the menu to always render, leaving useMenu /
+		// useSelect dropdowns visible-but-empty in the document flow
+		// (the platform's `:popover-open` flip becomes a no-op when
+		// `display` is already non-none, so the popover never enters
+		// the top layer). The `&:not([popover])` guard keeps closed
+		// dropdowns hidden until the composable shows them.
+		&:not([popover]) {
+			display: flex;
+		}
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: var(--set-menu-justify-content);
@@ -115,9 +126,13 @@
 	// popover surface already supplies inline / block padding — having
 	// both would double-pad.
 	// --------------------------------------------------------------------------
-	menu[popover],
-	[popover] menu,
-	[popover] > menu {
+	// Popover-mode `<menu>` — only flips to flex column when actually
+	// open (`:popover-open`); the closed state inherits the UA
+	// `display: none` from the `[popover]` selector.
+	menu[popover]:popover-open,
+	[popover]:popover-open menu,
+	[popover]:popover-open > menu {
+		display: flex;
 		flex-direction: column;
 		align-items: stretch;
 		justify-content: flex-start;

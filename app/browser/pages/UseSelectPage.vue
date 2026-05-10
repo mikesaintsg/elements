@@ -42,7 +42,11 @@ const combo = useSelect(comboToggle, {
 				Click the toggle, pick an option. Selected: <code>{{ sel.value.value ?? '—' }}</code
 				>.
 			</p>
-			<button ref="toggleRef" type="button" @click="sel.toggle()">
+			<!-- `useSelect` already binds `click` on the toggle button to
+			     `dropdown.toggle()`. Adding the same handler in the
+			     template fires the toggle twice (open then close
+			     immediately) so the menu looks like it never opens. -->
+			<button ref="toggleRef" type="button">
 				{{ sel.value.value ?? 'Pick fruit' }}
 			</button>
 			<menu ref="menuRef" popover>
@@ -58,9 +62,7 @@ const combo = useSelect(comboToggle, {
 				Selected: <code>{{ multi.values.value.join(', ') || '—' }}</code
 				>.
 			</p>
-			<button ref="multiToggle" type="button" @click="multi.toggle()">
-				{{ multi.values.value.length || 0 }} selected
-			</button>
+			<button ref="multiToggle" type="button">{{ multi.values.value.length || 0 }} selected</button>
 			<menu ref="multiMenu" popover>
 				<li><button type="button" data-value="red">Red</button></li>
 				<li><button type="button" data-value="green">Green</button></li>
@@ -76,7 +78,7 @@ const combo = useSelect(comboToggle, {
 				>.
 			</p>
 			<input ref="comboInput" type="text" placeholder="Type to filter…" />
-			<button ref="comboToggle" type="button" @click="combo.toggle()">▾</button>
+			<button ref="comboToggle" type="button">▾</button>
 			<menu ref="comboMenu" popover>
 				<li><button type="button" data-value="apple">Apple</button></li>
 				<li><button type="button" data-value="apricot">Apricot</button></li>

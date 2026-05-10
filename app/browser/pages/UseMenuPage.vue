@@ -51,9 +51,11 @@ const eventMenu = useMenu(eventToggle, eventMenuRef, {
 			<p class="showcase-caption">
 				Click the toggle to open. Click outside, press <kbd>Esc</kbd>, or pick an item to dismiss.
 			</p>
-			<button ref="basicToggle" type="button" class="primary" @click="basic.toggle()">
-				Account
-			</button>
+			<!-- No `@click` here — `useMenu` already wires the toggle's
+			     click → `popover.toggle()`. Adding the same handler in
+			     the template made the click fire twice (open then close
+			     immediately), so the dropdown looked like it never opened. -->
+			<button ref="basicToggle" type="button" class="primary">Account</button>
 			<menu ref="basicMenu" popover>
 				<li><button type="button">Profile</button></li>
 				<li><button type="button">Settings</button></li>
@@ -68,7 +70,7 @@ const eventMenu = useMenu(eventToggle, eventMenuRef, {
 				<code>{{ selected || '—' }}</code
 				>.
 			</p>
-			<button ref="selectedToggle" type="button" @click="selectMenu.toggle()">Pick one</button>
+			<button ref="selectedToggle" type="button">Pick one</button>
 			<menu ref="selectedMenu" popover>
 				<li><button type="button" @click="choose('Apple')">Apple</button></li>
 				<li><button type="button" @click="choose('Banana')">Banana</button></li>
@@ -78,7 +80,7 @@ const eventMenu = useMenu(eventToggle, eventMenuRef, {
 
 		<section id="events">
 			<h2>Lifecycle events</h2>
-			<button ref="eventToggle" type="button" @click="eventMenu.toggle()">Open me</button>
+			<button ref="eventToggle" type="button">Open me</button>
 			<menu ref="eventMenuRef" popover>
 				<li><button type="button">Item one</button></li>
 				<li><button type="button">Item two</button></li>

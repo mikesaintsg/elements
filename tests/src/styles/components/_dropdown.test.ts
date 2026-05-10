@@ -26,22 +26,33 @@ describe('dropdown — `<menu popover>` flips to a vertical column', () => {
 		expect(style(menu, 'flex-direction')).toBe('row')
 	})
 
-	it('`<menu popover>` flips to a vertical flex column', () => {
+	it('`<menu popover>` flips to a vertical flex column when shown', () => {
 		const menu = build('menu')
 		menu.setAttribute('popover', '')
 		menu.id = 'test-popover'
 		mount(menu)
+		// The framework only flips the menu to a column AFTER it enters
+		// `:popover-open` — closed popovers inherit the platform's
+		// `display: none` so they don't render at all in the document
+		// flow. The previous "always-flex" version forced popover-mode
+		// menus to render in-page, which broke `useMenu` / `useSelect`
+		// (the `:popover-open` flip became a no-op since `display` was
+		// already non-none, so the menu never entered the top layer).
+		menu.showPopover()
 		expect(style(menu, 'flex-direction')).toBe('column')
+		menu.hidePopover()
 	})
 
-	it('a `<menu>` nested inside a `[popover]` panel also flips vertical', () => {
+	it('a `<menu>` nested inside a `[popover]` panel also flips vertical when shown', () => {
 		const div = build('div')
 		div.setAttribute('popover', '')
 		div.id = 'wrapping-popover'
 		const menu = build('menu')
 		div.appendChild(menu)
 		mount(div)
+		div.showPopover()
 		expect(style(menu, 'flex-direction')).toBe('column')
+		div.hidePopover()
 	})
 })
 
