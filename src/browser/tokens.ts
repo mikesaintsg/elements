@@ -313,6 +313,30 @@ export const tokens = {
 		maxInlineSize: '--set-toast-max-inline-size',
 		fontSize: '--set-toast-font-size',
 		edgeInset: '--set-toast-edge-inset',
+		boxShadow: '--set-toast-box-shadow',
+		zIndex: '--set-toast-z-index',
+		// Linear stack — gap between siblings inside one container
+		// without `[data-toast-stack]`. Drives the per-toast
+		// `--set-toast-stack-offset` accumulation in `createToast`.
+		spacing: '--set-toast-spacing',
+		// Per-toast offset written inline by `createToast.stack()` —
+		// declared on `:root` with a `0px` default so the parity test
+		// resolves it on a bare `<output>` and `var(--set-toast-stack-
+		// offset)` references in `composables/_toast.scss` always have
+		// a fallback value.
+		stackOffset: '--set-toast-stack-offset',
+		// Per-toast deck index — 0 means the front card. Same default-
+		// on-:root pattern as `stackOffset`; the factory overwrites the
+		// inline value in deck mode.
+		stackIndex: '--set-toast-stack-index',
+		// Deck stacking tokens — consumed by the `[data-toast-stack]`
+		// rule in `composables/_toast.scss`. Inert in linear mode.
+		stackDepth: '--set-toast-stack-depth',
+		peekHeight: '--set-toast-peek-height',
+		scaleStep: '--set-toast-scale-step',
+		opacityStep: '--set-toast-opacity-step',
+		frontHeight: '--set-toast-front-height',
+		hiddenCount: '--set-toast-hidden-count',
 	},
 
 	// Tablist + tab + tabpanel — chrome painted on `[role=tablist]` /

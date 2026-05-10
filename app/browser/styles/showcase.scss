@@ -557,29 +557,53 @@ form[data-form-validated] label:has(:invalid) {
 	font-weight: 600;
 }
 
-// useToast deck — sonner-style stack. Up to three toasts visible at
-// the bottom-end of the viewport, slightly scaled and offset so the
-// older ones recede behind the newest. The composable already manages
-// the `:popover-open` state and the `data-toast-stack` wrapper; this
-// CSS adds the visual deck-layout.
-.showcase-toast-deck {
-	position: fixed;
-	inset-block-end: calc(var(--spacing) * 4);
-	inset-inline-end: calc(var(--spacing) * 4);
-	display: flex;
-	flex-direction: column-reverse;
-	gap: calc(var(--spacing) * 2);
-	z-index: 50;
-	pointer-events: none;
+// useToast container — neutral wrapper for `<output popover>` toasts.
+// Geometry, stacking, and deck-mode visuals all live in the framework
+// partials (`components/_output.scss` for the chrome, `composables/_toast.scss`
+// for the linear stack offset and the `[data-toast-stack]` Sonner-style
+// deck). This class is markup-only — its job is to hold the teleported
+// toasts in one DOM subtree so the framework's hover-expand and indicator
+// rules have a stable parent to walk up to. The container's own layout
+// box collapses to zero (every child is a top-layer popover); we don't
+// give it a position or a size.
+//
+// `.start` flips the deck to anchor at the bottom-start corner (matching
+// the toast's own `.start` placement modifier in `_output.scss`) so the
+// linear and deck containers can sit side-by-side without overlapping.
+.showcase-toast-container {
+	display: contents;
 
-	> output[popover] {
-		pointer-events: auto;
-		position: relative;
-		inset: auto;
-		margin: 0;
-		min-inline-size: 18rem;
-		max-inline-size: 28rem;
-		box-shadow: 0 6px 24px -6px rgb(0 0 0 / 0.18);
+	&.start > output[popover] {
+		inset-inline-start: var(--set-toast-edge-inset);
+		inset-inline-end: auto;
+	}
+}
+
+// Event-log list inside the linear-stack section — small font-mono row
+// stamping every `show / open / hide / close` transition. Mirrors the
+// `<small>` lockup the other composable showcases use.
+.showcase-event-log {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: var(--text-sm);
+
+	> li {
+		display: flex;
+		align-items: center;
+		gap: calc(var(--spacing) * 2);
+		padding-block: calc(var(--spacing) * 1);
+		border-block-end: 1px solid var(--color-border);
+
+		> code {
+			min-inline-size: 4rem;
+		}
+
+		> small {
+			margin-inline-start: auto;
+			color: var(--color-text-muted);
+		}
 	}
 }
 

@@ -105,9 +105,24 @@
 		// Menu sized to the wrapper's width via `anchor-size()` so the
 		// dropdown matches the trigger's full width regardless of menu
 		// content (Bootstrap's `.dropdown-menu.w-100` equivalent).
+		//
+		// Padding contract — mirrors mailbox's `.dropdown-menu` shape:
+		// the menu owns the BLOCK padding (small breathing-room band at
+		// top + bottom), items own the INLINE padding (so each option
+		// row's hover background spans edge-to-edge of the menu without
+		// a gutter). The popover surface paints `padding: 1rem 0.75rem`
+		// on every `[popover]`, and our cascade has `surfaces` after
+		// `components`, so the surface padding leaks onto `.select-menu`
+		// unless we override it from the `composables` layer (which IS
+		// after `surfaces`). This is the single explicit override —
+		// without it the menu paints with 16px outer inline padding plus
+		// 12px item inline padding, giving a 28px text-from-edge inset
+		// that visually "double-pads" the dropdown.
 		> .select-menu {
 			inline-size: anchor-size(width, 100%);
 			min-inline-size: var(--set-select-menu-min-inline-size);
+			padding-inline: 0;
+			padding-block: calc(var(--spacing) * 2);
 		}
 	}
 
@@ -125,18 +140,27 @@
 	// `aria-controls` at the listbox; typing in the inner `<input>`
 	// drives the substring filter.
 	//
-	// The negative inline / block margin pulls the search row to the
-	// menu's inner edges so the bordered separator below it spans the
-	// full width without leaving a gap. `position: sticky` + matching
-	// `inset-block-start` keep it pinned during scroll.
+	// Padding alignment — the row's `padding-inline` matches the
+	// option-button `padding-inline` declared by the menu component
+	// (`components/_menu.scss` writes `calc(var(--spacing) * 3)` =
+	// 12px on `[popover] menu > li > button`). Sharing that horizontal
+	// rhythm makes the search input visually sit in the same column
+	// as the option labels below it. The negative block margin lifts
+	// the row to flush against the menu's top edge so the bordered
+	// separator below it reads as a band rather than a floating row.
+	// `position: sticky` + matching `inset-block-start` keep the row
+	// pinned while the option list scrolls beneath it.
 	.select-menu > li.select-search {
 		position: sticky;
 		inset-block-start: 0;
 		z-index: 1;
 		display: block;
-		margin-block-start: 0;
+		// Negative block-start lifts the row over the menu's
+		// `padding-block` band so the search row's bottom border meets
+		// the first option without a gap.
+		margin-block-start: calc(var(--spacing) * -2);
 		margin-block-end: calc(var(--spacing) * 1);
-		padding-inline: calc(var(--spacing) * 2);
+		padding-inline: calc(var(--spacing) * 3);
 		padding-block: calc(var(--spacing) * 2);
 		background-color: var(--color-surface);
 		border-block-end: 1px solid var(--color-border);

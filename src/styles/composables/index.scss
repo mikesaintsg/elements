@@ -26,6 +26,11 @@
 //                          classes on `[role='tablist']` for `useTabs`.
 //                          The bare tablist baseline lives in
 //                          `components/_nav.scss`.
+//   • `_toast.scss`     → `[data-toast-stack]` deck mode + linear
+//                          stack-offset consumption + indicator chrome
+//                          for `useToast`. The bare `<output popover>`
+//                          banner baseline lives in
+//                          `components/_output.scss`.
 //
 // Composables sit AFTER every other framework layer
 // (`theme, base, elements, components, surfaces, composables, …`)
@@ -38,3 +43,4 @@
 @use 'dialog';
 @use 'select';
 @use 'tabs';
+@use 'toast';

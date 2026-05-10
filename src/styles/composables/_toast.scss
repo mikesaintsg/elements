@@ -1,0 +1,258 @@
+// ============================================================================
+// useToast — `<output popover>` notification chrome.
+//
+// The toast baseline (banner layout, tokens, default bottom-end placement,
+// fade-in/out via `[popover]:popover-open` + `@starting-style`) lives in
+// `components/_output.scss` alongside the bare `<output>` calc-chip rule.
+// This composable partial extends that baseline with the surfaces a real
+// toast deck needs:
+//
+//   1. Linear stack offset — multiple `<output popover>` siblings inside
+//      one container space themselves apart. The factory writes a per-
+//      toast `--set-toast-stack-offset` (sum of older toasts' heights +
+//      gap); this rule turns that token into a `inset-block-end` lift so
+//      a newly-shown toast appears above the previous one rather than
+//      stacking on top of it.
+//
+//   2. Deck mode — opt-in via `[data-toast-stack]` on the parent
+//      container. Mirrors Sonner's card-stack visuals: the most recent
+//      toast sits in front, older ones peek out as smaller, dimmer
+//      edges. Toasts beyond `--set-toast-stack-depth` are hidden
+//      (`data-stack-hidden` + `aria-hidden`) and counted by
+//      `[data-toast-indicator]`.
+//
+//   3. Hover / focus expand — the deck spreads out as a vertical list
+//      while the pointer hovers (or focus is inside). `:hover` walks
+//      the DOM ancestry, not the layout box, so it reaches the
+//      container even though the toast lives in the top layer.
+//      `[data-stack-closing]` pins the expanded layout while a card's
+//      close transition plays out so the deck doesn't collapse and
+//      re-expand mid-animation.
+//
+// Top-layer constraint
+// --------------------
+// `output[popover]` elevates to the browser top layer when open, so the
+// deck CANNOT be built by absolutely positioning cards inside the
+// container — the container's box collapses to zero. Instead every card
+// keeps its inherited `position: fixed` (from `components/_output.scss`)
+// and lands at the SAME corner anchor (the factory sets
+// `--set-toast-stack-offset` to `0px` in deck mode). The card-stack
+// visual is built entirely from `transform: translateY(...) scale(...)`
+// (Sonner's model) plus `opacity` and `z-index`. This is the only model
+// that survives the top-layer detachment.
+//
+// Tokens consumed (declared on `:root` in `components/_output.scss`):
+//   --set-toast-stack-offset      per-toast linear lift (factory-written)
+//   --set-toast-stack-index       per-toast deck index, 0 = front
+//   --set-toast-stack-depth       max visible cards in deck mode
+//   --set-toast-peek-height       vertical lift each card peeks behind
+//                                 the next (~Sonner's 14px)
+//   --set-toast-scale-step        scale reduction per index step
+//   --set-toast-opacity-step      opacity reduction per index step
+//   --set-toast-front-height      front card's measured height (factory)
+//   --set-toast-spacing           gap between cards in expanded list
+//   --set-toast-z-index           deck base z-index (cascades through
+//                                 `z-index: calc(...)` per card; popovers
+//                                 ignore z-index but the deck stack
+//                                 ordering still relies on it for the
+//                                 `:popover-open` cascade tie-break)
+//
+// Attributes consumed:
+//   [data-toast-stack]            container opt-in for deck mode
+//   [data-toast-stack][data-toast-position="top"]
+//                                 top-anchored deck (default is bottom)
+//   [data-stack-hidden]           per-toast hidden marker (depth overflow)
+//   [data-stack-closing]          container pin during a card's close
+//   [data-toast-hidden-count]     container — count of overflow toasts
+//   [data-toast-indicator]        consumer-authored child surfacing the
+//                                 hidden count (`+N hidden`)
+// ============================================================================
+
+@layer composables {
+	// ── Linear stack — bottom-anchored (default) ──────────────────────────────
+	// Each toast lifts above the previous by its accumulated offset. The
+	// factory writes `--set-toast-stack-offset` as the sum of older toasts'
+	// heights + `--set-toast-spacing`; we add that to the corner inset so
+	// the toast lands clear of its neighbour.
+	//
+	// We also re-state the toast chrome's padding here. The popover
+	// surface (`surfaces/_popover.scss`) paints `padding: 1rem 0.75rem`
+	// on every `[popover]`, and surfaces beats components in our
+	// cascade order — without this override the toast's own
+	// `--set-toast-padding-{inline,block}` tokens (declared in
+	// `components/_output.scss`) would be defeated by the surface
+	// padding. Composables sits after surfaces, so this rule wins.
+	output[popover] {
+		// Default to 0 so a single toast falls back to the corner inset.
+		--set-toast-stack-offset: 0px;
+		inset-block-end: calc(var(--set-toast-edge-inset) + var(--set-toast-stack-offset));
+		padding-inline: var(--set-toast-padding-inline);
+		padding-block: var(--set-toast-padding-block);
+
+		&.top {
+			inset-block-start: calc(var(--set-toast-edge-inset) + var(--set-toast-stack-offset));
+			inset-block-end: auto;
+		}
+	}
+
+	// ── Deck stacking mode ────────────────────────────────────────────────────
+	// Opt-in via `[data-toast-stack]` on the toast container. Without it,
+	// linear stacking (above) is the default and is unchanged.
+	//
+	// Each card stays `position: fixed` (top-layer constraint); the visual
+	// stack is built from `transform: translateY(...) scale(...)` plus
+	// `opacity` and `z-index`.
+	[data-toast-stack] > output[popover] {
+		// Cancel the linear lift — every card lands at the SAME corner so
+		// the deck transform alone produces the visual stack.
+		--set-toast-stack-offset: 0px;
+		// Unify card heights so the peek amount is consistent regardless
+		// of each toast's content height. The front card (index 0)
+		// restores `auto` below.
+		block-size: var(--set-toast-front-height);
+		overflow: hidden;
+		// Bottom-anchored stacks (default): older cards lift UP behind
+		// the front, so a sliver of their top edge peeks above the front
+		// card. `transform-origin: center bottom` keeps the bottom edge
+		// anchored while `scale()` shrinks the card upward. Top-anchored
+		// stacks (further down) flip the sign and origin.
+		transform: translateY(calc(var(--set-toast-stack-index, 0) * var(--set-toast-peek-height) * -1))
+			scale(calc(1 - var(--set-toast-stack-index, 0) * var(--set-toast-scale-step)));
+		transform-origin: center bottom;
+		opacity: calc(1 - var(--set-toast-stack-index, 0) * var(--set-toast-opacity-step));
+		// Newer toasts (lower index) paint on top — match Sonner's
+		// z-ordering so the front card always wins.
+		z-index: calc(var(--set-toast-z-index) - var(--set-toast-stack-index, 0));
+		transition:
+			transform var(--set-transition-duration, 200ms) ease,
+			opacity var(--set-transition-duration, 200ms) ease,
+			block-size var(--set-transition-duration, 200ms) ease;
+	}
+
+	// Front card (index 0) — identity transform, full opacity, intrinsic
+	// height. The `style*=` attribute selector matches the inline custom
+	// property the factory writes via `element.style.setProperty(...)`.
+	[data-toast-stack] > output[popover][style*='--set-toast-stack-index: 0'] {
+		transform: none;
+		opacity: 1;
+		block-size: auto;
+	}
+
+	// Top-anchored stacks — flip the lift direction (cards peek DOWNWARD
+	// behind the front) and pivot the scale around the top edge.
+	[data-toast-stack][data-toast-position='top'] > output[popover] {
+		transform: translateY(calc(var(--set-toast-stack-index, 0) * var(--set-toast-peek-height)))
+			scale(calc(1 - var(--set-toast-stack-index, 0) * var(--set-toast-scale-step)));
+		transform-origin: center top;
+	}
+
+	[data-toast-stack][data-toast-position='top']
+		> output[popover][style*='--set-toast-stack-index: 0'] {
+		transform: none;
+	}
+
+	// Toasts beyond `--set-toast-stack-depth` — faded out and removed from
+	// pointer events. They stay in the DOM (and the popover stays open)
+	// so the autohide timer keeps running and the front-card slot rotates
+	// as older toasts expire. `aria-hidden="true"` is written by the
+	// factory for the assistive-tech contract.
+	[data-toast-stack] > output[popover][data-stack-hidden] {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	// ── Expand on hover / focus-within ────────────────────────────────────────
+	// Hovering the front toast (or tabbing into the deck) propagates up to
+	// the container even though the toast is in the top layer — CSS hover
+	// walks the DOM ancestry, not the layout box. Every card spreads out
+	// as a vertical list. Cards stay `position: fixed`, so we translate
+	// each card by `index × (front-height + spacing)` instead of
+	// reflowing them.
+	//
+	// `[data-stack-closing]` is the pin the factory writes during a deck-
+	// card close so the deck doesn't collapse and re-expand when the
+	// pointer briefly loses the close button. The closing card itself is
+	// excluded with `:not(:popover-open)`-style scoping (`:popover-open`
+	// here) so its own fade-out plays through cleanly.
+	[data-toast-stack]:hover > output[popover],
+	[data-toast-stack]:focus-within > output[popover],
+	[data-toast-stack][data-stack-closing] > output[popover]:popover-open {
+		block-size: auto;
+		opacity: 1;
+		pointer-events: auto;
+		transform: translateY(
+			calc(
+				var(--set-toast-stack-index, 0) *
+					(var(--set-toast-front-height) + var(--set-toast-spacing)) * -1
+			)
+		);
+	}
+
+	[data-toast-stack][data-toast-position='top']:hover > output[popover],
+	[data-toast-stack][data-toast-position='top']:focus-within > output[popover],
+	[data-toast-stack][data-toast-position='top'][data-stack-closing] > output[popover]:popover-open {
+		transform: translateY(
+			calc(
+				var(--set-toast-stack-index, 0) * (var(--set-toast-front-height) + var(--set-toast-spacing))
+			)
+		);
+	}
+
+	// ── Stack indicator ───────────────────────────────────────────────────────
+	// `[data-toast-indicator]` inside a `[data-toast-stack]` container
+	// surfaces the number of toasts hidden beyond `--set-toast-stack-depth`.
+	// The factory writes `data-toast-hidden-count` on the container; this
+	// rule reveals the indicator only when that count is non-zero. The
+	// caller renders the count text (`+N hidden`); CSS owns the visibility.
+	//
+	// The indicator is `position: fixed` because the container's layout
+	// box collapses to zero in deck mode. The same `--set-toast-edge-inset`
+	// that anchors the toasts pins the indicator at the matching corner,
+	// and a translation equal to the front card's height pushes it just
+	// above the visible deck.
+	[data-toast-stack] [data-toast-indicator] {
+		display: none;
+		position: fixed;
+		inset-inline-end: var(--set-toast-edge-inset);
+		inset-block-end: calc(
+			var(--set-toast-edge-inset) + var(--set-toast-front-height) + calc(var(--spacing) * 2)
+		);
+		z-index: var(--set-toast-z-index);
+		font-size: var(--text-xs, 0.75rem);
+		color: var(--color-text-muted, var(--color-text));
+		padding-inline: calc(var(--spacing) * 2);
+		padding-block: calc(var(--spacing) * 1);
+		background-color: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-full, 9999px);
+		pointer-events: none;
+		transition: opacity var(--set-transition-duration, 200ms) ease;
+	}
+
+	[data-toast-stack][data-toast-hidden-count]:not([data-toast-hidden-count='0'])
+		[data-toast-indicator] {
+		display: block;
+	}
+
+	// Suppress the indicator while the deck is hover/focus-expanded —
+	// every toast is already visible in the list, so the chip would lie.
+	[data-toast-stack]:hover [data-toast-indicator],
+	[data-toast-stack]:focus-within [data-toast-indicator] {
+		opacity: 0;
+	}
+
+	// Top-anchored deck — indicator anchors below the deck instead of
+	// above, so it does not collide with the page header.
+	[data-toast-stack][data-toast-position='top'] [data-toast-indicator] {
+		inset-block-end: auto;
+		inset-block-start: calc(
+			var(--set-toast-edge-inset) + var(--set-toast-front-height) + calc(var(--spacing) * 2)
+		);
+	}
+
+	// Start-anchored decks — mirror to the leading edge.
+	[data-toast-stack][data-toast-position='start'] [data-toast-indicator] {
+		inset-inline-end: auto;
+		inset-inline-start: var(--set-toast-edge-inset);
+	}
+}

@@ -64,6 +64,39 @@
 		--set-toast-max-inline-size: 28rem;
 		--set-toast-font-size: var(--text-sm, 0.875rem);
 		--set-toast-edge-inset: calc(var(--spacing) * 4);
+		--set-toast-box-shadow: 0 6px 24px -6px rgb(0 0 0 / 0.18);
+		// Linear stack rhythm — the gap between the bottom of one toast
+		// and the bottom of the next when multiple toasts share a
+		// `<Teleport>` container without `[data-toast-stack]`. The factory
+		// reads this value (`createToast.stack()` → `length(--set-toast-
+		// spacing)`) and accumulates each toast's height + this gap into
+		// `--set-toast-stack-offset` (declared as `0px` below as the
+		// parity-test default; the factory writes per-toast offsets
+		// inline on each `<output>`).
+		--set-toast-spacing: calc(var(--spacing) * 3);
+		--set-toast-stack-offset: 0px;
+		--set-toast-stack-index: 0;
+		// Deck-mode tokens — drive the Sonner-style card-stack visual in
+		// `composables/_toast.scss` when a container opts in via
+		// `[data-toast-stack]`. The factory writes `--set-toast-stack-
+		// index` per toast and `--set-toast-front-height` /
+		// `data-toast-hidden-count` on the container; CSS consumes the
+		// structural constants below to size the per-card transform,
+		// opacity, and indicator. They're inert in linear mode (the
+		// default) — no `[data-toast-stack]`, no card-stack rules match.
+		--set-toast-stack-depth: 3;
+		--set-toast-peek-height: calc(var(--spacing) * 3.5);
+		--set-toast-scale-step: 0.06;
+		--set-toast-opacity-step: 0.1;
+		--set-toast-front-height: 0px;
+		--set-toast-hidden-count: 0;
+		// Deck base z-index — popovers ignore z-index for top-layer
+		// stacking (the browser owns that), but the deck rule applies
+		// `z-index: calc(var(--set-toast-z-index) - var(--set-toast-
+		// stack-index))` per card so consumers who choose to render a
+		// non-popover toast (`output[role='status']` outside the deck)
+		// can pin a sensible value too.
+		--set-toast-z-index: 1090;
 	}
 
 	// --------------------------------------------------------------------------
@@ -93,6 +126,7 @@
 		border-radius: var(--set-toast-border-radius);
 		padding-inline: var(--set-toast-padding-inline);
 		padding-block: var(--set-toast-padding-block);
+		box-shadow: var(--set-toast-box-shadow);
 	}
 
 	// --------------------------------------------------------------------------

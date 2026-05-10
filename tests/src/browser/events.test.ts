@@ -86,7 +86,7 @@ describe('events — shape', () => {
 	it('every verb is in the lifecycle vocabulary', () => {
 		for (const value of eventValues(events)) {
 			const verb = value.split(':')[2]!
-			expect(LIFECYCLE_VERBS.has(verb), `unknown verb \"${verb}\" in ${value}`).toBe(true)
+			expect(LIFECYCLE_VERBS.has(verb), `unknown verb "${verb}" in ${value}`).toBe(true)
 		}
 	})
 
@@ -94,7 +94,7 @@ describe('events — shape', () => {
 		for (const [source, group] of Object.entries(events)) {
 			for (const value of Object.values(group as Record<string, string>)) {
 				const segment = value.split(':')[1]
-				expect(segment, `${value} should be under \"${source}\"`).toBe(source)
+				expect(segment, `${value} should be under "${source}"`).toBe(source)
 			}
 		}
 	})

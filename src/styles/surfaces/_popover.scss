@@ -51,10 +51,6 @@
 		padding-block: var(--set-popover-padding-block);
 		box-shadow: var(--set-popover-box-shadow);
 
-		// Allow `display: none ↔ block` to participate in transitions so the
-		// open/close states can fade. Pair with `@starting-style` below.
-		transition-behavior: allow-discrete;
-
 		@include transition(
 			(
 				opacity var(--set-popover-transition-duration),
@@ -64,25 +60,66 @@
 			)
 		);
 
+		// `transition-behavior` must come AFTER the `transition` shorthand —
+		// the shorthand resets every `transition-*` longhand to its initial
+		// value, so declaring it before would silently revert. With
+		// `allow-discrete`, the `display: none ↔ block` flip participates
+		// in the transition pipeline (which is what makes `@starting-style`
+		// trigger a transition on entry instead of skipping it).
+		transition-behavior: allow-discrete;
+
+		// Closed-state values — the from-state for the close transition.
+		// Setting these on `[popover]` (NOT on `:not(:popover-open)`) keeps
+		// them lean: when the popover is open, the higher-specificity
+		// `:popover-open` rule below overrides; when closed (or transitioning
+		// out), these win.
 		opacity: 0;
 		transform: scale(0.98);
 	}
 
-	// Nest `@starting-style` INSIDE `[popover]:popover-open` so the
-	// starting-state rule inherits the same `@layer surfaces` membership
-	// as its parent. Declared as a sibling at-rule, the compiled output
-	// hoists `@starting-style` to top-level and the contained selector
-	// becomes UNLAYERED — unlayered styles beat layered ones in the
-	// cascade, so the unlayered `opacity: 0` would override the layered
-	// `opacity: 1` permanently (not just at transition start), leaving
-	// the popover stuck transparent on open. Nesting keeps the
-	// `[popover]:popover-open` selector inside the surfaces layer where
-	// the open-state transition target wins.
+	// Open-state target.
+	//
+	// `@starting-style` selector specificity matters here. We previously
+	// nested `@starting-style { opacity: 0 }` INSIDE this rule, so the
+	// compiled output's hoisted at-rule body became
+	// `@starting-style { [popover]:popover-open { opacity: 0 } }`. That
+	// gives the starting-state declaration the SAME specificity as the
+	// regular `:popover-open { opacity: 1 }` declaration. Chrome 148+
+	// has a regression (or undocumented behaviour) where the starting-
+	// style body competes in the normal cascade tier when transitions
+	// don't fully engage; same specificity + later source order means
+	// the `@starting-style` `opacity: 0` wins permanently and the
+	// popover never reaches opacity 1. Symptoms: every popover-family
+	// composable (toast, popover panel, combobox menu, tooltip, dialog
+	// non-modal) opens with the popover-open state set but the panel
+	// renders fully transparent.
+	//
+	// Workaround — declare `@starting-style` as a sibling at-rule
+	// targeting the bare `[popover]` selector instead of
+	// `:popover-open`. The starting-state body now has specificity
+	// (0,1,0), one pseudo-class lower than the regular
+	// `[popover]:popover-open` rule (0,2,0). Even if the @starting-style
+	// body leaks into the regular cascade tier, the open-state
+	// declaration wins by specificity and the popover-open state stays
+	// at opacity 1 / transform none. The element is still in the
+	// `[popover]` selector bucket when the transition begins (popover-
+	// open elements always carry the `[popover]` attribute), so
+	// @starting-style still resolves the from-state values it needs.
 	[popover]:popover-open {
 		opacity: 1;
 		transform: none;
+	}
 
-		@starting-style {
+	@starting-style {
+		// Targets the bare `[popover]` selector (specificity 0,1,0) so
+		// the starting-state declarations cannot defeat the regular
+		// `[popover]:popover-open` rule above (specificity 0,2,0) if
+		// Chrome's @starting-style cascade tier leaks into normal
+		// resolution. Popover-open elements always match `[popover]`
+		// (the popover attribute doesn't disappear when shown), so this
+		// selector still resolves the from-state values @starting-style
+		// needs at the transition's first frame.
+		[popover] {
 			opacity: 0;
 			transform: scale(0.98);
 		}
