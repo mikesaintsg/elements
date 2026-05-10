@@ -3,4 +3,14 @@
 // Always set the lang attribute (e.g. lang="en") for screen readers and search engines
 // box-sizing: border-box is the standard reset applied here
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+// `interpolate-size: allow-keywords` lets CSS transitions animate
+// to / from intrinsic sizing keywords (`auto`, `min-content`, `fit-
+// content`). The framework relies on this for smooth `<details>`
+// open / close (height: 0 ↔ auto via `::details-content`) and any
+// consumer that wants animated `block-size: auto`. Cascades down
+// to every descendant — same pattern Bootstrap / mailbox use.
+@layer elements {
+	html {
+		interpolate-size: allow-keywords;
+	}
+}

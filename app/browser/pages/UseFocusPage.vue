@@ -43,15 +43,7 @@ const initial = useFocus(initialRef, {
 					>active = <code>{{ trap.active.value }}</code></small
 				>
 			</div>
-			<div
-				ref="trapRef"
-				:style="{
-					padding: '1.5rem',
-					border: '2px solid var(--color-border, #ccc)',
-					borderRadius: '0.5rem',
-					marginBlockStart: '0.75rem',
-				}"
-			>
+			<div ref="trapRef" class="showcase-focus-trap" :data-active="trap.active.value">
 				<div class="showcase-row">
 					<button type="button">First</button>
 					<input placeholder="An input" />
@@ -69,20 +61,14 @@ const initial = useFocus(initialRef, {
 			</p>
 			<button type="button" class="primary" @click="initial.activate()">Open</button>
 			<button type="button" @click="initial.deactivate()">Close</button>
-			<div
-				ref="initialRef"
-				:style="{
-					padding: '1.5rem',
-					border: '2px solid var(--color-border, #ccc)',
-					borderRadius: '0.5rem',
-					marginBlockStart: '0.75rem',
-				}"
-			>
-				<input placeholder="Don't focus me first" />
-				<button ref="initialBtn" type="button" class="primary" data-initial>
-					Confirm (initial)
-				</button>
-				<button type="button">Cancel</button>
+			<div ref="initialRef" class="showcase-focus-trap" :data-active="initial.active.value">
+				<div class="showcase-row">
+					<input placeholder="Don't focus me first" />
+					<button ref="initialBtn" type="button" class="primary" data-initial>
+						Confirm (initial)
+					</button>
+					<button type="button">Cancel</button>
+				</div>
 			</div>
 		</section>
 
@@ -94,17 +80,11 @@ const initial = useFocus(initialRef, {
 			</p>
 			<button type="button" @click="noRestore.activate()">Activate (no restore)</button>
 			<button type="button" @click="noRestore.deactivate()">Deactivate</button>
-			<div
-				ref="noRestoreRef"
-				:style="{
-					padding: '1.5rem',
-					border: '2px solid var(--color-border, #ccc)',
-					borderRadius: '0.5rem',
-					marginBlockStart: '0.75rem',
-				}"
-			>
-				<button type="button">A</button>
-				<button type="button">B</button>
+			<div ref="noRestoreRef" class="showcase-focus-trap" :data-active="noRestore.active.value">
+				<div class="showcase-row">
+					<button type="button">A</button>
+					<button type="button">B</button>
+				</div>
 			</div>
 		</section>
 

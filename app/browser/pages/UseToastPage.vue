@@ -14,6 +14,23 @@ const pauseToast = useToast(pauseEl, { autohide: { delay: 6000 } })
 
 const linearEl = ref<HTMLOutputElement | null>(null)
 const linear = useToast(linearEl, { autohide: { delay: 5000 } })
+
+// Sonner-style deck — three toasts spawn from one button, stacking
+// at the viewport's bottom-end edge. The composable already manages
+// each toast's `[popover-open]` lifecycle; the deck is layout chrome
+// added by the page (see `.showcase-toast-deck` in showcase.scss).
+const deck1El = ref<HTMLOutputElement | null>(null)
+const deck2El = ref<HTMLOutputElement | null>(null)
+const deck3El = ref<HTMLOutputElement | null>(null)
+const deck1 = useToast(deck1El, { autohide: { delay: 5000 } })
+const deck2 = useToast(deck2El, { autohide: { delay: 5000 } })
+const deck3 = useToast(deck3El, { autohide: { delay: 5000 } })
+let deckIndex = 0
+const showDeckToast = (): void => {
+	const slots = [deck1, deck2, deck3] as const
+	slots[deckIndex % slots.length]!.show()
+	deckIndex++
+}
 </script>
 
 <template>
@@ -62,6 +79,26 @@ const linear = useToast(linearEl, { autohide: { delay: 5000 } })
 			</div>
 			<div data-toast-stack>
 				<output ref="pauseEl" popover class="primary">Hover me to pause.</output>
+			</div>
+		</section>
+
+		<section id="deck">
+			<h2>Sonner-style deck</h2>
+			<p class="showcase-caption">
+				Multiple toasts stack at the bottom-end of the viewport. Each call to <code>show()</code>
+				cycles through three `&lt;output popover&gt;` slots so consecutive triggers feel like a deck
+				of cards.
+			</p>
+			<div class="showcase-row">
+				<button type="button" class="primary" @click="showDeckToast">Stack a toast</button>
+			</div>
+			<!-- The deck wrapper is the page's responsibility — `useToast`
+			     stays surface-agnostic so `<output popover>` lives wherever
+			     the consumer wants it. -->
+			<div class="showcase-toast-deck">
+				<output ref="deck1El" popover class="success">Saved.</output>
+				<output ref="deck2El" popover class="primary">Synced.</output>
+				<output ref="deck3El" popover class="warning">Conflict resolved.</output>
 			</div>
 		</section>
 

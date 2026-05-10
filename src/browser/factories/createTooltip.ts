@@ -187,6 +187,28 @@ export function createTooltip(
 	const onEnter = (): void => show()
 	const onLeave = (): void => hide()
 
+	// Touch / click-toggle support — on coarse-pointer devices (phones,
+	// tablets) `mouseenter` / `mouseleave` either don't fire at all or
+	// fire alongside synthesized click events that immediately blur the
+	// anchor. Wire `pointerdown` against a `pointerType: 'touch'` filter
+	// so a tap toggles the tooltip without waiting for hover. Mouse and
+	// pen pointers fall through to the existing hover path.
+	const onPointerDown = (event: PointerEvent): void => {
+		if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+		toggle()
+	}
+
+	// Light-dismiss for the touch path — tapping anywhere outside the
+	// anchor / panel hides an open tooltip. Without this, a touch-opened
+	// tooltip would persist until another tap on the anchor.
+	const onDocPointerDown = (event: PointerEvent): void => {
+		if (!visible.value) return
+		if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+		const target = event.target as Node | null
+		if (target && (anchor.contains(target) || panel.contains(target))) return
+		hide()
+	}
+
 	const onDocKeydown = (event: KeyboardEvent): void => {
 		if (!visible.value || !dismissEscape) return
 		if (event.key !== 'Escape') return
@@ -209,6 +231,8 @@ export function createTooltip(
 	anchor.addEventListener('mouseleave', onLeave)
 	anchor.addEventListener('focusin', onEnter)
 	anchor.addEventListener('focusout', onLeave)
+	anchor.addEventListener('pointerdown', onPointerDown)
+	document.addEventListener('pointerdown', onDocPointerDown, true)
 	document.addEventListener('keydown', onDocKeydown)
 	document.addEventListener('scroll', onViewportChange, true)
 	window.addEventListener('resize', onViewportChange)
@@ -222,6 +246,8 @@ export function createTooltip(
 			anchor.removeEventListener('mouseleave', onLeave)
 			anchor.removeEventListener('focusin', onEnter)
 			anchor.removeEventListener('focusout', onLeave)
+			anchor.removeEventListener('pointerdown', onPointerDown)
+			document.removeEventListener('pointerdown', onDocPointerDown, true)
 			document.removeEventListener('keydown', onDocKeydown)
 			document.removeEventListener('scroll', onViewportChange, true)
 			window.removeEventListener('resize', onViewportChange)

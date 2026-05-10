@@ -46,8 +46,16 @@
 		--set-dialog-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 5));
 		--set-dialog-font-size: var(--set-size-font-size, var(--text-base));
 		--set-dialog-line-height: var(--leading-normal);
+		// `inline-size` is the dialog's preferred width; `max-inline-size`
+		// caps it. Bare modals default to a comfortable reading width
+		// (`32rem` ≈ 512px) and shrink to fit narrower viewports via the
+		// `min()` ceiling. Authors override per-instance with inline style
+		// or a size modifier. The block-size cap stays viewport-relative
+		// so tall content scrolls inside the dialog rather than spilling
+		// off-screen.
+		--set-dialog-inline-size: min(32rem, calc(100vw - calc(var(--spacing) * 4)));
 		--set-dialog-max-inline-size: min(90vw, calc(var(--spacing) * 120));
-		--set-dialog-max-block-size: 85dvh;
+		--set-dialog-max-block-size: min(85dvh, calc(100dvh - calc(var(--spacing) * 4)));
 		// Footer-action gap — tokenized so consumers can dial it for dense
 		// vs. roomy. Default matches the cross-element `.row` form gap.
 		--set-dialog-footer-gap: calc(var(--spacing) * 2);
@@ -56,6 +64,7 @@
 			0 8px 10px -6px color-mix(in srgb, black 15%, transparent);
 		--set-dialog-transition-duration: var(--set-transition-duration);
 
+		inline-size: var(--set-dialog-inline-size);
 		max-inline-size: var(--set-dialog-max-inline-size);
 		max-block-size: var(--set-dialog-max-block-size);
 		padding-inline: var(--set-dialog-padding-inline);

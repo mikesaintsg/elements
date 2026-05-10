@@ -366,12 +366,15 @@ $showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
 		padding: calc(var(--spacing) * 6);
 		text-align: center;
 
+		// Off-screen by default. The active slide overrides to translate(0).
+		// Mailbox uses the same `transform: translateX(±100%)` pattern with
+		// a smooth ease — feels closer to swiping a deck than fading.
 		opacity: 0;
-		transform: translateX(0);
+		transform: translateX(100%);
 		pointer-events: none;
 		transition:
-			opacity 0.25s ease-out,
-			transform 0.25s ease-out;
+			opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+			transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 
 		// Variant-tinted backgrounds — read framework variant tokens so
 		// colours track the active theme. Each variant resolves through
@@ -394,18 +397,259 @@ $showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
 
 		&.active {
 			opacity: 1;
+			transform: translateX(0);
 			pointer-events: auto;
 			z-index: 1;
 		}
 
-		// Mid-transition classes set by `useCarousel`. We don't animate
-		// transform here (we stick to a simple cross-fade), but the
-		// composable still flips these flags during a slide so consumer
-		// CSS can hook them when it wants directional motion.
-		&.carousel-item-next,
-		&.carousel-item-prev {
-			opacity: 0.6;
+		// Mid-transition classes from `useCarousel`. The factory adds
+		// `.carousel-item-next` / `.carousel-item-prev` to the INCOMING
+		// item before adding `.active`, and `.carousel-item-start` /
+		// `.carousel-item-end` to drive the slide axis. Map them to the
+		// directional translate so left-arrow vs right-arrow nav reads
+		// as a directional swipe rather than a generic fade.
+		&.carousel-item-next {
+			transform: translateX(100%);
+			opacity: 0;
 		}
+		&.carousel-item-prev {
+			transform: translateX(-100%);
+			opacity: 0;
+		}
+		&.carousel-item-start {
+			transform: translateX(0);
+			opacity: 1;
+		}
+	}
+}
+
+// useDrag / useDrop demo styles.
+//
+// `useDrag` adds three lifecycle classes to its host items:
+//   .draggable     — base item chrome (page-applied)
+//   .selected      — selection state (composable adds)
+//   .dragging      — currently being dragged (composable adds)
+//   .drop-target   — current insertion target (composable adds)
+// plus `.drag-handle` / `.no-drag` page utility classes.
+//
+// `useDrop` toggles `.over` on the host element when a valid payload
+// is hovering. The page styles below provide a visible "I see your
+// drag" affordance on top of the framework chrome.
+.showcase-page ul:where([data-drag], :has(> li.draggable)),
+.showcase-page :where(ul, ol):has(> li.draggable) {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--spacing) * 1);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	background-color: var(--color-surface);
+	padding: calc(var(--spacing) * 2);
+
+	li.draggable {
+		display: flex;
+		align-items: center;
+		gap: calc(var(--spacing) * 3);
+		padding-inline: calc(var(--spacing) * 3);
+		padding-block: calc(var(--spacing) * 2);
+		border-radius: var(--radius-sm);
+		background-color: var(--color-canvas);
+		border: 1px solid var(--color-border-subtle);
+		cursor: grab;
+		user-select: none;
+
+		transition:
+			background-color 0.15s,
+			border-color 0.15s,
+			transform 0.15s,
+			opacity 0.15s;
+
+		&:hover {
+			background-color: var(--color-surface-raised);
+		}
+
+		&.selected {
+			border-color: var(--color-primary);
+			background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-canvas));
+		}
+
+		&.dragging {
+			opacity: 0.4;
+			cursor: grabbing;
+		}
+
+		&.drop-target {
+			border-color: var(--color-primary);
+			border-style: dashed;
+			background-color: color-mix(in oklab, var(--color-primary) 6%, var(--color-canvas));
+		}
+
+		// First child caret / drag-handle: cursor + opacity affordance.
+		.drag-handle {
+			cursor: grab;
+			opacity: 0.5;
+			font-size: 1.1em;
+			user-select: none;
+		}
+
+		// `.no-drag` cancels drag-start; visually de-emphasize the action
+		// button so it doesn't look draggable.
+		.no-drag {
+			margin-inline-start: auto;
+		}
+
+		// Ordinal counter on the right (`<small>#1</small>` etc.)
+		> small:last-child {
+			margin-inline-start: auto;
+			color: var(--color-text-subtle);
+			font-variant-numeric: tabular-nums;
+		}
+	}
+}
+
+// useDrop badge palette — draggable example tokens that pair with the
+// drop zone demos. Each badge has `draggable="true"` and stamps a
+// `text/plain` payload via `dragstart`.
+.showcase-drag-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: calc(var(--spacing) * 2);
+	padding: calc(var(--spacing) * 2);
+
+	[draggable='true'] {
+		display: inline-flex;
+		align-items: center;
+		gap: calc(var(--spacing) * 1);
+		padding-inline: calc(var(--spacing) * 3);
+		padding-block: calc(var(--spacing) * 1);
+		border-radius: 999px;
+		border: 1px solid var(--color-border);
+		background-color: var(--color-surface);
+		font-size: var(--text-sm);
+		cursor: grab;
+		user-select: none;
+		transition:
+			background-color 0.15s,
+			transform 0.15s,
+			opacity 0.15s;
+
+		&:hover {
+			background-color: var(--color-surface-raised);
+		}
+
+		&:active {
+			cursor: grabbing;
+			transform: scale(0.97);
+		}
+
+		&.dragging {
+			opacity: 0.5;
+		}
+
+		// Variant-tinted badges so the demo looks alive.
+		&.primary {
+			background-color: color-mix(in oklab, var(--color-primary) 14%, var(--color-surface));
+			border-color: var(--color-primary);
+		}
+		&.success {
+			background-color: color-mix(in oklab, var(--color-success) 14%, var(--color-surface));
+			border-color: var(--color-success);
+		}
+		&.warning {
+			background-color: color-mix(in oklab, var(--color-warning) 18%, var(--color-surface));
+			border-color: var(--color-warning);
+		}
+		&.danger {
+			background-color: color-mix(in oklab, var(--color-danger) 14%, var(--color-surface));
+			border-color: var(--color-danger);
+		}
+	}
+}
+
+// useDrop zone — a dashed-bordered drop target that lights up when
+// hovered with a valid payload (`useDrop` toggles the `.over` class
+// via the reactive `over` ref).
+.showcase-drop-zone {
+	padding: calc(var(--spacing) * 8) calc(var(--spacing) * 4);
+	border: 2px dashed var(--color-border);
+	border-radius: var(--radius-md);
+	background-color: var(--color-surface);
+	color: var(--color-text-muted);
+	text-align: center;
+	transition:
+		border-color 0.15s,
+		background-color 0.15s,
+		color 0.15s;
+
+	&[data-over='true'] {
+		border-color: var(--color-primary);
+		border-style: solid;
+		background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-surface));
+		color: var(--color-text);
+	}
+}
+
+// useFocus active indicator — colours the host border when the trap
+// is active so the visual matches the `trap.active.value` ref.
+.showcase-focus-trap {
+	padding: calc(var(--spacing) * 6);
+	border: 2px solid var(--color-border);
+	border-radius: var(--radius-md);
+	background-color: var(--color-surface);
+	transition:
+		border-color 0.15s,
+		background-color 0.15s;
+	margin-block-start: calc(var(--spacing) * 3);
+
+	&[data-active='true'] {
+		border-color: var(--color-primary);
+		background-color: color-mix(in oklab, var(--color-primary) 4%, var(--color-surface));
+	}
+}
+
+// useForm validation — once the form has been submitted (the
+// composable adds `[data-form-validated]`), invalid required fields
+// show a danger-tinted border so the user can see which field is
+// blocking submission.
+form[data-form-validated] :where(input, select, textarea):invalid {
+	border-color: var(--color-danger);
+	background-color: color-mix(in oklab, var(--color-danger) 6%, var(--color-canvas));
+}
+
+form[data-form-validated] :where(input, select, textarea):invalid:focus-visible {
+	box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+		color-mix(
+			in oklab,
+			var(--color-danger) calc(var(--set-focus-box-shadow-opacity) * 100%),
+			transparent
+		);
+}
+
+// useToast deck — sonner-style stack. Up to three toasts visible at
+// the bottom-end of the viewport, slightly scaled and offset so the
+// older ones recede behind the newest. The composable already manages
+// the `:popover-open` state and the `data-toast-stack` wrapper; this
+// CSS adds the visual deck-layout.
+.showcase-toast-deck {
+	position: fixed;
+	inset-block-end: calc(var(--spacing) * 4);
+	inset-inline-end: calc(var(--spacing) * 4);
+	display: flex;
+	flex-direction: column-reverse;
+	gap: calc(var(--spacing) * 2);
+	z-index: 50;
+	pointer-events: none;
+
+	> output[popover] {
+		pointer-events: auto;
+		position: relative;
+		inset: auto;
+		margin: 0;
+		min-inline-size: 18rem;
+		max-inline-size: 28rem;
+		box-shadow: 0 6px 24px -6px rgb(0 0 0 / 0.18);
 	}
 }
 

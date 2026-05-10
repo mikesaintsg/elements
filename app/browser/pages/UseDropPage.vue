@@ -3,20 +3,33 @@ import { ref } from 'vue'
 import { useDrop } from '@src/browser'
 
 const zoneRef = ref<HTMLElement | null>(null)
-const drops = ref<{ at: string; types: readonly string[] }[]>([])
+const dropped = ref<string[]>([])
 const stamp = (): string => new Date().toLocaleTimeString()
 const zone = useDrop(zoneRef, {
 	on: {
 		drop: (event) => {
 			event.preventDefault()
-			const types = Array.from(event.dataTransfer?.types ?? [])
-			drops.value.unshift({ at: stamp(), types })
+			const text = event.dataTransfer?.getData('text/plain')
+			if (text) dropped.value.unshift(`${stamp()} · ${text}`)
 		},
 	},
 })
 
-const filtered = ref<HTMLElement | null>(null)
-const filteredOver = useDrop(filtered, { accept: ['text/plain'] })
+const filteredRef = ref<HTMLElement | null>(null)
+const filtered = useDrop(filteredRef, { accept: ['text/plain'] })
+
+// Drag-source helpers — start a drag with a given text payload. The
+// composable only handles the drop side; the page wires `dragstart`
+// directly on the badge nodes to keep the demo self-contained.
+const onBadgeDragStart = (event: DragEvent, label: string): void => {
+	event.dataTransfer?.setData('text/plain', label)
+	event.dataTransfer?.setData('application/x-elements-badge', label)
+	if (event.dataTransfer) event.dataTransfer.effectAllowed = 'copy'
+	;(event.target as HTMLElement).classList.add('dragging')
+}
+const onBadgeDragEnd = (event: DragEvent): void => {
+	;(event.target as HTMLElement).classList.remove('dragging')
+}
 </script>
 
 <template>
@@ -38,29 +51,48 @@ const filteredOver = useDrop(filtered, { accept: ['text/plain'] })
 		<section id="basic">
 			<h2>Drop zone</h2>
 			<p class="showcase-caption">
-				Drag a file or text from outside the page onto the zone. Hovered:
-				<code>{{ zone.over.value }}</code
-				>.
+				Drag any badge below onto the zone. The composable's reactive <code>over</code> ref drives
+				the host's <code>data-over</code> attribute (currently: <code>{{ zone.over.value }}</code
+				>).
 			</p>
-			<div
-				ref="zoneRef"
-				:style="{
-					padding: '2rem',
-					border: '2px dashed var(--color-border, #ccc)',
-					borderRadius: '0.5rem',
-					background: zone.over.value
-						? 'color-mix(in oklab, var(--color-primary) 10%, transparent)'
-						: 'transparent',
-					textAlign: 'center',
-				}"
-			>
-				Drop something here.
+
+			<div class="showcase-drag-badges">
+				<span
+					class="primary"
+					draggable="true"
+					@dragstart="(e) => onBadgeDragStart(e, 'Primary')"
+					@dragend="onBadgeDragEnd"
+					>Primary</span
+				>
+				<span
+					class="success"
+					draggable="true"
+					@dragstart="(e) => onBadgeDragStart(e, 'Success')"
+					@dragend="onBadgeDragEnd"
+					>Success</span
+				>
+				<span
+					class="warning"
+					draggable="true"
+					@dragstart="(e) => onBadgeDragStart(e, 'Warning')"
+					@dragend="onBadgeDragEnd"
+					>Warning</span
+				>
+				<span
+					class="danger"
+					draggable="true"
+					@dragstart="(e) => onBadgeDragStart(e, 'Danger')"
+					@dragend="onBadgeDragEnd"
+					>Danger</span
+				>
 			</div>
-			<small v-if="drops.length === 0">No drops yet.</small>
+
+			<div ref="zoneRef" class="showcase-drop-zone" :data-over="zone.over.value">
+				Drop a badge here.
+			</div>
+			<small v-if="dropped.length === 0">No drops yet.</small>
 			<ul v-else>
-				<li v-for="(d, i) in drops" :key="i">
-					<code>{{ d.types.join(', ') || '(no types)' }}</code> — {{ d.at }}
-				</li>
+				<li v-for="(d, i) in dropped" :key="i">{{ d }}</li>
 			</ul>
 		</section>
 
@@ -68,17 +100,10 @@ const filteredOver = useDrop(filtered, { accept: ['text/plain'] })
 			<h2>Type filter</h2>
 			<p class="showcase-caption">
 				<code>accept</code> restricts which payloads light up the zone. Hovered:
-				<code>{{ filteredOver.over.value }}</code
+				<code>{{ filtered.over.value }}</code
 				>.
 			</p>
-			<div
-				ref="filtered"
-				:style="{
-					padding: '1.5rem',
-					border: '2px dashed var(--color-border, #ccc)',
-					borderRadius: '0.5rem',
-				}"
-			>
+			<div ref="filteredRef" class="showcase-drop-zone" :data-over="filtered.over.value">
 				Drop <code>text/plain</code> only.
 			</div>
 		</section>

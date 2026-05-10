@@ -123,5 +123,54 @@
 		justify-content: flex-start;
 		padding-inline: 0;
 		padding-block: 0;
+		gap: 0;
+		min-inline-size: 12rem;
+	}
+
+	// Dropdown items — `<li>` wraps each command. The button inside owns
+	// the click target, and the framework's `<button>` baseline already
+	// handles focus + active states; here we just make the inner button
+	// fill the row, left-align text (commands read top-to-bottom, not
+	// centred), and drop the button's own border so each row reads as
+	// a list item rather than a row of separate buttons. Hover paints a
+	// subtle tint matching the active theme.
+	menu[popover] > li,
+	[popover] menu > li,
+	[popover] > menu > li {
+		list-style: none;
+		margin: 0;
+	}
+
+	menu[popover] > li > :where(button, a),
+	[popover] menu > li > :where(button, a),
+	[popover] > menu > li > :where(button, a) {
+		display: flex;
+		align-items: center;
+		gap: calc(var(--spacing) * 2);
+		inline-size: 100%;
+		padding-inline: calc(var(--spacing) * 3);
+		padding-block: calc(var(--spacing) * 2);
+		border: 0;
+		border-radius: 0;
+		background-color: transparent;
+		color: var(--color-text);
+		text-align: start;
+		text-decoration: none;
+		font-size: var(--text-sm);
+		cursor: pointer;
+
+		&:hover,
+		&:focus-visible {
+			background-color: color-mix(in oklab, var(--color-text) 6%, transparent);
+			color: var(--color-text-strong);
+		}
+
+		// `useSelect` flips `aria-selected="true"` on the chosen option;
+		// the active row gets a brand-tinted background so the user can
+		// see their current pick at a glance.
+		&[aria-selected='true'] {
+			background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
+			color: var(--color-primary);
+		}
 	}
 }

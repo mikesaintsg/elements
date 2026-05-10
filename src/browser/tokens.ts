@@ -343,6 +343,7 @@ export const tokens = {
 		paddingBlock: '--set-dialog-padding-block',
 		fontSize: '--set-dialog-font-size',
 		lineHeight: '--set-dialog-line-height',
+		inlineSize: '--set-dialog-inline-size',
 		maxInlineSize: '--set-dialog-max-inline-size',
 		maxBlockSize: '--set-dialog-max-block-size',
 		footerGap: '--set-dialog-footer-gap',
