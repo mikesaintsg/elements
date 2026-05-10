@@ -19,7 +19,7 @@
  * `./showcase.scss` and is loaded as a SCSS sibling.
  */
 
-@layer theme, base, elements, components, surfaces, modifiers, utilities;
+@layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
 
 @import 'tailwindcss';
 

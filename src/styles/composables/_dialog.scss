@@ -1,0 +1,50 @@
+// ============================================================================
+// useDialog — `<dialog>` size + layout modifier classes.
+//
+// The bare `<dialog>` baseline (token chain, modal centring, mobile
+// padding, transition timings) lives in `elements/_dialog.scss`. This
+// partial adds the modifier classes a `useDialog` consumer composes
+// onto the host `<dialog>` for sizing / layout variants:
+//
+//   • `.small`      → cap to 20rem (confirms / tight prompts).
+//   • `.large`      → stretch to 48rem (forms, two-pane wizards).
+//   • `.fullscreen` → edge-to-edge with zero radius (mobile sheet).
+//   • `.scrollable` → child `<section>` becomes the scroll container,
+//                     header / footer stay pinned.
+//
+// All four use the framework's `--set-dialog-*` token chain so a
+// consumer retuning a dialog token still cascades into every variant.
+// ============================================================================
+
+@layer composables {
+	dialog.small {
+		--set-dialog-inline-size: min(20rem, calc(100vw - calc(var(--spacing) * 4)));
+	}
+
+	dialog.large {
+		--set-dialog-inline-size: min(48rem, calc(100vw - calc(var(--spacing) * 4)));
+	}
+
+	dialog.fullscreen {
+		--set-dialog-inline-size: 100dvw;
+		--set-dialog-max-inline-size: 100dvw;
+		--set-dialog-max-block-size: 100dvh;
+		min-block-size: 100dvh;
+		border-radius: 0;
+	}
+
+	// `.scrollable` — the dialog itself stays compact, but a child
+	// `<section>` (or any block-element child) becomes a scroll
+	// container that grows / shrinks within the dialog's
+	// `max-block-size` cap. Header and footer remain pinned outside
+	// the scroll.
+	dialog.scrollable {
+		display: flex;
+		flex-direction: column;
+
+		> :where(section, .body) {
+			overflow-y: auto;
+			min-block-size: 0;
+		}
+	}
+}

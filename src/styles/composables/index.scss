@@ -1,0 +1,40 @@
+// ============================================================================
+// Composables barrel.
+//
+// Each partial styles a `useX` composable's class-based widget. Where an
+// element / component partial paints the bare HTML element (`<dialog>`
+// →  modal chrome, `<aside>` → sidebar / callout / alert), composable
+// partials add the extras a `useX` adapter expects beyond what the
+// element ships natively:
+//
+//   • `_carousel.scss`  → `.carousel` slide-deck chrome (controls,
+//                          indicators, slide-axis transitions) used
+//                          by `useCarousel`.
+//   • `_aside.scss`     → `<aside popover>` drawer geometry used by
+//                          `useAside` (full-viewport, edge-pinned,
+//                          slide-in transform). The bare `<aside>`
+//                          shapes (sidebar, callout, alert) live in
+//                          `components/_aside.scss`.
+//   • `_select.scss`    → `.select` listbox / combobox chrome used
+//                          by `useSelect`. The bare `<select>` element
+//                          rules live in `elements/_select.scss`.
+//   • `_dialog.scss`    → `.small` / `.large` / `.fullscreen` /
+//                          `.scrollable` modifier classes for `useDialog`.
+//                          The bare `<dialog>` rules live in
+//                          `elements/_dialog.scss`.
+//   • `_tabs.scss`      → `.pills` / `.vertical` / `.bordered` modifier
+//                          classes on `[role='tablist']` for `useTabs`.
+//                          The bare tablist baseline lives in
+//                          `components/_nav.scss`.
+//
+// Composables sit AFTER every other framework layer
+// (`theme, base, elements, components, surfaces, composables, …`)
+// so they can override surface defaults (popover positioning, popover
+// background) when a `useX` widget needs different geometry.
+// ============================================================================
+
+@use 'aside';
+@use 'carousel';
+@use 'dialog';
+@use 'select';
+@use 'tabs';

@@ -11,7 +11,7 @@
  * test scope, add a `@theme {…}` block before importing the framework.
  */
 
-@layer theme, base, elements, components, surfaces, modifiers, utilities;
+@layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
 
 @import 'tailwindcss';
 

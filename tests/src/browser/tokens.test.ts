@@ -30,6 +30,12 @@ const componentSources = import.meta.glob('../../../src/styles/components/_*.scs
 	eager: true,
 }) as Record<string, string>
 
+const composableSources = import.meta.glob('../../../src/styles/composables/_*.scss', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+}) as Record<string, string>
+
 const surfaceSources = import.meta.glob('../../../src/styles/surfaces/_*.scss', {
 	query: '?raw',
 	import: 'default',
@@ -94,6 +100,7 @@ const SUBSTANTIVE_PARTIALS: ReadonlyMap<string, string> = (() => {
 	}
 	collect(elementSources)
 	collect(componentSources)
+	collect(composableSources)
 	return map
 })()
 

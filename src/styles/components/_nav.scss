@@ -323,72 +323,10 @@
 			display: none;
 		}
 	}
-
-	// ── Tablist style modifiers ────────────────────────────────────────
-	// `.pills` swaps the underline indicator for a filled tinted
-	// background — useful for compact toolbars / segmented controls.
-	[role='tablist'].pills {
-		border-block-end: 0;
-		gap: calc(var(--spacing) * 1);
-
-		[role='tab'] {
-			border-radius: var(--radius-md);
-			border-block-end: 0;
-
-			&[aria-selected='true'] {
-				background-color: var(--set-tab-active-color);
-				color: var(--color-canvas);
-				border-block-end-color: transparent;
-			}
-
-			&:hover:not([aria-selected='true']) {
-				background-color: color-mix(in oklab, var(--set-tab-active-color) 10%, transparent);
-			}
-		}
-	}
-
-	// `.vertical` stacks tabs in a column with the indicator on the
-	// inline-start edge. Pair with a wrapper that lays the tablist + the
-	// active panel side-by-side (consumer's responsibility).
-	[role='tablist'].vertical {
-		flex-direction: column;
-		align-items: stretch;
-		border-block-end: 0;
-		border-inline-end: var(--set-tablist-border-width) solid var(--set-tablist-border-color);
-
-		[role='tab'] {
-			justify-content: flex-start;
-			border-block-end: 0;
-			border-inline-end: var(--set-tab-active-indicator-size) solid transparent;
-			margin-inline-end: calc(var(--set-tablist-border-width) * -1);
-
-			&[aria-selected='true'] {
-				border-block-end-color: transparent;
-				border-inline-end-color: var(--set-tab-active-color);
-			}
-		}
-	}
-
-	// `.bordered` paints a continuous outline around the active tab so
-	// the tab + the panel below read as a single bordered shape. Mirrors
-	// Bootstrap's `.nav-tabs` look.
-	[role='tablist'].bordered {
-		gap: 0;
-
-		[role='tab'] {
-			border: var(--set-tablist-border-width) solid transparent;
-			border-block-end: 0;
-			border-start-start-radius: var(--radius-md);
-			border-start-end-radius: var(--radius-md);
-			margin-block-end: calc(var(--set-tablist-border-width) * -1);
-
-			&[aria-selected='true'] {
-				border-color: var(--set-tablist-border-color);
-				background-color: var(--color-canvas);
-				color: var(--color-text);
-			}
-		}
-	}
+	// Tablist style modifiers (`.pills` / `.vertical` / `.bordered`)
+	// for `useTabs` live in `composables/_tabs.scss` — they sit in a
+	// later cascade layer so they can override the bare-tablist
+	// chrome above.
 
 	// --------------------------------------------------------------------------
 	// Breadcrumb — chevron separators between siblings.

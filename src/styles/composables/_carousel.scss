@@ -41,7 +41,7 @@
 
 @use '../mixins' as *;
 
-@layer components {
+@layer composables {
 	.carousel {
 		--set-carousel-block-size: 12rem;
 		--set-carousel-padding: calc(var(--spacing) * 6);

@@ -1,0 +1,152 @@
+// ============================================================================
+// useAside — `<aside popover="manual">` off-canvas drawer.
+//
+// `useAside` binds to `<aside popover="manual">` and toggles the
+// `[data-aside-open]` attribute synchronously with `showPopover()` /
+// `hidePopover()`. The popover surface in `surfaces/_popover.scss`
+// already supplies the panel background, border, padding, and the
+// open / close transition — this partial adds the drawer-specific
+// geometry and slide-in transform:
+//
+//   - Fixed-position, full viewport height (`block-size: 100dvh`) so the
+//     drawer covers the screen edge-to-edge — matches Bootstrap's
+//     offcanvas pattern.
+//   - `.start` / `.end` modifiers pin to the inline-start / inline-end
+//     edge with a slide-in transform; `.top` / `.bottom` swap to a
+//     `30dvh` band along the block axis.
+//   - All drawer rules are gated on `[data-aside-open]` so they only
+//     apply to `useAside`-managed asides — generic
+//     `<aside popover>` panels used by `usePopover` / `useTooltip`
+//     don't inherit drawer chrome.
+//
+// `!important` on `position`, `inset-*`, sizing, and `margin` lifts
+// the popover surface defaults (`[popover]:not(output) { position:
+// absolute; max-block-size: var(--set-anchor-max-block-size) }`).
+// Without the override, the drawer would render as a menu-sized
+// floater instead of a full-viewport-height panel.
+//
+// `opacity: 1 !important` + matching `@starting-style { opacity: 1 }`
+// suppress the popover surface's `@starting-style { opacity: 0;
+// transform: scale(0.98) }` fade-and-scale so the drawer plays ONE
+// motion (a slide from the edge) instead of competing transforms.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer composables {
+	// ── Base drawer geometry — applies in the open state only. ────────
+	aside[popover][data-aside-open]:popover-open {
+		position: fixed !important;
+		display: flex;
+		flex-direction: column;
+		gap: calc(var(--spacing) * 4);
+		max-inline-size: 100dvw !important;
+		margin: 0 !important;
+		overflow: auto;
+		opacity: 1 !important;
+		// Drawer needs a higher stacking context than the body grid +
+		// any sticky chrome, but lower than dialogs (which use the
+		// platform top layer via `showModal()`). 50 matches the showcase
+		// sidebar drawer convention.
+		z-index: 50;
+	}
+
+	// ── start (inline-start edge, slides in from the leading side) ────
+	aside[popover][data-aside-open].start:popover-open {
+		inset-block: 0 !important;
+		inset-inline-start: 0 !important;
+		inset-inline-end: auto !important;
+		inline-size: min(21.875rem, 100dvw) !important;
+		block-size: 100dvh !important;
+		max-block-size: 100dvh !important;
+		min-block-size: 100dvh !important;
+		border-inline-end: 1px solid var(--color-border);
+		transform: translateX(0);
+		@starting-style {
+			transform: translateX(-100%);
+			opacity: 1;
+		}
+	}
+
+	// ── end (inline-end edge, slides in from the trailing side) ──────
+	aside[popover][data-aside-open].end:popover-open {
+		inset-block: 0 !important;
+		inset-inline-start: auto !important;
+		inset-inline-end: 0 !important;
+		inline-size: min(21.875rem, 100dvw) !important;
+		block-size: 100dvh !important;
+		max-block-size: 100dvh !important;
+		min-block-size: 100dvh !important;
+		border-inline-start: 1px solid var(--color-border);
+		transform: translateX(0);
+		@starting-style {
+			transform: translateX(100%);
+			opacity: 1;
+		}
+	}
+
+	// ── top (block-start edge, slides down from above) ───────────────
+	aside[popover][data-aside-open].top:popover-open {
+		inset-block-start: 0 !important;
+		inset-block-end: auto !important;
+		inset-inline: 0 !important;
+		inline-size: 100dvw !important;
+		block-size: 30dvh !important;
+		max-block-size: 30dvh !important;
+		border-block-end: 1px solid var(--color-border);
+		transform: translateY(0);
+		@starting-style {
+			transform: translateY(-100%);
+			opacity: 1;
+		}
+	}
+
+	// ── bottom (block-end edge, slides up from below) ────────────────
+	aside[popover][data-aside-open].bottom:popover-open {
+		inset-block-start: auto !important;
+		inset-block-end: 0 !important;
+		inset-inline: 0 !important;
+		inline-size: 100dvw !important;
+		block-size: 30dvh !important;
+		max-block-size: 30dvh !important;
+		border-block-start: 1px solid var(--color-border);
+		transform: translateY(0);
+		@starting-style {
+			transform: translateY(100%);
+			opacity: 1;
+		}
+	}
+
+	// ── Default placement (no edge modifier) — slide from end. ───────
+	aside[popover][data-aside-open]:not(.start):not(.end):not(.top):not(.bottom):popover-open {
+		inset-block: 0 !important;
+		inset-inline-start: auto !important;
+		inset-inline-end: 0 !important;
+		inline-size: min(21.875rem, 100dvw) !important;
+		block-size: 100dvh !important;
+		max-block-size: 100dvh !important;
+		min-block-size: 100dvh !important;
+		border-inline-start: 1px solid var(--color-border);
+		transform: translateX(0);
+		@starting-style {
+			transform: translateX(100%);
+			opacity: 1;
+		}
+	}
+
+	// Transition list — includes `display` + `overlay` with
+	// `allow-discrete` so the open / close lifecycle plays through
+	// instead of snapping instantly. Applied to the bare `aside[popover]`
+	// so the closing transition (where `:popover-open` is no longer
+	// matched) still uses these timings.
+	aside[popover][data-aside-open] {
+		@include transition(
+			(
+				transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+				opacity 0.25s ease-out,
+				overlay 0.25s allow-discrete,
+				display 0.25s allow-discrete
+			)
+		);
+	}
+}

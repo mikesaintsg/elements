@@ -24,7 +24,7 @@
 // Tailwind's own `@layer theme, base, components, utilities` declaration then
 // merges as a no-op against the wider order:
 //
-//   theme, base, elements, components, surfaces, modifiers, utilities
+//   theme, base, elements, components, surfaces, composables, modifiers, utilities
 //
 // Layers later in the list win.
 
