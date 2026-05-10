@@ -102,6 +102,27 @@
 			white-space: nowrap;
 		}
 
+		// Combobox filter visibility — `createSelect.filter()` marks
+		// options that don't match the typeahead query with the
+		// `data-hidden` attribute (`SELECT_HIDDEN_ATTR`). Without a
+		// matching CSS rule, the marker has no visible effect and the
+		// dropdown shows the full option list regardless of input. Mailbox
+		// gets this for free via Bootstrap's `.d-none { display: none
+		// !important }` utility class; we use a `data-*` marker instead
+		// (no Bootstrap class soup), so the hide rule lives here.
+		//
+		// Targets BOTH the option element itself (when the option carries
+		// `data-value` directly) AND the wrapping `<li>` (when markup is
+		// `<li><button data-value="…">…</button></li>` and the factory
+		// applies the marker to the `<button>` — but the menu's
+		// `display: contents` on `<li>` makes that fine; we hide the
+		// marker-bearing element). Scoped under `.select-menu` so a
+		// stray `[data-hidden]` outside the dropdown context is left
+		// alone.
+		[data-hidden] {
+			display: none;
+		}
+
 		// Menu sized to the wrapper's width via `anchor-size()` so the
 		// dropdown matches the trigger's full width regardless of menu
 		// content (Bootstrap's `.dropdown-menu.w-100` equivalent).

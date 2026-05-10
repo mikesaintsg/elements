@@ -109,8 +109,35 @@ export const MENU_ITEM_SELECTOR =
  *  menu items but without the disabled exclusion (filtering, not focus). */
 export const COMBO_ITEM_SELECTOR = ':where(li, a, button)'
 
-/** Option rows inside a `<select>` listbox. Mirrors `MENU_ITEM_SELECTOR`. */
-export const SELECT_ITEM_SELECTOR = MENU_ITEM_SELECTOR
+/** Option rows inside a `<select>` listbox. UNLIKE `MENU_ITEM_SELECTOR`,
+ *  which catches every interactive descendant (`<li>` + `<a>` + `<button>`),
+ *  the select selector targets only ELEMENTS THAT CARRY A VALUE
+ *  (`[data-value]`). The narrowing matters because:
+ *
+ *    1. Combobox markup wraps the filter `<input>` in a non-value-bearing
+ *       `<li class="select-search">` row at the top of the menu. With the
+ *       broader menu-item selector, the search row matched as an "item":
+ *       click handlers ran `closest(SELECT_ITEM_SELECTOR)` against the
+ *       input target, walked up to the `<li>`, found NO `data-value`,
+ *       and silently returned. Selecting the FIRST visible item on
+ *       open / after filter then anchored the active descendant on the
+ *       search row instead of the first real option, breaking arrow-key
+ *       roving and Enter-to-select.
+ *    2. Standard option markup is `<li><button data-value="x">…</button></li>`.
+ *       The broader selector matched BOTH the wrapping `<li>` AND the
+ *       inner `<button>`, so every option was counted twice in
+ *       `items()` / `visibleItems()` lists. Roving with arrow keys
+ *       advanced through the duplicates, sometimes landing on a `<li>`
+ *       wrapper (no `data-value`) before the matching `<button>` —
+ *       Enter against the active `<li>` got `value === null` and did
+ *       nothing.
+ *
+ *  Mailbox solves the same problem with `.dropdown-item:not(.disabled)`
+ *  (class-scoped, one element per option). The `[data-value]` gate is
+ *  the elements-flavoured equivalent — every option already carries the
+ *  attribute (the factory cannot derive a value from text content; see
+ *  `SELECT_VALUE_ATTR`), so existing markup keeps working unchanged. */
+export const SELECT_ITEM_SELECTOR = `[${SELECT_VALUE_ATTR}]:not([disabled]):not([aria-disabled="true"])`
 
 /** Focus-trap candidate selector. Used by `useDialog`, `useAside`, and
  *  `useFocus`. */
