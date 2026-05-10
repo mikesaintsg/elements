@@ -43,6 +43,31 @@ useDrag<string>(loggedRef, {
 			log.value.unshift({ at: stamp(), kind: 'reorder', info: `→ ${event.detail.toIndex}` }),
 	},
 })
+
+// Kanban — three lists that share a drag group. Cards can move WITHIN
+// a column or BETWEEN columns. Each list is its own `useDrag` instance
+// with the same `group` identifier; the composable's cross-group
+// transfer fires `move` on the source and `receive` on the target.
+const kanban = ref({
+	todo: ['Spec API surface', 'Pick CSS layer order', 'Audit composables'],
+	doing: ['Add tab variants', 'Wire popover anchors'],
+	done: ['Ship _select partial', 'Migrate carousel chrome'],
+})
+const todoRef = ref<HTMLElement | null>(null)
+const doingRef = ref<HTMLElement | null>(null)
+const doneRef = ref<HTMLElement | null>(null)
+useDrag<string>(todoRef, {
+	list: () => kanban.value.todo,
+	group: 'kanban',
+})
+useDrag<string>(doingRef, {
+	list: () => kanban.value.doing,
+	group: 'kanban',
+})
+useDrag<string>(doneRef, {
+	list: () => kanban.value.done,
+	group: 'kanban',
+})
 </script>
 
 <template>
@@ -115,6 +140,41 @@ useDrag<string>(loggedRef, {
 					<code>{{ e.kind }}</code> {{ e.info ?? '' }} — {{ e.at }}
 				</li>
 			</ul>
+		</section>
+
+		<section id="kanban">
+			<h2>Kanban — cross-list move</h2>
+			<p class="showcase-caption">
+				Three lists share a <code>group: 'kanban'</code> identifier. Drag cards within a column to
+				reorder, or drop onto another column to move between lists. The composable splices the
+				source and target lists for you.
+			</p>
+			<div class="showcase-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1rem">
+				<div>
+					<h3>To do</h3>
+					<ul ref="todoRef">
+						<li v-for="(item, i) in kanban.todo" :key="item" class="draggable" :data-index="i">
+							<span>{{ item }}</span>
+						</li>
+					</ul>
+				</div>
+				<div>
+					<h3>Doing</h3>
+					<ul ref="doingRef">
+						<li v-for="(item, i) in kanban.doing" :key="item" class="draggable" :data-index="i">
+							<span>{{ item }}</span>
+						</li>
+					</ul>
+				</div>
+				<div>
+					<h3>Done</h3>
+					<ul ref="doneRef">
+						<li v-for="(item, i) in kanban.done" :key="item" class="draggable" :data-index="i">
+							<span>{{ item }}</span>
+						</li>
+					</ul>
+				</div>
+			</div>
 		</section>
 
 		<section id="api">

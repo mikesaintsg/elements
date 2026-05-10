@@ -30,6 +30,49 @@ const onBadgeDragStart = (event: DragEvent, label: string): void => {
 const onBadgeDragEnd = (event: DragEvent): void => {
 	;(event.target as HTMLElement).classList.remove('dragging')
 }
+
+// Upload zone — accepts files dragged from outside the browser.
+const uploadRef = ref<HTMLElement | null>(null)
+const files = ref<{ name: string; size: number; type: string }[]>([])
+const upload = useDrop(uploadRef, {
+	on: {
+		drop: (event) => {
+			event.preventDefault()
+			const list = event.dataTransfer?.files
+			if (!list) return
+			for (const file of Array.from(list)) {
+				files.value.unshift({ name: file.name, size: file.size, type: file.type })
+			}
+		},
+	},
+})
+const formatBytes = (n: number): string => {
+	if (n < 1024) return `${n} B`
+	if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+	return `${(n / 1024 / 1024).toFixed(1)} MB`
+}
+
+// Event callbacks — log every drag lifecycle event so the consumer can
+// see when each fires.
+const callbackRef = ref<HTMLElement | null>(null)
+const events = ref<{ at: string; kind: string }[]>([])
+useDrop(callbackRef, {
+	on: {
+		dragenter: () => events.value.unshift({ at: stamp(), kind: 'dragenter' }),
+		dragover: () => {
+			// dragover fires very rapidly; throttle by only logging the first
+			// after each enter / leave cycle.
+			if (events.value[0]?.kind !== 'dragover') {
+				events.value.unshift({ at: stamp(), kind: 'dragover' })
+			}
+		},
+		dragleave: () => events.value.unshift({ at: stamp(), kind: 'dragleave' }),
+		drop: (event) => {
+			event.preventDefault()
+			events.value.unshift({ at: stamp(), kind: 'drop' })
+		},
+	},
+})
 </script>
 
 <template>
@@ -106,6 +149,39 @@ const onBadgeDragEnd = (event: DragEvent): void => {
 			<div ref="filteredRef" class="showcase-drop-zone" :data-over="filtered.over.value">
 				Drop <code>text/plain</code> only.
 			</div>
+		</section>
+
+		<section id="upload">
+			<h2>Upload zone</h2>
+			<p class="showcase-caption">
+				Drag a file (or several) from your OS onto the zone below. Files appear in the list with
+				name, size, and MIME type.
+			</p>
+			<div ref="uploadRef" class="showcase-drop-zone" :data-over="upload.over.value">
+				Drag files here.
+			</div>
+			<small v-if="files.length === 0">No files dropped yet.</small>
+			<ul v-else>
+				<li v-for="(f, i) in files" :key="i">
+					<code>{{ f.name }}</code> — {{ formatBytes(f.size) }} · {{ f.type || '(unknown type)' }}
+				</li>
+			</ul>
+		</section>
+
+		<section id="callbacks">
+			<h2>Event callbacks</h2>
+			<p class="showcase-caption">
+				The drag lifecycle fires <code>dragenter → dragover* → dragleave</code> / <code>drop</code>.
+				The composable forwards each as a same-named event so consumers can hook into them.
+			</p>
+			<div ref="callbackRef" class="showcase-drop-zone">Drag a badge from above.</div>
+			<button type="button" class="ghost small" @click="events = []">clear log</button>
+			<small v-if="events.length === 0">No events yet.</small>
+			<ul v-else>
+				<li v-for="(e, i) in events" :key="i">
+					<code>{{ e.kind }}</code> — {{ e.at }}
+				</li>
+			</ul>
 		</section>
 
 		<section id="api">

@@ -29,6 +29,89 @@ const ev = usePointer(evRef, {
 		end: () => log.value.unshift({ at: stamp(), kind: 'end' }),
 	},
 })
+
+// Pointer tracker — paint X / Y as the pointer moves over a surface.
+const trackerRef = ref<HTMLElement | null>(null)
+const trackerXY = ref({ x: 0, y: 0, active: false })
+usePointer(trackerRef, {
+	on: {
+		start: (event) => {
+			trackerXY.value.active = true
+			const rect = (trackerRef.value as HTMLElement).getBoundingClientRect()
+			trackerXY.value.x = Math.round(event.clientX - rect.left)
+			trackerXY.value.y = Math.round(event.clientY - rect.top)
+		},
+		move: (event) => {
+			const rect = (trackerRef.value as HTMLElement).getBoundingClientRect()
+			trackerXY.value.x = Math.round(event.clientX - rect.left)
+			trackerXY.value.y = Math.round(event.clientY - rect.top)
+		},
+		end: () => {
+			trackerXY.value.active = false
+		},
+	},
+})
+
+// Splitter — drag a divider between two columns.
+const splitterRef = ref<HTMLElement | null>(null)
+const splitContainerRef = ref<HTMLElement | null>(null)
+const splitPercent = ref(50)
+usePointer(splitterRef, {
+	cursor: 'col-resize',
+	on: {
+		move: (event) => {
+			const container = splitContainerRef.value
+			if (!container) return
+			const rect = container.getBoundingClientRect()
+			const pct = ((event.clientX - rect.left) / rect.width) * 100
+			splitPercent.value = Math.max(15, Math.min(85, pct))
+		},
+	},
+})
+
+// Two-thumb range slider — both thumbs share the same track; their
+// values are clamped so the lower thumb never crosses the upper one.
+const rangeTrackRef = ref<HTMLElement | null>(null)
+const lowKnobRef = ref<HTMLElement | null>(null)
+const highKnobRef = ref<HTMLElement | null>(null)
+const range = ref({ low: 25, high: 75 })
+const computePct = (clientX: number): number => {
+	const track = rangeTrackRef.value
+	if (!track) return 0
+	const rect = track.getBoundingClientRect()
+	return Math.max(0, Math.min(100, Math.round(((clientX - rect.left) / rect.width) * 100)))
+}
+usePointer(lowKnobRef, {
+	cursor: 'ew-resize',
+	on: {
+		move: (event) => {
+			const pct = computePct(event.clientX)
+			range.value.low = Math.min(pct, range.value.high - 1)
+		},
+	},
+})
+usePointer(highKnobRef, {
+	cursor: 'ew-resize',
+	on: {
+		move: (event) => {
+			const pct = computePct(event.clientX)
+			range.value.high = Math.max(pct, range.value.low + 1)
+		},
+	},
+})
+
+// Vetoing — `start` is cancelable. preventDefault on the event blocks
+// the drag from starting (but click handlers still fire).
+const vetoRef = ref<HTMLElement | null>(null)
+const dragsBlocked = ref(0)
+usePointer(vetoRef, {
+	on: {
+		start: (event) => {
+			event.preventDefault()
+			dragsBlocked.value++
+		},
+	},
+})
 </script>
 
 <template>
@@ -78,6 +161,141 @@ const ev = usePointer(evRef, {
 					}"
 				></div>
 			</div>
+		</section>
+
+		<section id="tracker">
+			<h2>Pointer tracker</h2>
+			<p class="showcase-caption">
+				The composable's <code>start / move / end</code> events fire on press / drag / release.
+				Press and drag inside the panel below to read the live X / Y in panel-local pixels.
+			</p>
+			<div
+				ref="trackerRef"
+				:style="{
+					inlineSize: '100%',
+					blockSize: '10rem',
+					border: '1px solid var(--color-border)',
+					borderRadius: '0.5rem',
+					background: trackerXY.active
+						? 'color-mix(in oklab, var(--color-primary) 6%, var(--color-canvas))'
+						: 'var(--color-canvas)',
+					cursor: 'crosshair',
+					padding: '1rem',
+					fontFamily: 'monospace',
+					fontSize: '0.85em',
+				}"
+			>
+				x: {{ trackerXY.x }} · y: {{ trackerXY.y }} · active:
+				{{ trackerXY.active }}
+			</div>
+		</section>
+
+		<section id="splitter">
+			<h2>Splitter</h2>
+			<p class="showcase-caption">
+				Drag the divider between two columns to resize them. The composable owns the pointer
+				capture; the page maps `clientX` to a percentage.
+			</p>
+			<div
+				ref="splitContainerRef"
+				:style="{
+					display: 'flex',
+					inlineSize: '100%',
+					blockSize: '8rem',
+					border: '1px solid var(--color-border)',
+					borderRadius: '0.5rem',
+					overflow: 'hidden',
+				}"
+			>
+				<div
+					:style="{
+						inlineSize: `${splitPercent}%`,
+						background: 'color-mix(in oklab, var(--color-primary) 8%, var(--color-canvas))',
+						padding: '0.75rem',
+					}"
+				>
+					{{ Math.round(splitPercent) }}% wide
+				</div>
+				<div
+					ref="splitterRef"
+					:style="{
+						inlineSize: '0.5rem',
+						background: 'var(--color-border)',
+						cursor: 'col-resize',
+					}"
+				></div>
+				<div :style="{ flex: 1, padding: '0.75rem' }">{{ Math.round(100 - splitPercent) }}%</div>
+			</div>
+		</section>
+
+		<section id="range">
+			<h2>Two-thumb range slider</h2>
+			<p class="showcase-caption">
+				Two pointer instances share one track, each clamped so it can't cross the other. Useful for
+				range filters / price sliders.
+			</p>
+			<div
+				ref="rangeTrackRef"
+				:style="{
+					position: 'relative',
+					blockSize: '0.5rem',
+					background: 'var(--color-border)',
+					borderRadius: '0.25rem',
+					maxInlineSize: '24rem',
+				}"
+			>
+				<!-- Highlight between the two thumbs. -->
+				<div
+					:style="{
+						position: 'absolute',
+						insetBlock: 0,
+						insetInlineStart: `${range.low}%`,
+						inlineSize: `${range.high - range.low}%`,
+						background: 'var(--color-primary)',
+						borderRadius: '0.25rem',
+					}"
+				></div>
+				<div
+					ref="lowKnobRef"
+					:style="{
+						position: 'absolute',
+						insetBlockStart: '-0.5rem',
+						insetInlineStart: `calc(${range.low}% - 0.75rem)`,
+						inlineSize: '1.5rem',
+						blockSize: '1.5rem',
+						borderRadius: '50%',
+						background: 'var(--color-primary)',
+						cursor: 'ew-resize',
+						touchAction: 'none',
+					}"
+				></div>
+				<div
+					ref="highKnobRef"
+					:style="{
+						position: 'absolute',
+						insetBlockStart: '-0.5rem',
+						insetInlineStart: `calc(${range.high}% - 0.75rem)`,
+						inlineSize: '1.5rem',
+						blockSize: '1.5rem',
+						borderRadius: '50%',
+						background: 'var(--color-primary)',
+						cursor: 'ew-resize',
+						touchAction: 'none',
+					}"
+				></div>
+			</div>
+			<small>low: {{ range.low }} · high: {{ range.high }}</small>
+		</section>
+
+		<section id="veto">
+			<h2>Vetoing pointerdown</h2>
+			<p class="showcase-caption">
+				The <code>start</code> event is cancelable — calling
+				<code>event.preventDefault()</code> blocks the drag from starting (but the click event still
+				fires). Each blocked attempt increments the counter.
+			</p>
+			<button ref="vetoRef" type="button">Try to drag me</button>
+			<small>blocked: {{ dragsBlocked }}</small>
 		</section>
 
 		<section id="events">
