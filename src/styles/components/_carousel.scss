@@ -1,0 +1,287 @@
+// ============================================================================
+// carousel — Slide-deck composition.
+//
+// `useCarousel` orchestrates index state, autoplay timing, keyboard /
+// touch nav, and the four-class slide animation:
+//   .carousel-item-{next,prev,start,end}
+// plus the `.active` class on the visible slide. The composable renders
+// no DOM — this partial supplies the default chrome so consumers get a
+// working carousel out of the box.
+//
+// Markup contract (mirrors WAI-ARIA Carousel pattern + Bootstrap layout):
+//
+//   <section role="region" aria-roledescription="carousel" class="carousel" tabindex="0">
+//     <ol role="list">
+//       <li role="listitem" class="active">…</li>
+//       <li role="listitem">…</li>
+//       …
+//     </ol>
+//     <button type="button" class="carousel-control prev" aria-label="Previous slide">…</button>
+//     <button type="button" class="carousel-control next" aria-label="Next slide">…</button>
+//     <menu class="carousel-indicators" role="tablist">
+//       <li><button role="tab" aria-selected="true">…</button></li>
+//       …
+//     </menu>
+//   </section>
+//
+// Slide axis transition follows Bootstrap's exact selector lifecycle:
+//   .carousel-item-next:not(.carousel-item-start),
+//   .active.carousel-item-end                 → translateX(100%)
+//
+//   .carousel-item-prev:not(.carousel-item-end),
+//   .active.carousel-item-start               → translateX(-100%)
+//
+//   .carousel-item-next.carousel-item-start,
+//   .carousel-item-prev.carousel-item-end     → translateX(0)
+//
+// So the OUTGOING slide moves to translateX(±100%) at the same instant
+// the INCOMING slide moves from translateX(±100%) to 0 — both panels
+// traverse the viewport edge-to-edge in a single synchronised animation.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	.carousel {
+		--set-carousel-block-size: 12rem;
+		--set-carousel-padding: calc(var(--spacing) * 6);
+		--set-carousel-border-color: var(--color-border);
+		--set-carousel-border-radius: var(--radius-md);
+		--set-carousel-transition-duration: 0.6s;
+		--set-carousel-transition-easing: cubic-bezier(0.32, 0.72, 0, 1);
+		--set-carousel-control-size: 2.25rem;
+		--set-carousel-control-bg: rgb(255 255 255 / 0.85);
+		--set-carousel-control-icon: black;
+		--set-carousel-indicator-size: calc(var(--spacing) * 4);
+		--set-carousel-indicator-active-size: calc(var(--spacing) * 8);
+		--set-carousel-indicator-bg: rgb(255 255 255 / 0.5);
+		--set-carousel-indicator-bg-active: rgb(255 255 255);
+
+		position: relative;
+		overflow: hidden;
+		border: 1px solid var(--set-carousel-border-color);
+		border-radius: var(--set-carousel-border-radius);
+		block-size: var(--set-carousel-block-size);
+
+		&.carousel-compact {
+			--set-carousel-block-size: 8rem;
+		}
+
+		// ── Item track ──────────────────────────────────────────────────
+		// Items live in a `<ol role="list">`. The list takes the full
+		// viewport of the carousel; each item is absolutely positioned
+		// inside it so multiple slides can co-exist mid-transition.
+		> ol[role='list'] {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			block-size: 100%;
+			position: relative;
+		}
+
+		> ol[role='list'] > li[role='listitem'] {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			flex-direction: column;
+			gap: calc(var(--spacing) * 2);
+			align-items: center;
+			justify-content: center;
+			padding: var(--set-carousel-padding);
+			text-align: center;
+
+			// Resting state — off-screen, invisible, ignoring pointer.
+			visibility: hidden;
+			transform: translateX(0);
+			pointer-events: none;
+
+			// Variant-tinted backgrounds — track theme via the framework
+			// `--color-{variant}` tokens. Authors who want a plain
+			// no-tint slide just omit the variant class.
+			&.primary {
+				background-color: color-mix(in oklab, var(--color-primary) 12%, transparent);
+			}
+			&.success {
+				background-color: color-mix(in oklab, var(--color-success) 12%, transparent);
+			}
+			&.warning {
+				background-color: color-mix(in oklab, var(--color-warning) 18%, transparent);
+			}
+			&.danger {
+				background-color: color-mix(in oklab, var(--color-danger) 12%, transparent);
+			}
+			&.information {
+				background-color: color-mix(in oklab, var(--color-information) 12%, transparent);
+			}
+
+			// ── Active steady state ─────────────────────────────────────
+			&.active {
+				visibility: visible;
+				transform: translateX(0);
+				pointer-events: auto;
+				z-index: 1;
+			}
+
+			// ── Slide-in / slide-out lifecycle ─────────────────────────
+			// INCOMING starts off-screen at the OPPOSITE edge from where
+			// it'll arrive. `.carousel-item-next` enters from the end
+			// (right in LTR); `.carousel-item-prev` enters from the
+			// start (left). The `:not(.carousel-item-start)` /
+			// `:not(.carousel-item-end)` guards keep these positions only
+			// while the slide axis hasn't fired yet.
+			&.carousel-item-next:not(.carousel-item-start),
+			&.active.carousel-item-end {
+				visibility: visible;
+				transform: translateX(100%);
+				z-index: 1;
+			}
+
+			&.carousel-item-prev:not(.carousel-item-end),
+			&.active.carousel-item-start {
+				visibility: visible;
+				transform: translateX(-100%);
+				z-index: 1;
+			}
+
+			// MID-TRANSITION — slide axis active. The transition itself
+			// is declared on the `.carousel-item-{start,end}` classes
+			// (not on the bare item) so the snap-to-position when the
+			// lifecycle classes are removed doesn't animate.
+			&.carousel-item-start,
+			&.carousel-item-end {
+				transition: transform var(--set-carousel-transition-duration)
+					var(--set-carousel-transition-easing);
+			}
+
+			// INCOMING's slide-into-view target — kicks off the slide
+			// from the off-screen position to centred.
+			&.carousel-item-next.carousel-item-start,
+			&.carousel-item-prev.carousel-item-end {
+				visibility: visible;
+				transform: translateX(0);
+				z-index: 1;
+			}
+		}
+
+		// ── Control buttons (prev / next carets) ────────────────────────
+		// Transparent column on the inline edge with a centred round
+		// arrow chip. Hidden until hover on fine-pointer devices,
+		// always-visible on coarse-pointer (touch) where hover is fickle.
+		> .carousel-control {
+			position: absolute;
+			inset-block: 0;
+			inline-size: 15%;
+			min-inline-size: 3rem;
+			border: 0;
+			background: transparent;
+			cursor: pointer;
+			z-index: 2;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			opacity: 0;
+			transition:
+				opacity 0.2s ease-out,
+				background-color 0.2s ease-out;
+
+			&::before {
+				content: '';
+				display: block;
+				inline-size: var(--set-carousel-control-size);
+				block-size: var(--set-carousel-control-size);
+				border-radius: 50%;
+				background-color: var(--set-carousel-control-bg);
+				background-position: center;
+				background-repeat: no-repeat;
+				background-size: 1rem 1rem;
+				box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+			}
+
+			&:hover {
+				opacity: 1;
+				background-color: rgb(0 0 0 / 0.06);
+			}
+
+			&:focus-visible {
+				opacity: 1;
+				outline: 2px solid var(--color-primary);
+				outline-offset: -2px;
+			}
+		}
+
+		// Reveal the carets on hover anywhere over the carousel.
+		&:hover > .carousel-control {
+			opacity: 1;
+		}
+
+		// Coarse-pointer (touch) — keep arrows always visible.
+		@media (hover: none) {
+			> .carousel-control {
+				opacity: 0.85;
+			}
+		}
+
+		> .carousel-control.prev {
+			inset-inline-start: 0;
+
+			&::before {
+				background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='10 3 5 8 10 13'/></svg>");
+			}
+		}
+
+		> .carousel-control.next {
+			inset-inline-end: 0;
+
+			&::before {
+				background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 3 11 8 6 13'/></svg>");
+			}
+		}
+
+		// ── Indicator dots (Sonner-style pill row) ──────────────────────
+		// `<menu role="tablist">` along the bottom — one button per slide.
+		// Active dot stretches to a wider pill so the current slide is
+		// obvious at a glance; resting dots are translucent.
+		> .carousel-indicators {
+			position: absolute;
+			inset-block-end: calc(var(--spacing) * 3);
+			inset-inline: 0;
+			z-index: 3;
+			display: flex;
+			justify-content: center;
+			gap: calc(var(--spacing) * 1);
+			margin: 0;
+			padding: 0;
+			list-style: none;
+			pointer-events: none;
+			background: transparent;
+
+			> li {
+				margin: 0;
+				pointer-events: auto;
+			}
+
+			> li > button {
+				display: block;
+				inline-size: var(--set-carousel-indicator-size);
+				block-size: calc(var(--spacing) * 1);
+				padding: 0;
+				border: 0;
+				border-radius: 999px;
+				background-color: var(--set-carousel-indicator-bg);
+				cursor: pointer;
+				transition:
+					background-color 0.2s ease-out,
+					inline-size 0.2s ease-out;
+
+				&:hover {
+					background-color: rgb(255 255 255 / 0.8);
+				}
+
+				&[aria-selected='true'] {
+					inline-size: var(--set-carousel-indicator-active-size);
+					background-color: var(--set-carousel-indicator-bg-active);
+				}
+			}
+		}
+	}
+}

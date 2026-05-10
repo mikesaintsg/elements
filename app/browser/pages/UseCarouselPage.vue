@@ -63,7 +63,7 @@ const logged = useCarousel(logRef, {
 				role="region"
 				aria-roledescription="carousel"
 				tabindex="0"
-				class="showcase-carousel"
+				class="carousel"
 			>
 				<ol role="list">
 					<li
@@ -83,13 +83,13 @@ const logged = useCarousel(logRef, {
 				     content stays uncluttered, but still keyboard-reachable. -->
 				<button
 					type="button"
-					class="showcase-carousel-control showcase-carousel-prev"
+					class="carousel-control prev"
 					aria-label="Previous slide"
 					@click="car.prev()"
 				></button>
 				<button
 					type="button"
-					class="showcase-carousel-control showcase-carousel-next"
+					class="carousel-control next"
 					aria-label="Next slide"
 					@click="car.next()"
 				></button>
@@ -97,7 +97,7 @@ const logged = useCarousel(logRef, {
 				<!-- Indicator dots at the bottom — one per slide; click jumps
 				     directly to that slide. The active dot expands; resting
 				     dots are translucent. -->
-				<menu class="showcase-carousel-indicators" role="tablist">
+				<menu class="carousel-indicators" role="tablist">
 					<li v-for="(s, i) in slides" :key="`dot-${s.title}`">
 						<button
 							type="button"
@@ -132,7 +132,7 @@ const logged = useCarousel(logRef, {
 				role="region"
 				aria-roledescription="carousel"
 				tabindex="0"
-				class="showcase-carousel showcase-carousel-compact"
+				class="carousel carousel-compact"
 			>
 				<ol role="list">
 					<li

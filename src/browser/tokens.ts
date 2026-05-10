@@ -174,6 +174,17 @@ export const tokens = {
 			borderColor: '--set-select-focus-border-color',
 			boxShadow: '--set-select-focus-box-shadow',
 		},
+		// Component tokens for `.select` listbox / combobox chrome
+		// (`src/styles/components/_select.scss`). The `<select>` element
+		// and the `.select` listbox component share the `--set-select-*`
+		// namespace because they're conceptually the same widget — the
+		// component is just the HTML5-element-isn't-rich-enough escape
+		// hatch.
+		maxInlineSize: '--set-select-max-inline-size',
+		toggleMinBlockSize: '--set-select-toggle-min-block-size',
+		togglePaddingInlineEnd: '--set-select-toggle-padding-inline-end',
+		caretMinInlineSize: '--set-select-caret-min-inline-size',
+		menuMinInlineSize: '--set-select-menu-min-inline-size',
 	},
 
 	// Element-scoped tokens declared on `label` itself.
@@ -253,6 +264,23 @@ export const tokens = {
 		optimumColor: '--set-meter-optimum-color',
 		suboptimumColor: '--set-meter-suboptimum-color',
 		evenLessGoodColor: '--set-meter-even-less-good-color',
+	},
+
+	// Component tokens declared on `.carousel` (component partial).
+	carousel: {
+		blockSize: '--set-carousel-block-size',
+		padding: '--set-carousel-padding',
+		borderColor: '--set-carousel-border-color',
+		borderRadius: '--set-carousel-border-radius',
+		transitionDuration: '--set-carousel-transition-duration',
+		transitionEasing: '--set-carousel-transition-easing',
+		controlSize: '--set-carousel-control-size',
+		controlBg: '--set-carousel-control-bg',
+		controlIcon: '--set-carousel-control-icon',
+		indicatorSize: '--set-carousel-indicator-size',
+		indicatorActiveSize: '--set-carousel-indicator-active-size',
+		indicatorBg: '--set-carousel-indicator-bg',
+		indicatorBgActive: '--set-carousel-indicator-bg-active',
 	},
 
 	// Element-scoped tokens declared on `output` itself.

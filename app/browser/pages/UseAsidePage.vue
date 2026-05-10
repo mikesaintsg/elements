@@ -8,6 +8,15 @@ const start = useAside(startRef)
 const endRef = ref<HTMLElement | null>(null)
 const end = useAside(endRef)
 
+const topRef = ref<HTMLElement | null>(null)
+const top = useAside(topRef)
+
+const bottomRef = ref<HTMLElement | null>(null)
+const bottom = useAside(bottomRef)
+
+const noLockRef = ref<HTMLElement | null>(null)
+const noLock = useAside(noLockRef, { scroll: { lock: false } })
+
 const staticRef = ref<HTMLElement | null>(null)
 const blocks = ref(0)
 const staticAside = useAside(staticRef, {
@@ -47,12 +56,19 @@ const eventAside = useAside(eventRef, {
 			<pre><code>useAside(elementRef, options?): { visible, show(), hide(), toggle() }</code></pre>
 		</section>
 
-		<section id="basic">
-			<h2>Slide-in panel</h2>
-			<p class="showcase-caption">Click outside or press <kbd>Esc</kbd> to dismiss.</p>
+		<section id="placements">
+			<h2>All four placements</h2>
+			<p class="showcase-caption">
+				The <code>.start</code>, <code>.end</code>, <code>.top</code>, and
+				<code>.bottom</code> modifier classes pin the drawer to the corresponding viewport edge.
+				Side drawers default to <code>min(21.875rem, 100dvw)</code> wide and full viewport height;
+				top / bottom drawers stretch the full viewport width and use a <code>30dvh</code> band.
+			</p>
 			<div class="showcase-row">
-				<button type="button" class="primary" @click="start.show()">Open from start</button>
-				<button type="button" class="primary" @click="end.show()">Open from end</button>
+				<button type="button" class="primary" @click="start.show()">Start</button>
+				<button type="button" class="primary" @click="end.show()">End</button>
+				<button type="button" class="primary" @click="top.show()">Top</button>
+				<button type="button" class="primary" @click="bottom.show()">Bottom</button>
 			</div>
 			<aside ref="startRef" popover="manual" class="start">
 				<header><h3>Start panel</h3></header>
@@ -63,6 +79,33 @@ const eventAside = useAside(eventRef, {
 				<header><h3>End panel</h3></header>
 				<p>Slides in from the inline-end edge.</p>
 				<button type="button" @click="end.hide()">Close</button>
+			</aside>
+			<aside ref="topRef" popover="manual" class="top">
+				<header><h3>Top panel</h3></header>
+				<p>Slides down from the top edge — handy for site-wide announcement bars.</p>
+				<button type="button" @click="top.hide()">Close</button>
+			</aside>
+			<aside ref="bottomRef" popover="manual" class="bottom">
+				<header><h3>Bottom panel</h3></header>
+				<p>Slides up from the bottom edge — common for mobile filter sheets.</p>
+				<button type="button" @click="bottom.hide()">Close</button>
+			</aside>
+		</section>
+
+		<section id="scroll-lock">
+			<h2>Body scroll lock</h2>
+			<p class="showcase-caption">
+				By default <code>useAside</code> locks body scroll while the drawer is open. Pass
+				<code>scroll: { lock: false }</code> to disable — useful for non-modal drawers that
+				shouldn't trap the viewport.
+			</p>
+			<div class="showcase-row">
+				<button type="button" @click="noLock.show()">Open without scroll lock</button>
+			</div>
+			<aside ref="noLockRef" popover="manual" class="end">
+				<header><h3>Scroll-friendly drawer</h3></header>
+				<p>Try scrolling the page while this drawer is open — the body still moves.</p>
+				<button type="button" @click="noLock.hide()">Close</button>
 			</aside>
 		</section>
 
@@ -76,7 +119,7 @@ const eventAside = useAside(eventRef, {
 				<button type="button" class="warning" @click="staticAside.show()">Open static</button>
 				<small>{{ blocks }} block{{ blocks !== 1 ? 's' : '' }}</small>
 			</div>
-			<aside ref="staticRef" popover="manual">
+			<aside ref="staticRef" popover="manual" class="end">
 				<header><h3>Static aside</h3></header>
 				<p>Click the backdrop — the counter increments instead of dismissing.</p>
 				<button type="button" @click="staticAside.hide()">Close</button>
@@ -86,7 +129,7 @@ const eventAside = useAside(eventRef, {
 		<section id="events">
 			<h2>Lifecycle events</h2>
 			<button type="button" @click="eventAside.show()">Open me</button>
-			<aside ref="eventRef" popover="manual">
+			<aside ref="eventRef" popover="manual" class="end">
 				<header><h3>Watching transitions</h3></header>
 				<p>Open and close to watch the event sequence.</p>
 				<button type="button" @click="eventAside.hide()">Close</button>

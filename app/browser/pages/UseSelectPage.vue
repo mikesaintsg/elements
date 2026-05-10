@@ -42,15 +42,15 @@ const combo = useSelect(comboToggle, {
 				Click the toggle, pick an option. Selected: <code>{{ sel.value.value ?? '—' }}</code
 				>.
 			</p>
-			<!-- Wrapped in `.showcase-select` so the menu can size to the
+			<!-- Wrapped in `.select` so the menu can size to the
 			     toggle's full width (mailbox `.select` pattern). The toggle
-			     itself uses `.showcase-select-toggle` to get the chevron
+			     itself uses `.select-toggle` to get the chevron
 			     and full-width layout. -->
-			<div class="showcase-select">
-				<button ref="toggleRef" type="button" class="showcase-select-toggle">
-					<span class="showcase-select-value">{{ sel.value.value ?? 'Pick fruit' }}</span>
+			<div class="select">
+				<button ref="toggleRef" type="button" class="select-toggle">
+					<span class="select-value">{{ sel.value.value ?? 'Pick fruit' }}</span>
 				</button>
-				<menu ref="menuRef" popover class="showcase-select-menu">
+				<menu ref="menuRef" popover class="select-menu">
 					<li><button type="button" data-value="apple">Apple</button></li>
 					<li><button type="button" data-value="banana">Banana</button></li>
 					<li><button type="button" data-value="cherry">Cherry</button></li>
@@ -64,13 +64,13 @@ const combo = useSelect(comboToggle, {
 				Selected: <code>{{ multi.values.value.join(', ') || '—' }}</code
 				>.
 			</p>
-			<div class="showcase-select">
-				<button ref="multiToggle" type="button" class="showcase-select-toggle">
-					<span class="showcase-select-value">
+			<div class="select">
+				<button ref="multiToggle" type="button" class="select-toggle">
+					<span class="select-value">
 						{{ multi.values.value.length ? multi.values.value.join(', ') : 'Choose colours' }}
 					</span>
 				</button>
-				<menu ref="multiMenu" popover class="showcase-select-menu">
+				<menu ref="multiMenu" popover class="select-menu">
 					<li><button type="button" data-value="red">Red</button></li>
 					<li><button type="button" data-value="green">Green</button></li>
 					<li><button type="button" data-value="blue">Blue</button></li>
@@ -86,24 +86,14 @@ const combo = useSelect(comboToggle, {
 				>.
 			</p>
 			<!-- Combobox: input + caret button sit in a single row;
-			     `.showcase-select-combo` lays them flush with the menu
+			     `.select-combo` lays them flush with the menu
 			     anchor centred under the input/caret pair. -->
-			<div class="showcase-select showcase-select-combo">
-				<input
-					ref="comboInput"
-					type="text"
-					class="showcase-select-input"
-					placeholder="Type to filter…"
-				/>
-				<button
-					ref="comboToggle"
-					type="button"
-					class="showcase-select-caret"
-					aria-label="Open options"
-				>
+			<div class="select combo">
+				<input ref="comboInput" type="text" class="select-input" placeholder="Type to filter…" />
+				<button ref="comboToggle" type="button" class="select-caret" aria-label="Open options">
 					▾
 				</button>
-				<menu ref="comboMenu" popover class="showcase-select-menu">
+				<menu ref="comboMenu" popover class="select-menu">
 					<li><button type="button" data-value="apple">Apple</button></li>
 					<li><button type="button" data-value="apricot">Apricot</button></li>
 					<li><button type="button" data-value="avocado">Avocado</button></li>

@@ -121,4 +121,141 @@
 			opacity: var(--set-select-disabled-opacity);
 		}
 	}
+
+	// ─────────────────────────────────────────────────────────────────────
+	// `.select` — Custom listbox / combobox chrome.
+	//
+	// The native `<select>` above can't be styled (the dropdown popup is
+	// OS-rendered, options can't be styled, multi-select looks ancient on
+	// every platform). `useSelect` ships an alternative widget that wears
+	// the `.select` class on a wrapping `<div>`, with a `<button>` toggle
+	// (`.select-toggle`), an optional `<input>` for the combobox flavour
+	// (`.select-input` + `.select-caret`), and a `<menu popover>` listbox
+	// (`.select-menu`). The composable owns ARIA + lifecycle; this block
+	// supplies the default chrome.
+	//
+	// Sharing the `--set-select-*` namespace with the bare `<select>`
+	// element rule above is intentional — the two are conceptually the
+	// same widget, and consumers retuning a select-related token expect
+	// it to apply consistently across both shapes.
+	// ─────────────────────────────────────────────────────────────────────
+	.select {
+		--set-select-max-inline-size: 28rem;
+		--set-select-toggle-min-block-size: 2.5rem;
+		--set-select-toggle-padding-inline-end: calc(var(--spacing) * 9);
+		--set-select-caret-min-inline-size: 2.75rem;
+		--set-select-menu-min-inline-size: 12rem;
+
+		position: relative;
+		display: block;
+		max-inline-size: var(--set-select-max-inline-size);
+
+		// Toggle button — paints like an `<input>` with a chevron at the
+		// trailing edge. The button's own framework styles supply the
+		// padding / border / radius baseline; we override here for the
+		// full-width form-field shape.
+		> .select-toggle {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: calc(var(--spacing) * 2);
+			inline-size: 100%;
+			min-block-size: var(--set-select-toggle-min-block-size);
+			padding-inline-start: calc(var(--spacing) * 3);
+			padding-inline-end: var(--set-select-toggle-padding-inline-end);
+			padding-block: calc(var(--spacing) * 2);
+			border: 1px solid var(--color-border);
+			border-radius: var(--radius-md);
+			background-color: var(--color-canvas);
+			color: var(--color-text);
+			font-weight: 400;
+			text-align: start;
+			cursor: pointer;
+			position: relative;
+
+			// Chevron painted as a CSS mask on a `::after` pseudo so it
+			// tracks the active text colour without an extra SVG asset
+			// and rotates 180° when the listbox is open.
+			&::after {
+				content: '';
+				position: absolute;
+				inset-block: 0;
+				inset-inline-end: calc(var(--spacing) * 3);
+				margin-block: auto;
+				inline-size: 1rem;
+				block-size: 1rem;
+				background-color: currentColor;
+				mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 6 8 11 13 6'/></svg>")
+					no-repeat center / contain;
+				transition: transform 0.2s;
+			}
+
+			&[aria-expanded='true']::after {
+				transform: rotate(180deg);
+			}
+
+			&:hover {
+				border-color: var(--color-border-strong);
+			}
+		}
+
+		// Selected-value text inside the toggle — clip overflow so a long
+		// multi-select label doesn't push the chevron off the edge.
+		.select-value {
+			flex: 1;
+			min-inline-size: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		// Combobox shape — the `<input>` and the caret `<button>` sit
+		// side-by-side in a single bordered row. The input gets the brunt
+		// of the width, the caret keeps a fixed minimum tap target.
+		&.combo {
+			display: flex;
+			align-items: stretch;
+
+			> .select-input {
+				flex: 1;
+				min-inline-size: 0;
+				border-start-end-radius: 0;
+				border-end-end-radius: 0;
+				border-inline-end: 0;
+			}
+
+			> .select-caret {
+				min-inline-size: var(--set-select-caret-min-inline-size);
+				padding-inline: calc(var(--spacing) * 2);
+				border-start-start-radius: 0;
+				border-end-start-radius: 0;
+				background-color: var(--color-surface);
+				color: var(--color-text-muted);
+				font-size: 0.85em;
+				cursor: pointer;
+			}
+		}
+
+		// Menu sized to the wrapper's width — uses `anchor-size()` so the
+		// dropdown matches the trigger's full width regardless of menu
+		// content (Bootstrap's `.dropdown-menu.w-100` equivalent).
+		> .select-menu {
+			inline-size: anchor-size(width, 100%);
+			min-inline-size: var(--set-select-menu-min-inline-size);
+		}
+	}
+
+	// Token-resolution helper — the `<select>` element rule needs to
+	// also expose the component-only tokens so the framework's parity
+	// test can verify they resolve regardless of which selector ends
+	// up consuming them. They're harmless on the native element (it
+	// doesn't read these properties), but pinning them here keeps the
+	// `--set-select-*` namespace single-rooted.
+	select {
+		--set-select-max-inline-size: 28rem;
+		--set-select-toggle-min-block-size: 2.5rem;
+		--set-select-toggle-padding-inline-end: calc(var(--spacing) * 9);
+		--set-select-caret-min-inline-size: 2.75rem;
+		--set-select-menu-min-inline-size: 12rem;
+	}
 }

@@ -257,30 +257,12 @@
 		// inherit absolute positioning + the surface's auto-centered
 		// inset, breaking the edge-pinned drawer geometry.
 		position: fixed !important;
-		inset-block: 0 !important;
 		display: flex;
 		flex-direction: column;
 		gap: calc(var(--spacing) * 4);
-		// Match Bootstrap / mailbox `--bs-offcanvas-width` (350px) for
-		// the start / end drawer; capped at viewport width so phones
-		// don't horizontal-scroll. `!important` because the popover
-		// surface in `@layer surfaces` ships
-		// `[popover]:not(output) { max-inline-size: var(--set-anchor-
-		// max-block-size) }` — same layer-cascade reason as the
-		// position override above.
-		inline-size: min(21.875rem, 100dvw) !important;
 		max-inline-size: 100dvw !important;
-		// Full viewport height — `inset-block: 0` already stretches
-		// to the viewport edges, but the popover surface caps
-		// `max-block-size` to `--set-anchor-max-block-size` (a
-		// menu-sized clamp around 288px) so a drawer would render at
-		// menu height. `!important` lifts the cap so the drawer fills
-		// the viewport edge-to-edge like a Bootstrap offcanvas.
-		block-size: 100dvh !important;
-		max-block-size: 100dvh !important;
-		min-block-size: 100dvh !important;
 		margin: 0 !important;
-		overflow-y: auto;
+		overflow: auto;
 		// Suppress the popover surface's `@starting-style { opacity: 0;
 		// transform: scale(0.98) }` fade-in. The drawer wants ONE
 		// motion — a slide from the edge — not a fade-and-scale on
@@ -319,9 +301,16 @@
 	// surface's `@starting-style { opacity: 0 }`, which would otherwise
 	// fade the drawer in alongside the slide and produce a visible
 	// double-motion twitch.
+
+	// ── start (inline-start edge, slides in from the leading side) ─────
 	aside[popover][data-aside-open].start:popover-open {
+		inset-block: 0 !important;
 		inset-inline-start: 0 !important;
 		inset-inline-end: auto !important;
+		inline-size: min(21.875rem, 100dvw) !important;
+		block-size: 100dvh !important;
+		max-block-size: 100dvh !important;
+		min-block-size: 100dvh !important;
 		border-inline-end: 1px solid var(--color-border);
 		transform: translateX(0);
 		@starting-style {
@@ -330,9 +319,15 @@
 		}
 	}
 
+	// ── end (inline-end edge, slides in from the trailing side) ───────
 	aside[popover][data-aside-open].end:popover-open {
+		inset-block: 0 !important;
 		inset-inline-start: auto !important;
 		inset-inline-end: 0 !important;
+		inline-size: min(21.875rem, 100dvw) !important;
+		block-size: 100dvh !important;
+		max-block-size: 100dvh !important;
+		min-block-size: 100dvh !important;
 		border-inline-start: 1px solid var(--color-border);
 		transform: translateX(0);
 		@starting-style {
@@ -341,10 +336,47 @@
 		}
 	}
 
-	// Default placement (no `.start` / `.end`) — slide from end.
-	aside[popover][data-aside-open]:not(.start):not(.end):popover-open {
+	// ── top (block-start edge, slides down from above) ────────────────
+	aside[popover][data-aside-open].top:popover-open {
+		inset-block-start: 0 !important;
+		inset-block-end: auto !important;
+		inset-inline: 0 !important;
+		inline-size: 100dvw !important;
+		block-size: 30dvh !important;
+		max-block-size: 30dvh !important;
+		border-block-end: 1px solid var(--color-border);
+		transform: translateY(0);
+		@starting-style {
+			transform: translateY(-100%);
+			opacity: 1;
+		}
+	}
+
+	// ── bottom (block-end edge, slides up from below) ────────────────
+	aside[popover][data-aside-open].bottom:popover-open {
+		inset-block-start: auto !important;
+		inset-block-end: 0 !important;
+		inset-inline: 0 !important;
+		inline-size: 100dvw !important;
+		block-size: 30dvh !important;
+		max-block-size: 30dvh !important;
+		border-block-start: 1px solid var(--color-border);
+		transform: translateY(0);
+		@starting-style {
+			transform: translateY(100%);
+			opacity: 1;
+		}
+	}
+
+	// ── Default placement (no edge modifier) — slide from end. ────────
+	aside[popover][data-aside-open]:not(.start):not(.end):not(.top):not(.bottom):popover-open {
+		inset-block: 0 !important;
 		inset-inline-start: auto !important;
 		inset-inline-end: 0 !important;
+		inline-size: min(21.875rem, 100dvw) !important;
+		block-size: 100dvh !important;
+		max-block-size: 100dvh !important;
+		min-block-size: 100dvh !important;
 		border-inline-start: 1px solid var(--color-border);
 		transform: translateX(0);
 		@starting-style {

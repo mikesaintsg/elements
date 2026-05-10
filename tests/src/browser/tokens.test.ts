@@ -168,11 +168,18 @@ describe('TS → CSS: every TS leaf resolves at runtime', () => {
 		expect(rootToken(name)).not.toBe('')
 	})
 
+	// Class-based component partials whose name doesn't map to a real
+	// HTML element (e.g. `_carousel.scss` styles `.carousel`, not a
+	// `<carousel>` tag). For those, the token resolution test renders
+	// `<div class="{tag}">` instead of `<{tag}>`.
+	const CLASS_BASED_COMPONENTS = new Set(['carousel'])
+
 	for (const tag of elementTags) {
 		const tagLeaves = TS_LEAVES.filter((leaf) => leaf.startsWith(`--set-${tag}-`))
-		// Render the matching element. `tag` always refers to a real HTML tag.
-		it.each(tagLeaves)(`%s resolves on a <${tag}>`, (name) => {
-			const el = render(tag as keyof HTMLElementTagNameMap, '')
+		const isClass = CLASS_BASED_COMPONENTS.has(tag)
+		const label = isClass ? `.${tag}` : `<${tag}>`
+		it.each(tagLeaves)(`%s resolves on a ${label}`, (name) => {
+			const el = isClass ? render('div', tag) : render(tag as keyof HTMLElementTagNameMap, '')
 			expect(token(el, name)).not.toBe('')
 		})
 	}
