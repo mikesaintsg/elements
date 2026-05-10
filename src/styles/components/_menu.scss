@@ -220,6 +220,15 @@
 	[popover] > menu > li > :where(button, a) {
 		display: flex;
 		align-items: center;
+		// Reset `justify-content` from the bare `<button>` element rule,
+		// which centers flex children (so a button with an icon + label
+		// reads as a centered pair). Inside a dropdown menu we want the
+		// row to read like a list of commands — content anchored at the
+		// inline-start edge so labels line up vertically across rows
+		// regardless of icon presence. `text-align: start` covers single-
+		// text-node items; `justify-content: flex-start` covers icon +
+		// label pairs and any other multi-child layout.
+		justify-content: flex-start;
 		gap: calc(var(--spacing) * 2);
 		inline-size: 100%;
 		// Mailbox parity — `--bs-dropdown-item-padding-x: 0.625rem`,
