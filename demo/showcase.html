@@ -4663,6 +4663,7 @@
 								((o.value = !0),
 								i && (Is(), (s = !0)),
 								d(),
+								e.removeAttribute(`data-aside-closing`),
 								e.setAttribute(`data-aside-open`, ``),
 								e.matches(`:popover-open`) || e.showPopover(),
 								l(),
@@ -4681,7 +4682,6 @@
 								;((c = null),
 									f(),
 									e.matches(`:popover-open`) && e.hidePopover(),
-									e.removeAttribute(`data-aside-closing`),
 									(s &&= (Ls(), !1)),
 									$(e, ps.close))
 							})))
@@ -22531,10 +22531,6 @@ toast.destroy()</code></pre>`,
 				}
 			}
 			@layer composables {
-				aside[popover] {
-					transition-property: opacity, overlay, display;
-					transform: none;
-				}
 				aside[popover][data-aside-open],
 				aside[popover][data-aside-closing] {
 					gap: calc(var(--spacing) * 4);

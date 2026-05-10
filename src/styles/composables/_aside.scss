@@ -55,72 +55,45 @@
 @use '../mixins' as *;
 
 @layer composables {
-	// ── Cleanup-state floor — applies to every `aside[popover]` regardless
-	// of `data-aside-open` / `data-aside-closing`. Owns two surface
-	// overrides that prevent a "ghost slide-back" artifact at the END of
-	// the close lifecycle:
-	//
-	// Timing of the bug this rule fixes:
-	//   1. `useAside.hide()` swaps `[data-aside-open]` → `[data-aside-closing]`,
-	//      slide animates `translateX(0)` → `translateX(±100%)` over 250 ms.
-	//   2. `runTransition` callback fires, calls `hidePopover()`. The popover
-	//      surface's `transition-behavior: allow-discrete` keeps the element
-	//      in the render tree for its own 150 ms transition.
-	//   3. Same callback removes `[data-aside-closing]` synchronously. Now
-	//      NO aside-layer rule matches `transform` for this element.
-	//   4. Cascade falls back to `surfaces/_popover.scss`:
-	//      `[popover] { transform: scale(0.98) }` (closed-state default).
-	//   5. Popover surface's transition list includes `transform 150ms`, so
-	//      the element animates from `translateX(±100%)` → `scale(0.98)` —
-	//      the user sees a 2 %-shrunken "ghost" sliding back from off-screen
-	//      toward center for 150 ms before display:none finally kicks in.
-	//
-	// Fix:
-	//   - `transform: none` overrides the popover surface's `scale(0.98)` so
-	//     the post-cleanup transform is identity instead of a scaled value.
-	//     Per-state rules below (`[data-aside-open].start`, etc.) carry
-	//     specificity (0,3,1) > this rule's (0,1,1) so the slide transforms
-	//     still win during open / close.
-	//   - `transition-property` strips `transform` from the popover surface's
-	//     transition list. useAside owns the transform animation entirely
-	//     through the per-state rules' transition block (further down), so
-	//     the surface's transform tween is pure noise here. Removing it
-	//     means the cleanup-frame transform jump (translateX → none) is
-	//     instant rather than animated, killing the ghost.
-	aside[popover] {
-		transform: none;
-		transition-property: opacity, overlay, display;
-	}
-
 	// ── Base drawer geometry — gated on `[data-aside-open]` (open
-	// in-state) OR `[data-aside-closing]` (out-state during the
-	// close transition). `useAside` owns BOTH attributes:
+	// in-state) OR `[data-aside-closing]` (out-state during the close
+	// transition AND beyond, until the next open). `useAside` owns both
+	// attributes and follows this lifecycle:
 	//
-	//   open:  set `data-aside-open` → showPopover() → run transition.
-	//   close: swap to `data-aside-closing` → run transition →
-	//          hidePopover() → remove `data-aside-closing`.
+	//   open:   remove `data-aside-closing` (if lingering) → set
+	//           `data-aside-open` → showPopover() → run transition.
+	//   close:  swap `data-aside-open` → `data-aside-closing` →
+	//           run slide transition → hidePopover() → LEAVE
+	//           `data-aside-closing` set permanently until the next
+	//           open or destroy().
 	//
-	// Why both attributes? Without them, the popover surface defaults
-	// (`[popover]:not(output)`) supply `position: absolute` and
-	// `max-block-size: var(--set-anchor-max-block-size)` (= 18rem) in
-	// the closed state. If our gate only matched ONE state:
+	// Why leave `data-aside-closing` set after close completes?
+	// `hidePopover()` triggers the popover surface's discrete display
+	// transition; `transition-behavior: allow-discrete` keeps the
+	// element in the render tree for the surface's full transition
+	// duration (~150 ms) before display:none finally lands. If we
+	// removed `data-aside-closing` synchronously after `hidePopover()`,
+	// the cascade would flip off this geometry block during that 150 ms
+	// window — the panel would snap from `position: fixed; inset: 0;
+	// block-size: 100dvh` (drawer geometry) to `position: absolute;
+	// inset: auto; max-block-size: 18rem` (popover-surface defaults
+	// from `surfaces/_anchor-position.scss`). The user sees a
+	// ~288 px-tall ghost flash at the top of the page for 150 ms before
+	// display:none lands. Leaving the attribute set keeps the geometry
+	// block alive through the surface's discrete-transition tail, so
+	// the panel stays parked off-screen at `translateX(±100%)` and
+	// silently disappears when display:none kicks in.
 	//
-	//   - Gate on `[data-aside-open]` alone: open works, but close
-	//     strips the attribute synchronously with the slide-out
-	//     transition → drawer collapses 100dvh → 288px on the first
-	//     close frame, jumping vertically before sliding off.
-	//   - Gate on `:popover-open` alone: the from-state for the open
-	//     transition (popover not yet open) resolves to 288px tall,
-	//     so the first frame paints at the menu-floater size before
-	//     jumping to 100dvh — visible as a vertical pop on every open.
-	//   - Gate on `[data-aside-open]:popover-open`: BOTH twitches.
-	//
-	// Matching either attribute keeps the drawer geometry alive
-	// across the entire open ↔ close lifecycle, while the per-
-	// placement `[data-aside-closing]` rules below pin the transform
-	// to its off-screen value to drive the slide-out animation
-	// (instead of falling back to the popover surface's
-	// `transform: scale(0.98)` fade-out).
+	// Why the dual-attribute gate at all (instead of just `:popover-
+	// open`)? The from-state for the OPEN transition is computed
+	// before `:popover-open` matches; if our gate were on `:popover-
+	// open` alone, the from-state would resolve to popover-surface
+	// defaults (288 px tall, position: absolute) and the panel would
+	// briefly paint at the menu-floater size before jumping to 100dvh
+	// — a visible vertical pop on every open. The `[data-aside-open]`
+	// half of the gate covers the open from-state; the
+	// `[data-aside-closing]` half covers the slide-out and the
+	// post-close discrete-transition tail.
 	aside[popover][data-aside-open],
 	aside[popover][data-aside-closing] {
 		position: fixed !important;

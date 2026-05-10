@@ -95,6 +95,14 @@ export function createAside(
 		}
 
 		openAria()
+		// Clear any lingering closing attribute from the previous hide()
+		// before flipping to open. We intentionally keep `data-aside-closing`
+		// set after a close completes (see hide() for the rationale — it
+		// keeps the drawer geometry alive during the popover surface's
+		// discrete-transition tail so the panel doesn't flash at the top
+		// of the page). Removing it here lets the open-state per-placement
+		// rules (transform: translateX(0), etc.) win uncontested.
+		element.removeAttribute('data-aside-closing')
 		element.setAttribute('data-aside-open', '')
 		if (!element.matches(':popover-open')) element.showPopover()
 
@@ -124,7 +132,22 @@ export function createAside(
 			transition = null
 			closeAria()
 			if (element.matches(':popover-open')) element.hidePopover()
-			element.removeAttribute('data-aside-closing')
+			// Intentionally LEAVE `data-aside-closing` on the element after
+			// the slide completes. Removing it synchronously here flips the
+			// cascade off the drawer-geometry block (`aside[popover][data-
+			// aside-open], aside[popover][data-aside-closing]`), so for the
+			// 150 ms popover-surface discrete-transition tail (display:none
+			// hasn't fired yet — `transition-behavior: allow-discrete` keeps
+			// the element in the render tree) the panel SNAPS to the popover
+			// surface defaults: `position: absolute; inset: auto; max-block-
+			// size: 18rem` (from `surfaces/_anchor-position.scss`). The user
+			// sees a small (~288 px tall) ghost flash at the top of the page
+			// before display:none finally lands. Leaving the attribute set
+			// keeps the drawer geometry alive (`position: fixed`, full-height
+			// inset, `transform: translateX(±100%)`) until display:none, so
+			// the panel stays parked off-screen and invisibly disappears.
+			// `show()` removes the attribute on the next open. `destroy()`
+			// removes it as part of teardown.
 			if (locked) {
 				unlockBodyScroll()
 				locked = false
