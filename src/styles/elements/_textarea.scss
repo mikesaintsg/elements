@@ -89,5 +89,25 @@
 			opacity: var(--set-textarea-disabled-opacity);
 			resize: none;
 		}
+
+		&[readonly] {
+			background-color: color-mix(in oklab, currentColor 4%, Canvas);
+			cursor: default;
+			resize: none;
+		}
+
+		&:user-invalid {
+			border-color: var(--color-danger);
+		}
+
+		&:user-invalid:focus-visible {
+			border-color: var(--color-danger);
+			box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+				color-mix(
+					in oklab,
+					var(--color-danger) calc(var(--set-focus-box-shadow-opacity) * 100%),
+					transparent
+				);
+		}
 	}
 }

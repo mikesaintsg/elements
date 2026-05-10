@@ -47,11 +47,24 @@
 			var(--set-table-border-color) 25%,
 			transparent
 		);
+		--set-table-row-striped-background-color: color-mix(
+			in srgb,
+			var(--set-table-border-color) 12%,
+			transparent
+		);
+		--set-table-row-active-background-color: color-mix(
+			in srgb,
+			var(--set-table-border-color) 35%,
+			transparent
+		);
 		--set-table-row-selected-background-color: color-mix(
 			in srgb,
 			var(--color-primary, var(--set-table-border-color)) 18%,
 			transparent
 		);
+		--set-table-cell-padding-inline-small: calc(var(--spacing) * 1.5);
+		--set-table-cell-padding-block-small: var(--spacing);
+		--set-table-group-divider-width: 2px;
 		--set-table-sort-indicator-color: var(--set-table-color);
 		--set-table-sort-indicator-opacity: 0.4;
 		--set-table-sort-indicator-active-opacity: 1;
@@ -88,7 +101,16 @@
 			@include transition(background-color var(--set-table-transition-duration));
 		}
 
-		tbody tr:hover {
+		// Hover wins over striped / variant tints by source-order: this rule
+		// is declared inside the `table { … }` block but its modifier-aware
+		// counterpart at the bottom of the layer re-declares the same effect
+		// at higher specificity so striped odd-row tints don't mask the hover
+		// wash. Keep the simple form here for tables that never opt into the
+		// modifiers — specificity of `tbody > tr:hover > *` (0,1,3) is enough
+		// to win over a bare `tbody > tr > *` (0,0,3) but loses to the
+		// `.striped` modifier's (0,2,4); the override at the bottom of the
+		// layer fills that gap.
+		tbody > tr:hover > * {
 			background-color: var(--set-table-row-hover-background-color);
 		}
 
@@ -176,5 +198,160 @@
 		thead > tr > th [data-table-resize-handle][data-table-resizing] {
 			opacity: 1;
 		}
+	}
+
+	// ── Striped rows / columns ────────────────────────────────────────────────
+	// Layout-choice modifiers on `<table>`. Striped tints alternating body rows
+	// (or columns) with the neutral row-striped tint so the eye can track a
+	// horizontal scan across long rows. Specificity bumped past `tbody tr`
+	// so the stripe wins over the bare per-row baseline.
+	table.striped > tbody > tr:nth-of-type(odd) > * {
+		background-color: var(--set-table-row-striped-background-color);
+	}
+
+	table.striped-columns > :not(caption) > tr > :nth-child(even) {
+		background-color: var(--set-table-row-striped-background-color);
+	}
+
+	// ── Hover modifier ─────────────────────────────────────────────────────────
+	// The bare `table` already hover-tints body rows. `.hover` is reserved as a
+	// no-op alias here so consumers can write the canonical mailbox class
+	// without breaking the cascade — they get the same hover wash either way.
+	// (Future: if the hover default ever flips to off, this hook is what the
+	// modifier toggles back on.)
+
+	// ── Bordered ───────────────────────────────────────────────────────────────
+	// Mailbox `.table-bordered` draws a hairline on every cell edge and a
+	// perimeter border on the table itself. We re-declare `border-collapse:
+	// collapse` even though the bare element already carries it — the rule
+	// then survives any future re-tuning of the bare-element baseline (e.g. a
+	// project-wide return to the UA `separate` model) without losing the
+	// single-line look.
+	table.bordered {
+		border: var(--set-table-border-width) solid var(--set-table-border-color);
+		border-collapse: collapse;
+
+		> :not(caption) > * > * {
+			border: var(--set-table-border-width) solid var(--set-table-border-color);
+		}
+	}
+
+	// ── Borderless ─────────────────────────────────────────────────────────────
+	// Removes the row-divider seam from cells — useful for tables sitting
+	// inside an already-bordered surface where the inherited border would
+	// double up.
+	table.borderless > :not(caption) > * > * {
+		border-block-end-width: 0;
+	}
+
+	table.borderless > :not(:first-child) {
+		border-block-start-width: 0;
+	}
+
+	// ── Group divider ──────────────────────────────────────────────────────────
+	// Heavier divider line between thead and tbody (or between two tbody
+	// blocks). Mailbox uses `currentColor` at 2px to match the body text
+	// emphasis. Opt-in via `<tbody class="group-divider">`.
+	table tbody.group-divider {
+		border-block-start: var(--set-table-group-divider-width) solid currentColor;
+	}
+
+	// ── Compact (small) ────────────────────────────────────────────────────────
+	// Halves the cell padding for dense data grids (financial figures, log
+	// rows). Driven through the same cell-padding tokens so any consumer
+	// override of the bare table's padding still propagates down the chain.
+	table.small {
+		--set-table-cell-padding-inline: var(--set-table-cell-padding-inline-small);
+		--set-table-cell-padding-block: var(--set-table-cell-padding-block-small);
+	}
+
+	// ── Caption position ──────────────────────────────────────────────────────
+	// Mailbox `.caption-top` flips the visual side without changing source
+	// order. `caption` already sets `caption-side: top` (the UA default), so
+	// this modifier exists for parity / explicit declaration.
+	table.caption-top > caption {
+		caption-side: top;
+	}
+
+	table.caption-bottom > caption {
+		caption-side: bottom;
+	}
+
+	// ── Active row ─────────────────────────────────────────────────────────────
+	// Manual highlight for rows the consumer wants to emphasise outside the
+	// selection model (e.g. "current page" in a paginator). Sits between hover
+	// and selected in opacity so all three states layer cleanly.
+	table > tbody > tr.active > * {
+		background-color: var(--set-table-row-active-background-color);
+	}
+
+	// ── Variant row tints ─────────────────────────────────────────────────────
+	// Apply a `.{variant}` class to a `<tr>` to wash the row in the variant's
+	// `--color-{variant}-bg-subtle` token. The tint already accounts for
+	// light / dark theme and surface base via the theme layer, so no per-mode
+	// override is needed here.
+	//
+	// Implemented as targeted pairs (one per variant) rather than a generic
+	// `.tr-variant` shim so the modifier classes stay aligned with the
+	// project-wide variant naming on every other element.
+	table > tbody > tr.primary > * {
+		background-color: var(--color-primary-bg-subtle);
+	}
+
+	table > tbody > tr.secondary > * {
+		background-color: var(--color-secondary-bg-subtle);
+	}
+
+	table > tbody > tr.success > * {
+		background-color: var(--color-success-bg-subtle);
+	}
+
+	table > tbody > tr.warning > * {
+		background-color: var(--color-warning-bg-subtle);
+	}
+
+	table > tbody > tr.danger > * {
+		background-color: var(--color-danger-bg-subtle);
+	}
+
+	table > tbody > tr.information > * {
+		background-color: var(--color-information-bg-subtle, var(--color-primary-bg-subtle));
+	}
+
+	// ── Nowrap ─────────────────────────────────────────────────────────────────
+	// Opt-in: prevent cells from wrapping onto multiple lines so a narrow
+	// viewport triggers the responsive wrapper's horizontal scroll instead of
+	// column compression. Use on tables whose readability depends on each row
+	// staying on one line (financial figures, IDs, status badges).
+	table.nowrap > :not(caption) > * > * {
+		white-space: nowrap;
+	}
+
+	// ── Hover override over striped / variant tints ───────────────────────────
+	// Same-shape selector as `.striped > tbody > tr:nth-of-type(odd) > *` so
+	// specificity matches; declared after the modifiers so source order
+	// resolves the tie in hover's favour. Keeps the row tint readable while
+	// still surfacing the hover affordance on every row of a striped table.
+	table > tbody > tr:hover > * {
+		background-color: var(--set-table-row-hover-background-color);
+	}
+
+	// Selection still wins over hover — `[aria-selected]` re-declares after.
+	table > tbody > tr[aria-selected='true'] > * {
+		background-color: var(--set-table-row-selected-background-color);
+	}
+
+	// ── Responsive wrapper ─────────────────────────────────────────────────────
+	// Wrap a wide `<table>` in `<div class="table-responsive">` to bound
+	// horizontal overflow inside the wrapper rather than the page.
+	// `overscroll-behavior-inline: contain` keeps the swipe gesture local so
+	// touchpad users don't rubber-band the page when the table reaches its
+	// scroll limit.
+	.table-responsive {
+		inline-size: 100%;
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior-inline: contain;
 	}
 }

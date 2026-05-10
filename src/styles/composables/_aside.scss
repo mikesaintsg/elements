@@ -73,6 +73,14 @@
 		margin: 0 !important;
 		overflow: auto;
 		opacity: 1 !important;
+		// Drawer chrome — paint a subtle elevation shadow on the inner
+		// edge of the panel so the drawer reads as a layer above the
+		// page rather than a flush panel that just slid in from
+		// nowhere. Mirrors mailbox's `--bs-offcanvas-box-shadow:
+		// var(--bs-box-shadow-sm)`. Use `!important` to beat the
+		// popover surface's own (heavier) shadow so the drawer keeps
+		// a clean single shadow.
+		box-shadow: 0 0.125rem 0.25rem color-mix(in srgb, black 7.5%, transparent) !important;
 		// Drawer needs a higher stacking context than the body grid +
 		// any sticky chrome, but lower than dialogs (which use the
 		// platform top layer via `showModal()`). 50 matches the showcase

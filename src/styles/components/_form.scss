@@ -92,4 +92,46 @@
 	form.row > :is(input, textarea, select) {
 		inline-size: auto;
 	}
+
+	// --------------------------------------------------------------------------
+	// `useForm` validation pipeline.
+	//
+	// `[data-form-validated]` is set by the `useForm` composable after a
+	// `check() / report() / submit` cycle (see createForm.ts). It is the
+	// framework's replacement for Bootstrap's `.was-validated` opt-in:
+	// the chrome only lights up after the user has tried to submit, so empty
+	// required fields don't flash red on first paint.
+	//
+	// The element-layer rules already paint `:user-invalid` (modern, post-
+	// interaction) — these `[data-form-validated]` rules add the legacy /
+	// explicit-submit path so a programmatic `report()` triggers the same
+	// chrome on every browser regardless of `:user-invalid` support.
+	// --------------------------------------------------------------------------
+	form[data-form-validated] :where(input, select, textarea):invalid {
+		border-color: var(--color-danger);
+		box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-danger) 35%, transparent);
+	}
+
+	form[data-form-validated] :where(input, select, textarea):invalid:focus-visible {
+		outline: none;
+		border-color: var(--color-danger);
+		box-shadow:
+			0 0 0 1px var(--color-danger),
+			0 0 0 var(--set-focus-box-shadow-width)
+				color-mix(
+					in oklab,
+					var(--color-danger) calc(var(--set-focus-box-shadow-opacity) * 100%),
+					transparent
+				);
+	}
+
+	form[data-form-validated] :where(input, select, textarea):valid {
+		border-color: color-mix(in oklab, var(--color-success) 60%, var(--color-border));
+	}
+
+	// Highlight the label of an invalid field so the user can tell which
+	// field broke even if the input is offscreen / scrolled.
+	form[data-form-validated] label:has(:invalid) {
+		color: var(--color-danger);
+	}
 }

@@ -36,10 +36,21 @@
 		--set-popover-border-color: var(--color-border);
 		--set-popover-border-width: 1px;
 		--set-popover-border-radius: 0.5rem;
-		--set-popover-padding-inline: 1rem;
+		--set-popover-padding-inline: 0.75rem;
 		--set-popover-padding-block: 0.75rem;
-		--set-popover-box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15), 0 4px 6px -2px rgb(0 0 0 / 0.08);
+		// Floating-panel shadow — two-layer recipe ported from mailbox's
+		// `--bs-content-floating-box-shadow`. Diffuse main lift (12px blur)
+		// with a tighter contact shadow (3px blur) reads as a discrete
+		// floating layer rather than an inflated drop shadow.
+		--set-popover-box-shadow:
+			0 4px 12px color-mix(in srgb, black 8%, transparent),
+			0 1px 3px color-mix(in srgb, black 6%, transparent);
 		--set-popover-transition-duration: var(--set-transition-duration);
+		// Default max-width — mirrors mailbox's `--bs-popover-max-width:
+		// 17.25rem`. Authors can override per-host; the anchor surface's
+		// `--set-anchor-max-inline-size` (28rem) provides the upper safety
+		// cap.
+		--set-popover-max-inline-size: 17.25rem;
 	}
 
 	// Chrome paint applies to every `[popover]` including `<output popover>`
@@ -59,6 +70,12 @@
 		padding-inline: var(--set-popover-padding-inline);
 		padding-block: var(--set-popover-padding-block);
 		box-shadow: var(--set-popover-box-shadow);
+		// Default panel max-width — mailbox parity (`--bs-popover-max-width:
+		// 17.25rem`). The anchor surface's own `max-inline-size` token is
+		// declared at a higher 28rem upper cap; this rule narrows the
+		// default to the popover-spec ~280px width, while leaving the
+		// anchor cap as a hard ceiling for outlier hosts.
+		max-inline-size: min(var(--set-popover-max-inline-size), var(--set-anchor-max-inline-size));
 
 		@include transition(
 			(
@@ -164,12 +181,20 @@
 		// tooltip renders correctly even when the surrounding text color
 		// is the same shade (would otherwise produce white-on-white via
 		// `currentColor`). Authors override per-host or globally for theme.
-		--set-popover-hint-background-color: rgb(15 23 42 / 0.92);
+		// Opacity 0.95 mirrors mailbox's `--bs-tooltip-opacity` so the
+		// transient label keeps a hint of layer beneath it rather than
+		// reading as a fully opaque solid.
+		--set-popover-hint-background-color: rgb(15 23 42 / 0.95);
 		--set-popover-hint-border-color: transparent;
 		--set-popover-hint-padding-inline: calc(var(--spacing) * 2);
 		--set-popover-hint-padding-block: calc(var(--spacing) * 1);
 		--set-popover-hint-font-size: var(--text-xs, 0.75rem);
-		--set-popover-hint-max-inline-size: 16rem;
+		// Max width — mirrors mailbox's `--bs-tooltip-max-width: 12.5rem`.
+		// Tooltips are transient labels, not panels — a narrower max keeps
+		// them tight and forces multi-sentence content to break into the
+		// tooltip's own line rhythm rather than spanning the full
+		// `--set-anchor-max-inline-size`.
+		--set-popover-hint-max-inline-size: 12.5rem;
 	}
 
 	[popover='hint'],

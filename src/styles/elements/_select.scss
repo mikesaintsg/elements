@@ -120,6 +120,29 @@
 			cursor: not-allowed;
 			opacity: var(--set-select-disabled-opacity);
 		}
+
+		&:user-invalid {
+			border-color: var(--color-danger);
+		}
+
+		&:user-invalid:focus-visible {
+			border-color: var(--color-danger);
+			box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+				color-mix(
+					in oklab,
+					var(--color-danger) calc(var(--set-focus-box-shadow-opacity) * 100%),
+					transparent
+				);
+		}
+
+		// Native popup option chrome — Chromium / Firefox read each `<option>`'s
+		// own color / background-color rather than the trigger's, so unstyled
+		// options paint UA-default white-on-black even on themed selects. Bind
+		// to system colors for reliable contrast across light / dark.
+		> option {
+			color: CanvasText;
+			background-color: Canvas;
+		}
 	}
 
 	// useSelect listbox / combobox chrome (`.select`) lives in

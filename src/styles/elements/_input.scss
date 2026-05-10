@@ -131,8 +131,328 @@
 			opacity: var(--set-input-disabled-opacity);
 		}
 
+		// `:user-invalid` is the modern path — it activates only after the
+		// user has interacted with the field, so empty required inputs don't
+		// flag red on first paint. The legacy `:invalid:not(:placeholder-shown)`
+		// chain stays as a fallback for browsers that still need it (Safari
+		// 15-, Firefox <88).
+		&:user-invalid,
 		&:invalid:not(:placeholder-shown):not(:focus) {
 			border-color: var(--color-danger);
+		}
+
+		&:user-invalid:focus-visible {
+			border-color: var(--color-danger);
+			box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+				color-mix(
+					in oklab,
+					var(--color-danger) calc(var(--set-focus-box-shadow-opacity) * 100%),
+					transparent
+				);
+		}
+
+		// Read-only inputs paint with the disabled background but stay
+		// selectable + focusable. Mirrors mailbox's `--bs-form-disabled-bg`
+		// so the read-only state reads as "not editable" without dimming.
+		&[readonly] {
+			background-color: color-mix(in oklab, currentColor 4%, Canvas);
+			cursor: default;
+		}
+	}
+
+	// ==========================================================================
+	// File input — UA renders a button + label inline. We restyle the
+	// `::file-selector-button` so it picks up the framework's button cadence.
+	// ==========================================================================
+	input[type='file'] {
+		display: inline-block;
+		max-inline-size: 100%;
+		font-family: inherit;
+		font-size: var(--set-size-font-size, var(--text-sm));
+		line-height: var(--leading-normal);
+		color: currentColor;
+		background-color: Canvas;
+		border: 1px solid var(--color-border-strong);
+		border-radius: var(--set-size-border-radius, var(--radius-md));
+		cursor: pointer;
+		overflow: hidden;
+
+		&:focus-visible {
+			outline: none;
+			border-color: var(--color-primary);
+			box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+				color-mix(
+					in oklab,
+					var(--color-primary) calc(var(--set-focus-box-shadow-opacity) * 100%),
+					transparent
+				);
+		}
+
+		&:disabled {
+			cursor: not-allowed;
+			opacity: 0.5;
+		}
+
+		&::file-selector-button,
+		&::-webkit-file-upload-button {
+			padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
+			padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
+			margin-block: calc(var(--set-size-padding-block, calc(var(--spacing) * 1.5)) * -1);
+			margin-inline: calc(var(--set-size-padding-inline, calc(var(--spacing) * 3)) * -1);
+			margin-inline-end: var(--set-size-padding-inline, calc(var(--spacing) * 3));
+			color: inherit;
+			background-color: color-mix(in oklab, currentColor 6%, Canvas);
+			border: 0;
+			border-inline-end: 1px solid var(--color-border-strong);
+			border-radius: 0;
+			cursor: pointer;
+			pointer-events: none;
+			transition: background-color var(--set-transition-duration);
+		}
+
+		&:hover:not(:disabled)::file-selector-button,
+		&:hover:not(:disabled)::-webkit-file-upload-button {
+			background-color: color-mix(in oklab, currentColor 12%, Canvas);
+		}
+	}
+
+	// ==========================================================================
+	// Color input — UA paints a chunky default border around the swatch on
+	// every engine. `appearance: none` strips most of it; the swatch pseudos
+	// need explicit border:0 (UA stylesheets apply !important).
+	// ==========================================================================
+	input[type='color'] {
+		inline-size: 3rem;
+		block-size: calc(1.5em + var(--set-size-padding-block, calc(var(--spacing) * 1.5)) * 2 + 2px);
+		padding: 0.375rem;
+		border: 1px solid var(--color-border-strong);
+		border-radius: var(--set-size-border-radius, var(--radius-md));
+		background-color: Canvas;
+		cursor: pointer;
+		appearance: none;
+
+		&:disabled {
+			cursor: not-allowed;
+			opacity: 0.5;
+		}
+
+		&:focus-visible {
+			outline: none;
+			border-color: var(--color-primary);
+			box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+				color-mix(
+					in oklab,
+					var(--color-primary) calc(var(--set-focus-box-shadow-opacity) * 100%),
+					transparent
+				);
+		}
+
+		&::-webkit-color-swatch {
+			border: 0 !important;
+			border-radius: calc(var(--set-size-border-radius, var(--radius-md)) - 0.25rem);
+		}
+
+		&::-moz-color-swatch {
+			border: 0 !important;
+			border-radius: calc(var(--set-size-border-radius, var(--radius-md)) - 0.25rem);
+		}
+	}
+
+	// ==========================================================================
+	// Checkbox & radio — paint the box, the checked SVG, and the focus ring.
+	// Mailbox uses `--bs-form-check-bg-image` to swap the SVG; we use the same
+	// pattern but inline the SVGs as data: URLs so consumers don't need a
+	// separate token registry. Stroke is hard-coded white because the SVG
+	// renders inside the checked fill (always primary color = white-on-fill).
+	// ==========================================================================
+	input[type='checkbox'],
+	input[type='radio'] {
+		--set-check-size: 1em;
+		--set-check-bg: Canvas;
+		--set-check-border-color: var(--color-border-strong);
+		--set-check-checked-bg: var(--color-primary);
+		--set-check-checked-border-color: var(--color-primary);
+		--set-check-checkbox-svg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+		--set-check-radio-svg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e");
+		--set-check-dash-svg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10h8'/%3e%3c/svg%3e");
+
+		flex-shrink: 0;
+		inline-size: var(--set-check-size);
+		block-size: var(--set-check-size);
+		margin-block-start: 0.25em;
+		vertical-align: top;
+		background-color: var(--set-check-bg);
+		background-repeat: no-repeat;
+		background-position: center;
+		background-size: contain;
+		border: 1px solid var(--set-check-border-color);
+		appearance: none;
+		print-color-adjust: exact;
+		cursor: pointer;
+
+		@include transition(
+			(
+				background-color var(--set-transition-duration),
+				border-color var(--set-transition-duration),
+				box-shadow var(--set-transition-duration)
+			)
+		);
+
+		&:focus-visible {
+			outline: none;
+			border-color: var(--color-primary);
+			box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+				color-mix(
+					in oklab,
+					var(--color-primary) calc(var(--set-focus-box-shadow-opacity) * 100%),
+					transparent
+				);
+		}
+
+		&:checked {
+			background-color: var(--set-check-checked-bg);
+			border-color: var(--set-check-checked-border-color);
+		}
+
+		&:disabled,
+		&[disabled] {
+			cursor: not-allowed;
+			opacity: 0.5;
+			pointer-events: none;
+		}
+	}
+
+	input[type='checkbox'] {
+		border-radius: 0.25em;
+
+		&:checked {
+			background-image: var(--set-check-checkbox-svg);
+		}
+
+		&:indeterminate {
+			background-color: var(--set-check-checked-bg);
+			border-color: var(--set-check-checked-border-color);
+			background-image: var(--set-check-dash-svg);
+		}
+	}
+
+	input[type='radio'] {
+		border-radius: 50%;
+
+		&:checked {
+			background-image: var(--set-check-radio-svg);
+		}
+	}
+
+	// Switch — `<input type="checkbox" role="switch">` is the standard pattern.
+	// Mailbox renders it as a 2em-wide pill with an animated background-position.
+	input[type='checkbox'][role='switch'] {
+		--set-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23aeb1b7'/%3e%3c/svg%3e");
+		--set-switch-bg-checked: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+
+		inline-size: 2em;
+		border-radius: 2em;
+		background-image: var(--set-switch-bg);
+		background-position: left center;
+		transition:
+			background-position var(--set-transition-duration),
+			background-color var(--set-transition-duration),
+			border-color var(--set-transition-duration),
+			box-shadow var(--set-transition-duration);
+
+		&:checked {
+			background-image: var(--set-switch-bg-checked);
+			background-position: right center;
+		}
+	}
+
+	// ==========================================================================
+	// Range input — strip UA chrome, paint a flat track + circular thumb. UA
+	// pseudos can't read host-element custom properties reliably across engines,
+	// so the track / thumb tokens are reasserted on each pseudo.
+	// ==========================================================================
+	input[type='range'] {
+		--set-range-track-block-size: 0.5rem;
+		--set-range-thumb-size: 1.25rem;
+		--set-range-track-bg: var(--color-border);
+		--set-range-thumb-bg: var(--color-primary);
+		--set-range-thumb-ring: Canvas;
+
+		inline-size: 100%;
+		block-size: var(--set-range-thumb-size);
+		padding: 0;
+		background-color: transparent;
+		appearance: none;
+		cursor: pointer;
+
+		&:focus-visible {
+			outline: none;
+		}
+
+		&:disabled {
+			cursor: not-allowed;
+			opacity: 0.5;
+		}
+
+		&::-webkit-slider-runnable-track {
+			inline-size: 100%;
+			block-size: var(--set-range-track-block-size);
+			background-color: var(--set-range-track-bg);
+			border-radius: 1rem;
+			cursor: pointer;
+		}
+
+		&::-webkit-slider-thumb {
+			margin-block-start: calc(
+				(var(--set-range-thumb-size) - var(--set-range-track-block-size)) / -2
+			);
+			inline-size: var(--set-range-thumb-size);
+			block-size: var(--set-range-thumb-size);
+			background-color: var(--set-range-thumb-bg);
+			border: 2px solid var(--set-range-thumb-ring);
+			border-radius: 50%;
+			appearance: none;
+			cursor: pointer;
+			transition:
+				background-color var(--set-transition-duration),
+				box-shadow var(--set-transition-duration),
+				transform var(--set-transition-duration);
+		}
+
+		&::-moz-range-track {
+			inline-size: 100%;
+			block-size: var(--set-range-track-block-size);
+			background-color: var(--set-range-track-bg);
+			border: 0;
+			border-radius: 1rem;
+			cursor: pointer;
+		}
+
+		&::-moz-range-thumb {
+			inline-size: var(--set-range-thumb-size);
+			block-size: var(--set-range-thumb-size);
+			background-color: var(--set-range-thumb-bg);
+			border: 2px solid var(--set-range-thumb-ring);
+			border-radius: 50%;
+			cursor: pointer;
+		}
+
+		&:focus-visible::-webkit-slider-thumb {
+			box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+				color-mix(
+					in oklab,
+					var(--color-primary) calc(var(--set-focus-box-shadow-opacity) * 100%),
+					transparent
+				);
+		}
+
+		&:focus-visible::-moz-range-thumb {
+			box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+				color-mix(
+					in oklab,
+					var(--color-primary) calc(var(--set-focus-box-shadow-opacity) * 100%),
+					transparent
+				);
 		}
 	}
 }

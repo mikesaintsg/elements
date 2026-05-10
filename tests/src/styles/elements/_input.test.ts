@@ -37,18 +37,21 @@ describe('input — UA reset', () => {
 	})
 })
 
-describe('input — type filter', () => {
-	it('does not apply chrome to type=checkbox', () => {
+describe('input — type-specific chrome', () => {
+	it('paints checkbox with appearance: none + framework border', () => {
 		const el = render('input', '')
 		el.type = 'checkbox'
-		// Native checkbox keeps its UA appearance instead of `none`.
-		expect(style(el, 'appearance')).not.toBe('none')
+		// Mailbox port: framework draws the box itself so checked state can
+		// paint the variant color + SVG.
+		expect(style(el, 'appearance')).toBe('none')
+		expect(pixels(el, 'border-top-width')).toBe(1)
 	})
 
-	it('does not apply chrome to type=radio', () => {
+	it('paints radio with appearance: none + circular border-radius', () => {
 		const el = render('input', '')
 		el.type = 'radio'
-		expect(style(el, 'appearance')).not.toBe('none')
+		expect(style(el, 'appearance')).toBe('none')
+		expect(style(el, 'border-top-left-radius')).toBe('50%')
 	})
 })
 

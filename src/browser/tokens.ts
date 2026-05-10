@@ -562,6 +562,8 @@ export const tokens = {
 		cell: {
 			paddingInline: '--set-table-cell-padding-inline',
 			paddingBlock: '--set-table-cell-padding-block',
+			paddingInlineSmall: '--set-table-cell-padding-inline-small',
+			paddingBlockSmall: '--set-table-cell-padding-block-small',
 		},
 		header: {
 			fontWeight: '--set-table-header-font-weight',
@@ -569,6 +571,8 @@ export const tokens = {
 		},
 		row: {
 			hover: { backgroundColor: '--set-table-row-hover-background-color' },
+			striped: { backgroundColor: '--set-table-row-striped-background-color' },
+			active: { backgroundColor: '--set-table-row-active-background-color' },
 			selected: { backgroundColor: '--set-table-row-selected-background-color' },
 		},
 		sort: {
@@ -578,6 +582,7 @@ export const tokens = {
 				active: { opacity: '--set-table-sort-indicator-active-opacity' },
 			},
 		},
+		groupDivider: { width: '--set-table-group-divider-width' },
 	},
 
 	// ── Phase 3 typographic overrides ──────────────────────────────────────
@@ -706,6 +711,7 @@ export const tokens = {
 		paddingBlock: '--set-popover-padding-block',
 		boxShadow: '--set-popover-box-shadow',
 		transitionDuration: '--set-popover-transition-duration',
+		maxInlineSize: '--set-popover-max-inline-size',
 		// Tooltip variant — `[popover=hint]` / `[role=tooltip]`. Smaller,
 		// inverted, less-padded subset of the popover surface.
 		hint: {

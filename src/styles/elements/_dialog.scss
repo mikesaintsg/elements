@@ -42,8 +42,11 @@
 		--set-dialog-border-color: var(--set-variant-background-color, var(--color-border));
 		--set-dialog-border-width: 1px;
 		--set-dialog-border-radius: var(--set-size-border-radius, var(--radius-lg));
-		--set-dialog-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 6));
-		--set-dialog-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 5));
+		// Padding — mailbox parity. `--bs-modal-padding: 1rem` for both
+		// inline and block. The previous `× 6 / × 5` (1.5rem / 1.25rem)
+		// read too generous against mailbox's tighter modal rhythm.
+		--set-dialog-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));
+		--set-dialog-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 4));
 		--set-dialog-font-size: var(--set-size-font-size, var(--text-base));
 		--set-dialog-line-height: var(--leading-normal);
 		// `inline-size` is the dialog's preferred width; `max-inline-size`
@@ -59,9 +62,15 @@
 		// Footer-action gap — tokenized so consumers can dial it for dense
 		// vs. roomy. Default matches the cross-element `.row` form gap.
 		--set-dialog-footer-gap: calc(var(--spacing) * 2);
+		// Modal shadow — modal sits on top of a `::backdrop` scrim so it
+		// can carry a heavier elevation than a tooltip / popover without
+		// dominating the page. Mirrors mailbox's `--bs-content-box-shadow`
+		// recipe (deeper main lift than the popover's
+		// `--bs-content-floating-box-shadow`, but shallower than a 25%
+		// black drop).
 		--set-dialog-box-shadow:
-			0 10px 25px -5px color-mix(in srgb, black 25%, transparent),
-			0 8px 10px -6px color-mix(in srgb, black 15%, transparent);
+			0 8px 32px color-mix(in srgb, black 18%, transparent),
+			0 2px 6px color-mix(in srgb, black 10%, transparent);
 		--set-dialog-transition-duration: var(--set-transition-duration);
 
 		inline-size: var(--set-dialog-inline-size);

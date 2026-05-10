@@ -158,6 +158,11 @@
 		flex-direction: column;
 		align-items: stretch;
 		justify-content: flex-start;
+		// Mailbox parity — the popover surface already paints
+		// `padding-{inline,block}: 0.75rem` on the popover root; for
+		// dropdown menus we want a tighter `0.375rem` gutter so the
+		// pill-shaped rows hug the panel border closely (matches
+		// `--bs-dropdown-padding-{x,y}: 0.375rem`).
 		padding-inline: 0;
 		padding-block: 0;
 		gap: 0;
@@ -203,10 +208,20 @@
 		align-items: center;
 		gap: calc(var(--spacing) * 2);
 		inline-size: 100%;
-		padding-inline: calc(var(--spacing) * 3);
-		padding-block: calc(var(--spacing) * 2);
+		// Mailbox parity — `--bs-dropdown-item-padding-x: 0.625rem`,
+		// `padding-y: 0.375rem`. Tighter than a generic flex button row;
+		// pairs with the per-item border-radius below to produce
+		// pill-shaped hover affordances.
+		padding-inline: calc(var(--spacing) * 2.5);
+		padding-block: calc(var(--spacing) * 1.5);
 		border: 0;
-		border-radius: 0;
+		// Pill shape — mailbox renders dropdown items as their own rounded
+		// rectangles inside the panel (`--bs-dropdown-item-border-radius:
+		// calc(var(--bs-border-radius) - 0.125rem)`). The hover / focus /
+		// selected backgrounds paint the pill instead of bleeding to the
+		// panel edge, which reads as a list of actions rather than a slab
+		// of stacked rows.
+		border-radius: calc(var(--set-popover-border-radius) - 0.125rem);
 		background-color: transparent;
 		color: var(--color-text);
 		text-align: start;

@@ -1,0 +1,107 @@
+// ============================================================================
+// [role="group"] — button group / toolbar layout.
+//
+// Mailbox parallel: `.btn-group` / `.btn-group-vertical` / `.btn-toolbar`.
+// Elements identifies a button group via the WAI-ARIA `role="group"` attribute
+// instead of a class — the role is the semantic anchor, the visual chrome
+// (overlapping borders, shared corner radii) follows.
+//
+// Markup contract:
+//   <div role="group"> <button>One</button> <button>Two</button> </div>
+//   <div role="group" aria-orientation="vertical">…</div>
+//
+// A role="toolbar" host wraps multiple groups and lays them out as a wrapping
+// flex row.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	[role='group'] {
+		--set-role-group-border-width: 1px;
+
+		position: relative;
+		display: inline-flex;
+		vertical-align: middle;
+
+		// Each direct-child button keeps its own border, but consecutive
+		// children overlap by one pixel so adjacent borders read as a single
+		// shared edge instead of a double-thick rule.
+		> button {
+			position: relative;
+			flex: 1 1 auto;
+		}
+
+		// Hover / focus / active rises above the shared edge so the variant
+		// border-color paints over its neighbour rather than under.
+		> button:hover,
+		> button:focus,
+		> button:active,
+		> button.active {
+			z-index: 1;
+		}
+
+		// Negative inline-start margin overlaps borders for every button after
+		// the first. The bare-button border-width is 0, so this collapses to
+		// 0 — the rule only "does" something when consumers pair group buttons
+		// with a variant or .outline modifier (border-width = 1px).
+		> button + button {
+			margin-inline-start: calc(-1 * var(--set-role-group-border-width));
+		}
+
+		// Inner buttons square off — only the first/last carry the group's
+		// outer corner radii. Logical properties so RTL flips automatically.
+		> button:not(:first-child):not(:last-child) {
+			border-radius: 0;
+		}
+
+		> button:first-child:not(:only-child) {
+			border-start-end-radius: 0;
+			border-end-end-radius: 0;
+		}
+
+		> button:last-child:not(:only-child) {
+			border-start-start-radius: 0;
+			border-end-start-radius: 0;
+		}
+	}
+
+	// Vertical orientation — column layout, vertical overlap.
+	[role='group'][aria-orientation='vertical'] {
+		flex-direction: column;
+		align-items: stretch;
+
+		> button {
+			width: 100%;
+		}
+
+		> button + button {
+			margin-inline-start: 0;
+			margin-block-start: calc(-1 * var(--set-role-group-border-width));
+		}
+
+		> button:not(:first-child):not(:last-child) {
+			border-radius: 0;
+		}
+
+		> button:first-child:not(:only-child) {
+			border-end-end-radius: 0;
+			border-end-start-radius: 0;
+			border-start-end-radius: var(--set-button-border-radius, var(--radius-md));
+		}
+
+		> button:last-child:not(:only-child) {
+			border-start-start-radius: 0;
+			border-start-end-radius: 0;
+			border-end-start-radius: var(--set-button-border-radius, var(--radius-md));
+		}
+	}
+
+	// Toolbar — multiple groups laid out as a wrapping row.
+	[role='toolbar'] {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-start;
+		gap: calc(var(--spacing) * 2);
+	}
+}
