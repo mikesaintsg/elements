@@ -9,6 +9,26 @@ const tip = useTooltip({ anchor: a, panel: p, placement: 'top' })
 
 const placements: readonly Placement[] = ['top', 'end', 'bottom', 'start']
 
+// One anchor + panel ref per placement so each button hovers its own
+// tooltip with the matching `class="{placement}"` on the panel. The
+// placement modifier (top / end / bottom / start) is what tells the
+// framework's anchor-position rules which side to land the tooltip on.
+const placementAnchors = {
+	top: ref<HTMLElement | null>(null),
+	end: ref<HTMLElement | null>(null),
+	bottom: ref<HTMLElement | null>(null),
+	start: ref<HTMLElement | null>(null),
+}
+const placementPanels = {
+	top: ref<HTMLElement | null>(null),
+	end: ref<HTMLElement | null>(null),
+	bottom: ref<HTMLElement | null>(null),
+	start: ref<HTMLElement | null>(null),
+}
+for (const pl of placements) {
+	useTooltip({ anchor: placementAnchors[pl], panel: placementPanels[pl], placement: pl })
+}
+
 const delayed = ref<HTMLElement | null>(null)
 const delayedPanel = ref<HTMLElement | null>(null)
 useTooltip({
@@ -93,11 +113,24 @@ useTooltip({
 			<h2>Placements</h2>
 			<p class="showcase-caption">
 				Each placement value just sets the popover's class. The framework's anchor-position rules
-				handle the math.
+				handle the math — hover each button to see its tooltip surface on the matching side.
 			</p>
 			<div class="showcase-row">
 				<template v-for="pl in placements" :key="pl">
-					<button :id="`tt-${pl}`" type="button">{{ pl }}</button>
+					<button
+						:ref="(el) => (placementAnchors[pl].value = el as HTMLElement | null)"
+						type="button"
+					>
+						{{ pl }}
+					</button>
+					<aside
+						:ref="(el) => (placementPanels[pl].value = el as HTMLElement | null)"
+						popover
+						role="tooltip"
+						:class="pl"
+					>
+						{{ pl }} placement
+					</aside>
 				</template>
 			</div>
 		</section>

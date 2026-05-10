@@ -118,14 +118,14 @@ const groupDisabled = ref(false)
 			<form ref="inlineForm">
 				<label>
 					Name <input name="name" required minlength="2" />
-					<small v-if="inline.validity.value.name && !inline.validity.value.name.valid">
-						Name must be at least 2 characters.
+					<small v-if="inline.validity.message('name')">
+						{{ inline.validity.message('name') }}
 					</small>
 				</label>
 				<label>
 					Email <input name="email" type="email" required />
-					<small v-if="inline.validity.value.email && !inline.validity.value.email.valid">
-						Enter a valid email address.
+					<small v-if="inline.validity.message('email')">
+						{{ inline.validity.message('email') }}
 					</small>
 				</label>
 				<small>

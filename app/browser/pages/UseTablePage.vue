@@ -255,7 +255,7 @@ const live = useTable(liveRef, {
 			</p>
 			<table ref="selectionRef"></table>
 			<small>
-				Selected: <code>{{ selection.selection.ids.value.length }}</code> rows.
+				Selected: <code>{{ selection.selection.ids.size }}</code> rows.
 				<button type="button" class="ghost small" @click="selection.selection.clear()">
 					Clear
 				</button>
@@ -286,7 +286,7 @@ const live = useTable(liveRef, {
 			</p>
 			<table ref="expansionRef"></table>
 			<small>
-				Expanded rows: <code>{{ expansion.expansion.ids.value.length }}</code>
+				Expanded rows: <code>{{ expansion.expansion.expanded.size }}</code>
 				<button type="button" class="ghost small" @click="expansion.expansion.clear()">
 					Collapse all
 				</button>
@@ -313,7 +313,7 @@ const live = useTable(liveRef, {
 				<button type="button" @click="pagination.pagination.prev()">‹ prev</button>
 				<small>
 					page <code>{{ pagination.pagination.page.value }}</code> /
-					<code>{{ pagination.pagination.pages.value }}</code>
+					<code>{{ pagination.pagination.count.value }}</code>
 					({{ pagination.pagination.size.value }} per page)
 				</small>
 				<button type="button" @click="pagination.pagination.next()">next ›</button>

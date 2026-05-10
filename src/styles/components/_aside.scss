@@ -167,12 +167,13 @@
 
 		padding-inline: var(--set-alert-padding-inline);
 		padding-block: var(--set-alert-padding-block);
-		// Surface fill is opt-in via `.filled`; default is a transparent
-		// background with a leading variant bar. Border-inline-start gives
-		// the bar; the rest of the perimeter stays unbordered so the alert
-		// sits cleanly inside its container's surface.
+		// Variant alerts paint a tinted bg + saturated leading bar +
+		// subtle perimeter (matches mailbox's `.alert-{variant}` shape).
+		// The default alert keeps a transparent surface and a single
+		// leading accent bar.
 		background-color: var(--set-alert-background-color);
 		color: var(--set-alert-color);
+		border: 1px solid transparent;
 		border-inline-start: var(--set-alert-bar-width) solid var(--set-alert-border-color);
 		border-radius: var(--set-alert-border-radius);
 
@@ -213,9 +214,58 @@
 		// Trailing dismiss: any direct-child button with `aria-label`
 		// matching common dismiss verbs sits at the inline-end edge with
 		// `margin-inline-start: auto`. We don't require a specific class —
-		// the button's own role + label do the talking.
+		// the button's own role + label do the talking. We also RESET
+		// the variant context tokens so the close button paints as a
+		// transparent ghost regardless of the parent alert's variant
+		// class — without this, an `<aside class="warning">` propagates
+		// `--set-variant-background-color: yellow` down the cascade and
+		// the dismiss `<button>` paints filled-yellow (the alert's own
+		// chrome reads through `--set-alert-*` so it isn't affected, but
+		// any descendant button picks up the variant context). Resetting
+		// here keeps the close affordance unobtrusive on every variant.
 		& > button:last-child {
 			margin-inline-start: auto;
+			--set-variant-background-color: transparent;
+			--set-variant-color: currentColor;
+			--set-variant-border-color: transparent;
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Variant tinting — mirrors mailbox's `.alert-{variant}` chrome via the
+	// shared `--color-{variant}-{bg-subtle, text-emphasis, border-subtle}`
+	// theme tokens (declared in `_theme.scss`, with light + dark formulas).
+	// Each variant paints a TINTED background + a saturated leading bar +
+	// a subtle perimeter border so the message identifies itself without
+	// shouting.
+	//
+	// `--set-alert-border-color` drives BOTH the perimeter (1px) and the
+	// leading accent bar (4px) — for variant alerts we want the leading
+	// bar saturated and the perimeter subtle, so we paint them with two
+	// different rules: the variant override sets `--set-alert-border-
+	// color: var(--color-{variant}-text-emphasis)` (saturated) for the
+	// bar, and a per-variant `border-color` declaration overrides the
+	// transparent perimeter border to `--color-{variant}-border-subtle`.
+	// --------------------------------------------------------------------------
+	@each $variant in (primary, secondary, tertiary, success, warning, danger, information) {
+		aside[role='alert'].#{$variant} {
+			--set-alert-color: var(--color-#{$variant}-text-emphasis);
+			--set-alert-background-color: var(--color-#{$variant}-bg-subtle);
+			--set-alert-border-color: var(--color-#{$variant}-text-emphasis);
+			border-color: var(--color-#{$variant}-border-subtle);
+		}
+
+		// Variant tinting for `<aside popover>` panels — same subtle
+		// recipe as alerts but driven through the popover surface
+		// tokens (`--set-popover-*`) so the rule beats the surface
+		// defaults from the components layer (popovers paint chrome
+		// from `surfaces/_popover.scss`, but `--set-popover-{color,
+		// background-color,border-color}` are read VARS so writing
+		// them here retunes the panel without re-painting properties).
+		aside[popover].#{$variant} {
+			--set-popover-color: var(--color-#{$variant}-text-emphasis);
+			--set-popover-background-color: var(--color-#{$variant}-bg-subtle);
+			--set-popover-border-color: var(--color-#{$variant}-border-subtle);
 		}
 	}
 

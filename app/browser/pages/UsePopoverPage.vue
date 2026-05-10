@@ -170,24 +170,28 @@ const sticky = usePopover({
 				<button
 					:ref="(el) => (variantAnchors.primary.value = el as HTMLElement | null)"
 					type="button"
+					class="primary"
 				>
 					Primary
 				</button>
 				<button
 					:ref="(el) => (variantAnchors.success.value = el as HTMLElement | null)"
 					type="button"
+					class="success"
 				>
 					Success
 				</button>
 				<button
 					:ref="(el) => (variantAnchors.warning.value = el as HTMLElement | null)"
 					type="button"
+					class="warning"
 				>
 					Warning
 				</button>
 				<button
 					:ref="(el) => (variantAnchors.danger.value = el as HTMLElement | null)"
 					type="button"
+					class="danger"
 				>
 					Danger
 				</button>

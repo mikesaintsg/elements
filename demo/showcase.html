@@ -10363,27 +10363,41 @@ const tokens = {
 									{ id: `variants` },
 									[
 										Y(`h2`, null, `Variants`),
-										Y(
-											`p`,
-											{ class: `showcase-caption` },
-											` Same composable across every variant — only the modifier class changes. `,
-										),
+										Y(`p`, { class: `showcase-caption` }, [
+											X(
+												` Same composable across every variant — only the modifier class changes. The static demos below carry `,
+											),
+											Y(`code`, null, `data-alert-open`),
+											X(` so they paint without a `),
+											Y(`code`, null, `useAlert()`),
+											X(` binding (the composable's `),
+											Y(`code`, null, `show()`),
+											X(` is what writes that attribute on dynamic alerts). `),
+										]),
 										Y(`div`, { class: `showcase-stack` }, [
-											Y(`aside`, { role: `alert`, class: `primary` }, [
+											Y(`aside`, { role: `alert`, class: `primary`, 'data-alert-open': `` }, [
 												Y(`strong`, null, `Primary.`),
-												X(` Headline notice.`),
+												X(` Headline notice for the page. `),
 											]),
-											Y(`aside`, { role: `alert`, class: `success` }, [
+											Y(`aside`, { role: `alert`, class: `secondary`, 'data-alert-open': `` }, [
+												Y(`strong`, null, `Secondary.`),
+												X(` Quiet contextual reminder. `),
+											]),
+											Y(`aside`, { role: `alert`, class: `success`, 'data-alert-open': `` }, [
 												Y(`strong`, null, `Saved.`),
-												X(` Your changes are live.`),
+												X(` Your changes are live. `),
 											]),
-											Y(`aside`, { role: `alert`, class: `warning` }, [
+											Y(`aside`, { role: `alert`, class: `information`, 'data-alert-open': `` }, [
+												Y(`strong`, null, `New comment.`),
+												X(` Posted by Ada Lovelace. `),
+											]),
+											Y(`aside`, { role: `alert`, class: `warning`, 'data-alert-open': `` }, [
 												Y(`strong`, null, `Heads up.`),
-												X(` Unsaved sections.`),
+												X(` You have 3 unsaved sections. `),
 											]),
-											Y(`aside`, { role: `alert`, class: `danger` }, [
+											Y(`aside`, { role: `alert`, class: `danger`, 'data-alert-open': `` }, [
 												Y(`strong`, null, `Connection lost.`),
-												X(` Retry shortly.`),
+												X(` Please retry in a moment. `),
 											]),
 										]),
 									],
@@ -13455,8 +13469,8 @@ const tokens = {
 													null,
 													-1,
 												)),
-												W(c).validity.value.name && !W(c).validity.value.name.valid
-													? (q(), J(`small`, $p, ` Name must be at least 2 characters. `))
+												W(c).validity.message(`name`)
+													? (q(), J(`small`, $p, R(W(c).validity.message(`name`)), 1))
 													: ia(``, !0),
 											]),
 											Y(`label`, null, [
@@ -13467,8 +13481,8 @@ const tokens = {
 													null,
 													-1,
 												)),
-												W(c).validity.value.email && !W(c).validity.value.email.valid
-													? (q(), J(`small`, em, ` Enter a valid email address. `))
+												W(c).validity.message(`email`)
+													? (q(), J(`small`, em, R(W(c).validity.message(`email`)), 1))
 													: ia(``, !0),
 											]),
 											Y(`small`, null, [
@@ -14815,25 +14829,25 @@ const tokens = {
 									Y(`div`, Jm, [
 										Y(
 											`button`,
-											{ ref: (e) => (p.primary.value = e), type: `button` },
+											{ ref: (e) => (p.primary.value = e), type: `button`, class: `primary` },
 											` Primary `,
 											512,
 										),
 										Y(
 											`button`,
-											{ ref: (e) => (p.success.value = e), type: `button` },
+											{ ref: (e) => (p.success.value = e), type: `button`, class: `success` },
 											` Success `,
 											512,
 										),
 										Y(
 											`button`,
-											{ ref: (e) => (p.warning.value = e), type: `button` },
+											{ ref: (e) => (p.warning.value = e), type: `button`, class: `warning` },
 											` Warning `,
 											512,
 										),
 										Y(
 											`button`,
-											{ ref: (e) => (p.danger.value = e), type: `button` },
+											{ ref: (e) => (p.danger.value = e), type: `button`, class: `danger` },
 											` Danger `,
 											512,
 										),
@@ -15671,7 +15685,7 @@ const tokens = {
 										Y(`table`, { ref_key: `selectionRef`, ref: i }, null, 512),
 										Y(`small`, null, [
 											(f[13] ||= X(` Selected: `, -1)),
-											Y(`code`, null, R(W(a).selection.ids.value.length), 1),
+											Y(`code`, null, R(W(a).selection.ids.size), 1),
 											(f[14] ||= X(` rows. `, -1)),
 											Y(
 												`button`,
@@ -15734,7 +15748,7 @@ const tokens = {
 										Y(`table`, { ref_key: `expansionRef`, ref: c }, null, 512),
 										Y(`small`, null, [
 											(f[20] ||= X(` Expanded rows: `, -1)),
-											Y(`code`, null, R(W(l).expansion.ids.value.length), 1),
+											Y(`code`, null, R(W(l).expansion.expanded.size), 1),
 											Y(
 												`button`,
 												{
@@ -15788,7 +15802,7 @@ const tokens = {
 												(f[25] ||= X(` page `, -1)),
 												Y(`code`, null, R(W(p).pagination.page.value), 1),
 												(f[26] ||= X(` / `, -1)),
-												Y(`code`, null, R(W(p).pagination.pages.value), 1),
+												Y(`code`, null, R(W(p).pagination.count.value), 1),
 												X(` (` + R(W(p).pagination.size.value) + ` per page) `, 1),
 											]),
 											Y(
@@ -17442,13 +17456,12 @@ toast.destroy()</code></pre>`,
 				Kg = { id: `basic` },
 				qg = { id: `placements` },
 				Jg = { class: `showcase-row` },
-				Yg = [`id`],
-				Xg = { id: `delay` },
-				Zg = { id: `programmatic` },
-				Qg = { class: `showcase-row` },
-				$g = { id: `content` },
-				e_ = { id: `scrollable` },
-				t_ = {
+				Yg = { id: `delay` },
+				Xg = { id: `programmatic` },
+				Zg = { class: `showcase-row` },
+				Qg = { id: `content` },
+				$g = { id: `scrollable` },
+				e_ = {
 					style: {
 						'block-size': `8rem`,
 						'overflow-y': `auto`,
@@ -17456,54 +17469,57 @@ toast.destroy()</code></pre>`,
 						padding: `1rem`,
 					},
 				},
-				n_ = { id: `lifecycle` },
-				r_ = { key: 0 },
-				i_ = { key: 1 },
-				a_ = Zn({
+				t_ = { id: `lifecycle` },
+				n_ = { key: 0 },
+				r_ = { key: 1 },
+				i_ = Zn({
 					__name: `UseTooltipPage`,
 					setup(e) {
 						let t = U(null),
 							n = U(null),
 							r = Zl({ anchor: t, panel: n, placement: `top` }),
 							i = [`top`, `end`, `bottom`, `start`],
-							a = U(null),
-							o = U(null)
-						Zl({ anchor: a, panel: o, placement: `top`, delay: { show: 600, hide: 100 } })
+							a = { top: U(null), end: U(null), bottom: U(null), start: U(null) },
+							o = { top: U(null), end: U(null), bottom: U(null), start: U(null) }
+						for (let e of i) Zl({ anchor: a[e], panel: o[e], placement: e })
 						let s = U(null),
-							c = U(null),
-							l = Zl({ anchor: s, panel: c, placement: `top` }),
+							c = U(null)
+						Zl({ anchor: s, panel: c, placement: `top`, delay: { show: 600, hide: 100 } })
+						let l = U(null),
 							u = U(null),
-							d = U(null)
-						Zl({ anchor: u, panel: d, placement: `top` })
-						let f = U(null),
+							d = Zl({ anchor: l, panel: u, placement: `top` }),
+							f = U(null),
 							p = U(null)
 						Zl({ anchor: f, panel: p, placement: `top` })
 						let m = U(null),
-							h = U(null),
-							g = U([]),
-							_ = () => new Date().toLocaleTimeString()
+							h = U(null)
+						Zl({ anchor: m, panel: h, placement: `top` })
+						let g = U(null),
+							_ = U(null),
+							v = U([]),
+							y = () => new Date().toLocaleTimeString()
 						return (
 							Zl({
-								anchor: m,
-								panel: h,
+								anchor: g,
+								panel: _,
 								placement: `top`,
 								on: {
-									show: () => g.value.unshift({ at: _(), kind: `show` }),
-									open: () => g.value.unshift({ at: _(), kind: `open` }),
-									hide: () => g.value.unshift({ at: _(), kind: `hide` }),
-									close: () => g.value.unshift({ at: _(), kind: `close` }),
+									show: () => v.value.unshift({ at: y(), kind: `show` }),
+									open: () => v.value.unshift({ at: y(), kind: `open` }),
+									hide: () => v.value.unshift({ at: y(), kind: `hide` }),
+									close: () => v.value.unshift({ at: y(), kind: `close` }),
 								},
 							}),
-							(e, _) => (
+							(e, y) => (
 								q(),
 								J(`section`, null, [
-									(_[25] ||= Z(
+									(y[25] ||= Z(
 										`<header><h1>useTooltip</h1><p> Hover / focus tooltip on top of a <code>[popover]</code> panel. Tags the panel with <code>role=&quot;tooltip&quot;</code>, attaches hover + focus triggers, and exposes <code>show / hide / toggle</code> for programmatic control. </p></header><section id="signature"><h2>Signature</h2><pre><code>useTooltip({ anchor, panel, arrow?, placement?, delay?, dismiss?, on? }): { visible, placement, show(), hide(), toggle(), update() }</code></pre></section>`,
 										2,
 									)),
 									Y(`section`, Kg, [
-										(_[5] ||= Y(`h2`, null, `Hover / focus tooltip`, -1)),
-										(_[6] ||= Y(
+										(y[5] ||= Y(`h2`, null, `Hover / focus tooltip`, -1)),
+										(y[6] ||= Y(
 											`p`,
 											{ class: `showcase-caption` },
 											[
@@ -17523,16 +17539,16 @@ toast.destroy()</code></pre>`,
 											512,
 										),
 										Y(`small`, null, [
-											(_[4] ||= X(`visible = `, -1)),
+											(y[4] ||= X(`visible = `, -1)),
 											Y(`code`, null, R(W(r).visible.value), 1),
 										]),
 									]),
 									Y(`section`, qg, [
-										(_[7] ||= Y(`h2`, null, `Placements`, -1)),
-										(_[8] ||= Y(
+										(y[7] ||= Y(`h2`, null, `Placements`, -1)),
+										(y[8] ||= Y(
 											`p`,
 											{ class: `showcase-caption` },
-											` Each placement value just sets the popover's class. The framework's anchor-position rules handle the math. `,
+											` Each placement value just sets the popover's class. The framework's anchor-position rules handle the math — hover each button to see its tooltip surface on the matching side. `,
 											-1,
 										)),
 										Y(`div`, Jg, [
@@ -17540,16 +17556,44 @@ toast.destroy()</code></pre>`,
 											J(
 												K,
 												null,
-												G(i, (e) =>
-													Y(`button`, { key: e, id: `tt-${e}`, type: `button` }, R(e), 9, Yg),
+												G(
+													i,
+													(e) => (
+														q(),
+														J(
+															K,
+															{ key: e },
+															[
+																Y(
+																	`button`,
+																	{ ref_for: !0, ref: (t) => (a[e].value = t), type: `button` },
+																	R(e),
+																	513,
+																),
+																Y(
+																	`aside`,
+																	{
+																		ref_for: !0,
+																		ref: (t) => (o[e].value = t),
+																		popover: ``,
+																		role: `tooltip`,
+																		class: F(e),
+																	},
+																	R(e) + ` placement `,
+																	3,
+																),
+															],
+															64,
+														)
+													),
 												),
 												64,
 											)),
 										]),
 									]),
-									Y(`section`, Xg, [
-										(_[9] ||= Y(`h2`, null, `Show / hide delay`, -1)),
-										(_[10] ||= Y(
+									Y(`section`, Yg, [
+										(y[9] ||= Y(`h2`, null, `Show / hide delay`, -1)),
+										(y[10] ||= Y(
 											`p`,
 											{ class: `showcase-caption` },
 											` 600ms show delay, 100ms hide delay — feels like macOS-style menu chrome. `,
@@ -17557,7 +17601,7 @@ toast.destroy()</code></pre>`,
 										)),
 										Y(
 											`button`,
-											{ ref_key: `delayed`, ref: a, type: `button` },
+											{ ref_key: `delayed`, ref: s, type: `button` },
 											`Hover slowly`,
 											512,
 										),
@@ -17565,7 +17609,7 @@ toast.destroy()</code></pre>`,
 											`aside`,
 											{
 												ref_key: `delayedPanel`,
-												ref: o,
+												ref: c,
 												popover: ``,
 												role: `tooltip`,
 												class: `top`,
@@ -17574,34 +17618,34 @@ toast.destroy()</code></pre>`,
 											512,
 										),
 									]),
-									Y(`section`, Zg, [
-										(_[11] ||= Y(`h2`, null, `Programmatic control`, -1)),
-										(_[12] ||= Y(
+									Y(`section`, Xg, [
+										(y[11] ||= Y(`h2`, null, `Programmatic control`, -1)),
+										(y[12] ||= Y(
 											`p`,
 											{ class: `showcase-caption` },
 											` Trigger the tooltip from any other action — useful for "what changed?" indicators that surface a tooltip when an upstream value mutates. `,
 											-1,
 										)),
-										Y(`div`, Qg, [
+										Y(`div`, Zg, [
 											Y(
 												`button`,
-												{ ref_key: `programmaticAnchor`, ref: s, type: `button` },
+												{ ref_key: `programmaticAnchor`, ref: l, type: `button` },
 												`Anchor`,
 												512,
 											),
 											Y(
 												`button`,
-												{ type: `button`, onClick: (_[0] ||= (e) => W(l).show()) },
+												{ type: `button`, onClick: (y[0] ||= (e) => W(d).show()) },
 												`show()`,
 											),
 											Y(
 												`button`,
-												{ type: `button`, onClick: (_[1] ||= (e) => W(l).hide()) },
+												{ type: `button`, onClick: (y[1] ||= (e) => W(d).hide()) },
 												`hide()`,
 											),
 											Y(
 												`button`,
-												{ type: `button`, onClick: (_[2] ||= (e) => W(l).toggle()) },
+												{ type: `button`, onClick: (y[2] ||= (e) => W(d).toggle()) },
 												`toggle()`,
 											),
 										]),
@@ -17609,7 +17653,7 @@ toast.destroy()</code></pre>`,
 											`aside`,
 											{
 												ref_key: `programmaticPanel`,
-												ref: c,
+												ref: u,
 												popover: ``,
 												role: `tooltip`,
 												class: `top`,
@@ -17618,9 +17662,9 @@ toast.destroy()</code></pre>`,
 											512,
 										),
 									]),
-									Y(`section`, $g, [
-										(_[14] ||= Y(`h2`, null, `Content shapes`, -1)),
-										(_[15] ||= Y(
+									Y(`section`, Qg, [
+										(y[14] ||= Y(`h2`, null, `Content shapes`, -1)),
+										(y[15] ||= Y(
 											`p`,
 											{ class: `showcase-caption` },
 											` The tooltip panel accepts any HTML — not just text. Headings, lists, even buttons (for nested controls) all work. `,
@@ -17628,15 +17672,15 @@ toast.destroy()</code></pre>`,
 										)),
 										Y(
 											`button`,
-											{ ref_key: `richAnchor`, ref: u, type: `button` },
+											{ ref_key: `richAnchor`, ref: f, type: `button` },
 											`Hover for rich content`,
 											512,
 										),
 										Y(
 											`aside`,
-											{ ref_key: `richPanel`, ref: d, popover: ``, role: `tooltip`, class: `top` },
+											{ ref_key: `richPanel`, ref: p, popover: ``, role: `tooltip`, class: `top` },
 											[
-												...(_[13] ||= [
+												...(y[13] ||= [
 													Y(`strong`, null, `Storage`, -1),
 													Y(
 														`ul`,
@@ -17653,32 +17697,32 @@ toast.destroy()</code></pre>`,
 											512,
 										),
 									]),
-									Y(`section`, e_, [
-										(_[21] ||= Y(`h2`, null, `Inside a scrollable container`, -1)),
-										(_[22] ||= Y(
+									Y(`section`, $g, [
+										(y[21] ||= Y(`h2`, null, `Inside a scrollable container`, -1)),
+										(y[22] ||= Y(
 											`p`,
 											{ class: `showcase-caption` },
 											` Verifies the tooltip's anchor positioning follows the trigger as the surrounding scroller moves. Open the tooltip, then scroll the panel. `,
 											-1,
 										)),
-										Y(`div`, t_, [
-											(_[16] ||= Y(`p`, null, `Scroll me…`, -1)),
-											(_[17] ||= Y(`p`, null, `Scroll me…`, -1)),
+										Y(`div`, e_, [
+											(y[16] ||= Y(`p`, null, `Scroll me…`, -1)),
+											(y[17] ||= Y(`p`, null, `Scroll me…`, -1)),
 											Y(
 												`button`,
-												{ ref_key: `scrollableAnchor`, ref: f, type: `button` },
+												{ ref_key: `scrollableAnchor`, ref: m, type: `button` },
 												`Hover me, then scroll`,
 												512,
 											),
-											(_[18] ||= Y(`p`, null, `More content below.`, -1)),
-											(_[19] ||= Y(`p`, null, `Even more.`, -1)),
-											(_[20] ||= Y(`p`, null, `Keep scrolling.`, -1)),
+											(y[18] ||= Y(`p`, null, `More content below.`, -1)),
+											(y[19] ||= Y(`p`, null, `Even more.`, -1)),
+											(y[20] ||= Y(`p`, null, `Keep scrolling.`, -1)),
 										]),
 										Y(
 											`aside`,
 											{
 												ref_key: `scrollablePanel`,
-												ref: p,
+												ref: h,
 												popover: ``,
 												role: `tooltip`,
 												class: `top`,
@@ -17687,9 +17731,9 @@ toast.destroy()</code></pre>`,
 											512,
 										),
 									]),
-									Y(`section`, n_, [
-										(_[23] ||= Y(`h2`, null, `Lifecycle event log`, -1)),
-										(_[24] ||= Y(
+									Y(`section`, t_, [
+										(y[23] ||= Y(`h2`, null, `Lifecycle event log`, -1)),
+										(y[24] ||= Y(
 											`p`,
 											{ class: `showcase-caption` },
 											[
@@ -17704,13 +17748,13 @@ toast.destroy()</code></pre>`,
 										)),
 										Y(
 											`button`,
-											{ ref_key: `logAnchor`, ref: m, type: `button` },
+											{ ref_key: `logAnchor`, ref: g, type: `button` },
 											`Hover to log`,
 											512,
 										),
 										Y(
 											`aside`,
-											{ ref_key: `logPanel`, ref: h, popover: ``, role: `tooltip`, class: `top` },
+											{ ref_key: `logPanel`, ref: _, popover: ``, role: `tooltip`, class: `top` },
 											`Watching events.`,
 											512,
 										),
@@ -17719,20 +17763,20 @@ toast.destroy()</code></pre>`,
 											{
 												type: `button`,
 												class: `ghost small`,
-												onClick: (_[3] ||= (e) => (g.value = [])),
+												onClick: (y[3] ||= (e) => (v.value = [])),
 											},
 											`clear log`,
 										),
-										g.value.length === 0
-											? (q(), J(`small`, r_, `No events yet.`))
+										v.value.length === 0
+											? (q(), J(`small`, n_, `No events yet.`))
 											: (q(),
-												J(`ul`, i_, [
+												J(`ul`, r_, [
 													(q(!0),
 													J(
 														K,
 														null,
 														G(
-															g.value,
+															v.value,
 															(e, t) => (
 																q(),
 																J(`li`, { key: t }, [
@@ -17745,7 +17789,7 @@ toast.destroy()</code></pre>`,
 													)),
 												])),
 									]),
-									(_[26] ||= Z(
+									(y[26] ||= Z(
 										`<section id="api"><h2>API</h2><table><thead><tr><th>Option</th><th>Type</th><th>Default</th></tr></thead><tbody><tr><td><code>placement</code></td><td><code>Placement</code></td><td><code>&#39;bottom&#39;</code></td></tr><tr><td><code>delay.show</code></td><td><code>number</code></td><td><code>0</code></td></tr><tr><td><code>delay.hide</code></td><td><code>number</code></td><td><code>0</code></td></tr><tr><td><code>dismiss.escape</code></td><td><code>boolean</code></td><td><code>true</code></td></tr></tbody></table><h3>Events</h3><table><thead><tr><th>Name</th><th>Cancelable</th></tr></thead><tbody><tr><td><code>elements:tooltip:show</code></td><td>yes</td></tr><tr><td><code>elements:tooltip:open</code></td><td>no</td></tr><tr><td><code>elements:tooltip:hide</code></td><td>yes</td></tr><tr><td><code>elements:tooltip:close</code></td><td>no</td></tr><tr><td><code>elements:tooltip:place</code></td><td>no</td></tr></tbody></table></section>`,
 										1,
 									)),
@@ -17754,9 +17798,9 @@ toast.destroy()</code></pre>`,
 						)
 					},
 				}),
-				o_ = { id: `home`, title: `Overview`, group: `Getting started`, page: tu },
-				s_ = [
-					o_,
+				a_ = { id: `home`, title: `Overview`, group: `Getting started`, page: tu },
+				o_ = [
+					a_,
 					{ id: `a`, title: `a (anchor)`, group: `Elements`, page: au },
 					{ id: `button`, title: `button`, group: `Elements`, page: lu },
 					{ id: `dialog`, title: `dialog`, group: `Elements`, page: pu },
@@ -17795,36 +17839,36 @@ toast.destroy()</code></pre>`,
 					{ id: `use-tabs`, title: `useTabs`, group: `Composables`, page: ug },
 					{ id: `use-theme`, title: `useTheme`, group: `Composables`, page: wg },
 					{ id: `use-toast`, title: `useToast`, group: `Composables`, page: Gg },
-					{ id: `use-tooltip`, title: `useTooltip`, group: `Composables`, page: a_ },
+					{ id: `use-tooltip`, title: `useTooltip`, group: `Composables`, page: i_ },
 				],
-				c_ = (e) => {
+				s_ = (e) => {
 					let t = window.location.hash
 					if (!t.startsWith(`#/`)) return { id: e, section: null }
 					let n = t.slice(2).split(`/`),
 						r = n[0] ?? ``
 					return {
-						id: s_.some((e) => e.id === r) ? r : `home`,
+						id: o_.some((e) => e.id === r) ? r : `home`,
 						section: n.slice(1).filter(Boolean).join(`/`) || null,
 					}
 				},
-				l_ = typeof window > `u` ? { id: `home`, section: null } : c_(`home`),
-				u_ = U(l_.id),
-				d_ = U(l_.section)
+				c_ = typeof window > `u` ? { id: `home`, section: null } : s_(`home`),
+				l_ = U(c_.id),
+				u_ = U(c_.section)
 			typeof window < `u` &&
 				window.addEventListener(`hashchange`, () => {
-					let e = c_(u_.value)
-					;((u_.value = e.id), (d_.value = e.section))
+					let e = s_(l_.value)
+					;((l_.value = e.id), (u_.value = e.section))
 				})
-			var f_ = u_,
-				p_ = d_,
-				m_ = Q(() => s_.find((e) => e.id === u_.value) ?? o_),
-				h_ = (e, t) => {
+			var d_ = l_,
+				f_ = u_,
+				p_ = Q(() => o_.find((e) => e.id === l_.value) ?? a_),
+				m_ = (e, t) => {
 					window.location.hash = t ? `#/${e}/${t}` : `#/${e}`
 				},
-				g_ = { class: `showcase-rail-group-title` },
-				__ = { class: `showcase-rail-list` },
-				v_ = [`href`, `aria-current`, `onClick`],
-				y_ = Zn({
+				h_ = { class: `showcase-rail-group-title` },
+				g_ = { class: `showcase-rail-list` },
+				__ = [`href`, `aria-current`, `onClick`],
+				v_ = Zn({
 					__name: `SiteNav`,
 					props: { routes: {} },
 					emits: [`navigate`],
@@ -17834,14 +17878,14 @@ toast.destroy()</code></pre>`,
 							i = U(null),
 							a = Q(() => {
 								let e = new Map()
-								for (let t of n.routes ?? s_) {
+								for (let t of n.routes ?? o_) {
 									let n = e.get(t.group) ?? []
 									;(n.push({ id: t.id, title: t.title }), e.set(t.group, n))
 								}
 								return Array.from(e, ([e, t]) => ({ name: e, items: t }))
 							}),
 							o = (e) => {
-								;(h_(e), r(`navigate`, e))
+								;(m_(e), r(`navigate`, e))
 							},
 							s = (e) => {
 								if (e.key !== `ArrowDown` && e.key !== `ArrowUp`) return
@@ -17873,8 +17917,8 @@ toast.destroy()</code></pre>`,
 											(e) => (
 												q(),
 												J(`section`, { key: e.name, class: `showcase-rail-group` }, [
-													Y(`h2`, g_, R(e.name), 1),
-													Y(`ul`, __, [
+													Y(`h2`, h_, R(e.name), 1),
+													Y(`ul`, g_, [
 														(q(!0),
 														J(
 															K,
@@ -17888,13 +17932,13 @@ toast.destroy()</code></pre>`,
 																			`a`,
 																			{
 																				href: `#/${e.id}`,
-																				'aria-current': W(f_) === e.id ? `page` : void 0,
+																				'aria-current': W(d_) === e.id ? `page` : void 0,
 																				class: `showcase-rail-link`,
 																				onClick: jo((t) => o(e.id), [`prevent`]),
 																			},
 																			R(e.title),
 																			9,
-																			v_,
+																			__,
 																		),
 																	])
 																),
@@ -17913,11 +17957,11 @@ toast.destroy()</code></pre>`,
 						)
 					},
 				}),
-				b_ = { key: 0, 'aria-label': `Table of contents` },
-				x_ = { class: `showcase-toc-list` },
-				S_ = [`data-level`],
-				C_ = [`href`, `onClick`],
-				w_ = Zn({
+				y_ = { key: 0, 'aria-label': `Table of contents` },
+				b_ = { class: `showcase-toc-list` },
+				x_ = [`data-level`],
+				S_ = [`href`, `onClick`],
+				C_ = Zn({
 					__name: `Toc`,
 					props: { scroller: {} },
 					setup(e) {
@@ -17944,7 +17988,7 @@ toast.destroy()</code></pre>`,
 							},
 							i = null
 						;(jn(
-							() => f_.value,
+							() => d_.value,
 							() => {
 								;(i?.disconnect(), (i = null))
 								let e = t.scroller
@@ -17970,8 +18014,8 @@ toast.destroy()</code></pre>`,
 						return (e, t) =>
 							n.value.length
 								? (q(),
-									J(`nav`, b_, [
-										Y(`ol`, x_, [
+									J(`nav`, y_, [
+										Y(`ol`, b_, [
 											(q(!0),
 											J(
 												K,
@@ -17989,11 +18033,11 @@ toast.destroy()</code></pre>`,
 																	{ href: `#${e.id}`, onClick: jo((t) => a(e.id), [`prevent`]) },
 																	R(e.label),
 																	9,
-																	C_,
+																	S_,
 																),
 															],
 															8,
-															S_,
+															x_,
 														)
 													),
 												),
@@ -18004,16 +18048,16 @@ toast.destroy()</code></pre>`,
 								: ia(``, !0)
 					},
 				}),
-				T_ = { class: `showcase-banner` },
-				E_ = [`aria-label`, `title`],
-				D_ = { 'aria-hidden': `true` },
-				O_ = [`data-sidebar-open`],
-				k_ = { class: `showcase-rail-header` },
-				A_ = [`aria-label`, `title`],
-				j_ = { 'aria-hidden': `true` },
-				M_ = { key: 0, class: `showcase-empty` },
-				N_ = { class: `showcase-page` },
-				P_ = { id: `toc` }
+				w_ = { class: `showcase-banner` },
+				T_ = [`aria-label`, `title`],
+				E_ = { 'aria-hidden': `true` },
+				D_ = [`data-sidebar-open`],
+				O_ = { class: `showcase-rail-header` },
+				k_ = [`aria-label`, `title`],
+				A_ = { 'aria-hidden': `true` },
+				j_ = { key: 0, class: `showcase-empty` },
+				M_ = { class: `showcase-page` },
+				N_ = { id: `toc` }
 			Fo(
 				Zn({
 					__name: `App`,
@@ -18024,13 +18068,13 @@ toast.destroy()</code></pre>`,
 							i = Q(() => {
 								let e = r.value.trim().toLowerCase()
 								return e
-									? s_.filter(
+									? o_.filter(
 											(t) =>
 												t.title.toLowerCase().includes(e) ||
 												t.id.toLowerCase().includes(e) ||
 												t.group.toLowerCase().includes(e),
 										)
-									: s_
+									: o_
 							}),
 							a = U(null),
 							o = async (e) => {
@@ -18047,7 +18091,7 @@ toast.destroy()</code></pre>`,
 									t.scrollTop = 0
 								}
 							}
-						jn([f_, p_], ([, e]) => {
+						jn([d_, f_], ([, e]) => {
 							o(e)
 						})
 						let s = (e) => {
@@ -18056,13 +18100,13 @@ toast.destroy()</code></pre>`,
 								(e.preventDefault(), document.querySelector(`#sidebar-filter`)?.focus())
 						}
 						;(pr(() => {
-							;(document.addEventListener(`keydown`, s), o(p_.value))
+							;(document.addEventListener(`keydown`, s), o(f_.value))
 						}),
 							_r(() => {
 								document.removeEventListener(`keydown`, s)
 							}))
 						let c = (e) => {
-							;(e.preventDefault(), h_(`home`), (n.value = !1))
+							;(e.preventDefault(), m_(`home`), (n.value = !1))
 						}
 						return (e, o) => (
 							q(),
@@ -18079,7 +18123,7 @@ toast.destroy()</code></pre>`,
 												onClick: (o[0] ||= (e) => (n.value = !1)),
 											}))
 										: ia(``, !0),
-									Y(`header`, T_, [
+									Y(`header`, w_, [
 										Y(
 											`button`,
 											{
@@ -18101,11 +18145,11 @@ toast.destroy()</code></pre>`,
 												onClick: (o[2] ||= (e) => W(t).toggle()),
 											},
 											[
-												Y(`span`, D_, R(W(t).theme.value === `dark` ? `☾` : `☼`), 1),
+												Y(`span`, E_, R(W(t).theme.value === `dark` ? `☾` : `☼`), 1),
 												Y(`small`, null, R(W(t).setting.value), 1),
 											],
 											8,
-											E_,
+											T_,
 										),
 									]),
 									Y(
@@ -18117,7 +18161,7 @@ toast.destroy()</code></pre>`,
 											'data-sidebar-open': n.value ? `` : null,
 										},
 										[
-											Y(`header`, k_, [
+											Y(`header`, O_, [
 												Y(`a`, { href: `#/home`, class: `showcase-brand`, onClick: c }, `elements`),
 												Y(
 													`button`,
@@ -18129,11 +18173,11 @@ toast.destroy()</code></pre>`,
 														onClick: (o[3] ||= (e) => W(t).toggle()),
 													},
 													[
-														Y(`span`, j_, R(W(t).theme.value === `dark` ? `☾` : `☼`), 1),
+														Y(`span`, A_, R(W(t).theme.value === `dark` ? `☾` : `☼`), 1),
 														Y(`small`, null, R(W(t).setting.value), 1),
 													],
 													8,
-													A_,
+													k_,
 												),
 												Y(
 													`button`,
@@ -18171,28 +18215,28 @@ toast.destroy()</code></pre>`,
 												-1,
 											)),
 											ea(
-												y_,
+												v_,
 												{ routes: i.value, onNavigate: (o[6] ||= (e) => (n.value = !1)) },
 												null,
 												8,
 												[`routes`],
 											),
 											i.value.length === 0
-												? (q(), J(`p`, M_, ` No results for "` + R(r.value) + `" `, 1))
+												? (q(), J(`p`, j_, ` No results for "` + R(r.value) + `" `, 1))
 												: ia(``, !0),
 										],
 										8,
-										O_,
+										D_,
 									),
 									Y(
 										`main`,
 										{ ref_key: `scrollerRef`, ref: a },
-										[Y(`div`, N_, [(q(), Yi(wr(W(m_).page), { key: W(m_).id }))])],
+										[Y(`div`, M_, [(q(), Yi(wr(W(p_).page), { key: W(p_).id }))])],
 										512,
 									),
-									Y(`aside`, P_, [
+									Y(`aside`, N_, [
 										(o[8] ||= Y(`header`, { class: `showcase-toc-header` }, `On this page`, -1)),
-										ea(w_, { scroller: a.value }, null, 8, [`scroller`]),
+										ea(C_, { scroller: a.value }, null, 8, [`scroller`]),
 									]),
 									(o[9] ||= Y(`footer`, null, [Y(`p`, null, `© 2026 elements`)], -1)),
 								],
@@ -19872,6 +19916,7 @@ toast.destroy()</code></pre>`,
 					padding-block: var(--set-alert-padding-block);
 					background-color: var(--set-alert-background-color);
 					color: var(--set-alert-color);
+					border: 1px solid #0000;
 					border-inline-start: var(--set-alert-bar-width) solid var(--set-alert-border-color);
 					border-radius: var(--set-alert-border-radius);
 					opacity: 0;
@@ -19898,7 +19943,87 @@ toast.destroy()</code></pre>`,
 					visibility: visible;
 				}
 				aside[role='alert'] > button:last-child {
+					--set-variant-background-color: transparent;
+					--set-variant-color: currentColor;
+					--set-variant-border-color: transparent;
 					margin-inline-start: auto;
+				}
+				aside[role='alert'].primary {
+					--set-alert-color: var(--color-primary-text-emphasis);
+					--set-alert-background-color: var(--color-primary-bg-subtle);
+					--set-alert-border-color: var(--color-primary-text-emphasis);
+					border-color: var(--color-primary-border-subtle);
+				}
+				aside[popover].primary {
+					--set-popover-color: var(--color-primary-text-emphasis);
+					--set-popover-background-color: var(--color-primary-bg-subtle);
+					--set-popover-border-color: var(--color-primary-border-subtle);
+				}
+				aside[role='alert'].secondary {
+					--set-alert-color: var(--color-secondary-text-emphasis);
+					--set-alert-background-color: var(--color-secondary-bg-subtle);
+					--set-alert-border-color: var(--color-secondary-text-emphasis);
+					border-color: var(--color-secondary-border-subtle);
+				}
+				aside[popover].secondary {
+					--set-popover-color: var(--color-secondary-text-emphasis);
+					--set-popover-background-color: var(--color-secondary-bg-subtle);
+					--set-popover-border-color: var(--color-secondary-border-subtle);
+				}
+				aside[role='alert'].tertiary {
+					--set-alert-color: var(--color-tertiary-text-emphasis);
+					--set-alert-background-color: var(--color-tertiary-bg-subtle);
+					--set-alert-border-color: var(--color-tertiary-text-emphasis);
+					border-color: var(--color-tertiary-border-subtle);
+				}
+				aside[popover].tertiary {
+					--set-popover-color: var(--color-tertiary-text-emphasis);
+					--set-popover-background-color: var(--color-tertiary-bg-subtle);
+					--set-popover-border-color: var(--color-tertiary-border-subtle);
+				}
+				aside[role='alert'].success {
+					--set-alert-color: var(--color-success-text-emphasis);
+					--set-alert-background-color: var(--color-success-bg-subtle);
+					--set-alert-border-color: var(--color-success-text-emphasis);
+					border-color: var(--color-success-border-subtle);
+				}
+				aside[popover].success {
+					--set-popover-color: var(--color-success-text-emphasis);
+					--set-popover-background-color: var(--color-success-bg-subtle);
+					--set-popover-border-color: var(--color-success-border-subtle);
+				}
+				aside[role='alert'].warning {
+					--set-alert-color: var(--color-warning-text-emphasis);
+					--set-alert-background-color: var(--color-warning-bg-subtle);
+					--set-alert-border-color: var(--color-warning-text-emphasis);
+					border-color: var(--color-warning-border-subtle);
+				}
+				aside[popover].warning {
+					--set-popover-color: var(--color-warning-text-emphasis);
+					--set-popover-background-color: var(--color-warning-bg-subtle);
+					--set-popover-border-color: var(--color-warning-border-subtle);
+				}
+				aside[role='alert'].danger {
+					--set-alert-color: var(--color-danger-text-emphasis);
+					--set-alert-background-color: var(--color-danger-bg-subtle);
+					--set-alert-border-color: var(--color-danger-text-emphasis);
+					border-color: var(--color-danger-border-subtle);
+				}
+				aside[popover].danger {
+					--set-popover-color: var(--color-danger-text-emphasis);
+					--set-popover-background-color: var(--color-danger-bg-subtle);
+					--set-popover-border-color: var(--color-danger-border-subtle);
+				}
+				aside[role='alert'].information {
+					--set-alert-color: var(--color-information-text-emphasis);
+					--set-alert-background-color: var(--color-information-bg-subtle);
+					--set-alert-border-color: var(--color-information-text-emphasis);
+					border-color: var(--color-information-border-subtle);
+				}
+				aside[popover].information {
+					--set-popover-color: var(--color-information-text-emphasis);
+					--set-popover-background-color: var(--color-information-bg-subtle);
+					--set-popover-border-color: var(--color-information-border-subtle);
 				}
 				body {
 					background-color: var(--color-canvas);

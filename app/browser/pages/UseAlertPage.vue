@@ -66,13 +66,30 @@ const placement = useAlert(placementRef)
 		<section id="variants">
 			<h2>Variants</h2>
 			<p class="showcase-caption">
-				Same composable across every variant — only the modifier class changes.
+				Same composable across every variant — only the modifier class changes. The static demos
+				below carry <code>data-alert-open</code> so they paint without a
+				<code>useAlert()</code> binding (the composable's <code>show()</code> is what writes that
+				attribute on dynamic alerts).
 			</p>
 			<div class="showcase-stack">
-				<aside role="alert" class="primary"><strong>Primary.</strong> Headline notice.</aside>
-				<aside role="alert" class="success"><strong>Saved.</strong> Your changes are live.</aside>
-				<aside role="alert" class="warning"><strong>Heads up.</strong> Unsaved sections.</aside>
-				<aside role="alert" class="danger"><strong>Connection lost.</strong> Retry shortly.</aside>
+				<aside role="alert" class="primary" data-alert-open>
+					<strong>Primary.</strong> Headline notice for the page.
+				</aside>
+				<aside role="alert" class="secondary" data-alert-open>
+					<strong>Secondary.</strong> Quiet contextual reminder.
+				</aside>
+				<aside role="alert" class="success" data-alert-open>
+					<strong>Saved.</strong> Your changes are live.
+				</aside>
+				<aside role="alert" class="information" data-alert-open>
+					<strong>New comment.</strong> Posted by Ada Lovelace.
+				</aside>
+				<aside role="alert" class="warning" data-alert-open>
+					<strong>Heads up.</strong> You have 3 unsaved sections.
+				</aside>
+				<aside role="alert" class="danger" data-alert-open>
+					<strong>Connection lost.</strong> Please retry in a moment.
+				</aside>
 			</div>
 		</section>
 
