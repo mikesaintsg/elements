@@ -78,6 +78,21 @@ export const tokens = {
 		boxShadowOpacity: '--set-focus-box-shadow-opacity',
 	},
 
+	// Floater viewport budget — single source of truth for how a top-layer
+	// floating panel (popover, tooltip, toast, dropdown, drawer) respects
+	// the viewport edge on every form factor. The `mixins.floater-*` mixins
+	// consume these through `var()` chains, so a host-page retune at
+	// `:root` scope retunes every floater consumer at once.
+	floater: {
+		gutter: '--set-floater-gutter',
+		insetTop: '--set-floater-inset-top',
+		insetBottom: '--set-floater-inset-bottom',
+		insetStart: '--set-floater-inset-start',
+		insetEnd: '--set-floater-inset-end',
+		maxInlineSize: '--set-floater-max-inline-size',
+		maxBlockSize: '--set-floater-max-block-size',
+	},
+
 	// Variant context — set by .primary / .secondary / … modifier classes.
 	variant: {
 		color: '--set-variant-color',

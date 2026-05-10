@@ -269,6 +269,19 @@
 		}
 	}
 
+	// Windows High Contrast / forced-colors fallback for the alert banner.
+	// HC mode forces backgrounds to Canvas anyway, so we drop the variant
+	// tints and keep only the perimeter border + leading bar via CanvasText
+	// so the alert's banner shape survives.
+	aside[role='alert'] {
+		@include forced-colors {
+			background-color: Canvas;
+			color: CanvasText;
+			border-color: CanvasText;
+			border-inline-start-color: CanvasText;
+		}
+	}
+
 	// useAside drawer chrome lives in `composables/_aside.scss` so the
 	// popover-mode geometry overrides surface defaults from a later
 	// cascade layer (composables sits after surfaces).

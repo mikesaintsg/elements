@@ -18447,6 +18447,7 @@ toast.destroy()</code></pre>`,
 						--tw-backdrop-saturate: initial;
 						--tw-backdrop-sepia: initial;
 						--tw-duration: initial;
+						--tw-ease: initial;
 					}
 				}
 			}
@@ -18498,6 +18499,7 @@ toast.destroy()</code></pre>`,
 					--radius-md: 0.375rem;
 					--radius-lg: 0.5rem;
 					--radius-xl: 0.75rem;
+					--ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 					--default-transition-duration: 0.15s;
 					--default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 					--default-font-family: var(--font-sans);
@@ -18982,6 +18984,31 @@ toast.destroy()</code></pre>`,
 					pointer-events: none;
 					opacity: var(--set-button-disabled-opacity);
 				}
+				@media (forced-colors: active) {
+					button {
+						color: buttontext;
+						background-color: buttonface;
+						border-color: buttontext;
+					}
+					button:hover,
+					button:active,
+					button.active {
+						color: highlighttext;
+						background-color: highlight;
+						border-color: highlighttext;
+					}
+					button:focus-visible {
+						outline-offset: 2px;
+						box-shadow: none;
+						outline: 2px solid highlight;
+					}
+					button:disabled,
+					button[disabled],
+					button.disabled {
+						color: graytext;
+						border-color: graytext;
+					}
+				}
 				code {
 					--set-code-color: currentColor;
 					--set-code-background-color: var(--color-surface-raised);
@@ -19116,6 +19143,14 @@ toast.destroy()</code></pre>`,
 					flex-wrap: wrap;
 					margin: 0;
 					display: flex;
+				}
+				@media (forced-colors: active) {
+					dialog {
+						color: canvastext;
+						box-shadow: none;
+						background-color: canvas;
+						border-color: canvastext;
+					}
 				}
 				dl {
 					--set-dl-row-gap: 0.5rem;
@@ -19387,6 +19422,59 @@ toast.destroy()</code></pre>`,
 								var(--color-danger) calc(var(--set-focus-box-shadow-opacity) * 100%),
 								transparent
 							);
+					}
+				}
+				@media (forced-colors: active) {
+					input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+							[type='color']
+						):not([type='file']):not([type='hidden']):not([type='image']):not([type='submit']):not(
+							[type='reset']
+						):not([type='button']) {
+						color: fieldtext;
+						background-color: field;
+						border-color: fieldtext;
+					}
+					input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+							[type='color']
+						):not([type='file']):not([type='hidden']):not([type='image']):not([type='submit']):not(
+							[type='reset']
+						):not([type='button'])::placeholder {
+						color: graytext;
+					}
+					input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+							[type='color']
+						):not([type='file']):not([type='hidden']):not([type='image']):not([type='submit']):not(
+							[type='reset']
+						):not([type='button']):focus-visible {
+						outline-offset: 2px;
+						box-shadow: none;
+						border-color: highlight;
+						outline: 2px solid highlight;
+					}
+					input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+							[type='color']
+						):not([type='file']):not([type='hidden']):not([type='image']):not([type='submit']):not(
+							[type='reset']
+						):not([type='button']):disabled,
+					input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+							[type='color']
+						):not([type='file']):not([type='hidden']):not([type='image']):not([type='submit']):not(
+							[type='reset']
+						):not([type='button'])[disabled],
+					input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+							[type='color']
+						):not([type='file']):not([type='hidden']):not([type='image']):not([type='submit']):not(
+							[type='reset']
+						):not([type='button']).disabled {
+						color: graytext;
+						border-color: graytext;
+					}
+					input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+							[type='color']
+						):not([type='file']):not([type='hidden']):not([type='image']):not([type='submit']):not(
+							[type='reset']
+						):not([type='button']):user-invalid {
+						border-color: mark;
 					}
 				}
 				input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
@@ -21096,6 +21184,14 @@ toast.destroy()</code></pre>`,
 					--set-popover-background-color: var(--color-information-bg-subtle);
 					--set-popover-border-color: var(--color-information-border-subtle);
 				}
+				@media (forced-colors: active) {
+					aside[role='alert'] {
+						color: canvastext;
+						border-color: canvastext;
+						background-color: canvas;
+						border-inline-start-color: canvastext;
+					}
+				}
 				.badge {
 					--set-badge-color: var(
 						--set-variant-color,
@@ -21871,7 +21967,8 @@ toast.destroy()</code></pre>`,
 				output[role='status']:not(.filled) {
 					align-items: center;
 					gap: var(--set-toast-gap);
-					inline-size: min(var(--set-toast-inline-size), 100dvw - 2 * var(--set-toast-edge-inset));
+					inline-size: min(var(--set-toast-inline-size), var(--set-floater-max-inline-size));
+					max-block-size: var(--set-floater-max-block-size);
 					min-inline-size: var(--set-toast-min-inline-size);
 					max-inline-size: var(--set-toast-max-inline-size);
 					font-family: inherit;
@@ -23941,6 +24038,10 @@ toast.destroy()</code></pre>`,
 					--tw-duration: 0.2s;
 					transition-duration: 0.2s;
 				}
+				.ease-in-out {
+					--tw-ease: var(--ease-in-out);
+					transition-timing-function: var(--ease-in-out);
+				}
 				.select-all {
 					-webkit-user-select: all;
 					user-select: all;
@@ -24210,12 +24311,30 @@ toast.destroy()</code></pre>`,
 				syntax: '*';
 				inherits: false;
 			}
+			@property --tw-ease {
+				syntax: '*';
+				inherits: false;
+			}
 			:root {
 				--set-focus-box-shadow-width: 0.25rem;
 				--set-focus-box-shadow-opacity: 0.35;
 				--set-variant-color: currentColor;
 				--set-variant-border-width: 0;
 				--set-transition-duration: 0.15s;
+				--set-floater-gutter: 1rem;
+				--set-floater-inset-top: max(var(--set-floater-gutter), env(safe-area-inset-top, 0px));
+				--set-floater-inset-bottom: max(
+					var(--set-floater-gutter),
+					env(safe-area-inset-bottom, 0px)
+				);
+				--set-floater-inset-start: max(var(--set-floater-gutter), env(safe-area-inset-left, 0px));
+				--set-floater-inset-end: max(var(--set-floater-gutter), env(safe-area-inset-right, 0px));
+				--set-floater-max-inline-size: calc(
+					100dvw - var(--set-floater-inset-start) - var(--set-floater-inset-end)
+				);
+				--set-floater-max-block-size: calc(
+					100dvh - var(--set-floater-inset-top) - var(--set-floater-inset-bottom)
+				);
 			}
 			:root,
 			:host {

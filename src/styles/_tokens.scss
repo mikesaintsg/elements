@@ -55,4 +55,43 @@
 	// Default transition duration (Tailwind v4 doesn't ship a single duration).
 	// --------------------------------------------------------------------------
 	--set-transition-duration: 150ms;
+
+	// --------------------------------------------------------------------------
+	// Floater viewport budget — single source of truth for how a top-layer /
+	// native popover panel (popover, tooltip, toast, dropdown, drawer)
+	// respects the viewport edge on every form factor. Mirrors mailbox's
+	// `--bs-floater-*` token group; the `mixins.floater-*` mixins consume
+	// these through `var()` chains so a host-page retune at `:root` scope
+	// retunes every floater consumer at once.
+	//
+	//   --set-floater-gutter        design-side minimum gap between any
+	//                               floating panel and the viewport edge.
+	//   --set-floater-inset-{...}   the larger of `--set-floater-gutter` and
+	//                               the matching `env(safe-area-inset-*)` so
+	//                               notched / rounded-corner devices keep
+	//                               clearance. Requires the host page to
+	//                               declare `<meta name="viewport"
+	//                               content="… viewport-fit=cover">` for
+	//                               the env() values to resolve non-zero
+	//                               on iOS.
+	//   --set-floater-max-inline-size
+	//   --set-floater-max-block-size
+	//                               dvw / dvh budget minus the side insets,
+	//                               so a panel pinned to one edge cannot
+	//                               overflow the opposite edge. Dynamic-
+	//                               viewport units keep the budget honest
+	//                               when mobile browser chrome (Safari URL
+	//                               bar) shows or hides.
+	// --------------------------------------------------------------------------
+	--set-floater-gutter: 1rem;
+	--set-floater-inset-top: max(var(--set-floater-gutter), env(safe-area-inset-top, 0px));
+	--set-floater-inset-bottom: max(var(--set-floater-gutter), env(safe-area-inset-bottom, 0px));
+	--set-floater-inset-start: max(var(--set-floater-gutter), env(safe-area-inset-left, 0px));
+	--set-floater-inset-end: max(var(--set-floater-gutter), env(safe-area-inset-right, 0px));
+	--set-floater-max-inline-size: calc(
+		100dvw - var(--set-floater-inset-start) - var(--set-floater-inset-end)
+	);
+	--set-floater-max-block-size: calc(
+		100dvh - var(--set-floater-inset-top) - var(--set-floater-inset-bottom)
+	);
 }

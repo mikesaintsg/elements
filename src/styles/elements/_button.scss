@@ -147,5 +147,38 @@
 			pointer-events: none;
 			opacity: var(--set-button-disabled-opacity);
 		}
+
+		// Windows High Contrast / forced-colors fallback. Strip the framework's
+		// custom palette and fall back to the system color tokens so the
+		// button's affordance survives in HC mode (where custom backgrounds
+		// and borders are forced to system equivalents anyway). Variant
+		// classes still resolve `--set-variant-background-color` to the
+		// chosen variant; HC mode forces it to `Highlight` regardless.
+		@include forced-colors {
+			background-color: ButtonFace;
+			color: ButtonText;
+			border-color: ButtonText;
+
+			&:hover,
+			&:active,
+			&.active {
+				background-color: Highlight;
+				color: HighlightText;
+				border-color: HighlightText;
+			}
+
+			&:focus-visible {
+				outline: 2px solid Highlight;
+				outline-offset: 2px;
+				box-shadow: none;
+			}
+
+			&:disabled,
+			&[disabled],
+			&.disabled {
+				color: GrayText;
+				border-color: GrayText;
+			}
+		}
 	}
 }

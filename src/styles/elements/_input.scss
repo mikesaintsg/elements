@@ -151,6 +151,37 @@
 				);
 		}
 
+		// Windows High Contrast / forced-colors fallback — falls back to
+		// system colors so inputs stay legible in HC mode (where custom
+		// backgrounds and borders are forced to system equivalents anyway).
+		@include forced-colors {
+			background-color: Field;
+			color: FieldText;
+			border-color: FieldText;
+
+			&::placeholder {
+				color: GrayText;
+			}
+
+			&:focus-visible {
+				outline: 2px solid Highlight;
+				outline-offset: 2px;
+				box-shadow: none;
+				border-color: Highlight;
+			}
+
+			&:disabled,
+			&[disabled],
+			&.disabled {
+				color: GrayText;
+				border-color: GrayText;
+			}
+
+			&:user-invalid {
+				border-color: Mark;
+			}
+		}
+
 		// Read-only inputs paint with the disabled background but stay
 		// selectable + focusable. Mirrors mailbox's `--bs-form-disabled-bg`
 		// so the read-only state reads as "not editable" without dimming.

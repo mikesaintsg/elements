@@ -157,4 +157,17 @@
 		gap: var(--set-dialog-footer-gap);
 		margin: 0;
 	}
+
+	// Windows High Contrast / forced-colors fallback. The dialog drops its
+	// custom background and shadow (HC mode forces Canvas anyway), keeps a
+	// visible perimeter via CanvasText, and lets the `::backdrop` fall back
+	// to its own forced-colors rule (declared in `surfaces/_backdrop.scss`).
+	dialog {
+		@include forced-colors {
+			background-color: Canvas;
+			color: CanvasText;
+			border-color: CanvasText;
+			box-shadow: none;
+		}
+	}
 }

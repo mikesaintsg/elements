@@ -119,14 +119,17 @@
 		align-items: center;
 		gap: var(--set-toast-gap);
 
-		// Floater-bounds — TAKE the smaller of the design width and the
-		// viewport budget (dvw minus the edge gutter on each side). On
-		// desktop the toast lands at its design width (consistent across
-		// short / long messages); on mobile it shrinks to fill the
-		// viewport minus the gutters so the close button never gets
-		// pushed off-screen. `dvw` keeps the budget honest when mobile
-		// browser chrome (Safari address bar) shows / hides.
-		inline-size: min(var(--set-toast-inline-size), calc(100dvw - 2 * var(--set-toast-edge-inset)));
+		// Floater-bounds — TAKE the smaller of the design width
+		// (`--set-toast-inline-size`) and the framework's viewport budget
+		// (`--set-floater-max-inline-size`, dvw minus safe-area-aware
+		// gutters). On desktop the toast lands at its design width
+		// (consistent stack rhythm across short and long messages); on
+		// mobile it shrinks to fill the viewport minus the gutters so
+		// the close button never gets pushed off-screen. `dvw` keeps the
+		// budget honest when mobile browser chrome (Safari address bar)
+		// shows / hides. Mixin centralises the math; see
+		// `_mixins.scss` floater-bounds.
+		@include floater-bounds('toast', 'inline-size');
 		min-inline-size: var(--set-toast-min-inline-size);
 		max-inline-size: var(--set-toast-max-inline-size);
 
