@@ -47,6 +47,14 @@
 			var(--set-table-border-color) 25%,
 			transparent
 		);
+		--set-table-row-selected-background-color: color-mix(
+			in srgb,
+			var(--color-primary, var(--set-table-border-color)) 18%,
+			transparent
+		);
+		--set-table-sort-indicator-color: var(--set-table-color);
+		--set-table-sort-indicator-opacity: 0.4;
+		--set-table-sort-indicator-active-opacity: 1;
 		--set-table-transition-duration: var(--set-transition-duration);
 
 		inline-size: 100%;
@@ -87,6 +95,86 @@
 		tbody tr:last-child > th,
 		tbody tr:last-child > td {
 			border-block-end: 0;
+		}
+
+		// ── Sort indicator ────────────────────────────────────────────────────
+		// Header cells with `data-key` are sort triggers (createTable writes
+		// `aria-sort` on them). Base state shows a faint up/down chevron;
+		// `[aria-sort="ascending|descending"]` pins the matching glyph at full
+		// opacity. Mirrors the mailbox recipe exactly, scoped to native <th>.
+		thead > tr > th[data-key] {
+			position: relative;
+			padding-inline-end: calc(var(--set-table-cell-padding-inline) + 0.75rem);
+			cursor: pointer;
+			user-select: none;
+
+			&::after {
+				content: '';
+				position: absolute;
+				inset-inline-end: 0.5rem;
+				inset-block-start: 50%;
+				inline-size: 0.625rem;
+				block-size: 0.875rem;
+				transform: translateY(-50%);
+				opacity: var(--set-table-sort-indicator-opacity);
+				background-color: var(--set-table-sort-indicator-color);
+				mask-position: center;
+				mask-repeat: no-repeat;
+				mask-size: contain;
+				mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M5 0l4 5H1zM5 14l4-5H1z'/%3E%3C/svg%3E");
+				@include transition(opacity var(--set-table-transition-duration));
+			}
+
+			&[aria-sort='ascending']::after {
+				opacity: var(--set-table-sort-indicator-active-opacity);
+				mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M5 0l4 5H1z'/%3E%3C/svg%3E");
+			}
+
+			&[aria-sort='descending']::after {
+				opacity: var(--set-table-sort-indicator-active-opacity);
+				mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M5 14l4-5H1z'/%3E%3C/svg%3E");
+			}
+		}
+
+		// ── Selected rows ─────────────────────────────────────────────────────
+		// `createTable` writes `aria-selected="true"` directly on the <tr>.
+		// Tint dominates over hover by source order — the rule appears after
+		// `tbody tr:hover` so the selection state always wins when the user
+		// hovers a selected row.
+		tbody tr[aria-selected='true'] {
+			background-color: var(--set-table-row-selected-background-color);
+		}
+
+		// ── Expansion seam ────────────────────────────────────────────────────
+		// `createTable` pairs each body row with a sibling expansion row
+		// carrying `[data-table-expansion-panel]` inside its single <td>.
+		// When the row is collapsed (host row lacks `[data-table-expanded]`),
+		// the panel cell contributes a duplicate seam — zero its bottom
+		// padding & border so the data row above owns the divider.
+		tbody tr:has(> td > [data-table-expansion-panel]) > td {
+			padding-block: 0;
+		}
+
+		tbody tr:not([data-table-expanded]) + tr > td > [data-table-expansion-panel] {
+			display: none;
+		}
+
+		// Resize handle — visible only on hover of the host header so it
+		// doesn't compete with the sort indicator at rest.
+		thead > tr > th [data-table-resize-handle] {
+			position: absolute;
+			inset-block: 0;
+			inset-inline-end: 0;
+			inline-size: 4px;
+			cursor: col-resize;
+			opacity: 0;
+			background-color: var(--set-table-border-color);
+			@include transition(opacity var(--set-table-transition-duration));
+		}
+
+		thead > tr > th:hover [data-table-resize-handle],
+		thead > tr > th [data-table-resize-handle][data-table-resizing] {
+			opacity: 1;
 		}
 	}
 }

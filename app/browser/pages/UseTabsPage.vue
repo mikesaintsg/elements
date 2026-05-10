@@ -9,7 +9,7 @@ const t3 = ref<HTMLElement | null>(null)
 const p1 = ref<HTMLElement | null>(null)
 const p2 = ref<HTMLElement | null>(null)
 const p3 = ref<HTMLElement | null>(null)
-const tab1 = useTabs(t1, { pane: p1, group })
+const tab1 = useTabs(t1, { pane: p1, group, initial: true })
 const tab2 = useTabs(t2, { pane: p2, group })
 const tab3 = useTabs(t3, { pane: p3, group })
 
@@ -27,7 +27,7 @@ const record = (tab: string) => ({
 	hide: () => log.value.unshift({ at: stamp(), kind: 'hide', tab }),
 	close: () => log.value.unshift({ at: stamp(), kind: 'close', tab }),
 })
-const nav1 = useTabs(nt1, { pane: np1, group: navGroup, on: record('Profile') })
+const nav1 = useTabs(nt1, { pane: np1, group: navGroup, on: record('Profile'), initial: true })
 const nav2 = useTabs(nt2, { pane: np2, group: navGroup, on: record('Settings') })
 const activeNav = computed(() =>
 	nav1.active.value ? 'Profile' : nav2.active.value ? 'Settings' : '—',

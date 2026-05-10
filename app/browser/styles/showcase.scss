@@ -416,6 +416,34 @@ $showcase-breakpoint: 64rem; // 1024px — sidebar becomes a static rail
 			background-color: color-mix(in oklab, var(--color-primary) 6%, var(--color-canvas));
 		}
 
+		// Insertion-line indicator. The composable writes
+		// `.drop-indicator-before` / `.drop-indicator-after` on the row
+		// the pointer is hovering; we render a 2px pill rule on the
+		// matching edge to show where the dragged row will land.
+		&.drop-indicator {
+			position: relative;
+		}
+
+		&.drop-indicator-before::before,
+		&.drop-indicator-after::after {
+			content: '';
+			position: absolute;
+			inset-inline: 0;
+			height: 2px;
+			border-radius: 999px;
+			background-color: var(--color-primary);
+			box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 25%, transparent);
+			pointer-events: none;
+		}
+
+		&.drop-indicator-before::before {
+			top: -2px;
+		}
+
+		&.drop-indicator-after::after {
+			bottom: -2px;
+		}
+
 		// First child caret / drag-handle: cursor + opacity affordance.
 		.drag-handle {
 			cursor: grab;

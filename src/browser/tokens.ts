@@ -569,6 +569,14 @@ export const tokens = {
 		},
 		row: {
 			hover: { backgroundColor: '--set-table-row-hover-background-color' },
+			selected: { backgroundColor: '--set-table-row-selected-background-color' },
+		},
+		sort: {
+			indicator: {
+				color: '--set-table-sort-indicator-color',
+				opacity: '--set-table-sort-indicator-opacity',
+				active: { opacity: '--set-table-sort-indicator-active-opacity' },
+			},
 		},
 	},
 

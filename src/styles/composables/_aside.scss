@@ -34,8 +34,37 @@
 @use '../mixins' as *;
 
 @layer composables {
-	// ── Base drawer geometry — applies in the open state only. ────────
-	aside[popover][data-aside-open]:popover-open {
+	// ── Base drawer geometry — gated on `[data-aside-open]` (open
+	// in-state) OR `[data-aside-closing]` (out-state during the
+	// close transition). `useAside` owns BOTH attributes:
+	//
+	//   open:  set `data-aside-open` → showPopover() → run transition.
+	//   close: swap to `data-aside-closing` → run transition →
+	//          hidePopover() → remove `data-aside-closing`.
+	//
+	// Why both attributes? Without them, the popover surface defaults
+	// (`[popover]:not(output)`) supply `position: absolute` and
+	// `max-block-size: var(--set-anchor-max-block-size)` (= 18rem) in
+	// the closed state. If our gate only matched ONE state:
+	//
+	//   - Gate on `[data-aside-open]` alone: open works, but close
+	//     strips the attribute synchronously with the slide-out
+	//     transition → drawer collapses 100dvh → 288px on the first
+	//     close frame, jumping vertically before sliding off.
+	//   - Gate on `:popover-open` alone: the from-state for the open
+	//     transition (popover not yet open) resolves to 288px tall,
+	//     so the first frame paints at the menu-floater size before
+	//     jumping to 100dvh — visible as a vertical pop on every open.
+	//   - Gate on `[data-aside-open]:popover-open`: BOTH twitches.
+	//
+	// Matching either attribute keeps the drawer geometry alive
+	// across the entire open ↔ close lifecycle, while the per-
+	// placement `[data-aside-closing]` rules below pin the transform
+	// to its off-screen value to drive the slide-out animation
+	// (instead of falling back to the popover surface's
+	// `transform: scale(0.98)` fade-out).
+	aside[popover][data-aside-open],
+	aside[popover][data-aside-closing] {
 		position: fixed !important;
 		display: flex;
 		flex-direction: column;
@@ -52,7 +81,8 @@
 	}
 
 	// ── start (inline-start edge, slides in from the leading side) ────
-	aside[popover][data-aside-open].start:popover-open {
+	aside[popover][data-aside-open].start,
+	aside[popover][data-aside-closing].start {
 		inset-block: 0 !important;
 		inset-inline-start: 0 !important;
 		inset-inline-end: auto !important;
@@ -61,15 +91,21 @@
 		max-block-size: 100dvh !important;
 		min-block-size: 100dvh !important;
 		border-inline-end: 1px solid var(--color-border);
+	}
+	aside[popover][data-aside-open].start {
 		transform: translateX(0);
 		@starting-style {
 			transform: translateX(-100%);
 			opacity: 1;
 		}
 	}
+	aside[popover][data-aside-closing].start {
+		transform: translateX(-100%);
+	}
 
 	// ── end (inline-end edge, slides in from the trailing side) ──────
-	aside[popover][data-aside-open].end:popover-open {
+	aside[popover][data-aside-open].end,
+	aside[popover][data-aside-closing].end {
 		inset-block: 0 !important;
 		inset-inline-start: auto !important;
 		inset-inline-end: 0 !important;
@@ -78,15 +114,21 @@
 		max-block-size: 100dvh !important;
 		min-block-size: 100dvh !important;
 		border-inline-start: 1px solid var(--color-border);
+	}
+	aside[popover][data-aside-open].end {
 		transform: translateX(0);
 		@starting-style {
 			transform: translateX(100%);
 			opacity: 1;
 		}
 	}
+	aside[popover][data-aside-closing].end {
+		transform: translateX(100%);
+	}
 
 	// ── top (block-start edge, slides down from above) ───────────────
-	aside[popover][data-aside-open].top:popover-open {
+	aside[popover][data-aside-open].top,
+	aside[popover][data-aside-closing].top {
 		inset-block-start: 0 !important;
 		inset-block-end: auto !important;
 		inset-inline: 0 !important;
@@ -94,15 +136,21 @@
 		block-size: 30dvh !important;
 		max-block-size: 30dvh !important;
 		border-block-end: 1px solid var(--color-border);
+	}
+	aside[popover][data-aside-open].top {
 		transform: translateY(0);
 		@starting-style {
 			transform: translateY(-100%);
 			opacity: 1;
 		}
 	}
+	aside[popover][data-aside-closing].top {
+		transform: translateY(-100%);
+	}
 
 	// ── bottom (block-end edge, slides up from below) ────────────────
-	aside[popover][data-aside-open].bottom:popover-open {
+	aside[popover][data-aside-open].bottom,
+	aside[popover][data-aside-closing].bottom {
 		inset-block-start: auto !important;
 		inset-block-end: 0 !important;
 		inset-inline: 0 !important;
@@ -110,15 +158,21 @@
 		block-size: 30dvh !important;
 		max-block-size: 30dvh !important;
 		border-block-start: 1px solid var(--color-border);
+	}
+	aside[popover][data-aside-open].bottom {
 		transform: translateY(0);
 		@starting-style {
 			transform: translateY(100%);
 			opacity: 1;
 		}
 	}
+	aside[popover][data-aside-closing].bottom {
+		transform: translateY(100%);
+	}
 
 	// ── Default placement (no edge modifier) — slide from end. ───────
-	aside[popover][data-aside-open]:not(.start):not(.end):not(.top):not(.bottom):popover-open {
+	aside[popover][data-aside-open]:not(.start):not(.end):not(.top):not(.bottom),
+	aside[popover][data-aside-closing]:not(.start):not(.end):not(.top):not(.bottom) {
 		inset-block: 0 !important;
 		inset-inline-start: auto !important;
 		inset-inline-end: 0 !important;
@@ -127,19 +181,25 @@
 		max-block-size: 100dvh !important;
 		min-block-size: 100dvh !important;
 		border-inline-start: 1px solid var(--color-border);
+	}
+	aside[popover][data-aside-open]:not(.start):not(.end):not(.top):not(.bottom) {
 		transform: translateX(0);
 		@starting-style {
 			transform: translateX(100%);
 			opacity: 1;
 		}
 	}
+	aside[popover][data-aside-closing]:not(.start):not(.end):not(.top):not(.bottom) {
+		transform: translateX(100%);
+	}
 
 	// Transition list — includes `display` + `overlay` with
 	// `allow-discrete` so the open / close lifecycle plays through
-	// instead of snapping instantly. Applied to the bare `aside[popover]`
-	// so the closing transition (where `:popover-open` is no longer
-	// matched) still uses these timings.
-	aside[popover][data-aside-open] {
+	// instead of snapping instantly. Applied to both lifecycle states
+	// so the close transition (where `[data-aside-closing]` matches)
+	// retains these timings.
+	aside[popover][data-aside-open],
+	aside[popover][data-aside-closing] {
 		@include transition(
 			(
 				transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),

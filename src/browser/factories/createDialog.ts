@@ -132,8 +132,26 @@ export function createDialog(
 	// with `event.target === dialog`. Inner content clicks have a deeper
 	// target. When `dismiss.backdrop === 'static'` we fire `prevent`; when
 	// `false`, we ignore.
+	//
+	// Mobile padding-band footgun: the native `<dialog>` element receives
+	// padding, so a tap inside that padding band still has `event.target ===
+	// dialog`. On phones the dialog padding is ~1rem, which is wide enough
+	// to hit by accident — and would dismiss as if the user clicked the
+	// `::backdrop`. To distinguish a true backdrop click (outside the
+	// dialog box) from a padding-band tap (inside the dialog box), we
+	// compare the pointer coordinates against the dialog's bounding rect:
+	// if the pointer is inside the rect we treat it as a content click and
+	// ignore it.
 	const onClick = (event: Event): void => {
 		if (!visible.value || event.target !== element) return
+		if (!(event instanceof MouseEvent)) return
+		const rect = element.getBoundingClientRect()
+		const inside =
+			event.clientX >= rect.left &&
+			event.clientX <= rect.right &&
+			event.clientY >= rect.top &&
+			event.clientY <= rect.bottom
+		if (inside) return
 		if (backdropMode === true) hide()
 		else if (backdropMode === 'static') emit(element, DIALOG_EVENTS.prevent)
 	}

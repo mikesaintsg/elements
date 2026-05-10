@@ -965,6 +965,14 @@ export interface CreateTabsElements {
 
 export interface CreateTabsOptions {
 	readonly on?: Partial<UseTabsEventMap>
+	/**
+	 * Force this tab to be the initially active one. When `true` the trigger
+	 * is seeded with `aria-selected="true"` and its pane with
+	 * `data-tab-open` before the first paint, so consumers don't have to
+	 * pre-author the markup. Defaults to reading
+	 * `aria-selected="true"` from the trigger.
+	 */
+	readonly initial?: boolean
 }
 
 export interface CreateTabsInstance {
@@ -979,6 +987,11 @@ export interface UseTabsOptions {
 	readonly pane: Ref<HTMLElement | null>
 	readonly group: Ref<HTMLElement | null>
 	readonly on?: Partial<UseTabsEventMap>
+	/**
+	 * Force this tab to be active on first mount. Equivalent to pre-authoring
+	 * `aria-selected="true"` on the trigger before the composable runs.
+	 */
+	readonly initial?: boolean
 }
 
 export interface UseTabsReturn {

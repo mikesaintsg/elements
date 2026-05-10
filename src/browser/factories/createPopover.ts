@@ -14,6 +14,7 @@ import {
 	generateId,
 	resolvePopoverSide,
 	runTransition,
+	selfsForPopoverPlacement,
 	sideOf,
 } from '../helpers.js'
 
@@ -115,6 +116,16 @@ export function createPopover(
 		// `position-try-fallbacks` (declared on the surface rule) takes it
 		// from there and flips when the requested side overflows.
 		panel.style.positionArea = areaForPopoverPlacement(placementOpt)
+		// `align-self` / `justify-self` paired with `position-area` —
+		// the surface default (`align-self: start; justify-self:
+		// anchor-center`) is only correct for the `'bottom'` placement;
+		// every aligned variant (`bottom-start`, `top-end`, …) must
+		// override or the panel inherits inline-axis centering and ends
+		// up pinned to the anchor's CENTER instead of its start/end edge.
+		// Mirrors mailbox's `$placements` map (`_mixins.scss`).
+		const [alignSelf, justifySelf] = selfsForPopoverPlacement(placementOpt)
+		panel.style.alignSelf = alignSelf
+		panel.style.justifySelf = justifySelf
 		panel.dataset.popoverSide = sideOf(placementOpt)
 		panel.dataset.popoverStrategy = strategy
 		panel.dataset.popoverOffset = String(offset)
@@ -140,6 +151,8 @@ export function createPopover(
 		delete panel.dataset.popoverStrategy
 		delete panel.dataset.popoverOffset
 		panel.style.positionArea = ''
+		panel.style.alignSelf = ''
+		panel.style.justifySelf = ''
 		if (panel.matches(':popover-open')) panel.hidePopover()
 	}
 
@@ -187,6 +200,7 @@ export function createPopover(
 		showTimer = null
 		if (!dispatch(anchor, POPOVER_EVENTS.show)) return
 		visible.value = true
+		anchor.setAttribute('aria-expanded', 'true')
 		openedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
 		update()
 		panel.showPopover({ source: anchor })
@@ -198,6 +212,7 @@ export function createPopover(
 		if (!visible.value) return
 		if (!dispatch(anchor, POPOVER_EVENTS.hide)) return
 		visible.value = false
+		anchor.setAttribute('aria-expanded', 'false')
 		if (panel.matches(':popover-open')) panel.hidePopover()
 		finishClose()
 	}
@@ -265,6 +280,24 @@ export function createPopover(
 	const previousPositionAnchor = panel.style.positionAnchor
 	anchor.style.anchorName = anchorName
 	panel.style.positionAnchor = anchorName
+
+	// A11y wiring on the trigger so screen readers announce the
+	// disclosure state and link the trigger to the panel it controls.
+	// Mailbox doesn't write these (acknowledged gap in their composable);
+	// the framework-agnostic factory is the right place because it owns
+	// the trigger ↔ panel pair and the open/close lifecycle. We only set
+	// `aria-haspopup` / `aria-controls` once (boilerplate) and toggle
+	// `aria-expanded` synchronously with `visible` from the lifecycle
+	// hooks below. Saved previous values are restored by `destroy()`.
+	const previousAriaHasPopup = anchor.getAttribute('aria-haspopup')
+	const previousAriaControls = anchor.getAttribute('aria-controls')
+	const previousAriaExpanded = anchor.getAttribute('aria-expanded')
+	const previousPanelId = panel.id
+	if (!panel.id) panel.id = `elements-popover-${generateId('p').slice(2)}`
+	if (previousAriaHasPopup === null) anchor.setAttribute('aria-haspopup', 'dialog')
+	anchor.setAttribute('aria-controls', panel.id)
+	anchor.setAttribute('aria-expanded', 'false')
+
 	update()
 
 	const offBound = bindEventMap(anchor, POPOVER_EVENTS, options.on)
@@ -313,6 +346,16 @@ export function createPopover(
 		clearPanel()
 		anchor.style.anchorName = previousAnchor
 		panel.style.positionAnchor = previousPositionAnchor
+		// Restore prior a11y wiring. If the trigger had no aria-* before
+		// the factory ran, remove what we added; otherwise put back the
+		// original value so the host page's contract is preserved.
+		if (previousAriaHasPopup === null) anchor.removeAttribute('aria-haspopup')
+		else anchor.setAttribute('aria-haspopup', previousAriaHasPopup)
+		if (previousAriaControls === null) anchor.removeAttribute('aria-controls')
+		else anchor.setAttribute('aria-controls', previousAriaControls)
+		if (previousAriaExpanded === null) anchor.removeAttribute('aria-expanded')
+		else anchor.setAttribute('aria-expanded', previousAriaExpanded)
+		if (previousPanelId === '') panel.removeAttribute('id')
 		visible.value = false
 		scope.stop()
 	}

@@ -289,6 +289,12 @@ export function createForm(
 	const onInvalid = (event: Event): void => {
 		const target = event.target instanceof Element ? event.target : null
 		const name = target ? fieldName(target) : null
+		// An `invalid` event from a user-gesture submit means the browser ran
+		// constraint validation. Mark the form as `validated` so the
+		// `[data-form-validated]` attribute (and any author CSS hooked to it)
+		// reflects the post-attempt state — even when the native `submit`
+		// event never fires because validation aborted it.
+		if (validateSubmit) validated.value = true
 		scheduleInvalidRefresh()
 		const el = current()
 		if (!el) return

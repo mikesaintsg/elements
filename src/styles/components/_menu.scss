@@ -56,6 +56,21 @@
 		// `display` is already non-none, so the popover never enters
 		// the top layer). The `&:not([popover])` guard keeps closed
 		// dropdowns hidden until the composable shows them.
+		//
+		// The popover-mode dropdown shape (column layout, zero padding,
+		// `min-inline-size` floor) is declared on the bare `[popover]`
+		// rule below — NOT gated on `:popover-open`. Reason: the close
+		// transition (`transition-behavior: allow-discrete`) keeps the
+		// element in the render tree for the full transition duration,
+		// but `:popover-open` is dropped synchronously the moment
+		// `.hidePopover()` is called. Properties tied to the open
+		// pseudo-class therefore disappear at frame zero of the close
+		// transition, while opacity / transform animate over 150 ms —
+		// producing a visible width / padding "twitch" as the menu
+		// reverts to bare-menu layout while fading out. Declaring the
+		// shape on `[popover]` itself keeps it stable through both
+		// open and close transitions; the closed (post-transition)
+		// state gets `display: none` from the popover layer regardless.
 		&:not([popover]) {
 			display: flex;
 		}
@@ -126,13 +141,20 @@
 	// popover surface already supplies inline / block padding — having
 	// both would double-pad.
 	// --------------------------------------------------------------------------
-	// Popover-mode `<menu>` — only flips to flex column when actually
-	// open (`:popover-open`); the closed state inherits the UA
-	// `display: none` from the `[popover]` selector.
-	menu[popover]:popover-open,
-	[popover]:popover-open menu,
-	[popover]:popover-open > menu {
-		display: flex;
+	// Popover-mode `<menu>` — declare layout shape on the BARE
+	// `[popover]` selectors (NOT `:popover-open`). The popover
+	// surface still gates visibility via `display: none` (UA) →
+	// `display: flex` (open-state rule below), so closed dropdowns
+	// stay hidden. But width / padding / column-stack shape stays
+	// stable across the 150 ms close transition — opacity fades
+	// cleanly without the width "twitch" that happens when these
+	// properties are gated on `:popover-open` (the pseudo-class
+	// drops the moment `.hidePopover()` fires while opacity /
+	// transform animate across the full duration, leaving the menu
+	// to revert to bare-tag toolbar layout for 150 ms).
+	menu[popover],
+	[popover] menu,
+	[popover] > menu {
 		flex-direction: column;
 		align-items: stretch;
 		justify-content: flex-start;
@@ -140,6 +162,24 @@
 		padding-block: 0;
 		gap: 0;
 		min-inline-size: 12rem;
+		// `max-block-size` cap for the `flip-block` fallback decision is
+		// written INLINE by `createMenu` (≈ flip × 2.25 rem). It must be
+		// inline because the surface layer (`surfaces/_anchor-position`)
+		// declares its own `max-block-size: var(--set-anchor-max-block-
+		// size)` (= 18 rem) on `[popover]:not(output)`, and
+		// `@layer surfaces` beats `@layer components` — a CSS-only
+		// override here would lose. See createMenu.ts.
+	}
+
+	// Open-state flip — switch from the UA `display: none` (closed
+	// popover) to `display: flex` so the column layout above
+	// resolves. The bare-popover rule above intentionally omits
+	// `display`, so the UA's `display: none` for closed popovers
+	// keeps winning until `:popover-open` flips it to flex.
+	menu[popover]:popover-open,
+	[popover]:popover-open menu,
+	[popover]:popover-open > menu {
+		display: flex;
 	}
 
 	// Dropdown items — `<li>` wraps each command. The button inside owns

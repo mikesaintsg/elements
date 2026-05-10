@@ -30,7 +30,10 @@ export function useTabs(
 		() => [elementRef.value, paneRef.value, groupRef.value] as const,
 		([trigger, pane, group], _previous, onCleanup) => {
 			if (typeof window === 'undefined' || !trigger || !pane || !group) return
-			const instance = createTabs({ trigger, pane, group }, { on: options.on })
+			const instance = createTabs(
+				{ trigger, pane, group },
+				{ on: options.on, initial: options.initial },
+			)
 			factory.value = instance
 			onCleanup(() => {
 				instance.destroy()

@@ -92,13 +92,21 @@ export function createAside(
 		if (!dispatch(element, ASIDE_EVENTS.hide)) return
 
 		visible.value = false
+		// Swap `[data-aside-open]` for `[data-aside-closing]` synchronously so
+		// `composables/_aside.scss` keeps the drawer geometry alive (position:
+		// fixed, block-size: 100dvh) while flipping the slide transform to its
+		// off-screen value — driving a clean slide-out instead of collapsing
+		// back to popover-surface defaults (288px tall, position: absolute).
+		// The closing attribute is removed in the transition completion below.
 		element.removeAttribute('data-aside-open')
+		element.setAttribute('data-aside-closing', '')
 
 		cancelTransition()
 		transition = runTransition(element, () => {
 			transition = null
 			closeAria()
 			if (element.matches(':popover-open')) element.hidePopover()
+			element.removeAttribute('data-aside-closing')
 			if (locked) {
 				unlockBodyScroll()
 				locked = false
@@ -146,6 +154,7 @@ export function createAside(
 		}
 		if (element.matches(':popover-open')) element.hidePopover()
 		element.removeAttribute('data-aside-open')
+		element.removeAttribute('data-aside-closing')
 		closeAria()
 		element.popover = previousPopover
 		visible.value = false

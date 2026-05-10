@@ -1,6 +1,8 @@
 <script lang="ts" setup>
+import type { Ref } from 'vue'
 import { ref } from 'vue'
-import { useDrag } from '@src/browser'
+import type { UseDragReturn } from '@src/browser'
+import { isDragDropDetail, isDragStartDetail, useDrag } from '@src/browser'
 
 const initial = ['Inbox', 'Projects', 'Reports', 'Archive', 'Trash']
 const items = ref<string[]>([...initial])
@@ -44,30 +46,91 @@ useDrag<string>(loggedRef, {
 	},
 })
 
-// Kanban — three lists that share a drag group. Cards can move WITHIN
-// a column or BETWEEN columns. Each list is its own `useDrag` instance
-// with the same `group` identifier; the composable's cross-group
-// transfer fires `move` on the source and `receive` on the target.
-const kanban = ref({
-	todo: ['Spec API surface', 'Pick CSS layer order', 'Audit composables'],
-	doing: ['Add tab variants', 'Wire popover anchors'],
-	done: ['Ship _select partial', 'Migrate carousel chrome'],
-})
-const todoRef = ref<HTMLElement | null>(null)
-const doingRef = ref<HTMLElement | null>(null)
-const doneRef = ref<HTMLElement | null>(null)
-useDrag<string>(todoRef, {
-	list: () => kanban.value.todo,
-	group: 'kanban',
-})
-useDrag<string>(doingRef, {
-	list: () => kanban.value.doing,
-	group: 'kanban',
-})
-useDrag<string>(doneRef, {
-	list: () => kanban.value.done,
-	group: 'kanban',
-})
+// Kanban — three lists. Cards can reorder WITHIN a column (handled by
+// `useDrag` automatically through `list`) or move BETWEEN columns (the
+// composable has no built-in cross-list transfer, so the page wires it
+// up by recording the source on `start` and splicing on `drop`).
+const todo = ref<string[]>(['Spec API surface', 'Pick CSS layer order', 'Audit composables'])
+const doing = ref<string[]>(['Add tab variants', 'Wire popover anchors'])
+const done = ref<string[]>(['Ship _select partial', 'Migrate carousel chrome'])
+
+const kanbanLists: readonly [Ref<string[]>, Ref<string[]>, Ref<string[]>] = [todo, doing, done]
+const kanbanRefs: readonly [
+	Ref<HTMLElement | null>,
+	Ref<HTMLElement | null>,
+	Ref<HTMLElement | null>,
+] = [ref(null), ref(null), ref(null)]
+const kanbanDrags: [UseDragReturn | null, UseDragReturn | null, UseDragReturn | null] = [
+	null,
+	null,
+	null,
+]
+
+interface KanbanSource {
+	readonly column: number
+	readonly indices: readonly number[]
+	readonly cards: readonly string[]
+}
+let kanbanSource: KanbanSource | null = null
+
+const kanbanStart = (column: number, event: CustomEvent): void => {
+	if (!isDragStartDetail(event.detail)) return
+	const list = kanbanLists[column]
+	if (!list) return
+	const indices = [...event.detail.indices].sort((a, b) => a - b)
+	const cards: string[] = []
+	for (const i of indices) {
+		const card = list.value[i]
+		if (card !== undefined) cards.push(card)
+	}
+	kanbanSource = { column, indices, cards }
+}
+
+const kanbanDrop = (column: number, event: CustomEvent): void => {
+	const src = kanbanSource
+	if (!src) return
+	if (column === src.column) return // in-list reorder is handled by useDrag
+	if (!isDragDropDetail(event.detail)) return
+	const dest = kanbanLists[column]
+	const source = kanbanLists[src.column]
+	if (!dest || !source) return
+	for (const i of [...src.indices].sort((a, b) => b - a)) source.value.splice(i, 1)
+	const idx = event.detail.index
+	const pos = event.detail.position
+	const insertAt =
+		idx !== null && pos !== null && pos !== 'into'
+			? pos === 'after'
+				? idx + 1
+				: idx
+			: dest.value.length
+	dest.value.splice(insertAt, 0, ...src.cards)
+	kanbanSource = null
+}
+
+const kanbanEnd = (): void => {
+	kanbanSource = null
+}
+
+for (let i = 0; i < 3; i++) {
+	const column = i as 0 | 1 | 2
+	const list = kanbanLists[column]
+	if (!list) continue
+	kanbanDrags[column] = useDrag<string>(kanbanRefs[column]!, {
+		list,
+		on: {
+			start: (event) => kanbanStart(column, event),
+			drop: (event) => kanbanDrop(column, event),
+			end: kanbanEnd,
+		},
+	})
+}
+
+const kanbanRefSetter =
+	(column: 0 | 1 | 2) =>
+	(el: unknown): void => {
+		const r = kanbanRefs[column]
+		if (r) r.value = el instanceof HTMLElement ? el : null
+	}
 </script>
 
 <template>
@@ -145,31 +208,32 @@ useDrag<string>(doneRef, {
 		<section id="kanban">
 			<h2>Kanban — cross-list move</h2>
 			<p class="showcase-caption">
-				Three lists share a <code>group: 'kanban'</code> identifier. Drag cards within a column to
-				reorder, or drop onto another column to move between lists. The composable splices the
-				source and target lists for you.
+				Three lists, each its own <code>useDrag</code>. In-list reorder is automatic; cross-list
+				moves are coordinated through the public <code>start</code> / <code>drop</code> events — the
+				page records the source on <code>start</code> and splices the destination on
+				<code>drop</code>.
 			</p>
 			<div class="showcase-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1rem">
 				<div>
 					<h3>To do</h3>
-					<ul ref="todoRef">
-						<li v-for="(item, i) in kanban.todo" :key="item" class="draggable" :data-index="i">
+					<ul :ref="kanbanRefSetter(0)">
+						<li v-for="(item, i) in todo" :key="item" class="draggable" :data-index="i">
 							<span>{{ item }}</span>
 						</li>
 					</ul>
 				</div>
 				<div>
 					<h3>Doing</h3>
-					<ul ref="doingRef">
-						<li v-for="(item, i) in kanban.doing" :key="item" class="draggable" :data-index="i">
+					<ul :ref="kanbanRefSetter(1)">
+						<li v-for="(item, i) in doing" :key="item" class="draggable" :data-index="i">
 							<span>{{ item }}</span>
 						</li>
 					</ul>
 				</div>
 				<div>
 					<h3>Done</h3>
-					<ul ref="doneRef">
-						<li v-for="(item, i) in kanban.done" :key="item" class="draggable" :data-index="i">
+					<ul :ref="kanbanRefSetter(2)">
+						<li v-for="(item, i) in done" :key="item" class="draggable" :data-index="i">
 							<span>{{ item }}</span>
 						</li>
 					</ul>

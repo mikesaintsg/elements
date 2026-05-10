@@ -54,10 +54,21 @@ export function createMenu(
 	const offset = options.offset ?? DEFAULT_MENU_OFFSET
 	const flipThreshold = Math.max(0, options.flip ?? DEFAULT_MENU_FLIP)
 
-	// Forward `flip` to CSS via `--set-menu-flip`. The surface-layer rule
-	// caps the menu's `max-block-size` to N rows so the browser's
-	// `position-try-fallbacks` flips when the requested side has no room.
+	// Forward `flip` to CSS as an inline `max-block-size` cap. The
+	// browser uses this as the demanded space when evaluating
+	// `position-try-fallbacks: flip-block` — the menu flips up only
+	// when the requested side genuinely cannot host `flip` rows.
+	// Inline style is required because the surface layer
+	// (`surfaces/_anchor-position.scss`) declares its own
+	// `max-block-size: var(--set-anchor-max-block-size)` (= 18 rem)
+	// for every `[popover]`, and `@layer surfaces` beats `@layer
+	// components` — a layered component-level override would lose.
+	// 5 × 2.25 rem ≈ 180 px, matching mailbox's `--bs-dropdown-flip`
+	// × `--bs-dropdown-row-height` recipe and small enough that a
+	// toggle near the bottom of a short viewport still has room
+	// below for the menu (instead of flipping above on every open).
 	// `flip: 0` opts out — drops the cap and the block-axis fallback.
+	const ROW_HEIGHT_REM = 2.25
 	const previousFlip = menu.style.getPropertyValue('--set-menu-flip')
 	const previousMaxBlock = menu.style.maxBlockSize
 	const previousFallbacks = menu.style.positionTryFallbacks
@@ -66,6 +77,7 @@ export function createMenu(
 		menu.style.positionTryFallbacks = 'flip-inline'
 	} else {
 		menu.style.setProperty('--set-menu-flip', String(flipThreshold))
+		menu.style.maxBlockSize = `${flipThreshold * ROW_HEIGHT_REM}rem`
 	}
 
 	const popover: CreatePopoverInstance = createPopover(

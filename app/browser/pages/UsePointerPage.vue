@@ -219,11 +219,24 @@ usePointer(vetoRef, {
 				<div
 					ref="splitterRef"
 					:style="{
-						inlineSize: '0.5rem',
+						position: 'relative',
+						flex: '0 0 0.5rem',
 						background: 'var(--color-border)',
 						cursor: 'col-resize',
+						touchAction: 'none',
+						userSelect: 'none',
 					}"
-				></div>
+				>
+					<!-- Widen touch hit-area beyond the visible handle. -->
+					<span
+						aria-hidden="true"
+						:style="{
+							position: 'absolute',
+							insetBlock: 0,
+							insetInline: '-0.375rem',
+						}"
+					></span>
+				</div>
 				<div :style="{ flex: 1, padding: '0.75rem' }">{{ Math.round(100 - splitPercent) }}%</div>
 			</div>
 		</section>

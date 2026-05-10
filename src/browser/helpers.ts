@@ -724,6 +724,35 @@ export function areaForPopoverPlacement(placement: Placement): string {
 	return PLACEMENT_AREAS[placement] ?? PLACEMENT_AREAS.bottom
 }
 
+// `align-self` / `justify-self` per `Placement`. Mirrors mailbox's
+// `$placements` map in `_mixins.scss`. The surface default
+// (`align-self: start; justify-self: anchor-center`) only happens to be
+// correct for the `'bottom'` placement — every aligned placement
+// (`bottom-start`, `top-end`, etc.) needs an explicit override or it
+// inherits the surface default and visually CENTERS on the anchor or
+// drifts to the wrong edge of the position-area band. Composables write
+// these inline alongside `position-area` so the placement contract is
+// self-contained per panel.
+const PLACEMENT_SELFS: Readonly<Record<Placement, readonly [string, string]>> = {
+	top: ['end', 'anchor-center'],
+	'top-start': ['end', 'start'],
+	'top-end': ['end', 'end'],
+	bottom: ['start', 'anchor-center'],
+	'bottom-start': ['start', 'start'],
+	'bottom-end': ['start', 'end'],
+	end: ['anchor-center', 'start'],
+	'end-start': ['start', 'start'],
+	'end-end': ['end', 'start'],
+	start: ['anchor-center', 'end'],
+	'start-start': ['start', 'end'],
+	'start-end': ['end', 'end'],
+}
+
+/** `[alignSelf, justifySelf]` pair for a popover `Placement`. */
+export function selfsForPopoverPlacement(placement: Placement): readonly [string, string] {
+	return PLACEMENT_SELFS[placement] ?? PLACEMENT_SELFS.bottom
+}
+
 /**
  * Resolve the side the browser actually placed the panel on. Native popover
  * + `position-try-fallbacks` may flip the requested placement when it would

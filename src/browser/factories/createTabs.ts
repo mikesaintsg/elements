@@ -29,7 +29,12 @@ export function createTabs(
 	if (!pane.hasAttribute('role')) pane.setAttribute('role', 'tabpanel')
 
 	const scope = effectScope()
-	const active = scope.run(() => ref(triggerEl.getAttribute('aria-selected') === 'true'))
+	// Initial active state: `options.initial` wins (lets framework adapters
+	// pass a flag instead of pre-authoring ARIA), otherwise read the
+	// trigger's existing `aria-selected="true"`.
+	const initialActive =
+		options.initial === true || triggerEl.getAttribute('aria-selected') === 'true'
+	const active = scope.run(() => ref(initialActive))
 	if (!active) throw new Error('createTabs: failed to initialize reactive scope')
 
 	const transitions = new Set<() => void>()
