@@ -4648,12 +4648,12 @@
 					u = e.popover
 				e.popover = `manual`
 				let d = () => {
-						;(e.removeAttribute(`aria-hidden`),
+						;(e.removeAttribute(`inert`),
 							e.setAttribute(`aria-modal`, `true`),
 							e.setAttribute(`role`, `dialog`))
 					},
 					f = () => {
-						;(e.setAttribute(`aria-hidden`, `true`),
+						;(e.setAttribute(`inert`, ``),
 							e.removeAttribute(`aria-modal`),
 							e.removeAttribute(`role`))
 					},

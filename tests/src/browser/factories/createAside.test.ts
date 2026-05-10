@@ -20,12 +20,16 @@ describe('createAside', () => {
 		expect(() => createAside(wrong)).toThrowError(/aside/i)
 	})
 
-	it('starts hidden, sets popover=manual, ARIA-hides the panel', () => {
+	it('starts hidden, sets popover=manual, marks the panel inert', () => {
 		const aside = buildElement('aside')
 		const [api] = createFactoryFixture(() => createAside(aside))
 		expect(api.visible.value).toBe(false)
 		expect(aside.popover).toBe('manual')
-		expect(aside.getAttribute('aria-hidden')).toBe('true')
+		// `inert` (instead of `aria-hidden`) — `aria-hidden` triggers a
+		// browser console warning if a descendant retains focus when the
+		// attribute is set; `inert` blurs descendants automatically and is
+		// the W3C-recommended alternative for the closed-state contract.
+		expect(aside.hasAttribute('inert')).toBe(true)
 	})
 
 	it('show opens the popover, sets data-aside-open + ARIA, locks scroll', () => {

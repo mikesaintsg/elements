@@ -55,13 +55,31 @@ export function createAside(
 	const previousPopover = element.popover
 	element.popover = 'manual'
 
+	// A11y wiring uses the `inert` attribute (rather than `aria-hidden`) for
+	// the closed state. `aria-hidden` triggers a browser console warning if
+	// any descendant retains focus when the attribute is set — focus must
+	// not be hidden from assistive tech, and a closing transition can leave
+	// a focused button inside the panel for several frames before the
+	// popover machinery's automatic blur fires.
+	//
+	// `inert` is the platform-blessed alternative the W3C points to in the
+	// aria-hidden spec note. Setting `inert` on an element:
+	//   1. immediately blurs any focused descendant (no warning),
+	//   2. removes the subtree from the accessibility tree (same a11y goal
+	//      as aria-hidden), and
+	//   3. blocks pointer events on the subtree (matches "the panel is
+	//      closed" semantics — the user can't interact with controls
+	//      inside a hidden drawer).
+	//
+	// Browser support: Chrome 102+, Firefox 112+, Safari 15.5+ — already a
+	// hard prerequisite for the popover API this composable depends on.
 	const openAria = (): void => {
-		element.removeAttribute('aria-hidden')
+		element.removeAttribute('inert')
 		element.setAttribute('aria-modal', 'true')
 		element.setAttribute('role', 'dialog')
 	}
 	const closeAria = (): void => {
-		element.setAttribute('aria-hidden', 'true')
+		element.setAttribute('inert', '')
 		element.removeAttribute('aria-modal')
 		element.removeAttribute('role')
 	}
