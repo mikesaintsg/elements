@@ -18,6 +18,41 @@ const combo = useSelect(comboToggle, {
 	input: comboInput,
 	autocomplete: true,
 })
+
+// Flip threshold — `flip: 0` opts out of the row-count-based block-axis
+// flip (the menu always opens downward and may scroll if it overflows
+// the viewport). The default is `5` rows, which means menus over 5 rows
+// flip upward when there's not enough room below.
+const flipNeverToggle = ref<HTMLElement | null>(null)
+const flipNeverMenu = ref<HTMLMenuElement | null>(null)
+useSelect(flipNeverToggle, { menu: flipNeverMenu, flip: 0 })
+
+const flipDefaultToggle = ref<HTMLElement | null>(null)
+const flipDefaultMenu = ref<HTMLMenuElement | null>(null)
+useSelect(flipDefaultToggle, { menu: flipDefaultMenu })
+
+const longList = Array.from({ length: 30 }, (_, i) => `Option ${i + 1}`)
+
+// Lifecycle event log — show / open / hide / close / select.
+const eventToggle = ref<HTMLElement | null>(null)
+const eventMenu = ref<HTMLMenuElement | null>(null)
+const log = ref<{ at: string; kind: string; payload?: string }[]>([])
+const stamp = (): string => new Date().toLocaleTimeString()
+useSelect(eventToggle, {
+	menu: eventMenu,
+	on: {
+		show: () => log.value.unshift({ at: stamp(), kind: 'show' }),
+		open: () => log.value.unshift({ at: stamp(), kind: 'open' }),
+		hide: () => log.value.unshift({ at: stamp(), kind: 'hide' }),
+		close: () => log.value.unshift({ at: stamp(), kind: 'close' }),
+		select: (event) =>
+			log.value.unshift({
+				at: stamp(),
+				kind: 'select',
+				payload: event.detail?.value ?? '',
+			}),
+	},
+})
 </script>
 
 <template>
@@ -101,6 +136,63 @@ const combo = useSelect(comboToggle, {
 					<li><button type="button" data-value="blueberry">Blueberry</button></li>
 				</menu>
 			</div>
+		</section>
+
+		<section id="flip">
+			<h2>Flip threshold</h2>
+			<p class="showcase-caption">
+				Two long-list selects side-by-side: the first has <code>flip: 0</code> (never flips — the
+				menu opens downward even if it overflows the viewport), the second uses the default
+				<code>flip: 5</code> (any menu over 5 rows flips upward when there's no room). Scroll the
+				page so each toggle sits near the bottom edge to see the difference.
+			</p>
+			<div class="showcase-grid">
+				<div class="select">
+					<button ref="flipNeverToggle" type="button" class="select-toggle">
+						<span class="select-value">flip: 0</span>
+					</button>
+					<menu ref="flipNeverMenu" popover class="select-menu">
+						<li v-for="o in longList" :key="o">
+							<button type="button" :data-value="o">{{ o }}</button>
+						</li>
+					</menu>
+				</div>
+				<div class="select">
+					<button ref="flipDefaultToggle" type="button" class="select-toggle">
+						<span class="select-value">flip: 5 (default)</span>
+					</button>
+					<menu ref="flipDefaultMenu" popover class="select-menu">
+						<li v-for="o in longList" :key="o">
+							<button type="button" :data-value="o">{{ o }}</button>
+						</li>
+					</menu>
+				</div>
+			</div>
+		</section>
+
+		<section id="events">
+			<h2>Lifecycle event log</h2>
+			<p class="showcase-caption">
+				Open the listbox, pick a value, dismiss it — every transition emits a namespaced event.
+				<code>select</code> carries the chosen value in <code>event.detail.value</code>.
+			</p>
+			<div class="select">
+				<button ref="eventToggle" type="button" class="select-toggle">
+					<span class="select-value">Pick fruit</span>
+				</button>
+				<menu ref="eventMenu" popover class="select-menu">
+					<li><button type="button" data-value="apple">Apple</button></li>
+					<li><button type="button" data-value="banana">Banana</button></li>
+					<li><button type="button" data-value="cherry">Cherry</button></li>
+				</menu>
+			</div>
+			<button type="button" class="ghost small" @click="log = []">clear log</button>
+			<small v-if="log.length === 0">No events yet.</small>
+			<ul v-else>
+				<li v-for="(e, i) in log" :key="i">
+					<code>{{ e.kind }}</code> {{ e.payload ?? '' }} — {{ e.at }}
+				</li>
+			</ul>
 		</section>
 
 		<section id="api">
