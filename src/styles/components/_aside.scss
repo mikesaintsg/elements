@@ -180,8 +180,35 @@
 		// happens to sit inside the body shell still reads as an alert
 		// (banner row), not a column rail.
 		inline-size: auto;
-		overflow: visible;
+		overflow: hidden;
 		min-block-size: 0;
+
+		// Open / closed lifecycle is driven by `useAlert`, which toggles the
+		// `[data-alert-open]` attribute (mirrored by `aria-hidden`). The
+		// closed state collapses the alert to zero height + opacity so
+		// dismissed alerts disappear visually — without this rule the
+		// composable's attribute flips have no on-screen effect. The
+		// `interpolate-size: allow-keywords` declaration on `<html>` lets
+		// `block-size: auto ↔ 0` participate in the transition.
+		opacity: 0;
+		block-size: 0;
+		padding-block: 0;
+		border-inline-start-width: 0;
+		visibility: hidden;
+		transition:
+			opacity 0.2s ease-out,
+			block-size 0.25s ease,
+			padding-block 0.25s ease,
+			border-inline-start-width 0.2s ease,
+			visibility 0.25s allow-discrete;
+
+		&[data-alert-open] {
+			opacity: 1;
+			block-size: auto;
+			padding-block: var(--set-alert-padding-block);
+			border-inline-start-width: var(--set-alert-bar-width);
+			visibility: visible;
+		}
 
 		// Trailing dismiss: any direct-child button with `aria-label`
 		// matching common dismiss verbs sits at the inline-end edge with

@@ -27,6 +27,11 @@ describe('alert — `<aside role="alert">` banner shape', () => {
 	it('paints a flex row with a leading variant bar', () => {
 		const aside = render('aside', 'danger')
 		aside.setAttribute('role', 'alert')
+		// `useAlert` toggles `[data-alert-open]` to drive open/closed
+		// chrome. Static markup that wants the alert visible from the
+		// start sets the attribute up front; the framework treats its
+		// absence as the dismissed state (zero height + opacity).
+		aside.setAttribute('data-alert-open', '')
 		mount(aside)
 		expect(style(aside, 'display')).toBe('flex')
 		// Leading bar: thicker inline-start border (not the regular
@@ -37,6 +42,7 @@ describe('alert — `<aside role="alert">` banner shape', () => {
 	it('a trailing dismiss `<button>` is pushed to the inline-end edge', () => {
 		const aside = render('aside', '')
 		aside.setAttribute('role', 'alert')
+		aside.setAttribute('data-alert-open', '')
 		const text = document.createElement('span')
 		text.textContent = 'Heads up.'
 		const close = document.createElement('button')

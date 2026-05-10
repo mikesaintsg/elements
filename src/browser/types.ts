@@ -918,6 +918,13 @@ export interface UseAlertEventMap {
 }
 
 export interface CreateAlertOptions {
+	/**
+	 * Initial visibility. Defaults to `true` so alerts render visible
+	 * out of the box (`<aside role="alert">` is meaningless if hidden).
+	 * Pass `false` to mount in the dismissed state — useful when the
+	 * alert is going to be triggered by an upstream event.
+	 */
+	readonly initial?: boolean
 	readonly on?: Partial<UseAlertEventMap>
 }
 

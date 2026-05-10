@@ -32,12 +32,27 @@ export function createAlert(
 		if (!role) element.setAttribute('role', 'alert')
 	}
 
+	// Initial visibility resolution (highest precedence first):
+	//   1. Explicit `options.initial` from the consumer.
+	//   2. The `[data-alert-open]` attribute on the host (Vue / React
+	//      bindings often emit this on mount).
+	//   3. Default `true` — `<aside role="alert">` is meaningless when
+	//      hidden, so the framework opens by default rather than
+	//      requiring every author to seed the attribute.
+	const initialFromAttr = element.hasAttribute('data-alert-open')
+	const initialOpen = options.initial ?? (initialFromAttr || true)
+
 	const scope = effectScope()
-	const visible = scope.run(() => ref(element.hasAttribute('data-alert-open')))
+	const visible = scope.run(() => ref(initialOpen))
 	if (!visible) throw new Error('createAlert: failed to initialize reactive scope')
 
-	if (visible.value) element.removeAttribute('aria-hidden')
-	else element.setAttribute('aria-hidden', 'true')
+	if (visible.value) {
+		element.setAttribute('data-alert-open', '')
+		element.removeAttribute('aria-hidden')
+	} else {
+		element.removeAttribute('data-alert-open')
+		element.setAttribute('aria-hidden', 'true')
+	}
 
 	let transition: (() => void) | null = null
 	const cancelTransition = (): void => {

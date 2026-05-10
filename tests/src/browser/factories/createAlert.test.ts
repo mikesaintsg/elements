@@ -15,16 +15,28 @@ describe('createAlert', () => {
 		vi.useRealTimers()
 	})
 
-	it('assigns role="alert" when missing', () => {
+	it('assigns role="alert" when missing and defaults to visible', () => {
 		const el = buildElement('aside')
 		const [api] = createFactoryFixture(() => createAlert(el))
 		expect(el.getAttribute('role')).toBe('alert')
-		expect(api.visible.value).toBe(false)
+		// Alerts default to visible — `<aside role="alert">` is meaningless
+		// when hidden, so the framework opens by default. Authors who want
+		// to mount in the dismissed state pass `{ initial: false }`.
+		expect(api.visible.value).toBe(true)
+		expect(el.hasAttribute('data-alert-open')).toBe(true)
 	})
 
-	it('show sets data-alert-open and clears aria-hidden', () => {
+	it('respects `initial: false` to mount in the dismissed state', () => {
 		const el = buildElement('aside', { attrs: { role: 'alert' } })
-		const [api] = createFactoryFixture(() => createAlert(el))
+		const [api] = createFactoryFixture(() => createAlert(el, { initial: false }))
+		expect(api.visible.value).toBe(false)
+		expect(el.hasAttribute('data-alert-open')).toBe(false)
+		expect(el.getAttribute('aria-hidden')).toBe('true')
+	})
+
+	it('show after hide sets data-alert-open and clears aria-hidden', () => {
+		const el = buildElement('aside', { attrs: { role: 'alert' } })
+		const [api] = createFactoryFixture(() => createAlert(el, { initial: false }))
 		api.show()
 		expect(api.visible.value).toBe(true)
 		expect(el.hasAttribute('data-alert-open')).toBe(true)
@@ -35,7 +47,8 @@ describe('createAlert', () => {
 		const el = buildElement('aside', { attrs: { role: 'alert' } })
 		const close = createRecorder<[CustomEvent]>()
 		const [api] = createFactoryFixture(() => createAlert(el, { on: { close: close.handler } }))
-		api.show()
+		// Default-open: the alert is already visible after construction.
+		expect(api.visible.value).toBe(true)
 		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
 		api.hide()
 		expect(api.visible.value).toBe(false)
@@ -52,7 +65,8 @@ describe('createAlert', () => {
 		close.dataset.alertDismiss = ''
 		el.appendChild(close)
 		const [api] = createFactoryFixture(() => createAlert(el))
-		api.show()
+		// Default-open — the click hides it.
+		expect(api.visible.value).toBe(true)
 		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
 		close.click()
 		expect(api.visible.value).toBe(false)
@@ -62,7 +76,10 @@ describe('createAlert', () => {
 		const el = buildElement('aside', { attrs: { role: 'alert' } })
 		const show = createRecorder<[Event]>()
 		el.addEventListener(ALERT_EVENTS.show, show.handler)
-		const [api] = createFactoryFixture(() => createAlert(el))
+		// Mount dismissed so `show()` actually transitions through and
+		// dispatches the `show` event (vs. early-returning because the
+		// alert is already visible).
+		const [api] = createFactoryFixture(() => createAlert(el, { initial: false }))
 		api.show()
 		expect(show.count).toBe(1)
 	})
