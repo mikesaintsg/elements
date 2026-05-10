@@ -38,7 +38,18 @@
 	// container that grows / shrinks within the dialog's
 	// `max-block-size` cap. Header and footer remain pinned outside
 	// the scroll.
-	dialog.scrollable {
+	//
+	// `[open]` gate is mandatory on the `display: flex` rule. Without
+	// it, the rule (specificity 0,1,1) outranks the UA's
+	// `dialog:not([open]) { display: none }` (0,1,1 — but lower-source
+	// in the cascade) and the dialog stays rendered after `.close()`,
+	// pinned to the UA-default position (top-left of the containing
+	// block since `:modal` no longer matches → centering drops). User
+	// sees the dialog "move up and to the left a bit" on close and
+	// the panel never goes away. Other modifiers (`small`, `large`,
+	// `fullscreen`) don't override `display`, so they fall back to the
+	// UA `display: none` cleanly — only `.scrollable` needs the gate.
+	dialog.scrollable[open] {
 		display: flex;
 		flex-direction: column;
 

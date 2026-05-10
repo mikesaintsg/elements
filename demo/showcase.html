@@ -22934,11 +22934,11 @@ toast.destroy()</code></pre>`,
 					border-radius: 0;
 					min-block-size: 100dvh;
 				}
-				dialog.scrollable {
+				dialog.scrollable[open] {
 					flex-direction: column;
 					display: flex;
 				}
-				dialog.scrollable > :where(section, .body) {
+				dialog.scrollable[open] > :where(section, .body) {
 					min-block-size: 0;
 					overflow-y: auto;
 				}
