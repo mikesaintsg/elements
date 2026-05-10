@@ -55,6 +55,43 @@
 @use '../mixins' as *;
 
 @layer composables {
+	// ── Cleanup-state floor — applies to every `aside[popover]` regardless
+	// of `data-aside-open` / `data-aside-closing`. Owns two surface
+	// overrides that prevent a "ghost slide-back" artifact at the END of
+	// the close lifecycle:
+	//
+	// Timing of the bug this rule fixes:
+	//   1. `useAside.hide()` swaps `[data-aside-open]` → `[data-aside-closing]`,
+	//      slide animates `translateX(0)` → `translateX(±100%)` over 250 ms.
+	//   2. `runTransition` callback fires, calls `hidePopover()`. The popover
+	//      surface's `transition-behavior: allow-discrete` keeps the element
+	//      in the render tree for its own 150 ms transition.
+	//   3. Same callback removes `[data-aside-closing]` synchronously. Now
+	//      NO aside-layer rule matches `transform` for this element.
+	//   4. Cascade falls back to `surfaces/_popover.scss`:
+	//      `[popover] { transform: scale(0.98) }` (closed-state default).
+	//   5. Popover surface's transition list includes `transform 150ms`, so
+	//      the element animates from `translateX(±100%)` → `scale(0.98)` —
+	//      the user sees a 2 %-shrunken "ghost" sliding back from off-screen
+	//      toward center for 150 ms before display:none finally kicks in.
+	//
+	// Fix:
+	//   - `transform: none` overrides the popover surface's `scale(0.98)` so
+	//     the post-cleanup transform is identity instead of a scaled value.
+	//     Per-state rules below (`[data-aside-open].start`, etc.) carry
+	//     specificity (0,3,1) > this rule's (0,1,1) so the slide transforms
+	//     still win during open / close.
+	//   - `transition-property` strips `transform` from the popover surface's
+	//     transition list. useAside owns the transform animation entirely
+	//     through the per-state rules' transition block (further down), so
+	//     the surface's transform tween is pure noise here. Removing it
+	//     means the cleanup-frame transform jump (translateX → none) is
+	//     instant rather than animated, killing the ghost.
+	aside[popover] {
+		transform: none;
+		transition-property: opacity, overlay, display;
+	}
+
 	// ── Base drawer geometry — gated on `[data-aside-open]` (open
 	// in-state) OR `[data-aside-closing]` (out-state during the
 	// close transition). `useAside` owns BOTH attributes:
