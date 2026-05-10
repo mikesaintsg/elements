@@ -102,40 +102,66 @@
 			white-space: nowrap;
 		}
 
-		// Combobox shape — the `<input>` and the caret `<button>` sit
-		// side-by-side in a single bordered row. The input gets the
-		// brunt of the width, the caret keeps a fixed minimum tap
-		// target.
-		&.combo {
-			display: flex;
-			align-items: stretch;
-
-			> .select-input {
-				flex: 1;
-				min-inline-size: 0;
-				border-start-end-radius: 0;
-				border-end-end-radius: 0;
-				border-inline-end: 0;
-			}
-
-			> .select-caret {
-				min-inline-size: var(--set-select-caret-min-inline-size);
-				padding-inline: calc(var(--spacing) * 2);
-				border-start-start-radius: 0;
-				border-end-start-radius: 0;
-				background-color: var(--color-surface);
-				color: var(--color-text-muted);
-				font-size: 0.85em;
-				cursor: pointer;
-			}
-		}
-
 		// Menu sized to the wrapper's width via `anchor-size()` so the
 		// dropdown matches the trigger's full width regardless of menu
 		// content (Bootstrap's `.dropdown-menu.w-100` equivalent).
 		> .select-menu {
 			inline-size: anchor-size(width, 100%);
 			min-inline-size: var(--set-select-menu-min-inline-size);
+		}
+	}
+
+	// ── Combobox typeahead search ─────────────────────────────────────
+	// `.select-search` is the FIRST `<li>` inside a combobox's
+	// `<menu popover class="select-menu">`. It hosts the filter
+	// `<input>` and stays sticky at the top of the menu so the search
+	// box remains visible while the user scrolls the option list.
+	//
+	// Mailbox / Bootstrap pattern: the toggle `<button class="select-
+	// toggle">` keeps showing the selected label; the `<input>` lives
+	// INSIDE the dropdown so the trigger doesn't fight the input for
+	// the same row. `useSelect` with `{ input, autocomplete: true }`
+	// promotes the toggle to `role="combobox"` and points
+	// `aria-controls` at the listbox; typing in the inner `<input>`
+	// drives the substring filter.
+	//
+	// The negative inline / block margin pulls the search row to the
+	// menu's inner edges so the bordered separator below it spans the
+	// full width without leaving a gap. `position: sticky` + matching
+	// `inset-block-start` keep it pinned during scroll.
+	.select-menu > li.select-search {
+		position: sticky;
+		inset-block-start: 0;
+		z-index: 1;
+		display: block;
+		margin-block-start: 0;
+		margin-block-end: calc(var(--spacing) * 1);
+		padding-inline: calc(var(--spacing) * 2);
+		padding-block: calc(var(--spacing) * 2);
+		background-color: var(--color-surface);
+		border-block-end: 1px solid var(--color-border);
+
+		> input {
+			inline-size: 100%;
+			min-inline-size: 0;
+			padding-inline: calc(var(--spacing) * 2);
+			padding-block: calc(var(--spacing) * 1.5);
+			border: 1px solid var(--color-border);
+			border-radius: var(--radius-sm);
+			background-color: var(--color-canvas);
+			color: var(--color-text);
+			font-size: var(--text-sm);
+
+			&:focus-visible {
+				outline: none;
+				border-color: var(--color-primary);
+				box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+					color-mix(
+						in oklab,
+						var(--color-primary) calc(var(--set-focus-box-shadow-opacity) * 100%),
+						transparent
+					);
+			}
 		}
 	}
 }

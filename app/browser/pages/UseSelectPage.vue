@@ -116,19 +116,21 @@ useSelect(eventToggle, {
 		<section id="combo">
 			<h2>Combobox (autocomplete)</h2>
 			<p class="showcase-caption">
-				Pass an <code>input</code> ref + <code>autocomplete: true</code> to filter options as the
-				user types. Query: <code>{{ combo.query.value || '—' }}</code
+				Same shape as a single-select — one toggle button with the chevron — but the dropdown menu's
+				first row is a <code>&lt;li class="select-search"&gt;</code> hosting the filter
+				<code>&lt;input&gt;</code>. The composable promotes the toggle to
+				<code>role="combobox"</code> and substring-filters options as the user types. Query:
+				<code>{{ combo.query.value || '—' }}</code
 				>.
 			</p>
-			<!-- Combobox: input + caret button sit in a single row;
-			     `.select-combo` lays them flush with the menu
-			     anchor centred under the input/caret pair. -->
-			<div class="select combo">
-				<input ref="comboInput" type="text" class="select-input" placeholder="Type to filter…" />
-				<button ref="comboToggle" type="button" class="select-caret" aria-label="Open options">
-					▾
+			<div class="select">
+				<button ref="comboToggle" type="button" class="select-toggle">
+					<span class="select-value">{{ combo.value.value ?? 'Pick a fruit' }}</span>
 				</button>
 				<menu ref="comboMenu" popover class="select-menu">
+					<li class="select-search">
+						<input ref="comboInput" type="text" placeholder="Filter…" />
+					</li>
 					<li><button type="button" data-value="apple">Apple</button></li>
 					<li><button type="button" data-value="apricot">Apricot</button></li>
 					<li><button type="button" data-value="avocado">Avocado</button></li>
