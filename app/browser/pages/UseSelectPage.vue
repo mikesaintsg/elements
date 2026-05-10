@@ -42,18 +42,20 @@ const combo = useSelect(comboToggle, {
 				Click the toggle, pick an option. Selected: <code>{{ sel.value.value ?? '—' }}</code
 				>.
 			</p>
-			<!-- `useSelect` already binds `click` on the toggle button to
-			     `dropdown.toggle()`. Adding the same handler in the
-			     template fires the toggle twice (open then close
-			     immediately) so the menu looks like it never opens. -->
-			<button ref="toggleRef" type="button">
-				{{ sel.value.value ?? 'Pick fruit' }}
-			</button>
-			<menu ref="menuRef" popover>
-				<li><button type="button" data-value="apple">Apple</button></li>
-				<li><button type="button" data-value="banana">Banana</button></li>
-				<li><button type="button" data-value="cherry">Cherry</button></li>
-			</menu>
+			<!-- Wrapped in `.showcase-select` so the menu can size to the
+			     toggle's full width (mailbox `.select` pattern). The toggle
+			     itself uses `.showcase-select-toggle` to get the chevron
+			     and full-width layout. -->
+			<div class="showcase-select">
+				<button ref="toggleRef" type="button" class="showcase-select-toggle">
+					<span class="showcase-select-value">{{ sel.value.value ?? 'Pick fruit' }}</span>
+				</button>
+				<menu ref="menuRef" popover class="showcase-select-menu">
+					<li><button type="button" data-value="apple">Apple</button></li>
+					<li><button type="button" data-value="banana">Banana</button></li>
+					<li><button type="button" data-value="cherry">Cherry</button></li>
+				</menu>
+			</div>
 		</section>
 
 		<section id="multi">
@@ -62,12 +64,18 @@ const combo = useSelect(comboToggle, {
 				Selected: <code>{{ multi.values.value.join(', ') || '—' }}</code
 				>.
 			</p>
-			<button ref="multiToggle" type="button">{{ multi.values.value.length || 0 }} selected</button>
-			<menu ref="multiMenu" popover>
-				<li><button type="button" data-value="red">Red</button></li>
-				<li><button type="button" data-value="green">Green</button></li>
-				<li><button type="button" data-value="blue">Blue</button></li>
-			</menu>
+			<div class="showcase-select">
+				<button ref="multiToggle" type="button" class="showcase-select-toggle">
+					<span class="showcase-select-value">
+						{{ multi.values.value.length ? multi.values.value.join(', ') : 'Choose colours' }}
+					</span>
+				</button>
+				<menu ref="multiMenu" popover class="showcase-select-menu">
+					<li><button type="button" data-value="red">Red</button></li>
+					<li><button type="button" data-value="green">Green</button></li>
+					<li><button type="button" data-value="blue">Blue</button></li>
+				</menu>
+			</div>
 		</section>
 
 		<section id="combo">
@@ -77,15 +85,32 @@ const combo = useSelect(comboToggle, {
 				user types. Query: <code>{{ combo.query.value || '—' }}</code
 				>.
 			</p>
-			<input ref="comboInput" type="text" placeholder="Type to filter…" />
-			<button ref="comboToggle" type="button">▾</button>
-			<menu ref="comboMenu" popover>
-				<li><button type="button" data-value="apple">Apple</button></li>
-				<li><button type="button" data-value="apricot">Apricot</button></li>
-				<li><button type="button" data-value="avocado">Avocado</button></li>
-				<li><button type="button" data-value="banana">Banana</button></li>
-				<li><button type="button" data-value="blueberry">Blueberry</button></li>
-			</menu>
+			<!-- Combobox: input + caret button sit in a single row;
+			     `.showcase-select-combo` lays them flush with the menu
+			     anchor centred under the input/caret pair. -->
+			<div class="showcase-select showcase-select-combo">
+				<input
+					ref="comboInput"
+					type="text"
+					class="showcase-select-input"
+					placeholder="Type to filter…"
+				/>
+				<button
+					ref="comboToggle"
+					type="button"
+					class="showcase-select-caret"
+					aria-label="Open options"
+				>
+					▾
+				</button>
+				<menu ref="comboMenu" popover class="showcase-select-menu">
+					<li><button type="button" data-value="apple">Apple</button></li>
+					<li><button type="button" data-value="apricot">Apricot</button></li>
+					<li><button type="button" data-value="avocado">Avocado</button></li>
+					<li><button type="button" data-value="banana">Banana</button></li>
+					<li><button type="button" data-value="blueberry">Blueberry</button></li>
+				</menu>
+			</div>
 		</section>
 
 		<section id="api">

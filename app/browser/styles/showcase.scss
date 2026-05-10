@@ -847,6 +847,121 @@ form[data-form-validated] label:has(:invalid) {
 	}
 }
 
+// useSelect demo chrome — mailbox `.select` pattern.
+//
+// `.showcase-select` is a positioning wrapper that gives the menu a
+// reference to anchor against and grow to. The toggle button paints
+// like a form field (full width, leading value, trailing chevron);
+// the menu sizes to the wrapper's inline-size so the dropdown is the
+// same width as its trigger — same convention as Bootstrap's
+// `.dropdown-menu.w-100`.
+.showcase-select {
+	position: relative;
+	display: block;
+	max-inline-size: 28rem;
+
+	// Toggle button — paints like an `<input>` with a chevron at the
+	// trailing edge. The button's own `<button>` styles already supply
+	// padding / border / radius; we override here for full-width form-
+	// field shape.
+	> .showcase-select-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: calc(var(--spacing) * 2);
+		inline-size: 100%;
+		min-block-size: 2.5rem;
+		padding-inline-start: calc(var(--spacing) * 3);
+		padding-inline-end: calc(var(--spacing) * 9);
+		padding-block: calc(var(--spacing) * 2);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		background-color: var(--color-canvas);
+		color: var(--color-text);
+		font-weight: 400;
+		text-align: start;
+		cursor: pointer;
+
+		// Chevron painted as a CSS mask on a ::after pseudo so it
+		// tracks the active text colour without an extra SVG asset.
+		position: relative;
+
+		&::after {
+			content: '';
+			position: absolute;
+			inset-block: 0;
+			inset-inline-end: calc(var(--spacing) * 3);
+			margin-block: auto;
+			inline-size: 1rem;
+			block-size: 1rem;
+			background-color: currentColor;
+			mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 6 8 11 13 6'/></svg>")
+				no-repeat center / contain;
+			transition: transform 0.2s;
+		}
+
+		&[aria-expanded='true']::after {
+			transform: rotate(180deg);
+		}
+
+		&:hover {
+			border-color: var(--color-border-strong);
+		}
+	}
+
+	// Selected-value text inside the toggle — clip overflow so a long
+	// multi-select label doesn't push the chevron off the edge.
+	.showcase-select-value {
+		flex: 1;
+		min-inline-size: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	// Combobox shape — the `<input>` and the caret `<button>` sit
+	// side-by-side in a single bordered row. The input gets the brunt
+	// of the width, the caret keeps a fixed minimum tap target.
+	&.showcase-select-combo {
+		display: flex;
+		align-items: stretch;
+
+		> .showcase-select-input {
+			flex: 1;
+			min-inline-size: 0;
+			border-start-end-radius: 0;
+			border-end-end-radius: 0;
+			border-inline-end: 0;
+		}
+
+		> .showcase-select-caret {
+			min-inline-size: 2.75rem;
+			padding-inline: calc(var(--spacing) * 2);
+			border-start-start-radius: 0;
+			border-end-start-radius: 0;
+			background-color: var(--color-surface);
+			color: var(--color-text-muted);
+			font-size: 0.85em;
+			cursor: pointer;
+		}
+	}
+
+	// Menu — `<menu popover>` lives inside `.showcase-select`. The
+	// platform top-layer rendering takes the menu out of normal flow,
+	// so we override the popover surface's auto-anchoring with an
+	// explicit width tied to the wrapper. Width matches the wrapper
+	// via `--showcase-select-width`, set on the wrapper at runtime by
+	// inline style OR (preferred) via `anchor()` referencing the
+	// toggle's anchor name. We use a static width that mirrors the
+	// wrapper's `max-inline-size` for the demo since the framework's
+	// `useSelect` already wires anchor positioning for the placement
+	// math.
+	> .showcase-select-menu {
+		inline-size: anchor-size(width, 100%);
+		min-inline-size: 12rem;
+	}
+}
+
 // Definition list — what-ships-today / spec table on HomePage.
 .showcase-spec {
 	display: grid;

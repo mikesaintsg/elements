@@ -201,7 +201,15 @@ export function createSelect(
 					setActive(first ?? visibleItems()[0] ?? null)
 					visible.value = true
 				},
-				open: () => emit(toggleEl, SELECT_EVENTS.open),
+				open: () => {
+					// Combobox path: shift focus to the input the moment
+					// the dropdown opens so typing can drive the filter
+					// without an extra tap. `useMenu` already wires the
+					// click → open path, so we hook focus on the open
+					// event instead of duplicating the click listener.
+					if (input) input.focus()
+					emit(toggleEl, SELECT_EVENTS.open)
+				},
 				hide: (event: CustomEvent) => {
 					if (!dispatch(toggleEl, SELECT_EVENTS.hide)) event.preventDefault()
 				},
@@ -284,11 +292,12 @@ export function createSelect(
 		setActive(item)
 	}
 
-	const onToggleClick = (event: Event): void => {
-		event.preventDefault()
-		dropdown.toggle()
-		if (input && visible.value) input.focus()
-	}
+	// Note: there's intentionally NO click handler here. `createMenu`
+	// (which `dropdown` wraps) already binds `click` on the toggle to
+	// `dropdown.toggle()`. Adding our own click listener fired the
+	// toggle twice — open then immediately close — so the dropdown
+	// looked like it never opened. Combobox input focus lives in the
+	// `open` callback above.
 
 	const onKeydown = (event: Event): void => {
 		if (!(event instanceof KeyboardEvent)) return
@@ -352,12 +361,12 @@ export function createSelect(
 	// === Setup
 	const offBound = bindEventMap(toggleEl, SELECT_EVENTS, options.on)
 	const sameTrigger = input === toggleEl
+	// Only the keyboard handler binds here — the click is owned by
+	// `createMenu` further down the chain (see comment near
+	// `onToggleClick` for the full reasoning).
 	const offToggle = sameTrigger
 		? () => {}
-		: attachListeners(toggleEl, [
-				{ name: 'click', handler: onToggleClick },
-				{ name: 'keydown', handler: onKeydown },
-			])
+		: attachListeners(toggleEl, [{ name: 'keydown', handler: onKeydown }])
 	const offMenu = attachListeners(menu, [
 		{ name: 'click', handler: onMenuClick },
 		{ name: 'mouseover', handler: onMenuMouseOver },
