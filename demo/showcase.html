@@ -21552,7 +21552,9 @@ toast.destroy()</code></pre>`,
 				menu[popover],
 				[popover] menu,
 				[popover] > menu {
-					flex-direction: column;
+					overflow-block: auto;
+					overscroll-behavior: contain;
+					flex-flow: column;
 					justify-content: flex-start;
 					align-items: stretch;
 					gap: 0;

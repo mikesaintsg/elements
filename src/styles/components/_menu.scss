@@ -158,6 +158,20 @@
 		flex-direction: column;
 		align-items: stretch;
 		justify-content: flex-start;
+		// Reset `flex-wrap` from the bare-menu shape (toolbar / command
+		// row), which sets `flex-wrap: wrap` so a horizontal-row toolbar
+		// can break onto multiple lines. Inside a popover panel the
+		// wrap axis is the BLOCK axis (because flex-direction is column),
+		// so leaving wrap on causes items past the menu's `max-block-
+		// size` to spill into a SECOND COLUMN rather than scroll. We
+		// want vertical scrolling: `flex-wrap: nowrap` keeps items in a
+		// single column, and `overflow-block: auto` (paired with
+		// `overscroll-behavior: contain` so wheel events don't chain to
+		// the document) gives the user a scrollbar inside the menu when
+		// the item count exceeds the surface's `max-block-size` cap.
+		flex-wrap: nowrap;
+		overflow-block: auto;
+		overscroll-behavior: contain;
 		// Mailbox parity — the popover surface already paints
 		// `padding-{inline,block}: 0.75rem` on the popover root; for
 		// dropdown menus we want a tighter `0.375rem` gutter so the
