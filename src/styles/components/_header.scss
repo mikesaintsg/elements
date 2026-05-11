@@ -63,6 +63,29 @@
 		padding-block: var(--set-header-padding-block);
 
 		border-block-end: var(--set-header-border-width) solid var(--set-header-border-color);
+	}
+
+	// Drawer-header break-out — when a <header> sits inside a body-shell
+	// nav or aside rail, the rail's own padding-inline + padding-block-
+	// start would inset the header by the rail gutter, leaving a visible
+	// strip of rail bg around the header (and shortening the header's
+	// bottom separator so it doesn't run edge-to-edge of the drawer).
+	// Negative margins equal to the rail's padding pull the header out
+	// to the drawer edges. The header's own internal padding (declared
+	// above) provides the band's inline / block-end spacing.
+	//
+	// Per-rail tokens because nav and aside expose their own padding
+	// tokens (`--set-nav-padding-*` vs `--set-aside-padding-*`).
+	body:has(main) > nav > header,
+	body:has(main) > * > nav > header {
+		margin-inline: calc(var(--set-nav-padding-inline) * -1);
+		margin-block-start: calc(var(--set-nav-padding-block) * -1);
+	}
+
+	body:has(main) > aside > header,
+	body:has(main) > * > aside > header {
+		margin-inline: calc(var(--set-aside-padding-inline) * -1);
+		margin-block-start: calc(var(--set-aside-padding-block) * -1);
 
 		font-size: var(--set-header-font-size);
 		line-height: var(--set-header-line-height);
