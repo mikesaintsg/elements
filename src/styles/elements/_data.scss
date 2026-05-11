@@ -1,6 +1,22 @@
-// <data> – Machine-readable value annotation
-// Browser defaults: display: inline
-// Human-readable text goes between tags; machine-readable value goes in the value attribute
-// Visually identical to <span> — for time-specific values prefer <time>
+// ============================================================================
+// data — Machine-readable value annotation.
+//
+// Browser defaults: `display: inline`.
+//
+// Human-readable text goes between tags; machine-readable value in the
+// `value` attribute. Visually identical to <span> except for the
+// numeric-alignment polish below; for time-specific values prefer <time>.
+//
+// Override — opt into `font-variant-numeric: tabular-nums` for the same
+// reason <time> does: most <data> labels are numeric (prices, scores,
+// quantities, identifiers) and a column of them should align vertically.
+// Consumers wanting proportional digits opt out via the token.
+// ============================================================================
 
-// No visual reset needed
+@layer elements {
+	data {
+		--set-data-font-variant-numeric: tabular-nums;
+
+		font-variant-numeric: var(--set-data-font-variant-numeric);
+	}
+}

@@ -38,6 +38,12 @@ export const tokens = {
 		border: '--color-border',
 		borderStrong: '--color-border-strong',
 		borderSubtle: '--color-border-subtle',
+		// Inverted surface tier — canvas-opposite color used by always-distinct
+		// chrome (tooltips, hint popovers, inverted callouts). Flips with
+		// `data-theme` so the inversion stays visually distinct against the
+		// active canvas in both light and dark modes.
+		inverted: '--color-inverted',
+		invertedText: '--color-inverted-text',
 		// Variant subtle scale — tinted backgrounds, saturated text, and
 		// medium-strength borders derived from the seven variants.
 		// Mirrors mailbox's `--bs-{color}-bg-subtle` /
@@ -116,6 +122,10 @@ export const tokens = {
 	focus: {
 		boxShadowWidth: '--set-focus-box-shadow-width',
 		boxShadowOpacity: '--set-focus-box-shadow-opacity',
+		// Ring tint — declared by `surfaces/_focus.scss`. Defaults to the
+		// active variant background-color (so a focused `.danger` element
+		// rings danger-red), with `--color-primary` as the neutral fallback.
+		color: '--set-focus-color',
 	},
 
 	// Icon tokens — single overridable inline-SVG library for every chrome
@@ -247,7 +257,6 @@ export const tokens = {
 		transitionDuration: '--set-input-transition-duration',
 		cursor: '--set-input-cursor',
 		disabled: { opacity: '--set-input-disabled-opacity' },
-		placeholder: { opacity: '--set-input-placeholder-opacity' },
 		focus: {
 			borderColor: '--set-input-focus-border-color',
 			boxShadow: '--set-input-focus-box-shadow',
@@ -269,7 +278,6 @@ export const tokens = {
 		transitionDuration: '--set-textarea-transition-duration',
 		cursor: '--set-textarea-cursor',
 		disabled: { opacity: '--set-textarea-disabled-opacity' },
-		placeholder: { opacity: '--set-textarea-placeholder-opacity' },
 		focus: {
 			borderColor: '--set-textarea-focus-border-color',
 			boxShadow: '--set-textarea-focus-box-shadow',
@@ -910,6 +918,35 @@ export const tokens = {
 		lineHeight: '--set-figcaption-line-height',
 	},
 
+	// Element-scoped tokens declared on `<data>` (machine-readable value
+	// annotation). Numeric labels align in tabular-nums by default; consumers
+	// override per element when proportional digits are needed.
+	data: {
+		fontVariantNumeric: '--set-data-font-variant-numeric',
+	},
+
+	// Element-scoped tokens declared on `<time>` (date / time annotation).
+	// Same tabular-nums default as `<data>` so columns of times line up
+	// vertically without per-call utilities.
+	time: {
+		fontVariantNumeric: '--set-time-font-variant-numeric',
+	},
+
+	// Element-scoped tokens declared on `<u>` (unarticulated annotation).
+	// Disambiguated from a hyperlink via a muted dashed underline so the
+	// annotation reads as labelled rather than linked.
+	u: {
+		textDecorationColor: '--set-u-text-decoration-color',
+		textDecorationStyle: '--set-u-text-decoration-style',
+	},
+
+	// Element-scoped tokens declared on `<math>` (MathML formula). Math-aware
+	// font-family chain so consumers without STIX / Latin Modern Math
+	// installed still get correct operator / symbol glyphs out of the box.
+	math: {
+		fontFamily: '--set-math-font-family',
+	},
+
 	video: {
 		borderRadius: '--set-video-border-radius',
 		backgroundColor: '--set-video-background-color',
@@ -917,6 +954,23 @@ export const tokens = {
 
 	audio: {
 		inlineSize: '--set-audio-inline-size',
+	},
+
+	// Element-scoped tokens declared on `<canvas>` (bitmap surface). Caps
+	// the rendered inline size to the container — same overflow-bound treatment
+	// as <img> / <iframe> / <embed> / <object>. The internal pixel grid still
+	// comes from the `width` / `height` HTML attributes (set both for HiDPI).
+	canvas: {
+		maxInlineSize: '--set-canvas-max-inline-size',
+		blockSize: '--set-canvas-block-size',
+	},
+
+	// Element-scoped tokens declared on `<svg>` (inline SVG). Same overflow
+	// treatment as `<canvas>` / `<img>` so authored viewBox-only SVGs respect
+	// their container width and preserve aspect ratio.
+	svg: {
+		maxInlineSize: '--set-svg-max-inline-size',
+		blockSize: '--set-svg-block-size',
 	},
 
 	iframe: {
@@ -961,7 +1015,34 @@ export const tokens = {
 			paddingBlock: '--set-popover-hint-padding-block',
 			fontSize: '--set-popover-hint-font-size',
 			maxInlineSize: '--set-popover-hint-max-inline-size',
+			boxShadow: '--set-popover-hint-box-shadow',
 		},
+	},
+
+	// Surface tokens — `::placeholder` text in form controls. Owned by
+	// `surfaces/_placeholder.scss`; `<input>` / `<textarea>` no longer
+	// declare per-element placeholder rules — the surface paints once for
+	// every form control.
+	placeholder: {
+		color: '--set-placeholder-color',
+		opacity: '--set-placeholder-opacity',
+	},
+
+	// Surface tokens — `::marker` for list items. Owned by
+	// `surfaces/_marker.scss`. `<summary>` paints its own custom marker
+	// via mask-image and is intentionally outside this surface's reach.
+	marker: {
+		color: '--set-marker-color',
+		content: '--set-marker-content',
+	},
+
+	// Surface tokens — `::selection` highlighted text. Owned by
+	// `surfaces/_selection.scss`. Background tracks the active variant
+	// context with a reduced-alpha mix so the highlighted text stays
+	// legible.
+	selection: {
+		color: '--set-selection-color',
+		backgroundColor: '--set-selection-background-color',
 	},
 
 	// Surface tokens — UA scrollbar styling.

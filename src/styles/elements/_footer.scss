@@ -3,5 +3,8 @@
 // Contains info about nearest sectioning ancestor: authorship, copyright, related links
 // A <footer> directly inside <body> gets the contentinfo landmark role
 // Quirk: <footer> nested inside another <footer> or <header> loses its landmark role
-
-// No framework rules — Tailwind v4 preflight handles UA reset.
+//
+// Hydration: chrome lives in `components/_footer.scss` (page footer chrome
+// when `body > footer`, descendant card-footer chrome when inside `<article>`).
+// Anchor-context reset for nav-command links lives in the same partial per
+// the §6.1 contract. Element-layer is a no-op.

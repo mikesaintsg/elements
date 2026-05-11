@@ -2,5 +2,8 @@
 // Browser defaults: display: block
 // A <header> directly inside <body> gets the banner landmark role
 // Quirk: <header> inside <article>, <section>, etc. loses its banner landmark role
-
-// No framework rules — Tailwind v4 preflight handles UA reset.
+//
+// Hydration: chrome lives in `components/_header.scss` (page app-bar chrome
+// when `body > header`, card-header chrome when descendant of <article>).
+// Anchor-context reset for the brand link + primary nav lives in the same
+// partial per the §6.1 contract. Element-layer is a no-op.

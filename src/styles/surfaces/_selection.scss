@@ -1,0 +1,64 @@
+// ============================================================================
+// ::selection — text-selection surface.
+//
+// Browser support: every modern engine. `::selection` styles the highlighted
+// text the user has selected (mouse-drag, keyboard shift+arrow, double-click
+// word-pick, etc.).
+//
+// Surfaces covered by this partial:
+//   ::selection       highlighted text background + foreground color
+//
+// Why a surface, not per-element rules:
+//   Selection appearance is a global UI signal — when the user selects text
+//   they expect the same highlight color across the whole app, not one tint
+//   inside `<p>` and another inside `<article>`. Centralising in one rule
+//   means the variant cascade still works (a `.danger` modifier in a
+//   parent retunes `--set-variant-background-color` for its subtree, which
+//   `::selection` reads through `--set-selection-background-color`'s
+//   `var()` chain), but the FALLBACK is consistent across the whole UI.
+//
+// Quirks:
+//   - `::selection` allows a small whitelist of properties: `color`,
+//     `background-color`, `text-shadow`, `-webkit-text-stroke-color`. Any
+//     other property (e.g. `padding`, `transform`, `text-decoration`) is
+//     silently ignored by the UA.
+//   - Generated outside the normal DOM tree, so `::selection` cannot
+//     inherit element-scoped tokens declared on the host. Tokens live on
+//     `:root` (where `::selection` reads them).
+//   - Background opacity reduced to ~25% so highlighted text stays
+//     legible. Selection painted at full opacity hides the underlying
+//     characters in some font rendering paths (especially anti-aliased
+//     light text on dark bg).
+//   - Setting `color` here overrides the underlying text color while the
+//     selection is active, so the value MUST satisfy WCAG contrast
+//     against `--set-selection-background-color`. Default is
+//     `--color-text-strong` (canvas-contrasting strong text) which
+//     reaches AA against the variant tints in both light and dark
+//     themes.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer surfaces {
+	:root {
+		// Tint tracks the active variant context — a `.success` modifier
+		// in a parent retunes its subtree's `--set-variant-background-
+		// color` and `::selection` follows. Bare-element fallback is the
+		// framework's primary identity so a selection inside
+		// non-modifier-scoped body copy reads as primary-tinted.
+		--set-selection-background-color: color-mix(
+			in oklab,
+			var(--set-variant-background-color, var(--color-primary)) 25%,
+			transparent
+		);
+		// Strong text reads cleanly over the selection tint in both
+		// light and dark themes (slate-950 / white respectively).
+		--set-selection-color: var(--color-text-strong);
+	}
+
+	::selection {
+		color: var(--set-selection-color);
+		background-color: var(--set-selection-background-color);
+	}
+}
+

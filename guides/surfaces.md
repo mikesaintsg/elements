@@ -182,29 +182,42 @@ Modern non-WebKit way to style scrollbars. The two-value `scrollbar-color: <thum
 
 ## 7. Focus surface
 
-[`_focus.scss`](../src/styles/surfaces/_focus.scss). `:focus-visible` ring shared across every interactive element (`<button>`, `<a>`, `<input>`, `<select>`, `<details>` toggle, `<menu>` items). Reads `--set-focus-box-shadow-width` and `--set-focus-box-shadow-opacity` tokens (declared on `:root` in [src/styles/\_tokens.scss](../src/styles/_tokens.scss)), plus the active variant identity (`--set-variant-background-color`) to tint the ring.
+[`_focus.scss`](../src/styles/surfaces/_focus.scss). `:focus-visible` ring shared across every interactive element — every button, link, summary toggle, custom `[tabindex]` widget, third-party combobox. Reads `--set-focus-color` (the variant tint, defaulting to `--color-primary`), `--set-focus-box-shadow-width`, and `--set-focus-box-shadow-opacity` from `:root`.
 
 ```scss
-:focus-visible {
+:focus-visible:not(:where(input, textarea, select)) {
 	outline: none;
 	box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
 		color-mix(
-			in srgb,
-			var(--set-variant-background-color) calc(var(--set-focus-box-shadow-opacity) * 100%),
+			in oklab,
+			var(--set-focus-color) calc(var(--set-focus-box-shadow-opacity) * 100%),
 			transparent
 		);
 }
 ```
 
-Why a shared surface rather than per-element rules: every interactive element gets identical focus signal. Ring width, opacity, and tint are tuned once at `:root` — consumers retune globally without touching component partials. A variant-scoped focus (e.g. `.danger button:focus-visible`) inherits the variant's background-color through `--set-variant-background-color`, so the ring automatically matches the host element's variant tint.
+**Opt-out scoping.** Form controls (`<input>`, `<textarea>`, `<select>`) declare their own `&:focus-visible` block in the elements layer because focus also recolors their border. The surface uses `:focus-visible:not(:where(input, textarea, select))` — `:where()` keeps the opt-out at zero specificity so the surface rule stays the lowest possible `:focus-visible`. Form controls keep their per-element ring AND border-color paint; everything else gets the surface ring.
+
+**Why a shared surface rather than per-element rules:** every interactive element (button, link, summary, custom widget) gets identical focus signal. Ring color tracks the active variant via `--set-focus-color → --set-variant-background-color → --color-primary`, so a focused `.danger` button rings danger-red without per-element rules.
 
 `:focus-visible` is the UA-determined "keyboard-style" focus — clicking a button doesn't paint the ring, tabbing to it does. The surface intentionally does not style plain `:focus` (which would catch mouse clicks too) — the user-agent's heuristic is the right one and overriding it produces sticky focus rings after every click.
+
+**Forced-colors fallback.** Custom `box-shadow` rings are stripped in Windows High Contrast mode, so the surface paints a paired `outline: 2px solid Highlight; outline-offset: 2px` rule under `@media (forced-colors: active)` so the focus signal survives.
 
 ---
 
 ## 8. Placeholder surface
 
-[`_placeholder.scss`](../src/styles/surfaces/_placeholder.scss). `::placeholder` opacity + color, shared across `<input>` / `<textarea>` / `<select>` (when the search-mode `<select>` ships).
+[`_placeholder.scss`](../src/styles/surfaces/_placeholder.scss). `::placeholder` color + opacity, shared across `<input>` / `<textarea>` (and the future search-mode `<select>`). The previous per-element `--set-input-placeholder-opacity` / `--set-textarea-placeholder-opacity` tokens are REMOVED — the surface owns the value via `--set-placeholder-color: currentColor` + `--set-placeholder-opacity: 0.6`.
+
+```scss
+::placeholder {
+	color: var(--set-placeholder-color);
+	opacity: var(--set-placeholder-opacity);
+}
+```
+
+**Why `currentColor`:** keeps the placeholder tracking the form control's own text color, so a `.danger` input still has a danger-tinted placeholder hint. Opacity is the muting mechanism — pure color change would lose the visual link to the field.
 
 **Forced-colors fallback.** Windows High Contrast and similar forced-colors modes flatten author colors. The surface declares:
 
@@ -212,6 +225,7 @@ Why a shared surface rather than per-element rules: every interactive element ge
 @media (forced-colors: active) {
 	::placeholder {
 		color: GrayText;
+		opacity: 1;
 	}
 }
 ```
@@ -222,17 +236,26 @@ so the placeholder stays distinguishable from real text under user-mandated colo
 
 ## 9. Marker surface
 
-[`_marker.scss`](../src/styles/surfaces/_marker.scss). `::marker` shared across `<li>`, `<summary>` (the disclosure triangle), `<details>` (when `[open]` mutates the marker content).
+[`_marker.scss`](../src/styles/surfaces/_marker.scss). `::marker` shared across `<li>` and any element with `display: list-item`.
 
-The framework swaps the UA Unicode triangle for a CSS-painted SVG mask so the marker tracks `currentColor` reliably across font-rendering quirks. Native `<summary>` markers in some browsers ignore `color` and paint with a hardcoded shade; routing through a `mask-image` SVG with `background-color: currentColor` sidesteps the bug.
+```scss
+::marker {
+	color: var(--set-marker-color);
+	content: var(--set-marker-content);
+}
+```
 
-Token `--set-marker-content` lets consumers swap the glyph (e.g. `▶` to `›`, or to a custom SVG). `--set-marker-color` defaults to `currentColor` so the marker tracks the surrounding text's variant tint.
+`--set-marker-color` defaults to `--color-text-muted` so list bullets read as structural hints rather than emphasis ink (Bootstrap's default). `--set-marker-content` defaults to `normal` — the UA sentinel that means "use the marker generated by `list-style-type`" — so leaving it as the default keeps the bullet / number / lower-roman that the consumer chose via `list-style-type`. Override per consumer to inject a custom glyph (`'›  '`, `'• '`, etc.).
+
+**Property whitelist.** Only a small set of properties applies inside `::marker`: `color`, `content`, `font-*`, `white-space`, `text-combine-upright`, `unicode-bidi`, `direction`, `animation-*`, `transition-*`. Trying to set `background`, `padding`, `margin`, `border`, `transform`, etc. is silently ignored by the UA — this is why marker styling stays minimal.
+
+**Why `<summary>` is intentionally outside this surface's reach.** `<summary>` paints its own disclosure marker via a `::before` mask-image SVG (see [elements/\_summary.scss](../src/styles/elements/_summary.scss)) because the UA's disclosure-triangle glyph renders inconsistently across engines and ignores `color` in some browsers. The summary partial sets `list-style: none` AND hides `::-webkit-details-marker`, so the surface's `::marker` rule never reaches it — the two surfaces don't collide.
 
 ---
 
 ## 10. Selection surface
 
-[`_selection.scss`](../src/styles/surfaces/_selection.scss). `::selection` paints the user's selected text with a variant-tinted background (`--set-variant-background-color` with reduced alpha) so highlights match the active theme. When a `.primary` / `.success` / `.danger` modifier scope is in effect, selection inside that scope picks up the matching tint:
+[`_selection.scss`](../src/styles/surfaces/_selection.scss). `::selection` paints the user's selected text with a variant-tinted background so highlights match the active theme. When a `.primary` / `.success` / `.danger` modifier scope is in effect, selection inside that scope picks up the matching tint:
 
 ```scss
 ::selection {
@@ -241,9 +264,9 @@ Token `--set-marker-content` lets consumers swap the glyph (e.g. `▶` to `›`,
 }
 ```
 
-Tokens default to `--set-variant-background-color` with the alpha reduced so highlighted text stays legible (selection that paints over text at full opacity hides the underlying characters in some font rendering paths).
+Background defaults to `color-mix(in oklab, var(--set-variant-background-color, var(--color-primary)) 25%, transparent)` so highlighted text stays legible — selection painted at full opacity hides the underlying characters in some font rendering paths. `--set-selection-color` defaults to `--color-text-strong` (canvas-contrasting strong text) which reaches AA against the variant tints in both light and dark themes.
 
-Like `::backdrop`, `::selection` is generated outside the normal DOM tree, so the tint tokens live on `:root`. Variant-scoped overrides cascade through the active variant context tokens — a `.danger` modifier in a parent element retunes `--set-variant-background-color` for its subtree, which `::selection` reads, so a selection inside a danger-themed panel paints with the danger tint without per-host rules.
+Like `::backdrop`, `::selection` is generated outside the normal DOM tree, so the tint tokens live on `:root`. Variant-scoped overrides cascade through the active variant context tokens — a `.danger` modifier in a parent element retunes `--set-variant-background-color` for its subtree, which `::selection` reads through the `var()` chain, so a selection inside a danger-themed panel paints with the danger tint without per-host rules.
 
 ---
 

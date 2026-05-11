@@ -1,5 +1,9 @@
 // <menu> – Unordered list (semantic variant for command/option lists)
 // Browser defaults: display: block; list-style-type: disc; padding-inline-start: 40px; margin-block: 1em
 // Functionally identical to <ul> but semantically implies a list of commands or toolbar items
-
-// No framework rules — Tailwind v4 preflight handles UA reset.
+//
+// Hydration: chrome lives in `components/_menu.scss` (toolbar / action-row /
+// nav-rail / TOC chrome disambiguated by ancestry). Popover-mode menu
+// chrome lives in `composables/_select.scss` (the `useSelect` listbox uses
+// `<menu popover>`). Element-layer is a no-op — UA list-marker reset is
+// inherited from Tailwind preflight.

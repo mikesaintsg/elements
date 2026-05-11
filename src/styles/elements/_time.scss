@@ -1,7 +1,25 @@
-// <time> – Date and/or time
-// Browser defaults: display: inline
-// Human-readable label between the tags; machine-readable ISO 8601 value in the datetime attribute
-// Examples: datetime="2026-05-08"  datetime="14:30"  datetime="2026-05-08T14:30:00Z"
-// Enables search engines and calendar apps to extract dates reliably
+// ============================================================================
+// time — Date and/or time annotation.
+//
+// Browser defaults: `display: inline`.
+//
+// Override — opt the human-readable label into `font-variant-numeric:
+// tabular-nums` so a column of times / dates aligns vertically. Almost
+// every <time> renders a numeric label (`14:30`, `2026-05-08`, `5 min`),
+// and proportional digits would jitter inside a list / table column.
+// Consumers wanting proportional digits opt out per element via the
+// token override.
+//
+// Examples:
+//   <time datetime="2026-05-08">May 8</time>
+//   <time datetime="14:30">2:30 PM</time>
+//   <time datetime="P5M">5 minutes</time>
+// ============================================================================
 
-// No visual reset needed
+@layer elements {
+	time {
+		--set-time-font-variant-numeric: tabular-nums;
+
+		font-variant-numeric: var(--set-time-font-variant-numeric);
+	}
+}

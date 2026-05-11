@@ -52,7 +52,6 @@
 		--set-input-transition-duration: var(--set-transition-duration);
 		--set-input-cursor: text;
 		--set-input-disabled-opacity: 0.5;
-		--set-input-placeholder-opacity: 0.6;
 		--set-input-focus-border-color: var(--set-variant-background-color, var(--color-primary));
 		--set-input-focus-box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
 			color-mix(
@@ -108,12 +107,10 @@
 		);
 
 		// ----------------------------------------------------------------------
-		// Placeholder
+		// Placeholder color/opacity owned by `surfaces/_placeholder.scss` —
+		// the surface paints `::placeholder` once for every form control so
+		// the framework's hint chrome stays uniform.
 		// ----------------------------------------------------------------------
-		&::placeholder {
-			color: currentColor;
-			opacity: var(--set-input-placeholder-opacity);
-		}
 
 		// ----------------------------------------------------------------------
 		// States
@@ -159,9 +156,6 @@
 			color: FieldText;
 			border-color: FieldText;
 
-			&::placeholder {
-				color: GrayText;
-			}
 
 			&:focus-visible {
 				outline: 2px solid Highlight;

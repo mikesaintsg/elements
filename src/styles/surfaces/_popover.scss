@@ -175,15 +175,17 @@
 	//   chicken-and-egg problem; consumers theme via the tokens directly.
 	// --------------------------------------------------------------------------
 	:root {
-		--set-popover-hint-color: var(--color-white, #fff);
-		// Dark inverted background — uses an explicit dark literal so the
-		// tooltip renders correctly even when the surrounding text color
-		// is the same shade (would otherwise produce white-on-white via
-		// `currentColor`). Authors override per-host or globally for theme.
-		// Opacity 0.95 mirrors mailbox's `--bs-tooltip-opacity` so the
-		// transient label keeps a hint of layer beneath it rather than
-		// reading as a fully opaque solid.
-		--set-popover-hint-background-color: rgb(15 23 42 / 0.95);
+		--set-popover-hint-color: var(--color-inverted-text);
+		// Inverted background — sourced from the semantic `--color-inverted`
+		// tier (declared in `_theme.scss` and re-pinned per theme so the
+		// inverted surface stays visually distinct against whichever
+		// canvas is active). Mixed with 5% transparency so the transient
+		// label keeps a hint of layer beneath it (mirrors mailbox's
+		// `--bs-tooltip-opacity: 0.95`). Light theme: dark slate hint on
+		// white canvas. Dark theme: light slate hint on dark canvas — the
+		// inversion still produces contrast in both modes without a
+		// per-theme override here.
+		--set-popover-hint-background-color: color-mix(in srgb, var(--color-inverted) 95%, transparent);
 		--set-popover-hint-border-color: transparent;
 		--set-popover-hint-padding-inline: calc(var(--spacing) * 2);
 		--set-popover-hint-padding-block: calc(var(--spacing) * 1);
@@ -194,6 +196,9 @@
 		// tooltip's own line rhythm rather than spanning the full
 		// `--set-anchor-max-inline-size`.
 		--set-popover-hint-max-inline-size: 12.5rem;
+		// Tooltip elevation — flows through the global `--set-box-shadow-sm`
+		// scale so a single `:root` retune retunes every floating chrome.
+		--set-popover-hint-box-shadow: var(--set-box-shadow-sm);
 	}
 
 	[popover='hint'],
@@ -206,7 +211,8 @@
 		font-size: var(--set-popover-hint-font-size);
 		max-inline-size: var(--set-popover-hint-max-inline-size);
 		// Tooltips are transient; a smaller shadow keeps them visually
-		// lighter than a full menu / dropdown panel.
-		box-shadow: 0 4px 8px -2px rgb(0 0 0 / 0.18);
+		// lighter than a full menu / dropdown panel — `--set-box-shadow-sm`
+		// rather than the panel-tier `--set-box-shadow` base.
+		box-shadow: var(--set-popover-hint-box-shadow);
 	}
 }

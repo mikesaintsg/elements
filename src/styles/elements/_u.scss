@@ -1,7 +1,25 @@
-// <u> – Unarticulated non-textual annotation
-// Browser defaults: text-decoration: underline
-// Use for proper nouns in Chinese text or flagging misspellings — not for stylistic underlining
-// Quirk: looks identical to a hyperlink — use sparingly and visually distinguish from <a>
-//   e.g. text-decoration-color: red or a different text-decoration-style
+// ============================================================================
+// u — Unarticulated non-textual annotation.
+//
+// Browser defaults: `text-decoration: underline` (solid, currentColor).
+//
+// Use for proper nouns in Chinese text, misspellings, or other
+// "labelled" annotations — NOT for stylistic underline (`text-decoration`
+// utility) and NOT for links (use <a>).
+//
+// Override — visually disambiguate <u> from a hyperlink by routing the
+// underline through a muted color and a `dashed` style. Bare <a> uses
+// `solid` underline + `--color-primary`; <u> now reads as "annotated"
+// rather than "linked." Consumers retune via the two tokens at `:root`
+// (e.g. `--set-u-text-decoration-style: wavy` for spelling-flag UX).
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	u {
+		--set-u-text-decoration-color: var(--color-text-muted);
+		--set-u-text-decoration-style: dashed;
+
+		text-decoration-color: var(--set-u-text-decoration-color);
+		text-decoration-style: var(--set-u-text-decoration-style);
+	}
+}

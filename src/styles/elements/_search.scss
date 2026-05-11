@@ -2,5 +2,7 @@
 // Browser defaults: display: block
 // Introduced in HTML 5.3 (widely supported 2023+)
 // Automatically provides the ARIA search landmark role without needing role="search" on a <div>
-
-// No framework rules — Tailwind v4 preflight handles UA reset.
+//
+// Hydration: chrome lives in `components/_search.scss` (search-bar layout
+// hosting an `<input type="search">` + optional `<button>` filter affordance).
+// Element-layer is a no-op.

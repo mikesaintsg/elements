@@ -1,0 +1,51 @@
+// ============================================================================
+// ::placeholder — form-control placeholder text surface.
+//
+// Browser support: every modern engine. `::placeholder` is the standard
+// pseudo-element targeting placeholder text in `<input>` and `<textarea>`.
+// Vendor prefixes (::-webkit-input-placeholder, ::-moz-placeholder) are no
+// longer required.
+//
+// Surfaces covered by this partial:
+//   ::placeholder           the placeholder text in <input> / <textarea>
+//   ::placeholder (forced)  Windows High Contrast / forced-colors fallback
+//
+// Why a surface, not per-element rules:
+//   Both `<input>` and `<textarea>` (and any future form control with
+//   placeholder-shown semantics) want identical placeholder treatment —
+//   slightly muted color, partial opacity so it reads as "hint text" not
+//   "real value". Centralising in one rule means a consumer retunes
+//   placeholder appearance at one token (--set-placeholder-color /
+//   --set-placeholder-opacity) and every form control follows.
+//
+// Quirks:
+//   - `currentColor` keeps the placeholder tracking the form control's
+//     own text color (so a `.danger` input still has a danger-tinted
+//     placeholder hint). Opacity is the muting mechanism — pure color
+//     change would lose the visual link to the field.
+//   - In forced-colors mode, custom colors flatten to system palette;
+//     `GrayText` is the canonical "secondary text" color preserved by
+//     the UA and the right fallback for placeholder hints.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer surfaces {
+	:root {
+		--set-placeholder-color: currentColor;
+		--set-placeholder-opacity: 0.6;
+	}
+
+	::placeholder {
+		color: var(--set-placeholder-color);
+		opacity: var(--set-placeholder-opacity);
+	}
+
+	@include forced-colors {
+		::placeholder {
+			color: GrayText;
+			opacity: 1;
+		}
+	}
+}
+

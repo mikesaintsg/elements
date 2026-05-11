@@ -1,6 +1,27 @@
-// <picture> – Responsive image source switcher
-// Browser defaults: display: inline (inherits from the rendered <img>)
-// Coupled: <source> children (conditions) evaluated in order + one required <img> (last child, fallback)
-// Quirk: alt, width, height, and loading attributes belong on <img>, not on <source>
+// ============================================================================
+// picture — Responsive image source switcher.
+//
+// Browser defaults: `display: inline` (the wrapper itself; the inner <img>
+// renders per its own preflight rules).
+//
+// Coupled: <source> children (conditions) evaluated in order + one
+// required <img> (last child, fallback). `alt`, `width`, `height`,
+// `loading`, and any visual styling belong on the <img>, not on the
+// <source> elements.
+//
+// Override — `display: contents` so the <picture> wrapper is invisible to
+// the layout engine. Without this, a <picture> sitting in a flex / grid
+// row introduces an extra inline box that confuses container queries
+// and intrinsic sizing. With `display: contents`, the parent layout
+// sees the inner <img> directly, exactly as if the <picture> wrapper
+// weren't there. The wrapper still owns source-switching semantics in
+// the DOM; only its layout box is suppressed.
+//
+// No `--set-picture-*` tokens — the rule is structural, not visual.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight + UA defaults handle this.
+@layer elements {
+	picture {
+		display: contents;
+	}
+}

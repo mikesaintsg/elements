@@ -27,7 +27,6 @@
 		--set-textarea-transition-duration: var(--set-transition-duration);
 		--set-textarea-cursor: text;
 		--set-textarea-disabled-opacity: 0.5;
-		--set-textarea-placeholder-opacity: 0.6;
 		--set-textarea-focus-border-color: var(--set-variant-background-color, var(--color-primary));
 		--set-textarea-focus-box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
 			color-mix(
@@ -71,10 +70,7 @@
 			)
 		);
 
-		&::placeholder {
-			color: currentColor;
-			opacity: var(--set-textarea-placeholder-opacity);
-		}
+		// Placeholder color/opacity owned by `surfaces/_placeholder.scss`.
 
 		&:focus-visible {
 			outline: none;

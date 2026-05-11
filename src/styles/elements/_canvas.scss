@@ -1,7 +1,28 @@
-// <canvas> – Bitmap drawing surface
-// Browser defaults: display: inline; width: 300px; height: 150px
-// Quirk: CSS size scales the element but not the internal pixel grid —
-//   always set both the width/height attributes and CSS dimensions together for sharp HiDPI output
-// Quirk: like <img>, sits on the text baseline — a gap appears below in a block container
+// ============================================================================
+// canvas — Bitmap drawing surface.
+//
+// Override — same family as <img> / <iframe> / <embed> / <object>: cap
+// the rendered inline size to the container so canvases authored at
+// arbitrary device-pixel widths don't overflow on narrow viewports.
+// `block-size: auto` keeps the canvas's aspect ratio when scaled.
+//
+// Quirks:
+//   - CSS size scales the rendered output; the internal pixel grid is
+//     governed by the `width` / `height` HTML attributes. Always set
+//     both for sharp HiDPI output — the CSS size below only ensures
+//     the rendered surface respects the layout container.
+//   - Like <img>, sits on the text baseline by default — a gap appears
+//     below in a block container. Apply `display: block` per consumer
+//     when that gap matters (the framework leaves it inline so canvases
+//     can flow with text where intended).
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	canvas {
+		--set-canvas-max-inline-size: 100%;
+		--set-canvas-block-size: auto;
+
+		max-inline-size: var(--set-canvas-max-inline-size);
+		block-size: var(--set-canvas-block-size);
+	}
+}

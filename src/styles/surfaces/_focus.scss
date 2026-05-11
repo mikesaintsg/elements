@@ -1,0 +1,80 @@
+// ============================================================================
+// :focus-visible — keyboard-focus ring surface.
+//
+// Browser support: every modern engine. `:focus-visible` is the UA-determined
+// "keyboard-style" focus selector — clicking a button doesn't paint the ring,
+// tabbing to it does. Chromium 86+, Firefox 85+, Safari 15.4+.
+//
+// Surfaces covered by this partial:
+//   :focus-visible            generic keyboard-focus ring for any focusable
+//                             element that doesn't paint its own
+//   :focus-visible (forced)   forced-colors-mode fallback ring
+//
+// Why a surface, not per-element rules:
+//   Every interactive element (button, link, input, textarea, select,
+//   summary, custom [tabindex] widget, third-party combobox) wants the same
+//   keyboard focus signal. Putting the rule in one place — the surfaces
+//   layer — means the consumer retunes the framework's focus signal at one
+//   token (--set-focus-color) and every focusable element follows. See
+//   surfaces.md §7.
+//
+// Opt-out scoping:
+//   Form controls (input / textarea / select) declare their own
+//   `&:focus-visible` block in the elements layer because focus also
+//   recolors their border. The surface targets `:focus-visible:not(:where
+//   (input, textarea, select))` so those elements keep their own
+//   border-color paint AND box-shadow recipe. Every other focusable
+//   element gets the surface's ring by default.
+//
+// Quirks:
+//   - `outline: none` on its own is an a11y bug — pair with a visible focus
+//     affordance (the ring). The surface ships both, so removing the
+//     outline never strands a focusable element without a focus signal.
+//   - In `forced-colors: active` (Windows High Contrast), custom
+//     box-shadow rings are stripped by the UA. The surface declares a
+//     paired `outline: 2px solid Highlight; outline-offset: 2px;` rule so
+//     the focus signal survives HC mode.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer surfaces {
+	:root {
+		// The focus ring tints with the active variant: a `<button class
+		// ='primary'>` rings primary-blue, a `<button class='danger'>` rings
+		// danger-red. Neutral fallback is `--color-primary` so a bare
+		// element rings with the framework's primary identity (matching
+		// the bare-button border / accent default).
+		--set-focus-color: var(--set-variant-background-color, var(--color-primary));
+	}
+
+	// `:where()` keeps the opt-out selector at zero specificity so the
+	// real selector is plain `:focus-visible` — the LOWEST possible
+	// `:focus-visible` rule. Per-element rules in the elements layer that
+	// declare `input:focus-visible { ... }` (specificity 0,1,1) STILL lose
+	// to this surface rule by layer order — but only for box-shadow /
+	// outline. Their `border-color` paint stays.
+	//
+	// Form controls in the opt-out list keep their own focus chrome
+	// (variant-tinted border + matching box-shadow) so `:user-invalid`
+	// + focus combinations can paint a danger-tinted ring without the
+	// generic surface ring stomping it.
+	:focus-visible:not(:where(input, textarea, select)) {
+		outline: none;
+		box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+			color-mix(
+				in oklab,
+				var(--set-focus-color) calc(var(--set-focus-box-shadow-opacity) * 100%),
+				transparent
+			);
+	}
+
+	@include forced-colors {
+		:focus-visible:not(:where(input, textarea, select)) {
+			outline: 2px solid Highlight;
+			outline-offset: 2px;
+			box-shadow: none;
+		}
+	}
+}
+

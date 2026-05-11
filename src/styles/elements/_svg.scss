@@ -1,8 +1,29 @@
-// <svg> – Inline SVG graphics container
-// Browser defaults: display: inline (inline-replaced)
-// Unlike <img src="…svg">, inline SVG exposes its internal DOM to CSS and JS
-// Quirk: SVG without explicit width/height or a viewBox may render at 0×0
-// Quirk: default overflow: hidden can clip content outside the viewBox
-// fill="currentColor" on SVG paths enables CSS color theming via the color property
+// ============================================================================
+// svg — Inline SVG graphics container.
+//
+// Browser defaults: `display: inline` (inline-replaced).
+//
+// Override — same overflow-bound treatment as <img> / <iframe> / <canvas>:
+// cap the rendered inline size to its container so authored
+// `viewBox`-only SVGs don't overflow the layout. `block-size: auto`
+// preserves the aspect ratio when scaled.
+//
+// Quirks:
+//   - SVG without explicit width/height or a viewBox may render at 0×0.
+//   - Default `overflow: hidden` can clip content outside the viewBox.
+//   - `fill="currentColor"` on SVG paths enables CSS color theming via
+//     the `color` property — consumers leverage this for per-context tints
+//     without forking the asset.
+//   - Inline SVGs used as <i class="icon"> mask payloads consume the
+//     `--icon` consumer-supplied custom property instead — see _i.scss.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	svg {
+		--set-svg-max-inline-size: 100%;
+		--set-svg-block-size: auto;
+
+		max-inline-size: var(--set-svg-max-inline-size);
+		block-size: var(--set-svg-block-size);
+	}
+}

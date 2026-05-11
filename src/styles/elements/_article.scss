@@ -2,5 +2,10 @@
 // Browser defaults: display: block
 // Reusable, independently distributable content (blog post, news story, product card)
 // Nesting is valid — inner article is related to outer
-
-// No framework rules — Tailwind v4 preflight handles UA reset.
+//
+// Hydration: chrome lives in `components/_article.scss` (card surface,
+// descendant <header> / <footer> as card-header / card-footer, `.filled`
+// surface fill, `--set-article-box-shadow` flowing from `--set-box-shadow-sm`).
+// This element-layer partial intentionally emits no rule — element vs
+// component layering ensures the card chrome stays in the components layer
+// where utilities can override it cleanly.

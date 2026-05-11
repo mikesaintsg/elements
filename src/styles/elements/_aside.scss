@@ -2,5 +2,10 @@
 // Browser defaults: display: block
 // Sidebar material: pull quotes, related links, glossary terms, ads
 // Do not use as a generic side-column if the content is integral to the page narrative
-
-// No framework rules — Tailwind v4 preflight handles UA reset.
+//
+// Hydration: chrome lives in `components/_aside.scss` and disambiguates
+// three contexts by ancestry: `body > aside` (sidebar rail / TOC),
+// `article aside` (pull-quote / callout), `aside[role="alert"]` (alert banner).
+// Drawer-mode chrome (`<aside popover>`) lives in `composables/_aside.scss`
+// gated on `[data-aside-open]`. This element-layer partial is intentionally a
+// no-op — see [components.md](../../guides/components.md) for the ancestry rules.

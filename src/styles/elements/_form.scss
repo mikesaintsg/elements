@@ -2,5 +2,8 @@
 // Browser defaults: display: block
 // action (URL), method (get/post), enctype (multipart/form-data for file uploads)
 // Controls can live outside <form> via the form="id" attribute on the control
-
-// No framework rules — Tailwind v4 preflight handles UA reset.
+//
+// Hydration: chrome lives in `components/_form.scss` (vertical control stack
+// with `--set-form-row-gap`; `.row` modifier flips to horizontal). Form-state
+// chrome (`[data-form-validated]`, `aria-invalid` mirrors) lives in the
+// `useForm` / `createForm` composable layer. Element-layer is a no-op.

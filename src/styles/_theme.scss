@@ -105,6 +105,20 @@
 	--color-border-strong: var(--color-slate-300);
 	--color-border-subtle: var(--color-slate-100);
 
+	// Inverted surface — the canvas-opposite tier. Always painted as the
+	// theme-flipped surface so a tooltip / hint / inverted callout reads as
+	// distinct from the page underneath REGARDLESS of theme. In light mode
+	// the inverted surface is dark slate; in dark mode it flips to a light
+	// slate so the inversion still produces contrast against the dark
+	// canvas (rather than collapsing dark-on-dark).
+	//
+	// Consumed by `surfaces/_popover.scss`'s `[popover='hint']` /
+	// `[role='tooltip']` chrome, and any consumer-authored "always
+	// distinct from the canvas" surface (inverted callouts, dark-on-light
+	// promo bars in light mode, etc.).
+	--color-inverted: var(--color-slate-900);
+	--color-inverted-text: var(--color-white);
+
 	// ── Variant subtle scale ──────────────────────────────────────────────
 	// Tinted backgrounds, saturated text, and medium-strength borders
 	// derived from each variant identity. Mirrors the Bootstrap-style
@@ -202,6 +216,12 @@
 		--color-border: var(--color-slate-700);
 		--color-border-strong: var(--color-slate-600);
 		--color-border-subtle: var(--color-slate-800);
+
+		// Inverted surface flips with the theme so the inversion stays
+		// visually distinct against the dark canvas — see the light-mode
+		// declaration above for rationale.
+		--color-inverted: var(--color-slate-100);
+		--color-inverted-text: var(--color-slate-900);
 
 		// Variant subtle — re-derived against the dark surface. The light-mode
 		// 12-over-canvas formula dissolves at low surface lightness; bumping
@@ -313,6 +333,11 @@
 	--color-border: var(--color-slate-700);
 	--color-border-strong: var(--color-slate-600);
 	--color-border-subtle: var(--color-slate-800);
+
+	// Inverted surface flips with the theme — see the light-mode declaration
+	// for rationale.
+	--color-inverted: var(--color-slate-100);
+	--color-inverted-text: var(--color-slate-900);
 
 	// Variant subtle — re-derived against the dark surface. The light-mode
 	// 12-over-canvas formula dissolves at low surface lightness; bumping

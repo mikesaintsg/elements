@@ -63,7 +63,7 @@ The framework ships **non-color baseline tokens** alongside the color palette so
 
 - `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-sticky-offset` declared on `:root` so unsized elements have sensible defaults.
 - `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}` — single canonical layering scale (Bootstrap-aligned) for every floating surface.
-- `--set-box-shadow-{sm,base,lg}` — three-tier elevation scale consumed by every floating chrome partial.
+- `--set-box-shadow-sm`, `--set-box-shadow` (un-suffixed base tier — Bootstrap-aligned `--bs-box-shadow` convention), `--set-box-shadow-lg` — three-tier elevation scale consumed by every floating chrome partial.
 - `--set-focus-box-shadow-{width,opacity}` — focus-ring composition consumed by the `focus-ring()` mixin so every interactive element rings consistently.
 
 The baseline is **deliberately unopinionated**: a slate ramp for surfaces, a Tailwind `-600`-step palette for variant identities, a 0.375rem default radius, a 1px default border. Consumers who want a brand identity override at `:root` and the cascade re-tunes every consumer at once. The framework feels coherent the moment it loads; opinions stay optional.

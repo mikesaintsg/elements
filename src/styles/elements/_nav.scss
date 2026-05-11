@@ -3,5 +3,10 @@
 // Use for major navigation groups (primary site nav, ToC, breadcrumb, pagination)
 // Minor link clusters (footer legal links) do not need <nav>
 // Multiple <nav> elements are fine — differentiate with aria-label
-
-// No framework rules — Tailwind v4 preflight handles UA reset.
+//
+// Hydration: chrome lives in `components/_nav.scss`. Shape is determined
+// by inner content + ancestry: bare = horizontal flex; `body > nav` = vertical
+// rail; `<ol>`/`<ul>` with `aria-label="Breadcrumb"` = chevron-separated
+// breadcrumb; `[role="tablist"]` child = tab strip. Sidebar nav-row chrome
+// (full-width links / buttons) lives in `components/_menu.scss` per §6.1.
+// Element-layer is a no-op.

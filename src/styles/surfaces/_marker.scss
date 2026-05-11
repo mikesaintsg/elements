@@ -1,0 +1,65 @@
+// ============================================================================
+// ::marker — list-item marker surface.
+//
+// Browser support: Chromium 86+, Firefox 68+, Safari 11.1+. The pseudo
+// targets the auto-generated bullet / number / disclosure-triangle on any
+// element with `display: list-item` (default for <li>, opt-in for others).
+//
+// Surfaces covered by this partial:
+//   ::marker          list-item bullet / number color + content
+//
+// Why a surface, not per-element rules:
+//   The default UA marker is `currentColor` AND tracks the parent's
+//   font-size — already correct chrome — but its color is fixed to the
+//   parent's text color, which makes a long body of text-with-bullets read
+//   as "ink-heavy" because the bullet has the same weight as the text.
+//   Bootstrap and similar frameworks mute the bullet to a secondary text
+//   tier so the bullets become structural hints rather than emphasis. The
+//   surface does the same: --set-marker-color defaults to the muted text
+//   tier (`--color-text-muted`) so list bullets read as secondary.
+//
+// Scope:
+//   `<summary>` paints its own disclosure marker via a `::before`
+//   mask-image SVG (see `elements/_summary.scss`) because the UA's
+//   disclosure-triangle glyph renders inconsistently across engines and
+//   ignores `color` in some browsers. The summary partial sets `list-style:
+//   none` AND hides `::-webkit-details-marker`, so the surface's `::marker`
+//   rule never reaches summary in the first place — the two surfaces don't
+//   collide.
+//
+// Quirks:
+//   - Only a small whitelist of properties applies inside `::marker`:
+//     `color`, `content`, `font-*`, `white-space`, `text-combine-upright`,
+//     `unicode-bidi`, `direction`, `animation-*`, `transition-*`. Trying
+//     to set `background`, `padding`, `margin`, `border`, `transform`,
+//     etc. is silently ignored by the UA. This is why marker styling
+//     stays minimal.
+//   - `::marker` only targets elements with `display: list-item`. A
+//     `<div>` won't get a marker even if a `::marker` rule exists for it
+//     unless `display: list-item` is also set on the div.
+//   - `content: normal` (the UA default) means "use the marker generated
+//     by `list-style-type`" — so leaving `--set-marker-content: normal`
+//     keeps the bullet / number / lower-roman / etc. that the consumer
+//     chose via `list-style-type`.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer surfaces {
+	:root {
+		// Muted body-tier color — list bullets read as structural hints
+		// rather than emphasis ink. Tracks the active theme through
+		// `--color-text-muted` (light: slate-600, dark: slate-400).
+		--set-marker-color: var(--color-text-muted);
+		// `normal` keeps the UA-generated marker from `list-style-type`
+		// (disc / decimal / lower-roman / …). Override per consumer to
+		// inject a custom glyph (`'›  '`, `'• '`, etc.).
+		--set-marker-content: normal;
+	}
+
+	::marker {
+		color: var(--set-marker-color);
+		content: var(--set-marker-content);
+	}
+}
+
