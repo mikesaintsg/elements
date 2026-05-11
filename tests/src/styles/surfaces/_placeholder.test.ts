@@ -40,4 +40,3 @@ describe('placeholder — surface rule', () => {
 		expect(style(input, 'opacity')).toBe('1')
 	})
 })
-

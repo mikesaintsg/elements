@@ -8,16 +8,16 @@ You reach for `<button class="primary large">`, not `.btn-primary-lg`. You drop 
 
 ## What's in the box
 
-| Layer            | Owns                                                                                                                                                       |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Theme**        | Semantic colour variants (`--color-primary`, `--color-success`, …) registered with Tailwind via `@theme`; light/dark surface, text, border tiers           |
-| **Tokens**       | The `--set-*` variation surface — every visible value is overridable at `:root` (border-radius, gap, z-index scale, elevation, focus ring, icons, floater) |
-| **Mixins**       | `@include transition()` (paired with `prefers-reduced-motion`), `focus-ring()`, `forced-colors`, `floater-bounds`, `palette-each`                          |
-| **Modifiers**    | Four orthogonal dimensions — `variants`, `sizes`, `styles`, `states` — plus a `placements` system for `[popover]` panels                                   |
-| **Elements**     | One partial per HTML tag, token-driven baselines; bare elements look "alive" without utilities                                                             |
-| **Components**   | Element compositions (`<article>` as card, `<menu>` as toolbar, `<output popover>` as toast, …)                                                            |
-| **Surfaces**     | Pseudo-element / attribute-API chrome — `[popover]`, `::backdrop`, `:focus-visible`, `::placeholder`, `::marker`, `::selection`, `::view-transition-*`     |
-| **Composables**  | 20 framework-agnostic factories (`createDialog`, `createToast`, `createPopover`, …) paired with Vue 3 adapters (`useDialog`, `useToast`, `usePopover`, …)  |
+| Layer           | Owns                                                                                                                                                       |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Theme**       | Semantic colour variants (`--color-primary`, `--color-success`, …) registered with Tailwind via `@theme`; light/dark surface, text, border tiers           |
+| **Tokens**      | The `--set-*` variation surface — every visible value is overridable at `:root` (border-radius, gap, z-index scale, elevation, focus ring, icons, floater) |
+| **Mixins**      | `@include transition()` (paired with `prefers-reduced-motion`), `focus-ring()`, `forced-colors`, `floater-bounds`, `palette-each`                          |
+| **Modifiers**   | Four orthogonal dimensions — `variants`, `sizes`, `styles`, `states` — plus a `placements` system for `[popover]` panels                                   |
+| **Elements**    | One partial per HTML tag, token-driven baselines; bare elements look "alive" without utilities                                                             |
+| **Components**  | Element compositions (`<article>` as card, `<menu>` as toolbar, `<output popover>` as toast, …)                                                            |
+| **Surfaces**    | Pseudo-element / attribute-API chrome — `[popover]`, `::backdrop`, `:focus-visible`, `::placeholder`, `::marker`, `::selection`, `::view-transition-*`     |
+| **Composables** | 20 framework-agnostic factories (`createDialog`, `createToast`, `createPopover`, …) paired with Vue 3 adapters (`useDialog`, `useToast`, `usePopover`, …)  |
 
 ---
 
@@ -29,10 +29,10 @@ npm install elements tailwindcss @tailwindcss/postcss
 
 The package ships two entry points:
 
-| Subpath           | Purpose                                                  |
-| ----------------- | -------------------------------------------------------- |
-| `elements/styles` | Compiled CSS bundle — drop into your entry stylesheet    |
-| `elements/browser`| TypeScript composables + factories + token registries    |
+| Subpath                | Purpose                                                |
+| ---------------------- | ------------------------------------------------------ |
+| `elements/styles`      | Compiled CSS bundle — drop into your entry stylesheet  |
+| `elements/browser`     | TypeScript composables + factories + token registries  |
 | `elements/styles/scss` | SCSS source — for consumers compiling their own bundle |
 
 ---
@@ -81,10 +81,14 @@ export default {
 ### Hydrated baselines — zero classes required
 
 ```html
-<button>Save</button>            <!-- Border, padding, hover, focus ring, transition all present -->
-<dialog open>…</dialog>          <!-- Centered modal with backdrop scrim and lift shadow -->
-<form>…</form>                   <!-- Vertical stack with consistent label/control rhythm -->
-<menu>…</menu>                   <!-- Horizontal toolbar; nav-rail context makes it vertical -->
+<button>Save</button>
+<!-- Border, padding, hover, focus ring, transition all present -->
+<dialog open>…</dialog>
+<!-- Centered modal with backdrop scrim and lift shadow -->
+<form>…</form>
+<!-- Vertical stack with consistent label/control rhythm -->
+<menu>…</menu>
+<!-- Horizontal toolbar; nav-rail context makes it vertical -->
 ```
 
 ### Modifier cascade — variant + size + style compose orthogonally
@@ -128,7 +132,7 @@ Pin a brand color at `:root` and the entire cascade retunes — focus rings, toa
 Switch light ↔ dark by toggling `[data-theme]`:
 
 ```html
-<html data-theme="dark">
+<html data-theme="dark"></html>
 ```
 
 ---

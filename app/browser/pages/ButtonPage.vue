@@ -42,7 +42,15 @@ const logToggle = (e: Event): void => {
 	if (events.value.length > 6) events.value.length = 6
 }
 
-const variants = ['primary', 'secondary', 'tertiary', 'success', 'warning', 'danger', 'information'] as const
+const variants = [
+	'primary',
+	'secondary',
+	'tertiary',
+	'success',
+	'warning',
+	'danger',
+	'information',
+] as const
 
 const snippetBare = `<button>Save</button>`
 
@@ -182,25 +190,27 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		<hgroup>
 			<h1>Button</h1>
 			<p>
-				The interactive primitive. Every other framework element ports the <code>&lt;button&gt;</code>
-				cascade pattern — token chain, modifier orthogonality, hover / focus / active painting, forced-colors
-				fallback — so what you see on this page describes the framework's posture toward every interactive
-				surface that follows.
+				The interactive primitive. Every other framework element ports the
+				<code>&lt;button&gt;</code>
+				cascade pattern — token chain, modifier orthogonality, hover / focus / active painting,
+				forced-colors fallback — so what you see on this page describes the framework's posture
+				toward every interactive surface that follows.
 			</p>
 		</hgroup>
 		<p>
 			Every demo below is real working markup. Inspect any element, walk the cascade, override the
-			<code>--set-button-*</code> tokens at <code>:root</code> to retune. There are zero Tailwind utilities
-			painting the chrome on this page — every line, padding, shadow, and ring comes from the framework.
+			<code>--set-button-*</code> tokens at <code>:root</code> to retune. There are zero Tailwind
+			utilities painting the chrome on this page — every line, padding, shadow, and ring comes from
+			the framework.
 		</p>
 	</section>
 
 	<section id="button-bare">
 		<h2>Bare button</h2>
 		<p>
-			The zero-class default. Framework gives you padding, border-radius, font, focus ring,
-			and motion-paired hover all for free. The bare element renders neutral so a variant
-			modifier paints identity on top without fighting an opinionated baseline.
+			The zero-class default. Framework gives you padding, border-radius, font, focus ring, and
+			motion-paired hover all for free. The bare element renders neutral so a variant modifier
+			paints identity on top without fighting an opinionated baseline.
 		</p>
 		<div class="cluster">
 			<button type="button">Save</button>
@@ -214,10 +224,10 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 	<section id="button-variants">
 		<h2>Variants</h2>
 		<p>
-			Seven semantic variants — <code>primary</code>, <code>secondary</code>,
-			<code>tertiary</code>, <code>success</code>, <code>warning</code>, <code>danger</code>,
-			<code>information</code>. Each sets the variant-context tokens; the button element resolves
-			them through its fallback chain (<code>style → variant → default</code>).
+			Seven semantic variants — <code>primary</code>, <code>secondary</code>, <code>tertiary</code>,
+			<code>success</code>, <code>warning</code>, <code>danger</code>, <code>information</code>.
+			Each sets the variant-context tokens; the button element resolves them through its fallback
+			chain (<code>style → variant → default</code>).
 		</p>
 		<div class="cluster">
 			<button type="button">Default</button>
@@ -234,9 +244,9 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 	<section id="button-sizes">
 		<h2>Sizes</h2>
 		<p>
-			Two modifier sizes plus the bare default — <code>.small</code>, default,
-			<code>.large</code>. Each bundles a coordinated set of padding-inline / padding-block /
-			font-size / border-radius so consumers never compose <code>px-* py-* text-* rounded-*</code>
+			Two modifier sizes plus the bare default — <code>.small</code>, default, <code>.large</code>.
+			Each bundles a coordinated set of padding-inline / padding-block / font-size / border-radius
+			so consumers never compose <code>px-* py-* text-* rounded-*</code>
 			to make a button bigger. Tailwind has no built-in button-size utility; this is why.
 		</p>
 		<div class="cluster">
@@ -262,13 +272,13 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 			Three fill treatments forming a soft / medium / loud escalation —
 			<strong>bare</strong> (transparent surface, variant-tinted text, no border — the outlined
 			look), <code>.subtle</code> (Bootstrap-pattern tinted-bg button: pale variant background,
-			deeply-saturated variant text, subtle variant border — always reads cleanly against the
-			canvas in both light and dark mode), and <code>.filled</code> (saturated identity surface
-			with WCAG-AA contrast text). There is intentionally no <code>.outline</code> modifier —
-			Tailwind owns that name. The previous <code>.ghost</code> modifier was dropped because
-			its transparent text-on-canvas pattern failed WCAG AA for 4 of 7 variants in dark mode
-			and 3 of 7 in light. <code>.subtle</code> solves the contrast problem by giving the text
-			its own tinted lift off the canvas.
+			deeply-saturated variant text, subtle variant border — always reads cleanly against the canvas
+			in both light and dark mode), and <code>.filled</code> (saturated identity surface with
+			WCAG-AA contrast text). There is intentionally no <code>.outline</code> modifier — Tailwind
+			owns that name. The previous <code>.ghost</code> modifier was dropped because its transparent
+			text-on-canvas pattern failed WCAG AA for 4 of 7 variants in dark mode and 3 of 7 in light.
+			<code>.subtle</code> solves the contrast problem by giving the text its own tinted lift off
+			the canvas.
 		</p>
 		<div class="stack">
 			<div v-for="v in variants" :key="v" class="cluster">
@@ -290,7 +300,8 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 			page to see them. The remaining states get explicit demos: <code>.active</code> (toggled-on
 			marker), <code>[disabled]</code> (UA-disabled state), and <code>.loading</code> (cursor +
 			composed spinner). Every transition between states is paired with
-			<code>prefers-reduced-motion: reduce</code> via the framework's <code>transition()</code> mixin.
+			<code>prefers-reduced-motion: reduce</code> via the framework's
+			<code>transition()</code> mixin.
 		</p>
 		<div class="cluster">
 			<button type="button" class="primary">Default · hover me</button>
@@ -311,10 +322,10 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		<h2>The orthogonal cascade</h2>
 		<p>
 			Variant × size × style compose independently. An element wears at most one value from each
-			dimension; the cascade resolves through token fallback (<code>--set-style-*</code> wins,
-			then <code>--set-variant-*</code>, then the element default). The matrix below is
-			deliberately exhaustive: every variant rendered at every size and every style so the
-			orthogonality reads visually.
+			dimension; the cascade resolves through token fallback (<code>--set-style-*</code> wins, then
+			<code>--set-variant-*</code>, then the element default). The matrix below is deliberately
+			exhaustive: every variant rendered at every size and every style so the orthogonality reads
+			visually.
 		</p>
 		<div class="stack">
 			<div v-for="v in variants" :key="v" class="cluster">
@@ -339,8 +350,8 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		<h2>Icon buttons</h2>
 		<p>
 			Icons consume the framework's <code>--set-icon-*</code> registry through
-			<code>&lt;i class="icon"&gt;</code> — a CSS-mask painted from <code>currentColor</code> so
-			a single icon source tints to whichever variant context the button sits in.
+			<code>&lt;i class="icon"&gt;</code> — a CSS-mask painted from <code>currentColor</code> so a
+			single icon source tints to whichever variant context the button sits in.
 			<code>.icon-only</code> collapses inline padding to match block padding so single-glyph
 			buttons read square; <code>aria-label</code> covers the missing text label.
 		</p>
@@ -429,33 +440,27 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		<p>
 			<code>useButton</code> binds toggle semantics to a real <code>&lt;button&gt;</code>. Clicks
 			flip an internal <code>active</code> ref, mirror to the host's <code>.active</code> class +
-			<code>aria-pressed</code> attribute, and emit <code>elements:button:toggle</code> with the
-			new value in <code>event.detail.active</code>. The factory throws if the host isn't an
+			<code>aria-pressed</code> attribute, and emit <code>elements:button:toggle</code> with the new
+			value in <code>event.detail.active</code>. The factory throws if the host isn't an
 			<code>HTMLButtonElement</code> — toggle semantics require button-role, period.
 		</p>
 		<div class="cluster">
-			<button
-				ref="toggleBtn"
-				type="button"
-				class="primary"
-				@elements:button:toggle="logToggle"
-			>
+			<button ref="toggleBtn" type="button" class="primary" @elements:button:toggle="logToggle">
 				{{ toggleApi.active.value ? 'On — click to turn off' : 'Off — click to turn on' }}
 			</button>
-			<button type="button" class="subtle" @click="toggleApi.toggle()">
-				Toggle from outside
-			</button>
+			<button type="button" class="subtle" @click="toggleApi.toggle()">Toggle from outside</button>
 		</div>
 		<p>
-			<small>Live state: <code>active = {{ toggleApi.active.value }}</code></small>
+			<small
+				>Live state: <code>active = {{ toggleApi.active.value }}</code></small
+			>
 		</p>
 		<section v-if="events.length > 0" id="button-toggle-events" class="event-log">
 			<h6 class="text-xs uppercase tracking-wider opacity-70">Event log — newest first, max 6</h6>
 			<ol>
 				<li v-for="(entry, idx) in events" :key="idx">
 					<small>
-						<code>{{ entry.at }}</code> ·
-						<code>elements:button:toggle</code> →
+						<code>{{ entry.at }}</code> · <code>elements:button:toggle</code> →
 						<code>active: {{ entry.active }}</code>
 					</small>
 				</li>
@@ -494,9 +499,9 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 			<code>forced-colors: active</code>), the framework swaps every custom palette colour on the
 			button for system tokens — <code>ButtonFace</code> / <code>ButtonText</code> for default,
 			<code>Highlight</code> / <code>HighlightText</code> on hover &amp; active,
-			<code>GrayText</code> for disabled, and a paired <code>outline: 2px solid Highlight</code>
-			on focus so the ring survives. Custom <code>box-shadow</code> rings are stripped under HC
-			mode; the framework's paired <code>outline</code> takes over.
+			<code>GrayText</code> for disabled, and a paired <code>outline: 2px solid Highlight</code> on
+			focus so the ring survives. Custom <code>box-shadow</code> rings are stripped under HC mode;
+			the framework's paired <code>outline</code> takes over.
 		</p>
 		<div class="cluster">
 			<button type="button" class="primary">Primary · verify in HC mode</button>

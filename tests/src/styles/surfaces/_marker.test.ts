@@ -22,4 +22,3 @@ describe('marker — surface rule', () => {
 		expect(findRule('::marker')).toBe(true)
 	})
 })
-

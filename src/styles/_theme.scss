@@ -273,11 +273,7 @@
 			var(--color-surface)
 		);
 
-		--color-tertiary-bg-subtle: color-mix(
-			in oklab,
-			var(--color-tertiary) 15%,
-			var(--color-canvas)
-		);
+		--color-tertiary-bg-subtle: color-mix(in oklab, var(--color-tertiary) 15%, var(--color-canvas));
 		--color-tertiary-text-emphasis: color-mix(
 			in oklab,
 			var(--color-tertiary) 70%,
@@ -385,11 +381,7 @@
 		var(--color-surface)
 	);
 
-	--color-secondary-bg-subtle: color-mix(
-		in oklab,
-		var(--color-secondary) 15%,
-		var(--color-canvas)
-	);
+	--color-secondary-bg-subtle: color-mix(in oklab, var(--color-secondary) 15%, var(--color-canvas));
 	--color-secondary-text-emphasis: color-mix(
 		in oklab,
 		var(--color-secondary) 70%,

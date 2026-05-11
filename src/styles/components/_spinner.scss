@@ -36,10 +36,7 @@
 		// modifier wins for filled / subtle scopes; variant CONTRAST color
 		// is the bare-button fallback; `currentColor` is the no-modifier
 		// terminus for stand-alone spinners in body copy.
-		--set-spinner-color: var(
-			--set-style-color,
-			var(--set-variant-color, currentColor)
-		);
+		--set-spinner-color: var(--set-style-color, var(--set-variant-color, currentColor));
 		--set-spinner-duration: 0.75s;
 
 		display: inline-block;

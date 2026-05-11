@@ -20,4 +20,3 @@ describe('selection — surface rule', () => {
 		expect(findRule('::selection')).toBe(true)
 	})
 })
-

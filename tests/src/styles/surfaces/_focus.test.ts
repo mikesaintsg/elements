@@ -38,4 +38,3 @@ describe('focus — surface rule', () => {
 		expect(shadow).not.toBe('none')
 	})
 })
-

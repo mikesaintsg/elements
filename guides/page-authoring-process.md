@@ -157,18 +157,18 @@ preview_resize({ width: 1440, height: 900 })  // start desktop
 
 **The 10 rubric rows** (from plan.md §9.3):
 
-| # | Row | How to verify |
-| - | --- | ------------- |
-| 1 | **Light mode contrast** | `preview_resize({ colorScheme: 'light' })`. Spot-check 3 variants × 3 states. Use `preview_inspect` on representative selectors to capture computed `color` + `background-color`. |
-| 2 | **Dark mode contrast** | Toggle theme via `[data-theme="dark"]` (use the theme button in the showcase header or set the attr via `preview_eval`). Re-check the same 3×3 grid. |
-| 3 | **Focus paths** | `preview_eval` to dispatch `Tab` key presses sequentially; verify `:focus-visible` paints on every focusable, ring is visible, tab order matches visual order. |
-| 4 | **Mobile (375)** | `preview_resize({ preset: 'mobile' })`. Walk the page. No horizontal scroll. Drawer / TOC accessible. |
-| 5 | **Tablet (768)** | `preview_resize({ preset: 'tablet' })`. Body grid reflows cleanly. |
-| 6 | **Desktop (1440)** | `preview_resize({ width: 1440, height: 900 })`. No stretched-thin elements. |
-| 7 | **Reduced motion** | `preview_eval(document.documentElement.style.setProperty …)` or use Chrome's emulator via DevTools MCP. Trigger a transition (hover, toggle); verify it collapses to instant. |
-| 8 | **Forced colors** | Use Chrome's `forced-colors` emulator. Verify focus rings + borders + text survive. |
-| 9 | **Keyboard nav** | Tab through every interactive element. Verify Esc dismisses popovers, Enter activates buttons, arrow keys navigate where APG specifies. |
-| 10 | **Reader sanity** | `preview_console_logs({ level: 'error' })` and `{ level: 'warn' }` both return clean. Section IDs present, TOC populated, hash deep-links resolve. |
+| #   | Row                     | How to verify                                                                                                                                                                     |
+| --- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Light mode contrast** | `preview_resize({ colorScheme: 'light' })`. Spot-check 3 variants × 3 states. Use `preview_inspect` on representative selectors to capture computed `color` + `background-color`. |
+| 2   | **Dark mode contrast**  | Toggle theme via `[data-theme="dark"]` (use the theme button in the showcase header or set the attr via `preview_eval`). Re-check the same 3×3 grid.                              |
+| 3   | **Focus paths**         | `preview_eval` to dispatch `Tab` key presses sequentially; verify `:focus-visible` paints on every focusable, ring is visible, tab order matches visual order.                    |
+| 4   | **Mobile (375)**        | `preview_resize({ preset: 'mobile' })`. Walk the page. No horizontal scroll. Drawer / TOC accessible.                                                                             |
+| 5   | **Tablet (768)**        | `preview_resize({ preset: 'tablet' })`. Body grid reflows cleanly.                                                                                                                |
+| 6   | **Desktop (1440)**      | `preview_resize({ width: 1440, height: 900 })`. No stretched-thin elements.                                                                                                       |
+| 7   | **Reduced motion**      | `preview_eval(document.documentElement.style.setProperty …)` or use Chrome's emulator via DevTools MCP. Trigger a transition (hover, toggle); verify it collapses to instant.     |
+| 8   | **Forced colors**       | Use Chrome's `forced-colors` emulator. Verify focus rings + borders + text survive.                                                                                               |
+| 9   | **Keyboard nav**        | Tab through every interactive element. Verify Esc dismisses popovers, Enter activates buttons, arrow keys navigate where APG specifies.                                           |
+| 10  | **Reader sanity**       | `preview_console_logs({ level: 'error' })` and `{ level: 'warn' }` both return clean. Section IDs present, TOC populated, hash deep-links resolve.                                |
 
 **Per row, the format is**:
 
@@ -286,8 +286,10 @@ When starting a new page, copy this skeleton into `app/browser/pages/{Name}Page.
 
 	<section id="{name}-tokens">
 		<h2>Tokens</h2>
-		<p>Every value below flows through a <code>--set-*</code> custom property. Pin one at
-		<code>:root</code> to retune every consumer of this element across your app.</p>
+		<p>
+			Every value below flows through a <code>--set-*</code> custom property. Pin one at
+			<code>:root</code> to retune every consumer of this element across your app.
+		</p>
 		<dl>
 			<!-- per-token <dt>/<dd> pairs -->
 		</dl>

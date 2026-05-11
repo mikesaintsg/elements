@@ -141,12 +141,20 @@
 		//     theme-aware tint — slight darkening on light, slight lightening
 		//     on dark — so bare-button feedback is visible in both modes.
 		&:hover {
-			background-color: color-mix(in srgb, var(--set-button-background-color) 88%, var(--color-text-strong));
+			background-color: color-mix(
+				in srgb,
+				var(--set-button-background-color) 88%,
+				var(--color-text-strong)
+			);
 		}
 
 		&:active,
 		&.active {
-			background-color: color-mix(in srgb, var(--set-button-background-color) 78%, var(--color-text-strong));
+			background-color: color-mix(
+				in srgb,
+				var(--set-button-background-color) 78%,
+				var(--color-text-strong)
+			);
 		}
 
 		&:focus-visible {
