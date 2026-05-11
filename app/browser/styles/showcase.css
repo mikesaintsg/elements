@@ -30,44 +30,63 @@
  *      layout breakpoint where the right rail becomes a drawer).
  */
 
-/* Mobile-only chrome — drawer toggles in the header AND drawer-close
- * buttons inside each rail. On desktop the rails are in-flow grid
- * columns (see src/styles/components/_body.scss) so they never collapse
- * and need no toggle / close affordance. Below 960px the framework
- * promotes them to fixed off-canvas drawers driven by [data-open] and
- * the toggles + close buttons appear.
+/* Mobile-only chrome — drawer toggles in the body header AND drawer
+ * headers inside each rail (holding the close button). On desktop the
+ * rails are in-flow grid columns (see src/styles/components/_body.scss)
+ * so they never collapse and need neither the toggle nor the
+ * drawer-internal header. Below 960px the framework promotes them to
+ * fixed off-canvas drawers driven by [data-open] and the chrome appears.
  *
  * Rule ordering matters: defaults declared FIRST, the @media override
  * SECOND. CSS cascade resolves equal-specificity declarations by source
  * order — a previous version had `display: none` after the @media block
  * which silently overrode the mobile reveal. Keep this order.
  *
- * Close-button placement inside each drawer uses `align-self` so the
- * button hugs the FAR edge of the drawer (the edge facing the viewport
- * center after slide-in), echoing the iOS / Material drawer convention.
- * The left drawer slides from the inline-start; its close sits at the
- * inline-end (right). The right drawer slides from the inline-end; its
- * close sits at the inline-start (left).
+ * Drawer-header height: the framework's `_header.scss` rule applies to
+ * `body:has(main) > nav > header` and `> aside > header` (extended from
+ * the body-app-bar rule), so the drawer header automatically picks up
+ * the same flex row + padding + separator border + font as the body
+ * header. The two headers align visually at the same height across the
+ * top of the layout when the drawer is open.
+ *
+ * Close-button placement inside each drawer header: nav drawer (slides
+ * from inline-start) gets its close at the inline-END (right side of
+ * drawer) so the close sits at the drawer edge facing the viewport
+ * center after slide-in — thumb-reachable, echoes iOS / Material. Aside
+ * drawer (slides from inline-end) gets its close at the inline-START
+ * (left side of drawer), same principle.
  */
 .showcase-nav-toggle,
 .showcase-toc-toggle,
-.showcase-drawer-close {
+.showcase-drawer-header {
 	display: none;
 }
 
 @media (max-width: 960px) {
 	.showcase-nav-toggle,
-	.showcase-toc-toggle,
-	.showcase-drawer-close {
+	.showcase-toc-toggle {
 		display: inline-flex;
 	}
 
-	.showcase-drawer-close-start {
-		align-self: flex-end;
+	/* Restore the framework's drawer-header chrome (the flex row from
+	 * `_header.scss`); the class-scoped `display: none` above wins over
+	 * the framework's element selector by specificity. */
+	.showcase-drawer-header {
+		display: flex;
 	}
 
+	/* nav drawer — push the close to the inline-end edge with auto-margin
+	 * on its inline-start. Single-child header flex layout doesn't need
+	 * a sibling spacer. */
+	.showcase-drawer-close-start {
+		margin-inline-start: auto;
+	}
+
+	/* aside drawer — default flex-row puts the close at inline-start
+	 * (left). No margin trick needed. The rule exists for parity with
+	 * `-start` so future header content (title text) lands predictably. */
 	.showcase-drawer-close-end {
-		align-self: flex-start;
+		margin-inline-end: auto;
 	}
 }
 

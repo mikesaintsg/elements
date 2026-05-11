@@ -148,14 +148,16 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 	</header>
 
 	<nav aria-label="Primary" :data-open="leftOpen ? '' : null">
-		<button
-			type="button"
-			class="subtle icon-only showcase-drawer-close showcase-drawer-close-start"
-			aria-label="Close navigation"
-			@click="leftOpen = false"
-		>
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
-		</button>
+		<header class="showcase-drawer-header">
+			<button
+				type="button"
+				class="subtle icon-only showcase-drawer-close showcase-drawer-close-start"
+				aria-label="Close navigation"
+				@click="leftOpen = false"
+			>
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+			</button>
+		</header>
 		<SiteNav
 			v-model:query="filterQuery"
 			:routes="filteredRoutes"
@@ -169,14 +171,16 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 	</main>
 
 	<aside aria-label="On this page" :data-open="rightOpen ? '' : null">
-		<button
-			type="button"
-			class="subtle icon-only showcase-drawer-close showcase-drawer-close-end"
-			aria-label="Close table of contents"
-			@click="rightOpen = false"
-		>
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
-		</button>
+		<header class="showcase-drawer-header">
+			<button
+				type="button"
+				class="subtle icon-only showcase-drawer-close showcase-drawer-close-end"
+				aria-label="Close table of contents"
+				@click="rightOpen = false"
+			>
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+			</button>
+		</header>
 		<Toc :scroller="scrollerRef" :current-id="current.id" @navigate="rightOpen = false" />
 	</aside>
 

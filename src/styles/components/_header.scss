@@ -1,7 +1,7 @@
 ﻿// ============================================================================
 // header — Page app bar inside the layout shell.
 //
-// `<header>` lives in two contexts. The framework paints both:
+// `<header>` lives in three contexts. The framework paints all three:
 //
 //   1. body > header  (or body > * > header via display: contents wrapper)
 //      → page-level app bar. Spans the top row of the body grid. Subtle
@@ -9,7 +9,13 @@
 //        small font; designed for a brand + nav-toggle row, not for hero
 //        chrome.
 //
-//   2. article > header
+//   2. body > nav > header / body > aside > header (drawer header)
+//      → rail-local header. Same chrome contract as the body header so a
+//        mobile drawer has a visually consistent top band — useful for a
+//        close button + drawer title. Aligned-by-height to the body header
+//        across the layout so the eye reads them as one horizontal band.
+//
+//   3. article > header
 //      → card header. Already styled in `_article.scss` via the
 //        descendant-of-article rule (subtle band, separator, inner radius).
 //        That rule is more specific than the body-rooted one here, so the
@@ -21,9 +27,9 @@
 // Token declarations vs chrome rules:
 //   Tokens are declared on bare `<header>` so they always resolve when the
 //   element exists. Chrome rules are scoped to the layout-shell context
-//   (`body:has(main) > header`) so a hero/landing page that uses `<header>`
-//   outside a shell isn't auto-styled as a compact app bar — heroes should
-//   stay free-form.
+//   (`body:has(main) > header`, plus drawer-header variants) so a hero/
+//   landing page that uses `<header>` outside a shell isn't auto-styled as
+//   a compact app bar — heroes should stay free-form.
 // ============================================================================
 
 @use '../mixins' as *;
@@ -45,7 +51,11 @@
 	}
 
 	body:has(main) > header,
-	body:has(main) > * > header {
+	body:has(main) > * > header,
+	body:has(main) > nav > header,
+	body:has(main) > * > nav > header,
+	body:has(main) > aside > header,
+	body:has(main) > * > aside > header {
 		display: flex;
 		align-items: center;
 		gap: calc(var(--spacing) * 3);
