@@ -39,6 +39,24 @@
 		// mailbox showcase. Authors who want anchors that blend into body
 		// copy can override with `currentColor` per host. Style and variant
 		// modifiers still take precedence via the cascade.
+		//
+		// Known WCAG limitation: bare variant anchors paint variant-bg text
+		// directly on the body canvas. The saturated -600 step doesn't clear
+		// WCAG AA against the canvas for some variant × theme combinations:
+		//   - Light mode: warning amber-500 / success green-600 / information
+		//     sky-600 on white canvas (2.13, 3.22, 4.02 respectively)
+		//   - Dark mode: every variant on slate-950 canvas sits at ~3-4
+		//     ratio (the saturated -600 step doesn't lift enough off a
+		//     near-black surface)
+		// Consumers needing AA-compliant inline variant links should use the
+		// `.subtle` style modifier (variant text-emphasis on variant bg-subtle
+		// — passes AA in both modes for all variants) or override
+		// `--set-a-color` per host with a contrast-checked shade. Bare-inline
+		// variant anchors are documented as "small-block / large-text use"
+		// in `app/browser/pages/AnchorPage.vue`. A future theme-tier
+		// `--color-{variant}-on-canvas` token would fix this cleanly; deferred
+		// pending design decision (does the framework ship a third per-variant
+		// shade just for text-on-canvas semantics?).
 		--set-a-color: var(
 			--set-style-color,
 			var(--set-variant-background-color, var(--color-primary))

@@ -74,6 +74,9 @@ describe('a — bare baseline', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Variant cascade — links pick the variant identity color for text.
+//  Known limitation: bare variant anchors paint variant-bg text on canvas
+//  and don't always clear WCAG AA (see `_a.scss` for the table). Consumers
+//  needing AA-compliant variant links should use `.subtle` or `.filled`.
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('a — variant modifiers', () => {

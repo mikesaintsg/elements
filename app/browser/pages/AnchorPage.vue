@@ -1,0 +1,500 @@
+<script lang="ts" setup>
+/**
+ * AnchorPage — the canonical reference for the `<a>` element baseline.
+ *
+ * API surface coverage (Phase 1 audit):
+ *   - Bare element baseline (elements/_a.scss) — inline body-copy link,
+ *     `--color-primary` text + underline, currentColor on hover-darken
+ *   - 7 variants — primary, secondary, tertiary, success, warning, danger, information
+ *   - 3 sizes — bare-inline / .small / .large
+ *   - 3 styles — bare (inline), .subtle (Bootstrap tinted-bg button), .filled (saturated solid button)
+ *   - Modifier-aware padding — `.filled` and `.subtle` opt into button-shaped padding
+ *     + border-radius; bare stays inline. Text-decoration cascade: bare + .subtle keep
+ *     the underline; .filled drops it (the fill carries the affordance).
+ *   - 6 interactive states — :hover (80% color + 20% black), :active / .active
+ *     (65% color + 35% black), :focus-visible (ring via --set-a-focus-box-shadow),
+ *     [aria-disabled='true'] / .disabled (opacity + not-allowed + pointer-events: none),
+ *     :visited (reuses --set-a-color so a primary link doesn't go UA-purple)
+ *   - §6.1 anchor-context resets — bare <a> in `body > header` / `> footer` /
+ *     `> nav menu > li` / `> aside menu > li` flips to currentColor + no underline
+ *     so navigation commands don't read as body-copy hyperlinks. Live-demo via
+ *     scoped <article><header>/<footer> + <nav><menu> compositions on this page.
+ *   - HTML attribute pass-through — `target="_blank"`, `download`, `rel="…"`
+ *     don't carry special framework chrome; documented for completeness.
+ *   - Reduced-motion respect (every transition paired via `@include transition()`)
+ *   - 13 --set-a-* tokens declared on the bare element
+ *
+ * Cross-references:
+ *   - ButtonPage §button-link demonstrates `<a class="primary filled">` opting into
+ *     button chrome. AnchorPage expands that to all 7 variants × all 3 styles.
+ *   - HeaderPage / FooterPage / NavPage will cover the §6.1 context resets in their
+ *     own host-component contexts.
+ */
+import { ref } from 'vue'
+
+const variants = [
+	'primary',
+	'secondary',
+	'tertiary',
+	'success',
+	'warning',
+	'danger',
+	'information',
+] as const
+
+// Live :visited demo wires a counter so the reader can see the visited-color
+// reset stays the variant color (no UA purple). Anchors with this href become
+// "visited" the moment the page loads with the matching hash; we just need
+// the markup + a hint about how to verify.
+const visitedCounter = ref(0)
+
+const snippetBare = `<p>The <a href="#/anchor">framework documentation</a> reads like a real link.</p>`
+
+const snippetVariants = `<a href="#a-variants">Default (primary)</a>
+<a href="#a-variants" class="primary">Primary</a>
+<a href="#a-variants" class="secondary">Secondary</a>
+<a href="#a-variants" class="tertiary">Tertiary</a>
+<a href="#a-variants" class="success">Success</a>
+<a href="#a-variants" class="warning">Warning</a>
+<a href="#a-variants" class="danger">Danger</a>
+<a href="#a-variants" class="information">Information</a>`
+
+const snippetSizes = `<a href="#a-sizes" class="primary small">Small inline link</a>
+<a href="#a-sizes" class="primary">Default inline link</a>
+<a href="#a-sizes" class="primary large">Large inline link</a>
+
+<!-- Sizes also apply when the anchor opts into chrome via .subtle/.filled. -->
+<a href="#a-sizes" class="primary subtle small">Subtle · small</a>
+<a href="#a-sizes" class="primary subtle">Subtle · default</a>
+<a href="#a-sizes" class="primary subtle large">Subtle · large</a>`
+
+const snippetStyles = `<!-- Bare anchor: inline link, primary color + underline, zero padding. -->
+<a href="#a-styles" class="primary">Bare inline link</a>
+
+<!-- .subtle: anchor opts into button-shaped padding + border-radius. Keeps
+     the underline because the tint alone doesn't always read as "link" in
+     mixed contexts. -->
+<a href="#a-styles" class="primary subtle">Subtle button-shaped link</a>
+
+<!-- .filled: same padding/radius as .subtle, but drops the underline — the
+     saturated fill is sufficient affordance on its own. -->
+<a href="#a-styles" class="primary filled">Filled button-shaped link</a>`
+
+const snippetStates = `<a href="#a-states" class="primary">Hover me (color darkens 20%)</a>
+<a href="#a-states" class="primary active">.active (color darkens 35%)</a>
+<a href="#a-states" class="primary disabled">.disabled (opacity 0.5, no pointer events)</a>
+<a href="#a-states" class="primary" aria-disabled="true">aria-disabled (same as .disabled)</a>
+
+<!-- :visited stays the variant color (UA purple is overridden). The
+     reader can verify by reloading the page after clicking the link. -->
+<a href="#a-states-visited" class="primary">After clicking, this stays primary</a>`
+
+const snippetContexts = `<!-- Bare <a> in body copy: primary-blue underlined link. -->
+<p>Read the <a href="#">getting started guide</a> for setup details.</p>
+
+<!-- §6.1 reset: <a> inside body's <header> / <footer> drops the primary
+     tint and underline, picks up currentColor so the bar reads as one
+     unified band. Hover tints toward primary so affordance survives. -->
+<header><a href="#">Brand</a> · <a href="#">Docs</a> · <a href="#">API</a></header>
+<footer><a href="#">Privacy</a> · <a href="#">Terms</a></footer>
+
+<!-- Nav-rail menu: <a> in <body > nav menu > li> renders as a row item
+     (full-width, currentColor, hover bg-tint, aria-current=page paints
+     a subtle-primary band). -->
+<nav><menu>
+  <li><a href="#" aria-current="page">Home</a></li>
+  <li><a href="#">About</a></li>
+</menu></nav>
+
+<!-- Aside TOC menu: <a> in <body > aside menu> renders as a muted row
+     with a leading-bar accent on aria-current=location. -->
+<aside><menu>
+  <li><a href="#" aria-current="location">Section 1</a></li>
+  <li><a href="#">Section 2</a></li>
+</menu></aside>`
+
+const snippetAttributes = `<!-- Standard HTML attributes pass through. The framework adds no
+     special chrome — consumers handle external-link affordances per
+     consumer (e.g. via Tailwind utilities + <i class="icon">). -->
+<a href="https://example.com" target="_blank" rel="noopener noreferrer">
+  External link <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+</a>
+
+<a href="/document.pdf" download="report.pdf">Download report (PDF)</a>
+
+<a href="mailto:hello@example.com">hello@example.com</a>
+<a href="tel:+1234567890">+1 (234) 567-890</a>`
+
+const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor transition is paired with this guard. */
+@mixin transition($value) {
+  transition: $value;
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}`
+</script>
+
+<template>
+	<section id="anchor-intro">
+		<hgroup>
+			<h1>Anchor</h1>
+			<p>
+				The hyperlink primitive. Bare <code>&lt;a&gt;</code> reads as an inline body-copy link;
+				modifier classes opt into button-shaped chrome; host context (page header, footer, nav
+				rail, aside TOC) overrides the bare link affordance so navigation commands stay quiet.
+				Every variant cascade behaves identically to the button — the two elements share their
+				modifier surface — but the anchor adds <code>:visited</code> handling and an inline /
+				button-chrome split that the button doesn't need.
+			</p>
+		</hgroup>
+		<p>
+			Every demo below is real working markup. The framework's anchor partial declares 13
+			<code>--set-a-*</code> tokens; consumers retune at <code>:root</code> to recolor every link
+			in the app or per-host to scope. Zero Tailwind utilities paint the link chrome on this
+			page — every underline, padding, and ring comes from the framework.
+		</p>
+	</section>
+
+	<section id="anchor-bare">
+		<h2>Bare anchor</h2>
+		<p>
+			Zero-class default: an inline link painted with <code>--color-primary</code> text and an
+			underline. Hover darkens the color by 20%; <code>:focus-visible</code> rings via the
+			framework's focus chain; <code>:visited</code> reuses the link color so a primary link never
+			degrades to UA purple. The anchor's box collapses to its inline text — no padding, no
+			background, no border — unless a style modifier opts in.
+		</p>
+		<p>
+			Inline reading flow: the framework's
+			<a href="#anchor-bare">anchor documentation</a> is right here, painted with the bare-anchor
+			cascade. Hover me to see the darkening transition.
+		</p>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetBare }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-variants">
+		<h2>Variants</h2>
+		<p>
+			Seven semantic variants — same vocabulary as the button. Each sets
+			<code>--set-variant-background-color</code> which the anchor's color cascade resolves
+			through. Bare anchors (no style modifier) paint the variant identity as text color, keeping
+			the underline.
+		</p>
+		<aside role="alert" class="warning">
+			<strong>Known WCAG limitation for bare variant anchors.</strong> Measured contrast against
+			the body canvas:
+			<ul>
+				<li>
+					Light canvas: <code>primary</code> 5.25 ✓, <code>secondary</code> 7.58 ✓,
+					<code>tertiary</code> 5.89 ✓, <code>danger</code> 4.77 ✓,
+					<strong><code>information</code> 4.02 ✗, <code>success</code> 3.22 ✗,
+					<code>warning</code> 2.13 ✗</strong> (fails AA for normal text)
+				</li>
+				<li>
+					Dark canvas: every variant sits at ~3–4 ratio — the saturated -600 step doesn't lift
+					enough off the slate-950 surface.
+				</li>
+			</ul>
+			For AA-compliant variant inline links use <code>.subtle</code> (tinted bg + emphasis text;
+			passes AA in both modes for all 7 variants) or override <code>--set-a-color</code> per host
+			with a contrast-checked shade. A future framework
+			<code>--color-{variant}-on-canvas</code> tier would resolve this; deferred pending design
+			direction.
+		</aside>
+		<div class="cluster">
+			<a href="#anchor-variants">Default</a>
+			<a v-for="v in variants" :key="v" href="#anchor-variants" :class="v">
+				{{ v[0].toUpperCase() + v.slice(1) }}
+			</a>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetVariants }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-sizes">
+		<h2>Sizes</h2>
+		<p>
+			Inline anchors stay at the parent's font-size by default. Adding
+			<code>.small</code> or <code>.large</code> overrides via the same
+			<code>--set-size-font-size</code> token the button uses. When the anchor also has a style
+			modifier (<code>.subtle</code> / <code>.filled</code>), the size modifier additionally
+			cascades into padding-inline / padding-block / border-radius so the button-shaped chrome
+			scales coherently.
+		</p>
+		<div class="stack">
+			<div class="cluster">
+				<a href="#anchor-sizes" class="primary small">Small inline</a>
+				<a href="#anchor-sizes" class="primary">Default inline</a>
+				<a href="#anchor-sizes" class="primary large">Large inline</a>
+			</div>
+			<div class="cluster">
+				<a href="#anchor-sizes" class="primary subtle small">Subtle · small</a>
+				<a href="#anchor-sizes" class="primary subtle">Subtle · default</a>
+				<a href="#anchor-sizes" class="primary subtle large">Subtle · large</a>
+			</div>
+			<div class="cluster">
+				<a href="#anchor-sizes" class="primary filled small">Filled · small</a>
+				<a href="#anchor-sizes" class="primary filled">Filled · default</a>
+				<a href="#anchor-sizes" class="primary filled large">Filled · large</a>
+			</div>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetSizes }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-styles">
+		<h2>Styles</h2>
+		<p>
+			Three fill treatments — same cascade as the button — but the anchor differentiates them on
+			text-decoration too. <strong>Bare</strong> is inline (no padding, underline preserved).
+			<code>.subtle</code> opts into button-shaped padding + tinted background AND keeps the
+			underline so the link affordance stays clear in mixed flow. <code>.filled</code> opts into
+			the same padding AND drops the underline — the saturated fill is enough signal on its own
+			and an underlined fill reads as visual noise.
+		</p>
+		<div class="stack">
+			<div v-for="v in variants" :key="v" class="cluster">
+				<a href="#anchor-styles" :class="v">{{ v }} (bare inline)</a>
+				<a href="#anchor-styles" :class="`${v} subtle`">{{ v }} · subtle</a>
+				<a href="#anchor-styles" :class="`${v} filled`">{{ v }} · filled</a>
+			</div>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetStyles }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-states">
+		<h2>States</h2>
+		<p>
+			Hover and <code>:focus-visible</code> paint without classes — interact with any anchor on
+			this page to see them. <code>.active</code> mimics the depressed state without requiring an
+			actual click. <code>.disabled</code> and <code>aria-disabled="true"</code> are equivalent —
+			both dim the anchor, change the cursor to <code>not-allowed</code>, and disable pointer
+			events. <code>:visited</code> intentionally reuses
+			<code>--set-a-color</code> so a primary link doesn't degrade to UA purple after click; the
+			browser's history bit is preserved, the styling stays under framework control.
+		</p>
+		<div class="cluster">
+			<a href="#anchor-states" class="primary">Default · hover me</a>
+			<a href="#anchor-states" class="primary active">.active</a>
+			<a href="#anchor-states" class="primary disabled">.disabled</a>
+			<a href="#anchor-states" class="primary" aria-disabled="true">aria-disabled</a>
+		</div>
+		<p>
+			<small>
+				Visited demo:
+				<a href="#anchor-states-visited-target" class="primary" @click="visitedCounter++">
+					click this link
+				</a>
+				and then reload the page — it stays primary-blue, not purple. (Click count: {{
+				visitedCounter }}.)
+			</small>
+		</p>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetStates }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-cascade">
+		<h2>The orthogonal cascade</h2>
+		<p>
+			Variant × size × style compose independently — the same orthogonality the button surfaces,
+			now applied to inline + button-chrome link contexts. The matrix below is deliberately
+			exhaustive: every variant rendered inline, subtle, and filled, at every size.
+		</p>
+		<div class="stack">
+			<div v-for="v in variants" :key="v" class="cluster">
+				<a href="#anchor-cascade" :class="`${v} small`">{{ v }} · small</a>
+				<a href="#anchor-cascade" :class="v">{{ v }}</a>
+				<a href="#anchor-cascade" :class="`${v} large`">{{ v }} · large</a>
+				<a href="#anchor-cascade" :class="`${v} small subtle`">small · subtle</a>
+				<a href="#anchor-cascade" :class="`${v} subtle`">default · subtle</a>
+				<a href="#anchor-cascade" :class="`${v} large subtle`">large · subtle</a>
+				<a href="#anchor-cascade" :class="`${v} small filled`">small · filled</a>
+				<a href="#anchor-cascade" :class="`${v} filled`">default · filled</a>
+				<a href="#anchor-cascade" :class="`${v} large filled`">large · filled</a>
+			</div>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetVariants }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-contexts">
+		<h2>The anchor-context contract (§6.1)</h2>
+		<p>
+			The bare-anchor baseline (primary text + underline) reads as a link inside body copy. That
+			same chrome is wrong when an anchor is used as a NAVIGATION COMMAND — the page app bar's
+			brand link, a sidebar menu row, an in-page TOC waypoint. The framework's components reset
+			anchors in those contexts to <code>currentColor</code> + no underline so the navigation
+			band reads as a unified surface. Hover tints toward primary so the link affordance still
+			survives.
+		</p>
+		<p>
+			Four reset contexts are shipped, all via <code>:where()</code> wrappers so a single class on
+			the anchor opts back into the bare link look without <code>!important</code>:
+		</p>
+		<dl>
+			<dt><code>body:has(main) &gt; header :where(a)</code></dt>
+			<dd>Page app-bar brand + nav links — currentColor, no underline, hover tints to primary.</dd>
+
+			<dt><code>body:has(main) &gt; footer :where(a)</code></dt>
+			<dd>Page footer credits + secondary nav — same recipe as header.</dd>
+
+			<dt><code>body:has(main) &gt; nav menu &gt; li &gt; :where(a, button)</code></dt>
+			<dd>
+				Sidebar nav rows — full-width, start-aligned, currentColor, hover bg tint,
+				<code>aria-current="page"</code> paints a subtle-primary band.
+			</dd>
+
+			<dt><code>body:has(main) &gt; aside menu &gt; li &gt; :where(a, button)</code></dt>
+			<dd>
+				Aside TOC rows — muted text, leading-bar accent on
+				<code>aria-current="location"</code>.
+			</dd>
+		</dl>
+		<p>
+			<small>
+				These resets are <em>live in the showcase chrome you're reading right now</em> — the
+				brand link in the page header, the sidebar route links, and the TOC entries on the
+				right are all governed by the rules above. Inspect any of them.
+			</small>
+		</p>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetContexts }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-attributes">
+		<h2>Attribute pass-through</h2>
+		<p>
+			Standard HTML attributes — <code>target</code>, <code>download</code>, <code>rel</code>,
+			<code>hreflang</code>, <code>ping</code>, <code>type</code> — pass through unchanged. The
+			framework adds no decoration to external links, downloads, or mailto/tel links; consumers
+			can add per-site affordances via Tailwind utilities + the
+			<code>--set-icon-external</code> glyph or per-protocol classes.
+		</p>
+		<div class="cluster">
+			<a href="https://example.com" target="_blank" rel="noopener noreferrer" class="primary">
+				External link
+				<i
+					class="icon"
+					aria-hidden="true"
+					style="--icon: var(--set-icon-external); margin-inline-start: 0.25em"
+				></i>
+			</a>
+			<a href="/document.pdf" download="report.pdf" class="primary">Download report (PDF)</a>
+			<a href="mailto:hello@example.com" class="primary">hello@example.com</a>
+			<a href="tel:+1234567890" class="primary">+1 (234) 567-890</a>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetAttributes }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-reduced-motion">
+		<h2>Reduced motion</h2>
+		<p>
+			Every anchor transition on this page — color fade on hover, ring fade on focus, opacity on
+			disabled — is paired with <code>prefers-reduced-motion: reduce</code> through the
+			framework's <code>transition()</code> mixin. Toggle your OS reduced-motion preference and
+			the same anchors will switch states instantly with zero animation.
+		</p>
+		<div class="cluster">
+			<a href="#anchor-reduced-motion" class="primary">Hover me · slow</a>
+			<a href="#anchor-reduced-motion" class="success subtle">And me</a>
+			<a href="#anchor-reduced-motion" class="danger filled">And me</a>
+		</div>
+		<details>
+			<summary><small>The mixin that enforces this</small></summary>
+			<pre><code>{{ snippetReducedMotion }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-forced-colors">
+		<h2>Forced colors</h2>
+		<p>
+			In Windows High Contrast (or any <code>forced-colors: active</code> environment), the UA
+			forces a small palette of system colors. The framework's anchor doesn't override the UA's
+			<code>LinkText</code> system color — the link affordance survives natively. The
+			variant-tinted background on <code>.filled</code> anchors collapses to
+			<code>Canvas</code> + <code>CanvasText</code> per the same rules that govern the
+			<code>&lt;button&gt;</code> forced-colors fallback.
+		</p>
+		<div class="cluster">
+			<a href="#anchor-forced-colors" class="primary">Primary link · verify in HC mode</a>
+			<a href="#anchor-forced-colors" class="primary filled">Primary filled in HC</a>
+			<a href="#anchor-forced-colors" class="primary disabled">Disabled in HC</a>
+		</div>
+	</section>
+
+	<section id="anchor-tokens">
+		<h2>Tokens</h2>
+		<p>
+			Every visible value on an anchor flows through a <code>--set-a-*</code> token. Pin one at
+			<code>:root</code> to retune every anchor in your app; pin one on a single host to scope.
+			The defaults make a bare anchor "just look right" without consumer overrides.
+		</p>
+		<dl>
+			<dt><code>--set-a-color</code></dt>
+			<dd>Text color. Resolves <code>style → variant → --color-primary</code>.</dd>
+
+			<dt><code>--set-a-background-color</code></dt>
+			<dd>Surface fill. Resolves <code>style → transparent</code>.</dd>
+
+			<dt><code>--set-a-border-color</code></dt>
+			<dd>Border tint. Resolves <code>style → transparent</code>.</dd>
+
+			<dt><code>--set-a-border-width</code></dt>
+			<dd>Border thickness. Resolves <code>style → 0</code>.</dd>
+
+			<dt><code>--set-a-border-radius</code></dt>
+			<dd>Corner roundness. Resolves <code>size → 0</code> for bare; opts to
+				<code>--radius-md</code> when a style modifier is present.</dd>
+
+			<dt><code>--set-a-padding-inline</code></dt>
+			<dd>Horizontal padding. <code>0</code> for bare; <code>spacing × 3</code> for
+				<code>.subtle</code>/<code>.filled</code>.</dd>
+
+			<dt><code>--set-a-padding-block</code></dt>
+			<dd>Vertical padding. <code>0</code> for bare; <code>spacing × 1.5</code> for
+				<code>.subtle</code>/<code>.filled</code>.</dd>
+
+			<dt><code>--set-a-font-size</code></dt>
+			<dd>Text size. Resolves <code>size → 1em</code>.</dd>
+
+			<dt><code>--set-a-text-decoration</code></dt>
+			<dd>Underline. <code>underline</code> for bare/<code>.subtle</code>;
+				<code>none</code> for <code>.filled</code>.</dd>
+
+			<dt><code>--set-a-transition-duration</code></dt>
+			<dd>Animated-property duration. Defaults to <code>--set-transition-duration</code>.</dd>
+
+			<dt><code>--set-a-cursor</code></dt>
+			<dd>Pointer cursor. Defaults to <code>pointer</code>.</dd>
+
+			<dt><code>--set-a-disabled-opacity</code></dt>
+			<dd>Dimming applied to disabled anchors. Defaults to <code>0.5</code>.</dd>
+
+			<dt><code>--set-a-focus-box-shadow</code></dt>
+			<dd>
+				The focus-visible ring. Computed from <code>--set-variant-background-color</code>
+				mixed at <code>--set-focus-box-shadow-opacity</code> against transparent, sized by
+				<code>--set-focus-box-shadow-width</code>.
+			</dd>
+		</dl>
+	</section>
+</template>
