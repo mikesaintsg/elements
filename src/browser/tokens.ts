@@ -89,6 +89,16 @@ export const tokens = {
 		warningOnCanvas: '--color-warning-on-canvas',
 		dangerOnCanvas: '--color-danger-on-canvas',
 		informationOnCanvas: '--color-information-on-canvas',
+
+		// Tailwind palette steps re-pinned to guarantee emission. Tailwind v4
+		// tree-shakes palette tokens that aren't referenced by an emitted
+		// utility class — these three `-700` steps power the framework's
+		// success / warning / information variants but have no utility-class
+		// consumer, so we declare them explicitly in `@theme` (see
+		// `_theme.scss`). Mirrored here so the parity test stays green.
+		green700: '--color-green-700',
+		amber700: '--color-amber-700',
+		sky700: '--color-sky-700',
 	},
 
 	// Framework defaults that have no Tailwind equivalent.
@@ -368,6 +378,7 @@ export const tokens = {
 		borderRadius: '--set-fieldset-border-radius',
 		paddingInline: '--set-fieldset-padding-inline',
 		paddingBlock: '--set-fieldset-padding-block',
+		gap: '--set-fieldset-gap',
 		transitionDuration: '--set-fieldset-transition-duration',
 		disabled: { opacity: '--set-fieldset-disabled-opacity' },
 	},
@@ -548,11 +559,14 @@ export const tokens = {
 	output: {
 		color: '--set-output-color',
 		backgroundColor: '--set-output-background-color',
+		borderColor: '--set-output-border-color',
+		borderWidth: '--set-output-border-width',
 		borderRadius: '--set-output-border-radius',
 		paddingInline: '--set-output-padding-inline',
 		paddingBlock: '--set-output-padding-block',
 		fontFamily: '--set-output-font-family',
 		fontSize: '--set-output-font-size',
+		fontWeight: '--set-output-font-weight',
 		transitionDuration: '--set-output-transition-duration',
 	},
 

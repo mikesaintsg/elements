@@ -2,51 +2,80 @@
 // output — Calculation result display.
 //
 // Architecture (light cascade):
-//   Element-scoped --set-output-* tokens for typography only. Bare
-//   <output> stays inline phrasing. Style-modifier `.filled` opts into a
-//   subtle tinted pill shape so a visible result chip is one class away.
+//   Element-scoped --set-output-* tokens. Bare `<output>` reads as a
+//   small inline result chip — monospace, subtly tinted bg, thin border,
+//   tight padding — so a calculation result reads as a "computed value"
+//   rather than disappearing into the surrounding prose. `.filled` opts
+//   into the saturated variant-fill chip shape (primary blue by default
+//   or per-variant via the `--set-variant-*` cascade). `.subtle` opts
+//   into the variant tinted-bg + emphasis-text triplet for a softer
+//   accent.
 //
 // Quirks:
 //   - <output> is a live region by default (`role="status"` per ARIA);
 //     screen readers announce updated values without extra markup.
 //   - The `for=` attribute lists controlling input IDs; relationships
 //     are advisory and don't trigger any visual change on their own.
+//   - Bare <output> ships chrome (unlike most inline phrasing) because
+//     a calculation result that blends into prose loses its semantic
+//     weight — it should look like a discrete value, not narrative text.
 // ============================================================================
 
 @use '../mixins' as *;
 
 @layer elements {
 	output {
-		--set-output-color: var(--set-style-color, var(--set-variant-background-color, currentColor));
-		--set-output-background-color: var(--set-style-background-color, transparent);
-		--set-output-border-radius: var(--set-size-border-radius, 0.375rem);
-		--set-output-padding-inline: var(--set-size-padding-inline, 0);
-		--set-output-padding-block: var(--set-size-padding-block, 0);
+		// Bare output reads as a "code-chip" inline result — tinted surface,
+		// thin border, monospace, small padding. Variant + style modifiers
+		// can override via the standard cascade.
+		--set-output-color: var(
+			--set-style-color,
+			var(--set-variant-subtle-color, var(--color-text-strong, currentColor))
+		);
+		--set-output-background-color: var(
+			--set-style-background-color,
+			var(--set-variant-subtle-background-color, var(--color-surface-raised, transparent))
+		);
+		--set-output-border-color: var(
+			--set-style-border-color,
+			var(--set-variant-subtle-border-color, var(--color-border, transparent))
+		);
+		--set-output-border-width: 1px;
+		--set-output-border-radius: var(--set-size-border-radius, var(--radius-md, 0.375rem));
+		--set-output-padding-inline: var(--set-size-padding-inline, 0.5em);
+		--set-output-padding-block: var(--set-size-padding-block, 0.125em);
 		--set-output-font-family:
 			ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
 			monospace;
 		--set-output-font-size: var(--set-size-font-size, 0.9375em);
+		--set-output-font-weight: 500;
 		--set-output-transition-duration: var(--set-transition-duration);
 
 		color: var(--set-output-color);
 		background-color: var(--set-output-background-color);
+		border: var(--set-output-border-width) solid var(--set-output-border-color);
 		border-radius: var(--set-output-border-radius);
 		padding-inline: var(--set-output-padding-inline);
 		padding-block: var(--set-output-padding-block);
 		font-family: var(--set-output-font-family);
 		font-size: var(--set-output-font-size);
+		font-weight: var(--set-output-font-weight);
 
 		@include transition(
 			(
 				color var(--set-output-transition-duration),
-				background-color var(--set-output-transition-duration)
+				background-color var(--set-output-transition-duration),
+				border-color var(--set-output-transition-duration)
 			)
 		);
 
-		// Filled style adds breathing room so the chip shape reads visually.
+		// `.filled` — saturated variant fill (white-on-`-600` chip).
+		// Reads the FILLED tier of the variant cascade so a `.primary.filled`
+		// output paints as a primary-blue chip with white text.
 		&.filled {
-			padding-inline: 0.5em;
-			padding-block: 0.125em;
+			--set-output-color: var(--set-variant-color, white);
+			--set-output-background-color: var(--set-variant-background-color, var(--color-primary));
+			--set-output-border-color: var(--set-variant-background-color, var(--color-primary));
 		}
 	}
 }

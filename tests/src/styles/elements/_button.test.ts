@@ -106,9 +106,12 @@ describe('button — variant modifiers', () => {
 		expect(rgba(style(btn, 'color'))).toEqual([255, 255, 255, 1])
 	})
 
-	it('.warning uses black text (warning yellow needs dark contrast)', () => {
+	it('.warning uses white text (amber-700 fill clears AA with white)', () => {
+		// Warning shifted from amber-500 (required black text) to amber-700
+		// (white text clears 5.07 AA). See `modifiers/_variants.scss` and
+		// `_theme.scss` for the full color-shift rationale.
 		const btn = render('button', 'warning')
-		expect(rgba(style(btn, 'color'))).toEqual([0, 0, 0, 1])
+		expect(rgba(style(btn, 'color'))).toEqual([255, 255, 255, 1])
 	})
 
 	it('.primary bumps border-width to 1px (variant border-color is now visible)', () => {

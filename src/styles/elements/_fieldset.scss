@@ -46,10 +46,29 @@
 		);
 		--set-fieldset-border-width: var(--set-style-border-width, 1px);
 		--set-fieldset-border-radius: var(--set-size-border-radius, 0.5rem);
-		--set-fieldset-padding-inline: var(--set-size-padding-inline, 1rem);
-		--set-fieldset-padding-block: var(--set-size-padding-block, 0.75rem);
+		--set-fieldset-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));
+		--set-fieldset-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 3));
+		// Vertical rhythm between fieldset children — mirrors `--set-form-gap`
+		// so a `<fieldset>` reads the same way a `<form>` does (one stack of
+		// label+control pairs separated by a consistent gap). Without this,
+		// grouped controls pile up touching each other and the fieldset
+		// border becomes a tight box around a smudge of inputs.
+		--set-fieldset-gap: calc(var(--spacing) * 4);
 		--set-fieldset-transition-duration: var(--set-transition-duration);
 		--set-fieldset-disabled-opacity: 0.6;
+
+		// Flex-column stack mirrors `<form>` so direct-child label+control
+		// pairs (or a wrapper `<div class="stack">`) flow with the same
+		// vertical rhythm consumers expect from a form group. Bare
+		// `<fieldset>` ships the rhythm; consumers wrap nothing.
+		//
+		// CAVEAT: `display: flex` on `<fieldset>` historically broke the
+		// `<legend>` notch in old browsers — every evergreen since 2022
+		// renders the notch correctly with flex-column. The framework
+		// targets Baseline 2023 so this is a safe default.
+		display: flex;
+		flex-direction: column;
+		gap: var(--set-fieldset-gap);
 
 		color: var(--set-fieldset-color);
 		background-color: var(--set-fieldset-background-color);
@@ -65,6 +84,25 @@
 				border-color var(--set-fieldset-transition-duration)
 			)
 		);
+
+		// Label-on-top pattern for fieldset descendants — same shape as
+		// `_form.scss`'s `form > label` rule. Without this, a `<fieldset>`
+		// outside of `<form>` would render labels inline with their
+		// controls (UA default), looking nothing like the `<form>` flow.
+		> label {
+			display: flex;
+			flex-direction: column;
+			gap: calc(var(--spacing) * 1.5);
+		}
+
+		// Fieldset descendants — same intrinsic-width exclusions as the
+		// `<form>` rule (checkbox / radio / color keep their fixed sizes;
+		// text-like inputs / textarea / select / range / file fill the row).
+		> label
+			> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select),
+		> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select) {
+			inline-size: 100%;
+		}
 
 		&:disabled {
 			opacity: var(--set-fieldset-disabled-opacity);

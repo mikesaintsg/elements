@@ -186,11 +186,23 @@
 
 	// ==========================================================================
 	// File input — UA renders a button + label inline. We restyle the
-	// `::file-selector-button` so it picks up the framework's button cadence.
+	// `::file-selector-button` so the leading button picks up the framework's
+	// button cadence (padding, hover tint, separator border) while the file-
+	// name label flows in the input's content area.
+	//
+	// Padding contract: the input has the SAME padding-block / padding-inline
+	// as text-like inputs so the file-name label has breathing room. The
+	// button uses negative margins equal to that padding to bleed out to the
+	// input's border-edge, then re-applies its own padding so the button
+	// surface has identical chrome to a real `<button>` at the same size
+	// modifier. A trailing inline-end margin (`var(--set-size-padding-inline)`)
+	// separates the button from the file-name label.
 	// ==========================================================================
 	input[type='file'] {
 		display: inline-block;
 		max-inline-size: 100%;
+		padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
+		padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
 		font-family: inherit;
 		font-size: var(--set-size-font-size, var(--text-sm));
 		line-height: var(--leading-normal);
@@ -200,6 +212,10 @@
 		border-radius: var(--set-size-border-radius, var(--radius-md));
 		cursor: pointer;
 		overflow: hidden;
+
+		@include transition(
+			(border-color var(--set-transition-duration), box-shadow var(--set-transition-duration))
+		);
 
 		&:focus-visible {
 			outline: none;
@@ -222,7 +238,7 @@
 			padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
 			padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
 			margin-block: calc(var(--set-size-padding-block, calc(var(--spacing) * 1.5)) * -1);
-			margin-inline: calc(var(--set-size-padding-inline, calc(var(--spacing) * 3)) * -1);
+			margin-inline-start: calc(var(--set-size-padding-inline, calc(var(--spacing) * 3)) * -1);
 			margin-inline-end: var(--set-size-padding-inline, calc(var(--spacing) * 3));
 			color: inherit;
 			background-color: color-mix(in oklab, currentColor 6%, Canvas);
@@ -230,7 +246,6 @@
 			border-inline-end: 1px solid var(--color-border-strong);
 			border-radius: 0;
 			cursor: pointer;
-			pointer-events: none;
 			transition: background-color var(--set-transition-duration);
 		}
 
@@ -340,12 +355,17 @@
 		}
 
 		&:checked {
-			// Set `color` so `currentColor` inside the glyph SVG resolves
-			// white-on-fill against the checked background. The data-URL
-			// SVGs in `--set-icon-check` / `--set-icon-radio` /
-			// `--set-icon-dash` paint with `stroke='currentColor'` /
-			// `fill='currentColor'`.
-			color: var(--color-canvas, white);
+			// Hardcode the glyph to white so `currentColor` inside the SVG
+			// reliably reads against the saturated `--color-primary` fill in
+			// BOTH themes. A previous version used `var(--color-canvas,
+			// white)` which inverts in dark mode (`--color-canvas` flips to
+			// slate-950) and renders the glyph as a near-black silhouette on
+			// a primary-blue square — the bug looked like an unchecked
+			// state. The fill is always a saturated `-600`-tier color where
+			// white-on-fill clears WCAG AA, so a fixed white is correct.
+			// Per-variant overrides (`<input class="success">`) can re-pin
+			// `color:` to match the variant's `--set-variant-color`.
+			color: white;
 			background-color: var(--set-check-checked-bg);
 			border-color: var(--set-check-checked-border-color);
 		}
@@ -366,7 +386,8 @@
 		}
 
 		&:indeterminate {
-			color: var(--color-canvas, white);
+			// Same fixed-white reasoning as `&:checked` above — see comment.
+			color: white;
 			background-color: var(--set-check-checked-bg);
 			border-color: var(--set-check-checked-border-color);
 			background-image: var(--set-check-dash-svg);

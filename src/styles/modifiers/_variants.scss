@@ -83,13 +83,12 @@
 	}
 
 	.success {
-		// `--color-success` resolves to green-600 (oklch L ~ 0.573). Measured
-		// WCAG against white-on-green-600 is 3.22 — fails AA for normal text.
-		// Black on green-600 measures ~6.4 — passes AA easily. Same logic as
-		// warning; the "every -600 variant takes white" rule only holds for
-		// genuinely dark hues (blue, slate, violet, red sit at L ≤ 0.58 but
-		// also have low chroma luminance contribution).
-		--set-variant-color: black;
+		// `--color-success` is pinned to `green-700` (oklch L ~ 0.527) so
+		// white-on-fill clears WCAG AA at ~4.98 — keeps the "every variant
+		// takes white text" symmetric contract across all seven variants.
+		// The earlier `-600` step required black text (white-on-green-600
+		// measures 3.30) and broke the symmetry.
+		--set-variant-color: white;
 		--set-variant-background-color: var(--color-success);
 		--set-variant-border-color: var(--color-success);
 		--set-variant-border-width: 1px;
@@ -100,11 +99,13 @@
 	}
 
 	.warning {
-		// `--color-warning` is pinned at the `-500` step (amber/yellow at
-		// `-600` reads as olive — see _theme.scss). At L ~ 0.77 the surface
-		// is very light; black text is the only choice that clears WCAG AA
-		// against it (white-on-amber-500 measures ~1.8 — hard fail).
-		--set-variant-color: black;
+		// `--color-warning` is pinned to `amber-700` (oklch L ~ 0.555) so
+		// white-on-fill clears WCAG AA at ~5.07. The trade-off vs the
+		// previous `amber-500` (yellow-amber, required black text) is a
+		// shift toward burnt-amber / rust tone — still reads as "warm
+		// caution" and stays distinct from the red-600 danger fill, while
+		// keeping the framework's all-variants-take-white contract intact.
+		--set-variant-color: white;
 		--set-variant-background-color: var(--color-warning);
 		--set-variant-border-color: var(--color-warning);
 		--set-variant-border-width: 1px;
@@ -126,12 +127,13 @@
 	}
 
 	.information {
-		// `--color-information` resolves to sky-600 by default (oklch
-		// L ~ 0.588). Measured WCAG against white-on-sky-600 is 4.02 — fails
-		// AA for normal text (passes only large-text AA). Black on sky-600
-		// measures ~8.2 — passes AA easily. Sky is light enough that white
-		// loses; same logic as success and warning.
-		--set-variant-color: black;
+		// `--color-information` is pinned to `sky-700` (oklch L ~ 0.500) so
+		// white-on-fill clears WCAG AA at ~5.83. The earlier `sky-600`
+		// (L ~ 0.588) only cleared 4.04 with white text, just below the
+		// 4.5 normal-text bar. Sky-700 is slightly deeper / less brilliant
+		// but stays clearly blue (not green) and visually distinct from
+		// the primary `blue-600`.
+		--set-variant-color: white;
 		--set-variant-background-color: var(--color-information);
 		--set-variant-border-color: var(--color-information);
 		--set-variant-border-width: 1px;
