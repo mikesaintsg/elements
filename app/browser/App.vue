@@ -1,20 +1,6 @@
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useTheme } from '@src/browser'
-import { current, navigate, route, routes, section } from './router.js'
-import SiteNav from './components/SiteNav.vue'
-import Toc from './components/Toc.vue'
-
-/* ── Theme toggle ────────────────────────────────────────────────────────────
-   Banner-mounted dark/light switch driven by the singleton `useTheme`
-   factory. `toggle()` cycles between explicit `light` / `dark` / `system`
-   settings; the chip label and aria-state mirror the resolved theme
-   (`theme.value`) so a system-following user can see the current paint.
-
-   This is here on App.vue so it's available on every page — particularly
-   for the showcase audit work where light↔dark swap parity is part of the
-   contract. */
-const themeCtl = useTheme()
+import { computed } from 'vue'
+import { current, routes } from './router.js'
 
 /* ── Sidebar drawer (mobile) ─────────────────────────────────────────────────
    Below the layout breakpoint the sidebar is off-screen; a toggle reveals it.
@@ -85,105 +71,38 @@ const goHome = (event: MouseEvent): void => {
 	navigate('home')
 	sidebarOpen.value = false
 }
+
+/**
+ * Minimal layout shell. The framework's `body:has(> main)` rule turns
+ * <body> into a CSS-grid template-areas layout shell with named slots
+ * for <header>, <nav>, <main>, <aside>, <footer>. Each section below
+ * lands in its slot; the rule lives in `src/styles/components/_body.scss`.
+ *
+ * Drop / restore slots freely — the grid rule rewrites template-areas
+ * via `body:has()` and `:not(:has())` so missing children collapse
+ * cleanly without leaving empty columns.
+ */
+const page = computed(() => current.value.page)
 </script>
 
 <template>
-	<!--
-	  Bare-element layout shell. <body> is the framework's CSS-grid root
-	  (see src/styles/components/_body.scss). Top-level sectioning children
-	  are placed into named grid areas automatically. Every class below is
-	  either a showcase-chrome class (`showcase-*`) or a framework modifier
-	  (`ghost`, `small`) — zero utility classes from external CSS frameworks.
-	-->
-
-	<div
-		v-if="sidebarOpen"
-		class="showcase-backdrop"
-		aria-hidden="true"
-		@click="sidebarOpen = false"
-	/>
-
-	<header class="showcase-banner">
-		<button
-			type="button"
-			class="ghost small"
-			aria-label="Open navigation"
-			@click="sidebarOpen = true"
-		>
-			Menu
-		</button>
-		<a href="#/home" class="showcase-brand" @click="goHome">elements</a>
-		<button
-			type="button"
-			class="ghost small showcase-theme-toggle"
-			:aria-label="`Toggle theme — currently ${themeCtl.theme.value}`"
-			:title="`Theme: ${themeCtl.setting.value} (resolved ${themeCtl.theme.value})`"
-			@click="themeCtl.toggle()"
-		>
-			<span aria-hidden="true">{{ themeCtl.theme.value === 'dark' ? '☾' : '☼' }}</span>
-			<small>{{ themeCtl.setting.value }}</small>
-		</button>
+	<header>
+		<h1>Elements</h1>
 	</header>
 
-	<nav
-		id="sidebar"
-		aria-label="Primary"
-		class="showcase-sidebar"
-		:data-sidebar-open="sidebarOpen ? '' : null"
-	>
-		<header class="showcase-rail-header">
-			<a href="#/home" class="showcase-brand" @click="goHome">elements</a>
-			<button
-				type="button"
-				class="ghost small showcase-theme-toggle"
-				:aria-label="`Toggle theme — currently ${themeCtl.theme.value}`"
-				:title="`Theme: ${themeCtl.setting.value} (resolved ${themeCtl.theme.value})`"
-				@click="themeCtl.toggle()"
-			>
-				<span aria-hidden="true">{{ themeCtl.theme.value === 'dark' ? '☾' : '☼' }}</span>
-				<small>{{ themeCtl.setting.value }}</small>
-			</button>
-			<button
-				type="button"
-				class="ghost small showcase-close"
-				aria-label="Close navigation"
-				@click="sidebarOpen = false"
-			>
-				Close
-			</button>
-		</header>
-
-		<search>
-			<input
-				id="sidebar-filter"
-				v-model="filterQuery"
-				type="search"
-				placeholder="Filter pages…"
-				aria-label="Filter pages"
-				autocomplete="off"
-			/>
-		</search>
-		<small class="showcase-hint"> Press <kbd>/</kbd> to focus </small>
-
-		<SiteNav :routes="filteredRoutes" @navigate="sidebarOpen = false" />
-
-		<p v-if="filteredRoutes.length === 0" class="showcase-empty">
-			No results for "{{ filterQuery }}"
-		</p>
+	<nav aria-label="Primary">
+		<menu>
+			<li v-for="route in routes" :key="route.id">
+				<a :href="`#/${route.id}`">{{ route.title }}</a>
+			</li>
+		</menu>
 	</nav>
 
-	<main ref="scrollerRef">
-		<div class="showcase-page">
-			<component :is="current.page" :key="current.id" />
-		</div>
+	<main>
+		<component :is="page" />
 	</main>
 
-	<aside id="toc">
-		<header class="showcase-toc-header">On this page</header>
-		<Toc :scroller="scrollerRef" />
-	</aside>
-
 	<footer>
-		<p>© 2026 elements</p>
+		<small>Elements framework</small>
 	</footer>
 </template>

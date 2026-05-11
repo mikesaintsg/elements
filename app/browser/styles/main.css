@@ -1,38 +1,39 @@
-/* Showcase-app entry stylesheet.
+/* Showcase-app entry stylesheet. The single CSS file the app loads.
  *
- * Three responsibilities, all in this file:
- *   1. The merged layer order — declared before `@import "tailwindcss"` so
- *      Tailwind's own `@layer theme, base, components, utilities` declaration
- *      merges as a no-op against the wider order. Layers later in the list
- *      win.
- *   2. Tailwind v4 — its `@tailwindcss/postcss` plugin processes this file,
- *      expanding every `@theme` block into `:root` custom properties.
- *   3. `@source` directives tell Tailwind to scan the framework's SCSS sources
- *      and the app's templates for utility class usage and var() references —
- *      keeps the right utilities + theme tokens emitted on :root.
+ * Three responsibilities, in cascade order:
+ *   1. Declare the merged `@layer` order BEFORE `@import "tailwindcss"`
+ *      so Tailwind's own `@layer theme, base, components, utilities`
+ *      declaration merges as a no-op against the wider order. Later
+ *      layers win.
+ *   2. Import Tailwind v4. Its `@tailwindcss/postcss` plugin processes
+ *      this file, expanding every `@theme` block into `:root` custom
+ *      properties and generating utility classes the showcase uses.
+ *   3. Import the framework's SCSS bundle. Vite's Sass plugin compiles
+ *      the SCSS to CSS in-place; the result is post-processed by
+ *      `@tailwindcss/postcss` alongside this file, so framework tokens
+ *      (`--set-*`) and Tailwind tokens (`--color-*`, `--spacing-*`)
+ *      end up in the same `:root` block with no double-source.
  *
- * The framework SCSS bundle is imported separately from `main.ts` so this
- * file stays plain CSS (no Sass @import deprecations), exactly mirroring the
- * test-side setup at `tests/setup.css`.
- *
- * Showcase chrome (`showcase-*` classes used by App.vue and pages) lives in
- * `./showcase.scss` and is loaded as a SCSS sibling.
+ * `@source` directives tell Tailwind which files to scan for utility
+ * class usage and `var()` references so the right CSS is emitted.
  */
 
 @layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
 
 @import 'tailwindcss';
+@import '../../../src/styles/index.scss';
 
 @source '../../../src/styles';
 @source '../../../app';
 
-/* Vue mounts into <div id="app"> by default. The framework's body-as-layout-
- * shell rule (`body:has(> main) { display: grid; … }`) places sectioning
- * children of <body> into named grid areas — but Vue's #app wrapper would
- * sit between them and break the grid. `display: contents` makes #app
- * invisible to the parent's layout while still rendering its descendants,
- * so App.vue's <header>/<nav>/<main>/<aside>/<footer> become direct grid
- * items of <body> as if Vue weren't in the way. */
+/* Vue mounts into <div id="app"> by default. The framework's body-as-
+ * layout-shell rule (`body:has(> main) { display: grid; … }`) places
+ * sectioning children of <body> into named grid areas — but Vue's #app
+ * wrapper would sit between them and break the grid. `display: contents`
+ * makes #app invisible to the parent's layout while still rendering its
+ * descendants, so App.vue's <header>/<nav>/<main>/<aside>/<footer>
+ * become direct grid items of <body> as if Vue weren't in the way.
+ */
 #app {
 	display: contents;
 }

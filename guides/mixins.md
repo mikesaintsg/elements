@@ -1,63 +1,58 @@
 # Mixins & Sass Constants
 
-> Centralized SCSS helpers and shared list constants. Source: [src/styles/\_mixins.scss](../src/styles/_mixins.scss).
+> Authoritative reference for the framework's Sass-side reusable helpers. Source: [\_mixins.scss](../src/styles/_mixins.scss).
 
-`_mixins.scss` is the SCSS analogue of a `helpers.ts` registry. It emits no top-level CSS of its own — every consumer writes `@use '../mixins' as *;` to bring helpers into scope. Sass list constants documented here drive every per-modifier loop in the codebase, so a contributor changing a list (e.g., adding a variant) updates every iterator that depends on it in one place.
+## 1. Overview
 
----
+`src/styles/_mixins.scss` declares the framework's Sass-side reusable helpers. It emits no top-level CSS of its own — every consumer writes `@use '../mixins' as *;` to bring helpers into scope.
 
-## 1. The "extract once duplicated" rule
+Two kinds of helpers live here:
 
-A pattern moves into `_mixins.scss` only when **two or more partials would otherwise duplicate it**. Single-use patterns stay inline in their own partial. The risk we're guarding against: a registry full of bespoke helpers that obscure what's actually shared.
+- **Sass list constants** — plural-named lists that drive every `@each` loop in modifier and element partials. The lists are the source of truth for the framework's modifier vocabulary; a contributor adding a variant updates one list and every iterator picks it up.
+- **`@mixin` declarations** — used by partials for cross-cutting concerns: reduced motion, transitions, focus ring, forced colors, truncation, container queries, floating-panel viewport bounds, and palette iteration.
 
-A new helper added here gets:
+Cross-references:
 
-- A single-line `///` doc-comment naming its purpose.
-- Lowercase kebab-case name (verb or verb-noun: `reduced-motion`, `transition`, `focus-ring`).
-- An entry in §3 of this guide.
+- [styles.md](styles.md) — top-level architecture
+- [tokens.md](tokens.md) — the variation surface the mixins read through
+- [modifiers.md](modifiers.md) — the four-dimension cascade `palette-each` iterates
+- [components.md](components.md) / [composables.md](composables.md) — examples of mixin consumers
 
 ---
 
 ## 2. Sass list constants
 
-The five modifier dimensions surface here as plural-named lists, in the same order as their CSS source files. A `@each` loop that needs to enumerate a dimension reaches for these.
+The four modifier-dimension lists below — plus the placement list — drive every `@each` loop across the codebase. They are the source of truth for the modifier vocabulary.
 
 ```scss
 $variants: (primary, secondary, tertiary, success, warning, danger, information) !default;
-$sizes: (small, large) !default;
-$styles: (ghost, filled) !default;
+$sizes: (small, large, huge) !default;
+$styles: (outline, ghost, filled) !default;
+$shapes: (rounded, pill, square) !default;
 $states: (disabled, active, loading) !default;
+$placements: (top, end, bottom, start, top-start, top-end, bottom-start, bottom-end) !default;
 ```
 
-The full shape dimension was dropped because Tailwind v4's `.rounded-{none|sm|md|lg|xl|2xl|3xl|full}` utility scale covers every value a shape modifier would set. `.huge` was dropped from sizes to align with mailbox's `sm`/`lg`-only convention; oversized CTAs are composable from Tailwind utilities (`.px-8`, `.text-xl`) when needed. `$styles` ships only `ghost` + `filled` — `.outline` collides with Tailwind's outline utility. See [modifiers.md](modifiers.md) for the full vocabulary rationale.
+| List          | Role                                                                                                |
+| ------------- | --------------------------------------------------------------------------------------------------- |
+| `$variants`   | Seven semantic palette roles. Iterated by `_variants.scss` and every per-variant tint emitter.      |
+| `$sizes`      | Three non-default sizes. `medium` is the default and is intentionally absent.                       |
+| `$styles`     | Three appearance styles applied on top of a variant.                                                |
+| `$shapes`     | Three corner shapes.                                                                                |
+| `$states`     | Three interaction / lifecycle states.                                                               |
+| `$placements` | Eight anchored-surface placements for tooltip, popover, dropdown, and any anchor-positioned target. |
 
-| List        | Used by                                                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------ |
-| `$variants` | `modifiers/_variants.scss` (defines the seven values), parity tests, future per-color generators |
-| `$sizes`    | `modifiers/_sizes.scss`, future per-size generators                                              |
-| `$shapes`   | `modifiers/_shapes.scss`, future per-shape generators                                            |
-| `$styles`   | `modifiers/_styles.scss`, future per-style generators                                            |
-| `$states`   | `modifiers/_states.scss`, future per-state generators                                            |
+The `!default` flag lets a consumer override any list via `@use 'mixins' with ($variants: (primary, accent, warning, danger))` to ship a project-specific palette without forking the framework.
 
-The `!default` flag makes them downstream-overridable: a consumer can `@use 'mixins' with ($variants: (primary, accent, warning, danger))` to ship a project-specific palette.
-
-**Names match the modifier dimensions exactly.** No `$colors`, no `$button-sizes` — the lists are dimension-named so loops read uniformly across the codebase. When `modifiers.ts` exports a `Variant` type, the SCSS `$variants` list is the same axis on the SCSS side.
+Names match the modifier dimensions exactly — no `$colors`, no `$button-sizes`. When `modifiers.ts` exports a `Variant` type, `$variants` is the same axis on the SCSS side. See [modifiers.md](modifiers.md) for the full vocabulary.
 
 ---
 
-## 3. Helpers
+## 3. Motion & focus
 
 ### `reduced-motion`
 
-```scss
-@mixin reduced-motion {
-	@media (prefers-reduced-motion: reduce) {
-		@content;
-	}
-}
-```
-
-Wraps content in the `prefers-reduced-motion: reduce` media query. Usage:
+Wraps content in `@media (prefers-reduced-motion: reduce)`. Every rule that should reset when the user prefers reduced motion routes through this mixin.
 
 ```scss
 .spinner {
@@ -69,20 +64,9 @@ Wraps content in the `prefers-reduced-motion: reduce` media query. Usage:
 }
 ```
 
-This is the lower-level building block. For transitions, use `transition()` instead — it pairs the declaration with the guard automatically.
+### `transition($value)`
 
-### `transition`
-
-```scss
-@mixin transition($value) {
-	transition: $value;
-	@include reduced-motion {
-		transition: none;
-	}
-}
-```
-
-Emits a `transition:` declaration plus the matching reduced-motion guard. The two-line pattern was the dominant duplicate across animated partials — this collapses it into one call. **Use this for every transition declared in the project.** Hand-writing the pair is a code smell.
+Declares `transition: $value` plus a nested `reduced-motion { transition: none }`. Every transitional rule in the framework uses this; consumers should not write bare `transition:` declarations on framework-styled elements.
 
 ```scss
 button {
@@ -97,47 +81,172 @@ button {
 }
 ```
 
-### `focus-ring`
+### `focus-ring($alpha: 0.35)`
+
+Paints the framework's canonical focus signal:
 
 ```scss
-@mixin focus-ring($alpha: 0.35) {
-	box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
-		color-mix(
-			in oklab,
-			var(--set-variant-background-color, var(--color-primary)) calc(#{$alpha} * 100%),
-			transparent
-		);
+box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+	color-mix(
+		in oklab,
+		var(--set-variant-background-color, var(--color-primary)) calc(#{$alpha} * 100%),
+		transparent
+	);
+```
+
+The color tracks `--set-variant-background-color`, falling back to `--color-primary` when no variant is applied. `$alpha` (default `0.35`) controls ring intensity.
+
+```scss
+button:focus-visible {
+	outline: none;
+	@include focus-ring;
 }
 ```
 
-Emits the canonical focus-ring `box-shadow`. The color tracks the active variant via `--set-variant-background-color`, falling back to `--color-primary` when no variant is applied. The `$alpha` parameter (default `0.35`, matching `--set-focus-box-shadow-opacity`) controls ring intensity.
-
-The mixin **is not yet called from any partial** — `_button.scss` currently inlines the same `box-shadow` + `color-mix` formula because it's the only consumer. Once a second element (e.g., `<a>`, `<input>`) opts into the same focus ring, both partials will switch to the mixin.
+Pair with `outline: none` so the ring reads as the sole focus affordance.
 
 ---
 
-## 4. Decision tree — function vs. mixin vs. placeholder
+## 4. Accessibility & responsive
 
-Sass offers three tools. Pick the right one for what you're sharing.
+### `forced-colors`
 
-| You need                                    | Tool                                  | Returns | Emits                                   | Example use                                                  |
-| ------------------------------------------- | ------------------------------------- | ------- | --------------------------------------- | ------------------------------------------------------------ |
-| A value to plug into a property             | `@function`                           | a value | nothing                                 | `tint($name, $alpha)` (future), `clamp-spacing($n)`          |
-| To emit a block of CSS                      | `@mixin`                              | nothing | the block at every call site            | `transition($value)`, `focus-ring($alpha)`, `reduced-motion` |
-| Static identical declarations sharable once | `%placeholder` extended via `@extend` | nothing | once at the placeholder's compile point | (none currently)                                             |
-
-**Caveat on placeholders:** Sass placeholders are NOT reachable across `@use` boundaries. They're file-local. If you need cross-file sharing, use `@mixin` (the trade-off is N copies in compiled output rather than one). For the framework's current scope, every reusable pattern is small enough that the duplication cost is negligible.
-
-**The `transition` mixin's design.** Could it be a function? No — functions return values; this emits two declarations. Could it be a placeholder? No — `@extend` would cross `@use` boundaries with edge-cases around `@layer`. A mixin is the right tool: declarative at the call site, no surprise specificity coupling.
-
----
-
-## 5. Custom-property values and `#{…}` interpolation
-
-When a Sass function call appears inside a CSS custom-property value (`--bs-foo: …;`), wrap it in `#{}` to force evaluation:
+Wraps a rule body in `@media (forced-colors: active)` — Windows High Contrast mode. Element baselines use this to swap custom colors for system color keywords (`Canvas`, `CanvasText`, `Field`, `FieldText`, `Highlight`, `HighlightText`, `ButtonFace`, `ButtonText`, `LinkText`, `GrayText`, `AccentColor`, `AccentColorText`). Documented on `<button>`, `<input>`, `<dialog>`, `<aside>`, and `[popover]`.
 
 ```scss
-// Wrong — Sass treats the value as plain CSS and emits the literal `tint(...)`
+.badge {
+	@include forced-colors {
+		background-color: ButtonFace;
+		color: ButtonText;
+		border: 1px solid ButtonText;
+	}
+}
+```
+
+### `truncate`
+
+Single-line text ellipsis. Emits `overflow: hidden; text-overflow: ellipsis; white-space: nowrap`. Used by `<select-value>`, breadcrumb segments, and table cell labels.
+
+```scss
+select-value {
+	@include truncate;
+}
+```
+
+### `size-container($name, $type: inline-size)`
+
+Marks the element as a size-aware container for `@container` queries — declares `container-type` and `container-name` so descendant `@container $name (…)` queries resolve. Used wherever element-internal layout depends on the element's own width, not the viewport's.
+
+```scss
+article {
+	@include size-container('card');
+}
+
+@container card (min-width: 480px) {
+	/* … */
+}
+```
+
+`$name` is a single-word, kebab-case identifier. Pass `$type: size` for the rare case where block-axis queries are also required; the default `inline-size` matches the W3C primitive the framework standardises on.
+
+---
+
+## 5. Floating-panel mixins
+
+The floater family centralises the viewport-clamped sizing used by tooltip, popover, toast, dropdown, drawer, and modal. Every consumer reads through the same `--set-floater-*` token chain (declared in [tokens.md](tokens.md)), so a single retune at `:root` scope retunes every floating surface.
+
+### `floater-bounds($component, $width-prop: 'max-inline-size')`
+
+Pairs the consumer's design width against the framework's viewport budget. Sets the chosen inline-size property to `min(var(--set-{component}-inline-size), var(--set-floater-max-inline-size))`, and `max-block-size` to `var(--set-floater-max-block-size)`. On desktop the panel lands at design width; on mobile it shrinks to fit. Pass `$component: null` for panels with no design upper bound, or `$width-prop: 'inline-size'` for fixed-width panels (toast) that should take the smaller of the two values rather than just be capped by it.
+
+```scss
+output[popover] {
+	@include floater-bounds('toast', 'inline-size');
+}
+```
+
+### `floater-side-insets($component, $padding-var)`
+
+Emits the four `--set-{component}-inset-{top,bottom,start,end}` tokens. Each side resolves to `max(var($padding-var), env(safe-area-inset-*, 0px))` — the larger of the component's placement padding and the platform's safe-area inset, so notched and rounded-corner devices keep clearance even when the consumer asked for `p-0`. Requires `viewport-fit=cover` in the host page's viewport meta tag for non-zero `env()` values on iOS.
+
+```scss
+output[popover] {
+	@include floater-side-insets('toast', --set-toast-edge-inset);
+}
+```
+
+### `floater-edge($edge)`
+
+Anchors a fixed-position element to a single viewport edge — drawer territory, plus toast bottom-end and similar pinned surfaces. Accepts `start`, `end`, `top`, or `bottom`; sets only the inset values, leaving sizing, border direction, and slide transforms to the consumer.
+
+```scss
+aside[popover].drawer-end {
+	@include floater-edge('end');
+}
+```
+
+### `floater-fullscreen`
+
+Fills the viewport on both axes with `inset: 0` and dynamic-viewport units (`100dvw` / `100dvh`), and drops border + border-radius so the surface reads as full-bleed. Used by `useDialog.fullscreen` and `useAside` fullscreen variants.
+
+```scss
+dialog.fullscreen[open] {
+	@include floater-fullscreen;
+}
+```
+
+---
+
+## 6. Palette iteration
+
+### `palette-each($exclude: ())`
+
+`@each` loop over `$variants` that yields the variant name to its content block. Removes the boilerplate of typing the seven-value list in every per-variant rule emitter. Used by `_variants.scss` and any component that needs per-variant rules (toast tint, alert tint, callout tint, badge tint). Pass `$exclude` to skip variants that do not apply — e.g. `(secondary)` for chrome that does not carry a neutral semantic role.
+
+```scss
+@include palette-each using ($variant) {
+	.badge.#{$variant} {
+		background-color: var(--color-#{$variant});
+		color: var(--color-#{$variant}-contrast);
+	}
+}
+```
+
+Saves repeating seven near-identical rules by hand and guarantees every consumer iterates the same list in the same order.
+
+---
+
+## 7. Authoring rules
+
+Add a new mixin only when **the pattern repeats across three or more partials AND the partials would otherwise drift**. The third instance is what justifies the helper; anticipation of future reuse is not.
+
+When adding a mixin:
+
+1. Pick a lowercase kebab-case name. Verb or verb-noun: `reduced-motion`, `focus-ring`, `floater-bounds`.
+2. Write a `///` doc-comment naming purpose, parameters, and a usage snippet showing the call site (not the implementation).
+3. If the mixin takes a list or token that consumers might want to retune, declare it with `!default`.
+4. Document the new mixin in this guide.
+5. Add a test fixture if the mixin emits non-trivial CSS (viewport math, `color-mix`, container-query pairings).
+6. Migrate every existing duplicate call site to the new mixin in the same change. A mixin added without immediate adoption is dead code.
+
+---
+
+## 8. Anti-rules
+
+- **No element-specific mixins.** An element's quirks belong in its element file, not the shared registry. `<button>`'s hover darken is `color-mix` inline; it is not a `button-hover` mixin.
+- **No mixin that wraps `@layer`.** Use the layer directive directly — the indirection adds no leverage.
+- **No mixin whose contract is "declare these three properties".** That's a snippet, not a reusable abstraction. The exception is `truncate`, which earned its place by appearing in five partials and being a named, well-known CSS pattern.
+- **No premature abstraction.** A property-shaped pattern that looks reusable across two partials but turns out to be variant-specific costs more to unwind than to inline.
+- **No mixin that duplicates a Tailwind utility.** `.shadow-lg`, `.rounded-md`, `.text-center` — Tailwind owns those.
+
+---
+
+## 9. Custom-property values and `#{…}` interpolation
+
+When a Sass function call appears inside a CSS custom-property value (`--set-foo: …;`), wrap it in `#{}` to force evaluation. Sass treats custom-property values as plain CSS by default:
+
+```scss
+// Wrong — emits the literal `tint(...)` to CSS
 .alert {
 	--set-alert-bg: tint('primary', 0.1);
 }
@@ -148,37 +257,15 @@ When a Sass function call appears inside a CSS custom-property value (`--bs-foo:
 }
 ```
 
-Sass treats custom-property values as plain CSS by default. In regular property declarations (`background-color: tint(…)`), no interpolation is needed because Sass knows the property is a Sass value site.
-
-This rule will surface as soon as we add a function (e.g., a `tint()` helper). Document it now so the convention is clear when the time comes.
-
----
-
-## 6. What `_mixins.scss` is NOT for
-
-- One-off rules that only one partial would use. Inline them in the partial.
-- Component-specific chrome (e.g., button's hover darken). That's `color-mix` inline; not a shared pattern.
-- Property-shaped patterns that look reusable but are actually variant-specific. Premature abstraction is more expensive than the third instance you eventually extract.
-- Patterns that already have a Tailwind utility. `.shadow-lg`, `.rounded-md`, `.text-center` — Tailwind owns those.
-
----
-
-## 7. Adding a new helper
-
-1. Confirm ≥ 2 partials would otherwise duplicate the pattern.
-2. Decide function vs. mixin vs. placeholder via §4's decision tree.
-3. Write the helper with a `///` doc-comment.
-4. If the helper takes user-overridable values (like a list), use `!default` so consumers can re-tune via `@use ... with (…)`.
-5. Update §3 (helpers) or §2 (lists) of this guide.
-6. Migrate the call sites from inlined patterns to the new helper in the same change.
-
-A helper added without immediate call-site adoption is dead code. The pattern's third instance is what justifies the helper, not anticipation of future reuse.
+Regular property declarations (`background-color: tint(…)`) do not need interpolation — Sass knows the right-hand side is a Sass value site there.
 
 ---
 
 ## Reference
 
-- [\_mixins.scss](../src/styles/_mixins.scss) — SCSS source
-- [styles.md](styles.md) §"Author's contract" — when to reach for a helper
-- [modifiers.md](modifiers.md) — four-dimension list constants and their consumers
-- [tokens.md](tokens.md) — token surface the helpers integrate with
+- [\_mixins.scss](../src/styles/_mixins.scss) — Sass source
+- [styles.md](styles.md) — top-level architecture
+- [tokens.md](tokens.md) — token surface the mixins read through
+- [modifiers.md](modifiers.md) — modifier-dimension lists and their consumers
+- [components.md](components.md) — component partials that consume the floater family
+- [composables.md](composables.md) — composables whose CSS counterparts use these mixins

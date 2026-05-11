@@ -1,327 +1,336 @@
 # Modifiers
 
-> Five orthogonal dimensions, all spelled-out semantic English. CSS source: [src/styles/modifiers/](../src/styles/modifiers/). TS mirror: [src/browser/modifiers.ts](../src/browser/modifiers.ts). Bidirectional parity tests live alongside the shape tests in [tests/src/browser/modifiers.test.ts](../tests/src/browser/modifiers.test.ts).
+> Authoritative reference for the elements framework's modifier system. Modifiers are the framework's variation surface — six orthogonal dimensions, each a small CSS partial under [`src/styles/modifiers/`](../src/styles/modifiers/). A modifier class doesn't paint pixels directly; it sets `--set-{context}-*` tokens that the element / component baseline consumes via fallback chains.
 
-A modifier class is a **token-setter**, never a property-setter. The class declares the values of context tokens (`--set-variant-*`, `--set-size-*`, `--set-style-*`); element files consume those tokens via fallback chains. This is what makes `<button class="primary large ghost">` Just Work — every modifier carries no element-specific code, and every element that consumes the cascade gets all modifiers for free.
-
-The five dimensions are orthogonal: an element takes at most one value per dimension. They compose without conflict.
-
-| Dimension                       | Values                                                                                | Sets these tokens                                                                                                   |
-| ------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Variant** (semantic identity) | `primary`, `secondary`, `tertiary`, `success`, `warning`, `danger`, `information`     | `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`, `--set-variant-border-width` |
-| **Size** (physical scale)       | `small`, `large`                                                                      | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius`         |
-| **Style** (fill treatment)      | `ghost`, `filled`                                                                     | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`, `--set-style-border-width`         |
-| **State** (interaction state)   | `disabled`, `active`, `loading`                                                       | (mostly element-owned; states declare universal cursor + pointer-events at the modifier level)                      |
-| **Placement** (anchor position) | `top`, `bottom`, `start`, `end`, `top-start`, `top-end`, `bottom-start`, `bottom-end` | Sets `position-area` directly on anchor-positioned elements (popovers); see §6.                                     |
-
-**Why no shape dimension?** Tailwind v4 ships `.rounded-{none|sm|md|lg|xl|2xl|3xl|full}` utilities that cover every corner-radius value the framework would want a modifier for — `.pill` ≡ `.rounded-full`, `.square` ≡ `.rounded-none`, intermediate steps map directly. Shipping a shape modifier dimension would just duplicate Tailwind's vocabulary under different names. Consumers reach for `.rounded-full` and friends directly.
-
-**Why no `.huge` size?** Mailbox's reference button system has only `.btn-sm` and `.btn-lg`; oversized CTAs are composable from Tailwind utilities (`.px-8`, `.py-3`, `.text-xl`) when needed. Two coarse steps (`small`, `large`) cover the common cases without bloating the size scale.
-
-**Naming clashes that aren't shipped.** `.rounded` collides with Tailwind's `.rounded` utility (border-radius: 0.25rem) and `.outline` collides with Tailwind's `.outline` utility (outline-style: solid). Both Tailwind utilities live in the highest cascade layer and would always win against our modifiers. Rather than reorder layers (which would break the convention that explicit utility application overrides everything), the framework cedes the names to Tailwind. Consumers who want outlined patterns compose Tailwind's `border` + `bg-transparent` + `text-{variant}` utilities with a variant.
+This means every modifier dimension works on every element that consumes the right context tokens. Adding a new element doesn't add new modifier code — it just consumes the same `--set-{context}-*` tokens.
 
 ---
 
-## 1. Why these names
+## 1. The six dimensions
 
-- **Spelled out.** `information` not `info`. `large` not `lg`. `outline` not `ol`. The class name reads in HTML as English; every framework rule is "no abbreviations, ever."
-- **Singular nouns or adjectives, no compounds.** No `extra-large`, `outlined-primary`, `pill-shaped`. Each dimension stays a clean axis.
-- **No overlap across dimensions.** `dark` already names a theme; doesn't reuse here. `tight` already describes line-height; doesn't reuse for size. Vocabulary is partitioned.
-- **No `medium` size.** The absence of any size class IS the default size — adding `.medium` would just be `.normal` in disguise.
+Each dimension is orthogonal — an element takes at most one value from each.
+
+| Dimension                                  | Values                                                                                        | Context tokens it writes                                                                                    | Partial                                                        |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **Variant** (semantic identity)            | `.primary`, `.secondary`, `.tertiary`, `.success`, `.warning`, `.danger`, `.information`      | `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`                       | [`_variants.scss`](../src/styles/modifiers/_variants.scss)     |
+| **Size** (physical scale)                  | `.small`, `.large`, `.huge` (no `.medium` — that's the default)                               | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius` | [`_sizes.scss`](../src/styles/modifiers/_sizes.scss)           |
+| **Style** (fill treatment)                 | `.outline`, `.ghost`, `.filled`                                                               | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`                             | [`_styles.scss`](../src/styles/modifiers/_styles.scss)         |
+| **Shape** (corner radius)                  | `.rounded`, `.pill`, `.square`                                                                | `--set-shape-border-radius`                                                                                 | [`_shapes.scss`](../src/styles/modifiers/_shapes.scss)         |
+| **State** (interaction state)              | `.disabled`, `.active`, `.loading`                                                            | (typically toggles existing element rules; no dedicated context tokens)                                     | [`_states.scss`](../src/styles/modifiers/_states.scss)         |
+| **Placement** (anchored surface placement) | `.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end` | Maps to CSS `position-area` keywords                                                                        | [`_placements.scss`](../src/styles/modifiers/_placements.scss) |
+
+The dimensions compose freely. `<button class="primary large outline rounded">` resolves all four through the cascade in one pass.
 
 ---
 
-## 2. Variant — semantic identity
+## 2. How the cascade resolves
 
-Each variant chooses its own contrast text color. White on saturated colors (primary/tertiary/success/danger), black on light/yellow ones (secondary/warning/information). Consumers re-tuning the palette via `@theme` should also re-set `--set-variant-color` per variant if their palette inverts contrast.
+Walk through `<button class="primary large outline rounded">`:
+
+1. `.primary` sets:
+   ```css
+   --set-variant-color: white;
+   --set-variant-background-color: var(--color-primary);
+   --set-variant-border-color: var(--color-primary);
+   ```
+2. `.large` sets:
+   ```css
+   --set-size-padding-inline: var(--spacing-5);
+   --set-size-padding-block: var(--spacing-2);
+   --set-size-font-size: var(--text-lg);
+   --set-size-border-radius: var(--radius-lg);
+   ```
+3. `.outline` reads `--set-variant-background-color` (the variant identity) and rewrites:
+   ```css
+   --set-style-color: var(--set-variant-background-color);
+   --set-style-background-color: transparent;
+   --set-style-border-color: var(--set-variant-background-color);
+   ```
+4. `.rounded` sets:
+   ```css
+   --set-shape-border-radius: var(--radius-lg);
+   ```
+5. The `<button>` partial's fallback chain reads them in priority:
+   ```css
+   --set-button-color: var(--set-style-color, var(--set-variant-color, currentColor));
+   --set-button-background-color: var(
+   	--set-style-background-color,
+   	var(--set-variant-background-color, transparent)
+   );
+   --set-button-border-color: var(
+   	--set-style-border-color,
+   	var(--set-variant-border-color, transparent)
+   );
+   --set-button-border-radius: var(
+   	--set-shape-border-radius,
+   	var(--set-size-border-radius, var(--radius-md))
+   );
+   --set-button-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
+   ```
+
+Result: outlined primary button at large size with rounded corners. **Zero per-element variant/size/style code.** Every substantively-styled element consumes the same context tokens; the modifier dimension that wrote them doesn't know or care which element is consuming.
+
+---
+
+## 3. Variants
+
+Seven semantic identities. Each variant's identity color is `--set-variant-background-color` — the same token that fills the background in `.filled` state. There's no separate "base" token because the background color IS the variant's color.
 
 ```scss
-/* src/styles/modifiers/_variants.scss */
 .primary {
-  --set-variant-color:            white;
-  --set-variant-background-color: var(--color-primary);
-  --set-variant-border-color:     var(--color-primary);
-  --set-variant-border-width:     1px;
+	--set-variant-color: white;
+	--set-variant-background-color: var(--color-primary);
+	--set-variant-border-color: var(--color-primary);
 }
-.secondary    { --set-variant-color: black; ... }
-.tertiary     { --set-variant-color: white; ... }
-.success      { --set-variant-color: white; ... }
-.warning      { --set-variant-color: black; ... }
-.danger       { --set-variant-color: white; ... }
-.information  { --set-variant-color: black; ... }
+.secondary {
+	--set-variant-color: black;
+	--set-variant-background-color: var(--color-secondary);
+	--set-variant-border-color: var(--color-secondary);
+}
+.tertiary {
+	--set-variant-color: white;
+	--set-variant-background-color: var(--color-tertiary);
+	--set-variant-border-color: var(--color-tertiary);
+}
+.success {
+	--set-variant-color: white;
+	--set-variant-background-color: var(--color-success);
+	--set-variant-border-color: var(--color-success);
+}
+.warning {
+	--set-variant-color: black;
+	--set-variant-background-color: var(--color-warning);
+	--set-variant-border-color: var(--color-warning);
+}
+.danger {
+	--set-variant-color: white;
+	--set-variant-background-color: var(--color-danger);
+	--set-variant-border-color: var(--color-danger);
+}
+.information {
+	--set-variant-color: black;
+	--set-variant-background-color: var(--color-information);
+	--set-variant-border-color: var(--color-information);
+}
 ```
 
-The variant's identity color (used by outline / ghost / focus-ring) is `--set-variant-background-color` — the same token that fills the background in the filled state. No separate "base" token needed; the background color _is_ the variant's color.
+The contrast text color (`--set-variant-color`) is hand-tuned per variant for WCAG AA contrast against the variant's background. `.warning` and `.information` use black text; the others use white.
 
-`--set-variant-border-width: 1px` bumps the border width on a variant'd element so its border-color shows. Bare elements default to `0`, keeping them borderless.
+The variant context tokens are also consumed by element baselines that need a tint without a class — alerts and callouts read `--color-{variant}-bg-subtle`, `--color-{variant}-text-emphasis`, `--color-{variant}-border-subtle` directly from the theme layer.
 
 ---
 
-## 3. Size — physical scale
+## 4. Sizes
 
-Two coarse steps: small and large. Bare element renders at the default size (declared on the element itself in `elements/_{tag}.scss`) — no `.medium` class because absence is the default.
+Three scale steps plus the default (no `.medium` class — the bare element IS medium). Sizes consume Tailwind's scale tokens.
 
 ```scss
-/* src/styles/modifiers/_sizes.scss */
 .small {
-	--set-size-padding-inline: calc(var(--spacing) * 2); /* 0.5rem  / 8px  */
-	--set-size-padding-block: calc(var(--spacing) * 1); /* 0.25rem / 4px  */
-	--set-size-font-size: var(--text-xs); /* 0.75rem / 12px */
-	--set-size-border-radius: var(--radius-sm); /* 0.25rem / 4px  */
+	--set-size-padding-inline: var(--spacing-2);
+	--set-size-padding-block: var(--spacing-1);
+	--set-size-font-size: var(--text-sm);
+	--set-size-border-radius: var(--radius-sm);
 }
 .large {
-	--set-size-padding-inline: calc(var(--spacing) * 4); /* 1rem    / 16px */
-	--set-size-padding-block: calc(var(--spacing) * 2); /* 0.5rem  / 8px  */
-	--set-size-font-size: var(--text-base); /* 1rem    / 16px */
-	--set-size-border-radius: var(--radius-lg); /* 0.5rem  / 8px  */
+	--set-size-padding-inline: var(--spacing-5);
+	--set-size-padding-block: var(--spacing-2);
+	--set-size-font-size: var(--text-lg);
+	--set-size-border-radius: var(--radius-lg);
+}
+.huge {
+	--set-size-padding-inline: var(--spacing-8);
+	--set-size-padding-block: var(--spacing-3);
+	--set-size-font-size: var(--text-xl);
+	--set-size-border-radius: var(--radius-xl);
 }
 ```
 
-`var(--text-*)` and `var(--radius-*)` reference Tailwind theme tokens directly. `@tailwindcss/postcss` runs after Vite's Sass pass and processes the compiled CSS — it sees the var() references and emits the matching theme tokens on `:root`, so consumers can override `--text-xs` (etc.) at the `@theme` level and the size cascade follows.
-
-The size context **does not** override font-weight or line-height — those inherit from the element's own defaults. If a consumer wants the small button's text bolder, they apply a Tailwind utility (`font-bold`) rather than overloading the modifier.
+The framework-level `--set-density-factor` (declared in [`_tokens.scss`](../src/styles/_tokens.scss)) lets consumers globally retune the padding rhythm. Element partials that opt in wrap their padding tokens with `calc(value * var(--set-density-factor))`, so a `:root { --set-density-factor: 0.75 }` declaration compacts every action surface in lockstep.
 
 ---
 
-## 4. Style — fill treatment
+## 5. Styles
 
-`.ghost` / `.filled` re-route the variant's color through the style-context tokens. They consume `--set-variant-*` and rewrite `--set-style-*` to express different fill behaviors.
+Three fill treatments. Each consumes the variant context — meaning the same `.outline` class produces a primary-outlined button or a danger-outlined alert depending on the variant set alongside it.
 
 ```scss
-/* src/styles/modifiers/_styles.scss */
+.outline {
+	--set-style-color: var(--set-variant-background-color);
+	--set-style-background-color: transparent;
+	--set-style-border-color: var(--set-variant-background-color);
+}
 .ghost {
 	--set-style-color: var(--set-variant-background-color);
 	--set-style-background-color: transparent;
 	--set-style-border-color: transparent;
-	--set-style-border-width: 0;
 }
 .filled {
 	--set-style-color: var(--set-variant-color);
 	--set-style-background-color: var(--set-variant-background-color);
 	--set-style-border-color: var(--set-variant-border-color);
-	--set-style-border-width: 1px;
 }
 ```
 
-| Style     | Color            | Background       | Border         | Use case                                                               |
-| --------- | ---------------- | ---------------- | -------------- | ---------------------------------------------------------------------- |
-| `.ghost`  | variant identity | transparent      | transparent, 0 | tertiary / inline action                                               |
-| `.filled` | variant text     | variant identity | variant border | primary CTA (also the implicit default when only a variant is applied) |
-
-**`.filled` is mostly redundant** when you're already applying a variant — the cascade resolves to filled-style rendering by default. `.filled` exists for the case where a parent context applied `.ghost` and a child needs to opt back in.
-
-**Outlined patterns** (transparent fill, visible border, variant text) compose with Tailwind utilities on top of a variant: `<button class="primary bg-transparent text-primary border border-primary">`. An `.outline` modifier was intentionally dropped because Tailwind's `.outline` utility (which sets `outline-style: solid; outline-width: 1px`) would stack a separate outline alongside our framework's border.
+`<button class="primary outline">` paints blue text on transparent with a blue border — `.outline` pulls the variant identity into the style context. `<button class="primary filled">` is the explicit version of `<button class="primary">` for action surfaces (the bare-variant action surface defaults to `.filled` automatically; non-action surfaces stay neutral and require `.filled` to opt into the surface fill).
 
 ---
 
-## 5. State — interaction state
+## 6. Shapes
 
-State modifiers describe an interaction state distinct from native DOM attributes. They're useful when an element doesn't have a native `:disabled` (e.g., a styled `<a>`) or when state needs to drive styling beyond what the pseudo-class affords.
+The simplest dimension — just sets `--set-shape-border-radius`.
 
 ```scss
-/* src/styles/modifiers/_states.scss */
+.rounded {
+	--set-shape-border-radius: var(--radius-lg);
+}
+.pill {
+	--set-shape-border-radius: var(--radius-full);
+}
+.square {
+	--set-shape-border-radius: 0;
+}
+```
+
+The element's `border-radius` chain reads `--set-shape-border-radius → --set-size-border-radius → element default`, so `.rounded` overrides the size-driven default, `.pill` produces a full pill regardless of size, and `.square` strips the radius entirely.
+
+The framework-level `--set-radius-factor` (declared in [`_tokens.scss`](../src/styles/_tokens.scss)) lets consumers globally retune the corner rhythm. A `:root { --set-radius-factor: 0 }` declaration produces a sharp / angular variant of the framework; `1.5` produces a very-rounded variant.
+
+---
+
+## 7. States
+
+State classes mirror existing element pseudo-classes for hosts that don't expose a native attribute equivalent.
+
+```scss
 .disabled {
 	cursor: not-allowed;
+	opacity: var(--set-disabled-opacity, 0.5);
 	pointer-events: none;
-	opacity: 0.5;
 }
 .active {
-	/* element files own the visual treatment */
+	/* mirrors :active chrome; element partials decide what active looks like */
 }
 .loading {
 	cursor: progress;
+	pointer-events: none;
+	position: relative;
+	/* element partials paint a spinner overlay reading --set-loading-* tokens */
 }
 ```
 
-States are different from variant/size/style: they declare **CSS properties directly** (cursor, opacity), not context tokens. The behavior is universal — `cursor: not-allowed` on `.disabled` is correct on every element, whether it consumes the modifier cascade or not. Element files own the visual treatment of `.active` (e.g., button's `&.active` rule darkens the background).
+Use the state class when the native attribute isn't available. `<a class="disabled">` is the right pattern because `<a>` has no `disabled` attribute. `<button disabled>` is the right pattern because `<button>` does — the `.disabled` class is redundant and shouldn't be applied.
 
-For native disabled state, prefer the attribute (`disabled`, `aria-disabled="true"`). The class is the escape hatch.
+`.loading` is the framework's spinner-overlay state. The element partial decides whether to render the spinner via a `::after` pseudo (default) or to defer to a child `<progress>` indeterminate (for hosts that already contain a progress slot).
 
 ---
 
-## 6. Placement — where a floating element lands
+## 8. Placements
 
-Eight values describe where an anchor-positioned element appears relative to its anchor: four edges (top/bottom/start/end) and four corners (top-start, top-end, bottom-start, bottom-end). The class translates directly to a `position-area` keyword.
+Eight values map to CSS `position-area` keywords. Scoped to `[popover]:not([popover='manual'])` so per-element placement semantics on `<aside>` (drawer edge) / `<nav>` (rail side) / `<output>` (toast corner) aren't disrupted by the global placement vocabulary.
 
 ```scss
-/* src/styles/modifiers/_placements.scss (excerpt) */
 [popover]:not([popover='manual']).top {
 	position-area: block-start;
-	align-self: end;
-	justify-self: anchor-center;
 }
 [popover]:not([popover='manual']).bottom {
 	position-area: block-end;
-	align-self: start;
-	justify-self: anchor-center;
 }
 [popover]:not([popover='manual']).start {
 	position-area: inline-start;
-	align-self: anchor-center;
-	justify-self: end;
 }
 [popover]:not([popover='manual']).end {
 	position-area: inline-end;
-	align-self: anchor-center;
-	justify-self: start;
 }
-/* Corners use `span-` syntax so the popover's edge aligns with the
-   anchor's matching edge — not a single corner cell of the 3×3 grid. */
 [popover]:not([popover='manual']).top-start {
-	position-area: block-start span-inline-end;
+	position-area: block-start inline-start;
 }
 [popover]:not([popover='manual']).top-end {
-	position-area: block-start span-inline-start;
+	position-area: block-start inline-end;
 }
 [popover]:not([popover='manual']).bottom-start {
-	position-area: block-end span-inline-end;
+	position-area: block-end inline-start;
 }
 [popover]:not([popover='manual']).bottom-end {
-	position-area: block-end span-inline-start;
+	position-area: block-end inline-end;
 }
 ```
 
-**Why edges need alignment.** `position-area: block-start` selects the entire row above the anchor — but without `align-self: end`, the popover floats in the middle of that row's available space (could drift toward the top of the viewport). `align-self: end` makes it press against the row's bottom edge — kissing the anchor's top edge. Likewise, `justify-self: anchor-center` keeps the popover horizontally centered on the trigger no matter how wide the available row is.
+Logical-axis values (`block-start`, `inline-start`) keep RTL working. The full anchor positioning surface — including `position-try-fallbacks` for viewport overflow — lives in [`surfaces/_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss).
 
-**Why corners need `span-`.** Two-keyword pairs like `block-end inline-start` select a single corner cell of the 3×3 grid — the cell BELOW and to the LEFT of the anchor (outside the anchor's inline bounds). That's wrong for a dropdown, which should sit DIRECTLY BELOW the anchor with its start edge aligned to the anchor's start edge. The `span-inline-end` modifier expands the area to span from the anchor's start edge toward inline-end — the popover's start edge naturally aligns with the anchor's start, and the panel extends toward the end side. Same recipe applied across all four corners.
-
-Like state modifiers, placement modifiers declare a CSS property directly (`position-area`) rather than a context token — there's only one consumer (the anchor-positioned element itself), so the indirection of a context token would only obscure the rule.
-
-**Logical-axis vocabulary.** Class names use English directional words (`top`, `bottom`, `start`, `end`) but the rules resolve to logical CSS keywords (`block-start`, `block-end`, `inline-start`, `inline-end`). RTL pages and vertical writing modes flip placement automatically — a `<menu popover class="bottom-start">` that drops down + start-aligned in LTR becomes drops-up + end-aligned in `vertical-rl`.
-
-**Why scoped to non-manual popovers.** Manual popovers (`[popover='manual']`) carry their own viewport-fixed positioning (toasts pin to a corner via `inset-*` properties — see [`components/_output.scss`](../src/styles/components/_output.scss)). Setting `position-area` on them would re-enter anchor-positioning mode and fight the explicit insets. The selector excludes them; the toast's own `.start` / `.top` rules (which mean "flip the corner") keep working.
-
-The rest of the framework reuses these names too:
-
-- `<aside class="start">` (in body shell) flips its border to the trailing edge.
-- `<nav class="end">` flips its rail border.
-
-These bare-element rules don't anchor-position, so the modifier's `position-area` declaration is a no-op — the cohabitation is clean.
-
-The anchor-positioning _defaults_ (gap, fallback-try chain, default placement-area) live in [`surfaces/_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss). The modifier is the override layer.
+For non-popover surfaces (`<aside>` drawer, `<output>` toast, `<nav>` rail), the placement classes map to per-element rules in the matching component partial. A `<aside class="start">` slides in from the inline-start edge regardless of whether it's a popover-mode drawer or an in-flow rail.
 
 ---
 
-## 7. The cascade — how an element resolves a modifier stack
+## 9. TypeScript mirror
 
-Element files declare element-scoped tokens with fallback chains. `<button>`'s chain:
-
-```scss
-/* src/styles/elements/_button.scss (excerpt) */
-button {
-	--set-button-color: var(--set-style-color, var(--set-variant-color, currentColor));
-	--set-button-background-color: var(
-		--set-style-background-color,
-		var(--set-variant-background-color, transparent)
-	);
-	--set-button-border-color: var(
-		--set-style-border-color,
-		var(--set-variant-border-color, transparent)
-	);
-	--set-button-border-width: var(--set-style-border-width, var(--set-variant-border-width, 0));
-	--set-button-border-radius: var(--set-size-border-radius, var(--radius-md));
-	--set-button-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
-	--set-button-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
-	--set-button-font-size: var(--set-size-font-size, var(--text-sm));
-	--set-button-font-weight: var(--font-weight-normal);
-	--set-button-line-height: var(--leading-normal);
-	/* ... */
-}
-```
-
-Reading the chains tells you the precedence:
-
-- **Color / fill:** `style → variant → element default`. `.ghost` wins, then `.primary`, then bare button.
-- **Border width:** same chain — `.ghost` sets 0, `.primary` sets 1px, bare button is 0.
-- **Border radius:** `size → element default`. `.large` wins, then `--radius-md` literal. For non-default-non-size radii, consumers reach for Tailwind's `.rounded-{step}` directly.
-- **Padding:** `size → element default`. `.large` wins, then bare button's default spacing.
-- **Typography (font-size, font-weight, line-height):** size sets font-size; the bare element's own defaults handle weight + line-height.
-
-This is what `<button class="primary large ghost">` resolves to:
-
-1. `.primary` sets `--set-variant-*` (white text, primary fill, 1px border).
-2. `.large` sets `--set-size-*` (wider padding, larger font, larger radius).
-3. `.ghost` sets `--set-style-*` (reads `--set-variant-background-color`, drops to transparent fill + transparent border).
-4. Button's chain reads each `--set-*` slot in priority order.
-
-**Adding a new element** that wants the modifier system: declare element-scoped tokens with these fallback chains. Zero per-element variant/size/style rules.
-
----
-
-## 8. TypeScript mirror
-
-[`src/browser/modifiers.ts`](../src/browser/modifiers.ts) exports a frozen `modifiers` object plus derived string-literal-union types for typed component props.
+[`src/browser/modifiers.ts`](../src/browser/modifiers.ts) exports a frozen object tree per dimension plus derived string-literal-union types:
 
 ```ts
-import { modifiers, type Variant, type Size, type Style, type State } from '@elements/browser'
+export const modifiers = {
+	variant: {
+		primary: 'primary',
+		secondary: 'secondary',
+		tertiary: 'tertiary',
+		success: 'success',
+		warning: 'warning',
+		danger: 'danger',
+		information: 'information',
+	},
+	size: { small: 'small', large: 'large', huge: 'huge' },
+	style: { outline: 'outline', ghost: 'ghost', filled: 'filled' },
+	shape: { rounded: 'rounded', pill: 'pill', square: 'square' },
+	state: { disabled: 'disabled', active: 'active', loading: 'loading' },
+	placement: {
+		top: 'top',
+		bottom: 'bottom',
+		start: 'start',
+		end: 'end',
+		topStart: 'top-start',
+		topEnd: 'top-end',
+		bottomStart: 'bottom-start',
+		bottomEnd: 'bottom-end',
+	},
+} as const
 
-// String-literal constants — refactor-safe class names
-el.classList.add(modifiers.variant.primary)             // 'primary'
-el.classList.add(modifiers.size.large)                  // 'large'
-
-// Derived types — typed component props
-defineProps<{ variant?: Variant; size?: Size }>()
-
-// Test factories
-createButton({ variant: 'primary', size: 'large' })
-
-// Runtime iteration (e.g., docs site auto-generation)
-Object.values(modifiers.variant).forEach(name => /* ... */)
+export type Variant = (typeof modifiers.variant)[keyof typeof modifiers.variant]
+export type Size = (typeof modifiers.size)[keyof typeof modifiers.size]
+export type Style = (typeof modifiers.style)[keyof typeof modifiers.style]
+export type Shape = (typeof modifiers.shape)[keyof typeof modifiers.shape]
+export type State = (typeof modifiers.state)[keyof typeof modifiers.state]
+export type Placement = (typeof modifiers.placement)[keyof typeof modifiers.placement]
 ```
 
-**TS keys match modifier-class names verbatim.** No `info` / `information` mismatch. Whatever the CSS class is, that's the string literal.
+A bidirectional parity test at [`tests/src/browser/modifiers.test.ts`](../tests/src/browser/modifiers.test.ts) enforces: every CSS class declared in `modifiers/_*.scss` appears as a TS leaf, and every TS leaf has a matching CSS rule.
 
 ---
 
-## 9. Parity tests
+## 10. Adding a value to an existing dimension
 
-One file guards the modifier surface from drift, plus per-dimension behavior tests. All run in real Chromium (Playwright).
+Most dimensions stay closed. The framework is opinionated about the vocabulary — extending it is a deliberate design decision, not a per-project customization. Adding a value:
 
-| Test                                                        | Project       | What it checks                                                                                                                                                                                                                                                          |
-| ----------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [modifiers.test.ts](../tests/src/browser/modifiers.test.ts) | `src:browser` | **Shape:** five dimensions present, expected keys per dimension, every leaf string equals its key. **TS → CSS:** every leaf has a `.{name}` rule via `findRule()`. **SCSS → TS:** every `.X { … }` declared in `modifiers/_*.scss` appears as a leaf in `modifiers.ts`. |
-
-Plus per-dimension behavior tests in [tests/src/styles/modifiers/](../tests/src/styles/modifiers/) that mount an element and verify each modifier sets the expected context tokens.
-
----
-
-## 10. Adding a new modifier
-
-A new modifier dimension is a real architectural decision — not the same as adding a value to an existing dimension. Follow the smaller path first.
-
-### Adding a value to an existing dimension
-
-Example: a fourth size step `.tiny`.
-
-1. Declare `.tiny { --set-size-* : … }` in [\_sizes.scss](../src/styles/modifiers/_sizes.scss).
-2. Add `tiny: 'tiny'` to `modifiers.size` in [modifiers.ts](../src/browser/modifiers.ts).
-3. Update the `$sizes` Sass list in [\_mixins.scss](../src/styles/_mixins.scss) (e.g., `(small, medium, large)` if reintroducing a `medium` step).
-4. Add the value to the test in [\_sizes.test.ts](../tests/src/styles/modifiers/_sizes.test.ts).
-5. Update the table in §3 of this guide.
-
-The parity tests catch any drift automatically — TS without a CSS rule fails; CSS without a TS leaf fails.
-
-### Adding a new dimension
-
-Example: a `density` dimension (compact / cozy / spacious).
-
-1. Decide the context-token namespace (`--set-density-*`).
-2. Author `src/styles/modifiers/_densities.scss` with each class setting the context tokens.
-3. Add a `density` group to [modifiers.ts](../src/browser/modifiers.ts) and a derived `Density` type.
-4. Add `$densities` to [\_mixins.scss](../src/styles/_mixins.scss) Sass lists.
-5. **Update every element file that wants to consume the dimension** — add a `--set-{tag}-* : var(--set-density-*, …)` link in their fallback chains.
-6. Add `_densities.test.ts` to verify each class sets its context tokens.
-7. Update the parity test if its grouping logic needs to know about the new dimension.
-8. Update §1 of this guide and add a §X subsection describing the dimension's contract.
-
-A new dimension is rare — the existing five are designed to be near-exhaustive for HTML element modification. Reach for it only when the design surfaces a genuinely orthogonal axis.
+1. Add the rule to the matching `modifiers/_*.scss` partial. Use the existing rules as templates; new variants tune contrast text + identity color; new sizes step the four context tokens consistently.
+2. Add the value to the matching `modifiers.ts` object + derived type.
+3. Add the value to the matching Sass list in [`_mixins.scss`](../src/styles/_mixins.scss) (`$variants`, `$sizes`, etc.) so any `@each` loops in element partials pick up the new value automatically.
+4. The bidirectional parity test catches drift between SCSS and TS.
 
 ---
 
-## Reference
+## 11. Anti-rules
 
-- [src/styles/modifiers/](../src/styles/modifiers/) — SCSS sources
-- [modifiers.ts](../src/browser/modifiers.ts) — TS mirror
-- [modifiers.test.ts](../tests/src/browser/modifiers.test.ts) — bidirectional parity contract (subsumes the old `modifiers.parity.test.ts`)
-- [tokens.md](tokens.md) — context-token surface (modifiers set the tokens documented there)
-- [elements.md](elements.md) — element-side consumption pattern
+- **Don't abbreviate.** `.info` is wrong; `.information` is right. `.lg` is wrong; `.large` is right. `.bg-primary` is Tailwind utility-class territory — framework modifiers don't compete with utilities.
+- **Don't overlap dimension vocabularies.** `.dark` is reserved for theming, not a variant value. `.tight` is line-height; not a size value. Each dimension's values are distinct adjectives within that dimension; no cross-dimension collisions.
+- **Don't introduce a modifier whose effect is "set a hard-coded color or value."** Modifiers set tokens; the cascade does the rest. A `.brand` modifier that hard-codes `color: red` is wrong — instead, the consumer overrides `--color-primary` at `:root` and uses `.primary`.
+- **Don't hand-roll `&.primary { color: ... }` blocks inside element files.** The cascade already feeds `--set-{element}-*` through the fallback chain. Per-modifier rules in element files are only justified when a property genuinely cannot come from a token — for example, `<form>.row { flex-direction: row }` flips a layout primitive that has no token equivalent.
+- **Don't apply modifier classes to elements that don't consume the matching context tokens.** A `.primary` class on a `<section>` does nothing because `<section>` has no `--set-section-*` token chain. Use the substantive element instead (`<article class="primary">`).
+
+---
+
+## 12. Reference
+
+- [styles.md](styles.md) — top-level architecture; the cascade layer order modifiers participate in.
+- [tokens.md](tokens.md) — the `--set-*` namespace modifiers write.
+- [mixins.md](mixins.md) — the `$variants` / `$sizes` / `$styles` / `$shapes` / `$states` / `$placements` Sass lists modifier partials iterate.
+- [elements.md](elements.md) — the catalog of token-consuming elements.
+- [components.md](components.md) — element compositions that consume the same modifier tokens.
+- [composables.md](composables.md) — Vue + factory layer; composables consume state-class modifiers for the open/closed lifecycle.
+- [surfaces.md](surfaces.md) — the anchor-positioning surface that powers `.top` / `.bottom` / `.start` / `.end` placement.

@@ -1,128 +1,124 @@
 # Components
 
-> Higher-level UI patterns that compose elements. Static chrome lives in [src/styles/components/](../src/styles/components/); composable-attached chrome (drawer geometry, listbox layout, deck stacks) lives in [src/styles/composables/](../src/styles/composables/). The Vue + framework-agnostic behaviour layer is covered separately in [composables.md](./composables.md).
-
-A **component** is a UI pattern bigger than one element — a card, a sidebar, a modal, a toolbar, a filter bar. In a class-heavy framework these are class roots (`.card`, `.modal`, `.btn-toolbar`). In _elements_ they're, wherever possible, **bare HTML tags**: `<article>` IS a card, `<aside>` IS a sidebar, `<dialog>` IS a modal. The HTML tag carries the identity; modifier classes (variant / size / style / state / placement) carry the variations.
-
-Class-root patterns (`.skeleton`, `.spinner`, `.badge`) appear only when there's no semantic HTML home — they're the explicit fallback, not the default path. The current ratio: 12 element-driven components plus role-driven attribute selectors (`[role="tablist"]`, `[role="tab"]`, `[role="tabpanel"]`, `[popover=hint]`), versus 1 class-root partial (`<div>` for `.stack` / `.cluster`). Anchor-positioning is its own surface; placement is its own modifier dimension (`.top` / `.bottom` / `.start` / `.end` + corners), shared across every floating component.
+> Authoritative reference for the elements framework's component catalog. Components are UI patterns bigger than one element. The framework's stance is direct: **the HTML element IS the component**. Modifier classes carry the variations. Class roots appear only when no semantic tag fits.
 
 ---
 
-## 1. Where styles live — four folders
+## 1. Overview
+
+A **component** is a UI pattern bigger than one element — a card, a sidebar, a modal, a toolbar, a filter bar. In a class-heavy framework these are class roots (`.card`, `.modal`, `.btn-toolbar`). In _elements_ they are, wherever possible, **bare HTML tags**.
+
+- `<article>` IS a card.
+- `<aside>` IS a sidebar.
+- `<dialog>` IS a modal.
+- `<menu>` IS a toolbar.
+- `<details>` IS an accordion item.
+- `<search>` IS a search bar.
+- `<output>` IS a toast / status banner.
+
+The HTML tag carries the identity; modifier classes (variant / size / style / state / placement) carry the variations. Class-root patterns (`.skeleton`, `.spinner`, `.badge`, `.dot`, `.tag`) appear only when there is no semantic HTML home — the deliberate fallback, not the default.
+
+---
+
+## 2. Four style folders
 
 A new partial slots into exactly one of four folders. Cascade-layer order (`theme, base, elements, components, surfaces, composables, modifiers, utilities`) means later folders beat earlier ones for the same selector.
 
-| Category | Folder | What it is | Example root |
-|---|---|---|---|
-| **Element** | [src/styles/elements/](../src/styles/elements/) | One file per HTML tag. Token-driven baseline + UA reset. Targets the bare tag. | `button { … }`, `input { … }`, `table { … }` |
-| **Component** | [src/styles/components/](../src/styles/components/) | A composition of elements that reads as one UI thing. **Targets the bare HTML root** when one fits; class root when it doesn't. **Static** — chrome that applies regardless of whether a composable is attached. | `article { … card }`, `body:has(main) { … grid }`, `<div class="stack">` |
-| **Surface** | [src/styles/surfaces/](../src/styles/surfaces/) | CSS for browser-rendered chrome that isn't a tag or composition. | `[popover]`, `dialog::backdrop`, `::-webkit-scrollbar` |
-| **Composable** | [src/styles/composables/](../src/styles/composables/) | Component chrome that only applies while a composable's state attribute is set. Gated on `[data-{name}-open]` / `[data-{name}-closing]` / `:popover-open` / `:modal` / `[open]`. | `dialog.scrollable[open]`, `aside[popover][data-aside-open]`, `output[popover]:popover-open` |
+| Folder                                                  | Scope                                                                                                        | Example root                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| [`src/styles/elements/`](../src/styles/elements/)       | One partial per HTML tag. Token-driven baseline + UA-quirk reset. Targets the bare tag.                      | `button { … }`, `input { … }`, `table { … }`                      |
+| [`src/styles/components/`](../src/styles/components/)   | Element composition (static chrome). Targets bare HTML roots. Class-root fallback when no semantic tag fits. | `article { … card }`, `body:has(main) { … grid }`, `div.stack`    |
+| [`src/styles/surfaces/`](../src/styles/surfaces/)       | Browser-rendered chrome — see [surfaces.md](./surfaces.md).                                                  | `[popover]`, `dialog::backdrop`, `::-webkit-scrollbar`            |
+| [`src/styles/composables/`](../src/styles/composables/) | Component chrome gated on a composable's state attribute — see [composables.md](./composables.md).           | `aside[popover][data-aside-open]`, `output[popover]:popover-open` |
 
-If a partial styles a single tag with no composition (`button`, `input`), it belongs in `elements/`. If it composes multiple elements into one pattern, it belongs in `components/`. If it styles a pseudo-element or attribute API the browser owns, it belongs in `surfaces/`. If it depends on a composable being attached and toggling state attributes, it belongs in `composables/`.
+If a partial styles a single tag with no composition, it belongs in `elements/`. If it composes multiple elements into one pattern, it belongs in `components/`. If it styles a pseudo-element or attribute API the browser owns, it belongs in `surfaces/`. If it depends on a composable being attached and toggling state attributes, it belongs in `composables/`.
 
-When the same tag has rules across multiple layers (e.g. `<aside>` has a baseline, a component-layer file, AND a composables-layer file), each layer holds only what's appropriate to its scope. The cascade order ensures composables wins for any selector also painted by a lower layer.
-
-**Open/closed gating discipline.** Any rule that asserts `display`, `position: fixed`, or large `transform` on a popover-bearing / `<dialog>` / `<details>` selector MUST gate on the open-state selector or it defeats the UA's `display: none` for the closed state. Full discipline in [composables.md §3](./composables.md#3-openclosed-lifecycle).
+Any rule that asserts `display`, `position: fixed`, or a large `transform` on a popover-bearing, `<dialog>`, or `<details>` selector MUST gate on the open-state selector or it defeats the UA's `display: none` for the closed state.
 
 ---
 
-## 2. Element-driven components (preferred path)
+## 3. Element-driven components (the default path)
 
 The HTML element IS the component. No `.card`, no `.sidebar`, no `.modal-dialog` class on the root. Variations come from the modifier cascade plus, where context matters, descendant-selector disambiguation.
 
-### Why element-driven
+**Why element-driven:**
 
-- **Pure semantic markup.** `<article>` already means "self-contained composition" in HTML 5; styling it as a card is the literal interpretation. Same for `<aside>` (sidebar / callout), `<dialog>` (modal), `<details>` (disclosure / accordion item), `<menu>` (toolbar), `<nav>` (navigation), `<search>` (search bar).
-- **Tiny class surface.** Modifier vocabulary (variant / size / style / state / placement) is the entire user-facing API. No memorizing `.card-body` vs `.modal-body`.
+- **Pure semantic markup.** `<article>` already means "self-contained composition" in HTML5; styling it as a card is the literal interpretation.
+- **Tiny class surface.** Modifier vocabulary (variant / size / style / state / placement) is the entire user-facing API. No `.card-body` vs `.modal-body` to memorize.
 - **Memorable.** "I want a card → `<article>`." "I want a sidebar → `<aside>`."
 - **Lints, syndication, screen-reader landmarks all align** with intent.
 
 ### Disambiguation by ancestry
 
-When one HTML tag plays multiple roles depending on context, descendant selectors carry the variants — not class modifiers on the root. Examples shipped today:
+When one HTML tag plays multiple roles depending on context, descendant selectors carry the variants — not class modifiers on the root.
 
-| Tag        | Context                                   | Selector                                                          | Component                                 |
-| ---------- | ----------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------- |
-| `<header>` | direct child of body shell                | `body > header`                                                   | App bar (page banner)                     |
-| `<header>` | inside an `<article>`                     | `article > header`                                                | Card header                               |
-| `<footer>` | direct child of body shell                | `body > footer`                                                   | Page footer                               |
-| `<footer>` | inside an `<article>`                     | `article > footer`                                                | Card footer                               |
-| `<aside>`  | direct child of body shell                | `body > aside`                                                    | Sidebar / TOC rail                        |
-| `<aside>`  | inside an `<article>`                     | `article aside`                                                   | Pull-quote / callout                      |
-| `<nav>`    | direct child of body shell                | `body > nav`                                                      | Primary nav rail (vertical column)        |
-| `<nav>`    | with `<ol>` / `<ul>` child + `aria-label` | `nav[aria-label='Breadcrumb']`, `[aria-label='Pagination']`, etc. | Breadcrumb / pagination / list-nav        |
-| `<nav>`    | with `[role="tablist"]` child             | `nav [role=tablist]`                                              | Tabs (placement reserved; chrome pending) |
-| `<menu>`   | inside an `<article>`                     | `article menu`                                                    | Card action row (`justify-end`)           |
-| `<menu>`   | inside a `<nav>`                          | `nav menu`                                                        | Vertical column inside the rail           |
-| `<dialog>` | opened via `.showModal()`                 | `dialog:modal`                                                    | Modal (centered + ::backdrop)             |
-| `<dialog>` | opened via `.show()`                      | `dialog[open]:not(:modal)`                                        | Non-modal (inline)                        |
+| Tag        | Context                    | Selector                       | Component                          |
+| ---------- | -------------------------- | ------------------------------ | ---------------------------------- |
+| `<header>` | direct child of body shell | `body > header`                | App bar (page banner)              |
+| `<header>` | inside an `<article>`      | `article > header`             | Card header                        |
+| `<footer>` | direct child of body shell | `body > footer`                | Page footer                        |
+| `<footer>` | inside an `<article>`      | `article > footer`             | Card footer                        |
+| `<aside>`  | direct child of body shell | `body > aside`                 | Sidebar / TOC rail                 |
+| `<aside>`  | inside an `<article>`      | `article aside`                | Pull-quote / callout               |
+| `<nav>`    | direct child of body shell | `body > nav`                   | Primary nav rail (vertical column) |
+| `<nav>`    | breadcrumb trail           | `nav[aria-label='Breadcrumb']` | Breadcrumb                         |
+| `<nav>`    | pagination                 | `nav[aria-label='Pagination']` | Pagination                         |
+| `<nav>`    | tab strip                  | `nav [role=tablist]`           | Tabs                               |
+| `<menu>`   | inside an `<article>`      | `article menu`                 | Card action row (justify-end)      |
+| `<menu>`   | inside a `<nav>`           | `nav menu`                     | Vertical column inside the rail    |
+| `<dialog>` | opened via `.showModal()`  | `dialog:modal`                 | Centered modal with backdrop       |
+| `<dialog>` | opened via `.show()`       | `dialog[open]:not(:modal)`     | Non-modal inline dialog            |
 
-This pattern lets one partial own one tag and still cover three or four variants without inventing class names.
+One partial owns one tag and still covers three or four variants without inventing class names.
 
 ---
 
-## 3. Class-root components (fallback)
+## 4. Class-root components (the fallback)
 
-When the pattern has no native HTML home, a class root on `<div>` or `<span>` carries the identity. This is deliberate fallback, not the default. The framework prefers the semantic alternative whenever one exists:
+When a pattern has no native HTML home, a class root on `<div>` or `<span>` carries the identity. This is deliberate fallback, not the default. The framework prefers the semantic alternative whenever one exists:
 
-| If you'd reach for…                               | Use this instead                                  |
-| ------------------------------------------------- | ------------------------------------------------- |
-| `<div class="card">`                              | `<article>`                                       |
-| `<div class="sidebar">`                           | `<aside>` (inside `<body>`)                       |
-| `<div class="modal">`                             | `<dialog>` opened with `.showModal()`             |
-| `<div class="accordion-item">`                    | `<details><summary>`                              |
-| `<div class="alert">`                             | `<aside role="alert">` or `<output role="alert">` |
-| `<div class="toast">`                             | `<output role="status">` (live region)            |
-| `<div class="toolbar">`                           | `<menu>`                                          |
-| `<div class="search">`                            | `<search>`                                        |
-| `<div class="form-group">`                        | `<fieldset><legend>`                              |
-| `<span class="highlight">`                        | `<mark>`                                          |
-| `<span class="badge">` for a count tied to a form | `<output>`                                        |
-| `<span class="term">`                             | `<dfn>`                                           |
-| `<span class="kbd">`                              | `<kbd>`                                           |
-| `<div class="quote">`                             | `<blockquote><cite>`                              |
-| `<img class="avatar">`                            | `<img>` + size modifiers (no `.avatar` class)     |
-| `<div class="progress">`                          | `<progress>`                                      |
-| `<div class="meter">`                             | `<meter>`                                         |
+| If you'd reach for…            | Use this instead                                  |
+| ------------------------------ | ------------------------------------------------- |
+| `<div class="card">`           | `<article>`                                       |
+| `<div class="sidebar">`        | `<aside>` (inside `<body>`)                       |
+| `<div class="modal">`          | `<dialog>` opened with `.showModal()`             |
+| `<div class="accordion-item">` | `<details><summary>`                              |
+| `<div class="alert">`          | `<aside role="alert">` or `<output role="alert">` |
+| `<div class="toast">`          | `<output role="status">`                          |
+| `<div class="toolbar">`        | `<menu>`                                          |
+| `<div class="search">`         | `<search>`                                        |
+| `<div class="form-group">`     | `<fieldset><legend>`                              |
+| `<span class="highlight">`     | `<mark>`                                          |
+| `<span class="term">`          | `<dfn>`                                           |
+| `<div class="quote">`          | `<blockquote><cite>`                              |
+| `<div class="progress">`       | `<progress>`                                      |
+| `<div class="meter">`          | `<meter>`                                         |
 
-Class roots are reserved for these widgets where no semantic element fits cleanly:
+Class roots are reserved for:
 
-- **Layout primitives** — `.stack` (vertical flow with gap), `.cluster` (horizontal wrap with gap). Live in [`components/_div.scss`](../src/styles/components/_div.scss). Already shipped.
-- **Inline atoms** — `.badge` (when not tied to a form), `.chip`, `.tag`, `.dot`. Live in a future `components/_span.scss`.
-- **Loading states** — `.skeleton` (shimmer), `.spinner` (could also use `<progress>` indeterminate).
+- **Layout primitives** — `.stack` (vertical flow with gap), `.cluster` (horizontal wrap with gap).
+- **Inline atoms** — `.badge`, `.chip`, `.tag`, `.dot`.
+- **Loading affordances** — `.skeleton` (shimmer), `.spinner` (rotating ring).
 - **Empty / null states** — `.empty-state` (icon + heading + body + action).
-- **Composite widgets without a clean root** — `.splitter` (resizable panes), `.carousel`, `.stepper`, `.timeline`, `.rating`, `.stat` (KPI tile).
+- **Composite widgets without a clean root** — `.splitter`, `.carousel`, `.stepper`, `.timeline`, `.rating`, `.stat`.
 
 ---
 
-## 4. Naming
+## 5. Naming
 
 **Element-driven component** — file name mirrors the HTML tag: `_aside.scss`, `_article.scss`, `_nav.scss`. The selector targets the bare tag. No class root anywhere on the file.
 
-**Class-root component** — file name is the catch-all tag (`_div.scss`, `_span.scss`); inside, each pattern uses a single-word class root (`.stack`, `.cluster`, `.badge`). Slot subnames use the `{root}-{slot}` pattern (`.stat-value`, `.stat-label`, `.timeline-marker`) when the root is a class. Element-driven components don't need slot classes — the slot IS its own element (`<article> > <header>`, `<article> > <footer>`).
+**Class-root component** — file name is the catch-all tag (`_div.scss`, `_span.scss`); inside, each pattern uses a single-word class root (`.stack`, `.cluster`, `.badge`). When a single class root grows beyond a few rules it earns its own partial (`_skeleton.scss`, `_spinner.scss`, `_role-group.scss`).
 
-State classes — `.disabled`, `.active`, `.loading` — come from the modifier cascade in [src/browser/modifiers.ts](../src/browser/modifiers.ts). Component-specific states get their own attribute when one exists (`[open]` on `<details>` and `<dialog>`, `[aria-busy]` on anything loading) or a class on the root.
+Slot subnames use the `{root}-{slot}` pattern (`.stat-value`, `.stat-label`, `.timeline-marker`) **only when the root is a class**. Element-driven components don't need slot classes — the slot IS its own element (`<article> > <header>`, `<article> > <footer>`).
+
+State classes — `.disabled`, `.active`, `.loading` — come from the modifier cascade in [src/browser/modifiers.ts](../src/browser/modifiers.ts). Component-specific states get their own attribute when one exists (`[open]` on `<details>` and `<dialog>`, `[aria-busy]` on anything loading).
 
 ---
 
-## 5. Component partial template
+## 6. Component partial template
 
 ```scss
-// ============================================================================
-// {tag-or-component} — {one-line description}
-//
-// Architecture:
-//   1. Token declarations on the bare tag (or class root) — full --set-{name}-*
-//      cascade with fallback chains identical to the element pattern in
-//      tokens.md.
-//   2. Chrome rules wrapped in @layer components.
-//   3. Variant / size / style / state modifier cascade flows through the
-//      --set-{name}-* tokens — no per-element variant rules.
-//
-// Quirks: (any element-specific quirks the composition introduces)
-// ============================================================================
-
 @use '../mixins' as *;
 
 @layer components {
@@ -135,7 +131,6 @@ State classes — `.disabled`, `.active`, `.loading` — come from the modifier 
     --set-{name}-padding-block:       var(--set-size-padding-block,  calc(var(--spacing) * 3));
     --set-{name}-transition-duration: var(--set-transition-duration);
 
-    /* Layout + base properties consume the tokens. */
     color:            var(--set-{name}-color);
     background-color: var(--set-{name}-background-color);
     border-color:     var(--set-{name}-border-color);
@@ -151,10 +146,10 @@ State classes — `.disabled`, `.active`, `.loading` — come from the modifier 
 }
 ```
 
-**Conventions enforced:**
+**Conventions:**
 
 - Wrap rules in `@layer components`.
-- Tokens declared on the component root; flow through the modifier cascade.
+- Declare tokens on the component root with fallback chains (style → variant → element default).
 - Don't hand-roll `&.primary` / `&.large` / `&.ghost` — the variant / size / style cascades already feed `--set-{name}-*` via the fallback chain. Only declare per-modifier rules when the component genuinely needs them (e.g. `<form>.row` flips flex-direction, which can't come from a token).
 - Logical CSS properties (`padding-inline`, `margin-block`, `inset-inline-start`).
 - Reduced-motion-paired transitions via `@include transition(…)`.
@@ -162,184 +157,83 @@ State classes — `.disabled`, `.active`, `.loading` — come from the modifier 
 
 ---
 
-## 6. Catalog — shipped
+## 7. Shipped catalog
 
-Twelve element-driven component partials plus one class-root partial for layout primitives. All under `@layer components` (the popover surface lives in `@layer surfaces`).
+Every component partial under [`src/styles/components/`](../src/styles/components/).
 
-### Sectioning + layout (Phase 5, threads A + B)
+| Partial                                                         | Root selector                                                                                 | What it composes                                                                                                                                                                                                                                    | Modifiers                     |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| [`_body.scss`](../src/styles/components/_body.scss)             | `body:has(main)`                                                                              | CSS-grid template-areas layout shell. Direct + once-removed selectors so framework mount-point wrappers (`display: contents`) work cleanly.                                                                                                         | —                             |
+| [`_main.scss`](../src/styles/components/_main.scss)             | `body:has(main) > main`                                                                       | Scroll container (`overflow-y: auto` + scroll containment).                                                                                                                                                                                         | —                             |
+| [`_article.scss`](../src/styles/components/_article.scss)       | `article`, `article > header`, `article > footer`                                             | Card with header/footer slots. Variant cascade tints the border; `.filled` opts into surface fill. Container-query named `article` for width-adaptive layouts.                                                                                      | variant, size, style, state   |
+| [`_aside.scss`](../src/styles/components/_aside.scss)           | `body > aside`, `article aside`, `aside[role="alert"]`                                        | Three contexts disambiguated by ancestry / role: sidebar rail (page), leading-bar callout (in article), alert banner.                                                                                                                               | placement (`.start` / `.end`) |
+| [`_header.scss`](../src/styles/components/_header.scss)         | `body > header`                                                                               | Page app bar. Shell-only scoping; in-prose headers stay free-form.                                                                                                                                                                                  | —                             |
+| [`_footer.scss`](../src/styles/components/_footer.scss)         | `body > footer`                                                                               | Page footer. Shell-only scoping.                                                                                                                                                                                                                    | —                             |
+| [`_nav.scss`](../src/styles/components/_nav.scss)               | `nav`, `body > nav`, `nav > ol`, `nav > ul`, `nav[aria-label='…']`, `[role='tablist']` family | Single canonical chrome — content shape decides. Bare = horizontal flex; `body > nav` = vertical rail; inner `<ol>` w/ aria-label = breadcrumb / pagination / list-nav; `role="tablist"` = tabs (with `[role="tab"]` + `[role="tabpanel"]` chrome). | placement (`.end`)            |
+| [`_search.scss`](../src/styles/components/_search.scss)         | `search`                                                                                      | Search bar — flex row that pairs with the framework-styled `<input>`.                                                                                                                                                                               | —                             |
+| [`_menu.scss`](../src/styles/components/_menu.scss)             | `menu`, `article menu`, `nav menu`, `menu[popover]`, `[popover] menu`                         | Toolbar / action row / dropdown column. Article-context = `justify-end`; nav-context = vertical column; popover-context = vertical dropdown column.                                                                                                 | placement                     |
+| [`_output.scss`](../src/styles/components/_output.scss)         | `output[popover]`, `output[role='status']:not(.filled)`                                       | Toast / status banner. `popover` variant pins to a corner via the placement modifier; in-flow variant reads as a banner. Element baseline keeps the inline calc-chip shape.                                                                         | placement (`.start` / `.top`) |
+| [`_form.scss`](../src/styles/components/_form.scss)             | `form`, `form > label`, `form.row`                                                            | Form-control stack. Vertical flex with gap; `.row` flips to a wrapping horizontal row (filter bars, quick-input).                                                                                                                                   | layout (`.row`)               |
+| [`_div.scss`](../src/styles/components/_div.scss)               | `div.stack`, `div.cluster`                                                                    | Layout primitives — the deliberate fallback for patterns with no semantic root.                                                                                                                                                                     | —                             |
+| [`_badge.scss`](../src/styles/components/_badge.scss)           | `.badge`                                                                                      | Inline pill for counts, labels, status keywords. Bare = neutral chip; variant class repaints with subtle bg + emphasis text; `.filled` flips to saturated fill.                                                                                     | variant, style                |
+| [`_tag.scss`](../src/styles/components/_tag.scss)               | `.tag`                                                                                        | Inline tag (mailbox `.tag` parity) — pill-shaped chip with dismiss affordance.                                                                                                                                                                      | variant, style                |
+| [`_dot.scss`](../src/styles/components/_dot.scss)               | `.dot`                                                                                        | Small status dot — solid circle in the variant color.                                                                                                                                                                                               | variant                       |
+| [`_skeleton.scss`](../src/styles/components/_skeleton.scss)     | `.skeleton`                                                                                   | Shimmering loading placeholder. Highlight derived from `--color-text` mixed into the bg so it tracks the theme. `prefers-reduced-motion` strips animation + gradient.                                                                               | shape (`.text`)               |
+| [`_spinner.scss`](../src/styles/components/_spinner.scss)       | `.spinner`, `progress.indeterminate`                                                          | Rotating loading indicator. 3/4 border ring; variant tinting via `currentColor`. `prefers-reduced-motion` slows rotation rather than removing it.                                                                                                   | variant, size                 |
+| [`_role-group.scss`](../src/styles/components/_role-group.scss) | `[role='group']`, `[role='toolbar']`, `[role='radiogroup']`                                   | ARIA-role groupings — overlapping borders, shared corner radii. `aria-orientation='vertical'` flips axis; `role='toolbar'` wraps multiple groups in a flex row.                                                                                     | orientation                   |
 
-| Partial                                                   | Root selector(s)                                                                     | What it composes                                                                                                                                                                                                                                   | Modifiers                     |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| [`_body.scss`](../src/styles/components/_body.scss)       | `body:has(main)`                                                                     | CSS-grid template-areas layout shell. Direct + once-removed selectors so Vue/React mount-point wrappers (`display: contents`) work cleanly.                                                                                                        | —                             |
-| [`_main.scss`](../src/styles/components/_main.scss)       | `body:has(main) > main`                                                              | Scroll container (`overflow-y: auto` + scroll containment).                                                                                                                                                                                        | —                             |
-| [`_article.scss`](../src/styles/components/_article.scss) | `article` + `article > header` + `article > footer`                                  | Card. Variant cascade reaches the border only; `.filled` opts into surface fill. Sizes + states.                                                                                                                                                   | variant, size, style, state   |
-| [`_aside.scss`](../src/styles/components/_aside.scss)     | `body > aside` + `article aside` + `aside[role="alert"]`                             | Three contexts: sidebar rail (page) + leading-bar callout (in article) + alert banner. Disambiguated by ancestry / role.                                                                                                                           | placement (`.start` / `.end`) |
-| [`_header.scss`](../src/styles/components/_header.scss)   | `body > header`                                                                      | Page app bar (shell-only scoping; in-prose headers stay free-form).                                                                                                                                                                                | —                             |
-| [`_footer.scss`](../src/styles/components/_footer.scss)   | `body > footer`                                                                      | Page footer (shell-only scoping).                                                                                                                                                                                                                  | —                             |
-| [`_nav.scss`](../src/styles/components/_nav.scss)         | `nav`, `body > nav`, `nav > ol/ul`, `nav[aria-label='…']`, `[role='tablist']` family | Single canonical chrome. Content shape decides: bare = horizontal flex; `body > nav` = vertical rail; inner `<ol>` w/ aria-label = breadcrumb / pagination / list-nav; `role="tablist"` = tabs (with `[role="tab"]` + `[role="tabpanel"]` chrome). | placement (`.end`)            |
-| [`_search.scss`](../src/styles/components/_search.scss)   | `search`                                                                             | Search bar — flex row that pairs with the framework-styled `<input>`.                                                                                                                                                                              | —                             |
-| [`_menu.scss`](../src/styles/components/_menu.scss)       | `menu`, `article menu`, `nav menu`, `menu[popover]`, `[popover] menu`                | Toolbar / action row. Article-context = `justify-end`; nav-context = vertical column; popover-context = vertical dropdown column.                                                                                                                  | —                             |
-| [`_output.scss`](../src/styles/components/_output.scss)   | `output[popover]`, `output[role='status']:not(.filled)`                              | Toast / status banner. `popover` variant pins to the bottom-end corner; in-flow variant reads as a banner. Element baseline ([`elements/_output.scss`](../src/styles/elements/_output.scss)) keeps the inline calc-chip shape.                     | placement (`.start` / `.top`) |
-| [`_form.scss`](../src/styles/components/_form.scss)       | `form`, `form > label`, `form.row`                                                   | Form-control stack. Vertical flex with gap; `.row` flips to a wrapping horizontal row (filter bars, quick-input).                                                                                                                                  | layout (`.row`)               |
-| [`_div.scss`](../src/styles/components/_div.scss)         | `div.stack`, `div.cluster`                                                           | Layout primitives. The deliberate fallback for patterns with no semantic root.                                                                                                                                                                     | —                             |
-
-### Surfaces + element baselines that act as their own components
-
-These ship in [`src/styles/elements/`](../src/styles/elements/) or [`src/styles/surfaces/`](../src/styles/surfaces/) and complete a UI pattern without needing a separate `components/` partial.
-
-| Tag / surface                | UI pattern                                       | Notes                                                                                                                                                                                                                                                                                                                                                                                           |
-| ---------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `<dialog>`                   | Modal + non-modal dialog                         | `:modal` centers + uses `::backdrop`; `[open]:not(:modal)` flows inline. Footer row painted as flex-end with gap.                                                                                                                                                                                                                                                                               |
-| `<details>` + sibling group  | Disclosure / accordion item / accordion group    | Single `<details>` is a disclosure. Sibling `<details>` get a small block-start margin so a stack reads as one accordion group; `[name="…"]` makes the group exclusive (HTML5).                                                                                                                                                                                                                 |
-| `<table>`                    | Data table                                       | `<caption>`, `<thead>`, `<tbody>`, `<tfoot>`, `<tr>`, `<th>`, `<td>` all styled via [`_table.scss`](../src/styles/elements/_table.scss).                                                                                                                                                                                                                                                        |
-| `<form>` family              | Form controls                                    | `<input>`, `<textarea>`, `<select>`, `<button>`, `<label>`, `<fieldset>`, `<legend>`, `<output>`, `<progress>`, `<meter>`. Each has a substantive partial.                                                                                                                                                                                                                                      |
-| `<figure>` + `<figcaption>`  | Captioned media                                  | Pairs with `<img>` / `<video>` / `<audio>` baselines.                                                                                                                                                                                                                                                                                                                                           |
-| `<blockquote>` + `<cite>`    | Pull-quote                                       | `<cite>` styled inline; `<blockquote>` paints the leading bar.                                                                                                                                                                                                                                                                                                                                  |
-| `[popover]` (surface)        | Floating panel                                   | Top-layer panel with entry transition; `[popover=hint]` / `[role=tooltip]` paints a smaller, inverted tooltip variant. Lives in [`surfaces/_popover.scss`](../src/styles/surfaces/_popover.scss).                                                                                                                                                                                               |
-| Anchor positioning (surface) | Implicit-anchored placement                      | `[popover]:not([popover='manual'])` is auto-anchored to its `popovertarget` invoker via `position-area`. Default: `block-end` (below). `position-try-fallbacks` flips when there's no room. Lives in [`surfaces/_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss).                                                                                                          |
-| Placement modifiers          | `.top` / `.bottom` / `.start` / `.end` + corners | Eight values map to `position-area` keywords (logical axes: edges → `block-start` / `block-end` / `inline-start` / `inline-end`; corners → logical block + inline pairs). Scoped to non-manual popovers so existing per-element `.start` / `.end` semantics on `<aside>` / `<nav>` / toast aren't disrupted. Lives in [`modifiers/_placements.scss`](../src/styles/modifiers/_placements.scss). |
-
-### Element baselines that already act as their own components
-
-These ship in [`src/styles/elements/`](../src/styles/elements/) but the element baseline + bare-tag chrome together carry a complete UI pattern. No separate partial in `components/` is needed.
-
-| Tag                         | UI pattern                  | Notes                                                                                                                                                      |
-| --------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `<dialog>`                  | Modal + non-modal dialog    | `:modal` centers + uses `::backdrop`; `[open]:not(:modal)` flows inline. Footer row painted as flex-end with gap.                                          |
-| `<details>`                 | Disclosure / accordion item | Accordion **group** = sibling `<details>` (use `name=` attribute for exclusive groups, HTML5 standards-track).                                             |
-| `<table>`                   | Data table                  | `<caption>`, `<thead>`, `<tbody>`, `<tfoot>`, `<tr>`, `<th>`, `<td>` all styled via `_table.scss`.                                                         |
-| `<form>` family             | Form controls               | `<input>`, `<textarea>`, `<select>`, `<button>`, `<label>`, `<fieldset>`, `<legend>`, `<output>`, `<progress>`, `<meter>`. Each has a substantive partial. |
-| `<figure>` + `<figcaption>` | Captioned media             | Pairs with `<img>` / `<video>` / `<audio>` baselines.                                                                                                      |
-| `<blockquote>` + `<cite>`   | Pull-quote                  | `<cite>` styled inline; `<blockquote>` paints the leading bar.                                                                                             |
-
----
-
-## 7. Catalog — planned
-
-Mapped against the bare-element-IS-component philosophy and gap-checked against beercss, picocss, semantic-ui, mailbox, and the conceptual semantic-element model. Each row notes the canonical HTML root we want; class-root fallbacks only appear when no element fits.
-
-### Element-driven components — next priorities
-
-These need ONE small partial because the element baseline + a bit of context-specific chrome covers the pattern. Keyboard / show-hide behavior arrives with the Phase 6 composables.
-
-(Anchor positioning + placement modifiers shipped as of 2026-05-09 — see §6 catalog.)
-
-### Element baselines still placeholder (block component plans)
-
-These elements have placeholder partials with UA-only styling; substantive baselines unblock the components above.
-
-| Element                                                               | Why it matters                                                                                                                                         | Status      |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| `<small>`                                                             | Footnote / disclaimer / meta-text typography. Used heavily in card subtitles and form-help text.                                                       | placeholder |
-| `<mark>`                                                              | Highlight. The semantic alternative to `<span class="highlight">`.                                                                                     | placeholder |
-| `<address>`                                                           | Author / contact info. Common in card footers and article bylines.                                                                                     | placeholder |
-| `<time>`                                                              | Timestamp. Pairs with `<address>` in article meta.                                                                                                     | placeholder |
-| `<abbr>`                                                              | Hover tooltip via the `title` attribute. Underline-dotted is the convention.                                                                           | placeholder |
-| `<cite>`                                                              | Citation / source attribution. Used inside `<blockquote>` and `<figure>`.                                                                              | placeholder |
-| `<dfn>`                                                               | Defining term — semantic alternative to `<span class="term">`.                                                                                         | placeholder |
-| `<ins>` / `<del>`                                                     | Inserted / deleted content (tracked changes, diff views).                                                                                              | placeholder |
-| `<q>`                                                                 | Inline quotation (auto-quoted by the browser).                                                                                                         | placeholder |
-| `<s>`                                                                 | Strikethrough for "no longer accurate" content.                                                                                                        | placeholder |
-| `<ul>`, `<ol>`, `<li>`                                                | List typography. `<nav>` already strips list markers in nav-list contexts; bare lists in prose still rely on UA + Tailwind utilities for marker style. | placeholder |
-| `<hgroup>`                                                            | Heading + tagline pairing — `<h1>` + `<p>`. Replaces ad-hoc `class="subtitle"` patterns.                                                               | placeholder |
-| `<picture>`                                                           | Responsive image wrapper around `<img>`.                                                                                                               | placeholder |
-| `<datalist>`                                                          | Combobox suggestions for `<input list>`. Currently UA-rendered (limited stylability).                                                                  | placeholder |
-| `<input type=checkbox>` / `<input type=radio>`                        | Excluded from `_input.scss` (UA chrome). Need a dedicated partial with `appearance: none` + custom mark.                                               | placeholder |
-| `<input type=range>`                                                  | Slider. Excluded from `_input.scss`; needs a partial with `::-webkit-slider-thumb` / `::-moz-range-thumb` styling.                                     | placeholder |
-| `<input type=color>` / `<input type=file>` / `<input type=date>` etc. | UA chrome varies dramatically. Defer until the use case appears.                                                                                       | placeholder |
-
-### Class-root widgets (no semantic home)
-
-These earn a class root only because no element fits. They live in `_div.scss`, `_span.scss`, or a dedicated partial when the surface is large enough.
-
-| Pattern       | Class root                                                          | Lift-from                          | Composable              |
-| ------------- | ------------------------------------------------------------------- | ---------------------------------- | ----------------------- |
-| Spinner       | `<progress>` indeterminate (preferred) **or** `.spinner` on `<div>` | mailbox `_spinner.scss`            | —                       |
-| Skeleton      | `.skeleton` on `<div>`                                              | mailbox `_skeleton.scss`           | —                       |
-| Empty state   | `.empty-state` on `<div>` (or `<aside>`)                            | mailbox `_empty-state.scss`        | —                       |
-| Stat / KPI    | `<output>` styled (preferred) **or** `.stat` on `<div>`             | mailbox `_stat.scss`               | —                       |
-| Badge / chip  | `.badge` / `.chip` on `<span>`                                      | mailbox `_badge.scss`, `_tag.scss` | —                       |
-| Dot indicator | `.dot` on `<span>`                                                  | mailbox `_dot.scss`                | —                       |
-| Avatar        | `<img>` + size modifier (preferred) **or** `.avatar`                | mailbox `_avatar.scss`             | —                       |
-| Stepper       | `<ol class="stepper">` (preferred) **or** `.stepper` on `<div>`     | mailbox `_stepper.scss`            | —                       |
-| Timeline      | `<ol class="timeline">` **or** `.timeline` on `<div>`               | mailbox `_timeline.scss`           | —                       |
-| Rating        | `<meter>` (preferred) **or** `.rating` on `<div>`                   | mailbox `_rating.scss`             | —                       |
-| Splitter      | `.splitter` on `<div>`                                              | mailbox `_splitter.scss`           | `useDrag`, `usePointer` |
-| Carousel      | `<section class="carousel">`                                        | mailbox `_carousel.scss`           | `useCarousel`           |
-
-### Surfaces still planned
-
-| Surface                                        | Status     | Notes                                                                                            |
-| ---------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------ |
-| `_placeholder.scss` (for `::placeholder`)      | ⏳ pending | Currently `<input>` / `<textarea>` paint placeholder inline. Extract when more elements need it. |
-| `_marker.scss` (for `::marker`)                | ⏳ pending | `_summary.scss` paints its own marker today. Extract when `<details>` isn't the only consumer.   |
-| `_picker-select.scss` (for `::picker(select)`) | ⏳ pending | Awaiting Firefox + Safari `appearance: base-select`.                                             |
-| `_view-transition.scss`                        | ⏳ pending | `::view-transition-old/new/group(*)` for cross-page transitions on `<a>` navigation.             |
-| `_selection.scss` (for `::selection`)          | ⏳ pending | Variant-tinted selection color.                                                                  |
-
-### Modifier partials still planned
-
-| Partial                                     | What it adds                                                                                                                          |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Density modifier (`.compact` / `.spacious`) | Adjusts `--set-{tag}-padding-*` + `--set-{tag}-font-size`. Defer until a real need appears (most pages run fine on the default size). |
+Element baselines in [`src/styles/elements/`](../src/styles/elements/) that complete a UI pattern on their own — `<dialog>`, `<details>`, `<table>`, `<form>` family, `<figure>` + `<figcaption>`, `<blockquote>` + `<cite>`, `<progress>`, `<meter>` — do not need a separate `components/` partial. The element baseline and bare-tag chrome together carry the pattern. See [elements.md](./elements.md).
 
 ---
 
 ## 8. Composable pairings
 
-Components that need JS interactivity pair with a composable in [`src/browser/composables/`](../src/browser/composables/). Naming mirrors the element: `useDialog` ↔ `<dialog>`, `useDetails` ↔ `<details>`, `useAside` ↔ `<aside>`.
+Components that need JS interactivity pair with a composable. The composable owns **state** (open/closed, transitions, ARIA mirrors). The dynamic chrome partial in `src/styles/composables/` owns **state-gated chrome** (drawer geometry, deck stacks). The bare-tag partial in `src/styles/components/` or `src/styles/elements/` owns the **static baseline** that survives the close transition. Three layers, one responsibility each.
 
-21 composables ship today, each with a paired framework-agnostic factory under [`src/browser/factories/`](../src/browser/factories/). Non-Vue consumers can drop the Vue adapter and call `createDialog(el, opts)` directly.
+| Component                | Composable                                                                                                    | One-line                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Modal                    | [`useDialog`](../src/browser/composables/useDialog.ts)                                                        | Native `showModal()` / `close()` + cancellable show/hide events.  |
+| Drawer / sidebar         | [`useAside`](../src/browser/composables/useAside.ts)                                                          | Popover top-layer + slide-in via dual-attribute gating.           |
+| Accordion                | [`useDetails`](../src/browser/composables/useDetails.ts)                                                      | `[open]` toggle + height transition via `interpolate-size`.       |
+| Dropdown / popover panel | [`useMenu`](../src/browser/composables/useMenu.ts) / [`usePopover`](../src/browser/composables/usePopover.ts) | `<menu popover>` panel + arrow-key roving + anchor positioning.   |
+| Tooltip                  | [`useTooltip`](../src/browser/composables/useTooltip.ts)                                                      | Hover / focus triggers + `[popover=hint]` panel.                  |
+| Listbox / combobox       | [`useSelect`](../src/browser/composables/useSelect.ts)                                                        | `<menu>` listbox with filter + multi-select + autocomplete.       |
+| Toast                    | [`useToast`](../src/browser/composables/useToast.ts)                                                          | `<output popover>` with auto-hide + deck stacking.                |
+| Tabs                     | [`useTabs`](../src/browser/composables/useTabs.ts)                                                            | `[role='tablist']` keyboard roving + lazy panel mount.            |
+| Scroll-spy nav           | [`useNav`](../src/browser/composables/useNav.ts)                                                              | `IntersectionObserver` + `aria-current='location'`.               |
+| Form validation          | [`useForm`](../src/browser/composables/useForm.ts)                                                            | Constraint validation + `[data-form-validated]` + `aria-invalid`. |
+| Data table               | [`useTable`](../src/browser/composables/useTable.ts)                                                          | Sort + paginate + select + expand + resize.                       |
+| Carousel                 | [`useCarousel`](../src/browser/composables/useCarousel.ts)                                                    | Slide nav + autoplay + touch / swipe.                             |
+| Drag and drop            | [`useDrag`](../src/browser/composables/useDrag.ts) + [`useDrop`](../src/browser/composables/useDrop.ts)       | HTML5 DnD with reorder events.                                    |
+| Toggle button            | [`useButton`](../src/browser/composables/useButton.ts)                                                        | `aria-pressed` toggle.                                            |
+| Alert                    | [`useAlert`](../src/browser/composables/useAlert.ts)                                                          | `[role='alert']` dismiss lifecycle.                               |
+| Focus trap               | [`useFocus`](../src/browser/composables/useFocus.ts)                                                          | `activate()` / `deactivate()` tab-trap primitive.                 |
+| Pointer                  | [`usePointer`](../src/browser/composables/usePointer.ts)                                                      | `pointerdown` → `pointermove*` → `pointerup` multiplex.           |
+| Theme                    | [`useTheme`](../src/browser/composables/useTheme.ts)                                                          | `data-theme` / `data-core` + `prefers-color-scheme` follow.       |
 
-| Component | Composable | Key behaviour |
-|---|---|---|
-| Modal | `useDialog` | Native `showModal()` / `close()` + cancellable show/hide events. |
-| Drawer / sidebar | `useAside` | Popover top-layer + slide-in via dual-attribute gating. |
-| Accordion | `useDetails` | `[open]` toggle + CSS height transition via `interpolate-size`. |
-| Dropdown | `useMenu` | `<menu popover>` panel + arrow-key roving + anchor positioning. |
-| Tooltip | `useTooltip` | Hover/focus triggers + `[popover=hint]` panel. |
-| Floating panel | `usePopover` | `[popover]` toggle + anchor positioning. Backbone for menu/tooltip/select. |
-| Listbox / combobox | `useSelect` | `<menu>` listbox with filter + multi-select + autocomplete. |
-| Toast | `useToast` | `<output popover>` with auto-hide + deck stacking. |
-| Tabs | `useTabs` | `[role="tablist"]` keyboard roving + lazy panel mount. |
-| Scroll-spy nav | `useNav` | `IntersectionObserver` + `aria-current="location"`. |
-| Form | `useForm` | Constraint validation + `[data-form-validated]` + `aria-invalid`. |
-| Data table | `useTable` | Sort + paginate + select + expand + resize. |
-| Carousel | `useCarousel` | Slide nav + autoplay + touch/swipe. |
-| Drag / drop | `useDrag` + `useDrop` | HTML5 DnD with reorder events. |
-| Toggle button | `useButton` | `aria-pressed` toggle. |
-| Alert | `useAlert` | `[role="alert"]` dismiss lifecycle. |
-| Focus trap | `useFocus` | `activate()` / `deactivate()` tab-trap primitive. |
-| Pointer | `usePointer` | `pointerdown` → `pointermove*` → `pointerup` multiplex. |
-| Theme | `useTheme` | `data-theme` / `data-core` + `prefers-color-scheme` follow. |
-
-**Full per-composable reference** with options, return shapes, events, and the open/closed lifecycle discipline lives in [composables.md](./composables.md). Showcase pages live under [`app/browser/pages/Use*Page.vue`](../app/browser/pages/) — one per composable.
-
-The composable owns **state** (open/closed, transitions, ARIA mirrors). The component-layer partial in `src/styles/composables/` owns **dynamic chrome** (drawer geometry, deck stacks). The bare-tag partial in `src/styles/components/` (or `src/styles/elements/`) owns **static chrome** that survives the close transition. Three layers, one responsibility each.
+Full per-composable reference — options, return shapes, events, open/closed lifecycle discipline — lives in [composables.md](./composables.md). Non-Vue consumers can drop the Vue adapter and call the framework-agnostic factory in [`src/browser/factories/`](../src/browser/factories/) directly.
 
 ---
 
 ## 9. Wiring it up
 
-When a component lands, four touch points:
+When a component lands, five touch points:
 
-1. **`@use '{partial}'` in [src/styles/components/index.scss](../src/styles/components/index.scss)** — alphabetical inside the file.
-2. **Token mirror** — every `--set-{name}-*` appears as a TS leaf in [src/browser/tokens.ts](../src/browser/tokens.ts). The bidirectional parity test enforces this on every commit.
-3. **Behavior test** under `tests/src/styles/components/_{name}.test.ts` covering: bare component renders, modifier cascade reaches the root tokens, each slot resolves the expected layout. (Class-root components also assert the root selector matches.)
-4. **Showcase page** under `app/browser/pages/{Name}Page.vue` demonstrating the variant / size / style / state cascade, plus any composition slots. Add to `app/browser/router.ts`.
-5. **Documentation** — update §6 (shipped) or §7 (planned) above with the row's status.
+1. **`@use '{partial}'`** in [`src/styles/components/index.scss`](../src/styles/components/index.scss) — alphabetical inside the file.
+2. **Token mirror** — every `--set-{name}-*` appears as a TS leaf in [`src/browser/tokens.ts`](../src/browser/tokens.ts). The bidirectional parity test enforces this on every commit.
+3. **Behaviour test** under `tests/src/styles/components/_{name}.test.ts` covering: bare component renders, modifier cascade reaches the root tokens, each slot resolves the expected layout.
+4. **Showcase page** under [`app/browser/pages/`](../app/browser/pages/) demonstrating the variant / size / style / state cascade plus any composition slots. Add to `app/browser/router.ts`.
+5. **Documentation** — add the partial to §7 above with its root selector, composition, and modifier dimensions.
 
-Adding a class root that wasn't listed in §3 / §7 needs a separate reason — write up why no element fits, in the partial's header comment.
+Adding a class root that wasn't listed in §4 needs a separate reason — write up why no element fits, in the partial's header comment.
 
 ---
 
 ## 10. Cross-references
 
-- [plan.md §2](./plan.md#2-invariants--must-respect) — framework-wide invariants (cascade order, token-driven variation, open/closed gating, naming).
-- [plan.md §4](./plan.md#4-component-status) — top-level component status counts.
-- [composables.md](./composables.md) — Vue + factory layer that pairs with the dynamic component partials in `src/styles/composables/`.
 - [styles.md](./styles.md) — top-level architecture and authoring contract.
-- [tokens.md](./tokens.md) — element-scoped token pattern (components follow the same).
-- [modifiers.md](./modifiers.md) — modifier cascade components consume.
+- [tokens.md](./tokens.md) — the token system components consume.
+- [modifiers.md](./modifiers.md) — the modifier cascade components consume.
 - [elements.md](./elements.md) — element baselines components compose from.
 - [surfaces.md](./surfaces.md) — sibling category for browser-rendered chrome.
+- [composables.md](./composables.md) — Vue + factory layer for the dynamic component partials.

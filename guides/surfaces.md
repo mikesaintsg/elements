@@ -1,355 +1,291 @@
 # Surfaces
 
-> Browser-rendered chrome that isn't a tag or a composition. Folder: [src/styles/surfaces/](../src/styles/surfaces/). **Status: four surfaces shipped — `_anchor-position.scss`, `_backdrop.scss`, `_popover.scss`, `_scrollbar.scss`.**
+> Browser-rendered chrome that isn't a tag or a composition. Folder: [src/styles/surfaces/](../src/styles/surfaces/).
 
-A **surface** is a CSS hook into a UA-controlled feature: pseudo-elements, attribute APIs, at-rules, UA-behavior properties. Things like `[popover]`, `dialog::backdrop`, `::placeholder`, view transitions, scrollbar styling, anchor positioning. Distinct from elements (which name HTML tags) and components (which compose elements) — these name **a seam in the browser itself**.
-
-The folder exists with an empty barrel ([index.scss](../src/styles/surfaces/index.scss)) so the cascade layer is established. Real surfaces arrive when the framework needs them. This document describes the convention so future contributors land on the same shape, plus catalogs the Chromium-shipped candidate surfaces.
+A **surface** is a CSS hook into UA-controlled machinery: pseudo-elements (`::backdrop`, `::placeholder`, `::marker`, `::selection`, `::view-transition-*`), attribute APIs (`[popover]`, `[popover]:popover-open`), and behaviour properties the browser owns rather than the author (anchor positioning, scrollbar appearance, forced-colors fallbacks, focus ring). Surfaces are distinct from elements (which name HTML tags) and components (which compose elements) — they name **a seam in the browser itself**.
 
 ---
 
-## 1. The category line
+## 1. Overview
 
-What unifies surfaces is that every entry styles, toggles, or queries something the user agent renders or maintains on its own — backdrops, validity bookkeeping, top-layer overlays, scrollbars, captions, transition snapshots, popovers, autofill state, anchor relationships — none of which the author wrote into the DOM as a styleable element.
-
-| Category      | What it is                                                                                                        | Where it lives                                      |
-| ------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| **Element**   | A real HTML tag the framework styles.                                                                             | [src/styles/elements/](../src/styles/elements/)     |
-| **Component** | A composed widget built from elements.                                                                            | [src/styles/components/](../src/styles/components/) |
-| **Surface**   | A UA-controlled feature surfaced for styling — pseudo-elements, attribute APIs, at-rules, UA-behavior properties. | [src/styles/surfaces/](../src/styles/surfaces/)     |
-
-Decision rules:
-
-- If you'd write `<{tag}>` in HTML to use it → **element**.
-- If you'd assemble it from multiple elements with a single class root → **component**.
-- If the browser provides it through an attribute, pseudo, at-rule, or behavior property → **surface**.
-
----
-
-## 2. Naming
-
-Filename: `_{surface}.scss`. The `{surface}` segment names the underlying feature, not the CSS form:
+Surfaces ship in the `@layer surfaces` cascade layer. The full layer order is:
 
 ```
-src/styles/surfaces/_popover.scss          /* covers [popover], :popover-open, [popovertarget] */
-src/styles/surfaces/_backdrop.scss         /* covers ::backdrop on modal dialog only */
-src/styles/surfaces/_view-transition.scss  /* covers ::view-transition-* family + @view-transition */
-src/styles/surfaces/_scrollbar.scss        /* covers scrollbar-color, scrollbar-width, scrollbar-gutter */
-src/styles/surfaces/_placeholder.scss      /* covers ::placeholder on inputs */
-src/styles/surfaces/_marker.scss           /* covers ::marker on lists */
-src/styles/surfaces/_anchor-position.scss  /* covers anchor-name, position-anchor, position-area */
-src/styles/surfaces/_field-sizing.scss     /* covers field-sizing: content */
+theme, base, elements, components, surfaces, composables, modifiers, utilities
 ```
 
-If a surface family spans multiple selectors (e.g., view-transition's `::view-transition-old/new/group/image-pair`), one partial covers them together — the unit of organization is the underlying browser feature.
+Surfaces sit **between elements and composables**. Two reasons that placement is load-bearing:
+
+- **Above elements / components.** Pseudo-element styling needs to beat the element baseline that hosts it. `<input>` declares `color` in the elements layer; `::placeholder` needs to win for its own `color` (without inheriting the input's). Anchor positioning needs to beat any default `position` an element partial set. Putting surfaces above elements + components means a surface rule never loses to the host's own paint.
+- **Below composables.** The composable layer beats the surface for the rare case where a composable owns a pseudo-element's lifecycle. Example: drawer-mode `<aside>` (`useAside`) needs to take ownership of `[popover]` open/close transitions for its own slide-from-edge motion, overriding the surface's scale/fade transition. Composables sitting above surfaces is what makes that override clean — no `!important`, no specificity gymnastics.
+
+Layer order is declared in the consumer's entry CSS (see [tests/setup.css](../tests/setup.css) and [app/browser/styles/main.css](../app/browser/styles/main.css)) so it precedes `@import 'tailwindcss'`. Tailwind's own `@layer theme, base, components, utilities` merges as a no-op against the wider order.
 
 ---
 
-## 3. Surface partial template
+## 2. Shipped surfaces
+
+Every partial under [src/styles/surfaces/](../src/styles/surfaces/):
+
+| Partial                                                                 | Owns                                                                                                                                                                                      | Key tokens                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`_popover.scss`](../src/styles/surfaces/_popover.scss)                 | `[popover]` panel chrome + entry/exit transition via `@starting-style` + `transition-behavior: allow-discrete`. Variant `[popover='hint'], [role='tooltip']` for tooltip-shaped popovers. | `--set-popover-{color, background-color, border-color, border-width, border-radius, padding-inline, padding-block, box-shadow, transition-duration, max-inline-size}`, `--set-popover-hint-*` for the tooltip variant |
+| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)               | `dialog:modal::backdrop` dim scrim. Non-modal popovers keep the UA-default transparent backdrop.                                                                                          | `--set-backdrop-{background-color, backdrop-filter, transition-duration}`                                                                                                                                             |
+| [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) | `[popover]:not(output)` auto-anchored placement. Default `position-area: block-end`. `position-try-fallbacks` flips when there's no room.                                                 | `--set-anchor-{gap, position-area, position-try-fallbacks, position-try-order, max-block-size, max-inline-size, viewport-inset}`                                                                                      |
+| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss)             | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`.                                                                                                             | `--set-scrollbar-{thumb-color, track-color, width, gutter}`                                                                                                                                                           |
+| [`_focus.scss`](../src/styles/surfaces/_focus.scss)                     | `:focus-visible` ring rules using the framework's focus tokens.                                                                                                                           | `--set-focus-box-shadow-{width, opacity}`                                                                                                                                                                             |
+| [`_placeholder.scss`](../src/styles/surfaces/_placeholder.scss)         | `::placeholder` opacity + color across `<input>` / `<textarea>`.                                                                                                                          | `--set-placeholder-{color, opacity}`                                                                                                                                                                                  |
+| [`_marker.scss`](../src/styles/surfaces/_marker.scss)                   | `::marker` styling shared across `<details>` / `<summary>` / `<li>`.                                                                                                                      | `--set-marker-{color, content}`                                                                                                                                                                                       |
+| [`_selection.scss`](../src/styles/surfaces/_selection.scss)             | Variant-tinted `::selection`.                                                                                                                                                             | `--set-selection-{color, background-color}`                                                                                                                                                                           |
+| [`_view-transition.scss`](../src/styles/surfaces/_view-transition.scss) | `::view-transition-old/new/group(*)` cross-page transitions for `<a>` navigation.                                                                                                         | `--set-view-transition-{duration, timing-function}`                                                                                                                                                                   |
+
+---
+
+## 3. `[popover]` panel surface
+
+The most important surface. [`_popover.scss`](../src/styles/surfaces/_popover.scss) styles every element with the `popover` attribute — the element acts as a popover (top-layer rendering, `::backdrop`, light-dismiss via `popover=auto` or manual via `popover=manual`).
+
+**What it owns.** Panel chrome — `color`, `background-color`, `border`, `border-radius`, `padding-inline`, `padding-block`, `box-shadow`, `max-inline-size`. Every `[popover]` paints with the same chrome by default; the toast component (`output[popover]`) repaints with banner-row layout from the composables layer.
+
+**Open/close transition.** Three pieces wired together:
 
 ```scss
-// ============================================================================
-// {surface} — {one-line description of the browser feature being styled}
-//
-// Browser support: Chrome {version}+, Edge {version}+. Safari/Firefox status
-// noted only when relevant.
-//
-// Surfaces covered by this partial:
-//   {selector or feature name}
-//   {selector or feature name}
-//
-// Quirks:
-//   {anything non-obvious about the surface — UA-default values that need
-//    overriding, top-layer constraints, focus interactions, etc.}
-// ============================================================================
+[popover] {
+	transition:
+		opacity var(--set-popover-transition-duration),
+		transform var(--set-popover-transition-duration),
+		overlay var(--set-popover-transition-duration) allow-discrete,
+		display var(--set-popover-transition-duration) allow-discrete;
+	transition-behavior: allow-discrete;
+	opacity: 0;
+	transform: scale(0.98);
+}
 
-@use '../mixins' as *;
+[popover]:popover-open {
+	opacity: 1;
+	transform: none;
+}
 
-@layer surfaces {
-	/* Selectors and feature rules */
+@starting-style {
+	[popover] {
+		opacity: 0;
+		transform: scale(0.98);
+	}
 }
 ```
 
-**Conventions enforced:**
+- `transition-behavior: allow-discrete` keeps the `display: none ↔ block` flip inside the transition pipeline. Without it, the popover pops in instantly.
+- `@starting-style` declares the from-state for entry so the first frame interpolates from `opacity: 0; transform: scale(0.98)`.
+- **Critical specificity rule.** The `@starting-style` block targets the bare `[popover]` selector (specificity 0,1,0), one step BELOW `[popover]:popover-open` (specificity 0,2,0). Chrome 148+ has a regression where `@starting-style` declarations can leak into the normal cascade tier — if the starting-state body lived at `[popover]:popover-open` specificity it would tie the open-state declaration on source-order and the popover would render permanently at `opacity: 0`. Keeping the from-state selector one specificity tier lower means the open-state declaration wins regardless.
 
-- Wrap rules in `@layer surfaces`.
-- Use tokens, not literals — read `--set-*` and Tailwind palette tokens. A surface can declare its own `--set-{surface}-*` tokens on whichever selector scope owns the styling, just like an element.
-- Logical CSS properties (`inset-inline-start` not `left`).
-- Reduced-motion-paired transitions via `@include transition(…)`.
-- Document browser support in the header comment. Surfaces sit at the leading edge of CSS — many are Chrome 130+ — so consumers need to know.
+**Variants.** Two shapes:
 
----
+- **Bare `[popover]`** — the full panel. Background = `--color-surface` (tracks the active theme — flips to slate in dark mode). Max-width capped at `min(--set-popover-max-inline-size, --set-anchor-max-inline-size)`. Used by menu, dialog (non-modal), drawer-mode aside.
+- **`[popover='hint'], [role='tooltip']`** — the tooltip shape. Smaller padding, inverted chrome (white text on `rgb(15 23 42 / 0.95)` dark background), narrower max-width (12.5rem), lighter shadow. The hint background uses an explicit dark literal rather than `currentColor` to dodge the chicken-and-egg of `color` and `background-color` both being set on the same selector.
 
-## 4. Wiring it up
+**Theme tracking.** Tokens reference `--color-surface`, `--color-text`, `--color-border` — when the consumer flips `data-theme="dark"`, popovers / menus / dropdowns track without per-host overrides.
 
-When a surface lands, three touch points:
-
-1. **`@use '{surface}'` in [src/styles/surfaces/index.scss](../src/styles/surfaces/index.scss).** Alphabetical.
-2. **Behavior test** under `tests/src/styles/surfaces/_{surface}.test.ts`. Test what the surface actually styles — for `[popover]`, that the popover panel renders with the right padding when open. For `::backdrop`, that the backdrop shows the configured color. The test environment is real Chromium via Playwright, so UA features work.
-3. **Documentation** — add a row to §"Catalog" below.
-
-If the surface pairs with a composable (e.g., `usePopover` to manage the show/hide lifecycle), follow the [components.md](components.md) §"Composables and events" convention. Surfaces and composables can pair the same way components and composables do.
-
----
-
-## 5. Chromium-shipped candidate surfaces
-
-Catalog of browser-rendered surfaces that could earn a partial. Use this as a menu, not a roadmap — most won't need styling. Promote when product UI actually uses them.
-
-### 5.1 Pseudo-elements that style browser-rendered chrome
-
-| Surface                                                                    | Styles                                 | Chrome shipped              |
-| -------------------------------------------------------------------------- | -------------------------------------- | --------------------------- |
-| `::backdrop`                                                               | dialog / fullscreen / popover backdrop | 37 (popover support 114)    |
-| `::placeholder`                                                            | input/textarea placeholder text        | 57                          |
-| `::marker`                                                                 | list item bullet/number                | 86                          |
-| `::file-selector-button`                                                   | `<input type="file">` button           | 89                          |
-| `::cue` / `::cue(selector)`                                                | WebVTT caption cues on `<video>`       | 26                          |
-| `::target-text`                                                            | text-fragment scroll-to-text highlight | 89                          |
-| `::spelling-error` / `::grammar-error`                                     | UA spelling/grammar underlines         | 121                         |
-| `::highlight(name)`                                                        | Custom Highlight API ranges            | 105                         |
-| `::selection`                                                              | selected-text highlight                | 1 (inheritance updates 134) |
-| `::view-transition`, `::view-transition-{old,new,image-pair,group}(name)`  | view-transition snapshots              | 111                         |
-| `::scroll-marker` / `::scroll-marker-group` / `::scroll-button(direction)` | scroll-driven indicators               | 135                         |
-| `::picker(select)`, `::picker-icon`, `::checkmark`                         | customizable `<select>` UI             | 134                         |
-| `::details-content`                                                        | `<details>` content region             | 131                         |
-
-### 5.2 Pseudo-classes that key off browser state
-
-| Surface                                                 | Selects                                       | Chrome shipped             |
-| ------------------------------------------------------- | --------------------------------------------- | -------------------------- | --- |
-| `:focus-visible`                                        | UA-determined keyboard focus                  | 86 (UA stylesheet 90)      |
-| `:focus-within`                                         | focus inside descendant                       | 60                         |
-| `:has(...)`                                             | relational selector                           | 105                        |
-| `:is(...)` / `:where(...)`                              | selector list grouping                        | 88                         |
-| `:placeholder-shown`                                    | input currently showing placeholder           | 47                         |
-| `:autofill`                                             | UA-autofilled form control                    | 109                        |
-| `:user-valid` / `:user-invalid`                         | form validity after user interaction          | 119                        |
-| `:fullscreen`                                           | element rendered fullscreen                   | 71                         |
-| `:modal`                                                | modal `<dialog>` / fullscreen                 | 105                        |
-| `:popover-open`                                         | popover currently shown                       | 114                        |
-| `:open`                                                 | open `<dialog>`/`<details>`/`<select>`/picker | 133                        |
-| `:picture-in-picture`                                   | element currently in PiP                      | 105                        |
-| `:state(name)`                                          | custom-element state                          | 125                        |
-| `:dir(ltr                                               | rtl)`                                         | UA-resolved directionality | 123 |
-| `:host` / `:host()` / `:host-context()` / `::slotted()` | Shadow DOM boundary                           | 53                         |
-
-### 5.3 Attribute-as-feature APIs
-
-| Surface                                                  | Behavior                              | Chrome shipped |
-| -------------------------------------------------------- | ------------------------------------- | -------------- |
-| `[popover]` / `[popover=auto/manual/hint]`               | popover top-layer element             | 114 (hint 134) |
-| `[inert]`                                                | UA disables hit-testing/focus/AT      | 102            |
-| `[hidden=until-found]`                                   | find-in-page reveals collapsed region | 102            |
-| `[draggable]`                                            | drag source for HTML5 DnD             | 4              |
-| `[contenteditable]` / `[contenteditable=plaintext-only]` | UA-managed editing                    | 1 / 100        |
-| `[autocomplete]`                                         | UA autofill/autocomplete behavior     | 1              |
-| `[spellcheck]`                                           | UA spellcheck rendering               | 9              |
-| `[anchor]`                                               | implicit anchor association           | 125            |
-| `[writingsuggestions]`                                   | UA writing-suggestion underlines      | 124            |
-
-### 5.4 CSS at-rules that hook UA behaviors
-
-| Surface                                       | Purpose                               | Chrome shipped |
-| --------------------------------------------- | ------------------------------------- | -------------- |
-| `@view-transition`                            | cross-document view transitions       | 126            |
-| `@starting-style`                             | entry/exit interpolation start values | 117            |
-| `@scope`                                      | scoped style block with donut hole    | 118            |
-| `@container (size)`                           | size container queries                | 105            |
-| `@container style(...)`                       | style container queries               | 111            |
-| `@container scroll-state(...)`                | scroll-state container queries        | 133            |
-| `@property`                                   | typed/registered custom properties    | 85             |
-| `@layer`                                      | cascade layers                        | 99             |
-| `@supports selector(...)`                     | selector feature query                | 88             |
-| `@font-palette-values`                        | palette overrides for color fonts     | 101            |
-| `@counter-style`                              | custom list/counter styles            | 91             |
-| `@page` (with margin boxes)                   | print pagination                      | 2+             |
-| `@position-try`                               | anchor-position fallback try blocks   | 125            |
-| `scroll()` / `view()` on `animation-timeline` | scroll-driven animations              | 115            |
-
-### 5.5 CSS properties that opt into UA behaviors
-
-| Surface                                                                                                                 | Behavior                                                         | Chrome shipped  |
-| ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | --------------- |
-| `field-sizing: content`                                                                                                 | input/textarea auto-size to content                              | 123             |
-| `text-wrap: balance` / `pretty` / `stable`                                                                              | UA balances last lines / orphan optimization / re-wrap stability | 114 / 117 / 130 |
-| `interpolate-size: allow-keywords`                                                                                      | animate to/from `auto`/`min-content`/etc.                        | 129             |
-| `view-transition-name` / `view-transition-class`                                                                        | opts element into VT capture                                     | 111 / 125       |
-| `content-visibility: auto/hidden`                                                                                       | UA render-skipping                                               | 85              |
-| `contain-intrinsic-size`                                                                                                | placeholder size for skipped subtrees                            | 83              |
-| `scrollbar-color` / `scrollbar-width` / `scrollbar-gutter`                                                              | standard scrollbar styling                                       | 121 / 121 / 94  |
-| `overscroll-behavior`                                                                                                   | UA scroll chain/glow control                                     | 63              |
-| `accent-color`                                                                                                          | UA color of checkboxes/radios/range/progress                     | 93              |
-| `caret-color`                                                                                                           | text-input caret color                                           | 57              |
-| `color-scheme: light \| dark`                                                                                           | opts into UA dark form controls/scrollbars                       | 81              |
-| `appearance: base-select` / `base`                                                                                      | opts `<select>` into customizable rendering                      | 134             |
-| `anchor-name` / `position-anchor` / `position-area` / `position-try-fallbacks` / `position-visibility` / `anchor-scope` | anchor positioning                                               | 125–131         |
-| `overlay: auto` (animation-only)                                                                                        | top-layer transition hook                                        | 117             |
-| `transition-behavior: allow-discrete`                                                                                   | animate `display`/`content-visibility`/top-layer                 | 117             |
-| `text-spacing-trim` / `text-box` / `text-box-trim` / `text-box-edge`                                                    | UA-managed CJK punctuation / leading trim                        | 123 / 133       |
-| `font-variant-emoji`                                                                                                    | UA emoji presentation                                            | 131             |
-| `print-color-adjust` / `forced-color-adjust`                                                                            | UA color-overrides hook                                          | 17 / 89         |
-| `pointer-events: none/auto`                                                                                             | UA hit-testing opt-out                                           | 2+              |
-| `touch-action`                                                                                                          | UA gesture/scroll opt-in                                         | 36              |
-| `user-select`                                                                                                           | UA selection behavior                                            | 54              |
-
----
-
-## 6. Catalog (built surfaces)
-
-| Surface                                                                 | Status  | What it covers                                                                                                                                                                                                                                                                                                                                                                                                                                 | Composable                            |
-| ----------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) | ✅ done | Auto-anchored placement for every `[popover]` via `position-area` + `position-try-fallbacks` + viewport-aware size bounds. Default places the popover below the anchor (`block-end`); placement modifiers (`.top` / `.bottom-start` / …) override per-host. Boundary detection: shrink → flip → shrink-after-flip via `max-block-size`, `position-try-fallbacks`, and `position-visibility: anchors-visible`. See §"Boundary detection" below. | `usePopover` / `useTooltip` (shipped) |
-| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)               | ✅ done | `dialog:modal::backdrop` only — dim + blur scrim. Popovers (`auto` / `manual` / `hint`) intentionally keep the UA-default transparent backdrop so non-modal floating panels don't dim the page.                                                                                                                                                                                                                                                | _(none yet)_                          |
-| [`_popover.scss`](../src/styles/surfaces/_popover.scss)                 | ✅ done | `[popover]` panel chrome + `:popover-open` entry/exit transition (`transition-behavior: allow-discrete` + `@starting-style`) + `[popover=hint]` / `[role=tooltip]` smaller-variant chrome.                                                                                                                                                                                                                                                     | `usePopover` / `useTooltip` (shipped) |
-| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss)             | ✅ done | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`                                                                                                                                                                                                                                                                                                                                                                   | _(none — purely declarative)_         |
-
-When the next surface lands, add a row above.
-
-### 6.1 Gotcha — Tailwind layout utilities on `[popover]` elements
-
-The UA hides closed popovers with `[popover]:not(:popover-open) { display: none; }`. That UA rule sits in the lowest cascade tier, so any author rule (including a Tailwind utility) wins. Putting `class="grid"`, `class="flex"`, or `class="block"` directly on a `[popover]` element forces `display: grid|flex|block` even when the popover is closed — the panel renders flat in document flow until first opened.
-
-**Fix:** wrap the popover's content in a child div that takes the layout utility, leave the popover element itself layout-utility-free.
+**Gotcha — Tailwind layout utilities on `[popover]`.** The UA hides closed popovers with `[popover]:not(:popover-open) { display: none; }` in the lowest cascade tier. Any author rule beats it. Putting `class="grid"`, `class="flex"`, or `class="block"` directly on a `[popover]` element forces `display: grid|flex|block` even when closed — the panel renders flat in document flow until first opened.
 
 ```html
-<!-- ✗ Wrong — `.grid` defeats the UA's hide-when-closed rule -->
+<!-- Wrong — `.grid` defeats the UA's hide-when-closed rule -->
 <div popover="auto" class="grid gap-2">…</div>
 
-<!-- ✓ Right — popover element keeps UA-controlled display, child handles layout -->
-<div popover="auto" style="max-inline-size: 24rem">
+<!-- Right — popover element keeps UA display, child handles layout -->
+<div popover="auto">
 	<div class="grid gap-2">…</div>
 </div>
 ```
 
-A future `_popover.scss` enhancement could re-assert `display: revert-layer` for closed popovers in `@layer surfaces`, but the current trade-off (predictable cascade, simple author rule) is preferred — let utilities follow the layer order without exceptions.
-
 ---
 
-### 6.2 Boundary detection — how `_anchor-position.scss` keeps popovers on screen
+## 4. Anchor positioning surface
 
-A dropdown that prefers to drop down but flips up when the trigger is near the bottom of the viewport. A tooltip that shrinks (rather than overflows) when its anchor is at the edge of a small phone screen. A menu that auto-hides when its trigger scrolls offscreen. All three behaviours come for free in CSS — no JavaScript Floating-UI library needed — when four primitives are wired together correctly. Mailbox calls this the **shrink → flip → shrink-after-flip** recipe; the framework adopts the same pattern in [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) and applies it to every `[popover]` automatically.
+[`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) handles placement for every `[popover]:not(output)`.
 
-**The four primitives:**
+**What it owns.** When a popover is invoked via `<button popovertarget="…">`, the browser sets up an _implicit_ anchor relationship between the invoker and the popover. No `anchor-name` / `position-anchor` boilerplate needed — the surface only declares placement (`position-area`) and the browser handles the rest. Default placement is `block-end` (below the invoker in LTR top-to-bottom; flips automatically in vertical / RTL writing modes).
 
-| Property                                                                                                 | What it buys                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `position-area: var(--set-anchor-position-area)`                                                         | The requested side. Defaults to `block-end` (below); placement modifiers (`.top`, `.bottom-start`, …) override.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline` + `position-try-order: normal` | Full block-axis + inline-axis flip enabled. We leave `position-try-order` at the spec default (`normal`) so the browser walks the fallbacks in declaration order and commits to the first one that fits. Mailbox tested both `most-width` and `most-block-size` and rejected them as too greedy — "a dropdown anchored mid-viewport with plenty of room both ways would flip to whichever side had ONE pixel more room, instead of staying on the requested side." With `normal`, the browser tries the requested side first and only flips when it genuinely doesn't fit the demanded space (next row). |
-| `max-block-size: var(--set-anchor-max-block-size)` (default `18rem`)                                     | The **demanded space** — a fixed cap, not viewport-relative. This is the half of the recipe that makes `flip-block` actually work: the browser uses `max-block-size` as the popover's wanted size when comparing against available room on each side. Mailbox uses a fixed row-count cap (`5 rows × 2.25rem = ~180 px`) for dropdowns; we use `18 rem` as a generic default. Consumers tighten per-host (`#my-dropdown { --set-anchor-max-block-size: 12rem; }`) or unbump for big-content popovers (`max-block-size: calc(100dvh - 2rem);`).                                                            |
-| `overflow: auto`                                                                                         | Scrolls the popover's content when the demanded size still exceeds what fits — the cap doesn't truncate the menu, it scrolls it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `position-visibility: anchors-visible`                                                                   | Auto-hides the popover when the anchor scrolls offscreen. Without this, a dropdown left open in a scrolling list floats untethered at its computed position, pointing at nothing.                                                                                                                                                                                                                                                                                                                                                                                                                        |
+**Modifier hookup.** Placement modifier classes (`.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end`) live in [modifiers/\_placements.scss](../src/styles/modifiers/_placements.scss) — see [modifiers.md](modifiers.md). Each writes the matching `position-area` keyword on the popover.
 
-**The recipe in action.** Imagine a popover anchored to a button near the bottom of the viewport:
+**Overflow handling.** `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline` — the browser tries the requested side first, then flips block, then flips inline, then flips both. `position-try-order: normal` (the spec default) means the browser commits to the first fallback that fits in declaration order — `most-width` / `most-block-size` are rejected as too greedy (they flip the moment the opposite side has even one pixel more room, producing a "dropdown snaps up even when there's plenty of space below" symptom).
 
-1. The browser plans the popover at `position-area: block-end` (below the button).
-2. `max-block-size: 18rem` (≈ 288 px) sets the demanded space.
-3. Only ~40 px remain below the button → 288 px doesn't fit. The browser walks `position-try-fallbacks` (in order, `normal` ordering) and commits to the first fallback that fits: `block-start span-inline-end` (above the trigger, start-aligned).
-4. **No overlap with the trigger.** Verified live: with `flip-block` enabled and the fixed cap, the popover lands cleanly above the trigger with the configured `--set-anchor-gap` of separation.
-5. **Mid-page popovers drop down.** When there's room below the trigger to host 18 rem, the requested side wins (no fallback fires) and the popover drops down naturally.
-6. **Each fresh open re-evaluates.** Close the popover, scroll the trigger into different space, reopen — the layout pass reruns `position-try-fallbacks` from scratch and picks the side that fits the new geometry. Verified: open near bottom → flips up; close → scroll trigger to mid-page → reopen → drops down.
+**Demanded space.** `max-block-size: var(--set-anchor-max-block-size)` (default `18rem`) and `max-inline-size: var(--set-anchor-max-inline-size)` (default `28rem`). The browser uses these caps as the popover's _demanded size_ when evaluating `position-try-fallbacks`. If `18rem` doesn't fit below the trigger, `flip-block` fires and the popover lands above. Consumers tighten per-host:
 
-All of this happens in the layout pass, before paint — there's no flicker, no JS observer, no re-positioning event during open. Long content scrolls inside the popover via `overflow: auto`.
-
-**Tokens consumers can override.**
-
-| Token                                 | Default                                           | Notes                                                                                                                                                                                                            |
-| ------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--set-anchor-gap`                    | `calc(var(--spacing) * 1)`                        | Distance between anchor and popover (the gap below a dropdown).                                                                                                                                                  |
-| `--set-anchor-position-area`          | `block-end`                                       | Default placement; placement modifiers override.                                                                                                                                                                 |
-| `--set-anchor-position-try-fallbacks` | `flip-block, flip-inline, flip-block flip-inline` | Default fallback chain — block + inline flip enabled. Mailbox's popover/select recipe. Override per-host to opt out (e.g. for a navigational dropdown): `#my-dropdown { position-try-fallbacks: flip-inline; }`. |
-| `--set-anchor-position-try-order`     | `normal`                                          | Spec default. Mailbox tested `most-width` and `most-block-size` and rejected both as too greedy. Authors override per-host if they want greediness: `#my-popover { position-try-order: most-width; }`.           |
-| `--set-anchor-max-block-size`         | `18rem`                                           | Fixed `max-block-size` cap — the demanded space `flip-block` evaluates against. Mailbox uses `flip × row-height` for dropdowns; we expose a flat token consumers tighten per-host.                               |
-| `--set-anchor-max-inline-size`        | `28rem`                                           | Fixed `max-inline-size` cap — same role as `max-block-size` for the inline axis.                                                                                                                                 |
-| `--set-anchor-viewport-inset`         | `calc(var(--spacing) * 2)`                        | Minimum gap between popover and viewport edge. Reserved for composable / consumer use; the surface itself uses fixed caps so `flip-block` re-evaluation works correctly.                                         |
-
-**What the framework intentionally does NOT use.**
-
-- `position-try-order: most-width` (or `most-height`) is rejected. It's greedier — flips the moment the opposite side has even one pixel more room — which produces the "dropdown snaps up even when there's plenty of space below" symptom that mailbox debugged out of their dropdown.
-- A separate JS Floating-UI / Floating-DOM dependency. The four primitives above cover the patterns we ship; a composable layer (Phase 6 `usePopover` / `useTooltip`) only adds keyboard nav, ARIA state writes, and arrow-side detection for tooltips — placement and boundary handling stay CSS.
-
-#### What CSS handles vs. what JS handles
-
-The flip side of the recipe runs at OPEN TIME. Each fresh open re-evaluates `position-try-fallbacks` cleanly — a popover that opens near the viewport bottom flips up; close it, scroll the trigger into the middle of the viewport, re-open, and it drops down again. Verified live: open near bottom → flipped up; close → scroll up → re-open → dropped down.
-
-What CSS CANNOT do today is **re-flip a still-open popover when its anchor scrolls inside a nested scroll container**. Chromium re-evaluates `position-try-fallbacks` only when the popover's own layout changes (size or containing block). Scrolling an anchor's parent doesn't trigger that. We exhaustively tested CSS-only workarounds:
-
-| Approach                                                                       | Result                                                                                                                   |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `position-try-order: most-block-size` (greedier flip)                          | No effect — sticky flip persists                                                                                         |
-| `animation-timeline: scroll(nearest)` on `[popover]`                           | Doesn't run — top-layer popover's nearest scroller resolves to the viewport, not the inner scroller                      |
-| `animation-timeline: scroll(self)` on `<main>` propagating a custom property   | Property changes correctly, but its presence in the popover's `max-block-size` calc doesn't trigger layout re-evaluation |
-| Animating `max-block-size` directly via scroll-driven animation on the popover | Same — animation doesn't run for top-layer hosts                                                                         |
-
-Mailbox lives with the same limitation in its CSS layer: their JS composables observe where Chromium placed the panel (to update an arrow-side class) but don't force re-flip either. The honest answer is that Chromium's anchor-positioning needs a layout invalidation hook that fires on anchor scroll — and until that lands, the gap is JS-shaped.
-
-The Phase 6 composable layer (`useMenu` / `usePopover` / `useTooltip`) is shipped, but does NOT currently force a re-flip on anchor scroll — the composables match mailbox's behaviour: scroll listeners only update the resolved-side dataset attribute (so chrome that follows the resolved side stays accurate) and don't nudge the popover's layout. The in-session stickiness is documented behaviour: open ⇒ commit ⇒ live until closed. Closing and re-opening always re-evaluates correctly, so the practical impact is small — most dropdown / popover sessions don't span a meaningful scroll.
-
-Authors who need forced re-flip can write a small observer themselves:
-
-```ts
-// Force a layout invalidation when the anchor scrolls inside a nested scroller.
-// Toggle `max-block-size` by an inert value to make Chromium re-run
-// `position-try-fallbacks` against the anchor's current position.
-function observeAnchorScroll(popover: HTMLElement): () => void {
-	let frame = 0
-	const tick = () => {
-		cancelAnimationFrame(frame)
-		frame = requestAnimationFrame(() => {
-			const previous = popover.style.maxBlockSize
-			popover.style.maxBlockSize = previous === '' ? '99999px' : ''
-		})
-	}
-	document.addEventListener('scroll', tick, { capture: true, passive: true })
-	return () => document.removeEventListener('scroll', tick, true)
+```scss
+#my-dropdown {
+	--set-anchor-max-block-size: 12rem;
 }
 ```
 
-#### The popover-overlaps-trigger edge case
+**Overflow scrolls inside.** `overflow: auto` + `overscroll-behavior: contain` — when content exceeds the cap, the popover scrolls instead of truncating, and scroll-chain doesn't leak to the document.
 
-Same family of CSS-anchor-positioning limitations, different symptom. With our default `position-try-fallbacks: flip-inline` (block-axis flip OFF), a popover anchored near the viewport bottom can't flip up — but its natural height may exceed the available space below the trigger. Chromium's last-resort behaviour is to **shift the popover up to fit the viewport**, which means it visually overlaps the trigger.
+**Anchor-visibility tracking.** `position-visibility: anchors-visible` auto-hides the popover when the anchor scrolls offscreen, so a dropdown left open in a scrolling list doesn't float untethered.
 
-We exhaustively tested CSS-only ways to clamp the popover's height to the actual space-below-anchor:
+**`position: absolute`, not the top-layer default.** Top-layer popovers default to `position: fixed` (pinned to viewport coordinates), which means scrolling a nested ancestor doesn't relayout. The surface sets `position: absolute` so the popover's layout lives in its containing block's coordinate space — letting the browser re-evaluate `position-try-fallbacks` when the anchor's surroundings change.
 
-| Approach                                                                                        | Result                                                                                                  |
-| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `max-block-size: calc(100dvh - anchor(bottom) - inset)` with explicit `position-anchor: --name` | `anchor()` is not allowed in size properties per spec; the calc resolves to fallback (the viewport cap) |
-| `max-block-size: anchor-size(self-block)`                                                       | Returns the anchor's OWN block-size (the trigger's height), not space-around-anchor                     |
-| `align-self: stretch` + `min-block-size: 0`                                                     | Popover's intrinsic content size still wins; auto-fit shifts it up                                      |
-| `inset-block-end: var(--inset)` (try to pin both ends so size = available space)                | `position-area` already governs the cell; explicit inset-\* properties are ignored on anchored popovers |
-| `@position-try` named block with size constraint                                                | Named try blocks accept `position-area` and inset properties but `anchor()` in size is still rejected   |
+**Why exclude `output`.** Toasts are `<output popover="manual">` and want viewport-fixed corner placement, not anchor positioning. The toast component partial overrides position with explicit `position: fixed; inset-*` values. Excluding `output` here lets the toast component rule resolve cleanly without `!important`.
 
-**Mailbox accepts the same limitation.** Their `_dropdown.scss` has only one `anchor-size()` call — `width: anchor-size(width)` for the `.w-100` utility, which ties menu width to trigger width. They never clamp height to space-below-anchor; the SAME overflow case happens for plain dropdowns there too.
-
-The shipped composable layer (`useMenu`) takes a different approach: instead of computing `max-block-size` from the anchor rect, the factory writes the inline `--set-menu-flip` custom property the surface CSS reads to cap height (`max-block-size: calc(var(--set-menu-flip) * row-height)`), and lets the browser's `position-try-fallbacks` flip the menu when the requested side has fewer than N rows. `flip: 0` opts out and lets surplus rows scroll inside the panel.
-
-Consumers who want a tighter clamp than `useMenu`'s row-count threshold can either:
-
-1. **Explicit `max-block-size`** per host: `#my-popover { max-block-size: 12rem; }` — caps the popover so it always fits some reasonable space + scrolls overflow.
-2. **Opt back in to a richer `position-try-fallbacks` chain** per host: `#my-popover { position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline; }` — accepts in-session stickiness in exchange for proper boundary handling at open time. This is what the surface-level default ships.
-3. **Ship a tiny observer** like the `clampToAvailableSpace` recipe above — drive `max-block-size` directly from `getBoundingClientRect` if you need height to track viewport-edge proximity continuously.
+**Known limitation: in-session sticky flip.** Chromium re-evaluates `position-try-fallbacks` only when the popover's own layout changes. Scrolling the anchor in a nested scroll container doesn't trigger re-evaluation — a popover that flips up at open time stays up until closed. Closing and re-opening always re-evaluates from scratch. Composable observers (`useMenu`, `usePopover`, `useTooltip`) can nudge `max-block-size` on scroll to force re-evaluation; the surface itself documents the limitation and stays declarative.
 
 ---
 
-## 7. First candidates
+## 5. Backdrop surface
 
-The four shipped surfaces (`_anchor-position.scss`, `_backdrop.scss`, `_popover.scss`, `_scrollbar.scss`) cover what the framework's element + component layer needs today. The composable layer pairs into the popover surface (`usePopover` / `useTooltip` / `useMenu` / `useSelect` / `useToast` all consume `[popover]:not(output)`).
+[`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss). Only `dialog:modal::backdrop` paints the dim scrim:
 
-Next candidates as the framework's component layer earns them:
+```scss
+dialog:modal::backdrop {
+	background-color: var(--set-backdrop-background-color);
+	backdrop-filter: var(--set-backdrop-backdrop-filter);
+	transition:
+		background-color var(--set-backdrop-transition-duration),
+		backdrop-filter var(--set-backdrop-transition-duration);
+}
+```
 
-- **`_view-transition.scss`** — `::view-transition-old/new/group(*)` for cross-page transitions on `<a>` navigation.
-- **`_picker-select.scss`** — `::picker(select)` once Firefox + Safari ship `appearance: base-select` (Chromium 134+ only today).
-- **`_placeholder.scss`** — extract `::placeholder` chrome from `_input.scss` / `_textarea.scss` once a third element needs it.
-- **`_marker.scss`** — extract `::marker` chrome from `_summary.scss` once `<details>` isn't the only consumer.
-- **`_selection.scss`** — variant-tinted `::selection` color.
+Non-modal popovers (tooltips, dropdowns, toasts, auto popovers) keep the UA-default transparent backdrop so they don't dim the page underneath. Mailbox solves this with an exclusion-list approach; the framework is simpler — only modal `<dialog>` gets the scrim, period.
+
+**Token scope.** `--set-backdrop-*` tokens live on `:root` because `::backdrop` is generated outside the normal DOM tree and cannot inherit element-scoped tokens declared on the host. Consumers override globally on `:root` or opt a specific dialog in:
+
+```scss
+dialog#confirm::backdrop {
+	--set-backdrop-background-color: rgb(0 0 0 / 0.7);
+}
+```
+
+**Opt-in for popovers.** If a future use-case needs a backdropped popover (e.g. a confirm-style modal-popover hybrid), the consumer opts in per-host: `#my-popover::backdrop { background-color: var(--set-backdrop-background-color); }`.
 
 ---
 
-## Reference
+## 6. Scrollbar surface
 
-- [src/styles/surfaces/](../src/styles/surfaces/) — SCSS sources (currently empty)
-- [styles.md](styles.md) — top-level architecture and authoring contract
-- [components.md](components.md) — sibling category for composed widgets
-- [elements.md](elements.md) — sibling category for HTML tags
-- [tokens.md](tokens.md) — token surface for any `--set-{surface}-*` tokens you author
-- [modifiers.md](modifiers.md) — modifier cascade (rarely consumed by surfaces, but available)
+[`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss). Declares `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`:
+
+```scss
+:root {
+	--set-scrollbar-thumb-color: var(--color-border-strong);
+	--set-scrollbar-track-color: transparent;
+	--set-scrollbar-width: thin;
+	--set-scrollbar-gutter: stable;
+
+	scrollbar-color: var(--set-scrollbar-thumb-color) var(--set-scrollbar-track-color);
+	scrollbar-width: var(--set-scrollbar-width);
+	scrollbar-gutter: var(--set-scrollbar-gutter);
+}
+```
+
+Modern non-WebKit way to style scrollbars. The two-value `scrollbar-color: <thumb> <track>` shorthand is composed at the application site from the two separate tokens so consumers can override either half independently.
+
+**Vendor pseudos intentionally absent.** WebKit-only `::-webkit-scrollbar` family pseudo-elements are NOT styled here — those are deprecated in favour of the standard `scrollbar-*` properties. Safari < 18.2 ignores `scrollbar-color` / `scrollbar-width`; the native iOS overlay scrollbar is the fallback (acceptable).
+
+---
+
+## 7. Focus surface
+
+[`_focus.scss`](../src/styles/surfaces/_focus.scss). `:focus-visible` ring shared across every interactive element (`<button>`, `<a>`, `<input>`, `<select>`, `<details>` toggle, `<menu>` items). Reads `--set-focus-box-shadow-width` and `--set-focus-box-shadow-opacity` tokens (declared on `:root` in [src/styles/\_tokens.scss](../src/styles/_tokens.scss)), plus the active variant identity (`--set-variant-background-color`) to tint the ring.
+
+```scss
+:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
+		color-mix(
+			in srgb,
+			var(--set-variant-background-color) calc(var(--set-focus-box-shadow-opacity) * 100%),
+			transparent
+		);
+}
+```
+
+Why a shared surface rather than per-element rules: every interactive element gets identical focus signal. Ring width, opacity, and tint are tuned once at `:root` — consumers retune globally without touching component partials. A variant-scoped focus (e.g. `.danger button:focus-visible`) inherits the variant's background-color through `--set-variant-background-color`, so the ring automatically matches the host element's variant tint.
+
+`:focus-visible` is the UA-determined "keyboard-style" focus — clicking a button doesn't paint the ring, tabbing to it does. The surface intentionally does not style plain `:focus` (which would catch mouse clicks too) — the user-agent's heuristic is the right one and overriding it produces sticky focus rings after every click.
+
+---
+
+## 8. Placeholder surface
+
+[`_placeholder.scss`](../src/styles/surfaces/_placeholder.scss). `::placeholder` opacity + color, shared across `<input>` / `<textarea>` / `<select>` (when the search-mode `<select>` ships).
+
+**Forced-colors fallback.** Windows High Contrast and similar forced-colors modes flatten author colors. The surface declares:
+
+```scss
+@media (forced-colors: active) {
+	::placeholder {
+		color: GrayText;
+	}
+}
+```
+
+so the placeholder stays distinguishable from real text under user-mandated colour scheme overrides. `GrayText` is one of the CSS system colours preserved in forced-colors mode.
+
+---
+
+## 9. Marker surface
+
+[`_marker.scss`](../src/styles/surfaces/_marker.scss). `::marker` shared across `<li>`, `<summary>` (the disclosure triangle), `<details>` (when `[open]` mutates the marker content).
+
+The framework swaps the UA Unicode triangle for a CSS-painted SVG mask so the marker tracks `currentColor` reliably across font-rendering quirks. Native `<summary>` markers in some browsers ignore `color` and paint with a hardcoded shade; routing through a `mask-image` SVG with `background-color: currentColor` sidesteps the bug.
+
+Token `--set-marker-content` lets consumers swap the glyph (e.g. `▶` to `›`, or to a custom SVG). `--set-marker-color` defaults to `currentColor` so the marker tracks the surrounding text's variant tint.
+
+---
+
+## 10. Selection surface
+
+[`_selection.scss`](../src/styles/surfaces/_selection.scss). `::selection` paints the user's selected text with a variant-tinted background (`--set-variant-background-color` with reduced alpha) so highlights match the active theme. When a `.primary` / `.success` / `.danger` modifier scope is in effect, selection inside that scope picks up the matching tint:
+
+```scss
+::selection {
+	color: var(--set-selection-color);
+	background-color: var(--set-selection-background-color);
+}
+```
+
+Tokens default to `--set-variant-background-color` with the alpha reduced so highlighted text stays legible (selection that paints over text at full opacity hides the underlying characters in some font rendering paths).
+
+Like `::backdrop`, `::selection` is generated outside the normal DOM tree, so the tint tokens live on `:root`. Variant-scoped overrides cascade through the active variant context tokens — a `.danger` modifier in a parent element retunes `--set-variant-background-color` for its subtree, which `::selection` reads, so a selection inside a danger-themed panel paints with the danger tint without per-host rules.
+
+---
+
+## 11. View-transition surface
+
+[`_view-transition.scss`](../src/styles/surfaces/_view-transition.scss). `::view-transition-old(root)` and `::view-transition-new(root)` paint the cross-page transition when consumers navigate via `<a>` with `view-transition-name` set, or opt into cross-document navigation transitions via `@view-transition { navigation: auto; }`.
+
+Default is a fade (`opacity` cross-tween). Per-page customisation lives at the call site: a navigating element declares `view-transition-name: <name>` and per-name `::view-transition-old(<name>) / -new(<name>)` rules override the default duration / timing function for that element only.
+
+Tokens `--set-view-transition-duration` and `--set-view-transition-timing-function` retune the default fade globally. Like other top-layer-adjacent pseudos, the tokens live on `:root` — `::view-transition-*` snapshots render outside the normal DOM tree.
+
+Reduced-motion-paired: the framework's shared `transition()` mixin honors `prefers-reduced-motion`, so the surface's view-transition rules collapse to zero-duration when the user has reduced motion enabled. Cross-page navigation still feels instant rather than ignoring user preference for the sake of polish.
+
+---
+
+## 12. Author's contract for surfaces
+
+When to add a new surface partial:
+
+1. The pattern styles a pseudo-element or attribute API the browser owns (not a tag). If it's a tag, it belongs in [src/styles/elements/](../src/styles/elements/). If it's a composition of multiple tags under a class root, it belongs in [src/styles/components/](../src/styles/components/).
+2. The pattern is shared across more than one element / component. A pseudo-element consumed only by `<progress>` lives in `elements/_progress.scss`. Promote to a surface partial once a second element needs the same styling.
+3. The partial declares tokens on `:root` when the surface is generated outside the normal DOM tree (`::backdrop`, `::placeholder`, `::marker`, `::selection`, `::view-transition-*`). These pseudos cannot inherit element-scoped tokens.
+4. Wrap all rules in `@layer surfaces`.
+
+Each substantive partial follows the template documented in the file's header — browser-support comment, surfaces-covered list, quirks list, then `@use '../mixins' as *;` and the `@layer surfaces { … }` body.
+
+---
+
+## 13. Anti-rules
+
+- **Don't style deprecated vendor pseudo-elements outside their specific element partial.** `::-webkit-scrollbar`, `::-moz-progress-bar`, `::-ms-*` live (when needed at all) in the relevant element partial — e.g. `<progress>` vendor pseudos live in `elements/_progress.scss`, not in a surfaces partial.
+- **Don't add a surface for a single-element pseudo.** `<select>::picker(select)` lives in `elements/_select.scss` while only `<select>` consumes it. Promote to a surface once a second element does.
+- **Don't override `display` on `[popover]` outside the open-state selector.** The UA's `[popover]:not(:popover-open) { display: none; }` keeps closed popovers out of flow. Any author rule that sets `display` on `[popover]` defeats the hide-when-closed behaviour. See [composables.md §3 — open/closed lifecycle](composables.md).
+- **Don't filter `[popover]` rules with `:not(output)` at chrome-paint time.** The toast composable in the composables layer beats surface defaults because composables sit _above_ surfaces in the cascade — adding `:not(output)` to chrome rules would lift their specificity (`[popover]:not(output)` is 0,2,0 vs `[popover='hint']` at 0,1,0) and break the hint variant. Only the anchor-position surface uses `:not(output)` because toasts need viewport-fixed placement, not the `position: absolute` anchor layout.
+
+---
+
+## 14. Cross-references
+
+- [styles.md](styles.md) — cascade layer order and authoring contract for the whole framework
+- [tokens.md](tokens.md) — the `--set-*` namespace and how surface tokens compose with variant context tokens
+- [composables.md](composables.md) §3 — the open/closed lifecycle that popover-based surfaces participate in (composables own the lifecycle, surfaces own the paint)
+- [modifiers.md](modifiers.md) — the placement vocabulary (`.top`, `.bottom-start`, etc.) that drives `position-area`
+- [components.md](components.md) — sibling category for composed widgets (bare tags / class roots) that consume surfaces
+- [elements.md](elements.md) — sibling category for HTML-tag partials

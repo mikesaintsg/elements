@@ -1,224 +1,332 @@
-# Plan & Status
+# Plan — Building Elements from Scratch
 
-> Living tracker of where the framework stands today and what to build next. Companion guides — [styles.md](styles.md), [tokens.md](tokens.md), [modifiers.md](modifiers.md), [mixins.md](mixins.md), [elements.md](elements.md), [components.md](components.md), [composables.md](composables.md), [surfaces.md](surfaces.md) — describe how each layer works; this file tracks what's shipped, what's next, and the invariants every contributor must respect.
+> A from-scratch implementation plan for the entire framework. Every checkbox is a discrete, testable task you can land in one commit. Each section maps to one of the companion guides; finishing a section means that guide is fully realised in code.
 
----
+This plan assumes:
 
-## 1. Where we are
+- An empty repo with `package.json`, `tsconfig.json`, `vite.config.ts`, and Vitest configured for browser-environment tests.
+- Tailwind v4 + `@tailwindcss/postcss` installed.
+- Vue 3 installed for the showcase app and composable layer.
+- Sass installed (Dart Sass via Vite plugin) for the framework SCSS partials.
 
-A working framework built over Tailwind v4, layered into the `@layer` order:
+Read the guides ([styles.md](styles.md), [tokens.md](tokens.md), [mixins.md](mixins.md), [modifiers.md](modifiers.md), [elements.md](elements.md), [components.md](components.md), [composables.md](composables.md), [surfaces.md](surfaces.md)) before starting — they describe what each layer LOOKS like when done. This plan tells you the order in which to BUILD it.
 
-```
-theme, base, elements, components, surfaces, composables, modifiers, utilities
-```
-
-Five concrete layers ship today:
-
-| Layer | What lives there | Folder |
-|---|---|---|
-| **Elements** | One file per HTML tag. Token-driven baselines + UA-quirk resets. Targets bare tags. | [`src/styles/elements/`](../src/styles/elements/) |
-| **Components** | Element compositions that read as one UI thing — card, sidebar, navbar, dropdown, toast. Targets bare HTML roots; class-root fallback when no semantic tag fits. | [`src/styles/components/`](../src/styles/components/) |
-| **Surfaces** | Browser-rendered chrome that isn't a tag or composition — `[popover]`, `::backdrop`, scrollbar, anchor positioning. | [`src/styles/surfaces/`](../src/styles/surfaces/) |
-| **Composables** | Component-specific layout / chrome that only applies while a composable's state attribute is set. Lives `@layer composables`, beats every previous layer for the same selector. | [`src/styles/composables/`](../src/styles/composables/) |
-| **Modifiers** | The four-dimension cascade — variant, size, style, shape, state, placement. | [`src/styles/modifiers/`](../src/styles/modifiers/) |
-
-The TypeScript surface mirrors what ships under three folders:
-
-| Folder | Owns |
-|---|---|
-| [`src/browser/composables/`](../src/browser/composables/) | 21 Vue 3 adapters — `useDialog`, `useAside`, `useMenu`, `useSelect`, `useToast`, `useTooltip`, `usePopover`, `useDetails`, `useTabs`, `useNav`, `useForm`, `useTable`, `useCarousel`, `useDrag`, `useDrop`, `useFocus`, `usePointer`, `useTheme`, `useButton`, `useAlert`, `useAside`. |
-| [`src/browser/factories/`](../src/browser/factories/) | Framework-agnostic `create*` factories — one per composable. Import only from `@vue/reactivity`. The Vue adapter is the thin layer; the factory is the logic. |
-| [`src/browser/`](../src/browser/) | `tokens.ts`, `modifiers.ts`, `elements.ts`, `events.ts`, `constants.ts`, `helpers.ts`, `types.ts` — the contract surface. Bidirectionally parity-tested against SCSS. |
+Work top-to-bottom. Each phase depends on the one before. Within a phase, items can be parallelised across contributors but each is its own commit.
 
 ---
 
-## 2. Invariants — must respect
+## Phase 0 — Repo bootstrap
 
-These are framework-wide rules every commit honors. Breaking one ships a bug. The recent audits ([§5](#5-recent-audits--lessons-learned)) all trace back to one of these being violated.
+- [ ] Install dependencies: `vue@^3`, `@vue/reactivity`, `tailwindcss@^4`, `@tailwindcss/postcss`, `sass`, `vite`, `vitest`, `@vitest/browser`, `playwright`, `vue-tsc`, `oxlint`, `oxfmt`.
+- [ ] Create folder skeleton:
+  ```
+  src/styles/{elements,components,surfaces,composables,modifiers}/
+  src/browser/{composables,factories}/
+  app/browser/{pages,styles}/
+  tests/src/{styles,browser}/
+  guides/
+  ```
+- [ ] Wire `vite.config.ts` for the framework build (`src/styles/index.scss` → `dist/src/styles/index.css`) and for the TS bundle (`src/browser/index.ts` → `dist/src/browser/`).
+- [ ] Wire `configs/app/vite.showcase.config.ts` for the showcase build with `vite-plugin-singlefile` so demos can be shipped as one HTML.
+- [ ] Wire `configs/src/vite.styles.config.ts` for the CSS-only build of the framework (used by NPM consumers who don't want to compile SCSS).
+- [ ] Wire `vite.config.ts` for Vitest with browser environment + `tests/setup.ts` (DOM helpers) and `tests/setup.css` (cascade layer order).
+- [ ] Add NPM scripts: `dev`, `build`, `build:src:styles`, `build:src:browser`, `test`, `check` (`oxlint --fix` + `vue-tsc --noEmit`), `format` (`oxfmt --write .`), `show` (`build:showcase` + copy to `demo/showcase.html`).
 
-### 2.1 The cascade layer order is load-bearing
-
-Layer order is declared once in the consumer entry CSS (`tests/setup.css`, `app/browser/styles/main.css`):
-
-```css
-@layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
-```
-
-Later layers win. Composables sits AFTER surfaces, so a composable rule on `<aside>` beats the popover surface's defaults for the same selector. Modifiers sit AFTER everything except utilities, so `.primary` reliably tints regardless of what else matches. Don't reorder.
-
-### 2.2 Tokens are the variation surface — modifiers don't hand-roll selectors
-
-Every component-level rule reads through the four-dimension fallback chain:
-
-```scss
---set-{name}-color:
-  var(--set-style-color,
-  var(--set-variant-color,
-  currentColor));
-```
-
-A `<button class="primary large outline rounded">` resolves via that chain — `.outline` rewrites `--set-style-*`, `.primary` writes `--set-variant-*`, `.large` writes `--set-size-*`, `.rounded` writes `--set-shape-border-radius`. No `&.primary { color: ... }` blocks inside element files. The four dimensions cover ~99% of variations; only declare per-modifier rules in element files when a property genuinely can't come from a token (`<form>.row` flips flex-direction — that can't be a token).
-
-### 2.3 Open/closed lifecycle: dual-attribute gating with persistent closing state
-
-Any element that opens and closes (popover, dialog, aside drawer, toast, menu) MUST gate its drawer-shaped CSS on the open-state selector. Author CSS that asserts `display: flex`, `position: fixed`, or large transforms on a bare popover-bearing selector defeats the UA's `display: none` for the closed state — the element stays rendered after `.hidePopover()` / `.close()`.
-
-The discipline:
-
-1. **Bare element rule** stays minimal — typically only tokens and color/border chrome that survives the close. No `display`, no `position: fixed`, no large translate.
-2. **Open-state rule** gates on `:popover-open` / `:modal` / `[data-{name}-open]` and owns the drawer geometry (display, position, inset, sizing, transforms).
-3. **Closing-state attribute** (e.g. `[data-aside-closing]`) is set synchronously when `hide()` runs AND intentionally NOT removed after the slide completes — it persists until the next `show()` (which clears it) or `destroy()`. This keeps the drawer geometry alive through the popover surface's `transition-behavior: allow-discrete` window (~150 ms after `hidePopover()` before `display: none` lands), preventing a "ghost flash" at the popover-surface default position.
-4. **`@starting-style` for from-state** targets a selector ONE specificity step below the open-state rule (e.g. `aside[popover].start` vs `aside[popover][data-aside-open].start`) — works around the Chrome 148+ cascade-tier bleed-through bug where matching-specificity starting-style declarations defeat the open-state rule.
-
-Full discussion + per-composable lifecycle map in [composables.md §Open/closed lifecycle](./composables.md).
-
-### 2.4 Factories are dual-distribution; composables are the Vue adapter
-
-Every composable has a paired `create*` factory under `src/browser/factories/`. The composable is a Vue adapter (resolves refs, watchEffect, returns `readonly()` state). The factory is the logic (imports only `@vue/reactivity`, attaches listeners, manages attributes, emits events, owns `destroy()`).
-
-Non-Vue consumers drop the composable and call `createDialog(el, opts)` directly. Tests cover both layers separately.
-
-### 2.5 Naming
-
-| Surface | Convention |
-|---|---|
-| HTML tag → composable | `<dialog>` → `useDialog`, `<aside>` → `useAside`, `<menu>` → `useMenu`. One composable per tag. |
-| Composable → factory | `useDialog` ↔ `createDialog`. Same name, different layer. |
-| Event names | `elements:{source}:{verb}` — source = tag or composable noun, verb from the lifecycle vocabulary (`show`/`open`/`hide`/`close`/`select`/`destroy`/etc.). |
-| State attributes | `[data-{name}-{state}]` — `data-aside-open`, `data-aside-closing`, `data-table-expanded`, `data-toast-stack-closing`. |
-| CSS tokens | `--set-{scope}[-context]-{property}` where `{property}` is the real CSS property key (`color`, `background-color`, `padding-inline`). |
-
-Bootstrap class soup (`.show`, `.fade`, `.modal-backdrop`, `.btn-close`, `.dropdown-*`) is OUT. Use the data attribute or the native ARIA state instead.
+**Verification:** `npm install` succeeds; `npm run check` exits 0 against an empty src tree.
 
 ---
 
-## 3. Element status
+## Phase 1 — Style entry + cascade layer order
 
-Detailed checklist in [elements.md](elements.md). Top-level counts:
+The cascade layer order is the load-bearing invariant. Get it wrong and modifiers don't beat element baselines, popover surfaces leak into composable rules, and Tailwind utilities lose to framework rules.
 
-| Status | Count | Examples |
-|---|---|---|
-| ✅ cascade | ~21 | `<button>`, `<a>`, `<input>`, `<textarea>`, `<select>`, `<dialog>`, `<aside>`, `<details>`, `<table>`-family, `<form>`-controls, `<output>`, `<progress>`, `<meter>`, `<h1>`–`<h6>` |
-| 🟡 override | ~17 | `<abbr>`, `<address>`, `<mark>`, `<p>`, `<hr>`, `<blockquote>`, `<code>`-family, `<pre>`, `<dl>`-family, `<figure>`-family, `<video>`, `<audio>`, `<iframe>`, `<embed>`, `<object>` |
-| 🚫 stays | ~55 | Inline phrasing, sectioning landmarks (handled at components layer), void/inert metadata, MathML/SVG/canvas, list markers |
+- [ ] Create `tests/setup.css`:
+  ```css
+  @layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
+  @import 'tailwindcss';
+  ```
+- [ ] Create `app/browser/styles/main.css` (the single CSS entry):
+  ```css
+  @layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
+  @import 'tailwindcss';
+  @import '../../../src/styles/index.scss';
+  @source '../../../src/styles';
+  @source '../../../app';
+  #app {
+  	display: contents;
+  }
+  ```
+- [ ] Create `src/styles/index.scss` as the framework barrel:
+  ```scss
+  @use 'tokens';
+  @use 'theme';
+  @use 'mixins';
+  @use 'elements';
+  @use 'components';
+  @use 'surfaces';
+  @use 'composables';
+  @use 'modifiers';
+  ```
+- [ ] Create empty `index.scss` files in each subfolder (`elements/index.scss`, `components/index.scss`, …) so the barrel resolves even before partials land.
 
----
-
-## 4. Component status
-
-Detailed catalog in [components.md](components.md). Element-driven components live in `src/styles/components/`; composable-attached chrome lives in `src/styles/composables/`.
-
-| Layer | Shipped | Notes |
-|---|---|---|
-| `components/` static | 12 partials — `_body.scss`, `_main.scss`, `_article.scss`, `_aside.scss`, `_header.scss`, `_footer.scss`, `_nav.scss`, `_search.scss`, `_menu.scss`, `_output.scss`, `_form.scss`, `_div.scss` | Plus three small atoms (`_badge.scss`, `_dot.scss`, `_tag.scss`, `_role-group.scss`, `_skeleton.scss`, `_spinner.scss`). |
-| `composables/` dynamic | 6 partials — `_aside.scss` (drawer geometry), `_dialog.scss` (size modifiers), `_select.scss` (listbox/combobox chrome), `_toast.scss` (deck stacking), `_tabs.scss` (indicator + roving tabindex), `_carousel.scss` | Each gated on the composable's data attribute so the rule only applies while the composable is mounted. |
-| `surfaces/` | 5 partials — `_popover.scss`, `_backdrop.scss`, `_anchor-position.scss`, `_scrollbar.scss`, `_focus.scss` | `_anchor-position.scss` ships the placement vocabulary (`.start`/`.end`/`.top`/`.bottom` + corners) consumed by every floating component. |
-
----
-
-## 5. Recent audits + lessons learned
-
-These shaped the invariants in §2. Each is a class of bug we'd hit more than once, fixed once, documented going forward.
-
-### 5.1 The `[open]` / `:popover-open` gating audit (2026-05)
-
-Found three places where author CSS asserted `display: flex` on a popover-bearing or `<dialog>`-bearing selector without gating on the open-state pseudo. Each one defeated the UA's `display: none` for the closed state, leaving the element rendered after `.close()` / `.hidePopover()`:
-
-1. `dialog.scrollable { display: flex }` — closed scrollable dialog stayed at top-left of viewport (`:modal` no longer matched, centering rule dropped, UA position absolute won).
-2. `output[popover] { display: flex }` — closed toast stayed at bottom-end corner after autohide elapsed.
-3. `[data-toast-stack] > output[popover] { transform: ...; opacity: ... }` — closing toast in a 2+ deck never faded cleanly because deck specificity beat the popover surface's close-state values.
-
-All three fixed by splitting the rule: layout (`display`/`transform`/`opacity`) gates on the open-state selector; chrome (background/border/sizing) stays unconditional so closing elements retain visual identity for the surface's discrete-transition tail.
-
-Codified in invariant §2.3 above.
-
-### 5.2 The `<aside>` post-close ghost flash (2026-05)
-
-After the slide-out completed and `data-aside-closing` was removed synchronously, the drawer-geometry block stopped matching. For the popover surface's ~150 ms discrete-transition tail (display:none → block transition with `transition-behavior: allow-discrete` keeps the element in the render tree), the panel snapped from `position: fixed; inset: 0; block-size: 100dvh` to popover-surface defaults (`position: absolute; inset: auto; max-block-size: 18rem`). User saw a ~288 px-tall ghost at the top of the page before display:none lands.
-
-Fixed by stopping `createAside` from removing `data-aside-closing` after `hidePopover()`. The attribute persists until the next `show()` (which clears it) or `destroy()`. The drawer-geometry block stays alive through the discrete-transition tail; the panel parks off-screen at `translateX(±100%)` and silently disappears when display:none kicks in.
-
-Codified in invariant §2.3 above. Pattern is documented next to the `display: flex` line in `composables/_aside.scss` as load-bearing.
-
-### 5.3 `@starting-style` Chrome 148+ bleed-through (2026-05)
-
-Nesting `@starting-style { ... }` inside an open-state rule (e.g. `aside[popover][data-aside-open].start`) compiled to a starting-style declaration with the SAME specificity as the open-state rule. Chrome 148+ has a regression where matching-specificity starting-style declarations leak into the normal cascade tier when transitions don't fully engage — same specificity + later source order means the off-screen transform wins permanently, leaving the panel stuck off-screen.
-
-Fixed by extracting `@starting-style` to target a BARE selector one specificity step below the open-state rule (`aside[popover].start` vs `aside[popover][data-aside-open].start`). The element still matches the bare selector at the transition's first frame so `@starting-style` resolves its from-state values; the open-state rule wins by specificity regardless of cascade-tier leakage.
-
-Same fix applied earlier to `surfaces/_popover.scss` for `[popover]:popover-open`. Pattern is documented in the header of both files.
-
-### 5.4 The `useSelect` combobox filter + click (2026-05)
-
-`SELECT_ITEM_SELECTOR` aliased `MENU_ITEM_SELECTOR` (`:where(li, a, button):not([disabled]):not([aria-disabled])`), which caught every interactive descendant including the filter input's wrapping `<li class="select-search">` and option-wrapper `<li>`s. Clicks on the search row matched closest() and silently returned (no `data-value`); arrow-key roving doubled-counted options because both `<li>` and inner `<button>` matched.
-
-Fixed by narrowing `SELECT_ITEM_SELECTOR` to `[data-value]:not([disabled]):not([aria-disabled="true"])` — only value-bearing elements qualify. The elements-flavoured equivalent of mailbox's `.dropdown-item[data-value]`.
-
-Separately, the factory marked filtered options with `[data-hidden]` but no CSS rule hid them. Added `.select [data-hidden] { display: none }` in `composables/_select.scss`.
-
-### 5.5 The `<menu>` dropdown wrap + alignment (2026-05)
-
-`<menu>` items wrapped into a second COLUMN instead of scrolling when content exceeded the popover's `max-block-size` cap, because the bare `<menu>` rule's `flex-wrap: wrap` inherited into popover-mode menus with `flex-direction: column`. Fix: `flex-wrap: nowrap; overflow-block: auto; overscroll-behavior: contain` on popover-mode `<menu>` rules.
-
-Items were also center-aligned because the bare `<button>` rule sets `justify-content: center`. Fix: `justify-content: flex-start` on popover-menu item rules (text-align alone didn't cover multi-child flex layouts).
+**Verification:** `npm run build:src:styles` succeeds and emits an empty `dist/src/styles/index.css` (just the cascade layer declaration). `npm run dev` boots Vite without errors.
 
 ---
 
-## 6. What's next
+## Phase 2 — Tokens
 
-Active threads in priority order:
+The variation surface every element, component, and modifier reads through.
 
-### 6.1 Showcase polish
+- [ ] **`src/styles/_tokens.scss`** — `@theme` block registering semantic colour variants (`--color-primary`, `--color-success`, `--color-danger`, …) so Tailwind generates matching `.bg-*` / `.text-*` / `.border-*` utilities. Plus `:root` declarations for framework-only sub-tokens: focus ring (`--set-focus-box-shadow-width`, `--set-focus-box-shadow-opacity`), variant context (`--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`), density factor, radius factor, transition duration, elevation scale (`--set-box-shadow-{sm,base,lg}`), floater token chain (`--set-floater-gutter`, `--set-floater-inset-{top,bottom,start,end}`, `--set-floater-max-inline-size`, `--set-floater-max-block-size`).
+- [ ] **`src/styles/_theme.scss`** — `[data-theme="dark"]` block re-tuning the `@theme` variant colors for dark mode. Tailwind cascade rules let consumers override at `:root` if they want a different theme system.
+- [ ] **`src/browser/tokens.ts`** — TypeScript mirror of every `--set-*` token. Frozen object tree of string literals + derived union types.
+- [ ] **`tests/src/browser/tokens.test.ts`** — bidirectional parity: every TS leaf resolves on `:root`, every `--set-*` in any SCSS partial appears as a TS leaf.
 
-The 20 `Use*Page.vue` showcase pages cover every composable but vary in fidelity. Highest-value pass: visual + interaction audit on each, mobile + desktop, light + dark theme. The audits in §5 came from this kind of pass.
-
-### 6.2 Theming surface
-
-| Item | Status | Notes |
-|---|---|---|
-| Dark mode | ✅ shipped | `[data-theme="dark"]` block in `_theme.scss` with full variant + neutral re-tuning. |
-| Named theme cores | ⏳ none yet | Mailbox ships 4 named cores. We could offer 1–2 alternates to dogfood the theming surface. |
-| Density factor (`--set-density-factor`) | ✅ shipped | Global multiplier in `_tokens.scss`. Per-component opt-in pending. |
-| Radius factor (`--set-radius-factor`) | ✅ shipped | Same shape. |
-| Elevation scale (`--set-box-shadow-{sm,base,lg}`) | ✅ shipped | Three-tier scale; toast/popover/dialog all consume. |
-
-### 6.3 Remaining surfaces
-
-| Surface | Status | Notes |
-|---|---|---|
-| `_placeholder.scss` (`::placeholder`) | ⏳ pending | Currently `<input>`/`<textarea>` paint placeholder inline — extract when more elements need it. |
-| `_marker.scss` (`::marker`) | ⏳ pending | `_summary.scss` paints its own marker. Extract when `<details>` isn't the only consumer. |
-| `_picker-select.scss` (`::picker(select)`) | ⏳ pending | Awaiting Firefox + Safari `appearance: base-select`. |
-| `_view-transition.scss` | ⏳ pending | Cross-page transitions on `<a>` navigation. Independent surface; can ship any time. |
-| `_selection.scss` (`::selection`) | ⏳ pending | Variant-tinted selection color. |
-
-### 6.4 Class-root widgets (no semantic home)
-
-Layout primitives shipped (`.stack`, `.cluster`). Atoms shipped (`.badge`, `.dot`, `.tag`, `.skeleton`, `.spinner`). Still pending:
-
-| Widget | Class root / element | Lift-from |
-|---|---|---|
-| Empty state | `.empty-state` on `<aside>` | mailbox `_empty-state.scss` |
-| Stat / KPI | `<output>` styled (preferred) or `.stat` | mailbox `_stat.scss` |
-| Avatar | `<img>` + size modifier (preferred) or `.avatar` | mailbox `_avatar.scss` |
-| Stepper | `<ol class="stepper">` | mailbox `_stepper.scss` |
-| Timeline | `<ol class="timeline">` | mailbox `_timeline.scss` |
-| Rating | `<meter>` (preferred) or `.rating` | mailbox `_rating.scss` |
-| Splitter | `.splitter` on `<div>` | mailbox `_splitter.scss` — pairs with `useDrag` + `usePointer` |
-
-### 6.5 Distribution polish
-
-Published-package guidance, `@source` ergonomics, dual-distribution (CSS + TS) build verification, npm publish dry-run. Defer until the framework is consumed by a second app.
+**Verification:** Tests pass. Open DevTools on a blank page, inspect `:root` — every token in `tokens.ts` is present.
 
 ---
 
-## 7. Update protocol
+## Phase 3 — Mixins
 
-Every commit that materially advances the framework updates **two** places:
+Shared SCSS helpers every partial reaches for.
 
-1. The matching guide ([tokens.md](tokens.md) / [elements.md](elements.md) / [components.md](components.md) / [composables.md](composables.md) / [surfaces.md](surfaces.md) / [mixins.md](mixins.md) / [modifiers.md](modifiers.md)).
-2. This file's tables — move shipped items into the right status table; if it's a new lesson learned, add a §5 entry.
+- [ ] **`src/styles/_mixins.scss`** with these mixins (each documented in [mixins.md](mixins.md)):
+  - `@mixin reduced-motion` — `@media (prefers-reduced-motion: reduce) { @content; }`
+  - `@mixin transition($value)` — declares `transition: $value` and nests `reduced-motion { transition: none; }`
+  - `@mixin focus-ring($alpha)` — paints the framework focus shadow using `--set-variant-background-color` and the focus sub-tokens.
+  - `@mixin forced-colors` — `@media (forced-colors: active) { @content; }`
+  - `@mixin truncate` — single-line text ellipsis.
+  - `@mixin size-container($name)` — container-query setup with a stable `container-name`.
+  - `@mixin floater-bounds($name, $axis)` — viewport-clamped max-inline / max-block-size using `--set-floater-*` tokens.
+  - `@mixin floater-side-insets($name)` / `@mixin floater-edge` / `@mixin floater-fullscreen` — composable inset patterns for tooltips/popovers/toasts.
+  - `@mixin palette-each` — `@each` loop over the `$variants` Sass list.
+- [ ] Sass list constants alongside the mixins: `$variants`, `$sizes`, `$styles`, `$shapes`, `$states` — used by `@each` loops in modifier partials.
 
-Out-of-date status is worse than missing status. Don't wait for a "doc pass."
+**Verification:** A trivial element partial that `@include`s `transition()` compiles and ships both the transition and the reduced-motion override.
 
-When picking what to work on next, prefer the lowest-numbered §6 row. The §2 invariants are non-negotiable for every commit.
+---
+
+## Phase 4 — Modifiers
+
+Four orthogonal dimensions plus placement and state. The variation surface every element consumes.
+
+- [ ] **`src/styles/modifiers/_variants.scss`** — `.primary`, `.secondary`, `.tertiary`, `.success`, `.warning`, `.danger`, `.information`. Each sets `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`. Variant identity color = the variant's background color; contrast text is white or black depending on luminance.
+- [ ] **`src/styles/modifiers/_sizes.scss`** — `.small`, `.large`, `.huge`. Each sets `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius` from Tailwind scales.
+- [ ] **`src/styles/modifiers/_styles.scss`** — `.outline`, `.ghost`, `.filled`. Each rewrites `--set-style-{color, background-color, border-color}` by consuming the variant context.
+- [ ] **`src/styles/modifiers/_shapes.scss`** — `.rounded`, `.pill`, `.square`. Each sets `--set-shape-border-radius`.
+- [ ] **`src/styles/modifiers/_states.scss`** — `.disabled`, `.active`, `.loading`. Typically just toggle existing element rules.
+- [ ] **`src/styles/modifiers/_placements.scss`** — `.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end`. Map to CSS `position-area` keywords. Scoped to `[popover]:not([popover='manual'])` so per-element placement semantics on `<aside>` / `<nav>` / `<output>` aren't disrupted.
+- [ ] **`src/styles/modifiers/index.scss`** — barrel.
+- [ ] **`src/browser/modifiers.ts`** — TS mirror: frozen object tree of class names + derived `Variant`, `Size`, `Style`, `Shape`, `State`, `Placement` union types.
+- [ ] **`tests/src/browser/modifiers.test.ts`** — bidirectional parity test.
+- [ ] **`tests/src/styles/modifiers/_{name}.test.ts`** — one test per modifier dimension verifying the rule emits the expected `--set-*-*` token values.
+
+**Verification:** Every modifier class resolves correctly when applied to a sample `<div>` mounted in a test fixture.
+
+---
+
+## Phase 5 — Element baselines
+
+One partial per HTML tag. Token-driven baselines + UA-quirk resets. The `<button>` partial is the reference implementation; bring it up first, then port the cascade pattern to every other substantive element.
+
+### 5.1 Reference implementation — `<button>`
+
+- [ ] **`src/styles/elements/_button.scss`** with the full `--set-button-*` cascade. Token fallback chain: `--set-button-color: var(--set-style-color, var(--set-variant-color, currentColor))`. Same shape for background, border, radius, padding, font-size, transition. Hover / active / focus / disabled rules read through the tokens.
+- [ ] **`src/browser/elements.ts`** — register `button`. TS object frozen as `as const` + derived `Element` union type.
+- [ ] **`tests/src/browser/elements.test.ts`** — bidirectional parity: every TS element has a partial declaring at least one `--set-{tag}-*` token.
+- [ ] **`tests/src/styles/elements/_button.test.ts`** — bare button paints, modifier cascade reaches the root tokens, every variant / size / style / shape / state combination resolves the expected color/padding/radius.
+- [ ] **`app/browser/pages/ButtonPage.vue`** — showcase demo of every variant + size + style + shape + state combination.
+
+### 5.2 Form controls
+
+- [ ] `<input>`, `<textarea>`, `<select>`, `<label>`, `<fieldset>` + `<legend>`, `<output>`, `<progress>`, `<meter>` — each with the same cascade pattern. Per-element quirks documented inline.
+- [ ] Add each to `elements.ts`, write per-element behaviour tests, write showcase pages.
+
+### 5.3 Interactive elements
+
+- [ ] `<a>` (substantive — keeps underline by default; variants tint text; `.filled` fills with the variant identity and drops the underline).
+- [ ] `<details>` + `<summary>` (substantive — `interpolate-size: allow-keywords` for CSS-driven height animation).
+- [ ] `<dialog>` (substantive — `:modal` centers via `position: fixed; translate: -50% -50%`; `[open]:not(:modal)` flows inline at source position).
+- [ ] `<table>` family (`<caption>`, `<thead>`, `<tbody>`, `<tfoot>`, `<tr>`, `<th>`, `<td>`).
+- [ ] `<h1>`–`<h6>` (shared `--set-heading-*` cascade — six tags, one partial).
+
+### 5.4 Typography overrides
+
+- [ ] `<abbr>`, `<address>`, `<mark>`, `<p>`, `<hr>`, `<blockquote>`, `<code>`, `<kbd>`, `<samp>`, `<var>`, `<pre>`, `<dl>` + `<dt>` + `<dd>`, `<figure>` + `<figcaption>` — single-rule UA-quirk overrides. No cascade entry, no TS mirror.
+
+### 5.5 Media + embeds
+
+- [ ] `<img>`, `<video>`, `<audio>`, `<iframe>`, `<embed>`, `<object>` — overrides only.
+
+**Verification:** Every element's behaviour test passes. The showcase has one page per substantive element demonstrating the cascade.
+
+---
+
+## Phase 6 — Components
+
+Element compositions that read as one UI thing. Static chrome (always applies) lives in `src/styles/components/`; composable-attached chrome (only while a state attribute is set) lives in `src/styles/composables/` and comes in Phase 8.
+
+- [ ] **`src/styles/components/_body.scss`** — `body:has(> main)` CSS-grid layout shell with template-areas (`header / nav / main / aside / footer`).
+- [ ] **`src/styles/components/_main.scss`** — `body:has(main) > main` — `overflow-y: auto`, scroll containment.
+- [ ] **`src/styles/components/_article.scss`** — card chrome on bare `<article>`. Descendant `<header>` / `<footer>` get card-header/footer chrome via descendant selectors. `.filled` opts into surface fill.
+- [ ] **`src/styles/components/_aside.scss`** — three contexts disambiguated by ancestry: `body > aside` (sidebar rail), `article aside` (pull-quote / callout), `aside[role="alert"]` (alert banner).
+- [ ] **`src/styles/components/_header.scss`** — `body > header` page app bar.
+- [ ] **`src/styles/components/_footer.scss`** — `body > footer` page footer.
+- [ ] **`src/styles/components/_nav.scss`** — single canonical chrome on `<nav>`. Shape determined by inner content: bare = horizontal flex; `body > nav` = vertical rail; `<ol>`/`<ul>` with `aria-label="Breadcrumb"` = chevron-separated breadcrumb; `[role="tablist"]` child = tab strip.
+- [ ] **`src/styles/components/_search.scss`** — search-bar layout on `<search>`.
+- [ ] **`src/styles/components/_menu.scss`** — toolbar / action row on `<menu>`. Article-context = `justify-content: flex-end` (card actions). Nav-context = vertical column.
+- [ ] **`src/styles/components/_output.scss`** — toast / status banner chrome (bare-element baseline; the popover-mode toast lifecycle lives in `src/styles/composables/_toast.scss`).
+- [ ] **`src/styles/components/_form.scss`** — vertical form-control stack. `.row` flips horizontal.
+- [ ] **`src/styles/components/_div.scss`** — class-root layout primitives (`.stack`, `.cluster`).
+- [ ] **`src/styles/components/_span.scss`** — inline atoms (`.badge`, `.chip`, `.tag`, `.dot`).
+- [ ] **`src/styles/components/_skeleton.scss`** + **`_spinner.scss`** — loading affordances.
+- [ ] **`src/styles/components/_role-group.scss`** — `[role="group"]`, `[role="toolbar"]`, `[role="radiogroup"]` baseline.
+- [ ] **`tests/src/styles/components/_{name}.test.ts`** for each partial.
+- [ ] Showcase page per component under `app/browser/pages/{Name}Page.vue`.
+
+**Verification:** Every component's behaviour test passes; the showcase demos each component's variant + size + style cascade.
+
+---
+
+## Phase 7 — Surfaces
+
+Browser-rendered chrome that isn't a tag.
+
+- [ ] **`src/styles/surfaces/_popover.scss`** — `[popover]` panel chrome + open/close transition. `@starting-style` for entry. `transition-behavior: allow-discrete` for the close tail. Hint variant `[popover='hint'], [role='tooltip']` for tooltip-shaped popovers.
+- [ ] **`src/styles/surfaces/_backdrop.scss`** — `dialog:modal::backdrop` dim scrim. Non-modal popovers keep the UA-default transparent backdrop.
+- [ ] **`src/styles/surfaces/_anchor-position.scss`** — `[popover]:not([popover='manual'])` anchor positioning. Default `position-area: block-end`. `position-try-fallbacks` for viewport overflow.
+- [ ] **`src/styles/surfaces/_scrollbar.scss`** — `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`.
+- [ ] **`src/styles/surfaces/_focus.scss`** — `:focus-visible` ring rules using the framework's focus tokens.
+- [ ] **`src/styles/surfaces/_placeholder.scss`** — `::placeholder` opacity + color across `<input>` / `<textarea>`.
+- [ ] **`src/styles/surfaces/_marker.scss`** — `::marker` styling shared across `<details>` / `<summary>` / `<li>`.
+- [ ] **`src/styles/surfaces/_selection.scss`** — variant-tinted `::selection`.
+- [ ] **`src/styles/surfaces/_view-transition.scss`** — `::view-transition-old/new/group(*)` cross-page transitions for `<a>` navigation.
+- [ ] **`src/styles/surfaces/index.scss`** — barrel.
+
+**Verification:** A `[popover]` panel opens and closes with the entry/exit transition. Modal `<dialog>` paints a dim backdrop; non-modal stays transparent.
+
+---
+
+## Phase 8 — Composables
+
+Each `use*` composable has a paired framework-agnostic factory under `src/browser/factories/`. The composable is a thin Vue adapter; the factory is the logic.
+
+### 8.1 Shared infrastructure
+
+- [ ] **`src/browser/constants.ts`** — event-name maps (`DIALOG_EVENTS`, `ASIDE_EVENTS`, …), selector strings (`MENU_ITEM_SELECTOR`, `SELECT_ITEM_SELECTOR`, `FOCUSABLE_SELECTOR`), default timing tokens, data-attribute markers (`BODY_LOCKED_ATTR`, `SELECT_HIDDEN_ATTR`, `TOAST_STACK_ATTR`, …).
+- [ ] **`src/browser/helpers.ts`** — `assertElement<T>(el, tag, fn)`, `attachListeners(el, list)`, `bindEventMap(el, map, on)`, `dispatch(el, name, detail)`, `emit(el, name, detail)`, `runTransition(el, callback, fallbackMs)`, `waitForFrame()`, `lockBodyScroll()` / `unlockBodyScroll()`.
+- [ ] **`src/browser/types.ts`** — `{Entity}EventMap`, `Use{Entity}Options`, `Use{Entity}Return`, `Create{Entity}Options`, `Create{Entity}Instance` for every composable.
+- [ ] **`src/browser/events.ts`** — frozen event-name registry, parity-tested against `constants.ts`.
+- [ ] **`src/browser/index.ts`** — barrel re-exports tokens, modifiers, elements, events, every composable.
+- [ ] **`src/browser/factories/index.ts`** — barrel re-exports every factory.
+- [ ] **`tests/setupBrowser.ts`** — element factory utilities (`createDialogElements`, `createAsideElements`, …), `mountSetup`, `withElement`, `assertCleanDispose`.
+
+### 8.2 Primitives (no specific element)
+
+- [ ] `useFocus` ↔ `createFocus` — tab-trap with `activate()` / `deactivate()`.
+- [ ] `usePointer` ↔ `createPointer` — `pointerdown → pointermove* → pointerup` multiplex with body cursor lock.
+- [ ] `useDrag` ↔ `createDrag` — HTML5 drag-source pipeline.
+- [ ] `useDrop` ↔ `createDrop` — drop-target with `relatedTarget`-aware `over` tracking.
+- [ ] `useTheme` ↔ `createTheme` — singleton theme controller; `data-theme` + `data-core` attributes; `prefers-color-scheme` follow.
+
+### 8.3 Floating-panel layer
+
+- [ ] `usePopover` ↔ `createPopover` — `[popover]` toggle + anchor positioning + click-outside dismiss.
+- [ ] `useTooltip` ↔ `createTooltip` — hover/focus triggers + `role="tooltip"` + `[popover=hint]` panel. Composes `usePopover`.
+- [ ] `useMenu` ↔ `createMenu` — `<menu popover>` panel + toggle `<button>`. Arrow-key roving, Home/End, click-outside dismiss. Composes `usePopover`.
+
+### 8.4 Element-bound composables
+
+Each binds to one semantic element via `assertElement`. Drawer-shaped CSS lives in matching `src/styles/composables/_{entity}.scss` partials gated on `:popover-open` / `:modal` / `[open]` / `[data-{name}-open]`.
+
+- [ ] **`useDialog` ↔ `createDialog`** — `<dialog>` wrapper. Cancellable `show / open / hide / close` over native `showModal()` / `close()`. Escape dismiss, backdrop-click dismiss with `'static'` mode, optional non-modal scroll lock.
+- [ ] **`useAside` ↔ `createAside`** — `<aside popover="manual">` drawer. Dual-attribute gating (`[data-aside-open]`, `[data-aside-closing]`). Closing attribute persists until next `show()` / `destroy()` — see [composables.md §3](composables.md#3-openclosed-lifecycle).
+- [ ] **`useDetails` ↔ `createDetails`** — `<details>`. Flips `[open]` synchronously, listens to native `toggle` for external mutation.
+- [ ] **`useToast` ↔ `createToast`** — `<output popover>`. Auto-hide timer, deck stacking via `[data-toast-stack]`, pause-on-hover, swipe-to-dismiss.
+- [ ] **`useSelect` ↔ `createSelect`** — `<menu>` listbox + toggle + optional `<input>`. Listbox + combobox + multi-select + autocomplete. Filter via substring + `[data-hidden]` marker.
+- [ ] **`useTable` ↔ `createTable`** — `<table>`. Sort, paginate, multi-select, row expansion (sync or animated), column resize, focus management.
+- [ ] **`useForm` ↔ `createForm`** — `<form>`. Constraint-validation pipeline + `[data-form-validated]` + `aria-invalid` mirrors.
+- [ ] **`useNav` ↔ `createNav`** — `<nav>`. `IntersectionObserver`-driven scroll-spy + `aria-current="location"`.
+- [ ] **`useButton` ↔ `createButton`** — `<button>`. Toggle state + `aria-pressed`.
+- [ ] **`useAlert` ↔ `createAlert`** — `[role="alert"]` / `[role="status"]`. Open/dismiss lifecycle.
+- [ ] **`useTabs` ↔ `createTabs`** — `[role="tablist"]`. Arrow-key roving + lazy panel mount.
+- [ ] **`useCarousel` ↔ `createCarousel`** — `<section class="carousel">`. Slide nav + autoplay + touch/swipe.
+
+### 8.5 Composable chrome partials
+
+For each composable that needs drawer-shaped CSS (display/position/transform gated on the open-state):
+
+- [ ] `src/styles/composables/_aside.scss` — drawer geometry.
+- [ ] `src/styles/composables/_dialog.scss` — size modifiers (`.small`, `.large`, `.fullscreen`, `.scrollable`). Every modifier that touches `display` MUST gate on `[open]`.
+- [ ] `src/styles/composables/_select.scss` — listbox/combobox chrome. `[data-hidden]` filter rule.
+- [ ] `src/styles/composables/_toast.scss` — deck-mode rules. Per-card transform/opacity gates on `:popover-open`.
+- [ ] `src/styles/composables/_tabs.scss` — indicator + roving tabindex chrome.
+- [ ] `src/styles/composables/_carousel.scss` — slide track + indicator chrome.
+
+### 8.6 Tests + showcase
+
+For each composable:
+
+- [ ] **Factory test** at `tests/src/browser/factories/create{Entity}.test.ts`. Cover construction + ARIA wiring + every action + every event + `preventDefault` cancellation + `destroy()` idempotence + `assertCleanDispose` (no listener/observer/timer leaks).
+- [ ] **Composable test** at `tests/src/browser/composables/use{Entity}.test.ts`. Mirror the factory's coverage.
+- [ ] **Showcase page** at `app/browser/pages/Use{Entity}Page.vue` demoing the API surface end-to-end on real DOM.
+
+**Verification:** Every composable's factory + composable + showcase page exist; the test suite passes; each `Use*Page.vue` is reachable in the showcase and demonstrates the full API.
+
+---
+
+## Phase 9 — Showcase polish
+
+- [ ] **Sidebar navigation** — `app/browser/components/SiteNav.vue` with filter input + grouped route list.
+- [ ] **In-page TOC** — `app/browser/components/Toc.vue` reading `section[id]` inside the scroller, building an on-this-page list.
+- [ ] **Theme toggle** — banner-mounted dark/light switch using `useTheme`.
+- [ ] **Mobile drawer** — sidebar slides in via `useAside` below the layout breakpoint.
+- [ ] **Per-page audits** — verify every showcase page reads cleanly in light + dark, desktop + mobile, with framework-only chrome (Tailwind utilities reserved for last-mile fine-tuning).
+
+---
+
+## Phase 10 — Distribution
+
+- [ ] **Dual-build verification** — `dist/src/styles/index.css` (CSS bundle) + `dist/src/browser/` (TS bundle, ESM + CJS).
+- [ ] **`package.json` exports map** — `"./styles"` → CSS bundle, `"."` → TS entry.
+- [ ] **Consumer setup snippet** in the README:
+  ```css
+  /* user-entry.css */
+  @import 'tailwindcss';
+  @import '@elements/styles';
+  ```
+  ```ts
+  // user-entry.ts
+  import { useDialog } from '@elements/browser'
+  ```
+- [ ] **NPM publish dry-run** — `npm pack --dry-run` lists the right files. No source maps, no SCSS, no tests in the published tarball.
+- [ ] **CHANGELOG.md** — automated from conventional-commits or hand-curated.
+
+---
+
+## Phase 11 — Invariants verification
+
+Before declaring done, run the framework-wide invariants checklist (also covered in each guide):
+
+- [ ] **Cascade layer order** — `@layer theme, base, elements, components, surfaces, composables, modifiers, utilities;` is the only declaration in any `@layer` listing across the codebase. Run `grep -rn "@layer " src/ tests/ app/` and verify.
+- [ ] **Token-driven variation** — no element partial contains a `&.primary { color: ... }`-style block. Variation flows through `--set-style-*` → `--set-variant-*` → element default. Run `grep -rn "&\.primary\|&\.success\|&\.large" src/styles/elements/` and verify each match is a legitimate exception (documented inline).
+- [ ] **Open/closed dual-attribute gating** — every popover-bearing / dialog / details composable that owns `display: flex` / `position: fixed` / large `transform` gates on the open-state selector. Run `grep -rn "display: flex\|position: fixed" src/styles/composables/ src/styles/components/` and verify each is gated.
+- [ ] **Bidirectional parity** — `tokens.test.ts`, `modifiers.test.ts`, `elements.test.ts`, `events.test.ts` all pass.
+- [ ] **Test coverage** — every element/composable/factory has a behaviour test. Run the full suite (`npm test`) — every file under `src/browser/{composables,factories}` and `src/styles/elements` has at least one matching test.
+- [ ] **No mojibake** — every `.md` under `guides/` is valid UTF-8. Run `python -c "import re; [print(p) for p in __import__('glob').glob('guides/*.md') if re.search(r'[ðâÃÂ][^ ]{0,3}', open(p, encoding='utf-8').read())]"` — empty output means clean.
+- [ ] **Lint + typecheck clean** — `npm run check` exits 0.
+
+---
+
+## Reference
+
+- [styles.md](styles.md) — top-level architecture and authoring contract.
+- [tokens.md](tokens.md) — the variation surface (Phase 2).
+- [mixins.md](mixins.md) — Sass helpers (Phase 3).
+- [modifiers.md](modifiers.md) — four-dimension cascade (Phase 4).
+- [elements.md](elements.md) — HTML element catalog (Phase 5).
+- [components.md](components.md) — element compositions (Phase 6).
+- [surfaces.md](surfaces.md) — browser-rendered chrome (Phase 7).
+- [composables.md](composables.md) — Vue + factory layer (Phase 8).
+
+Each phase corresponds to one guide. Finishing the phase means the guide is fully realised. The guides describe the framework as it exists when this plan is complete.
