@@ -234,6 +234,14 @@ CSS-aware tests load `tests/setup.css` (Tailwind + framework `@theme`) followed 
 - `npm run build:src:styles` → `dist/src/styles/index.css` (the bundled framework CSS) + a copy of the SCSS sources at `dist/src/styles/scss/`.
 - `npm run build:src:browser` → `dist/src/browser/index.js` + `index.cjs` + `index.d.ts` (ESM + CJS bundle).
 - `npm run build:app:browser` → `dist/app/browser/` (the showcase as an SPA).
+- `npm run show` → `dist/showcase/index.html` (one self-contained file via `vite-plugin-singlefile`), then copied to `demo/showcase.html` for `file://` review.
+
+The showcase output is explicitly **no-cache**: `app/browser/index.html` carries the three `Cache-Control` / `Pragma` / `Expires` meta tags so the browser revalidates on every reload — without this, `file://` reloads happily serve a stale build. On top of that, `configs/app/vite.showcase.config.ts` injects a fresh ISO timestamp in two places per build:
+
+- a `<meta name="build-id" content="…">` tag in `<head>` (changes the HTML byte content, defeating any byte-identical cache hit), and
+- a `__BUILD_ID__` global exposed via Vite's `define` — `app/browser/env.d.ts` declares it so Vue/TS components can read it. Surface it in the App footer (`<small>build {{ __BUILD_ID__ }}</small>`) for an at-a-glance "yes, this is the new build" signal.
+
+Consumers building their own single-file or `file://`-distributed apps can copy the same three pieces: meta tags in `index.html`, an inline `transformIndexHtml` plugin that stamps `<meta name="build-id">`, and a `define: { __BUILD_ID__: JSON.stringify(new Date().toISOString()) }` block.
 
 ### 5.4 Consumer setup
 

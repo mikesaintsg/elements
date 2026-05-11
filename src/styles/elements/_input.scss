@@ -303,9 +303,15 @@
 		--set-check-border-color: var(--color-border-strong);
 		--set-check-checked-bg: var(--color-primary);
 		--set-check-checked-border-color: var(--color-primary);
-		--set-check-checkbox-svg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
-		--set-check-radio-svg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e");
-		--set-check-dash-svg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10h8'/%3e%3c/svg%3e");
+		// Glyph assets — pulled from the shared `--set-icon-*` tokens in
+		// `_tokens.scss` so a host-page icon-set swap retunes the check / dash
+		// / radio glyphs alongside every other framework icon. The defaults
+		// paint with `stroke='currentColor'` / `fill='currentColor'`; we set
+		// `color: var(--color-canvas)` on the checked state below so the
+		// glyph reads white-on-fill against the checked background.
+		--set-check-checkbox-svg: var(--set-icon-check);
+		--set-check-radio-svg: var(--set-icon-radio);
+		--set-check-dash-svg: var(--set-icon-dash);
 
 		flex-shrink: 0;
 		inline-size: var(--set-check-size);
@@ -341,6 +347,12 @@
 		}
 
 		&:checked {
+			// Set `color` so `currentColor` inside the glyph SVG resolves
+			// white-on-fill against the checked background. The data-URL
+			// SVGs in `--set-icon-check` / `--set-icon-radio` /
+			// `--set-icon-dash` paint with `stroke='currentColor'` /
+			// `fill='currentColor'`.
+			color: var(--color-canvas, white);
 			background-color: var(--set-check-checked-bg);
 			border-color: var(--set-check-checked-border-color);
 		}
@@ -361,6 +373,7 @@
 		}
 
 		&:indeterminate {
+			color: var(--color-canvas, white);
 			background-color: var(--set-check-checked-bg);
 			border-color: var(--set-check-checked-border-color);
 			background-image: var(--set-check-dash-svg);
@@ -378,8 +391,11 @@
 	// Switch — `<input type="checkbox" role="switch">` is the standard pattern.
 	// Mailbox renders it as a 2em-wide pill with an animated background-position.
 	input[type='checkbox'][role='switch'] {
-		--set-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23aeb1b7'/%3e%3c/svg%3e");
-		--set-switch-bg-checked: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+		// Thumb glyphs — pulled from the shared `--set-icon-switch-*` tokens
+		// in `_tokens.scss`. Off uses a muted grey fill; on flips to white
+		// so the thumb reads against the checked-state fill.
+		--set-switch-bg: var(--set-icon-switch-off);
+		--set-switch-bg-checked: var(--set-icon-switch-on);
 
 		inline-size: 2em;
 		border-radius: 2em;

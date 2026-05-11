@@ -46,10 +46,13 @@
 		--set-select-cursor: pointer;
 		--set-select-disabled-opacity: 0.5;
 		--set-select-chevron-size: 0.75rem;
-		// Default chevron — inline SVG data URL with slate-500 stroke. Override
-		// `--set-select-background-image` (globally on :root, on a parent
-		// selector, or per-element via `style="..."`) to swap the asset.
-		--set-select-background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+		// Default chevron — pulled from the shared `--set-icon-chevron-down`
+		// token in `_tokens.scss` so a host-page swap of the framework's icon
+		// set retunes every chevron consumer at once. Override
+		// `--set-select-background-image` directly to swap just the select's
+		// chevron, or override `--set-icon-chevron-down` globally to retune
+		// every chevron in the framework.
+		--set-select-background-image: var(--set-icon-chevron-down);
 		--set-select-focus-border-color: var(--set-variant-background-color, var(--color-primary));
 		--set-select-focus-box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
 			color-mix(

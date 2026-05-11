@@ -94,6 +94,47 @@ export const tokens = {
 		boxShadowOpacity: '--set-focus-box-shadow-opacity',
 	},
 
+	// Icon tokens — single overridable inline-SVG library for every chrome
+	// glyph the framework paints (chevrons, check / dash / radio dots,
+	// switch thumb, breadcrumb separator, sort indicator, status icons,
+	// …). Consumer partials reference these through per-element aliases
+	// (`--set-select-background-image`, `--set-summary-marker-image`,
+	// `--set-nav-breadcrumb-separator-image`, …) so a host-page override
+	// at `:root` scope retunes every consumer at once. Defaults are 16×16
+	// viewBox inline data URLs at `stroke-width='2'` with
+	// `stroke='currentColor'` (or `fill='currentColor'` for filled
+	// glyphs), suitable for either `background-image` or `mask-image`
+	// usage. See `_tokens.scss` for the full design rationale.
+	icon: {
+		chevronDown: '--set-icon-chevron-down',
+		chevronUp: '--set-icon-chevron-up',
+		chevronLeft: '--set-icon-chevron-left',
+		chevronRight: '--set-icon-chevron-right',
+		caretDown: '--set-icon-caret-down',
+		caretUp: '--set-icon-caret-up',
+		check: '--set-icon-check',
+		dash: '--set-icon-dash',
+		radio: '--set-icon-radio',
+		switchOff: '--set-icon-switch-off',
+		switchOn: '--set-icon-switch-on',
+		close: '--set-icon-close',
+		menu: '--set-icon-menu',
+		more: '--set-icon-more',
+		search: '--set-icon-search',
+		filter: '--set-icon-filter',
+		sort: '--set-icon-sort',
+		external: '--set-icon-external',
+		sun: '--set-icon-sun',
+		moon: '--set-icon-moon',
+		system: '--set-icon-system',
+		info: '--set-icon-info',
+		success: '--set-icon-success',
+		warning: '--set-icon-warning',
+		danger: '--set-icon-danger',
+		plus: '--set-icon-plus',
+		minus: '--set-icon-minus',
+	},
+
 	// Floater viewport budget — single source of truth for how a top-layer
 	// floating panel (popover, tooltip, toast, dropdown, drawer) respects
 	// the viewport edge on every form factor. The `mixins.floater-*` mixins

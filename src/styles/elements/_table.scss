@@ -135,7 +135,7 @@
 				position: absolute;
 				inset-inline-end: 0.5rem;
 				inset-block-start: 50%;
-				inline-size: 0.625rem;
+				inline-size: 0.875rem;
 				block-size: 0.875rem;
 				transform: translateY(-50%);
 				opacity: var(--set-table-sort-indicator-opacity);
@@ -143,18 +143,23 @@
 				mask-position: center;
 				mask-repeat: no-repeat;
 				mask-size: contain;
-				mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M5 0l4 5H1zM5 14l4-5H1z'/%3E%3C/svg%3E");
+				// Sort indicator glyphs — pulled from the shared `--set-icon-*`
+				// tokens in `_tokens.scss` so a host-page icon-set swap retunes
+				// the table sort chrome alongside every other framework icon.
+				// Default: stacked up/down triangles for the resting state, a
+				// single caret for the active ascending / descending direction.
+				mask-image: var(--set-icon-sort);
 				@include transition(opacity var(--set-table-transition-duration));
 			}
 
 			&[aria-sort='ascending']::after {
 				opacity: var(--set-table-sort-indicator-active-opacity);
-				mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M5 0l4 5H1z'/%3E%3C/svg%3E");
+				mask-image: var(--set-icon-caret-up);
 			}
 
 			&[aria-sort='descending']::after {
 				opacity: var(--set-table-sort-indicator-active-opacity);
-				mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'%3E%3Cpath d='M5 14l4-5H1z'/%3E%3C/svg%3E");
+				mask-image: var(--set-icon-caret-down);
 			}
 		}
 

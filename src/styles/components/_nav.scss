@@ -58,12 +58,13 @@
 
 		// Breadcrumb separator asset — exposed as a token so consumers can
 		// swap a different chevron, a slash, or a custom glyph without
-		// touching the framework. Same pattern as
-		// `--set-select-background-image` and `--set-summary-marker-image`:
-		// the mask drives the SHAPE; the color comes from currentColor via
-		// `background-color` on the pseudo, so the separator inherits text
-		// color naturally. Default: a slim right-pointing chevron.
-		--set-nav-breadcrumb-separator-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 4 4 4-4 4'/%3E%3C/svg%3E");
+		// touching the framework. Pulled from the shared
+		// `--set-icon-chevron-right` token in `_tokens.scss` so a host-page
+		// icon-set swap retunes the separator alongside every other chevron
+		// consumer. The mask drives the SHAPE; the color comes from
+		// currentColor via `background-color` on the pseudo, so the
+		// separator inherits text color naturally.
+		--set-nav-breadcrumb-separator-image: var(--set-icon-chevron-right);
 		--set-nav-breadcrumb-separator-size: 0.75em;
 		--set-nav-breadcrumb-separator-opacity: 0.5;
 		--set-nav-breadcrumb-active-color: var(--color-text-muted, var(--color-text));
