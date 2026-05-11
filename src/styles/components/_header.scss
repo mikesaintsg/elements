@@ -101,14 +101,37 @@
 		}
 	}
 
-	// Drawer-header break-out — when a <header> sits inside a body-shell
-	// nav or aside rail, the rail's own padding-inline + padding-block-
-	// start would inset the header by the rail gutter, leaving a visible
-	// strip of rail bg around the header (and shortening the header's
-	// bottom separator so it doesn't run edge-to-edge of the drawer).
-	// Negative margins equal to the rail's padding pull the header out
-	// to the drawer edges. The header's own internal padding (declared
-	// above) provides the band's inline / block-end spacing.
+	// Drawer-header break-out + sticky pin.
+	//
+	// Two problems the rule below solves at once:
+	//
+	//   1. Edge-to-edge band. The rail's own `padding-inline` +
+	//      `padding-block-start` would inset the header by the rail gutter,
+	//      leaving a visible strip of rail bg around the header (and
+	//      shortening the header's bottom separator so it doesn't run edge-
+	//      to-edge of the drawer). Negative margins equal to the rail's
+	//      padding pull the header out to the drawer edges; the header's
+	//      own internal padding (declared above) provides the band's
+	//      inline / block-end spacing.
+	//
+	//   2. Sticky pin while the rail scrolls. The rails are `overflow-y:
+	//      auto` scroll containers (and become scrollable drawers on
+	//      mobile). Without `position: sticky` the header scrolls away
+	//      with the rail content on the first swipe — the close button +
+	//      any drawer title disappear, leaving menu items peeking through
+	//      the top of the drawer. `position: sticky` keeps the band
+	//      pinned, `z-index: 1` floats it above scrolling list rows.
+	//
+	// The two interact subtly: a sticky element with `inset-block-start: 0`
+	// pins at the scroll container's CONTENT EDGE (where padding ends),
+	// NOT at the rail's outer edge. That would leave the same 16px
+	// padding-strip of rail bg above the pinned header. A NEGATIVE
+	// `inset-block-start` equal to the rail's padding-block pulls the
+	// pinned position up to the rail's outer edge — Chromium / Firefox /
+	// WebKit all honor negative sticky offsets, and the result is a
+	// header that's edge-to-edge in both the static-scroll-0 state
+	// (via the negative margin) AND the scrolled state (via the negative
+	// sticky offset).
 	//
 	// Per-rail tokens because nav and aside expose their own padding
 	// tokens (`--set-nav-padding-*` vs `--set-aside-padding-*`).
@@ -116,11 +139,17 @@
 	body:has(main) > * > nav > header {
 		margin-inline: calc(var(--set-nav-padding-inline) * -1);
 		margin-block-start: calc(var(--set-nav-padding-block) * -1);
+		position: sticky;
+		inset-block-start: calc(var(--set-nav-padding-block) * -1);
+		z-index: 1;
 	}
 
 	body:has(main) > aside > header,
 	body:has(main) > * > aside > header {
 		margin-inline: calc(var(--set-aside-padding-inline) * -1);
 		margin-block-start: calc(var(--set-aside-padding-block) * -1);
+		position: sticky;
+		inset-block-start: calc(var(--set-aside-padding-block) * -1);
+		z-index: 1;
 	}
 }
