@@ -122,6 +122,58 @@
 		align-items: stretch;
 	}
 
+	// ------------------------------------------------------------------------
+	// Nav-rail menu item — `<a>` or bare `<button>` inside a sidebar nav menu
+	// is a navigation COMMAND, not a body-copy hyperlink. Without these rules
+	// `<a>` would inherit the bare-anchor baseline (primary color + underline)
+	// and `<button>` would inherit the framework button chrome (border / bg /
+	// center text). Both look wrong as a sidebar entry: nav commands want
+	// quiet text, start-aligned, full-width, with a hover tint that signals
+	// affordance and an active-page state from `aria-current="page"`.
+	//
+	// `:where()` keeps specificity at zero so a consumer can opt back into
+	// the bare anchor look with a single class without reaching for
+	// `!important`.
+	// ------------------------------------------------------------------------
+	body:has(main) > nav menu > li > :where(a, button),
+	body:has(main) > * > nav menu > li > :where(a, button) {
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		gap: calc(var(--spacing) * 2);
+		inline-size: 100%;
+		padding-inline: calc(var(--spacing) * 2.5);
+		padding-block: calc(var(--spacing) * 1.5);
+
+		border: 0;
+		border-radius: var(--radius-md, 0.375rem);
+		background-color: transparent;
+
+		color: var(--color-text);
+		text-align: start;
+		text-decoration: none;
+		font-size: inherit;
+		font-weight: 400;
+		line-height: 1.4;
+		white-space: normal;
+
+		appearance: none;
+		cursor: pointer;
+
+		@include transition(
+			(
+				color var(--set-nav-transition-duration),
+				background-color var(--set-nav-transition-duration)
+			)
+		);
+	}
+
+	body:has(main) > nav menu > li > :where(a, button):hover,
+	body:has(main) > * > nav menu > li > :where(a, button):hover {
+		background-color: color-mix(in oklab, currentColor 6%, transparent);
+		color: var(--color-text-strong, var(--color-text));
+	}
+
 	// Active-page affordance for the primary nav rail. WAI-ARIA APG: the
 	// current page in a navigation landmark carries `aria-current="page"`.
 	// Paint with the variant subtle palette so the active row tracks the
@@ -157,12 +209,27 @@
 	body:has(main) > aside menu > li > :where(a, button),
 	body:has(main) > * > aside menu > li > :where(a, button) {
 		display: block;
+		inline-size: 100%;
+		border: 0;
 		border-inline-start: 2px solid transparent;
 		padding-inline: calc(var(--spacing) * 2);
 		padding-block: calc(var(--spacing) * 1);
+		background-color: transparent;
 		color: var(--color-text-muted);
 		font-size: var(--text-sm);
+		font-weight: 400;
 		line-height: 1.4;
+		text-align: start;
+		text-decoration: none;
+		appearance: none;
+		cursor: pointer;
+
+		@include transition(
+			(
+				color var(--set-aside-transition-duration),
+				border-color var(--set-aside-transition-duration)
+			)
+		);
 	}
 
 	body:has(main) > aside menu > li > :where(a, button):hover,

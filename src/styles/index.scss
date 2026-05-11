@@ -1,114 +1,25 @@
 // ============================================================================
-// Framework entrypoint.
+// Framework SCSS entrypoint.
 //
-// `_tokens.scss` declares the cascade layer order (reset < elements <
-// components < surfaces < modifiers < utilities) at the top of its emitted
-// CSS so the ordering is established before any layered rules land.
-// `_mixins.scss` emits no top-level CSS.
+// `_tokens.scss` ships the framework's global `--set-*` declarations on
+// `:root`. `_theme.scss` registers semantic variant colors with Tailwind via
+// `@theme { … }` and provides dark-mode overrides. `_mixins.scss` is a
+// registry of `@function` / `@mixin` / Sass-list members — it emits no
+// top-level CSS and is NEVER `@use`'d from this barrel; consumers reach for
+// it directly with `@use '../mixins' as *;` (per AGENTS.md §21.1).
+//
+// The cascade layer order
+//   `theme, base, elements, components, surfaces, composables, modifiers, utilities`
+// is declared once in the consumer's entry CSS BEFORE `@import 'tailwindcss'`
+// (see `tests/setup.css` and `app/browser/styles/main.css`). Layered rules
+// in this bundle land in their declared layer; later layers win.
 // ============================================================================
 
 @use 'tokens';
 @use 'theme';
-@use 'mixins';
 
-// Element partials — alphabetical. Each substantive partial wraps its rules
-// in `@layer elements { ... }`; placeholder partials are unlayered for now
-// and will be folded into the layer as they gain real styling.
-@use 'elements/a';
-@use 'elements/abbr';
-@use 'elements/address';
-@use 'elements/article';
-@use 'elements/aside';
-@use 'elements/audio';
-@use 'elements/b';
-@use 'elements/bdi';
-@use 'elements/bdo';
-@use 'elements/blockquote';
-@use 'elements/body';
-@use 'elements/button';
-@use 'elements/canvas';
-@use 'elements/caption';
-@use 'elements/cite';
-@use 'elements/code';
-@use 'elements/col';
-@use 'elements/colgroup';
-@use 'elements/data';
-@use 'elements/datalist';
-@use 'elements/dd';
-@use 'elements/del';
-@use 'elements/details';
-@use 'elements/dfn';
-@use 'elements/dialog';
-@use 'elements/div';
-@use 'elements/dl';
-@use 'elements/dt';
-@use 'elements/em';
-@use 'elements/embed';
-@use 'elements/fieldset';
-@use 'elements/figcaption';
-@use 'elements/figure';
-@use 'elements/footer';
-@use 'elements/form';
-@use 'elements/h1-h6';
-@use 'elements/header';
-@use 'elements/hgroup';
-@use 'elements/hr';
-@use 'elements/html';
-@use 'elements/i';
-@use 'elements/iframe';
-@use 'elements/img';
-@use 'elements/input';
-@use 'elements/ins';
-@use 'elements/kbd';
-@use 'elements/label';
-@use 'elements/legend';
-@use 'elements/li';
-@use 'elements/main';
-@use 'elements/mark';
-@use 'elements/math';
-@use 'elements/menu';
-@use 'elements/meter';
-@use 'elements/nav';
-@use 'elements/object';
-@use 'elements/ol';
-@use 'elements/optgroup';
-@use 'elements/option';
-@use 'elements/output';
-@use 'elements/p';
-@use 'elements/picture';
-@use 'elements/pre';
-@use 'elements/progress';
-@use 'elements/q';
-@use 'elements/rp';
-@use 'elements/rt';
-@use 'elements/ruby';
-@use 'elements/s';
-@use 'elements/samp';
-@use 'elements/search';
-@use 'elements/section';
-@use 'elements/select';
-@use 'elements/small';
-@use 'elements/span';
-@use 'elements/strong';
-@use 'elements/sub';
-@use 'elements/summary';
-@use 'elements/sup';
-@use 'elements/svg';
-@use 'elements/table';
-@use 'elements/tbody';
-@use 'elements/td';
-@use 'elements/textarea';
-@use 'elements/tfoot';
-@use 'elements/th';
-@use 'elements/thead';
-@use 'elements/time';
-@use 'elements/tr';
-@use 'elements/u';
-@use 'elements/ul';
-@use 'elements/var';
-@use 'elements/video';
-
-@use 'modifiers';
+@use 'elements';
 @use 'components';
 @use 'surfaces';
 @use 'composables';
+@use 'modifiers';

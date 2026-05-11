@@ -49,7 +49,6 @@ const onLinkClick = (event: MouseEvent, id: string): void => {
 	</search>
 	<!-- Note: .sr-only is a Tailwind utility — visually hidden but accessible -->
 
-
 	<!-- Each group is its own labelled <section>, list rendered as
 	     <menu><li><a> — picks up the framework's vertical-rail menu
 	     shape from components/_menu.scss. The active-page anchor uses

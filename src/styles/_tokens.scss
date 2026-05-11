@@ -57,6 +57,64 @@
 	--set-transition-duration: 150ms;
 
 	// --------------------------------------------------------------------------
+	// Baseline hydration — non-color defaults that make the framework feel
+	// "alive" the moment a consumer drops it into a page (Bootstrap parity).
+	// Every value here is a real `:root` declaration — not a `var(…, fallback)`
+	// inlined elsewhere — so consumers can reflectively read or override
+	// them at one global scope without forking partials.
+	// --------------------------------------------------------------------------
+
+	// Default border-radius / border-width for any element that hasn't been
+	// sized with a `.small` / `.large` modifier. Tailwind ships
+	// `--radius-{none,sm,md,lg,xl,2xl,3xl,full}` scales but no canonical
+	// "framework default" — this token bridges that gap so a bare element
+	// renders with consistent corner roundness.
+	--set-border-radius: var(--radius-md);
+	--set-border-width: 1px;
+
+	// Default flex / grid gap for layout primitives (`.stack`, `.cluster`,
+	// `<form>` control list, `<menu>` toolbar). Per-component gap tokens
+	// (`--set-form-row-gap`, `--set-menu-gap`) consume this as their
+	// fallback so a single host-page override retunes every layout that
+	// hasn't been pinned to a specific rhythm.
+	--set-gap: calc(var(--spacing) * 3); // 0.75rem / 12px
+	--set-stack-spacing: 1em; // sibling vertical rhythm — relative to local font-size
+
+	// Anchor-jump / scroll-snap offset so a sticky toolbar (consumer sets
+	// per app: `:root { --set-sticky-offset: 4rem; }`) never covers the
+	// scroll target. Defaults to `0px` so apps without sticky chrome get
+	// unmodified UA behaviour. Consumed by `_html.scss`'s
+	// `scroll-padding-block-start` and any composable that adjusts
+	// scroll position (`useNav` scroll-spy, `useTabs` panel scroll).
+	--set-sticky-offset: 0px;
+
+	// --------------------------------------------------------------------------
+	// Z-index scale — single canonical layering order for every floating
+	// surface the framework paints. Mirrors Bootstrap's z-index scale so
+	// consumers familiar with that ecosystem land the same intuitions
+	// (popover above modal, tooltip above popover, toast above tooltip).
+	//
+	// Native popovers and `<dialog>:modal` use the browser's TOP LAYER
+	// instead of z-index — these tokens still matter for:
+	//   - Non-popover dropdowns / sticky panels in the regular stacking
+	//     context (`<select>` listbox in fallback mode, `useNav` rail).
+	//   - In-flow `output[role="status"]` banners that opt out of popover.
+	//   - Consumer-authored chrome (custom layouts that need to layer
+	//     against the framework's surfaces without guessing values).
+	//
+	// 20-step gaps leave breathing room for consumer-layered chrome
+	// (e.g. an app shell sticky header at 1025 sits above generic sticky
+	// content but below a dropdown at 1040).
+	// --------------------------------------------------------------------------
+	--set-z-index-sticky: 1020;
+	--set-z-index-fixed: 1030;
+	--set-z-index-dropdown: 1040;
+	--set-z-index-modal: 1050;
+	--set-z-index-popover: 1070;
+	--set-z-index-tooltip: 1080;
+	--set-z-index-toast: 1090;
+
+	// --------------------------------------------------------------------------
 	// Density + radius factors — global multipliers consumers can set at
 	// `:root` to retune the framework's spacing rhythm and corner roundness
 	// without touching any per-component tokens. Mirrors mailbox's

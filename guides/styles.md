@@ -57,6 +57,17 @@ A TypeScript leaf without a matching CSS rule fails parity; a CSS rule without a
 
 A card is `<article>`. A modal is `<dialog>`. A sidebar is `<aside>`. A disclosure is `<details>`. A toast is `<output>`. The tag carries the identity; modifier classes carry variation; descendant context disambiguates dual-role tags (`body > header` is the app bar, `article > header` is the card header). Class-root patterns (`.stack`, `.cluster`, `.skeleton`) appear only when there is no semantic HTML home. The Vue composable layer and framework-agnostic factory layer follow the same rule: one composable per tag, named after the tag (`useDialog`, `useAside`, `useDetails`, `useMenu`, `useTable`). Full discussion in [components.md](components.md) and [composables.md](composables.md).
 
+### 1.7 Baseline hydration — Bootstrap-parity defaults
+
+The framework ships **non-color baseline tokens** alongside the color palette so a bare HTML element drops into a page already feeling "wired up": consistent border-radius and border-width, consistent flex/grid `gap`, sibling vertical rhythm, focus rings, hover/active/disabled states, transitions paired with `prefers-reduced-motion`, and a canonical z-index layering scale for floating chrome. The intent mirrors Bootstrap's appeal — coherent visual grammar across every primitive — but the surface is the elements themselves, not utility classes. Concretely:
+
+- `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-sticky-offset` declared on `:root` so unsized elements have sensible defaults.
+- `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}` — single canonical layering scale (Bootstrap-aligned) for every floating surface.
+- `--set-box-shadow-{sm,base,lg}` — three-tier elevation scale consumed by every floating chrome partial.
+- `--set-focus-box-shadow-{width,opacity}` — focus-ring composition consumed by the `focus-ring()` mixin so every interactive element rings consistently.
+
+The baseline is **deliberately unopinionated**: a slate ramp for surfaces, a Tailwind `-600`-step palette for variant identities, a 0.375rem default radius, a 1px default border. Consumers who want a brand identity override at `:root` and the cascade re-tunes every consumer at once. The framework feels coherent the moment it loads; opinions stay optional.
+
 ---
 
 ## 2. File layout

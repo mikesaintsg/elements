@@ -157,15 +157,21 @@ describe('createTable', () => {
 			}),
 		)
 		// Initial: insertion order
-		const before = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map((r) => r.cells[0]!.textContent)
+		const before = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map(
+			(r) => r.cells[0]!.textContent,
+		)
 		expect(before).toEqual(['Banana', 'Apple', 'Cherry'])
 		// Sort fruit asc (alphabetical)
 		api.sort.toggle('fruit')
-		const afterAsc = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map((r) => r.cells[0]!.textContent)
+		const afterAsc = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map(
+			(r) => r.cells[0]!.textContent,
+		)
 		expect(afterAsc).toEqual(['Apple', 'Banana', 'Cherry'])
 		// Sort fruit desc
 		api.sort.toggle('fruit')
-		const afterDesc = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map((r) => r.cells[0]!.textContent)
+		const afterDesc = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map(
+			(r) => r.cells[0]!.textContent,
+		)
 		expect(afterDesc).toEqual(['Cherry', 'Banana', 'Apple'])
 	})
 
@@ -187,7 +193,9 @@ describe('createTable', () => {
 		)
 		api.sort.toggle('qty')
 		// Lexicographic would give ['12', '20', '5']; numeric gives ['5', '12', '20'].
-		const after = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map((r) => r.cells[1]!.textContent)
+		const after = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map(
+			(r) => r.cells[1]!.textContent,
+		)
 		expect(after).toEqual(['5', '12', '20'])
 	})
 
@@ -205,7 +213,9 @@ describe('createTable', () => {
 		// sort state updated...
 		expect(api.sort.direction('fruit')).toBe('asc')
 		// ...but row order untouched (consumer drives reorder).
-		const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map((r) => r.cells[0]!.textContent)
+		const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map(
+			(r) => r.cells[0]!.textContent,
+		)
 		expect(rows).toEqual(['Banana', 'Apple', 'Cherry'])
 	})
 

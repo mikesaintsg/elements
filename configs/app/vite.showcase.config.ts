@@ -10,10 +10,7 @@ const BUILD_ID = new Date().toISOString()
 const buildStampPlugin = () => ({
 	name: 'build-stamp',
 	transformIndexHtml(html: string) {
-		return html.replace(
-			'<head>',
-			`<head>\n\t\t<meta name="build-id" content="${BUILD_ID}" />`,
-		)
+		return html.replace('<head>', `<head>\n\t\t<meta name="build-id" content="${BUILD_ID}" />`)
 	},
 })
 

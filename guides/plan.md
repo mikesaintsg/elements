@@ -15,6 +15,28 @@ Work top-to-bottom. Each phase depends on the one before. Within a phase, items 
 
 ---
 
+## The Baseline Hydration Goal (read once, applies to every phase)
+
+The framework's overarching visual goal is **Bootstrap-parity hydration**: dropping the framework into a page should make every element feel **already wired up** — proper colors, spacing, alignment, hover states, focus rings, transitions — without the consumer reaching for utilities or composing modifiers. **Not opinionated** (no brand-flavored palette, no funky border-radius), just **consistent and uniform across the whole surface**.
+
+Concretely this means each phase's audit verifies — for every element / component / composable touched — that all of the following are tokenized through `--set-*` defaults declared on `:root` (with `var(…, fallback)` only as documentation, never as the source of truth):
+
+- **Colors** — variant identity, surface tier, text tier, border tier; subtle / emphasis / border-subtle triplets per variant; both light and dark resolve cleanly.
+- **Sizes** — padding-inline, padding-block, font-size, line-height, border-radius across `default` / `.small` / `.large` modifier states.
+- **Border** — border-radius (`--set-border-radius`) and border-width (`--set-border-width`) defaults so unsized rounded surfaces don't look razor-edged or chunky.
+- **Spacing** — flex / grid `gap` (`--set-gap`), sibling vertical rhythm (`--set-stack-spacing`), per-element padding chain.
+- **Z-index layering** — every floating chrome surface (popover / dialog / toast / tooltip / dropdown / sticky / fixed) consumes the canonical `--set-z-index-*` scale.
+- **Elevation** — `--set-box-shadow-{sm,base,lg}` for the three "lift" tiers consumed by every floating surface.
+- **Focus** — `:focus-visible` ring painted via `focus-ring()` mixin consuming `--set-focus-*` tokens.
+- **Animations / transitions** — every `transition:` paired with `prefers-reduced-motion: reduce` opt-out via `@include transition()`; every `animation:` paired with `@include reduced-motion { animation: none }`. Durations consume `--set-transition-duration`.
+- **Interactions** — hover / focus / active / disabled / loading all painted with appropriate cursor + visual state.
+- **Themes** — light / dark flip on `[data-theme]` retunes everything without per-component override; consumer can pin a brand color at `:root` and the cascade re-tunes every consumer.
+- **Customizability** — every visible value flows through a `--set-*` token; no inline hex, no magic numbers in element / component / surface partials.
+
+Each phase below explicitly notes the baseline-hydration items its scope owns. A phase is not "done" until every element / component / composable in its scope passes the hydration checklist above.
+
+---
+
 ## Phase 0 — Repo bootstrap
 
 - [ ] Install dependencies: `vue@^3`, `@vue/reactivity`, `tailwindcss@^4`, `@tailwindcss/postcss`, `sass`, `vite`, `vitest`, `@vitest/browser`, `playwright`, `vue-tsc`, `oxlint`, `oxfmt`.
@@ -77,12 +99,22 @@ The cascade layer order is the load-bearing invariant. Get it wrong and modifier
 
 The variation surface every element, component, and modifier reads through.
 
-- [ ] **`src/styles/_tokens.scss`** — `@theme` block registering semantic colour variants (`--color-primary`, `--color-success`, `--color-danger`, …) so Tailwind generates matching `.bg-*` / `.text-*` / `.border-*` utilities. Plus `:root` declarations for framework-only sub-tokens: focus ring (`--set-focus-box-shadow-width`, `--set-focus-box-shadow-opacity`), variant context (`--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`), density factor, radius factor, transition duration, elevation scale (`--set-box-shadow-{sm,base,lg}`), floater token chain (`--set-floater-gutter`, `--set-floater-inset-{top,bottom,start,end}`, `--set-floater-max-inline-size`, `--set-floater-max-block-size`).
-- [ ] **`src/styles/_theme.scss`** — `[data-theme="dark"]` block re-tuning the `@theme` variant colors for dark mode. Tailwind cascade rules let consumers override at `:root` if they want a different theme system.
+- [ ] **`src/styles/_tokens.scss`** — `:root` declarations for every framework-owned `--set-*` token. Three families:
+  - **Variation surface** — focus ring (`--set-focus-box-shadow-{width,opacity}`), variant context (`--set-variant-{color,background-color,border-color,border-width}`), density / radius factors, transition duration.
+  - **Baseline hydration** (Bootstrap-parity defaults so a bare element looks "alive" without per-component overrides):
+    - `--set-border-radius`, `--set-border-width` — default rounded-corner + border thickness for any element that hasn't been sized.
+    - `--set-gap`, `--set-stack-spacing` — default flex/grid gap and sibling vertical rhythm.
+    - `--set-sticky-offset` — `scroll-padding-block-start` budget.
+    - `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}` — Bootstrap-style layering scale (top-layer surfaces still take precedence; this scale governs in-flow chrome + consumer-authored layering).
+    - `--set-box-shadow-{sm,base,lg}` — three-tier elevation scale for floating surfaces.
+    - `--set-icon-*` — single overridable inline-SVG library for every chrome glyph.
+    - `--set-floater-*` — viewport-clamped sizing budget for top-layer panels.
+  - Every value is a real `:root` declaration — never a `var(…, fallback)` inlined elsewhere — so consumers can override at one global scope without forking partials.
+- [ ] **`src/styles/_theme.scss`** — `@theme` block registering semantic colour variants (`--color-primary`, `--color-success`, …) so Tailwind generates matching `.bg-*` / `.text-*` / `.border-*` utilities. `:root` block of surface / text / border tier tokens (`--color-canvas`, `--color-text`, `--color-border`, …) and per-variant `bg-subtle / text-emphasis / border-subtle` triplets derived via `color-mix()`. Dark-mode overrides under `[data-theme="dark"]` (and `prefers-color-scheme: dark` follow on `:root:not([data-theme])`).
 - [ ] **`src/browser/tokens.ts`** — TypeScript mirror of every `--set-*` token. Frozen object tree of string literals + derived union types.
 - [ ] **`tests/src/browser/tokens.test.ts`** — bidirectional parity: every TS leaf resolves on `:root`, every `--set-*` in any SCSS partial appears as a TS leaf.
 
-**Verification:** Tests pass. Open DevTools on a blank page, inspect `:root` — every token in `tokens.ts` is present.
+**Verification:** Tests pass. Open DevTools on a blank page, inspect `:root` — every token in `tokens.ts` is present and has a non-empty resolved value (no token whose only definition is a `var(…, fallback)` chain).
 
 ---
 
@@ -100,7 +132,7 @@ Shared SCSS helpers every partial reaches for.
   - `@mixin floater-bounds($name, $axis)` — viewport-clamped max-inline / max-block-size using `--set-floater-*` tokens.
   - `@mixin floater-side-insets($name)` / `@mixin floater-edge` / `@mixin floater-fullscreen` — composable inset patterns for tooltips/popovers/toasts.
   - `@mixin palette-each` — `@each` loop over the `$variants` Sass list.
-- [ ] Sass list constants alongside the mixins: `$variants`, `$sizes`, `$styles`, `$shapes`, `$states` — used by `@each` loops in modifier partials.
+- [ ] Sass list constants alongside the mixins: `$variants`, `$sizes`, `$styles`, `$states` — used by `@each` loops in modifier partials. (Shape is **not** a modifier dimension; corner-roundness is driven by `--set-radius-factor` in [tokens.md](tokens.md) and the `.rounded` / `.pill` family is reserved to Tailwind utilities. See [modifiers.md](modifiers.md).)
 
 **Verification:** A trivial element partial that `@include`s `transition()` compiles and ships both the transition and the reduced-motion override.
 
@@ -111,13 +143,12 @@ Shared SCSS helpers every partial reaches for.
 Four orthogonal dimensions plus placement and state. The variation surface every element consumes.
 
 - [ ] **`src/styles/modifiers/_variants.scss`** — `.primary`, `.secondary`, `.tertiary`, `.success`, `.warning`, `.danger`, `.information`. Each sets `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`. Variant identity color = the variant's background color; contrast text is white or black depending on luminance.
-- [ ] **`src/styles/modifiers/_sizes.scss`** — `.small`, `.large`, `.huge`. Each sets `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius` from Tailwind scales.
-- [ ] **`src/styles/modifiers/_styles.scss`** — `.outline`, `.ghost`, `.filled`. Each rewrites `--set-style-{color, background-color, border-color}` by consuming the variant context.
-- [ ] **`src/styles/modifiers/_shapes.scss`** — `.rounded`, `.pill`, `.square`. Each sets `--set-shape-border-radius`.
+- [ ] **`src/styles/modifiers/_sizes.scss`** — `.small`, `.large`. Each sets `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius` from Tailwind scales. (Default size is bare-element; `.huge` is **not** part of the surface — it would clash with Tailwind text-\* utilities.)
+- [ ] **`src/styles/modifiers/_styles.scss`** — `.ghost`, `.filled`. Each rewrites `--set-style-{color, background-color, border-color}` by consuming the variant context. (`.outline` is reserved to Tailwind's `outline-*` family; the framework's outlined look is the bare-element default.)
 - [ ] **`src/styles/modifiers/_states.scss`** — `.disabled`, `.active`, `.loading`. Typically just toggle existing element rules.
 - [ ] **`src/styles/modifiers/_placements.scss`** — `.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end`. Map to CSS `position-area` keywords. Scoped to `[popover]:not([popover='manual'])` so per-element placement semantics on `<aside>` / `<nav>` / `<output>` aren't disrupted.
 - [ ] **`src/styles/modifiers/index.scss`** — barrel.
-- [ ] **`src/browser/modifiers.ts`** — TS mirror: frozen object tree of class names + derived `Variant`, `Size`, `Style`, `Shape`, `State`, `Placement` union types.
+- [ ] **`src/browser/modifiers.ts`** — TS mirror: frozen object tree of class names + derived `Variant`, `Size`, `Style`, `State`, `Placement` union types.
 - [ ] **`tests/src/browser/modifiers.test.ts`** — bidirectional parity test.
 - [ ] **`tests/src/styles/modifiers/_{name}.test.ts`** — one test per modifier dimension verifying the rule emits the expected `--set-*-*` token values.
 
@@ -150,6 +181,15 @@ One partial per HTML tag. Token-driven baselines + UA-quirk resets. The `<button
 - [ ] `<table>` family (`<caption>`, `<thead>`, `<tbody>`, `<tfoot>`, `<tr>`, `<th>`, `<td>`).
 - [ ] `<h1>`–`<h6>` (shared `--set-heading-*` cascade — six tags, one partial).
 
+### 5.3a Sectioning content
+
+Sectioning landmarks the framework treats as **hydrated containers**, not invisible block boxes. Bare element + per-element token surface; no class needed.
+
+- [ ] `<main>` (substantive — fluid inline padding gutter via `clamp(1rem, 5vw, …)` + page-level vertical gap; component-layer `overflow-y: auto` layered on top inside the body grid).
+- [ ] `<section>` (substantive — flex-column with `--set-section-padding-block` + `--set-section-gap` so a bare section reads with proper rhythm; nested `<section>` inside `<main>` / `<section>` / `<article>` collapses its padding-block to avoid double-counting; `scroll-margin-block-start` consumes `--set-sticky-offset` so deep links land clear of sticky headers).
+- [ ] `<hgroup>` (substantive — tight flex-column gap + subordinate `<p>` margin reset and subdued color/font-size so the tagline reads as metadata).
+- [ ] **Audit pass for the rest:** walk `guides/w3c/elements/sections.md` and `groupings.md` and confirm every remaining sectioning / grouping element either has a substantive baseline (above) or has its UA default explicitly verified as Bootstrap-equivalent. Any element that semantically expects to be a container but currently renders as a bare block is a hydration gap.
+
 ### 5.4 Typography overrides
 
 - [ ] `<abbr>`, `<address>`, `<mark>`, `<p>`, `<hr>`, `<blockquote>`, `<code>`, `<kbd>`, `<samp>`, `<var>`, `<pre>`, `<dl>` + `<dt>` + `<dd>`, `<figure>` + `<figcaption>` — single-rule UA-quirk overrides. No cascade entry, no TS mirror.
@@ -158,7 +198,7 @@ One partial per HTML tag. Token-driven baselines + UA-quirk resets. The `<button
 
 - [ ] `<img>`, `<video>`, `<audio>`, `<iframe>`, `<embed>`, `<object>` — overrides only.
 
-**Verification:** Every element's behaviour test passes. The showcase has one page per substantive element demonstrating the cascade.
+**Verification:** Every element's behaviour test passes. The showcase has one page per substantive element demonstrating the cascade. **Baseline-hydration audit (per substantive element):** every `--set-{tag}-*` chain falls back through `style → variant → size → :root baseline (--set-border-radius / --set-gap / etc.)` so no element renders flat; every `transition:` paired with `prefers-reduced-motion`; every `:focus-visible` painted via `focus-ring()`; hover / active / disabled all visually distinct.
 
 ---
 
@@ -184,7 +224,25 @@ Element compositions that read as one UI thing. Static chrome (always applies) l
 - [ ] **`tests/src/styles/components/_{name}.test.ts`** for each partial.
 - [ ] Showcase page per component under `app/browser/pages/{Name}Page.vue`.
 
-**Verification:** Every component's behaviour test passes; the showcase demos each component's variant + size + style cascade.
+### 6.1 Anchor + button context contract (load-bearing)
+
+The bare `<a>` baseline paints `--color-primary` text + underline so links read as links inside flowing body copy. That treatment is wrong for anchors used as **navigation commands** (sidebar entries, app-bar brand, TOC rows, footer credits). Each component partial that hosts nav commands must reset:
+
+- `<a>` → `color: currentColor` (or muted variant for TOC), `text-decoration: none`, hover tint toward `--color-primary`.
+- `<button>` → drop the inline-button center-text chrome inside nav-rail/TOC menus so a `<menu><li><a>` and `<menu><li><button>` row read identically. Buttons in the page header keep their framework button chrome (icon-buttons, theme toggles); only nav-rail/TOC menus normalize them to row items.
+
+Shipped reset rules:
+
+| Selector                                               | What it normalizes                                                                                                          |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `body:has(main) > header :where(a)`                    | App-bar brand + nav links — currentColor, no underline, hover tints to primary                                              |
+| `body:has(main) > footer :where(a)`                    | Footer credits + secondary nav — same recipe as header                                                                      |
+| `body:has(main) > nav menu > li > :where(a, button)`   | Sidebar nav rows — full-width, start-aligned, currentColor, hover bg tint, `aria-current="page"` paints subtle-primary band |
+| `body:has(main) > aside menu > li > :where(a, button)` | TOC rows — muted text, leading-bar accent on `aria-current="location"`                                                      |
+
+`:where()` keeps specificity at zero so a single class on the anchor opts back into the bare-link look without `!important`. Modal / popover / article / dropdown contexts are unchanged — those have their own anchor rules already.
+
+**Verification:** Every component's behaviour test passes; the showcase demos each component's variant + size + style cascade. **Baseline-hydration audit (per component):** layout primitives consume `--set-gap` for `flex` / `grid` `gap`; floating components (toast, drawer chrome) consume `--set-z-index-*` and `--set-box-shadow-*` from the global scale rather than declaring their own magic numbers; surface tier colors come from `--color-canvas` / `--color-surface` / `--color-surface-raised`; every focus-visible ring resolved via `focus-ring()`. **Anchor + button context defaults:** every nav-command host (header, footer, nav-rail menu, aside TOC menu) resets `<a>` away from the bare-link look (currentColor, no underline) and normalizes `<button>` to row-item chrome where appropriate — see §6.1.
 
 ---
 

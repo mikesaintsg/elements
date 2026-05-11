@@ -1,7 +1,63 @@
-// <section> – Generic document section
-// Browser defaults: display: block
-// A thematic grouping of content, typically with its own heading
-// Quirk: <section> does not reset heading rank — <h1> inside a nested <section> is still h1
-// If the content has no heading and is just a layout region, prefer <div>
+// ============================================================================
+// <section> — Generic thematic grouping (sectioning content).
+//
+// W3C: a thematic grouping of content, typically with its own heading. NOT a
+// generic layout box (use `<div>` for that). Maps to the `region` ARIA
+// landmark when given an accessible name (`aria-label` / `aria-labelledby`).
+//
+// Element baseline: a hydrated content container. A bare `<section>` ships
+// with vertical padding and a flex-column gap so its children — headings,
+// paragraphs, lists, embedded `<figure>` / `<aside class="callout">` — pick
+// up the same vertical rhythm `<main>` gives its top-level children. This
+// is the "drop a section in and it already feels alive" baseline that lets
+// authors stop reaching for `<div class="stack">`.
+//
+// Nesting collapse: a `<section>` directly inside `<main>`, another
+// `<section>`, or an `<article>` opts out of its own padding-block (the
+// parent already supplies the gutter) so successive sections don't stack
+// two budgets of whitespace. The inter-child `gap` still applies via the
+// parent so nested sections breathe correctly.
+//
+// Sticky-offset: `scroll-margin-block-start` consumes `--set-sticky-offset`
+// so anchor navigation (`#section-id`) lands the section heading clear of
+// any sticky `<header>` the consumer pinned at the top of the viewport.
+//
+// Quirk preserved: `<section>` does NOT reset heading rank — an `<h1>`
+// inside a nested `<section>` is still document-level h1.
+//
+// Token chain:
+//   --set-section-padding-block  Vertical breathing room above first +
+//                                below last child. Zero when nested under
+//                                another sectioning container.
+//   --set-section-gap            Spacing between top-level children.
+//                                Smaller than `--set-main-gap` because
+//                                section's children are usually
+//                                paragraphs/lists, not page-level blocks.
+//   --set-section-scroll-margin  Anchor-landing offset; mirrors the global
+//                                sticky-offset so deep links land cleanly.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	section {
+		--set-section-padding-block: calc(var(--spacing) * 6);
+		--set-section-gap: calc(var(--spacing) * 4);
+		--set-section-scroll-margin: var(--set-sticky-offset, 0px);
+
+		display: flex;
+		flex-direction: column;
+		gap: var(--set-section-gap);
+		padding-block: var(--set-section-padding-block);
+		scroll-margin-block-start: var(--set-section-scroll-margin);
+	}
+
+	// Nesting collapse — the parent already supplies the vertical gutter,
+	// so the child section opts out of its own padding-block to avoid
+	// double-counting whitespace.
+	main > section,
+	section > section,
+	article > section {
+		--set-section-padding-block: 0;
+	}
+}

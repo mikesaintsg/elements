@@ -207,11 +207,7 @@
 		// 12-over-canvas formula dissolves at low surface lightness; bumping
 		// to ~22% over `--color-surface` keeps the variant identity readable.
 		--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 22%, var(--color-surface));
-		--color-primary-text-emphasis: color-mix(
-			in oklab,
-			var(--color-primary) 70%,
-			var(--color-text)
-		);
+		--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
 		--color-primary-border-subtle: color-mix(
 			in oklab,
 			var(--color-primary) 50%,

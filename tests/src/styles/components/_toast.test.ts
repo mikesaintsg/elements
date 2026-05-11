@@ -31,6 +31,11 @@ describe('toast — `<output popover>` is a fixed-position banner', () => {
 		out.id = 'toast-1'
 		out.textContent = 'Saved'
 		mount(out)
+		// `display: flex` is gated on `:popover-open` so the UA's
+		// `display: none` for closed popovers wins (otherwise a closed
+		// toast would stay visible at its corner). Open the popover so
+		// the open-state rule applies.
+		out.showPopover()
 		expect(style(out, 'display')).toBe('flex')
 		expect(pixels(out, 'padding-top')).toBeGreaterThan(0)
 	})

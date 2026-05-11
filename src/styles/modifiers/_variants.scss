@@ -24,7 +24,10 @@
 	}
 
 	.secondary {
-		--set-variant-color: black;
+		// `--color-secondary` resolves to Tailwind's slate-600 by default
+		// (oklch L ~ 0.45). White wins WCAG AA contrast against that
+		// luminance comfortably; black would only clear ~3:1.
+		--set-variant-color: white;
 		--set-variant-background-color: var(--color-secondary);
 		--set-variant-border-color: var(--color-secondary);
 		--set-variant-border-width: 1px;
@@ -45,6 +48,10 @@
 	}
 
 	.warning {
+		// `--color-warning` is the only variant pinned at the `-500` step
+		// (amber/yellow at `-600` reads as olive — see _theme.scss). At
+		// L ~ 0.85 the surface is very light; black text is the only
+		// choice that clears WCAG AA against it.
 		--set-variant-color: black;
 		--set-variant-background-color: var(--color-warning);
 		--set-variant-border-color: var(--color-warning);
@@ -59,7 +66,11 @@
 	}
 
 	.information {
-		--set-variant-color: black;
+		// `--color-information` resolves to sky-600 by default (oklch
+		// L ~ 0.55 — medium-dark blue). White wins contrast comfortably;
+		// black sits in the ~3:1 borderline range that fails AA at small
+		// type sizes.
+		--set-variant-color: white;
 		--set-variant-background-color: var(--color-information);
 		--set-variant-border-color: var(--color-information);
 		--set-variant-border-width: 1px;

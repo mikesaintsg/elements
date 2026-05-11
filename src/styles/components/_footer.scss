@@ -64,5 +64,20 @@
 				border-color var(--set-footer-transition-duration)
 			)
 		);
+
+		// ------------------------------------------------------------------
+		// Anchor-as-footer-item — same reasoning as the header rule.
+		// Footer links are typically credits / secondary navigation, not
+		// body-copy hyperlinks. Reset to currentColor + no underline so
+		// they read as quiet metadata; hover tints toward the primary.
+		// ------------------------------------------------------------------
+		& :where(a) {
+			color: currentColor;
+			text-decoration: none;
+		}
+
+		& :where(a):hover {
+			color: var(--color-primary);
+		}
 	}
 }

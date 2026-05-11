@@ -1,0 +1,108 @@
+// ============================================================================
+// Elements barrel.
+//
+// One partial per HTML tag. Most are comment-only placeholders — only ship a
+// rule when Tailwind preflight + UA defaults aren't already covering the
+// desired baseline. Substantive partials wrap their rules in
+// `@layer elements { … }` so utilities (and modifier classes) can win
+// per the canonical cascade order declared in the consumer entry CSS.
+//
+// Alphabetical. Adding a new element means: create the partial, add a line
+// here, register it in `src/browser/elements.ts` if the partial declares at
+// least one `--set-{tag}-*` token (parity-tested in
+// `tests/src/browser/elements.test.ts`).
+// ============================================================================
+
+@use 'a';
+@use 'abbr';
+@use 'address';
+@use 'article';
+@use 'aside';
+@use 'audio';
+@use 'b';
+@use 'bdi';
+@use 'bdo';
+@use 'blockquote';
+@use 'body';
+@use 'button';
+@use 'canvas';
+@use 'caption';
+@use 'cite';
+@use 'code';
+@use 'col';
+@use 'colgroup';
+@use 'data';
+@use 'datalist';
+@use 'dd';
+@use 'del';
+@use 'details';
+@use 'dfn';
+@use 'dialog';
+@use 'div';
+@use 'dl';
+@use 'dt';
+@use 'em';
+@use 'embed';
+@use 'fieldset';
+@use 'figcaption';
+@use 'figure';
+@use 'footer';
+@use 'form';
+@use 'h1-h6';
+@use 'header';
+@use 'hgroup';
+@use 'hr';
+@use 'html';
+@use 'i';
+@use 'iframe';
+@use 'img';
+@use 'input';
+@use 'ins';
+@use 'kbd';
+@use 'label';
+@use 'legend';
+@use 'li';
+@use 'main';
+@use 'mark';
+@use 'math';
+@use 'menu';
+@use 'meter';
+@use 'nav';
+@use 'object';
+@use 'ol';
+@use 'optgroup';
+@use 'option';
+@use 'output';
+@use 'p';
+@use 'picture';
+@use 'pre';
+@use 'progress';
+@use 'q';
+@use 'rp';
+@use 'rt';
+@use 'ruby';
+@use 's';
+@use 'samp';
+@use 'search';
+@use 'section';
+@use 'select';
+@use 'small';
+@use 'span';
+@use 'strong';
+@use 'sub';
+@use 'summary';
+@use 'sup';
+@use 'svg';
+@use 'table';
+@use 'tbody';
+@use 'td';
+@use 'textarea';
+@use 'tfoot';
+@use 'th';
+@use 'thead';
+@use 'time';
+@use 'tr';
+@use 'u';
+@use 'ul';
+@use 'var';
+@use 'video';

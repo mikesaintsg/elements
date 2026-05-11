@@ -1,6 +1,44 @@
-// <hgroup> – Heading with subordinate content
-// Browser defaults: display: block
-// Groups one primary <h1>–<h6> with adjacent metadata <p> elements (taglines, subtitles)
-// Only one heading allowed inside <hgroup>; the heading drives the document outline
+// ============================================================================
+// <hgroup> — Heading + tagline stack.
+//
+// W3C: groups one primary `<h1>`–`<h6>` with adjacent metadata `<p>`
+// elements (taglines, subtitles, alternative titles). The heading drives
+// the document outline; the surrounding `<p>` elements are subordinate
+// metadata that should read tighter and quieter than the heading.
+//
+// Element baseline: a tight flex-column stack so the heading and tagline
+// hug each other (no UA-default paragraph margin between them) and the
+// tagline color drops to the muted text tier so it reads as metadata rather
+// than body content. The framework deliberately keeps this minimal — the
+// heading itself owns its `--set-heading-*` cascade from `_h1-h6.scss`.
+//
+// Token chain:
+//   --set-hgroup-gap                Vertical spacing between heading and
+//                                   tagline. Tight by design (smaller than
+//                                   `--set-section-gap`).
+//   --set-hgroup-tagline-color      Subdued color for the metadata `<p>`.
+//   --set-hgroup-tagline-font-size  Slightly smaller than body so the
+//                                   tagline reads as secondary content.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@use '../mixins' as *;
+
+@layer elements {
+	hgroup {
+		--set-hgroup-gap: calc(var(--spacing) * 1);
+		--set-hgroup-tagline-color: var(--color-text-subtle, currentColor);
+		--set-hgroup-tagline-font-size: var(--text-sm, 0.875rem);
+
+		display: flex;
+		flex-direction: column;
+		gap: var(--set-hgroup-gap);
+
+		// Subordinate `<p>` reads as metadata, not body copy. The heading
+		// itself keeps its `--set-heading-*` cascade untouched.
+		> p {
+			margin-block: 0;
+			color: var(--set-hgroup-tagline-color);
+			font-size: var(--set-hgroup-tagline-font-size);
+		}
+	}
+}

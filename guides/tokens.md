@@ -25,17 +25,19 @@ Tailwind's documentation is authoritative. The framework reads these via `var()`
 
 **Framework-owned** (`--set-*`):
 
-| Group            | Examples                                                               |
-| ---------------- | ---------------------------------------------------------------------- |
-| Focus ring       | `--set-focus-box-shadow-width`, `--set-focus-box-shadow-opacity`       |
-| Variant context  | `--set-variant-color`, `--set-variant-background-color`                |
-| Modifier context | `--set-style-*`, `--set-size-*`, `--set-shape-*`                       |
-| Density / radius | `--set-density-factor`, `--set-radius-factor`                          |
-| Elevation        | `--set-box-shadow-sm`, `--set-box-shadow`, `--set-box-shadow-lg`       |
-| Icon             | `--set-icon-chevron-*`, `--set-icon-check`, `--set-icon-close`, …      |
-| Floater          | `--set-floater-gutter`, `--set-floater-inset-*`, `--set-floater-max-*` |
-| Transition       | `--set-transition-duration`                                            |
-| Element-scoped   | `--set-button-*`, `--set-input-*`, `--set-dialog-*`, …                 |
+| Group              | Examples                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| Focus ring         | `--set-focus-box-shadow-width`, `--set-focus-box-shadow-opacity`                                       |
+| Variant context    | `--set-variant-color`, `--set-variant-background-color`                                                |
+| Modifier context   | `--set-style-*`, `--set-size-*`                                                                        |
+| Density / radius   | `--set-density-factor`, `--set-radius-factor`                                                          |
+| Baseline hydration | `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-sticky-offset` |
+| Z-index scale      | `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}`                                    |
+| Elevation          | `--set-box-shadow-sm`, `--set-box-shadow`, `--set-box-shadow-lg`                                       |
+| Icon               | `--set-icon-chevron-*`, `--set-icon-check`, `--set-icon-close`, …                                      |
+| Floater            | `--set-floater-gutter`, `--set-floater-inset-*`, `--set-floater-max-*`                                 |
+| Transition         | `--set-transition-duration`                                                                            |
+| Element-scoped     | `--set-button-*`, `--set-input-*`, `--set-dialog-*`, …                                                 |
 
 Plus `--color-{variant}` (seven semantic palette tokens registered via `@theme` so Tailwind generates `.bg-primary` / `.text-success` / etc.) and `--color-{variant}-{bg-subtle, text-emphasis, border-subtle}` triplets declared on `:root` for theme-aware surfaces.
 
@@ -141,7 +143,7 @@ Three-tier scale. `sm` for hover-raised list items and subtle action panels. Bas
 ### Icon tokens
 
 ```scss
---set-icon-chevron-down: url("data:image/svg+xml,…");
+--set-icon-chevron-down: url('data:image/svg+xml,…');
 --set-icon-chevron-up: url(…);
 --set-icon-chevron-left: url(…);
 --set-icon-chevron-right: url(…);
@@ -210,6 +212,40 @@ Requires the host page to declare `<meta name="viewport" content="… viewport-f
 ```
 
 Consumed by the `transition()` mixin and by every element-scoped `--set-{tag}-transition-duration`. Tailwind v4 ships per-step `--duration-*` tokens but no single canonical default; this token fills that gap.
+
+### Baseline hydration tokens
+
+These exist so the framework feels **already wired up** the moment a consumer drops it onto a page — Bootstrap-parity, not opinionated theming. Every value is a real `:root` declaration (not just a `var(…, fallback)` inlined elsewhere) so consumers can read or override them at one global scope.
+
+```scss
+--set-border-radius: var(--radius-md); /* Tailwind --radius-md = 0.375rem */
+--set-border-width: 1px;
+--set-gap: calc(var(--spacing) * 3); /* 0.75rem default flex/grid gap */
+--set-stack-spacing: 1em; /* sibling vertical rhythm relative to local font-size */
+--set-sticky-offset: 0px; /* consumer sets per app: `:root { --set-sticky-offset: 4rem; }` */
+```
+
+`--set-border-radius` and `--set-border-width` are the "default" answer when no `.small` / `.large` size modifier is active and no element-scoped chain provides a more specific value. `--set-gap` is the default `flex` / `grid` `gap` for layout primitives (`.stack`, `.cluster`, `<form>` control list, `<menu>` toolbar). `--set-stack-spacing` drives sibling vertical rhythm (e.g. `p + p { margin-block-start: var(--set-stack-spacing) }`). `--set-sticky-offset` is consumed by `<html>`'s `scroll-padding-block-start` so anchor jumps clear a sticky toolbar.
+
+### Z-index scale
+
+```scss
+--set-z-index-sticky: 1020;
+--set-z-index-fixed: 1030;
+--set-z-index-dropdown: 1040;
+--set-z-index-modal: 1050;
+--set-z-index-popover: 1070;
+--set-z-index-tooltip: 1080;
+--set-z-index-toast: 1090;
+```
+
+Single canonical layering order for every floating surface, mirroring Bootstrap's z-index scale so consumers familiar with that ecosystem keep their intuitions. Native popovers and `<dialog>:modal` use the browser's **top layer** (z-index inert there), but the scale still applies to:
+
+- Non-popover dropdowns and sticky panels in the regular stacking context (e.g. `<select>` listbox in fallback mode, `useNav` rail).
+- In-flow `output[role="status"]` banners that opt out of popover.
+- Consumer-authored chrome that needs to layer against the framework's surfaces without guessing values.
+
+20-step gaps between tiers leave breathing room for consumer-layered chrome (e.g. an app-shell sticky header pinned at 1025 sits above generic sticky content but below a dropdown at 1040).
 
 ---
 

@@ -4,3 +4,57 @@
 // Maps to the main ARIA landmark — screen-reader users use it to skip to content
 
 // No framework rules — Tailwind v4 preflight handles UA reset.
+
+// ============================================================================
+// <main> — Primary content landmark.
+//
+// W3C: the dominant content of the document body. One per page (others
+// must carry the `hidden` attribute). Maps to the `main` ARIA landmark.
+//
+// Element baseline: a hydrated content container so a bare `<main>`
+// (whether on a doc page or inside the body-grid app shell) ships with
+// proper padding gutters and a flex-column layout that gives every
+// top-level child (`<section>`, `<article>`, `<aside class="callout">`,
+// …) consistent vertical rhythm — no manual `<div class="stack">`
+// needed.
+//
+// In an app shell, the body-grid rule from `_body.scss` places `<main>`
+// in the `main` named area; the inline-padding still applies inside that
+// track (acts as the content gutter against the side rails). The
+// `components/_main.scss` partial layers `overflow-y: auto` on top so
+// the content region scrolls independently when paired with the body
+// grid.
+//
+// On a doc page (a bare `<main>` not under the body grid), the same
+// padding + gap give the page a centered-feel rhythm out of the box.
+// Consumers wanting a constrained reading column wrap their content in
+// a sized child (the framework deliberately doesn't pin a max-inline-
+// size on `<main>` itself so app shells can fill the available width).
+//
+// Token chain:
+//   --set-main-padding-inline   `clamp(1rem, 5vw, …)` — fluid gutter that
+//                               narrows on mobile and widens on desktop
+//                               without per-breakpoint overrides.
+//   --set-main-padding-block    Vertical breathing room above first +
+//                               below last child.
+//   --set-main-gap              Spacing between top-level children
+//                               (sectioning content). Tuned larger than
+//                               `--set-gap` because main's children are
+//                               page-level blocks, not row items.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer elements {
+	main {
+		--set-main-padding-inline: clamp(1rem, 5vw, calc(var(--spacing) * 10));
+		--set-main-padding-block: calc(var(--spacing) * 8);
+		--set-main-gap: calc(var(--spacing) * 8);
+
+		display: flex;
+		flex-direction: column;
+		gap: var(--set-main-gap);
+		padding-inline: var(--set-main-padding-inline);
+		padding-block: var(--set-main-padding-block);
+	}
+}

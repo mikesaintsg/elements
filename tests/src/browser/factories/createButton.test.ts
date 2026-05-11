@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BUTTON_EVENTS, createButton } from '@src/browser'
-import {
-	assertCleanDispose,
-	buildElement,
-	createFactoryFixture,
-} from '../../../setupBrowser'
+import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 describe('createButton', () => {
 	it('rejects non-<button> hosts', () => {

@@ -53,3 +53,25 @@ describe('footer — chrome inside the layout shell', () => {
 		expect(style(footer, 'display')).toBe('flex')
 	})
 })
+
+describe('footer — anchor-as-footer-item defaults', () => {
+	it('<a> inside the page footer drops the bare-anchor underline', () => {
+		const main = build('main')
+		const footer = build('footer')
+		const a = build('a', '', 'Imprint')
+		footer.appendChild(a)
+		document.body.append(main, footer)
+
+		expect(style(a, 'text-decoration-line')).toBe('none')
+	})
+
+	it('<a> inside the page footer inherits the muted footer color', () => {
+		const main = build('main')
+		const footer = build('footer')
+		const a = build('a', '', 'Imprint')
+		footer.appendChild(a)
+		document.body.append(main, footer)
+
+		expect(style(a, 'color')).toBe(style(footer, 'color'))
+	})
+})

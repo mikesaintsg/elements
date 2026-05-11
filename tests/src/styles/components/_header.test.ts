@@ -56,3 +56,45 @@ describe('header — app-bar chrome inside the layout shell', () => {
 		expect(style(header, 'align-items')).toBe('center')
 	})
 })
+
+describe('header — anchor-as-navbar-item defaults', () => {
+	it('<a> inside the app bar drops the bare-anchor underline', () => {
+		const header = build('header')
+		const main = build('main')
+		const a = build('a', '', 'Brand')
+		header.appendChild(a)
+		document.body.append(header, main)
+
+		expect(style(a, 'text-decoration-line')).toBe('none')
+	})
+
+	it('<a> inside the app bar inherits text color (not the link blue)', () => {
+		const header = build('header')
+		const main = build('main')
+		const a = build('a', '', 'Brand')
+		header.appendChild(a)
+		document.body.append(header, main)
+
+		// The bare-anchor baseline paints `--color-primary`; the header
+		// rule overrides to `currentColor` which resolves to the header's
+		// own text color.
+		const headerColor = style(header, 'color')
+		expect(style(a, 'color')).toBe(headerColor)
+	})
+
+	it('<button> inside the app bar keeps its framework button chrome', () => {
+		// Buttons are commands, not text — the header link reset must NOT
+		// strip button styling. The bare button retains its padding /
+		// cursor / appearance from the element baseline. (`display`
+		// blockifies from `inline-flex` to `flex` automatically because
+		// the parent `<header>` is a flex container — that's the spec.)
+		const header = build('header')
+		const main = build('main')
+		const button = build('button', '', 'Action')
+		header.appendChild(button)
+		document.body.append(header, main)
+
+		expect(style(button, 'cursor')).toBe('pointer')
+		expect(pixels(button, 'padding-left')).toBeGreaterThan(0)
+	})
+})

@@ -169,6 +169,9 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		v-if="leftOpen || rightOpen"
 		class="showcase-backdrop"
 		aria-hidden="true"
-		@click="leftOpen = false; rightOpen = false"
+		@click="
+			leftOpen = false
+			rightOpen = false
+		"
 	></div>
 </template>

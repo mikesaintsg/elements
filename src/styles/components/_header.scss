@@ -66,5 +66,26 @@
 				border-color var(--set-header-transition-duration)
 			)
 		);
+
+		// ------------------------------------------------------------------
+		// Anchor-as-navbar-item — a page app bar hosts brand + nav links,
+		// not body-copy hyperlinks. The bare `<a>` baseline (primary color
+		// + underline) reads as a content link inside flowing text but
+		// looks wrong against the header band; reset to currentColor + no
+		// underline so the brand + links integrate with the bar. Hover
+		// tints toward the primary so the link affordance survives.
+		//
+		// Wrapped in `:where()` to keep specificity at zero — consumers
+		// who want explicit underline back can use a single class on the
+		// anchor without writing `!important`.
+		// ------------------------------------------------------------------
+		& :where(a) {
+			color: currentColor;
+			text-decoration: none;
+		}
+
+		& :where(a):hover {
+			color: var(--color-primary);
+		}
 	}
 }

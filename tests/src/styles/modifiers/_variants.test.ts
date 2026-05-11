@@ -27,17 +27,26 @@ describe('variant modifiers set --set-variant-* context tokens', () => {
 })
 
 describe('variants pick contrast text colors deliberately', () => {
-	it('primary, tertiary, success, danger use white text', () => {
-		for (const name of ['primary', 'tertiary', 'success', 'danger'] as const) {
+	it('every variant except `warning` uses white text', () => {
+		// At Tailwind's `-600` step, every variant background sits at
+		// oklch L ≤ 0.55 — white text wins WCAG AA. `warning` is the
+		// outlier (`-500` amber, L ~ 0.85) where black is the only
+		// readable choice.
+		for (const name of [
+			'primary',
+			'secondary',
+			'tertiary',
+			'success',
+			'danger',
+			'information',
+		] as const) {
 			const el = render('div', name)
 			expect(token(el, '--set-variant-color').trim()).toBe('white')
 		}
 	})
 
-	it('secondary, warning, information use black text', () => {
-		for (const name of ['secondary', 'warning', 'information'] as const) {
-			const el = render('div', name)
-			expect(token(el, '--set-variant-color').trim()).toBe('black')
-		}
+	it('warning uses black text', () => {
+		const el = render('div', 'warning')
+		expect(token(el, '--set-variant-color').trim()).toBe('black')
 	})
 })

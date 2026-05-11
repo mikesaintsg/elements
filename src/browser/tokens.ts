@@ -72,6 +72,30 @@ export const tokens = {
 	// Framework defaults that have no Tailwind equivalent.
 	transitionDuration: '--set-transition-duration',
 
+	// Baseline hydration — non-color defaults so a bare element renders
+	// with consistent border-radius, gap, sticky offset, and z-index
+	// layering without per-component overrides. See `_tokens.scss` for
+	// design rationale.
+	borderRadius: '--set-border-radius',
+	borderWidth: '--set-border-width',
+	gap: '--set-gap',
+	stackSpacing: '--set-stack-spacing',
+	stickyOffset: '--set-sticky-offset',
+
+	// Z-index scale for floating chrome. Native popovers + `<dialog>:modal`
+	// use the browser top layer (z-index inert there), but in-flow surfaces,
+	// non-popover dropdowns, and consumer-authored chrome consume these
+	// tokens for predictable layering against the framework's own surfaces.
+	zIndex: {
+		sticky: '--set-z-index-sticky',
+		fixed: '--set-z-index-fixed',
+		dropdown: '--set-z-index-dropdown',
+		modal: '--set-z-index-modal',
+		popover: '--set-z-index-popover',
+		tooltip: '--set-z-index-tooltip',
+		toast: '--set-z-index-toast',
+	},
+
 	// Density + radius factors — global multipliers consumers can set at
 	// `:root` to retune the framework's spacing rhythm and corner
 	// roundness without touching any per-component tokens. Mirrors
@@ -729,6 +753,35 @@ export const tokens = {
 		boxShadow: '--set-article-box-shadow',
 		transitionDuration: '--set-article-transition-duration',
 		disabled: { opacity: '--set-article-disabled-opacity' },
+	},
+
+	// Element-scoped tokens declared on bare `<main>` (sectioning content
+	// container). Hydrated padding gutters + flex-column rhythm so a bare
+	// main on a doc page or inside the body grid ships with consistent
+	// spacing for its top-level children.
+	main: {
+		paddingInline: '--set-main-padding-inline',
+		paddingBlock: '--set-main-padding-block',
+		gap: '--set-main-gap',
+	},
+
+	// Element-scoped tokens declared on bare `<section>` (thematic
+	// grouping). Vertical padding + flex-column gap give nested sectioning
+	// content predictable rhythm; `scroll-margin` clears any sticky header.
+	section: {
+		paddingBlock: '--set-section-padding-block',
+		gap: '--set-section-gap',
+		scrollMargin: '--set-section-scroll-margin',
+	},
+
+	// Element-scoped tokens declared on `<hgroup>` (heading + tagline).
+	// Tight stack with a subdued tagline so metadata reads as secondary.
+	hgroup: {
+		gap: '--set-hgroup-gap',
+		tagline: {
+			color: '--set-hgroup-tagline-color',
+			fontSize: '--set-hgroup-tagline-font-size',
+		},
 	},
 
 	// Element-scoped tokens declared on `table` itself.
