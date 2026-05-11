@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import type { Component, ComputedRef, Ref } from 'vue'
 
 import HomePage from './pages/HomePage.vue'
+import ButtonPage from './pages/ButtonPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -20,8 +21,14 @@ export interface Route {
 }
 
 const HOME: Route = { id: 'home', title: 'Home', group: 'Getting started', page: HomePage }
+const BUTTON: Route = {
+	id: 'button',
+	title: 'Button',
+	group: 'Elements — Interactive',
+	page: ButtonPage,
+}
 
-export const routes: readonly Route[] = [HOME]
+export const routes: readonly Route[] = [HOME, BUTTON]
 
 interface RouteLocation {
 	readonly id: string

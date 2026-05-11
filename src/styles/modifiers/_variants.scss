@@ -2,9 +2,13 @@
 // Variant modifiers
 //
 // Each .{variant} class sets the four --set-variant-* context tokens. The
-// variant chooses its own contrast text color (white on saturated colors,
-// black on light ones). Element files consume these tokens via fallback
-// chains; nothing here applies CSS properties directly.
+// variant chooses its own contrast text color (white on dark-luminance
+// variants, black on light-luminance variants). The split between the two
+// groups is empirically WCAG-driven: white wins AA on primary, secondary,
+// tertiary, danger; black wins AA on success, warning, information (the
+// last three sit at oklch L ≥ 0.57 where white-on-variant drops below
+// 4.5:1). Element files consume these tokens via fallback chains; nothing
+// here applies CSS properties directly.
 //
 // --set-variant-color            text color when the variant fills a surface
 // --set-variant-background-color the variant's identity color (used for fill
@@ -41,17 +45,23 @@
 	}
 
 	.success {
-		--set-variant-color: white;
+		// `--color-success` resolves to green-600 (oklch L ~ 0.573). Measured
+		// WCAG against white-on-green-600 is 3.22 — fails AA for normal text.
+		// Black on green-600 measures ~6.4 — passes AA easily. Same logic as
+		// warning; the "every -600 variant takes white" rule only holds for
+		// genuinely dark hues (blue, slate, violet, red sit at L ≤ 0.58 but
+		// also have low chroma luminance contribution).
+		--set-variant-color: black;
 		--set-variant-background-color: var(--color-success);
 		--set-variant-border-color: var(--color-success);
 		--set-variant-border-width: 1px;
 	}
 
 	.warning {
-		// `--color-warning` is the only variant pinned at the `-500` step
-		// (amber/yellow at `-600` reads as olive — see _theme.scss). At
-		// L ~ 0.85 the surface is very light; black text is the only
-		// choice that clears WCAG AA against it.
+		// `--color-warning` is pinned at the `-500` step (amber/yellow at
+		// `-600` reads as olive — see _theme.scss). At L ~ 0.77 the surface
+		// is very light; black text is the only choice that clears WCAG AA
+		// against it (white-on-amber-500 measures ~1.8 — hard fail).
 		--set-variant-color: black;
 		--set-variant-background-color: var(--color-warning);
 		--set-variant-border-color: var(--color-warning);
@@ -67,10 +77,11 @@
 
 	.information {
 		// `--color-information` resolves to sky-600 by default (oklch
-		// L ~ 0.55 — medium-dark blue). White wins contrast comfortably;
-		// black sits in the ~3:1 borderline range that fails AA at small
-		// type sizes.
-		--set-variant-color: white;
+		// L ~ 0.588). Measured WCAG against white-on-sky-600 is 4.02 — fails
+		// AA for normal text (passes only large-text AA). Black on sky-600
+		// measures ~8.2 — passes AA easily. Sky is light enough that white
+		// loses; same logic as success and warning.
+		--set-variant-color: black;
 		--set-variant-background-color: var(--color-information);
 		--set-variant-border-color: var(--color-information);
 		--set-variant-border-width: 1px;

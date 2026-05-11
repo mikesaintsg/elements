@@ -29,8 +29,19 @@
  */
 
 @media (max-width: 960px) {
+	/* Vue / React / Solid commonly mount inside a <div id="app"> wrapper.
+	 * The wrapper carries `display: contents` (see main.css) so its children
+	 * become real grid items of <body>. The framework's body-grid rules in
+	 * src/styles/components/_body.scss match BOTH `body > nav` AND
+	 * `body > * > nav` to handle the once-removed wrapper case; this
+	 * media query mirrors that pattern so the drawer geometry applies
+	 * regardless of whether nav/aside are direct or once-removed
+	 * descendants of <body>.
+	 */
 	body:has(main) > nav,
-	body:has(main) > aside {
+	body:has(main) > * > nav,
+	body:has(main) > aside,
+	body:has(main) > * > aside {
 		position: fixed;
 		inset-block: 0;
 		inline-size: min(20rem, 85vw);
@@ -40,24 +51,30 @@
 		transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1);
 	}
 
-	body:has(main) > nav {
+	body:has(main) > nav,
+	body:has(main) > * > nav {
 		inset-inline-start: 0;
 		transform: translateX(-100%);
 	}
 
-	body:has(main) > aside {
+	body:has(main) > aside,
+	body:has(main) > * > aside {
 		inset-inline-end: 0;
 		transform: translateX(100%);
 	}
 
 	body:has(main) > nav[data-open],
-	body:has(main) > aside[data-open] {
+	body:has(main) > * > nav[data-open],
+	body:has(main) > aside[data-open],
+	body:has(main) > * > aside[data-open] {
 		transform: translateX(0);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		body:has(main) > nav,
-		body:has(main) > aside {
+		body:has(main) > * > nav,
+		body:has(main) > aside,
+		body:has(main) > * > aside {
 			transition: none;
 		}
 	}

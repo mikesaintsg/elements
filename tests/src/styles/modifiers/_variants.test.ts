@@ -27,26 +27,28 @@ describe('variant modifiers set --set-variant-* context tokens', () => {
 })
 
 describe('variants pick contrast text colors deliberately', () => {
-	it('every variant except `warning` uses white text', () => {
-		// At Tailwind's `-600` step, every variant background sits at
-		// oklch L ≤ 0.55 — white text wins WCAG AA. `warning` is the
-		// outlier (`-500` amber, L ~ 0.85) where black is the only
-		// readable choice.
-		for (const name of [
-			'primary',
-			'secondary',
-			'tertiary',
-			'success',
-			'danger',
-			'information',
-		] as const) {
+	it('dark-luminance variants use white text', () => {
+		// Empirically WCAG-checked: white-on-variant clears AA (>= 4.5) for
+		// the four variants whose Tailwind step sits at oklch L ≤ 0.55:
+		// primary (blue-600 L=0.546), secondary (slate-600 L=0.446), tertiary
+		// (violet-600 L=0.541), danger (red-600 L=0.577). The remaining three
+		// (success/warning/information) sit at L ≥ 0.57 where white-on-variant
+		// drops below 4.5 — see the black-text spec below.
+		for (const name of ['primary', 'secondary', 'tertiary', 'danger'] as const) {
 			const el = render('div', name)
 			expect(token(el, '--set-variant-color').trim()).toBe('white')
 		}
 	})
 
-	it('warning uses black text', () => {
-		const el = render('div', 'warning')
-		expect(token(el, '--set-variant-color').trim()).toBe('black')
+	it('light-luminance variants use black text', () => {
+		// Measured WCAG ratios against white-on-variant:
+		//   success (green-600 L=0.573)      = 3.22 — fails AA
+		//   warning (amber-500 L=0.769)      = 1.80 — hard fail
+		//   information (sky-600 L=0.588)    = 4.02 — fails AA
+		// Black-on-variant clears AA easily for all three (>= 6.4).
+		for (const name of ['success', 'warning', 'information'] as const) {
+			const el = render('div', name)
+			expect(token(el, '--set-variant-color').trim()).toBe('black')
+		}
 	})
 })
