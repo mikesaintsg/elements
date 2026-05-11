@@ -32,6 +32,7 @@ Tailwind's documentation is authoritative. The framework reads these via `var()`
 | Modifier context | `--set-style-*`, `--set-size-*`, `--set-shape-*`                       |
 | Density / radius | `--set-density-factor`, `--set-radius-factor`                          |
 | Elevation        | `--set-box-shadow-sm`, `--set-box-shadow`, `--set-box-shadow-lg`       |
+| Icon             | `--set-icon-chevron-*`, `--set-icon-check`, `--set-icon-close`, …      |
 | Floater          | `--set-floater-gutter`, `--set-floater-inset-*`, `--set-floater-max-*` |
 | Transition       | `--set-transition-duration`                                            |
 | Element-scoped   | `--set-button-*`, `--set-input-*`, `--set-dialog-*`, …                 |
@@ -136,6 +137,51 @@ Same idea for corner roundness. `0` flattens every radius to a hard corner; `1.5
 ```
 
 Three-tier scale. `sm` for hover-raised list items and subtle action panels. Base for popover panels and dropdown menus. `lg` for modal dialogs, toasts, and drawer chrome. Each level layers a diffuse main drop with a tighter contact shadow so the surface reads as a discrete floating layer.
+
+### Icon tokens
+
+```scss
+--set-icon-chevron-down: url("data:image/svg+xml,…");
+--set-icon-chevron-up: url(…);
+--set-icon-chevron-left: url(…);
+--set-icon-chevron-right: url(…);
+--set-icon-caret-down: url(…);
+--set-icon-caret-up: url(…);
+--set-icon-check: url(…);
+--set-icon-dash: url(…);
+--set-icon-radio: url(…);
+--set-icon-switch-off: url(…);
+--set-icon-switch-on: url(…);
+--set-icon-close: url(…);
+--set-icon-menu: url(…);
+--set-icon-more: url(…);
+--set-icon-search: url(…);
+--set-icon-filter: url(…);
+--set-icon-sort: url(…);
+--set-icon-external: url(…);
+--set-icon-sun: url(…);
+--set-icon-moon: url(…);
+--set-icon-system: url(…);
+--set-icon-info: url(…);
+--set-icon-success: url(…);
+--set-icon-warning: url(…);
+--set-icon-danger: url(…);
+--set-icon-plus: url(…);
+--set-icon-minus: url(…);
+```
+
+Single overridable inline-SVG library for every chrome glyph the framework paints. Defaults are URL-encoded 16×16 viewBox data URLs at `stroke-width='2'` with `stroke='currentColor'` (or `fill='currentColor'` for filled glyphs — `caret-*`, `radio`, `more`, `sort`, `switch-*`), so the same value works as either `background-image` (paints the stroke) or `mask-image` (drives the SHAPE; tint comes from the consumer's `background-color: currentColor` on the masked pseudo).
+
+Consumer partials reference these through per-element aliases (`--set-select-background-image`, `--set-summary-marker-image`, `--set-nav-breadcrumb-separator-image`, `--set-check-checkbox-svg`, the carousel `mask-image`, the table sort indicator, …) so a host-page override at `:root` scope retunes every consumer at once:
+
+```scss
+:root {
+	--set-icon-chevron-down: url('/icons/heroicons/chevron-down.svg');
+	--set-icon-check: url('/icons/lucide/check.svg');
+}
+```
+
+Override a single icon (`--set-icon-check`) to swap one glyph, or replace the whole set with a different icon library. The per-element alias (`--set-select-background-image`) remains overridable for one-off element-specific swaps.
 
 ### Floater token chain
 

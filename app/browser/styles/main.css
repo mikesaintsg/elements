@@ -22,6 +22,7 @@
 
 @import 'tailwindcss';
 @import '../../../src/styles/index.scss';
+@import './showcase.css';
 
 @source '../../../src/styles';
 @source '../../../app';

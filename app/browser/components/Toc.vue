@@ -19,10 +19,11 @@ const sections = ref<Section[]>([])
 const active = ref<string | null>(null)
 let io: IntersectionObserver | null = null
 
-/* ── Discover sections + observe ────────────────────────────────────────────
-   On every route change or scroller mount, walk the scroller's DOM for
-   `section[id]` and rebuild the TOC. An IntersectionObserver tracks which
-   section is currently in view so the matching link gets aria-current. */
+/* Walk the scroller's `section[id]` descendants on every route change,
+ * build the on-this-page list, and observe each with an
+ * IntersectionObserver. Whichever section is closest to the viewport
+ * top gets `active = id` → the matching anchor picks up
+ * `aria-current="location"`, which `showcase.css` paints. */
 const rebuild = async (): Promise<void> => {
 	await nextTick()
 	io?.disconnect()
@@ -39,10 +40,9 @@ const rebuild = async (): Promise<void> => {
 	for (const el of scroller.querySelectorAll<HTMLElement>('section[id], h2[id], h3[id]')) {
 		const id = el.id
 		if (!id || id === props.currentId) continue
-		// Prefer the section's first heading text; fall back to id.
 		const heading = el.querySelector<HTMLElement>('h1, h2, h3')
 		const label = (heading?.textContent ?? id).trim()
-		const level = el.tagName === 'H3' ? 3 : el.tagName === 'H2' ? 2 : 2
+		const level = el.tagName === 'H3' ? 3 : 2
 		list.push({ id, label, level })
 	}
 	sections.value = list
@@ -95,8 +95,11 @@ const onClick = (event: MouseEvent, id: string): void => {
 </script>
 
 <template>
-	<h2 class="toc-heading">On this page</h2>
-	<nav v-if="sections.length > 0" aria-label="Table of contents" class="toc-list">
+	<h2>On this page</h2>
+	<!-- WAI-ARIA APG: the in-page TOC is a "Table of contents" navigation
+	     landmark. Framework's components/_nav.scss + the showcase rules
+	     in showcase.css paint the active-link affordance. -->
+	<nav v-if="sections.length > 0" aria-label="Table of contents">
 		<menu>
 			<li v-for="s in sections" :key="s.id" :data-level="s.level">
 				<a
@@ -109,57 +112,7 @@ const onClick = (event: MouseEvent, id: string): void => {
 			</li>
 		</menu>
 	</nav>
-	<p v-else class="toc-empty">No sections on this page.</p>
+	<p v-else>
+		<small>No sections on this page.</small>
+	</p>
 </template>
-
-<style scoped>
-.toc-heading {
-	margin-block-end: calc(var(--spacing) * 2);
-	font-size: var(--text-xs);
-	font-weight: 600;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-	color: var(--color-text-muted);
-}
-
-.toc-list menu {
-	display: flex;
-	flex-direction: column;
-	gap: 1px;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.toc-list li[data-level='3'] {
-	padding-inline-start: calc(var(--spacing) * 3);
-}
-
-.toc-list a {
-	display: block;
-	padding-inline: calc(var(--spacing) * 2);
-	padding-block: calc(var(--spacing) * 1);
-	border-radius: var(--radius-md);
-	border-inline-start: 2px solid transparent;
-	color: var(--color-text-muted);
-	text-decoration: none;
-	font-size: var(--text-sm);
-	line-height: 1.4;
-}
-
-.toc-list a:hover {
-	color: var(--color-text);
-	background-color: color-mix(in oklab, var(--color-text) 4%, transparent);
-}
-
-.toc-list a[aria-current='location'] {
-	color: var(--color-primary);
-	border-inline-start-color: var(--color-primary);
-	font-weight: 500;
-}
-
-.toc-empty {
-	color: var(--color-text-muted);
-	font-size: var(--text-sm);
-}
-</style>

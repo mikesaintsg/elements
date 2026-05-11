@@ -26,14 +26,16 @@ const grouped = computed<Group[]>(() => {
 })
 
 const onLinkClick = (event: MouseEvent, id: string): void => {
-	// Don't intercept modified clicks (cmd-click for new tab, etc.).
 	if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
 	emit('navigate', id)
 }
 </script>
 
 <template>
-	<form class="sidenav-filter" role="search" @submit.prevent>
+	<!-- Sidebar filter — the framework's <search> + <input type="search">
+	     baselines paint the row + input chrome. Pressing "/" focuses the
+	     input via the document-level keydown listener in App.vue. -->
+	<search>
 		<label>
 			<span class="sr-only">Filter pages</span>
 			<input
@@ -44,98 +46,28 @@ const onLinkClick = (event: MouseEvent, id: string): void => {
 				autocomplete="off"
 			/>
 		</label>
-	</form>
+	</search>
 
-	<nav aria-label="Pages" class="sidenav-list">
-		<section v-for="g in grouped" :key="g.group">
-			<h2>{{ g.group }}</h2>
-			<menu>
-				<li v-for="r in g.entries" :key="r.id">
-					<a
-						:href="`#/${r.id}`"
-						:aria-current="active === r.id ? 'page' : undefined"
-						@click="(e) => onLinkClick(e, r.id)"
-					>
-						{{ r.title }}
-					</a>
-				</li>
-			</menu>
-		</section>
-		<p v-if="grouped.length === 0" class="sidenav-empty">No matches.</p>
-	</nav>
+	<!-- Each group is its own labelled <section>, list rendered as
+	     <menu><li><a> — picks up the framework's vertical-rail menu
+	     shape from components/_menu.scss. The active-page anchor uses
+	     aria-current="page"; showcase.css paints the affordance. -->
+	<section v-for="g in grouped" :key="g.group">
+		<h2>{{ g.group }}</h2>
+		<menu>
+			<li v-for="r in g.entries" :key="r.id">
+				<a
+					:href="`#/${r.id}`"
+					:aria-current="active === r.id ? 'page' : undefined"
+					@click="(e) => onLinkClick(e, r.id)"
+				>
+					{{ r.title }}
+				</a>
+			</li>
+		</menu>
+	</section>
+
+	<p v-if="grouped.length === 0">
+		<small>No matches.</small>
+	</p>
 </template>
-
-<style scoped>
-.sidenav-filter {
-	padding-inline: calc(var(--spacing) * 4);
-	padding-block-end: calc(var(--spacing) * 3);
-	border-block-end: 1px solid var(--color-border);
-}
-
-.sidenav-filter input {
-	inline-size: 100%;
-}
-
-.sidenav-list {
-	padding-inline: calc(var(--spacing) * 4);
-}
-
-.sidenav-list section + section {
-	margin-block-start: calc(var(--spacing) * 4);
-}
-
-.sidenav-list h2 {
-	margin-block-end: calc(var(--spacing) * 2);
-	font-size: var(--text-xs);
-	font-weight: 600;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-	color: var(--color-text-muted);
-}
-
-.sidenav-list menu {
-	display: flex;
-	flex-direction: column;
-	gap: 1px;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.sidenav-list a {
-	display: block;
-	padding-inline: calc(var(--spacing) * 3);
-	padding-block: calc(var(--spacing) * 1.5);
-	border-radius: var(--radius-md);
-	color: var(--color-text);
-	text-decoration: none;
-	font-size: var(--text-sm);
-}
-
-.sidenav-list a:hover {
-	background-color: color-mix(in oklab, var(--color-text) 5%, transparent);
-}
-
-.sidenav-list a[aria-current='page'] {
-	background-color: color-mix(in oklab, var(--color-primary) 12%, transparent);
-	color: var(--color-primary);
-	font-weight: 500;
-}
-
-.sidenav-empty {
-	color: var(--color-text-muted);
-	font-size: var(--text-sm);
-}
-
-.sr-only {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	padding: 0;
-	margin: -1px;
-	overflow: hidden;
-	clip: rect(0, 0, 0, 0);
-	white-space: nowrap;
-	border: 0;
-}
-</style>
