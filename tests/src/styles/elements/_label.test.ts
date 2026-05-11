@@ -26,9 +26,13 @@ describe('label — baseline', () => {
 })
 
 describe('label — variant cascade', () => {
-	it('.primary tints label color via --set-label-color', () => {
+	it('.primary tints label color via --set-label-color (on-canvas tier)', () => {
+		// Labels paint directly on the page canvas — variant context resolves
+		// through `--set-variant-on-canvas-color` so the shade clears WCAG AA
+		// in both light and dark modes (bare `--color-primary` fails AA on
+		// slate-950).
 		const label = render('label', 'primary')
-		const expected = style(document.documentElement, '--color-primary').trim()
+		const expected = style(document.documentElement, '--color-primary-on-canvas').trim()
 		expect(token(label, '--set-label-color').trim()).toBe(expected)
 	})
 })

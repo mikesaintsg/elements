@@ -249,7 +249,11 @@
 
 		--set-tab-color: currentColor;
 		--set-tab-background-color: transparent;
-		--set-tab-active-color: var(--color-primary);
+		// Active tab paints variant text directly on the tablist canvas
+		// (no tinted bg). On-canvas tier clears WCAG AA in both modes —
+		// bare `--color-primary` (blue-600) is borderline against dark
+		// canvas (slate-950 → ~3.92 ratio, fails AA for normal text).
+		--set-tab-active-color: var(--color-primary-on-canvas);
 		--set-tab-active-indicator-size: 2px;
 		--set-tab-padding-inline: calc(var(--spacing) * 3);
 		--set-tab-padding-block: calc(var(--spacing) * 2);

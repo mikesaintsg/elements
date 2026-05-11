@@ -39,7 +39,7 @@ Tailwind's documentation is authoritative. The framework reads these via `var()`
 | Transition         | `--set-transition-duration`                                                                            |
 | Element-scoped     | `--set-button-*`, `--set-input-*`, `--set-dialog-*`, …                                                 |
 
-Plus `--color-{variant}` (seven semantic palette tokens registered via `@theme` so Tailwind generates `.bg-primary` / `.text-success` / etc.) and `--color-{variant}-{bg-subtle, text-emphasis, border-subtle}` triplets declared on `:root` for theme-aware surfaces.
+Plus `--color-{variant}` (seven semantic palette tokens registered via `@theme` so Tailwind generates `.bg-primary` / `.text-success` / etc.), the `--color-{variant}-{bg-subtle, text-emphasis, border-subtle}` triplets declared on `:root` for theme-aware tinted surfaces, and the single-token `--color-{variant}-on-canvas` tier for variant text painted directly on the body canvas.
 
 ---
 
@@ -276,6 +276,22 @@ For each variant, a `{bg-subtle, text-emphasis, border-subtle}` triplet is decla
 ```
 
 Toast, alert, and callout surfaces consume these triplets so a consumer who retunes `--color-primary` automatically gets matching subtle / emphasis / border-subtle without redeclaring each one.
+
+Alongside the triplet, each variant exposes a single `--color-{variant}-on-canvas` token for text painted directly on `--color-canvas` (no tinted container under the glyph):
+
+```scss
+// Light :root
+--color-primary-on-canvas: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
+--color-warning-on-canvas: color-mix(in oklab, var(--color-warning) 30%, var(--color-text));
+
+// Dark :root (slightly more variant chroma since canvas has no tint)
+--color-primary-on-canvas: color-mix(in oklab, var(--color-primary) 80%, var(--color-text));
+--color-warning-on-canvas: var(--color-warning);
+```
+
+Naming follows Material Design's `on-X` convention — the suffix names the SURFACE the color is safe ON. The bare `-600` step that reads as a saturated FILL doesn't have enough luminance contrast to clear WCAG AA when painted as TEXT on canvas (amber/green/sky fail in light mode; every variant fails in dark mode at ~3–4 ratio). The `on-canvas` tier solves it with a per-mode `color-mix(in oklab, variant {70|80}%, --color-text)` so the shade auto-inverts polarity between light and dark and clears AA on both canvases.
+
+`text-emphasis` and `on-canvas` are decoupled by name even though their formulas match today: `text-emphasis` is "text emphasized on `bg-subtle`" (variant-tinted bg), `on-canvas` is "text safe on `--color-canvas`" (no bg tint). Canvas-context can retune independently of bg-subtle-context if a future theme needs divergent shades. Bare variant anchors (`elements/_a.scss`), bare variant labels (`elements/_label.scss`), header/footer/menu-current foreground hover states, and any inline variant text consume the `on-canvas` tier through `--set-variant-on-canvas-color`.
 
 **Dark-mode tunes** live under `[data-theme="dark"]` in `_theme.scss`. Surface, text, and border tokens flip from the slate `50`/`100` light scale to the slate `900`/`950` dark scale; variant identities stay constant (Tailwind's `-600` step contrasts well against both extremes); subtle triplets re-derive against `--color-surface` with bumped mix percentages so the tint reads cleanly against the deep canvas.
 

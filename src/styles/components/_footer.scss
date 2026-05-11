@@ -77,7 +77,9 @@
 		}
 
 		& :where(a):hover {
-			color: var(--color-primary);
+			// Footer band paints over `--color-surface` (slate-50 / slate-900);
+			// the on-canvas tier clears WCAG AA against both surface tones.
+			color: var(--color-primary-on-canvas);
 		}
 	}
 }

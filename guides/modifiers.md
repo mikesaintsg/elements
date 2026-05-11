@@ -10,14 +10,14 @@ This means every modifier dimension works on every element that consumes the rig
 
 Each dimension is orthogonal — an element takes at most one value from each.
 
-| Dimension                                  | Values                                                                                        | Context tokens it writes                                                                                    | Partial                                                        |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| **Variant** (semantic identity)            | `.primary`, `.secondary`, `.tertiary`, `.success`, `.warning`, `.danger`, `.information`      | `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`                       | [`_variants.scss`](../src/styles/modifiers/_variants.scss)     |
-| **Size** (physical scale)                  | `.small`, `.large`, `.huge` (no `.medium` — that's the default)                               | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius` | [`_sizes.scss`](../src/styles/modifiers/_sizes.scss)           |
-| **Style** (fill treatment)                 | `.outline`, `.ghost`, `.filled`                                                               | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`                             | [`_styles.scss`](../src/styles/modifiers/_styles.scss)         |
-| **Shape** (corner radius)                  | `.rounded`, `.pill`, `.square`                                                                | `--set-shape-border-radius`                                                                                 | [`_shapes.scss`](../src/styles/modifiers/_shapes.scss)         |
-| **State** (interaction state)              | `.disabled`, `.active`, `.loading`                                                            | (typically toggles existing element rules; no dedicated context tokens)                                     | [`_states.scss`](../src/styles/modifiers/_states.scss)         |
-| **Placement** (anchored surface placement) | `.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end` | Maps to CSS `position-area` keywords                                                                        | [`_placements.scss`](../src/styles/modifiers/_placements.scss) |
+| Dimension                                  | Values                                                                                        | Context tokens it writes                                                                                                                                                                                                                         | Partial                                                        |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| **Variant** (semantic identity)            | `.primary`, `.secondary`, `.tertiary`, `.success`, `.warning`, `.danger`, `.information`      | FILLED: `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`, `--set-variant-border-width`. SUBTLE: `--set-variant-subtle-{color, background-color, border-color}`. ON-CANVAS: `--set-variant-on-canvas-color`. | [`_variants.scss`](../src/styles/modifiers/_variants.scss)     |
+| **Size** (physical scale)                  | `.small`, `.large`, `.huge` (no `.medium` — that's the default)                               | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius`                                                                                                                                      | [`_sizes.scss`](../src/styles/modifiers/_sizes.scss)           |
+| **Style** (fill treatment)                 | `.outline`, `.ghost`, `.filled`                                                               | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`                                                                                                                                                                  | [`_styles.scss`](../src/styles/modifiers/_styles.scss)         |
+| **Shape** (corner radius)                  | `.rounded`, `.pill`, `.square`                                                                | `--set-shape-border-radius`                                                                                                                                                                                                                      | [`_shapes.scss`](../src/styles/modifiers/_shapes.scss)         |
+| **State** (interaction state)              | `.disabled`, `.active`, `.loading`                                                            | (typically toggles existing element rules; no dedicated context tokens)                                                                                                                                                                          | [`_states.scss`](../src/styles/modifiers/_states.scss)         |
+| **Placement** (anchored surface placement) | `.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end` | Maps to CSS `position-area` keywords                                                                                                                                                                                                             | [`_placements.scss`](../src/styles/modifiers/_placements.scss) |
 
 The dimensions compose freely. `<button class="primary large outline rounded">` resolves all four through the cascade in one pass.
 
@@ -74,47 +74,45 @@ Result: outlined primary button at large size with rounded corners. **Zero per-e
 
 ## 3. Variants
 
-Seven semantic identities. Each variant's identity color is `--set-variant-background-color` — the same token that fills the background in `.filled` state. There's no separate "base" token because the background color IS the variant's color.
+Seven semantic identities. Each `.{variant}` class sets EIGHT context tokens across three "treatment" tiers — FILLED, SUBTLE, and ON-CANVAS — each tuned for a different surface context.
 
 ```scss
 .primary {
+	// FILLED — saturated identity surface (consumed by `.filled` style and
+	// by bare element variants that paint with a fill).
 	--set-variant-color: white;
 	--set-variant-background-color: var(--color-primary);
 	--set-variant-border-color: var(--color-primary);
-}
-.secondary {
-	--set-variant-color: black;
-	--set-variant-background-color: var(--color-secondary);
-	--set-variant-border-color: var(--color-secondary);
-}
-.tertiary {
-	--set-variant-color: white;
-	--set-variant-background-color: var(--color-tertiary);
-	--set-variant-border-color: var(--color-tertiary);
-}
-.success {
-	--set-variant-color: white;
-	--set-variant-background-color: var(--color-success);
-	--set-variant-border-color: var(--color-success);
-}
-.warning {
-	--set-variant-color: black;
-	--set-variant-background-color: var(--color-warning);
-	--set-variant-border-color: var(--color-warning);
-}
-.danger {
-	--set-variant-color: white;
-	--set-variant-background-color: var(--color-danger);
-	--set-variant-border-color: var(--color-danger);
-}
-.information {
-	--set-variant-color: black;
-	--set-variant-background-color: var(--color-information);
-	--set-variant-border-color: var(--color-information);
+	--set-variant-border-width: 1px;
+
+	// SUBTLE — tinted bg + emphasis text + subtle border (consumed by
+	// `.subtle` style). The triplet is theme-aware via `_theme.scss`.
+	--set-variant-subtle-color: var(--color-primary-text-emphasis);
+	--set-variant-subtle-background-color: var(--color-primary-bg-subtle);
+	--set-variant-subtle-border-color: var(--color-primary-border-subtle);
+
+	// ON-CANVAS — single-token tier for variant text painted directly on
+	// `--color-canvas` (no tinted container). Tuned per-mode so the same
+	// token clears WCAG AA in both light and dark themes.
+	--set-variant-on-canvas-color: var(--color-primary-on-canvas);
 }
 ```
 
-The contrast text color (`--set-variant-color`) is hand-tuned per variant for WCAG AA contrast against the variant's background. `.warning` and `.information` use black text; the others use white.
+(`.secondary`, `.tertiary`, `.success`, `.warning`, `.danger`, `.information` follow the same eight-token shape.)
+
+**Tier semantics:**
+
+- **FILLED** — saturated identity surface. Consumed by `.filled` style and by bare element variants that need a fill (e.g. `<button class="primary">` paints filled by default). Text color (`--set-variant-color`) is white on dark-luminance variants (primary/secondary/tertiary/danger) and black on light-luminance variants (success/warning/information) — the empirical split is WCAG-driven.
+- **SUBTLE** — tinted bg + emphasis text + subtle border. Consumed by `.subtle` style; mirrors Bootstrap 5's `.btn-{color}-subtle`. The bg + text pair is tuned per-mode in `_theme.scss` so the combination clears AA in both themes.
+- **ON-CANVAS** — single-token tier for unboxed variant text (bare variant anchor, bare variant label, header/footer/menu-current foreground hover). Solves the WCAG gap where the saturated `-600` step doesn't clear 4.5:1 against the body canvas. Naming follows Material Design's `on-X` convention — the suffix names the SURFACE the color is safe ON. Sibling to (but decoupled from) the SUBTLE tier's `text-emphasis` member; canvas-context and bg-subtle-context can retune independently.
+
+When to reach for which:
+
+| Surface under the glyph                                | Token to consume                                                                    |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| Variant fill (`.filled`, primary button bg)            | `--set-variant-background-color` for bg, `--set-variant-color` for fg               |
+| Variant-tinted container (`.subtle`, alert, callout)   | `--set-variant-subtle-background-color` for bg, `--set-variant-subtle-color` for fg |
+| Body canvas — no tinted container (bare anchor, label) | `--set-variant-on-canvas-color` for fg                                              |
 
 The variant context tokens are also consumed by element baselines that need a tint without a class — alerts and callouts read `--color-{variant}-bg-subtle`, `--color-{variant}-text-emphasis`, `--color-{variant}-border-subtle` directly from the theme layer.
 

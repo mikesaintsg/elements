@@ -130,8 +130,11 @@
 	}
 
 	// Highlight the label of an invalid field so the user can tell which
-	// field broke even if the input is offscreen / scrolled.
+	// field broke even if the input is offscreen / scrolled. Uses the
+	// `on-canvas` tier so the danger-red label clears WCAG AA against the
+	// form surface in both light (white canvas) and dark (slate-950)
+	// modes — bare `--color-danger` (red-600) fails AA on slate-950.
 	form[data-form-validated] label:has(:invalid) {
-		color: var(--color-danger);
+		color: var(--color-danger-on-canvas);
 	}
 }

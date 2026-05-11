@@ -442,8 +442,8 @@ A page that fails any row gets fixed in-place before being marked done — the r
 
 #### Elements — Interactive (5)
 
-- [ ] **ButtonPage** — the cascade reference. Every variant × every size × every style × every state, with focus-ring + hover + disabled side-by-side, icon-buttons, loading states, link-as-button.
-- [ ] **AnchorPage** — bare anchor (in-body), anchors in header / footer / nav-rail / TOC contexts (the §6.1 context contract proved out), variant anchors, `.filled` anchors, external-link affordance, visited state.
+- [x] **ButtonPage** — the cascade reference. Every variant × every size × every style × every state, with focus-ring + hover + disabled side-by-side, icon-buttons, loading states, link-as-button. _Landed alongside dark-mode bare-button visibility fix and the spinner-visibility tune-up._
+- [x] **AnchorPage** — bare anchor (in-body), anchors in header / footer / nav-rail / TOC contexts (the §6.1 context contract proved out), variant anchors, `.filled` anchors, external-link affordance, visited state. _Surfaced the variant-text-on-canvas WCAG gap, which drove the framework-wide `--color-{variant}-on-canvas` tier addition (see "Phase 9 cross-cutting changes" below)._
 - [ ] **FormControlsPage** — input (every `type=`), textarea (auto-resize), select (native), label, fieldset + legend, output (calc-chip flavour), progress, meter (optimum / sub-optimum / even-less-good). One mega-page; subsections per control.
 - [ ] **DetailsPage** — bare details, group accordion, nested, custom marker via `--set-summary-marker-image`, smooth open/close (`interpolate-size: allow-keywords`).
 - [ ] **DialogElementPage** — bare `<dialog>` element baseline (modal / non-modal, `open` flow vs `showModal()`), modifier classes (`.small`, `.large`, `.fullscreen`, `.scrollable`), backdrop scrim. _(Live composable wiring is on `UseDialogPage`.)_
@@ -517,7 +517,31 @@ The current flat list works for 1–14 pages. By the time the roster hits ~15 en
 - [ ] **Forced-colors full-suite** — Windows High Contrast walkthrough.
 - [ ] **Console-clean full-suite** — boot the dev server, walk every page, capture zero Vue warns / zero Tailwind missing-source warns.
 
-### 9.7 Working cadence
+### 9.7 Phase 9 cross-cutting framework changes
+
+Phase 9 occasionally surfaces a gap that can't be fixed inside a single page — the rubric catches a framework-wide regression the page authoring revealed. Record those landings here so the API surface diff stays visible across pages.
+
+- [x] **`--color-{variant}-on-canvas` tier** — added a third per-variant tier (sibling to `bg-subtle` / `text-emphasis` / `border-subtle`) for variant text painted directly on the canvas surface. Surfaced by AnchorPage: bare variant anchors using the saturated `-600` step failed WCAG AA against `--color-canvas` for amber/green/sky in light mode and most variants in dark mode. The new tier is tuned per-mode via `color-mix(in oklab, var(--color-{variant}) {70|80}%, var(--color-text))` so the same token clears AA in both themes. Naming follows Material Design's `on-X` convention — the suffix names the surface the color is safe ON. Migrations landed across:
+  - `elements/_a.scss` — bare anchor cascade fallback
+  - `elements/_label.scss` — bare label color fallback
+  - `components/_form.scss` — invalid-field label highlight
+  - `components/_header.scss` / `_footer.scss` — anchor hover color
+  - `components/_menu.scss` — aside-TOC `aria-current="location"` + select-popover `aria-selected="true"`
+  - `components/_nav.scss` — `--set-tab-active-color`
+  - `modifiers/_variants.scss` — `--set-variant-on-canvas-color` exposed per variant
+  - `_theme.scss` — light / dark / `[data-theme='dark']` blocks
+  - `src/browser/tokens.ts` — TS mirror
+- [x] **Hgroup tagline color** — `--set-hgroup-tagline-color` migrated from `--color-text-subtle` (slate-400/500, placeholder-tier) to `--color-text-muted` (slate-600/400) — surfaced by AnchorPage's tagline reading as washed-out in both modes. `--color-text-subtle` is reserved for placeholder-like dimming; metadata under a heading is a secondary-text context.
+- [x] **`<dl>` responsive shape** — `_dl.scss` now stacks single-column below 640px and uses `minmax(0, max-content) minmax(0, 1fr)` + `overflow-wrap: anywhere` on `<dt>`/`<dd>` at wider widths. Previous `max-content 1fr` let long terms push the page wider than the viewport, surfaced by AnchorPage's token-reference list.
+
+Skip-listed (not text contrast, decisions deferred):
+
+- `elements/_blockquote.scss` — `--set-blockquote-color` is the leading-bar (border), not text; the 4px stripe at the saturated `-600` step stays as visual identity.
+- `elements/_progress.scss` — fill paints over the track, not directly over canvas; track-contrast tuning is a separate design decision.
+- `elements/_meter.scss`, `components/_dot.scss`, `elements/_hr.scss` — fills / decorations / separators; not text.
+- `_button.scss` — variant on `<button>` is always a fill (white-on-`-600`); a bare variant button without `.subtle` / `.filled` paints filled by default, so there's no bare-variant-text-on-canvas case.
+
+### 9.8 Working cadence
 
 The user has explicitly chosen **Phase 9 Option A** — page-by-page, no batching. Per turn:
 

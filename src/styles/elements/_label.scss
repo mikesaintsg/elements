@@ -28,7 +28,13 @@
 		// ----------------------------------------------------------------------
 		// Element-scoped tokens — variant/size context first, then defaults.
 		// ----------------------------------------------------------------------
-		--set-label-color: var(--set-variant-background-color, currentColor);
+		// Variant cascade resolves through the ON-CANVAS tier — labels paint
+		// directly on whatever surface they sit on (page canvas, card, form
+		// section), so the variant shade has to clear WCAG AA without a
+		// tinted container. `--set-variant-on-canvas-color` is tuned per-mode
+		// for canvas contrast; falls back to `currentColor` (inherits from
+		// parent form/section) when no variant class is set.
+		--set-label-color: var(--set-variant-on-canvas-color, currentColor);
 		--set-label-font-size: var(--set-size-font-size, 1em);
 		--set-label-font-weight: 500;
 		--set-label-line-height: 1.4;

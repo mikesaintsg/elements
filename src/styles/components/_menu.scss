@@ -239,7 +239,11 @@
 
 	body:has(main) > aside menu > li > :where(a, button)[aria-current='location'],
 	body:has(main) > * > aside menu > li > :where(a, button)[aria-current='location'] {
-		color: var(--color-primary);
+		// Active TOC item paints variant text directly on the aside surface
+		// (no tinted bg). On-canvas tier clears WCAG AA for the text; the
+		// 1px leading bar keeps the saturated identity step (line decoration
+		// doesn't need the 4.5:1 text-contrast ratio).
+		color: var(--color-primary-on-canvas);
 		border-inline-start-color: var(--color-primary);
 		font-weight: 500;
 	}
@@ -387,10 +391,12 @@
 
 		// `useSelect` flips `aria-selected="true"` on the chosen option;
 		// the active row gets a brand-tinted background so the user can
-		// see their current pick at a glance.
+		// see their current pick at a glance. The 10% primary mix sits
+		// close to `bg-subtle` — text uses the `on-canvas` tier so the
+		// row clears WCAG AA against the tinted surface in both modes.
 		&[aria-selected='true'] {
 			background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
-			color: var(--color-primary);
+			color: var(--color-primary-on-canvas);
 		}
 	}
 }
