@@ -372,21 +372,163 @@ For each composable that needs drawer-shaped CSS (display/position/transform gat
 
 For each composable:
 
-- [x] **Factory test** at `tests/src/browser/factories/create{Entity}.test.ts`. Cover construction + ARIA wiring + every action + every event + `preventDefault` cancellation + `destroy()` idempotence + `assertCleanDispose` (no listener/observer/timer leaks). All passing in `src:browser` (953/953).
+- [x] **Factory test** at `tests/src/browser/factories/create{Entity}.test.ts`. Cover construction + ARIA wiring + every action + every event + `preventDefault` cancellation + `destroy()` idempotence + `assertCleanDispose` (no listener/observer/timer leaks).
 - [x] **Composable test** at `tests/src/browser/composables/use{Entity}.test.ts`. Mirrors the factory's coverage.
-- [x] **Showcase page** at `app/browser/pages/Use{Entity}Page.vue` demoing the API surface end-to-end on real DOM.
+- [ ] **Showcase page** at `app/browser/pages/Use{Entity}Page.vue` demoing the API surface end-to-end on real DOM. **STATUS: not yet built.** Only `HomePage.vue` exists. The previous "[x]" marking was incorrect — see Phase 9 below for the comprehensive per-page roster, authoring contract, and audit rubric that closes this out honestly.
 
-**Verification:** Every composable's factory + composable + showcase page exist; the test suite passes; each `Use*Page.vue` is reachable in the showcase and demonstrates the full API.
+**Verification:** Every composable's factory + composable test passes. Showcase pages are tracked under Phase 9 and gated on the per-page authoring contract; a composable is not "showcase-complete" until its dedicated page is built, audited per rubric, and confirmed by hand-walkthrough in light + dark + mobile + desktop.
 
 ---
 
-## Phase 9 — Showcase polish
+## Phase 9 — Showcase
 
-- [x] **Sidebar navigation** — `app/browser/components/SiteNav.vue` with filter input + grouped route list.
+> The framework's user-facing proof. Every substantive surface gets a dedicated page that demonstrates the full API on real DOM, audited per the rubric in §9.2, and walked by hand in light + dark + mobile + desktop before being marked done.
+
+### 9.0 Reality
+
+Only `HomePage.vue` exists today. Phase §8.6's previous "[x]" for `Use{Entity}Page.vue` was incorrect — those pages were never built. This phase replaces that lie with an honest roster of ~42 pages, a per-page authoring contract, and a rubric every page passes before it ships.
+
+### 9.1 Shell + chrome (✅ shipped)
+
+- [x] **Sidebar navigation** — `app/browser/components/SiteNav.vue` with filter input + grouped route list. **Note for §9.3:** will need a collapsible-group treatment once the page roster grows past ~15 entries; today it's a flat list that works fine for one route.
 - [x] **In-page TOC** — `app/browser/components/Toc.vue` reading `section[id]` inside the scroller, building an on-this-page list.
-- [x] **Theme toggle** — banner-mounted dark/light switch using `useTheme`.
-- [x] **Mobile drawer** — sidebar slides in via two-state (`leftOpen` / `rightOpen`) backdrop dismiss in `App.vue`. The `closeDrawers()` method centralises the dual-flag reset so a future `oxfmt` reformat can't break the multi-statement `@click` expression (Vue compiler rejects newline-separated statements in directive expressions — single-method handlers are formatter-safe).
-- [ ] **Per-page audits** — verify every showcase page reads cleanly in light + dark, desktop + mobile, with framework-only chrome (Tailwind utilities reserved for last-mile fine-tuning). _(Ongoing — sectioning containers, anchor/button context defaults, address/dd token leaks, article elevation already audited per checkpoints 5a–5c in [prompt.md](../prompt.md).)_
+- [x] **Theme toggle** — banner-mounted dark/light/system switch using `useTheme`.
+- [x] **Mobile drawer** — sidebar slides in via two-state (`leftOpen` / `rightOpen`) backdrop dismiss in `App.vue`.
+
+### 9.2 The page authoring contract
+
+Every showcase page MUST:
+
+1. **Live under `app/browser/pages/{Name}Page.vue`** and be registered in `app/browser/router.ts` under the appropriate `group`.
+2. **Open with an `hgroup`** — `<h1>` page title + `<p>` one-sentence framing.
+3. **Cover the full API surface** for the symbol it documents:
+   - Element pages: every variant × every size × every style × every relevant state, plus per-element idiosyncrasies (focus-ring, disabled, placeholder, etc.).
+   - Composable pages: every action method, every event, every option key — wired live, not narrated.
+4. **Use real, framework-only markup.** Tailwind utilities are reserved for last-mile fine-tuning (layout assists, spacing). The page itself is the proof that the framework's chrome is hydrated.
+5. **Live demos, not screenshots.** Every example is interactive — clicking the button paints the active state, opening the dialog runs the real transition, sorting the table calls the real factory.
+6. **Code samples sit beside their demos.** A `<details>` / `<pre><code>` block per example lets readers copy the markup.
+7. **Section IDs** on every major heading so the right-rail TOC picks them up and the URL hash deep-links work.
+8. **Pass the rubric in §9.3 before being marked `[x]`.**
+
+### 9.3 The per-page audit rubric
+
+A page is not done until each row is verified by hand-walkthrough (preview server, real browser):
+
+| Dimension | What to verify |
+| --------- | -------------- |
+| **Light mode contrast** | Every text/border meets WCAG AA (4.5:1 normal text, 3:1 large text + non-text). Spot-check variants on tinted backgrounds. |
+| **Dark mode contrast** | Same bar in `[data-theme="dark"]`. Variant-tinted surfaces (alerts, toasts, badges, hint tooltips) reach AA — the subtle/emphasis triplets do not auto-survive dark, they must be checked. |
+| **Focus paths** | Tab order matches visual order. Focus ring visible on every interactive element. `:focus-visible` only fires on keyboard nav (not mouse click). Modal traps focus on `useDialog` pages; tab-trap demos verify the entry/exit. |
+| **Mobile (375)** | No horizontal scroll. Drawer toggles dismiss when an interaction lands. Every action is reachable; no overlapping chrome. Toast / dialog / popover all sit inside the viewport with safe-area gutters. |
+| **Tablet (768)** | Body grid reflows cleanly (no orphaned sidebar or TOC stub). Composables that have placement variants pick sensible defaults. |
+| **Desktop (1440)** | Generous spacing, no stretched-thin elements. Inline-size caps (`--set-floater-max-inline-size`, `--set-popover-max-inline-size`, `--set-toast-inline-size`) prevent over-wide chrome. |
+| **Reduced motion** | All transitions collapse via `prefers-reduced-motion: reduce` (the `transition()` mixin guarantees this; verify per page that no inline `transition:` slipped past the mixin). Composable entry/exit motion shortens to instant (the popover surface's `transition-behavior: allow-discrete` still keeps the discrete display flip but the visual tween skips). |
+| **Forced colors** | Windows High Contrast: focus rings survive (`outline: 2px solid Highlight`), borders + text remain visible, custom backgrounds collapse to `Canvas`. |
+| **Keyboard nav** | Every action reachable via keyboard. APG-defined patterns wire arrow keys (menu, tablist, select, table-row, carousel-indicator) and Esc dismissal (dialog, drawer, popover, toast on Esc-to-pause). |
+| **Reader sanity** | Section IDs present and TOC populated. Code samples copy cleanly. Hash deep-links resolve. No console warnings (Vue or otherwise). |
+
+A page that fails any row gets fixed in-place before being marked done — the rubric is the gate, not aspirational.
+
+### 9.4 The page roster
+
+42 pages, grouped to match the natural mental model of the framework. Each line is a TODO; check it off only after the rubric in §9.3 passes.
+
+#### Foundations (4)
+
+- [ ] **TokensPage** — every `--set-*` leaf surfaced with its live computed value; retune playground (consumer pins `--set-border-radius: 0` and watches every rounded surface flatten); icon registry preview; elevation scale demonstration.
+- [ ] **ThemePage** — light / dark / system, brand retune (`--color-primary` slider drives variant cascade across every surface on the page), inverted tier, surface / text / border tier demonstration, subtle / emphasis / border-subtle triplets per variant.
+- [ ] **ModifiersPage** — variant × size × style × state cascade demonstration. Single shared markup, 16+ rendered permutations.
+- [ ] **PlacementsPage** — popover anchor positioning live (`.top`, `.bottom`, `.start`, `.end`, plus corners), `position-try-fallbacks` flip demo, viewport-clamp behaviour.
+
+#### Elements — Interactive (5)
+
+- [ ] **ButtonPage** — the cascade reference. Every variant × every size × every style × every state, with focus-ring + hover + disabled side-by-side, icon-buttons, loading states, link-as-button.
+- [ ] **AnchorPage** — bare anchor (in-body), anchors in header / footer / nav-rail / TOC contexts (the §6.1 context contract proved out), variant anchors, `.filled` anchors, external-link affordance, visited state.
+- [ ] **FormControlsPage** — input (every `type=`), textarea (auto-resize), select (native), label, fieldset + legend, output (calc-chip flavour), progress, meter (optimum / sub-optimum / even-less-good). One mega-page; subsections per control.
+- [ ] **DetailsPage** — bare details, group accordion, nested, custom marker via `--set-summary-marker-image`, smooth open/close (`interpolate-size: allow-keywords`).
+- [ ] **DialogElementPage** — bare `<dialog>` element baseline (modal / non-modal, `open` flow vs `showModal()`), modifier classes (`.small`, `.large`, `.fullscreen`, `.scrollable`), backdrop scrim. _(Live composable wiring is on `UseDialogPage`.)_
+
+#### Elements — Content (4)
+
+- [ ] **HeadingsPage** — `<h1>`–`<h6>` cascade, `<hgroup>` heading + tagline, document outline best practices.
+- [ ] **TypographyPage** — `<p>`, `<blockquote>`, `<abbr>`, `<mark>`, `<address>`, `<code>`, `<kbd>`, `<samp>`, `<var>`, `<pre>`, `<small>`, `<strong>`, `<em>`, `<ins>`, `<del>`, `<s>`, `<q>`, `<sub>`, `<sup>`, `<time>`, `<data>`, `<u>`, `<hr>`. Each in body-copy context.
+- [ ] **ListsPage** — `<ul>` / `<ol>` / `<li>` (with `::marker` surface variants), `<dl>` / `<dt>` / `<dd>` (definition pairs, multi-term, multi-definition).
+- [ ] **TablesPage** — `<table>` element baseline: `<caption>`, `<thead>` / `<tbody>` / `<tfoot>`, `<tr>` / `<th>` / `<td>`, sticky header, striped rows, hover, sort indicators (static — interactive sort lives on `UseTablePage`).
+
+#### Elements — Media & Sectioning (3)
+
+- [ ] **MediaPage** — `<img>`, `<video>`, `<audio>`, `<canvas>`, `<svg>` (inline + viewBox-only), `<iframe>`, `<embed>`, `<object>`, `<picture>` (`display: contents` structural rule).
+- [ ] **FiguresPage** — `<figure>` + `<figcaption>` with image / code / table / pull-quote variants.
+- [ ] **SectioningPage** — `<main>`, `<section>`, `<article>`, `<aside>`, `<header>`, `<footer>`, `<nav>`, `<search>`, `<hgroup>`. Demonstrates the body-grid layout shell, the substantive sectioning hydration (flex-column rhythm, `--set-sticky-offset` scroll-margin), nesting collapse behaviour.
+
+#### Components (5)
+
+- [ ] **ArticleCardPage** — bare `<article>` as card, `.filled` opt-in, header / footer / menu compositions, elevation, callout via descendant `<aside>`.
+- [ ] **AsidePage** — sidebar context (body-shell), inline pull-quote (article descendant), alert banner (`role="alert"` with variant cascade), forced-colors fallback.
+- [ ] **NavPage** — body-rail nav (sidebar), breadcrumb (`<ol>` with `aria-label="Breadcrumb"`), pagination chrome, tablist composition.
+- [ ] **MenuPage** — bare menu (toolbar / action row), card-action row (`article menu`), nav-rail rows (`body > nav menu`), dropdown menu (`<menu popover>`).
+- [ ] **InlineAtomsPage** — `.badge`, `.dot` (with pulse), `.tag` (chip-shaped), `.spinner`, `.skeleton`. Variant cascade demonstration per atom.
+
+#### Surfaces (3)
+
+- [ ] **PopoverSurfacesPage** — `[popover=auto]`, `[popover=manual]`, `[popover=hint]` / `[role="tooltip"]`, `dialog:modal::backdrop` scrim, anchor positioning with `position-try-fallbacks`, hint variant inversion.
+- [ ] **FormSurfacesPage** — focus-ring (variant-tinted, form-control opt-out, forced-colors fallback), `::placeholder`, `::marker`, `::selection`. Live demonstrations on real form controls and list items.
+- [ ] **ScrollAndTransitionPage** — scrollbar surface (thin / stable gutter), `::view-transition-*` (consumer-triggered `document.startViewTransition()` demo so the default fade actually fires).
+
+#### Composables — Primitives (4)
+
+- [ ] **UseFocusPage** — tab-trap on a panel; activate / deactivate cycling; verify trapped focus + restore on deactivate.
+- [ ] **UsePointerPage** — drag multiplex on a custom slider thumb; body cursor lock during drag.
+- [ ] **UseDragDropPage** — `useDrag` source + `useDrop` target pair (paired because they're useless alone). Reorderable list with `relatedTarget`-aware `over` tracking.
+- [ ] **UseThemeButtonPage** — `useTheme` controller (light / dark / system / explicit) + `useButton` toggle (`aria-pressed`) — paired because both are tiny-surface composables that benefit from a shared canvas.
+
+#### Composables — Floating Layer (3)
+
+- [ ] **UsePopoverPage** — toggle + anchor positioning + click-outside dismiss + every placement modifier + composed with `useTooltip` / `useMenu` (which build on it).
+- [ ] **UseTooltipPage** — hover + focus triggers, `role="tooltip"`, `[popover=hint]` panel, delay-show / delay-hide, multi-trigger.
+- [ ] **UseMenuPage** — `<menu popover>` panel + toggle, arrow-key roving, Home / End, click-outside dismiss.
+
+#### Composables — Element-Bound (11)
+
+- [ ] **UseDialogPage** — modal vs non-modal, every dismissal path (Esc, backdrop, programmatic), `'static'` mode (no backdrop dismiss), scrollable + fullscreen modifiers, non-modal scroll-lock.
+- [ ] **UseAsidePage** — drawer mode (`<aside popover="manual">`) at every edge (`.start`, `.end`, `.top`, `.bottom`), backdrop dismiss, `[data-aside-closing]` lifecycle exposed.
+- [ ] **UseDetailsPage** — programmatic open / close synced with native `toggle`, animated height, group accordion (one-open-at-a-time pattern).
+- [ ] **UseToastPage** — linear stack (default), Sonner-deck mode (`[data-toast-stack]`), auto-hide timer + pause-on-hover, swipe-to-dismiss, variant tinting, hidden-overflow indicator.
+- [ ] **UseSelectPage** — listbox + combobox + multi-select + autocomplete + typeahead filter. Three sub-demos: native select repaint, custom listbox, combobox with sticky search.
+- [ ] **UseTablePage** — sort (one / multi-column), paginate, multi-select with shift-range, row expansion (sync + animated), column resize, focus management, sticky header.
+- [ ] **UseFormPage** — constraint-validation pipeline, `[data-form-validated]` after first submit, per-field `aria-invalid` mirror, summary error region, submit-disabled-on-invalid.
+- [ ] **UseNavPage** — scroll-spy on a long article with anchored sections; `aria-current="location"` flips as scroll position passes section boundaries.
+- [ ] **UseAlertPage** — `useAlert` open / dismiss lifecycle, transition collapse, polite vs assertive (`role="alert"` vs `role="status"`), persistence across re-mounts.
+- [ ] **UseTabsPage** — `[role="tablist"]` arrow-key roving, lazy panel mount, vertical vs horizontal orientation, manual vs automatic activation.
+- [ ] **UseCarouselPage** — slide nav, autoplay + pause-on-hover, touch / swipe, indicator dots, variant-tinted slides, every-axis transition lifecycle.
+
+### 9.5 Sidebar nav adjustments needed before page #15
+
+The current flat list works for 1–14 pages. By the time the roster hits ~15 entries:
+
+- [ ] **Group-collapsible sidebar** — `<details><summary>{group}</summary><menu>…</menu></details>` per group so the rail isn't a 42-line scroll.
+- [ ] **Keyboard nav inside the rail** — arrow keys move focus between visible items; `[` / `]` collapse / expand groups.
+- [ ] **Active-page state** — `aria-current="page"` paint already shipped; verify it survives the collapsible-group treatment.
+
+### 9.6 Cross-page polish (run AFTER all pages exist)
+
+- [ ] **Theme retune end-to-end** — pin a brand color at `:root` and walk every page; verify the cascade reaches focus rings / toasts / alerts / selections / popovers / tabs / breadcrumbs.
+- [ ] **Reduced-motion full-suite** — verify every animation + transition collapses across all 42 pages.
+- [ ] **Forced-colors full-suite** — Windows High Contrast walkthrough.
+- [ ] **Console-clean full-suite** — boot the dev server, walk every page, capture zero Vue warns / zero Tailwind missing-source warns.
+
+### 9.7 Working cadence
+
+The user has explicitly chosen **Phase 9 Option A** — page-by-page, no batching. Per turn:
+
+1. Build ONE page end-to-end, every example interactive, code samples beside demos.
+2. Run the rubric in §9.3 — preview server, light + dark, 375 / 768 / 1440, focus paths, console clean.
+3. Land fixes inline; never declare done with an unticked rubric row.
+4. Hand to user for sample + report.
+5. User feedback → fix → re-rubric → mark `[x]`.
+6. Commit.
+
+No skipping ahead. No batching pages. The pages that exist are real; the pages that don't are honestly tracked as `[ ]`.
 
 ---
 
