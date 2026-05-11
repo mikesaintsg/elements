@@ -1,18 +1,37 @@
-// <address> – Contact information block
-// Browser defaults: display: block; font-style: italic
-// Provides contact details for the nearest <article> or <body> ancestor
+// ============================================================================
+// <address> — Contact information for the nearest sectioning ancestor.
 //
-// Tailwind preflight doesn't touch font-style. The framework explicitly
-// resets address from italic to normal — the italic-by-default behavior
-// is widely considered an unwanted UA quirk and most design systems undo it.
-// Consumers who do want italic addresses can re-add `font-italic` via utility.
+// W3C: contact information for the nearest `<article>` or `<body>`
+// ancestor (per HTML LS §4.3.10). Implies the `contentinfo` role when used
+// inside a body footer; otherwise it's a labelled metadata block.
+//
+// Element baseline: a small subdued contact block. The italic UA quirk is
+// dropped (most design systems agree); font-size, color, and line-height
+// pull from semantic tokens so the block reads as secondary metadata
+// (byline / signature / contact) without inheriting the body-copy weight.
+//
+// Token chain:
+//   --set-address-color           Subdued text tier; matches the design
+//                                 system's "muted body copy" semantics.
+//   --set-address-font-size       Slightly smaller than body so the block
+//                                 reads as metadata, not paragraph text.
+//   --set-address-line-height     Tight rhythm for stacked contact lines
+//                                 (street / city / phone / email).
+//   --set-address-margin-block-end  Bottom rhythm so the next paragraph
+//                                   doesn't crowd the block.
+// ============================================================================
 
 @layer elements {
 	address {
-		--set-address-margin-block-end: 1rem;
+		--set-address-color: var(--color-text-muted, currentColor);
+		--set-address-font-size: var(--text-sm, 0.875rem);
+		--set-address-line-height: 1.5;
+		--set-address-margin-block-end: var(--set-stack-spacing, 1rem);
 
 		font-style: normal;
-		line-height: inherit;
+		color: var(--set-address-color);
+		font-size: var(--set-address-font-size);
+		line-height: var(--set-address-line-height);
 		margin-block-end: var(--set-address-margin-block-end);
 	}
 }

@@ -54,6 +54,11 @@ watch([route, section], ([, target]) => {
 	rightOpen.value = false
 })
 
+const closeDrawers = (): void => {
+	leftOpen.value = false
+	rightOpen.value = false
+}
+
 const onKeydown = (e: KeyboardEvent): void => {
 	if (e.key === '/' && !document.querySelector('input:focus, textarea:focus')) {
 		e.preventDefault()
@@ -169,9 +174,6 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		v-if="leftOpen || rightOpen"
 		class="showcase-backdrop"
 		aria-hidden="true"
-		@click="
-			leftOpen = false
-			rightOpen = false
-		"
+		@click="closeDrawers"
 	></div>
 </template>

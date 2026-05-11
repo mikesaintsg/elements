@@ -202,7 +202,7 @@
 				block-size: var(--set-carousel-control-size);
 				border-radius: 50%;
 				background-color: var(--set-carousel-control-bg);
-				box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+				box-shadow: var(--set-box-shadow-sm);
 			}
 
 			&::after {

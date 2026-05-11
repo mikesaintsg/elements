@@ -185,14 +185,16 @@ One partial per HTML tag. Token-driven baselines + UA-quirk resets. The `<button
 
 Sectioning landmarks the framework treats as **hydrated containers**, not invisible block boxes. Bare element + per-element token surface; no class needed.
 
-- [ ] `<main>` (substantive — fluid inline padding gutter via `clamp(1rem, 5vw, …)` + page-level vertical gap; component-layer `overflow-y: auto` layered on top inside the body grid).
-- [ ] `<section>` (substantive — flex-column with `--set-section-padding-block` + `--set-section-gap` so a bare section reads with proper rhythm; nested `<section>` inside `<main>` / `<section>` / `<article>` collapses its padding-block to avoid double-counting; `scroll-margin-block-start` consumes `--set-sticky-offset` so deep links land clear of sticky headers).
-- [ ] `<hgroup>` (substantive — tight flex-column gap + subordinate `<p>` margin reset and subdued color/font-size so the tagline reads as metadata).
-- [ ] **Audit pass for the rest:** walk `guides/w3c/elements/sections.md` and `groupings.md` and confirm every remaining sectioning / grouping element either has a substantive baseline (above) or has its UA default explicitly verified as Bootstrap-equivalent. Any element that semantically expects to be a container but currently renders as a bare block is a hydration gap.
+- [x] `<main>` (substantive — fluid inline padding gutter via `clamp(1rem, 5vw, …)` + page-level vertical gap; component-layer `overflow-y: auto` layered on top inside the body grid).
+- [x] `<section>` (substantive — flex-column with `--set-section-padding-block` + `--set-section-gap` so a bare section reads with proper rhythm; nested `<section>` inside `<main>` / `<section>` / `<article>` collapses its padding-block to avoid double-counting; `scroll-margin-block-start` consumes `--set-sticky-offset` so deep links land clear of sticky headers).
+- [x] `<hgroup>` (substantive — tight flex-column gap + subordinate `<p>` margin reset and subdued color/font-size so the tagline reads as metadata).
+- [x] **Audit pass for the rest:** `<header>`, `<footer>`, `<nav>`, `<aside>`, `<article>`, `<form>`, `<menu>`, `<search>`, `<details>`, `<dialog>` all already substantive at element or component layer; baseline-hydration audit clean (token surfaces present, anchor / button context defaults applied per §6.1, elevation through `--set-box-shadow-*`, focus rings via `focus-ring()`).
 
 ### 5.4 Typography overrides
 
 - [ ] `<abbr>`, `<address>`, `<mark>`, `<p>`, `<hr>`, `<blockquote>`, `<code>`, `<kbd>`, `<samp>`, `<var>`, `<pre>`, `<dl>` + `<dt>` + `<dd>`, `<figure>` + `<figcaption>` — single-rule UA-quirk overrides. No cascade entry, no TS mirror.
+
+**Done so far:** `<address>` promoted from "italic-reset only" to a full small-contact-info block (subdued color, smaller font, tight line-height, stack-spacing margin); `<dd>` color token swapped from `--color-slate-600` (Tailwind palette leak) to `--color-text-muted` (semantic token). `<blockquote>`, `<dl>`, `<figure>`, `<figcaption>` already substantive — verified token surfaces and audit clean.
 
 ### 5.5 Media + embeds
 
@@ -368,6 +370,8 @@ Before declaring done, run the framework-wide invariants checklist (also covered
 
 - [ ] **Cascade layer order** — `@layer theme, base, elements, components, surfaces, composables, modifiers, utilities;` is the only declaration in any `@layer` listing across the codebase. Run `grep -rn "@layer " src/ tests/ app/` and verify.
 - [ ] **Token-driven variation** — no element partial contains a `&.primary { color: ... }`-style block. Variation flows through `--set-style-*` → `--set-variant-*` → element default. Run `grep -rn "&\.primary\|&\.success\|&\.large" src/styles/elements/` and verify each match is a legitimate exception (documented inline).
+- [ ] **No Tailwind-palette leaks outside `_theme.scss`** — `_theme.scss` is the only file allowed to reference `--color-{slate,blue,zinc,gray,stone,red,green,sky,amber}-{step}` directly. Element / component / surface / composable partials must consume **semantic** tokens (`--color-text`, `--color-text-muted`, `--color-surface`, `--color-border`, `--color-{variant}`). Run `grep -rn "color-slate\|color-blue\|color-zinc\|color-gray\|color-stone\|color-red\|color-green\|color-sky\|color-amber" src/styles/{elements,components,surfaces,composables}/` — empty output means clean.
+- [ ] **No hardcoded color literals outside fallbacks** — element / component partials emit no inline `#hex`, `rgb()`, `hsl()`, or `oklch()` colors except as the **last fallback** of a `var()` chain. Box-shadows route through `--set-box-shadow-{sm,base,lg}`; floating-surface backgrounds route through theme tier tokens. Run `grep -rn "rgb(\|rgba(\|hsl(\|hsla(" src/styles/{elements,components,surfaces,composables}/` and audit each match.
 - [ ] **Open/closed dual-attribute gating** — every popover-bearing / dialog / details composable that owns `display: flex` / `position: fixed` / large `transform` gates on the open-state selector. Run `grep -rn "display: flex\|position: fixed" src/styles/composables/ src/styles/components/` and verify each is gated.
 - [ ] **Bidirectional parity** — `tokens.test.ts`, `modifiers.test.ts`, `elements.test.ts`, `events.test.ts` all pass.
 - [ ] **Test coverage** — every element/composable/factory has a behaviour test. Run the full suite (`npm test`) — every file under `src/browser/{composables,factories}` and `src/styles/elements` has at least one matching test.

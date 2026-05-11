@@ -9,7 +9,7 @@
 
 @layer elements {
 	dd {
-		--set-dd-color: var(--color-slate-600, currentColor);
+		--set-dd-color: var(--color-text-muted, currentColor);
 
 		color: var(--set-dd-color);
 		margin-inline-start: 0;

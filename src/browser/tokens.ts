@@ -372,9 +372,13 @@ export const tokens = {
 	},
 
 	// Element-scoped tokens declared on `address` itself. Ported from mailbox's
-	// `<address>` reboot — restores the `margin-block-end: 1rem` Tailwind
-	// preflight strips.
+	// `<address>` — small contact-info block (byline / signature / contact
+	// details for the nearest sectioning ancestor). Subdued color + smaller
+	// font so the block reads as metadata, not paragraph text.
 	address: {
+		color: '--set-address-color',
+		fontSize: '--set-address-font-size',
+		lineHeight: '--set-address-line-height',
 		marginBlockEnd: '--set-address-margin-block-end',
 	},
 
