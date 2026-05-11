@@ -30,26 +30,44 @@
  *      layout breakpoint where the right rail becomes a drawer).
  */
 
-/* Both drawer toggle buttons (left nav, right TOC) are hidden on desktop
- * where the rails are in-flow grid columns and don't need a button to
- * reveal them. Below the framework's 960px responsive breakpoint, the
- * rails detach into off-canvas drawers (see src/styles/components/_body.scss)
- * and the toggles become visible.
+/* Mobile-only chrome — drawer toggles in the header AND drawer-close
+ * buttons inside each rail. On desktop the rails are in-flow grid
+ * columns (see src/styles/components/_body.scss) so they never collapse
+ * and need no toggle / close affordance. Below 960px the framework
+ * promotes them to fixed off-canvas drawers driven by [data-open] and
+ * the toggles + close buttons appear.
  *
  * Rule ordering matters: defaults declared FIRST, the @media override
  * SECOND. CSS cascade resolves equal-specificity declarations by source
- * order — the previous version had `display: none` after the @media
- * block which silently overrode the mobile reveal. Keep this order.
+ * order — a previous version had `display: none` after the @media block
+ * which silently overrode the mobile reveal. Keep this order.
+ *
+ * Close-button placement inside each drawer uses `align-self` so the
+ * button hugs the FAR edge of the drawer (the edge facing the viewport
+ * center after slide-in), echoing the iOS / Material drawer convention.
+ * The left drawer slides from the inline-start; its close sits at the
+ * inline-end (right). The right drawer slides from the inline-end; its
+ * close sits at the inline-start (left).
  */
 .showcase-nav-toggle,
-.showcase-toc-toggle {
+.showcase-toc-toggle,
+.showcase-drawer-close {
 	display: none;
 }
 
 @media (max-width: 960px) {
 	.showcase-nav-toggle,
-	.showcase-toc-toggle {
+	.showcase-toc-toggle,
+	.showcase-drawer-close {
 		display: inline-flex;
+	}
+
+	.showcase-drawer-close-start {
+		align-self: flex-end;
+	}
+
+	.showcase-drawer-close-end {
+		align-self: flex-start;
 	}
 }
 
