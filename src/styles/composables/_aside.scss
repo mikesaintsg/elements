@@ -97,6 +97,16 @@
 	aside[popover][data-aside-open],
 	aside[popover][data-aside-closing] {
 		position: fixed !important;
+		// Load-bearing: this `display: flex` would defeat the UA
+		// `[popover]:not(:popover-open) { display: none }` if the
+		// selector were broadened beyond the dual-attribute gate (e.g.
+		// to bare `aside[popover]`). The dual-attribute gate is held by
+		// `createAside`, which sets `[data-aside-closing]` synchronously
+		// and intentionally does NOT remove it after `hidePopover()`
+		// (it persists until the next `show()` or `destroy()`). See
+		// header for the full lifecycle. Keep the gate or the drawer
+		// stays rendered after close — same bug class as the
+		// `dialog.scrollable` and `output[popover]` fixes.
 		display: flex;
 		flex-direction: column;
 		gap: calc(var(--spacing) * 4);

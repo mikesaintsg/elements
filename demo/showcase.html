@@ -21966,10 +21966,13 @@ toast.destroy()</code></pre>`,
 					--set-toast-hidden-count: 0;
 					--set-toast-z-index: 1090;
 				}
-				output[popover],
-				output[role='status']:not(.filled) {
+				:is(output[popover]:popover-open, output[role='status']:not(.filled)) {
 					align-items: center;
 					gap: var(--set-toast-gap);
+					display: flex;
+				}
+				output[popover],
+				output[role='status']:not(.filled) {
 					inline-size: min(var(--set-toast-inline-size), var(--set-floater-max-inline-size));
 					max-block-size: var(--set-floater-max-block-size);
 					min-inline-size: var(--set-toast-min-inline-size);
@@ -21983,7 +21986,6 @@ toast.destroy()</code></pre>`,
 					padding-inline: var(--set-toast-padding-inline);
 					padding-block: var(--set-toast-padding-block);
 					box-shadow: var(--set-toast-box-shadow);
-					display: flex;
 				}
 				output[popover].primary,
 				output[role='status'].primary:not(.filled) {
@@ -23118,7 +23120,7 @@ toast.destroy()</code></pre>`,
 					align-self: center;
 					margin-inline-start: auto;
 				}
-				[data-toast-stack] > output[popover] {
+				[data-toast-stack] > output[popover]:popover-open {
 					--set-toast-stack-offset: 0px;
 					block-size: var(--set-toast-front-height);
 					transform: translateY(
@@ -23134,12 +23136,12 @@ toast.destroy()</code></pre>`,
 						block-size var(--set-transition-duration, 0.2s) ease;
 					overflow: hidden;
 				}
-				[data-toast-stack] > output[popover][style*='--set-toast-stack-index: 0'] {
+				[data-toast-stack] > output[popover]:popover-open[style*='--set-toast-stack-index: 0'] {
 					opacity: 1;
 					block-size: auto;
 					transform: none;
 				}
-				[data-toast-stack][data-toast-position='top'] > output[popover] {
+				[data-toast-stack][data-toast-position='top'] > output[popover]:popover-open {
 					transform: translateY(
 							calc(var(--set-toast-stack-index, 0) * var(--set-toast-peek-height))
 						)
@@ -23147,7 +23149,7 @@ toast.destroy()</code></pre>`,
 					transform-origin: top;
 				}
 				[data-toast-stack][data-toast-position='top']
-					> output[popover][style*='--set-toast-stack-index: 0'] {
+					> output[popover]:popover-open[style*='--set-toast-stack-index: 0'] {
 					transform: none;
 				}
 				[data-toast-stack] > output[popover][data-stack-hidden] {

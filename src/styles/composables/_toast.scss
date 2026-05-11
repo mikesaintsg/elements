@@ -136,7 +136,19 @@
 	// Each card stays `position: fixed` (top-layer constraint); the visual
 	// stack is built from `transform: translateY(...) scale(...)` plus
 	// `opacity` and `z-index`.
-	[data-toast-stack] > output[popover] {
+	//
+	// `:popover-open` gate is required on the per-card transform/opacity
+	// rule. Without it, a card that called `hidePopover()` carries on
+	// asserting `opacity: calc(1 - index×0.1)` (non-zero for indices
+	// 0–9) AND `transform: translateY(...) scale(...)` for the popover
+	// surface's full ~150 ms discrete-transition tail. Both compete with
+	// the surface's `opacity: 0; transform: scale(0.98)` close-state
+	// values (specificity 0,2,1 vs 0,1,0 — deck rule wins) so the
+	// closing card never fades out cleanly when the deck has 2+ cards.
+	// Gating on `:popover-open` lets the closed card surrender its
+	// transform/opacity to the popover-surface defaults during the
+	// close transition, producing a clean fade-out.
+	[data-toast-stack] > output[popover]:popover-open {
 		// Cancel the linear lift — every card lands at the SAME corner so
 		// the deck transform alone produces the visual stack.
 		--set-toast-stack-offset: 0px;
@@ -166,7 +178,8 @@
 	// Front card (index 0) — identity transform, full opacity, intrinsic
 	// height. The `style*=` attribute selector matches the inline custom
 	// property the factory writes via `element.style.setProperty(...)`.
-	[data-toast-stack] > output[popover][style*='--set-toast-stack-index: 0'] {
+	// `:popover-open` gate matches the deck rule above — same rationale.
+	[data-toast-stack] > output[popover]:popover-open[style*='--set-toast-stack-index: 0'] {
 		transform: none;
 		opacity: 1;
 		block-size: auto;
@@ -174,14 +187,15 @@
 
 	// Top-anchored stacks — flip the lift direction (cards peek DOWNWARD
 	// behind the front) and pivot the scale around the top edge.
-	[data-toast-stack][data-toast-position='top'] > output[popover] {
+	// `:popover-open` gate as above.
+	[data-toast-stack][data-toast-position='top'] > output[popover]:popover-open {
 		transform: translateY(calc(var(--set-toast-stack-index, 0) * var(--set-toast-peek-height)))
 			scale(calc(1 - var(--set-toast-stack-index, 0) * var(--set-toast-scale-step)));
 		transform-origin: center top;
 	}
 
 	[data-toast-stack][data-toast-position='top']
-		> output[popover][style*='--set-toast-stack-index: 0'] {
+		> output[popover]:popover-open[style*='--set-toast-stack-index: 0'] {
 		transform: none;
 	}
 

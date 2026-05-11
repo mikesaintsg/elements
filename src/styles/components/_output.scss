@@ -116,13 +116,32 @@
 	// --------------------------------------------------------------------------
 	// Toast root — `<output popover>` OR `<output role="status">` standalone
 	// (i.e. NOT the inline calc-chip case from `_output.scss`).
+	//
+	// Two-rule split is intentional. `display: flex` MUST be gated on
+	// `:popover-open` for the popover-mode toast; an unconditional
+	// `display: flex` (specificity 0,2,0) outranks the UA's
+	// `[popover]:not(:popover-open) { display: none }` (also 0,2,0,
+	// author wins ties), so a closed toast stays rendered at the corner
+	// after `hidePopover()` instead of disappearing — same bug class as
+	// the previously-fixed `dialog.scrollable`. The chrome rule below
+	// (background, padding, border, shadow, sizing) applies regardless
+	// of open-state so closing toasts retain their visual identity for
+	// the popover surface's discrete-transition tail (display:none →
+	// block transition with `transition-behavior: allow-discrete` keeps
+	// the element in the render tree for ~150 ms after `hidePopover()`).
+	// `output[role='status']:not(.filled)` is the non-popover live-region
+	// flavour — it has no open/closed lifecycle, so it stays in both
+	// rules ungated.
 	// --------------------------------------------------------------------------
-	output[popover],
+	output[popover]:popover-open,
 	output[role='status']:not(.filled) {
 		display: flex;
 		align-items: center;
 		gap: var(--set-toast-gap);
+	}
 
+	output[popover],
+	output[role='status']:not(.filled) {
 		// Floater-bounds — TAKE the smaller of the design width
 		// (`--set-toast-inline-size`) and the framework's viewport budget
 		// (`--set-floater-max-inline-size`, dvw minus safe-area-aware
