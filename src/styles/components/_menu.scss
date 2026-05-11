@@ -122,6 +122,66 @@
 		align-items: stretch;
 	}
 
+	// Active-page affordance for the primary nav rail. WAI-ARIA APG: the
+	// current page in a navigation landmark carries `aria-current="page"`.
+	// Paint with the variant subtle palette so the active row tracks the
+	// theme; bare `<a>` baseline + tokens own everything else.
+	body:has(main) > nav menu > li > :where(a, button)[aria-current='page'],
+	body:has(main) > * > nav menu > li > :where(a, button)[aria-current='page'] {
+		background-color: var(--color-primary-bg-subtle);
+		color: var(--color-primary-text-emphasis);
+		font-weight: 500;
+	}
+
+	// --------------------------------------------------------------------------
+	// In-aside TOC menu — `body:has(main) > aside menu` is the standard
+	// "on this page" pattern: an aside (right rail) hosting a nav with a
+	// menu of in-page section links. WAI-ARIA APG: the surfacing nav
+	// carries `aria-label="Table of contents"`; the active section in
+	// view carries `aria-current="location"` (per the spec's vocabulary
+	// for in-page targets, distinct from `aria-current="page"` for the
+	// active route).
+	//
+	// Paint a left-rule + indented affordance so the TOC reads as a
+	// stacked column of waypoints rather than a generic link list. The
+	// optional `[data-level]` attribute on the `<li>` (set by an
+	// IntersectionObserver-driven TOC builder) lets the rule indent h3-
+	// level entries beneath their h2 parents.
+	// --------------------------------------------------------------------------
+	body:has(main) > aside menu,
+	body:has(main) > * > aside menu {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	body:has(main) > aside menu > li > :where(a, button),
+	body:has(main) > * > aside menu > li > :where(a, button) {
+		display: block;
+		border-inline-start: 2px solid transparent;
+		padding-inline: calc(var(--spacing) * 2);
+		padding-block: calc(var(--spacing) * 1);
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
+		line-height: 1.4;
+	}
+
+	body:has(main) > aside menu > li > :where(a, button):hover,
+	body:has(main) > * > aside menu > li > :where(a, button):hover {
+		color: var(--color-text);
+	}
+
+	body:has(main) > aside menu > li > :where(a, button)[aria-current='location'],
+	body:has(main) > * > aside menu > li > :where(a, button)[aria-current='location'] {
+		color: var(--color-primary);
+		border-inline-start-color: var(--color-primary);
+		font-weight: 500;
+	}
+
+	body:has(main) > aside menu > li[data-level='3'],
+	body:has(main) > * > aside menu > li[data-level='3'] {
+		padding-inline-start: calc(var(--spacing) * 3);
+	}
+
 	// --------------------------------------------------------------------------
 	// Dropdown menu — `<menu popover>` paired with a `<button popovertarget>`.
 	//

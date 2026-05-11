@@ -1,6 +1,32 @@
-// <i> – Idiomatic / alternate-voice text
-// Browser defaults: font-style: italic
-// Use for technical terms, foreign phrases, ship names, taxonomic names, internal thoughts
-// Do not use for stress emphasis — use <em> for that
+// ============================================================================
+// <i> — Idiomatic / alternate-voice text + icon-primitive opt-in.
+//
+// Two flavours:
+//   1. Bare `<i>` — italic phrasing (UA default). Tailwind preflight
+//      handles it; the framework adds no rule.
+//   2. `<i class="icon">` — opt-in icon primitive. Consumers point at any
+//      `--set-icon-*` token via the `--icon` custom property:
+//
+//        <i class="icon" style="--icon: var(--set-icon-menu)" aria-hidden="true"></i>
+//
+//      The icon renders as a 1em mask painted with `currentColor`, so it
+//      tracks the surrounding text colour automatically. `font-style:
+//      normal` overrides the UA italic since the icon's glyph isn't
+//      typographic — italic doesn't apply to a mask.
+//
+// Authors who want an inline SVG instead of the mask pattern just drop
+// the class and use `<svg>` directly — the framework doesn't force the
+// icon-primitive on `<i>`.
+// ============================================================================
 
-// No framework rules — Tailwind v4 preflight handles UA reset.
+@layer elements {
+	i.icon {
+		display: inline-block;
+		inline-size: 1em;
+		block-size: 1em;
+		vertical-align: -0.125em;
+		background-color: currentColor;
+		font-style: normal;
+		mask: var(--icon) no-repeat center / contain;
+	}
+}

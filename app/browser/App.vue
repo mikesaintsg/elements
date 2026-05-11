@@ -117,7 +117,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			:aria-expanded="leftOpen"
 			@click="toggleLeft"
 		>
-			<span class="showcase-icon" style="--icon: var(--set-icon-menu)" />
+			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
 		</button>
 
 		<a href="#/home" class="flex-1" @click="goHome"><strong>Elements</strong></a>
@@ -128,7 +128,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			:aria-label="`Switch theme (currently ${themeCtl.theme.value})`"
 			@click="cycleTheme"
 		>
-			<span class="showcase-icon" :style="{ '--icon': `var(--set-icon-${themeIcon})` }" />
+			<i class="icon" aria-hidden="true" :style="{ '--icon': `var(--set-icon-${themeIcon})` }"></i>
 		</button>
 
 		<button
@@ -138,7 +138,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			:aria-expanded="rightOpen"
 			@click="toggleRight"
 		>
-			<span class="showcase-icon" style="--icon: var(--set-icon-menu)" />
+			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
 		</button>
 	</header>
 
@@ -161,7 +161,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 
 	<footer>
 		<small>Elements framework</small>
-		<small class="showcase-build">build {{ buildId }}</small>
+		<small class="font-mono text-xs">build {{ buildId }}</small>
 	</footer>
 
 	<!-- Drawer backdrop — clicks dismiss whichever drawer is open. -->

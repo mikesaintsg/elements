@@ -4,7 +4,6 @@ import {
 	assertCleanDispose,
 	buildElement,
 	createFactoryFixture,
-	createRecorder,
 } from '../../../setupBrowser'
 
 describe('createButton', () => {
