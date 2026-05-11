@@ -1,37 +1,48 @@
 // ============================================================================
 // Variant modifiers
 //
-// Each .{variant} class sets SEVEN --set-variant-* context tokens that drive
-// the framework's three "fill treatments" downstream:
+// Each .{variant} class sets EIGHT --set-variant-* context tokens that drive
+// the framework's three "treatments" downstream:
 //
-//   FILLED  — saturated identity surface (--set-variant-{color,
-//             background-color, border-color, border-width}). Consumed by
-//             `.filled` style and by bare element variants. Text color is
-//             white on dark-luminance variants (primary/secondary/tertiary/
-//             danger) and black on light-luminance variants (success/
-//             warning/information). The empirical split is WCAG-driven —
-//             see per-variant comments.
+//   FILLED    — saturated identity surface (--set-variant-{color,
+//               background-color, border-color, border-width}). Consumed by
+//               `.filled` style and by bare element variants. Text color is
+//               white on dark-luminance variants (primary/secondary/tertiary/
+//               danger) and black on light-luminance variants (success/
+//               warning/information). The empirical split is WCAG-driven —
+//               see per-variant comments.
 //
-//   SUBTLE  — tinted bg + emphasis text + subtle border. Token names
-//             mirror the FILLED tier with a `-subtle-` infix:
-//             --set-variant-subtle-{color, background-color, border-color}.
-//             Consumed by `.subtle` style. Mirrors Bootstrap 5's
-//             `.btn-{color}-subtle`
-//             pattern: a pale-tinted surface with deeply-saturated text
-//             that reads cleanly against the canvas in BOTH light and
-//             dark modes. Resolves from the theme's per-mode tier tokens
-//             (`--color-{variant}-{bg-subtle, text-emphasis, border-subtle}`)
-//             which are derived via `color-mix()` in `_theme.scss` so a
-//             consumer who retunes `--color-primary` to a brand colour
-//             gets matching subtle / emphasis without a redeclaration.
+//   SUBTLE    — tinted bg + emphasis text + subtle border. Token names
+//               mirror the FILLED tier with a `-subtle-` infix:
+//               --set-variant-subtle-{color, background-color, border-color}.
+//               Consumed by `.subtle` style. Mirrors Bootstrap 5's
+//               `.btn-{color}-subtle`
+//               pattern: a pale-tinted surface with deeply-saturated text
+//               that reads cleanly against the canvas in BOTH light and
+//               dark modes. Resolves from the theme's per-mode tier tokens
+//               (`--color-{variant}-{bg-subtle, text-emphasis, border-subtle}`)
+//               which are derived via `color-mix()` in `_theme.scss` so a
+//               consumer who retunes `--color-primary` to a brand colour
+//               gets matching subtle / emphasis without a redeclaration.
 //
-// Why two tiers instead of one: the saturated -600 step that reads as a
+//   ON-CANVAS — single-token tier for variant TEXT painted directly on the
+//               body canvas (no tinted container, no fill). Exposed as
+//               `--set-variant-on-canvas-color` and consumed by bare
+//               variant anchors (and any future inline variant text
+//               element). Resolves from `--color-{variant}-on-canvas` in
+//               the theme, which inverts polarity per-mode (darkened
+//               variant in light, brightened variant in dark) so the same
+//               token clears WCAG AA against `--color-canvas` in both
+//               themes without per-host overrides. Sibling to the SUBTLE
+//               text-emphasis token; decoupled so canvas tuning can
+//               diverge from bg-subtle tuning when needed.
+//
+// Why three tiers instead of one: the saturated -600 step that reads as a
 // solid identity surface (FILLED) doesn't have enough luminance contrast
 // against the canvas when used as TEXT (the previous `.ghost` failure
 // mode — variant text on canvas dropped to 2-4:1 ratios). The SUBTLE
-// tier solves this by giving the text its own tinted background to lift
-// it off the canvas; the bg + text-emphasis are tuned per-mode so the
-// combination clears AA in both themes.
+// tier solves this with a tinted bg-and-text pair; the ON-CANVAS tier
+// solves it for the unboxed case where there's no container to tint.
 // ============================================================================
 
 @layer modifiers {
@@ -43,6 +54,7 @@
 		--set-variant-subtle-color: var(--color-primary-text-emphasis);
 		--set-variant-subtle-background-color: var(--color-primary-bg-subtle);
 		--set-variant-subtle-border-color: var(--color-primary-border-subtle);
+		--set-variant-on-canvas-color: var(--color-primary-on-canvas);
 	}
 
 	.secondary {
@@ -56,6 +68,7 @@
 		--set-variant-subtle-color: var(--color-secondary-text-emphasis);
 		--set-variant-subtle-background-color: var(--color-secondary-bg-subtle);
 		--set-variant-subtle-border-color: var(--color-secondary-border-subtle);
+		--set-variant-on-canvas-color: var(--color-secondary-on-canvas);
 	}
 
 	.tertiary {
@@ -66,6 +79,7 @@
 		--set-variant-subtle-color: var(--color-tertiary-text-emphasis);
 		--set-variant-subtle-background-color: var(--color-tertiary-bg-subtle);
 		--set-variant-subtle-border-color: var(--color-tertiary-border-subtle);
+		--set-variant-on-canvas-color: var(--color-tertiary-on-canvas);
 	}
 
 	.success {
@@ -82,6 +96,7 @@
 		--set-variant-subtle-color: var(--color-success-text-emphasis);
 		--set-variant-subtle-background-color: var(--color-success-bg-subtle);
 		--set-variant-subtle-border-color: var(--color-success-border-subtle);
+		--set-variant-on-canvas-color: var(--color-success-on-canvas);
 	}
 
 	.warning {
@@ -96,6 +111,7 @@
 		--set-variant-subtle-color: var(--color-warning-text-emphasis);
 		--set-variant-subtle-background-color: var(--color-warning-bg-subtle);
 		--set-variant-subtle-border-color: var(--color-warning-border-subtle);
+		--set-variant-on-canvas-color: var(--color-warning-on-canvas);
 	}
 
 	.danger {
@@ -106,6 +122,7 @@
 		--set-variant-subtle-color: var(--color-danger-text-emphasis);
 		--set-variant-subtle-background-color: var(--color-danger-bg-subtle);
 		--set-variant-subtle-border-color: var(--color-danger-border-subtle);
+		--set-variant-on-canvas-color: var(--color-danger-on-canvas);
 	}
 
 	.information {
@@ -121,5 +138,6 @@
 		--set-variant-subtle-color: var(--color-information-text-emphasis);
 		--set-variant-subtle-background-color: var(--color-information-bg-subtle);
 		--set-variant-subtle-border-color: var(--color-information-border-subtle);
+		--set-variant-on-canvas-color: var(--color-information-on-canvas);
 	}
 }

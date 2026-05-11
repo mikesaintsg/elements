@@ -4,6 +4,29 @@
 // Override — Tailwind preflight zeroes margin universally; this restores
 // vertical rhythm between key/value pairs via `gap` on a grid layout.
 // Sibling <dt> and <dd> partials inherit the rhythm via the parent grid.
+//
+// Responsive shape:
+//   - Narrow viewports (<640px): single-column stack — both <dt> and
+//     <dd> get the full width. A 2-column grid at phone width starves
+//     the description track (the term wraps to full width and the
+//     description collapses to 0).
+//   - Wide viewports (≥640px): two-column grid — term in col 1
+//     (`minmax(0, max-content)` so a long term can shrink instead of
+//     pushing the page wider), description in col 2 (`minmax(0, 1fr)`
+//     fills the remainder). `overflow-wrap: anywhere` on <dt>/<dd> lets
+//     unbreakable strings (long tokens, URLs, identifiers) wrap inside
+//     the grid track instead of forcing it wide.
+//
+// Mirrors the `<pre>` and responsive-table contracts: content stays
+// inside its container, the page width is owned by the viewport.
+//
+// Why two top-level @layer blocks instead of nesting @media inside the
+// dl selector: the postcss pipeline that runs after Sass collapses a
+// nested `@media` inside a `@layer`-wrapped selector and the base rule
+// gets lost (the wide-viewport rule wins regardless of viewport width).
+// Two siblings — the base rule, then the responsive override under
+// @media — compile to flat output that both Sass and postcss
+// round-trip cleanly.
 // ============================================================================
 
 @layer elements {
@@ -12,8 +35,22 @@
 		--set-dl-column-gap: 1rem;
 
 		display: grid;
-		grid-template-columns: max-content 1fr;
+		grid-template-columns: minmax(0, 1fr);
 		row-gap: var(--set-dl-row-gap);
 		column-gap: var(--set-dl-column-gap);
+
+		> dt,
+		> dd {
+			min-width: 0;
+			overflow-wrap: anywhere;
+		}
+	}
+}
+
+@media (min-width: 640px) {
+	@layer elements {
+		dl {
+			grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+		}
 	}
 }

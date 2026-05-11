@@ -34,32 +34,33 @@
 		// ----------------------------------------------------------------------
 		// Element-scoped tokens — fallback chains let any modifier override.
 		// ----------------------------------------------------------------------
-		// Bare <a> defaults to the primary variant color so links read as
-		// links — matches Bootstrap's `--bs-link-color` convention and the
-		// mailbox showcase. Authors who want anchors that blend into body
-		// copy can override with `currentColor` per host. Style and variant
-		// modifiers still take precedence via the cascade.
+		// Bare <a> defaults to the primary variant's ON-CANVAS color so
+		// links read as links and clear WCAG AA against the body canvas in
+		// both light and dark modes. Matches Bootstrap's `--bs-link-color`
+		// idea (a dedicated link-color token distinct from `--bs-primary`)
+		// and the mailbox theme-aware emphasis pattern.
 		//
-		// Known WCAG limitation: bare variant anchors paint variant-bg text
-		// directly on the body canvas. The saturated -600 step doesn't clear
-		// WCAG AA against the canvas for some variant × theme combinations:
-		//   - Light mode: warning amber-500 / success green-600 / information
-		//     sky-600 on white canvas (2.13, 3.22, 4.02 respectively)
-		//   - Dark mode: every variant on slate-950 canvas sits at ~3-4
-		//     ratio (the saturated -600 step doesn't lift enough off a
-		//     near-black surface)
-		// Consumers needing AA-compliant inline variant links should use the
-		// `.subtle` style modifier (variant text-emphasis on variant bg-subtle
-		// — passes AA in both modes for all variants) or override
-		// `--set-a-color` per host with a contrast-checked shade. Bare-inline
-		// variant anchors are documented as "small-block / large-text use"
-		// in `app/browser/pages/AnchorPage.vue`. A future theme-tier
-		// `--color-{variant}-on-canvas` token would fix this cleanly; deferred
-		// pending design decision (does the framework ship a third per-variant
-		// shade just for text-on-canvas semantics?).
+		// Cascade priority — `--set-a-color` resolves in this order:
+		//   1. `--set-style-color`            — set by `.filled` / `.subtle`
+		//                                       (style cascade wins)
+		//   2. `--set-variant-on-canvas-color` — set by `.primary` / `.danger`
+		//                                       / … (variant identity, tuned
+		//                                       for canvas-safe contrast)
+		//   3. `--color-primary-on-canvas`     — bare anchor default (no
+		//                                       class), the "links look like
+		//                                       links" baseline
+		//   4. `var(--color-primary)`          — final fallback for theme-
+		//                                       less environments
+		//
+		// The ON-CANVAS tier replaces the previous direct `--color-{variant}`
+		// fallback, which painted the saturated -600 step on the body
+		// canvas and failed AA for amber/green/sky in light mode and every
+		// variant in dark mode. See `src/styles/_theme.scss` for the
+		// per-mode formulas (`color-mix` against `--color-text` so the
+		// shade auto-inverts between light and dark).
 		--set-a-color: var(
 			--set-style-color,
-			var(--set-variant-background-color, var(--color-primary))
+			var(--set-variant-on-canvas-color, var(--color-primary-on-canvas, var(--color-primary)))
 		);
 		--set-a-background-color: var(--set-style-background-color, transparent);
 		--set-a-border-color: var(--set-style-border-color, transparent);

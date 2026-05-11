@@ -73,6 +73,22 @@ export const tokens = {
 		informationBgSubtle: '--color-information-bg-subtle',
 		informationTextEmphasis: '--color-information-text-emphasis',
 		informationBorderSubtle: '--color-information-border-subtle',
+
+		// Variant on-canvas scale — single-token tier for variant text painted
+		// directly on `--color-canvas` (no tinted container). Tuned per-mode
+		// in `_theme.scss` via `color-mix()` so the same token clears WCAG
+		// AA in both light (canvas = white) and dark (canvas = slate-950)
+		// without per-host overrides. Consumed by bare variant anchors
+		// (`_a.scss`) and any future inline variant text element. Naming
+		// follows Material Design's `on-X` convention — the suffix names
+		// the SURFACE the color is safe ON.
+		primaryOnCanvas: '--color-primary-on-canvas',
+		secondaryOnCanvas: '--color-secondary-on-canvas',
+		tertiaryOnCanvas: '--color-tertiary-on-canvas',
+		successOnCanvas: '--color-success-on-canvas',
+		warningOnCanvas: '--color-warning-on-canvas',
+		dangerOnCanvas: '--color-danger-on-canvas',
+		informationOnCanvas: '--color-information-on-canvas',
 	},
 
 	// Framework defaults that have no Tailwind equivalent.

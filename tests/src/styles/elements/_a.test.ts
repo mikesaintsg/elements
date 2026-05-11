@@ -54,41 +54,44 @@ describe('a — bare baseline', () => {
 		expect(bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)').toBe(true)
 	})
 
-	it('paints the primary variant color by default (Bootstrap link-color convention)', () => {
-		// Bare `<a>` falls back to `--color-primary` so links read as
-		// links — matches Bootstrap's `--bs-link-color` and the mailbox
-		// showcase. Authors who want anchors to blend into body copy
-		// override per-host with `color: currentColor` (or `inherit`).
-		// The test asserts the bare anchor IGNORES parent color in favor
-		// of the framework primary, even when the parent sets a color.
+	it('paints the primary on-canvas color by default (Bootstrap link-color convention)', () => {
+		// Bare `<a>` falls back to `--color-primary-on-canvas` — the
+		// canvas-safe variant of primary tuned to clear WCAG AA against
+		// the body canvas in both modes. Matches Bootstrap's
+		// `--bs-link-color` idea (a dedicated link-color token distinct
+		// from `--bs-primary`). Authors who want anchors to blend into
+		// body copy override per-host with `color: currentColor`. The
+		// test asserts the bare anchor IGNORES parent color in favor of
+		// the framework primary-on-canvas, even when the parent sets a
+		// color.
 		const parent = document.createElement('div')
 		parent.style.color = 'rgb(20, 200, 50)'
 		const a = document.createElement('a')
 		a.href = '#'
 		parent.appendChild(a)
 		mount(parent)
-		const primary = rootToken('color-primary')
-		expect(colorEqual(style(a, 'color'), primary)).toBe(true)
+		const expected = rootToken('color-primary-on-canvas')
+		expect(colorEqual(style(a, 'color'), expected)).toBe(true)
 	})
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Variant cascade — links pick the variant identity color for text.
-//  Known limitation: bare variant anchors paint variant-bg text on canvas
-//  and don't always clear WCAG AA (see `_a.scss` for the table). Consumers
-//  needing AA-compliant variant links should use `.subtle` or `.filled`.
+//  Variant cascade — links pick the variant's on-canvas color for text.
+//  The on-canvas tier (`--color-{variant}-on-canvas`) is tuned per-mode to
+//  clear WCAG AA against the body canvas — replaces the previous direct
+//  `--color-{variant}` fallback which failed AA for light-luminance hues.
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('a — variant modifiers', () => {
-	it('.primary sets text color to the primary variant color', () => {
+	it('.primary sets text color to the primary on-canvas color', () => {
 		const a = render('a', 'primary')
-		const expected = style(document.documentElement, '--color-primary').trim() || 'blue'
+		const expected = style(document.documentElement, '--color-primary-on-canvas').trim() || 'blue'
 		expect(colorEqual(expected, style(a, 'color'), 4)).toBe(true)
 	})
 
-	it('.danger sets text color to the danger variant color', () => {
+	it('.danger sets text color to the danger on-canvas color', () => {
 		const a = render('a', 'danger')
-		const expected = style(document.documentElement, '--color-danger').trim() || 'red'
+		const expected = style(document.documentElement, '--color-danger-on-canvas').trim() || 'red'
 		expect(colorEqual(expected, style(a, 'color'), 4)).toBe(true)
 	})
 

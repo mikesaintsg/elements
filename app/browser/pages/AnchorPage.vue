@@ -30,7 +30,7 @@
  *   - HeaderPage / FooterPage / NavPage will cover the §6.1 context resets in their
  *     own host-component contexts.
  */
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 const variants = [
 	'primary',
@@ -44,9 +44,17 @@ const variants = [
 
 // Live :visited demo wires a counter so the reader can see the visited-color
 // reset stays the variant color (no UA purple). Anchors with this href become
-// "visited" the moment the page loads with the matching hash; we just need
-// the markup + a hint about how to verify.
-const visitedCounter = ref(0)
+// "visited" the moment the page loads with the matching hash; the counter
+// persists across reloads via localStorage so the visited reload-test is
+// observable (without persistence the count would reset to 0 every reload,
+// defeating the "reload to see :visited" instruction).
+const VISITED_COUNTER_KEY = 'elements:anchor-page:visited-counter'
+const visitedCounter = ref(
+	typeof window === 'undefined' ? 0 : Number(window.localStorage.getItem(VISITED_COUNTER_KEY) ?? 0),
+)
+watch(visitedCounter, (n) => {
+	if (typeof window !== 'undefined') window.localStorage.setItem(VISITED_COUNTER_KEY, String(n))
+})
 
 const snippetBare = `<p>The <a href="#/anchor">framework documentation</a> reads like a real link.</p>`
 
@@ -87,7 +95,7 @@ const snippetStates = `<a href="#a-states" class="primary">Hover me (color darke
 
 <!-- :visited stays the variant color (UA purple is overridden). The
      reader can verify by reloading the page after clicking the link. -->
-<a href="#a-states-visited" class="primary">After clicking, this stays primary</a>`
+<a href="#a-states-visited" class="success">After clicking, this stays success-green</a>`
 
 const snippetContexts = `<!-- Bare <a> in body copy: primary-blue underlined link. -->
 <p>Read the <a href="#">getting started guide</a> for setup details.</p>
@@ -140,18 +148,18 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 			<h1>Anchor</h1>
 			<p>
 				The hyperlink primitive. Bare <code>&lt;a&gt;</code> reads as an inline body-copy link;
-				modifier classes opt into button-shaped chrome; host context (page header, footer, nav
-				rail, aside TOC) overrides the bare link affordance so navigation commands stay quiet.
-				Every variant cascade behaves identically to the button — the two elements share their
-				modifier surface — but the anchor adds <code>:visited</code> handling and an inline /
-				button-chrome split that the button doesn't need.
+				modifier classes opt into button-shaped chrome; host context (page header, footer, nav rail,
+				aside TOC) overrides the bare link affordance so navigation commands stay quiet. Every
+				variant cascade behaves identically to the button — the two elements share their modifier
+				surface — but the anchor adds <code>:visited</code> handling and an inline / button-chrome
+				split that the button doesn't need.
 			</p>
 		</hgroup>
 		<p>
 			Every demo below is real working markup. The framework's anchor partial declares 13
-			<code>--set-a-*</code> tokens; consumers retune at <code>:root</code> to recolor every link
-			in the app or per-host to scope. Zero Tailwind utilities paint the link chrome on this
-			page — every underline, padding, and ring comes from the framework.
+			<code>--set-a-*</code> tokens; consumers retune at <code>:root</code> to recolor every link in
+			the app or per-host to scope. Zero Tailwind utilities paint the link chrome on this page —
+			every underline, padding, and ring comes from the framework.
 		</p>
 	</section>
 
@@ -179,30 +187,37 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		<h2>Variants</h2>
 		<p>
 			Seven semantic variants — same vocabulary as the button. Each sets
-			<code>--set-variant-background-color</code> which the anchor's color cascade resolves
-			through. Bare anchors (no style modifier) paint the variant identity as text color, keeping
-			the underline.
+			<code>--set-variant-on-canvas-color</code> which the anchor's color cascade resolves through.
+			Bare anchors (no style modifier) paint the variant's <em>canvas-safe</em> shade as text color,
+			keeping the underline.
 		</p>
-		<aside role="alert" class="warning">
-			<strong>Known WCAG limitation for bare variant anchors.</strong> Measured contrast against
-			the body canvas:
+		<aside class="information">
+			<strong>Why a separate <code>on-canvas</code> tier?</strong> The saturated <code>-600</code>
+			variant step that reads as a solid fill (<code>.filled</code>) doesn't have enough luminance
+			contrast against the body canvas when used as inline TEXT — measured at 2.13–4.02 against a
+			white canvas (warning / success / information all failed AA) and ~3–4 against a slate-950
+			canvas (every variant). The framework adds a dedicated
+			<code>--color-{variant}-on-canvas</code> theme token, derived per-mode via
+			<code>color-mix(in oklab, var(--color-{variant}) {70|80}%, var(--color-text))</code>, so the
+			shade auto-inverts polarity between light and dark and clears AA on both canvases.
 			<ul>
 				<li>
-					Light canvas: <code>primary</code> 5.25 ✓, <code>secondary</code> 7.58 ✓,
-					<code>tertiary</code> 5.89 ✓, <code>danger</code> 4.77 ✓,
-					<strong><code>information</code> 4.02 ✗, <code>success</code> 3.22 ✗,
-					<code>warning</code> 2.13 ✗</strong> (fails AA for normal text)
+					<strong>Naming</strong> follows Material Design's <code>on-X</code> convention — the
+					suffix names the SURFACE the color is safe ON. Sibling to the
+					<code>bg-subtle / text-emphasis / border-subtle</code> triplet that drives
+					<code>.subtle</code> chrome.
 				</li>
 				<li>
-					Dark canvas: every variant sits at ~3–4 ratio — the saturated -600 step doesn't lift
-					enough off the slate-950 surface.
+					<strong>Symmetry</strong> with the variant cascade: each <code>.{variant}</code> class now
+					sets <code>--set-variant-on-canvas-color</code> alongside its FILLED and SUBTLE token
+					trios — a third "treatment" tier explicitly for unboxed variant text.
+				</li>
+				<li>
+					<strong>Decoupling</strong> from <code>text-emphasis</code>: same numeric formula today,
+					separate semantic API forever. Canvas-context can retune independently of
+					bg-subtle-context if future themes need divergent shades.
 				</li>
 			</ul>
-			For AA-compliant variant inline links use <code>.subtle</code> (tinted bg + emphasis text;
-			passes AA in both modes for all 7 variants) or override <code>--set-a-color</code> per host
-			with a contrast-checked shade. A future framework
-			<code>--color-{variant}-on-canvas</code> tier would resolve this; deferred pending design
-			direction.
 		</aside>
 		<div class="cluster">
 			<a href="#anchor-variants">Default</a>
@@ -255,9 +270,9 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 			Three fill treatments — same cascade as the button — but the anchor differentiates them on
 			text-decoration too. <strong>Bare</strong> is inline (no padding, underline preserved).
 			<code>.subtle</code> opts into button-shaped padding + tinted background AND keeps the
-			underline so the link affordance stays clear in mixed flow. <code>.filled</code> opts into
-			the same padding AND drops the underline — the saturated fill is enough signal on its own
-			and an underlined fill reads as visual noise.
+			underline so the link affordance stays clear in mixed flow. <code>.filled</code> opts into the
+			same padding AND drops the underline — the saturated fill is enough signal on its own and an
+			underlined fill reads as visual noise.
 		</p>
 		<div class="stack">
 			<div v-for="v in variants" :key="v" class="cluster">
@@ -275,13 +290,13 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 	<section id="anchor-states">
 		<h2>States</h2>
 		<p>
-			Hover and <code>:focus-visible</code> paint without classes — interact with any anchor on
-			this page to see them. <code>.active</code> mimics the depressed state without requiring an
-			actual click. <code>.disabled</code> and <code>aria-disabled="true"</code> are equivalent —
-			both dim the anchor, change the cursor to <code>not-allowed</code>, and disable pointer
-			events. <code>:visited</code> intentionally reuses
-			<code>--set-a-color</code> so a primary link doesn't degrade to UA purple after click; the
-			browser's history bit is preserved, the styling stays under framework control.
+			Hover and <code>:focus-visible</code> paint without classes — interact with any anchor on this
+			page to see them. <code>.active</code> mimics the depressed state without requiring an actual
+			click. <code>.disabled</code> and <code>aria-disabled="true"</code> are equivalent — both dim
+			the anchor, change the cursor to <code>not-allowed</code>, and disable pointer events.
+			<code>:visited</code> intentionally reuses <code>--set-a-color</code> so a primary link
+			doesn't degrade to UA purple after click; the browser's history bit is preserved, the styling
+			stays under framework control.
 		</p>
 		<div class="cluster">
 			<a href="#anchor-states" class="primary">Default · hover me</a>
@@ -292,11 +307,12 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		<p>
 			<small>
 				Visited demo:
-				<a href="#anchor-states-visited-target" class="primary" @click="visitedCounter++">
+				<a href="#anchor-states-visited-target" class="success" @click="visitedCounter++">
 					click this link
 				</a>
-				and then reload the page — it stays primary-blue, not purple. (Click count: {{
-				visitedCounter }}.)
+				and then reload the page — it stays success-green, not UA purple. The counter persists
+				across reloads via <code>localStorage</code>, so you can refresh and watch the visited state
+				survive. (Click count: {{ visitedCounter }}.)
 			</small>
 		</p>
 		<details>
@@ -308,9 +324,9 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 	<section id="anchor-cascade">
 		<h2>The orthogonal cascade</h2>
 		<p>
-			Variant × size × style compose independently — the same orthogonality the button surfaces,
-			now applied to inline + button-chrome link contexts. The matrix below is deliberately
-			exhaustive: every variant rendered inline, subtle, and filled, at every size.
+			Variant × size × style compose independently — the same orthogonality the button surfaces, now
+			applied to inline + button-chrome link contexts. The matrix below is deliberately exhaustive:
+			every variant rendered inline, subtle, and filled, at every size.
 		</p>
 		<div class="stack">
 			<div v-for="v in variants" :key="v" class="cluster">
@@ -335,11 +351,10 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		<h2>The anchor-context contract (§6.1)</h2>
 		<p>
 			The bare-anchor baseline (primary text + underline) reads as a link inside body copy. That
-			same chrome is wrong when an anchor is used as a NAVIGATION COMMAND — the page app bar's
-			brand link, a sidebar menu row, an in-page TOC waypoint. The framework's components reset
-			anchors in those contexts to <code>currentColor</code> + no underline so the navigation
-			band reads as a unified surface. Hover tints toward primary so the link affordance still
-			survives.
+			same chrome is wrong when an anchor is used as a NAVIGATION COMMAND — the page app bar's brand
+			link, a sidebar menu row, an in-page TOC waypoint. The framework's components reset anchors in
+			those contexts to <code>currentColor</code> + no underline so the navigation band reads as a
+			unified surface. Hover tints toward primary so the link affordance still survives.
 		</p>
 		<p>
 			Four reset contexts are shipped, all via <code>:where()</code> wrappers so a single class on
@@ -366,9 +381,9 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		</dl>
 		<p>
 			<small>
-				These resets are <em>live in the showcase chrome you're reading right now</em> — the
-				brand link in the page header, the sidebar route links, and the TOC entries on the
-				right are all governed by the rules above. Inspect any of them.
+				These resets are <em>live in the showcase chrome you're reading right now</em> — the brand
+				link in the page header, the sidebar route links, and the TOC entries on the right are all
+				governed by the rules above. Inspect any of them.
 			</small>
 		</p>
 		<details>
@@ -382,9 +397,9 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		<p>
 			Standard HTML attributes — <code>target</code>, <code>download</code>, <code>rel</code>,
 			<code>hreflang</code>, <code>ping</code>, <code>type</code> — pass through unchanged. The
-			framework adds no decoration to external links, downloads, or mailto/tel links; consumers
-			can add per-site affordances via Tailwind utilities + the
-			<code>--set-icon-external</code> glyph or per-protocol classes.
+			framework adds no decoration to external links, downloads, or mailto/tel links; consumers can
+			add per-site affordances via Tailwind utilities + the <code>--set-icon-external</code> glyph
+			or per-protocol classes.
 		</p>
 		<div class="cluster">
 			<a href="https://example.com" target="_blank" rel="noopener noreferrer" class="primary">
@@ -409,9 +424,9 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		<h2>Reduced motion</h2>
 		<p>
 			Every anchor transition on this page — color fade on hover, ring fade on focus, opacity on
-			disabled — is paired with <code>prefers-reduced-motion: reduce</code> through the
-			framework's <code>transition()</code> mixin. Toggle your OS reduced-motion preference and
-			the same anchors will switch states instantly with zero animation.
+			disabled — is paired with <code>prefers-reduced-motion: reduce</code> through the framework's
+			<code>transition()</code> mixin. Toggle your OS reduced-motion preference and the same anchors
+			will switch states instantly with zero animation.
 		</p>
 		<div class="cluster">
 			<a href="#anchor-reduced-motion" class="primary">Hover me · slow</a>
@@ -429,9 +444,9 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		<p>
 			In Windows High Contrast (or any <code>forced-colors: active</code> environment), the UA
 			forces a small palette of system colors. The framework's anchor doesn't override the UA's
-			<code>LinkText</code> system color — the link affordance survives natively. The
-			variant-tinted background on <code>.filled</code> anchors collapses to
-			<code>Canvas</code> + <code>CanvasText</code> per the same rules that govern the
+			<code>LinkText</code> system color — the link affordance survives natively. The variant-tinted
+			background on <code>.filled</code> anchors collapses to <code>Canvas</code> +
+			<code>CanvasText</code> per the same rules that govern the
 			<code>&lt;button&gt;</code> forced-colors fallback.
 		</p>
 		<div class="cluster">
@@ -445,8 +460,8 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		<h2>Tokens</h2>
 		<p>
 			Every visible value on an anchor flows through a <code>--set-a-*</code> token. Pin one at
-			<code>:root</code> to retune every anchor in your app; pin one on a single host to scope.
-			The defaults make a bare anchor "just look right" without consumer overrides.
+			<code>:root</code> to retune every anchor in your app; pin one on a single host to scope. The
+			defaults make a bare anchor "just look right" without consumer overrides.
 		</p>
 		<dl>
 			<dt><code>--set-a-color</code></dt>
@@ -462,23 +477,31 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 			<dd>Border thickness. Resolves <code>style → 0</code>.</dd>
 
 			<dt><code>--set-a-border-radius</code></dt>
-			<dd>Corner roundness. Resolves <code>size → 0</code> for bare; opts to
-				<code>--radius-md</code> when a style modifier is present.</dd>
+			<dd>
+				Corner roundness. Resolves <code>size → 0</code> for bare; opts to
+				<code>--radius-md</code> when a style modifier is present.
+			</dd>
 
 			<dt><code>--set-a-padding-inline</code></dt>
-			<dd>Horizontal padding. <code>0</code> for bare; <code>spacing × 3</code> for
-				<code>.subtle</code>/<code>.filled</code>.</dd>
+			<dd>
+				Horizontal padding. <code>0</code> for bare; <code>spacing × 3</code> for
+				<code>.subtle</code>/<code>.filled</code>.
+			</dd>
 
 			<dt><code>--set-a-padding-block</code></dt>
-			<dd>Vertical padding. <code>0</code> for bare; <code>spacing × 1.5</code> for
-				<code>.subtle</code>/<code>.filled</code>.</dd>
+			<dd>
+				Vertical padding. <code>0</code> for bare; <code>spacing × 1.5</code> for
+				<code>.subtle</code>/<code>.filled</code>.
+			</dd>
 
 			<dt><code>--set-a-font-size</code></dt>
 			<dd>Text size. Resolves <code>size → 1em</code>.</dd>
 
 			<dt><code>--set-a-text-decoration</code></dt>
-			<dd>Underline. <code>underline</code> for bare/<code>.subtle</code>;
-				<code>none</code> for <code>.filled</code>.</dd>
+			<dd>
+				Underline. <code>underline</code> for bare/<code>.subtle</code>; <code>none</code> for
+				<code>.filled</code>.
+			</dd>
 
 			<dt><code>--set-a-transition-duration</code></dt>
 			<dd>Animated-property duration. Defaults to <code>--set-transition-duration</code>.</dd>
@@ -491,8 +514,8 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 
 			<dt><code>--set-a-focus-box-shadow</code></dt>
 			<dd>
-				The focus-visible ring. Computed from <code>--set-variant-background-color</code>
-				mixed at <code>--set-focus-box-shadow-opacity</code> against transparent, sized by
+				The focus-visible ring. Computed from <code>--set-variant-background-color</code> mixed at
+				<code>--set-focus-box-shadow-opacity</code> against transparent, sized by
 				<code>--set-focus-box-shadow-width</code>.
 			</dd>
 		</dl>

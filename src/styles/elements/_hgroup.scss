@@ -26,7 +26,11 @@
 @layer elements {
 	hgroup {
 		--set-hgroup-gap: calc(var(--spacing) * 1);
-		--set-hgroup-tagline-color: var(--color-text-subtle, currentColor);
+		// `--color-text-muted` (slate-600 light / slate-400 dark) reads as
+		// secondary metadata in both themes — `--color-text-subtle`
+		// (slate-400 / slate-500) is reserved for placeholder-like dimming
+		// and washed out under a heading at body-copy size.
+		--set-hgroup-tagline-color: var(--color-text-muted, currentColor);
 		--set-hgroup-tagline-font-size: var(--text-sm, 0.875rem);
 
 		display: flex;

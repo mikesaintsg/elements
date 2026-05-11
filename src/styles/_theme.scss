@@ -138,6 +138,40 @@
 	// Warning uses higher mix percentages because amber against white has
 	// less perceptual contrast than blue/red/green — the bump compensates.
 
+	// ── Variant on-canvas tier ────────────────────────────────────────────
+	// "Text-safe variant color when painted directly on `--color-canvas`."
+	// Sibling to the bg-subtle / text-emphasis / border-subtle triplet,
+	// but tuned for text on the bare body canvas (no tinted bg under the
+	// glyph) — used by bare variant anchors and any inline variant text
+	// that needs to clear WCAG AA without an opt-in tinted container.
+	//
+	// Naming follows Material Design's `on-X` convention: the token's
+	// suffix names the SURFACE the color is safe ON. Distinct from
+	// `text-emphasis` (which is "text emphasized on bg-subtle") so the two
+	// tiers can diverge as the surface contexts evolve — same numeric
+	// formula today, separate semantic API forever.
+	//
+	// Formula matches `text-emphasis` because both surfaces (canvas, bg-
+	// subtle) are luminance-similar in each mode — bg-subtle is canvas
+	// plus a small variant tint, so text that clears AA on bg-subtle
+	// clears AA on canvas (canvas is further from the variant in
+	// luminance, increasing contrast). Warning gets its own ratio
+	// because amber-500's high natural luminance flips the mix polarity.
+
+	--color-primary-on-canvas: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
+	--color-secondary-on-canvas: color-mix(in oklab, var(--color-secondary) 70%, var(--color-text));
+	--color-tertiary-on-canvas: color-mix(in oklab, var(--color-tertiary) 70%, var(--color-text));
+	--color-success-on-canvas: color-mix(in oklab, var(--color-success) 70%, var(--color-text));
+	// Warning on-canvas — amber needs a low variant mix (deep amber-brown)
+	// to clear AA on white, identical reasoning to warning-text-emphasis.
+	--color-warning-on-canvas: color-mix(in oklab, var(--color-warning) 30%, var(--color-text));
+	--color-danger-on-canvas: color-mix(in oklab, var(--color-danger) 70%, var(--color-text));
+	--color-information-on-canvas: color-mix(
+		in oklab,
+		var(--color-information) 70%,
+		var(--color-text)
+	);
+
 	--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 12%, var(--color-canvas));
 	--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
 	--color-primary-border-subtle: color-mix(in oklab, var(--color-primary) 35%, var(--color-canvas));
@@ -249,6 +283,25 @@
 		// dominates — this gives the text-emphasis cascade room to clear
 		// AA against a genuinely dark bg in the same way light mode
 		// pairs dark text against a genuinely light bg.
+		// On-canvas tier — dark mode bumps the variant ratio to 80% (vs
+		// light's 70%) so the saturated -600 step retains more chroma when
+		// pulled toward slate-200 body text. Canvas (slate-950) has no
+		// variant tint, so the link needs a bit more variant-ness than
+		// text-emphasis (which sits on a variant-tinted bg-subtle that
+		// already signals "variant context"). Warning stays on bare amber-
+		// 500 — already plenty bright against slate-950.
+		--color-primary-on-canvas: color-mix(in oklab, var(--color-primary) 80%, var(--color-text));
+		--color-secondary-on-canvas: color-mix(in oklab, var(--color-secondary) 80%, var(--color-text));
+		--color-tertiary-on-canvas: color-mix(in oklab, var(--color-tertiary) 80%, var(--color-text));
+		--color-success-on-canvas: color-mix(in oklab, var(--color-success) 80%, var(--color-text));
+		--color-warning-on-canvas: var(--color-warning);
+		--color-danger-on-canvas: color-mix(in oklab, var(--color-danger) 80%, var(--color-text));
+		--color-information-on-canvas: color-mix(
+			in oklab,
+			var(--color-information) 80%,
+			var(--color-text)
+		);
+
 		--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 15%, var(--color-canvas));
 		--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
 		--color-primary-border-subtle: color-mix(
@@ -373,6 +426,20 @@
 	// neither light text nor dark text cleared AA. Canvas (slate-950)
 	// base + 15% variant yields L≈0.17 — properly dark, lets the standard
 	// text-emphasis formula clear AA.
+	// On-canvas tier — see the `prefers-color-scheme: dark` block above
+	// for rationale (80% variant + 20% text keeps chroma against slate-950).
+	--color-primary-on-canvas: color-mix(in oklab, var(--color-primary) 80%, var(--color-text));
+	--color-secondary-on-canvas: color-mix(in oklab, var(--color-secondary) 80%, var(--color-text));
+	--color-tertiary-on-canvas: color-mix(in oklab, var(--color-tertiary) 80%, var(--color-text));
+	--color-success-on-canvas: color-mix(in oklab, var(--color-success) 80%, var(--color-text));
+	--color-warning-on-canvas: var(--color-warning);
+	--color-danger-on-canvas: color-mix(in oklab, var(--color-danger) 80%, var(--color-text));
+	--color-information-on-canvas: color-mix(
+		in oklab,
+		var(--color-information) 80%,
+		var(--color-text)
+	);
+
 	--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 15%, var(--color-canvas));
 	--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
 	--color-primary-border-subtle: color-mix(
