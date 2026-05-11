@@ -26,12 +26,12 @@ describe('variant modifiers set --set-variant-* context tokens', () => {
 	})
 
 	it.each(VARIANTS)(
-		'.%s sets the SUBTLE-tier --set-variant-{text-emphasis,bg-subtle,border-subtle} tokens',
+		'.%s sets the SUBTLE-tier --set-variant-subtle-{color,background-color,border-color} tokens',
 		(name) => {
 			const el = render('div', name)
-			expect(token(el, '--set-variant-text-emphasis')).not.toBe('')
-			expect(token(el, '--set-variant-bg-subtle')).not.toBe('')
-			expect(token(el, '--set-variant-border-subtle')).not.toBe('')
+			expect(token(el, '--set-variant-subtle-color')).not.toBe('')
+			expect(token(el, '--set-variant-subtle-background-color')).not.toBe('')
+			expect(token(el, '--set-variant-subtle-border-color')).not.toBe('')
 		},
 	)
 })

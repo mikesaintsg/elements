@@ -22,13 +22,13 @@ describe('style modifiers set --set-style-* context tokens', () => {
 		expect(token(el, '--set-style-background-color')).not.toBe('')
 		expect(token(el, '--set-style-border-color')).not.toBe('')
 		expect(token(el, '--set-style-border-width').trim()).toBe('1px')
-		// The .subtle color slot must resolve to the variant's text-emphasis
-		// derivation, not the saturated background-color. Equality of the
-		// computed value to --set-variant-text-emphasis proves the cascade
-		// chain (style → variant text-emphasis) lands correctly.
+		// The .subtle color slot must resolve to the variant's SUBTLE-tier
+		// color derivation, not the saturated background-color. Equality of
+		// the computed value to --set-variant-subtle-color proves the cascade
+		// chain (style → variant subtle-color) lands correctly.
 		const styleColor = token(el, '--set-style-color').trim()
-		const variantEmphasis = token(el, '--set-variant-text-emphasis').trim()
-		expect(styleColor).toBe(variantEmphasis)
+		const variantSubtle = token(el, '--set-variant-subtle-color').trim()
+		expect(styleColor).toBe(variantSubtle)
 	})
 
 	it('.filled mirrors the variant FILLED-tier tokens directly', () => {

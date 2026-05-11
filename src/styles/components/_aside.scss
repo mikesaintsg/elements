@@ -45,6 +45,11 @@
 		--set-aside-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));
 		--set-aside-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 4));
 		--set-aside-inline-size: 14rem;
+		// Vertical rhythm between top-level aside-rail children (heading +
+		// nav, or multiple grouped sections). Matches the `body > nav` rail
+		// pattern so both rails behave symmetrically. Smaller than the page-
+		// section gap because rail content is denser.
+		--set-aside-gap: calc(var(--spacing) * 3);
 		--set-aside-font-size: var(--set-size-font-size, var(--text-sm));
 		--set-aside-line-height: var(--leading-normal);
 		--set-aside-transition-duration: var(--set-transition-duration);
@@ -60,6 +65,17 @@
 		padding-block: var(--set-aside-padding-block);
 		overflow-y: auto;
 		min-block-size: 0;
+
+		// Flex-column with gap so direct children (heading + nav, or a
+		// grouped list of sections) flow with consistent rhythm without
+		// requiring a wrapping `<section>` or `<div class="stack">`. Mirrors
+		// the body-shell nav rail's `display: flex; flex-direction: column;
+		// gap: var(--set-nav-gap)` pattern. The previous flow stacked h6 +
+		// nav siblings tight against each other (~2px between heading and
+		// menu — the showcase TOC bug surfaced this).
+		display: flex;
+		flex-direction: column;
+		gap: var(--set-aside-gap);
 
 		// Default border on the inline-start edge — the aside sits to the
 		// trailing side of <main> in the body grid, so the border separates

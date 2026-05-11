@@ -54,10 +54,16 @@
 
 	// Nesting collapse — the parent already supplies the vertical gutter,
 	// so the child section opts out of its own padding-block to avoid
-	// double-counting whitespace.
+	// double-counting whitespace. <nav> and <aside> body-shell rails use
+	// their own gap rhythm (--set-nav-gap, --set-aside-gap) for inter-
+	// section spacing; without this collapse the section's 24px padding
+	// would stack onto the rail's gap for ~56px of dead whitespace per
+	// adjacent pair (visible in the showcase sidebar before this fix).
 	main > section,
 	section > section,
-	article > section {
+	article > section,
+	nav > section,
+	aside > section {
 		--set-section-padding-block: 0;
 	}
 }

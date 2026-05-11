@@ -42,9 +42,9 @@
 
 @layer modifiers {
 	.subtle {
-		--set-style-color: var(--set-variant-text-emphasis, currentColor);
-		--set-style-background-color: var(--set-variant-bg-subtle, transparent);
-		--set-style-border-color: var(--set-variant-border-subtle, transparent);
+		--set-style-color: var(--set-variant-subtle-color, currentColor);
+		--set-style-background-color: var(--set-variant-subtle-background-color, transparent);
+		--set-style-border-color: var(--set-variant-subtle-border-color, transparent);
 		--set-style-border-width: 1px;
 	}
 

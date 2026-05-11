@@ -185,22 +185,23 @@ export const tokens = {
 	},
 
 	// Variant context — set by .primary / .secondary / … modifier classes.
-	// Two tiers per variant:
+	// Two tiers per variant; names mirror each other with a `-subtle-` infix:
 	//   FILLED tier — color / background-color / border-color / border-width.
-	//     The saturated identity surface; consumed by `.filled` style and
-	//     bare element variants.
-	//   SUBTLE tier — text-emphasis / bg-subtle / border-subtle.
+	//     Saturated identity surface; consumed by `.filled` style and bare
+	//     element variants.
+	//   SUBTLE tier — subtle-color / subtle-background-color / subtle-border-color.
 	//     Consumed by `.subtle` style. Tier values resolve from per-mode
 	//     theme tokens (`--color-{variant}-{text-emphasis, bg-subtle,
-	//     border-subtle}`) in `_theme.scss` so light + dark both clear AA.
+	//     border-subtle}` — Bootstrap idiom retained on the theme tier) in
+	//     `_theme.scss` so light + dark both clear AA.
 	variant: {
 		color: '--set-variant-color',
 		backgroundColor: '--set-variant-background-color',
 		borderColor: '--set-variant-border-color',
 		borderWidth: '--set-variant-border-width',
-		textEmphasis: '--set-variant-text-emphasis',
-		bgSubtle: '--set-variant-bg-subtle',
-		borderSubtle: '--set-variant-border-subtle',
+		subtleColor: '--set-variant-subtle-color',
+		subtleBackgroundColor: '--set-variant-subtle-background-color',
+		subtleBorderColor: '--set-variant-subtle-border-color',
 	},
 
 	// Size context — set by .small / .large.
@@ -724,6 +725,7 @@ export const tokens = {
 		paddingInline: '--set-aside-padding-inline',
 		paddingBlock: '--set-aside-padding-block',
 		inlineSize: '--set-aside-inline-size',
+		gap: '--set-aside-gap',
 		fontSize: '--set-aside-font-size',
 		lineHeight: '--set-aside-line-height',
 		transitionDuration: '--set-aside-transition-duration',

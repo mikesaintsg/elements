@@ -28,7 +28,18 @@
 	.spinner {
 		--set-spinner-size: 2em;
 		--set-spinner-border-width: 0.2em;
-		--set-spinner-color: var(--set-variant-background-color, currentColor);
+		// Color cascade: match the button's text cascade exactly so an
+		// inline `.spinner` inside `<button class="primary">` paints WHITE
+		// (the variant's contrast text, which is also the button label
+		// color) — not the variant's IDENTITY blue, which was the previous
+		// invisibility bug (blue spinner on blue button surface). Style
+		// modifier wins for filled / subtle scopes; variant CONTRAST color
+		// is the bare-button fallback; `currentColor` is the no-modifier
+		// terminus for stand-alone spinners in body copy.
+		--set-spinner-color: var(
+			--set-style-color,
+			var(--set-variant-color, currentColor)
+		);
 		--set-spinner-duration: 0.75s;
 
 		display: inline-block;
@@ -52,5 +63,17 @@
 	}
 	.spinner.large {
 		--set-spinner-size: 3em;
+	}
+
+	// Inline-button spinner — when a `.spinner` is a direct child of a
+	// loading button, auto-shrink to a button-friendly size. The button's
+	// font-size is the parent context; 1em sized at the button's font (14px
+	// default, 12px for `.small`, 16px for `.large`) keeps the spinner
+	// proportional to the label without requiring consumers to add
+	// `.spinner.small` markup explicitly.
+	button.loading > .spinner,
+	a.loading > .spinner {
+		--set-spinner-size: 1em;
+		--set-spinner-border-width: 0.15em;
 	}
 }

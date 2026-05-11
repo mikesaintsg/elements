@@ -126,13 +126,27 @@
 		// ----------------------------------------------------------------------
 		// States
 		// ----------------------------------------------------------------------
+		// Mix the hover / active tint against `--color-text-strong` rather
+		// than the literal `black` Bootstrap-style darkening. The strong-text
+		// token flips with the theme (slate-950 in light, white in dark), so:
+		//   - Filled variants: hover SLIGHTLY DARKENS in light (mix with
+		//     slate-950) and SLIGHTLY LIGHTENS in dark (mix with white).
+		//     Both directions read as "depressed" against the saturated
+		//     surface.
+		//   - Bare variant (background-color: transparent): the previous
+		//     `mix(transparent, black)` resolved to ~12% black-on-transparent,
+		//     which appears as a subtle tint on a white canvas but is invisible
+		//     on slate-950 (dark) because black-on-near-black has no luminance
+		//     delta. Mixing against `--color-text-strong` instead produces a
+		//     theme-aware tint — slight darkening on light, slight lightening
+		//     on dark — so bare-button feedback is visible in both modes.
 		&:hover {
-			background-color: color-mix(in srgb, var(--set-button-background-color) 88%, black);
+			background-color: color-mix(in srgb, var(--set-button-background-color) 88%, var(--color-text-strong));
 		}
 
 		&:active,
 		&.active {
-			background-color: color-mix(in srgb, var(--set-button-background-color) 78%, black);
+			background-color: color-mix(in srgb, var(--set-button-background-color) 78%, var(--color-text-strong));
 		}
 
 		&:focus-visible {
