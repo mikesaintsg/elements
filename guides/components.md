@@ -1,6 +1,6 @@
 # Components
 
-> Higher-level UI patterns that compose elements. Folder: [src/styles/components/](../src/styles/components/). **Status: Phase 5 (sectioning components) shipped; Phase 6 (composables) shipped — 20 Vue adapters + paired factories under [`src/browser/`](../src/browser/); class-root widgets (skeleton, badge, dot, stepper, …) still planned.**
+> Higher-level UI patterns that compose elements. Static chrome lives in [src/styles/components/](../src/styles/components/); composable-attached chrome (drawer geometry, listbox layout, deck stacks) lives in [src/styles/composables/](../src/styles/composables/). The Vue + framework-agnostic behaviour layer is covered separately in [composables.md](./composables.md).
 
 A **component** is a UI pattern bigger than one element — a card, a sidebar, a modal, a toolbar, a filter bar. In a class-heavy framework these are class roots (`.card`, `.modal`, `.btn-toolbar`). In _elements_ they're, wherever possible, **bare HTML tags**: `<article>` IS a card, `<aside>` IS a sidebar, `<dialog>` IS a modal. The HTML tag carries the identity; modifier classes (variant / size / style / state / placement) carry the variations.
 
@@ -8,19 +8,22 @@ Class-root patterns (`.skeleton`, `.spinner`, `.badge`) appear only when there's
 
 ---
 
-## 1. Component, element, surface — three layers
+## 1. Where styles live — four folders
 
-A new partial slots into exactly one of three folders.
+A new partial slots into exactly one of four folders. Cascade-layer order (`theme, base, elements, components, surfaces, composables, modifiers, utilities`) means later folders beat earlier ones for the same selector.
 
-| Category      | Folder                                              | What it is                                                                                                                      | Example root                                                             |
-| ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| **Element**   | [src/styles/elements/](../src/styles/elements/)     | One file per HTML tag. Token-driven baseline + UA reset. Targets the bare tag.                                                  | `button { … }`, `input { … }`, `table { … }`                             |
-| **Component** | [src/styles/components/](../src/styles/components/) | A composition of elements that reads as one UI thing. **Targets the bare HTML root** when one fits; class root when it doesn't. | `body:has(main) { … grid }`, `article { … card }`, `<div class="stack">` |
-| **Surface**   | [src/styles/surfaces/](../src/styles/surfaces/)     | CSS for browser-rendered chrome that isn't a tag or composition.                                                                | `[popover]`, `dialog::backdrop`, `::-webkit-scrollbar`                   |
+| Category | Folder | What it is | Example root |
+|---|---|---|---|
+| **Element** | [src/styles/elements/](../src/styles/elements/) | One file per HTML tag. Token-driven baseline + UA reset. Targets the bare tag. | `button { … }`, `input { … }`, `table { … }` |
+| **Component** | [src/styles/components/](../src/styles/components/) | A composition of elements that reads as one UI thing. **Targets the bare HTML root** when one fits; class root when it doesn't. **Static** — chrome that applies regardless of whether a composable is attached. | `article { … card }`, `body:has(main) { … grid }`, `<div class="stack">` |
+| **Surface** | [src/styles/surfaces/](../src/styles/surfaces/) | CSS for browser-rendered chrome that isn't a tag or composition. | `[popover]`, `dialog::backdrop`, `::-webkit-scrollbar` |
+| **Composable** | [src/styles/composables/](../src/styles/composables/) | Component chrome that only applies while a composable's state attribute is set. Gated on `[data-{name}-open]` / `[data-{name}-closing]` / `:popover-open` / `:modal` / `[open]`. | `dialog.scrollable[open]`, `aside[popover][data-aside-open]`, `output[popover]:popover-open` |
 
-If a partial styles a single tag with no composition (`button`, `input`), it belongs in `elements/`. If it composes multiple elements into one pattern (a layout shell across `<body>` / `<header>` / `<main>` / `<aside>` / `<footer>`, a card across `<article>` / `<header>` / `<footer>`, a search-bar across `<search>` / `<input>` / `<button>`), it belongs in `components/`. If it styles a pseudo-element or attribute API the browser owns, it belongs in `surfaces/`.
+If a partial styles a single tag with no composition (`button`, `input`), it belongs in `elements/`. If it composes multiple elements into one pattern, it belongs in `components/`. If it styles a pseudo-element or attribute API the browser owns, it belongs in `surfaces/`. If it depends on a composable being attached and toggling state attributes, it belongs in `composables/`.
 
-When the same tag has both an element-baseline file and a component file (e.g. `<aside>` and `<menu>`), the element file holds the bare-tag UA-quirk normalization (often empty) and the component file holds the chrome — the two layers cohabit cleanly because `@layer components` beats `@layer elements`.
+When the same tag has rules across multiple layers (e.g. `<aside>` has a baseline, a component-layer file, AND a composables-layer file), each layer holds only what's appropriate to its scope. The cascade order ensures composables wins for any selector also painted by a lower layer.
+
+**Open/closed gating discipline.** Any rule that asserts `display`, `position: fixed`, or large `transform` on a popover-bearing / `<dialog>` / `<details>` selector MUST gate on the open-state selector or it defeats the UA's `display: none` for the closed state. Full discipline in [composables.md §3](./composables.md#3-openclosed-lifecycle).
 
 ---
 
@@ -282,35 +285,37 @@ These earn a class root only because no element fits. They live in `_div.scss`, 
 
 ---
 
-## 8. Composable pairings (Phase 6) — ✅ shipped
+## 8. Composable pairings
 
-Components that need JS interactivity pair with a composable in [`src/browser/composables/`](../src/browser/composables/). Naming mirrors the element: `useDialog` ↔ `<dialog>`, `useDetails` ↔ `<details>`, `useAside` ↔ `<aside>`. The shipped surface (20 composables) is detailed in [plan.md §Phase 6](./plan.md#phase-6--composables-lift-from-mailbox-adapted--shipped); the abridged map below shows which component each composable powers.
+Components that need JS interactivity pair with a composable in [`src/browser/composables/`](../src/browser/composables/). Naming mirrors the element: `useDialog` ↔ `<dialog>`, `useDetails` ↔ `<details>`, `useAside` ↔ `<aside>`.
 
-| Component              | Composable                     | Wrapped element / contract                                                                                                 |
-| ---------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| Modal                  | `useDialog` (← `useModal`)     | `<dialog>` — gated; layers `elements:dialog:show / open / hide / close` over native `showModal()` / `close()`.             |
-| Accordion / disclosure | `useDetails` (← `useCollapse`) | `<details>` — gated; flips `[open]` synchronously, listens to native `toggle` for external mutations.                      |
-| Popover surface        | `usePopover` (attribute-bound) | `[popover]` — sets `popover="manual"` itself; consumed by tooltip / menu / select / toast.                                 |
-| Tooltip                | `useTooltip`                   | Hover + focus triggers; sets `role="tooltip"`. Composes `usePopover`.                                                      |
-| Dropdown               | `useMenu` (← `useDropdown`)    | `<menu>` panel gated; ARIA `aria-expanded` + `aria-haspopup="menu"`; arrow-key roving + Home / End. Composes `usePopover`. |
-| Sidebar / drawer       | `useAside` (← `useOffcanvas`)  | `<aside>` — gated; popover-API top layer + `[data-aside-open]` mirror; scroll lock + Escape dismiss.                       |
-| Toast                  | `useToast`                     | `<output>` — gated (matches the `output[popover]` toast surface scope). Stack-deck layout via `[data-toast-stack]`.        |
-| Tabs                   | `useTabs` (← `useTab`)         | One trigger / one pane within a `[role="tablist"]` group; ARIA roles auto-applied.                                         |
-| Nav / scroll-spy       | `useNav` (← `useScrollSpy`)    | `<nav>` ref gated; `IntersectionObserver` toggles `aria-current="location"` on the matching link.                          |
-| Form                   | `useForm`                      | `<form>` — gated; constraint-validation pipeline + `[data-form-validated]` + `aria-invalid` mirrors.                       |
-| Select / combobox      | `useSelect`                    | `<menu>` panel; ARIA listbox / combobox / multi-select / autocomplete modes.                                               |
-| Table                  | `useTable`                     | `<table>` — gated; sort, paginate, select, expand (with optional height-transition), focus, resize.                        |
-| Carousel               | `useCarousel`                  | Slide nav + autoplay + keyboard / touch / swipe.                                                                           |
-| Drag / drop            | `useDrag` + `useDrop`          | HTML5 DnD pipeline on `[data-index]` rows + drop-target with `relatedTarget`-aware `over` tracking.                        |
-| Pointer                | `usePointer`                   | `pointerdown → pointermove* → pointerup` with body cursor lock. Foundation for drag / slider / splitter.                   |
-| Focus                  | `useFocus`                     | Tab-trap with `activate()` / `deactivate()` lifecycle. Extracted from mailbox's `createModal` focus-trap loop.             |
-| Theme                  | `useTheme`                     | Singleton theme controller — `data-theme` + `data-core` attributes; `prefers-color-scheme` reactive follow.                |
-| Button                 | `useButton`                    | `<button>` — gated; toggle state + `aria-pressed` + `elements:button:toggle`.                                              |
-| Alert                  | `useAlert`                     | `[role="alert"]` / `[role="status"]` host; `[data-alert-open]` + `[data-alert-dismiss]` descendant.                        |
+21 composables ship today, each with a paired framework-agnostic factory under [`src/browser/factories/`](../src/browser/factories/). Non-Vue consumers can drop the Vue adapter and call `createDialog(el, opts)` directly.
 
-Each composable has a paired framework-agnostic factory under [`src/browser/factories/`](../src/browser/factories/) so non-Vue consumers can drop the Vue adapter and call `createDialog(el, opts)` directly. The composable owns **state** (open/closed, active/inactive, transitions). The component partial owns **chrome** (color, layout, sizing). Event names follow `elements:{element-or-component}:{verb}` per [src/browser/events.ts](../src/browser/events.ts).
+| Component | Composable | Key behaviour |
+|---|---|---|
+| Modal | `useDialog` | Native `showModal()` / `close()` + cancellable show/hide events. |
+| Drawer / sidebar | `useAside` | Popover top-layer + slide-in via dual-attribute gating. |
+| Accordion | `useDetails` | `[open]` toggle + CSS height transition via `interpolate-size`. |
+| Dropdown | `useMenu` | `<menu popover>` panel + arrow-key roving + anchor positioning. |
+| Tooltip | `useTooltip` | Hover/focus triggers + `[popover=hint]` panel. |
+| Floating panel | `usePopover` | `[popover]` toggle + anchor positioning. Backbone for menu/tooltip/select. |
+| Listbox / combobox | `useSelect` | `<menu>` listbox with filter + multi-select + autocomplete. |
+| Toast | `useToast` | `<output popover>` with auto-hide + deck stacking. |
+| Tabs | `useTabs` | `[role="tablist"]` keyboard roving + lazy panel mount. |
+| Scroll-spy nav | `useNav` | `IntersectionObserver` + `aria-current="location"`. |
+| Form | `useForm` | Constraint validation + `[data-form-validated]` + `aria-invalid`. |
+| Data table | `useTable` | Sort + paginate + select + expand + resize. |
+| Carousel | `useCarousel` | Slide nav + autoplay + touch/swipe. |
+| Drag / drop | `useDrag` + `useDrop` | HTML5 DnD with reorder events. |
+| Toggle button | `useButton` | `aria-pressed` toggle. |
+| Alert | `useAlert` | `[role="alert"]` dismiss lifecycle. |
+| Focus trap | `useFocus` | `activate()` / `deactivate()` tab-trap primitive. |
+| Pointer | `usePointer` | `pointerdown` → `pointermove*` → `pointerup` multiplex. |
+| Theme | `useTheme` | `data-theme` / `data-core` + `prefers-color-scheme` follow. |
 
-Showcase pages live under [`app/browser/pages/Use*Page.vue`](../app/browser/pages/) — one per composable — and demonstrate the API surface end-to-end on real DOM.
+**Full per-composable reference** with options, return shapes, events, and the open/closed lifecycle discipline lives in [composables.md](./composables.md). Showcase pages live under [`app/browser/pages/Use*Page.vue`](../app/browser/pages/) — one per composable.
+
+The composable owns **state** (open/closed, transitions, ARIA mirrors). The component-layer partial in `src/styles/composables/` owns **dynamic chrome** (drawer geometry, deck stacks). The bare-tag partial in `src/styles/components/` (or `src/styles/elements/`) owns **static chrome** that survives the close transition. Three layers, one responsibility each.
 
 ---
 
@@ -330,9 +335,9 @@ Adding a class root that wasn't listed in §3 / §7 needs a separate reason — 
 
 ## 10. Cross-references
 
-- [plan.md §Phase 5](./plan.md#phase-5--sectioning-elements-become-their-components-the-pivot) — full strategic context for the "element IS component" pivot.
-- [plan.md §Phase 6](./plan.md#phase-6--composables-lift-from-mailbox-adapted) — composable lift list with priorities.
-- [plan.md §Phase 7](./plan.md#phase-7--remaining-surfaces-in-progress) — surface roadmap.
+- [plan.md §2](./plan.md#2-invariants--must-respect) — framework-wide invariants (cascade order, token-driven variation, open/closed gating, naming).
+- [plan.md §4](./plan.md#4-component-status) — top-level component status counts.
+- [composables.md](./composables.md) — Vue + factory layer that pairs with the dynamic component partials in `src/styles/composables/`.
 - [styles.md](./styles.md) — top-level architecture and authoring contract.
 - [tokens.md](./tokens.md) — element-scoped token pattern (components follow the same).
 - [modifiers.md](./modifiers.md) — modifier cascade components consume.

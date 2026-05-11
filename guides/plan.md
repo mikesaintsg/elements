@@ -1,503 +1,224 @@
-﻿# Implementation Plan & Status
+# Plan & Status
 
-> Living tracker of what's built, what's next, and what's deferred. Update with every meaningful change. The companion guides ([styles.md](styles.md), [tokens.md](tokens.md), [modifiers.md](modifiers.md), [mixins.md](mixins.md), [elements.md](elements.md), [components.md](components.md), [surfaces.md](surfaces.md)) describe the architecture; this file tracks how much of it has actually shipped and what to build next.
-
-The architectural plan-of-record lives at `~/.claude/plans/i-want-to-make-nifty-quill.md`. This file mirrors its current state of execution.
+> Living tracker of where the framework stands today and what to build next. Companion guides — [styles.md](styles.md), [tokens.md](tokens.md), [modifiers.md](modifiers.md), [mixins.md](mixins.md), [elements.md](elements.md), [components.md](components.md), [composables.md](composables.md), [surfaces.md](surfaces.md) — describe how each layer works; this file tracks what's shipped, what's next, and the invariants every contributor must respect.
 
 ---
 
-## How to read this plan
+## 1. Where we are
 
-- **Substantive (✅ cascade)** — element has a full `--set-{tag}-*` token chain, consumes the modifier cascade, has a TS entry in `elements.ts`, has a behavior test, and a showcase placement (its own page or under a grouped pattern page).
-- **Override (🟡)** — element ships a small framework-essential rule (often UA quirk normalization or a single missing default) but does NOT enter the modifier cascade. No TS entry, no per-element test beyond shape parity.
-- **n/a (🚫)** — partial is comment-only documentation. Tailwind preflight + UA defaults handle everything.
+A working framework built over Tailwind v4, layered into the `@layer` order:
 
-The element-rule philosophy stays the same: only ship a rule when it earns its keep. Most elements stay 🚫 indefinitely. Promote to 🟡 when a specific UA quirk demands a fix, and to ✅ when an element earns the full cascade.
+```
+theme, base, elements, components, surfaces, composables, modifiers, utilities
+```
+
+Five concrete layers ship today:
+
+| Layer | What lives there | Folder |
+|---|---|---|
+| **Elements** | One file per HTML tag. Token-driven baselines + UA-quirk resets. Targets bare tags. | [`src/styles/elements/`](../src/styles/elements/) |
+| **Components** | Element compositions that read as one UI thing — card, sidebar, navbar, dropdown, toast. Targets bare HTML roots; class-root fallback when no semantic tag fits. | [`src/styles/components/`](../src/styles/components/) |
+| **Surfaces** | Browser-rendered chrome that isn't a tag or composition — `[popover]`, `::backdrop`, scrollbar, anchor positioning. | [`src/styles/surfaces/`](../src/styles/surfaces/) |
+| **Composables** | Component-specific layout / chrome that only applies while a composable's state attribute is set. Lives `@layer composables`, beats every previous layer for the same selector. | [`src/styles/composables/`](../src/styles/composables/) |
+| **Modifiers** | The four-dimension cascade — variant, size, style, shape, state, placement. | [`src/styles/modifiers/`](../src/styles/modifiers/) |
+
+The TypeScript surface mirrors what ships under three folders:
+
+| Folder | Owns |
+|---|---|
+| [`src/browser/composables/`](../src/browser/composables/) | 21 Vue 3 adapters — `useDialog`, `useAside`, `useMenu`, `useSelect`, `useToast`, `useTooltip`, `usePopover`, `useDetails`, `useTabs`, `useNav`, `useForm`, `useTable`, `useCarousel`, `useDrag`, `useDrop`, `useFocus`, `usePointer`, `useTheme`, `useButton`, `useAlert`, `useAside`. |
+| [`src/browser/factories/`](../src/browser/factories/) | Framework-agnostic `create*` factories — one per composable. Import only from `@vue/reactivity`. The Vue adapter is the thin layer; the factory is the logic. |
+| [`src/browser/`](../src/browser/) | `tokens.ts`, `modifiers.ts`, `elements.ts`, `events.ts`, `constants.ts`, `helpers.ts`, `types.ts` — the contract surface. Bidirectionally parity-tested against SCSS. |
 
 ---
 
-## Foundation phase — complete
+## 2. Invariants — must respect
 
-Phase 1 (foundation), Phase 2 (form controls), Phase 3 (typography), Phase 4 (media) are all shipped. Phase 6 surfaces have started — `[popover]`, `::backdrop`, scrollbar styling are in.
+These are framework-wide rules every commit honors. Breaking one ships a bug. The recent audits ([§5](#5-recent-audits--lessons-learned)) all trace back to one of these being violated.
 
-### Architecture
+### 2.1 The cascade layer order is load-bearing
 
-| Concern                                                                                                                                                     | Status | File(s)                                                                                              |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------- |
-| Tailwind v4 + `@tailwindcss/postcss`                                                                                                                        | ✅     | [package.json](../package.json), [vite.config.ts](../vite.config.ts)                                 |
-| `@layer` order (`theme, base, elements, components, surfaces, modifiers, utilities`)                                                                        | ✅     | [tests/setup.css](../tests/setup.css), [app/browser/styles/main.css](../app/browser/styles/main.css) |
-| Token surface (`--set-*` + `@theme` variants)                                                                                                               | ✅     | [\_tokens.scss](../src/styles/_tokens.scss), [\_theme.scss](../src/styles/_theme.scss)               |
-| Mixins registry (`reduced-motion`, `transition`, `focus-ring`, `$variants`/`$sizes`/`$styles`/`$states`)                                                    | ✅     | [\_mixins.scss](../src/styles/_mixins.scss)                                                          |
-| Modifier system — four dimensions (variant / size / style / state)                                                                                          | ✅     | [src/styles/modifiers/](../src/styles/modifiers/)                                                    |
-| TS contract layer (`tokens.ts`, `modifiers.ts`, `elements.ts`, `events.ts`)                                                                                 | ✅     | [src/browser/](../src/browser/)                                                                      |
-| Bidirectional parity tests                                                                                                                                  | ✅     | [tests/src/browser/](../tests/src/browser/)                                                          |
-| Modifier behavior tests                                                                                                                                     | ✅     | [tests/src/styles/modifiers/](../tests/src/styles/modifiers/)                                        |
-| Per-element behavior tests (button, a, input, textarea, select, dialog, table, label, fieldset, details, progress, meter, output) + typography pattern test | ✅     | [tests/src/styles/elements/](../tests/src/styles/elements/)                                          |
-| Tailwind interop test                                                                                                                                       | ✅     | [tests/src/styles/integration.test.ts](../tests/src/styles/integration.test.ts)                      |
-| Showcase pages — Home + 7 element pages + 3 pattern pages (Forms, Typography, Surfaces)                                                                     | ✅     | [app/browser/pages/](../app/browser/pages/)                                                          |
+Layer order is declared once in the consumer entry CSS (`tests/setup.css`, `app/browser/styles/main.css`):
 
-### Element baselines shipped (✅ cascade, full `--set-{tag}-*` token chain)
+```css
+@layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
+```
 
-| Element                                          | Phase | Partial                                                                                                        | Test                                                                  | Showcase                                               |
-| ------------------------------------------------ | ----- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------ |
-| `<button>`                                       | 1     | [\_button.scss](../src/styles/elements/_button.scss)                                                           | [\_button.test.ts](../tests/src/styles/elements/_button.test.ts)      | [/button](../app/browser/pages/ButtonPage.vue)         |
-| `<a>`                                            | 1     | [\_a.scss](../src/styles/elements/_a.scss)                                                                     | [\_a.test.ts](../tests/src/styles/elements/_a.test.ts)                | [/anchor](../app/browser/pages/AnchorPage.vue)         |
-| `<input>`                                        | 1     | [\_input.scss](../src/styles/elements/_input.scss)                                                             | [\_input.test.ts](../tests/src/styles/elements/_input.test.ts)        | [/input](../app/browser/pages/InputPage.vue)           |
-| `<textarea>`                                     | 1     | [\_textarea.scss](../src/styles/elements/_textarea.scss)                                                       | [\_textarea.test.ts](../tests/src/styles/elements/_textarea.test.ts)  | [/textarea](../app/browser/pages/TextareaPage.vue)     |
-| `<select>`                                       | 1     | [\_select.scss](../src/styles/elements/_select.scss)                                                           | [\_select.test.ts](../tests/src/styles/elements/_select.test.ts)      | [/select](../app/browser/pages/SelectPage.vue)         |
-| `<dialog>` (+ `::backdrop` surface)              | 1     | [\_dialog.scss](../src/styles/elements/_dialog.scss), [\_backdrop.scss](../src/styles/surfaces/_backdrop.scss) | [\_dialog.test.ts](../tests/src/styles/elements/_dialog.test.ts)      | [/dialog](../app/browser/pages/DialogPage.vue)         |
-| `<table>` family                                 | 1     | [\_table.scss](../src/styles/elements/_table.scss)                                                             | [\_table.test.ts](../tests/src/styles/elements/_table.test.ts)        | [/table](../app/browser/pages/TablePage.vue)           |
-| `<label>` (light cascade)                        | 2.1   | [\_label.scss](../src/styles/elements/_label.scss)                                                             | [\_label.test.ts](../tests/src/styles/elements/_label.test.ts)        | [/forms](../app/browser/pages/FormsPage.vue)           |
-| `<fieldset>` + `<legend>`                        | 2.2   | [\_fieldset.scss](../src/styles/elements/_fieldset.scss), [\_legend.scss](../src/styles/elements/_legend.scss) | [\_fieldset.test.ts](../tests/src/styles/elements/_fieldset.test.ts)  | [/forms](../app/browser/pages/FormsPage.vue)           |
-| `<details>` + `<summary>`                        | 2.3   | [\_details.scss](../src/styles/elements/_details.scss), [\_summary.scss](../src/styles/elements/_summary.scss) | [\_details.test.ts](../tests/src/styles/elements/_details.test.ts)    | [/forms](../app/browser/pages/FormsPage.vue)           |
-| `<progress>`                                     | 2.4   | [\_progress.scss](../src/styles/elements/_progress.scss)                                                       | [\_progress.test.ts](../tests/src/styles/elements/_progress.test.ts)  | [/forms](../app/browser/pages/FormsPage.vue)           |
-| `<meter>`                                        | 2.5   | [\_meter.scss](../src/styles/elements/_meter.scss)                                                             | [\_meter.test.ts](../tests/src/styles/elements/_meter.test.ts)        | [/forms](../app/browser/pages/FormsPage.vue)           |
-| `<output>` (light cascade)                       | 2.6   | [\_output.scss](../src/styles/elements/_output.scss)                                                           | [\_output.test.ts](../tests/src/styles/elements/_output.test.ts)      | [/forms](../app/browser/pages/FormsPage.vue)           |
-| `<h1>`–`<h6>` (shared `--set-heading-*` cascade) | 3.1   | [\_h1-h6.scss](../src/styles/elements/_h1-h6.scss)                                                             | [typography.test.ts](../tests/src/styles/elements/typography.test.ts) | [/typography](../app/browser/pages/TypographyPage.vue) |
+Later layers win. Composables sits AFTER surfaces, so a composable rule on `<aside>` beats the popover surface's defaults for the same selector. Modifiers sit AFTER everything except utilities, so `.primary` reliably tints regardless of what else matches. Don't reorder.
 
-### Element overrides shipped (🟡, single-rule normalization)
+### 2.2 Tokens are the variation surface — modifiers don't hand-roll selectors
 
-| Element                                | Phase         | Partial                                                                                                            |
-| -------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `<abbr>`, `<address>`, `<mark>`, `<p>` | (preexisting) | individual partials in `src/styles/elements/`                                                                      |
-| `<hr>`, `<blockquote>`                 | 3.2, 3.3      | [\_hr.scss](../src/styles/elements/_hr.scss), [\_blockquote.scss](../src/styles/elements/_blockquote.scss)         |
-| `<code>`, `<kbd>`, `<samp>`, `<var>`   | 3.4           | individual partials                                                                                                |
-| `<pre>`                                | 3.5           | [\_pre.scss](../src/styles/elements/_pre.scss)                                                                     |
-| `<dl>`, `<dt>`, `<dd>`                 | 3.9           | individual partials                                                                                                |
-| `<figure>` + `<figcaption>`            | 4.2           | [\_figure.scss](../src/styles/elements/_figure.scss), [\_figcaption.scss](../src/styles/elements/_figcaption.scss) |
-| `<video>`, `<audio>`                   | 4.3           | individual partials                                                                                                |
-| `<iframe>`, `<embed>`, `<object>`      | 4.4           | individual partials                                                                                                |
-
-### Surfaces shipped
-
-| Surface                                      | Status | File                                                       |
-| -------------------------------------------- | ------ | ---------------------------------------------------------- |
-| `dialog::backdrop` + `[popover]::backdrop`   | ✅     | [\_backdrop.scss](../src/styles/surfaces/_backdrop.scss)   |
-| `[popover]` panel + entry/exit transition    | ✅     | [\_popover.scss](../src/styles/surfaces/_popover.scss)     |
-| Scrollbar (`scrollbar-color/-width/-gutter`) | ✅     | [\_scrollbar.scss](../src/styles/surfaces/_scrollbar.scss) |
-
-### App-shell refactor + framework polish (2026-05-09)
-
-A semantic + visual audit pass driven by issues caught while using the app. Findings + fixes:
-
-**`<header>` vs `<nav>` decision rule** — added research-backed checklist (HTML LS + WAI-ARIA APG):
-
-1. `<nav>` = "major navigation block." Always labeled with `aria-label` when more than one exists. Footer link rows aren't `<nav>`.
-2. `<header>` = "introductory band of the sectioning element you're inside." `body > header` = banner landmark; everywhere else = structural hook.
-3. `<aside>` = catch-all for tangential rails. Pure nav rails → `<nav>`; nav + non-nav content → `<aside>` containing a labelled `<nav>`.
-
-**App.vue refactor**: the page now has a real `<header>` page banner (always-visible, contains brand + global search + mobile menu trigger). The left sidebar is `<nav aria-label="Primary">` containing the SiteNav rail directly (no nested nav). The right TOC is `<aside>` containing `<nav aria-label="Table of contents">`. The `<small>Press / to focus</small>` hint moved into the `<search>` itself as a trailing `<kbd>` element.
-
-**`nav > ol/ul` flex default → opt-in** — the previous rule made every list-shaped `<nav>` a horizontal flex row, which broke TOC (vertical list) and SiteNav-style grouped rails (sub-headings + ULs). Horizontal flex is now opt-in via WAI-ARIA standard labels (`aria-label="Breadcrumb"|"Pagination"|"Primary"|"Secondary"|"Page navigation"`). Plain `<nav><ul>` and `<nav aria-label="Table of contents"><ol>` stay vertical block flow — what their use cases actually want.
-
-**Body-shell rail rule was missing `display: flex`** — the `flex-direction: column` was set without `display: flex`, so the rail children fell back to block flow. Fixed; sidebar is now a real flex column with gap.
-
-**Container variant cascades stay neutral** — `<fieldset class="primary">` and `<details class="primary">` had the same auto-fill bug `<article>` had earlier: variant cascade reached `--set-{tag}-background-color` and filled the surface. Fix: variant tints BORDER only by default; `.filled` opts into surface fill. Containers stay neutral; action surfaces (button, anchor) auto-fill.
-
-**Article size scale** — `.small` / `.large` modifier values were tuned for buttons (8px / 16px padding), making `.large article` SMALLER than the default article (20px). Per-element overrides in `_article.scss`: small 12/12, default 20/20, large 32/32 — now visibly small → default → large.
-
-**Heading color cascade** — `<article class="primary filled">` headings disappeared into the primary surface because `_h1-h6.scss` resolved `--set-heading-color` from `--set-variant-background-color`. Updated cascade prefers `--set-style-color` (the variant's CONTRAST color, set by `.filled`); bare `.primary` headings still tint to variant identity.
-
-**`<summary>` chevron** — replaced unicode `▶` / `▼` with a CSS-painted SVG mask (same pattern as the select chevron). Tracks `currentColor` via `mask-image` + `background-color`, rotates 90° on `[open]`. No more font-rendering inconsistencies.
-
-**Dialog mobile padding** — added `@media (max-width: 480px)` reduction to `--set-dialog-padding-{inline,block}` so content gets more breathing room on phones.
-
-**ButtonPage Form context** — was using `class="flex flex-wrap items-end gap-3"` which didn't include `flex-row`, so our framework's `form { flex-direction: column }` won. Switched to `<form class="inline">` (the framework's horizontal form modifier).
-
-### Naming & coverage audit (2026-05-08)
-
-A second audit pass enforced the "element IS the component" rule consistently across the showcase + fixed two visual bugs.
-
-**Naming consistency** — the only page named after a _component concept_ rather than its _element_ was CardPage. Renamed to **ArticlePage** (route `/article`, title `<article> (card)`). Every component group page now follows `tag → ElementPage.vue` naming. Pages reference the spec's element name first, the common-name role parenthesized when helpful (e.g. `aside (sidebar / callout)`, `header (app bar)`, `menu (toolbar)`).
-
-**Showcase coverage** — added pages for the 8 components that didn't have a dedicated demo: AsidePage, HeaderPage, FooterPage, NavPage, SearchPage, MenuPage, FormPage, DivPage. Each page demos the element's variants in the contexts the framework styles (e.g. NavPage shows the breadcrumb opt-in via `aria-label="Breadcrumb"` alongside pagination, navbar-with-`<ul>`, and the body-shell rail).
-
-**Heading color bug fix** — `<article class="primary filled">` had a contrast collapse: card body filled with primary-blue, but headings inside still resolved `--set-heading-color` to `--set-variant-background-color` (also primary-blue) → heading text disappeared into the surface. Fix in `_h1-h6.scss`: prefer `--set-style-color` (the variant's _contrast_ color, set by `.filled`) over `--set-variant-background-color`. Bare `.primary` headings still tint to the variant identity (style-color is unset → falls through to variant-background-color); only filled-context headings flip to the contrast color.
-
-**Form spacing** — bare `<form>` now provides label-on-top stacking for every direct `<label>` child, plus full-width inputs / textareas / selects:
+Every component-level rule reads through the four-dimension fallback chain:
 
 ```scss
-form > label {
-	display: flex;
-	flex-direction: column;
-	gap: var(--set-form-label-gap);
-}
-form > label > :is(input, textarea, select),
-form > :is(input, textarea, select) {
-	inline-size: 100%;
-}
-form.inline > label > :is(input, textarea, select) {
-	inline-size: auto; /* intrinsic in the inline variant */
-}
+--set-{name}-color:
+  var(--set-style-color,
+  var(--set-variant-color,
+  currentColor));
 ```
 
-The flex-column structure adapts cleanly to mobile widths without viewport-specific rules — inputs at `inline-size: 100%` fit whatever parent width the form has.
+A `<button class="primary large outline rounded">` resolves via that chain — `.outline` rewrites `--set-style-*`, `.primary` writes `--set-variant-*`, `.large` writes `--set-size-*`, `.rounded` writes `--set-shape-border-radius`. No `&.primary { color: ... }` blocks inside element files. The four dimensions cover ~99% of variations; only declare per-modifier rules in element files when a property genuinely can't come from a token (`<form>.row` flips flex-direction — that can't be a token).
 
-### Semantic audit (2026-05-08)
+### 2.3 Open/closed lifecycle: dual-attribute gating with persistent closing state
 
-After Threads A + B landed, an audit caught four element-vs-spec mismatches that needed correcting:
+Any element that opens and closes (popover, dialog, aside drawer, toast, menu) MUST gate its drawer-shaped CSS on the open-state selector. Author CSS that asserts `display: flex`, `position: fixed`, or large transforms on a bare popover-bearing selector defeats the UA's `display: none` for the closed state — the element stays rendered after `.hidePopover()` / `.close()`.
 
-1. **Showcase pages were wrapping content in `<article>`.** Per spec, `<article>` is "a self-contained composition... independently distributable, e.g., in syndication." A documentation page is a _section of a docs site_, not a syndicatable article. The framework's bare-`<article>` = card chrome was incidentally being applied to every page wrapper, surfacing the conflict. Fix: every page (HomePage, ButtonPage, AnchorPage, DialogPage, InputPage, SelectPage, TablePage, TextareaPage, CardPage, FormsPage, TypographyPage, SurfacesPage) now uses `<section>` as its root wrapper — semantically correct, no chrome conflict. The CardPage in particular dropped its `!block !shadow-none !border-0 !p-0 !bg-transparent` overrides — that anti-pattern was itself the smell flagging the wrong tag choice.
+The discipline:
 
-2. **`nav > ol` auto-applied breadcrumb chevrons to every list-shaped nav.** Pagination, table-of-contents, sequential-step indicators all use `<nav><ol>` and were getting unwanted chevron separators. The WAI-ARIA Authoring Practices Guide explicitly recommends `aria-label="Breadcrumb"` on the breadcrumb's nav, so we use that label as the disambiguator. Fix: chevron is now scoped to `nav[aria-label="Breadcrumb"] > ol`. Plain `<nav><ol>` stays separator-free; consumers opt in via the aria attribute.
+1. **Bare element rule** stays minimal — typically only tokens and color/border chrome that survives the close. No `display`, no `position: fixed`, no large translate.
+2. **Open-state rule** gates on `:popover-open` / `:modal` / `[data-{name}-open]` and owns the drawer geometry (display, position, inset, sizing, transforms).
+3. **Closing-state attribute** (e.g. `[data-aside-closing]`) is set synchronously when `hide()` runs AND intentionally NOT removed after the slide completes — it persists until the next `show()` (which clears it) or `destroy()`. This keeps the drawer geometry alive through the popover surface's `transition-behavior: allow-discrete` window (~150 ms after `hidePopover()` before `display: none` lands), preventing a "ghost flash" at the popover-surface default position.
+4. **`@starting-style` for from-state** targets a selector ONE specificity step below the open-state rule (e.g. `aside[popover].start` vs `aside[popover][data-aside-open].start`) — works around the Chrome 148+ cascade-tier bleed-through bug where matching-specificity starting-style declarations defeat the open-state rule.
 
-3. **Toc.vue selector `article section[id]` would have broken when wrappers became `<section>`.** Fix: use `section[id]` (the wrapper has no id, only inner demo sections do).
+Full discussion + per-composable lifecycle map in [composables.md §Open/closed lifecycle](./composables.md).
 
-4. **FormsPage didn't actually demo a `<form>`.** The page name is "Forms" but it only showed individual form controls (`<fieldset>`, `<input>`, `<details>`, `<progress>`, `<meter>`, `<output>`). The framework's `_form.scss` was unexercised in the showcase. Fix: added a real `<form>` demo (vertical stack) and a `<form class="inline">` demo (horizontal row).
+### 2.4 Factories are dual-distribution; composables are the Vue adapter
 
-A new `tests/src/styles/components/_section.test.ts` locks in the "section has no chrome" decision so future contributors don't accidentally add styling to bare `<section>` and break consumers.
+Every composable has a paired `create*` factory under `src/browser/factories/`. The composable is a Vue adapter (resolves refs, watchEffect, returns `readonly()` state). The factory is the logic (imports only `@vue/reactivity`, attaches listeners, manages attributes, emits events, owns `destroy()`).
 
-### Recent fixes (2026-05-08)
+Non-Vue consumers drop the composable and call `createDialog(el, opts)` directly. Tests cover both layers separately.
 
-- `<select>` chevron: tokenized as `--set-select-background-image` so consumers can swap or remove it without touching the framework partial. Default is an inline SVG (slate-500 stroke, hardcoded because CSS background-image SVGs don't reliably resolve `currentColor`).
-- `<dialog>` positioning: explicit `&:modal` rule re-anchors modal dialogs to viewport center; `&[open]:not(:modal)` rule sets `position: static; margin: 0` so non-modal dialogs flow inline at their source position.
-- `<a>.filled` chrome: medium-default `padding-inline` / `padding-block` / `border-radius` inside `&.filled` so a filled link without an explicit size modifier still has breathing room.
-- `app/browser/styles/main.scss` → `main.css`: dropped Sass `@import` deprecation warnings by mirroring the test-side setup. Sass-side framework SCSS is now a separate import in `main.ts`.
-- **SurfacesPage popover bug**: Tailwind layout utilities (`.grid` / `.flex` / `.block`) on `[popover]` elements override the UA's `display: none` for closed popovers, causing the panel to render flat in document flow. Fixed by wrapping popover content in a child div and documented as a gotcha in [surfaces.md](surfaces.md#61-gotcha--tailwind-layout-utilities-on-popover-elements).
+### 2.5 Naming
 
-### Component partials shipped (Phase 5 — bare-element-IS-component)
+| Surface | Convention |
+|---|---|
+| HTML tag → composable | `<dialog>` → `useDialog`, `<aside>` → `useAside`, `<menu>` → `useMenu`. One composable per tag. |
+| Composable → factory | `useDialog` ↔ `createDialog`. Same name, different layer. |
+| Event names | `elements:{source}:{verb}` — source = tag or composable noun, verb from the lifecycle vocabulary (`show`/`open`/`hide`/`close`/`select`/`destroy`/etc.). |
+| State attributes | `[data-{name}-{state}]` — `data-aside-open`, `data-aside-closing`, `data-table-expanded`, `data-toast-stack-closing`. |
+| CSS tokens | `--set-{scope}[-context]-{property}` where `{property}` is the real CSS property key (`color`, `background-color`, `padding-inline`). |
 
-| File                                                                 | Selector                           | What it does                                                                                                                                                                                                                                                         |
-| -------------------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`components/_body.scss`](../src/styles/components/_body.scss)       | `body:has(main)`                   | CSS-grid template-areas layout shell. Direct + once-removed selectors so Vue/React mount-point wrappers (with `display: contents`) work without breaking placement.                                                                                                  |
-| [`components/_main.scss`](../src/styles/components/_main.scss)       | `body:has(main) > main`            | `overflow-y: auto`, scroll containment. Main scrolls independently of the surrounding chrome.                                                                                                                                                                        |
-| [`components/_article.scss`](../src/styles/components/_article.scss) | `article`                          | Card. Bare `<article>` ships chrome (padding, border, radius, soft shadow). Variant cascade reaches the border only — `.filled` is the explicit opt-in for surface fills. Descendant `<header>` / `<footer>` get card-header/footer chrome via descendant selectors. |
-| [`components/_aside.scss`](../src/styles/components/_aside.scss)     | `body > aside`, `article aside`    | Two contexts disambiguated by ancestry: page sidebar (rail chrome) vs article callout (leading-bar pull-quote).                                                                                                                                                      |
-| [`components/_header.scss`](../src/styles/components/_header.scss)   | `body > header`                    | Page app bar. Scoped to layout-shell context so heroes outside the shell stay free-form.                                                                                                                                                                             |
-| [`components/_footer.scss`](../src/styles/components/_footer.scss)   | `body > footer`                    | Page footer. Same shell-only scoping.                                                                                                                                                                                                                                |
-| [`components/_nav.scss`](../src/styles/components/_nav.scss)         | `nav`, `body > nav`, `nav > ol`    | Navigation. Bare `<nav>` is a flex row; body-shell context makes it a vertical rail; inner `<ol>` becomes a chevron-separated breadcrumb.                                                                                                                            |
-| [`components/_search.scss`](../src/styles/components/_search.scss)   | `search`                           | Search bar — flex row container that pairs with the framework-styled `<input>` for the field.                                                                                                                                                                        |
-| [`components/_menu.scss`](../src/styles/components/_menu.scss)       | `menu`, `article menu`, `nav menu` | Toolbar / action row. Article-context = `justify-end` (card actions); nav-context = vertical column.                                                                                                                                                                 |
-| [`components/_form.scss`](../src/styles/components/_form.scss)       | `form`                             | Form-control stack. Vertical flex with gap; `.inline` modifier flips horizontal.                                                                                                                                                                                     |
-| [`components/_div.scss`](../src/styles/components/_div.scss)         | `div.stack`, `div.cluster`         | Layout primitives where `<div>` is the unavoidable fallback (no semantic alternative).                                                                                                                                                                               |
-
-### Verification (run `npm test && npm run check` to reproduce)
-
-- **712 / 712 tests** pass across 35 test files.
-- 0 oxlint warnings/errors.
-- 0 vue-tsc errors.
-- Dev server compile clean — no Sass deprecations, no PostCSS warnings.
-- Showcase build: 194 kB single-file → [demo/showcase.html](../demo/showcase.html).
+Bootstrap class soup (`.show`, `.fade`, `.modal-backdrop`, `.btn-close`, `.dropdown-*`) is OUT. Use the data attribute or the native ARIA state instead.
 
 ---
 
-## What's left in each phase
+## 3. Element status
 
-### Phase 2 — Form controls & disclosure (✅ done)
+Detailed checklist in [elements.md](elements.md). Top-level counts:
 
-All substantive elements shipped. Datalist / option / optgroup remain 🚫 documented limitations (UA-rendered popups, not stylable until `appearance: base-select` lands).
-
-### Phase 3 — Typographic content (✅ done)
-
-All overrides + the heading cascade shipped. Inline phrasing elements stay 🚫 — UA + Tailwind preflight cover them entirely. `<ul>` / `<ol>` / `<li>` stay 🚫 — list-marker styling is opt-in via Tailwind utilities.
-
-### Phase 4 — Media & embeds (✅ done)
-
-`<img>`, `<figure>`, `<figcaption>`, `<video>`, `<audio>`, `<iframe>`, `<embed>`, `<object>` all have override partials. `<canvas>`, `<svg>`, `<picture>`, `<math>` stay 🚫.
-
-### Phase 5 — Sectioning elements **become** their components (the pivot)
-
-The original plan had sectioning + generic elements stay 🚫 forever ("visual treatment is the consumer's job"). After looking at how beercss leverages `<article>` / `<nav>` / `<menu>` / `<dialog>` directly, and how the sibling `mailbox` framework has 50+ component partials that mostly target semantic tags, **the framework's stance is**:
-
-> **The element IS the component.** No naming class. `<aside>` is a sidebar. `<article>` is a card. `<header>` is an app bar. `<nav>` is navigation. The HTML tag carries the identity; modifiers (variant / size / style / state / placement) carry the variations.
-
-This goes further than beercss (which still mixes `.card` on `<article>` with class-only `.snackbar` on `<div>`). It's purer: every shipped component has a canonical HTML root, and that root is its name. If a developer wants a card, they write `<article>`. If they want a sidebar, they write `<aside>`. Done.
-
-**Layer separation:**
-
-| Layer                 | Path                                | Owns                                                                                                                                                                                                            |
-| --------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Element baseline      | `src/styles/elements/_{tag}.scss`   | Bare-tag UA-quirk normalization. For component-home tags, this stays minimal (or empty) — the chrome lives in `components/_{tag}.scss` instead.                                                                 |
-| Component composition | `src/styles/components/_{tag}.scss` | Component chrome on the bare tag. Selector targets the tag directly: `aside { … }`, `article { … }`, `nav { … }`. Disambiguation when needed via descendant selectors (e.g. `body > aside` vs `article aside`). |
-
-The naming rule: file name mirrors the root HTML tag. `components/_aside.scss` styles `<aside>` (sidebar). `components/_article.scss` styles `<article>` (card). Same shape as `src/styles/elements/`, different layer in the cascade — components sit in `@layer components`, elements in `@layer elements`. Components win when both target the same selector.
-
-**Component map under the "element IS component" rule:**
-
-| Tag         | Canonical component                                                                                                                                                                                                                                                                                                                                                                 | Disambiguation when nested differently                                         | Lift-from                                                     |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| `<body>`    | **Layout shell** — CSS grid with template-areas (`header / nav / main / aside / footer`). Modifier classes pick areas (`.layout-rail-start`, `.layout-rail-end`, `.layout-no-aside`).                                                                                                                                                                                               | —                                                                              | beercss main-layout, mailbox `.container-shell-row`           |
-| `<main>`    | **Content slot** — viewport-locked frame, `overflow: hidden` so children own scroll.                                                                                                                                                                                                                                                                                                | —                                                                              | mailbox `.container-shell`                                    |
-| `<header>`  | **App bar** when child of `<body>` (page header). **Card header** when descendant of `<article>`. Disambiguated via `body > header` vs `article header`.                                                                                                                                                                                                                            | `body > header` = appbar, `article header` = card-header chrome                | beercss `<header class="responsive fixed">`                   |
-| `<footer>`  | **App footer** when child of `<body>`. **Card footer** when descendant of `<article>`. Same disambiguation pattern.                                                                                                                                                                                                                                                                 | `body > footer` = page footer, `article footer` = card-footer chrome           | beercss `<footer class="responsive fixed">`                   |
-| `<nav>`     | **Navigation** — single canonical chrome. The shape variants (rail/bar/tabs/breadcrumb/pagination) are determined by **inner content**, not by class on `<nav>` itself: an inner `<ol>` of `<a>`s is a breadcrumb (links separated by chevrons), an inner `<ol>` of numbered links is pagination, a `role="tablist"` makes it tabs. The `<nav>` chrome itself is a clean container. | Inner `<ol>` → breadcrumb. Inner `[role=tablist]` → tabs. Bare links → navbar. | mailbox `_nav.scss` + `_breadcrumb.scss` + `_pagination.scss` |
-| `<aside>`   | **Sidebar** when child of `<body>` (persistent or responsive drawer). **Callout / pull quote** when descendant of `<article>`. Disambiguated via `body > aside` vs `article aside`. Placement via `.start` / `.end` / `.top` / `.bottom` modifiers (sidebars).                                                                                                                      | `body > aside` = sidebar chrome, `article aside` = callout chrome              | mailbox `_sidebar.scss` + `_offcanvas.scss` (fully developed) |
-| `<article>` | **Card** — the flagship. Self-contained composition with optional `<header>`/`<footer>` slots styled via the descendant rules above.                                                                                                                                                                                                                                                | —                                                                              | beercss `<article>` direct, mailbox `_card.scss`              |
-| `<section>` | **Labeled region** — currently no chrome by default. Stays 🚫 unless we find a single canonical use (e.g., a banded marketing section). Sections are too generic to opinionate.                                                                                                                                                                                                     | —                                                                              | —                                                             |
-| `<hgroup>`  | **Title group** — heading + tagline (`<p>`) pair. Tight vertical rhythm + de-emphasized tagline color.                                                                                                                                                                                                                                                                              | —                                                                              | —                                                             |
-| `<search>`  | **Search bar** — `<input>` + optional submit + suggestions slot. Composes with `<form>` and `<input>` element styling already shipped.                                                                                                                                                                                                                                              | —                                                                              | (fresh territory)                                             |
-| `<menu>`    | **Toolbar / action row** — list of commands (the spec's intent). Pairs naturally with descendant `<button>`s. When descendant of `<article>` (card), it's the card's action row (no extra rule needed; descendant selectors handle layout).                                                                                                                                         | `article menu` = card actions, `body menu` = page-level toolbar                | beercss FAB `<menu>` patterns                                 |
-| `<form>`    | **Form stack** — vertical layout, `gap`-driven, label-on-top by default. `.inline` modifier flips to label-beside-control.                                                                                                                                                                                                                                                          | —                                                                              | mailbox `_forms.scss` + `useForm`                             |
-| `<dialog>`  | already shipped (modal centered + non-modal inline)                                                                                                                                                                                                                                                                                                                                 | —                                                                              | mailbox `_modal.scss` + `useModal` for dynamics               |
-| `<details>` | already shipped (disclosure with marker normalization)                                                                                                                                                                                                                                                                                                                              | —                                                                              | mailbox `_accordion.scss` + `useCollapse` for dynamics        |
-| `<table>`   | already shipped (table-family cascade)                                                                                                                                                                                                                                                                                                                                              | —                                                                              | mailbox `useTable` for dynamics                               |
-
-**Generic-box exception:** `<div>` and `<span>` have no semantic identity, so widgets without a more specific tag still live there — class-named because the tag itself doesn't carry meaning. These are a deliberate fallback, not the default path:
-
-| Tag      | Where class-naming is acceptable                       | Examples                                                                                                                                                         |
-| -------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `<div>`  | Layout primitives + widgets that have no semantic root | `.container`, `.stack`, `.cluster`, `.center`, `.splitter`, `.spinner`, `.skeleton`, `.placeholder`, `.empty-state`, `.stat`, `.timeline`, `.stepper`, `.rating` |
-| `<span>` | Inline atoms with no semantic root                     | `.badge`, `.chip`, `.tag`, `.dot`                                                                                                                                |
-
-But always prefer the semantic alternative when it exists:
-
-- Avatar → `<img>` (already styled), with size modifiers — not `<div class="avatar">`.
-- Live count → `<output>` (already styled) — not `<span class="badge">` (use `.badge` only when there's no associated form).
-- Inline code → `<code>` / `<kbd>` / `<samp>` / `<var>` (already styled).
-- Highlight → `<mark>` (already styled) — not `<span class="highlight">`.
-- Block quote → `<blockquote>` (already styled).
-- Definition term → `<dfn>` — not `<span class="term">`.
-- Full prose chunk → `<article>`, never `<div>`.
-
-**Tradeoffs of the "element IS component" rule:**
-
-- ✅ Pure semantic markup. Lints, syndication, screen-reader landmarks all align with intent.
-- ✅ Tiny class surface. Modifier vocabulary (variant/size/style/state/placement) is the entire user-facing API.
-- ✅ Memorable: "I want a card → `<article>`. I want a sidebar → `<aside>`."
-- ⚠️ Forces opinionated mappings. `<section>` doesn't get a default chrome (correctly — it's too generic), but neither does `<menu>`-as-context-menu-popover (we'd lose that pattern). Tradeoff: one tag, one canonical form.
-- ⚠️ Descendant-selector disambiguation has to be careful. `body > header` and `article header` selectors must be specific enough to avoid bleeding (e.g., a `<dialog>` inside `<article>` shouldn't pick up card-header styling on its own internal header).
-- ⚠️ Every component partial inevitably also paints rules on the bare tag — the line between "element baseline" and "component chrome" thins. We may eventually merge `elements/_aside.scss` and `components/_aside.scss` into a single file, with the component layer wrapped in `@layer components` and the baseline in `@layer elements`. **Decision deferred** until the first component lands and the friction shows up in practice.
-
-### Phase 6 — Composables (lift from mailbox, adapted) ✅ shipped
-
-`mailbox` shipped 19 composables paired with 19 framework-agnostic factories importing only from `@vue/reactivity`. The pattern is sound — and as of the current commit it's brought forward and extended: **20 composables shipped** (the 19 mailbox originals renamed per the element-IS-component rule, plus a new `useFocus` primitive extracted from mailbox's `createModal` focus-trap loop). `useReducedMotion` is the only mailbox-listed primitive deliberately left out — Tailwind v4 already exposes the media query as a class variant and the framework's `transition` mixin honors it via `@media (prefers-reduced-motion: reduce)`, so a Vue composable would be redundant.
-
-**Shipped surface (alphabetical):** `useAlert`, `useAside`, `useButton`, `useCarousel`, `useDetails`, `useDialog`, `useDrag`, `useDrop`, `useFocus`, `useForm`, `useMenu`, `useNav`, `usePointer`, `usePopover`, `useSelect`, `useTable`, `useTabs`, `useTheme`, `useToast`, `useTooltip`. Each Vue adapter has a paired framework-agnostic `create*` factory under `src/browser/factories/`.
-
-**Adaptations applied during the lift:**
-
-- Each composable that binds to a single semantic element calls `assertElement<T>(host, expectedTag)` so a `<div>` masquerading as `<dialog>` / `<details>` / `<menu>` / `<form>` / `<table>` / `<aside>` / `<nav>` / `<output>` is rejected at construction time. The complete map is in `helpers.ts` next to the helper itself.
-- Bootstrap class chrome (`.show`, `.fade`, `.btn-close`, `.dropdown-*`, `.modal-*`, `.offcanvas-*`, `.was-validated`, `.bs-popover-{side}`, `.tooltip-{side}`, `.collapse`, `.collapsing`, `.carousel-item-next`, etc.) was replaced with native ARIA + `data-*` attributes:
-  - `aria-pressed` (button toggle), `aria-expanded` (menu / details), `aria-selected` (tabs / select / drag), `aria-modal` + `aria-hidden` + `role="dialog"` (dialog / aside), `aria-current="location"` (nav scroll-spy active link), `aria-invalid` + `data-form-validated` (form), `aria-haspopup="listbox"` + `aria-activedescendant` + `aria-multiselectable` (select).
-  - `data-popover-side`, `data-tooltip-side`, `data-tab-open`, `data-aside-open`, `data-alert-open`, `data-alert-dismiss`, `data-table-resizable`, `data-table-resizing`, `data-table-expanded`, `data-table-expansion`, `data-table-resize-handle`, `data-table-expansion-panel`, `data-toast-stack`, `data-stack-hidden`, `data-stack-closing`, `data-toast-hidden-count`, `data-hidden` (filtered select option), `data-no-drag`, `data-no-select`, `data-elements-scroll-locked` (body lock).
-- Bootstrap-flavoured CSS custom properties renamed: `--bs-*` → `--set-*` (e.g. `--bs-dropdown-flip` → `--set-menu-flip`, `--bs-toast-stack-depth` → `--set-toast-stack-depth`, `--bs-nav-indicator-x` → `--set-tabs-indicator-x`).
-- Event namespace renamed: `mailbox:*` → `elements:*`. Renames also applied to the source segment per the plan: `MODAL → DIALOG`, `COLLAPSE → DETAILS`, `DROPDOWN → MENU`, `OFFCANVAS → ASIDE`, `TAB → TABS`, `SCROLLSPY → NAV`. The complete event tree lives in `constants.ts` and is mirrored at the type level in `events.ts`.
-- Element-IS-component reimaginings:
-  - `usePopover` / `useTooltip` drop the `bs-popover-{side}` / `tooltip-{side}` class machinery and instead set inline `position-area` + `dataset.popoverSide` / `dataset.tooltipSide`. Surface CSS reads the inline style; the resolved-side attribute drives chrome (arrow rotation, callout edge).
-  - `useDialog` leans on the native `<dialog>` API (`showModal()` / `close()` / `cancel` / `close` events). Native focus trap + `::backdrop` + scroll lock all come for free; the factory layers cancellable `elements:dialog:show / hide` events on top.
-  - `useDetails` does NOT run a JS height transition — animation is CSS-driven via `interpolate-size: allow-keywords`. The factory's `show()` / `hide()` flip `[open]` synchronously and emit lifecycle events; the native `toggle` event is a backstop for external mutation.
-  - `useAside` uses the popover API (`popover="manual"`) for top-layer rendering with the native `::backdrop` providing the scrim. `data-aside-open` is the hook for slide-in transitions.
-  - `useToast` is bound to `<output>` because the surface scope (`output[popover]`) keeps toast's component-layer `position: fixed` from being beaten by the popover surface defaults. Stack-deck layout via `[data-toast-stack]` container attribute.
-  - `useTable` ports the full mailbox expansion pipeline: synchronous default (`expansion.animate: false` toggles `hidden` on the inner `[data-table-expansion-panel]`), opt-in height-transition pipeline (`expansion.animate: true` drives `[data-collapsing]` + inline-height pinning + `runTransition` await — mirrors `createDetails` semantics), in-flight transition cancellers keyed by row id, and async coordination so `expansion.multiple: false` awaits the prior collapse before opening the new row. Bootstrap's `.collapse` / `.collapsing` / `.show` class soup replaced with `[data-table-expanded]` on the data row, `[data-table-expansion]` on the detail tr, `[data-table-expansion-panel]` on the inner panel, and `[data-collapsing]` during animation.
-  - `useFocus` is **new** — extracted from mailbox's `createModal` focus-trap loop into a standalone primitive so authors can apply it outside `<dialog>` (which has its own native trap).
-
-**Test surface:** 725 / 725 passing. Per-vertical files under `tests/src/browser/factories/` and `tests/src/browser/composables/`. Vue mounting harness lives at `tests/setupBrowser.ts` (`mountSetup` + `withElement` + `assertCleanDispose` + event creators).
-
-**Shipped alongside the composable layer:**
-
-- 20 showcase pages — one `Use*Page.vue` per composable under [`app/browser/pages/`](../app/browser/pages/), wired through the `Composables` group in [`router.ts`](../app/browser/router.ts).
-- `app/browser/styles/showcase.scss` — chrome partial that drives the showcase's sidebar drawer, mobile banner, page scaffolding, rail-link styling, and TOC list. The showcase prefers framework-first authoring (bare semantic elements → framework modifier classes → `showcase-*` chrome helpers); Tailwind utilities remain available as last-mile fine-tuning but are deliberately rare.
-
-**Deferred:** integration smoke tests that mount a real composed component and exercise the full chain (composable + factory + element baseline + surface), and the `useReducedMotion` primitive (Tailwind variant + the framework's `transition` mixin already cover the use case).
+| Status | Count | Examples |
+|---|---|---|
+| ✅ cascade | ~21 | `<button>`, `<a>`, `<input>`, `<textarea>`, `<select>`, `<dialog>`, `<aside>`, `<details>`, `<table>`-family, `<form>`-controls, `<output>`, `<progress>`, `<meter>`, `<h1>`–`<h6>` |
+| 🟡 override | ~17 | `<abbr>`, `<address>`, `<mark>`, `<p>`, `<hr>`, `<blockquote>`, `<code>`-family, `<pre>`, `<dl>`-family, `<figure>`-family, `<video>`, `<audio>`, `<iframe>`, `<embed>`, `<object>` |
+| 🚫 stays | ~55 | Inline phrasing, sectioning landmarks (handled at components layer), void/inert metadata, MathML/SVG/canvas, list markers |
 
 ---
 
-### Phase 6 — Composables (legacy planning notes, kept for reference)
+## 4. Component status
 
-`mailbox` ships 19 composables paired with 19 framework-agnostic factories importing only from `@vue/reactivity`. The pattern is sound — bring it forward.
+Detailed catalog in [components.md](components.md). Element-driven components live in `src/styles/components/`; composable-attached chrome lives in `src/styles/composables/`.
 
-**Architecture (mirrored from mailbox):**
-
-```
-src/browser/
-├── composables/      Vue adapter layer — useDialog.ts, useDetails.ts, useAside.ts, …
-├── factories/        Framework-agnostic — createDialog.ts, createDetails.ts, createAside.ts, …
-├── helpers.ts        Shared utilities (generateId, extract*, etc.)
-├── types.ts          Composable option/return types (Use*Return, Create*Options, …)
-├── constants.ts      Event names, selector strings, default timing tokens
-└── events.ts         Event-name registry (gets populated as composables ship)
-```
-
-**Composable naming rule (mirrors the "element IS component" rule).** Composables follow the same naming logic as components — the wrapped element's tag is the composable's name. Every Bootstrap-flavored mailbox name (`useModal`, `useDropdown`, `useOffcanvas`, `useCollapse`) renames to its element. The factory layer mirrors: `createDialog`, `createDetails`, `createMenu`, etc.
-
-The naming sorts composables into three buckets:
-
-1. **Element-bound (named for the wrapped HTML tag).** `useDialog` wraps `<dialog>`, `useDetails` wraps `<details>`, etc. One composable per tag, even if the tag plays multiple roles (the composable handles all of them — e.g. `useAside` covers both page-sidebar drawer behavior and any aside-level state, with options if there's variation).
-2. **Attribute-bound (named for the attribute API).** `usePopover` wraps the `popover` attribute (which can sit on any element). `useReducedMotion` wraps the `prefers-reduced-motion` media query.
-3. **Behavioral primitives (no specific element).** `useFocus`, `useTheme`, `useDrag`, `useDrop`, `usePointer`. These are reusable building blocks composed into multiple element-bound composables.
-
-**Composable lift list** — element-bound and attribute-bound composables get tag-mirrored names. Mailbox's behavior-named ones either rename to their element or stay as primitives:
-
-| Composable            | Bucket                             | Wraps                                                                                                                                                                                                                                       | Mailbox source (rename direction)              | Priority                                                                          |
-| --------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------- |
-| `useReducedMotion`    | primitive                          | `prefers-reduced-motion` media query                                                                                                                                                                                                        | author fresh                                   | 1st (foundation; consumed by every transition)                                    |
-| `useFocus`            | primitive                          | trap focus inside container + restore                                                                                                                                                                                                       | adapt from mailbox `_modal.scss` internals     | 1st (foundation; consumed by `useDialog`, `useMenu`)                              |
-| `useDialog`           | element                            | `<dialog>` show/showModal/close + Escape + focus restore                                                                                                                                                                                    | ← from `useModal`                              | 1st (populates `events.ts` with `elements:dialog:open` / `elements:dialog:close`) |
-| `useDetails`          | element                            | `<details>` open/close, `[open]` attribute, `toggle` event                                                                                                                                                                                  | ← from `useCollapse`                           | 2nd                                                                               |
-| `usePopover`          | attribute                          | `[popover]` show/hide, smart placement, anchor positioning                                                                                                                                                                                  | unchanged                                      | 2nd (unblocks `useTooltip` and `useMenu`)                                         |
-| `useMenu`             | element                            | `<menu>` toggle + keyboard nav + descendant `<button>` activation. Encompasses what mailbox called "dropdown" because under our rule a dropdown IS a `<menu>` (popover-positioned by `usePopover`).                                         | ← from `useDropdown`                           | 3rd                                                                               |
-| `useTooltip`          | primitive (no clean element home)  | hover/focus floating label, attaches to any element + `[popover]` panel                                                                                                                                                                     | unchanged                                      | 3rd                                                                               |
-| `useAside`            | element                            | `<aside>` drawer / sidebar show-hide, responsive-breakpoint behavior, focus management when used as drawer                                                                                                                                  | ← from `useOffcanvas`                          | 3rd                                                                               |
-| `useToast`            | primitive (no clean element home)  | transient notification stack. (Could later collapse into `useOutput` if we standardize on `<output role="status">` as the toast root — left as separate for now.)                                                                           | unchanged                                      | 3rd                                                                               |
-| `useNav`              | element                            | `<nav>` responsive collapse + scroll-spy + active-link tracking. Extends mailbox `useScrollSpy` (which becomes a sub-feature) and adds drawer/responsive behavior.                                                                          | merge of `useScrollSpy` + nav-related concerns | 4th                                                                               |
-| `useTable`            | element                            | `<table>` sort / pagination / selection / expansion / focus / resize                                                                                                                                                                        | unchanged                                      | 4th (own spec)                                                                    |
-| `useForm`             | element                            | `<form>` constraint validation API wrapper                                                                                                                                                                                                  | unchanged                                      | 4th                                                                               |
-| `useSelect`           | element                            | `<select>` keyboard navigation + filter. (Element-side `<select>` already styles correctly; the composable adds combobox-style enhancements.)                                                                                               | unchanged                                      | 5th                                                                               |
-| `useTabs`             | primitive (sub-feature, not a tag) | `[role="tablist"]` keyboard arrow + roving tabindex pattern. Lives separate from `useNav` because tablist semantics are role-based, not element-based — `<nav>` with tablist is one consumer; an `<ol>` or `<div>` with tablist is another. | ← from `useTab`                                | 5th                                                                               |
-| `useDrag` + `useDrop` | primitive                          | drag source / drop target list mutation                                                                                                                                                                                                     | unchanged                                      | 5th                                                                               |
-| `useTheme`            | primitive                          | reactive theme controller (light/dark + named cores)                                                                                                                                                                                        | unchanged                                      | 5th                                                                               |
-| `useCarousel`         | primitive (no element home)        | slide navigation                                                                                                                                                                                                                            | unchanged                                      | 6th                                                                               |
-| `usePointer`          | primitive                          | mouse/touch/pen multiplex                                                                                                                                                                                                                   | unchanged                                      | last (primitive used by `useDrag`, `useSelect`)                                   |
-
-**Naming-convention notes:**
-
-- The Vue adapter is `useX.ts` in `composables/`; the framework-agnostic factory is `createX.ts` in `factories/`. Both live under the same name as the wrapped tag/attribute/behavior. So `useDialog` ↔ `createDialog`, `useAside` ↔ `createAside`.
-- **Element-bound composables emit events under their tag namespace:** `elements:dialog:open`, `elements:details:toggle`, `elements:aside:show`. Behavioral primitives don't emit framework-namespaced events at all (they return reactive state only — `useReducedMotion` returns a `Ref<boolean>`).
-- **No `useDisclosure`, `useDropdown`, `useModal`, `useOffcanvas`, `useCollapse`** — these were mailbox names tied to Bootstrap UI vocabulary. Under our rule, they become `useDetails`, `useMenu`, `useDialog`, `useAside`, `useDetails` respectively (the last two collapse into their element).
-- Tests live in `tests/src/browser/composables/{name}.test.ts`. Each test file mirrors the composable's name exactly.
-
-### Phase 7 — Remaining surfaces (in progress)
-
-| Item                                                 | Status     | Notes                                                                                                                                       |
-| ---------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `_backdrop.scss`                                     | ✅ shipped | Used by `<dialog>` and `[popover]`                                                                                                          |
-| `_popover.scss`                                      | ✅ shipped | Panel chrome + open/close transition. Placement / `anchor-name` integration deferred.                                                       |
-| `_scrollbar.scss`                                    | ✅ shipped | `scrollbar-color`, `-width`, `-gutter` defaults on `:root`                                                                                  |
-| `_anchor-positioning.scss`                           | ⏳ pending | `anchor-name` + `position-area` defaults. Foundation for tooltip/dropdown placement vocabulary.                                             |
-| `_placements.scss` (modifier partial, not a surface) | ⏳ pending | `.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end`. Class names map to `position-area` keywords. |
-| `_placeholder.scss` (for `::placeholder`)            | ⏳ pending | Currently `<input>`/`<textarea>` paint placeholder inline — extract when more elements need it.                                             |
-| `_marker.scss` (for `::marker`)                      | ⏳ pending | `_summary.scss` paints its own marker today. Extract when `<details>` isn't the only consumer.                                              |
-| `_picker-select.scss` (for `::picker(select)`)       | ⏳ pending | Awaiting Firefox + Safari `appearance: base-select`.                                                                                        |
-| View transitions (`::view-transition-*`)             | ⏳ pending | Independent surface; can ship any time.                                                                                                     |
-
-### Phase 8 — Theming + distribution
-
-| Item                 | Status      | Notes                                                                                                                                                                                                                                |
-| -------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Multiple theme cores | ⏳ none yet | Mailbox ships 4 named cores (auroramoon, eclipse, honeymoon, lagunamoon) under `themes/` with `[data-bs-theme]` overrides. We can offer 1–2 alternates beyond the default to dogfood the theming surface.                            |
-| Dark mode            | ⏳ none yet | `[data-theme="dark"]` block layered on top of the default.                                                                                                                                                                           |
-| Density modifier     | ⏳ none yet | New dimension worth considering: `.compact` / `.comfortable` / `.spacious` adjusting `--set-{tag}-padding-*` + `--set-{tag}-font-size`. Beercss skips this; mailbox uses a `--bs-density-factor` `@property` for animatable density. |
-| Distribution polish  | ⏳ none yet | Published-package guidance, `@source` ergonomics, dual-distribution (CSS + TS) build verification, NPM publish dry-run.                                                                                                              |
-
-| Item                                                                                                                                                                                                                                                                | Status      | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `_backdrop.scss`                                                                                                                                                                                                                                                    | ✅ shipped  | Used by `<dialog>` and `[popover]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `_popover.scss`                                                                                                                                                                                                                                                     | ✅ shipped  | Panel chrome + open/close transition. Placement / `anchor-name` integration deferred.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `_scrollbar.scss`                                                                                                                                                                                                                                                   | ✅ shipped  | `scrollbar-color`, `-width`, `-gutter` defaults on `:root`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `_placeholder.scss` (for `::placeholder`)                                                                                                                                                                                                                           | ⏳ pending  | Small surface. Currently `<input>`/`<textarea>` paint placeholder via `::placeholder { opacity: var(--set-input-placeholder-opacity) }` inside the element file — extract to a shared surface partial when more elements need it.                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `_marker.scss` (for `::marker`)                                                                                                                                                                                                                                     | ⏳ pending  | Currently `_summary.scss` paints its own marker. Promote to a shared surface when `<details>` isn't the only consumer.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `_picker-select.scss` (for `::picker(select)`)                                                                                                                                                                                                                      | ⏳ pending  | Awaiting Firefox + Safari support for `appearance: base-select`. Track Chromium 134+ adoption.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Anchor positioning (`anchor-name` / `position-area`)                                                                                                                                                                                                                | ⏳ pending  | Foundational for `<dialog>` modal placement, `[popover]` placement, tooltip placement. Resolve placement vocabulary first (see Cross-cutting).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| View transitions (`::view-transition-*`)                                                                                                                                                                                                                            | ⏳ pending  | Independent surface; can ship any time.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Composables — `useDialog`, `useDetails`, `usePopover`, `useMenu`, `useAside`, `useNav`, `useTooltip`, `useToast`, `useTabs`, `useTable`, `useForm`, `useSelect`, `useDrag`, `useDrop`, `useFocus`, `usePointer`, `useCarousel`, `useTheme`, `useButton`, `useAlert` | ✅ shipped  | All 20 ported from mailbox with the rename map applied (`useModal→useDialog`, `useCollapse→useDetails`, `useDropdown→useMenu`, `useOffcanvas→useAside`, `useTab→useTabs`, `useScrollSpy→useNav`). Each `use*` accepts only its semantically-correct host element via `assertElement`. Bootstrap class soup (`.show`, `.fade`, `.bs-*`, `.modal-*`, `.dropdown-*`, etc.) replaced with `data-*` attributes + native ARIA. `useFocus` was extracted from mailbox's `createModal` into a standalone primitive. `useReducedMotion` deliberately not ported — Tailwind variant + the framework's `transition` mixin cover the use case. |
-| Components — `card`, `alert`, `modal` (wraps `<dialog>` + composables), `dropdown`, `tooltip`, `toast`                                                                                                                                                              | ⏳ none yet | Each is a separate spec. Depends on composables being usable.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Theming beyond default                                                                                                                                                                                                                                              | ⏳ none yet | Architecture is theme-friendly already; specific themes are content.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Distribution polish                                                                                                                                                                                                                                                 | ⏳ none yet | Published-package guidance + dual-distribution build verification.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Layer | Shipped | Notes |
+|---|---|---|
+| `components/` static | 12 partials — `_body.scss`, `_main.scss`, `_article.scss`, `_aside.scss`, `_header.scss`, `_footer.scss`, `_nav.scss`, `_search.scss`, `_menu.scss`, `_output.scss`, `_form.scss`, `_div.scss` | Plus three small atoms (`_badge.scss`, `_dot.scss`, `_tag.scss`, `_role-group.scss`, `_skeleton.scss`, `_spinner.scss`). |
+| `composables/` dynamic | 6 partials — `_aside.scss` (drawer geometry), `_dialog.scss` (size modifiers), `_select.scss` (listbox/combobox chrome), `_toast.scss` (deck stacking), `_tabs.scss` (indicator + roving tabindex), `_carousel.scss` | Each gated on the composable's data attribute so the rule only applies while the composable is mounted. |
+| `surfaces/` | 5 partials — `_popover.scss`, `_backdrop.scss`, `_anchor-position.scss`, `_scrollbar.scss`, `_focus.scss` | `_anchor-position.scss` ships the placement vocabulary (`.start`/`.end`/`.top`/`.bottom` + corners) consumed by every floating component. |
 
 ---
 
-## Best next steps (recommended ordering)
+## 5. Recent audits + lessons learned
 
-The element-baseline work is broadly done. The remaining productive work splits along **four threads**, with **Thread A** the highest leverage for the next session because every consumer-facing demo improves the moment a layout primitive lands.
+These shaped the invariants in §2. Each is a class of bug we'd hit more than once, fixed once, documented going forward.
 
-### Thread A — Layout shell + flagship card (CSS-only, no JS, no naming classes)
+### 5.1 The `[open]` / `:popover-open` gating audit (2026-05)
 
-These are the bare-tag components a developer reaches for on day one. None require a composable; all live as pure SCSS in `src/styles/components/_{tag}.scss`. The selectors target the bare element (e.g. `aside { … }`, `article { … }`) — no `.sidebar` or `.card` classes anywhere. Ship in this order:
+Found three places where author CSS asserted `display: flex` on a popover-bearing or `<dialog>`-bearing selector without gating on the open-state pseudo. Each one defeated the UA's `display: none` for the closed state, leaving the element rendered after `.close()` / `.hidePopover()`:
 
-1. **`<body>` → layout shell** — `src/styles/components/_body.scss`. CSS-grid template-areas (`header / nav / main / aside / footer`) on `body` directly. Modifier classes adjust the grid (e.g. `body.rail-end` flips the nav rail to the right; `body.no-aside` collapses the sidebar column). Replaces hand-rolled app shells.
-2. **`<main>` → content slot** — `src/styles/components/_main.scss`. Viewport-locked frame with `overflow: hidden` so children own scroll. Selector targets bare `main`.
-3. **`<article>` → card** — `src/styles/components/_article.scss`. Flagship of the "element IS component" pitch. Card chrome on bare `article`. Nested `<header>` / `<footer>` slots styled via descendant selectors (`article > header`, `article > footer`) — no `.card-header` / `.card-footer` classes. Lift visual register from mailbox `_card.scss`.
-4. **`<aside>` → sidebar (page) / callout (in article)** — `src/styles/components/_aside.scss`. Two contexts, one partial. `body > aside` = persistent sidebar + drawer-below-breakpoint behavior; `article aside` = inline pull-quote / callout chrome. Placement via existing modifier vocabulary (`.start`/`.end`/`.top`/`.bottom`). Lift sidebar/offcanvas conventions from mailbox.
-5. **`<header>` / `<footer>` → page chrome / card chrome** — `src/styles/components/_header.scss`, `_footer.scss`. `body > header` = app bar (with optional `.fixed` / `.responsive` modifiers from beercss vocabulary); `article header` = card header. Same disambiguation for footer.
+1. `dialog.scrollable { display: flex }` — closed scrollable dialog stayed at top-left of viewport (`:modal` no longer matched, centering rule dropped, UA position absolute won).
+2. `output[popover] { display: flex }` — closed toast stayed at bottom-end corner after autohide elapsed.
+3. `[data-toast-stack] > output[popover] { transform: ...; opacity: ... }` — closing toast in a 2+ deck never faded cleanly because deck specificity beat the popover surface's close-state values.
 
-**Generic-box layout primitives** — Phase 5 explicitly accepts `<div>`-with-class for layout primitives that have no semantic equivalent. Ship these alongside Thread A items 1–2:
+All three fixed by splitting the rule: layout (`display`/`transform`/`opacity`) gates on the open-state selector; chrome (background/border/sizing) stays unconditional so closing elements retain visual identity for the surface's discrete-transition tail.
 
-6. **`.container` + `.stack` + `.cluster` + `.center`** — `src/styles/components/_div.scss`. The core layout primitives every page reaches for. Class-keyed because `<div>` carries no semantics. Lift conventions from mailbox `_grid.scss`.
+Codified in invariant §2.3 above.
 
-**Why Thread A first**: the showcase app's `App.vue` shell can drop its hand-rolled layout for bare `<body>` + `<main>` the moment items 1–2 land. The homepage gets a flagship `<article>` row in items 3. No JS dependency, no test infrastructure changes.
+### 5.2 The `<aside>` post-close ghost flash (2026-05)
 
-### Thread B — Navigation + landmarks (still no naming classes)
+After the slide-out completed and `data-aside-closing` was removed synchronously, the drawer-geometry block stopped matching. For the popover surface's ~150 ms discrete-transition tail (display:none → block transition with `transition-behavior: allow-discrete` keeps the element in the render tree), the panel snapped from `position: fixed; inset: 0; block-size: 100dvh` to popover-surface defaults (`position: absolute; inset: auto; max-block-size: 18rem`). User saw a ~288 px-tall ghost at the top of the page before display:none lands.
 
-After Thread A's layout shell:
+Fixed by stopping `createAside` from removing `data-aside-closing` after `hidePopover()`. The attribute persists until the next `show()` (which clears it) or `destroy()`. The drawer-geometry block stays alive through the discrete-transition tail; the panel parks off-screen at `translateX(±100%)` and silently disappears when display:none kicks in.
 
-7. **`<nav>` → navigation** — `src/styles/components/_nav.scss`. Single canonical chrome on bare `<nav>`. Variant shape comes from **inner content semantics**, not from a class on `<nav>`:
-   - Inner `<ol>` of `<a>` links → breadcrumb (chevron separators)
-   - Inner `<ol>` with numeric link text → pagination
-   - Inner `[role="tablist"]` → tabs
-   - Bare child links → navbar / nav rail (positioned by parent layout)
-   - Lift styling from mailbox `_nav.scss` + `_breadcrumb.scss` + `_pagination.scss`.
-8. **`<search>` → search bar** — `src/styles/components/_search.scss`. Bare `<search>` paints search-bar chrome (icon + input + optional submit). Composes with `<input>` element styling already shipped.
-9. **`<menu>` → toolbar / action row** — `src/styles/components/_menu.scss`. Bare `<menu>` styles a command row. Descendant context disambiguates: `article menu` (card actions) vs `body menu` (page toolbar).
-10. **`<form>` → form stack** — `src/styles/components/_form.scss`. Vertical stack with gap, label-on-top by default. `<form class="inline">` flips to label-beside-control. Pairs with `<input>` / `<textarea>` / `<select>` / `<label>` / `<fieldset>` / `<legend>` already shipped.
+Codified in invariant §2.3 above. Pattern is documented next to the `display: flex` line in `composables/_aside.scss` as load-bearing.
 
-### Thread C — Composables + their components
+### 5.3 `@starting-style` Chrome 148+ bleed-through (2026-05)
 
-Once Thread A + B are stable, the composable layer gives static components dynamic behavior. **Recommended first composable: `useReducedMotion`** (smallest, no DOM touchpoints) followed by `useDialog` (populates `events.ts`). Names match the wrapped element where applicable — see Phase 6's naming rule.
+Nesting `@starting-style { ... }` inside an open-state rule (e.g. `aside[popover][data-aside-open].start`) compiled to a starting-style declaration with the SAME specificity as the open-state rule. Chrome 148+ has a regression where matching-specificity starting-style declarations leak into the normal cascade tier when transitions don't fully engage — same specificity + later source order means the off-screen transform wins permanently, leaving the panel stuck off-screen.
 
-10. **Anchor-positioning surface** (`src/styles/surfaces/_anchor-positioning.scss`) + **placement modifiers** (`src/styles/modifiers/_placements.scss`). Unblocks `usePopover`, `useTooltip`, `useMenu`.
-11. **`useReducedMotion`** + **`useFocus`** — primitives consumed by every animation- or focus-bearing composable below.
-12. **`useDialog`** wraps `<dialog>` — first element-bound composable; populates `events.ts` with `elements:dialog:*`.
-13. **`useDetails`** wraps `<details>` (covers what mailbox called "collapse" / disclosure).
-14. **`usePopover`** wraps `[popover]` + **`useTooltip`** primitive.
-15. **`useMenu`** wraps `<menu>` (covers what mailbox called "dropdown"; uses `usePopover` for positioning).
-16. **`useAside`** wraps `<aside>` (covers what mailbox called "offcanvas"; drawer + responsive-breakpoint behavior).
-17. **`useNav`** wraps `<nav>` (responsive collapse + scroll-spy + active-link). Replaces mailbox's standalone `useScrollSpy`.
-18. **`useToast`** — primitive (no clean element home; may later fold into `useOutput`).
-19. **`useTabs`** — primitive for `[role="tablist"]` keyboard pattern (independent of `<nav>` so it works on `<ol>`/`<div>` too).
-20. **`useTable`** wraps `<table>` + **`useForm`** wraps `<form>` — bigger composables, own specs.
-21. **`useSelect`** wraps `<select>` (combobox-style enhancements over the bare element).
-22. **`useDrag` + `useDrop`** + **`usePointer`** — drag primitives.
-23. **`useCarousel`** — primitive (no element home).
-24. **`useTheme`** — primitive; integrates with Phase 8 theming.
+Fixed by extracting `@starting-style` to target a BARE selector one specificity step below the open-state rule (`aside[popover].start` vs `aside[popover][data-aside-open].start`). The element still matches the bare selector at the transition's first frame so `@starting-style` resolves its from-state values; the open-state rule wins by specificity regardless of cascade-tier leakage.
 
-### Thread D — Widgets + remaining surfaces
+Same fix applied earlier to `surfaces/_popover.scss` for `[popover]:popover-open`. Pattern is documented in the header of both files.
 
-Lower-priority but useful:
+### 5.4 The `useSelect` combobox filter + click (2026-05)
 
-21. **`<span class="badge|chip|tag|dot>`** — `components/_span.scss`. Inline atoms. Mailbox has `_badge.scss` + `_tag.scss` + `_dot.scss` ready to lift.
-22. **`<div class="spinner|skeleton|placeholder|empty-state|stat>`** — `components/_div.scss` (extends Thread A). Mailbox ships all of these.
-23. **`<div class="splitter">`** — resizable two-pane layout. Pairs with `useDrag` and `usePointer`.
-24. **`<div class="stepper|timeline|rating|carousel>`** — composite widgets.
-25. **`<form class="form">`** — `components/_form.scss`. Field-grid + labeled-row variants. Pairs with `useForm`.
+`SELECT_ITEM_SELECTOR` aliased `MENU_ITEM_SELECTOR` (`:where(li, a, button):not([disabled]):not([aria-disabled])`), which caught every interactive descendant including the filter input's wrapping `<li class="select-search">` and option-wrapper `<li>`s. Clicks on the search row matched closest() and silently returned (no `data-value`); arrow-key roving doubled-counted options because both `<li>` and inner `<button>` matched.
 
-### Recommended next commit
+Fixed by narrowing `SELECT_ITEM_SELECTOR` to `[data-value]:not([disabled]):not([aria-disabled="true"])` — only value-bearing elements qualify. The elements-flavoured equivalent of mailbox's `.dropdown-item[data-value]`.
 
-**Thread A and Thread B are complete** as of 2026-05-08 (1 commit; see Foundation table). Every sectioning element + generic-box layout primitive has shipped: `<body>`, `<main>`, `<article>`, `<aside>`, `<header>`, `<footer>`, `<nav>`, `<search>`, `<menu>`, `<form>` plus `<div class="stack|cluster">`.
+Separately, the factory marked filtered options with `[data-hidden]` but no CSS rule hid them. Added `.select [data-hidden] { display: none }` in `composables/_select.scss`.
 
-The next high-leverage commit is **Thread C item 10** (anchor-positioning surface + placement modifiers) followed by **Thread C items 11–12** (`useReducedMotion` + `useDialog`). These are the foundation of the composable layer:
+### 5.5 The `<menu>` dropdown wrap + alignment (2026-05)
 
-1. `src/styles/surfaces/_anchor-positioning.scss` — `anchor-name` + `position-area` defaults. Foundational for tooltip/dropdown placement.
-2. `src/styles/modifiers/_placements.scss` — class names `.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end` mapping to `position-area` keywords.
-3. `src/browser/composables/useReducedMotion.ts` + `factories/createReducedMotion.ts` — primitive composable consumed by every animation-bearing composable below.
-4. `src/browser/composables/useDialog.ts` + `factories/createDialog.ts` — first element-bound composable; populates `events.ts` with `elements:dialog:open` / `elements:dialog:close`.
+`<menu>` items wrapped into a second COLUMN instead of scrolling when content exceeded the popover's `max-block-size` cap, because the bare `<menu>` rule's `flex-wrap: wrap` inherited into popover-mode menus with `flex-direction: column`. Fix: `flex-wrap: nowrap; overflow-block: auto; overscroll-behavior: contain` on popover-mode `<menu>` rules.
 
-After that, the rest of Thread C unrolls naturally (`useDetails`, `usePopover`, `useMenu`, `useAside`, `useNav`, `useTooltip`, `useToast`, `useTabs`, `useTable`, `useForm`, `useSelect`, `useDrag`/`useDrop`, `useCarousel`, `useTheme` — each lifting the framework-agnostic factory pattern from mailbox).
+Items were also center-aligned because the bare `<button>` rule sets `justify-content: center`. Fix: `justify-content: flex-start` on popover-menu item rules (text-align alone didn't cover multi-child flex layouts).
 
 ---
 
-## Cross-cutting open questions
+## 6. What's next
 
-These come up in multiple phases; resolve once and reuse.
+Active threads in priority order:
 
-- **Placement vocabulary.** Resolved by Thread C above — ship `_placements.scss` with class names matching `position-area` keywords, alongside the anchor-positioning surface.
-- **Loading state handoff.** `.loading` is in the state modifier set but no element interprets it yet. Decision needed: does `.loading` toggle a spinner pseudo-element, or just dim + cursor? Settle when the first component (Modal? Toast?) actually needs it.
-- **`appearance: base-select`.** Track Chromium 134+ adoption. Once Firefox + Safari ship it, the select chevron's hardcoded color goes away — the picker becomes a real surface (`_picker-select.scss`). Until then the `--set-select-background-image` token is the customization point.
-- **Input validation states.** `:invalid` is the natural state to color the border with `--color-danger`. Decision: ship it automatically or require an opt-in (`.validate`) modifier? Lean toward opt-in — automatic `:invalid` is too aggressive on initial render. Settle when a form composable lands.
-- **Tailwind layout utilities on `[popover]` / state-driven elements.** Documented as a gotcha in surfaces.md §6.1 — don't put `.grid` / `.flex` / `.block` directly on a `[popover]` element; wrap content in a child instead. May warrant a dedicated `_state-display.scss` surface that re-asserts UA hide rules in `@layer base` if it bites a second time.
+### 6.1 Showcase polish
+
+The 20 `Use*Page.vue` showcase pages cover every composable but vary in fidelity. Highest-value pass: visual + interaction audit on each, mobile + desktop, light + dark theme. The audits in §5 came from this kind of pass.
+
+### 6.2 Theming surface
+
+| Item | Status | Notes |
+|---|---|---|
+| Dark mode | ✅ shipped | `[data-theme="dark"]` block in `_theme.scss` with full variant + neutral re-tuning. |
+| Named theme cores | ⏳ none yet | Mailbox ships 4 named cores. We could offer 1–2 alternates to dogfood the theming surface. |
+| Density factor (`--set-density-factor`) | ✅ shipped | Global multiplier in `_tokens.scss`. Per-component opt-in pending. |
+| Radius factor (`--set-radius-factor`) | ✅ shipped | Same shape. |
+| Elevation scale (`--set-box-shadow-{sm,base,lg}`) | ✅ shipped | Three-tier scale; toast/popover/dialog all consume. |
+
+### 6.3 Remaining surfaces
+
+| Surface | Status | Notes |
+|---|---|---|
+| `_placeholder.scss` (`::placeholder`) | ⏳ pending | Currently `<input>`/`<textarea>` paint placeholder inline — extract when more elements need it. |
+| `_marker.scss` (`::marker`) | ⏳ pending | `_summary.scss` paints its own marker. Extract when `<details>` isn't the only consumer. |
+| `_picker-select.scss` (`::picker(select)`) | ⏳ pending | Awaiting Firefox + Safari `appearance: base-select`. |
+| `_view-transition.scss` | ⏳ pending | Cross-page transitions on `<a>` navigation. Independent surface; can ship any time. |
+| `_selection.scss` (`::selection`) | ⏳ pending | Variant-tinted selection color. |
+
+### 6.4 Class-root widgets (no semantic home)
+
+Layout primitives shipped (`.stack`, `.cluster`). Atoms shipped (`.badge`, `.dot`, `.tag`, `.skeleton`, `.spinner`). Still pending:
+
+| Widget | Class root / element | Lift-from |
+|---|---|---|
+| Empty state | `.empty-state` on `<aside>` | mailbox `_empty-state.scss` |
+| Stat / KPI | `<output>` styled (preferred) or `.stat` | mailbox `_stat.scss` |
+| Avatar | `<img>` + size modifier (preferred) or `.avatar` | mailbox `_avatar.scss` |
+| Stepper | `<ol class="stepper">` | mailbox `_stepper.scss` |
+| Timeline | `<ol class="timeline">` | mailbox `_timeline.scss` |
+| Rating | `<meter>` (preferred) or `.rating` | mailbox `_rating.scss` |
+| Splitter | `.splitter` on `<div>` | mailbox `_splitter.scss` — pairs with `useDrag` + `usePointer` |
+
+### 6.5 Distribution polish
+
+Published-package guidance, `@source` ergonomics, dual-distribution (CSS + TS) build verification, npm publish dry-run. Defer until the framework is consumed by a second app.
 
 ---
 
-## Element verdict roster
-
-Single source of truth for "where does each tag stand?" Cross-references the phase that delivered each promotion. Shipped status flips visible in [elements.md](elements.md).
-
-| Status      | Count | Examples                                                                                                                                                                     |
-| ----------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ✅ cascade  | 21    | button, a, input, textarea, select, dialog, table-family-7, label, fieldset+legend, details+summary, progress, meter, output, h1–h6                                          |
-| 🟡 override | 17    | abbr, address, mark, p, hr, blockquote, code, kbd, samp, var, pre, dl, dt, dd, figure, figcaption, video, audio, iframe, embed, object (some are coupled multi-tag partials) |
-| 🚫 stays    | ~55   | inline phrasing, sectioning landmarks, void/inert metadata, MathML/SVG/canvas containers, list markers (`<ul>`/`<ol>`/`<li>`)                                                |
-
-(Multi-tag partials like `_h1-h6.scss` and the table-family count each tag as its own consumer surface.)
-
----
-
-## Update protocol
+## 7. Update protocol
 
 Every commit that materially advances the framework updates **two** places:
 
-1. The matching guide (token surface change → `tokens.md`; new element → `elements.md`; new mixin → `mixins.md`; new surface → `surfaces.md`).
-2. This file's tables — move the row out of the upcoming-phase table into Foundation, update the verdict roster, bump the test count.
+1. The matching guide ([tokens.md](tokens.md) / [elements.md](elements.md) / [components.md](components.md) / [composables.md](composables.md) / [surfaces.md](surfaces.md) / [mixins.md](mixins.md) / [modifiers.md](modifiers.md)).
+2. This file's tables — move shipped items into the right status table; if it's a new lesson learned, add a §5 entry.
 
-Don't wait for a "doc pass" — out-of-date status is worse than missing status.
+Out-of-date status is worse than missing status. Don't wait for a "doc pass."
 
-When picking the next thing to work on, prefer the lowest-numbered row in **Best next steps** above. Thread A items 1–3 (`<body>`/`<main>`/`<article>` as components) are pure-SCSS unblockers for the showcase. Thread C item 10 (anchor positioning + placement modifiers) is the prerequisite for any popover-shaped composable. Thread C items 11–12 (`useReducedMotion` + `useDialog`) are the start of the composable layer — they populate `events.ts` and establish the test pattern under `tests/src/browser/composables/`.
+When picking what to work on next, prefer the lowest-numbered §6 row. The §2 invariants are non-negotiable for every commit.
