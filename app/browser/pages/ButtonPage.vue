@@ -449,16 +449,18 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		<p>
 			<small>Live state: <code>active = {{ toggleApi.active.value }}</code></small>
 		</p>
-		<dl v-if="events.length > 0">
-			<dt><strong>Event log</strong> (newest first, max 6)</dt>
-			<dd v-for="(entry, idx) in events" :key="idx">
-				<small>
-					<code>{{ entry.at }}</code> ·
-					<code>elements:button:toggle</code> →
-					<code>active: {{ entry.active }}</code>
-				</small>
-			</dd>
-		</dl>
+		<section v-if="events.length > 0" id="button-toggle-events" class="event-log">
+			<h6 class="text-xs uppercase tracking-wider opacity-70">Event log — newest first, max 6</h6>
+			<ol>
+				<li v-for="(entry, idx) in events" :key="idx">
+					<small>
+						<code>{{ entry.at }}</code> ·
+						<code>elements:button:toggle</code> →
+						<code>active: {{ entry.active }}</code>
+					</small>
+				</li>
+			</ol>
+		</section>
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre><code>{{ snippetToggle }}</code></pre>

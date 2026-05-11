@@ -51,10 +51,23 @@
 		);
 
 		// Let the input field grow to fill the row; descendant submit / clear
-		// buttons stay at their intrinsic size.
-		& > input {
+		// buttons stay at their intrinsic size. The `<label>` selector
+		// catches the common labelled-input markup pattern
+		// (`<search><label><input></label></search>`) — without it the
+		// label sits at its inline intrinsic width and leaves dead space
+		// to the right of the input. Setting the label itself to flex-1
+		// and making it a flex container lets the inner <input>'s
+		// `inline-size: 100%` (declared on the input element) fill the
+		// label's box.
+		& > input,
+		& > label {
 			flex: 1 1 auto;
 			min-inline-size: 0;
+		}
+
+		& > label {
+			display: flex;
+			flex-direction: column;
 		}
 	}
 }

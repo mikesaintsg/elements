@@ -389,6 +389,10 @@ export const tokens = {
 		markerImage: '--set-summary-marker-image',
 		markerOpenRotate: '--set-summary-marker-open-rotate',
 		transitionDuration: '--set-summary-transition-duration',
+		// Trailing margin applied when the parent <details> is open — pushes
+		// the disclosure body away from the summary. See _summary.scss for
+		// the margin-vs-padding rationale.
+		marginBlockEnd: '--set-summary-margin-block-end',
 	},
 
 	// Element-scoped tokens declared on `address` itself. Ported from mailbox's

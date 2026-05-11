@@ -42,6 +42,13 @@
 		--set-summary-marker-image: var(--set-icon-chevron-right);
 		--set-summary-marker-open-rotate: 90deg;
 		--set-summary-transition-duration: var(--set-transition-duration);
+		// Gap between the summary and the disclosure body when <details> is
+		// open. Margin (not padding) so the summary's own box stays
+		// symmetric top/bottom — adding padding-block-end would produce a
+		// taller-on-the-bottom summary which reads as off-balance. The
+		// margin only takes effect when the details is open (rule below),
+		// so a collapsed details has no trailing gap to nothing.
+		--set-summary-margin-block-end: calc(var(--spacing) * 2);
 
 		display: flex;
 		align-items: center;
@@ -77,5 +84,13 @@
 
 	details[open] > summary::before {
 		rotate: var(--set-summary-marker-open-rotate);
+	}
+
+	// Open-state margin pushes the disclosure body away from the summary.
+	// Tied to `[open]` so a collapsed details doesn't carry dead trailing
+	// space below the summary. The token resolution still reads from the
+	// summary element so consumers retune via summary scope.
+	details[open] > summary {
+		margin-block-end: var(--set-summary-margin-block-end);
 	}
 }

@@ -167,7 +167,23 @@
 	--color-success-border-subtle: color-mix(in oklab, var(--color-success) 35%, var(--color-canvas));
 
 	--color-warning-bg-subtle: color-mix(in oklab, var(--color-warning) 18%, var(--color-canvas));
-	--color-warning-text-emphasis: color-mix(in oklab, var(--color-warning) 80%, var(--color-text));
+	// Warning's variant is amber-500 (oklch L≈0.77) — naturally light. The
+	// universal `mix(variant 70%, --color-text)` formula resolves to a
+	// light-amber-on-pale-amber combo that drops below WCAG AA against the
+	// pale yellow bg-subtle (measured 2.87:1). Flip the mix ratio for
+	// warning specifically so the variant percentage stays LOW: 30% amber
+	// + 70% body-text gives a deep amber-brown that reads as "warning-
+	// flavoured" but with enough darkness to clear AA on the pale bg.
+	// Bootstrap solves this the same way with `#664d03` (deep amber) text
+	// over `#fff3cd` (pale amber) bg.
+	//
+	// Why not `var(--color-amber-800)` directly? Tailwind v4 tree-shakes
+	// palette tokens to only what's referenced inside `@theme` or utility
+	// classes. `var(--color-amber-800)` in author CSS doesn't trigger
+	// emission, so the reference would resolve to empty string at runtime.
+	// `color-mix(--color-warning, --color-text)` is self-contained — both
+	// inputs are already-emitted tokens.
+	--color-warning-text-emphasis: color-mix(in oklab, var(--color-warning) 30%, var(--color-text));
 	--color-warning-border-subtle: color-mix(in oklab, var(--color-warning) 45%, var(--color-canvas));
 
 	--color-danger-bg-subtle: color-mix(in oklab, var(--color-danger) 12%, var(--color-canvas));
@@ -223,10 +239,17 @@
 		--color-inverted: var(--color-slate-100);
 		--color-inverted-text: var(--color-slate-900);
 
-		// Variant subtle — re-derived against the dark surface. The light-mode
-		// 12-over-canvas formula dissolves at low surface lightness; bumping
-		// to ~22% over `--color-surface` keeps the variant identity readable.
-		--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 22%, var(--color-surface));
+		// Variant subtle — re-derived for the dark canvas. The previous
+		// "22% variant + slate-900 (--color-surface)" formula put bg-subtle
+		// at oklab L≈0.27, sitting in a deadzone where neither light text
+		// nor dark text could clear WCAG AA (secondary subtle measured
+		// 3.80, tertiary 4.41). The fix lifts bg-subtle to a properly
+		// dark base by switching to `--color-canvas` (slate-950, L≈0.13)
+		// and dropping the variant percentage so the underlying canvas
+		// dominates — this gives the text-emphasis cascade room to clear
+		// AA against a genuinely dark bg in the same way light mode
+		// pairs dark text against a genuinely light bg.
+		--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 15%, var(--color-canvas));
 		--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
 		--color-primary-border-subtle: color-mix(
 			in oklab,
@@ -236,8 +259,8 @@
 
 		--color-secondary-bg-subtle: color-mix(
 			in oklab,
-			var(--color-secondary) 22%,
-			var(--color-surface)
+			var(--color-secondary) 15%,
+			var(--color-canvas)
 		);
 		--color-secondary-text-emphasis: color-mix(
 			in oklab,
@@ -252,8 +275,8 @@
 
 		--color-tertiary-bg-subtle: color-mix(
 			in oklab,
-			var(--color-tertiary) 22%,
-			var(--color-surface)
+			var(--color-tertiary) 15%,
+			var(--color-canvas)
 		);
 		--color-tertiary-text-emphasis: color-mix(
 			in oklab,
@@ -266,7 +289,7 @@
 			var(--color-surface)
 		);
 
-		--color-success-bg-subtle: color-mix(in oklab, var(--color-success) 22%, var(--color-surface));
+		--color-success-bg-subtle: color-mix(in oklab, var(--color-success) 15%, var(--color-canvas));
 		--color-success-text-emphasis: color-mix(in oklab, var(--color-success) 70%, var(--color-text));
 		--color-success-border-subtle: color-mix(
 			in oklab,
@@ -274,15 +297,24 @@
 			var(--color-surface)
 		);
 
-		--color-warning-bg-subtle: color-mix(in oklab, var(--color-warning) 28%, var(--color-surface));
-		--color-warning-text-emphasis: color-mix(in oklab, var(--color-warning) 80%, var(--color-text));
+		--color-warning-bg-subtle: color-mix(in oklab, var(--color-warning) 18%, var(--color-canvas));
+		// Dark-mode warning text — light amber on dark canvas-based
+		// bg-subtle. The light-mode warning emphasis (30% amber + 70% slate-
+		// 900) gives a deep amber-brown; in dark mode we'd want the
+		// opposite: high-luminance amber that lifts off the dark bg. Use
+		// the variant directly (`--color-warning` = amber-500, L≈0.77)
+		// since it's already light enough to clear AA on canvas-based
+		// bg-subtle (L≈0.13). This keeps the warning chrome symmetric:
+		// pale-bg + dark-text in light, dark-bg + light-text in dark, but
+		// derived from the same single variant token.
+		--color-warning-text-emphasis: var(--color-warning);
 		--color-warning-border-subtle: color-mix(
 			in oklab,
 			var(--color-warning) 55%,
 			var(--color-surface)
 		);
 
-		--color-danger-bg-subtle: color-mix(in oklab, var(--color-danger) 22%, var(--color-surface));
+		--color-danger-bg-subtle: color-mix(in oklab, var(--color-danger) 15%, var(--color-canvas));
 		--color-danger-text-emphasis: color-mix(in oklab, var(--color-danger) 70%, var(--color-text));
 		--color-danger-border-subtle: color-mix(
 			in oklab,
@@ -292,8 +324,8 @@
 
 		--color-information-bg-subtle: color-mix(
 			in oklab,
-			var(--color-information) 22%,
-			var(--color-surface)
+			var(--color-information) 15%,
+			var(--color-canvas)
 		);
 		--color-information-text-emphasis: color-mix(
 			in oklab,
@@ -339,10 +371,13 @@
 	--color-inverted: var(--color-slate-100);
 	--color-inverted-text: var(--color-slate-900);
 
-	// Variant subtle — re-derived against the dark surface. The light-mode
-	// 12-over-canvas formula dissolves at low surface lightness; bumping
-	// to ~22% over `--color-surface` keeps the variant identity readable.
-	--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 22%, var(--color-surface));
+	// Variant subtle — see the `prefers-color-scheme: dark` block for the
+	// full rationale on the canvas-base / 15% variant tuning. Summary: the
+	// previous 22%-over-surface formula sat in an L≈0.27 deadzone where
+	// neither light text nor dark text cleared AA. Canvas (slate-950)
+	// base + 15% variant yields L≈0.17 — properly dark, lets the standard
+	// text-emphasis formula clear AA.
+	--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 15%, var(--color-canvas));
 	--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
 	--color-primary-border-subtle: color-mix(
 		in oklab,
@@ -352,8 +387,8 @@
 
 	--color-secondary-bg-subtle: color-mix(
 		in oklab,
-		var(--color-secondary) 22%,
-		var(--color-surface)
+		var(--color-secondary) 15%,
+		var(--color-canvas)
 	);
 	--color-secondary-text-emphasis: color-mix(
 		in oklab,
@@ -366,7 +401,7 @@
 		var(--color-surface)
 	);
 
-	--color-tertiary-bg-subtle: color-mix(in oklab, var(--color-tertiary) 22%, var(--color-surface));
+	--color-tertiary-bg-subtle: color-mix(in oklab, var(--color-tertiary) 15%, var(--color-canvas));
 	--color-tertiary-text-emphasis: color-mix(in oklab, var(--color-tertiary) 70%, var(--color-text));
 	--color-tertiary-border-subtle: color-mix(
 		in oklab,
@@ -374,7 +409,7 @@
 		var(--color-surface)
 	);
 
-	--color-success-bg-subtle: color-mix(in oklab, var(--color-success) 22%, var(--color-surface));
+	--color-success-bg-subtle: color-mix(in oklab, var(--color-success) 15%, var(--color-canvas));
 	--color-success-text-emphasis: color-mix(in oklab, var(--color-success) 70%, var(--color-text));
 	--color-success-border-subtle: color-mix(
 		in oklab,
@@ -382,22 +417,25 @@
 		var(--color-surface)
 	);
 
-	--color-warning-bg-subtle: color-mix(in oklab, var(--color-warning) 28%, var(--color-surface));
-	--color-warning-text-emphasis: color-mix(in oklab, var(--color-warning) 80%, var(--color-text));
+	--color-warning-bg-subtle: color-mix(in oklab, var(--color-warning) 18%, var(--color-canvas));
+	// Dark-mode warning text — see the `prefers-color-scheme: dark` block
+	// above for rationale. Bare amber-500 reads as light-amber-on-dark which
+	// clears AA against the canvas-based bg-subtle.
+	--color-warning-text-emphasis: var(--color-warning);
 	--color-warning-border-subtle: color-mix(
 		in oklab,
 		var(--color-warning) 55%,
 		var(--color-surface)
 	);
 
-	--color-danger-bg-subtle: color-mix(in oklab, var(--color-danger) 22%, var(--color-surface));
+	--color-danger-bg-subtle: color-mix(in oklab, var(--color-danger) 15%, var(--color-canvas));
 	--color-danger-text-emphasis: color-mix(in oklab, var(--color-danger) 70%, var(--color-text));
 	--color-danger-border-subtle: color-mix(in oklab, var(--color-danger) 50%, var(--color-surface));
 
 	--color-information-bg-subtle: color-mix(
 		in oklab,
-		var(--color-information) 22%,
-		var(--color-surface)
+		var(--color-information) 15%,
+		var(--color-canvas)
 	);
 	--color-information-text-emphasis: color-mix(
 		in oklab,
