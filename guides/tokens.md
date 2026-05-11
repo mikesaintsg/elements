@@ -219,16 +219,17 @@ Seven variants registered via `@theme` in [`_theme.scss`](../src/styles/_theme.s
 
 ```scss
 @theme {
-	--color-primary: hsl(235 85% 50%);
-	--color-secondary: hsl(216 20% 45%);
-	--color-tertiary: oklch(60.6% 0.25 292.717);
-	--color-success: hsl(145 52% 34%);
-	--color-warning: hsl(50 93% 50%);
-	--color-danger: hsl(0 67.5% 50%);
-	--color-information: hsl(216 100% 50%);
-	--color-neutral: /* canvas-neutral; pulls from surface tokens */;
+	--color-primary: var(--color-blue-600);
+	--color-secondary: var(--color-slate-600);
+	--color-tertiary: var(--color-violet-600);
+	--color-success: var(--color-green-600);
+	--color-warning: var(--color-amber-500);
+	--color-danger: var(--color-red-600);
+	--color-information: var(--color-sky-600);
 }
 ```
+
+Every variant references Tailwind's own oklch palette via `var(--color-{hue}-{step})`. This is the framework's zero-gap with Tailwind: consumers who customise Tailwind's palette automatically retune the framework variants, and there is no HSL or hand-tuned color value anywhere in the framework. The `-600` step is the standard "action surface" lightness — saturated enough to read as identity, calm enough on body text. `--color-warning` uses `-500` because amber/yellow at `-600` reads as olive (low luminance) and loses its caution identity.
 
 For each variant, a `{bg-subtle, text-emphasis, border-subtle}` triplet is declared on `:root` (outside `@theme` so they can re-resolve under `[data-theme="dark"]`):
 
@@ -240,7 +241,7 @@ For each variant, a `{bg-subtle, text-emphasis, border-subtle}` triplet is decla
 
 Toast, alert, and callout surfaces consume these triplets so a consumer who retunes `--color-primary` automatically gets matching subtle / emphasis / border-subtle without redeclaring each one.
 
-**Dark-mode tunes** live under `[data-theme="dark"]` in `_theme.scss`. Surface, text, and border tokens flip to the deep sable palette; `--color-primary` shifts from blue-violet (`hsl(235 85% 50%)`) to bright cyan (`hsl(198 100% 50%)`) for AA contrast against the dark canvas; subtle triplets re-derive against `--color-surface` with bumped mix percentages.
+**Dark-mode tunes** live under `[data-theme="dark"]` in `_theme.scss`. Surface, text, and border tokens flip from the slate `50`/`100` light scale to the slate `900`/`950` dark scale; variant identities stay constant (Tailwind's `-600` step contrasts well against both extremes); subtle triplets re-derive against `--color-surface` with bumped mix percentages so the tint reads cleanly against the deep canvas.
 
 The framework uses explicit `[data-theme]` attribute overrides rather than `light-dark()` because Chromium currently fails to re-resolve `light-dark()` values stored in custom properties against a child element's `color-scheme`.
 

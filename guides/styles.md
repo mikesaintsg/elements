@@ -254,9 +254,12 @@ A consumer brings their own Tailwind v4 setup. The full integration is two impor
 @import 'tailwindcss';
 
 @theme {
-	/* override semantic variants if desired; the framework defaults apply otherwise */
-	--color-primary: hsl(211 100% 50%);
-	--color-secondary: hsl(210 11% 71%);
+	/* override semantic variants if desired; the framework defaults
+	   reference Tailwind's own palette via `var(--color-blue-600)` etc.,
+	   so consumers who retune Tailwind's palette automatically retune
+	   the framework variants. */
+	--color-primary: oklch(60% 0.22 30); /* warm orange */
+	--color-secondary: var(--color-zinc-600); /* warmer neutral than slate */
 }
 
 @import '@elements/styles';

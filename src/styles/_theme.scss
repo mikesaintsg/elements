@@ -1,128 +1,129 @@
 // ============================================================================
-//  Default theme — semantic palette + surface / text / border tokens with
-//  light + dark variants. Colors ported directly from the mailbox project's
-//  Bootstrap-derived sable palette (hue 216, saturation 20%) so consumers
-//  who lift this theme get the exact Mailbox look without rederiving values.
+// Default theme — restrained, Tailwind-aligned defaults that work as the
+// neutral fallback for any consumer. Two responsibilities:
 //
-//  Two concerns in this file:
+//   1. Variant palette via `@theme` — `--color-{primary|secondary|…}`.
+//      Tailwind v4's plugin sees these and emits both `:root { --color-* }`
+//      and the matching `.bg-primary` / `.text-success` / `.border-warning`
+//      utility classes. We define them as references to Tailwind's own
+//      default oklch palette (`var(--color-blue-600)`, …) so consumers
+//      who customise Tailwind's palette automatically retune the framework
+//      variants — zero gap between framework and Tailwind colors.
 //
-//    1. Semantic palette via `@theme` — `--color-{primary|secondary|…}`.
-//       Tailwind's `@theme` plugin sees these and emits both `:root
-//       { --color-* }` and the matching `.bg-primary` / `.text-success`
-//       / etc. utility classes. Light values live in `@theme`; dark
-//       overrides ride the `[data-theme='dark']` block below (where the
-//       palette legitimately shifts — mailbox swaps primary from a
-//       blue-violet `hsl(235 85% 50%)` in light to a brighter cyan
-//       `hsl(198 100% 50%)` in dark; the rest stay constant).
+//   2. Surface / text / border tokens via plain `:root` blocks — declared
+//      OUTSIDE `@theme` because Tailwind doesn't need utility classes for
+//      these (consumers reach for them via `var(--color-canvas)` directly
+//      or via per-element framework rules). Dark-mode overrides ride the
+//      `[data-theme='dark']` attribute selector below.
 //
-//    2. Surface / text / border tokens via plain `:root` blocks — declared
-//       OUTSIDE `@theme` because `@theme` doesn't extract these for
-//       utility-class generation. The light defaults land directly in
-//       `:root`; the `[data-theme='dark']` block overrides them with
-//       dark values. We use this pattern instead of `light-dark()`
-//       because Chromium has a known bug where `light-dark()` values
-//       stored in custom properties don't re-resolve against a child
-//       element's `color-scheme` when consumed via `var()` — they
-//       resolve against the `color-scheme` of the declaring element
-//       (`:root`), which short-circuits scoped theme switching for any
-//       token consumed indirectly through another `var()`. Explicit
-//       attribute overrides sidestep that resolution quirk.
+//   Why attribute selectors instead of `light-dark()`? Chromium has a
+//   long-standing bug where `light-dark()` stored in custom properties
+//   doesn't re-resolve against a child element's `color-scheme` when
+//   consumed via `var()` — it resolves against the `color-scheme` of the
+//   declaring element (`:root`), which short-circuits scoped theme
+//   switching for any token consumed indirectly. Explicit attribute
+//   overrides sidestep the resolution quirk and make scoped theme islands
+//   work (e.g. a dark-mode card embedded in a light page).
 //
-//  Color format: HSL values lifted verbatim from mailbox's
-//  `_default-theme.scss` (Bootstrap variable map). `hsl()` is the
-//  canonical web color space; consumers can override any `--color-*`
-//  token with any color value (oklch, hsl, hex, rgb, named).
+// Design choices:
 //
-//  The `:root` block also advertises `color-scheme: light dark` so UA
-//  chrome (form controls, scrollbars) honors `prefers-color-scheme` until
-//  the consumer pins it via `data-theme="light"` / `data-theme="dark"`.
+//   - Every color is oklch — either inline or via Tailwind's own oklch
+//     palette tokens. No HSL anywhere. Wide-gamut + perceptually-uniform
+//     mixing produces smoother gradients and predictable `color-mix()`
+//     results across `bg-subtle` / `text-emphasis` / `border-subtle`
+//     derivations.
+//   - Surfaces use Tailwind's `slate` ramp — a neutral, cool gray that
+//     reads as a sober default for any product. Consumers who want a
+//     warmer feel override `--color-canvas` / `--color-text` etc. at
+//     `:root` with their preferred ramp; the variant identities stay
+//     intact because they reference `--color-{hue}-600` directly.
+//   - Variant colors stay constant between light and dark. Tailwind's
+//     `-600` step has enough contrast against both white and slate-900
+//     surfaces to read as primary action — no per-mode swap needed.
+//   - `color-scheme: light dark` on `:root` advertises both modes so UA
+//     chrome (form controls, scrollbars) follows `prefers-color-scheme`
+//     until a consumer pins via `data-theme`.
 //
-//  Authoring rule for downstream partials and the showcase: read these
-//  tokens (`var(--color-canvas)`, `var(--color-text)`) instead of inlining
-//  palette swatches. That keeps the surface-attribute swap cheap — flipping
-//  `data-theme` retunes the whole UI without re-rendering.
+// Authoring rule for downstream partials: read these tokens
+// (`var(--color-canvas)`, `var(--color-text)`) instead of inlining
+// palette swatches. Flipping `data-theme` retunes the whole UI without
+// re-rendering.
 // ============================================================================
 
 @theme {
-	// ── Semantic variants — Tailwind-utility-generated ────────────────────
-	// Each variant is a literal HSL value lifted from mailbox's default
-	// theme so the framework works without depending on Tailwind's palette
-	// tokens being present on `:root`. Light values here; dark overrides
-	// in the `[data-theme='dark']` block (only `--color-primary` actually
-	// shifts between modes — the rest stay constant per mailbox's spec).
+	// ── Semantic variant palette — Tailwind utility-generated ─────────────
+	// Each variant references Tailwind's default oklch palette so it
+	// inherits the gamut, contrast tuning, and any consumer customisation
+	// (Tailwind's `@theme` cascade lets the consumer override
+	// `--color-blue-600` and our variants follow without redeclaration).
+	//
+	// Tailwind v4 default-palette oklch values (for reference):
+	//   blue-600    = oklch(54.6% 0.245 262.881)
+	//   slate-600   = oklch(44.6% 0.043 257.281)
+	//   violet-600  = oklch(54.1% 0.281 293.009)
+	//   green-600   = oklch(57.3% 0.149 144.34)
+	//   amber-500   = oklch(76.9% 0.188 70.08)
+	//   red-600     = oklch(57.7% 0.245 27.325)
+	//   sky-600     = oklch(58.8% 0.158 241.966)
+	//
+	// `-600` is the standard "action surface" step — saturated enough to
+	// read as an identity, calm enough to use on body text. `-500` for
+	// warning because amber/yellow at `-600` reads as dark olive (low
+	// luminance) and loses its "caution" identity.
 
-	// Mailbox primary — light: blue-violet, calm against white surface.
-	--color-primary: hsl(235 85% 50%);
-	// Mailbox secondary — neutral slate at mid-lightness; pairs with both
-	// light and dark canvases.
-	--color-secondary: hsl(216 20% 45%);
-	// Tertiary — mailbox doesn't ship one; we keep Tailwind's violet here
-	// so consumers who want a third accent get a sensible default.
-	--color-tertiary: oklch(60.6% 0.25 292.717);
-	// Mailbox success — desaturated forest green; works on both modes.
-	--color-success: hsl(145 52% 34%);
-	// Mailbox warning — saturated yellow; legible on both modes.
-	--color-warning: hsl(50 93% 50%);
-	// Mailbox danger — saturated crimson; legible on both modes.
-	--color-danger: hsl(0 67.5% 50%);
-	// Mailbox info (we name it `information`) — saturated azure.
-	--color-information: hsl(216 100% 50%);
+	--color-primary: var(--color-blue-600);
+	--color-secondary: var(--color-slate-600);
+	--color-tertiary: var(--color-violet-600);
+	--color-success: var(--color-green-600);
+	--color-warning: var(--color-amber-500);
+	--color-danger: var(--color-red-600);
+	--color-information: var(--color-sky-600);
 }
 
-// ── Light defaults on :root ──────────────────────────────────────────────────
-// `:root` declares `color-scheme: light dark` so UA chrome follows
-// `prefers-color-scheme`; the surface / text / border tokens below are the
-// LIGHT defaults that `[data-theme='dark']` overrides further down.
-//
-// All sable values share hue 216 / saturation 20% — the mailbox calibration.
-// Lightness steps:
-//   100  → page canvas
-//   98.75 → card surface (cards are subtly tinted off-white in light mode)
-//   97.5  → raised surface (code / kbd / pre tints)
-//   90    → subtle border
-//   80    → default border
-//   70    → strong border
-//   65    → subtle text (placeholders, disabled)
-//   40    → muted text (captions, hints)
-//   15    → body text
-//   0     → strong text (headings, emphasis)
+// ── Light defaults on :root ──────────────────────────────────────────────
+// Slate ramp from Tailwind. Pure white canvas, slate-50/100 for surface
+// tiers, slate-900 body text against slate-100..300 border scale.
 
 :root {
 	color-scheme: light dark;
 
-	// Surfaces (canvas → surface → raised; sable hue 216, saturation 20%)
-	--color-canvas: hsl(0 0% 100%);
-	--color-surface: hsl(216 20% 98.75%);
-	--color-surface-raised: hsl(216 20% 97.5%);
+	// Surfaces — page → card → raised
+	--color-canvas: var(--color-white);
+	--color-surface: var(--color-slate-50);
+	--color-surface-raised: var(--color-slate-100);
 
-	// Text scale — strong ↔ subtle
-	--color-text: hsl(216 20% 15%);
-	--color-text-strong: hsl(0 0% 0%);
-	--color-text-muted: hsl(216 20% 40%);
-	--color-text-subtle: hsl(216 20% 65%);
+	// Text scale — strong (headings) → body → muted (captions) → subtle
+	// (placeholders, disabled labels)
+	--color-text: var(--color-slate-900);
+	--color-text-strong: var(--color-slate-950);
+	--color-text-muted: var(--color-slate-600);
+	--color-text-subtle: var(--color-slate-400);
 
-	// Border scale — strong ↔ subtle
-	--color-border: hsl(216 20% 80%);
-	--color-border-strong: hsl(216 20% 70%);
-	--color-border-subtle: hsl(216 20% 90%);
+	// Border scale — default → strong (input focus boundaries) → subtle
+	// (low-contrast separators)
+	--color-border: var(--color-slate-200);
+	--color-border-strong: var(--color-slate-300);
+	--color-border-subtle: var(--color-slate-100);
 
-	// Variant subtle scale — light tinted backgrounds, saturated text,
-	// medium-strength borders. Mirrors mailbox's `--bs-{color}-bg-subtle`,
-	// `--bs-{color}-text-emphasis`, and `--bs-{color}-border-subtle` token
-	// triplet (every Bootstrap-derived themed component reads through these).
-	// Each triplet is derived from the saturated `--color-{variant}` token
-	// via `color-mix()` so a consumer who retunes the variant identity
-	// (e.g. swaps `--color-primary` for a brand colour) automatically gets
-	// matching subtle / emphasis / border-subtle without redeclaring.
+	// ── Variant subtle scale ──────────────────────────────────────────────
+	// Tinted backgrounds, saturated text, and medium-strength borders
+	// derived from each variant identity. Mirrors the Bootstrap-style
+	// `bg-subtle` / `text-emphasis` / `border-subtle` triplet every
+	// themed component (alert, toast, callout) reads through.
+	//
+	// Each triplet is derived from `--color-{variant}` via `color-mix()`
+	// so retuning a variant identity (e.g. swapping `--color-primary` for
+	// a brand colour) automatically retunes the matching subtle / emphasis
+	// / border-subtle without redeclaring.
 	//
 	// Light-mode formula:
-	//   bg-subtle      = mix(variant 12%, canvas)   pale tinted bg
-	//   text-emphasis  = mix(variant 70%, text)     readable text on tinted bg
-	//   border-subtle  = mix(variant 35%, canvas)   visible border at low ink
+	//   bg-subtle      = mix(variant 12%, canvas)   — pale tinted bg
+	//   text-emphasis  = mix(variant 70%, text)     — readable text on tinted bg
+	//   border-subtle  = mix(variant 35%, canvas)   — visible border at low ink
 	//
-	// Dark-mode override (in `[data-theme='dark']` block below) bumps the
-	// percentages and switches the base to `--color-surface` so the tint
-	// reads against the deep canvas.
+	// Warning uses higher mix percentages because amber against white has
+	// less perceptual contrast than blue/red/green — the bump compensates.
+
 	--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 12%, var(--color-canvas));
 	--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
 	--color-primary-border-subtle: color-mix(in oklab, var(--color-primary) 35%, var(--color-canvas));
@@ -176,40 +177,41 @@
 	);
 }
 
-// ── prefers-color-scheme follow ─────────────────────────────────────────────
-// When the user hasn't explicitly pinned a theme via `data-theme`, follow
-// the OS preference. The `:not([data-theme])` guard makes the explicit
-// attribute selectors below win when set.
+// ── prefers-color-scheme follow ─────────────────────────────────────────
+// When the user hasn't pinned a theme via `data-theme`, follow the OS
+// preference. The `:not([data-theme])` guard makes the explicit attribute
+// selectors below win when set.
 
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme]) {
-		// Surfaces — mailbox dark goes deep (lightness 11) and raises by 2pt
-		// per surface step rather than flipping to lighter slates.
-		--color-canvas: hsl(216 20% 11%);
-		--color-surface: hsl(216 20% 13%);
-		--color-surface-raised: hsl(216 20% 15%);
+		// Surfaces — slate-950 canvas, slate-900/800 for tiers
+		--color-canvas: var(--color-slate-950);
+		--color-surface: var(--color-slate-900);
+		--color-surface-raised: var(--color-slate-800);
 
-		// Text — soft slate-300 body (85%) reads gentler than pure white;
-		// strong-emphasis (headings) climbs to true white.
-		--color-text: hsl(216 20% 85%);
-		--color-text-strong: hsl(0 0% 100%);
-		--color-text-muted: hsl(216 20% 60%);
-		--color-text-subtle: hsl(216 20% 35%);
+		// Text — slate-200 body reads gentler than pure white; strong climbs
+		// to white for headings; muted/subtle stepping mirrors the light scale
+		// in reverse
+		--color-text: var(--color-slate-200);
+		--color-text-strong: var(--color-white);
+		--color-text-muted: var(--color-slate-400);
+		--color-text-subtle: var(--color-slate-500);
 
-		// Borders — distinctly visible against the deep canvas; strong climbs
-		// further; subtle stays just above the surface for low-contrast dividers.
-		--color-border: hsl(216 20% 30%);
-		--color-border-strong: hsl(216 20% 40%);
-		--color-border-subtle: hsl(216 20% 22%);
+		// Borders — slate-700 default; strong climbs to slate-600; subtle
+		// stays just above the surface for low-contrast dividers
+		--color-border: var(--color-slate-700);
+		--color-border-strong: var(--color-slate-600);
+		--color-border-subtle: var(--color-slate-800);
 
-		// Variant override — mailbox shifts primary from blue-violet (235) to
-		// bright cyan (198) in dark to keep AA contrast against the deep canvas.
-		--color-primary: hsl(198 100% 50%);
-
-		// Variant subtle — re-derived against the dark surface (see
-		// `[data-theme='dark']` block below for the rationale and formula).
+		// Variant subtle — re-derived against the dark surface. The light-mode
+		// 12-over-canvas formula dissolves at low surface lightness; bumping
+		// to ~22% over `--color-surface` keeps the variant identity readable.
 		--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 22%, var(--color-surface));
-		--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
+		--color-primary-text-emphasis: color-mix(
+			in oklab,
+			var(--color-primary) 70%,
+			var(--color-text)
+		);
 		--color-primary-border-subtle: color-mix(
 			in oklab,
 			var(--color-primary) 50%,
@@ -290,12 +292,11 @@
 	}
 }
 
-// ── Theme attribute pins ────────────────────────────────────────────────────
-// `useTheme` (composable) writes `data-theme="light"` or `data-theme="dark"`
-// on `<html>` based on user choice. Both selectors below pin
-// `color-scheme` so UA chrome (form controls, native scrollbars in dark)
-// follows the explicit choice; the `dark` arm also overrides every surface
-// / text / border token plus `--color-primary`.
+// ── Explicit theme attribute pins ────────────────────────────────────────
+// `useTheme` writes `data-theme="light"` or `data-theme="dark"` on
+// `<html>` based on user choice. The explicit pins below override the
+// `prefers-color-scheme` defaults so a user who toggles to a non-system
+// theme stays put across reloads.
 
 [data-theme='light'] {
 	color-scheme: light;
@@ -304,29 +305,22 @@
 [data-theme='dark'] {
 	color-scheme: dark;
 
-	--color-canvas: hsl(216 20% 11%);
-	--color-surface: hsl(216 20% 13%);
-	--color-surface-raised: hsl(216 20% 15%);
+	--color-canvas: var(--color-slate-950);
+	--color-surface: var(--color-slate-900);
+	--color-surface-raised: var(--color-slate-800);
 
-	--color-text: hsl(216 20% 85%);
-	--color-text-strong: hsl(0 0% 100%);
-	--color-text-muted: hsl(216 20% 60%);
-	--color-text-subtle: hsl(216 20% 35%);
+	--color-text: var(--color-slate-200);
+	--color-text-strong: var(--color-white);
+	--color-text-muted: var(--color-slate-400);
+	--color-text-subtle: var(--color-slate-500);
 
-	--color-border: hsl(216 20% 30%);
-	--color-border-strong: hsl(216 20% 40%);
-	--color-border-subtle: hsl(216 20% 22%);
-
-	--color-primary: hsl(198 100% 50%);
+	--color-border: var(--color-slate-700);
+	--color-border-strong: var(--color-slate-600);
+	--color-border-subtle: var(--color-slate-800);
 
 	// Variant subtle — re-derived against the dark surface. The light-mode
 	// 12-over-canvas formula dissolves at low surface lightness; bumping
-	// to ~22% over `--color-surface` keeps the variant identity readable
-	// against the deep canvas. Text-emphasis flips its mix base from
-	// `--color-text` (dark in light mode) to `--color-text` (light in
-	// dark mode) — same token reference, the value just shifts with the
-	// theme attribute. Border-subtle uses the same ~50% mix to stay
-	// visible without competing with the message text.
+	// to ~22% over `--color-surface` keeps the variant identity readable.
 	--color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 22%, var(--color-surface));
 	--color-primary-text-emphasis: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
 	--color-primary-border-subtle: color-mix(

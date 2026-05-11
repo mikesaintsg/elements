@@ -9,7 +9,7 @@ import Toc from './components/Toc.vue'
  * Showcase shell. The framework's `body:has(> main)` rule turns <body>
  * into a CSS-grid template-areas layout — the bare semantic elements
  * (<header>, <nav>, <main>, <aside>, <footer>) land in their slots
- * automatically. Element + component baselines own the chrome
+ * automatically. Element and component baselines own the chrome
  * (padding, borders, rail widths, scroll containment). Only the
  * mobile-drawer slide-in and a couple of small affordances are
  * showcase-specific; those live in `styles/showcase.css`.
