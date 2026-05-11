@@ -59,6 +59,22 @@
 		font-weight: var(--set-summary-font-weight);
 		cursor: var(--set-summary-cursor);
 
+		// Explicit baseline of `margin-block-end: 0` so the transition on
+		// the margin (declared below) has two endpoints to interpolate
+		// between. The open-state rule `details[open] > summary` overrides
+		// this to `var(--set-summary-margin-block-end)`. Without the
+		// explicit baseline the property would go from "unset" to a value,
+		// which CSS doesn't transition.
+		margin-block-end: 0;
+
+		// Margin transition matches the `::details-content` body
+		// height-collapse duration in `_details.scss` (0.25s) so summary
+		// and body fade in / out in sync. The previous behavior snapped
+		// the 8px bottom margin instantly when `[open]` was removed,
+		// producing a noticeable twitch ~0.25s before the body finished
+		// collapsing. Paired with reduced-motion via `@include transition`.
+		@include transition((margin-block-end 0.25s ease));
+
 		// Suppress the UA marker; we paint our own as a ::before pseudo so
 		// it can track text color via mask + currentColor reliably.
 		list-style: none;
