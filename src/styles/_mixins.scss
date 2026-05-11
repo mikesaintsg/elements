@@ -21,7 +21,7 @@
 // Modifier dimension lists — names match the modifiers.ts groupings exactly.
 $variants: (primary, secondary, tertiary, success, warning, danger, information) !default;
 $sizes: (small, large) !default;
-$styles: (ghost, filled) !default;
+$styles: (subtle, filled) !default;
 $states: (disabled, active, loading) !default;
 
 // ── Motion + transitions ────────────────────────────────────────────────────

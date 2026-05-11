@@ -52,9 +52,13 @@ const onLinkClick = (event: MouseEvent, id: string): void => {
 	<!-- Each group is its own labelled <section>, list rendered as
 	     <menu><li><a> — picks up the framework's vertical-rail menu
 	     shape from components/_menu.scss. The active-page anchor uses
-	     aria-current="page"; showcase.css paints the affordance. -->
+	     aria-current="page"; the framework's nav-rail menu rule paints
+	     the affordance. Group label uses <h6> (the smallest framework
+	     heading — 1rem, font-weight 600) so it reads as a section
+	     divider rather than a competing page heading; uppercase +
+	     tracking gives it editorial sidebar character. -->
 	<section v-for="g in grouped" :key="g.group">
-		<h2>{{ g.group }}</h2>
+		<h6 class="text-xs uppercase tracking-wider opacity-70">{{ g.group }}</h6>
 		<menu>
 			<li v-for="r in g.entries" :key="r.id">
 				<a

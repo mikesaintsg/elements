@@ -95,7 +95,13 @@
 		--set-tag-border-color: var(--set-variant-background-color);
 	}
 
-	// Ghost / outline — transparent bg, colored border + text.
+	// Outlined tag — strip the tinted background but keep the variant text +
+	// border. Tag-component-local class. The `.ghost` name here predates
+	// (and is independent of) the global style-modifier vocabulary —
+	// `.subtle` / `.filled` are the framework-wide style modifiers; tag.ghost
+	// is a tag-only override meaning "no tinted bg." Renaming or removing
+	// requires touching every tag consumer, so we keep the historical name
+	// with this clarifying note.
 	.tag.ghost {
 		--set-tag-background-color: transparent;
 	}

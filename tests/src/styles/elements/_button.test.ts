@@ -148,15 +148,19 @@ describe('button — size modifiers', () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Style cascade — .ghost / .filled override variant.
-//  (.outline was dropped; Tailwind's `.outline` utility owns that name.)
+//  Style cascade — .subtle / .filled override variant.
+//  (Previous .ghost dropped because its transparent text-on-canvas pattern
+//   failed WCAG AA. .outline dropped because Tailwind's `.outline` utility
+//   owns that name.)
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('button — style modifiers', () => {
-	it('.primary.ghost has transparent background AND zero border-width', () => {
-		const btn = render('button', 'primary ghost')
-		expect(rgba(style(btn, 'background-color'))).toEqual([0, 0, 0, 0])
-		expect(pixels(btn, 'border-top-width')).toBe(0)
+	it('.primary.subtle paints the variant SUBTLE tier (tinted bg + emphasis text + visible border)', () => {
+		const btn = render('button', 'primary subtle')
+		// Subtle bg is variant-bg-subtle (non-transparent tint), not transparent.
+		expect(rgba(style(btn, 'background-color'))).not.toEqual([0, 0, 0, 0])
+		// And the border has width 1px (subtle ships 1px to match Bootstrap parity).
+		expect(pixels(btn, 'border-top-width')).toBe(1)
 	})
 
 	it('.primary.filled mirrors the bare-variant fill', () => {
@@ -174,15 +178,16 @@ describe('button — style modifiers', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('button — combined modifiers', () => {
-	it('.primary.large.ghost composes correctly', () => {
-		const btn = render('button', 'primary large ghost')
-		expect(rgba(style(btn, 'background-color'))).toEqual([0, 0, 0, 0]) // ghost → transparent
-		expect(pixels(btn, 'border-top-width')).toBe(0) // ghost → 0
+	it('.primary.large.subtle composes correctly', () => {
+		const btn = render('button', 'primary large subtle')
+		// Subtle paints a tinted bg, not transparent.
+		expect(rgba(style(btn, 'background-color'))).not.toEqual([0, 0, 0, 0])
+		expect(pixels(btn, 'border-top-width')).toBe(1) // subtle → 1
 		expect(pixels(btn, 'padding-left')).toBeGreaterThan(12) // large → wider than default 12px
 	})
 
 	it('button-scoped tokens reflect the cascade priority', () => {
-		const btn = render('button', 'primary large ghost')
+		const btn = render('button', 'primary large subtle')
 		expect(token(btn, '--set-button-color')).not.toBe('')
 		expect(token(btn, '--set-button-background-color')).not.toBe('')
 		expect(token(btn, '--set-button-border-color')).not.toBe('')

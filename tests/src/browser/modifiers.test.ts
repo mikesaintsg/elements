@@ -72,8 +72,8 @@ describe('modifiers — five orthogonal dimensions', () => {
 		expect(Object.keys(modifiers.size).sort()).toEqual(['large', 'small'])
 	})
 
-	it('style has ghost/filled (no .outline — Tailwind owns that name)', () => {
-		expect(Object.keys(modifiers.style).sort()).toEqual(['filled', 'ghost'])
+	it('style has subtle/filled (no .outline — Tailwind owns that name; .ghost was dropped over WCAG AA failures — see _styles.scss notes)', () => {
+		expect(Object.keys(modifiers.style).sort()).toEqual(['filled', 'subtle'])
 	})
 
 	it('state has disabled/active/loading', () => {
@@ -106,7 +106,7 @@ describe('modifiers — string-literal-union types', () => {
 	it('typed values pass type-checking (compile-time check)', () => {
 		const v: Variant = 'primary'
 		const s: Size = 'large'
-		const st: Style = 'ghost'
+		const st: Style = 'subtle'
 		const state: State = 'disabled'
 		expect([v, s, st, state]).toBeTruthy()
 	})

@@ -95,7 +95,7 @@ const onClick = (event: MouseEvent, id: string): void => {
 </script>
 
 <template>
-	<h2>On this page</h2>
+	<h6 class="text-xs uppercase tracking-wider opacity-70">On this page</h6>
 	<!-- WAI-ARIA APG: the in-page TOC is a "Table of contents" navigation
 	     landmark. Framework's components/_nav.scss + the showcase rules
 	     in showcase.css paint the active-link affordance. -->

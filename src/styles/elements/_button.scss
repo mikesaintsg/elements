@@ -4,7 +4,7 @@
 // Architecture:
 //   1. Element-scoped --set-button-* tokens declared on the button selector.
 //      Each one resolves via a fallback chain that prefers, in order:
-//        a. style-context tokens   (set by .ghost / .filled)
+//        a. style-context tokens   (set by .subtle / .filled)
 //        b. variant-context tokens (set by .primary / .secondary / …)
 //        c. size-context tokens    (set by .small / .large)
 //        d. element-natural defaults (mailbox-aligned: 14px font, 6px/12px

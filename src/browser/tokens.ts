@@ -185,11 +185,22 @@ export const tokens = {
 	},
 
 	// Variant context — set by .primary / .secondary / … modifier classes.
+	// Two tiers per variant:
+	//   FILLED tier — color / background-color / border-color / border-width.
+	//     The saturated identity surface; consumed by `.filled` style and
+	//     bare element variants.
+	//   SUBTLE tier — text-emphasis / bg-subtle / border-subtle.
+	//     Consumed by `.subtle` style. Tier values resolve from per-mode
+	//     theme tokens (`--color-{variant}-{text-emphasis, bg-subtle,
+	//     border-subtle}`) in `_theme.scss` so light + dark both clear AA.
 	variant: {
 		color: '--set-variant-color',
 		backgroundColor: '--set-variant-background-color',
 		borderColor: '--set-variant-border-color',
 		borderWidth: '--set-variant-border-width',
+		textEmphasis: '--set-variant-text-emphasis',
+		bgSubtle: '--set-variant-bg-subtle',
+		borderSubtle: '--set-variant-border-subtle',
 	},
 
 	// Size context — set by .small / .large.
@@ -200,7 +211,7 @@ export const tokens = {
 		borderRadius: '--set-size-border-radius',
 	},
 
-	// Style context — set by .ghost / .filled.
+	// Style context — set by .subtle / .filled.
 	style: {
 		color: '--set-style-color',
 		backgroundColor: '--set-style-background-color',
@@ -765,6 +776,19 @@ export const tokens = {
 		boxShadow: '--set-article-box-shadow',
 		transitionDuration: '--set-article-transition-duration',
 		disabled: { opacity: '--set-article-disabled-opacity' },
+	},
+
+	// Component tokens declared on `body:has(main)` — the application layout
+	// shell. The framework's body-grid promotes <nav> / <main> / <aside>
+	// children into a 3×3 template-area grid; below the 960px breakpoint
+	// (hardcoded — CSS @media doesn't accept var() conditions), the rails
+	// detach from the grid and become fixed off-canvas drawers driven by a
+	// `[data-open]` attribute on the rail element. The tokens below let
+	// consumers retune the drawer dimensions + slide-in timing without
+	// touching the framework's `_body.scss`.
+	body: {
+		railWidth: '--set-body-rail-width',
+		railTransitionDuration: '--set-body-rail-transition-duration',
 	},
 
 	// Element-scoped tokens declared on bare `<main>` (sectioning content

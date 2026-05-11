@@ -113,7 +113,7 @@
 		// trailing inline edge. Mirrors mailbox's `.toast > .btn-close`
 		// rule. The selector keys off `:last-child` rather than a class
 		// or aria-label so the framework remains markup-agnostic: any
-		// trailing button works (`.ghost.small`, a bare `<button>`, an
+		// trailing button works (`.subtle.small`, a bare `<button>`, an
 		// inline-svg icon button) without consumers reaching for a
 		// project-specific `.toast-close` modifier. `flex-shrink: 0`
 		// stops the button from collapsing if the toast text is long

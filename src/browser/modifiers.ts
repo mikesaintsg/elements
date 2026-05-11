@@ -9,7 +9,7 @@
 // dimension:
 //   variant   — semantic identity (primary, success, …)
 //   size      — physical scale    (small, large)
-//   style     — fill treatment    (ghost, filled)
+//   style     — fill treatment    (subtle, filled)
 //   state     — interaction state (disabled, active, loading)
 //   placement — anchor placement  (top, bottom, start, end + corners)
 //
@@ -41,7 +41,7 @@ export const modifiers = {
 	},
 
 	style: {
-		ghost: 'ghost',
+		subtle: 'subtle',
 		filled: 'filled',
 	},
 

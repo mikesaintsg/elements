@@ -97,4 +97,71 @@
 	body:has(main) > * > footer {
 		grid-area: footer;
 	}
+
+	// --------------------------------------------------------------------------
+	// Responsive rail-drawer chrome — under the framework's mobile breakpoint
+	// (960px), the `<nav>` and `<aside>` rails detach from the grid and become
+	// fixed-position off-canvas drawers. Consumers slide them in by writing a
+	// truthy `[data-open]` attribute on the rail (any toggle works — a `<button
+	// popovertarget>`, a Vue `:data-open` binding, or `useAside`).
+	//
+	// `--set-body-rail-{width, transition-duration}` retune the drawer
+	// dimensions and slide timing. Tokens are declared on bare `body` (not
+	// `body:has(main)`) so they're always available to override from consumer
+	// CSS regardless of whether the body shell is currently engaged. The
+	// breakpoint itself is hardcoded because CSS doesn't accept `var()` inside
+	// `@media (max-width: …)` declarations.
+	//
+	// Selectors mirror the body-grid placement above: BOTH direct children of
+	// `<body>` AND once-removed grandchildren via a `display: contents`
+	// wrapper (Vue / React / Solid mount-point pattern). The framework's own
+	// invariant — that semantic structure works regardless of the host
+	// framework — extends to the drawer chrome.
+	//
+	// Reduced-motion guard collapses the slide transition so users with motion
+	// sensitivity see instant attribute-driven state changes.
+	//
+	// Showcase / consumer chrome owns the BACKDROP overlay (a separate
+	// `<div>` with `position: fixed`) and the toggle buttons in `<header>`;
+	// the framework only owns the rail geometry + transition pipeline.
+	// --------------------------------------------------------------------------
+	body {
+		--set-body-rail-width: min(20rem, 85vw);
+		--set-body-rail-transition-duration: 250ms;
+	}
+
+	@media (max-width: 960px) {
+		body:has(main) > nav,
+		body:has(main) > * > nav,
+		body:has(main) > aside,
+		body:has(main) > * > aside {
+			position: fixed;
+			inset-block: 0;
+			inline-size: var(--set-body-rail-width);
+			z-index: var(--set-z-index-fixed, 1030);
+			background-color: var(--color-surface);
+			box-shadow: var(--set-box-shadow-lg);
+
+			@include transition((transform var(--set-body-rail-transition-duration) cubic-bezier(0.32, 0.72, 0, 1)));
+		}
+
+		body:has(main) > nav,
+		body:has(main) > * > nav {
+			inset-inline-start: 0;
+			transform: translateX(-100%);
+		}
+
+		body:has(main) > aside,
+		body:has(main) > * > aside {
+			inset-inline-end: 0;
+			transform: translateX(100%);
+		}
+
+		body:has(main) > nav[data-open],
+		body:has(main) > * > nav[data-open],
+		body:has(main) > aside[data-open],
+		body:has(main) > * > aside[data-open] {
+			transform: translateX(0);
+		}
+	}
 }

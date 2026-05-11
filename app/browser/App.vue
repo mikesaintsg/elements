@@ -117,7 +117,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 	<header>
 		<button
 			type="button"
-			class="ghost"
+			class="subtle"
 			aria-label="Toggle navigation"
 			:aria-expanded="leftOpen"
 			@click="toggleLeft"
@@ -129,7 +129,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 
 		<button
 			type="button"
-			class="ghost"
+			class="subtle"
 			:aria-label="`Switch theme (currently ${themeCtl.theme.value})`"
 			@click="cycleTheme"
 		>

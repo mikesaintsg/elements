@@ -136,7 +136,7 @@ describe('Tailwind v4 utility ↔ framework modifier conflicts', () => {
 		// Sanity check: if the scanner regressed and returns an empty set,
 		// the conflict assertion above would pass vacuously. Verify the scan
 		// picks up known framework modifiers.
-		const mustFind = ['primary', 'small', 'large', 'ghost', 'filled', 'disabled', 'row']
+		const mustFind = ['primary', 'small', 'large', 'subtle', 'filled', 'disabled', 'row']
 		for (const name of mustFind) {
 			expect(frameworkModifiers.has(name)).toBe(true)
 		}

@@ -8,77 +8,29 @@
  *   │               │ <h2> / <menu> chrome; <i class="icon"> icon mask     │
  *   │ components    │ body-grid layout shell, per-rail chrome              │
  *   │               │ (header band, nav rail, main scroller, aside rail,   │
- *   │               │ footer band), in-rail nav menu, in-aside TOC menu,   │
+ *   │               │ footer band), responsive rail-drawer (under 960px:   │
+ *   │               │ nav/aside become fixed off-canvas drawers driven by  │
+ *   │               │ [data-open]), in-rail nav menu, in-aside TOC menu,   │
  *   │               │ aria-current=page / aria-current=location styling    │
  *   │ surfaces      │ scrollbar styling, focus ring, ::selection           │
- *   │ modifiers     │ `.ghost` on icon buttons; `.primary` highlights      │
+ *   │ modifiers     │ `.subtle` on icon buttons; `.primary` highlights     │
  *   │ composables   │ useTheme() drives the light / dark / system toggle   │
  *   │ utilities     │ Tailwind utilities (`flex-1`, `sr-only`, `font-mono`,│
  *   │               │ `text-xs`, etc.) for one-off layout / typography     │
  *   └───────────────┴──────────────────────────────────────────────────────┘
  *
  * What's left, and lives here:
- *   1. Mobile drawer slide-in transforms — the showcase keeps <nav> +
- *      <aside> as bare semantic rails (not popover-mode) so the
- *      framework's primary-rail chrome stays applicable above the
- *      breakpoint. Below the breakpoint, [data-open] from App.vue
- *      drives a fixed-position slide-in.
- *   2. Backdrop overlay while a drawer is open.
- *   3. Responsive visibility of the TOC toggle (visible only below
- *      the layout breakpoint).
+ *   1. BACKDROP overlay shown while a drawer is open — a dim scrim that
+ *      catches outside-clicks to dismiss. The drawer geometry itself is
+ *      framework-owned (see src/styles/components/_body.scss); the
+ *      backdrop is consumer chrome because the framework can't know
+ *      whether the consumer wants light-dismiss, click-blocking, or
+ *      no scrim at all.
+ *   2. Responsive visibility of the TOC toggle (visible only below the
+ *      layout breakpoint where the right rail becomes a drawer).
  */
 
 @media (max-width: 960px) {
-	/* Vue / React / Solid commonly mount inside a <div id="app"> wrapper.
-	 * The wrapper carries `display: contents` (see main.css) so its children
-	 * become real grid items of <body>. The framework's body-grid rules in
-	 * src/styles/components/_body.scss match BOTH `body > nav` AND
-	 * `body > * > nav` to handle the once-removed wrapper case; this
-	 * media query mirrors that pattern so the drawer geometry applies
-	 * regardless of whether nav/aside are direct or once-removed
-	 * descendants of <body>.
-	 */
-	body:has(main) > nav,
-	body:has(main) > * > nav,
-	body:has(main) > aside,
-	body:has(main) > * > aside {
-		position: fixed;
-		inset-block: 0;
-		inline-size: min(20rem, 85vw);
-		z-index: 30;
-		background-color: var(--color-surface);
-		box-shadow: var(--set-box-shadow-lg);
-		transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1);
-	}
-
-	body:has(main) > nav,
-	body:has(main) > * > nav {
-		inset-inline-start: 0;
-		transform: translateX(-100%);
-	}
-
-	body:has(main) > aside,
-	body:has(main) > * > aside {
-		inset-inline-end: 0;
-		transform: translateX(100%);
-	}
-
-	body:has(main) > nav[data-open],
-	body:has(main) > * > nav[data-open],
-	body:has(main) > aside[data-open],
-	body:has(main) > * > aside[data-open] {
-		transform: translateX(0);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		body:has(main) > nav,
-		body:has(main) > * > nav,
-		body:has(main) > aside,
-		body:has(main) > * > aside {
-			transition: none;
-		}
-	}
-
 	.showcase-toc-toggle {
 		display: inline-flex;
 	}

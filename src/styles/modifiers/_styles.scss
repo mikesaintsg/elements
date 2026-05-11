@@ -1,18 +1,39 @@
 // ============================================================================
 // Style modifiers (fill treatment)
 //
-// .ghost / .filled — read variant context tokens and route them into
-// --set-style-* context tokens. Element files prefer --set-style-* over raw
-// --set-variant-* so a style modifier always wins when applied.
+// Two values: `.subtle` and `.filled`. Combined with the bare element
+// (no class) they form a three-tier escalation:
 //
-// .ghost      transparent background, transparent border; variant color
-//             only for text — for tertiary / inline actions
-// .filled     explicit filled state — useful when overriding an inherited
-//             style modifier from an ancestor (the bare-variant default
-//             already renders filled, so applying .filled is mostly a
-//             readability hint)
+//   BARE (no class)
+//     transparent surface; the variant's identity color paints the text
+//     and border. For outline-style buttons / cards / inputs where the
+//     element should read as "marked but not solid."
 //
-// An `.outline` modifier was intentionally dropped because Tailwind ships
+//   `.subtle`
+//     Bootstrap 5–style tinted button — pale variant-tinted background
+//     (`--set-variant-bg-subtle`), saturated variant-tinted text
+//     (`--set-variant-text-emphasis`), medium variant-tinted border
+//     (`--set-variant-border-subtle`). Designed to read cleanly against
+//     the canvas in BOTH light and dark modes — the tier tokens are
+//     derived per-theme in `_theme.scss`. Use for secondary actions,
+//     status banners, callouts, anywhere you want variant identity
+//     without the loudness of a filled surface.
+//
+//   `.filled`
+//     Saturated identity surface (`--set-variant-background-color`) with
+//     a contrast text color (`--set-variant-color`) chosen per-variant
+//     for WCAG AA. Use for primary actions, confirmation banners, any
+//     surface that should read as the page's strongest signal.
+//
+// `.ghost` removed (it was a transparent text-on-canvas treatment whose
+// rest-state contrast failed WCAG AA for 4 of 7 variants in dark mode
+// and 3 of 7 in light mode — see `_variants.scss` notes). The intent
+// it served — "minimal-visual button that doesn't compete" — is now
+// covered by either the BARE element (transparent, outline-ish) or
+// `.subtle` (tinted but always readable). Icon-only chrome buttons in
+// the showcase header migrated to bare buttons.
+//
+// `.outline` modifier was intentionally dropped because Tailwind ships
 // its own `.outline` utility (`outline-style: solid`) which would stack a
 // separate outline alongside our border. Consumers who want an outlined
 // button compose with Tailwind border utilities + variant: e.g.
@@ -20,11 +41,11 @@
 // ============================================================================
 
 @layer modifiers {
-	.ghost {
-		--set-style-color: var(--set-variant-background-color, currentColor);
-		--set-style-background-color: transparent;
-		--set-style-border-color: transparent;
-		--set-style-border-width: 0;
+	.subtle {
+		--set-style-color: var(--set-variant-text-emphasis, currentColor);
+		--set-style-background-color: var(--set-variant-bg-subtle, transparent);
+		--set-style-border-color: var(--set-variant-border-subtle, transparent);
+		--set-style-border-width: 1px;
 	}
 
 	.filled {

@@ -82,7 +82,7 @@
 				<strong>Size</strong> — physical scale (<code>small</code>, default, <code>large</code>)
 			</li>
 			<li>
-				<strong>Style</strong> — fill treatment (<code>ghost</code>, default, <code>filled</code>)
+				<strong>Style</strong> — fill treatment (<code>subtle</code>, default, <code>filled</code>)
 			</li>
 			<li>
 				<strong>State</strong> — interaction state (<code>disabled</code>, <code>active</code>,

@@ -4,14 +4,14 @@
 // Architecture:
 //   1. Element-scoped --set-a-* tokens declared on the anchor selector. Each
 //      one resolves via a fallback chain that prefers, in order:
-//        a. style-context tokens   (set by .ghost / .filled)
+//        a. style-context tokens   (set by .subtle / .filled)
 //        b. variant-context tokens (set by .primary / .secondary / …)
 //        c. size-context tokens    (set by .small / .large)
 //        d. anchor-natural defaults — bare <a> stays an inline underlined
 //           link with `color: currentColor`. The chrome (padding,
 //           border-radius, background) collapses to zero when no modifier
 //           is present, so the cascade is invisible until a modifier opts in.
-//   2. Modifier-aware text-decoration: bare anchors and ghost variants keep
+//   2. Modifier-aware text-decoration: bare anchors and subtle variants keep
 //      the underline; .filled drops it because the fill itself signals
 //      affordance and an underline on a filled surface looks wrong.
 //   3. :visited reuses --set-a-color so a primary link doesn't degrade to

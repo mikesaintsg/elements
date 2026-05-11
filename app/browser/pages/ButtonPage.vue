@@ -6,7 +6,7 @@
  *   - Bare element baseline (element/_button.scss)
  *   - 7 variants — primary, secondary, tertiary, success, warning, danger, information
  *   - 3 sizes — .small, default, .large
- *   - 3 styles — bare (transparent), .ghost, .filled
+ *   - 3 styles — bare (transparent), .subtle (Bootstrap tinted-bg pattern), .filled
  *   - 5 interactive states — :hover, :active/.active, :focus-visible, [disabled]/.disabled, .loading
  *   - .icon-only modifier (equal block + inline padding)
  *   - Icon registry consumption (--set-icon-* via <i class="icon">)
@@ -60,7 +60,7 @@ const snippetSizes = `<button class="primary small">Small</button>
 <button class="primary large">Large</button>`
 
 const snippetStyles = `<button class="primary">Bare (outline-ish)</button>
-<button class="primary ghost">Ghost — text only</button>
+<button class="primary subtle">Ghost — text only</button>
 <button class="primary filled">Filled — solid surface</button>`
 
 const snippetStates = `<button class="primary">Default</button>
@@ -74,7 +74,7 @@ const snippetStates = `<button class="primary">Default</button>
 const snippetCascade = `<!-- Variant × Size × Style — the orthogonal cascade. Each axis is
      independent; an element wears at most one value from each. -->
 <button class="primary small filled">Primary · small · filled</button>
-<button class="success large ghost">Success · large · ghost</button>
+<button class="success large subtle">Success · large · subtle</button>
 <button class="danger filled">Danger · default · filled</button>`
 
 const snippetIcon = `<!-- Icon-leading: icon then label, framework gap fills automatically. -->
@@ -91,7 +91,7 @@ const snippetIcon = `<!-- Icon-leading: icon then label, framework gap fills aut
 
 <!-- Icon-only: \`.icon-only\` collapses inline padding to match block padding,
      so a single-glyph button reads as a square. -->
-<button class="icon-only ghost" aria-label="More actions">
+<button class="icon-only subtle" aria-label="More actions">
   <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
 </button>`
 
@@ -99,21 +99,21 @@ const snippetLink = `<!-- <a> opts into button chrome via .filled and a variant 
      framework's anchor-context contract (guides §6.1) defers to the
      button cascade when these modifiers are present. -->
 <a href="#button-link" class="primary filled">Primary anchor-as-button</a>
-<a href="#button-link" class="success ghost">Success anchor, ghost style</a>`
+<a href="#button-link" class="success subtle">Success anchor, subtle style</a>`
 
 const snippetGroups = `<!-- Connected button group: a [role="group"] wrapping buttons
      produces a single bonded control. -->
 <div role="group" aria-label="Text alignment">
-  <button class="ghost">Left</button>
-  <button class="ghost active" aria-pressed="true">Center</button>
-  <button class="ghost">Right</button>
+  <button class="subtle">Left</button>
+  <button class="subtle active" aria-pressed="true">Center</button>
+  <button class="subtle">Right</button>
 </div>
 
 <!-- Toolbar: a [role="toolbar"] groups loose buttons with a labelled rail. -->
 <div role="toolbar" aria-label="Document actions">
   <button class="primary">Save</button>
   <button class="secondary">Discard</button>
-  <button class="ghost">Preview</button>
+  <button class="subtle">Preview</button>
 </div>`
 
 // Build the toggle snippet by concatenating angle-bracket sentinels in pieces.
@@ -259,16 +259,21 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 	<section id="button-styles">
 		<h2>Styles</h2>
 		<p>
-			Three fill treatments — bare (transparent surface, variant-tinted text), <code>.ghost</code>
-			(explicit transparent, no border), and <code>.filled</code> (explicit solid surface). Bare
-			is the default for an outlined look; <code>.ghost</code> drops the border for inline / tertiary
-			actions; <code>.filled</code> is mostly a readability hint when overriding an inherited style
-			ancestor. There is intentionally no <code>.outline</code> modifier — Tailwind owns that name.
+			Three fill treatments forming a soft / medium / loud escalation —
+			<strong>bare</strong> (transparent surface, variant-tinted text, no border — the outlined
+			look), <code>.subtle</code> (Bootstrap-pattern tinted-bg button: pale variant background,
+			deeply-saturated variant text, subtle variant border — always reads cleanly against the
+			canvas in both light and dark mode), and <code>.filled</code> (saturated identity surface
+			with WCAG-AA contrast text). There is intentionally no <code>.outline</code> modifier —
+			Tailwind owns that name. The previous <code>.ghost</code> modifier was dropped because
+			its transparent text-on-canvas pattern failed WCAG AA for 4 of 7 variants in dark mode
+			and 3 of 7 in light. <code>.subtle</code> solves the contrast problem by giving the text
+			its own tinted lift off the canvas.
 		</p>
 		<div class="stack">
 			<div v-for="v in variants" :key="v" class="cluster">
 				<button type="button" :class="v">{{ v }}</button>
-				<button type="button" :class="`${v} ghost`">{{ v }} · ghost</button>
+				<button type="button" :class="`${v} subtle`">{{ v }} · subtle</button>
 				<button type="button" :class="`${v} filled`">{{ v }} · filled</button>
 			</div>
 		</div>
@@ -316,9 +321,9 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 				<button type="button" :class="`${v} small`">{{ v }} · small</button>
 				<button type="button" :class="v">{{ v }} · default</button>
 				<button type="button" :class="`${v} large`">{{ v }} · large</button>
-				<button type="button" :class="`${v} small ghost`">small · ghost</button>
-				<button type="button" :class="`${v} ghost`">default · ghost</button>
-				<button type="button" :class="`${v} large ghost`">large · ghost</button>
+				<button type="button" :class="`${v} small subtle`">small · subtle</button>
+				<button type="button" :class="`${v} subtle`">default · subtle</button>
+				<button type="button" :class="`${v} large subtle`">large · subtle</button>
 				<button type="button" :class="`${v} small filled`">small · filled</button>
 				<button type="button" :class="`${v} filled`">default · filled</button>
 				<button type="button" :class="`${v} large filled`">large · filled</button>
@@ -352,7 +357,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
 				Delete
 			</button>
-			<button type="button" class="icon-only ghost" aria-label="More actions">
+			<button type="button" class="icon-only subtle" aria-label="More actions">
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
 			</button>
 			<button type="button" class="icon-only" aria-label="Refresh">
@@ -380,7 +385,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		<div class="cluster">
 			<a href="#button-link" class="primary filled">Primary anchor</a>
 			<a href="#button-link" class="success">Success anchor</a>
-			<a href="#button-link" class="danger ghost">Danger anchor · ghost</a>
+			<a href="#button-link" class="danger subtle">Danger anchor · subtle</a>
 			<a href="#button-link" class="information large">Information · large</a>
 		</div>
 		<details>
@@ -399,16 +404,16 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		</p>
 		<div class="stack">
 			<div role="group" aria-label="Text alignment">
-				<button type="button" class="ghost">Left</button>
-				<button type="button" class="ghost active" aria-pressed="true">Center</button>
-				<button type="button" class="ghost">Right</button>
-				<button type="button" class="ghost">Justify</button>
+				<button type="button" class="subtle">Left</button>
+				<button type="button" class="subtle active" aria-pressed="true">Center</button>
+				<button type="button" class="subtle">Right</button>
+				<button type="button" class="subtle">Justify</button>
 			</div>
 			<div role="toolbar" aria-label="Document actions">
 				<button type="button" class="primary">Save</button>
 				<button type="button" class="secondary">Discard</button>
-				<button type="button" class="ghost">Preview</button>
-				<button type="button" class="ghost icon-only" aria-label="More">
+				<button type="button" class="subtle">Preview</button>
+				<button type="button" class="subtle icon-only" aria-label="More">
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
 				</button>
 			</div>
@@ -437,7 +442,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 			>
 				{{ toggleApi.active.value ? 'On — click to turn off' : 'Off — click to turn on' }}
 			</button>
-			<button type="button" class="ghost" @click="toggleApi.toggle()">
+			<button type="button" class="subtle" @click="toggleApi.toggle()">
 				Toggle from outside
 			</button>
 		</div>
@@ -472,7 +477,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		<div class="cluster">
 			<button type="button" class="primary">Hover me · slow</button>
 			<button type="button" class="success filled">And me</button>
-			<button type="button" class="danger ghost">And me</button>
+			<button type="button" class="danger subtle">And me</button>
 		</div>
 		<details>
 			<summary><small>The mixin that enforces this</small></summary>
