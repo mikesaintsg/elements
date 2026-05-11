@@ -117,7 +117,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 	<header>
 		<button
 			type="button"
-			class="subtle"
+			class="subtle showcase-nav-toggle"
 			aria-label="Toggle navigation"
 			:aria-expanded="leftOpen"
 			@click="toggleLeft"
@@ -138,7 +138,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 
 		<button
 			type="button"
-			class="ghost showcase-toc-toggle"
+			class="subtle showcase-toc-toggle"
 			aria-label="Toggle table of contents"
 			:aria-expanded="rightOpen"
 			@click="toggleRight"

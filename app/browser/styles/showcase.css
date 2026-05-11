@@ -30,14 +30,27 @@
  *      layout breakpoint where the right rail becomes a drawer).
  */
 
+/* Both drawer toggle buttons (left nav, right TOC) are hidden on desktop
+ * where the rails are in-flow grid columns and don't need a button to
+ * reveal them. Below the framework's 960px responsive breakpoint, the
+ * rails detach into off-canvas drawers (see src/styles/components/_body.scss)
+ * and the toggles become visible.
+ *
+ * Rule ordering matters: defaults declared FIRST, the @media override
+ * SECOND. CSS cascade resolves equal-specificity declarations by source
+ * order — the previous version had `display: none` after the @media
+ * block which silently overrode the mobile reveal. Keep this order.
+ */
+.showcase-nav-toggle,
+.showcase-toc-toggle {
+	display: none;
+}
+
 @media (max-width: 960px) {
+	.showcase-nav-toggle,
 	.showcase-toc-toggle {
 		display: inline-flex;
 	}
-}
-
-.showcase-toc-toggle {
-	display: none;
 }
 
 .showcase-backdrop {
