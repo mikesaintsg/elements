@@ -8,7 +8,7 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { events } from '@src/browser'
+import { events } from '@elements/browser'
 
 /** Lifecycle verb vocabulary — every third segment of every event name
  *  must appear here. Adding a verb is a deliberate framework-wide

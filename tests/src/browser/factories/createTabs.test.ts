@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createTabs, TABS_EVENTS } from '@src/browser'
+import { createTabs, TABS_EVENTS } from '@elements/browser'
 import {
 	assertCleanDispose,
 	buildElement,

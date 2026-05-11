@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createPointer } from '@src/browser'
+import { createPointer } from '@elements/browser'
 import {
 	assertCleanDispose,
 	buildElement,

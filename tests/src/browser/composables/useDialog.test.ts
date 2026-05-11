@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { useDialog } from '@src/browser'
+import { useDialog } from '@elements/browser'
 import { buildElement, mountSetup, waitForBootstrap } from '../../../setupBrowser'
 
 describe('useDialog', () => {

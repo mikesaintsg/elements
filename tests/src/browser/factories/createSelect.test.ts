@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createSelect, SELECT_EVENTS } from '@src/browser'
+import { createSelect, SELECT_EVENTS } from '@elements/browser'
 import {
 	assertCleanDispose,
 	buildElement,

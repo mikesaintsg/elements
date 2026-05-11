@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createFocus } from '@src/browser'
+import { createFocus } from '@elements/browser'
 import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 function createFocusHost(): {

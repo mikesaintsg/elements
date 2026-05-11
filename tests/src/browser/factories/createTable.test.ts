@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createTable, TABLE_EVENTS, TRANSITION_FALLBACK_MS } from '@src/browser'
+import { createTable, TABLE_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import {
 	assertCleanDispose,
 	buildElement,

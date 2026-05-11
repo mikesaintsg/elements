@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createNav } from '@src/browser'
+import { createNav } from '@elements/browser'
 import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 describe('createNav', () => {

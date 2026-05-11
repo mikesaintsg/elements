@@ -18,8 +18,8 @@
 
 		"noEmit": true,
 		"paths": {
-			"@src/browser": ["./src/browser/index.ts"],
-			"@src/styles": ["./src/styles/index.ts"]
+			"@elements/browser": ["./src/browser/index.ts"],
+			"@elements/styles": ["./src/styles/index.ts"]
 		}
 	},
 	"exclude": ["node_modules", "dist", "tmp"]

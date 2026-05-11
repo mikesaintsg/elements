@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useTheme } from '@src/browser'
+import { useTheme } from '@elements/browser'
 import { current, navigate, route, routes, section } from './router.js'
 import SiteNav from './components/SiteNav.vue'
 import Toc from './components/Toc.vue'

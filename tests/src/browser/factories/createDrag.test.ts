@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createDrag } from '@src/browser'
+import { createDrag } from '@elements/browser'
 import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 function createListWithRows(count: number): {

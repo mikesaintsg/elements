@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ASIDE_EVENTS, createAside, TRANSITION_FALLBACK_MS } from '@src/browser'
+import { ASIDE_EVENTS, createAside, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import {
 	assertCleanDispose,
 	buildElement,

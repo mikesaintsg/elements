@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createDrop } from '@src/browser'
+import { createDrop } from '@elements/browser'
 import {
 	assertCleanDispose,
 	buildElement,

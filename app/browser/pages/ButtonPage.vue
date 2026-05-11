@@ -23,7 +23,7 @@
  *   - InlineAtomsPage for .spinner (composed here in the .loading example)
  */
 import { ref, useTemplateRef } from 'vue'
-import { useButton } from '@src/browser'
+import { useButton } from '@elements/browser'
 
 // `useButton` mirrors the `.active` class + `aria-pressed` attribute. The
 // composable returns an `active` reactive and a `toggle()` method; the

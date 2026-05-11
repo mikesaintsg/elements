@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { POPOVER_EVENTS, TRANSITION_FALLBACK_MS, usePopover } from '@src/browser'
+import { POPOVER_EVENTS, TRANSITION_FALLBACK_MS, usePopover } from '@elements/browser'
 import { buildElement, createRecorder, mountSetup, waitForBootstrap } from '../../../setupBrowser'
 
 function createPopoverElements(): {

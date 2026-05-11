@@ -12,7 +12,7 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { tokens } from '@src/browser'
+import { tokens } from '@elements/browser'
 import { render, rootToken, token } from '../../setupStyles.ts'
 
 import tokensScss from '../../../src/styles/_tokens.scss?raw'

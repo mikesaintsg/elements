@@ -74,9 +74,17 @@
 	}
 
 	// Inputs / textareas / selects inside a form fill the available width so
-	// the form looks like a column even on narrow viewports.
-	form > label > :is(input, textarea, select),
-	form > :is(input, textarea, select) {
+	// the form looks like a column even on narrow viewports. Excludes intrinsic
+	// or fixed-width input types (checkbox / radio = 1em squares, color = 3rem
+	// swatch) which have their own sizing baked into the element partials and
+	// would render at full-row width if this rule reached them. `range` and
+	// `file` keep the 100% — the slider track and file-picker row are meant to
+	// fill their container.
+	form
+		> label
+		> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select),
+	form
+		> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select) {
 		inline-size: 100%;
 	}
 
@@ -88,8 +96,11 @@
 	form.row > label {
 		align-items: start;
 	}
-	form.row > label > :is(input, textarea, select),
-	form.row > :is(input, textarea, select) {
+	form.row
+		> label
+		> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select),
+	form.row
+		> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select) {
 		inline-size: auto;
 	}
 

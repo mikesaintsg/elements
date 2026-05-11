@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createMenu, MENU_EVENTS } from '@src/browser'
+import { createMenu, MENU_EVENTS } from '@elements/browser'
 import {
 	assertCleanDispose,
 	buildElement,

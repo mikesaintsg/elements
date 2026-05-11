@@ -444,7 +444,7 @@ A page that fails any row gets fixed in-place before being marked done — the r
 
 - [x] **ButtonPage** — the cascade reference. Every variant × every size × every style × every state, with focus-ring + hover + disabled side-by-side, icon-buttons, loading states, link-as-button. _Landed alongside dark-mode bare-button visibility fix and the spinner-visibility tune-up._
 - [x] **AnchorPage** — bare anchor (in-body), anchors in header / footer / nav-rail / TOC contexts (the §6.1 context contract proved out), variant anchors, `.filled` anchors, external-link affordance, visited state. _Surfaced the variant-text-on-canvas WCAG gap, which drove the framework-wide `--color-{variant}-on-canvas` tier addition (see "Phase 9 cross-cutting changes" below)._
-- [ ] **FormControlsPage** — input (every `type=`), textarea (auto-resize), select (native), label, fieldset + legend, output (calc-chip flavour), progress, meter (optimum / sub-optimum / even-less-good). One mega-page; subsections per control.
+- [x] **FormControlsPage** — input (every `type=`), textarea (auto-resize), select (native), label, fieldset + legend, output (calc-chip flavour), progress, meter (optimum / sub-optimum / even-less-good). One mega-page; subsections per control. _Surfaced a framework bug in `components/_form.scss` — the `form > label > :is(input, …) { inline-size: 100% }` rule was matching every input type and stretching checkboxes / radios / color swatches to row width. Fixed by excluding `[type='checkbox']` / `[type='radio']` / `[type='color']` from the selector (range + file keep the 100%). Recorded in §9.7._
 - [ ] **DetailsPage** — bare details, group accordion, nested, custom marker via `--set-summary-marker-image`, smooth open/close (`interpolate-size: allow-keywords`).
 - [ ] **DialogElementPage** — bare `<dialog>` element baseline (modal / non-modal, `open` flow vs `showModal()`), modifier classes (`.small`, `.large`, `.fullscreen`, `.scrollable`), backdrop scrim. _(Live composable wiring is on `UseDialogPage`.)_
 
@@ -540,6 +540,8 @@ Skip-listed (not text contrast, decisions deferred):
 - `elements/_progress.scss` — fill paints over the track, not directly over canvas; track-contrast tuning is a separate design decision.
 - `elements/_meter.scss`, `components/_dot.scss`, `elements/_hr.scss` — fills / decorations / separators; not text.
 - `_button.scss` — variant on `<button>` is always a fill (white-on-`-600`); a bare variant button without `.subtle` / `.filled` paints filled by default, so there's no bare-variant-text-on-canvas case.
+
+- [x] **`form > label > input` inline-size scoping** — `components/_form.scss` was forcing `inline-size: 100%` on every direct-child input inside a `<form>`, which stretched checkboxes (`1em` intended), radios (`1em`), and color swatches (`3rem`) to the full row width. Surfaced by FormControlsPage. Fixed by excluding `[type='checkbox']` / `[type='radio']` / `[type='color']` from the selector; `range` and `file` keep the 100% because the slider track + file-picker row are meant to fill their container. The framework's bare-`<form>` pattern now plays nicely with mixed text-input + checkbox-row layouts.
 
 ### 9.8 Working cadence
 

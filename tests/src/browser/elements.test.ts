@@ -14,7 +14,7 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { elements, type Element } from '@src/browser'
+import { elements, type Element } from '@elements/browser'
 
 const elementSources = import.meta.glob('../../../src/styles/elements/_*.scss', {
 	query: '?raw',

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { TRANSITION_FALLBACK_MS, useAside } from '@src/browser'
+import { TRANSITION_FALLBACK_MS, useAside } from '@elements/browser'
 import { buildElement, mountSetup, waitForBootstrap } from '../../../setupBrowser'
 
 describe('useAside', () => {

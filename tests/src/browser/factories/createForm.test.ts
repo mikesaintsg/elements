@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createForm, FORM_EVENTS } from '@src/browser'
+import { createForm, FORM_EVENTS } from '@elements/browser'
 import {
 	assertCleanDispose,
 	buildElement,

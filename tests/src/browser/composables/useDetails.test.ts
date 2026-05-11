@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import { useDetails } from '@src/browser'
+import { useDetails } from '@elements/browser'
 import { buildElement, mountSetup, waitForBootstrap } from '../../../setupBrowser'
 
 describe('useDetails', () => {

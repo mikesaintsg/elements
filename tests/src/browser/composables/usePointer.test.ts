@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { usePointer } from '@src/browser'
+import { usePointer } from '@elements/browser'
 import {
 	buildElement,
 	createPointerEvent,

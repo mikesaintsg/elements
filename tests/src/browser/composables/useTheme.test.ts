@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { nextTick } from 'vue'
-import { resetTheme, STORAGE_KEY_THEME, THEME_EVENTS, useTheme } from '@src/browser'
+import { resetTheme, STORAGE_KEY_THEME, THEME_EVENTS, useTheme } from '@elements/browser'
 import {
 	createRecorder,
 	extractProperty,

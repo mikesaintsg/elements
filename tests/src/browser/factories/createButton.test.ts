@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BUTTON_EVENTS, createButton } from '@src/browser'
+import { BUTTON_EVENTS, createButton } from '@elements/browser'
 import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 describe('createButton', () => {
