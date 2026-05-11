@@ -1,0 +1,73 @@
+// ============================================================================
+// ::view-transition-* — cross-page / cross-state transition surface.
+//
+// Browser support: Chrome 111+ (same-document), Chrome 126+ (cross-document
+// via `@view-transition { navigation: auto }`), Edge 111+, Safari 18+,
+// Firefox not yet (gracefully degrades — the surface is inert when the UA
+// doesn't run a view transition).
+//
+// Surfaces covered by this partial:
+//   ::view-transition              the root wrapper the UA generates
+//   ::view-transition-group(root)  the snapshot pair container
+//   ::view-transition-old(root)    the outgoing snapshot
+//   ::view-transition-new(root)    the incoming snapshot
+//
+// Why a surface, not per-page rules:
+//   Same rationale as ::selection and ::backdrop — view-transition pseudos
+//   are generated outside the normal DOM tree and cannot inherit element-
+//   scoped tokens. The default cross-fade lives on the (root) pair so every
+//   transition the consumer triggers — `document.startViewTransition()`,
+//   `@view-transition { navigation: auto }`, or per-element `view-
+//   transition-name` — gets the framework's default tween without per-call
+//   boilerplate. Per-name overrides (`::view-transition-old(card-3)`) live
+//   at the call site and beat this rule on specificity.
+//
+// Tokens:
+//   --set-view-transition-duration         duration of the default fade
+//   --set-view-transition-timing-function  easing of the default fade
+//
+// Quirks:
+//   - Only a small whitelist of properties applies inside the
+//     `::view-transition-*` pseudos: `animation-*`, `mix-blend-mode`,
+//     `transform`, `opacity`, `transition` (limited). Layout properties
+//     (`display`, `padding`, etc.) are ignored.
+//   - The default UA animation IS a cross-fade with a UA-chosen duration
+//     (~250ms). Overriding `animation-duration` / `animation-timing-function`
+//     on the pair retunes it without re-declaring the keyframes. This
+//     surface uses `animation-duration` rather than `transition` because
+//     the UA generates the cross-fade via a keyframe `@keyframes`-style
+//     animation, not a property transition.
+//   - `prefers-reduced-motion: reduce` MUST collapse the duration to a
+//     minimal value (rather than disabling the animation outright) — view
+//     transitions that don't run still snapshot and discard, but disabling
+//     the animation leaves the snapshot suspended for an undefined
+//     duration in some engines. A 1ms duration finishes synchronously and
+//     produces an instant cut, which is the right reduced-motion behaviour
+//     for cross-page transitions.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer surfaces {
+	:root {
+		--set-view-transition-duration: var(--set-transition-duration);
+		--set-view-transition-timing-function: ease;
+	}
+
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation-duration: var(--set-view-transition-duration);
+		animation-timing-function: var(--set-view-transition-timing-function);
+	}
+
+	@include reduced-motion {
+		::view-transition-old(root),
+		::view-transition-new(root) {
+			// Collapse to an instant cut. Skipping the animation entirely is
+			// undefined-behaviour territory in some engines (snapshot stays
+			// suspended); a 1ms duration finishes synchronously and produces
+			// the right reduced-motion effect.
+			animation-duration: 1ms;
+		}
+	}
+}

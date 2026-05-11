@@ -1053,6 +1053,16 @@ export const tokens = {
 		gutter: '--set-scrollbar-gutter',
 	},
 
+	// Surface tokens — `::view-transition-*` cross-page / cross-state
+	// snapshot tween. Owned by `surfaces/_view-transition.scss`. The default
+	// cross-fade animation runs on `::view-transition-{old,new}(root)`;
+	// per-name overrides (`::view-transition-old(card-3)`) live at the call
+	// site and beat the default on specificity.
+	viewTransition: {
+		duration: '--set-view-transition-duration',
+		timingFunction: '--set-view-transition-timing-function',
+	},
+
 	// Surface tokens — CSS anchor positioning. The defaults here flow into
 	// every popover (auto / hint variants); placement modifiers (.top /
 	// .bottom / .start / .end / corners) override `--set-anchor-position-area`
