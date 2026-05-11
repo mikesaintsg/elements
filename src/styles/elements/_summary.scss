@@ -31,16 +31,20 @@
 		--set-summary-cursor: pointer;
 		--set-summary-marker-size: 0.75em;
 		--set-summary-marker-gap: calc(var(--spacing) * 2);
-		// The marker asset is a token so consumers can swap it (a different
-		// chevron, a plus-sign, a custom icon) without touching the framework
-		// partial. Pulled from the shared `--set-icon-chevron-right` token in
-		// `_tokens.scss` so a host-page icon-set swap retunes the disclosure
-		// marker alongside every other chevron consumer. The mask drives the
-		// SHAPE; the color comes from `currentColor` via `background-color`
-		// on the pseudo, so variant tints flow naturally. Default: a
-		// right-pointing chevron that rotates 90° on [open].
-		--set-summary-marker-image: var(--set-icon-chevron-right);
+		// Marker rotation when the parent `<details>` is open. The framework's
+		// default chevron-right rotates 90° to chevron-down; a consumer
+		// swapping the marker image (e.g. to a plus sign) usually wants a
+		// different angle (a plus rotates 45° to become an X), so this is
+		// exposed as a per-instance token alongside the marker image.
 		--set-summary-marker-open-rotate: 90deg;
+		// NOTE: `--set-summary-marker-image` is intentionally NOT declared
+		// here. Re-declaring it on summary would shadow any per-instance
+		// override (e.g. `<details style="--set-summary-marker-image: …">`)
+		// because CSS custom properties resolve at their declared scope —
+		// summary's own declaration would always win over an inherited one.
+		// Instead, the marker image is consumed via fallback chain on the
+		// `::before` pseudo's `mask-image` (see below): consumers set the
+		// token at any ancestor and it cascades down naturally.
 		--set-summary-transition-duration: var(--set-transition-duration);
 		// Gap between the summary and the disclosure body when <details> is
 		// open. Margin (not padding) so the summary's own box stays
@@ -89,6 +93,9 @@
 			inline-size: var(--set-summary-marker-size);
 			block-size: var(--set-summary-marker-size);
 			background-color: currentColor;
+			// The token is declared at `:root` in `_tokens.scss` so per-
+			// instance overrides on any ancestor (`<details style=…>`) flow
+			// down without the summary's own rule shadowing them.
 			mask-image: var(--set-summary-marker-image);
 			mask-repeat: no-repeat;
 			mask-position: center;

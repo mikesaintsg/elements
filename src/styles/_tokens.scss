@@ -212,6 +212,16 @@
 	--set-icon-switch-off: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3E%3Ccircle r='3' fill='%23aeb1b7'/%3E%3C/svg%3E");
 	--set-icon-switch-on: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3E%3Ccircle r='3' fill='%23fff'/%3E%3C/svg%3E");
 
+	// `<summary>` disclosure marker — declared at `:root` (not inside the
+	// `summary` rule in `_summary.scss`) so per-instance overrides on any
+	// ancestor (`<details style="--set-summary-marker-image: …">`) flow
+	// down naturally. Re-declaring on `summary` would shadow the ancestor's
+	// value because custom properties resolve at their declared scope —
+	// the closest declaration wins. Keeping the default at `:root` means
+	// every `<details>` can override its descendant `<summary>`'s marker
+	// without the consumer having to drill into a summary descendant.
+	--set-summary-marker-image: var(--set-icon-chevron-right);
+
 	// ── Common UI affordances ──────────────────────────────────────────────────
 	--set-icon-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 4 8 8M12 4l-8 8'/%3E%3C/svg%3E");
 	--set-icon-menu: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4h10M3 8h10M3 12h10'/%3E%3C/svg%3E");
