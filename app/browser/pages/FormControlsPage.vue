@@ -743,11 +743,13 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			<div class="form-row">
 				<label for="state-required">Required (try focusing then blurring empty)</label>
 				<input id="state-required" type="email" required placeholder="ada@example.com" />
+			</div>
+			<p class="form-row-hint">
 				<small>
 					<code>:user-invalid</code> kicks in after the field has been interacted with — empty +
 					required + blurred = red border. Re-enter a valid email to clear.
 				</small>
-			</div>
+			</p>
 		</form>
 		<details>
 			<summary><small>Markup</small></summary>
@@ -788,9 +790,22 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 
 @media (min-width: 640px) {
 	.form-row {
-		grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr) auto;
+		grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
 		align-items: center;
 		gap: calc(var(--spacing) * 3);
+	}
+}
+
+/* Trailing hint paragraph under a form-row — tucked under the input
+ * column on wide viewports so it reads as the row's footnote rather
+ * than a separate block. On mobile it sits below the row naturally. */
+.form-row-hint {
+	margin: 0;
+	margin-block-start: calc(var(--spacing) * -2);
+}
+@media (min-width: 640px) {
+	.form-row-hint {
+		margin-inline-start: calc(12rem + var(--spacing) * 3);
 	}
 }
 

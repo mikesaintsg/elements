@@ -197,9 +197,18 @@
 	--set-icon-caret-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='currentColor'%3E%3Cpath d='M4 10h8L8 5z'/%3E%3C/svg%3E");
 
 	// ── Form indicators ────────────────────────────────────────────────────────
-	--set-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 8 3 3 5-6'/%3E%3C/svg%3E");
-	--set-icon-dash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E");
-	--set-icon-radio: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='currentColor'%3E%3Ccircle cx='8' cy='8' r='3'/%3E%3C/svg%3E");
+	// Check / dash / radio glyphs paint OVER the checked variant fill, which
+	// is always a saturated `-600`-tier color — so the glyph color is fixed
+	// at `%23fff` (white) here. The earlier `stroke='currentColor'` /
+	// `fill='currentColor'` versions relied on the `:checked` host's
+	// `color:` cascading into the data URL SVG, but `currentColor` inside
+	// `background-image: url(data:…)` doesn't resolve reliably across
+	// Chromium / Firefox / Safari (the issue Bootstrap solved by hardcoding
+	// the color the same way). Consumers who need different glyph colors
+	// per variant override `--set-icon-check` etc. with their own data URL.
+	--set-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 8 3 3 5-6'/%3E%3C/svg%3E");
+	--set-icon-dash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E");
+	--set-icon-radio: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3E%3Ccircle cx='8' cy='8' r='3'/%3E%3C/svg%3E");
 	--set-icon-switch-off: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3E%3Ccircle r='3' fill='%23aeb1b7'/%3E%3C/svg%3E");
 	--set-icon-switch-on: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3E%3Ccircle r='3' fill='%23fff'/%3E%3C/svg%3E");
 

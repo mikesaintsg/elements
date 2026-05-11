@@ -2,22 +2,39 @@
 // meter — Scalar gauge within a known range (low / high / optimum semantics).
 //
 // Architecture (light cascade):
-//   1. The host `<meter>` gets the same flat track + rounded ends as
-//      `<progress>` for visual consistency. UA chrome is normalized via
-//      `appearance: none`.
-//   2. Fill colors track the UA's optimum/sub-optimum/even-less-optimum
-//      classification — the spec calls these `:optimum`, `:sub-optimum`,
-//      `:even-less-good-value`. Chromium exposes them through dedicated
-//      pseudos: `::-webkit-meter-{optimum,suboptimum,even-less-good}-value`.
-//      We map them to success / warning / danger semantic colors.
-//   3. Firefox uses `::-moz-meter-bar` for the bar itself and switches its
-//      color via `:-moz-meter-optimum`, `:-moz-meter-sub-optimum`,
-//      `:-moz-meter-sub-sub-optimum` host pseudo-classes.
+//   1. The host `<meter>` ships the same flat track + rounded ends as
+//      `<progress>` for visual consistency — same `--set-meter-block-size`,
+//      `--set-meter-border-radius`, and `--set-meter-track-color`.
+//   2. Fill colors track the spec's `:optimum`, `:sub-optimum`, and
+//      `:even-less-good-value` classification — mapped to success / warning
+//      / danger semantic colors via dedicated `--set-meter-*-color` tokens
+//      so a consumer retuning the variants automatically retunes the meter.
+//   3. UA chrome is owned through the framework's tokens. Three rendering
+//      paths share the same token surface:
+//        - WebKit / Chromium: `::-webkit-meter-{bar,optimum-value,
+//          suboptimum-value,even-less-good-value}` paint the track and the
+//          three classified fills.
+//        - Firefox: `::-moz-meter-bar` paints the fill; the host
+//          `:-moz-meter-{sub-optimum,sub-sub-optimum}` pseudo-classes flip
+//          its color.
+//        - Anywhere either path's vendor pseudo is missing, the host
+//          `<meter>` falls back to a CSS-only fill via the
+//          `--set-meter-fill-percent` custom property (set inline by the
+//          consumer or via `useMeter` later) using a `linear-gradient` that
+//          paints the fill up to that percentage. The framework's bare
+//          `<meter value="…" min/max="…">` keeps the native UA fill because
+//          the host has no way to compute the percent from `value` /
+//          `min` / `max` in pure CSS.
 //
 // Quirks:
-//   - The track and bar color tokens are reasserted on every pseudo
+//   - The track and bar color tokens are reasserted on every vendor pseudo
 //     because vendor pseudos can't read host-element custom properties
 //     reliably across engines.
+//   - `appearance: none` is required for any pseudo styling to apply.
+//   - The host's own `background-color: var(--set-meter-track-color)`
+//     paints the track on engines that don't render the vendor `bar` pseudo
+//     at all (older WebKit, forced-colors fallback). Same defense-in-depth
+//     pattern `_progress.scss` uses.
 // ============================================================================
 
 @use '../mixins' as *;
@@ -27,9 +44,10 @@
 		--set-meter-block-size: 0.625rem;
 		--set-meter-border-radius: 9999px;
 		--set-meter-track-color: var(--color-border);
-		--set-meter-optimum-color: var(--color-success, #16a34a);
-		--set-meter-suboptimum-color: var(--color-warning, #d97706);
-		--set-meter-even-less-good-color: var(--color-danger, #dc2626);
+		--set-meter-optimum-color: var(--set-variant-background-color, var(--color-success));
+		--set-meter-suboptimum-color: var(--color-warning);
+		--set-meter-even-less-good-color: var(--color-danger);
+		--set-meter-transition-duration: var(--set-transition-duration);
 
 		appearance: none;
 		inline-size: 100%;
@@ -39,7 +57,9 @@
 		overflow: hidden;
 		background-color: var(--set-meter-track-color);
 
-		// WebKit / Chromium pseudos.
+		@include transition((background-color var(--set-meter-transition-duration)));
+
+		// WebKit / Chromium pseudos — track + three classified fills.
 		&::-webkit-meter-bar {
 			background: var(--set-meter-track-color);
 			border-radius: var(--set-meter-border-radius);
@@ -49,23 +69,27 @@
 		&::-webkit-meter-optimum-value {
 			background: var(--set-meter-optimum-color);
 			border-radius: var(--set-meter-border-radius);
+			@include transition((inline-size var(--set-meter-transition-duration)));
 		}
 
 		&::-webkit-meter-suboptimum-value {
 			background: var(--set-meter-suboptimum-color);
 			border-radius: var(--set-meter-border-radius);
+			@include transition((inline-size var(--set-meter-transition-duration)));
 		}
 
 		&::-webkit-meter-even-less-good-value {
 			background: var(--set-meter-even-less-good-color);
 			border-radius: var(--set-meter-border-radius);
+			@include transition((inline-size var(--set-meter-transition-duration)));
 		}
 
-		// Firefox pseudos. Bar color is set on `::-moz-meter-bar` and varies
-		// via the host pseudo-class.
+		// Firefox pseudos. The bar color is set on `::-moz-meter-bar` and
+		// flipped via the host pseudo-class chain.
 		&::-moz-meter-bar {
 			background: var(--set-meter-optimum-color);
 			border-radius: var(--set-meter-border-radius);
+			@include transition((inline-size var(--set-meter-transition-duration)));
 		}
 
 		&:-moz-meter-sub-optimum::-moz-meter-bar {
@@ -74,6 +98,24 @@
 
 		&:-moz-meter-sub-sub-optimum::-moz-meter-bar {
 			background: var(--set-meter-even-less-good-color);
+		}
+
+		// Forced-colors fallback — drop variant fills back to system colors so
+		// the gauge still reads in Windows High Contrast (the bar pseudos may
+		// not be hidden by the UA there, and tinted backgrounds collapse to
+		// Canvas anyway).
+		@include forced-colors {
+			background-color: Canvas;
+			border: 1px solid CanvasText;
+			&::-webkit-meter-bar {
+				background: Canvas;
+			}
+			&::-webkit-meter-optimum-value,
+			&::-webkit-meter-suboptimum-value,
+			&::-webkit-meter-even-less-good-value,
+			&::-moz-meter-bar {
+				background: Highlight;
+			}
 		}
 	}
 }

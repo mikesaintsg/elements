@@ -536,6 +536,7 @@ export const tokens = {
 		optimumColor: '--set-meter-optimum-color',
 		suboptimumColor: '--set-meter-suboptimum-color',
 		evenLessGoodColor: '--set-meter-even-less-good-color',
+		transitionDuration: '--set-meter-transition-duration',
 	},
 
 	// Component tokens declared on `.carousel` (component partial).
@@ -564,6 +565,7 @@ export const tokens = {
 		borderRadius: '--set-output-border-radius',
 		paddingInline: '--set-output-padding-inline',
 		paddingBlock: '--set-output-padding-block',
+		marginInline: '--set-output-margin-inline',
 		fontFamily: '--set-output-font-family',
 		fontSize: '--set-output-font-size',
 		fontWeight: '--set-output-font-weight',
