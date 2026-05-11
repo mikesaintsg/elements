@@ -790,7 +790,15 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 
 @media (min-width: 640px) {
 	.form-row {
-		grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+		/* Three tracks: label column (capped width), control column (fills
+		 * remainder), trailing chip / hint column (sized to content). The
+		 * third track is `max-content` capped at 12rem so a wide trailing
+		 * element (e.g. the range row's `<output>` chip) doesn't squeeze
+		 * the input track to 0 — it'll wrap to a new row instead. */
+		grid-template-columns:
+			minmax(8rem, 12rem)
+			minmax(0, 1fr)
+			minmax(0, max-content);
 		align-items: center;
 		gap: calc(var(--spacing) * 3);
 	}

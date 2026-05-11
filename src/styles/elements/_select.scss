@@ -33,7 +33,7 @@
 @layer elements {
 	select {
 		--set-select-color: var(--set-style-color, currentColor);
-		--set-select-background-color: var(--set-style-background-color, Canvas);
+		--set-select-background-color: var(--set-style-background-color, var(--color-canvas, Canvas));
 		--set-select-border-color: var(--set-variant-background-color, var(--color-border-strong));
 		--set-select-border-width: 1px;
 		--set-select-border-radius: var(--set-size-border-radius, var(--radius-md));
@@ -140,11 +140,14 @@
 
 		// Native popup option chrome — Chromium / Firefox read each `<option>`'s
 		// own color / background-color rather than the trigger's, so unstyled
-		// options paint UA-default white-on-black even on themed selects. Bind
-		// to system colors for reliable contrast across light / dark.
+		// options paint UA-default white-on-black even on themed selects. The
+		// `color` / `background-color` here flow through the theme tokens
+		// first; the system-color (`CanvasText` / `Canvas`) is the fallback
+		// for engines where the theme hasn't engaged yet so the popup options
+		// stay legible across light / dark in every case.
 		> option {
-			color: CanvasText;
-			background-color: Canvas;
+			color: var(--color-text, CanvasText);
+			background-color: var(--color-canvas, Canvas);
 		}
 	}
 
