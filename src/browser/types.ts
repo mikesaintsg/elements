@@ -703,6 +703,128 @@ export interface UseMenuReturn {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// useSelect. Bound to the native `<menu>` listbox; layers WAI-ARIA
+// listbox + optional combobox semantics on top of `useMenu`.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Payload of the `elements:select:select` event. Fired on every value
+ *  commit; carries both the single-select scalar (`value`) and the
+ *  multi-select snapshot (`values`) so listeners pick whichever shape
+ *  fits their model. */
+export interface SelectSelectDetail {
+	readonly value: string | null
+	readonly values: readonly string[]
+}
+
+/** Payload of the `elements:select:input` event. Fired on every
+ *  combobox-input keystroke after the filter has settled; carries the
+ *  current query string. */
+export interface SelectInputDetail {
+	readonly query: string
+}
+
+export interface UseSelectEventMap {
+	readonly show: (event: CustomEvent) => void
+	readonly open: (event: CustomEvent) => void
+	readonly hide: (event: CustomEvent) => void
+	readonly close: (event: CustomEvent) => void
+	readonly select: (event: CustomEvent<SelectSelectDetail>) => void
+	readonly clear: (event: CustomEvent) => void
+	readonly input: (event: CustomEvent<SelectInputDetail>) => void
+}
+
+/** Element refs the factory takes. `toggle` is the trigger button (or
+ *  the wrapping <select> mirror element); `menu` is the listbox panel.
+ *  `native` is the optional <select> (or <input>) the factory mirrors
+ *  values into for form-data participation. `input` promotes the
+ *  toggle to a combobox — typing filters options. */
+export interface CreateSelectElements {
+	readonly toggle: HTMLElement
+	readonly menu: HTMLMenuElement
+	readonly native?: HTMLSelectElement | HTMLInputElement | null
+	readonly input?: HTMLInputElement | null
+}
+
+export interface CreateSelectOptions {
+	/** Multi-select mode. Mutually exclusive with `autocomplete`. */
+	readonly multiple?: boolean
+	/** Combobox autocomplete mode. Requires `input` in the elements. */
+	readonly autocomplete?: boolean
+	/** Initial value — a scalar (single-select), an array (multi-select),
+	 *  or undefined for empty initial state. */
+	readonly value?: string | readonly string[]
+	readonly placement?: Placement
+	readonly strategy?: Strategy
+	readonly offset?: number
+	/** Min item-rows the requested side must hold before the menu commits.
+	 *  `0` opts out — surplus rows scroll inside the panel. Default 5. */
+	readonly flip?: number
+	readonly dismiss?: {
+		readonly outside?: boolean
+		readonly escape?: boolean
+		/** Single-select defaults to `true` (dismiss on commit); multi-
+		 *  select defaults to `false` so callers can build up a selection
+		 *  without reopening the panel. */
+		readonly inside?: boolean
+	}
+	readonly on?: Partial<UseSelectEventMap>
+}
+
+export interface CreateSelectInstance {
+	readonly visible: Readonly<Ref<boolean>>
+	/** Single-select scalar. Tracks the first entry of `values` in multi-
+	 *  select mode (always `null` when the selection is empty). */
+	readonly value: Readonly<Ref<string | null>>
+	/** Multi-select snapshot. Always the canonical source of truth — the
+	 *  scalar `value` is derived. */
+	readonly values: Readonly<Ref<readonly string[]>>
+	/** Combobox-mode query string. Empty in non-autocomplete mode. */
+	readonly query: Readonly<Ref<string>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	/** Commit a value. Single-select replaces; multi-select toggles
+	 *  membership. Fires `elements:select:select`. */
+	readonly select: (next: string) => void
+	/** Empty the selection. Fires `elements:select:clear`. */
+	readonly clear: () => void
+	readonly update: (options?: { readonly placement?: Placement }) => void
+	readonly destroy: () => void
+}
+
+export interface UseSelectOptions {
+	readonly menu: Ref<HTMLMenuElement | null>
+	readonly native?: Ref<HTMLSelectElement | HTMLInputElement | null>
+	readonly input?: Ref<HTMLInputElement | null>
+	readonly multiple?: boolean
+	readonly autocomplete?: boolean
+	readonly value?: string | readonly string[]
+	readonly placement?: Placement | Ref<Placement>
+	readonly strategy?: Strategy
+	readonly offset?: number
+	readonly flip?: number
+	readonly dismiss?: {
+		readonly outside?: boolean
+		readonly escape?: boolean
+		readonly inside?: boolean
+	}
+	readonly on?: Partial<UseSelectEventMap>
+}
+
+export interface UseSelectReturn {
+	readonly visible: Readonly<Ref<boolean>>
+	readonly value: Readonly<Ref<string | null>>
+	readonly values: Readonly<Ref<readonly string[]>>
+	readonly query: Readonly<Ref<string>>
+	readonly show: () => void
+	readonly hide: () => void
+	readonly toggle: () => void
+	readonly select: (next: string) => void
+	readonly clear: () => void
+	readonly update: () => void
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // useToast. Bound to the native `<output>` element.
 // ─────────────────────────────────────────────────────────────────────────
 

@@ -46,7 +46,7 @@ describe('createSelect', () => {
 
 	it('select replaces single-mode value and emits select', () => {
 		const { toggle, menu } = createSelectFixture(['a', 'b', 'c'])
-		const select = createRecorder<[CustomEvent]>()
+		const select = createRecorder<[Event]>()
 		toggle.addEventListener(SELECT_EVENTS.select, select.handler)
 		const [api] = createFactoryFixture(() => createSelect({ toggle, menu }))
 		api.select('b')

@@ -80,4 +80,8 @@ export type Variant = (typeof modifiers.variant)[keyof typeof modifiers.variant]
 export type Size = (typeof modifiers.size)[keyof typeof modifiers.size]
 export type Style = (typeof modifiers.style)[keyof typeof modifiers.style]
 export type State = (typeof modifiers.state)[keyof typeof modifiers.state]
-export type Placement = (typeof modifiers.placement)[keyof typeof modifiers.placement]
+// `Placement` is the cross-cutting floating-panel side+alignment union;
+// the canonical declaration lives in `./types.ts` so every popover-bearing
+// composable / factory imports the same shape. Re-export here so consumers
+// pulling modifiers + placement-as-a-class-name both find one type.
+export type { Placement } from './types.js'

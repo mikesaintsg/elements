@@ -68,7 +68,7 @@ describe('createTable', () => {
 				],
 			}),
 		)
-		const sortRecorder = createRecorder<[CustomEvent]>()
+		const sortRecorder = createRecorder<[Event]>()
 		table.addEventListener(TABLE_EVENTS.sort, sortRecorder.handler)
 		api.sort.toggle('name')
 		expect(api.sort.direction('name')).toBe('asc')
@@ -157,15 +157,15 @@ describe('createTable', () => {
 			}),
 		)
 		// Initial: insertion order
-		const before = [...table.querySelectorAll('tbody tr')].map((r) => r.cells[0]!.textContent)
+		const before = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map((r) => r.cells[0]!.textContent)
 		expect(before).toEqual(['Banana', 'Apple', 'Cherry'])
 		// Sort fruit asc (alphabetical)
 		api.sort.toggle('fruit')
-		const afterAsc = [...table.querySelectorAll('tbody tr')].map((r) => r.cells[0]!.textContent)
+		const afterAsc = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map((r) => r.cells[0]!.textContent)
 		expect(afterAsc).toEqual(['Apple', 'Banana', 'Cherry'])
 		// Sort fruit desc
 		api.sort.toggle('fruit')
-		const afterDesc = [...table.querySelectorAll('tbody tr')].map((r) => r.cells[0]!.textContent)
+		const afterDesc = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map((r) => r.cells[0]!.textContent)
 		expect(afterDesc).toEqual(['Cherry', 'Banana', 'Apple'])
 	})
 
@@ -187,7 +187,7 @@ describe('createTable', () => {
 		)
 		api.sort.toggle('qty')
 		// Lexicographic would give ['12', '20', '5']; numeric gives ['5', '12', '20'].
-		const after = [...table.querySelectorAll('tbody tr')].map((r) => r.cells[1]!.textContent)
+		const after = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map((r) => r.cells[1]!.textContent)
 		expect(after).toEqual(['5', '12', '20'])
 	})
 
@@ -205,7 +205,7 @@ describe('createTable', () => {
 		// sort state updated...
 		expect(api.sort.direction('fruit')).toBe('asc')
 		// ...but row order untouched (consumer drives reorder).
-		const rows = [...table.querySelectorAll('tbody tr')].map((r) => r.cells[0]!.textContent)
+		const rows = [...table.querySelectorAll<HTMLTableRowElement>('tbody tr')].map((r) => r.cells[0]!.textContent)
 		expect(rows).toEqual(['Banana', 'Apple', 'Cherry'])
 	})
 
@@ -236,7 +236,7 @@ describe('createTable', () => {
 			instance.refresh()
 			return instance
 		})
-		const selectRecorder = createRecorder<[CustomEvent]>()
+		const selectRecorder = createRecorder<[Event]>()
 		table.addEventListener(TABLE_EVENTS.select, selectRecorder.handler)
 		api.selection.select('r1')
 		expect(api.selection.ids.has('r1')).toBe(true)
@@ -251,7 +251,7 @@ describe('createTable', () => {
 
 	it('emits TABLE_EVENTS.change on row mutations', () => {
 		const table = buildTable()
-		const change = createRecorder<[CustomEvent]>()
+		const change = createRecorder<[Event]>()
 		table.addEventListener(TABLE_EVENTS.change, change.handler)
 		const [api] = createFactoryFixture(() => createTable(table, { rows: [['a']] }))
 		api.rows.append(['b'])
