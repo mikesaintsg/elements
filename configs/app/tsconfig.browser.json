@@ -5,5 +5,5 @@
 		"rootDir": "../../app",
 		"types": ["vite/client", "vue"]
 	},
-	"include": ["../../app/browser/**/*.ts", "../../app/browser/**/*.vue", "../../app/core/**/*.ts"]
+	"include": ["../../app/browser/**/*.ts", "../../app/browser/**/*.vue"]
 }

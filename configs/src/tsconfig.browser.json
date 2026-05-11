@@ -9,5 +9,5 @@
 		"rootDir": "../../src",
 		"outDir": "../../dist/src"
 	},
-	"include": ["../../src/browser/**/*.ts", "../../src/core/**/*.ts"]
+	"include": ["../../src/browser/**/*.ts"]
 }

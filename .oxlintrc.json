@@ -27,7 +27,8 @@
 
 		"no-var": "error",
 		"prefer-const": "error",
-		"no-debugger": "error"
+		"no-debugger": "error",
+		"no-underscore-dangle": ["error", { "allow": ["__BUILD_ID__"] }]
 	},
 	"categories": {
 		"correctness": "error",
