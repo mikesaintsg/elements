@@ -97,3 +97,55 @@
 	background-color: color-mix(in oklab, black 35%, transparent);
 	backdrop-filter: blur(2px);
 }
+
+/* Sticky sidebar search bar — APP-SPECIFIC, not framework chrome.
+ *
+ * Docs sites (and product-internal UIs) tend to want the filter input
+ * pinned to the top of a scrolling navigation rail so the search box stays
+ * reachable while the user is mid-scroll through a long list. That's a
+ * deliberate design choice the SHOWCASE makes, not something every
+ * consumer of the framework's `<search>` element wants — some products
+ * prefer the search to scroll with content, some put it in the app bar,
+ * some use a dialog-launched command-K instead. So this rule lives here,
+ * scoped to `body:has(main) > nav > search` (exactly the way the showcase
+ * mounts its sidebar filter), rather than in
+ * `src/styles/components/_search.scss`.
+ *
+ * Mechanics (all framework primitives are reused — only the composition
+ * is showcase-specific):
+ *
+ *   - `position: sticky; inset-block-start: 0` pins the bar to the top of
+ *     the nav rail's scroll container.
+ *   - `--set-search-*` token overrides route the bar's internal padding
+ *     through the rail's own `--set-nav-padding-*` so the input's gutter
+ *     matches the rail's outer gutter.
+ *   - Negative margins (block-start + inline-both) cancel the rail's outer
+ *     padding so the pinned bar extends flush to the rail's top + side
+ *     edges. Without these, the rail's padding leaves a visible strip of
+ *     canvas around the bar when it's pinned.
+ *   - `background-color: var(--set-nav-background-color)` paints the
+ *     rail's own background under the bar so scrolling list rows are
+ *     cleanly masked when they slide behind the pinned bar.
+ *   - `border-block-end` paints the divider below the bar that separates
+ *     it from the first list group (the rail's flex `gap` adds the
+ *     breathing room above the first group).
+ *
+ * If extracted into a consumer site, the same rule (pasted verbatim or
+ * adapted to the consumer's preferred sidebar shape) drops in cleanly —
+ * everything it consumes is a framework token, no showcase-private
+ * values.
+ */
+body:has(main) > nav > search,
+body:has(main) > * > nav > search {
+	position: sticky;
+	inset-block-start: 0;
+	z-index: 1;
+
+	--set-search-padding-inline: var(--set-nav-padding-inline);
+	--set-search-padding-block: var(--set-nav-padding-block);
+	--set-search-background-color: var(--set-nav-background-color);
+
+	margin-block-start: calc(var(--set-nav-padding-block) * -1);
+	margin-inline: calc(var(--set-nav-padding-inline) * -1);
+	border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
+}
