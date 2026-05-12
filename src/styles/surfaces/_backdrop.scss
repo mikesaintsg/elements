@@ -2,24 +2,58 @@
 // ::backdrop — UA-rendered surface behind a top-layer element.
 //
 // `::backdrop` exists for every top-layer host (modal `<dialog>`,
-// fullscreen elements, every flavour of `[popover]`), but visually only
-// modal dialogs need the dim-and-blur scrim. Tooltips, dropdowns, toasts,
-// and auto popovers should be light-dismissable WITHOUT covering the
-// page — their backdrop must stay transparent.
+// fullscreen elements, every flavour of `[popover]`). The framework
+// paints a dim-and-blur scrim on the surfaces that BLOCK interaction
+// with the page beneath:
 //
-// Mailbox solves this with an exclusion-list approach (opt OTHER popovers
-// IN to the backdrop, never the four named families). Our framework is
-// simpler: only modal `<dialog>` gets the dim scrim, period. All popover
-// flavours keep the UA-default transparent backdrop, which is exactly
-// what a non-modal floating panel wants.
+//   1. `dialog:modal::backdrop`           — modal dialog scrim
+//   2. `aside[popover]::backdrop`         — offcanvas drawer scrim
 //
-// If a future use-case needs a backdropped popover (e.g. a confirm-style
-// modal-popover hybrid), the consumer opts in per-host:
-//   #my-popover::backdrop { background-color: var(--set-backdrop-background-color); }
+// Both render from the SAME tokens (`--set-backdrop-*`) so the dim
+// reads as one consistent surface across the framework's two "blocking
+// overlay" patterns. A modal dialog and an offcanvas drawer feel like
+// siblings — the only difference is geometry (centered panel vs edge-
+// slide). Bootstrap parity: their `.modal-backdrop` and
+// `.offcanvas-backdrop` paint the same `--bs-backdrop-bg` /
+// `--bs-backdrop-opacity` recipe.
 //
-// Tokens: --set-backdrop-* live on `:root` because ::backdrop is generated
-// outside the normal DOM tree and cannot inherit element-scoped tokens
-// declared on the host. Consumers override on :root or per host:
+// Surfaces that DON'T paint a scrim (intentionally transparent):
+//
+//   - Non-modal `<dialog>` (`.show()`)    — inline panel, non-blocking
+//   - `<output popover>` (toasts)         — transient corner notifications
+//   - `<menu popover>` (dropdowns)        — anchored to a trigger
+//   - `[popover='hint']` (tooltips)       — hover-driven labels
+//   - Bare `[popover]` (generic panels)   — author-controlled chrome
+//
+// The transparent default matches the UA `::backdrop`. Consumers can
+// opt a specific host in per-id:
+//
+//   #my-popover::backdrop {
+//     background-color: var(--set-backdrop-background-color);
+//     backdrop-filter:  var(--set-backdrop-backdrop-filter);
+//   }
+//
+// Single-backdrop guarantee. Every framework surface that needs a
+// scrim renders it via the native `::backdrop` pseudo — there is no
+// per-component "duplicate backdrop element" anywhere in the framework.
+// Top-layer elements get their backdrop from the browser; the
+// framework only styles the existing pseudo. The one exception is
+// the showcase body-shell rail drawers (`<nav>` / `<aside>` with
+// `[data-open]`), which are NOT top-layer (they're CSS-positioned via
+// the body grid) and therefore don't have a `::backdrop` pseudo to
+// style. Those are app-specific drawers and live in
+// `app/browser/styles/showcase.css`'s `.showcase-backdrop` — that
+// rule reads from the SAME `--set-backdrop-*` tokens so the showcase
+// scrim is visually identical to the framework's modal / drawer
+// backdrop. Move the body-shell rails into a popover-mode composition
+// (which makes them top-layer) and the `::backdrop` pseudo would be
+// available; the custom backdrop element becomes unnecessary.
+//
+// Tokens: --set-backdrop-* live on `:root` because ::backdrop is
+// generated outside the normal DOM tree and cannot inherit element-
+// scoped tokens declared on the host. Consumers override on :root or
+// per host:
+//
 //   dialog#confirm::backdrop { --set-backdrop-background-color: …; }
 // ============================================================================
 
@@ -32,27 +66,27 @@
 		--set-backdrop-transition-duration: var(--set-transition-duration);
 	}
 
-	// Only modal `<dialog>` (opened via .showModal()) gets the dim-and-blur
-	// scrim. Non-modal dialogs and every popover flavour keep the UA-default
-	// transparent backdrop — exactly what a non-blocking floating panel
-	// wants.
+	// Transition list on bare `dialog::backdrop` and bare
+	// `aside[popover]::backdrop` — keeps the backdrop's color +
+	// filter animating smoothly through the close transition tail.
 	//
-	// Why TWO rules (bare `dialog::backdrop` + `dialog:modal::backdrop`):
-	// the transition list lives on the bare rule so it PERSISTS through
-	// the close transition tail. When `.close()` is called `:modal` stops
-	// matching synchronously, so any styles or transitions declared on
-	// `dialog:modal::backdrop` would disappear at frame 0 of close —
-	// the backdrop's `background-color` and `backdrop-filter` would
-	// snap from the dim scrim to the UA-default faint `rgba(0,0,0,0.1)`
-	// (Chromium's transparent-but-still-rendered default) for the 250 ms
-	// the dialog's `overlay allow-discrete` keeps the backdrop alive.
-	// That snap reads to the user as a backdrop "flash" between the
-	// dim scrim and the faint UA default. Putting the transition on the
-	// bare pseudo means the backdrop's color animates from dim → UA-
-	// transparent over the full motion duration in lockstep with the
-	// dialog's fade-out, producing a single smooth dismiss instead of
-	// a flash-then-fade.
-	dialog::backdrop {
+	// Why split the transition off the modal-state rules (the two
+	// rules below): `:modal` (for dialog) and `[popover]` open state
+	// stop matching synchronously the moment `.close()` /
+	// `.hidePopover()` returns. If the transition declaration lived
+	// only on the open-state rule, it would disappear at frame 0 of
+	// close — the backdrop's `background-color` and `backdrop-filter`
+	// would snap from the dim scrim to the UA-default faint
+	// `rgba(0,0,0,0.1)` (Chromium's transparent-but-still-rendered
+	// default) for the 250 ms the host's `overlay allow-discrete`
+	// keeps the backdrop alive. That snap reads to the user as a
+	// backdrop "flash" between the dim scrim and the faint UA
+	// default. Putting the transition on the bare pseudo means the
+	// backdrop's color animates from dim → UA-transparent over the
+	// full motion duration in lockstep with the panel's fade-out,
+	// producing a single smooth dismiss instead of a flash-then-fade.
+	dialog::backdrop,
+	aside[popover]::backdrop {
 		@include transition(
 			(
 				background-color var(--set-motion-duration) ease-out,
@@ -61,7 +95,20 @@
 		);
 	}
 
-	dialog:modal::backdrop {
+	// Open-state scrim chrome. Modal dialog (`dialog:modal`) matches
+	// when `.showModal()` is the open path; offcanvas drawer
+	// (`aside[popover]:popover-open`) matches while the popover is
+	// open. Both selectors gate on the open-state pseudo so the
+	// background-color and backdrop-filter declarations REVERT when
+	// the host transitions closed — that lets the bare-pseudo
+	// transition list above interpolate the values back to their UA
+	// defaults over the motion duration, producing the smooth fade
+	// out. Without the open-state gate, colors would stay applied for
+	// the full close transition tail and then snap to UA-transparent
+	// at the end (the inverse of the flash bug we fixed for modal
+	// dialog).
+	dialog:modal::backdrop,
+	aside[popover]:popover-open::backdrop {
 		background-color: var(--set-backdrop-background-color);
 		backdrop-filter: var(--set-backdrop-backdrop-filter);
 	}

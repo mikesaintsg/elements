@@ -90,22 +90,42 @@
 	}
 }
 
-/* Backdrop fade — pairs with the framework drawer's opacity+slide so
- * the scrim doesn't snap in instantly while the rail slides at
- * 250ms. `@starting-style` provides the from-state at the element's
- * first mount frame (Vue's `v-if` mounts and unmounts on toggle), so
- * the backdrop fades in with the drawer. Closing relies on Vue's
- * `v-if` removal — there's no explicit unmount transition because the
+/* Body-shell rail drawer backdrop — APP-SPECIFIC element.
+ *
+ * Why this exists at all: the showcase's mobile sidebar / TOC drawers
+ * are CSS-positioned via the body grid + `[data-open]`, NOT top-layer
+ * elements like `<dialog>` or `<aside popover>`. They have no native
+ * `::backdrop` pseudo to style. So the showcase mounts a manual
+ * `<div class="showcase-backdrop">` (see App.vue, gated on
+ * `v-if="leftOpen || rightOpen"`) and the rule below paints it.
+ *
+ * Single-backdrop invariant: this scrim ONLY appears for the body-shell
+ * rail drawers. Modal `<dialog>` uses its native `::backdrop` (styled
+ * in `surfaces/_backdrop.scss`); offcanvas `<aside popover>` drawers
+ * use THEIR native `::backdrop` (same surface partial, same tokens).
+ * No surface gets BOTH a native backdrop and this custom one — the
+ * `v-if` guard pairs only with body-shell drawer state.
+ *
+ * Visual parity with the framework's `::backdrop`: this rule consumes
+ * the SAME `--set-backdrop-background-color` + `--set-backdrop-
+ * backdrop-filter` tokens that style the native pseudo, so the showcase
+ * drawer scrim reads identically to the modal / offcanvas drawer
+ * scrim. The motion is also identical — `--set-motion-duration` for
+ * the opacity fade. A consumer retuning either token at `:root` flows
+ * through to all three surfaces.
+ *
+ * `@starting-style` provides the from-state at the element's first
+ * mount frame (Vue's `v-if` mounts and unmounts on toggle), so the
+ * backdrop fades in with the drawer. Closing relies on Vue's `v-if`
+ * removal — there's no explicit unmount transition because the
  * scrim is non-essential UX; abrupt removal as the drawer slides out
- * is acceptable. Reads the shared drawer-transition tokens so the
- * scrim's fade duration tracks any consumer retune of the drawer
- * family motion. */
+ * is acceptable. */
 .showcase-backdrop {
 	position: fixed;
 	inset: 0;
 	z-index: 25;
-	background-color: color-mix(in oklab, black 35%, transparent);
-	backdrop-filter: blur(2px);
+	background-color: var(--set-backdrop-background-color);
+	backdrop-filter: var(--set-backdrop-backdrop-filter);
 	transition: opacity var(--set-motion-duration) ease-out;
 
 	@starting-style {

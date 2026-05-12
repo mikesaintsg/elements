@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T17:22:29.471Z" />
+		<meta name="build-id" content="2026-05-12T17:41:13.609Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9040,7 +9040,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T17:22:29.471Z`)), 1),
+										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T17:41:13.609Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -9191,6 +9191,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--radius-xl: 0.75rem;
 					--shadow-sm: 0 1px 3px 0 #0000001a, 0 1px 2px -1px #0000001a;
 					--shadow-md: 0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a;
+					--ease-out: cubic-bezier(0, 0, 0.2, 1);
 					--ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 					--default-transition-duration: 0.15s;
 					--default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -14065,17 +14066,24 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-backdrop-backdrop-filter: blur(2px);
 					--set-backdrop-transition-duration: var(--set-transition-duration);
 				}
-				dialog::backdrop {
+				dialog::backdrop,
+				aside[popover]::backdrop {
 					transition:
 						background-color var(--set-motion-duration) ease-out,
 						backdrop-filter var(--set-motion-duration) ease-out;
 				}
 				@media (prefers-reduced-motion: reduce) {
-					dialog::backdrop {
+					dialog::backdrop,
+					aside[popover]::backdrop {
 						transition: none;
 					}
 				}
 				dialog:modal::backdrop {
+					background-color: var(--set-backdrop-background-color);
+					-webkit-backdrop-filter: var(--set-backdrop-backdrop-filter);
+					backdrop-filter: var(--set-backdrop-backdrop-filter);
+				}
+				aside[popover]:popover-open::backdrop {
 					background-color: var(--set-backdrop-background-color);
 					-webkit-backdrop-filter: var(--set-backdrop-backdrop-filter);
 					backdrop-filter: var(--set-backdrop-backdrop-filter);
@@ -15653,6 +15661,10 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--tw-ease: var(--ease-in-out);
 					transition-timing-function: var(--ease-in-out);
 				}
+				.ease-out {
+					--tw-ease: var(--ease-out);
+					transition-timing-function: var(--ease-out);
+				}
 				.select-all {
 					-webkit-user-select: all;
 					user-select: all;
@@ -16809,10 +16821,10 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 			}
 			.showcase-backdrop {
 				z-index: 25;
-				-webkit-backdrop-filter: blur(2px);
-				backdrop-filter: blur(2px);
+				background-color: var(--set-backdrop-background-color);
+				-webkit-backdrop-filter: var(--set-backdrop-backdrop-filter);
+				backdrop-filter: var(--set-backdrop-backdrop-filter);
 				transition: opacity var(--set-motion-duration) ease-out;
-				background-color: oklab(0% none none/.35);
 				position: fixed;
 				inset: 0;
 			}

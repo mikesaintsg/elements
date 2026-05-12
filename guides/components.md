@@ -52,22 +52,23 @@ The HTML element IS the component. No `.card`, no `.sidebar`, no `.modal-dialog`
 
 When one HTML tag plays multiple roles depending on context, descendant selectors carry the variants — not class modifiers on the root.
 
-| Tag        | Context                    | Selector                       | Component                          |
-| ---------- | -------------------------- | ------------------------------ | ---------------------------------- |
-| `<header>` | direct child of body shell | `body > header`                | App bar (page banner)              |
-| `<header>` | inside an `<article>`      | `article > header`             | Card header                        |
-| `<footer>` | direct child of body shell | `body > footer`                | Page footer                        |
-| `<footer>` | inside an `<article>`      | `article > footer`             | Card footer                        |
-| `<aside>`  | direct child of body shell | `body > aside`                 | Sidebar / TOC rail                 |
-| `<aside>`  | inside an `<article>`      | `article aside`                | Pull-quote / callout               |
-| `<nav>`    | direct child of body shell | `body > nav`                   | Primary nav rail (vertical column) |
-| `<nav>`    | breadcrumb trail           | `nav[aria-label='Breadcrumb']` | Breadcrumb                         |
-| `<nav>`    | pagination                 | `nav[aria-label='Pagination']` | Pagination                         |
-| `<nav>`    | tab strip                  | `nav [role=tablist]`           | Tabs                               |
-| `<menu>`   | inside an `<article>`      | `article menu`                 | Card action row (justify-end)      |
-| `<menu>`   | inside a `<nav>`           | `nav menu`                     | Vertical column inside the rail    |
-| `<dialog>` | opened via `.showModal()`  | `dialog:modal`                 | Centered modal with backdrop       |
-| `<dialog>` | opened via `.show()`       | `dialog[open]:not(:modal)`     | Non-modal inline dialog            |
+| Tag        | Context                    | Selector                       | Component                                                                                                     |
+| ---------- | -------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `<header>` | direct child of body shell | `body > header`                | App bar (page banner)                                                                                         |
+| `<header>` | inside an `<article>`      | `article > header`             | Card header                                                                                                   |
+| `<footer>` | direct child of body shell | `body > footer`                | Page footer                                                                                                   |
+| `<footer>` | inside an `<article>`      | `article > footer`             | Card footer                                                                                                   |
+| `<aside>`  | direct child of body shell | `body > aside`                 | Sidebar / TOC rail                                                                                            |
+| `<aside>`  | inside an `<article>`      | `article aside`                | Pull-quote / callout                                                                                          |
+| `<nav>`    | direct child of body shell | `body > nav`                   | Primary nav rail (vertical column)                                                                            |
+| `<nav>`    | breadcrumb trail           | `nav[aria-label='Breadcrumb']` | Breadcrumb                                                                                                    |
+| `<nav>`    | pagination                 | `nav[aria-label='Pagination']` | Pagination                                                                                                    |
+| `<nav>`    | tab strip                  | `nav [role=tablist]`           | Tabs                                                                                                          |
+| `<menu>`   | inside an `<article>`      | `article menu`                 | Card action row (justify-end)                                                                                 |
+| `<menu>`   | inside a `<nav>`           | `nav menu`                     | Vertical column inside the rail                                                                               |
+| `<dialog>` | opened via `.showModal()`  | `dialog:modal`                 | Centered modal with backdrop scrim                                                                            |
+| `<dialog>` | opened via `.show()`       | `dialog[open]:not(:modal)`     | Non-modal inline dialog (no scrim)                                                                            |
+| `<aside>`  | `popover` attribute        | `aside[popover]:popover-open`  | Offcanvas drawer with backdrop scrim — shares the `dialog:modal` scrim recipe (see `surfaces/_backdrop.scss`) |
 
 One partial owns one tag and still covers three or four variants without inventing class names.
 
