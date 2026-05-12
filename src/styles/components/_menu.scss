@@ -488,5 +488,61 @@
 			background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
 			color: var(--color-primary-on-canvas);
 		}
+
+		// `aria-disabled="true"` mutes the row and disables pointer
+		// activation. Same opacity multiplier the button baseline +
+		// pagination disabled state use, so a `<button aria-disabled>`
+		// or `<a aria-disabled>` inside a dropdown reads consistently
+		// with disabled controls elsewhere in the framework.
+		&[aria-disabled='true'],
+		&:disabled,
+		&.disabled {
+			opacity: 0.5;
+			pointer-events: none;
+			cursor: not-allowed;
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Dropdown structural extras — section header + divider.
+	//
+	// Mailbox / Bootstrap compose dropdowns out of mixed content: an
+	// optional `.dropdown-header` to label a group of commands, and
+	// `.dropdown-divider` (an `<hr>`) to separate command groups. The
+	// framework uses bare HTML tags — `<h6>` for the section label
+	// (the smallest heading, conventional for sub-section captions)
+	// and `<hr>` for the divider (the semantic separator). Both apply
+	// inside both canonical `menu[popover]` AND wrapped `[popover]:
+	// not(aside):not(nav) menu` patterns; drawer surfaces (`<aside
+	// popover>` / `<nav popover>`) intentionally fall outside the
+	// selector because menus inside those render with nav-rail chrome.
+	// --------------------------------------------------------------------------
+	menu[popover] > h6,
+	[popover]:not(aside):not(nav) menu > h6,
+	[popover]:not(aside):not(nav) > menu > h6 {
+		margin: 0;
+		padding-inline: calc(var(--spacing) * 2.5);
+		padding-block: calc(var(--spacing) * 1.5) calc(var(--spacing) * 1);
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+	}
+
+	menu[popover] > hr,
+	[popover]:not(aside):not(nav) menu > hr,
+	[popover]:not(aside):not(nav) > menu > hr {
+		margin-block: calc(var(--spacing) * 1);
+		// Negative inline margin pulls the divider past the menu's own
+		// `padding-inline` (0 inside the popover, but the popover
+		// surface gives the panel `padding-inline: --set-popover-
+		// padding-inline`). The divider spans the panel's content
+		// width edge to edge; pill-shaped items inside still respect
+		// their own padding.
+		margin-inline: calc(var(--set-popover-padding-inline) * -1);
+		border: 0;
+		border-block-start: 1px solid var(--set-popover-border-color);
+		block-size: 0;
 	}
 }

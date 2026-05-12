@@ -197,3 +197,58 @@ describe('button — combined modifiers', () => {
 		expect(token(btn, '--set-button-border-radius')).not.toBe('')
 	})
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Popover trigger caret — auto-painted on `button[popovertarget]`
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('button — popover trigger caret', () => {
+	// Regression: an earlier draft of the menu showcase pasted a Unicode
+	// `▾` chevron into the trigger label. The framework now paints a
+	// proper chevron-down caret via `::after` on `button[popovertarget]`
+	// (mailbox `.dropdown-toggle` parity). The token surface
+	// (`--set-button-popover-caret-{image, size, opacity}`) is set on
+	// `button[popovertarget]`; the spacing between label and caret comes
+	// from the button baseline's own flex `gap`, matching the framework's
+	// other caret/chevron surfaces (`<summary>::before`, `<select>`
+	// chevron, breadcrumb separator).
+	it('exposes --set-button-popover-caret-* tokens on a button[popovertarget]', () => {
+		const btn = document.createElement('button')
+		btn.setAttribute('popovertarget', 'demo')
+		btn.textContent = 'Account'
+		mount(btn)
+
+		expect(token(btn, '--set-button-popover-caret-image').trim()).not.toBe('')
+		expect(token(btn, '--set-button-popover-caret-size').trim()).not.toBe('')
+		expect(token(btn, '--set-button-popover-caret-opacity').trim()).not.toBe('')
+	})
+
+	it('paints a non-empty `::after` caret on `button[popovertarget]`', () => {
+		const btn = document.createElement('button')
+		btn.setAttribute('popovertarget', 'demo')
+		btn.textContent = 'Account'
+		mount(btn)
+
+		const after = globalThis.getComputedStyle(btn, '::after')
+		// content resolves to a quoted empty string (the `content: ''`
+		// declaration); non-popover buttons would resolve to `none`.
+		expect(after.content).not.toBe('none')
+	})
+
+	it('does NOT paint a caret on a button WITHOUT popovertarget', () => {
+		const btn = render('button', '')
+		const after = globalThis.getComputedStyle(btn, '::after')
+		expect(after.content).toBe('none')
+	})
+
+	it('the `.icon-only` modifier suppresses the caret on a popover trigger', () => {
+		const btn = document.createElement('button')
+		btn.setAttribute('popovertarget', 'demo')
+		btn.classList.add('icon-only')
+		btn.setAttribute('aria-label', 'Open menu')
+		mount(btn)
+
+		const after = globalThis.getComputedStyle(btn, '::after')
+		expect(after.content).toBe('none')
+	})
+})

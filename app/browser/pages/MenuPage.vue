@@ -273,8 +273,19 @@ const onCommand = (label: string): void => {
 			End, type-ahead filter) land in <code>composables/</code> later; the panel chrome below is the
 			static foundation they build on.
 		</p>
+		<p>
+			<strong>Caret affordance.</strong> Any <code>&lt;button popovertarget&gt;</code> automatically
+			paints a <code>chevron-down</code> caret via <code>::after</code> — same
+			<code>currentColor</code> mask-image recipe <code>&lt;summary&gt;</code>'s disclosure marker,
+			<code>&lt;select&gt;</code>'s chevron, and the breadcrumb separator all use, sized to
+			<code>0.75 em</code> with the button's own flex <code>gap</code> handling the spacing between
+			label and caret. No Unicode glyph in the label, no <code>.dropdown-toggle</code> class.
+			Override per-instance via <code>--set-button-popover-caret-image</code> for a custom glyph;
+			suppress automatically by composing with <code>.icon-only</code> (which already hosts a single
+			glyph).
+		</p>
 		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
-			<button type="button" popovertarget="demo-dropdown">Account ▾</button>
+			<button type="button" popovertarget="demo-dropdown">Account</button>
 			<small v-if="lastCommand"
 				>Last picked: <strong>{{ lastCommand }}</strong></small
 			>
@@ -295,7 +306,7 @@ const onCommand = (label: string): void => {
 		</menu>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>&lt;button popovertarget="account-actions"&gt;Account ▾&lt;/button&gt;
+			<pre><code>&lt;button popovertarget="account-actions"&gt;Account&lt;/button&gt;
 &lt;menu popover id="account-actions"&gt;
   &lt;li&gt;&lt;button&gt;Profile&lt;/button&gt;&lt;/li&gt;
   &lt;li&gt;&lt;button&gt;Workspace settings&lt;/button&gt;&lt;/li&gt;
@@ -303,6 +314,68 @@ const onCommand = (label: string): void => {
   &lt;li&gt;&lt;button&gt;Sign out&lt;/button&gt;&lt;/li&gt;
 &lt;/menu&gt;</code></pre>
 		</details>
+
+		<h3>Section headers + dividers + disabled items</h3>
+		<p>
+			Mailbox-parity composition: an optional <code>&lt;h6&gt;</code> labels a group of commands, an
+			<code>&lt;hr&gt;</code> separates groups (edge-to-edge perimeter rule), and an
+			<code>aria-disabled="true"</code> (or native <code>disabled</code>) row mutes its affordance +
+			suppresses pointer activation. Same opacity multiplier the
+			<code>&lt;button&gt;</code> baseline and pagination disabled state use — disabled controls
+			read consistently across the framework.
+		</p>
+		<button type="button" popovertarget="demo-dropdown-full">Document</button>
+		<menu popover id="demo-dropdown-full">
+			<h6>Edit</h6>
+			<li><button type="button" @click="onCommand('Cut')">Cut</button></li>
+			<li><button type="button" @click="onCommand('Copy')">Copy</button></li>
+			<li><button type="button" aria-disabled="true">Paste</button></li>
+			<hr />
+			<h6>History</h6>
+			<li><button type="button" @click="onCommand('Undo')">Undo</button></li>
+			<li><button type="button" aria-disabled="true">Redo</button></li>
+			<hr />
+			<li><button type="button" @click="onCommand('Delete')">Delete</button></li>
+		</menu>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;menu popover id="document-actions"&gt;
+  &lt;h6&gt;Edit&lt;/h6&gt;
+  &lt;li&gt;&lt;button&gt;Cut&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;button&gt;Copy&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;button aria-disabled="true"&gt;Paste&lt;/button&gt;&lt;/li&gt;
+  &lt;hr /&gt;
+  &lt;h6&gt;History&lt;/h6&gt;
+  &lt;li&gt;&lt;button&gt;Undo&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;button aria-disabled="true"&gt;Redo&lt;/button&gt;&lt;/li&gt;
+&lt;/menu&gt;</code></pre>
+		</details>
+
+		<h3>Placement modifiers</h3>
+		<p>
+			Dropdowns share the popover surface's placement system. <code>.start</code> /
+			<code>.end</code> / <code>.top</code> / <code>.bottom</code> on the
+			<code>&lt;menu popover&gt;</code> root pin the panel to the matching edge of the trigger
+			button. Useful when the trigger sits in a corner where the default
+			<code>block-end</code> placement would clip against the viewport.
+		</p>
+		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+			<button type="button" popovertarget="demo-dd-start">Open from start</button>
+			<button type="button" popovertarget="demo-dd-end">Open from end</button>
+			<button type="button" popovertarget="demo-dd-top">Open above</button>
+		</div>
+		<menu popover id="demo-dd-start" class="start">
+			<li><button type="button">First action</button></li>
+			<li><button type="button">Second action</button></li>
+		</menu>
+		<menu popover id="demo-dd-end" class="end">
+			<li><button type="button">First action</button></li>
+			<li><button type="button">Second action</button></li>
+		</menu>
+		<menu popover id="demo-dd-top" class="top">
+			<li><button type="button">First action</button></li>
+			<li><button type="button">Second action</button></li>
+		</menu>
 
 		<h3>Wrapped dropdown — <code>&lt;div popover&gt;&lt;menu&gt;</code></h3>
 		<p>
@@ -313,7 +386,7 @@ const onCommand = (label: string): void => {
 			surfaces (where descendant menus should render with nav-rail chrome, not dropdown chrome — the
 			regression-guarded behavior captured during the iOS scroll-on-link audit).
 		</p>
-		<button type="button" popovertarget="demo-wrapped">Open wrapped panel ▾</button>
+		<button type="button" popovertarget="demo-wrapped">Open wrapped panel</button>
 		<div popover id="demo-wrapped" style="min-inline-size: 16rem">
 			<header
 				style="
