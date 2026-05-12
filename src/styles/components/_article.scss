@@ -295,4 +295,27 @@
 	article > ol.group > li {
 		border-inline-width: 0;
 	}
+
+	// When the list-group sits between a header band and / or a footer band,
+	// close the article's flex `gap` so the list-group reads as flush against
+	// the band(s). Without this, the article's `--set-article-gap` puts a
+	// visible strip of card surface between the band's divider and the list-
+	// group's first / last row — the band stops looking like a slot on top of
+	// the list and starts looking like a separate sibling card.
+	//
+	// Implementation: negative `margin-block-start` equal to the article's
+	// gap on the list-group (when it follows a header) and on the footer
+	// (when it follows the list-group). The list-group's own first / last
+	// row already has its border-block-start / -end zeroed (rules above), so
+	// the header's `border-block-end` divider is the only line painted
+	// between the band and the list — no doubled borders.
+	article > header:first-child + ul.group,
+	article > header:first-child + ol.group {
+		margin-block-start: calc(var(--set-article-gap) * -1);
+	}
+
+	article > ul.group + footer:last-child,
+	article > ol.group + footer:last-child {
+		margin-block-start: calc(var(--set-article-gap) * -1);
+	}
 }

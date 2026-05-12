@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T12:33:31.240Z" />
+		<meta name="build-id" content="2026-05-12T12:38:14.860Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -8378,7 +8378,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, xu, `build ` + A(Jt(`2026-05-12T12:33:31.240Z`)), 1),
+										Y(`small`, xu, `build ` + A(Jt(`2026-05-12T12:38:14.860Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -11346,6 +11346,12 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				article > ul.group > li,
 				article > ol.group > li {
 					border-inline-width: 0;
+				}
+				article > header:first-child + ul.group,
+				article > header:first-child + ol.group,
+				article > ul.group + footer:last-child,
+				article > ol.group + footer:last-child {
+					margin-block-start: calc(var(--set-article-gap) * -1);
 				}
 				aside {
 					--set-aside-color: var(--set-style-color, currentColor);
