@@ -18,7 +18,7 @@
  * class usage and `var()` references so the right CSS is emitted.
  */
 
-/* hmr-touch 64 */
+/* hmr-touch 65 */
 @layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
 
 @import 'tailwindcss';

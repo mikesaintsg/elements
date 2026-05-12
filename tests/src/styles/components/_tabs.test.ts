@@ -31,12 +31,19 @@ describe('tabs — token surface', () => {
 })
 
 describe('tabs — tablist chrome', () => {
-	it('`<nav role="tablist">` paints a flex row with a bottom-border track', () => {
+	it('`<nav role="tablist">` paints a flex row with NO opinionated baseline track', () => {
+		// User feedback during NavPage authoring: the continuous
+		// `border-block-end` on the bare tablist read as opinionated
+		// chrome the framework hadn't earned. The active tab's own
+		// `border-block-end-color` indicator (declared on `[role="tab"]`)
+		// carries the entire "this is the active tab" signal. Stretched-
+		// row variants (`.bordered` / `.pills` / `.vertical`) live in
+		// `composables/_tabs.scss` and earn their chrome under `useTabs`.
 		const nav = build('nav')
 		nav.setAttribute('role', 'tablist')
 		mount(nav)
 		expect(style(nav, 'display')).toBe('flex')
-		expect(pixels(nav, 'border-bottom-width')).toBeGreaterThan(0)
+		expect(pixels(nav, 'border-bottom-width')).toBe(0)
 	})
 
 	it('`<menu role="tablist">` (non-`<nav>` host) gets the same chrome', () => {
@@ -44,7 +51,7 @@ describe('tabs — tablist chrome', () => {
 		menu.setAttribute('role', 'tablist')
 		mount(menu)
 		expect(style(menu, 'display')).toBe('flex')
-		expect(pixels(menu, 'border-bottom-width')).toBeGreaterThan(0)
+		expect(pixels(menu, 'border-bottom-width')).toBe(0)
 	})
 })
 

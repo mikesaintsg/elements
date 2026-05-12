@@ -304,11 +304,15 @@ const goto = (n: number): void => {
 			groups inside cards or widgets where a landmark would be unwanted noise.
 		</p>
 		<p>
-			The framework paints chrome only: horizontal flex row, continuous bottom-border track on the
-			tablist, per-tab overlap indicator that paints over the track on
-			<code>aria-selected="true"</code>. Keyboard wiring (Left / Right / Home / End / Esc, roving
-			tabindex) lives in <code>useTabs</code> (Phase 6 composable, not yet shipped); until then
-			consumers wire the click handlers themselves as below.
+			The framework paints chrome only: horizontal flex row, per-tab bottom-border indicator
+			(transparent by default; variant-coloured under <code>aria-selected="true"</code>). The bare
+			tablist has <em>no</em> continuous baseline track — that read as opinionated chrome the
+			framework hadn't earned; the active tab's own indicator carries the entire visual signal. For
+			the Bootstrap / Mailbox stretched-row look (continuous track + overlap), opt in with
+			<code>&lt;nav role="tablist" class="bordered"&gt;</code> as shown in the second demo below.
+			Keyboard wiring (Left / Right / Home / End / Esc, roving tabindex) lives in
+			<code>useTabs</code> (Phase 6 composable, not yet shipped); until then consumers wire the
+			click handlers themselves as below.
 		</p>
 		<nav role="tablist" aria-label="Settings">
 			<button
@@ -393,6 +397,31 @@ const goto = (n: number): void => {
 &lt;div role="tabpanel" id="p-2" aria-labelledby="t-2" hidden&gt;…&lt;/div&gt;
 &lt;div role="tabpanel" id="p-3" aria-labelledby="t-3" hidden&gt;…&lt;/div&gt;</code></pre>
 		</details>
+
+		<h3>Visual variants — <code>.pills</code>, <code>.bordered</code>, <code>.vertical</code></h3>
+		<p>
+			Three tablist style modifiers ship in <code>composables/_tabs.scss</code> for consumers using
+			the <code>useTabs</code> composable:
+		</p>
+		<ul>
+			<li>
+				<strong><code>.pills</code></strong> — swaps the underline indicator for a filled background
+				tint (segmented-control look).
+			</li>
+			<li>
+				<strong><code>.bordered</code></strong> — frames the active tab + the panel below as a
+				single card with a continuous border (Bootstrap <code>.nav-tabs</code> look).
+			</li>
+			<li>
+				<strong><code>.vertical</code></strong> — stacks tabs in a column with the indicator on the
+				inline-end edge; pairs with a wrapper that lays the tablist + the active panel side-by-side.
+			</li>
+		</ul>
+		<p>
+			All three reuse the framework's <code>--set-tab-*</code> token chain so a consumer retuning
+			the active colour / padding cascades into every variant. Demo coverage for the three modifiers
+			ships on the <strong>UseTabsPage</strong> when that composable lands.
+		</p>
 	</section>
 
 	<section id="nav-fill-justified">

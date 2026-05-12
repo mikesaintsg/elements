@@ -154,3 +154,56 @@ describe('menu — aside (TOC) item defaults', () => {
 		expect(colorEqual(style(a, 'color'), 'var(--color-text-muted)')).toBe(true)
 	})
 })
+
+describe('menu — touch-action contract on nav-rail interactive rows', () => {
+	// Regression: an earlier version of `_menu.scss` left
+	// `body:has(main) > nav menu > li > :where(a, button)` at the UA
+	// default `touch-action: auto`. On iOS Safari that meant the
+	// browser's heuristic about which gesture (scroll vs tap) to
+	// dispatch had to "decide" between scrolling the rail and
+	// activating the link — and inside a top-layer popover drawer it
+	// frequently chose tap, blocking scroll-on-link entirely. Users
+	// could only scroll the rail by swiping non-interactive whitespace.
+	// Fix: explicit `touch-action: pan-y` so the contract is declarative.
+	it('nav-rail menu `<a>` rows declare `touch-action: pan-y`', () => {
+		const nav = build('nav')
+		const main = build('main', '', 'Body')
+		const menu = build('menu')
+		const li = build('li')
+		const a = build('a', '', 'Link') as HTMLAnchorElement
+		a.href = '#'
+		li.appendChild(a)
+		menu.appendChild(li)
+		nav.appendChild(menu)
+		document.body.append(nav, main)
+
+		expect(style(a, 'touch-action')).toBe('pan-y')
+	})
+
+	it('aside-TOC menu `<a>` rows declare `touch-action: pan-y` (same iOS contract)', () => {
+		const aside = build('aside')
+		const main = build('main', '', 'Body')
+		const menu = build('menu')
+		const li = build('li')
+		const a = build('a', '', 'Section') as HTMLAnchorElement
+		a.href = '#'
+		li.appendChild(a)
+		menu.appendChild(li)
+		aside.appendChild(menu)
+		document.body.append(main, aside)
+
+		expect(style(a, 'touch-action')).toBe('pan-y')
+	})
+
+	it('a bare <menu> outside any popover gets the toolbar shape, not dropdown chrome', () => {
+		// Regression-adjacent: the dropdown chrome (`overflow-block:
+		// auto`, `min-inline-size: 12rem`, `flex-wrap: nowrap`) used to
+		// over-match into nav-rail menus. The bare-menu toolbar shape
+		// stays `flex-wrap: wrap` and no overflow-block auto.
+		const menu = build('menu')
+		mount(menu)
+
+		expect(style(menu, 'flex-direction')).toBe('row')
+		expect(style(menu, 'flex-wrap')).toBe('wrap')
+	})
+})

@@ -302,10 +302,19 @@
 		align-items: stretch;
 		gap: var(--set-tablist-gap);
 
-		// The continuous track sits 1px below the row; tabs overlap it with
-		// a same-colour underline so the active indicator paints OVER the
-		// track without leaving a visible double-line.
-		border-block-end: var(--set-tablist-border-width) solid var(--set-tablist-border-color);
+		// No continuous bottom-track on the bare tablist. The active tab
+		// paints its own `border-block-end-color` indicator (sized by
+		// `--set-tab-active-indicator-size`) under the selected label —
+		// that's the entire visual signal of "this is the active tab,"
+		// no baseline rule needed. An always-on track read as
+		// "opinionated chrome" the framework hadn't earned; the active
+		// tab's own indicator carries the entire signal. Visual variants
+		// of the tablist (`.pills`, `.bordered`, `.vertical`) live in
+		// `composables/_tabs.scss` — `.bordered` there frames the active
+		// tab + panel as one card (Bootstrap `.nav-tabs` look), distinct
+		// from a Mailbox stretched-row underline track. Consumers wanting
+		// a stretched-row baseline set `border-block-end` on the tablist
+		// directly via inline style or a project-specific class.
 		padding-inline: var(--set-tablist-padding-inline);
 		padding-block: var(--set-tablist-padding-block);
 
@@ -327,11 +336,11 @@
 
 		padding-inline: var(--set-tab-padding-inline);
 		padding-block: var(--set-tab-padding-block);
-		// The tab paints its own bottom-border that overlaps the tablist
-		// track. Default: transparent (so the tablist's track shows through);
-		// active: the variant colour. The negative margin pulls the indicator
-		// down by exactly the track width so the two overlap pixel-perfectly.
-		margin-block-end: calc(-1 * var(--set-tablist-border-width, 1px));
+		// The tab paints its own bottom-border indicator. Default state
+		// is `transparent`; `aria-selected="true"` flips the colour to
+		// `--set-tab-active-color` (the variant identity). Bare tablists
+		// have no baseline track to overlap, so the indicator just sits
+		// at the bottom of the tab box — no negative margin needed.
 		border-block-end: var(--set-tab-active-indicator-size) solid transparent;
 
 		color: var(--set-tab-color);

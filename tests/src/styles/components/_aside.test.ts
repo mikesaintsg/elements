@@ -95,3 +95,89 @@ describe('aside — article descendant becomes a callout', () => {
 		expect(token(aside, '--set-callout-padding-inline').trim()).not.toBe('')
 	})
 })
+
+describe('aside — body-shell rail sticky pin only applies in-flow', () => {
+	// Regression: an earlier framework rule pinned the drawer header
+	// with `position: sticky` regardless of whether the rail was
+	// in-flow or popover-mode. On popover-mode rails (the body-shell
+	// rails on mobile when their `:popover="isMobile ? 'auto' :
+	// undefined"` binding takes effect) the sticky pin fought the
+	// drawer's own flex-column layout and pulled the header band
+	// above the drawer's outer edge. Fix: scope the framework's
+	// sticky-pin rule to `body:has(main) > nav:not([popover]) >
+	// header` (and `> aside:not([popover]) > header`) so popover-mode
+	// rails leave the band as a normal flex child.
+	it('in-flow `<nav>` rail header gets `position: sticky` from the framework', () => {
+		const nav = build('nav', '', 'Sidebar')
+		const main = build('main', '', 'Body')
+		const header = build('header')
+		nav.appendChild(header)
+		document.body.append(nav, main)
+
+		expect(style(header, 'position')).toBe('sticky')
+	})
+
+	it('popover-mode `<nav>` rail header does NOT get the sticky pin', () => {
+		const nav = build('nav', '', 'Sidebar')
+		nav.setAttribute('popover', '')
+		const main = build('main', '', 'Body')
+		const header = build('header')
+		nav.appendChild(header)
+		document.body.append(nav, main)
+		nav.showPopover()
+
+		expect(style(header, 'position')).not.toBe('sticky')
+
+		nav.hidePopover()
+	})
+
+	it('popover-mode `<aside>` rail header does NOT get the sticky pin', () => {
+		const aside = build('aside', '', 'TOC')
+		aside.setAttribute('popover', '')
+		const main = build('main', '', 'Body')
+		const header = build('header')
+		aside.appendChild(header)
+		document.body.append(main, aside)
+		aside.showPopover()
+
+		expect(style(header, 'position')).not.toBe('sticky')
+
+		aside.hidePopover()
+	})
+})
+
+describe('aside — `<aside popover>` overrides anchor-position cap', () => {
+	// Regression: the popover surface declares `max-inline-size:
+	// var(--set-anchor-max-inline-size)` (= 18 rem) on `[popover]:not
+	// (output)`. Drawers want viewport-edge geometry, not anchor-
+	// positioned panels capped at 18 rem. Fix: `:is(aside, nav)
+	// [popover]` lifts `--set-popover-max-inline-size`,
+	// `--set-anchor-max-inline-size`, and `--set-popover-viewport-
+	// inset` to 100 dvw / 0 so the surface's clamp formula collapses
+	// to "no clamp" for drawers.
+	it('an `<aside popover>` lifts the anchor cap so the drawer can be edge-to-edge', () => {
+		const aside = build('aside')
+		aside.setAttribute('popover', '')
+		mount(aside)
+		aside.showPopover()
+
+		// `--set-popover-max-inline-size` should be 100 dvw on the
+		// drawer (NOT the 17.25 rem popover-surface default).
+		const cap = token(aside, '--set-popover-max-inline-size').trim()
+		expect(cap).toContain('100dvw')
+
+		aside.hidePopover()
+	})
+
+	it('a `<nav popover>` ALSO lifts the anchor cap (same drawer chrome)', () => {
+		const nav = build('nav')
+		nav.setAttribute('popover', '')
+		mount(nav)
+		nav.showPopover()
+
+		const cap = token(nav, '--set-popover-max-inline-size').trim()
+		expect(cap).toContain('100dvw')
+
+		nav.hidePopover()
+	})
+})
