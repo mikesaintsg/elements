@@ -7,6 +7,7 @@ import AnchorPage from './pages/AnchorPage.vue'
 import FormControlsPage from './pages/FormControlsPage.vue'
 import DetailsPage from './pages/DetailsPage.vue'
 import DialogElementPage from './pages/DialogElementPage.vue'
+import HeadingsPage from './pages/HeadingsPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -55,6 +56,12 @@ const DIALOG_ELEMENT: Route = {
 	group: 'Elements — Interactive',
 	page: DialogElementPage,
 }
+const HEADINGS: Route = {
+	id: 'headings',
+	title: 'Headings',
+	group: 'Elements — Content',
+	page: HeadingsPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -63,6 +70,7 @@ export const routes: readonly Route[] = [
 	FORM_CONTROLS,
 	DETAILS,
 	DIALOG_ELEMENT,
+	HEADINGS,
 ]
 
 interface RouteLocation {
