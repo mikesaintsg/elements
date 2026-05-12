@@ -229,7 +229,74 @@ Adding a class root that wasn't listed in §4 needs a separate reason — write 
 
 ---
 
-## 10. Cross-references
+## 10. App-shell composition patterns
+
+A handful of compositions show up across consumer apps that aren't shipped as a partial but ARE the framework's recommended shape. Documented here so consumers don't re-invent them per project.
+
+### Docs / settings sidebar — grouped nav with optional filter
+
+The semantic structure inside `<nav>`:
+
+```html
+<nav aria-label="Primary">
+	<!-- Mobile drawer close button (display: none on desktop) -->
+	<header>
+		<button aria-label="Close navigation">…</button>
+	</header>
+
+	<!-- Optional filter — `<search>` ships the row chrome -->
+	<search>
+		<label>
+			<span class="sr-only">Filter pages</span>
+			<input type="search" />
+		</label>
+	</search>
+
+	<!-- Groups: alternating `<h6>` + `<menu>` sibling pairs -->
+	<h6>Group label</h6>
+	<menu>
+		<li><a href="…">Page A</a></li>
+		<li><a href="…">Page B</a></li>
+	</menu>
+	<h6>Next group</h6>
+	<menu>…</menu>
+</nav>
+```
+
+**Group structure: `<h6>` + `<menu>` siblings, NOT `<section>` wrappers.**
+
+- `<section>` ships `padding-block` (sectioning-content baseline) that bloats sidebar vertical rhythm.
+- `<section>` inside `<nav>` nests region landmarks unnecessarily — `<nav>` is already a landmark.
+- Heading + menu pairs are the correct semantic for "this heading labels these nav targets."
+- Control inter-group rhythm via h6 asymmetric margins (room above each non-first heading, tight below to its menu) so the heading reads as a label for the list directly beneath it.
+
+### Scroll-container model
+
+The framework's body-shell rail is a SINGLE scroll container by default: the `<nav>` itself has `overflow-y: auto` so all its content (drawer header + any inner regions + menus) scrolls together. This is the right baseline for product navs.
+
+Docs-style sidebars often want a SPLIT scroll container: a fixed-height filter at top, a separately-scrolling list below. That's a CONSUMER composition (not a framework chrome) — the consumer turns `<nav>` into a flex column with `overflow: hidden`, drops in a `flex-shrink: 0` filter card, and a `flex: 1; overflow-y: auto` list region.
+
+Consumers using the split-scroll pattern must ALSO opt the drawer header OUT of the framework's sticky pin (the framework assumes the rail itself scrolls). Override via a higher-specificity rule keyed to the consumer's class:
+
+```css
+nav > header.your-drawer-header-class {
+	position: static;
+	margin: 0;
+	inset-block-start: auto;
+}
+```
+
+The header keeps its `--set-header-padding-*` height, so it stays the same height as the body app bar across the layout.
+
+See `app/browser/styles/showcase.css` for the worked example the framework's showcase uses.
+
+### App bar header parity
+
+`<header>` inside the body-grid (page app bar, mobile drawer header, side rail header) all consume the same `--set-header-padding-*` tokens, so they paint at the same height across the layout. Consumers tightening sidebar padding via `--set-nav-padding-*` should NOT also override `--set-header-padding-*` — the header sizing is intentionally decoupled from the rail padding so the body header and drawer header read as siblings of equal stature.
+
+---
+
+## 11. Cross-references
 
 - [styles.md](./styles.md) — top-level architecture and authoring contract.
 - [tokens.md](./tokens.md) — the token system components consume.

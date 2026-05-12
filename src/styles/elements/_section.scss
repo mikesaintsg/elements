@@ -25,6 +25,18 @@
 // Quirk preserved: `<section>` does NOT reset heading rank — an `<h1>`
 // inside a nested `<section>` is still document-level h1.
 //
+// When NOT to use `<section>`:
+//   - Inside `<nav>` for grouped nav targets. `<nav>` is itself a
+//     sectioning landmark; nesting `<section>` inside adds region
+//     landmarks without meaningful purpose, AND `<section>`'s
+//     `padding-block` baseline bloats sidebar vertical rhythm.
+//     Use alternating `<h6>` + `<menu>` sibling pairs instead — see
+//     `components/_menu.scss` § Grouped sidebars.
+//   - As a generic layout box. That's what `<div>` is for. The
+//     framework treats `<section>` semantically: a thematic content
+//     grouping WITH a heading. If there's no heading and no theme,
+//     reach for `<div>`.
+//
 // Token chain:
 //   --set-section-padding-block  Vertical breathing room above first +
 //                                below last child. Zero when nested under

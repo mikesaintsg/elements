@@ -32,6 +32,23 @@
 //   Tokens declared on bare `<nav>` so they always resolve. Body-shell rail
 //   chrome is scoped to `body:has(main) > nav` so `<nav>` outside the shell
 //   isn't auto-painted as a 14rem column.
+//
+// Scroll-container model:
+//   The body-shell rail is a SINGLE scroll container by default: the
+//   `<nav>` itself has `overflow-y: auto` so all its content (drawer
+//   header + any inner regions + menus) scrolls together. This is the
+//   right baseline for product navs and toolboxes — drop links in, the
+//   rail handles the scroll.
+//
+//   Docs-style sidebars often want a SPLIT scroll container instead:
+//   a fixed-height search / filter at top, a separately-scrolling list
+//   below. That's a consumer composition, not a framework chrome —
+//   the consumer turns `<nav>` into a flex column with `overflow:
+//   hidden`, drops in a `flex-shrink: 0` filter card, and a
+//   `flex: 1; overflow-y: auto` list region. See `app/browser/
+//   styles/showcase.css` for a worked example. Consumers using this
+//   pattern must ALSO opt the drawer header out of its framework
+//   sticky pin (see `_header.scss` § Drawer-header opt-out).
 // ============================================================================
 
 @use '../mixins' as *;

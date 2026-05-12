@@ -33,6 +33,29 @@
 //   - When children are `<li>` wrappers, they get `display: contents` so
 //     the buttons inside become direct flex items of the menu (no extra
 //     box layer to fight).
+//
+// Grouped sidebars (the docs-sidebar pattern):
+//   To render a sidebar with labelled groups of nav targets, use
+//   alternating `<h6>` + `<menu>` sibling pairs inside `<nav>`:
+//
+//      <nav>
+//        <h6>Group label</h6>
+//        <menu>
+//          <li><a href=…>Page A</a></li>
+//          <li><a href=…>Page B</a></li>
+//        </menu>
+//        <h6>Next group</h6>
+//        <menu>…</menu>
+//      </nav>
+//
+//   DO NOT wrap each group in `<section>`. `<section>` ships
+//   `padding-block` (sectioning content baseline — see `_section.scss`)
+//   that bloats the sidebar's vertical rhythm, AND nests landmarks
+//   unnecessarily inside the `<nav>` landmark. Heading + menu sibling
+//   pairs are the right semantic for "heading labels a list of nav
+//   targets" — control inter-group rhythm via h6 asymmetric margins
+//   (room above, tight below) so each heading reads as a label for
+//   the menu directly beneath it.
 // ============================================================================
 
 @use '../mixins' as *;
