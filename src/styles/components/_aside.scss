@@ -267,6 +267,9 @@
 			--set-variant-background-color: transparent;
 			--set-variant-color: currentColor;
 			--set-variant-border-color: transparent;
+			--set-variant-subtle-background-color: transparent;
+			--set-variant-subtle-color: currentColor;
+			--set-variant-subtle-border-color: transparent;
 		}
 	}
 
@@ -336,14 +339,19 @@
 
 	// Same variant-context reset as `aside[role='alert'] > button:last-child`,
 	// but for close / dismiss buttons living inside a header or footer band.
-	// Without the reset, a `.warning` alert propagates the variant context
-	// into the close button and it paints filled-amber.
+	// Covers BOTH the bare-variant tier and the `.subtle` modifier tier
+	// (same reset surface as the drawer close button below) so consumers
+	// get consistent behavior whether the dismiss button is bare or
+	// `<button class="subtle">`.
 	aside[role='alert'] > header > button:last-child,
 	aside[role='alert'] > footer > button:last-child {
 		margin-inline-start: auto;
 		--set-variant-background-color: transparent;
 		--set-variant-color: currentColor;
 		--set-variant-border-color: transparent;
+		--set-variant-subtle-background-color: transparent;
+		--set-variant-subtle-color: currentColor;
+		--set-variant-subtle-border-color: transparent;
 	}
 
 	// --------------------------------------------------------------------------
@@ -487,16 +495,30 @@
 		--set-anchor-max-inline-size: 100dvw;
 		--set-popover-viewport-inset: 0;
 
+		// Zero the popover surface's padding — each drawer region
+		// (header, body, footer) supplies its own padding. Matches
+		// Bootstrap's offcanvas pattern (`.offcanvas` has no padding,
+		// `.offcanvas-header` / `.offcanvas-body` each pad themselves).
+		--set-popover-padding-inline: 0;
+		--set-popover-padding-block: 0;
+
+		// Drawer's own region-padding token — header / footer / body
+		// each consume this so retuning at `:root` retunes every region
+		// uniformly. Matches mailbox's `--bs-offcanvas-padding-{x,y}`.
+		--set-aside-drawer-padding-inline: calc(var(--spacing) * 4);
+		--set-aside-drawer-padding-block: calc(var(--spacing) * 4);
+		--set-aside-drawer-band-gap: calc(var(--spacing) * 3);
+
 		position: fixed;
 		margin: 0;
 		max-inline-size: 100dvw;
 		max-block-size: 100dvh;
 
-		// Inner-stack rhythm — `<header>` / body / `<footer>` flow as a
-		// flex-column with breathing space between regions. Matches the
-		// Bootstrap offcanvas header / body / footer rhythm.
+		// Inner-stack — flex-column with NO gap (each region carries
+		// its own padding; a parent gap would double-count whitespace
+		// between bands and body).
 		flex-direction: column;
-		gap: calc(var(--spacing) * 4);
+		gap: 0;
 
 		// Drawer shadow — subtle elevation so the panel reads as a layer
 		// above the page rather than a flush surface that slid in from
@@ -632,6 +654,89 @@
 		}
 	}
 
+	// --------------------------------------------------------------------------
+	// Header / footer bands + body padding.
+	//
+	// Bootstrap-parity offcanvas regions: a direct-child `<header>` (first)
+	// and / or `<footer>` (last) pad themselves to drawer-gutter values
+	// and draw a divider between band and body. The "body" is implicit —
+	// every direct child that isn't header / footer IS the body and
+	// inherits the same drawer-padding for inline + block.
+	//
+	// `flex-shrink: 0` on the bands keeps them at intrinsic height when
+	// the body grows tall and forces a scroll. Body content uses
+	// `flex: 1` + `overflow-y: auto` so the long-form list inside the
+	// drawer scrolls without the bands scrolling along with it.
+	//
+	// Pattern mirrors the existing alert (`aside[role='alert']`) and
+	// dialog (`<dialog>`) header / footer chrome — close-button
+	// placement + variant-context reset are identical across all three
+	// surfaces so consumers learn the contract once.
+	// --------------------------------------------------------------------------
+
+	aside[popover] > header:first-child,
+	aside[popover] > footer:last-child {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		gap: var(--set-aside-drawer-band-gap);
+		padding-inline: var(--set-aside-drawer-padding-inline);
+		padding-block: var(--set-aside-drawer-padding-block);
+		// Reset framework heading margins inside the band so the band's
+		// padding owns the rhythm (matching the dialog header pattern).
+		& > :is(h1, h2, h3, h4, h5, h6) {
+			margin-block: 0;
+		}
+	}
+
+	aside[popover] > header:first-child {
+		border-block-end: 1px solid var(--set-popover-border-color);
+	}
+
+	aside[popover] > footer:last-child {
+		// Trailing-action row — buttons pile up on the inline-end edge.
+		justify-content: flex-end;
+		flex-wrap: wrap;
+		border-block-start: 1px solid var(--set-popover-border-color);
+	}
+
+	// Body region — every direct child that isn't a header / footer
+	// band. Pads itself to the drawer gutter; `flex: 1 + min-block-
+	// size: 0 + overflow-y: auto` so the body scrolls independently
+	// of the bands when content overflows. `overscroll-behavior:
+	// contain` keeps a long body from rubber-banding the page behind
+	// it on touch devices (mailbox's `.offcanvas-body` pattern).
+	aside[popover] > :not(header):not(footer) {
+		flex: 1 1 auto;
+		min-block-size: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding-inline: var(--set-aside-drawer-padding-inline);
+		padding-block: var(--set-aside-drawer-padding-block);
+	}
+
+	// Close button inside a header / footer band — same idiom the
+	// alert dismiss button uses (`aside[role='alert'] > header > button:
+	// last-child` above). `margin-inline-start: auto` pushes the
+	// trailing `<button aria-label="Close">` to the inline-end edge of
+	// the band so it sits opposite the title. Variant-context reset
+	// stops the drawer's `.{variant}` cascade from filling the close
+	// button — covers BOTH the bare-variant tier (`--set-variant-*`)
+	// AND the subtle tier (`--set-variant-subtle-*`) so a
+	// `<button class="subtle">` close button inside a `.warning`
+	// drawer doesn't paint amber-on-amber (same color as the drawer's
+	// bg-subtle body) and disappear against the band.
+	aside[popover] > header > button:last-child,
+	aside[popover] > footer > button:last-child {
+		margin-inline-start: auto;
+		--set-variant-background-color: transparent;
+		--set-variant-color: currentColor;
+		--set-variant-border-color: transparent;
+		--set-variant-subtle-background-color: transparent;
+		--set-variant-subtle-color: currentColor;
+		--set-variant-subtle-border-color: transparent;
+	}
+
 	// Variant tinting — through the popover surface's tokens so the
 	// background / color / border all retint coherently. Drawers and
 	// alerts share the same triplet (bg-subtle body, text-emphasis text,
@@ -655,8 +760,4 @@
 			border-color: CanvasText;
 		}
 	}
-
-	// useAside drawer chrome lives in `composables/_aside.scss` so the
-	// popover-mode geometry overrides surface defaults from a later
-	// cascade layer (composables sits after surfaces).
 }

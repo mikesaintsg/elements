@@ -359,12 +359,11 @@ const restore = (): void => {
 					popovertarget="aside-drawer-start"
 					popovertargetaction="hide"
 					aria-label="Close"
-					style="margin-inline-start: auto"
 				>
 					×
 				</button>
 			</header>
-			<p style="padding-inline: 1rem">
+			<p>
 				Slides in from the inline-start edge (left in LTR, right in RTL). Full block-height. Ideal
 				for primary navigation, filter panels, or workspace switchers.
 			</p>
@@ -379,12 +378,11 @@ const restore = (): void => {
 					popovertarget="aside-drawer-end"
 					popovertargetaction="hide"
 					aria-label="Close"
-					style="margin-inline-start: auto"
 				>
 					×
 				</button>
 			</header>
-			<p style="padding-inline: 1rem">
+			<p>
 				Slides in from the inline-end edge (right in LTR). Full block-height. The default placement
 				— ideal for inspectors, settings panels, and detail views that supplement the main content.
 			</p>
@@ -399,12 +397,11 @@ const restore = (): void => {
 					popovertarget="aside-drawer-top"
 					popovertargetaction="hide"
 					aria-label="Close"
-					style="margin-inline-start: auto"
 				>
 					×
 				</button>
 			</header>
-			<p style="padding-inline: 1rem">
+			<p>
 				Slides down from the block-start edge. 30dvh tall by default. Useful for command palettes,
 				quick search, or page-level notifications that need more room than a toast.
 			</p>
@@ -419,12 +416,11 @@ const restore = (): void => {
 					popovertarget="aside-drawer-bottom"
 					popovertargetaction="hide"
 					aria-label="Close"
-					style="margin-inline-start: auto"
 				>
 					×
 				</button>
 			</header>
-			<p style="padding-inline: 1rem">
+			<p>
 				Slides up from the block-end edge. 30dvh tall by default. Common on mobile for action
 				sheets, share menus, or contextual pickers (mirrors iOS / Material bottom sheets).
 			</p>
@@ -452,12 +448,11 @@ const restore = (): void => {
 					popovertarget="aside-drawer-primary"
 					popovertargetaction="hide"
 					aria-label="Close"
-					style="margin-inline-start: auto"
 				>
 					×
 				</button>
 			</header>
-			<p style="padding-inline: 1rem">
+			<p>
 				Tinted through the popover surface's <code>--set-popover-*</code> token triplet (<code
 					>bg-subtle</code
 				>
@@ -475,12 +470,11 @@ const restore = (): void => {
 					popovertarget="aside-drawer-success"
 					popovertargetaction="hide"
 					aria-label="Close"
-					style="margin-inline-start: auto"
 				>
 					×
 				</button>
 			</header>
-			<p style="padding-inline: 1rem">
+			<p>
 				Success variant — green-tinted body, emphasis-colored text. The panel doesn't announce
 				itself like a status banner does (no implicit live region); user-triggered, user-dismissed.
 			</p>
@@ -495,12 +489,11 @@ const restore = (): void => {
 					popovertarget="aside-drawer-warning"
 					popovertargetaction="hide"
 					aria-label="Close"
-					style="margin-inline-start: auto"
 				>
 					×
 				</button>
 			</header>
-			<p style="padding-inline: 1rem">
+			<p>
 				Warning variant — amber-tinted. Suitable for "are you sure?" confirmation drawers where the
 				user needs to acknowledge a state change without leaving the current view.
 			</p>
@@ -515,12 +508,11 @@ const restore = (): void => {
 					popovertarget="aside-drawer-danger"
 					popovertargetaction="hide"
 					aria-label="Close"
-					style="margin-inline-start: auto"
 				>
 					×
 				</button>
 			</header>
-			<p style="padding-inline: 1rem">
+			<p>
 				Danger variant — red-tinted. For genuinely destructive actions prefer a
 				<code>&lt;dialog&gt;</code> (modal, focus-trapped, screen-reader announces as a modal); the
 				drawer is fine for less-final destructive flows like "remove from list" or "archive".
