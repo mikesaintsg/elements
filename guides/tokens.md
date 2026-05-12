@@ -258,14 +258,21 @@ Seven variants registered via `@theme` in [`_theme.scss`](../src/styles/_theme.s
 	--color-primary: var(--color-blue-600);
 	--color-secondary: var(--color-slate-600);
 	--color-tertiary: var(--color-violet-600);
-	--color-success: var(--color-green-600);
-	--color-warning: var(--color-amber-500);
-	--color-danger: var(--color-red-600);
-	--color-information: var(--color-sky-600);
+	--color-success: var(--color-green-700);
+	--color-warning: var(--color-amber-700);
+	--color-danger: var(--color-red-700);
+	--color-information: var(--color-sky-700);
 }
 ```
 
-Every variant references Tailwind's own oklch palette via `var(--color-{hue}-{step})`. This is the framework's zero-gap with Tailwind: consumers who customise Tailwind's palette automatically retune the framework variants, and there is no HSL or hand-tuned color value anywhere in the framework. The `-600` step is the standard "action surface" lightness — saturated enough to read as identity, calm enough on body text. `--color-warning` uses `-500` because amber/yellow at `-600` reads as olive (low luminance) and loses its caution identity.
+Every variant references Tailwind's own oklch palette via `var(--color-{hue}-{step})`. This is the framework's zero-gap with Tailwind: consumers who customise Tailwind's palette automatically retune the framework variants, and there is no HSL or hand-tuned color value anywhere in the framework outside the `@theme` block.
+
+**Variant step selection — the all-variants-take-white-text contract.** Four variants sit on the `-700` step (`success`, `warning`, `danger`, `information`) and three on `-600` (`primary`, `secondary`, `tertiary`). Every variant clears WCAG AA contrast for **white text** on its fill — that's the single rule that picks the step:
+
+- `primary` blue-600, `secondary` slate-600, `tertiary` violet-600 — `-600` already clears AA with white text (the hue's natural luminance + chroma stays low enough).
+- `success` green-700, `warning` amber-700, `danger` red-700, `information` sky-700 — bumped one step because their `-600` siblings are too bright (white-on-green-600 = 3.30, white-on-amber-500 = 1.80, white-on-red-600 = 4.6 but flagged as "fire-engine intense", white-on-sky-600 = 4.02). The `-700` step keeps the hue + identity but pulls luminance + chroma into the "comfortable, calm" range (M3 error-40 / Atlassian danger-bold / Polaris critical all sit in the same territory).
+
+Tailwind v4 tree-shakes palette tokens not referenced by an emitted utility class — the four `-700` steps are re-pinned explicitly in `@theme` so they survive the bundle.
 
 For each variant, a `{bg-subtle, text-emphasis, border-subtle}` triplet is declared on `:root` (outside `@theme` so they can re-resolve under `[data-theme="dark"]`):
 
@@ -282,14 +289,12 @@ Alongside the triplet, each variant exposes a single `--color-{variant}-on-canva
 ```scss
 // Light :root
 --color-primary-on-canvas: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
---color-warning-on-canvas: color-mix(in oklab, var(--color-warning) 30%, var(--color-text));
 
 // Dark :root (slightly more variant chroma since canvas has no tint)
 --color-primary-on-canvas: color-mix(in oklab, var(--color-primary) 80%, var(--color-text));
---color-warning-on-canvas: var(--color-warning);
 ```
 
-Naming follows Material Design's `on-X` convention — the suffix names the SURFACE the color is safe ON. The bare `-600` step that reads as a saturated FILL doesn't have enough luminance contrast to clear WCAG AA when painted as TEXT on canvas (amber/green/sky fail in light mode; every variant fails in dark mode at ~3–4 ratio). The `on-canvas` tier solves it with a per-mode `color-mix(in oklab, variant {70|80}%, --color-text)` so the shade auto-inverts polarity between light and dark and clears AA on both canvases.
+Naming follows Material Design's `on-X` convention — the suffix names the SURFACE the color is safe ON. The bare `-600` step that reads as a saturated FILL doesn't have enough luminance contrast to clear WCAG AA when painted as TEXT on canvas (amber/green/sky fail in light mode; every variant fails in dark mode at ~3–4 ratio). The `on-canvas` tier solves it with a per-mode `color-mix(in oklab, variant {70|80}%, --color-text)` so the shade auto-inverts polarity between light and dark and clears AA on both canvases. After the variant-step shift the formula is uniform across all seven variants — the prior warning special case (30% mix / bare amber) collapsed back to the standard ratios.
 
 `text-emphasis` and `on-canvas` are decoupled by name even though their formulas match today: `text-emphasis` is "text emphasized on `bg-subtle`" (variant-tinted bg), `on-canvas` is "text safe on `--color-canvas`" (no bg tint). Canvas-context can retune independently of bg-subtle-context if a future theme needs divergent shades. Bare variant anchors (`elements/_a.scss`), bare variant labels (`elements/_label.scss`), header/footer/menu-current foreground hover states, and any inline variant text consume the `on-canvas` tier through `--set-variant-on-canvas-color`.
 
