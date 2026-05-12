@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T17:41:13.609Z" />
+		<meta name="build-id" content="2026-05-12T17:57:36.151Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -8763,25 +8763,26 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				yu = [`aria-expanded`],
+				yu = [`popovertarget`],
 				bu = [`aria-label`],
-				xu = [`aria-expanded`],
-				Su = [`data-open`],
-				Cu = { class: `showcase-drawer-header` },
-				wu = { class: `showcase-sidebar-scroll` },
-				Tu = [`data-open`],
-				Eu = { class: `showcase-drawer-header` },
-				Du = { class: `font-mono text-xs` }
+				xu = [`popovertarget`],
+				Su = [`popover`],
+				Cu = { class: `showcase-sidebar-scroll` },
+				wu = [`popover`],
+				Tu = { class: `font-mono text-xs` }
 			mo(
 				B({
 					__name: `App`,
 					setup(e) {
 						let t = Zo(),
-							n = L(!1),
+							n = L(``),
 							r = L(!1),
-							i = L(``),
-							a = _a(() => {
-								let e = i.value.trim().toLowerCase()
+							i = typeof window < `u` ? window.matchMedia(`(max-width: 960px)`) : null,
+							a = () => {
+								r.value = i?.matches ?? !1
+							},
+							o = _a(() => {
+								let e = n.value.trim().toLowerCase()
 								return e
 									? nu.filter(
 											(t) =>
@@ -8791,11 +8792,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										)
 									: nu
 							}),
-							o = _a(() => lu.value.page),
-							s = L(null),
-							c = async (e) => {
+							s = _a(() => lu.value.page),
+							c = L(null),
+							l = async (e) => {
 								await _n()
-								let t = s.value
+								let t = c.value
 								if (t) {
 									if (e) {
 										let n = t.querySelector(`#${CSS.escape(e)}`)
@@ -8806,42 +8807,41 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									}
 									t.scrollTop = 0
 								}
+							},
+							u = () => {
+								for (let e of [`primary-rail`, `toc-rail`]) {
+									let t = document.getElementById(e)
+									t?.matches(`:popover-open`) && t.hidePopover()
+								}
 							}
 						Fn([su, cu], ([, e]) => {
-							;(c(e), (n.value = !1), (r.value = !1))
+							;(l(e), u())
 						})
-						let l = () => {
-								;((n.value = !1), (r.value = !1))
-							},
-							u = (e) => {
-								;(e.key === `/` &&
-									!document.querySelector(`input:focus, textarea:focus`) &&
-									(e.preventDefault(), document.querySelector(`#sidebar-filter`)?.focus()),
-									e.key === `Escape` && ((n.value = !1), (r.value = !1)))
-							}
+						let d = (e) => {
+							e.key === `/` &&
+								!document.querySelector(`input:focus, textarea:focus`) &&
+								(e.preventDefault(), document.querySelector(`#sidebar-filter`)?.focus())
+						}
 						;(rr(() => {
-							;(document.addEventListener(`keydown`, u), c(cu.value))
+							;(a(),
+								i?.addEventListener(`change`, a),
+								document.addEventListener(`keydown`, d),
+								l(cu.value))
 						}),
 							sr(() => {
-								document.removeEventListener(`keydown`, u)
+								;(i?.removeEventListener(`change`, a), document.removeEventListener(`keydown`, d))
 							}))
-						let d = (e) => {
-								;(e.preventDefault(), uu(`home`), (n.value = !1), (r.value = !1))
-							},
-							f = () => {
-								;((n.value = !n.value), n.value && (r.value = !1))
+						let f = (e) => {
+								;(e.preventDefault(), uu(`home`), u())
 							},
 							p = () => {
-								;((r.value = !r.value), r.value && (n.value = !1))
-							},
-							m = () => {
 								t.toggle()
 							},
-							h = _a(() => {
+							m = _a(() => {
 								let e = t.theme.value
 								return e === `dark` ? `moon` : e === `light` ? `sun` : `system`
 							})
-						return (e, c) => (
+						return (e, i) => (
 							q(),
 							J(
 								G,
@@ -8854,11 +8854,10 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												type: `button`,
 												class: `subtle showcase-nav-toggle`,
 												'aria-label': `Toggle navigation`,
-												'aria-expanded': n.value,
-												onClick: f,
+												popovertarget: r.value ? `primary-rail` : void 0,
 											},
 											[
-												...(c[5] ||= [
+												...(i[1] ||= [
 													Y(
 														`i`,
 														{
@@ -8874,8 +8873,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 											8,
 											yu,
 										),
-										Y(`a`, { href: `#/home`, class: `flex-1`, onClick: d }, [
-											...(c[6] ||= [Y(`strong`, null, `Elements`, -1)]),
+										Y(`a`, { href: `#/home`, class: `flex-1`, onClick: f }, [
+											...(i[2] ||= [Y(`strong`, null, `Elements`, -1)]),
 										]),
 										Y(
 											`button`,
@@ -8883,7 +8882,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												type: `button`,
 												class: `subtle`,
 												'aria-label': `Switch theme (currently ${Yt(t).theme.value})`,
-												onClick: m,
+												onClick: p,
 											},
 											[
 												Y(
@@ -8891,7 +8890,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 													{
 														class: `icon`,
 														'aria-hidden': `true`,
-														style: de({ '--icon': `var(--set-icon-${h.value})` }),
+														style: de({ '--icon': `var(--set-icon-${m.value})` }),
 													},
 													null,
 													4,
@@ -8906,11 +8905,10 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												type: `button`,
 												class: `subtle showcase-toc-toggle`,
 												'aria-label': `Toggle table of contents`,
-												'aria-expanded': r.value,
-												onClick: p,
+												popovertarget: r.value ? `toc-rail` : void 0,
 											},
 											[
-												...(c[7] ||= [
+												...(i[3] ||= [
 													Y(
 														`i`,
 														{
@@ -8929,42 +8927,45 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									]),
 									Y(
 										`nav`,
-										{ 'aria-label': `Primary`, 'data-open': n.value ? `` : null },
+										{
+											id: `primary-rail`,
+											'aria-label': `Primary`,
+											popover: r.value ? `auto` : void 0,
+										},
 										[
-											Y(`header`, Cu, [
-												Y(
-													`button`,
-													{
-														type: `button`,
-														class: `subtle icon-only showcase-drawer-close showcase-drawer-close-start`,
-														'aria-label': `Close navigation`,
-														onClick: (c[0] ||= (e) => (n.value = !1)),
-													},
-													[
-														...(c[8] ||= [
-															Y(
-																`i`,
-																{
-																	class: `icon`,
-																	'aria-hidden': `true`,
-																	style: { '--icon': `var(--set-icon-close)` },
-																},
-																null,
-																-1,
-															),
-														]),
-													],
-												),
-											]),
+											(i[5] ||= Y(
+												`header`,
+												{ class: `showcase-drawer-header` },
+												[
+													Y(
+														`button`,
+														{
+															type: `button`,
+															class: `subtle icon-only showcase-drawer-close showcase-drawer-close-start`,
+															'aria-label': `Close navigation`,
+															popovertarget: `primary-rail`,
+															popovertargetaction: `hide`,
+														},
+														[
+															Y(`i`, {
+																class: `icon`,
+																'aria-hidden': `true`,
+																style: { '--icon': `var(--set-icon-close)` },
+															}),
+														],
+													),
+												],
+												-1,
+											)),
 											Y(`search`, null, [
 												Y(`label`, null, [
-													(c[9] ||= Y(`span`, { class: `sr-only` }, `Filter pages`, -1)),
+													(i[4] ||= Y(`span`, { class: `sr-only` }, `Filter pages`, -1)),
 													kn(
 														Y(
 															`input`,
 															{
 																id: `sidebar-filter`,
-																'onUpdate:modelValue': (c[1] ||= (e) => (i.value = e)),
+																'onUpdate:modelValue': (i[0] ||= (e) => (n.value = e)),
 																type: `search`,
 																placeholder: `Filter… (press /)`,
 																autocomplete: `off`,
@@ -8972,85 +8973,68 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 															null,
 															512,
 														),
-														[[lo, i.value]],
+														[[lo, n.value]],
 													),
 												]),
 											]),
-											Y(`div`, wu, [
-												X(
-													pu,
-													{
-														routes: a.value,
-														active: Yt(lu).id,
-														onNavigate: (c[2] ||= (e) => (n.value = !1)),
-													},
-													null,
-													8,
-													[`routes`, `active`],
-												),
+											Y(`div`, Cu, [
+												X(pu, { routes: o.value, active: Yt(lu).id, onNavigate: u }, null, 8, [
+													`routes`,
+													`active`,
+												]),
 											]),
 										],
 										8,
 										Su,
 									),
-									Y(`main`, { ref_key: `scrollerRef`, ref: s }, [(q(), Ii(mr(o.value)))], 512),
+									Y(`main`, { ref_key: `scrollerRef`, ref: c }, [(q(), Ii(mr(s.value)))], 512),
 									Y(
 										`aside`,
-										{ 'aria-label': `On this page`, 'data-open': r.value ? `` : null },
+										{
+											id: `toc-rail`,
+											'aria-label': `On this page`,
+											popover: r.value ? `auto` : void 0,
+										},
 										[
-											Y(`header`, Eu, [
-												Y(
-													`button`,
-													{
-														type: `button`,
-														class: `subtle icon-only showcase-drawer-close showcase-drawer-close-end`,
-														'aria-label': `Close table of contents`,
-														onClick: (c[3] ||= (e) => (r.value = !1)),
-													},
-													[
-														...(c[10] ||= [
-															Y(
-																`i`,
-																{
-																	class: `icon`,
-																	'aria-hidden': `true`,
-																	style: { '--icon': `var(--set-icon-close)` },
-																},
-																null,
-																-1,
-															),
-														]),
-													],
-												),
-											]),
+											(i[6] ||= Y(
+												`header`,
+												{ class: `showcase-drawer-header` },
+												[
+													Y(
+														`button`,
+														{
+															type: `button`,
+															class: `subtle icon-only showcase-drawer-close showcase-drawer-close-end`,
+															'aria-label': `Close table of contents`,
+															popovertarget: `toc-rail`,
+															popovertargetaction: `hide`,
+														},
+														[
+															Y(`i`, {
+																class: `icon`,
+																'aria-hidden': `true`,
+																style: { '--icon': `var(--set-icon-close)` },
+															}),
+														],
+													),
+												],
+												-1,
+											)),
 											X(
 												vu,
-												{
-													scroller: s.value,
-													'current-id': Yt(lu).id,
-													onNavigate: (c[4] ||= (e) => (r.value = !1)),
-												},
+												{ scroller: c.value, 'current-id': Yt(lu).id, onNavigate: u },
 												null,
 												8,
 												[`scroller`, `current-id`],
 											),
 										],
 										8,
-										Tu,
+										wu,
 									),
 									Y(`footer`, null, [
-										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T17:41:13.609Z`)), 1),
+										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
+										Y(`small`, Tu, `build ` + k(Yt(`2026-05-12T17:57:36.151Z`)), 1),
 									]),
-									n.value || r.value
-										? (q(),
-											J(`div`, {
-												key: 0,
-												class: `showcase-backdrop`,
-												'aria-hidden': `true`,
-												onClick: l,
-											}))
-										: Wi(``, !0),
 								],
 								64,
 							)
@@ -12273,7 +12257,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-aside-drawer-padding-block: calc(var(--spacing) * 4);
 					--set-aside-drawer-band-gap: calc(var(--spacing) * 3);
 				}
-				aside[popover] {
+				:is(aside, nav)[popover] {
 					--set-popover-max-inline-size: 100dvw;
 					--set-anchor-max-inline-size: 100dvw;
 					--set-popover-viewport-inset: 0;
@@ -12293,11 +12277,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					position: fixed;
 				}
 				@media (prefers-reduced-motion: reduce) {
-					aside[popover] {
+					:is(aside, nav)[popover] {
 						transition: none;
 					}
 				}
-				aside[popover] {
+				:is(aside, nav)[popover] {
 					inline-size: min(var(--set-aside-drawer-inline-size), 100dvw);
 					border-inline-start: 1px solid var(--set-popover-border-color);
 					opacity: 0;
@@ -12306,46 +12290,46 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					inset-inline: auto 0;
 					transform: translate(100%);
 				}
-				aside[popover]:popover-open {
+				:is(aside, nav)[popover]:popover-open {
 					opacity: 1;
 					display: flex;
 					transform: translate(0);
 				}
 				@starting-style {
-					aside[popover]:popover-open {
+					:is(aside, nav)[popover]:popover-open {
 						opacity: 0;
 						transform: translate(100%);
 					}
 				}
-				aside[popover].start {
+				:is(aside, nav)[popover].start {
 					border-inline-start: 0;
 					border-inline-end: 1px solid var(--set-popover-border-color);
 					inset-inline: 0 auto;
 					transform: translate(-100%);
 				}
-				aside[popover].start:popover-open {
+				:is(aside, nav)[popover].start:popover-open {
 					transform: translate(0);
 				}
 				@starting-style {
-					aside[popover].start:popover-open {
+					:is(aside, nav)[popover].start:popover-open {
 						transform: translate(-100%);
 					}
 				}
-				aside[popover].end {
+				:is(aside, nav)[popover].end {
 					border-inline-start: 1px solid var(--set-popover-border-color);
 					border-inline-end: 0;
 					inset-inline: auto 0;
 					transform: translate(100%);
 				}
-				aside[popover].end:popover-open {
+				:is(aside, nav)[popover].end:popover-open {
 					transform: translate(0);
 				}
 				@starting-style {
-					aside[popover].end:popover-open {
+					:is(aside, nav)[popover].end:popover-open {
 						transform: translate(100%);
 					}
 				}
-				aside[popover].top {
+				:is(aside, nav)[popover].top {
 					inline-size: 100dvw;
 					block-size: var(--set-aside-drawer-block-size);
 					border-block-start: 0;
@@ -12355,15 +12339,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					inset-inline: 0;
 					transform: translateY(-100%);
 				}
-				aside[popover].top:popover-open {
+				:is(aside, nav)[popover].top:popover-open {
 					transform: translateY(0);
 				}
 				@starting-style {
-					aside[popover].top:popover-open {
+					:is(aside, nav)[popover].top:popover-open {
 						transform: translateY(-100%);
 					}
 				}
-				aside[popover].bottom {
+				:is(aside, nav)[popover].bottom {
 					inline-size: 100dvw;
 					block-size: var(--set-aside-drawer-block-size);
 					border-inline: 0;
@@ -12373,16 +12357,33 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					inset-inline: 0;
 					transform: translateY(100%);
 				}
-				aside[popover].bottom:popover-open {
+				:is(aside, nav)[popover].bottom:popover-open {
 					transform: translateY(0);
 				}
 				@starting-style {
-					aside[popover].bottom:popover-open {
+					:is(aside, nav)[popover].bottom:popover-open {
 						transform: translateY(100%);
 					}
 				}
-				aside[popover] > header:first-child,
-				aside[popover] > footer:last-child {
+				:is(aside, nav)[popover]:not(:popover-open) {
+					display: none;
+				}
+				nav[popover] {
+					border-inline-start: 0;
+					border-inline-end: 1px solid var(--set-popover-border-color);
+					inset-inline: 0 auto;
+					transform: translate(-100%);
+				}
+				nav[popover]:popover-open {
+					transform: translate(0);
+				}
+				@starting-style {
+					nav[popover]:popover-open {
+						transform: translate(-100%);
+					}
+				}
+				:is(aside, nav)[popover] > header:first-child,
+				:is(aside, nav)[popover] > footer:last-child {
 					align-items: center;
 					gap: var(--set-aside-drawer-band-gap);
 					padding-inline: var(--set-aside-drawer-padding-inline);
@@ -12390,19 +12391,19 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					flex-shrink: 0;
 					display: flex;
 				}
-				aside[popover] > header:first-child > :is(h1, h2, h3, h4, h5, h6),
-				aside[popover] > footer:last-child > :is(h1, h2, h3, h4, h5, h6) {
+				:is(aside, nav)[popover] > header:first-child > :is(h1, h2, h3, h4, h5, h6),
+				:is(aside, nav)[popover] > footer:last-child > :is(h1, h2, h3, h4, h5, h6) {
 					margin-block: 0;
 				}
-				aside[popover] > header:first-child {
+				:is(aside, nav)[popover] > header:first-child {
 					border-block-end: 1px solid var(--set-popover-border-color);
 				}
-				aside[popover] > footer:last-child {
+				:is(aside, nav)[popover] > footer:last-child {
 					border-block-start: 1px solid var(--set-popover-border-color);
 					flex-wrap: wrap;
 					justify-content: flex-end;
 				}
-				aside[popover] > :not(header):not(footer) {
+				:is(aside, nav)[popover] > :not(header):not(footer) {
 					overscroll-behavior: contain;
 					min-block-size: 0;
 					padding-inline: var(--set-aside-drawer-padding-inline);
@@ -12410,8 +12411,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					flex: auto;
 					overflow-y: auto;
 				}
-				aside[popover] > header > button:last-child,
-				aside[popover] > footer > button:last-child {
+				:is(aside, nav)[popover] > header > button:last-child,
+				:is(aside, nav)[popover] > footer > button:last-child {
 					--set-variant-background-color: transparent;
 					--set-variant-color: currentColor;
 					--set-variant-border-color: transparent;
@@ -12420,43 +12421,43 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-variant-subtle-border-color: transparent;
 					margin-inline-start: auto;
 				}
-				aside[popover].primary {
+				:is(aside, nav)[popover].primary {
 					--set-popover-color: var(--color-primary-text-emphasis);
 					--set-popover-background-color: var(--color-primary-bg-subtle);
 					--set-popover-border-color: var(--color-primary-border-subtle);
 				}
-				aside[popover].secondary {
+				:is(aside, nav)[popover].secondary {
 					--set-popover-color: var(--color-secondary-text-emphasis);
 					--set-popover-background-color: var(--color-secondary-bg-subtle);
 					--set-popover-border-color: var(--color-secondary-border-subtle);
 				}
-				aside[popover].tertiary {
+				:is(aside, nav)[popover].tertiary {
 					--set-popover-color: var(--color-tertiary-text-emphasis);
 					--set-popover-background-color: var(--color-tertiary-bg-subtle);
 					--set-popover-border-color: var(--color-tertiary-border-subtle);
 				}
-				aside[popover].success {
+				:is(aside, nav)[popover].success {
 					--set-popover-color: var(--color-success-text-emphasis);
 					--set-popover-background-color: var(--color-success-bg-subtle);
 					--set-popover-border-color: var(--color-success-border-subtle);
 				}
-				aside[popover].warning {
+				:is(aside, nav)[popover].warning {
 					--set-popover-color: var(--color-warning-text-emphasis);
 					--set-popover-background-color: var(--color-warning-bg-subtle);
 					--set-popover-border-color: var(--color-warning-border-subtle);
 				}
-				aside[popover].danger {
+				:is(aside, nav)[popover].danger {
 					--set-popover-color: var(--color-danger-text-emphasis);
 					--set-popover-background-color: var(--color-danger-bg-subtle);
 					--set-popover-border-color: var(--color-danger-border-subtle);
 				}
-				aside[popover].information {
+				:is(aside, nav)[popover].information {
 					--set-popover-color: var(--color-information-text-emphasis);
 					--set-popover-background-color: var(--color-information-bg-subtle);
 					--set-popover-border-color: var(--color-information-border-subtle);
 				}
 				@media (forced-colors: active) {
-					aside[popover] {
+					:is(aside, nav)[popover] {
 						color: canvastext;
 						background-color: canvas;
 						border-color: canvastext;
@@ -12563,46 +12564,6 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				}
 				body {
 					--set-body-rail-width: min(20rem, 85vw);
-				}
-				@media (width<=960px) {
-					:is(
-						body:has(main) > nav,
-						body:has(main) > * > nav,
-						body:has(main) > aside,
-						body:has(main) > * > aside
-					) {
-						inline-size: var(--set-body-rail-width);
-						z-index: var(--set-z-index-fixed, 1030);
-						background-color: var(--color-surface);
-						box-shadow: var(--set-box-shadow-lg);
-						position: fixed;
-						inset-block: 0;
-					}
-					:is(body:has(main) > nav, body:has(main) > * > nav) {
-						inset-inline-start: 0;
-						transform: translate(-100%);
-					}
-					:is(body:has(main) > aside, body:has(main) > * > aside) {
-						inset-inline-end: 0;
-						transform: translate(100%);
-					}
-					:is(
-						body:has(main) > nav,
-						body:has(main) > * > nav,
-						body:has(main) > aside,
-						body:has(main) > * > aside
-					) {
-						opacity: 0;
-					}
-					:is(
-						body:has(main) > nav[data-open],
-						body:has(main) > * > nav[data-open],
-						body:has(main) > aside[data-open],
-						body:has(main) > * > aside[data-open]
-					) {
-						opacity: 1;
-						transform: translate(0);
-					}
 				}
 				div.stack {
 					--set-stack-gap: calc(var(--spacing) * 4);
@@ -14041,7 +14002,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-anchor-position-area: block-end;
 					--set-anchor-viewport-inset: calc(var(--spacing) * 2);
 				}
-				[popover]:not(output):not(aside) {
+				[popover]:not(output):not(aside):not(nav) {
 					margin: 0;
 					margin-block: var(--set-anchor-gap);
 					position-area: var(--set-anchor-position-area);
@@ -14067,14 +14028,14 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-backdrop-transition-duration: var(--set-transition-duration);
 				}
 				dialog::backdrop,
-				aside[popover]::backdrop {
+				:is(aside, nav)[popover]::backdrop {
 					transition:
 						background-color var(--set-motion-duration) ease-out,
 						backdrop-filter var(--set-motion-duration) ease-out;
 				}
 				@media (prefers-reduced-motion: reduce) {
 					dialog::backdrop,
-					aside[popover]::backdrop {
+					:is(aside, nav)[popover]::backdrop {
 						transition: none;
 					}
 				}
@@ -14083,7 +14044,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					-webkit-backdrop-filter: var(--set-backdrop-backdrop-filter);
 					backdrop-filter: var(--set-backdrop-backdrop-filter);
 				}
-				aside[popover]:popover-open::backdrop {
+				:is(aside, nav)[popover]:popover-open::backdrop {
 					background-color: var(--set-backdrop-background-color);
 					-webkit-backdrop-filter: var(--set-backdrop-backdrop-filter);
 					backdrop-filter: var(--set-backdrop-backdrop-filter);
@@ -14161,7 +14122,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						100vw - var(--set-popover-viewport-inset) * 2
 					);
 				}
-				[popover]:not(aside) {
+				[popover]:not(aside):not(nav) {
 					opacity: 0;
 					transition:
 						opacity var(--set-popover-transition-duration),
@@ -14171,16 +14132,16 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					transform: scale(0.98);
 				}
 				@media (prefers-reduced-motion: reduce) {
-					[popover]:not(aside) {
+					[popover]:not(aside):not(nav) {
 						transition: none;
 					}
 				}
-				[popover]:not(aside):popover-open {
+				[popover]:not(aside):not(nav):popover-open {
 					opacity: 1;
 					transform: none;
 				}
 				@starting-style {
-					[popover]:not(aside) {
+					[popover]:not(aside):not(nav) {
 						opacity: 0;
 						transform: scale(0.98);
 					}
@@ -14950,39 +14911,39 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				.loading {
 					cursor: progress;
 				}
-				[popover]:not(aside):not(output).top {
+				[popover]:not(aside):not(nav):not(output).top {
 					position-area: block-start;
 					align-self: end;
 					justify-self: anchor-center;
 				}
-				[popover]:not(aside):not(output).bottom {
+				[popover]:not(aside):not(nav):not(output).bottom {
 					position-area: block-end;
 					align-self: start;
 					justify-self: anchor-center;
 				}
-				[popover]:not(aside):not(output).start {
+				[popover]:not(aside):not(nav):not(output).start {
 					position-area: inline-start;
 					align-self: anchor-center;
 					justify-self: end;
 				}
-				[popover]:not(aside):not(output).end {
+				[popover]:not(aside):not(nav):not(output).end {
 					position-area: inline-end;
 					align-self: anchor-center;
 					justify-self: start;
 				}
-				[popover]:not(aside):not(output).top-start {
+				[popover]:not(aside):not(nav):not(output).top-start {
 					position-area: block-start span-inline-end;
 					place-self: end start;
 				}
-				[popover]:not(aside):not(output).top-end {
+				[popover]:not(aside):not(nav):not(output).top-end {
 					position-area: block-start span-inline-start;
 					place-self: end;
 				}
-				[popover]:not(aside):not(output).bottom-start {
+				[popover]:not(aside):not(nav):not(output).bottom-start {
 					position-area: block-end span-inline-end;
 					place-self: start;
 				}
-				[popover]:not(aside):not(output).bottom-end {
+				[popover]:not(aside):not(nav):not(output).bottom-end {
 					position-area: block-end span-inline-start;
 					place-self: start end;
 				}
@@ -16817,20 +16778,6 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				}
 				.showcase-drawer-close-end {
 					margin-inline-end: auto;
-				}
-			}
-			.showcase-backdrop {
-				z-index: 25;
-				background-color: var(--set-backdrop-background-color);
-				-webkit-backdrop-filter: var(--set-backdrop-backdrop-filter);
-				backdrop-filter: var(--set-backdrop-backdrop-filter);
-				transition: opacity var(--set-motion-duration) ease-out;
-				position: fixed;
-				inset: 0;
-			}
-			@starting-style {
-				.showcase-backdrop {
-					opacity: 0;
 				}
 			}
 			:is(body:has(main) > nav:has(> search), body:has(main) > * > nav:has(> search)) {

@@ -125,7 +125,7 @@
 	// puts the drawer's full fade-slide cascade in one place and lets
 	// @starting-style resolve cleanly. Toasts (`<output popover>`) and
 	// generic popovers keep the surface's scale-in defaults.
-	[popover]:not(aside) {
+	[popover]:not(aside):not(nav) {
 		opacity: 0;
 		transform: scale(0.98);
 
@@ -170,7 +170,7 @@
 	// Open-state target — opacity + transform reset for the non-aside
 	// popover family. Aside drawers own their own `:popover-open` rule
 	// in `components/_aside.scss` (opacity: 1 + transform: translate(0)).
-	[popover]:not(aside):popover-open {
+	[popover]:not(aside):not(nav):popover-open {
 		opacity: 1;
 		transform: none;
 	}
@@ -197,7 +197,7 @@
 		// to interpolate while others snap. Scoping the surface
 		// @starting-style away from aside keeps each surface family's
 		// from-state values in one place.
-		[popover]:not(aside) {
+		[popover]:not(aside):not(nav) {
 			opacity: 0;
 			transform: scale(0.98);
 		}

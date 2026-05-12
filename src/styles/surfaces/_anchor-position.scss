@@ -188,7 +188,7 @@
 	// fixed` + viewport corner insets via the components-layer rule — that
 	// rule wins because @layer components beats @layer surfaces.
 	// --------------------------------------------------------------------------
-	// `:not(output):not(aside)` scopes the surface defaults to anchor-
+	// `:not(output):not(aside):not(nav)` scopes the surface defaults to anchor-
 	// anchored popovers and tooltips. Two viewport-fixed exclusions:
 	//   - `<output popover>` (toasts) — corner-anchored notifications.
 	//   - `<aside popover>` (drawers / offcanvas) — full-viewport-edge
@@ -200,7 +200,7 @@
 	// layer wins over components when selectors collide; excluding both
 	// here lets their component-layer rules resolve without `!important`
 	// or layer reshuffling.
-	[popover]:not(output):not(aside) {
+	[popover]:not(output):not(aside):not(nav) {
 		// Take the panel out of normal flow. Top-layer popovers default
 		// to `position: fixed` (pinned to viewport coordinates), which
 		// means scrolling a nested ancestor doesn't relayout the popover.

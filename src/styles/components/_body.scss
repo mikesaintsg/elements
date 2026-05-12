@@ -99,99 +99,41 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// Responsive rail-drawer chrome — under the framework's mobile breakpoint
-	// (960px), the `<nav>` and `<aside>` rails detach from the grid and become
-	// fixed-position off-canvas drawers. Consumers slide them in by writing a
-	// truthy `[data-open]` attribute on the rail (any toggle works — a `<button
-	// popovertarget>`, a Vue `:data-open` binding, or `useAside`).
+	// Responsive rail drawer — `<nav>` + `<aside>` body-shell rails opt
+	// into the framework's native-popover offcanvas drawer surface for
+	// mobile rendering by toggling the `popover` attribute below the
+	// mobile breakpoint. Consumer JS (the showcase uses Vue with a
+	// `:popover="isMobile ? 'auto' : undefined"` binding) is responsible
+	// for adding / removing the attribute on viewport change; once
+	// `popover` is set, the rail picks up the full drawer contract
+	// declared in `components/_aside.scss` § "offcanvas drawer
+	// (Bootstrap-parity)": slide-from-edge geometry, motion-token
+	// transitions, `::backdrop` scrim (via `surfaces/_backdrop.scss`),
+	// light-dismiss, Esc-dismiss, focus restoration, and uniform open /
+	// close lifecycle with the `<aside popover>` examples on the
+	// AsidePage. Toggle buttons use `popovertarget` (no Vue state); the
+	// rail's open / closed state lives entirely in DOM via the native
+	// Popover API.
 	//
-	// `--set-body-rail-width` retunes the drawer width; slide timing
-	// reads from the framework-wide `--set-drawer-transition-{duration,
-	// timing-function}` pair in `_tokens.scss` so the body-shell rails
-	// and the `<aside popover>` offcanvas drawers share one perceptual
-	// contract (both slide at 250ms with the iOS stiff-decel curve).
-	// Tokens are declared on bare `body` (not `body:has(main)`) so
-	// they're always available to override from consumer CSS regardless
-	// of whether the body shell is currently engaged. The breakpoint
-	// itself is hardcoded because CSS doesn't accept `var()` inside
-	// `@media (max-width: …)` declarations.
+	// Why we ditched the previous `[data-open]` machinery: maintaining
+	// a parallel drawer chrome (one for body-shell rails keyed on
+	// `[data-open]`, one for offcanvas asides keyed on `:popover-open`)
+	// was a recipe for drift — they share the same visual contract
+	// (slide + fade with motion tokens, backdrop scrim, header / footer
+	// bands) and divergent state machinery just multiplied the surface
+	// where things could fall out of sync. Native popover gives us a
+	// single source of truth for drawer behavior across the whole
+	// framework; the showcase uses it for the body-shell rails and the
+	// AsidePage offcanvas examples alike.
 	//
-	// Selectors mirror the body-grid placement above: BOTH direct children of
-	// `<body>` AND once-removed grandchildren via a `display: contents`
-	// wrapper (Vue / React / Solid mount-point pattern). The framework's own
-	// invariant — that semantic structure works regardless of the host
-	// framework — extends to the drawer chrome.
-	//
-	// Reduced-motion guard collapses the slide transition so users with motion
-	// sensitivity see instant attribute-driven state changes.
-	//
-	// Showcase / consumer chrome owns the BACKDROP overlay (a separate
-	// `<div>` with `position: fixed`) and the toggle buttons in `<header>`;
-	// the framework only owns the rail geometry + transition pipeline.
+	// `--set-body-rail-width` retained for consumers who want a
+	// per-shell drawer width that differs from the framework default
+	// (`--set-aside-drawer-inline-size: 21.875rem`). Override in
+	// `<body>` scope to set both rails; override per-rail (`body:has
+	// (main) > nav[popover] { --set-aside-drawer-inline-size: 18rem }`)
+	// to differentiate.
 	// --------------------------------------------------------------------------
 	body {
 		--set-body-rail-width: min(20rem, 85vw);
-	}
-
-	@media (max-width: 960px) {
-		body:has(main) > nav,
-		body:has(main) > * > nav,
-		body:has(main) > aside,
-		body:has(main) > * > aside {
-			position: fixed;
-			inset-block: 0;
-			inline-size: var(--set-body-rail-width);
-			z-index: var(--set-z-index-fixed, 1030);
-			background-color: var(--color-surface);
-			box-shadow: var(--set-box-shadow-lg);
-
-			// Slide transition lives on the ELEMENT rules
-			// (`components/_nav.scss` and `_aside.scss`) so the cascade
-			// can't strip the transform entry no matter which partial
-			// loads last in the components barrel. Declaring `transition`
-			// here too would just fight the element rule via shorthand
-			// replacement and leave one rail snapping while the other
-			// slides — exactly the asymmetry this drawer block existed
-			// to fix.
-		}
-
-		body:has(main) > nav,
-		body:has(main) > * > nav {
-			inset-inline-start: 0;
-			transform: translateX(-100%);
-		}
-
-		body:has(main) > aside,
-		body:has(main) > * > aside {
-			inset-inline-end: 0;
-			transform: translateX(100%);
-		}
-
-		// Closed state — `opacity: 0` pairs with the off-screen transform.
-		// Why fade alongside the slide: the drawer-transition timing
-		// function (`cubic-bezier(0.32, 0.72, 0, 1)`, iOS stiff-decel)
-		// front-loads the movement — the panel rushes ~70 % of the way in
-		// during the first third of the duration, then slowly settles.
-		// A pure-transform slide reads as "the panel POPS in then crawls
-		// to a stop." Fading opacity 0 → 1 over the same window smooths
-		// the perceived motion: by the time the panel is halfway through
-		// its slide it's already fully opaque, masking the curve's
-		// front-loaded velocity. Same shape the `<aside popover>`
-		// offcanvas drawers use — keeps motion uniform across the
-		// drawer family.
-		body:has(main) > nav,
-		body:has(main) > * > nav,
-		body:has(main) > aside,
-		body:has(main) > * > aside {
-			opacity: 0;
-		}
-
-		body:has(main) > nav[data-open],
-		body:has(main) > * > nav[data-open],
-		body:has(main) > aside[data-open],
-		body:has(main) > * > aside[data-open] {
-			transform: translateX(0);
-			opacity: 1;
-		}
 	}
 }

@@ -86,7 +86,7 @@
 	// full motion duration in lockstep with the panel's fade-out,
 	// producing a single smooth dismiss instead of a flash-then-fade.
 	dialog::backdrop,
-	aside[popover]::backdrop {
+	:is(aside, nav)[popover]::backdrop {
 		@include transition(
 			(
 				background-color var(--set-motion-duration) ease-out,
@@ -97,18 +97,22 @@
 
 	// Open-state scrim chrome. Modal dialog (`dialog:modal`) matches
 	// when `.showModal()` is the open path; offcanvas drawer
-	// (`aside[popover]:popover-open`) matches while the popover is
-	// open. Both selectors gate on the open-state pseudo so the
-	// background-color and backdrop-filter declarations REVERT when
-	// the host transitions closed — that lets the bare-pseudo
-	// transition list above interpolate the values back to their UA
-	// defaults over the motion duration, producing the smooth fade
-	// out. Without the open-state gate, colors would stay applied for
-	// the full close transition tail and then snap to UA-transparent
-	// at the end (the inverse of the flash bug we fixed for modal
-	// dialog).
+	// (`:is(aside, nav)[popover]:popover-open`) matches while the
+	// drawer popover is open — covers BOTH the standalone `<aside
+	// popover>` offcanvas surface AND the `<nav popover>` navigation
+	// drawer (e.g. the showcase's body-shell rail on mobile, which
+	// uses the conditional `:popover` Vue binding to opt into popover
+	// mode below 960 px and back out to in-flow above). Both
+	// selectors gate on the open-state pseudo so the background-color
+	// and backdrop-filter declarations REVERT when the host
+	// transitions closed — that lets the bare-pseudo transition list
+	// above interpolate the values back to their UA defaults over the
+	// motion duration, producing the smooth fade out. Without the
+	// open-state gate, colors would stay applied for the full close
+	// transition tail and then snap to UA-transparent at the end (the
+	// inverse of the flash bug we fixed for modal dialog).
 	dialog:modal::backdrop,
-	aside[popover]:popover-open::backdrop {
+	:is(aside, nav)[popover]:popover-open::backdrop {
 		background-color: var(--set-backdrop-background-color);
 		backdrop-filter: var(--set-backdrop-backdrop-filter);
 	}

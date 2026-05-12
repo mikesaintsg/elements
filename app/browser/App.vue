@@ -16,9 +16,23 @@ import Toc from './components/Toc.vue'
  */
 
 const themeCtl = useTheme()
-const leftOpen = ref(false)
-const rightOpen = ref(false)
 const filterQuery = ref('')
+
+// `isMobile` toggles the `popover` attribute on the body-shell rails
+// (`<nav>` + `<aside>`) so they're native popover drawers on mobile
+// but regular in-flow grid cells on desktop. The framework's
+// `<aside popover>` / `<nav popover>` drawer chrome (slide from edge,
+// fade with motion tokens, ::backdrop scrim) handles the mobile
+// experience uniformly with the AsidePage offcanvas examples — same
+// motion contract, same backdrop, same dismiss patterns (Esc, click-
+// outside, popovertarget toggle button). On desktop the popover
+// attribute is absent so the rails are just `<nav>` / `<aside>` —
+// the body grid places them naturally, no popover machinery involved.
+const isMobile = ref(false)
+const mobileQuery = typeof window !== 'undefined' ? window.matchMedia('(max-width: 960px)') : null
+const updateMobile = (): void => {
+	isMobile.value = mobileQuery?.matches ?? false
+}
 
 const filteredRoutes = computed(() => {
 	const q = filterQuery.value.trim().toLowerCase()
@@ -48,52 +62,51 @@ const scrollToTarget = async (target: string | null): Promise<void> => {
 	scroller.scrollTop = 0
 }
 
-watch([route, section], ([, target]) => {
-	void scrollToTarget(target)
-	leftOpen.value = false
-	rightOpen.value = false
-})
-
-const closeDrawers = (): void => {
-	leftOpen.value = false
-	rightOpen.value = false
+// Close any open rail drawer (mobile only). Calls `.hidePopover()` on
+// each rail if it's currently open. On desktop the popover attribute
+// isn't set, so the call is a no-op (the rail is in-flow grid content,
+// not a popover). Used by the route watcher (close drawer when user
+// navigates to a new page) and the goHome click handler.
+const closeRailDrawers = (): void => {
+	for (const id of ['primary-rail', 'toc-rail']) {
+		const el = document.getElementById(id)
+		if (el?.matches(':popover-open')) el.hidePopover()
+	}
 }
 
+watch([route, section], ([, target]) => {
+	void scrollToTarget(target)
+	closeRailDrawers()
+})
+
 const onKeydown = (e: KeyboardEvent): void => {
+	// `/` keyboard shortcut focuses the sidebar filter. Skip if the
+	// user is already typing in another input (otherwise typing `/` in
+	// any field would steal focus). The framework's native popover API
+	// handles Escape-to-close on the rail drawers automatically; no
+	// JS-side Escape handling needed here.
 	if (e.key === '/' && !document.querySelector('input:focus, textarea:focus')) {
 		e.preventDefault()
 		document.querySelector<HTMLInputElement>('#sidebar-filter')?.focus()
 	}
-	if (e.key === 'Escape') {
-		leftOpen.value = false
-		rightOpen.value = false
-	}
 }
 
 onMounted(() => {
+	updateMobile()
+	mobileQuery?.addEventListener('change', updateMobile)
 	document.addEventListener('keydown', onKeydown)
 	void scrollToTarget(section.value)
 })
 
 onUnmounted(() => {
+	mobileQuery?.removeEventListener('change', updateMobile)
 	document.removeEventListener('keydown', onKeydown)
 })
 
 const goHome = (event: MouseEvent): void => {
 	event.preventDefault()
 	navigate('home')
-	leftOpen.value = false
-	rightOpen.value = false
-}
-
-const toggleLeft = (): void => {
-	leftOpen.value = !leftOpen.value
-	if (leftOpen.value) rightOpen.value = false
-}
-
-const toggleRight = (): void => {
-	rightOpen.value = !rightOpen.value
-	if (rightOpen.value) leftOpen.value = false
+	closeRailDrawers()
 }
 
 const cycleTheme = (): void => {
@@ -115,12 +128,16 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 
 <template>
 	<header>
+		<!-- `popovertarget` is set only when the rail IS a popover (mobile).
+		     On desktop the rail has no popover attribute and these toggles
+		     are hidden via `showcase.css` anyway, so the attribute is a
+		     no-op there. Native popover handles toggle / focus / Esc-
+		     dismiss / outside-click-dismiss for free. -->
 		<button
 			type="button"
 			class="subtle showcase-nav-toggle"
 			aria-label="Toggle navigation"
-			:aria-expanded="leftOpen"
-			@click="toggleLeft"
+			:popovertarget="isMobile ? 'primary-rail' : undefined"
 		>
 			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
 		</button>
@@ -140,20 +157,29 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			type="button"
 			class="subtle showcase-toc-toggle"
 			aria-label="Toggle table of contents"
-			:aria-expanded="rightOpen"
-			@click="toggleRight"
+			:popovertarget="isMobile ? 'toc-rail' : undefined"
 		>
 			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
 		</button>
 	</header>
 
-	<nav aria-label="Primary" :data-open="leftOpen ? '' : null">
+	<!-- LEFT rail — `<nav>` on every viewport. The `:popover` binding
+	     toggles the native popover attribute ON below the framework's
+	     mobile breakpoint (960px). Above 960px, no popover attribute is
+	     set and the rail renders as a regular in-flow body-grid cell.
+	     This is the "framework drawer surface" pattern applied to the
+	     showcase: the framework's `nav[popover]:popover-open` rules
+	     (mirrored from `aside[popover]` in `components/_aside.scss`)
+	     handle the slide-from-edge geometry + backdrop scrim, and Vue
+	     just decides whether the rail is a popover or not. -->
+	<nav id="primary-rail" aria-label="Primary" :popover="isMobile ? 'auto' : undefined">
 		<header class="showcase-drawer-header">
 			<button
 				type="button"
 				class="subtle icon-only showcase-drawer-close showcase-drawer-close-start"
 				aria-label="Close navigation"
-				@click="leftOpen = false"
+				popovertarget="primary-rail"
+				popovertargetaction="hide"
 			>
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
 			</button>
@@ -184,7 +210,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		     outside the overflow. Inside, SiteNav renders the framework's
 		     documented `<h6>` + `<menu>` sibling-pair pattern. -->
 		<div class="showcase-sidebar-scroll">
-			<SiteNav :routes="filteredRoutes" :active="current.id" @navigate="leftOpen = false" />
+			<SiteNav :routes="filteredRoutes" :active="current.id" @navigate="closeRailDrawers" />
 		</div>
 	</nav>
 
@@ -192,18 +218,22 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		<component :is="page" />
 	</main>
 
-	<aside aria-label="On this page" :data-open="rightOpen ? '' : null">
+	<!-- RIGHT rail — `<aside>` mirrors the left `<nav>`: same conditional
+	     popover binding, same framework offcanvas chrome on mobile, same
+	     close-button + popovertarget contract. -->
+	<aside id="toc-rail" aria-label="On this page" :popover="isMobile ? 'auto' : undefined">
 		<header class="showcase-drawer-header">
 			<button
 				type="button"
 				class="subtle icon-only showcase-drawer-close showcase-drawer-close-end"
 				aria-label="Close table of contents"
-				@click="rightOpen = false"
+				popovertarget="toc-rail"
+				popovertargetaction="hide"
 			>
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
 			</button>
 		</header>
-		<Toc :scroller="scrollerRef" :current-id="current.id" @navigate="rightOpen = false" />
+		<Toc :scroller="scrollerRef" :current-id="current.id" @navigate="closeRailDrawers" />
 	</aside>
 
 	<footer>
@@ -211,11 +241,11 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		<small class="font-mono text-xs">build {{ buildId }}</small>
 	</footer>
 
-	<!-- Drawer backdrop — clicks dismiss whichever drawer is open. -->
-	<div
-		v-if="leftOpen || rightOpen"
-		class="showcase-backdrop"
-		aria-hidden="true"
-		@click="closeDrawers"
-	></div>
+	<!-- No custom backdrop element — native `::backdrop` (styled in
+	     `surfaces/_backdrop.scss`) handles the scrim for both rail
+	     drawers AND the framework's `<aside popover>` offcanvas
+	     drawers. Single-backdrop invariant: every overlay renders one
+	     native pseudo, no duplicate DOM elements. Light-dismiss
+	     (click outside) and Escape-dismiss are built into the Popover
+	     API; no Vue handlers needed. -->
 </template>

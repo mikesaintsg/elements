@@ -405,7 +405,7 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// aside[popover] — offcanvas drawer (Bootstrap-parity).
+	// :is(aside, nav)[popover] — offcanvas drawer (Bootstrap-parity).
 	//
 	// `<aside popover>` IS the framework's drawer / offcanvas surface — a
 	// full-viewport-edge slide-in panel that floats above the page in the
@@ -431,7 +431,7 @@
 	//   .bottom  — block-end edge, full inline-width, 30dvh tall
 	//
 	// Transition machinery — pure CSS, no JS-side class flips. The bare
-	// `aside[popover].{placement}` rule sets the OFF-SCREEN transform
+	// `:is(aside, nav)[popover].{placement}` rule sets the OFF-SCREEN transform
 	// (the resting / closed state); the `:popover-open` rule on the
 	// same selector sets the on-screen transform (`translateX(0)`).
 	// `@starting-style` provides the from-state at the first frame of
@@ -445,7 +445,7 @@
 	// (the `:not(aside)` clause in the popover-surface scope) so the
 	// drawer geometry below applies cleanly.
 	//
-	// Variant tinting — `aside[popover].{variant}` retints through the
+	// Variant tinting — `:is(aside, nav)[popover].{variant}` retints through the
 	// popover surface's `--set-popover-*` tokens (bg-subtle / text-
 	// emphasis / border-subtle triplet). The drawer's chrome (slide
 	// transform, fixed-edge geometry) is independent of the variant
@@ -488,7 +488,7 @@
 		// regions. Mirrors mailbox's `--bs-offcanvas-padding-{x,y}` —
 		// shared by all three regions so the bands and the body align
 		// horizontally without per-region tuning. Declared on `:root`
-		// (not on `aside[popover]`) so consumers can retune from any
+		// (not on `:is(aside, nav)[popover]`) so consumers can retune from any
 		// scope before the drawer mounts.
 		--set-aside-drawer-padding-inline: calc(var(--spacing) * 4);
 		--set-aside-drawer-padding-block: calc(var(--spacing) * 4);
@@ -499,11 +499,11 @@
 		--set-aside-drawer-band-gap: calc(var(--spacing) * 3);
 	}
 
-	// Drawer chrome — applies to every `aside[popover]` so the closed
+	// Drawer chrome — applies to every `:is(aside, nav)[popover]` so the closed
 	// state (display:none) already has drawer geometry. The on-screen
 	// transform flips via `:popover-open`; the open / close transition
 	// animates between them.
-	aside[popover] {
+	:is(aside, nav)[popover] {
 		// Override popover surface defaults (which set
 		// `position: absolute; max-inline-size: 17.25rem`) — drawers
 		// are viewport-fixed and edge-to-edge along one axis.
@@ -569,7 +569,7 @@
 
 		// Default placement = end (inline-end edge). The block below
 		// repeats per placement; the default lives on bare
-		// `aside[popover]` so a placement-less drawer still slides
+		// `:is(aside, nav)[popover]` so a placement-less drawer still slides
 		// in from somewhere reasonable.
 		inset-block: 0;
 		inset-inline-start: auto;
@@ -587,7 +587,7 @@
 	// rule) and animates the slide-in. Each placement re-states the
 	// on-screen transform; the bare rule sets the resting (off-screen)
 	// position for the close transition to interpolate back into.
-	aside[popover]:popover-open {
+	:is(aside, nav)[popover]:popover-open {
 		display: flex;
 		transform: translateX(0);
 		opacity: 1;
@@ -598,48 +598,48 @@
 	// immediately (no slide). Targets the open-state selector so it
 	// resolves the from-state values at the transition's first frame.
 	@starting-style {
-		aside[popover]:popover-open {
+		:is(aside, nav)[popover]:popover-open {
 			transform: translateX(100%);
 			opacity: 0;
 		}
 	}
 
 	// ── .start — slide from the inline-start (leading) edge ──────────
-	aside[popover].start {
+	:is(aside, nav)[popover].start {
 		inset-inline-start: 0;
 		inset-inline-end: auto;
 		border-inline-start: 0;
 		border-inline-end: 1px solid var(--set-popover-border-color);
 		transform: translateX(-100%);
 	}
-	aside[popover].start:popover-open {
+	:is(aside, nav)[popover].start:popover-open {
 		transform: translateX(0);
 	}
 	@starting-style {
-		aside[popover].start:popover-open {
+		:is(aside, nav)[popover].start:popover-open {
 			transform: translateX(-100%);
 		}
 	}
 
 	// ── .end — slide from the inline-end (trailing) edge (= default) ─
-	aside[popover].end {
+	:is(aside, nav)[popover].end {
 		inset-inline-start: auto;
 		inset-inline-end: 0;
 		border-inline-start: 1px solid var(--set-popover-border-color);
 		border-inline-end: 0;
 		transform: translateX(100%);
 	}
-	aside[popover].end:popover-open {
+	:is(aside, nav)[popover].end:popover-open {
 		transform: translateX(0);
 	}
 	@starting-style {
-		aside[popover].end:popover-open {
+		:is(aside, nav)[popover].end:popover-open {
 			transform: translateX(100%);
 		}
 	}
 
 	// ── .top — slide down from the block-start edge ──────────────────
-	aside[popover].top {
+	:is(aside, nav)[popover].top {
 		inset-block-start: 0;
 		inset-block-end: auto;
 		inset-inline: 0;
@@ -650,17 +650,17 @@
 		border-block-end: 1px solid var(--set-popover-border-color);
 		transform: translateY(-100%);
 	}
-	aside[popover].top:popover-open {
+	:is(aside, nav)[popover].top:popover-open {
 		transform: translateY(0);
 	}
 	@starting-style {
-		aside[popover].top:popover-open {
+		:is(aside, nav)[popover].top:popover-open {
 			transform: translateY(-100%);
 		}
 	}
 
 	// ── .bottom — slide up from the block-end edge ───────────────────
-	aside[popover].bottom {
+	:is(aside, nav)[popover].bottom {
 		inset-block-start: auto;
 		inset-block-end: 0;
 		inset-inline: 0;
@@ -671,12 +671,68 @@
 		border-block-end: 0;
 		transform: translateY(100%);
 	}
-	aside[popover].bottom:popover-open {
+	:is(aside, nav)[popover].bottom:popover-open {
 		transform: translateY(0);
 	}
 	@starting-style {
-		aside[popover].bottom:popover-open {
+		:is(aside, nav)[popover].bottom:popover-open {
 			transform: translateY(100%);
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Closed-popover hide — explicit `display: none` when the popover is
+	// not open. The UA stylesheet ships this via `[popover]:not(:popover-
+	// open) { display: none }` (specificity 0,2,0), but the framework's
+	// body-shell rules like `body:has(main) > nav { display: flex }`
+	// (0,0,3) are AUTHOR rules and outrank the UA at any specificity.
+	// Without this explicit override, a closed `<nav popover>` body-shell
+	// rail stays `display: flex` (just translated off-screen via the
+	// drawer transform), which leaks the closed rail into the focus
+	// order and reads to assistive tech as "rendered but hidden." The
+	// `:is(aside, nav)[popover]:not(:popover-open)` selector (0,2,2)
+	// beats the body-shell rules and pulls the closed popover back to
+	// the UA-expected `display: none`. Doesn't affect the close
+	// transition because the transition list keeps the element
+	// rendered through `display allow-discrete`.
+	// --------------------------------------------------------------------------
+	:is(aside, nav)[popover]:not(:popover-open) {
+		display: none;
+	}
+
+	// --------------------------------------------------------------------------
+	// `<nav popover>` default placement — start (inline-leading edge).
+	//
+	// The shared `:is(aside, nav)[popover]` rule above defaults to `.end`
+	// placement (right edge in LTR) — the conventional offcanvas drawer
+	// shape. `<nav popover>` reads more naturally as a navigation drawer
+	// sliding in from the leading edge (the iOS / Material / Bootstrap
+	// pattern for primary-nav drawers), so for nav we override the
+	// default to `.start`. Explicit placement classes (`.start`, `.end`,
+	// `.top`, `.bottom`) still override either default.
+	//
+	// Source-order win: this `nav[popover]` rule sits AFTER the shared
+	// `:is(aside, nav)[popover]` block (specificity 0,1,1 vs the shared
+	// rule's 0,1,1), so the latter declaration wins for the colliding
+	// properties (inset, transform, border edges). The shared rule still
+	// supplies everything else (transition list, box-shadow, max-inline-
+	// size token overrides, padding-zero) so this override stays minimal.
+	// --------------------------------------------------------------------------
+	nav[popover] {
+		inset-inline-start: 0;
+		inset-inline-end: auto;
+		border-inline-start: 0;
+		border-inline-end: 1px solid var(--set-popover-border-color);
+		transform: translateX(-100%);
+	}
+
+	nav[popover]:popover-open {
+		transform: translateX(0);
+	}
+
+	@starting-style {
+		nav[popover]:popover-open {
+			transform: translateX(-100%);
 		}
 	}
 
@@ -700,8 +756,8 @@
 	// surfaces so consumers learn the contract once.
 	// --------------------------------------------------------------------------
 
-	aside[popover] > header:first-child,
-	aside[popover] > footer:last-child {
+	:is(aside, nav)[popover] > header:first-child,
+	:is(aside, nav)[popover] > footer:last-child {
 		flex-shrink: 0;
 		display: flex;
 		align-items: center;
@@ -715,11 +771,11 @@
 		}
 	}
 
-	aside[popover] > header:first-child {
+	:is(aside, nav)[popover] > header:first-child {
 		border-block-end: 1px solid var(--set-popover-border-color);
 	}
 
-	aside[popover] > footer:last-child {
+	:is(aside, nav)[popover] > footer:last-child {
 		// Trailing-action row — buttons pile up on the inline-end edge.
 		justify-content: flex-end;
 		flex-wrap: wrap;
@@ -732,7 +788,7 @@
 	// of the bands when content overflows. `overscroll-behavior:
 	// contain` keeps a long body from rubber-banding the page behind
 	// it on touch devices (mailbox's `.offcanvas-body` pattern).
-	aside[popover] > :not(header):not(footer) {
+	:is(aside, nav)[popover] > :not(header):not(footer) {
 		flex: 1 1 auto;
 		min-block-size: 0;
 		overflow-y: auto;
@@ -752,8 +808,8 @@
 	// `<button class="subtle">` close button inside a `.warning`
 	// drawer doesn't paint amber-on-amber (same color as the drawer's
 	// bg-subtle body) and disappear against the band.
-	aside[popover] > header > button:last-child,
-	aside[popover] > footer > button:last-child {
+	:is(aside, nav)[popover] > header > button:last-child,
+	:is(aside, nav)[popover] > footer > button:last-child {
 		margin-inline-start: auto;
 		--set-variant-background-color: transparent;
 		--set-variant-color: currentColor;
@@ -769,7 +825,7 @@
 	// border-subtle perimeter) — the visual contract is consistent
 	// across the framework's variant surfaces.
 	@each $variant in (primary, secondary, tertiary, success, warning, danger, information) {
-		aside[popover].#{$variant} {
+		:is(aside, nav)[popover].#{$variant} {
 			--set-popover-color: var(--color-#{$variant}-text-emphasis);
 			--set-popover-background-color: var(--color-#{$variant}-bg-subtle);
 			--set-popover-border-color: var(--color-#{$variant}-border-subtle);
@@ -779,7 +835,7 @@
 	// Forced-colors fallback — drop variant tints and route through the
 	// system color keywords so the drawer's shape survives Windows High
 	// Contrast mode.
-	aside[popover] {
+	:is(aside, nav)[popover] {
 		@include forced-colors {
 			background-color: Canvas;
 			color: CanvasText;
