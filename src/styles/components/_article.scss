@@ -177,7 +177,35 @@
 		margin-inline: calc(var(--set-article-padding-inline) * -1);
 		padding-inline: var(--set-article-padding-inline);
 		padding-block: calc(var(--set-article-padding-block) * 0.625);
-		background-color: var(--color-surface-raised);
+
+		// Band tint is a tonal shift of the card's OWN color, not a fixed
+		// `--color-surface-raised`. The fixed slate-100 / slate-800 surface
+		// token was wrong for two cases:
+		//
+		//   - `.filled` cards have a saturated variant body with white
+		//     text; painting light slate behind that white text gives ~2:1
+		//     contrast (illegible).
+		//   - `.subtle` cards have a variant-tinted body; the slate band
+		//     reads as a foreign neutral strip rather than as part of the
+		//     card.
+		//
+		// `color-mix(in srgb, currentColor 8%, transparent)` resolves at
+		// the header / footer's inherited color:
+		//
+		//   - Bare card:    8% body-text over canvas → subtle dark tint
+		//                   (visually equivalent to the old surface-raised
+		//                   slate-100 in light, slate-800 in dark)
+		//   - Variant card: 8% variant text-emphasis over variant bg-
+		//                   subtle → slightly more saturated band, reads
+		//                   as a tonal shift in the same hue family
+		//   - Filled card:  8% white over saturated variant → slightly
+		//                   lighter variant fill, white text stays
+		//                   readable against the lighter shade
+		//
+		// Same idiom `_button.scss` uses for hover state mixing — the
+		// band's tonal relationship to the card body is the same in any
+		// theme and any variant, no per-state override needed.
+		background-color: color-mix(in srgb, currentColor 8%, transparent);
 	}
 
 	article > header:first-child {
