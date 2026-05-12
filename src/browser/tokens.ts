@@ -275,12 +275,13 @@ export const tokens = {
 		cursor: '--set-button-cursor',
 		disabled: { opacity: '--set-button-disabled-opacity' },
 		focus: { boxShadow: '--set-button-focus-box-shadow' },
-		// Popover-trigger caret — auto-painted via `::after` on
-		// `button[popovertarget]` (mailbox `.dropdown-toggle` parity).
-		// See `elements/_button.scss` § Popover trigger caret.
-		popoverCaretImage: '--set-button-popover-caret-image',
-		popoverCaretSize: '--set-button-popover-caret-size',
-		popoverCaretOpacity: '--set-button-popover-caret-opacity',
+		// Dropdown-trigger caret — opt-in via `<button class="dropdown"
+		// popovertarget="…">`. See `elements/_button.scss` § Dropdown-
+		// trigger caret. Distinct from drawer / dialog / tooltip
+		// triggers, which don't carry a caret affordance.
+		dropdownCaretImage: '--set-button-dropdown-caret-image',
+		dropdownCaretSize: '--set-button-dropdown-caret-size',
+		dropdownCaretOpacity: '--set-button-dropdown-caret-opacity',
 	},
 
 	// Element-scoped tokens declared on `a` itself.

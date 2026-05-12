@@ -199,56 +199,72 @@ describe('button — combined modifiers', () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Popover trigger caret — auto-painted on `button[popovertarget]`
+//  Dropdown trigger caret — OPT-IN via `.dropdown` class
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('button — popover trigger caret', () => {
-	// Regression: an earlier draft of the menu showcase pasted a Unicode
-	// `▾` chevron into the trigger label. The framework now paints a
-	// proper chevron-down caret via `::after` on `button[popovertarget]`
-	// (mailbox `.dropdown-toggle` parity). The token surface
-	// (`--set-button-popover-caret-{image, size, opacity}`) is set on
-	// `button[popovertarget]`; the spacing between label and caret comes
-	// from the button baseline's own flex `gap`, matching the framework's
-	// other caret/chevron surfaces (`<summary>::before`, `<select>`
-	// chevron, breadcrumb separator).
-	it('exposes --set-button-popover-caret-* tokens on a button[popovertarget]', () => {
-		const btn = document.createElement('button')
-		btn.setAttribute('popovertarget', 'demo')
-		btn.textContent = 'Account'
-		mount(btn)
-
-		expect(token(btn, '--set-button-popover-caret-image').trim()).not.toBe('')
-		expect(token(btn, '--set-button-popover-caret-size').trim()).not.toBe('')
-		expect(token(btn, '--set-button-popover-caret-opacity').trim()).not.toBe('')
+describe('button — dropdown trigger caret', () => {
+	// Regression: an earlier draft auto-painted a chevron-down caret on
+	// every `button[popovertarget]`. That over-matched — drawer toggles,
+	// dialog triggers, theme buttons, drawer-close buttons, etc. all
+	// target a popover and were picking up a stray caret. Mailbox /
+	// Bootstrap use a `.dropdown-toggle` opt-in for the same reason;
+	// the framework uses single-English-word `.dropdown`. The caret is
+	// painted via `::after` with a `currentColor` mask-image so the
+	// glyph tracks the button's text colour across variants + themes.
+	// Token surface (`--set-button-dropdown-caret-{image, size, opacity}`)
+	// lives on `:root` so consumers can retune at any cascade scope.
+	it('exposes --set-button-dropdown-caret-* tokens on :root', () => {
+		const html = document.documentElement
+		expect(
+			globalThis
+				.getComputedStyle(html)
+				.getPropertyValue('--set-button-dropdown-caret-image')
+				.trim(),
+		).not.toBe('')
+		expect(
+			globalThis.getComputedStyle(html).getPropertyValue('--set-button-dropdown-caret-size').trim(),
+		).not.toBe('')
+		expect(
+			globalThis
+				.getComputedStyle(html)
+				.getPropertyValue('--set-button-dropdown-caret-opacity')
+				.trim(),
+		).not.toBe('')
 	})
 
-	it('paints a non-empty `::after` caret on `button[popovertarget]`', () => {
-		const btn = document.createElement('button')
-		btn.setAttribute('popovertarget', 'demo')
+	it('paints a non-empty `::after` caret on `button.dropdown`', () => {
+		const btn = render('button', 'dropdown')
 		btn.textContent = 'Account'
-		mount(btn)
 
 		const after = globalThis.getComputedStyle(btn, '::after')
-		// content resolves to a quoted empty string (the `content: ''`
-		// declaration); non-popover buttons would resolve to `none`.
 		expect(after.content).not.toBe('none')
 	})
 
-	it('does NOT paint a caret on a button WITHOUT popovertarget', () => {
+	it('does NOT paint a caret on a `button[popovertarget]` WITHOUT `.dropdown`', () => {
+		// Drawer toggles, dialog triggers, theme buttons, drawer-close
+		// buttons — all target popovers but aren't dropdowns. They must
+		// stay caret-free.
+		const btn = document.createElement('button')
+		btn.setAttribute('popovertarget', 'drawer')
+		btn.classList.add('subtle')
+		btn.textContent = 'Open menu'
+		mount(btn)
+
+		const after = globalThis.getComputedStyle(btn, '::after')
+		expect(after.content).toBe('none')
+	})
+
+	it('does NOT paint a caret on a bare `<button>`', () => {
 		const btn = render('button', '')
 		const after = globalThis.getComputedStyle(btn, '::after')
 		expect(after.content).toBe('none')
 	})
 
-	it('the `.icon-only` modifier suppresses the caret on a popover trigger', () => {
-		const btn = document.createElement('button')
-		btn.setAttribute('popovertarget', 'demo')
-		btn.classList.add('icon-only')
-		btn.setAttribute('aria-label', 'Open menu')
-		mount(btn)
+	it('caret tokens cascade per-instance', () => {
+		// Verify consumers can override the glyph at the trigger scope.
+		const btn = render('button', 'dropdown')
+		btn.setAttribute('style', '--set-button-dropdown-caret-opacity: 0.3;')
 
-		const after = globalThis.getComputedStyle(btn, '::after')
-		expect(after.content).toBe('none')
+		expect(token(btn, '--set-button-dropdown-caret-opacity').trim()).toBe('0.3')
 	})
 })

@@ -56,10 +56,6 @@ const bold = ref(false)
 const italic = ref(false)
 const underline = ref(false)
 
-// Demo TOC active id — switching it flips the leading-rule indicator
-// on the matching row via `aria-current="location"`.
-const activeSection = ref('introduction')
-
 // Dropdown demo: track which command the user picked last so the
 // trigger button can reflect the choice.
 const lastCommand = ref<string | null>(null)
@@ -242,18 +238,6 @@ const onCommand = (label: string): void => {
   &lt;/nav&gt;
 &lt;/aside&gt;</code></pre>
 		</details>
-		<p>
-			<button
-				type="button"
-				class="subtle small"
-				@click="activeSection = activeSection === 'introduction' ? 'next' : 'introduction'"
-			>
-				Toggle which row reads as active (live demo bound to the showcase TOC)
-			</button>
-			<small style="margin-inline-start: 0.5rem"
-				>Currently active: <strong>{{ activeSection }}</strong></small
-			>
-		</p>
 	</section>
 
 	<section id="menu-dropdown">
@@ -274,18 +258,18 @@ const onCommand = (label: string): void => {
 			static foundation they build on.
 		</p>
 		<p>
-			<strong>Caret affordance.</strong> Any <code>&lt;button popovertarget&gt;</code> automatically
-			paints a <code>chevron-down</code> caret via <code>::after</code> — same
+			<strong>Caret affordance.</strong> Add <code>class="dropdown"</code> to the trigger button and
+			the framework paints a <code>chevron-down</code> caret via <code>::after</code> — same
 			<code>currentColor</code> mask-image recipe <code>&lt;summary&gt;</code>'s disclosure marker,
 			<code>&lt;select&gt;</code>'s chevron, and the breadcrumb separator all use, sized to
 			<code>0.75 em</code> with the button's own flex <code>gap</code> handling the spacing between
-			label and caret. No Unicode glyph in the label, no <code>.dropdown-toggle</code> class.
-			Override per-instance via <code>--set-button-popover-caret-image</code> for a custom glyph;
-			suppress automatically by composing with <code>.icon-only</code> (which already hosts a single
-			glyph).
+			label and caret. The class is opt-in (Mailbox <code>.dropdown-toggle</code> / Bootstrap
+			parity) so drawer-trigger, dialog-trigger, and theme-toggle buttons that target a popover but
+			aren't dropdowns don't pick up a stray caret. Retune the glyph via
+			<code>--set-button-dropdown-caret-image</code> at <code>:root</code> or per-instance.
 		</p>
 		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
-			<button type="button" popovertarget="demo-dropdown">Account</button>
+			<button type="button" class="dropdown" popovertarget="demo-dropdown">Account</button>
 			<small v-if="lastCommand"
 				>Last picked: <strong>{{ lastCommand }}</strong></small
 			>
@@ -324,7 +308,7 @@ const onCommand = (label: string): void => {
 			<code>&lt;button&gt;</code> baseline and pagination disabled state use — disabled controls
 			read consistently across the framework.
 		</p>
-		<button type="button" popovertarget="demo-dropdown-full">Document</button>
+		<button type="button" class="dropdown" popovertarget="demo-dropdown-full">Document</button>
 		<menu popover id="demo-dropdown-full">
 			<h6>Edit</h6>
 			<li><button type="button" @click="onCommand('Cut')">Cut</button></li>
@@ -360,9 +344,9 @@ const onCommand = (label: string): void => {
 			<code>block-end</code> placement would clip against the viewport.
 		</p>
 		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
-			<button type="button" popovertarget="demo-dd-start">Open from start</button>
-			<button type="button" popovertarget="demo-dd-end">Open from end</button>
-			<button type="button" popovertarget="demo-dd-top">Open above</button>
+			<button type="button" class="dropdown" popovertarget="demo-dd-start">Open from start</button>
+			<button type="button" class="dropdown" popovertarget="demo-dd-end">Open from end</button>
+			<button type="button" class="dropdown" popovertarget="demo-dd-top">Open above</button>
 		</div>
 		<menu popover id="demo-dd-start" class="start">
 			<li><button type="button">First action</button></li>
@@ -386,7 +370,7 @@ const onCommand = (label: string): void => {
 			surfaces (where descendant menus should render with nav-rail chrome, not dropdown chrome — the
 			regression-guarded behavior captured during the iOS scroll-on-link audit).
 		</p>
-		<button type="button" popovertarget="demo-wrapped">Open wrapped panel</button>
+		<button type="button" class="dropdown" popovertarget="demo-wrapped">Open wrapped panel</button>
 		<div popover id="demo-wrapped" style="min-inline-size: 16rem">
 			<header
 				style="

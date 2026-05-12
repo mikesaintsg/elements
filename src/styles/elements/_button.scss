@@ -205,45 +205,40 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// Popover trigger caret — `<button popovertarget="…">` is the canonical
-	// "this button opens a panel" affordance. Mailbox / Bootstrap paint a
-	// downward caret glyph on `.dropdown-toggle::after`; the framework
-	// applies the same affordance to ANY `button[popovertarget]` so
-	// consumers don't need to opt into a class root or paste a Unicode
-	// chevron into every label.
+	// Dropdown-trigger caret — `<button class="dropdown" popovertarget="…">`.
+	//
+	// OPT-IN, not auto-painted. A button can target many kinds of popover
+	// (drawer, dialog, dropdown, tooltip), and only the dropdown shape
+	// conventionally carries a caret affordance — slapping one on every
+	// `popovertarget` puts a chevron on the hamburger, the theme toggle,
+	// the close button, etc. The `.dropdown` modifier matches Mailbox's
+	// `.dropdown-toggle` / Bootstrap's `.dropdown-toggle` opt-in but in
+	// the framework's single-English-word naming convention.
 	//
 	// Painted via `::after` with a mask-image so the glyph picks up
 	// `currentColor` and tints correctly through every variant / forced-
-	// colors / theme combination. The size + image + opacity are all
-	// tokenised so consumers can swap the glyph globally (chevron-up for
-	// a dropup trigger), per-instance (a custom SVG for a brand-flavoured
-	// caret), or zero out the opacity to suppress the affordance
-	// entirely without rewriting the markup.
-	//
-	// The `.icon-only` variant suppresses the caret automatically: those
-	// buttons already host a single glyph as their visible content, and
-	// adding a caret next to it would read as two stacked icons. Same
-	// reason the framework drops the inline-end gap in `.icon-only` —
-	// the button is a glyph, not a label + indicator pair.
+	// colors / theme combination — same recipe `<summary>::before`,
+	// `<select>` chevron, and the breadcrumb `::before` separator all
+	// use. Size + image + opacity tokenised so consumers can swap the
+	// glyph globally (chevron-up for a dropup-style trigger), per-
+	// instance (a custom SVG for a brand-flavoured caret), or zero out
+	// the opacity to suppress the affordance entirely.
 	@layer elements {
 		// Tokens declared on `:root` so consumers can retune the caret
-		// glyph globally (chevron-up for a dropup-styled trigger), per-
-		// instance (`<button style="--set-button-popover-caret-image:
-		// url(...)">`), or zero out the opacity to suppress the
-		// affordance without rewriting the markup. Same scope pattern
+		// glyph at any cascade scope. Same scope pattern
 		// `--set-summary-marker-image` uses for the disclosure marker.
 		:root {
-			--set-button-popover-caret-image: var(--set-icon-chevron-down);
-			--set-button-popover-caret-size: 0.75em;
-			--set-button-popover-caret-opacity: 0.7;
+			--set-button-dropdown-caret-image: var(--set-icon-chevron-down);
+			--set-button-dropdown-caret-size: 0.75em;
+			--set-button-dropdown-caret-opacity: 0.7;
 		}
 
 		// Sized + glyph-sourced to match the framework's other chevron /
-		// caret indicators (`<summary>::before` in `_summary.scss`,
-		// `<select>` chevron in `_select.scss`, breadcrumb `::before`
-		// separator in `_nav.scss`). All four surfaces converge on the
-		// same 0.75 em + currentColor mask-image recipe so the indicator
-		// size + colour track the button's own font + colour cascade.
+		// caret indicators (`<summary>::before`, `<select>` chevron,
+		// breadcrumb `::before` separator). All four surfaces converge
+		// on the same `0.75em` + `currentColor` mask-image recipe so the
+		// indicator size + colour track the button's own font + colour
+		// cascade.
 		//
 		// Spacing between the label and the caret uses the button
 		// baseline's own flex `gap` (declared above) — the `::after`
@@ -252,24 +247,17 @@
 		// idiom `<summary>` uses, not per-glyph `margin-inline-start`,
 		// so the spacing stays consistent across every chevron / caret
 		// surface.
-		button[popovertarget]::after {
+		button.dropdown::after {
 			content: '';
 			flex: none;
-			inline-size: var(--set-button-popover-caret-size);
-			block-size: var(--set-button-popover-caret-size);
+			inline-size: var(--set-button-dropdown-caret-size);
+			block-size: var(--set-button-dropdown-caret-size);
 			background-color: currentColor;
-			mask-image: var(--set-button-popover-caret-image);
+			mask-image: var(--set-button-dropdown-caret-image);
 			mask-repeat: no-repeat;
 			mask-position: center;
 			mask-size: contain;
-			opacity: var(--set-button-popover-caret-opacity);
-		}
-
-		// `.icon-only` hosts a single glyph as its visible content —
-		// a caret next to it would read as two stacked icons. Suppress
-		// the affordance.
-		button[popovertarget].icon-only::after {
-			content: none;
+			opacity: var(--set-button-dropdown-caret-opacity);
 		}
 	}
 }
