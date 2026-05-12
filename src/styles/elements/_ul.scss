@@ -64,20 +64,20 @@
 		--set-group-border-radius: var(--radius-md);
 		--set-group-item-padding-inline: calc(var(--spacing) * 4);
 		--set-group-item-padding-block: calc(var(--spacing) * 2);
-		--set-group-action-hover-background-color: color-mix(in oklab, currentColor 6%, transparent);
-		--set-group-action-active-background-color: color-mix(in oklab, currentColor 10%, transparent);
 		--set-group-disabled-color: var(--color-text-subtle);
-		// `--set-group-active-{color,background-color}` are declared in
+		// `--set-group-active-{color,background-color}` and the row's
+		// resting `--set-group-item-background-color` are declared in
 		// `_li.scss` ON the `<li>` itself — NOT here on the parent. Reason:
 		// the `<li>` is where the variant class lands (`<li class="success
-		// active">`), and CSS custom-property values inherit by their
-		// computed value. If we declared `var(--set-variant-color, …)` on
-		// the parent, the substitution would resolve at the parent (where
-		// `--set-variant-color` is undefined → fallback wins), then inherit
-		// to the child as the already-substituted fallback. By declaring on
-		// the `<li>`, the variant cascade and the active-token consumer
-		// live on the same element, so the variant's color reaches the
-		// active state correctly.
+		// active">`), and CSS custom-property substitution resolves at the
+		// element where the var() is used. Co-locating the declaration with
+		// the consumer keeps the variant cascade intact.
+		//
+		// Hover / press feedback derives from `--set-group-item-background-
+		// color` via `color-mix` (mirrors `_button.scss`), so there are no
+		// separate `--set-group-action-hover-background-color` /
+		// `…-action-active-background-color` tokens — the hover rule mixes
+		// the current bg with `--color-text-strong` directly.
 
 		// Reset preflight ul/ol padding + bullets so the group looks like a
 		// chrome panel.

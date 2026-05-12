@@ -2,22 +2,16 @@
 	"version": "0.0.1",
 	"configurations": [
 		{
-			"name": "dev",
-			"runtimeExecutable": "npm",
-			"runtimeArgs": ["run", "dev"],
-			"port": 5174
-		},
-		{
 			"name": "elements",
 			"runtimeExecutable": "npm",
 			"runtimeArgs": ["run", "dev"],
-			"port": 5174
+			"port": 5173
 		},
 		{
-			"name": "showcase",
+			"name": "elements-debug",
 			"runtimeExecutable": "npm",
-			"runtimeArgs": ["run", "showcase"],
-			"port": 5173
+			"runtimeArgs": ["run", "dev"],
+			"port": 5175
 		}
 	]
 }

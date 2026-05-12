@@ -23,6 +23,17 @@
 // child stretches to fill the row's padding box and the row gains hover /
 // active backgrounds. Implemented via `:has(> a)` so consumers don't add a
 // class; mailbox's `.list-group-item-action` is implicit here.
+//
+// Hover / press feedback — matches `_button.scss`
+// ---------------------------------------------------------------------------
+// State tints use the same `color-mix(in srgb, <current-bg> 88%, --color-
+// text-strong)` pattern that `<button>` uses. Each state (bare, variant tint,
+// active) sets `--set-group-item-background-color` to its resting bg; hover
+// and press read that token and mix it with `--color-text-strong` — slate-950
+// in light, white in dark — so the tint feels "depressed" in both themes
+// regardless of the underlying fill. No background-image trickery, no
+// specificity wars between `.active` and `:hover`: the active rule simply
+// updates the bg token and the hover rule reads it.
 // ============================================================================
 
 @use '../mixins' as *;
@@ -57,13 +68,21 @@
 		--set-group-active-color: white;
 		--set-group-active-background-color: var(--set-variant-background-color, var(--color-primary));
 
+		// `--set-group-item-background-color` is the row's RESTING bg.
+		// Variant tint rules and the .active rule override this token (not
+		// `background-color` directly), so the hover / press rules can read
+		// it via `color-mix` and produce a theme-aware tint without
+		// fighting `.active`'s specificity. Mirrors `_button.scss`'s
+		// `--set-button-background-color` → `:hover` chain exactly.
+		--set-group-item-background-color: transparent;
+
 		position: relative;
 		display: block;
 		padding-inline: var(--set-group-item-padding-inline);
 		padding-block: var(--set-group-item-padding-block);
 		color: inherit;
 		text-decoration: none;
-		background-color: transparent;
+		background-color: var(--set-group-item-background-color);
 		border: var(--set-group-border-width) solid var(--set-group-border-color);
 
 		@include transition(
@@ -106,34 +125,29 @@
 		cursor: pointer;
 	}
 
-	// Hover / focus-within / mouse-down feedback. Painted as a
-	// `background-image` overlay rather than `background-color` so the
-	// tint LAYERS on top of the base bg-color rather than replacing it.
-	// Replacing background-color broke `<li class="X active">` rows: the
-	// hover rule's specificity (0,2,3 via `:has() :hover`) beats the
-	// `.active` rule (0,2,2), so on hover the variant fill got wiped to a
-	// translucent white tint while the active rule's border-color stayed
-	// — producing the "everything white except borders" visual. With a
-	// gradient image overlay, the variant fill stays painted underneath
-	// and the tint composites on top in every state. The gradient uses
-	// the same color top→bottom (a flat overlay, not a gradient effect);
-	// `linear-gradient(<color>, <color>)` is the standard CSS idiom for
-	// "paint a flat overlay of <color> the size of the box."
+	// Hover / focus-within / mouse-down feedback. Matches the `<button>`
+	// pattern: mix the row's resting bg with `--color-text-strong` (slate-
+	// 950 in light, white in dark) so the tint darkens variant fills in
+	// light mode and lightens them in dark mode — both directions read as
+	// "depressed." Mixing 88% / 12% on hover and 78% / 22% on press matches
+	// `_button.scss` exactly so a row anchor and a button feel identical.
 	ul.group > li:has(> a, > button):hover,
 	ul.group > li:has(> a, > button):focus-within,
 	ol.group > li:has(> a, > button):hover,
 	ol.group > li:has(> a, > button):focus-within {
-		background-image: linear-gradient(
-			var(--set-group-action-hover-background-color),
-			var(--set-group-action-hover-background-color)
+		background-color: color-mix(
+			in srgb,
+			var(--set-group-item-background-color) 88%,
+			var(--color-text-strong)
 		);
 	}
 
 	ul.group > li:has(> a, > button):active,
 	ol.group > li:has(> a, > button):active {
-		background-image: linear-gradient(
-			var(--set-group-action-active-background-color),
-			var(--set-group-action-active-background-color)
+		background-color: color-mix(
+			in srgb,
+			var(--set-group-item-background-color) 78%,
+			var(--color-text-strong)
 		);
 	}
 
@@ -170,11 +184,12 @@
 
 	// --------------------------------------------------------------------------
 	// Variant tint per row — consumes the same `--color-{variant}-bg-subtle`
-	// triplet that powers tinted surfaces elsewhere in the framework. The
-	// `--set-variant-background-color` chain is set by the modifier classes
-	// in `modifiers/_variants.scss`; we re-route that into the row by
-	// preferring the subtle-bg colour when present. To stay readable on the
-	// tint, text shifts to the variant's text-emphasis colour.
+	// triplet that powers tinted surfaces elsewhere in the framework. Each
+	// variant rule sets `--set-group-item-background-color` (NOT
+	// `background-color` directly) so the hover / press rules read the
+	// current variant tint correctly and produce a theme-aware darken /
+	// lighten via `color-mix`. Mirrors how `_button.scss` cascades a
+	// variant's bg into `--set-button-background-color`.
 	//
 	// Source order matters: the .active rule below must follow these so a
 	// row marked `<li class="success active">` paints the saturated identity
@@ -182,49 +197,49 @@
 	// --------------------------------------------------------------------------
 	ul.group > li.primary,
 	ol.group > li.primary {
-		background-color: var(--color-primary-bg-subtle);
+		--set-group-item-background-color: var(--color-primary-bg-subtle);
 		color: var(--color-primary-text-emphasis);
 		border-color: var(--color-primary-border-subtle);
 	}
 
 	ul.group > li.secondary,
 	ol.group > li.secondary {
-		background-color: var(--color-secondary-bg-subtle);
+		--set-group-item-background-color: var(--color-secondary-bg-subtle);
 		color: var(--color-secondary-text-emphasis);
 		border-color: var(--color-secondary-border-subtle);
 	}
 
 	ul.group > li.tertiary,
 	ol.group > li.tertiary {
-		background-color: var(--color-tertiary-bg-subtle);
+		--set-group-item-background-color: var(--color-tertiary-bg-subtle);
 		color: var(--color-tertiary-text-emphasis);
 		border-color: var(--color-tertiary-border-subtle);
 	}
 
 	ul.group > li.success,
 	ol.group > li.success {
-		background-color: var(--color-success-bg-subtle);
+		--set-group-item-background-color: var(--color-success-bg-subtle);
 		color: var(--color-success-text-emphasis);
 		border-color: var(--color-success-border-subtle);
 	}
 
 	ul.group > li.warning,
 	ol.group > li.warning {
-		background-color: var(--color-warning-bg-subtle);
+		--set-group-item-background-color: var(--color-warning-bg-subtle);
 		color: var(--color-warning-text-emphasis);
 		border-color: var(--color-warning-border-subtle);
 	}
 
 	ul.group > li.danger,
 	ol.group > li.danger {
-		background-color: var(--color-danger-bg-subtle);
+		--set-group-item-background-color: var(--color-danger-bg-subtle);
 		color: var(--color-danger-text-emphasis);
 		border-color: var(--color-danger-border-subtle);
 	}
 
 	ul.group > li.information,
 	ol.group > li.information {
-		background-color: var(--color-information-bg-subtle);
+		--set-group-item-background-color: var(--color-information-bg-subtle);
 		color: var(--color-information-text-emphasis);
 		border-color: var(--color-information-border-subtle);
 	}
@@ -235,15 +250,17 @@
 	// active">`); bare `.active` defaults to the primary identity through
 	// `--set-variant-background-color`. Placed AFTER the variant tint rules
 	// so a row with both classes paints the saturated identity fill (active
-	// wins) rather than the subtle tint.
+	// wins) rather than the subtle tint. Sets `--set-group-item-background-
+	// color` rather than `background-color` directly so hover / press can
+	// read the active bg and tint it the same way buttons do.
 	// --------------------------------------------------------------------------
 	ul.group > li.active,
 	ol.group > li.active,
 	ul.group > li[aria-current='true'],
 	ol.group > li[aria-current='true'] {
 		z-index: 1;
+		--set-group-item-background-color: var(--set-group-active-background-color);
 		color: var(--set-group-active-color);
-		background-color: var(--set-group-active-background-color);
 		border-color: var(--set-group-active-background-color);
 	}
 }
