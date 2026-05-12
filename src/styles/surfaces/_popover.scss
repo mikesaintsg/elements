@@ -100,6 +100,35 @@
 			calc(100vw - var(--set-popover-viewport-inset) * 2)
 		);
 
+		// `transition-behavior: allow-discrete` is set PER-PROPERTY in the
+		// transition shorthands (both in this surface's `:not(aside)` block
+		// below and in `components/_aside.scss`'s aside-specific block), on
+		// `overlay` and `display` only. A standalone
+		// `transition-behavior: allow-discrete` declaration here would
+		// overwrite those per-property values to apply allow-discrete to
+		// ALL transition properties — which makes Chrome treat continuous
+		// properties (opacity, transform) as discrete and snap them
+		// instead of interpolating. (We hit this bug: opacity on aside
+		// drawers snapping to 1 instead of fading in over 250ms.) Keep
+		// the behavior on per-property tails only.
+	}
+
+	// Closed-state values + scale-in transition — scoped to non-aside
+	// popovers because `<aside popover>` drawers own their entire fade-
+	// slide contract in `components/_aside.scss`. Splitting the closed-
+	// state opacity across two layers (surfaces' bare `[popover]
+	// { opacity: 0 }` and components' `aside[popover] { opacity: 0 }`)
+	// caused Chrome to apply @starting-style for transform but skip it
+	// for opacity — the drawer's slide animated correctly but opacity
+	// snapped to 1 instead of fading from 0. Keeping aside out of every
+	// surfaces rule (closed state, @starting-style, transition list)
+	// puts the drawer's full fade-slide cascade in one place and lets
+	// @starting-style resolve cleanly. Toasts (`<output popover>`) and
+	// generic popovers keep the surface's scale-in defaults.
+	[popover]:not(aside) {
+		opacity: 0;
+		transform: scale(0.98);
+
 		@include transition(
 			(
 				opacity var(--set-popover-transition-duration),
@@ -108,22 +137,6 @@
 				display var(--set-popover-transition-duration) allow-discrete
 			)
 		);
-
-		// `transition-behavior` must come AFTER the `transition` shorthand —
-		// the shorthand resets every `transition-*` longhand to its initial
-		// value, so declaring it before would silently revert. With
-		// `allow-discrete`, the `display: none ↔ block` flip participates
-		// in the transition pipeline (which is what makes `@starting-style`
-		// trigger a transition on entry instead of skipping it).
-		transition-behavior: allow-discrete;
-
-		// Closed-state values — the from-state for the close transition.
-		// Setting these on `[popover]` (NOT on `:not(:popover-open)`) keeps
-		// them lean: when the popover is open, the higher-specificity
-		// `:popover-open` rule below overrides; when closed (or transitioning
-		// out), these win.
-		opacity: 0;
-		transform: scale(0.98);
 	}
 
 	// Open-state target.
@@ -154,7 +167,10 @@
 	// `[popover]` selector bucket when the transition begins (popover-
 	// open elements always carry the `[popover]` attribute), so
 	// @starting-style still resolves the from-state values it needs.
-	[popover]:popover-open {
+	// Open-state target — opacity + transform reset for the non-aside
+	// popover family. Aside drawers own their own `:popover-open` rule
+	// in `components/_aside.scss` (opacity: 1 + transform: translate(0)).
+	[popover]:not(aside):popover-open {
 		opacity: 1;
 		transform: none;
 	}
@@ -167,8 +183,21 @@
 		// resolution. Popover-open elements always match `[popover]`
 		// (the popover attribute doesn't disappear when shown), so this
 		// selector still resolves the from-state values @starting-style
-		// needs at the transition's first frame.
-		[popover] {
+		// needs at the transition's first frame. `:not(aside)` keeps the
+		// surface's scale-in starting transform AND its opacity-fade
+		// from-state from defeating the drawer's slide-in starting
+		// transform AND the drawer's own opacity from-state (both
+		// declared in `components/_aside.scss`'s own `@starting-style`
+		// rule on `aside[popover]:popover-open`). The drawer needs its
+		// from-state declarations to live in a SINGLE @starting-style
+		// rule for the same selector — Chrome's @starting-style cascade
+		// resolution doesn't reliably merge from-state values across
+		// multiple matching @starting-style rules at different
+		// specificities, so split declarations cause some properties
+		// to interpolate while others snap. Scoping the surface
+		// @starting-style away from aside keeps each surface family's
+		// from-state values in one place.
+		[popover]:not(aside) {
 			opacity: 0;
 			transform: scale(0.98);
 		}

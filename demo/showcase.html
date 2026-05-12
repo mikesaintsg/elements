@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T16:31:00.354Z" />
+		<meta name="build-id" content="2026-05-12T16:44:20.534Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9040,7 +9040,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T16:31:00.354Z`)), 1),
+										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T16:44:20.534Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -14132,28 +14132,27 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						var(--set-anchor-max-inline-size),
 						100vw - var(--set-popover-viewport-inset) * 2
 					);
+				}
+				[popover]:not(aside) {
+					opacity: 0;
 					transition:
 						opacity var(--set-popover-transition-duration),
 						transform var(--set-popover-transition-duration),
 						overlay var(--set-popover-transition-duration) allow-discrete,
 						display var(--set-popover-transition-duration) allow-discrete;
+					transform: scale(0.98);
 				}
 				@media (prefers-reduced-motion: reduce) {
-					[popover] {
+					[popover]:not(aside) {
 						transition: none;
 					}
 				}
-				[popover] {
-					transition-behavior: allow-discrete;
-					opacity: 0;
-					transform: scale(0.98);
-				}
-				[popover]:popover-open {
+				[popover]:not(aside):popover-open {
 					opacity: 1;
 					transform: none;
 				}
 				@starting-style {
-					[popover] {
+					[popover]:not(aside) {
 						opacity: 0;
 						transform: scale(0.98);
 					}
