@@ -183,6 +183,33 @@
 		appearance: none;
 		cursor: pointer;
 
+		// `touch-action: pan-y` — explicit opt-in for vertical scroll
+		// when a finger touches a nav-rail link or button on mobile.
+		// iOS Safari has a long-standing quirk: when an interactive
+		// element (`<a>`, `<button>`) sits inside a fixed-position
+		// scroll container — like a body-shell rail in mobile drawer
+		// mode (`<nav popover>` open in the top layer) — the browser
+		// can refuse to start a scroll gesture if the touch lands ON
+		// the interactive element. The default `touch-action: auto`
+		// asks the browser to "figure it out" and the heuristic
+		// fails inside top-layer popovers: touching a link, holding,
+		// then dragging up/down does nothing — only swipes that
+		// originate on non-interactive whitespace (between links, or
+		// on the `<h6>` group labels) scroll cleanly.
+		//
+		// `pan-y` declares the contract directly: this element accepts
+		// vertical pan gestures (scroll) AND tap (click) — both work,
+		// no heuristic. Horizontal pan + pinch + double-tap-zoom are
+		// disabled, which is what we want on a nav row anyway
+		// (there's nothing useful to zoom or horizontally pan).
+		//
+		// Applies to both `<a href>` links and `<button>` action rows
+		// in the nav-rail menu chrome — same scroll-on-touch contract
+		// regardless of which interactive element a consumer reaches
+		// for. Bootstrap, Mailbox, and most production nav patterns
+		// ship the same opt-in on their nav rows for the same reason.
+		touch-action: pan-y;
+
 		@include transition(
 			(
 				color var(--set-nav-transition-duration),
@@ -246,6 +273,12 @@
 		text-decoration: none;
 		appearance: none;
 		cursor: pointer;
+
+		// `touch-action: pan-y` — see `body:has(main) > nav menu > li
+		// > :where(a, button)` rule above for the rationale. Same iOS-
+		// Safari scroll-on-link quirk applies inside the aside-TOC
+		// rail when it's a popover drawer on mobile.
+		touch-action: pan-y;
 
 		@include transition(
 			(
