@@ -59,17 +59,6 @@
 		// the panel's target width wins; on narrow viewports the
 		// viewport gutter wins. No per-breakpoint override needed.
 		--set-popover-viewport-inset: 1rem;
-		// Leading-bar tokens — by default the popover paints a uniform
-		// border on all four sides (width + color from the tokens
-		// above). Consumers wanting an alert-style accent bar on the
-		// inline-start edge override these to a thicker width and a
-		// saturated color (see `components/_aside.scss` § aside[popover]
-		// for the `<aside popover>` variant that adopts this pattern).
-		// Default values keep the popover's existing uniform border so
-		// no visual change for general popovers — the leading-bar token
-		// pair is a hook, not a default.
-		--set-popover-leading-bar-width: var(--set-popover-border-width);
-		--set-popover-leading-bar-color: var(--set-popover-border-color);
 	}
 
 	// Chrome paint applies to every `[popover]` including `<output popover>`
@@ -84,18 +73,11 @@
 	[popover] {
 		color: var(--set-popover-color);
 		background-color: var(--set-popover-background-color);
-		// Border split into three sides + leading bar so the inline-
-		// start edge can opt into a thicker / differently-colored
-		// accent bar via the `--set-popover-leading-bar-*` tokens
-		// (default to the perimeter values — no visual change for
-		// general popovers). The `<aside popover>` variant in
-		// `components/_aside.scss` overrides the tokens to paint an
-		// alert-style leading bar; everything else keeps the uniform
-		// perimeter the shorthand `border` used to produce.
-		border-block: var(--set-popover-border-width) solid var(--set-popover-border-color);
-		border-inline-end: var(--set-popover-border-width) solid var(--set-popover-border-color);
-		border-inline-start: var(--set-popover-leading-bar-width) solid
-			var(--set-popover-leading-bar-color);
+		// Uniform perimeter border — same width / color on all four
+		// sides. Popovers are top-layer panels with their own elevation
+		// (box-shadow); the border separates them from the surface
+		// they float over without competing with the shadow.
+		border: var(--set-popover-border-width) solid var(--set-popover-border-color);
 		border-radius: var(--set-popover-border-radius);
 		padding-inline: var(--set-popover-padding-inline);
 		padding-block: var(--set-popover-padding-block);

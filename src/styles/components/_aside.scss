@@ -369,30 +369,6 @@
 			--set-alert-border-color: var(--color-#{$variant}-text-emphasis);
 			border-color: var(--color-#{$variant}-border-subtle);
 		}
-
-		// Variant tinting for `<aside popover>` panels — alert chrome
-		// recipe lifted into the popover surface. Same triplet the alert
-		// variant rule uses (bg-subtle body, text-emphasis text,
-		// border-subtle perimeter) plus a saturated leading-bar color
-		// (`text-emphasis`) painted by overriding the inline-start border
-		// color specifically — without this override the leading bar
-		// would inherit the popover surface's `--set-popover-border-
-		// color` (which we set to `border-subtle` two lines above),
-		// painting a subtle bar that doesn't carry the variant signal.
-		// `border-inline-start-color` overrides the per-side color
-		// inherited from the shorthand `border: 1px solid var(--set-
-		// popover-border-color)` in `surfaces/_popover.scss`.
-		aside[popover].#{$variant} {
-			--set-popover-color: var(--color-#{$variant}-text-emphasis);
-			--set-popover-background-color: var(--color-#{$variant}-bg-subtle);
-			--set-popover-border-color: var(--color-#{$variant}-border-subtle);
-			// Saturated leading bar color (paints the thicker inline-start
-			// border via the popover surface's `--set-popover-leading-bar-
-			// color` token). Same idiom the alert variant rule uses —
-			// perimeter stays subtle, leading bar carries the saturated
-			// variant signal.
-			--set-popover-leading-bar-color: var(--color-#{$variant}-text-emphasis);
-		}
 	}
 
 	// Windows High Contrast / forced-colors fallback for the alert banner.
@@ -409,116 +385,38 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// aside[popover] — alert-as-popover, NOT a tooltip.
+	// aside[popover] — generic tangential-info popover panel.
 	//
-	// An `<aside popover>` is a FLOATING alert: the alert chrome contract
-	// (wider banner padding, leading accent bar, bg-subtle tint, subtle
-	// perimeter) lifted into the popover top-layer so a button can trigger
-	// it without an inline-flow slot. It's distinct from `<menu popover>`
-	// (dropdown) and bare `[popover]` (small floating panel) — the
-	// `<aside>` semantic is "tangentially-related content," and an
-	// inline-floated alert-style notification fits exactly there.
+	// `<aside popover>` is `<aside>`'s top-layer flavor: a button-triggered
+	// floating panel for "tangentially related" content (the W3C
+	// definition of `<aside>`). The popover surface in
+	// `surfaces/_popover.scss` already paints the panel chrome (color,
+	// background, border, radius, padding, box-shadow, max-inline-size
+	// with viewport-clamp, scale-in transition); the aside element
+	// doesn't override any of it. Variant classes (`.primary`,
+	// `.success`, …) cascade through the popover surface's
+	// `--set-popover-*` tokens to retint perimeter + body.
 	//
-	// Chrome adoption — reset the popover surface tokens that control
-	// the panel's PADDING / SIZE / RADIUS to the alert equivalents so the
-	// floating panel has banner-room rather than tooltip-room:
-	//   --set-popover-padding-inline   → alert padding-inline
-	//   --set-popover-padding-block    → alert padding-block
-	//   --set-popover-max-inline-size  → alert max-inline-size (32rem)
-	//   --set-popover-border-radius    → alert border-radius
+	// Drawer geometry — when `useAside` attaches, it sets
+	// `[data-aside-open]` and `composables/_aside.scss` repaints the
+	// aside as a full-viewport-edge slide-out drawer (its rules sit in
+	// a later cascade layer so they win against the surface defaults).
+	// Without `useAside`, `<aside popover>` stays as the surface's
+	// anchor-positioned panel.
 	//
-	// Leading accent bar — match alerts: a thicker `border-inline-start`
-	// in the variant's saturated `text-emphasis` color (vs the perimeter
-	// which stays subtle `border-subtle`). The variant rule below paints
-	// the saturated bar color via `border-inline-start-color`; the bare
-	// (variantless) popover-aside uses `--color-border-strong` so the bar
-	// still reads as a divider against the panel bg.
-	//
-	// Positioning stays the popover surface's default — anchor-positioned
-	// below the trigger via `position-area: block-end` from
-	// `surfaces/_anchor-position.scss`. The mobile-viewport clamp on
-	// `max-inline-size: min(…, calc(100vw - 2rem))` (same surface) keeps
-	// the panel from touching screen edges on narrow viewports.
+	// What `<aside popover>` is NOT:
+	//   - NOT an alert. Alerts (`<aside role="alert">`) sit IN FLOW,
+	//     shift the document below, and announce via the implicit
+	//     `aria-live="assertive"`. The popover sits in the top layer
+	//     and does not shift content.
+	//   - NOT a toast. Toasts (`<output popover>`, see
+	//     `components/_output.scss`) are transient corner-anchored
+	//     status notifications with `role="status"` politeness and
+	//     auto-dismiss. `<aside popover>` is a user-controlled panel
+	//     opened by a button.
+	//   - NOT a tooltip. Tooltips (`[popover="hint"]` or
+	//     `[role="tooltip"]`) are smaller, label-style, hover-driven.
 	// --------------------------------------------------------------------------
-	aside[popover] {
-		--set-popover-padding-inline: var(--set-alert-padding-inline);
-		--set-popover-padding-block: var(--set-alert-padding-block);
-		--set-popover-max-inline-size: var(--set-alert-max-inline-size);
-		--set-popover-border-radius: var(--set-alert-border-radius);
-
-		// Leading accent bar — opt into the alert-style thicker
-		// inline-start border via the popover surface's leading-bar
-		// tokens. Default bar color is `--color-border-strong`;
-		// variants override below to the saturated `text-emphasis`
-		// color (matching the alert variant recipe). The tokens
-		// approach is required because `surfaces/_popover.scss` (the
-		// layer where the border is painted) sits AFTER `components/`
-		// in the cascade — overriding the border properties directly
-		// here would lose to the surface declaration. The surface
-		// reads the tokens and paints, so the cross-layer cascade
-		// flows through the tokens not the rules.
-		--set-popover-leading-bar-width: var(--set-alert-bar-width);
-		--set-popover-leading-bar-color: var(--color-border-strong);
-	}
-
-	// --------------------------------------------------------------------------
-	// Popover-aside auto-banded slots — `<header>` / `<footer>` direct
-	// children of `<aside popover>`.
-	//
-	// Same composition pattern as article + dialog + alert: a direct-child
-	// header (first) and / or footer (last) auto-paints a tinted band with
-	// a divider. Useful for popover panels that need a title row + close
-	// button (header) or a trailing action row (footer). Negative inline /
-	// block margins bleed the band to the popover's edge so the band runs
-	// edge-to-edge of the panel; matching corner radii (calc'd as
-	// `popover-border-radius - popover-border-width`) keep the bands
-	// rounded against the popover's inner edge.
-	//
-	// Surfaces don't ship `overflow: hidden` (popover arrows can't be
-	// clipped), so corner radii are matched explicitly per-band instead
-	// of relying on overflow-clip like the alert.
-	// --------------------------------------------------------------------------
-	aside[popover] > header:first-child,
-	aside[popover] > footer:last-child {
-		display: flex;
-		align-items: center;
-		gap: calc(var(--spacing) * 3);
-		margin-inline: calc(var(--set-popover-padding-inline) * -1);
-		padding-inline: var(--set-popover-padding-inline);
-		padding-block: calc(var(--set-popover-padding-block) * 0.625);
-		background-color: color-mix(in srgb, currentColor 8%, transparent);
-	}
-
-	aside[popover] > header:first-child {
-		margin-block-start: calc(var(--set-popover-padding-block) * -1);
-		border-block-end: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-		border-start-start-radius: calc(
-			var(--set-popover-border-radius) - var(--set-popover-border-width)
-		);
-		border-start-end-radius: calc(
-			var(--set-popover-border-radius) - var(--set-popover-border-width)
-		);
-	}
-
-	aside[popover] > footer:last-child {
-		margin-block-end: calc(var(--set-popover-padding-block) * -1);
-		border-block-start: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-		border-end-start-radius: calc(
-			var(--set-popover-border-radius) - var(--set-popover-border-width)
-		);
-		border-end-end-radius: calc(var(--set-popover-border-radius) - var(--set-popover-border-width));
-	}
-
-	// Close button inside a popover header / footer — same variant-context
-	// reset the alert dismiss button uses, so a `.success` popover's close
-	// button doesn't paint filled-green.
-	aside[popover] > header > button:last-child,
-	aside[popover] > footer > button:last-child {
-		margin-inline-start: auto;
-		--set-variant-background-color: transparent;
-		--set-variant-color: currentColor;
-		--set-variant-border-color: transparent;
-	}
 
 	// useAside drawer chrome lives in `composables/_aside.scss` so the
 	// popover-mode geometry overrides surface defaults from a later

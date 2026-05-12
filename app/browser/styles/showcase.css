@@ -98,82 +98,121 @@
 	backdrop-filter: blur(2px);
 }
 
-/* Sidebar layout — uses the framework's `<nav>` baseline AS-IS.
+/* Sidebar layout — APP-SPECIFIC flex-column split.
  *
  * Markup the showcase mounts inside the body-shell `<nav>`:
  *
  *   <nav aria-label="Primary">
  *     <header class="showcase-drawer-header">…close button…</header>
  *     <search>…filter input…</search>
- *     <h6>Group</h6>
- *     <menu>…</menu>
- *     <h6>Group</h6>
- *     <menu>…</menu>
- *     …
+ *     <div class="showcase-sidebar-scroll">
+ *       <h6>Group</h6><menu>…</menu>
+ *       <h6>Group</h6><menu>…</menu>
+ *       …
+ *     </div>
  *   </nav>
  *
- * Every element earns its place — no `<div>` wrappers, no app-only
- * classes on the structural elements. The framework already supplies:
+ * Three regions inside the rail:
+ *   1. `<header class="showcase-drawer-header">` — drawer close
+ *      button (visible only below 960px when the rail collapses to
+ *      an off-canvas drawer). Edge-to-edge band, height matches
+ *      the body app bar via the framework's `--set-header-padding-*`.
+ *   2. `<search>` — filter row pinned at the top of the rail OUTSIDE
+ *      the scroll container. Just enough height for the input plus
+ *      breathing space; bottom divider separates it from the
+ *      scrolling list below.
+ *   3. `<div class="showcase-sidebar-scroll">` — the rail's ONLY
+ *      scroll container. Holds the `<h6>` + `<menu>` grouped-sidebar
+ *      pattern (per `components/_menu.scss` § Grouped sidebars).
+ *      `flex: 1 + min-block-size: 0 + overflow-y: auto` so the
+ *      links own all remaining vertical space and scroll
+ *      independently of the search + header above.
  *
- *   • `body:has(main) > nav` — flex-column, padded, `overflow-y: auto`
- *     (the rail is the sole scroll container), inline-end border.
- *   • `body:has(main) > nav > header` — drawer-header chrome with the
- *     edge-to-edge negative margins + `position: sticky` pin so the
- *     close button stays visible as the rail scrolls. The header's
- *     own `padding-block` matches the body app bar's, so the two
- *     headers read as a single horizontal band of equal height
- *     across the layout.
- *   • `<h6>` + `<menu>` sibling-pair grouped-sidebar pattern (see
- *     `components/_menu.scss` § Grouped sidebars for the contract).
- *     `<menu>` / `<li>` row chrome — owned by `components/_menu.scss`.
+ * Why a flex-column split (rather than the framework's single-scroller
+ * default): docs-site sidebars benefit from a pinned filter that
+ * doesn't scroll away with the link list. Product UIs / consumer
+ * navs typically prefer the rail-as-single-scroller default — that's
+ * why the framework keeps the simpler shape and the showcase opts
+ * into the split via `nav:has(> search)` here.
  *
- * What lives in this stylesheet:
- *
- *   1. `<search>` rail chrome — pulls the filter edge-to-edge of the
- *      rail and paints the bottom divider that separates it from the
- *      first group. The framework's bare `<search>` is unstyled by
- *      default; this is the showcase's card-shell treatment.
- *   2. `<h6>` group-label chrome — muted uppercase editorial register
- *      with asymmetric margins (room above each heading, tight below)
- *      so each heading reads as a label for the menu it precedes.
- *
- * Nothing here overrides framework chrome; everything is additive. */
+ * Drawer header opt-out: the framework's `body:has(main) > nav >
+ * header` rule pins the drawer header with `position: sticky` +
+ * negative margins keyed to `--set-nav-padding-*`. With the split,
+ * the rail no longer scrolls (the inner `.showcase-sidebar-scroll`
+ * does) AND the rail's own padding is zero (each region carries its
+ * own band-style padding), so the sticky / negative-margin machinery
+ * is both unneeded and harmful (negative margins against zero
+ * padding push the band off-screen). The override at the bottom of
+ * this section returns the drawer header to a normal flex child
+ * sized by its own `--set-header-padding-*` (matching the body app
+ * bar's height of ~45px on mobile). */
 
-/* Search filter — edge-to-edge of the rail with a bottom divider.
- * Negative inline-margin pulls the row out past the nav's gutter so
- * the divider runs from one rail edge to the other (matching the
- * drawer header's edge-to-edge band above). `margin-block-start:
- * -(nav-gap)` collapses the rail's gap between the sticky header
- * and the search so the two bands stack with no visible seam. */
+/* Rail container — opt into the flex-column split when the nav
+ * carries a `<search>` child. Zero padding + zero gap (each region
+ * paints its own band); `overflow: hidden` so a tall link list
+ * can't push the rail taller than the viewport. */
+body:has(main) > nav:has(> search),
+body:has(main) > * > nav:has(> search) {
+	overflow: hidden;
+	padding: 0;
+	gap: 0;
+}
+
+/* Drawer header — opt out of the framework's sticky / negative-margin
+ * pin (see comment block above for why). Keep the framework's
+ * `--set-header-padding-*` so the band reads at the SAME HEIGHT as the
+ * body app bar's `<header>`. The class-scoped selector (no body-shell
+ * prefix) wins the framework's pure-element rule by class specificity. */
+nav > header.showcase-drawer-header {
+	position: static;
+	margin: 0;
+	inset-block-start: auto;
+}
+
+/* Search row — sits between the drawer header and the scrolling
+ * list, OUTSIDE the scroll container. `flex-shrink: 0` keeps its
+ * intrinsic height stable when the link list is tall. Its own
+ * `padding-block` gives the input breathing space on top and
+ * bottom; `padding-inline` matches the rail's gutter so the
+ * input aligns with menu rows below. Bottom divider separates the
+ * search from the scrolling list. */
 body:has(main) > nav > search,
 body:has(main) > * > nav > search {
-	margin-inline: calc(var(--set-nav-padding-inline) * -1);
-	margin-block-start: calc(var(--set-nav-gap) * -1);
+	flex-shrink: 0;
 	padding-inline: var(--set-nav-padding-inline);
-	padding-block-end: var(--set-nav-padding-block);
+	padding-block: var(--set-nav-padding-block);
+	background-color: var(--set-nav-background-color);
 	border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
 }
 
-/* Group label — `<h6>` directly inside the body-shell `<nav>`.
- * Muted uppercase editorial register, indented to align with each
- * `<menu> > <li> > <a>` row's text.
+/* Scroll container — the rail's only scrolling region. `flex: 1`
+ * claims the remaining vertical space; `min-block-size: 0` lets
+ * the flex item shrink below its intrinsic content size so
+ * `overflow-y: auto` activates instead of pushing the rail taller. */
+.showcase-sidebar-scroll {
+	flex: 1 1 auto;
+	min-block-size: 0;
+	overflow-y: auto;
+	padding-inline: var(--set-nav-padding-inline);
+	padding-block: var(--set-nav-padding-block);
+}
+
+/* Group rhythm — `<h6>` + `<menu>` sibling pairs inside the scroll
+ * container (the framework-documented grouped-sidebar pattern, see
+ * `components/_menu.scss` § Grouped sidebars).
  *
- * Asymmetric margins control the group rhythm:
- *   • margin-block-start opens a clear separator above each heading.
- *     The first heading also gets the negative-nav-gap collapse so
- *     it hugs the search's bottom divider instead of carrying the
- *     rail's own gap on top.
- *   • margin-block-end pulls the menu close so the heading reads as
- *     a label for the menu directly beneath it.
- *
- * The framework's nav rail uses `gap: var(--set-nav-gap)` between
- * flex children. With `margin-block-end: 0` on the h6, the gap still
- * separates the heading from its menu by `--set-nav-gap` (8px) —
- * a tight, label-attached rhythm. */
-body:has(main) > nav > h6,
-body:has(main) > * > nav > h6 {
-	margin-block-start: calc(var(--spacing) * 3);
-	margin-block-end: calc(var(--set-nav-gap) * -1);
+ * Asymmetric margins control the rhythm:
+ *   • Top of each heading: clear separator from the previous menu.
+ *   • Bottom of each heading: tight so the heading reads as a label
+ *     for the menu directly beneath it (not as a standalone item).
+ *   • First heading: no top margin (the scroll region's own
+ *     `padding-block` supplies the gap from the search divider).
+ *   • Menus: zero block margins. The framework gives each
+ *     `<li><a>` row its own vertical padding so rows breathe
+ *     internally without needing margins on the menu. */
+.showcase-sidebar-scroll h6 {
+	margin-block-start: calc(var(--spacing) * 5);
+	margin-block-end: calc(var(--spacing) * 1);
 	padding-inline: calc(var(--spacing) * 2);
 	color: var(--color-text-muted);
 	font-size: var(--text-xs);
@@ -182,11 +221,10 @@ body:has(main) > * > nav > h6 {
 	text-transform: uppercase;
 }
 
-/* First heading collapses with the search's bottom divider so the
- * first group hugs the search card. Without this the rail's gap
- * (8px) would stack against the search's bottom border, pushing
- * the first group down. */
-body:has(main) > nav > h6:first-of-type,
-body:has(main) > * > nav > h6:first-of-type {
+.showcase-sidebar-scroll h6:first-child {
 	margin-block-start: 0;
+}
+
+.showcase-sidebar-scroll menu {
+	margin-block: 0;
 }

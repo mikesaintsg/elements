@@ -159,10 +159,12 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			</button>
 		</header>
 
-		<!-- `<search>` is the HTML5 search landmark — semantic on its own,
-		     no wrapper needed. The framework styles `<search>` as a flex
-		     row; `showcase.css` adds the rail-edge bleed + bottom divider
-		     so it reads as a card flush with the rail's edges. -->
+		<!-- `<search>` is the HTML5 search landmark. Mounted as a
+		     separate, NON-scrolling row of the nav rail's flex column
+		     (`showcase.css` switches the rail to a flex-column split
+		     when it carries a `> search` child). The links list below
+		     gets its own scroll region — the search stays anchored at
+		     the top, the rest scrolls. -->
 		<search>
 			<label>
 				<span class="sr-only">Filter pages</span>
@@ -176,7 +178,14 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			</label>
 		</search>
 
-		<SiteNav :routes="filteredRoutes" :active="current.id" @navigate="leftOpen = false" />
+		<!-- Scrolling links region. The `<div>` is layout-only — it owns the
+		     `flex: 1 + overflow-y: auto` scroll container so the sibling
+		     `<header>` and `<search>` above can stay at fixed height
+		     outside the overflow. Inside, SiteNav renders the framework's
+		     documented `<h6>` + `<menu>` sibling-pair pattern. -->
+		<div class="showcase-sidebar-scroll">
+			<SiteNav :routes="filteredRoutes" :active="current.id" @navigate="leftOpen = false" />
+		</div>
 	</nav>
 
 	<main ref="scrollerRef">

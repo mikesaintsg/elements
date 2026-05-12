@@ -1,49 +1,62 @@
 <script lang="ts" setup>
 /**
- * AsidePage — the canonical reference for `<aside>` across its three
- * framework-painted contexts: body-shell sidebar, article callout,
- * and role="alert" / role="status" banner. Plus the `<aside popover>`
- * variant for floating supplementary panels.
+ * AsidePage — the canonical reference for `<aside>` across the
+ * contexts the framework paints. `<aside>` is W3C-defined as
+ * "content tangentially related to the main flow"; context decides
+ * the chrome.
  *
- * The semantic constant: `<aside>` is tangentially-related content.
- * Context decides the chrome:
- *
- *   1. body > aside (or body > * > aside) — page-level sidebar rail.
- *      Persistent column alongside `<main>`. Borders on the inner
- *      edge, scoped padding, fixed inline-size, vertical scroll.
- *      The showcase's right-hand TOC rail IS this — readers can see
- *      the chrome live on this very page.
+ *   1. body > aside (or body > * > aside) — page-level sidebar
+ *      rail. Persistent column alongside `<main>`. Borders on the
+ *      inner edge, scoped padding, fixed inline-size, vertical
+ *      scroll. The showcase's right-hand TOC rail IS this — readers
+ *      can see the chrome live on this very page.
  *   2. article aside — inline pull-quote / callout inside a card.
- *      Leading bar (in variant color) + italic body + indent. Same
- *      semantic as a sidenote: tangential to the card's main flow.
- *   3. aside[role="alert"] / [role="status"] — banner with variant
+ *      Leading bar (in variant color) + italic body + indent.
+ *      Tangential to the card's main flow.
+ *   3. aside[role="alert"] / [role="status"] — IN-FLOW BANNER.
+ *      Lives in the document flow, shifts content below it, and
+ *      announces via the role's implicit `aria-live`. Variant
  *      tinting (bg-subtle + saturated leading bar + subtle
  *      perimeter). Open / closed lifecycle via `data-alert-open`
- *      attribute (toggled by `useAlert`); `interpolate-size: allow-
- *      keywords` powers the smooth collapse animation.
- *   4. aside[popover] — floating supplementary panel. Variant
- *     classes retint via `--set-popover-*` tokens. Chrome lives
- *     in `surfaces/_popover.scss` + `composables/_aside.scss`.
+ *      attribute (toggled by `useAlert`).
+ *   4. aside[popover] — TOP-LAYER PANEL. Generic tangential-info
+ *      popover triggered by a button (`popovertarget`). When
+ *      `useAside` attaches, the same `<aside popover>` becomes the
+ *      framework's off-canvas drawer (composables/_aside.scss
+ *      repaints the geometry). Chrome from `surfaces/_popover.scss`.
  *
- * API surface coverage (Phase 1 audit):
- *   - Body-shell sidebar context (this page sits inside one)
- *   - Article callout — all 7 variants, default + variant cascade
- *   - Alert banner — bare default + all 7 variants, dismiss button
- *     with variant-context reset, optional `.filled` semantics
- *   - Status banner — same chrome, role="status" politeness
- *   - Popover panel — variant-tinted floating aside
- *   - Forced-colors fallback documented
+ * What `<aside>` is NOT — the disambiguation that motivates this
+ * page's section ordering:
+ *
+ *   • Toast notifications are NOT `<aside>`. Toasts use `<output
+ *     popover>` (top-layer, transient, corner-anchored, polite
+ *     `role="status"` announce). See `components/_output.scss`.
+ *   • Modals are NOT `<aside>`. Modals use `<dialog>` with
+ *     `.showModal()` (top-layer + backdrop + focus trap).
+ *   • Tooltips are NOT `<aside>`. Tooltips use `[popover="hint"]`
+ *     or `[role="tooltip"]` (small label-style hover panels).
+ *
+ * Layer mental model — the bright line behind the section ordering:
+ *
+ *   IN-FLOW (shifts surrounding UI):
+ *     - body > aside (sidebar rail) — section 1
+ *     - article aside (callout) — section 2
+ *     - aside[role="alert"] / [role="status"] (banner) — section 3
+ *
+ *   TOP-LAYER (overlays surrounding UI):
+ *     - aside[popover] (panel + drawer) — section 5
+ *     - output[popover] (toast) — see OutputPage
+ *     - dialog (modal) — see DialogPage
  *
  * Cross-references:
- *   - `<aside>` inside `<article>` composes with the article card
- *     surface (ArticleCardPage) — the callout sits in the card's
- *     flex-column rhythm without disrupting padding-block.
- *   - `useAlert` composable (composables roster) drives the open /
- *     close animation; the chrome partial gates on the `[data-
- *     alert-open]` attribute lifecycle.
+ *   - `useAlert` composable drives the in-flow open / close
+ *     animation; chrome gates on `[data-alert-open]`.
+ *   - `useAside` composable upgrades `<aside popover>` to a drawer
+ *     by setting `[data-aside-open]`; composables/_aside.scss
+ *     supplies the slide-from-edge geometry.
  *   - `<output role="alert">` is the inline form-validation peer —
- *     same live-region politeness, different layout context (tied
- *     to an `<input>` via `aria-describedby`).
+ *     same live-region politeness, different layout (tied to an
+ *     `<input>` via `aria-describedby`).
  */
 import { ref } from 'vue'
 
@@ -75,17 +88,25 @@ const restore = (): void => {
 		<hgroup>
 			<h1>Aside</h1>
 			<p>
-				<code>&lt;aside&gt;</code> is the framework's "tangentially-related content" element.
-				Context picks the chrome: the body-shell sidebar rail is one role; a callout inside an
-				article is another; a <code>role="alert"</code> banner is a third. One element, three
-				semantic-distinct shapes, no naming class — disambiguated entirely by ancestry / role.
+				<code>&lt;aside&gt;</code> is the W3C-defined "tangentially-related content" element.
+				Context picks the chrome — sidebar rail, article callout, in-flow alert banner, or top-layer
+				popover panel. One element, four shapes, disambiguated by ancestry + role + attributes
+				(never by a class).
 			</p>
 		</hgroup>
 		<p>
 			You're looking at one of these right now — the right-hand TOC rail on this page is a
-			<code>&lt;body&gt; &gt; &lt;aside&gt;</code>. The page below demonstrates the other two
-			contexts (article callout, alert banner) plus the <code>[popover]</code> variant.
+			<code>&lt;body&gt; &gt; &lt;aside&gt;</code>. Sections below cover the other three.
 		</p>
+		<aside role="status" class="information" data-alert-open>
+			<p>
+				<strong>Mental model.</strong> Sections 1–3 are <strong>in-flow</strong> shapes that shift
+				the surrounding UI. Section 5 is a <strong>top-layer</strong> overlay that does NOT shift
+				content. Toast notifications (top-layer, transient, auto-dismiss) and modals (top-layer,
+				focus-trapped) are not <code>&lt;aside&gt;</code> — they belong on
+				<code>&lt;output popover&gt;</code> and <code>&lt;dialog&gt;</code> respectively.
+			</p>
+		</aside>
 	</section>
 
 	<section id="aside-sidebar-context">
@@ -283,27 +304,44 @@ const restore = (): void => {
 	<section id="aside-popover">
 		<h2>5. Popover panel — <code>&lt;aside popover&gt;</code></h2>
 		<p>
-			The <code>[popover]</code> attribute turns the aside into a floating layer (top-layer via the
-			native Popover API). Variant classes retint the panel through
-			<code>--set-popover-*</code> tokens. Direct-child <code>&lt;header&gt;</code> and
-			<code>&lt;footer&gt;</code> auto-paint banded chrome (same pattern as alerts + articles +
-			dialogs) — useful for a title-row + close button at the top, or an action-row at the bottom.
+			The <code>[popover]</code> attribute lifts the aside into the browser's
+			<strong>top layer</strong>
+			— an overlay above the surrounding UI, not part of the document flow. A button with
+			<code>popovertarget="…"</code> opens it; a second button inside the panel with
+			<code>popovertargetaction="hide"</code> closes it. No JS required.
 		</p>
 		<p>
-			<strong>Width.</strong> The popover surface clamps panel width to
-			<code
-				>min(--set-popover-max-inline-size, --set-anchor-max-inline-size, 100vw -
-				--set-popover-viewport-inset * 2)</code
-			>. On wide viewports the panel's target width wins (~17.25rem default); on narrow viewports
-			the third clause clamps to viewport minus a 1rem inset on each side so the panel never reaches
-			the screen edges.
+			<strong>Not an alert, not a toast.</strong> The popover panel is a <em>user-controlled</em>
+			tangential-info surface — opened on demand, dismissed by the user. Two adjacent patterns
+			belong elsewhere:
+		</p>
+		<ul>
+			<li>
+				<strong>In-flow alerts</strong> (section&nbsp;3 above) use
+				<code>&lt;aside role="alert"&gt;</code> — they sit in the document flow, push content below,
+				and announce via <code>aria-live="assertive"</code>.
+			</li>
+			<li>
+				<strong>Top-layer toasts</strong> are <code>&lt;output popover&gt;</code> — transient
+				corner-anchored notifications with implicit <code>role="status"</code> and auto-dismiss. See
+				the OutputPage for the toast chrome.
+			</li>
+		</ul>
+		<p>
+			<strong>Width &amp; placement.</strong> The popover surface clamps the panel to
+			<code>min(--set-popover-max-inline-size, --set-anchor-max-inline-size, 100vw - inset×2)</code>
+			(default target ~17.25rem; viewport-clamped on narrow screens). Without an anchor, popovers
+			center in the viewport. With anchor positioning, they anchor under their trigger button via
+			<code>position-area: block-end</code>. Mobile viewports auto-inset the panel from the screen
+			edges so it never touches the device frame.
 		</p>
 		<p>
-			<strong>Close.</strong> Use a button with <code>popovertarget="…"</code> +
-			<code>popovertargetaction="hide"</code> and <code>aria-label="Close"</code> — the native
-			Popover API closes the panel via the button without any JS. Buttons inside the header / footer
-			band get a variant-context reset (they paint as transparent ghosts regardless of the panel's
-			variant), same idiom as the alert's dismiss button.
+			<strong>Drawer mode.</strong> When the <code>useAside</code> composable attaches to this same
+			<code>&lt;aside popover&gt;</code>, it sets <code>[data-aside-open]</code> and a
+			composables-layer rule repaints the geometry into a full-viewport-edge slide-out drawer (
+			<code>.start</code> / <code>.end</code> / <code>.top</code> / <code>.bottom</code> placement
+			modifiers). The examples below stay in plain popover mode — drawer chrome is covered on the
+			DrawerPage / composable docs.
 		</p>
 		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
 			<button type="button" popovertarget="aside-pop-default">Default</button>
@@ -314,125 +352,71 @@ const restore = (): void => {
 		</div>
 
 		<aside id="aside-pop-default" popover>
-			<header>
-				<strong>Quick note</strong>
-				<button
-					type="button"
-					popovertarget="aside-pop-default"
-					popovertargetaction="hide"
-					aria-label="Close"
-				>
-					×
-				</button>
-			</header>
-			<p style="margin-block: 0">
-				Default popover — neutral panel chrome from the framework's popover surface. Headers and
-				footers paint banded chrome that adapts to the variant cascade.
+			<p>
+				Default popover panel — neutral chrome from the framework's popover surface
+				(<code>surfaces/_popover.scss</code>): perimeter border, subtle elevation, scale-in
+				transition.
 			</p>
-			<footer>
-				<button
-					type="button"
-					class="subtle small"
-					popovertarget="aside-pop-default"
-					popovertargetaction="hide"
-				>
-					Got it
-				</button>
-			</footer>
+			<button
+				type="button"
+				class="subtle small"
+				popovertarget="aside-pop-default"
+				popovertargetaction="hide"
+			>
+				Close
+			</button>
 		</aside>
 
 		<aside id="aside-pop-primary" popover class="primary">
-			<header>
-				<strong>Primary popover</strong>
-				<button
-					type="button"
-					popovertarget="aside-pop-primary"
-					popovertargetaction="hide"
-					aria-label="Close"
+			<p>
+				Variant classes retint the panel via <code>--set-popover-*</code> tokens (<code
+					>bg-subtle</code
 				>
-					×
-				</button>
-			</header>
-			<p style="margin-block: 0">
-				Retinted via the <code>--color-primary-bg-subtle</code> triplet. Body sits between the
-				header and footer bands.
+				body, <code>border-subtle</code> perimeter, <code>text-emphasis</code> text). The primary
+				variant tints toward <code>--color-primary-*</code>.
 			</p>
-			<footer>
-				<button
-					type="button"
-					class="primary small"
-					popovertarget="aside-pop-primary"
-					popovertargetaction="hide"
-				>
-					Confirm
-				</button>
-			</footer>
+			<button
+				type="button"
+				class="primary small"
+				popovertarget="aside-pop-primary"
+				popovertargetaction="hide"
+			>
+				Confirm
+			</button>
 		</aside>
 
 		<aside id="aside-pop-success" popover class="success">
-			<header>
-				<strong>Build complete</strong>
-				<button
-					type="button"
-					popovertarget="aside-pop-success"
-					popovertargetaction="hide"
-					aria-label="Close"
-				>
-					×
-				</button>
-			</header>
-			<p style="margin-block: 0">
-				All 1,420 tests passing. Ready to deploy. The popover surface uses the success variant's
-				<code>bg-subtle</code> + <code>border-subtle</code> + <code>text-emphasis</code> triplet.
+			<p>
+				Success variant — uses the <code>--color-success-bg-subtle</code> +
+				<code>--color-success-text-emphasis</code> theme tokens. Same triplet as the success alert,
+				but the panel sits in the top layer.
 			</p>
 		</aside>
 
 		<aside id="aside-pop-warning" popover class="warning">
-			<header>
-				<strong>Quota warning</strong>
-				<button
-					type="button"
-					popovertarget="aside-pop-warning"
-					popovertargetaction="hide"
-					aria-label="Close"
-				>
-					×
-				</button>
-			</header>
-			<p style="margin-block: 0">
-				87% of your monthly API quota used. Consider upgrading or rate-limiting non-critical traffic
-				before the soft cap kicks in.
+			<p>
+				Warning variant. Suitable for a user-triggered confirmation panel (e.g. "are you sure?")
+				where the panel needs to stay visible until the user dismisses it. For automatic
+				notifications that announce themselves and auto-dismiss, prefer a toast (<code
+					>&lt;output popover&gt;</code
+				>).
 			</p>
 		</aside>
 
 		<aside id="aside-pop-danger" popover class="danger">
-			<header>
-				<strong>Destructive action</strong>
-				<button
-					type="button"
-					popovertarget="aside-pop-danger"
-					popovertargetaction="hide"
-					aria-label="Close"
-				>
-					×
-				</button>
-			</header>
-			<p style="margin-block: 0">
-				This will permanently delete 4 projects and revoke 12 access tokens. The action can't be
-				undone.
+			<p>
+				Danger variant. The popover can host an inline action — but if the action is destructive,
+				prefer a <code>&lt;dialog&gt;</code> opened with <code>.showModal()</code> (focus-trapped,
+				backdrop, screen-reader announces as modal).
 			</p>
-			<footer>
-				<button
-					type="button"
-					class="subtle small"
-					popovertarget="aside-pop-danger"
-					popovertargetaction="hide"
-					style="margin-inline-end: auto"
-				>
-					Cancel
-				</button>
-				<button type="button" class="danger small">Delete forever</button>
-			</footer>
+			<button
+				type="button"
+				class="subtle small"
+				popovertarget="aside-pop-danger"
+				popovertargetaction="hide"
+			>
+				Close
+			</button>
 		</aside>
 	</section>
 
