@@ -103,7 +103,8 @@
 				color var(--set-aside-transition-duration),
 				background-color var(--set-aside-transition-duration),
 				border-color var(--set-aside-transition-duration),
-				transform var(--set-drawer-transition-duration) var(--set-drawer-transition-timing-function)
+				transform var(--set-drawer-transition-duration) var(--set-drawer-transition-timing-function),
+				opacity var(--set-drawer-transition-duration) ease-out
 			)
 		);
 

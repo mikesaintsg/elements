@@ -90,12 +90,27 @@
 	}
 }
 
+/* Backdrop fade — pairs with the framework drawer's opacity+slide so
+ * the scrim doesn't snap in instantly while the rail slides at
+ * 250ms. `@starting-style` provides the from-state at the element's
+ * first mount frame (Vue's `v-if` mounts and unmounts on toggle), so
+ * the backdrop fades in with the drawer. Closing relies on Vue's
+ * `v-if` removal — there's no explicit unmount transition because the
+ * scrim is non-essential UX; abrupt removal as the drawer slides out
+ * is acceptable. Reads the shared drawer-transition tokens so the
+ * scrim's fade duration tracks any consumer retune of the drawer
+ * family motion. */
 .showcase-backdrop {
 	position: fixed;
 	inset: 0;
 	z-index: 25;
 	background-color: color-mix(in oklab, black 35%, transparent);
 	backdrop-filter: blur(2px);
+	transition: opacity var(--set-drawer-transition-duration) ease-out;
+
+	@starting-style {
+		opacity: 0;
+	}
 }
 
 /* Sidebar layout — APP-SPECIFIC flex-column split.

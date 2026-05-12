@@ -167,11 +167,31 @@
 			transform: translateX(100%);
 		}
 
+		// Closed state — `opacity: 0` pairs with the off-screen transform.
+		// Why fade alongside the slide: the drawer-transition timing
+		// function (`cubic-bezier(0.32, 0.72, 0, 1)`, iOS stiff-decel)
+		// front-loads the movement — the panel rushes ~70 % of the way in
+		// during the first third of the duration, then slowly settles.
+		// A pure-transform slide reads as "the panel POPS in then crawls
+		// to a stop." Fading opacity 0 → 1 over the same window smooths
+		// the perceived motion: by the time the panel is halfway through
+		// its slide it's already fully opaque, masking the curve's
+		// front-loaded velocity. Same shape the `<aside popover>`
+		// offcanvas drawers use — keeps motion uniform across the
+		// drawer family.
+		body:has(main) > nav,
+		body:has(main) > * > nav,
+		body:has(main) > aside,
+		body:has(main) > * > aside {
+			opacity: 0;
+		}
+
 		body:has(main) > nav[data-open],
 		body:has(main) > * > nav[data-open],
 		body:has(main) > aside[data-open],
 		body:has(main) > * > aside[data-open] {
 			transform: translateX(0);
+			opacity: 1;
 		}
 	}
 }

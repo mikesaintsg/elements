@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T16:21:24.367Z" />
+		<meta name="build-id" content="2026-05-12T16:31:00.354Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9040,7 +9040,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T16:21:24.367Z`)), 1),
+										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T16:31:00.354Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -12050,7 +12050,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						background-color var(--set-aside-transition-duration),
 						border-color var(--set-aside-transition-duration),
 						transform var(--set-drawer-transition-duration)
-							var(--set-drawer-transition-timing-function);
+							var(--set-drawer-transition-timing-function),
+						opacity var(--set-drawer-transition-duration) ease-out;
 					flex-direction: column;
 					display: flex;
 					overflow-y: auto;
@@ -12566,11 +12567,20 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						transform: translate(100%);
 					}
 					:is(
+						body:has(main) > nav,
+						body:has(main) > * > nav,
+						body:has(main) > aside,
+						body:has(main) > * > aside
+					) {
+						opacity: 0;
+					}
+					:is(
 						body:has(main) > nav[data-open],
 						body:has(main) > * > nav[data-open],
 						body:has(main) > aside[data-open],
 						body:has(main) > * > aside[data-open]
 					) {
+						opacity: 1;
 						transform: translate(0);
 					}
 				}
@@ -13285,7 +13295,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						background-color var(--set-nav-transition-duration),
 						border-color var(--set-nav-transition-duration),
 						transform var(--set-drawer-transition-duration)
-							var(--set-drawer-transition-timing-function);
+							var(--set-drawer-transition-timing-function),
+						opacity var(--set-drawer-transition-duration) ease-out;
 					flex-flow: column;
 					display: flex;
 					overflow-y: auto;
@@ -16781,9 +16792,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				z-index: 25;
 				-webkit-backdrop-filter: blur(2px);
 				backdrop-filter: blur(2px);
+				transition: opacity var(--set-drawer-transition-duration) ease-out;
 				background-color: oklab(0% none none/.35);
 				position: fixed;
 				inset: 0;
+			}
+			@starting-style {
+				.showcase-backdrop {
+					opacity: 0;
+				}
 			}
 			:is(body:has(main) > nav:has(> search), body:has(main) > * > nav:has(> search)) {
 				gap: 0;

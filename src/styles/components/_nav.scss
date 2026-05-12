@@ -171,7 +171,8 @@
 				color var(--set-nav-transition-duration),
 				background-color var(--set-nav-transition-duration),
 				border-color var(--set-nav-transition-duration),
-				transform var(--set-drawer-transition-duration) var(--set-drawer-transition-timing-function)
+				transform var(--set-drawer-transition-duration) var(--set-drawer-transition-timing-function),
+				opacity var(--set-drawer-transition-duration) ease-out
 			)
 		);
 
