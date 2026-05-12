@@ -11,6 +11,7 @@ import HeadingsPage from './pages/HeadingsPage.vue'
 import TypographyPage from './pages/TypographyPage.vue'
 import ListsPage from './pages/ListsPage.vue'
 import TablesPage from './pages/TablesPage.vue'
+import MediaPage from './pages/MediaPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -83,6 +84,12 @@ const TABLES: Route = {
 	group: 'Elements — Content',
 	page: TablesPage,
 }
+const MEDIA: Route = {
+	id: 'media',
+	title: 'Media',
+	group: 'Elements — Media & Sectioning',
+	page: MediaPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -95,6 +102,7 @@ export const routes: readonly Route[] = [
 	TYPOGRAPHY,
 	LISTS,
 	TABLES,
+	MEDIA,
 ]
 
 interface RouteLocation {

@@ -457,7 +457,7 @@ A page that fails any row gets fixed in-place before being marked done — the r
 
 #### Elements — Media & Sectioning (3)
 
-- [ ] **MediaPage** — `<img>`, `<video>`, `<audio>`, `<canvas>`, `<svg>` (inline + viewBox-only), `<iframe>`, `<embed>`, `<object>`, `<picture>` (`display: contents` structural rule).
+- [x] **MediaPage** — `<img>` (block + `vertical-align: middle` for inline-flow), `<picture>` (the `display: contents` structural rule that makes the wrapper layout-invisible so flex / grid sees the inner `<img>` directly), `<video>` (block, max-inline-size, black bg default, optional `--set-video-border-radius`), `<audio>` (full-width player, OS chrome preserved), `<canvas>` (capped at container width, CSS-size-vs-pixel-grid distinction documented; small JS hook paints an example bar chart so the demo canvas isn't blank — canvas is fundamentally a JS surface), `<svg>` (max-width + `block-size: auto`, `fill="currentColor"` for per-context theming demonstrated with primary + success-tinted variants), `<iframe>` (UA `border: 2px inset` stripped, max-width cap), `<embed>` / `<object>` (max-width treatment + markup contract docs). Best-practices section covers `alt` attribute, `width` / `height` for CLS prevention, `<picture>` vs CSS bg-image, `preload="metadata"` for video / audio, HiDPI canvas sizing, and `<iframe sandbox>` for third-party embeds.
 - [ ] **FiguresPage** — `<figure>` + `<figcaption>` with image / code / table / pull-quote variants.
 - [ ] **SectioningPage** — `<main>`, `<section>`, `<article>`, `<aside>`, `<header>`, `<footer>`, `<nav>`, `<search>`, `<hgroup>`. Demonstrates the body-grid layout shell, the substantive sectioning hydration (flex-column rhythm, `--set-sticky-offset` scroll-margin), nesting collapse behaviour.
 
