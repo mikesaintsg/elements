@@ -370,17 +370,28 @@
 			border-color: var(--color-#{$variant}-border-subtle);
 		}
 
-		// Variant tinting for `<aside popover>` panels — same subtle
-		// recipe as alerts but driven through the popover surface
-		// tokens (`--set-popover-*`) so the rule beats the surface
-		// defaults from the components layer (popovers paint chrome
-		// from `surfaces/_popover.scss`, but `--set-popover-{color,
-		// background-color,border-color}` are read VARS so writing
-		// them here retunes the panel without re-painting properties).
+		// Variant tinting for `<aside popover>` panels — alert chrome
+		// recipe lifted into the popover surface. Same triplet the alert
+		// variant rule uses (bg-subtle body, text-emphasis text,
+		// border-subtle perimeter) plus a saturated leading-bar color
+		// (`text-emphasis`) painted by overriding the inline-start border
+		// color specifically — without this override the leading bar
+		// would inherit the popover surface's `--set-popover-border-
+		// color` (which we set to `border-subtle` two lines above),
+		// painting a subtle bar that doesn't carry the variant signal.
+		// `border-inline-start-color` overrides the per-side color
+		// inherited from the shorthand `border: 1px solid var(--set-
+		// popover-border-color)` in `surfaces/_popover.scss`.
 		aside[popover].#{$variant} {
 			--set-popover-color: var(--color-#{$variant}-text-emphasis);
 			--set-popover-background-color: var(--color-#{$variant}-bg-subtle);
 			--set-popover-border-color: var(--color-#{$variant}-border-subtle);
+			// Saturated leading bar color (paints the thicker inline-start
+			// border via the popover surface's `--set-popover-leading-bar-
+			// color` token). Same idiom the alert variant rule uses —
+			// perimeter stays subtle, leading bar carries the saturated
+			// variant signal.
+			--set-popover-leading-bar-color: var(--color-#{$variant}-text-emphasis);
 		}
 	}
 
@@ -395,6 +406,59 @@
 			border-color: CanvasText;
 			border-inline-start-color: CanvasText;
 		}
+	}
+
+	// --------------------------------------------------------------------------
+	// aside[popover] — alert-as-popover, NOT a tooltip.
+	//
+	// An `<aside popover>` is a FLOATING alert: the alert chrome contract
+	// (wider banner padding, leading accent bar, bg-subtle tint, subtle
+	// perimeter) lifted into the popover top-layer so a button can trigger
+	// it without an inline-flow slot. It's distinct from `<menu popover>`
+	// (dropdown) and bare `[popover]` (small floating panel) — the
+	// `<aside>` semantic is "tangentially-related content," and an
+	// inline-floated alert-style notification fits exactly there.
+	//
+	// Chrome adoption — reset the popover surface tokens that control
+	// the panel's PADDING / SIZE / RADIUS to the alert equivalents so the
+	// floating panel has banner-room rather than tooltip-room:
+	//   --set-popover-padding-inline   → alert padding-inline
+	//   --set-popover-padding-block    → alert padding-block
+	//   --set-popover-max-inline-size  → alert max-inline-size (32rem)
+	//   --set-popover-border-radius    → alert border-radius
+	//
+	// Leading accent bar — match alerts: a thicker `border-inline-start`
+	// in the variant's saturated `text-emphasis` color (vs the perimeter
+	// which stays subtle `border-subtle`). The variant rule below paints
+	// the saturated bar color via `border-inline-start-color`; the bare
+	// (variantless) popover-aside uses `--color-border-strong` so the bar
+	// still reads as a divider against the panel bg.
+	//
+	// Positioning stays the popover surface's default — anchor-positioned
+	// below the trigger via `position-area: block-end` from
+	// `surfaces/_anchor-position.scss`. The mobile-viewport clamp on
+	// `max-inline-size: min(…, calc(100vw - 2rem))` (same surface) keeps
+	// the panel from touching screen edges on narrow viewports.
+	// --------------------------------------------------------------------------
+	aside[popover] {
+		--set-popover-padding-inline: var(--set-alert-padding-inline);
+		--set-popover-padding-block: var(--set-alert-padding-block);
+		--set-popover-max-inline-size: var(--set-alert-max-inline-size);
+		--set-popover-border-radius: var(--set-alert-border-radius);
+
+		// Leading accent bar — opt into the alert-style thicker
+		// inline-start border via the popover surface's leading-bar
+		// tokens. Default bar color is `--color-border-strong`;
+		// variants override below to the saturated `text-emphasis`
+		// color (matching the alert variant recipe). The tokens
+		// approach is required because `surfaces/_popover.scss` (the
+		// layer where the border is painted) sits AFTER `components/`
+		// in the cascade — overriding the border properties directly
+		// here would lose to the surface declaration. The surface
+		// reads the tokens and paints, so the cross-layer cascade
+		// flows through the tokens not the rules.
+		--set-popover-leading-bar-width: var(--set-alert-bar-width);
+		--set-popover-leading-bar-color: var(--color-border-strong);
 	}
 
 	// --------------------------------------------------------------------------

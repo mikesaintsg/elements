@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T13:30:31.203Z" />
+		<meta name="build-id" content="2026-05-12T13:48:22.825Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -8884,7 +8884,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Ou, `build ` + k(Yt(`2026-05-12T13:30:31.203Z`)), 1),
+										Y(`small`, Ou, `build ` + k(Yt(`2026-05-12T13:48:22.825Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -12039,6 +12039,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-color: var(--color-primary-text-emphasis);
 					--set-popover-background-color: var(--color-primary-bg-subtle);
 					--set-popover-border-color: var(--color-primary-border-subtle);
+					--set-popover-leading-bar-color: var(--color-primary-text-emphasis);
 				}
 				aside[role='alert'].secondary {
 					--set-alert-color: var(--color-secondary-text-emphasis);
@@ -12050,6 +12051,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-color: var(--color-secondary-text-emphasis);
 					--set-popover-background-color: var(--color-secondary-bg-subtle);
 					--set-popover-border-color: var(--color-secondary-border-subtle);
+					--set-popover-leading-bar-color: var(--color-secondary-text-emphasis);
 				}
 				aside[role='alert'].tertiary {
 					--set-alert-color: var(--color-tertiary-text-emphasis);
@@ -12061,6 +12063,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-color: var(--color-tertiary-text-emphasis);
 					--set-popover-background-color: var(--color-tertiary-bg-subtle);
 					--set-popover-border-color: var(--color-tertiary-border-subtle);
+					--set-popover-leading-bar-color: var(--color-tertiary-text-emphasis);
 				}
 				aside[role='alert'].success {
 					--set-alert-color: var(--color-success-text-emphasis);
@@ -12072,6 +12075,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-color: var(--color-success-text-emphasis);
 					--set-popover-background-color: var(--color-success-bg-subtle);
 					--set-popover-border-color: var(--color-success-border-subtle);
+					--set-popover-leading-bar-color: var(--color-success-text-emphasis);
 				}
 				aside[role='alert'].warning {
 					--set-alert-color: var(--color-warning-text-emphasis);
@@ -12083,6 +12087,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-color: var(--color-warning-text-emphasis);
 					--set-popover-background-color: var(--color-warning-bg-subtle);
 					--set-popover-border-color: var(--color-warning-border-subtle);
+					--set-popover-leading-bar-color: var(--color-warning-text-emphasis);
 				}
 				aside[role='alert'].danger {
 					--set-alert-color: var(--color-danger-text-emphasis);
@@ -12094,6 +12099,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-color: var(--color-danger-text-emphasis);
 					--set-popover-background-color: var(--color-danger-bg-subtle);
 					--set-popover-border-color: var(--color-danger-border-subtle);
+					--set-popover-leading-bar-color: var(--color-danger-text-emphasis);
 				}
 				aside[role='alert'].information {
 					--set-alert-color: var(--color-information-text-emphasis);
@@ -12105,6 +12111,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-color: var(--color-information-text-emphasis);
 					--set-popover-background-color: var(--color-information-bg-subtle);
 					--set-popover-border-color: var(--color-information-border-subtle);
+					--set-popover-leading-bar-color: var(--color-information-text-emphasis);
 				}
 				@media (forced-colors: active) {
 					aside[role='alert'] {
@@ -12113,6 +12120,14 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						background-color: canvas;
 						border-inline-start-color: canvastext;
 					}
+				}
+				aside[popover] {
+					--set-popover-padding-inline: var(--set-alert-padding-inline);
+					--set-popover-padding-block: var(--set-alert-padding-block);
+					--set-popover-max-inline-size: var(--set-alert-max-inline-size);
+					--set-popover-border-radius: var(--set-alert-border-radius);
+					--set-popover-leading-bar-width: var(--set-alert-bar-width);
+					--set-popover-leading-bar-color: var(--color-border-strong);
 				}
 				aside[popover] > header:first-child,
 				aside[popover] > footer:last-child {
@@ -13850,11 +13865,16 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-transition-duration: var(--set-transition-duration);
 					--set-popover-max-inline-size: 17.25rem;
 					--set-popover-viewport-inset: 1rem;
+					--set-popover-leading-bar-width: var(--set-popover-border-width);
+					--set-popover-leading-bar-color: var(--set-popover-border-color);
 				}
 				[popover] {
 					color: var(--set-popover-color);
 					background-color: var(--set-popover-background-color);
-					border: var(--set-popover-border-width) solid var(--set-popover-border-color);
+					border-block: var(--set-popover-border-width) solid var(--set-popover-border-color);
+					border-inline-end: var(--set-popover-border-width) solid var(--set-popover-border-color);
+					border-inline-start: var(--set-popover-leading-bar-width) solid
+						var(--set-popover-leading-bar-color);
 					border-radius: var(--set-popover-border-radius);
 					padding-inline: var(--set-popover-padding-inline);
 					padding-block: var(--set-popover-padding-block);
