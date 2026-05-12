@@ -98,54 +98,64 @@
 	backdrop-filter: blur(2px);
 }
 
-/* Sticky sidebar search bar — APP-SPECIFIC, not framework chrome.
+/* Sidebar search CARD — APP-SPECIFIC composition, not framework chrome.
  *
- * Docs sites (and product-internal UIs) tend to want the filter input
- * pinned to the top of a scrolling navigation rail so the search box stays
- * reachable while the user is mid-scroll through a long list. That's a
- * deliberate design choice the SHOWCASE makes, not something every
- * consumer of the framework's `<search>` element wants — some products
- * prefer the search to scroll with content, some put it in the app bar,
- * some use a dialog-launched command-K instead. So this rule lives here,
- * scoped to `body:has(main) > nav > search` (exactly the way the showcase
- * mounts its sidebar filter), rather than in
- * `src/styles/components/_search.scss`.
+ * The showcase wraps its `<search>` filter in a `<div class="showcase-
+ * sidebar-search">` card-shell. The card pins to the top of the
+ * scrolling nav rail, paints the rail's own background to mask list
+ * rows that scroll behind it, and provides the padding + bottom divider
+ * that separates the card from the first group below.
  *
- * Mechanics (all framework primitives are reused — only the composition
- * is showcase-specific):
+ * Why a wrapper element (not just sticky chrome on the `<search>`
+ * itself): the search element ships its own row-layout contract (flex
+ * + input growth + optional submit button); layering sticky-card
+ * behavior on top of that contract muddies what `<search>` IS. The
+ * card-shell is a separate concern — "the chrome that holds the search
+ * in place" — and a wrapper makes that concern visible in markup. A
+ * consumer building their own sidebar follows the same pattern:
+ * `<div class="my-sticky-card"><search>…</search></div>`.
  *
- *   - `position: sticky; inset-block-start: 0` pins the bar to the top of
- *     the nav rail's scroll container.
- *   - `--set-search-*` token overrides route the bar's internal padding
- *     through the rail's own `--set-nav-padding-*` so the input's gutter
- *     matches the rail's outer gutter.
- *   - Negative margins (block-start + inline-both) cancel the rail's outer
- *     padding so the pinned bar extends flush to the rail's top + side
- *     edges. Without these, the rail's padding leaves a visible strip of
- *     canvas around the bar when it's pinned.
+ * Why this is showcase-specific (not framework): the framework ships
+ * the `<search>` element's row chrome and the body-shell nav rail.
+ * Whether the search is pinned to the top of the rail, lives in the
+ * app bar, or pops via a command-K dialog is a product-design choice
+ * the consumer owns. So this rule lives in `app/browser/`, not
+ * `src/styles/`.
+ *
+ * Mechanics (composes only framework tokens, no showcase-private
+ * values — paste verbatim into a consumer site and it drops in clean):
+ *
+ *   - `position: sticky; inset-block-start: 0` pins the card to the
+ *     top of the rail's scroll container (the `<nav>` itself, which
+ *     has `overflow-y: auto` from the framework's body-shell rule).
+ *   - Negative `margin-block-start` + `margin-inline` cancel the rail's
+ *     outer padding so the card extends flush to the rail's top +
+ *     side edges. Without this, the rail's padding leaves a visible
+ *     strip of canvas around the card when it's pinned.
+ *   - `padding-block` matches the rail's `--set-nav-padding-block` so
+ *     the search input inside sits at the same vertical rhythm the
+ *     rail's first list row would have started at. `padding-inline`
+ *     same idea — input lines up with the list rows' inline gutter.
  *   - `background-color: var(--set-nav-background-color)` paints the
- *     rail's own background under the bar so scrolling list rows are
- *     cleanly masked when they slide behind the pinned bar.
- *   - `border-block-end` paints the divider below the bar that separates
- *     it from the first list group (the rail's flex `gap` adds the
- *     breathing room above the first group).
- *
- * If extracted into a consumer site, the same rule (pasted verbatim or
- * adapted to the consumer's preferred sidebar shape) drops in cleanly —
- * everything it consumes is a framework token, no showcase-private
- * values.
+ *     rail's own background under the card so anything that scrolls
+ *     behind it is cleanly masked.
+ *   - `border-block-end` paints the divider below the card that
+ *     separates it from the first list group (the rail's flex `gap`
+ *     adds breathing room above the first group itself).
+ *   - `z-index: 1` floats the card above the scrolling rows in the
+ *     stacking context — without it, rows with their own bg-color
+ *     would peek through the card during mid-scroll.
  */
-body:has(main) > nav > search,
-body:has(main) > * > nav > search {
+.showcase-sidebar-search {
 	position: sticky;
 	inset-block-start: 0;
 	z-index: 1;
 
-	--set-search-padding-inline: var(--set-nav-padding-inline);
-	--set-search-padding-block: var(--set-nav-padding-block);
-	--set-search-background-color: var(--set-nav-background-color);
-
 	margin-block-start: calc(var(--set-nav-padding-block) * -1);
 	margin-inline: calc(var(--set-nav-padding-inline) * -1);
+	padding-block: var(--set-nav-padding-block);
+	padding-inline: var(--set-nav-padding-inline);
+
+	background-color: var(--set-nav-background-color);
 	border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
 }

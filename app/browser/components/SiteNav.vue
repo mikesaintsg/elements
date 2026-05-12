@@ -34,19 +34,27 @@ const onLinkClick = (event: MouseEvent, id: string): void => {
 <template>
 	<!-- Sidebar filter — the framework's <search> + <input type="search">
 	     baselines paint the row + input chrome. Pressing "/" focuses the
-	     input via the document-level keydown listener in App.vue. -->
-	<search>
-		<label>
-			<span class="sr-only">Filter pages</span>
-			<input
-				id="sidebar-filter"
-				v-model="query"
-				type="search"
-				placeholder="Filter… (press /)"
-				autocomplete="off"
-			/>
-		</label>
-	</search>
+	     input via the document-level keydown listener in App.vue.
+	     The wrapping <div class="showcase-sidebar-search"> is the
+	     SHOWCASE'S card-shell around the search — it pins the search to
+	     the top of the rail, paints the rail's bg behind it so scrolling
+	     list rows are masked when they slide underneath, and provides
+	     the bottom divider that separates the search card from the
+	     first nav group. See showcase.css for the rule. -->
+	<div class="showcase-sidebar-search">
+		<search>
+			<label>
+				<span class="sr-only">Filter pages</span>
+				<input
+					id="sidebar-filter"
+					v-model="query"
+					type="search"
+					placeholder="Filter… (press /)"
+					autocomplete="off"
+				/>
+			</label>
+		</search>
+	</div>
 	<!-- Note: .sr-only is a Tailwind utility — visually hidden but accessible -->
 
 	<!-- Each group is its own labelled <section>, list rendered as
