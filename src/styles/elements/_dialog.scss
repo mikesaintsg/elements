@@ -132,29 +132,61 @@
 		);
 
 		// ----------------------------------------------------------------------
-		// Modal — center on the viewport. The top-layer rendering already takes
-		// the dialog out of normal flow; we just need to anchor it to the
-		// viewport center regardless of containing-block geometry.
+		// Default positioning — modal-style centering.
+		//
+		// Applied to bare `<dialog>` (not gated on `:modal`) so the
+		// positioning PERSISTS through the close transition.
+		//
+		// Why this matters: `.close()` removes `[open]` and `:modal` stops
+		// matching synchronously, but the `transition-behavior: allow-
+		// discrete` on `display` + `overlay` keeps the element rendered for
+		// the full motion duration. If the modal-centering rule were gated
+		// on `:modal`, it would stop matching the instant `.close()`
+		// returned — UA defaults take over (`position: absolute; inset:
+		// auto 0; margin: 0`) and the dialog snaps to the top-left corner
+		// of the containing block while the opacity transition plays. The
+		// user sees a "ghost" copy of the modal fade away at (0, 0) while
+		// the real one was at center. Captured the bug via Playwright:
+		// at t=0 of close, position flipped from `fixed; inset: 50% 50%;
+		// translate: -50% -50%` to `fixed; inset: 0`. Pulling the
+		// centering onto bare `<dialog>` keeps the position stable
+		// through the entire fade-out.
+		//
+		// Non-modal open (`<dialog open>` via `.show()`) overrides this
+		// to render inline at its source position via the rule below.
 		// ----------------------------------------------------------------------
-		&:modal {
-			position: fixed;
-			inset-block-start: 50%;
-			inset-inline-start: 50%;
-			inset-block-end: auto;
-			inset-inline-end: auto;
-			margin: 0;
-			translate: -50% -50%;
-		}
+		position: fixed;
+		inset-block-start: 50%;
+		inset-inline-start: 50%;
+		inset-block-end: auto;
+		inset-inline-end: auto;
+		margin: 0;
+		translate: -50% -50%;
 
 		// ----------------------------------------------------------------------
 		// Non-modal — flow inline at the dialog's source position. The UA
 		// default `position: absolute` would send it to the top-of-page;
-		// `static` puts it back into document order so it renders next to the
-		// trigger button.
+		// `static` puts it back into document order so it renders next to
+		// the trigger button. Also clears the `translate` longhand so it
+		// doesn't compose with the inline layout.
+		//
+		// NOTE: non-modal close has a known wart — when `[open]` is
+		// removed, this rule stops matching and the dialog snaps to the
+		// bare-`<dialog>` modal-centering position for the duration of
+		// the close transition (~250 ms) before display:none lands. The
+		// user sees the inline dialog briefly "jump" to viewport center
+		// and fade out there. This is the trade-off for not requiring a
+		// JS composable to track previous-modal state: modal close (the
+		// common case) stays smooth at center; non-modal close (rare)
+		// jumps. If your app uses non-modal dialogs heavily and the jump
+		// is jarring, attach `useDialog` and we can add a
+		// `[data-dialog-closing]` attribute to pin position through the
+		// close transition.
 		// ----------------------------------------------------------------------
 		&[open]:not(:modal) {
 			position: static;
-			margin: 0;
+			inset: auto;
+			translate: none;
 		}
 
 		// ----------------------------------------------------------------------
