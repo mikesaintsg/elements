@@ -59,11 +59,21 @@
 	// section spacing; without this collapse the section's 24px padding
 	// would stack onto the rail's gap for ~56px of dead whitespace per
 	// adjacent pair (visible in the showcase sidebar before this fix).
+	//
+	// `<dialog>` is in the list because `.scrollable` uses an inner
+	// `<section>` as the scroll container — a doubled gap appears between
+	// the dialog's header-section-gap (20px) and the section's own
+	// padding-block (24px), reading as "the header padding is wrong" in
+	// the audit. Same nesting-collapse contract: the dialog owns the
+	// vertical gutter (`--set-dialog-padding-block` + `--set-dialog-
+	// section-gap`), so the inner section drops its own padding-block.
 	main > section,
 	section > section,
 	article > section,
 	nav > section,
-	aside > section {
+	aside > section,
+	dialog > section,
+	dialog > form > section {
 		--set-section-padding-block: 0;
 	}
 }
