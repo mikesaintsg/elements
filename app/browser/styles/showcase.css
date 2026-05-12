@@ -178,13 +178,25 @@ body:has(main) > * > nav[popover] > search {
 }
 
 /* Scroll region — claims remaining height, scrolls independently of
- * the pinned header band + search row above. `min-block-size: 0`
- * lets the flex item shrink below its intrinsic content size so
- * `overflow-y: auto` actually engages (otherwise the item pushes the
- * rail taller than the viewport). */
+ * the pinned header band + search row above.
+ *
+ * `flex: 1 1 0` (NOT `1 1 auto`) is deliberate for cross-browser
+ * robustness. `flex-basis: auto` resolves to the flex item's
+ * INTRINSIC content size — when the link list is taller than the
+ * available rail space, Safari can fail to shrink the item back to
+ * its allocated size even with `min-block-size: 0`, leaving the
+ * scroll-div at its full content height and pushing the rail's
+ * combined contents (header + search + scroll-div) past the rail's
+ * 100dvh container — which then either spills (if the rail has
+ * `overflow: visible`) or makes the rail itself a scroll container
+ * (if `overflow: auto`), pulling the title + search into the scroll
+ * region. `flex-basis: 0` starts the item at zero and lets
+ * `flex-grow: 1` allocate exactly the remaining space; `min-block-
+ * size: 0` keeps the item shrinkable so `overflow-y: auto` engages
+ * cleanly on its content. */
 body:has(main) > nav > .showcase-sidebar-scroll,
 body:has(main) > * > nav > .showcase-sidebar-scroll {
-	flex: 1 1 auto;
+	flex: 1 1 0;
 	min-block-size: 0;
 	overflow-y: auto;
 	padding-inline: var(--set-nav-padding-inline);

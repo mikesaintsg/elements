@@ -6,8 +6,13 @@
 // paints a dim-and-blur scrim on the surfaces that BLOCK interaction
 // with the page beneath:
 //
-//   1. `dialog:modal::backdrop`           — modal dialog scrim
-//   2. `aside[popover]::backdrop`         — offcanvas drawer scrim
+//   1. `dialog:modal::backdrop`                       — modal dialog scrim
+//   2. `:is(aside, nav)[popover]:popover-open::backdrop` — offcanvas drawer
+//      scrim. Covers both the standalone `<aside popover>` surface
+//      AND the `<nav popover>` navigation drawer (the showcase's
+//      body-shell rails use a conditional `:popover` Vue binding to
+//      opt into popover mode on mobile below 960 px and back out to
+//      in-flow above).
 //
 // Both render from the SAME tokens (`--set-backdrop-*`) so the dim
 // reads as one consistent surface across the framework's two "blocking
@@ -35,19 +40,16 @@
 //
 // Single-backdrop guarantee. Every framework surface that needs a
 // scrim renders it via the native `::backdrop` pseudo — there is no
-// per-component "duplicate backdrop element" anywhere in the framework.
-// Top-layer elements get their backdrop from the browser; the
-// framework only styles the existing pseudo. The one exception is
-// the showcase body-shell rail drawers (`<nav>` / `<aside>` with
-// `[data-open]`), which are NOT top-layer (they're CSS-positioned via
-// the body grid) and therefore don't have a `::backdrop` pseudo to
-// style. Those are app-specific drawers and live in
-// `app/browser/styles/showcase.css`'s `.showcase-backdrop` — that
-// rule reads from the SAME `--set-backdrop-*` tokens so the showcase
-// scrim is visually identical to the framework's modal / drawer
-// backdrop. Move the body-shell rails into a popover-mode composition
-// (which makes them top-layer) and the `::backdrop` pseudo would be
-// available; the custom backdrop element becomes unnecessary.
+// per-component "duplicate backdrop element" anywhere in the
+// framework. Top-layer elements get their backdrop from the browser;
+// the framework only styles the existing pseudo. The body-shell rail
+// drawers (`<nav>` / `<aside>` direct children of `<body>`) opt into
+// popover mode on mobile via a `:popover="isMobile ? 'auto' :
+// undefined"` Vue binding (showcase pattern in `app/browser/App.vue`),
+// which lifts them into the top layer and surfaces a native
+// `::backdrop` automatically — so the same open-state scrim rule
+// below covers the modal dialog AND both body-shell drawers without
+// a parallel showcase-side scrim element.
 //
 // Tokens: --set-backdrop-* live on `:root` because ::backdrop is
 // generated outside the normal DOM tree and cannot inherit element-

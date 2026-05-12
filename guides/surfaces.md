@@ -135,9 +135,13 @@ The most important surface. [`_popover.scss`](../src/styles/surfaces/_popover.sc
 
 ```scss
 // Open-state scrim chrome — modal dialog + offcanvas drawer share
-// the same dim-and-blur recipe.
+// the same dim-and-blur recipe. The `:is(aside, nav)[popover]` form
+// covers BOTH the standalone `<aside popover>` offcanvas surface AND
+// the `<nav popover>` navigation drawer (e.g. the showcase's body-
+// shell rail on mobile, which uses a conditional `:popover` Vue
+// binding to opt into popover mode below 960 px).
 dialog:modal::backdrop,
-aside[popover]:popover-open::backdrop {
+:is(aside, nav)[popover]:popover-open::backdrop {
 	background-color: var(--set-backdrop-background-color);
 	backdrop-filter: var(--set-backdrop-backdrop-filter);
 }
@@ -145,18 +149,18 @@ aside[popover]:popover-open::backdrop {
 // Bare pseudo carries the transition list so it survives the close
 // transition tail (see § "Single-backdrop guarantee" below).
 dialog::backdrop,
-aside[popover]::backdrop {
+:is(aside, nav)[popover]::backdrop {
 	transition:
 		background-color var(--set-motion-duration) ease-out,
 		backdrop-filter var(--set-motion-duration) ease-out;
 }
 ```
 
-A modal `<dialog>` and an `<aside popover>` offcanvas drawer feel like siblings — same scrim, same fade-out timing — differing only in geometry. Bootstrap parity: their `.modal-backdrop` and `.offcanvas-backdrop` paint the same `--bs-backdrop-bg` / `--bs-backdrop-opacity` recipe.
+A modal `<dialog>`, an `<aside popover>` offcanvas drawer, and a `<nav popover>` navigation drawer all feel like siblings — same scrim, same fade-out timing — differing only in geometry. Bootstrap parity: their `.modal-backdrop` and `.offcanvas-backdrop` paint the same `--bs-backdrop-bg` / `--bs-backdrop-opacity` recipe.
 
 **Transparent by default for non-blocking surfaces.** Non-modal `<dialog>` (opened via `.show()`), `<output popover>` (toasts), `<menu popover>` (dropdowns), `[popover='hint']` (tooltips), and bare `[popover]` panels keep the UA-default transparent backdrop so they don't dim the page underneath. The matching surface for a "blocking" panel — one that demands the user's attention before the page is interactive again — is modal `<dialog>` or offcanvas `<aside popover>`. The matching surface for a "non-blocking" panel is everything else.
 
-**Single-backdrop guarantee.** Every framework surface that needs a scrim renders it via the native `::backdrop` pseudo — there is no per-component "duplicate backdrop element" anywhere in the framework. Top-layer elements get their backdrop from the browser; the framework only styles the existing pseudo. The one documented exception is the showcase's body-shell rail drawers (`<nav>` / `<aside>` with `[data-open]`) which are NOT top-layer (they're CSS-positioned via the body grid) and have no `::backdrop` pseudo to style — `app/browser/styles/showcase.css` mounts a manual `<div class="showcase-backdrop">` and reads from the SAME `--set-backdrop-*` tokens so the showcase scrim is visually identical to the framework's modal / offcanvas backdrop. Move a body-shell rail into a popover-mode composition (`<aside popover>`) and the native `::backdrop` is available; the custom element becomes unnecessary.
+**Single-backdrop guarantee.** Every framework surface that needs a scrim renders it via the native `::backdrop` pseudo — there is no per-component "duplicate backdrop element" anywhere in the framework. Top-layer elements get their backdrop from the browser; the framework only styles the existing pseudo. The body-shell rail drawers (`<nav>` / `<aside>` direct children of `<body>`) opt into popover mode on mobile via a `:popover="isMobile ? 'auto' : undefined"` binding (showcase pattern in `app/browser/App.vue`), which lifts them into the top layer when the drawer is open and surfaces a native `::backdrop` automatically — so the same `dialog:modal::backdrop, aside[popover]:popover-open::backdrop` rule covers both the modal dialog and the body-shell drawers without a parallel showcase-side scrim element.
 
 **Why split the transition list onto the bare pseudo.** `:modal` (for dialog) and `:popover-open` (for popovers) stop matching synchronously the moment `.close()` / `.hidePopover()` returns. If the transition were declared only on the open-state rule, it would disappear at frame 0 of close — `background-color` and `backdrop-filter` would snap from the dim scrim to the UA-default faint `rgba(0, 0, 0, 0.1)` (Chromium's transparent-but-still-rendered default) for the 250 ms the host's `overlay allow-discrete` keeps the backdrop alive. That snap reads to the user as a backdrop "flash" between the dim scrim and the faint UA default. Putting the transition on the bare pseudo means the backdrop's color animates from dim → UA-transparent over the full motion duration in lockstep with the panel's fade-out, producing a single smooth dismiss instead of a flash-then-fade.
 
