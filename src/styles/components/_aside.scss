@@ -143,6 +143,20 @@
 		--set-alert-padding-block: calc(var(--spacing) * 3);
 		--set-alert-gap: calc(var(--spacing) * 3);
 		--set-alert-border-radius: 0.375rem;
+		// Maximum inline-size — caps alerts on wide viewports so they
+		// don't span the full page width. Mobile relies on the parent
+		// container's gutter (`<main>`'s `--set-main-padding-inline`)
+		// for the inline margin; the alert just fills its parent and
+		// the parent's padding does the work. On wide viewports the
+		// alert tops out at 32rem so reading width stays comfortable.
+		--set-alert-max-inline-size: 32rem;
+		// Band tint inside the alert — slightly lighter or darker than
+		// the alert's own bg, derived from `currentColor` so it adapts
+		// to every variant (light slate band on bare alerts, slightly
+		// darker variant tint on `.success`, etc). Same idiom the
+		// article header / footer bands use.
+		--set-alert-band-background-color: color-mix(in srgb, currentColor 8%, transparent);
+		--set-alert-band-border-color: color-mix(in srgb, currentColor 12%, transparent);
 	}
 
 	// --------------------------------------------------------------------------
@@ -181,6 +195,14 @@
 		align-items: center;
 		gap: var(--set-alert-gap);
 
+		// Width: caps at `--set-alert-max-inline-size` on wide viewports.
+		// On narrow viewports `inline-size: auto` lets the alert fill its
+		// parent, and the parent (typically `<main>`'s padding-inline)
+		// supplies the viewport gutter — no explicit mobile breakpoint
+		// needed because the parent already provides one.
+		inline-size: 100%;
+		max-inline-size: var(--set-alert-max-inline-size);
+
 		padding-inline: var(--set-alert-padding-inline);
 		padding-block: var(--set-alert-padding-block);
 		// Variant alerts paint a tinted bg + saturated leading bar +
@@ -195,8 +217,9 @@
 
 		// Reset sidebar-context properties so an `<aside role="alert">` that
 		// happens to sit inside the body shell still reads as an alert
-		// (banner row), not a column rail.
-		inline-size: auto;
+		// (banner row), not a column rail. `inline-size` already set
+		// above to `100%` (parent-fill) — overrides the sidebar's fixed
+		// `--set-aside-inline-size`.
 		overflow: hidden;
 		min-block-size: 0;
 
@@ -248,6 +271,82 @@
 	}
 
 	// --------------------------------------------------------------------------
+	// Alert auto-banded slots — `<header>` / `<footer>` direct children.
+	//
+	// An alert with a `<header>` (title row + dismiss) or `<footer>` (action
+	// buttons) switches from the default flex-row banner shape to a flex-
+	// column stack. The header / footer bands carry their own tinted band
+	// chrome (matching the article + dialog band pattern); body content
+	// between them keeps the alert's normal padding inset.
+	//
+	// The `:has()` guards keep the simple banner shape for alerts that have
+	// only inline body + dismiss button (the common case). Bands are an
+	// opt-in composition for richer alerts (multi-action notices, branded
+	// inline cards, etc).
+	//
+	// Band tint adapts to the alert's variant — `--set-alert-band-
+	// background-color: color-mix(currentColor 8%, transparent)` resolves
+	// from the variant's `--set-alert-color` (text-emphasis), so a
+	// `.success` alert gets a slightly-more-saturated green band over its
+	// green-bg-subtle body, a bare alert gets a subtle slate band, etc.
+	// Same idiom the article header / footer rule uses.
+	// --------------------------------------------------------------------------
+	aside[role='alert']:has(> header),
+	aside[role='alert']:has(> footer) {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0;
+		padding-inline: 0;
+	}
+
+	// Padding-block on the alert root needs to be zeroed in the open
+	// state too — the open-state rule above sets `padding-block: var(--set-
+	// alert-padding-block)`, and its specificity (0,2,1) beats the
+	// `:has(> header)` selector (0,1,2). Qualifying with the
+	// `[data-alert-open]` attribute brings us to 0,2,2 + `:has()`'s arg
+	// specificity → wins the cascade.
+	aside[role='alert'][data-alert-open]:has(> header),
+	aside[role='alert'][data-alert-open]:has(> footer) {
+		padding-block: 0;
+	}
+
+	aside[role='alert']:has(> header) > :not(header):not(footer),
+	aside[role='alert']:has(> footer) > :not(header):not(footer) {
+		padding-inline: var(--set-alert-padding-inline);
+		padding-block: var(--set-alert-padding-block);
+	}
+
+	aside[role='alert'] > header:first-child,
+	aside[role='alert'] > footer:last-child {
+		display: flex;
+		align-items: center;
+		gap: var(--set-alert-gap);
+		padding-inline: var(--set-alert-padding-inline);
+		padding-block: calc(var(--set-alert-padding-block) * 0.625);
+		background-color: var(--set-alert-band-background-color);
+	}
+
+	aside[role='alert'] > header:first-child {
+		border-block-end: 1px solid var(--set-alert-band-border-color);
+	}
+
+	aside[role='alert'] > footer:last-child {
+		border-block-start: 1px solid var(--set-alert-band-border-color);
+	}
+
+	// Same variant-context reset as `aside[role='alert'] > button:last-child`,
+	// but for close / dismiss buttons living inside a header or footer band.
+	// Without the reset, a `.warning` alert propagates the variant context
+	// into the close button and it paints filled-amber.
+	aside[role='alert'] > header > button:last-child,
+	aside[role='alert'] > footer > button:last-child {
+		margin-inline-start: auto;
+		--set-variant-background-color: transparent;
+		--set-variant-color: currentColor;
+		--set-variant-border-color: transparent;
+	}
+
+	// --------------------------------------------------------------------------
 	// Variant tinting — mirrors mailbox's `.alert-{variant}` chrome via the
 	// shared `--color-{variant}-{bg-subtle, text-emphasis, border-subtle}`
 	// theme tokens (declared in `_theme.scss`, with light + dark formulas).
@@ -296,6 +395,65 @@
 			border-color: CanvasText;
 			border-inline-start-color: CanvasText;
 		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Popover-aside auto-banded slots — `<header>` / `<footer>` direct
+	// children of `<aside popover>`.
+	//
+	// Same composition pattern as article + dialog + alert: a direct-child
+	// header (first) and / or footer (last) auto-paints a tinted band with
+	// a divider. Useful for popover panels that need a title row + close
+	// button (header) or a trailing action row (footer). Negative inline /
+	// block margins bleed the band to the popover's edge so the band runs
+	// edge-to-edge of the panel; matching corner radii (calc'd as
+	// `popover-border-radius - popover-border-width`) keep the bands
+	// rounded against the popover's inner edge.
+	//
+	// Surfaces don't ship `overflow: hidden` (popover arrows can't be
+	// clipped), so corner radii are matched explicitly per-band instead
+	// of relying on overflow-clip like the alert.
+	// --------------------------------------------------------------------------
+	aside[popover] > header:first-child,
+	aside[popover] > footer:last-child {
+		display: flex;
+		align-items: center;
+		gap: calc(var(--spacing) * 3);
+		margin-inline: calc(var(--set-popover-padding-inline) * -1);
+		padding-inline: var(--set-popover-padding-inline);
+		padding-block: calc(var(--set-popover-padding-block) * 0.625);
+		background-color: color-mix(in srgb, currentColor 8%, transparent);
+	}
+
+	aside[popover] > header:first-child {
+		margin-block-start: calc(var(--set-popover-padding-block) * -1);
+		border-block-end: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+		border-start-start-radius: calc(
+			var(--set-popover-border-radius) - var(--set-popover-border-width)
+		);
+		border-start-end-radius: calc(
+			var(--set-popover-border-radius) - var(--set-popover-border-width)
+		);
+	}
+
+	aside[popover] > footer:last-child {
+		margin-block-end: calc(var(--set-popover-padding-block) * -1);
+		border-block-start: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+		border-end-start-radius: calc(
+			var(--set-popover-border-radius) - var(--set-popover-border-width)
+		);
+		border-end-end-radius: calc(var(--set-popover-border-radius) - var(--set-popover-border-width));
+	}
+
+	// Close button inside a popover header / footer — same variant-context
+	// reset the alert dismiss button uses, so a `.success` popover's close
+	// button doesn't paint filled-green.
+	aside[popover] > header > button:last-child,
+	aside[popover] > footer > button:last-child {
+		margin-inline-start: auto;
+		--set-variant-background-color: transparent;
+		--set-variant-color: currentColor;
+		--set-variant-border-color: transparent;
 	}
 
 	// useAside drawer chrome lives in `composables/_aside.scss` so the

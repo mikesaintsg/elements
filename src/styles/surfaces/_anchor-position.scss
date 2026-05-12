@@ -234,7 +234,19 @@
 		// big-content popovers:
 		//   #my-popover { max-block-size: calc(100dvh - 2rem); }
 		max-block-size: var(--set-anchor-max-block-size);
-		max-inline-size: var(--set-anchor-max-inline-size);
+		// `max-inline-size` clamps to the smaller of: (a) the anchor's
+		// fixed inline cap, (b) the popover surface's preferred target
+		// width, (c) the viewport minus a 1rem gutter on each side. The
+		// third clause is the load-bearing one for mobile — without it,
+		// a popover at the anchor cap (28rem) on a 23rem viewport would
+		// touch the screen edges. `min()` returns the smallest, so on
+		// wide viewports the popover target wins (~17.25rem) and on
+		// narrow viewports the viewport gutter wins automatically.
+		max-inline-size: min(
+			var(--set-anchor-max-inline-size),
+			var(--set-popover-max-inline-size, var(--set-anchor-max-inline-size)),
+			calc(100vw - var(--set-popover-viewport-inset, 1rem) * 2)
+		);
 
 		// Long content scrolls inside the popover (overscroll-contain
 		// stops scroll-chaining to the document when the menu hits its

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T12:52:50.507Z" />
+		<meta name="build-id" content="2026-05-12T13:30:31.203Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -7869,7 +7869,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								G,
 								null,
 								[
-									(a[10] ||= Q(
+									(a[14] ||= Q(
 										`<section id="aside-intro"><hgroup><h1>Aside</h1><p><code>&lt;aside&gt;</code> is the framework&#39;s &quot;tangentially-related content&quot; element. Context picks the chrome: the body-shell sidebar rail is one role; a callout inside an article is another; a <code>role=&quot;alert&quot;</code> banner is a third. One element, three semantic-distinct shapes, no naming class — disambiguated entirely by ancestry / role. </p></hgroup><p> You&#39;re looking at one of these right now — the right-hand TOC rail on this page is a <code>&lt;body&gt; &gt; &lt;aside&gt;</code>. The page below demonstrates the other two contexts (article callout, alert banner) plus the <code>[popover]</code> variant. </p></section><section id="aside-sidebar-context"><h2>1. Body-shell sidebar — <code>&lt;body&gt; &gt; &lt;aside&gt;</code></h2><p> The showcase&#39;s right rail. Selected via <code>body:has(main) &gt; aside</code> (plus the <code>&gt; *&gt;</code> once-removed variant for framework mount points) so <code>&lt;aside&gt;</code> outside the shell isn&#39;t auto-styled. Fixed <code>--set-aside-inline-size</code>, scoped <code>--set-aside-padding-*</code>, <code>overflow-y: auto</code>, flex-column with <code>--set-aside-gap</code> between children. Border on the inline-start edge (the rail sits trailing the main content); <code>.start</code> flips the border for asides on the leading side. </p><p> Under 960px the rail collapses to an off-canvas drawer driven by <code>[data-open]</code>. The chrome stays the same — only the positioning context flips between persistent grid item and fixed drawer. See <a href="#/sectioning">SectioningPage § Aside</a> for the body-grid layout discussion. </p></section>`,
 										2,
 									)),
@@ -7977,13 +7977,99 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 														Y(
 															`button`,
 															{ type: `button`, class: `subtle small`, onClick: i },
-															`Restore dismissed alerts`,
+															` Restore dismissed alerts `,
 														),
 													]))
 												: Wi(``, !0),
 										]),
+										(a[10] ||= Q(
+											`<h3>With <code>&lt;header&gt;</code> and <code>&lt;footer&gt;</code> slots</h3><p> A direct-child <code>&lt;header&gt;</code> (first) or <code>&lt;footer&gt;</code> (last) switches the alert from the simple banner row to a flex-column stack with banded chrome — same auto-banding pattern <code>&lt;article&gt;</code> and <code>&lt;dialog&gt;</code> use. The band tint adapts to the variant via <code>color-mix(currentColor 8%, transparent)</code>, so success alerts get a slightly more saturated green band, neutral alerts get a subtle slate band, etc. </p>`,
+											2,
+										)),
+										(a[11] ||= Y(
+											`div`,
+											{ style: { display: `flex`, 'flex-direction': `column`, gap: `1rem` } },
+											[
+												Y(`aside`, { role: `alert`, class: `information`, 'data-alert-open': `` }, [
+													Y(`header`, null, [
+														Y(`strong`, null, `Scheduled maintenance`),
+														Y(`button`, { type: `button`, 'aria-label': `Dismiss` }, `×`),
+													]),
+													Y(
+														`p`,
+														{ style: { 'margin-block': `0` } },
+														` Database maintenance tonight 02:00–04:00 UTC. The app will be read-only during that window. Reports and exports will queue and run after the window closes. `,
+													),
+													Y(`footer`, null, [
+														Y(
+															`a`,
+															{ href: `#aside-alert`, style: { 'margin-inline-end': `auto` } },
+															`View status page →`,
+														),
+														Y(`button`, { type: `button`, class: `subtle small` }, `Snooze 1h`),
+														Y(`button`, { type: `button`, class: `primary small` }, `Acknowledge`),
+													]),
+												]),
+												Y(`aside`, { role: `alert`, class: `danger`, 'data-alert-open': `` }, [
+													Y(`header`, null, [
+														Y(`strong`, null, `Payment failed`),
+														Y(`button`, { type: `button`, 'aria-label': `Dismiss` }, `×`),
+													]),
+													Y(
+														`p`,
+														{ style: { 'margin-block': `0` } },
+														` Your subscription couldn't be renewed because the card on file was declined. Update the billing method to restore access. You have 7 days before the account is suspended. `,
+													),
+													Y(`footer`, null, [
+														Y(
+															`button`,
+															{
+																type: `button`,
+																class: `subtle small`,
+																style: { 'margin-inline-end': `auto` },
+															},
+															` Contact support `,
+														),
+														Y(`button`, { type: `button`, class: `danger small` }, `Update card`),
+													]),
+												]),
+												Y(`aside`, { role: `alert`, class: `success`, 'data-alert-open': `` }, [
+													Y(`header`, null, [
+														Y(`strong`, null, `Build passed`),
+														Y(`button`, { type: `button`, 'aria-label': `Dismiss` }, `×`),
+													]),
+													Y(`p`, { style: { 'margin-block': `0` } }, [
+														Z(` All 1,420 tests passing on `),
+														Y(`code`, null, `main`),
+														Z(`. The deploy will start in 60 seconds unless cancelled. `),
+													]),
+												]),
+											],
+											-1,
+										)),
+										(a[12] ||= Y(`h3`, null, `Width behavior`, -1)),
+										(a[13] ||= Y(
+											`p`,
+											null,
+											[
+												Z(` Alerts cap at `),
+												Y(`code`, null, `--set-alert-max-inline-size`),
+												Z(` (default `),
+												Y(`code`, null, `32rem`),
+												Z(
+													`) on wide viewports — they don't span the full page width even if their parent is wider. Mobile relies on the parent container's gutter (typically `,
+												),
+												Y(`code`, null, `<main>`),
+												Z(`'s fluid `),
+												Y(`code`, null, `--set-main-padding-inline`),
+												Z(
+													`) for the inline margin from screen edges — the alert fills its parent and the parent's padding does the work, so there's no explicit mobile breakpoint to maintain. `,
+												),
+											],
+											-1,
+										)),
 									]),
-									(a[11] ||= Y(
+									(a[15] ||= Y(
 										`section`,
 										{ id: `aside-status` },
 										[
@@ -8001,7 +8087,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 											Y(`aside`, { role: `status`, class: `success`, 'data-alert-open': `` }, [
 												Y(`div`, null, [
 													Y(`strong`, null, `Saved.`),
-													Z(` All changes synced 12 seconds ago. `),
+													Z(` All changes synced 12 seconds ago.`),
 												]),
 											]),
 											Y(
@@ -8015,14 +8101,14 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												[
 													Y(`div`, null, [
 														Y(`strong`, null, `Sync in progress.`),
-														Z(` Uploading 4 of 12 files… `),
+														Z(` Uploading 4 of 12 files…`),
 													]),
 												],
 											),
 										],
 										-1,
 									)),
-									(a[12] ||= Y(
+									(a[16] ||= Y(
 										`section`,
 										{ id: `aside-popover` },
 										[
@@ -8034,12 +8120,36 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 													` attribute turns the aside into a floating layer (top-layer via the native Popover API). Variant classes retint the panel through `,
 												),
 												Y(`code`, null, `--set-popover-*`),
-												Z(` tokens — the chrome lives in `),
-												Y(`code`, null, `surfaces/_popover.scss`),
-												Z(` + `),
-												Y(`code`, null, `composables/_aside.scss`),
+												Z(` tokens. Direct-child `),
+												Y(`code`, null, `<header>`),
+												Z(` and `),
+												Y(`code`, null, `<footer>`),
 												Z(
-													`; the variant tinting rule is in the aside partial alongside the alert rule. `,
+													` auto-paint banded chrome (same pattern as alerts + articles + dialogs) — useful for a title-row + close button at the top, or an action-row at the bottom. `,
+												),
+											]),
+											Y(`p`, null, [
+												Y(`strong`, null, `Width.`),
+												Z(` The popover surface clamps panel width to `),
+												Y(
+													`code`,
+													null,
+													`min(--set-popover-max-inline-size, --set-anchor-max-inline-size, 100vw - --set-popover-viewport-inset * 2)`,
+												),
+												Z(
+													`. On wide viewports the panel's target width wins (~17.25rem default); on narrow viewports the third clause clamps to viewport minus a 1rem inset on each side so the panel never reaches the screen edges. `,
+												),
+											]),
+											Y(`p`, null, [
+												Y(`strong`, null, `Close.`),
+												Z(` Use a button with `),
+												Y(`code`, null, `popovertarget="…"`),
+												Z(` + `),
+												Y(`code`, null, `popovertargetaction="hide"`),
+												Z(` and `),
+												Y(`code`, null, `aria-label="Close"`),
+												Z(
+													` — the native Popover API closes the panel via the button without any JS. Buttons inside the header / footer band get a variant-context reset (they paint as transparent ghosts regardless of the panel's variant), same idiom as the alert's dismiss button. `,
 												),
 											]),
 											Y(`div`, { style: { display: `flex`, 'flex-wrap': `wrap`, gap: `0.5rem` } }, [
@@ -8070,43 +8180,153 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												),
 											]),
 											Y(`aside`, { id: `aside-pop-default`, popover: `` }, [
-												Y(`p`, { style: { 'margin-block': `0` } }, [
-													Y(`strong`, null, `Default popover.`),
-													Z(
-														` Neutral panel — bg + border + radius from the framework's popover surface. `,
+												Y(`header`, null, [
+													Y(`strong`, null, `Quick note`),
+													Y(
+														`button`,
+														{
+															type: `button`,
+															popovertarget: `aside-pop-default`,
+															popovertargetaction: `hide`,
+															'aria-label': `Close`,
+														},
+														` × `,
+													),
+												]),
+												Y(
+													`p`,
+													{ style: { 'margin-block': `0` } },
+													` Default popover — neutral panel chrome from the framework's popover surface. Headers and footers paint banded chrome that adapts to the variant cascade. `,
+												),
+												Y(`footer`, null, [
+													Y(
+														`button`,
+														{
+															type: `button`,
+															class: `subtle small`,
+															popovertarget: `aside-pop-default`,
+															popovertargetaction: `hide`,
+														},
+														` Got it `,
 													),
 												]),
 											]),
 											Y(`aside`, { id: `aside-pop-primary`, popover: ``, class: `primary` }, [
+												Y(`header`, null, [
+													Y(`strong`, null, `Primary popover`),
+													Y(
+														`button`,
+														{
+															type: `button`,
+															popovertarget: `aside-pop-primary`,
+															popovertargetaction: `hide`,
+															'aria-label': `Close`,
+														},
+														` × `,
+													),
+												]),
 												Y(`p`, { style: { 'margin-block': `0` } }, [
-													Y(`strong`, null, `Primary popover.`),
-													Z(` Panel retinted via the `),
+													Z(` Retinted via the `),
 													Y(`code`, null, `--color-primary-bg-subtle`),
-													Z(` triplet. `),
+													Z(` triplet. Body sits between the header and footer bands. `),
+												]),
+												Y(`footer`, null, [
+													Y(
+														`button`,
+														{
+															type: `button`,
+															class: `primary small`,
+															popovertarget: `aside-pop-primary`,
+															popovertargetaction: `hide`,
+														},
+														` Confirm `,
+													),
 												]),
 											]),
 											Y(`aside`, { id: `aside-pop-success`, popover: ``, class: `success` }, [
+												Y(`header`, null, [
+													Y(`strong`, null, `Build complete`),
+													Y(
+														`button`,
+														{
+															type: `button`,
+															popovertarget: `aside-pop-success`,
+															popovertargetaction: `hide`,
+															'aria-label': `Close`,
+														},
+														` × `,
+													),
+												]),
 												Y(`p`, { style: { 'margin-block': `0` } }, [
-													Y(`strong`, null, `Success popover.`),
-													Z(` Subtle green panel, same triplet. `),
+													Z(
+														` All 1,420 tests passing. Ready to deploy. The popover surface uses the success variant's `,
+													),
+													Y(`code`, null, `bg-subtle`),
+													Z(` + `),
+													Y(`code`, null, `border-subtle`),
+													Z(` + `),
+													Y(`code`, null, `text-emphasis`),
+													Z(` triplet. `),
 												]),
 											]),
 											Y(`aside`, { id: `aside-pop-warning`, popover: ``, class: `warning` }, [
-												Y(`p`, { style: { 'margin-block': `0` } }, [
-													Y(`strong`, null, `Warning popover.`),
-													Z(` Subtle amber panel. `),
+												Y(`header`, null, [
+													Y(`strong`, null, `Quota warning`),
+													Y(
+														`button`,
+														{
+															type: `button`,
+															popovertarget: `aside-pop-warning`,
+															popovertargetaction: `hide`,
+															'aria-label': `Close`,
+														},
+														` × `,
+													),
 												]),
+												Y(
+													`p`,
+													{ style: { 'margin-block': `0` } },
+													` 87% of your monthly API quota used. Consider upgrading or rate-limiting non-critical traffic before the soft cap kicks in. `,
+												),
 											]),
 											Y(`aside`, { id: `aside-pop-danger`, popover: ``, class: `danger` }, [
-												Y(`p`, { style: { 'margin-block': `0` } }, [
-													Y(`strong`, null, `Danger popover.`),
-													Z(` Subtle red panel. `),
+												Y(`header`, null, [
+													Y(`strong`, null, `Destructive action`),
+													Y(
+														`button`,
+														{
+															type: `button`,
+															popovertarget: `aside-pop-danger`,
+															popovertargetaction: `hide`,
+															'aria-label': `Close`,
+														},
+														` × `,
+													),
+												]),
+												Y(
+													`p`,
+													{ style: { 'margin-block': `0` } },
+													` This will permanently delete 4 projects and revoke 12 access tokens. The action can't be undone. `,
+												),
+												Y(`footer`, null, [
+													Y(
+														`button`,
+														{
+															type: `button`,
+															class: `subtle small`,
+															popovertarget: `aside-pop-danger`,
+															popovertargetaction: `hide`,
+															style: { 'margin-inline-end': `auto` },
+														},
+														` Cancel `,
+													),
+													Y(`button`, { type: `button`, class: `danger small` }, `Delete forever`),
 												]),
 											]),
 										],
 										-1,
 									)),
-									(a[13] ||= Q(
+									(a[17] ||= Q(
 										`<section id="aside-forced-colors"><h2>Forced-colors fallback</h2><p> In Windows High Contrast mode (and any <code>forced-colors: active</code> environment), the alert banner drops its variant tints — HC mode forces backgrounds to <code>Canvas</code> anyway — and falls back to a single perimeter border + leading bar painted with <code>CanvasText</code> so the banner&#39;s shape survives: </p><pre><code>aside[role=&quot;alert&quot;] {
   @include forced-colors {
     background-color: Canvas;
@@ -8664,7 +8884,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Ou, `build ` + k(Yt(`2026-05-12T12:52:50.507Z`)), 1),
+										Y(`small`, Ou, `build ` + k(Yt(`2026-05-12T13:30:31.203Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -11712,10 +11932,27 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-alert-padding-block: calc(var(--spacing) * 3);
 					--set-alert-gap: calc(var(--spacing) * 3);
 					--set-alert-border-radius: 0.375rem;
+					--set-alert-max-inline-size: 32rem;
+					--set-alert-band-background-color: currentColor;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root {
+						--set-alert-band-background-color: color-mix(in srgb, currentColor 8%, transparent);
+					}
+				}
+				:root {
+					--set-alert-band-border-color: currentColor;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					:root {
+						--set-alert-band-border-color: color-mix(in srgb, currentColor 12%, transparent);
+					}
 				}
 				aside[role='alert'] {
 					align-items: center;
 					gap: var(--set-alert-gap);
+					inline-size: 100%;
+					max-inline-size: var(--set-alert-max-inline-size);
 					padding-inline: var(--set-alert-padding-inline);
 					padding-block: var(--set-alert-padding-block);
 					background-color: var(--set-alert-background-color);
@@ -11727,7 +11964,6 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					visibility: hidden;
 					block-size: 0;
 					min-block-size: 0;
-					inline-size: auto;
 					transition:
 						opacity 0.2s ease-out,
 						block-size 0.25s ease,
@@ -11747,6 +11983,47 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					visibility: visible;
 				}
 				aside[role='alert'] > button:last-child {
+					--set-variant-background-color: transparent;
+					--set-variant-color: currentColor;
+					--set-variant-border-color: transparent;
+					margin-inline-start: auto;
+				}
+				:is(aside[role='alert']:has(> header), aside[role='alert']:has(> footer)) {
+					flex-direction: column;
+					align-items: stretch;
+					gap: 0;
+					padding-inline: 0;
+				}
+				:is(
+					aside[role='alert'][data-alert-open]:has(> header),
+					aside[role='alert'][data-alert-open]:has(> footer)
+				) {
+					padding-block: 0;
+				}
+				:is(
+					aside[role='alert']:has(> header) > :not(header):not(footer),
+					aside[role='alert']:has(> footer) > :not(header):not(footer)
+				) {
+					padding-inline: var(--set-alert-padding-inline);
+					padding-block: var(--set-alert-padding-block);
+				}
+				aside[role='alert'] > header:first-child,
+				aside[role='alert'] > footer:last-child {
+					align-items: center;
+					gap: var(--set-alert-gap);
+					padding-inline: var(--set-alert-padding-inline);
+					padding-block: calc(var(--set-alert-padding-block) * 0.625);
+					background-color: var(--set-alert-band-background-color);
+					display: flex;
+				}
+				aside[role='alert'] > header:first-child {
+					border-block-end: 1px solid var(--set-alert-band-border-color);
+				}
+				aside[role='alert'] > footer:last-child {
+					border-block-start: 1px solid var(--set-alert-band-border-color);
+				}
+				aside[role='alert'] > header > button:last-child,
+				aside[role='alert'] > footer > button:last-child {
 					--set-variant-background-color: transparent;
 					--set-variant-color: currentColor;
 					--set-variant-border-color: transparent;
@@ -11836,6 +12113,63 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						background-color: canvas;
 						border-inline-start-color: canvastext;
 					}
+				}
+				aside[popover] > header:first-child,
+				aside[popover] > footer:last-child {
+					align-items: center;
+					gap: calc(var(--spacing) * 3);
+					margin-inline: calc(var(--set-popover-padding-inline) * -1);
+					padding-inline: var(--set-popover-padding-inline);
+					padding-block: calc(var(--set-popover-padding-block) * 0.625);
+					background-color: currentColor;
+					display: flex;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					aside[popover] > header:first-child,
+					aside[popover] > footer:last-child {
+						background-color: color-mix(in srgb, currentColor 8%, transparent);
+					}
+				}
+				aside[popover] > header:first-child {
+					border-block-end: 1px solid;
+					margin-block-start: calc(var(--set-popover-padding-block) * -1);
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					aside[popover] > header:first-child {
+						border-block-end: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+					}
+				}
+				aside[popover] > header:first-child {
+					border-start-start-radius: calc(
+						var(--set-popover-border-radius) - var(--set-popover-border-width)
+					);
+					border-start-end-radius: calc(
+						var(--set-popover-border-radius) - var(--set-popover-border-width)
+					);
+				}
+				aside[popover] > footer:last-child {
+					border-block-start: 1px solid;
+					margin-block-end: calc(var(--set-popover-padding-block) * -1);
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					aside[popover] > footer:last-child {
+						border-block-start: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+					}
+				}
+				aside[popover] > footer:last-child {
+					border-end-end-radius: calc(
+						var(--set-popover-border-radius) - var(--set-popover-border-width)
+					);
+					border-end-start-radius: calc(
+						var(--set-popover-border-radius) - var(--set-popover-border-width)
+					);
+				}
+				aside[popover] > header > button:last-child,
+				aside[popover] > footer > button:last-child {
+					--set-variant-background-color: transparent;
+					--set-variant-color: currentColor;
+					--set-variant-border-color: transparent;
+					margin-inline-start: auto;
 				}
 				.badge {
 					--set-badge-color: var(
@@ -13430,7 +13764,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					justify-self: anchor-center;
 					position-visibility: anchors-visible;
 					max-block-size: var(--set-anchor-max-block-size);
-					max-inline-size: var(--set-anchor-max-inline-size);
+					max-inline-size: min(
+						var(--set-anchor-max-inline-size),
+						var(--set-popover-max-inline-size, var(--set-anchor-max-inline-size)),
+						100vw - var(--set-popover-viewport-inset, 1rem) * 2
+					);
 					overscroll-behavior: contain;
 					position: absolute;
 					inset: auto;
@@ -13511,6 +13849,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-box-shadow: var(--set-box-shadow);
 					--set-popover-transition-duration: var(--set-transition-duration);
 					--set-popover-max-inline-size: 17.25rem;
+					--set-popover-viewport-inset: 1rem;
 				}
 				[popover] {
 					color: var(--set-popover-color);
@@ -13522,7 +13861,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					box-shadow: var(--set-popover-box-shadow);
 					max-inline-size: min(
 						var(--set-popover-max-inline-size),
-						var(--set-anchor-max-inline-size)
+						var(--set-anchor-max-inline-size),
+						100vw - var(--set-popover-viewport-inset) * 2
 					);
 					transition:
 						opacity var(--set-popover-transition-duration),

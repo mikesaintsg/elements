@@ -198,6 +198,71 @@ const restore = (): void => {
 				</button>
 			</p>
 		</div>
+
+		<h3>With <code>&lt;header&gt;</code> and <code>&lt;footer&gt;</code> slots</h3>
+		<p>
+			A direct-child <code>&lt;header&gt;</code> (first) or <code>&lt;footer&gt;</code> (last)
+			switches the alert from the simple banner row to a flex-column stack with banded chrome — same
+			auto-banding pattern <code>&lt;article&gt;</code> and <code>&lt;dialog&gt;</code> use. The
+			band tint adapts to the variant via <code>color-mix(currentColor 8%, transparent)</code>, so
+			success alerts get a slightly more saturated green band, neutral alerts get a subtle slate
+			band, etc.
+		</p>
+		<div style="display: flex; flex-direction: column; gap: 1rem">
+			<aside role="alert" class="information" data-alert-open>
+				<header>
+					<strong>Scheduled maintenance</strong>
+					<button type="button" aria-label="Dismiss">×</button>
+				</header>
+				<p style="margin-block: 0">
+					Database maintenance tonight 02:00–04:00 UTC. The app will be read-only during that
+					window. Reports and exports will queue and run after the window closes.
+				</p>
+				<footer>
+					<a href="#aside-alert" style="margin-inline-end: auto">View status page →</a>
+					<button type="button" class="subtle small">Snooze 1h</button>
+					<button type="button" class="primary small">Acknowledge</button>
+				</footer>
+			</aside>
+
+			<aside role="alert" class="danger" data-alert-open>
+				<header>
+					<strong>Payment failed</strong>
+					<button type="button" aria-label="Dismiss">×</button>
+				</header>
+				<p style="margin-block: 0">
+					Your subscription couldn't be renewed because the card on file was declined. Update the
+					billing method to restore access. You have 7 days before the account is suspended.
+				</p>
+				<footer>
+					<button type="button" class="subtle small" style="margin-inline-end: auto">
+						Contact support
+					</button>
+					<button type="button" class="danger small">Update card</button>
+				</footer>
+			</aside>
+
+			<aside role="alert" class="success" data-alert-open>
+				<header>
+					<strong>Build passed</strong>
+					<button type="button" aria-label="Dismiss">×</button>
+				</header>
+				<p style="margin-block: 0">
+					All 1,420 tests passing on <code>main</code>. The deploy will start in 60 seconds unless
+					cancelled.
+				</p>
+			</aside>
+		</div>
+
+		<h3>Width behavior</h3>
+		<p>
+			Alerts cap at <code>--set-alert-max-inline-size</code> (default <code>32rem</code>) on wide
+			viewports — they don't span the full page width even if their parent is wider. Mobile relies
+			on the parent container's gutter (typically <code>&lt;main&gt;</code>'s fluid
+			<code>--set-main-padding-inline</code>) for the inline margin from screen edges — the alert
+			fills its parent and the parent's padding does the work, so there's no explicit mobile
+			breakpoint to maintain.
+		</p>
 	</section>
 
 	<section id="aside-status">
@@ -220,9 +285,25 @@ const restore = (): void => {
 		<p>
 			The <code>[popover]</code> attribute turns the aside into a floating layer (top-layer via the
 			native Popover API). Variant classes retint the panel through
-			<code>--set-popover-*</code> tokens — the chrome lives in
-			<code>surfaces/_popover.scss</code> + <code>composables/_aside.scss</code>; the variant
-			tinting rule is in the aside partial alongside the alert rule.
+			<code>--set-popover-*</code> tokens. Direct-child <code>&lt;header&gt;</code> and
+			<code>&lt;footer&gt;</code> auto-paint banded chrome (same pattern as alerts + articles +
+			dialogs) — useful for a title-row + close button at the top, or an action-row at the bottom.
+		</p>
+		<p>
+			<strong>Width.</strong> The popover surface clamps panel width to
+			<code
+				>min(--set-popover-max-inline-size, --set-anchor-max-inline-size, 100vw -
+				--set-popover-viewport-inset * 2)</code
+			>. On wide viewports the panel's target width wins (~17.25rem default); on narrow viewports
+			the third clause clamps to viewport minus a 1rem inset on each side so the panel never reaches
+			the screen edges.
+		</p>
+		<p>
+			<strong>Close.</strong> Use a button with <code>popovertarget="…"</code> +
+			<code>popovertargetaction="hide"</code> and <code>aria-label="Close"</code> — the native
+			Popover API closes the panel via the button without any JS. Buttons inside the header / footer
+			band get a variant-context reset (they paint as transparent ghosts regardless of the panel's
+			variant), same idiom as the alert's dismiss button.
 		</p>
 		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
 			<button type="button" popovertarget="aside-pop-default">Default</button>
@@ -233,27 +314,125 @@ const restore = (): void => {
 		</div>
 
 		<aside id="aside-pop-default" popover>
+			<header>
+				<strong>Quick note</strong>
+				<button
+					type="button"
+					popovertarget="aside-pop-default"
+					popovertargetaction="hide"
+					aria-label="Close"
+				>
+					×
+				</button>
+			</header>
 			<p style="margin-block: 0">
-				<strong>Default popover.</strong> Neutral panel — bg + border + radius from the framework's
-				popover surface.
+				Default popover — neutral panel chrome from the framework's popover surface. Headers and
+				footers paint banded chrome that adapts to the variant cascade.
 			</p>
+			<footer>
+				<button
+					type="button"
+					class="subtle small"
+					popovertarget="aside-pop-default"
+					popovertargetaction="hide"
+				>
+					Got it
+				</button>
+			</footer>
 		</aside>
+
 		<aside id="aside-pop-primary" popover class="primary">
+			<header>
+				<strong>Primary popover</strong>
+				<button
+					type="button"
+					popovertarget="aside-pop-primary"
+					popovertargetaction="hide"
+					aria-label="Close"
+				>
+					×
+				</button>
+			</header>
 			<p style="margin-block: 0">
-				<strong>Primary popover.</strong> Panel retinted via the
-				<code>--color-primary-bg-subtle</code> triplet.
+				Retinted via the <code>--color-primary-bg-subtle</code> triplet. Body sits between the
+				header and footer bands.
 			</p>
+			<footer>
+				<button
+					type="button"
+					class="primary small"
+					popovertarget="aside-pop-primary"
+					popovertargetaction="hide"
+				>
+					Confirm
+				</button>
+			</footer>
 		</aside>
+
 		<aside id="aside-pop-success" popover class="success">
+			<header>
+				<strong>Build complete</strong>
+				<button
+					type="button"
+					popovertarget="aside-pop-success"
+					popovertargetaction="hide"
+					aria-label="Close"
+				>
+					×
+				</button>
+			</header>
 			<p style="margin-block: 0">
-				<strong>Success popover.</strong> Subtle green panel, same triplet.
+				All 1,420 tests passing. Ready to deploy. The popover surface uses the success variant's
+				<code>bg-subtle</code> + <code>border-subtle</code> + <code>text-emphasis</code> triplet.
 			</p>
 		</aside>
+
 		<aside id="aside-pop-warning" popover class="warning">
-			<p style="margin-block: 0"><strong>Warning popover.</strong> Subtle amber panel.</p>
+			<header>
+				<strong>Quota warning</strong>
+				<button
+					type="button"
+					popovertarget="aside-pop-warning"
+					popovertargetaction="hide"
+					aria-label="Close"
+				>
+					×
+				</button>
+			</header>
+			<p style="margin-block: 0">
+				87% of your monthly API quota used. Consider upgrading or rate-limiting non-critical traffic
+				before the soft cap kicks in.
+			</p>
 		</aside>
+
 		<aside id="aside-pop-danger" popover class="danger">
-			<p style="margin-block: 0"><strong>Danger popover.</strong> Subtle red panel.</p>
+			<header>
+				<strong>Destructive action</strong>
+				<button
+					type="button"
+					popovertarget="aside-pop-danger"
+					popovertargetaction="hide"
+					aria-label="Close"
+				>
+					×
+				</button>
+			</header>
+			<p style="margin-block: 0">
+				This will permanently delete 4 projects and revoke 12 access tokens. The action can't be
+				undone.
+			</p>
+			<footer>
+				<button
+					type="button"
+					class="subtle small"
+					popovertarget="aside-pop-danger"
+					popovertargetaction="hide"
+					style="margin-inline-end: auto"
+				>
+					Cancel
+				</button>
+				<button type="button" class="danger small">Delete forever</button>
+			</footer>
 		</aside>
 	</section>
 

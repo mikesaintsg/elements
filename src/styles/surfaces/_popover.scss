@@ -50,6 +50,15 @@
 		// `--set-anchor-max-inline-size` (28rem) provides the upper safety
 		// cap.
 		--set-popover-max-inline-size: 17.25rem;
+		// Minimum viewport gutter — on narrow viewports the popover
+		// clamps to `100vw - (inset * 2)` so it can't reach the screen
+		// edges. Default 1rem each side = 2rem total inset from `100vw`.
+		// The `min()` chain in the rule below combines this with
+		// `--set-popover-max-inline-size` + `--set-anchor-max-inline-
+		// size`: whichever value is smallest wins. On wide viewports
+		// the panel's target width wins; on narrow viewports the
+		// viewport gutter wins. No per-breakpoint override needed.
+		--set-popover-viewport-inset: 1rem;
 	}
 
 	// Chrome paint applies to every `[popover]` including `<output popover>`
@@ -74,7 +83,18 @@
 		// declared at a higher 28rem upper cap; this rule narrows the
 		// default to the popover-spec ~280px width, while leaving the
 		// anchor cap as a hard ceiling for outlier hosts.
-		max-inline-size: min(var(--set-popover-max-inline-size), var(--set-anchor-max-inline-size));
+		//
+		// The `100vw - 2 * viewport-inset` clause clamps the panel to
+		// the viewport on narrow screens — without it the popover at
+		// 17.25rem touches the edges of a 16rem (256px) mobile viewport.
+		// `min()` returns the smallest of the three, so on wide
+		// viewports the panel target wins and on narrow viewports the
+		// viewport gutter wins automatically.
+		max-inline-size: min(
+			var(--set-popover-max-inline-size),
+			var(--set-anchor-max-inline-size),
+			calc(100vw - var(--set-popover-viewport-inset) * 2)
+		);
 
 		@include transition(
 			(
