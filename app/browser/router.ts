@@ -21,6 +21,7 @@ import MenuPage from './pages/MenuPage.vue'
 import InlineAtomsPage from './pages/InlineAtomsPage.vue'
 import PopoverSurfacesPage from './pages/PopoverSurfacesPage.vue'
 import FormSurfacesPage from './pages/FormSurfacesPage.vue'
+import ScrollAndTransitionPage from './pages/ScrollAndTransitionPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -153,6 +154,12 @@ const FORM_SURFACES: Route = {
 	group: 'Surfaces',
 	page: FormSurfacesPage,
 }
+const SCROLL_AND_TRANSITION: Route = {
+	id: 'scroll-and-transition',
+	title: 'Scroll & transition',
+	group: 'Surfaces',
+	page: ScrollAndTransitionPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -175,6 +182,7 @@ export const routes: readonly Route[] = [
 	INLINE_ATOMS,
 	POPOVER_SURFACES,
 	FORM_SURFACES,
+	SCROLL_AND_TRANSITION,
 ]
 
 interface RouteLocation {
