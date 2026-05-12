@@ -106,16 +106,35 @@
 		cursor: pointer;
 	}
 
+	// Hover / focus-within / mouse-down feedback. Painted as a
+	// `background-image` overlay rather than `background-color` so the
+	// tint LAYERS on top of the base bg-color rather than replacing it.
+	// Replacing background-color broke `<li class="X active">` rows: the
+	// hover rule's specificity (0,2,3 via `:has() :hover`) beats the
+	// `.active` rule (0,2,2), so on hover the variant fill got wiped to a
+	// translucent white tint while the active rule's border-color stayed
+	// — producing the "everything white except borders" visual. With a
+	// gradient image overlay, the variant fill stays painted underneath
+	// and the tint composites on top in every state. The gradient uses
+	// the same color top→bottom (a flat overlay, not a gradient effect);
+	// `linear-gradient(<color>, <color>)` is the standard CSS idiom for
+	// "paint a flat overlay of <color> the size of the box."
 	ul.group > li:has(> a, > button):hover,
 	ul.group > li:has(> a, > button):focus-within,
 	ol.group > li:has(> a, > button):hover,
 	ol.group > li:has(> a, > button):focus-within {
-		background-color: var(--set-group-action-hover-background-color);
+		background-image: linear-gradient(
+			var(--set-group-action-hover-background-color),
+			var(--set-group-action-hover-background-color)
+		);
 	}
 
 	ul.group > li:has(> a, > button):active,
 	ol.group > li:has(> a, > button):active {
-		background-color: var(--set-group-action-active-background-color);
+		background-image: linear-gradient(
+			var(--set-group-action-active-background-color),
+			var(--set-group-action-active-background-color)
+		);
 	}
 
 	// The inner anchor stretches to the row's padding box and inherits color,
