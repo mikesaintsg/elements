@@ -64,7 +64,7 @@
 		);
 		--set-table-cell-padding-inline-small: calc(var(--spacing) * 1.5);
 		--set-table-cell-padding-block-small: var(--spacing);
-		--set-table-group-divider-width: 2px;
+		--set-table-divider-width: 2px;
 		--set-table-sort-indicator-color: var(--set-table-color);
 		--set-table-sort-indicator-opacity: 0.4;
 		--set-table-sort-indicator-active-opacity: 1;
@@ -237,13 +237,6 @@
 		background-color: var(--set-table-row-striped-background-color);
 	}
 
-	// ── Hover modifier ─────────────────────────────────────────────────────────
-	// The bare `table` already hover-tints body rows. `.hover` is reserved as a
-	// no-op alias here so consumers can write the canonical mailbox class
-	// without breaking the cascade — they get the same hover wash either way.
-	// (Future: if the hover default ever flips to off, this hook is what the
-	// modifier toggles back on.)
-
 	// ── Bordered ───────────────────────────────────────────────────────────────
 	// Mailbox `.table-bordered` draws a hairline on every cell edge and a
 	// perimeter border on the table itself. We re-declare `border-collapse:
@@ -272,12 +265,19 @@
 		border-block-start-width: 0;
 	}
 
-	// ── Group divider ──────────────────────────────────────────────────────────
-	// Heavier divider line between thead and tbody (or between two tbody
-	// blocks). Mailbox uses `currentColor` at 2px to match the body text
-	// emphasis. Opt-in via `<tbody class="group-divider">`.
-	table tbody.group-divider {
-		border-block-start: var(--set-table-group-divider-width) solid currentColor;
+	// ── Divided tbody ─────────────────────────────────────────────────────────
+	// Heavier 2px divider above a `<tbody>` block — visually separates one
+	// dataset group from another inside the same table. Opt-in via
+	// `<tbody class="divided">`. Past-participle modifier name follows the
+	// framework's `.bordered` / `.borderless` / `.filled` / `.subtle` pattern
+	// — single generic English word describing the visual treatment, no
+	// element-name prefix, no library-flavored compound. (Bootstrap's
+	// `.table-group-divider` is the analogue; "group" was rejected here
+	// because the framework already uses `.group` for the list-group
+	// chrome — overloading the word in two unrelated contexts hurts read-
+	// ability of consumer markup.)
+	table tbody.divided {
+		border-block-start: var(--set-table-divider-width) solid currentColor;
 	}
 
 	// ── Compact (small) ────────────────────────────────────────────────────────
@@ -373,13 +373,25 @@
 		background-color: var(--set-table-row-selected-background-color);
 	}
 
-	// ── Responsive wrapper ─────────────────────────────────────────────────────
-	// Wrap a wide `<table>` in `<div class="table-responsive">` to bound
-	// horizontal overflow inside the wrapper rather than the page.
+	// ── Scrollable wrapper ────────────────────────────────────────────────────
+	// Wrap any wide content in `<div class="scrollable">` to bound horizontal
+	// overflow inside the wrapper rather than letting the page widen. The
+	// classic use is `<div class="scrollable"><table>…</table></div>` so a
+	// wide table scrolls inside its bounding box; the rule is element-
+	// agnostic, so the same wrapper works for a wide `<pre>` block, an
+	// inline-flex toolbar, or any other content too wide for the viewport.
+	//
 	// `overscroll-behavior-inline: contain` keeps the swipe gesture local so
-	// touchpad users don't rubber-band the page when the table reaches its
+	// touchpad users don't rubber-band the page when the wrapper reaches its
 	// scroll limit.
-	.table-responsive {
+	//
+	// Naming: matches `dialog.scrollable` already in the framework (a
+	// dialog whose body section scrolls on overflow) — the unifying
+	// semantic is "this surface scrolls when its content overflows."
+	// Bootstrap's `.table-responsive` was rejected because the
+	// `table-` prefix violates the framework's "no element-name prefix"
+	// rule and ties a general-purpose wrapper to one element family.
+	.scrollable:not(dialog) {
 		inline-size: 100%;
 		overflow-x: auto;
 		overflow-y: hidden;

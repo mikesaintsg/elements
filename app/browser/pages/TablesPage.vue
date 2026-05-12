@@ -14,8 +14,8 @@
  *     so the header band reads as a separate visual register.
  *   `tbody tr:hover` — every body row tints on hover via
  *     `--set-table-row-hover-background-color` (25% mix). Default
- *     behavior; `.hover` is a no-op alias for consumers who prefer
- *     the explicit class.
+ *     behavior — no opt-in class needed (the Bootstrap `.hover`
+ *     alias was dropped because it carried no rule of its own).
  *   `.striped` / `.striped-columns` — alternating-row / -column
  *     tints at 12% mix. Specificity bumped past the bare-cell rule
  *     so the stripe wins, then the hover override at the bottom of
@@ -25,8 +25,8 @@
  *     inside an already-bordered surface).
  *   `.small` — halved cell padding for dense data grids.
  *   `.nowrap` — prevent cell text from wrapping; pair with
- *     `.table-responsive` so the row stays on one line and the
- *     wrapper scrolls instead.
+ *     `<div class="scrollable">` so the row stays on one line and
+ *     the wrapper scrolls instead.
  *   `.caption-top` / `.caption-bottom` — flip the caption visually
  *     without changing source order.
  *   `<tr class="{variant}">` — washes a single row with the
@@ -37,15 +37,22 @@
  *   `<tr aria-selected="true">` — selection tier (18% mix of
  *     `--color-primary`). Wins over hover + variant tints via
  *     source-order override.
- *   `<tbody class="group-divider">` — heavier 2px divider above the
+ *   `<tbody class="divided">` — heavier 2px divider above the
  *     `<tbody>` block; useful for splitting datasets by category.
+ *     (Bootstrap's `.table-group-divider` analogue. "group" was rejected
+ *     because the framework already uses `.group` for list-group chrome
+ *     — past-participle `divided` matches the `.bordered`/`.borderless`
+ *     pattern.)
  *   `<th data-key="…">` with `[aria-sort]` — sort indicator chrome
  *     (caret glyph via `--set-icon-*` mask). Interactive sort logic
  *     belongs on `UseTablePage`; this page demonstrates the static
  *     rendering only.
- *   `<div class="table-responsive">` wrapper — bounds horizontal
- *     overflow to the wrapper so a wide table doesn't push the
- *     viewport wider than the page.
+ *   `<div class="scrollable">` wrapper — bounds horizontal overflow
+ *     to the wrapper so a wide table doesn't push the viewport wider
+ *     than the page. Element-agnostic (works around any wide content,
+ *     not just tables); matches `dialog.scrollable` already in the
+ *     framework. Bootstrap's `.table-responsive` was renamed to drop
+ *     the element-name prefix.
  *
  * Cross-references:
  *   - Interactive sort / paginate / row-expand / column-resize live
@@ -489,12 +496,16 @@ const members: readonly Member[] = [
 		</table>
 	</section>
 
-	<section id="tables-group-divider">
-		<h2>Group divider — <code>&lt;tbody class="group-divider"&gt;</code></h2>
+	<section id="tables-divided">
+		<h2>Divided tbody — <code>&lt;tbody class="divided"&gt;</code></h2>
 		<p>
-			A heavier 2px divider above a <code>&lt;tbody&gt;</code> block — useful for visually grouping
-			rows by category, region, or time period without leaving the same table. Mirrors Bootstrap's
-			<code>.table-group-divider</code>.
+			A heavier 2px divider above a <code>&lt;tbody&gt;</code> block — separates dataset groups
+			(category, region, time period) inside the same table. Past-participle modifier name follows
+			the framework's <code>.bordered</code> / <code>.borderless</code> / <code>.filled</code> /
+			<code>.subtle</code> pattern (single generic English word describing the visual treatment, no
+			element-name prefix). Bootstrap's <code>.table-group-divider</code> was the inspiration;
+			"group" was rejected here because the framework already uses it for the list-group chrome
+			(<code>&lt;ul class="group"&gt;</code>) and overloading the word would confuse markup readers.
 		</p>
 		<table class="bordered">
 			<thead>
@@ -516,7 +527,7 @@ const members: readonly Member[] = [
 					<td>$315k</td>
 				</tr>
 			</tbody>
-			<tbody class="group-divider">
+			<tbody class="divided">
 				<tr>
 					<td>Partner</td>
 					<td>NA</td>
@@ -570,13 +581,19 @@ const members: readonly Member[] = [
 	</section>
 
 	<section id="tables-responsive">
-		<h2>Responsive wrapper — <code>.table-responsive</code></h2>
+		<h2>Scrollable wrapper — <code>&lt;div class="scrollable"&gt;</code></h2>
 		<p>
-			Wrap a wide table in <code>&lt;div class="table-responsive"&gt;</code> to bound horizontal
-			overflow inside the wrapper rather than the page. Combine with <code>.nowrap</code> if you
-			want long rows to scroll instead of wrapping.
+			Wrap a wide table in <code>&lt;div class="scrollable"&gt;</code> to bound horizontal overflow
+			inside the wrapper rather than the page. The same modifier works on any wide content (a
+			<code>&lt;pre&gt;</code> block, an inline toolbar, an image strip) — the rule is
+			element-agnostic. Combine with <code>.nowrap</code> on the table if you want long rows to
+			scroll instead of wrapping. Matches <code>dialog.scrollable</code> already in the framework —
+			the unifying semantic is "this surface scrolls when its content overflows." Bootstrap's
+			<code>.table-responsive</code> was rejected because the <code>table-</code>
+			prefix violates the framework's no-element-name-prefix rule and ties a general wrapper to one
+			element family.
 		</p>
-		<div class="table-responsive">
+		<div class="scrollable">
 			<table class="striped nowrap">
 				<thead>
 					<tr>
@@ -685,8 +702,8 @@ const members: readonly Member[] = [
 			</li>
 			<li>
 				Wide tables (more columns than the viewport fits) belong inside
-				<code>&lt;div class="table-responsive"&gt;</code> so the wrapper scrolls, not the page.
-				Combine with <code>.nowrap</code> when readability depends on each row staying on one line.
+				<code>&lt;div class="scrollable"&gt;</code> so the wrapper scrolls, not the page. Combine
+				with <code>.nowrap</code> when readability depends on each row staying on one line.
 			</li>
 		</ul>
 	</section>

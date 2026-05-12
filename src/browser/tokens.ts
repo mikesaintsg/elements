@@ -906,7 +906,7 @@ export const tokens = {
 				active: { opacity: '--set-table-sort-indicator-active-opacity' },
 			},
 		},
-		groupDivider: { width: '--set-table-group-divider-width' },
+		divider: { width: '--set-table-divider-width' },
 	},
 
 	// ── Phase 3 typographic overrides ──────────────────────────────────────
