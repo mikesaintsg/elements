@@ -136,11 +136,23 @@
 /* Make the rail itself a non-scrolling container — the inner list
  * region owns the scroll. The framework's `body:has(main) > nav`
  * rule sets `overflow-y: auto`; we override here to defer scrolling
- * to `.showcase-sidebar-list` below. */
+ * to `.showcase-sidebar-list` below.
+ *
+ * Token override: tighten the rail's padding + group gap below the
+ * framework defaults (16px / 8px). Docs sidebars typically read
+ * better at a denser rhythm — group headers don't need to breathe
+ * the way primary nav links do, and the visible list is long so
+ * generous gutters waste space. The override only applies to navs
+ * carrying `.showcase-sidebar-search`; other framework consumers
+ * still get the spacious default. */
 body:has(main) > nav:has(> .showcase-sidebar-search),
 body:has(main) > * > nav:has(> .showcase-sidebar-search) {
 	overflow: hidden;
 	padding-block: 0;
+
+	--set-nav-padding-inline: calc(var(--spacing) * 2);
+	--set-nav-padding-block: calc(var(--spacing) * 2);
+	--set-nav-gap: calc(var(--spacing) * 1);
 }
 
 /* Search card — flex-shrink: 0 so it always renders at its content
