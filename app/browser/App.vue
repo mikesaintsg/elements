@@ -159,34 +159,24 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			</button>
 		</header>
 
-		<!-- Sidebar filter card — sits OUTSIDE the scrolling list region so
-		     it can't be scrolled past or overlapped by list rows. The
-		     `<search>` element provides the row chrome (flex + input
-		     fills row); the wrapping `<div class="showcase-sidebar-
-		     search">` is the showcase's card-shell (flush with the
-		     rail's top + side edges, bottom divider, padding matching
-		     the rail's gutter). See `showcase.css`. -->
-		<div class="showcase-sidebar-search">
-			<search>
-				<label>
-					<span class="sr-only">Filter pages</span>
-					<input
-						id="sidebar-filter"
-						v-model="filterQuery"
-						type="search"
-						placeholder="Filter… (press /)"
-						autocomplete="off"
-					/>
-				</label>
-			</search>
-		</div>
+		<!-- `<search>` is the HTML5 search landmark — semantic on its own,
+		     no wrapper needed. The framework styles `<search>` as a flex
+		     row; `showcase.css` adds the rail-edge bleed + bottom divider
+		     so it reads as a card flush with the rail's edges. -->
+		<search>
+			<label>
+				<span class="sr-only">Filter pages</span>
+				<input
+					id="sidebar-filter"
+					v-model="filterQuery"
+					type="search"
+					placeholder="Filter… (press /)"
+					autocomplete="off"
+				/>
+			</label>
+		</search>
 
-		<!-- Scrolling list region — flex-grow + overflow-y: auto so the
-		     list owns its own scroll behavior, with the search card
-		     above staying fixed. Mailbox's pattern. -->
-		<div class="showcase-sidebar-list">
-			<SiteNav :routes="filteredRoutes" :active="current.id" @navigate="leftOpen = false" />
-		</div>
+		<SiteNav :routes="filteredRoutes" :active="current.id" @navigate="leftOpen = false" />
 	</nav>
 
 	<main ref="scrollerRef">

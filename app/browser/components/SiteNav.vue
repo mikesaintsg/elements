@@ -31,21 +31,21 @@ const onLinkClick = (event: MouseEvent, id: string): void => {
 </script>
 
 <template>
-	<!-- SiteNav renders the grouped page list as alternating `<h6>` +
-	     `<menu>` sibling pairs. NO outer `<section>` wrapper around
-	     each group — `<section>` is for substantial thematic content
-	     bodies with their own region landmark, and inside a `<nav>`
-	     it nests landmarks unnecessarily AND ships framework
-	     `padding-block: 24px` that bloats the sidebar's vertical
-	     rhythm. Sibling pairs are the right semantic for "heading
-	     labels a list" — the spacing rhythm comes from
-	     `showcase.css` (h6 margins asymmetric: room above, tight
-	     below).
+	<!-- SiteNav renders each group as an `<h6>` + `<menu>` sibling pair
+	     (the framework's documented grouped-sidebar pattern — see
+	     `components/_menu.scss` § Grouped sidebars). No `<section>`
+	     wrapper: the framework's anti-pattern note explains why
+	     (`<section>` nests a region landmark inside the `<nav>`
+	     landmark and ships `padding-block` that fights the rail's
+	     gap rhythm). Inter-group rhythm comes from `<h6>` asymmetric
+	     margins in `showcase.css` — room above each heading, tight
+	     below, so the heading reads as a label for the menu directly
+	     beneath it.
 
-	     `<menu>` (not `<ul>`) so the framework's nav-rail menu rules
-	     in `components/_menu.scss` paint the row chrome. The
-	     active-page anchor uses `aria-current="page"`; the framework
-	     paints the affordance. -->
+	     `<menu>` (not `<ul>`) so the framework's nav-rail menu rules in
+	     `components/_menu.scss` paint the row chrome. The active-page
+	     anchor uses `aria-current="page"`; the framework paints the
+	     affordance. -->
 	<template v-for="g in grouped" :key="g.group">
 		<h6>{{ g.group }}</h6>
 		<menu>

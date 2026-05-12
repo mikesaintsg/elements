@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T14:09:50.993Z" />
+		<meta name="build-id" content="2026-05-12T14:27:59.190Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -8609,11 +8609,9 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				xu = [`aria-expanded`],
 				Su = [`data-open`],
 				Cu = { class: `showcase-drawer-header` },
-				wu = { class: `showcase-sidebar-search` },
-				Tu = { class: `showcase-sidebar-list` },
-				Eu = [`data-open`],
-				Du = { class: `showcase-drawer-header` },
-				Ou = { class: `font-mono text-xs` }
+				wu = [`data-open`],
+				Tu = { class: `showcase-drawer-header` },
+				Eu = { class: `font-mono text-xs` }
 			mo(
 				B({
 					__name: `App`,
@@ -8798,41 +8796,37 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 													],
 												),
 											]),
-											Y(`div`, wu, [
-												Y(`search`, null, [
-													Y(`label`, null, [
-														(c[9] ||= Y(`span`, { class: `sr-only` }, `Filter pages`, -1)),
-														kn(
-															Y(
-																`input`,
-																{
-																	id: `sidebar-filter`,
-																	'onUpdate:modelValue': (c[1] ||= (e) => (i.value = e)),
-																	type: `search`,
-																	placeholder: `Filter… (press /)`,
-																	autocomplete: `off`,
-																},
-																null,
-																512,
-															),
-															[[lo, i.value]],
+											Y(`search`, null, [
+												Y(`label`, null, [
+													(c[9] ||= Y(`span`, { class: `sr-only` }, `Filter pages`, -1)),
+													kn(
+														Y(
+															`input`,
+															{
+																id: `sidebar-filter`,
+																'onUpdate:modelValue': (c[1] ||= (e) => (i.value = e)),
+																type: `search`,
+																placeholder: `Filter… (press /)`,
+																autocomplete: `off`,
+															},
+															null,
+															512,
 														),
-													]),
+														[[lo, i.value]],
+													),
 												]),
 											]),
-											Y(`div`, Tu, [
-												X(
-													pu,
-													{
-														routes: a.value,
-														active: Yt(lu).id,
-														onNavigate: (c[2] ||= (e) => (n.value = !1)),
-													},
-													null,
-													8,
-													[`routes`, `active`],
-												),
-											]),
+											X(
+												pu,
+												{
+													routes: a.value,
+													active: Yt(lu).id,
+													onNavigate: (c[2] ||= (e) => (n.value = !1)),
+												},
+												null,
+												8,
+												[`routes`, `active`],
+											),
 										],
 										8,
 										Su,
@@ -8842,7 +8836,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										`aside`,
 										{ 'aria-label': `On this page`, 'data-open': r.value ? `` : null },
 										[
-											Y(`header`, Du, [
+											Y(`header`, Tu, [
 												Y(
 													`button`,
 													{
@@ -8880,11 +8874,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 											),
 										],
 										8,
-										Eu,
+										wu,
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Ou, `build ` + k(Yt(`2026-05-12T14:09:50.993Z`)), 1),
+										Y(`small`, Eu, `build ` + k(Yt(`2026-05-12T14:27:59.190Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -16681,51 +16675,25 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				position: fixed;
 				inset: 0;
 			}
-			:is(
-				body:has(main) > nav:has(> .showcase-sidebar-search),
-				body:has(main) > * > nav:has(> .showcase-sidebar-search)
-			) {
-				--set-nav-padding-inline: calc(var(--spacing) * 2);
-				--set-nav-padding-block: calc(var(--spacing) * 2);
-				gap: 0;
-				padding: 0;
-				overflow: hidden;
-			}
-			nav > header.showcase-drawer-header {
-				border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
-				margin: 0;
-				position: static;
-				inset-block-start: auto;
-			}
-			.showcase-sidebar-search {
-				padding-block: var(--set-nav-padding-block);
+			:is(body:has(main) > nav > search, body:has(main) > * > nav > search) {
+				margin-inline: calc(var(--set-nav-padding-inline) * -1);
 				padding-inline: var(--set-nav-padding-inline);
-				background-color: var(--set-nav-background-color);
 				border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
-				flex-shrink: 0;
+				margin-block-start: calc(var(--set-nav-gap) * -1);
+				padding-block-end: var(--set-nav-padding-block);
 			}
-			.showcase-sidebar-list {
-				min-block-size: 0;
-				padding-block: var(--set-nav-padding-block);
-				padding-inline: var(--set-nav-padding-inline);
-				flex: auto;
-				overflow-y: auto;
-			}
-			.showcase-sidebar-list h6 {
+			:is(body:has(main) > nav > h6, body:has(main) > * > nav > h6) {
 				padding-inline: calc(var(--spacing) * 2);
 				color: var(--color-text-muted);
+				font-size: var(--text-xs);
 				letter-spacing: 0.05em;
 				text-transform: uppercase;
-				margin-block-start: calc(var(--spacing) * 6);
-				margin-block-end: calc(var(--spacing) * 1);
-				font-size: 0.6875rem;
+				margin-block-start: calc(var(--spacing) * 3);
+				margin-block-end: calc(var(--set-nav-gap) * -1);
 				font-weight: 600;
 			}
-			.showcase-sidebar-list h6:first-child {
+			:is(body:has(main) > nav > h6:first-of-type, body:has(main) > * > nav > h6:first-of-type) {
 				margin-block-start: 0;
-			}
-			.showcase-sidebar-list menu {
-				margin-block: 0;
 			}
 			#app {
 				display: contents;
