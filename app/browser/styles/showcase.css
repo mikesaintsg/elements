@@ -82,19 +82,15 @@
 		display: flex;
 	}
 
-	/* nav drawer — push the close to the inline-end edge with auto-margin
-	 * on its inline-start. Single-child header flex layout doesn't need
-	 * a sibling spacer. */
-	.showcase-drawer-close-start {
-		margin-inline-start: auto;
-	}
-
-	/* aside drawer — default flex-row puts the close at inline-start
-	 * (left). No margin trick needed. The rule exists for parity with
-	 * `-start` so future header content (title text) lands predictably. */
-	.showcase-drawer-close-end {
-		margin-inline-end: auto;
-	}
+	/* No close-button positioning classes here — the framework's
+	 * `:is(aside, nav)[popover] > header > button:last-child` rule in
+	 * `components/_aside.scss` positions the close at the user-facing
+	 * edge of the drawer (Bootstrap convention: inline-END regardless
+	 * of placement). The previous `.showcase-drawer-close-start` /
+	 * `.showcase-drawer-close-end` classes conflicted with the
+	 * framework rule (`margin-inline-start: auto` from framework +
+	 * `margin-inline-end: auto` from showcase = both margins compute
+	 * to half the available space, button centered) — removed. */
 }
 
 /* (No custom backdrop element — the body-shell rails now use native
@@ -159,10 +155,27 @@
 /* Rail container — opt into the flex-column split when the nav
  * carries a `<search>` child. Zero padding + zero gap (each region
  * paints its own band); `overflow: hidden` so a tall link list
- * can't push the rail taller than the viewport. */
+ * can't push the rail taller than the viewport AND so the rail
+ * itself never becomes a competing scroll container alongside the
+ * inner `.showcase-sidebar-scroll`.
+ *
+ * The `[popover]`-variant selectors below cover the same nav once
+ * it's a popover drawer on mobile. Without them, the framework's
+ * `:is(aside, nav)[popover]` drawer chrome (specificity 0,1,1) wins
+ * `overflow-y: auto` + `overscroll-behavior: contain` over the
+ * showcase rule (specificity 0,0,4) — even though the showcase rule
+ * is unlayered and beats the framework's `@layer components` for
+ * any property they both set, the `overscroll-behavior` declaration
+ * isn't covered by the showcase's `overflow: hidden` and persists,
+ * which makes touch scroll feel "stuck" on iOS (scroll-chain
+ * containment without a chain to contain). Bumping specificity on
+ * the popover variant ensures the showcase rule fully owns the
+ * rail's scroll behavior for the mobile drawer case. */
 body:has(main) > nav:has(> search),
-body:has(main) > * > nav:has(> search) {
+body:has(main) > * > nav:has(> search),
+nav[popover]:has(> search) {
 	overflow: hidden;
+	overscroll-behavior: auto;
 	padding: 0;
 	gap: 0;
 }

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T18:14:20.632Z" />
+		<meta name="build-id" content="2026-05-12T18:30:27.471Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -8941,7 +8941,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 														`button`,
 														{
 															type: `button`,
-															class: `subtle icon-only showcase-drawer-close showcase-drawer-close-start`,
+															class: `subtle icon-only`,
 															'aria-label': `Close navigation`,
 															popovertarget: `primary-rail`,
 															popovertargetaction: `hide`,
@@ -9004,7 +9004,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 														`button`,
 														{
 															type: `button`,
-															class: `subtle icon-only showcase-drawer-close showcase-drawer-close-end`,
+															class: `subtle icon-only`,
 															'aria-label': `Close table of contents`,
 															popovertarget: `toc-rail`,
 															popovertargetaction: `hide`,
@@ -9033,7 +9033,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Tu, `build ` + k(Yt(`2026-05-12T18:14:20.632Z`)), 1),
+										Y(`small`, Tu, `build ` + k(Yt(`2026-05-12T18:30:27.471Z`)), 1),
 									]),
 								],
 								64,
@@ -16775,14 +16775,21 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				.showcase-drawer-header {
 					display: flex;
 				}
-				.showcase-drawer-close-start {
-					margin-inline-start: auto;
-				}
-				.showcase-drawer-close-end {
-					margin-inline-end: auto;
-				}
 			}
-			:is(body:has(main) > nav:has(> search), body:has(main) > * > nav:has(> search)) {
+			body:has(main) > nav:has(> search) {
+				overscroll-behavior: auto;
+				gap: 0;
+				padding: 0;
+				overflow: hidden;
+			}
+			body:has(main) > * > nav:has(> search) {
+				overscroll-behavior: auto;
+				gap: 0;
+				padding: 0;
+				overflow: hidden;
+			}
+			nav[popover]:has(> search) {
+				overscroll-behavior: auto;
 				gap: 0;
 				padding: 0;
 				overflow: hidden;

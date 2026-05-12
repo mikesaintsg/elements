@@ -176,7 +176,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		<header class="showcase-drawer-header">
 			<button
 				type="button"
-				class="subtle icon-only showcase-drawer-close showcase-drawer-close-start"
+				class="subtle icon-only"
 				aria-label="Close navigation"
 				popovertarget="primary-rail"
 				popovertargetaction="hide"
@@ -225,7 +225,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		<header class="showcase-drawer-header">
 			<button
 				type="button"
-				class="subtle icon-only showcase-drawer-close showcase-drawer-close-end"
+				class="subtle icon-only"
 				aria-label="Close table of contents"
 				popovertarget="toc-rail"
 				popovertargetaction="hide"
