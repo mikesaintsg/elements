@@ -9,6 +9,7 @@ import DetailsPage from './pages/DetailsPage.vue'
 import DialogElementPage from './pages/DialogElementPage.vue'
 import HeadingsPage from './pages/HeadingsPage.vue'
 import TypographyPage from './pages/TypographyPage.vue'
+import ListsPage from './pages/ListsPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -69,6 +70,12 @@ const TYPOGRAPHY: Route = {
 	group: 'Elements — Content',
 	page: TypographyPage,
 }
+const LISTS: Route = {
+	id: 'lists',
+	title: 'Lists',
+	group: 'Elements — Content',
+	page: ListsPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -79,6 +86,7 @@ export const routes: readonly Route[] = [
 	DIALOG_ELEMENT,
 	HEADINGS,
 	TYPOGRAPHY,
+	LISTS,
 ]
 
 interface RouteLocation {
