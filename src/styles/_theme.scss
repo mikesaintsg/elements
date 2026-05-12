@@ -63,47 +63,58 @@
 	//   violet-600  = oklch(54.1% 0.281 293.009)
 	//   green-700   = oklch(52.7% 0.154 150.069)
 	//   amber-700   = oklch(55.5% 0.163 48.998)
-	//   red-600     = oklch(57.7% 0.245 27.325)
+	//   red-700     = oklch(50.5% 0.213 27.518)
 	//   sky-700     = oklch(50.0% 0.134 242.749)
 	//
-	// All variants are pinned to a step that clears WCAG AA contrast for
-	// white text on the fill — uniformly `-600` for blue / slate / violet
-	// / red, and `-700` for green / amber / sky (their `-600` siblings
-	// have higher natural luminance and white-text-on-fill would fail AA).
-	// Bumping the three lighter hues a step keeps the framework's
-	// "white text on every variant" contract symmetric across all seven
-	// without the previous black-text exception for success / warning /
-	// information.
+	// All seven variants now sit at the `-700` step (or `-600` where the
+	// `-600` step already clears the contrast bar — blue / slate / violet,
+	// which have lower natural luminance and chroma than the red / green
+	// / amber / sky family). The uniform target: white text on every
+	// variant clears WCAG AA, AND the saturated identity reads as "calm
+	// + comfortable" rather than "fire-alarm bright."
 	//
-	// Trade-off — the darker amber-700 reads as a deeper "burnt-amber" /
-	// rust tone instead of the pure yellow-amber of `-500`. The user-
-	// requested symmetry of light-text-on-fill outweighs the visual-
-	// identity shift (warning still reads as warm + distinct from danger
-	// red; only its specific yellow flavor changes).
+	// Danger was the last variant to shift. The earlier `red-600`
+	// (oklch L=0.577, C=0.245) was flagged as "too intense" — it sits
+	// at the loud end of every industry palette (Bootstrap, Carbon,
+	// Primer all use a similar bright red and have been criticized for
+	// it). Material Design 3 error-40 (#BA1A1A), Atlassian's danger-bold
+	// (#C9372C), and Polaris critical/text (#8E1F0B) all sit at lower
+	// luminance + lower chroma to convey "urgency without alarm."
+	// `red-700` (L=0.505, C=0.213) mirrors M3 error-40 / Atlassian
+	// danger-bold almost exactly — same hue, lower L, lower C.
+	// White-text contrast climbs from ~4.6:1 to ~5.9:1.
+	//
+	// Trade-offs:
+	//   - amber-700 reads as a deeper "burnt-amber" / rust vs the
+	//     yellow-amber of `-500`. Still warm + distinct from danger.
+	//   - red-700 reads as a deeper brick-red vs the bright fire-engine
+	//     red of `-600`. Still unmistakable as "danger" in semantic
+	//     context, just less alarmingly loud against body copy.
 
 	--color-primary: var(--color-blue-600);
 	--color-secondary: var(--color-slate-600);
 	--color-tertiary: var(--color-violet-600);
 	--color-success: var(--color-green-700);
 	--color-warning: var(--color-amber-700);
-	--color-danger: var(--color-red-600);
+	--color-danger: var(--color-red-700);
 	--color-information: var(--color-sky-700);
 
 	// Tailwind v4 tree-shakes palette tokens that aren't referenced by an
 	// emitted utility class. The `-600` steps stay in :root because every
 	// framework variant pointed at one of them historically (their utility
 	// classes — `.bg-success`, `.text-danger`, etc. — pull them in). After
-	// shifting success / warning / information to their `-700` steps, the
-	// new tokens weren't referenced by any utility class, so they resolved
-	// to empty in test + production bundles even though @theme declared
-	// them as references. Re-pinning the three `-700` palette tokens to
-	// their canonical Tailwind oklch values here forces emission and
-	// preserves the `--color-success` indirection — consumers who retune
-	// Tailwind's `--color-green-700` still cascade through to the variant
-	// surface.
+	// shifting success / warning / information / danger to their `-700`
+	// steps, the new tokens weren't referenced by any utility class, so
+	// they resolved to empty in test + production bundles even though
+	// @theme declared them as references. Re-pinning the four `-700`
+	// palette tokens to their canonical Tailwind oklch values here forces
+	// emission and preserves the `--color-{variant}` indirection —
+	// consumers who retune Tailwind's `--color-red-700` still cascade
+	// through to the variant surface.
 	--color-green-700: oklch(52.7% 0.154 150.069);
 	--color-amber-700: oklch(55.5% 0.163 48.998);
 	--color-sky-700: oklch(50% 0.134 242.749);
+	--color-red-700: oklch(50.5% 0.213 27.518);
 }
 
 // ── Light defaults on :root ──────────────────────────────────────────────

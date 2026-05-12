@@ -31,20 +31,17 @@
 		--set-summary-cursor: pointer;
 		--set-summary-marker-size: 0.75em;
 		--set-summary-marker-gap: calc(var(--spacing) * 2);
-		// Marker rotation when the parent `<details>` is open. The framework's
-		// default chevron-right rotates 90° to chevron-down; a consumer
-		// swapping the marker image (e.g. to a plus sign) usually wants a
-		// different angle (a plus rotates 45° to become an X), so this is
-		// exposed as a per-instance token alongside the marker image.
-		--set-summary-marker-open-rotate: 90deg;
-		// NOTE: `--set-summary-marker-image` is intentionally NOT declared
-		// here. Re-declaring it on summary would shadow any per-instance
-		// override (e.g. `<details style="--set-summary-marker-image: …">`)
-		// because CSS custom properties resolve at their declared scope —
-		// summary's own declaration would always win over an inherited one.
-		// Instead, the marker image is consumed via fallback chain on the
-		// `::before` pseudo's `mask-image` (see below): consumers set the
-		// token at any ancestor and it cascades down naturally.
+		// NOTE: `--set-summary-marker-image` AND `--set-summary-marker-
+		// open-rotate` are intentionally NOT declared here. Re-declaring
+		// either on `summary` would shadow any per-instance override on
+		// an ancestor (`<details style="--set-summary-marker-image: …;
+		// --set-summary-marker-open-rotate: 45deg">`) because CSS custom
+		// properties resolve at their declared scope — summary's own
+		// declaration always wins over an inherited one. Both defaults
+		// live on `:root` in `_tokens.scss` instead; the summary's
+		// `::before` pseudo consumes them through normal inheritance, so
+		// consumers can retune the marker at any cascade scope (`:root`
+		// for global, `<details>` for per-instance).
 		--set-summary-transition-duration: var(--set-transition-duration);
 		// Gap between the summary and the disclosure body when <details> is
 		// open. Margin (not padding) so the summary's own box stays

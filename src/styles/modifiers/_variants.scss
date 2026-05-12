@@ -116,6 +116,14 @@
 	}
 
 	.danger {
+		// `--color-danger` is pinned to `red-700` (oklch L ~ 0.505,
+		// C ~ 0.213) so white-on-fill clears WCAG AA at ~5.9. Earlier
+		// `red-600` (L ~ 0.577, C ~ 0.245) sat at the loud end of the
+		// industry palette (Bootstrap, Carbon, Primer all use a similar
+		// bright red and have been criticized for it). `red-700` mirrors
+		// Material Design 3 error-40 (#BA1A1A) and Atlassian's danger-
+		// bold tone — same hue, calmer luminance + chroma so the variant
+		// conveys urgency without alarm.
 		--set-variant-color: white;
 		--set-variant-background-color: var(--color-danger);
 		--set-variant-border-color: var(--color-danger);

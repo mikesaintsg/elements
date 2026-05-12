@@ -92,13 +92,15 @@ export const tokens = {
 
 		// Tailwind palette steps re-pinned to guarantee emission. Tailwind v4
 		// tree-shakes palette tokens that aren't referenced by an emitted
-		// utility class — these three `-700` steps power the framework's
-		// success / warning / information variants but have no utility-class
-		// consumer, so we declare them explicitly in `@theme` (see
-		// `_theme.scss`). Mirrored here so the parity test stays green.
+		// utility class — these four `-700` steps power the framework's
+		// success / warning / information / danger variants but have no
+		// utility-class consumer, so we declare them explicitly in
+		// `@theme` (see `_theme.scss`). Mirrored here so the parity test
+		// stays green.
 		green700: '--color-green-700',
 		amber700: '--color-amber-700',
 		sky700: '--color-sky-700',
+		red700: '--color-red-700',
 	},
 
 	// Framework defaults that have no Tailwind equivalent.
