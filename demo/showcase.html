@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T21:23:54.916Z" />
+		<meta name="build-id" content="2026-05-12T21:27:33.894Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -300,21 +300,21 @@
 					}
 					run() {
 						if (!(this.flags & 1)) return this.fn()
-						;((this.flags |= 2), qe(this), Ie(this))
+						;((this.flags |= 2), Ke(this), Ie(this))
 						let e = j,
-							t = Ue
-						;((j = this), (Ue = !0))
+							t = M
+						;((j = this), (M = !0))
 						try {
 							return this.fn()
 						} finally {
-							;(Le(this), (j = e), (Ue = t), (this.flags &= -3))
+							;(Le(this), (j = e), (M = t), (this.flags &= -3))
 						}
 					}
 					stop() {
 						if (this.flags & 1) {
 							for (let e = this.deps; e; e = e.nextDep) Be(e)
 							;((this.deps = this.depsTail = void 0),
-								qe(this),
+								Ke(this),
 								this.onStop && this.onStop(),
 								(this.flags &= -2))
 						}
@@ -396,15 +396,15 @@
 			function ze(e) {
 				if (
 					(e.flags & 4 && !(e.flags & 16)) ||
-					((e.flags &= -17), e.globalVersion === Je) ||
-					((e.globalVersion = Je), !e.isSSR && e.flags & 128 && ((!e.deps && !e._dirty) || !Re(e)))
+					((e.flags &= -17), e.globalVersion === qe) ||
+					((e.globalVersion = qe), !e.isSSR && e.flags & 128 && ((!e.deps && !e._dirty) || !Re(e)))
 				)
 					return
 				e.flags |= 2
 				let t = e.dep,
 					n = j,
-					r = Ue
-				;((j = e), (Ue = !0))
+					r = M
+				;((j = e), (M = !0))
 				try {
 					Ie(e)
 					let n = e.fn(e._value)
@@ -412,7 +412,7 @@
 				} catch (e) {
 					throw (t.version++, e)
 				} finally {
-					;((j = n), (Ue = r), Le(e), (e.flags &= -3))
+					;((j = n), (M = r), Le(e), (e.flags &= -3))
 				}
 			}
 			function Be(e, t = !1) {
@@ -444,16 +444,16 @@
 				let r = n.run.bind(n)
 				return ((r.effect = n), r)
 			}
-			var Ue = !0,
-				We = []
+			var M = !0,
+				Ue = []
+			function We() {
+				;(Ue.push(M), (M = !1))
+			}
 			function Ge() {
-				;(We.push(Ue), (Ue = !1))
+				let e = Ue.pop()
+				M = e === void 0 ? !0 : e
 			}
-			function Ke() {
-				let e = We.pop()
-				Ue = e === void 0 ? !0 : e
-			}
-			function qe(e) {
+			function Ke(e) {
 				let { cleanup: t } = e
 				if (((e.cleanup = void 0), t)) {
 					let e = j
@@ -465,8 +465,8 @@
 					}
 				}
 			}
-			var Je = 0,
-				Ye = class {
+			var qe = 0,
+				Je = class {
 					constructor(e, t) {
 						;((this.sub = e),
 							(this.dep = t),
@@ -479,7 +479,7 @@
 									void 0))
 					}
 				},
-				Xe = class {
+				Ye = class {
 					constructor(e) {
 						;((this.computed = e),
 							(this.version = 0),
@@ -491,14 +491,14 @@
 							(this.__v_skip = !0))
 					}
 					track(e) {
-						if (!j || !Ue || j === this.computed) return
+						if (!j || !M || j === this.computed) return
 						let t = this.activeLink
 						if (t === void 0 || t.sub !== j)
-							((t = this.activeLink = new Ye(j, this)),
+							((t = this.activeLink = new Je(j, this)),
 								j.deps
 									? ((t.prevDep = j.depsTail), (j.depsTail.nextDep = t), (j.depsTail = t))
 									: (j.deps = j.depsTail = t),
-								Ze(t))
+								Xe(t))
 						else if (t.version === -1 && ((t.version = this.version), t.nextDep)) {
 							let e = t.nextDep
 							;((e.prevDep = t.prevDep),
@@ -512,7 +512,7 @@
 						return t
 					}
 					trigger(e) {
-						;(this.version++, Je++, this.notify(e))
+						;(this.version++, qe++, this.notify(e))
 					}
 					notify(e) {
 						Pe()
@@ -523,33 +523,33 @@
 						}
 					}
 				}
-			function Ze(e) {
+			function Xe(e) {
 				if ((e.dep.sc++, e.sub.flags & 4)) {
 					let t = e.dep.computed
 					if (t && !e.dep.subs) {
 						t.flags |= 20
-						for (let e = t.deps; e; e = e.nextDep) Ze(e)
+						for (let e = t.deps; e; e = e.nextDep) Xe(e)
 					}
 					let n = e.dep.subs
 					;(n !== e && ((e.prevSub = n), n && (n.nextSub = e)), (e.dep.subs = e))
 				}
 			}
-			var Qe = new WeakMap(),
+			var Ze = new WeakMap(),
+				Qe = Symbol(``),
 				$e = Symbol(``),
-				et = Symbol(``),
-				tt = Symbol(``)
-			function M(e, t, n) {
-				if (Ue && j) {
-					let t = Qe.get(e)
-					t || Qe.set(e, (t = new Map()))
+				et = Symbol(``)
+			function N(e, t, n) {
+				if (M && j) {
+					let t = Ze.get(e)
+					t || Ze.set(e, (t = new Map()))
 					let r = t.get(n)
-					;(r || (t.set(n, (r = new Xe())), (r.map = t), (r.key = n)), r.track())
+					;(r || (t.set(n, (r = new Ye())), (r.map = t), (r.key = n)), r.track())
 				}
 			}
-			function nt(e, t, n, r, i, a) {
-				let o = Qe.get(e)
+			function tt(e, t, n, r, i, a) {
+				let o = Ze.get(e)
 				if (!o) {
-					Je++
+					qe++
 					return
 				}
 				let s = (e) => {
@@ -562,123 +562,123 @@
 					if (i && n === `length`) {
 						let e = Number(r)
 						o.forEach((t, n) => {
-							;(n === `length` || n === tt || (!_(n) && n >= e)) && s(t)
+							;(n === `length` || n === et || (!_(n) && n >= e)) && s(t)
 						})
 					} else
-						switch (((n !== void 0 || o.has(void 0)) && s(o.get(n)), a && s(o.get(tt)), t)) {
+						switch (((n !== void 0 || o.has(void 0)) && s(o.get(n)), a && s(o.get(et)), t)) {
 							case `add`:
-								i ? a && s(o.get(`length`)) : (s(o.get($e)), f(e) && s(o.get(et)))
+								i ? a && s(o.get(`length`)) : (s(o.get(Qe)), f(e) && s(o.get($e)))
 								break
 							case `delete`:
-								i || (s(o.get($e)), f(e) && s(o.get(et)))
+								i || (s(o.get(Qe)), f(e) && s(o.get($e)))
 								break
 							case `set`:
-								f(e) && s(o.get($e))
+								f(e) && s(o.get(Qe))
 								break
 						}
 				}
 				Fe()
 			}
+			function nt(e) {
+				let t = F(e)
+				return t === e ? t : (N(t, `iterate`, et), P(e) ? t : t.map(Wt))
+			}
 			function rt(e) {
-				let t = P(e)
-				return t === e ? t : (M(t, `iterate`, tt), N(e) ? t : t.map(F))
+				return (N((e = F(e)), `iterate`, et), e)
 			}
-			function it(e) {
-				return (M((e = P(e)), `iterate`, tt), e)
+			function it(e, t) {
+				return Vt(e) ? Gt(Bt(e) ? Wt(t) : t) : Wt(t)
 			}
-			function at(e, t) {
-				return Ht(e) ? Gt(Vt(e) ? F(t) : t) : F(t)
-			}
-			var ot = {
+			var at = {
 				__proto__: null,
 				[Symbol.iterator]() {
-					return st(this, Symbol.iterator, (e) => at(this, e))
+					return ot(this, Symbol.iterator, (e) => it(this, e))
 				},
 				concat(...e) {
-					return rt(this).concat(...e.map((e) => (d(e) ? rt(e) : e)))
+					return nt(this).concat(...e.map((e) => (d(e) ? nt(e) : e)))
 				},
 				entries() {
-					return st(this, `entries`, (e) => ((e[1] = at(this, e[1])), e))
+					return ot(this, `entries`, (e) => ((e[1] = it(this, e[1])), e))
 				},
 				every(e, t) {
-					return lt(this, `every`, e, t, void 0, arguments)
+					return ct(this, `every`, e, t, void 0, arguments)
 				},
 				filter(e, t) {
-					return lt(this, `filter`, e, t, (e) => e.map((e) => at(this, e)), arguments)
+					return ct(this, `filter`, e, t, (e) => e.map((e) => it(this, e)), arguments)
 				},
 				find(e, t) {
-					return lt(this, `find`, e, t, (e) => at(this, e), arguments)
+					return ct(this, `find`, e, t, (e) => it(this, e), arguments)
 				},
 				findIndex(e, t) {
-					return lt(this, `findIndex`, e, t, void 0, arguments)
+					return ct(this, `findIndex`, e, t, void 0, arguments)
 				},
 				findLast(e, t) {
-					return lt(this, `findLast`, e, t, (e) => at(this, e), arguments)
+					return ct(this, `findLast`, e, t, (e) => it(this, e), arguments)
 				},
 				findLastIndex(e, t) {
-					return lt(this, `findLastIndex`, e, t, void 0, arguments)
+					return ct(this, `findLastIndex`, e, t, void 0, arguments)
 				},
 				forEach(e, t) {
-					return lt(this, `forEach`, e, t, void 0, arguments)
+					return ct(this, `forEach`, e, t, void 0, arguments)
 				},
 				includes(...e) {
-					return dt(this, `includes`, e)
+					return ut(this, `includes`, e)
 				},
 				indexOf(...e) {
-					return dt(this, `indexOf`, e)
+					return ut(this, `indexOf`, e)
 				},
 				join(e) {
-					return rt(this).join(e)
+					return nt(this).join(e)
 				},
 				lastIndexOf(...e) {
-					return dt(this, `lastIndexOf`, e)
+					return ut(this, `lastIndexOf`, e)
 				},
 				map(e, t) {
-					return lt(this, `map`, e, t, void 0, arguments)
+					return ct(this, `map`, e, t, void 0, arguments)
 				},
 				pop() {
-					return ft(this, `pop`)
+					return dt(this, `pop`)
 				},
 				push(...e) {
-					return ft(this, `push`, e)
+					return dt(this, `push`, e)
 				},
 				reduce(e, ...t) {
-					return ut(this, `reduce`, e, t)
+					return lt(this, `reduce`, e, t)
 				},
 				reduceRight(e, ...t) {
-					return ut(this, `reduceRight`, e, t)
+					return lt(this, `reduceRight`, e, t)
 				},
 				shift() {
-					return ft(this, `shift`)
+					return dt(this, `shift`)
 				},
 				some(e, t) {
-					return lt(this, `some`, e, t, void 0, arguments)
+					return ct(this, `some`, e, t, void 0, arguments)
 				},
 				splice(...e) {
-					return ft(this, `splice`, e)
+					return dt(this, `splice`, e)
 				},
 				toReversed() {
-					return rt(this).toReversed()
+					return nt(this).toReversed()
 				},
 				toSorted(e) {
-					return rt(this).toSorted(e)
+					return nt(this).toSorted(e)
 				},
 				toSpliced(...e) {
-					return rt(this).toSpliced(...e)
+					return nt(this).toSpliced(...e)
 				},
 				unshift(...e) {
-					return ft(this, `unshift`, e)
+					return dt(this, `unshift`, e)
 				},
 				values() {
-					return st(this, `values`, (e) => at(this, e))
+					return ot(this, `values`, (e) => it(this, e))
 				},
 			}
-			function st(e, t, n) {
-				let r = it(e),
+			function ot(e, t, n) {
+				let r = rt(e),
 					i = r[t]()
 				return (
 					r !== e &&
-						!N(e) &&
+						!P(e) &&
 						((i._next = i.next),
 						(i.next = () => {
 							let e = i._next()
@@ -687,20 +687,20 @@
 					i
 				)
 			}
-			var ct = Array.prototype
-			function lt(e, t, n, r, i, a) {
-				let o = it(e),
-					s = o !== e && !N(e),
+			var st = Array.prototype
+			function ct(e, t, n, r, i, a) {
+				let o = rt(e),
+					s = o !== e && !P(e),
 					c = o[t]
-				if (c !== ct[t]) {
+				if (c !== st[t]) {
 					let t = c.apply(e, a)
-					return s ? F(t) : t
+					return s ? Wt(t) : t
 				}
 				let l = n
 				o !== e &&
 					(s
 						? (l = function (t, r) {
-								return n.call(this, at(e, t), r, e)
+								return n.call(this, it(e, t), r, e)
 							})
 						: n.length > 2 &&
 							(l = function (t, r) {
@@ -709,48 +709,48 @@
 				let u = c.call(o, l, r)
 				return s && i ? i(u) : u
 			}
-			function ut(e, t, n, r) {
-				let i = it(e),
-					a = i !== e && !N(e),
+			function lt(e, t, n, r) {
+				let i = rt(e),
+					a = i !== e && !P(e),
 					o = n,
 					s = !1
 				i !== e &&
 					(a
 						? ((s = r.length === 0),
 							(o = function (t, r, i) {
-								return (s && ((s = !1), (t = at(e, t))), n.call(this, t, at(e, r), i, e))
+								return (s && ((s = !1), (t = it(e, t))), n.call(this, t, it(e, r), i, e))
 							}))
 						: n.length > 3 &&
 							(o = function (t, r, i) {
 								return n.call(this, t, r, i, e)
 							}))
 				let c = i[t](o, ...r)
-				return s ? at(e, c) : c
+				return s ? it(e, c) : c
 			}
-			function dt(e, t, n) {
-				let r = P(e)
-				M(r, `iterate`, tt)
+			function ut(e, t, n) {
+				let r = F(e)
+				N(r, `iterate`, et)
 				let i = r[t](...n)
-				return (i === -1 || i === !1) && Ut(n[0]) ? ((n[0] = P(n[0])), r[t](...n)) : i
+				return (i === -1 || i === !1) && Ht(n[0]) ? ((n[0] = F(n[0])), r[t](...n)) : i
 			}
-			function ft(e, t, n = []) {
-				;(Ge(), Pe())
-				let r = P(e)[t].apply(e, n)
-				return (Fe(), Ke(), r)
+			function dt(e, t, n = []) {
+				;(We(), Pe())
+				let r = F(e)[t].apply(e, n)
+				return (Fe(), Ge(), r)
 			}
-			var pt = e(`__proto__,__v_isRef,__isVue`),
-				mt = new Set(
+			var ft = e(`__proto__,__v_isRef,__isVue`),
+				pt = new Set(
 					Object.getOwnPropertyNames(Symbol)
 						.filter((e) => e !== `arguments` && e !== `caller`)
 						.map((e) => Symbol[e])
 						.filter(_),
 				)
-			function ht(e) {
+			function mt(e) {
 				_(e) || (e = String(e))
-				let t = P(this)
-				return (M(t, `has`, e), t.hasOwnProperty(e))
+				let t = F(this)
+				return (N(t, `has`, e), t.hasOwnProperty(e))
 			}
-			var gt = class {
+			var ht = class {
 					constructor(e = !1, t = !1) {
 						;((this._isReadonly = e), (this._isShallow = t))
 					}
@@ -762,26 +762,26 @@
 						if (t === `__v_isReadonly`) return r
 						if (t === `__v_isShallow`) return i
 						if (t === `__v_raw`)
-							return n === (r ? (i ? Pt : Nt) : i ? Mt : jt).get(e) ||
+							return n === (r ? (i ? Nt : Mt) : i ? jt : At).get(e) ||
 								Object.getPrototypeOf(e) === Object.getPrototypeOf(n)
 								? e
 								: void 0
 						let a = d(e)
 						if (!r) {
 							let e
-							if (a && (e = ot[t])) return e
-							if (t === `hasOwnProperty`) return ht
+							if (a && (e = at[t])) return e
+							if (t === `hasOwnProperty`) return mt
 						}
 						let o = Reflect.get(e, t, I(e) ? e : n)
-						if ((_(t) ? mt.has(t) : pt(t)) || (r || M(e, `get`, t), i)) return o
+						if ((_(t) ? pt.has(t) : ft(t)) || (r || N(e, `get`, t), i)) return o
 						if (I(o)) {
 							let e = a && C(t) ? o : o.value
-							return r && v(e) ? zt(e) : e
+							return r && v(e) ? Rt(e) : e
 						}
-						return v(o) ? (r ? zt(o) : Lt(o)) : o
+						return v(o) ? (r ? Rt(o) : It(o)) : o
 					}
 				},
-				_t = class extends gt {
+				gt = class extends ht {
 					constructor(e = !1) {
 						super(!1, e)
 					}
@@ -789,29 +789,29 @@
 						let i = e[t],
 							a = d(e) && C(t)
 						if (!this._isShallow) {
-							let e = Ht(i)
-							if ((!N(n) && !Ht(n) && ((i = P(i)), (n = P(n))), !a && I(i) && !I(n)))
+							let e = Vt(i)
+							if ((!P(n) && !Vt(n) && ((i = F(i)), (n = F(n))), !a && I(i) && !I(n)))
 								return (e || (i.value = n), !0)
 						}
 						let o = a ? Number(t) < e.length : u(e, t),
 							s = Reflect.set(e, t, n, I(e) ? e : r)
-						return (e === P(r) && (o ? E(n, i) && nt(e, `set`, t, n, i) : nt(e, `add`, t, n)), s)
+						return (e === F(r) && (o ? E(n, i) && tt(e, `set`, t, n, i) : tt(e, `add`, t, n)), s)
 					}
 					deleteProperty(e, t) {
 						let n = u(e, t),
 							r = e[t],
 							i = Reflect.deleteProperty(e, t)
-						return (i && n && nt(e, `delete`, t, void 0, r), i)
+						return (i && n && tt(e, `delete`, t, void 0, r), i)
 					}
 					has(e, t) {
 						let n = Reflect.has(e, t)
-						return ((!_(t) || !mt.has(t)) && M(e, `has`, t), n)
+						return ((!_(t) || !pt.has(t)) && N(e, `has`, t), n)
 					}
 					ownKeys(e) {
-						return (M(e, `iterate`, d(e) ? `length` : $e), Reflect.ownKeys(e))
+						return (N(e, `iterate`, d(e) ? `length` : Qe), Reflect.ownKeys(e))
 					}
 				},
-				vt = class extends gt {
+				_t = class extends ht {
 					constructor(e = !1) {
 						super(!0, e)
 					}
@@ -822,22 +822,22 @@
 						return !0
 					}
 				},
+				vt = new gt(),
 				yt = new _t(),
-				bt = new vt(),
-				xt = new _t(!0),
-				St = (e) => e,
-				Ct = (e) => Reflect.getPrototypeOf(e)
-			function wt(e, t, n) {
+				bt = new gt(!0),
+				xt = (e) => e,
+				St = (e) => Reflect.getPrototypeOf(e)
+			function Ct(e, t, n) {
 				return function (...r) {
 					let i = this.__v_raw,
-						a = P(i),
+						a = F(i),
 						o = f(a),
 						c = e === `entries` || (e === Symbol.iterator && o),
 						l = e === `keys` && o,
 						u = i[e](...r),
-						d = n ? St : t ? Gt : F
+						d = n ? xt : t ? Gt : Wt
 					return (
-						!t && M(a, `iterate`, l ? et : $e),
+						!t && N(a, `iterate`, l ? $e : Qe),
 						s(Object.create(u), {
 							next() {
 								let { value: e, done: t } = u.next()
@@ -847,102 +847,102 @@
 					)
 				}
 			}
-			function Tt(e) {
+			function wt(e) {
 				return function (...t) {
 					return e === `delete` ? !1 : e === `clear` ? void 0 : this
 				}
 			}
-			function Et(e, t) {
+			function Tt(e, t) {
 				let n = {
 					get(n) {
 						let r = this.__v_raw,
-							i = P(r),
-							a = P(n)
-						e || (E(n, a) && M(i, `get`, n), M(i, `get`, a))
-						let { has: o } = Ct(i),
-							s = t ? St : e ? Gt : F
+							i = F(r),
+							a = F(n)
+						e || (E(n, a) && N(i, `get`, n), N(i, `get`, a))
+						let { has: o } = St(i),
+							s = t ? xt : e ? Gt : Wt
 						if (o.call(i, n)) return s(r.get(n))
 						if (o.call(i, a)) return s(r.get(a))
 						r !== i && r.get(n)
 					},
 					get size() {
 						let t = this.__v_raw
-						return (!e && M(P(t), `iterate`, $e), t.size)
+						return (!e && N(F(t), `iterate`, Qe), t.size)
 					},
 					has(t) {
 						let n = this.__v_raw,
-							r = P(n),
-							i = P(t)
+							r = F(n),
+							i = F(t)
 						return (
-							e || (E(t, i) && M(r, `has`, t), M(r, `has`, i)),
+							e || (E(t, i) && N(r, `has`, t), N(r, `has`, i)),
 							t === i ? n.has(t) : n.has(t) || n.has(i)
 						)
 					},
 					forEach(n, r) {
 						let i = this,
 							a = i.__v_raw,
-							o = P(a),
-							s = t ? St : e ? Gt : F
-						return (!e && M(o, `iterate`, $e), a.forEach((e, t) => n.call(r, s(e), s(t), i)))
+							o = F(a),
+							s = t ? xt : e ? Gt : Wt
+						return (!e && N(o, `iterate`, Qe), a.forEach((e, t) => n.call(r, s(e), s(t), i)))
 					},
 				}
 				return (
 					s(
 						n,
 						e
-							? { add: Tt(`add`), set: Tt(`set`), delete: Tt(`delete`), clear: Tt(`clear`) }
+							? { add: wt(`add`), set: wt(`set`), delete: wt(`delete`), clear: wt(`clear`) }
 							: {
 									add(e) {
-										let n = P(this),
-											r = Ct(n),
-											i = P(e),
-											a = !t && !N(e) && !Ht(e) ? i : e
+										let n = F(this),
+											r = St(n),
+											i = F(e),
+											a = !t && !P(e) && !Vt(e) ? i : e
 										return (
 											r.has.call(n, a) ||
 												(E(e, a) && r.has.call(n, e)) ||
 												(E(i, a) && r.has.call(n, i)) ||
-												(n.add(a), nt(n, `add`, a, a)),
+												(n.add(a), tt(n, `add`, a, a)),
 											this
 										)
 									},
 									set(e, n) {
-										!t && !N(n) && !Ht(n) && (n = P(n))
-										let r = P(this),
-											{ has: i, get: a } = Ct(r),
+										!t && !P(n) && !Vt(n) && (n = F(n))
+										let r = F(this),
+											{ has: i, get: a } = St(r),
 											o = i.call(r, e)
-										o ||= ((e = P(e)), i.call(r, e))
+										o ||= ((e = F(e)), i.call(r, e))
 										let s = a.call(r, e)
 										return (
 											r.set(e, n),
-											o ? E(n, s) && nt(r, `set`, e, n, s) : nt(r, `add`, e, n),
+											o ? E(n, s) && tt(r, `set`, e, n, s) : tt(r, `add`, e, n),
 											this
 										)
 									},
 									delete(e) {
-										let t = P(this),
-											{ has: n, get: r } = Ct(t),
+										let t = F(this),
+											{ has: n, get: r } = St(t),
 											i = n.call(t, e)
-										i ||= ((e = P(e)), n.call(t, e))
+										i ||= ((e = F(e)), n.call(t, e))
 										let a = r ? r.call(t, e) : void 0,
 											o = t.delete(e)
-										return (i && nt(t, `delete`, e, void 0, a), o)
+										return (i && tt(t, `delete`, e, void 0, a), o)
 									},
 									clear() {
-										let e = P(this),
+										let e = F(this),
 											t = e.size !== 0,
 											n = e.clear()
-										return (t && nt(e, `clear`, void 0, void 0, void 0), n)
+										return (t && tt(e, `clear`, void 0, void 0, void 0), n)
 									},
 								},
 					),
 					[`keys`, `values`, `entries`, Symbol.iterator].forEach((r) => {
-						n[r] = wt(r, e, t)
+						n[r] = Ct(r, e, t)
 					}),
 					n
 				)
 			}
-			function Dt(e, t) {
-				let n = Et(e, t)
+			function Et(e, t) {
+				let n = Tt(e, t)
 				return (t, r, i) =>
 					r === `__v_isReactive`
 						? !e
@@ -952,14 +952,14 @@
 								? t
 								: Reflect.get(u(n, r) && r in t ? n : t, r, i)
 			}
-			var Ot = { get: Dt(!1, !1) },
-				kt = { get: Dt(!1, !0) },
-				At = { get: Dt(!0, !1) },
+			var Dt = { get: Et(!1, !1) },
+				Ot = { get: Et(!1, !0) },
+				kt = { get: Et(!0, !1) },
+				At = new WeakMap(),
 				jt = new WeakMap(),
 				Mt = new WeakMap(),
-				Nt = new WeakMap(),
-				Pt = new WeakMap()
-			function Ft(e) {
+				Nt = new WeakMap()
+			function Pt(e) {
 				switch (e) {
 					case `Object`:
 					case `Array`:
@@ -973,48 +973,48 @@
 						return 0
 				}
 			}
+			function Ft(e) {
+				return e.__v_skip || !Object.isExtensible(e) ? 0 : Pt(ee(e))
+			}
 			function It(e) {
-				return e.__v_skip || !Object.isExtensible(e) ? 0 : Ft(ee(e))
+				return Vt(e) ? e : zt(e, !1, vt, Dt, At)
 			}
 			function Lt(e) {
-				return Ht(e) ? e : Bt(e, !1, yt, Ot, jt)
+				return zt(e, !1, bt, Ot, jt)
 			}
 			function Rt(e) {
-				return Bt(e, !1, xt, kt, Mt)
+				return zt(e, !0, yt, kt, Mt)
 			}
-			function zt(e) {
-				return Bt(e, !0, bt, At, Nt)
-			}
-			function Bt(e, t, n, r, i) {
+			function zt(e, t, n, r, i) {
 				if (!v(e) || (e.__v_raw && !(t && e.__v_isReactive))) return e
-				let a = It(e)
+				let a = Ft(e)
 				if (a === 0) return e
 				let o = i.get(e)
 				if (o) return o
 				let s = new Proxy(e, a === 2 ? r : n)
 				return (i.set(e, s), s)
 			}
-			function Vt(e) {
-				return Ht(e) ? Vt(e.__v_raw) : !!(e && e.__v_isReactive)
+			function Bt(e) {
+				return Vt(e) ? Bt(e.__v_raw) : !!(e && e.__v_isReactive)
 			}
-			function Ht(e) {
+			function Vt(e) {
 				return !!(e && e.__v_isReadonly)
 			}
-			function N(e) {
+			function P(e) {
 				return !!(e && e.__v_isShallow)
 			}
-			function Ut(e) {
+			function Ht(e) {
 				return e ? !!e.__v_raw : !1
 			}
-			function P(e) {
+			function F(e) {
 				let t = e && e.__v_raw
-				return t ? P(t) : e
+				return t ? F(t) : e
 			}
-			function Wt(e) {
+			function Ut(e) {
 				return (!u(e, `__v_skip`) && Object.isExtensible(e) && D(e, `__v_skip`, !0), e)
 			}
-			var F = (e) => (v(e) ? Lt(e) : e),
-				Gt = (e) => (v(e) ? zt(e) : e)
+			var Wt = (e) => (v(e) ? It(e) : e),
+				Gt = (e) => (v(e) ? Rt(e) : e)
 			function I(e) {
 				return e ? e.__v_isRef === !0 : !1
 			}
@@ -1029,11 +1029,11 @@
 			}
 			var Jt = class {
 				constructor(e, t) {
-					;((this.dep = new Xe()),
+					;((this.dep = new Ye()),
 						(this.__v_isRef = !0),
 						(this.__v_isShallow = !1),
-						(this._rawValue = t ? e : P(e)),
-						(this._value = t ? e : F(e)),
+						(this._rawValue = t ? e : F(e)),
+						(this._value = t ? e : Wt(e)),
 						(this.__v_isShallow = t))
 				}
 				get value() {
@@ -1041,9 +1041,9 @@
 				}
 				set value(e) {
 					let t = this._rawValue,
-						n = this.__v_isShallow || N(e) || Ht(e)
-					;((e = n ? e : P(e)),
-						E(e, t) && ((this._rawValue = e), (this._value = n ? e : F(e)), this.dep.trigger()))
+						n = this.__v_isShallow || P(e) || Vt(e)
+					;((e = n ? e : F(e)),
+						E(e, t) && ((this._rawValue = e), (this._value = n ? e : Wt(e)), this.dep.trigger()))
 				}
 			}
 			function Yt(e) {
@@ -1057,19 +1057,19 @@
 				},
 			}
 			function Zt(e) {
-				return Vt(e) ? e : new Proxy(e, Xt)
+				return Bt(e) ? e : new Proxy(e, Xt)
 			}
 			var Qt = class {
 				constructor(e, t, n) {
 					;((this.fn = e),
 						(this.setter = t),
 						(this._value = void 0),
-						(this.dep = new Xe(this)),
+						(this.dep = new Ye(this)),
 						(this.__v_isRef = !0),
 						(this.deps = void 0),
 						(this.depsTail = void 0),
 						(this.flags = 16),
-						(this.globalVersion = Je - 1),
+						(this.globalVersion = qe - 1),
 						(this.next = void 0),
 						(this.effect = this),
 						(this.__v_isReadonly = !t),
@@ -1101,7 +1101,7 @@
 			}
 			function an(e, n, i = t) {
 				let { immediate: a, deep: o, once: s, scheduler: l, augmentJob: u, call: f } = i,
-					p = (e) => (o ? e : N(e) || o === !1 || o === 0 ? on(e, 1) : on(e)),
+					p = (e) => (o ? e : P(e) || o === !1 || o === 0 ? on(e, 1) : on(e)),
 					m,
 					g,
 					_,
@@ -1110,16 +1110,16 @@
 					b = !1
 				if (
 					(I(e)
-						? ((g = () => e.value), (y = N(e)))
-						: Vt(e)
+						? ((g = () => e.value), (y = P(e)))
+						: Bt(e)
 							? ((g = () => p(e)), (y = !0))
 							: d(e)
 								? ((b = !0),
-									(y = e.some((e) => Vt(e) || N(e))),
+									(y = e.some((e) => Bt(e) || P(e))),
 									(g = () =>
 										e.map((e) => {
 											if (I(e)) return e.value
-											if (Vt(e)) return p(e)
+											if (Bt(e)) return p(e)
 											if (h(e)) return f ? f(e, 2) : e()
 										})))
 								: (g = h(e)
@@ -1129,11 +1129,11 @@
 												: e
 											: () => {
 													if (_) {
-														Ge()
+														We()
 														try {
 															_()
 														} finally {
-															Ke()
+															Ge()
 														}
 													}
 													let t = nn
@@ -1255,7 +1255,7 @@
 						t = t.parent
 					}
 					if (o) {
-						;(Ge(), sn(o, null, 10, [e, i, a]), Ke())
+						;(We(), sn(o, null, 10, [e, i, a]), Ge())
 						return
 					}
 				}
@@ -1394,7 +1394,7 @@
 					let s = i[o]
 					a && (s.oldValue = a[o].value)
 					let c = s.dir[r]
-					c && (Ge(), cn(c, n, 8, [e.el, s, e, t]), Ke())
+					c && (We(), cn(c, n, 8, [e.el, s, e, t]), Ge())
 				}
 			}
 			function jn(e, t) {
@@ -1525,7 +1525,7 @@
 					m = n && n.r,
 					_ = f.refs === t ? (f.refs = {}) : f.refs,
 					v = f.setupState,
-					y = P(v),
+					y = F(v),
 					b = v === t ? i : (e) => (Wn(_, e) ? !1 : u(y, e)),
 					x = (e, t) => !(t && Wn(_, t))
 				if (m != null && m !== p) {
@@ -1601,10 +1601,10 @@
 				if (n) {
 					let i = n[e] || (n[e] = []),
 						a = (t.__weh ||= (...r) => {
-							Ge()
+							We()
 							let i = na(n),
 								a = cn(t, n, e, r)
-							return (i(), Ke(), a)
+							return (i(), Ge(), a)
 						})
 					return (r ? i.unshift(a) : i.push(a), a)
 				}
@@ -1651,12 +1651,12 @@
 					a = n && n[r],
 					o = d(e)
 				if (o || g(e)) {
-					let n = o && Vt(e),
+					let n = o && Bt(e),
 						r = !1,
 						s = !1
-					;(n && ((r = !N(e)), (s = Ht(e)), (e = it(e))), (i = Array(e.length)))
+					;(n && ((r = !P(e)), (s = Vt(e)), (e = rt(e))), (i = Array(e.length)))
 					for (let n = 0, o = e.length; n < o; n++)
-						i[n] = t(r ? (s ? Gt(F(e[n])) : F(e[n])) : e[n], n, void 0, a && a[n])
+						i[n] = t(r ? (s ? Gt(Wt(e[n])) : Wt(e[n])) : e[n], n, void 0, a && a[n])
 				} else if (typeof e == `number`) {
 					i = Array(e)
 					for (let n = 0; n < e; n++) i[n] = t(n + 1, n, void 0, a && a[n])
@@ -1729,7 +1729,7 @@
 						let d = vr[n],
 							f,
 							p
-						if (d) return (n === `$attrs` && M(e.attrs, `get`, ``), d(e))
+						if (d) return (n === `$attrs` && N(e.attrs, `get`, ``), d(e))
 						if ((f = c.__cssModules) && (f = f[n])) return f
 						if (r !== t && u(r, n)) return ((s[n] = 4), r[n])
 						if (((p = l.config.globalProperties), u(p, n))) return p[n]
@@ -1824,7 +1824,7 @@
 					}
 				if (a) {
 					let t = a.call(n, n)
-					v(t) && (e.data = Lt(t))
+					v(t) && (e.data = It(t))
 				}
 				if (((Sr = !0), o))
 					for (let e in o) {
@@ -2280,7 +2280,7 @@
 					a = $r()
 				;((e.propsDefaults = Object.create(null)), ri(e, t, i, a))
 				for (let t in e.propsOptions[0]) t in i || (i[t] = void 0)
-				;(n ? (e.props = r ? i : Rt(i)) : e.type.props ? (e.props = i) : (e.props = a),
+				;(n ? (e.props = r ? i : Lt(i)) : e.type.props ? (e.props = i) : (e.props = a),
 					(e.attrs = a))
 			}
 			function ni(e, t, n, r) {
@@ -2289,7 +2289,7 @@
 						attrs: a,
 						vnode: { patchFlag: o },
 					} = e,
-					s = P(i),
+					s = F(i),
 					[c] = e.propsOptions,
 					l = !1
 				if ((r || o > 0) && !(o & 16)) {
@@ -2318,7 +2318,7 @@
 								: delete i[a])
 					if (a !== s) for (let e in a) (!t || !u(t, e)) && (delete a[e], (l = !0))
 				}
-				l && nt(e.attrs, `set`, ``)
+				l && tt(e.attrs, `set`, ``)
 			}
 			function ri(e, n, r, i) {
 				let [a, o] = e.propsOptions,
@@ -2336,7 +2336,7 @@
 							: Wr(e.emitsOptions, t) || ((!(t in i) || l !== i[t]) && ((i[t] = l), (s = !0)))
 					}
 				if (o) {
-					let n = P(r),
+					let n = F(r),
 						i = c || t
 					for (let t = 0; t < o.length; t++) {
 						let s = o[t]
@@ -2783,9 +2783,9 @@
 							(e.next = null),
 							ni(e, t.props, r, n),
 							hi(e, t.children, n),
-							Ge(),
+							We(),
 							Sn(e),
-							Ke())
+							Ge())
 					},
 					fe = (e, t, n, r, i, a, o, s, c = !1) => {
 						let l = e && e.children,
@@ -2952,7 +2952,7 @@
 						} = e
 						if (
 							(d === -2 && (i = !1),
-							s != null && (Ge(), Kn(s, null, n, e, !0), Ke()),
+							s != null && (We(), Kn(s, null, n, e, !0), Ge()),
 							p != null && (t.renderCache[p] = void 0),
 							u & 256)
 						) {
@@ -3201,13 +3201,13 @@
 					t = Hi(t)
 					let { class: e, style: n } = t
 					;(e && !g(e) && (t.class = O(e)),
-						v(n) && (Ut(n) && !d(n) && (n = s({}, n)), (t.style = de(n))))
+						v(n) && (Ht(n) && !d(n) && (n = s({}, n)), (t.style = de(n))))
 				}
 				let o = g(e) ? 1 : Ei(e) ? 128 : Bn(e) ? 64 : v(e) ? 4 : h(e) ? 2 : 0
 				return Y(e, t, n, r, i, o, a, !0)
 			}
 			function Hi(e) {
-				return e ? (Ut(e) || ei(e) ? s({}, e) : e) : null
+				return e ? (Ht(e) || ei(e) ? s({}, e) : e) : null
 			}
 			function Ui(e, t, n = !1, r = !1) {
 				let { props: i, ref: a, patchFlag: o, children: s, transition: c } = e,
@@ -3432,12 +3432,12 @@
 				;((e.accessCache = Object.create(null)), (e.proxy = new Proxy(e.ctx, br)))
 				let { setup: r } = n
 				if (r) {
-					Ge()
+					We()
 					let n = (e.setupContext = r.length > 1 ? pa(e) : null),
 						i = na(e),
 						a = sn(r, e, 0, [e.props, n]),
 						o = y(a)
-					if ((Ke(), i(), (o || e.sp) && !Jn(e) && Un(e), o)) {
+					if ((Ge(), i(), (o || e.sp) && !Jn(e) && Un(e), o)) {
 						if ((a.then(ra, ra), t))
 							return a
 								.then((n) => {
@@ -3474,17 +3474,17 @@
 				}
 				{
 					let t = na(e)
-					Ge()
+					We()
 					try {
 						Cr(e)
 					} finally {
-						;(Ke(), t())
+						;(Ge(), t())
 					}
 				}
 			}
 			var fa = {
 				get(e, t) {
-					return (M(e, `get`, ``), e[t])
+					return (N(e, `get`, ``), e[t])
 				},
 			}
 			function pa(e) {
@@ -3499,7 +3499,7 @@
 			}
 			function ma(e) {
 				return e.exposed
-					? (e.exposeProxy ||= new Proxy(Zt(Wt(e.exposed)), {
+					? (e.exposeProxy ||= new Proxy(Zt(Ut(e.exposed)), {
 							get(t, n) {
 								if (n in t) return t[n]
 								if (n in vr) return vr[n](e)
@@ -3931,7 +3931,7 @@
 				e.addEventListener(`click`, a)
 				let s = !1
 				return {
-					active: zt(r),
+					active: Rt(r),
 					toggle: i,
 					destroy: () => {
 						;(s || ((s = !0), o(), e.removeEventListener(`click`, a), n.stop()),
@@ -4036,9 +4036,9 @@
 					},
 					u = !1
 				return {
-					theme: zt(t),
-					setting: zt(n),
-					core: zt(r),
+					theme: Rt(t),
+					setting: Rt(n),
+					core: Rt(r),
 					dark: i,
 					toggle: s,
 					apply: c,
@@ -8920,9 +8920,296 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				vu = { id: `home`, title: `Home`, group: `Getting started`, page: Qo },
-				yu = [
-					vu,
+				vu = { id: `menu-bare` },
+				yu = [`aria-pressed`],
+				bu = [`aria-pressed`],
+				xu = [`aria-pressed`],
+				Su = [`aria-pressed`],
+				Cu = { id: `menu-toc` },
+				wu = { style: { 'margin-inline-start': `0.5rem` } },
+				Tu = { id: `menu-dropdown` },
+				Eu = {
+					style: { display: `flex`, 'flex-wrap': `wrap`, gap: `0.5rem`, 'align-items': `center` },
+				},
+				Du = { key: 0 },
+				Ou = { popover: ``, id: `demo-dropdown` },
+				ku = B({
+					__name: `MenuPage`,
+					setup(e) {
+						let t = L(!1),
+							n = L(!1),
+							r = L(!1),
+							i = L(!1),
+							a = L(`introduction`),
+							o = L(null),
+							s = (e) => {
+								;((o.value = e), document.getElementById(`demo-dropdown`)?.hidePopover())
+							}
+						return (e, c) => (
+							q(),
+							J(
+								G,
+								null,
+								[
+									(c[23] ||= Q(
+										`<section id="menu-intro"><hgroup><h1>Menu</h1><p><code>&lt;menu&gt;</code> is the HTML LS toolbar element — a list of items where each item represents a command. Content-equivalent to <code>&lt;ul&gt;</code> but with semantic intent that signals &quot;buttons, not bullets.&quot; Bare = horizontal command row; inside <code>&lt;article&gt;</code> = card action row; inside <code>&lt;nav&gt;</code> = vertical column of nav commands; inside <code>&lt;aside&gt;</code> = TOC waypoint column; with <code>popover</code> = dropdown panel. </p></hgroup><p> Per the spec, <code>&lt;menu&gt;</code> must contain <code>&lt;li&gt;</code> children, but the framework&#39;s chrome treats <code>&lt;li&gt;</code> as a layout-only wrapper: <code>&lt;li&gt;</code> gets <code>display: contents</code> so the <code>&lt;button&gt;</code> / <code>&lt;a&gt;</code> inside becomes a direct flex item of the menu — no extra box layer to fight when sizing and spacing. </p></section>`,
+										1,
+									)),
+									Y(`section`, vu, [
+										(c[12] ||= Y(
+											`h2`,
+											null,
+											[Z(`1. Bare `), Y(`code`, null, `<menu>`), Z(` — toolbar / command row`)],
+											-1,
+										)),
+										(c[13] ||= Y(
+											`p`,
+											null,
+											[
+												Z(` Outside any host context, `),
+												Y(`code`, null, `<menu>`),
+												Z(` is a horizontal flex row with `),
+												Y(`code`, null, `--set-menu-gap`),
+												Z(` between items and `),
+												Y(`code`, null, `flex-wrap: wrap`),
+												Z(
+													` so a long row breaks onto multiple lines on narrow viewports. Children inherit the standard `,
+												),
+												Y(`code`, null, `<button>`),
+												Z(` chrome — variant + size + style modifiers all cascade. `),
+											],
+											-1,
+										)),
+										Y(`menu`, null, [
+											Y(`li`, null, [
+												Y(
+													`button`,
+													{
+														type: `button`,
+														'aria-pressed': n.value,
+														onClick: (c[0] ||= (e) => (n.value = !n.value)),
+													},
+													[...(c[9] ||= [Y(`strong`, null, `B`, -1)])],
+													8,
+													yu,
+												),
+											]),
+											Y(`li`, null, [
+												Y(
+													`button`,
+													{
+														type: `button`,
+														'aria-pressed': r.value,
+														onClick: (c[1] ||= (e) => (r.value = !r.value)),
+													},
+													[...(c[10] ||= [Y(`em`, null, `I`, -1)])],
+													8,
+													bu,
+												),
+											]),
+											Y(`li`, null, [
+												Y(
+													`button`,
+													{
+														type: `button`,
+														'aria-pressed': i.value,
+														onClick: (c[2] ||= (e) => (i.value = !i.value)),
+													},
+													[...(c[11] ||= [Y(`u`, null, `U`, -1)])],
+													8,
+													xu,
+												),
+											]),
+											Y(`li`, null, [
+												Y(
+													`button`,
+													{
+														type: `button`,
+														class: `subtle`,
+														'aria-pressed': t.value,
+														onClick: (c[3] ||= (e) => (t.value = !t.value)),
+													},
+													k(t.value ? `★ Bookmarked` : `☆ Bookmark`),
+													9,
+													Su,
+												),
+											]),
+										]),
+										(c[14] ||= Y(
+											`details`,
+											null,
+											[
+												Y(`summary`, null, [Y(`small`, null, `Markup`)]),
+												Y(`pre`, null, [
+													Y(
+														`code`,
+														null,
+														`<menu>
+  <li><button type="button"><strong>B</strong></button></li>
+  <li><button type="button"><em>I</em></button></li>
+  <li><button type="button"><u>U</u></button></li>
+  <li><button type="button" class="subtle">☆ Bookmark</button></li>
+</menu>`,
+													),
+												]),
+											],
+											-1,
+										)),
+									]),
+									(c[24] ||= Q(
+										`<section id="menu-card-actions"><h2>2. Card action row — <code>article menu</code></h2><p> Inside an <code>&lt;article&gt;</code> the menu picks up <code>--set-menu-justify-content: flex-end</code>, pushing actions to the trailing edge. Bootstrap and Material both converge on this convention — primary actions sit at the inline-end of the card so the eye reads body → actions in scan order. </p><article><header><h3>Aurora 1.2 release</h3></header><p> The Aurora 1.2 SDK ships at the end of the month. Migration guide covers every breaking change with a one-step automated rewrite; consumers on 1.1.x with the legacy webhook signature should read the API council notes before upgrading. </p><menu><li><button type="button" class="subtle">Dismiss</button></li><li><button type="button" class="subtle">Remind me later</button></li><li><button type="button" class="primary">Read migration guide</button></li></menu></article><details><summary><small>Markup</small></summary><pre><code>&lt;article&gt;
+  &lt;header&gt;…&lt;/header&gt;
+  &lt;p&gt;…&lt;/p&gt;
+  &lt;menu&gt;
+    &lt;li&gt;&lt;button class=&quot;subtle&quot;&gt;Dismiss&lt;/button&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;button class=&quot;primary&quot;&gt;Read migration guide&lt;/button&gt;&lt;/li&gt;
+  &lt;/menu&gt;
+&lt;/article&gt;</code></pre></details></section><section id="menu-nav-rail"><h2>3. Nav-rail menu — <code>body &gt; nav menu</code></h2><p> Inside a body-shell <code>&lt;nav&gt;</code> the menu flips to a vertical column. Each <code>&lt;li&gt;&lt;a&gt;</code> / <code>&lt;li&gt;&lt;button&gt;</code> becomes a full- width start-aligned row with quiet text, a subtle hover tint, and an <code>aria-current=&quot;page&quot;</code> active state that paints <code>--color-primary-bg-subtle</code> + <code>--color-primary-text-emphasis</code> (same triplet the active tab and the in-flow alert variants use). Touch-action <code>pan-y</code> ships on every row to keep iOS Safari scroll-on-link working inside the popover-drawer rail. </p><p> You&#39;re looking at this pattern live to the left — the showcase&#39;s primary navigation rail is a body-shell <code>&lt;nav&gt;</code> with <code>&lt;h6&gt;</code> + <code>&lt;menu&gt;</code> sibling pairs (see <a href="#/nav/nav-rail">NavPage § Body-shell rail</a> for the chrome contract). </p><details><summary><small>Markup — grouped nav-rail with active page</small></summary><pre><code>&lt;nav aria-label=&quot;Primary&quot;&gt;
+  &lt;h6&gt;Components&lt;/h6&gt;
+  &lt;menu&gt;
+    &lt;li&gt;&lt;a href=&quot;#/article-card&quot;&gt;Article card&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#/aside&quot;&gt;Aside&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#/menu&quot; aria-current=&quot;page&quot;&gt;Menu&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#/nav&quot;&gt;Nav&lt;/a&gt;&lt;/li&gt;
+  &lt;/menu&gt;
+&lt;/nav&gt;</code></pre></details></section>`,
+										2,
+									)),
+									Y(`section`, Cu, [
+										(c[16] ||= Q(
+											`<h2>4. In-aside TOC menu — <code>body &gt; aside menu</code></h2><p> Inside a body-shell <code>&lt;aside&gt;</code> the menu reads as a stacked column of in-page waypoints. Each row carries a 2 px transparent <code>border-inline-start</code> rule that flips to <code>--color-primary</code> on <code>aria-current=&quot;location&quot;</code>. The text colour mutes to <code>--color-text-muted</code> by default; active and hover lift it to <code>--color-text</code> / <code>--color-primary-on-canvas</code>. The optional <code>[data-level=&quot;3&quot;]</code> attribute on the <code>&lt;li&gt;</code> nudges h3-level entries inward so the visual hierarchy mirrors the heading hierarchy. </p><p> You&#39;re looking at this pattern live to the right — the showcase&#39;s on-this-page rail uses it for the section list of every page (including this one). Per the WAI-ARIA APG, in-page anchors use <code>aria-current=&quot;location&quot;</code> (not <code>page</code>) since they navigate within the same page. </p><details><summary><small>Markup — TOC menu with two levels + active section</small></summary><pre><code>&lt;aside&gt;
+  &lt;h6&gt;On this page&lt;/h6&gt;
+  &lt;nav aria-label=&quot;Table of contents&quot;&gt;
+    &lt;menu&gt;
+      &lt;li&gt;&lt;a href=&quot;#section-1&quot; aria-current=&quot;location&quot;&gt;Introduction&lt;/a&gt;&lt;/li&gt;
+      &lt;li data-level=&quot;3&quot;&gt;&lt;a href=&quot;#section-1-1&quot;&gt;Subtopic A&lt;/a&gt;&lt;/li&gt;
+      &lt;li data-level=&quot;3&quot;&gt;&lt;a href=&quot;#section-1-2&quot;&gt;Subtopic B&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#section-2&quot;&gt;Next chapter&lt;/a&gt;&lt;/li&gt;
+    &lt;/menu&gt;
+  &lt;/nav&gt;
+&lt;/aside&gt;</code></pre></details>`,
+											4,
+										)),
+										Y(`p`, null, [
+											Y(
+												`button`,
+												{
+													type: `button`,
+													class: `subtle small`,
+													onClick: (c[4] ||= (e) =>
+														(a.value = a.value === `introduction` ? `next` : `introduction`)),
+												},
+												` Toggle which row reads as active (live demo bound to the showcase TOC) `,
+											),
+											Y(`small`, wu, [
+												(c[15] ||= Z(`Currently active: `, -1)),
+												Y(`strong`, null, k(a.value), 1),
+											]),
+										]),
+									]),
+									Y(`section`, Tu, [
+										(c[19] ||= Q(
+											`<h2>5. Dropdown menu — <code>&lt;menu popover&gt;</code></h2><p> With the <code>popover</code> attribute, <code>&lt;menu&gt;</code> becomes a top-layer command panel triggered by a <code>&lt;button popovertarget&gt;</code>. The popover surface (<code>surfaces/_popover.scss</code>) paints the panel chrome (background, border, radius, shadow, entry transition); this partial re-orients the menu inside as a vertical column with pill-shaped items (Mailbox / Bootstrap dropdown parity, including <code>--bs-dropdown-padding-{x, y}: 0.375 rem</code>). </p><p> Click outside or press <strong>Esc</strong> to dismiss — native popover API handles both. Selecting an item inside calls <code>.hidePopover()</code> on the menu so the panel closes immediately on choice. Behavioural composables (<code>useMenu</code>, arrow-key roving, Home / End, type-ahead filter) land in <code>composables/</code> later; the panel chrome below is the static foundation they build on. </p>`,
+											3,
+										)),
+										Y(`div`, Eu, [
+											(c[18] ||= Y(
+												`button`,
+												{ type: `button`, popovertarget: `demo-dropdown` },
+												`Account ▾`,
+												-1,
+											)),
+											o.value
+												? (q(),
+													J(`small`, Du, [
+														(c[17] ||= Z(`Last picked: `, -1)),
+														Y(`strong`, null, k(o.value), 1),
+													]))
+												: Wi(``, !0),
+										]),
+										Y(`menu`, Ou, [
+											Y(`li`, null, [
+												Y(
+													`button`,
+													{ type: `button`, onClick: (c[5] ||= (e) => s(`Profile`)) },
+													`Profile`,
+												),
+											]),
+											Y(`li`, null, [
+												Y(
+													`button`,
+													{ type: `button`, onClick: (c[6] ||= (e) => s(`Workspace settings`)) },
+													` Workspace settings `,
+												),
+											]),
+											Y(`li`, null, [
+												Y(
+													`button`,
+													{ type: `button`, onClick: (c[7] ||= (e) => s(`Billing`)) },
+													`Billing`,
+												),
+											]),
+											Y(`li`, null, [
+												Y(
+													`button`,
+													{ type: `button`, onClick: (c[8] ||= (e) => s(`Sign out`)) },
+													`Sign out`,
+												),
+											]),
+										]),
+										(c[20] ||= Q(
+											`<details><summary><small>Markup</small></summary><pre><code>&lt;button popovertarget=&quot;account-actions&quot;&gt;Account ▾&lt;/button&gt;
+&lt;menu popover id=&quot;account-actions&quot;&gt;
+  &lt;li&gt;&lt;button&gt;Profile&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;button&gt;Workspace settings&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;button&gt;Billing&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;button&gt;Sign out&lt;/button&gt;&lt;/li&gt;
+&lt;/menu&gt;</code></pre></details><h3>Wrapped dropdown — <code>&lt;div popover&gt;&lt;menu&gt;</code></h3><p> Some consumers want a custom popover panel that hosts a <code>&lt;menu&gt;</code> alongside other content (a header, a search field, a footer). The same dropdown chrome reaches the inner <code>&lt;menu&gt;</code> via the <code>[popover]:not(aside):not(nav) menu</code> selector — the <code>:not(aside):not(nav)</code> clause excludes the framework&#39;s offcanvas drawer surfaces (where descendant menus should render with nav-rail chrome, not dropdown chrome — the regression-guarded behavior captured during the iOS scroll-on-link audit). </p>`,
+											3,
+										)),
+										(c[21] ||= Y(
+											`button`,
+											{ type: `button`, popovertarget: `demo-wrapped` },
+											`Open wrapped panel ▾`,
+											-1,
+										)),
+										(c[22] ||= Y(
+											`div`,
+											{ popover: ``, id: `demo-wrapped`, style: { 'min-inline-size': `16rem` } },
+											[
+												Y(
+													`header`,
+													{
+														style: {
+															'padding-block-end': `0.5rem`,
+															'border-block-end': `1px solid var(--color-border)`,
+															'margin-block-end': `0.5rem`,
+														},
+													},
+													[Y(`strong`, null, `Filter`)],
+												),
+												Y(`menu`, null, [
+													Y(`li`, null, [Y(`button`, { type: `button` }, `Recent`)]),
+													Y(`li`, null, [Y(`button`, { type: `button` }, `Starred`)]),
+													Y(`li`, null, [Y(`button`, { type: `button` }, `Archived`)]),
+												]),
+											],
+											-1,
+										)),
+									]),
+									(c[25] ||= Q(
+										`<section id="menu-reduced-motion"><h2>Reduced motion</h2><p> Menu row hover / focus transitions (background-color, color) route through the framework&#39;s <code>@include transition()</code> mixin, which collapses to instant under <code>prefers-reduced-motion: reduce</code>. Toggle the OS preference and verify hover swaps without a fade on the nav-rail rows in the left sidebar. </p></section><section id="menu-forced-colors"><h2>Forced colors</h2><p> In Windows High Contrast (or any <code>forced-colors: active</code> environment), nav-row active state (<code>aria-current=&quot;page&quot;</code>) falls back to <code>Highlight</code> / <code>HighlightText</code> via the framework&#39;s variant tokens. TOC leading rule paints with <code>currentColor</code> — also survives HC mode. </p></section><section id="menu-tokens"><h2>Tokens</h2><p> Every value below flows through a <code>--set-menu-*</code> custom property declared on bare <code>&lt;menu&gt;</code>. Override at <code>:root</code> for global retune, per- instance via inline <code>style</code>, or via a parent context selector. </p><dl><dt><code>--set-menu-color</code></dt><dd>Text colour of the menu and its descendants. Defaults to <code>currentColor</code>.</dd><dt><code>--set-menu-background-color</code></dt><dd>Surface colour behind the menu row. Defaults to <code>transparent</code>.</dd><dt><code>--set-menu-gap</code></dt><dd>Spacing between menu items. Defaults to <code>calc(var(--spacing) * 2)</code> (0.5 rem in the default theme).</dd><dt><code>--set-menu-padding-inline</code> / <code>--set-menu-padding-block</code></dt><dd>Inner padding of the menu container. Defaults to <code>0</code> on bare <code>&lt;menu&gt;</code>; populated for popover dropdowns by the popover surface.</dd><dt><code>--set-menu-justify-content</code></dt><dd>Flex justification of menu children. Defaults to <code>flex-start</code> on bare <code>&lt;menu&gt;</code>; flips to <code>flex-end</code> inside an <code>&lt;article&gt;</code> for the card-action-row convention.</dd><dt><code>--set-menu-transition-duration</code></dt><dd>Duration of color + background transitions inside the menu. Defaults to <code>--set-transition-duration</code> (150 ms in the default theme).</dd></dl></section>`,
+										3,
+									)),
+								],
+								64,
+							)
+						)
+					},
+				}),
+				Au = { id: `home`, title: `Home`, group: `Getting started`, page: Qo },
+				ju = [
+					Au,
 					{ id: `button`, title: `Button`, group: `Elements — Interactive`, page: ys },
 					{ id: `anchor`, title: `Anchor`, group: `Elements — Interactive`, page: Is },
 					{
@@ -8948,34 +9235,35 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					{ id: `article-card`, title: `Article card`, group: `Components`, page: ql },
 					{ id: `aside`, title: `Aside`, group: `Components`, page: eu },
 					{ id: `nav`, title: `Nav`, group: `Components`, page: _u },
+					{ id: `menu`, title: `Menu`, group: `Components`, page: ku },
 				],
-				bu = (e) => {
+				Mu = (e) => {
 					let t = window.location.hash
 					if (!t.startsWith(`#/`)) return { id: e, section: null }
 					let n = t.slice(2).split(`/`),
 						r = n[0] ?? ``
 					return {
-						id: yu.some((e) => e.id === r) ? r : `home`,
+						id: ju.some((e) => e.id === r) ? r : `home`,
 						section: n.slice(1).filter(Boolean).join(`/`) || null,
 					}
 				},
-				xu = typeof window > `u` ? { id: `home`, section: null } : bu(`home`),
-				Su = L(xu.id),
-				Cu = L(xu.section)
+				Nu = typeof window > `u` ? { id: `home`, section: null } : Mu(`home`),
+				Pu = L(Nu.id),
+				Fu = L(Nu.section)
 			typeof window < `u` &&
 				window.addEventListener(`hashchange`, () => {
-					let e = bu(Su.value)
-					;((Su.value = e.id), (Cu.value = e.section))
+					let e = Mu(Pu.value)
+					;((Pu.value = e.id), (Fu.value = e.section))
 				})
-			var wu = Su,
-				Tu = Cu,
-				Eu = _a(() => yu.find((e) => e.id === Su.value) ?? vu),
-				Du = (e, t) => {
+			var Iu = Pu,
+				Lu = Fu,
+				Ru = _a(() => ju.find((e) => e.id === Pu.value) ?? Au),
+				zu = (e, t) => {
 					window.location.hash = t ? `#/${e}/${t}` : `#/${e}`
 				},
-				Ou = [`href`, `aria-current`, `onClick`],
-				ku = { key: 0 },
-				Au = B({
+				Bu = [`href`, `aria-current`, `onClick`],
+				Vu = { key: 0 },
+				Hu = B({
 					__name: `SiteNav`,
 					props: { routes: {}, active: {} },
 					emits: [`navigate`],
@@ -9031,7 +9319,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 																				},
 																				k(t.title),
 																				9,
-																				Ou,
+																				Bu,
 																			),
 																		])
 																	),
@@ -9047,7 +9335,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										128,
 									)),
 									i.value.length === 0
-										? (q(), J(`p`, ku, [...(n[0] ||= [Y(`small`, null, `No matches.`, -1)])]))
+										? (q(), J(`p`, Vu, [...(n[0] ||= [Y(`small`, null, `No matches.`, -1)])]))
 										: Wi(``, !0),
 								],
 								64,
@@ -9055,11 +9343,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				ju = { key: 0, 'aria-label': `Table of contents` },
-				Mu = [`data-level`],
-				Nu = [`href`, `aria-current`, `onClick`],
-				Pu = { key: 1 },
-				Fu = B({
+				Uu = { key: 0, 'aria-label': `Table of contents` },
+				Wu = [`data-level`],
+				Gu = [`href`, `aria-current`, `onClick`],
+				Ku = { key: 1 },
+				qu = B({
 					__name: `Toc`,
 					props: { scroller: {}, currentId: {} },
 					emits: [`navigate`],
@@ -9121,7 +9409,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								e.ctrlKey ||
 								e.shiftKey ||
 								e.altKey ||
-								(e.preventDefault(), Du(n.currentId, t), r(`navigate`))
+								(e.preventDefault(), zu(n.currentId, t), r(`navigate`))
 						}
 						return (t, n) => (
 							q(),
@@ -9137,7 +9425,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									)),
 									i.value.length > 0
 										? (q(),
-											J(`nav`, ju, [
+											J(`nav`, Uu, [
 												Y(`menu`, null, [
 													(q(!0),
 													J(
@@ -9160,11 +9448,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 																			},
 																			k(t.label),
 																			9,
-																			Nu,
+																			Gu,
 																		),
 																	],
 																	8,
-																	Mu,
+																	Wu,
 																)
 															),
 														),
@@ -9173,7 +9461,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											]))
 										: (q(),
-											J(`p`, Pu, [
+											J(`p`, Ku, [
 												...(n[0] ||= [Y(`small`, null, `No sections on this page.`, -1)]),
 											])),
 								],
@@ -9182,13 +9470,13 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				Iu = [`popovertarget`],
-				Lu = [`aria-label`],
-				Ru = [`popovertarget`],
-				zu = [`popover`],
-				Bu = { class: `showcase-sidebar-scroll` },
-				Vu = [`popover`],
-				Hu = { class: `font-mono text-xs` }
+				Ju = [`popovertarget`],
+				Yu = [`aria-label`],
+				Xu = [`popovertarget`],
+				Zu = [`popover`],
+				Qu = { class: `showcase-sidebar-scroll` },
+				$u = [`popover`],
+				ed = { class: `font-mono text-xs` }
 			mo(
 				B({
 					__name: `App`,
@@ -9203,15 +9491,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 							o = _a(() => {
 								let e = n.value.trim().toLowerCase()
 								return e
-									? yu.filter(
+									? ju.filter(
 											(t) =>
 												t.title.toLowerCase().includes(e) ||
 												t.id.toLowerCase().includes(e) ||
 												t.group.toLowerCase().includes(e),
 										)
-									: yu
+									: ju
 							}),
-							s = _a(() => Eu.value.page),
+							s = _a(() => Ru.value.page),
 							c = L(null),
 							l = async (e) => {
 								await _n()
@@ -9233,7 +9521,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									t?.matches(`:popover-open`) && t.hidePopover()
 								}
 							}
-						Fn([wu, Tu], ([, e]) => {
+						Fn([Iu, Lu], ([, e]) => {
 							;(l(e), u())
 						})
 						let d = (e) => {
@@ -9245,13 +9533,13 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 							;(a(),
 								i?.addEventListener(`change`, a),
 								document.addEventListener(`keydown`, d),
-								l(Tu.value))
+								l(Lu.value))
 						}),
 							sr(() => {
 								;(i?.removeEventListener(`change`, a), document.removeEventListener(`keydown`, d))
 							}))
 						let f = (e) => {
-								;(e.preventDefault(), Du(`home`), u())
+								;(e.preventDefault(), zu(`home`), u())
 							},
 							p = () => {
 								t.toggle()
@@ -9290,7 +9578,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											],
 											8,
-											Iu,
+											Ju,
 										),
 										Y(`a`, { href: `#/home`, class: `flex-1`, onClick: f }, [
 											...(i[2] ||= [Y(`strong`, null, `Elements`, -1)]),
@@ -9316,7 +9604,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												),
 											],
 											8,
-											Lu,
+											Yu,
 										),
 										Y(
 											`button`,
@@ -9341,7 +9629,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											],
 											8,
-											Ru,
+											Xu,
 										),
 									]),
 									Y(
@@ -9397,15 +9685,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 													),
 												]),
 											]),
-											Y(`div`, Bu, [
-												X(Au, { routes: o.value, active: Yt(Eu).id, onNavigate: u }, null, 8, [
+											Y(`div`, Qu, [
+												X(Hu, { routes: o.value, active: Yt(Ru).id, onNavigate: u }, null, 8, [
 													`routes`,
 													`active`,
 												]),
 											]),
 										],
 										8,
-										zu,
+										Zu,
 									),
 									Y(`main`, { ref_key: `scrollerRef`, ref: c }, [(q(), Ii(mr(s.value)))], 512),
 									Y(
@@ -9442,19 +9730,19 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												-1,
 											)),
 											X(
-												Fu,
-												{ scroller: c.value, 'current-id': Yt(Eu).id, onNavigate: u },
+												qu,
+												{ scroller: c.value, 'current-id': Yt(Ru).id, onNavigate: u },
 												null,
 												8,
 												[`scroller`, `current-id`],
 											),
 										],
 										8,
-										Vu,
+										$u,
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Hu, `build ` + k(Yt(`2026-05-12T21:23:54.916Z`)), 1),
+										Y(`small`, ed, `build ` + k(Yt(`2026-05-12T21:27:33.894Z`)), 1),
 									]),
 								],
 								64,
@@ -15895,6 +16183,9 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				.uppercase {
 					text-transform: uppercase;
 				}
+				.\!italic {
+					font-style: italic !important;
+				}
 				.italic {
 					font-style: italic;
 				}
@@ -15910,6 +16201,9 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				}
 				.normal-nums {
 					font-variant-numeric: normal;
+				}
+				.\!underline {
+					text-decoration-line: underline !important;
 				}
 				.line-through {
 					text-decoration-line: line-through;

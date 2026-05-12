@@ -17,6 +17,7 @@ import SectioningPage from './pages/SectioningPage.vue'
 import ArticleCardPage from './pages/ArticleCardPage.vue'
 import AsidePage from './pages/AsidePage.vue'
 import NavPage from './pages/NavPage.vue'
+import MenuPage from './pages/MenuPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -125,6 +126,12 @@ const NAV: Route = {
 	group: 'Components',
 	page: NavPage,
 }
+const MENU: Route = {
+	id: 'menu',
+	title: 'Menu',
+	group: 'Components',
+	page: MenuPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -143,6 +150,7 @@ export const routes: readonly Route[] = [
 	ARTICLE_CARD,
 	ASIDE,
 	NAV,
+	MENU,
 ]
 
 interface RouteLocation {
