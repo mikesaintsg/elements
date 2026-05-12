@@ -6,12 +6,6 @@
 			"runtimeExecutable": "npm",
 			"runtimeArgs": ["run", "dev"],
 			"port": 5173
-		},
-		{
-			"name": "elements-debug",
-			"runtimeExecutable": "npm",
-			"runtimeArgs": ["run", "dev"],
-			"port": 5175
 		}
 	]
 }
