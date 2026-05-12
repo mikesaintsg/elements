@@ -5,15 +5,14 @@
  *   ┌─ Layer ───────┬─ What it owns in the showcase ───────────────────────┐
  *   │ elements      │ <header> / <nav> / <main> / <aside> / <footer>       │
  *   │               │ baselines; <a> / <button> / <input type="search"> /  │
- *   │               │ <h2> / <menu> chrome; <i class="icon"> icon mask;    │
- *   │               │ <nav popover> / <aside popover> drawer chrome —      │
- *   │               │ slide-from-edge, ::backdrop scrim, light-dismiss,    │
- *   │               │ Esc-dismiss — see components/_aside.scss for the    │
- *   │               │ full offcanvas contract                              │
- *   │ components    │ body-grid layout shell, per-rail chrome              │
- *   │               │ (header band, nav rail, main scroller, aside rail,   │
- *   │               │ footer band), in-rail nav menu, in-aside TOC menu,   │
- *   │               │ aria-current=page / aria-current=location styling    │
+ *   │               │ <h2> / <menu> chrome; <i class="icon"> icon mask     │
+ *   │ components    │ body-grid layout shell, per-rail chrome (header     │
+ *   │               │ band, nav rail, main scroller, aside rail, footer    │
+ *   │               │ band), in-rail nav menu, in-aside TOC menu,          │
+ *   │               │ `aria-current=page` / `aria-current=location`        │
+ *   │               │ styling, native-popover drawer chrome on mobile:     │
+ *   │               │ slide-from-edge, ::backdrop scrim, Esc + click-out   │
+ *   │               │ dismiss, header band height parity with body bar    │
  *   │ surfaces      │ scrollbar styling, focus ring, ::selection,          │
  *   │               │ ::backdrop dim+blur scrim                            │
  *   │ modifiers     │ `.subtle` on icon buttons; `.primary` highlights     │
@@ -26,43 +25,34 @@
  *   1. Responsive visibility of the toggle buttons + drawer headers
  *      (visible only below the framework's 960 px breakpoint where the
  *      rails become popover drawers).
- *   2. App-specific flex-column split inside the left nav rail (search
- *      pinned at top, scrolling link list below).
+ *   2. App-specific flex-column split inside the left nav rail (drawer
+ *      header band on top, search pinned below it, scrolling link list
+ *      filling the remainder).
+ *   3. Inter-group rhythm for the `<h6>` + `<menu>` grouped sidebar
+ *      pattern — the framework documents the markup but leaves the
+ *      vertical rhythm to the consumer.
  */
 
+/* hmr-touch 57 */
+
 /* Mobile-only chrome — drawer toggles in the body header AND drawer
- * headers inside each rail (holding the close button). On desktop the
- * rails are in-flow grid columns (see src/styles/components/_body.scss)
- * so they never collapse and need neither the toggle nor the
- * drawer-internal header. Below 960 px App.vue toggles a `popover="auto"`
- * attribute on each rail (the `isMobile` Vue ref watches the same 960 px
- * media query) and the rail becomes a native popover drawer — chrome,
- * motion, backdrop scrim, and dismiss patterns all come from
- * `components/_aside.scss`'s offcanvas drawer rules (which now match
- * `:is(aside, nav)[popover]`, covering both rails uniformly). The
- * toggles + drawer headers below are the SHOWCASE-side chrome that the
+ * headers inside each rail (holding the close button).
+ *
+ * On desktop the rails are in-flow grid columns so they never collapse
+ * and need neither the toggle button nor the drawer-internal header.
+ * Below 960 px App.vue flips a `popover="auto"` attribute on each rail
+ * (the `isMobile` Vue ref watches the same 960 px media query) and the
+ * rail becomes a native popover drawer — slide motion, ::backdrop
+ * scrim, light-dismiss + Esc-dismiss all come from
+ * `components/_aside.scss`'s `:is(aside, nav)[popover]` drawer rules.
+ * The toggles + drawer headers below are the SHOWCASE-side chrome the
  * framework doesn't ship: the toggle buttons in the body app bar and
  * the close buttons inside each drawer header.
  *
- * Rule ordering matters: defaults declared FIRST, the @media override
- * SECOND. CSS cascade resolves equal-specificity declarations by source
- * order — a previous version had `display: none` after the @media block
- * which silently overrode the mobile reveal. Keep this order.
- *
- * Drawer-header height: the framework's `_header.scss` rule applies to
- * `body:has(main) > nav > header` and `> aside > header` (extended from
- * the body-app-bar rule), so the drawer header automatically picks up
- * the same flex row + padding + separator border + font as the body
- * header. The two headers align visually at the same height across the
- * top of the layout when the drawer is open.
- *
- * Close-button placement inside each drawer header: nav drawer (slides
- * from inline-start) gets its close at the inline-END (right side of
- * drawer) so the close sits at the drawer edge facing the viewport
- * center after slide-in — thumb-reachable, echoes iOS / Material. Aside
- * drawer (slides from inline-end) gets its close at the inline-START
- * (left side of drawer), same principle.
- */
+ * Rule ordering matters: defaults FIRST, the @media reveal SECOND. CSS
+ * cascade resolves equal-specificity declarations by source order — a
+ * previous version had `display: none` after the @media block which
+ * silently overrode the mobile reveal. Keep this order. */
 .showcase-nav-toggle,
 .showcase-toc-toggle,
 .showcase-drawer-header {
@@ -81,29 +71,9 @@
 	.showcase-drawer-header {
 		display: flex;
 	}
-
-	/* No close-button positioning classes here — the framework's
-	 * `:is(aside, nav)[popover] > header > button:last-child` rule in
-	 * `components/_aside.scss` positions the close at the user-facing
-	 * edge of the drawer (Bootstrap convention: inline-END regardless
-	 * of placement). The previous `.showcase-drawer-close-start` /
-	 * `.showcase-drawer-close-end` classes conflicted with the
-	 * framework rule (`margin-inline-start: auto` from framework +
-	 * `margin-inline-end: auto` from showcase = both margins compute
-	 * to half the available space, button centered) — removed. */
 }
 
-/* (No custom backdrop element — the body-shell rails now use native
- * popover via `:popover="isMobile ? 'auto' : undefined"` in App.vue,
- * so they get their `::backdrop` scrim from
- * `surfaces/_backdrop.scss` (which covers `dialog:modal`,
- * `aside[popover]`, AND `nav[popover]` open states with the same
- * dim+blur recipe). The previous `<div class="showcase-backdrop">`
- * element is gone — single-backdrop invariant restored: every
- * framework overlay renders one native pseudo, no duplicate
- * elements.) */
-
-/* Sidebar layout — APP-SPECIFIC flex-column split.
+/* Left rail layout — APP-SPECIFIC flex-column split.
  *
  * Markup the showcase mounts inside the body-shell `<nav>`:
  *
@@ -118,59 +88,46 @@
  *   </nav>
  *
  * Three regions inside the rail:
- *   1. `<header class="showcase-drawer-header">` — drawer close
- *      button (visible only below 960px when the rail collapses to
- *      an off-canvas drawer). Edge-to-edge band, height matches
- *      the body app bar via the framework's `--set-header-padding-*`.
+ *   1. `<header class="showcase-drawer-header">` — drawer close button,
+ *      visible only below 960 px. Edge-to-edge band whose height is
+ *      pinned by `_header.scss`'s body-shell-drawer-header parity rule
+ *      to match the body app bar (`--set-header-padding-block`).
  *   2. `<search>` — filter row pinned at the top of the rail OUTSIDE
- *      the scroll container. Just enough height for the input plus
- *      breathing space; bottom divider separates it from the
+ *      the scroll container. Just enough block padding for the input
+ *      plus breathing space; bottom divider separates it from the
  *      scrolling list below.
  *   3. `<div class="showcase-sidebar-scroll">` — the rail's ONLY
  *      scroll container. Holds the `<h6>` + `<menu>` grouped-sidebar
  *      pattern (per `components/_menu.scss` § Grouped sidebars).
  *      `flex: 1 + min-block-size: 0 + overflow-y: auto` so the
- *      links own all remaining vertical space and scroll
- *      independently of the search + header above.
+ *      links own all remaining vertical space and scroll independently
+ *      of the search row + header band above.
  *
- * Why a flex-column split (rather than the framework's single-scroller
- * default): docs-site sidebars benefit from a pinned filter that
- * doesn't scroll away with the link list. Product UIs / consumer
- * navs typically prefer the rail-as-single-scroller default — that's
- * why the framework keeps the simpler shape and the showcase opts
- * into the split via `nav:has(> search)` here.
- *
- * Drawer header opt-out: the framework's `body:has(main) > nav >
- * header` rule pins the drawer header with `position: sticky` +
- * negative margins keyed to `--set-nav-padding-*`. With the split,
- * the rail no longer scrolls (the inner `.showcase-sidebar-scroll`
- * does) AND the rail's own padding is zero (each region carries its
- * own band-style padding), so the sticky / negative-margin machinery
- * is both unneeded and harmful (negative margins against zero
- * padding push the band off-screen). The override at the bottom of
- * this section returns the drawer header to a normal flex child
- * sized by its own `--set-header-padding-*` (matching the body app
- * bar's height of ~45px on mobile). */
+ * Why a split (vs. the framework's single-scroller rail default):
+ * docs-site sidebars benefit from a pinned filter that doesn't scroll
+ * away with the link list. Product UIs / consumer navs typically
+ * prefer the rail-as-single-scroller default — that's why the
+ * framework keeps the simpler shape and the showcase opts into the
+ * split via `nav:has(> search)`. */
 
 /* Rail container — opt into the flex-column split when the nav
  * carries a `<search>` child. Zero padding + zero gap (each region
- * paints its own band); `overflow: hidden` so a tall link list
- * can't push the rail taller than the viewport AND so the rail
- * itself never becomes a competing scroll container alongside the
- * inner `.showcase-sidebar-scroll`.
+ * paints its own band); `overflow: hidden` so a tall link list can't
+ * push the rail past the viewport AND so the rail itself never
+ * becomes a competing scroll container alongside the inner
+ * `.showcase-sidebar-scroll`.
  *
- * The `[popover]`-variant selectors below cover the same nav once
- * it's a popover drawer on mobile. Without them, the framework's
- * `:is(aside, nav)[popover]` drawer chrome (specificity 0,1,1) wins
- * `overflow-y: auto` + `overscroll-behavior: contain` over the
- * showcase rule (specificity 0,0,4) — even though the showcase rule
- * is unlayered and beats the framework's `@layer components` for
- * any property they both set, the `overscroll-behavior` declaration
- * isn't covered by the showcase's `overflow: hidden` and persists,
- * which makes touch scroll feel "stuck" on iOS (scroll-chain
- * containment without a chain to contain). Bumping specificity on
- * the popover variant ensures the showcase rule fully owns the
- * rail's scroll behavior for the mobile drawer case. */
+ * The `[popover]`-variant selector covers the same nav once it's a
+ * popover drawer on mobile. Without it, the framework's
+ * `:is(aside, nav)[popover]` drawer chrome (specificity 0,1,1) would
+ * win `overflow-y: auto` + `overscroll-behavior: contain` over the
+ * showcase rule (specificity 0,0,4) — the unlayered showcase rule
+ * beats the framework's `@layer components` for any property they
+ * both set, but `overscroll-behavior` isn't covered by `overflow:
+ * hidden` and persists, which makes touch scroll feel "stuck" on iOS
+ * (scroll-chain containment without a chain to contain). Bumping
+ * specificity on the popover variant ensures the showcase rule fully
+ * owns the rail's scroll behavior in mobile drawer mode. */
 body:has(main) > nav:has(> search),
 body:has(main) > * > nav:has(> search),
 nav[popover]:has(> search) {
@@ -180,24 +137,12 @@ nav[popover]:has(> search) {
 	gap: 0;
 }
 
-/* Drawer header — opt out of the framework's sticky / negative-margin
- * pin (see comment block above for why). Keep the framework's
- * `--set-header-padding-*` so the band reads at the SAME HEIGHT as the
- * body app bar's `<header>`. The class-scoped selector (no body-shell
- * prefix) wins the framework's pure-element rule by class specificity. */
-nav > header.showcase-drawer-header {
-	position: static;
-	margin: 0;
-	inset-block-start: auto;
-}
-
-/* Search row — sits between the drawer header and the scrolling
- * list, OUTSIDE the scroll container. `flex-shrink: 0` keeps its
- * intrinsic height stable when the link list is tall. Its own
- * `padding-block` gives the input breathing space on top and
- * bottom; `padding-inline` matches the rail's gutter so the
- * input aligns with menu rows below. Bottom divider separates the
- * search from the scrolling list. */
+/* Search row — sits between the drawer header and the scrolling list,
+ * OUTSIDE the scroll container. `flex-shrink: 0` keeps its intrinsic
+ * height stable when the link list is tall. Its own `padding-block`
+ * gives the input breathing space on top and bottom; `padding-inline`
+ * matches the rail's gutter so the input aligns with menu rows below.
+ * Bottom divider separates the search from the scrolling list. */
 body:has(main) > nav > search,
 body:has(main) > * > nav > search {
 	flex-shrink: 0;
@@ -208,9 +153,9 @@ body:has(main) > * > nav > search {
 }
 
 /* Scroll container — the rail's only scrolling region. `flex: 1`
- * claims the remaining vertical space; `min-block-size: 0` lets
- * the flex item shrink below its intrinsic content size so
- * `overflow-y: auto` activates instead of pushing the rail taller. */
+ * claims the remaining vertical space; `min-block-size: 0` lets the
+ * flex item shrink below its intrinsic content size so `overflow-y:
+ * auto` activates instead of pushing the rail taller. */
 .showcase-sidebar-scroll {
 	flex: 1 1 auto;
 	min-block-size: 0;
@@ -224,16 +169,19 @@ body:has(main) > * > nav > search {
  * `components/_menu.scss` § Grouped sidebars).
  *
  * Asymmetric margins control the rhythm:
- *   • Top of each heading: clear separator from the previous menu.
- *   • Bottom of each heading: tight so the heading reads as a label
- *     for the menu directly beneath it (not as a standalone item).
+ *   • Top of each heading: clears a group separator from the previous
+ *     menu (24 px — Mailbox / Bootstrap docs-sidebar parity).
+ *   • Bottom of each heading: tight so the heading reads as a LABEL
+ *     for the menu directly beneath it (4 px), not as a standalone
+ *     item floating between two menus.
  *   • First heading: no top margin (the scroll region's own
- *     `padding-block` supplies the gap from the search divider).
- *   • Menus: zero block margins. The framework gives each
- *     `<li><a>` row its own vertical padding so rows breathe
- *     internally without needing margins on the menu. */
+ *     `padding-block` already supplies the gap from the search
+ *     divider).
+ *   • Menus: zero block margins. The framework gives each `<li><a>`
+ *     row its own vertical padding so rows breathe internally
+ *     without needing margins on the menu. */
 .showcase-sidebar-scroll h6 {
-	margin-block-start: calc(var(--spacing) * 5);
+	margin-block-start: calc(var(--spacing) * 3);
 	margin-block-end: calc(var(--spacing) * 1);
 	padding-inline: calc(var(--spacing) * 2);
 	color: var(--color-text-muted);

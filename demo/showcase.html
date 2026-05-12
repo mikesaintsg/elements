@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T18:47:30.099Z" />
+		<meta name="build-id" content="2026-05-12T19:29:56.919Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9033,7 +9033,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Tu, `build ` + k(Yt(`2026-05-12T18:47:30.099Z`)), 1),
+										Y(`small`, Tu, `build ` + k(Yt(`2026-05-12T19:29:56.919Z`)), 1),
 									]),
 								],
 								64,
@@ -12958,6 +12958,12 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					position: sticky;
 					inset-block-start: calc(var(--set-aside-padding-block) * -1);
 				}
+				:is(
+					body:has(main) > :is(nav, aside)[popover] > header:first-child,
+					body:has(main) > * > :is(nav, aside)[popover] > header:first-child
+				) {
+					padding-block: var(--set-header-padding-block);
+				}
 				:is(body:has(main) > main, body:has(main) > * > main) {
 					overscroll-behavior: contain;
 					min-block-size: 0;
@@ -13126,8 +13132,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					padding-inline-start: calc(var(--spacing) * 3);
 				}
 				menu[popover],
-				[popover] menu,
-				[popover] > menu {
+				[popover]:not(aside):not(nav) menu,
+				[popover]:not(aside):not(nav) > menu {
 					overflow-block: auto;
 					overscroll-behavior: contain;
 					flex-flow: column;
@@ -13138,22 +13144,18 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					padding-block: 0;
 					padding-inline: 0;
 				}
-				:is(
-					menu[popover]:popover-open,
-					[popover]:popover-open menu,
-					[popover]:popover-open > menu
-				) {
+				menu[popover]:popover-open {
 					display: flex;
 				}
 				menu[popover] > li,
-				[popover] menu > li,
-				[popover] > menu > li {
+				[popover]:not(aside):not(nav) menu > li,
+				[popover]:not(aside):not(nav) > menu > li {
 					margin: 0;
 					list-style: none;
 				}
 				menu[popover] > li > :where(button, a),
-				[popover] menu > li > :where(button, a),
-				[popover] > menu > li > :where(button, a) {
+				[popover]:not(aside):not(nav) menu > li > :where(button, a),
+				[popover]:not(aside):not(nav) > menu > li > :where(button, a) {
 					justify-content: flex-start;
 					align-items: center;
 					gap: calc(var(--spacing) * 2);
@@ -13172,45 +13174,45 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				}
 				menu[popover] > li > :where(button, a):hover,
 				menu[popover] > li > :where(button, a):focus-visible,
-				[popover] menu > li > :where(button, a):hover,
-				[popover] menu > li > :where(button, a):focus-visible,
-				[popover] > menu > li > :where(button, a):hover,
-				[popover] > menu > li > :where(button, a):focus-visible {
+				[popover]:not(aside):not(nav) menu > li > :where(button, a):hover,
+				[popover]:not(aside):not(nav) menu > li > :where(button, a):focus-visible,
+				[popover]:not(aside):not(nav) > menu > li > :where(button, a):hover,
+				[popover]:not(aside):not(nav) > menu > li > :where(button, a):focus-visible {
 					background-color: var(--color-text);
 				}
 				@supports (color: color-mix(in lab, red, red)) {
 					menu[popover] > li > :where(button, a):hover,
 					menu[popover] > li > :where(button, a):focus-visible,
-					[popover] menu > li > :where(button, a):hover,
-					[popover] menu > li > :where(button, a):focus-visible,
-					[popover] > menu > li > :where(button, a):hover,
-					[popover] > menu > li > :where(button, a):focus-visible {
+					[popover]:not(aside):not(nav) menu > li > :where(button, a):hover,
+					[popover]:not(aside):not(nav) menu > li > :where(button, a):focus-visible,
+					[popover]:not(aside):not(nav) > menu > li > :where(button, a):hover,
+					[popover]:not(aside):not(nav) > menu > li > :where(button, a):focus-visible {
 						background-color: color-mix(in oklab, var(--color-text) 6%, transparent);
 					}
 				}
 				menu[popover] > li > :where(button, a):hover,
 				menu[popover] > li > :where(button, a):focus-visible,
-				[popover] menu > li > :where(button, a):hover,
-				[popover] menu > li > :where(button, a):focus-visible,
-				[popover] > menu > li > :where(button, a):hover,
-				[popover] > menu > li > :where(button, a):focus-visible {
+				[popover]:not(aside):not(nav) menu > li > :where(button, a):hover,
+				[popover]:not(aside):not(nav) menu > li > :where(button, a):focus-visible,
+				[popover]:not(aside):not(nav) > menu > li > :where(button, a):hover,
+				[popover]:not(aside):not(nav) > menu > li > :where(button, a):focus-visible {
 					color: var(--color-text-strong);
 				}
 				menu[popover] > li > :where(button, a)[aria-selected='true'],
-				[popover] menu > li > :where(button, a)[aria-selected='true'],
-				[popover] > menu > li > :where(button, a)[aria-selected='true'] {
+				[popover]:not(aside):not(nav) menu > li > :where(button, a)[aria-selected='true'],
+				[popover]:not(aside):not(nav) > menu > li > :where(button, a)[aria-selected='true'] {
 					background-color: #155dfc1a;
 				}
 				@supports (color: color-mix(in lab, red, red)) {
 					menu[popover] > li > :where(button, a)[aria-selected='true'],
-					[popover] menu > li > :where(button, a)[aria-selected='true'],
-					[popover] > menu > li > :where(button, a)[aria-selected='true'] {
+					[popover]:not(aside):not(nav) menu > li > :where(button, a)[aria-selected='true'],
+					[popover]:not(aside):not(nav) > menu > li > :where(button, a)[aria-selected='true'] {
 						background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
 					}
 				}
 				menu[popover] > li > :where(button, a)[aria-selected='true'],
-				[popover] menu > li > :where(button, a)[aria-selected='true'],
-				[popover] > menu > li > :where(button, a)[aria-selected='true'] {
+				[popover]:not(aside):not(nav) menu > li > :where(button, a)[aria-selected='true'],
+				[popover]:not(aside):not(nav) > menu > li > :where(button, a)[aria-selected='true'] {
 					color: var(--color-primary-on-canvas);
 				}
 				nav {
@@ -16796,11 +16798,6 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				padding: 0;
 				overflow: hidden;
 			}
-			nav > header.showcase-drawer-header {
-				margin: 0;
-				position: static;
-				inset-block-start: auto;
-			}
 			:is(body:has(main) > nav > search, body:has(main) > * > nav > search) {
 				padding-inline: var(--set-nav-padding-inline);
 				padding-block: var(--set-nav-padding-block);
@@ -16821,7 +16818,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				font-size: var(--text-xs);
 				letter-spacing: 0.05em;
 				text-transform: uppercase;
-				margin-block-start: calc(var(--spacing) * 5);
+				margin-block-start: calc(var(--spacing) * 3);
 				margin-block-end: calc(var(--spacing) * 1);
 				font-weight: 600;
 			}

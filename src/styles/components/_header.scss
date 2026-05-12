@@ -189,4 +189,29 @@
 		inset-block-start: calc(var(--set-aside-padding-block) * -1);
 		z-index: 1;
 	}
+
+	// Body-shell drawer-header height parity.
+	//
+	// When a body-shell rail (`body > nav` or `body > aside`) opts into
+	// native popover mode for mobile, the framework's drawer-band rule
+	// (`:is(aside, nav)[popover] > header:first-child` in `_aside.scss`)
+	// paints the header band with `padding-block: --set-aside-drawer-
+	// padding-block` (32px) — the Bootstrap / Mailbox stand-alone
+	// offcanvas convention. That looks right for free-floating drawers
+	// anywhere on the page, but inside the LAYOUT SHELL the three
+	// headers — body `<header>` (app bar), nav-drawer `<header>`, and
+	// aside-drawer `<header>` — must align at the SAME height so they
+	// read as one continuous horizontal band across the top of the
+	// layout when a drawer is open. Override the drawer-band padding-
+	// block here with the body-header token so all three bands track
+	// each other; the inline-bleed + divider + flex-row chrome from
+	// the drawer-band rule still apply unchanged.
+	//
+	// Specificity: `body:has(main) > :is(aside, nav)[popover] > header
+	// :first-child` (0,2,4) beats the framework drawer-band rule
+	// `:is(aside, nav)[popover] > header:first-child` (0,2,2).
+	body:has(main) > :is(nav, aside)[popover] > header:first-child,
+	body:has(main) > * > :is(nav, aside)[popover] > header:first-child {
+		padding-block: var(--set-header-padding-block);
+	}
 }

@@ -322,11 +322,37 @@
 	// The popover surface (`surfaces/_popover.scss`) paints the panel
 	// chrome (background, border, radius, shadow, entry transition) on
 	// `[popover]`. This rule re-orients the menu inside that panel: when a
-	// `<menu>` IS the popover panel (or lives inside one), its children
-	// stack vertically as a column of commands rather than the bare-tag
-	// horizontal toolbar. We also drop the menu's own padding because the
-	// popover surface already supplies inline / block padding — having
-	// both would double-pad.
+	// `<menu>` IS the popover panel, its children stack vertically as a
+	// column of commands rather than the bare-tag horizontal toolbar.
+	// We also drop the menu's own padding because the popover surface
+	// already supplies inline / block padding — having both would
+	// double-pad.
+	//
+	// SCOPED to dropdown-panel popovers, NOT offcanvas drawer popovers.
+	// The selector list reads as: "either the menu IS the popover
+	// (canonical `<menu popover>` dropdown), OR it sits inside any
+	// popover that is NOT an offcanvas drawer surface (i.e. a generic
+	// `<div popover>` wrapping a menu, the wrapped-dropdown pattern)."
+	//
+	// `:is(aside, nav)[popover]` IS the framework's offcanvas drawer
+	// surface (Bootstrap parity, see `_aside.scss` § offcanvas) — its
+	// body is nav-rail chrome, not a dropdown panel. Body-shell rails
+	// in mobile-drawer mode (`<nav popover>` + grouped sidebar
+	// `<h6><menu><li><a>`) need their inner menus to render with
+	// normal NAV-RAIL chrome (start-aligned rows, no scroll container,
+	// no min-inline-size floor) so the rail itself can be the scroll
+	// surface. The previous selector list `menu[popover], [popover]
+	// menu, [popover] > menu` over-matched into the drawer case and
+	// painted dropdown chrome on grouped-sidebar menus — including
+	// `overflow-block: auto`, which made each `<menu>` a competing
+	// scroll container. On iOS Safari that scroll container intercepts
+	// touch events from descendants (links / buttons) and blocks
+	// scroll-on-tap, so swiping a finger on a sidebar link would do
+	// nothing — only swipes that originated on non-interactive
+	// whitespace scrolled the rail. The `:not(aside):not(nav)` clause
+	// excludes drawer surfaces and leaves the dropdown wrapping pattern
+	// intact for all other popover hosts (`<div popover>`,
+	// `<section popover>`, etc.).
 	// --------------------------------------------------------------------------
 	// Popover-mode `<menu>` — declare layout shape on the BARE
 	// `[popover]` selectors (NOT `:popover-open`). The popover
@@ -340,8 +366,8 @@
 	// transform animate across the full duration, leaving the menu
 	// to revert to bare-tag toolbar layout for 150 ms).
 	menu[popover],
-	[popover] menu,
-	[popover] > menu {
+	[popover]:not(aside):not(nav) menu,
+	[popover]:not(aside):not(nav) > menu {
 		flex-direction: column;
 		align-items: stretch;
 		justify-content: flex-start;
@@ -382,9 +408,13 @@
 	// resolves. The bare-popover rule above intentionally omits
 	// `display`, so the UA's `display: none` for closed popovers
 	// keeps winning until `:popover-open` flips it to flex.
-	menu[popover]:popover-open,
-	[popover]:popover-open menu,
-	[popover]:popover-open > menu {
+	//
+	// Only the canonical `menu[popover]` form needs the open-state
+	// flip — for the wrapped pattern (`<div popover><menu>`), the
+	// inner `<menu>` already has `display: flex` from the bare-menu
+	// element rule. The wrapper's `:popover-open` opens the panel;
+	// the menu inside is already laid out as flex.
+	menu[popover]:popover-open {
 		display: flex;
 	}
 
@@ -395,16 +425,20 @@
 	// centred), and drop the button's own border so each row reads as
 	// a list item rather than a row of separate buttons. Hover paints a
 	// subtle tint matching the active theme.
+	//
+	// Same dropdown-vs-drawer scoping as the bare-state rule above —
+	// covers canonical `menu[popover]` AND wrapped `[popover] menu`
+	// patterns, EXCLUDES `:is(aside, nav)[popover]` drawer surfaces.
 	menu[popover] > li,
-	[popover] menu > li,
-	[popover] > menu > li {
+	[popover]:not(aside):not(nav) menu > li,
+	[popover]:not(aside):not(nav) > menu > li {
 		list-style: none;
 		margin: 0;
 	}
 
 	menu[popover] > li > :where(button, a),
-	[popover] menu > li > :where(button, a),
-	[popover] > menu > li > :where(button, a) {
+	[popover]:not(aside):not(nav) menu > li > :where(button, a),
+	[popover]:not(aside):not(nav) > menu > li > :where(button, a) {
 		display: flex;
 		align-items: center;
 		// Reset `justify-content` from the bare `<button>` element rule,
