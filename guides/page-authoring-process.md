@@ -144,39 +144,41 @@ One section per API dimension. Each section follows the same shape:
 - **Forced-colors verification block is mandatory.** A note + a representative element the reader can verify in Windows HC mode.
 - **Tokens reference section is mandatory**. `<dl>` listing every `--set-{tag}-*` token the page exposes, with a one-line description.
 
-### Phase 4 — Rubric pass (preview server, real browser)
+### Phase 4 — Verification pass (live preview)
 
-This phase is non-negotiable. **Mark zero rubric rows verified before running the preview.** Run the preview, walk each row, document each pass with one line.
+**Real verification via the preview server**, not against screenshots — `preview_eval` + `preview_inspect` + `preview_screenshot` are the primary instruments. The verification budget is calibrated to PER-PAGE complexity: a simple page (TypographyPage, HeadingsPage) needs a quick walk-through; a high-density page (FormControlsPage, DialogElementPage) needs the full ten-row sweep.
 
 **Preview setup**:
 
 ```
-preview_start({ name: "dev" })
-preview_resize({ width: 1440, height: 900 })  // start desktop
+preview_start({ name: "elements" })  // launch.json wires this to npm run dev
+preview_eval(`window.location.hash = '#/{page}'`)
 ```
 
-**The 10 rubric rows** (from plan.md §9.3):
+**The verification checklist** (formerly "rubric rows" — same intent, less ceremony):
 
-| #   | Row                     | How to verify                                                                                                                                                                     |
-| --- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Light mode contrast** | `preview_resize({ colorScheme: 'light' })`. Spot-check 3 variants × 3 states. Use `preview_inspect` on representative selectors to capture computed `color` + `background-color`. |
-| 2   | **Dark mode contrast**  | Toggle theme via `[data-theme="dark"]` (use the theme button in the showcase header or set the attr via `preview_eval`). Re-check the same 3×3 grid.                              |
-| 3   | **Focus paths**         | `preview_eval` to dispatch `Tab` key presses sequentially; verify `:focus-visible` paints on every focusable, ring is visible, tab order matches visual order.                    |
-| 4   | **Mobile (375)**        | `preview_resize({ preset: 'mobile' })`. Walk the page. No horizontal scroll. Drawer / TOC accessible.                                                                             |
-| 5   | **Tablet (768)**        | `preview_resize({ preset: 'tablet' })`. Body grid reflows cleanly.                                                                                                                |
-| 6   | **Desktop (1440)**      | `preview_resize({ width: 1440, height: 900 })`. No stretched-thin elements.                                                                                                       |
-| 7   | **Reduced motion**      | `preview_eval(document.documentElement.style.setProperty …)` or use Chrome's emulator via DevTools MCP. Trigger a transition (hover, toggle); verify it collapses to instant.     |
-| 8   | **Forced colors**       | Use Chrome's `forced-colors` emulator. Verify focus rings + borders + text survive.                                                                                               |
-| 9   | **Keyboard nav**        | Tab through every interactive element. Verify Esc dismisses popovers, Enter activates buttons, arrow keys navigate where APG specifies.                                           |
-| 10  | **Reader sanity**       | `preview_console_logs({ level: 'error' })` and `{ level: 'warn' }` both return clean. Section IDs present, TOC populated, hash deep-links resolve.                                |
+| #   | Row                           | How to verify                                                                                                                                                                                                                                                                          |
+| --- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Light mode contrast**       | `preview_eval` to read computed styles for representative selectors. Sample 3 variants × 3 states. WCAG AA = 4.5:1 for normal text, 3:1 for large text + UI components.                                                                                                                |
+| 2   | **Dark mode contrast**        | `document.documentElement.dataset.theme = 'dark'` + 200ms wait. Re-sample. Verify the variant tier and on-canvas tier both flip cleanly.                                                                                                                                               |
+| 3   | **Variant cascade**           | Every variant rendered (not "a sample"). For elements with seven variants, all seven appear in the demo. Sample each via `preview_eval` if the visual difference might be hard to read in screenshots.                                                                                 |
+| 4   | **State coverage**            | Hover / focus / active / disabled / aria-current / aria-selected / loading — render or describe each state the element supports.                                                                                                                                                       |
+| 5   | **Viewport responsiveness**   | Resize the preview to ~375px (mobile), ~768px (tablet), ~1440px (desktop). No horizontal scroll on mobile; body grid reflows; drawers / TOC accessible. Use `preview_screenshot` to capture each.                                                                                      |
+| 6   | **Reduced motion**            | Either toggle the OS preference and re-eval, or rely on the framework's `@include transition()` mixin — every transition the page introduces should route through it. (Worth verifying when the page DOES introduce a transition — most don't, since the chrome lives in the partial.) |
+| 7   | **Forced colors / a11y**      | For variant chrome that carries semantic signal (alerts, status, sort indicators), document the forced-colors fallback in the page's accessibility section. Verify in Chrome DevTools' "Emulate CSS media feature forced-colors: active" if the page introduces new variant chrome.    |
+| 8   | **Keyboard nav**              | Tab through interactive elements; verify Esc dismisses popovers, Enter activates buttons, arrow keys navigate where APG specifies. For pages without interactives (TypographyPage, FiguresPage), skip — note "no interactive surface" in the report.                                   |
+| 9   | **Console clean**             | `preview_console_logs({ level: 'error' })` and `{ level: 'warn' }` return clean. Vue HMR warnings during dev are acceptable as long as they resolve after a reload.                                                                                                                    |
+| 10  | **Sidebar + TOC integration** | The new page appears in `SiteNav` under its group, navigates correctly via hash. Sections have `id` attributes the right-rail TOC picks up.                                                                                                                                            |
 
-**Per row, the format is**:
+**Per row, the format**:
 
 ```
-Row 1 — Light mode contrast: [PASS|FAIL] {one-line evidence}
+Row 1 — Light mode contrast: [PASS|FAIL] {one-line evidence — measured contrast, sampled selector, OK / NG}
 ```
 
-**Any FAIL gets fixed before continuing.** Fix at the SCSS / TS source, not in the page markup. If the framework chrome is broken, the page is broken too.
+**Any FAIL gets fixed before moving on.** Fix at the SCSS / TS source, not in the page markup. If the framework chrome is broken, the page is broken too — and the page just earned its keep by surfacing the bug.
+
+**Cross-cutting framework changes**: when a page audit surfaces a framework bug (token-scope shadowing, variant cascade gap, contrast failure, naming inconsistency), fix it AT the framework level, then log the change in `plan.md §9.7` with: (a) which page surfaced it, (b) the diagnosis, (c) the fix, (d) any files affected. This is how the framework matures — pages aren't passive demos, they're audit drivers.
 
 ### Phase 5 — Findings report
 
@@ -214,11 +216,11 @@ A short structured report to the user. Format:
 
 After the report:
 
-1. **Stop the preview server** (`preview_stop`) so the user picks up a clean slot.
-2. **Wait for user feedback.** Don't move to the next page.
-3. **Triage feedback**: real issues → fix → re-rubric the affected row → re-commit. Style preferences → discuss; only land if the user confirms direction.
-4. **Mark the plan checkbox** `[x]` only after the user confirms the page is acceptable.
-5. **Commit** the final state with a message naming the page and what changed.
+1. **Leave the preview server running.** The user iterates against the same live preview the audit ran against; restarting forces them to re-navigate.
+2. **Run the standard cadence**: `npm run show` rebuilds `demo/showcase.html` (the single-file bundle the user can open from disk), `npm run format` formats the workspace, then commit with a descriptive message and push. The commit message names the page, the section count, and any framework gaps surfaced.
+3. **Mark the plan checkbox** `[x]` after the user confirms the page is acceptable (NOT before — false `[x]`s have caused real lost-work scenarios in earlier phases).
+4. **Triage feedback**: real issues → fix → re-verify → re-commit. Style preferences → discuss; only land if the user confirms direction. Naming-convention disagreements → audit against the framework's modifier-naming rules (single English word, no element-name prefix, no library namespace; past-participle / adjective for visual treatments; see `plan.md §9.7` for the codified list).
+5. **App-specific vs framework-specific** is a recurring question: when a pattern lives in `src/styles/`, ask "would every consumer of the framework's `<X>` element want this?" If yes, framework. If it's a deliberate composition choice (e.g. sticky sidebar search, sidebar group rhythm, drawer-header inside flex-column rail), it belongs in `app/browser/styles/showcase.css` instead.
 
 ---
 
@@ -227,12 +229,17 @@ After the report:
 These are the failures the previous showcase work fell into. Don't repeat them.
 
 - **Marking `[x]` before building.** Phase 9 §8.6 carried false `[x]` marks for ~20 composable pages that didn't exist. Never check a box that doesn't reflect shipping code.
-- **Batching pages.** Building 5 pages in one turn means 5 pages get half-attention. Build one page, rubric it, hand it off. Repeat.
+- **Batching pages.** Building 5 pages in one turn means 5 pages get half-attention. Build one page, verify it, hand it off. Repeat.
 - **"Sample of variants" cop-out.** If the symbol has 7 variants, render all 7. Three buttons labeled "primary, success, danger" isn't a showcase, it's a teaser.
-- **Skipping the reduced-motion block.** Without it, the user has to take it on faith that the framework respects motion preference. The page is supposed to prove it.
-- **Inlining demos as code-fence-only.** A `<pre><code>...</code></pre>` is not a demo. The demo is the working element; the code sample is the supplement.
-- **Tailwind utility rescues.** Adding `class="bg-blue-500 px-4"` to make a demo look right hides a framework gap. Fix the framework.
-- **Console warnings.** Vue warns / Tailwind missing-source warns / unhandled errors all fail Row 10. Every page exits with a clean console.
+- **Adding showcase composition to `src/styles/`.** If a rule only makes sense in the showcase's exact composition (e.g. sticky sidebar search, flex-column split rail, tightened group rhythm), it belongs in `app/browser/styles/showcase.css`, NOT in the framework. The framework ships the ELEMENTS and their CHROME; the showcase composes them into one particular shape. Cross-check: "would every consumer of the framework's `<X>` element want this?" If no, it's app-specific.
+- **Inlining demos as code-fence-only.** A `<pre><code>...</code></pre>` is not a demo. The demo is the working element; the code sample (if shown) is the supplement.
+- **Tailwind utility rescues.** Adding `class="bg-blue-500 px-4"` to make a demo look right hides a framework gap. Fix the framework, not the demo.
+- **Console warnings.** Vue warns / Tailwind missing-source warns / unhandled errors all fail Row 9. Every page exits with a clean console.
+- **Dragging Bootstrap / mailbox class names in verbatim.** Mailbox's `.list-group-item-action`, `.table-responsive`, `.table-group-divider`, `.accordion-button` are starting suggestions, not the framework's vocabulary. Audit every modifier name against the framework's naming rules before landing (`plan.md §9.7` § Modifier-name audit). The framework's preference is generic single English word, past-participle for visual treatments, no element-name prefix.
+- **Letting an apparent fix mask a deeper issue.** Two examples from real audits:
+  - ListsPage `.success.active` painted subtle tint, not the saturated identity. First instinct: reorder the SCSS. Real fix: the cascade-resolution timing of `--set-group-active-*` declared on the parent `<ul>` didn't reach the `<li>`'s variant tokens. The "obvious" fix was a symptom; the real fix was the architectural relocation.
+  - ArticleCardPage `.filled` header band had white-on-light-slate contrast (~2:1). The fixed `--color-surface-raised` token was wrong for the filled state. Real fix: `color-mix(currentColor 8%, transparent)` so the band tints from the article's own color, automatically right in every variant + theme combo.
+  - When a fix feels "too easy," it might be papering over a deeper inconsistency. Ask "is the original rule wrong, or just wrong here?" — if wrong everywhere, fix at the source.
 
 ---
 
@@ -329,28 +336,31 @@ Phase 3 — Demos
 - [ ] Forced-colors verification block
 - [ ] Tokens reference section
 
-Phase 4 — Rubric (preview server)
-- [ ] Row 1 — Light mode contrast
-- [ ] Row 2 — Dark mode contrast
-- [ ] Row 3 — Focus paths
-- [ ] Row 4 — Mobile (375)
-- [ ] Row 5 — Tablet (768)
-- [ ] Row 6 — Desktop (1440)
-- [ ] Row 7 — Reduced motion
-- [ ] Row 8 — Forced colors
-- [ ] Row 9 — Keyboard nav
-- [ ] Row 10 — Reader sanity (console clean, TOC populated)
+Phase 4 — Verification (preview server)
+- [ ] Row 1 — Light mode contrast (sampled via preview_eval)
+- [ ] Row 2 — Dark mode contrast (data-theme="dark" + re-sample)
+- [ ] Row 3 — Every variant rendered (not a sample)
+- [ ] Row 4 — State coverage (hover / focus / active / disabled / aria-*)
+- [ ] Row 5 — Viewport responsiveness (375 / 768 / 1440 screenshots)
+- [ ] Row 6 — Reduced motion (mixin coverage or manual toggle)
+- [ ] Row 7 — Forced colors / a11y (documented in page if new variant chrome)
+- [ ] Row 8 — Keyboard nav (or "no interactive surface")
+- [ ] Row 9 — Console clean (preview_console_logs error + warn)
+- [ ] Row 10 — SiteNav + TOC integration
 
 Phase 5 — Findings report (to user)
 - [ ] Built section listed
-- [ ] Rubric results listed
-- [ ] Framework chrome gaps documented + fixed
+- [ ] Verification results listed
+- [ ] Framework chrome gaps documented + fixed (with plan.md §9.7 entry if cross-cutting)
 - [ ] Open questions noted
 
 Phase 6 — Hand-off + close
-- [ ] Preview server stopped
-- [ ] Waited for user feedback
+- [ ] Waited for user feedback (preview stays running)
 - [ ] Fixes landed (if any)
+- [ ] App-specific vs framework-specific reviewed (showcase.css vs src/styles)
+- [ ] Modifier names audited against framework conventions
+- [ ] `npm run show` rebuilt demo/showcase.html
 - [ ] plan.md §9.4 checkbox [x]'d
-- [ ] Commit with named message
+- [ ] prompt.md "shipped so far" list updated
+- [ ] Commit with named message + push
 ```
