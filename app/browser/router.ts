@@ -20,6 +20,7 @@ import NavPage from './pages/NavPage.vue'
 import MenuPage from './pages/MenuPage.vue'
 import InlineAtomsPage from './pages/InlineAtomsPage.vue'
 import PopoverSurfacesPage from './pages/PopoverSurfacesPage.vue'
+import FormSurfacesPage from './pages/FormSurfacesPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -146,6 +147,12 @@ const POPOVER_SURFACES: Route = {
 	group: 'Surfaces',
 	page: PopoverSurfacesPage,
 }
+const FORM_SURFACES: Route = {
+	id: 'form-surfaces',
+	title: 'Form surfaces',
+	group: 'Surfaces',
+	page: FormSurfacesPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -167,6 +174,7 @@ export const routes: readonly Route[] = [
 	MENU,
 	INLINE_ATOMS,
 	POPOVER_SURFACES,
+	FORM_SURFACES,
 ]
 
 interface RouteLocation {
