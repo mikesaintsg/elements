@@ -74,11 +74,18 @@
 			)
 		);
 
-		// `.filled` — saturated variant fill (white-on-`-600` chip).
-		// Reads the FILLED tier of the variant cascade so a `.primary.filled`
-		// output paints as a primary-blue chip with white text.
+		// `.filled` — saturated variant fill chip. Always white text:
+		// every framework variant pairs white-on-fill via the all-variants-
+		// take-white-text contract (see `modifiers/_variants.scss` + the
+		// `-700` palette shift). Routing the text color through `var(--set-
+		// variant-color, white)` would short-circuit because `--set-variant-
+		// color` resolves to its `:root` default (`currentColor`) when no
+		// `.{variant}` class is applied — making a bare `<output class=
+		// "filled">` render dark text on primary blue. Hardcoding white
+		// keeps the chip readable regardless of whether a variant class is
+		// composed on top.
 		&.filled {
-			--set-output-color: var(--set-variant-color, white);
+			--set-output-color: white;
 			--set-output-background-color: var(--set-variant-background-color, var(--color-primary));
 			--set-output-border-color: var(--set-variant-background-color, var(--color-primary));
 		}
