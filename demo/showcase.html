@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T19:55:19.454Z" />
+		<meta name="build-id" content="2026-05-12T20:02:24.317Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9035,7 +9035,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Tu, `build ` + k(Yt(`2026-05-12T19:55:19.454Z`)), 1),
+										Y(`small`, Tu, `build ` + k(Yt(`2026-05-12T20:02:24.317Z`)), 1),
 									]),
 								],
 								64,
@@ -16782,33 +16782,46 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					display: block;
 				}
 			}
-			:is(
-				body:has(main) > nav:not([popover]):has(> search),
-				body:has(main) > * > nav:not([popover]):has(> search)
-			) {
+			:is(body:has(main) > nav:has(> search), body:has(main) > * > nav:has(> search)) {
 				gap: 0;
 				padding: 0;
 				overflow: hidden;
 			}
 			:is(
-				body:has(main) > nav:not([popover]) > search,
-				body:has(main) > * > nav:not([popover]) > search
+				body:has(main) > nav[popover]:has(> search) > header:first-child,
+				body:has(main) > * > nav[popover]:has(> search) > header:first-child
 			) {
+				margin-inline: 0;
+			}
+			:is(body:has(main) > nav > search, body:has(main) > * > nav > search) {
 				padding-inline: var(--set-nav-padding-inline);
 				padding-block: var(--set-nav-padding-block);
 				background-color: var(--set-nav-background-color);
 				border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
 				flex-shrink: 0;
 			}
+			:is(body:has(main) > nav[popover] > search, body:has(main) > * > nav[popover] > search) {
+				padding-inline: var(--set-aside-drawer-padding-inline);
+				padding-block: var(--set-aside-drawer-padding-block);
+				background-color: var(--set-popover-background-color);
+				border-block-end-color: var(--set-popover-border-color);
+			}
 			:is(
-				body:has(main) > nav:not([popover]) > .showcase-sidebar-scroll,
-				body:has(main) > * > nav:not([popover]) > .showcase-sidebar-scroll
+				body:has(main) > nav > .showcase-sidebar-scroll,
+				body:has(main) > * > nav > .showcase-sidebar-scroll
 			) {
 				min-block-size: 0;
 				padding-inline: var(--set-nav-padding-inline);
 				padding-block: var(--set-nav-padding-block);
 				flex: auto;
 				overflow-y: auto;
+			}
+			:is(
+				body:has(main) > nav[popover] > .showcase-sidebar-scroll,
+				body:has(main) > * > nav[popover] > .showcase-sidebar-scroll
+			) {
+				padding-inline: var(--set-aside-drawer-padding-inline);
+				padding-block: var(--set-aside-drawer-padding-block);
 			}
 			:is(body:has(main) > nav h6, body:has(main) > * > nav h6) {
 				padding-inline: calc(var(--spacing) * 2);
@@ -16820,16 +16833,10 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				margin-block-end: calc(var(--spacing) * 1);
 				font-weight: 600;
 			}
-			body:has(main) > nav h6:first-child {
-				margin-block-start: 0;
-			}
-			body:has(main) > * > nav h6:first-child {
-				margin-block-start: 0;
-			}
-			body:has(main) > nav .showcase-sidebar-scroll > h6:first-child {
-				margin-block-start: 0;
-			}
-			body:has(main) > * > nav .showcase-sidebar-scroll > h6:first-child {
+			:is(
+				body:has(main) > nav .showcase-sidebar-scroll > h6:first-child,
+				body:has(main) > * > nav .showcase-sidebar-scroll > h6:first-child
+			) {
 				margin-block-start: 0;
 			}
 			:is(body:has(main) > nav menu, body:has(main) > * > nav menu) {

@@ -25,20 +25,20 @@
  *   1. Responsive visibility of the mobile toggle buttons + the
  *      drawer header bands (visible only below 960 px where the rails
  *      become popover drawers).
- *   2. Desktop-only flex-column split on the left nav rail (drawer
- *      header band hidden, search row pinned at the top of the rail,
- *      scrolling group list below). Mobile inherits the canonical
- *      `<aside popover>` drawer chrome straight from
- *      `components/_aside.scss` — same chunky padding, same 24px
- *      child gap, same edge-bleed header band — so the body-shell
- *      rails and the standalone offcanvas drawers on AsidePage read
- *      as one family.
+ *   2. Flex-column split on the LEFT nav rail in BOTH modes (desktop
+ *      and mobile drawer). The drawer header band + filter `<search>`
+ *      stay PINNED at the top; the grouped link list scrolls
+ *      independently in the `.showcase-sidebar-scroll` region. Docs-
+ *      site sidebar convention — Mailbox / Bootstrap docs / Material
+ *      all do this. The RIGHT (TOC) rail stays canonical drawer-
+ *      shaped (single scroller, header scrolls with content) since
+ *      it has no filter row to pin.
  *   3. Inter-group rhythm for the `<h6>` + `<menu>` grouped sidebar
  *      pattern — framework documents the markup but leaves the
  *      vertical rhythm to the consumer.
  */
 
-/* hmr-touch 59 */
+/* hmr-touch 61 */
 
 /* Mobile-only chrome — drawer toggles in the body header AND drawer
  * header bands inside each rail (holding title + close button).
@@ -86,7 +86,7 @@
 	}
 }
 
-/* Desktop-only flex-column split on the LEFT nav rail.
+/* Left nav rail — FLEX-COLUMN SPLIT (both modes).
  *
  * Markup the showcase mounts inside the body-shell `<nav>`:
  *
@@ -99,39 +99,63 @@
  *     </div>
  *   </nav>
  *
- * Three desktop regions:
- *   1. `<header class="showcase-drawer-header">` — hidden via the
- *      `.showcase-drawer-header { display: none }` rule above. Desktop
- *      doesn't need a drawer header band; the rail is already labelled
- *      as a `<nav aria-label="Primary">` landmark.
- *   2. `<search>` — filter row PINNED at the top, OUTSIDE the scroll
- *      container. `flex-shrink: 0` so it never compresses.
- *   3. `<div class="showcase-sidebar-scroll">` — `flex: 1 + overflow-y:
- *      auto` so the link list scrolls independently while the search
- *      stays in place.
+ * Three regions inside the rail:
+ *   1. `<header class="showcase-drawer-header">` — drawer header band
+ *      with title + close button. Hidden on desktop (no popover);
+ *      visible on mobile when the rail is a popover drawer. Pinned
+ *      at the top of the rail in BOTH modes (when visible).
+ *   2. `<search>` — filter row PINNED below the header, OUTSIDE the
+ *      scroll region. `flex-shrink: 0` so it never compresses; its
+ *      own padding + bottom divider separate it from the scrolling
+ *      list. STAYS PINNED while the link list scrolls.
+ *   3. `<div class="showcase-sidebar-scroll">` — `flex: 1 + overflow-
+ *      y: auto` so the link list claims the remaining vertical space
+ *      and scrolls independently of the header band + search row
+ *      above. The rail container itself has `overflow: hidden` so it
+ *      never becomes a competing scroll container.
  *
- * Why a split (vs. the framework's single-scroller rail default):
- * docs-site sidebars benefit from a pinned filter that doesn't scroll
- * away with the link list. Product UIs / consumer navs typically
- * prefer the single-scroller default — the framework keeps the
- * simpler shape and the showcase opts in via `nav:has(> search)`.
+ * Why a split: docs-site sidebars benefit from a pinned filter that
+ * doesn't scroll away with the link list, plus a pinned title band
+ * on mobile so the close button stays reachable. Product UIs /
+ * consumer navs typically prefer the framework's single-scroller
+ * rail default — that's why the framework keeps the simpler shape
+ * and the showcase opts into the split via `nav:has(> search)`.
  *
- * On MOBILE the rail switches to native-popover drawer mode and
- * inherits the framework's canonical drawer chrome (32px padding-
- * inline, 24px child gap, overflow-y: auto on the container,
- * edge-bleed header band) directly from `components/_aside.scss` —
- * matching the standalone `<aside popover>` drawers on AsidePage.
- * All rules below scope to `:not([popover])` so the override surface
- * is desktop-only; mobile inherits the canonical chrome untouched. */
-body:has(main) > nav:not([popover]):has(> search),
-body:has(main) > * > nav:not([popover]):has(> search) {
+ * MOBILE drawer-mode addendum: the rail in popover mode picks up the
+ * framework's drawer chrome (background, border, motion, edge-bleed
+ * header band, ::backdrop scrim) but we zero out the drawer's
+ * default `padding-inline` (16px) + `gap` (12px) so each region
+ * owns its OWN padding-inline and the regions sit flush against
+ * each other with no flex-gap (their bottom borders / band tints
+ * are the visual separator). Without `padding: 0` here, the rail's
+ * 16px inline padding would push the inner regions inward and the
+ * header band's `margin-inline: -16px` bleed would cancel correctly
+ * — but the `<search>` and `<div>` regions would NOT bleed, so
+ * their bottom dividers would be inset (not edge-to-edge). With
+ * `padding: 0`, each region owns its 16px inline padding directly
+ * and dividers paint edge-to-edge. */
+body:has(main) > nav:has(> search),
+body:has(main) > * > nav:has(> search) {
 	overflow: hidden;
 	padding: 0;
 	gap: 0;
 }
 
-body:has(main) > nav:not([popover]) > search,
-body:has(main) > * > nav:not([popover]) > search {
+/* Drawer header band — when the rail kills its own padding (rule
+ * above), the framework's drawer-band negative-margin bleed
+ * (`margin-inline: -16px` in `_aside.scss`) would push the band 16px
+ * off-screen to the inline-start. Cancel the bleed so the band sits
+ * at the rail's outer edges via its OWN padding-inline. The flex-
+ * row, divider, padding-block, and close-button trail (margin-
+ * inline-start: auto) from the framework rule all still apply. */
+body:has(main) > nav[popover]:has(> search) > header:first-child,
+body:has(main) > * > nav[popover]:has(> search) > header:first-child {
+	margin-inline: 0;
+}
+
+/* Search row — pinned below the header band, edge-to-edge. */
+body:has(main) > nav > search,
+body:has(main) > * > nav > search {
 	flex-shrink: 0;
 	padding-inline: var(--set-nav-padding-inline);
 	padding-block: var(--set-nav-padding-block);
@@ -139,8 +163,27 @@ body:has(main) > * > nav:not([popover]) > search {
 	border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
 }
 
-body:has(main) > nav:not([popover]) > .showcase-sidebar-scroll,
-body:has(main) > * > nav:not([popover]) > .showcase-sidebar-scroll {
+/* Mobile drawer-mode override: in popover mode the rail's chrome
+ * tokens are the popover surface's (`--set-popover-*`), not the
+ * nav-rail tokens. Re-paint the search row with the popover surface
+ * tones so the row matches the drawer chrome (same background and
+ * divider colour as the header band above and the scroll region
+ * below). */
+body:has(main) > nav[popover] > search,
+body:has(main) > * > nav[popover] > search {
+	padding-inline: var(--set-aside-drawer-padding-inline);
+	padding-block: var(--set-aside-drawer-padding-block);
+	background-color: var(--set-popover-background-color);
+	border-block-end-color: var(--set-popover-border-color);
+}
+
+/* Scroll region — claims remaining height, scrolls independently of
+ * the pinned header band + search row above. `min-block-size: 0`
+ * lets the flex item shrink below its intrinsic content size so
+ * `overflow-y: auto` actually engages (otherwise the item pushes the
+ * rail taller than the viewport). */
+body:has(main) > nav > .showcase-sidebar-scroll,
+body:has(main) > * > nav > .showcase-sidebar-scroll {
 	flex: 1 1 auto;
 	min-block-size: 0;
 	overflow-y: auto;
@@ -148,23 +191,28 @@ body:has(main) > * > nav:not([popover]) > .showcase-sidebar-scroll {
 	padding-block: var(--set-nav-padding-block);
 }
 
+/* Mobile drawer-mode override: same idea as the search row — switch
+ * the inline / block padding to the drawer's own tokens so the
+ * scroll region's gutter matches the rest of the drawer. */
+body:has(main) > nav[popover] > .showcase-sidebar-scroll,
+body:has(main) > * > nav[popover] > .showcase-sidebar-scroll {
+	padding-inline: var(--set-aside-drawer-padding-inline);
+	padding-block: var(--set-aside-drawer-padding-block);
+}
+
 /* Group rhythm — `<h6>` + `<menu>` sibling pairs.
  *
  * Asymmetric margins control the rhythm:
- *   • Top of each heading: 24 px so the heading clears the previous
- *     menu (Mailbox / Bootstrap docs-sidebar parity).
- *   • Bottom of each heading: 8 px so the heading reads as a LABEL
- *     for the menu directly beneath it, not as a standalone item.
+ *   • Top of each heading: spacing × 3 so the heading clears the
+ *     previous menu.
+ *   • Bottom of each heading: spacing × 1, tight so the heading
+ *     reads as a LABEL for the menu directly beneath it, not as a
+ *     standalone item.
  *   • First heading: no top margin (the scroll region's own padding
  *     supplies the gap from the search divider above).
  *   • Menus: zero block margins. The framework gives each `<li><a>`
  *     row its own vertical padding so rows breathe internally
- *     without needing margins on the menu.
- *
- * Applied to nav rail descendants regardless of mode — works on
- * desktop (in-flow rail with `.showcase-sidebar-scroll` wrapper) AND
- * inside the mobile drawer (the wrapper still wraps the groups,
- * just doesn't carry padding / overflow there). */
+ *     without needing margins on the menu. */
 body:has(main) > nav h6,
 body:has(main) > * > nav h6 {
 	margin-block-start: calc(var(--spacing) * 3);
@@ -177,8 +225,6 @@ body:has(main) > * > nav h6 {
 	text-transform: uppercase;
 }
 
-body:has(main) > nav h6:first-child,
-body:has(main) > * > nav h6:first-child,
 body:has(main) > nav .showcase-sidebar-scroll > h6:first-child,
 body:has(main) > * > nav .showcase-sidebar-scroll > h6:first-child {
 	margin-block-start: 0;
