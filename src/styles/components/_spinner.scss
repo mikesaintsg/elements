@@ -28,15 +28,24 @@
 	.spinner {
 		--set-spinner-size: 2em;
 		--set-spinner-border-width: 0.2em;
-		// Color cascade: match the button's text cascade exactly so an
-		// inline `.spinner` inside `<button class="primary">` paints WHITE
-		// (the variant's contrast text, which is also the button label
-		// color) — not the variant's IDENTITY blue, which was the previous
-		// invisibility bug (blue spinner on blue button surface). Style
-		// modifier wins for filled / subtle scopes; variant CONTRAST color
-		// is the bare-button fallback; `currentColor` is the no-modifier
-		// terminus for stand-alone spinners in body copy.
-		--set-spinner-color: var(--set-style-color, var(--set-variant-color, currentColor));
+		// Color cascade: STANDALONE spinners (on canvas, in body copy)
+		// paint the variant's IDENTITY color — `<span class="spinner
+		// primary">` reads as a primary-blue ring. This is the case the
+		// eye expects on the InlineAtomsPage spinner demos.
+		//
+		// Cascade order:
+		//   1. `--set-style-color` (`.filled` / `.subtle` set this to the
+		//      contrast / emphasis tier respectively) wins.
+		//   2. `--set-variant-background-color` is the variant's identity
+		//      tint (primary blue, success green, danger red, etc.) —
+		//      the visible standalone affordance.
+		//   3. `currentColor` is the no-modifier terminus for a spinner
+		//      in body copy (inherits text color).
+		//
+		// Inside a `.loading` button or anchor the spinner needs the
+		// variant's CONTRAST color (white-on-fill, not blue-on-blue);
+		// that override lives at the bottom of this partial.
+		--set-spinner-color: var(--set-style-color, var(--set-variant-background-color, currentColor));
 		--set-spinner-duration: 0.75s;
 
 		display: inline-block;
@@ -63,14 +72,24 @@
 	}
 
 	// Inline-button spinner — when a `.spinner` is a direct child of a
-	// loading button, auto-shrink to a button-friendly size. The button's
-	// font-size is the parent context; 1em sized at the button's font (14px
-	// default, 12px for `.small`, 16px for `.large`) keeps the spinner
-	// proportional to the label without requiring consumers to add
-	// `.spinner.small` markup explicitly.
+	// loading button / anchor, two overrides apply:
+	//
+	//   1. Auto-shrink to 1em so the spinner is proportional to the label
+	//      (14 px default, 12 px for `.small`, 16 px for `.large`) without
+	//      requiring consumers to add `.spinner.small` markup explicitly.
+	//
+	//   2. Swap from the variant's IDENTITY color (the baseline) to the
+	//      variant's CONTRAST color so the spinner reads against the
+	//      button's filled bg — `<button class="primary loading">` paints
+	//      a blue-bg button with a WHITE spinner, not blue-on-blue.
+	//      `currentColor` inherited from the button's own color cascade
+	//      gets us this for free (the button text is already white on a
+	//      filled variant, slate on subtle, etc.) — re-stating the
+	//      override here keeps the contract local and self-documenting.
 	button.loading > .spinner,
 	a.loading > .spinner {
 		--set-spinner-size: 1em;
 		--set-spinner-border-width: 0.15em;
+		--set-spinner-color: currentColor;
 	}
 }

@@ -221,6 +221,44 @@ describe('.spinner — token surface + animation', () => {
 		// `--set-spinner-size` is overridden to `1em` for the inline-loading case.
 		expect(token(spinner, '--set-spinner-size').trim()).toBe('1em')
 	})
+
+	it('standalone `<span class="spinner primary">` paints the variant IDENTITY (not contrast)', () => {
+		// Regression: an earlier draft resolved spinner color through
+		// `--set-variant-color` (the white-on-fill contrast color), so a
+		// standalone `<span class="spinner primary">` on the page canvas
+		// paint white — invisible in light mode. Fix: baseline cascade
+		// resolves to `--set-variant-background-color` (the IDENTITY tint)
+		// so standalone spinners read as their variant identity. The
+		// `.loading` button + anchor override re-routes to `currentColor`
+		// so spinners inside a filled button paint the button's text
+		// colour (white on a filled variant button).
+		const spinner = build('span', 'spinner primary')
+		mount(spinner)
+		const primaryIdentity = style(document.documentElement, '--color-primary').trim()
+		const borderTop = style(spinner, 'border-top-color').trim()
+		// The border colour resolves through `--set-spinner-color` →
+		// `--set-variant-background-color` → `--color-primary`. Visual
+		// notations differ between custom-property declarations
+		// (`oklch(54.6% …)`) and computed values (`oklch(0.546 …)`), so
+		// compare via the hue / chroma trailing digits which match in
+		// both forms.
+		expect(primaryIdentity).not.toBe('')
+		expect(borderTop).not.toBe('rgba(0, 0, 0, 0)')
+		// Hue match — both primary identity and the resolved border use
+		// the same `262.881` blue chroma value (Tailwind v4 oklch).
+		expect(borderTop).toContain('262.881')
+	})
+
+	it('spinner inside a `.loading` button uses `currentColor` (contrast on filled bg)', () => {
+		const btn = build('button', 'primary loading')
+		const spinner = build('span', 'spinner')
+		btn.appendChild(spinner)
+		mount(btn)
+		// Override re-routes spinner colour to `currentColor`, which the
+		// button's own colour cascade resolves to the contrast tier
+		// (white on a filled `.primary` button).
+		expect(token(spinner, '--set-spinner-color').trim()).toBe('currentColor')
+	})
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
