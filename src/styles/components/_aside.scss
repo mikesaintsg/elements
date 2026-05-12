@@ -103,8 +103,8 @@
 				color var(--set-aside-transition-duration),
 				background-color var(--set-aside-transition-duration),
 				border-color var(--set-aside-transition-duration),
-				transform var(--set-drawer-transition-duration) var(--set-drawer-transition-timing-function),
-				opacity var(--set-drawer-transition-duration) ease-out
+				transform var(--set-motion-duration) var(--set-motion-timing-function),
+				opacity var(--set-motion-duration) ease-out
 			)
 		);
 
@@ -560,10 +560,10 @@
 		// fade.
 		@include transition(
 			(
-				transform var(--set-drawer-transition-duration) var(--set-drawer-transition-timing-function),
-				opacity var(--set-drawer-transition-duration) ease-out,
-				overlay var(--set-drawer-transition-duration) allow-discrete,
-				display var(--set-drawer-transition-duration) allow-discrete
+				transform var(--set-motion-duration) var(--set-motion-timing-function),
+				opacity var(--set-motion-duration) ease-out,
+				overlay var(--set-motion-duration) allow-discrete,
+				display var(--set-motion-duration) allow-discrete
 			)
 		);
 

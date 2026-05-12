@@ -96,11 +96,38 @@
 		background-color: var(--set-dialog-background-color);
 		box-shadow: var(--set-dialog-box-shadow);
 
+		// Closed-state values for the entry / exit transitions. Same
+		// pattern the popover surface uses: opacity 0 + a subtle scale-
+		// down. `transform: scale(0.96)` reads as "settling into place"
+		// when fading in and "lifting away" when fading out — kinder
+		// to the eye than a full popcorn-in zoom. The `:modal`
+		// centring uses the `translate` longhand (not `transform`), so
+		// the two compose: `translate: -50% -50%` anchors the dialog
+		// to viewport center and `transform: scale(...)` animates the
+		// entry.
+		opacity: 0;
+		transform: scale(0.96);
+
+		// Transition list — color / bg / border tints use the small
+		// `--set-dialog-transition-duration` (150ms) for theme flips
+		// and hover-like color shifts. opacity / transform / display
+		// / overlay use the framework-wide `--set-motion-*` tokens
+		// (250ms iOS stiff-decel) so the dialog's entry animation
+		// feels uniform with drawers / details / table expansions.
+		//
+		// `display` + `overlay` with `allow-discrete` keep the element
+		// in the render tree for the full motion duration on close —
+		// without them, the dialog snaps to `display: none` the moment
+		// `.close()` returns and the exit animation never plays.
 		@include transition(
 			(
 				color var(--set-dialog-transition-duration),
 				background-color var(--set-dialog-transition-duration),
-				border-color var(--set-dialog-transition-duration)
+				border-color var(--set-dialog-transition-duration),
+				opacity var(--set-motion-duration) ease-out,
+				transform var(--set-motion-duration) var(--set-motion-timing-function),
+				overlay var(--set-motion-duration) allow-discrete,
+				display var(--set-motion-duration) allow-discrete
 			)
 		);
 
@@ -146,6 +173,41 @@
 		// useDialog size / layout modifiers (`.small` / `.large` /
 		// `.fullscreen` / `.scrollable`) live in
 		// `composables/_dialog.scss`.
+
+		// ----------------------------------------------------------------------
+		// Open state — settled in. Targets `[open]` so both `:modal`
+		// (from `.showModal()`) and non-modal inline (`.show()`) paths
+		// get the same fade + scale entry. The transition pipeline
+		// declared above interpolates from the closed-state values to
+		// here over 250ms.
+		// ----------------------------------------------------------------------
+		&[open] {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	// `@starting-style` — first-frame from-state when the dialog
+	// transitions from `display: none` to displayed. Without this, the
+	// element renders at its CASCADE values (opacity: 1, transform:
+	// none) on the very first frame and the entry transition starts
+	// with nowhere to interpolate from. The starting values match the
+	// bare-`dialog` closed state so close → open and open → close
+	// share the same motion curve.
+	//
+	// Specificity note: targeting `dialog[open]` (specificity 0,1,1)
+	// rather than nesting inside `&[open]` (which would compile to
+	// `@starting-style { dialog[open] { ... } }` with the same
+	// specificity as the regular `dialog[open]` rule above) is the
+	// same Chrome 148+ workaround the popover surface uses for the
+	// aside drawer — the starting-state body stays one specificity
+	// step below the in-state rule, so the open transform wins
+	// regardless of any @starting-style cascade-tier leakage.
+	@starting-style {
+		dialog[open] {
+			opacity: 0;
+			transform: scale(0.96);
+		}
 	}
 
 	// --------------------------------------------------------------------------

@@ -440,11 +440,19 @@
 		// padding regardless of the child's declared block-size.
 		//
 		// `block-size: 0 → auto` requires `interpolate-size: allow-
-		// keywords` (declared globally on `<html>` in `_html.scss`). Same
-		// animation contract `<details>::details-content` uses — opening
-		// the row's inline `<details>` toggle ripples through `:has()`
-		// and the sibling panel expands with identical timing and easing.
-		@include transition((block-size 0.25s ease, padding-block 0.25s ease, opacity 0.2s ease));
+		// keywords` (declared globally on `<html>` in `_html.scss`).
+		// Reads from the framework-wide motion tokens so opening the
+		// row's inline `<details>` toggle ripples through `:has()` and
+		// the sibling panel expands with the same iOS-stiff-decel curve
+		// and 250ms duration the disclosure animation in
+		// `elements/_details.scss` uses — same surface, same motion.
+		@include transition(
+			(
+				block-size var(--set-motion-duration) var(--set-motion-timing-function),
+				padding-block var(--set-motion-duration) var(--set-motion-timing-function),
+				opacity var(--set-motion-duration) ease-out
+			)
+		);
 	}
 
 	table > tbody > tr:has(> td > details[open]) + tr.expansion > td > .expansion-panel,

@@ -64,19 +64,24 @@
 		//
 		// `block-size: 0 → auto` requires `interpolate-size: allow-keywords`
 		// to animate (declared globally in `_root.scss`). The
-		// `transition-behavior: allow-discrete` keeps the
-		// `content-visibility` flip in the same animation frame as the
-		// height tween so screen-readers don't announce mid-transition
-		// content. Same trick the popover surface uses.
+		// `content-visibility` line uses `allow-discrete` so the discrete
+		// `auto → hidden` flip animates alongside the height tween instead
+		// of snapping — same idiom the popover surface uses for
+		// `display: none ↔ block`.
+		//
+		// Timing reads from the framework-wide motion tokens so a
+		// disclosure expansion feels uniform with drawers, dialogs, and
+		// the table-row expansion that shares this same animation
+		// contract (see `elements/_table.scss` § Table row expansion).
 		// ----------------------------------------------------------------------
 		&::details-content {
 			block-size: 0;
 			opacity: 0;
 			overflow: clip;
 			transition:
-				block-size 0.25s ease,
-				opacity 0.2s ease,
-				content-visibility 0.25s allow-discrete;
+				block-size var(--set-motion-duration) var(--set-motion-timing-function),
+				opacity var(--set-motion-duration) ease-out,
+				content-visibility var(--set-motion-duration) allow-discrete;
 		}
 
 		&[open]::details-content {

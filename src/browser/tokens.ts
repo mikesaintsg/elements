@@ -106,13 +106,16 @@ export const tokens = {
 	// Framework defaults that have no Tailwind equivalent.
 	transitionDuration: '--set-transition-duration',
 
-	// Drawer-shape transition contract — shared between body-shell rail
-	// drawers (`<nav>` / `<aside>` on mobile) and `<aside popover>`
-	// offcanvas drawers. Single duration + timing-function so motion
-	// feels uniform across the drawer family. See `_tokens.scss` §
-	// Drawer-shape transition contract for the curve rationale.
-	drawerTransitionDuration: '--set-drawer-transition-duration',
-	drawerTransitionTimingFunction: '--set-drawer-transition-timing-function',
+	// Framework-wide motion contract — shared between body-shell rail
+	// drawers (`<nav>` / `<aside>` on mobile), `<aside popover>`
+	// offcanvas drawers, `<dialog>` modals, `<details>::details-content`
+	// disclosure animations, and `tr.expansion .expansion-panel` table
+	// row reveals. Single duration + timing-function so substantial
+	// motion feels uniform across the whole framework. See
+	// `_tokens.scss` § Framework-wide motion contract for the curve
+	// rationale.
+	motionDuration: '--set-motion-duration',
+	motionTimingFunction: '--set-motion-timing-function',
 
 	// Baseline hydration — non-color defaults so a bare element renders
 	// with consistent border-radius, gap, sticky offset, and z-index

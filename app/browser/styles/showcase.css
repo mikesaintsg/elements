@@ -106,7 +106,7 @@
 	z-index: 25;
 	background-color: color-mix(in oklab, black 35%, transparent);
 	backdrop-filter: blur(2px);
-	transition: opacity var(--set-drawer-transition-duration) ease-out;
+	transition: opacity var(--set-motion-duration) ease-out;
 
 	@starting-style {
 		opacity: 0;

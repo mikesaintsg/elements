@@ -57,29 +57,42 @@
 	--set-transition-duration: 150ms;
 
 	// --------------------------------------------------------------------------
-	// Drawer-shape transition contract — every framework surface that slides
-	// in over the UI (body-shell rail drawers on mobile, `<aside popover>`
-	// offcanvas drawers at any viewport, future `<dialog>` slide modes)
-	// reads from this pair so motion feels uniform across the family.
+	// Framework-wide motion contract — every framework surface that
+	// performs a "substantial" reveal/dismiss reads from this pair so
+	// motion feels uniform across the whole library:
 	//
-	// `250ms` is the perceptual sweet spot for edge-slide motion: long
-	// enough that the user registers "panel slid in from somewhere" rather
-	// than "panel appeared," short enough that it doesn't feel sluggish.
-	// Matches Bootstrap's `--bs-transition-offcanvas-duration: 0.25s` and
-	// the iOS native sheet timing.
+	//   - Body-shell rail drawers (`<nav>` / `<aside>` on mobile)
+	//   - Offcanvas drawers (`<aside popover>` at any viewport)
+	//   - Modals / non-modals (`<dialog>`)
+	//   - Disclosure expansions (`<details>::details-content`)
+	//   - Table row expansion (`tr.expansion .expansion-panel`)
+	//   - Drawer backdrops (consumer-owned scrims in `showcase.css`)
+	//
+	// Distinct from `--set-transition-duration` (150 ms, used for small
+	// UI tints — hover, focus, color/border fades): substantial motion
+	// is anything that physically moves a surface in or out of view.
+	//
+	// `250ms` is the perceptual sweet spot for substantial motion: long
+	// enough that the user registers "something happened" rather than
+	// "something appeared," short enough that it doesn't feel sluggish.
+	// Matches Bootstrap's `--bs-transition-offcanvas-duration: 0.25s`,
+	// Material Design's `medium2` (250ms), and iOS native sheet timing.
 	//
 	// `cubic-bezier(0.32, 0.72, 0, 1)` is the iOS-native "stiff
 	// decelerate" curve — fast start, gentle settle. Same curve mailbox
-	// uses for its offcanvas + modal slide. Reads as decisive on entry
-	// and considered on exit, vs the default `ease` which feels mushy
-	// at this scale.
+	// uses for offcanvas + modal slide. Reads as decisive on entry and
+	// considered on exit, vs the default `ease` which feels mushy at
+	// this scale. Opacity fades inside the motion family use plain
+	// `ease-out` (the cubic-bezier's tail looks identical for opacity
+	// but `ease-out` is the universally-readable name for fades).
 	//
-	// Consumers retune both at `:root` to change every drawer's feel at
-	// once, or per-rail (`body { --set-drawer-transition-duration: 400ms }`)
-	// for one surface family.
+	// Consumers retune both at `:root` to change every motion's feel
+	// at once, or per-component by overriding the consumer-scoped
+	// token (`dialog { --set-motion-duration: 400ms }`) for one
+	// surface family.
 	// --------------------------------------------------------------------------
-	--set-drawer-transition-duration: 250ms;
-	--set-drawer-transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+	--set-motion-duration: 250ms;
+	--set-motion-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 
 	// --------------------------------------------------------------------------
 	// Baseline hydration — non-color defaults that make the framework feel

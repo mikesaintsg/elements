@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T16:44:20.534Z" />
+		<meta name="build-id" content="2026-05-12T16:55:15.905Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9040,7 +9040,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T16:44:20.534Z`)), 1),
+										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T16:55:15.905Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -9798,9 +9798,9 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					opacity: 0;
 					block-size: 0;
 					transition:
-						block-size 0.25s ease,
-						opacity 0.2s ease,
-						content-visibility 0.25s allow-discrete;
+						block-size var(--set-motion-duration) var(--set-motion-timing-function),
+						opacity var(--set-motion-duration) ease-out,
+						content-visibility var(--set-motion-duration) allow-discrete;
 					overflow: clip;
 				}
 				details[open]::details-content {
@@ -9840,10 +9840,16 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					color: var(--set-dialog-color);
 					background-color: var(--set-dialog-background-color);
 					box-shadow: var(--set-dialog-box-shadow);
+					opacity: 0;
 					transition:
 						color var(--set-dialog-transition-duration),
 						background-color var(--set-dialog-transition-duration),
-						border-color var(--set-dialog-transition-duration);
+						border-color var(--set-dialog-transition-duration),
+						opacity var(--set-motion-duration) ease-out,
+						transform var(--set-motion-duration) var(--set-motion-timing-function),
+						overlay var(--set-motion-duration) allow-discrete,
+						display var(--set-motion-duration) allow-discrete;
+					transform: scale(0.96);
 				}
 				@media (prefers-reduced-motion: reduce) {
 					dialog {
@@ -9866,6 +9872,16 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						--set-dialog-max-inline-size: calc(100vw - calc(var(--spacing) * 6));
 						--set-dialog-padding-inline: calc(var(--spacing) * 4);
 						--set-dialog-padding-block: calc(var(--spacing) * 4);
+					}
+				}
+				dialog[open] {
+					opacity: 1;
+					transform: none;
+				}
+				@starting-style {
+					dialog[open] {
+						opacity: 0;
+						transform: scale(0.96);
 					}
 				}
 				dialog {
@@ -11596,9 +11612,9 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				table > tbody > tr.expansion > td > .expansion-panel,
 				table > tbody > tr > td > [data-table-expansion-panel] {
 					transition:
-						block-size 0.25s,
-						padding-block 0.25s,
-						opacity 0.2s;
+						block-size var(--set-motion-duration) var(--set-motion-timing-function),
+						padding-block var(--set-motion-duration) var(--set-motion-timing-function),
+						opacity var(--set-motion-duration) ease-out;
 				}
 				@media (prefers-reduced-motion: reduce) {
 					table > tbody > tr.expansion > td > .expansion-panel,
@@ -12049,9 +12065,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						color var(--set-aside-transition-duration),
 						background-color var(--set-aside-transition-duration),
 						border-color var(--set-aside-transition-duration),
-						transform var(--set-drawer-transition-duration)
-							var(--set-drawer-transition-timing-function),
-						opacity var(--set-drawer-transition-duration) ease-out;
+						transform var(--set-motion-duration) var(--set-motion-timing-function),
+						opacity var(--set-motion-duration) ease-out;
 					flex-direction: column;
 					display: flex;
 					overflow-y: auto;
@@ -12262,11 +12277,10 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					max-block-size: 100dvh;
 					max-inline-size: 100dvw;
 					transition:
-						transform var(--set-drawer-transition-duration)
-							var(--set-drawer-transition-timing-function),
-						opacity var(--set-drawer-transition-duration) ease-out,
-						overlay var(--set-drawer-transition-duration) allow-discrete,
-						display var(--set-drawer-transition-duration) allow-discrete;
+						transform var(--set-motion-duration) var(--set-motion-timing-function),
+						opacity var(--set-motion-duration) ease-out,
+						overlay var(--set-motion-duration) allow-discrete,
+						display var(--set-motion-duration) allow-discrete;
 					flex-direction: column;
 					gap: 0;
 					margin: 0;
@@ -13294,9 +13308,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						color var(--set-nav-transition-duration),
 						background-color var(--set-nav-transition-duration),
 						border-color var(--set-nav-transition-duration),
-						transform var(--set-drawer-transition-duration)
-							var(--set-drawer-transition-timing-function),
-						opacity var(--set-drawer-transition-duration) ease-out;
+						transform var(--set-motion-duration) var(--set-motion-timing-function),
+						opacity var(--set-motion-duration) ease-out;
 					flex-flow: column;
 					display: flex;
 					overflow-y: auto;
@@ -15644,8 +15657,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				--set-variant-color: currentColor;
 				--set-variant-border-width: 0;
 				--set-transition-duration: 0.15s;
-				--set-drawer-transition-duration: 0.25s;
-				--set-drawer-transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+				--set-motion-duration: 0.25s;
+				--set-motion-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 				--set-border-radius: var(--radius-md);
 				--set-border-width: 1px;
 				--set-gap: calc(var(--spacing) * 3);
@@ -16791,7 +16804,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				z-index: 25;
 				-webkit-backdrop-filter: blur(2px);
 				backdrop-filter: blur(2px);
-				transition: opacity var(--set-drawer-transition-duration) ease-out;
+				transition: opacity var(--set-motion-duration) ease-out;
 				background-color: oklab(0% none none/.35);
 				position: fixed;
 				inset: 0;
