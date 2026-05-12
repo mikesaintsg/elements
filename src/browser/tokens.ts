@@ -106,6 +106,14 @@ export const tokens = {
 	// Framework defaults that have no Tailwind equivalent.
 	transitionDuration: '--set-transition-duration',
 
+	// Drawer-shape transition contract — shared between body-shell rail
+	// drawers (`<nav>` / `<aside>` on mobile) and `<aside popover>`
+	// offcanvas drawers. Single duration + timing-function so motion
+	// feels uniform across the drawer family. See `_tokens.scss` §
+	// Drawer-shape transition contract for the curve rationale.
+	drawerTransitionDuration: '--set-drawer-transition-duration',
+	drawerTransitionTimingFunction: '--set-drawer-transition-timing-function',
+
 	// Baseline hydration — non-color defaults so a bare element renders
 	// with consistent border-radius, gap, sticky offset, and z-index
 	// layering without per-component overrides. See `_tokens.scss` for
@@ -781,6 +789,16 @@ export const tokens = {
 		fontSize: '--set-aside-font-size',
 		lineHeight: '--set-aside-line-height',
 		transitionDuration: '--set-aside-transition-duration',
+		// Drawer / offcanvas sub-surface — `aside[popover]` viewport-edge
+		// slide-in panel. Tokens scope per-drawer geometry + internal
+		// region padding without leaking into the bare-aside (sidebar /
+		// callout / alert) surface.
+		drawerInlineSize: '--set-aside-drawer-inline-size',
+		drawerBlockSize: '--set-aside-drawer-block-size',
+		drawerZIndex: '--set-aside-drawer-z-index',
+		drawerPaddingInline: '--set-aside-drawer-padding-inline',
+		drawerPaddingBlock: '--set-aside-drawer-padding-block',
+		drawerBandGap: '--set-aside-drawer-band-gap',
 	},
 
 	// Component tokens declared on bare `<header>` when it's a child of the
@@ -842,7 +860,6 @@ export const tokens = {
 	// touching the framework's `_body.scss`.
 	body: {
 		railWidth: '--set-body-rail-width',
-		railTransitionDuration: '--set-body-rail-transition-duration',
 	},
 
 	// Element-scoped tokens declared on bare `<main>` (sectioning content
@@ -1083,6 +1100,12 @@ export const tokens = {
 		boxShadow: '--set-popover-box-shadow',
 		transitionDuration: '--set-popover-transition-duration',
 		maxInlineSize: '--set-popover-max-inline-size',
+		// Symmetric viewport inset used in the surface's `max-inline-size`
+		// clamp: `min(target, anchor-max, 100vw - viewport-inset * 2)`.
+		// Defaults to `1rem` so popovers never touch the screen edges on
+		// narrow viewports. Drawer surface lifts it to `0` so the panel
+		// reaches the viewport edge.
+		viewportInset: '--set-popover-viewport-inset',
 		// Tooltip variant — `[popover=hint]` / `[role=tooltip]`. Smaller,
 		// inverted, less-padded subset of the popover surface.
 		hint: {

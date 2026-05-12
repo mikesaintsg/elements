@@ -472,6 +472,19 @@
 		// convention. Native popovers also adopt the top layer so the
 		// `z-index` is mainly a fallback hint for the transition tail.
 		--set-aside-drawer-z-index: var(--set-z-index-fixed, 50);
+		// Region-padding tokens for the drawer's header / body / footer
+		// regions. Mirrors mailbox's `--bs-offcanvas-padding-{x,y}` —
+		// shared by all three regions so the bands and the body align
+		// horizontally without per-region tuning. Declared on `:root`
+		// (not on `aside[popover]`) so consumers can retune from any
+		// scope before the drawer mounts.
+		--set-aside-drawer-padding-inline: calc(var(--spacing) * 4);
+		--set-aside-drawer-padding-block: calc(var(--spacing) * 4);
+		// Inline gap between siblings within a drawer band (title and
+		// trailing close button) — `margin-inline-start: auto` on the
+		// close button does the heavy lifting; this gap is the minimum
+		// space when the title is long enough to push against the close.
+		--set-aside-drawer-band-gap: calc(var(--spacing) * 3);
 	}
 
 	// Drawer chrome — applies to every `aside[popover]` so the closed
@@ -502,13 +515,6 @@
 		--set-popover-padding-inline: 0;
 		--set-popover-padding-block: 0;
 
-		// Drawer's own region-padding token — header / footer / body
-		// each consume this so retuning at `:root` retunes every region
-		// uniformly. Matches mailbox's `--bs-offcanvas-padding-{x,y}`.
-		--set-aside-drawer-padding-inline: calc(var(--spacing) * 4);
-		--set-aside-drawer-padding-block: calc(var(--spacing) * 4);
-		--set-aside-drawer-band-gap: calc(var(--spacing) * 3);
-
 		position: fixed;
 		margin: 0;
 		max-inline-size: 100dvw;
@@ -532,12 +538,20 @@
 		// Without `allow-discrete` on `display`, the close transition
 		// would snap instantly to `display: none` and the slide-out
 		// never plays.
+		//
+		// Duration + timing-function come from the shared drawer
+		// transition tokens (`_tokens.scss` § Drawer-shape transition
+		// contract) so the body-shell rails and the offcanvas drawers
+		// share one perceptual feel. Opacity uses `ease-out` because
+		// it crossfades against the @starting-style from-state (0 →
+		// 1); the slide curve's slow-out tail would over-linger the
+		// fade.
 		@include transition(
 			(
-				transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
-				opacity 0.25s ease-out,
-				overlay 0.25s allow-discrete,
-				display 0.25s allow-discrete
+				transform var(--set-drawer-transition-duration) var(--set-drawer-transition-timing-function),
+				opacity var(--set-drawer-transition-duration) ease-out,
+				overlay var(--set-drawer-transition-duration) allow-discrete,
+				display var(--set-drawer-transition-duration) allow-discrete
 			)
 		);
 

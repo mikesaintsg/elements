@@ -57,6 +57,31 @@
 	--set-transition-duration: 150ms;
 
 	// --------------------------------------------------------------------------
+	// Drawer-shape transition contract — every framework surface that slides
+	// in over the UI (body-shell rail drawers on mobile, `<aside popover>`
+	// offcanvas drawers at any viewport, future `<dialog>` slide modes)
+	// reads from this pair so motion feels uniform across the family.
+	//
+	// `250ms` is the perceptual sweet spot for edge-slide motion: long
+	// enough that the user registers "panel slid in from somewhere" rather
+	// than "panel appeared," short enough that it doesn't feel sluggish.
+	// Matches Bootstrap's `--bs-transition-offcanvas-duration: 0.25s` and
+	// the iOS native sheet timing.
+	//
+	// `cubic-bezier(0.32, 0.72, 0, 1)` is the iOS-native "stiff
+	// decelerate" curve — fast start, gentle settle. Same curve mailbox
+	// uses for its offcanvas + modal slide. Reads as decisive on entry
+	// and considered on exit, vs the default `ease` which feels mushy
+	// at this scale.
+	//
+	// Consumers retune both at `:root` to change every drawer's feel at
+	// once, or per-rail (`body { --set-drawer-transition-duration: 400ms }`)
+	// for one surface family.
+	// --------------------------------------------------------------------------
+	--set-drawer-transition-duration: 250ms;
+	--set-drawer-transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+
+	// --------------------------------------------------------------------------
 	// Baseline hydration — non-color defaults that make the framework feel
 	// "alive" the moment a consumer drops it into a page (Bootstrap parity).
 	// Every value here is a real `:root` declaration — not a `var(…, fallback)`

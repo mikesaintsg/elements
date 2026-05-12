@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T15:55:38.785Z" />
+		<meta name="build-id" content="2026-05-12T16:14:28.258Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9040,7 +9040,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T15:55:38.785Z`)), 1),
+										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T16:14:28.258Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -12245,6 +12245,9 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-aside-drawer-inline-size: 21.875rem;
 					--set-aside-drawer-block-size: 30dvh;
 					--set-aside-drawer-z-index: var(--set-z-index-fixed, 50);
+					--set-aside-drawer-padding-inline: calc(var(--spacing) * 4);
+					--set-aside-drawer-padding-block: calc(var(--spacing) * 4);
+					--set-aside-drawer-band-gap: calc(var(--spacing) * 3);
 				}
 				aside[popover] {
 					--set-popover-max-inline-size: 100dvw;
@@ -12252,17 +12255,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-viewport-inset: 0;
 					--set-popover-padding-inline: 0;
 					--set-popover-padding-block: 0;
-					--set-aside-drawer-padding-inline: calc(var(--spacing) * 4);
-					--set-aside-drawer-padding-block: calc(var(--spacing) * 4);
-					--set-aside-drawer-band-gap: calc(var(--spacing) * 3);
 					--set-popover-box-shadow: var(--set-box-shadow-sm);
 					max-block-size: 100dvh;
 					max-inline-size: 100dvw;
 					transition:
-						transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
-						opacity 0.25s ease-out,
-						overlay 0.25s allow-discrete,
-						display 0.25s allow-discrete;
+						transform var(--set-drawer-transition-duration)
+							var(--set-drawer-transition-timing-function),
+						opacity var(--set-drawer-transition-duration) ease-out,
+						overlay var(--set-drawer-transition-duration) allow-discrete,
+						display var(--set-drawer-transition-duration) allow-discrete;
 					flex-direction: column;
 					gap: 0;
 					margin: 0;
@@ -12539,7 +12540,6 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				}
 				body {
 					--set-body-rail-width: min(20rem, 85vw);
-					--set-body-rail-transition-duration: 0.25s;
 				}
 				@media (width<=960px) {
 					:is(
@@ -12552,8 +12552,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						z-index: var(--set-z-index-fixed, 1030);
 						background-color: var(--color-surface);
 						box-shadow: var(--set-box-shadow-lg);
-						transition: transform var(--set-body-rail-transition-duration)
-							cubic-bezier(0.32, 0.72, 0, 1);
+						transition: transform var(--set-drawer-transition-duration)
+							var(--set-drawer-transition-timing-function);
 						position: fixed;
 						inset-block: 0;
 					}
@@ -15644,6 +15644,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				--set-variant-color: currentColor;
 				--set-variant-border-width: 0;
 				--set-transition-duration: 0.15s;
+				--set-drawer-transition-duration: 0.25s;
+				--set-drawer-transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 				--set-border-radius: var(--radius-md);
 				--set-border-width: 1px;
 				--set-gap: calc(var(--spacing) * 3);
