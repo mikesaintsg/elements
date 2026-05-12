@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T21:11:09.173Z" />
+		<meta name="build-id" content="2026-05-12T21:23:54.916Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9454,7 +9454,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Hu, `build ` + k(Yt(`2026-05-12T21:11:09.173Z`)), 1),
+										Y(`small`, Hu, `build ` + k(Yt(`2026-05-12T21:23:54.916Z`)), 1),
 									]),
 								],
 								64,
@@ -13754,7 +13754,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-tablist-transition-duration: var(--set-transition-duration);
 					--set-tab-color: currentColor;
 					--set-tab-background-color: transparent;
-					--set-tab-active-color: var(--color-primary-on-canvas);
+					--set-tab-active-color: var(--color-primary-text-emphasis);
+					--set-tab-active-background-color: var(--color-primary-bg-subtle);
 					--set-tab-active-indicator-size: 2px;
 					--set-tab-padding-inline: calc(var(--spacing) * 3);
 					--set-tab-padding-block: calc(var(--spacing) * 2);
@@ -13781,7 +13782,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					gap: calc(var(--spacing) * 1.5);
 					padding-inline: var(--set-tab-padding-inline);
 					padding-block: var(--set-tab-padding-block);
-					border-block-end: var(--set-tab-active-indicator-size) solid transparent;
+					border-radius: var(--radius-md);
 					color: var(--set-tab-color);
 					background-color: var(--set-tab-background-color);
 					font-size: var(--set-tab-font-size);
@@ -13790,10 +13791,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					cursor: pointer;
 					transition:
 						color var(--set-tab-transition-duration),
-						border-color var(--set-tab-transition-duration),
 						background-color var(--set-tab-transition-duration);
-					border-block-start: 0;
-					border-inline: 0;
+					border: 0;
 					display: inline-flex;
 				}
 				@media (prefers-reduced-motion: reduce) {
@@ -13801,12 +13800,20 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						transition: none;
 					}
 				}
-				[role='tab']:hover {
-					color: var(--set-tab-active-color);
+				[role='tab']:hover:not([aria-selected='true']) {
+					background-color: currentColor;
+				}
+				@supports (color: color-mix(in lab, red, red)) {
+					[role='tab']:hover:not([aria-selected='true']) {
+						background-color: color-mix(in oklab, currentColor 6%, transparent);
+					}
+				}
+				[role='tab']:hover:not([aria-selected='true']) {
+					color: var(--color-text-strong, var(--color-text));
 				}
 				[role='tab'][aria-selected='true'] {
+					background-color: var(--set-tab-active-background-color);
 					color: var(--set-tab-active-color);
-					border-block-end-color: var(--set-tab-active-color);
 				}
 				[role='tab'][aria-disabled='true'],
 				[role='tab'][disabled] {

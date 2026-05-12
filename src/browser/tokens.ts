@@ -647,6 +647,7 @@ export const tokens = {
 		color: '--set-tab-color',
 		backgroundColor: '--set-tab-background-color',
 		activeColor: '--set-tab-active-color',
+		activeBackgroundColor: '--set-tab-active-background-color',
 		activeIndicatorSize: '--set-tab-active-indicator-size',
 		paddingInline: '--set-tab-padding-inline',
 		paddingBlock: '--set-tab-padding-block',

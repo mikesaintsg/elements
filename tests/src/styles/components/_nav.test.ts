@@ -280,7 +280,15 @@ describe('nav — tablist has no opinionated baseline track', () => {
 		expect(pixels(tablist, 'border-bottom-width')).toBe(0)
 	})
 
-	it('the active tab paints its own bottom-border indicator', () => {
+	it('the active tab paints a `bg-subtle` fill + `text-emphasis` colour (nav-row idiom)', () => {
+		// Matches the framework's `aria-current="page"` nav-row pattern
+		// declared in `_menu.scss` § nav-rail menu. Active = subtle
+		// tinted background + emphasised text + zero border. An
+		// earlier draft painted a 2 px `border-block-end` indicator
+		// under the active tab; combined with the button baseline's
+		// `border-radius`, the indicator's ends rounded along the
+		// radius and read as opinionated chrome inconsistent with the
+		// rest of the framework.
 		const tablist = build('nav', '', 'Test')
 		tablist.setAttribute('role', 'tablist')
 		const tab = build('button')
@@ -289,16 +297,16 @@ describe('nav — tablist has no opinionated baseline track', () => {
 		tablist.appendChild(tab)
 		mount(tablist)
 
-		// `--set-tab-active-indicator-size` defaults to 2 px; the
-		// `[role='tab']` baseline declares `border-block-end: var(...)
-		// solid transparent` and the [aria-selected="true"] rule flips
-		// the colour to the variant identity. Without a continuous
-		// tablist track to overlap, no negative margin is needed.
-		expect(pixels(tab, 'border-bottom-width')).toBeGreaterThan(0)
+		// No border-line indicator. The active state is a background
+		// fill + text colour flip.
+		expect(pixels(tab, 'border-bottom-width')).toBe(0)
 		expect(pixels(tab, 'margin-bottom')).toBe(0)
+		// Background paints the primary `bg-subtle` tier (non-transparent).
+		const bg = style(tab, 'background-color')
+		expect(bg).not.toBe('rgba(0, 0, 0, 0)')
 	})
 
-	it('inactive tabs keep a transparent bottom-border (placeholder for the indicator)', () => {
+	it('inactive tabs have NO border-line and NO background fill', () => {
 		const tablist = build('nav', '', 'Test')
 		tablist.setAttribute('role', 'tablist')
 		const tab = build('button')
@@ -307,17 +315,24 @@ describe('nav — tablist has no opinionated baseline track', () => {
 		tablist.appendChild(tab)
 		mount(tablist)
 
-		expect(pixels(tab, 'border-bottom-width')).toBeGreaterThan(0)
-		// The indicator paints transparent until selected, so layout
-		// doesn't shift between the active and inactive tab box.
-		// `transparent` resolves to `rgba(0, 0, 0, 0)` in computed
-		// styles, so check either form.
-		const color = style(tab, 'border-bottom-color')
-		const isTransparent =
-			color.includes('transparent') ||
-			color.includes('rgba(0, 0, 0, 0)') ||
-			color.replace(/\s+/g, '') === 'rgba(0,0,0,0)'
-		expect(isTransparent).toBe(true)
+		expect(pixels(tab, 'border-bottom-width')).toBe(0)
+		expect(style(tab, 'background-color')).toBe('rgba(0, 0, 0, 0)')
+	})
+
+	it('tabs inherit the button border-radius for pill-shaped hover/active fills', () => {
+		// The active tab's `bg-subtle` fill, plus the hover tint on
+		// inactive tabs, paint INSIDE the tab's border-radius so the
+		// fill reads as a pill instead of a sharp rectangle — same
+		// shape language as the framework's nav-rail menu rows and
+		// dropdown menu items.
+		const tablist = build('nav', '', 'Test')
+		tablist.setAttribute('role', 'tablist')
+		const tab = build('button')
+		tab.setAttribute('role', 'tab')
+		tablist.appendChild(tab)
+		mount(tablist)
+
+		expect(pixels(tab, 'border-top-left-radius')).toBeGreaterThan(0)
 	})
 })
 

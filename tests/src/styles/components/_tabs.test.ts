@@ -56,7 +56,7 @@ describe('tabs — tablist chrome', () => {
 })
 
 describe('tabs — `[role="tab"]` chrome', () => {
-	it('paints a flex container with an active-state indicator slot', () => {
+	it('paints a flex container with a pill-shaped border-radius (no border-line)', () => {
 		const nav = build('nav')
 		nav.setAttribute('role', 'tablist')
 		const tab = build('button')
@@ -67,28 +67,36 @@ describe('tabs — `[role="tab"]` chrome', () => {
 		// The display resolves to either `flex` or `inline-flex` depending on
 		// which layer wins (nav-tab role wraps button, both are inline-flex).
 		expect(style(tab, 'display')).toMatch(/flex/)
-		// The default tab has a transparent indicator border that gets
-		// painted with the active color when `aria-selected="true"`.
-		expect(pixels(tab, 'border-bottom-width')).toBeGreaterThan(0)
+		// Active-state indicator is a background fill (matching the
+		// framework's nav-row `aria-current="page"` idiom), NOT a
+		// bottom-border line. The pill shape comes from the button
+		// baseline's `border-radius`.
+		expect(pixels(tab, 'border-bottom-width')).toBe(0)
+		expect(pixels(tab, 'border-top-left-radius')).toBeGreaterThan(0)
 	})
 
-	it('`aria-selected="true"` flips the indicator to the active colour', () => {
+	it('`aria-selected="true"` flips the tab to a `bg-subtle` fill + emphasis text', () => {
 		const nav = build('nav')
 		nav.setAttribute('role', 'tablist')
 		const tab = build('button')
 		tab.setAttribute('role', 'tab')
 		tab.setAttribute('aria-selected', 'true')
 		tab.textContent = 'Profile'
-		nav.appendChild(tab)
-		mount(nav)
-		const inactiveBorder = style(tab, 'border-bottom-color')
-		// Compare against a sibling tab without aria-selected.
 		const sibling = build('button')
 		sibling.setAttribute('role', 'tab')
 		sibling.textContent = 'Account'
+		nav.appendChild(tab)
 		nav.appendChild(sibling)
-		const siblingBorder = style(sibling, 'border-bottom-color')
-		expect(inactiveBorder).not.toBe(siblingBorder)
+		mount(nav)
+
+		const activeBg = style(tab, 'background-color')
+		const siblingBg = style(sibling, 'background-color')
+
+		// Active tab has a non-transparent bg; sibling is transparent.
+		expect(activeBg).not.toBe(siblingBg)
+		expect(activeBg).not.toBe('rgba(0, 0, 0, 0)')
+		// Inactive tab keeps the transparent toolbar bg.
+		expect(siblingBg).toBe('rgba(0, 0, 0, 0)')
 	})
 })
 

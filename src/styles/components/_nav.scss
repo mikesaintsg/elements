@@ -281,11 +281,17 @@
 
 		--set-tab-color: currentColor;
 		--set-tab-background-color: transparent;
-		// Active tab paints variant text directly on the tablist canvas
-		// (no tinted bg). On-canvas tier clears WCAG AA in both modes —
-		// bare `--color-primary` (blue-600) is borderline against dark
-		// canvas (slate-950 → ~3.92 ratio, fails AA for normal text).
-		--set-tab-active-color: var(--color-primary-on-canvas);
+		// Active tab matches the framework's nav-row `aria-current=
+		// page` idiom: `bg-subtle` fill paired with the variant's
+		// `text-emphasis` text colour. Same triplet
+		// (`bg-subtle` / `text-emphasis` / `border-subtle`) the
+		// in-flow alerts, list-group active rows, and aside-popover
+		// drawers use — one visual contract across the framework.
+		--set-tab-active-color: var(--color-primary-text-emphasis);
+		--set-tab-active-background-color: var(--color-primary-bg-subtle);
+		// Retained for the `.vertical` composable modifier in
+		// `composables/_tabs.scss`, which paints a `border-inline-end`
+		// indicator on the stacked-tab variant.
 		--set-tab-active-indicator-size: 2px;
 		--set-tab-padding-inline: calc(var(--spacing) * 3);
 		--set-tab-padding-block: calc(var(--spacing) * 2);
@@ -336,12 +342,20 @@
 
 		padding-inline: var(--set-tab-padding-inline);
 		padding-block: var(--set-tab-padding-block);
-		// The tab paints its own bottom-border indicator. Default state
-		// is `transparent`; `aria-selected="true"` flips the colour to
-		// `--set-tab-active-color` (the variant identity). Bare tablists
-		// have no baseline track to overlap, so the indicator just sits
-		// at the bottom of the tab box — no negative margin needed.
-		border-block-end: var(--set-tab-active-indicator-size) solid transparent;
+		// Tabs match the framework's nav-row active-state idiom: an
+		// `aria-current="page"` row in a body-shell nav rail paints
+		// `bg-subtle` + emphasised text (see `_menu.scss` § nav-rail
+		// menu rule). The bare `[role='tab']` reads as a button-like
+		// row — quiet text, subtle hover tint, no border-line — and
+		// the `[aria-selected='true']` state lifts to the bg-subtle
+		// fill. An earlier draft painted a 2 px `border-block-end`
+		// indicator under the active tab; combined with the button
+		// baseline's `border-radius`, the indicator's ends were
+		// rounded by the radius and read as opinionated chrome
+		// inconsistent with the rest of the framework. Background-
+		// tint indicators sit better with the framework's anchor /
+		// button / nav-row visual language.
+		border-radius: var(--radius-md);
 
 		color: var(--set-tab-color);
 		background-color: var(--set-tab-background-color);
@@ -352,25 +366,24 @@
 		// element per ARIA APG). Buttons inside tablists shouldn't paint
 		// the framework's button background — they're inline tab labels.
 		appearance: none;
-		border-inline: 0;
-		border-block-start: 0;
+		border: 0;
 		cursor: pointer;
 
 		@include transition(
 			(
 				color var(--set-tab-transition-duration),
-				border-color var(--set-tab-transition-duration),
 				background-color var(--set-tab-transition-duration)
 			)
 		);
 
-		&:hover {
-			color: var(--set-tab-active-color);
+		&:hover:not([aria-selected='true']) {
+			background-color: color-mix(in oklab, currentColor 6%, transparent);
+			color: var(--color-text-strong, var(--color-text));
 		}
 
 		&[aria-selected='true'] {
+			background-color: var(--set-tab-active-background-color);
 			color: var(--set-tab-active-color);
-			border-block-end-color: var(--set-tab-active-color);
 		}
 
 		&[aria-disabled='true'],
