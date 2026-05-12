@@ -1,278 +1,32 @@
 // ============================================================================
-// useAside — `<aside popover="manual">` off-canvas drawer.
+// useAside — `<aside popover="manual">` drawer composable layer.
 //
-// `useAside` binds to `<aside popover="manual">` and toggles the
-// `[data-aside-open]` attribute synchronously with `showPopover()` /
-// `hidePopover()`. The popover surface in `surfaces/_popover.scss`
-// already supplies the panel background, border, padding, and the
-// open / close transition — this partial adds the drawer-specific
-// geometry and slide-in transform:
+// The drawer chrome (per-edge geometry, slide transforms, transitions,
+// variant tinting) lives in `components/_aside.scss` and applies to every
+// `<aside popover>` via the native Popover API — no composable required
+// for the basic offcanvas behavior. See that partial's `aside[popover]
+// — offcanvas drawer` block for the chrome contract.
 //
-//   - Fixed-position, full viewport height (`block-size: 100dvh`) so the
-//     drawer covers the screen edge-to-edge — matches Bootstrap's
-//     offcanvas pattern.
-//   - `.start` / `.end` modifiers pin to the inline-start / inline-end
-//     edge with a slide-in transform; `.top` / `.bottom` swap to a
-//     `30dvh` band along the block axis.
-//   - All drawer rules are gated on `[data-aside-open]` so they only
-//     apply to `useAside`-managed asides — generic
-//     `<aside popover>` panels used by `usePopover` / `useTooltip`
-//     don't inherit drawer chrome.
+// This composables-layer file exists for additional behaviors that
+// `useAside` layers on top of the bare drawer (when consumers attach
+// the composable):
 //
-// `!important` on `position`, `inset-*`, sizing, and `margin` lifts
-// the popover surface defaults (`[popover]:not(output) { position:
-// absolute; max-block-size: var(--set-anchor-max-block-size) }`).
-// Without the override, the drawer would render as a menu-sized
-// floater instead of a full-viewport-height panel.
+//   - Light-dismiss outside-click handling (closes on backdrop tap)
+//   - Scroll lock on `<body>` while open
+//   - Focus trap inside the drawer
+//   - Escape-key dismiss
+//   - Backdrop scrim (`useAside` mounts and toggles its own element)
 //
-// `opacity: 1 !important` + matching `@starting-style { opacity: 1 }`
-// suppress the popover surface's `@starting-style { opacity: 0;
-// transform: scale(0.98) }` fade-and-scale so the drawer plays ONE
-// motion (a slide from the edge) instead of competing transforms.
-//
-// @starting-style specificity workaround (Chrome 148+ bleed-through):
-// Each placement's `@starting-style` block targets the BARE
-// `aside[popover].{placement}` selector (specificity 0,2,1) rather
-// than the open-state `aside[popover][data-aside-open].{placement}`
-// selector (specificity 0,3,1). If we'd nested @starting-style inside
-// the open-state rule, the compiled output would be
-// `@starting-style { aside[popover][data-aside-open].start { ... } }`
-// — same specificity as the regular `translateX(0)` rule. Chrome 148+
-// has a regression where the @starting-style body competes in the
-// normal cascade tier when transitions don't fully engage; equal
-// specificity + later source order means the off-screen transform
-// wins permanently, leaving the drawer stuck off-screen on open
-// (visible to the user as "something floats in the opposite
-// direction"). Targeting the bare selector keeps the starting-state
-// body one specificity step below the in-state rule, so the open
-// transform wins regardless. The element still matches the bare
-// `aside[popover].{placement}` selector when open (the popover +
-// class attributes don't disappear), so @starting-style still
-// resolves the from-state values it needs at the transition's first
-// frame. Same fix as `surfaces/_popover.scss`.
+// None of those require additional chrome rules in CSS — the composable
+// reads / writes attributes and event listeners directly. The placeholder
+// rule below documents the contract: `<aside popover>` is a drawer
+// regardless of whether `useAside` is attached, and the composable
+// layers behavior, not geometry.
 // ============================================================================
 
-@use '../mixins' as *;
-
 @layer composables {
-	// ── Base drawer geometry — gated on `[data-aside-open]` (open
-	// in-state) OR `[data-aside-closing]` (out-state during the close
-	// transition AND beyond, until the next open). `useAside` owns both
-	// attributes and follows this lifecycle:
-	//
-	//   open:   remove `data-aside-closing` (if lingering) → set
-	//           `data-aside-open` → showPopover() → run transition.
-	//   close:  swap `data-aside-open` → `data-aside-closing` →
-	//           run slide transition → hidePopover() → LEAVE
-	//           `data-aside-closing` set permanently until the next
-	//           open or destroy().
-	//
-	// Why leave `data-aside-closing` set after close completes?
-	// `hidePopover()` triggers the popover surface's discrete display
-	// transition; `transition-behavior: allow-discrete` keeps the
-	// element in the render tree for the surface's full transition
-	// duration (~150 ms) before display:none finally lands. If we
-	// removed `data-aside-closing` synchronously after `hidePopover()`,
-	// the cascade would flip off this geometry block during that 150 ms
-	// window — the panel would snap from `position: fixed; inset: 0;
-	// block-size: 100dvh` (drawer geometry) to `position: absolute;
-	// inset: auto; max-block-size: 18rem` (popover-surface defaults
-	// from `surfaces/_anchor-position.scss`). The user sees a
-	// ~288 px-tall ghost flash at the top of the page for 150 ms before
-	// display:none lands. Leaving the attribute set keeps the geometry
-	// block alive through the surface's discrete-transition tail, so
-	// the panel stays parked off-screen at `translateX(±100%)` and
-	// silently disappears when display:none kicks in.
-	//
-	// Why the dual-attribute gate at all (instead of just `:popover-
-	// open`)? The from-state for the OPEN transition is computed
-	// before `:popover-open` matches; if our gate were on `:popover-
-	// open` alone, the from-state would resolve to popover-surface
-	// defaults (288 px tall, position: absolute) and the panel would
-	// briefly paint at the menu-floater size before jumping to 100dvh
-	// — a visible vertical pop on every open. The `[data-aside-open]`
-	// half of the gate covers the open from-state; the
-	// `[data-aside-closing]` half covers the slide-out and the
-	// post-close discrete-transition tail.
-	aside[popover][data-aside-open],
-	aside[popover][data-aside-closing] {
-		position: fixed !important;
-		// Load-bearing: this `display: flex` would defeat the UA
-		// `[popover]:not(:popover-open) { display: none }` if the
-		// selector were broadened beyond the dual-attribute gate (e.g.
-		// to bare `aside[popover]`). The dual-attribute gate is held by
-		// `createAside`, which sets `[data-aside-closing]` synchronously
-		// and intentionally does NOT remove it after `hidePopover()`
-		// (it persists until the next `show()` or `destroy()`). See
-		// header for the full lifecycle. Keep the gate or the drawer
-		// stays rendered after close — same bug class as the
-		// `dialog.scrollable` and `output[popover]` fixes.
-		display: flex;
-		flex-direction: column;
-		gap: calc(var(--spacing) * 4);
-		max-inline-size: 100dvw !important;
-		margin: 0 !important;
-		overflow: auto;
-		opacity: 1 !important;
-		// Drawer chrome — paint a subtle elevation shadow on the inner
-		// edge of the panel so the drawer reads as a layer above the
-		// page rather than a flush panel that just slid in from
-		// nowhere. Mirrors mailbox's `--bs-offcanvas-box-shadow:
-		// var(--bs-box-shadow-sm)`. Use `!important` to beat the
-		// popover surface's own (heavier) shadow so the drawer keeps
-		// a clean single shadow.
-		box-shadow: 0 0.125rem 0.25rem color-mix(in srgb, black 7.5%, transparent) !important;
-		// Drawer needs a higher stacking context than the body grid +
-		// any sticky chrome, but lower than dialogs (which use the
-		// platform top layer via `showModal()`). 50 matches the showcase
-		// sidebar drawer convention.
-		z-index: 50;
-	}
-
-	// ── start (inline-start edge, slides in from the leading side) ────
-	aside[popover][data-aside-open].start,
-	aside[popover][data-aside-closing].start {
-		inset-block: 0 !important;
-		inset-inline-start: 0 !important;
-		inset-inline-end: auto !important;
-		inline-size: min(21.875rem, 100dvw) !important;
-		block-size: 100dvh !important;
-		max-block-size: 100dvh !important;
-		min-block-size: 100dvh !important;
-		border-inline-end: 1px solid var(--color-border);
-	}
-	aside[popover][data-aside-open].start {
-		transform: translateX(0);
-	}
-	// Starting-state for `.start` — targets bare `aside[popover].start`
-	// (0,2,1) so the open-state rule above (0,3,1) wins by specificity
-	// even if Chrome's @starting-style cascade tier leaks. See header.
-	@starting-style {
-		aside[popover].start {
-			transform: translateX(-100%);
-			opacity: 1;
-		}
-	}
-	aside[popover][data-aside-closing].start {
-		transform: translateX(-100%);
-	}
-
-	// ── end (inline-end edge, slides in from the trailing side) ──────
-	aside[popover][data-aside-open].end,
-	aside[popover][data-aside-closing].end {
-		inset-block: 0 !important;
-		inset-inline-start: auto !important;
-		inset-inline-end: 0 !important;
-		inline-size: min(21.875rem, 100dvw) !important;
-		block-size: 100dvh !important;
-		max-block-size: 100dvh !important;
-		min-block-size: 100dvh !important;
-		border-inline-start: 1px solid var(--color-border);
-	}
-	aside[popover][data-aside-open].end {
-		transform: translateX(0);
-	}
-	@starting-style {
-		aside[popover].end {
-			transform: translateX(100%);
-			opacity: 1;
-		}
-	}
-	aside[popover][data-aside-closing].end {
-		transform: translateX(100%);
-	}
-
-	// ── top (block-start edge, slides down from above) ───────────────
-	aside[popover][data-aside-open].top,
-	aside[popover][data-aside-closing].top {
-		inset-block-start: 0 !important;
-		inset-block-end: auto !important;
-		inset-inline: 0 !important;
-		inline-size: 100dvw !important;
-		block-size: 30dvh !important;
-		max-block-size: 30dvh !important;
-		border-block-end: 1px solid var(--color-border);
-	}
-	aside[popover][data-aside-open].top {
-		transform: translateY(0);
-	}
-	@starting-style {
-		aside[popover].top {
-			transform: translateY(-100%);
-			opacity: 1;
-		}
-	}
-	aside[popover][data-aside-closing].top {
-		transform: translateY(-100%);
-	}
-
-	// ── bottom (block-end edge, slides up from below) ────────────────
-	aside[popover][data-aside-open].bottom,
-	aside[popover][data-aside-closing].bottom {
-		inset-block-start: auto !important;
-		inset-block-end: 0 !important;
-		inset-inline: 0 !important;
-		inline-size: 100dvw !important;
-		block-size: 30dvh !important;
-		max-block-size: 30dvh !important;
-		border-block-start: 1px solid var(--color-border);
-	}
-	aside[popover][data-aside-open].bottom {
-		transform: translateY(0);
-	}
-	@starting-style {
-		aside[popover].bottom {
-			transform: translateY(100%);
-			opacity: 1;
-		}
-	}
-	aside[popover][data-aside-closing].bottom {
-		transform: translateY(100%);
-	}
-
-	// ── Default placement (no edge modifier) — slide from end. ───────
-	aside[popover][data-aside-open]:not(.start):not(.end):not(.top):not(.bottom),
-	aside[popover][data-aside-closing]:not(.start):not(.end):not(.top):not(.bottom) {
-		inset-block: 0 !important;
-		inset-inline-start: auto !important;
-		inset-inline-end: 0 !important;
-		inline-size: min(21.875rem, 100dvw) !important;
-		block-size: 100dvh !important;
-		max-block-size: 100dvh !important;
-		min-block-size: 100dvh !important;
-		border-inline-start: 1px solid var(--color-border);
-	}
-	aside[popover][data-aside-open]:not(.start):not(.end):not(.top):not(.bottom) {
-		transform: translateX(0);
-	}
-	// Default placement starting-state — bare `aside[popover]:not(...)`
-	// (0,5,1: 1 element + 1 attr + 4 pseudo-class `:not()`) is still one
-	// step below the open-state rule (0,6,1, adds `[data-aside-open]`),
-	// preserving the specificity gap that lets the open transform win.
-	@starting-style {
-		aside[popover]:not(.start):not(.end):not(.top):not(.bottom) {
-			transform: translateX(100%);
-			opacity: 1;
-		}
-	}
-	aside[popover][data-aside-closing]:not(.start):not(.end):not(.top):not(.bottom) {
-		transform: translateX(100%);
-	}
-
-	// Transition list — includes `display` + `overlay` with
-	// `allow-discrete` so the open / close lifecycle plays through
-	// instead of snapping instantly. Applied to both lifecycle states
-	// so the close transition (where `[data-aside-closing]` matches)
-	// retains these timings.
-	aside[popover][data-aside-open],
-	aside[popover][data-aside-closing] {
-		@include transition(
-			(
-				transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
-				opacity 0.25s ease-out,
-				overlay 0.25s allow-discrete,
-				display 0.25s allow-discrete
-			)
-		);
-	}
+	// Intentionally empty — `useAside`'s behavior is JS-side; the
+	// drawer's visual chrome (geometry, slide transforms, variant
+	// tinting, forced-colors fallback) lives in
+	// `components/_aside.scss` and applies to every `<aside popover>`.
 }

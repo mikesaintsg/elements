@@ -385,38 +385,276 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// aside[popover] — generic tangential-info popover panel.
+	// aside[popover] — offcanvas drawer (Bootstrap-parity).
 	//
-	// `<aside popover>` is `<aside>`'s top-layer flavor: a button-triggered
-	// floating panel for "tangentially related" content (the W3C
-	// definition of `<aside>`). The popover surface in
-	// `surfaces/_popover.scss` already paints the panel chrome (color,
-	// background, border, radius, padding, box-shadow, max-inline-size
-	// with viewport-clamp, scale-in transition); the aside element
-	// doesn't override any of it. Variant classes (`.primary`,
-	// `.success`, …) cascade through the popover surface's
-	// `--set-popover-*` tokens to retint perimeter + body.
+	// `<aside popover>` IS the framework's drawer / offcanvas surface — a
+	// full-viewport-edge slide-in panel that floats above the page in the
+	// top layer (does NOT shift the document below). One element + one
+	// placement modifier; no `useAside` composable required for the basic
+	// drawer chrome (just `popovertarget` from the trigger button).
 	//
-	// Drawer geometry — when `useAside` attaches, it sets
-	// `[data-aside-open]` and `composables/_aside.scss` repaints the
-	// aside as a full-viewport-edge slide-out drawer (its rules sit in
-	// a later cascade layer so they win against the surface defaults).
-	// Without `useAside`, `<aside popover>` stays as the surface's
-	// anchor-positioned panel.
+	// Markup contract:
+	//   <button popovertarget="my-drawer">Open</button>
+	//   <aside id="my-drawer" popover class="end">
+	//     <header>
+	//       <strong>Title</strong>
+	//       <button popovertarget="my-drawer" popovertargetaction="hide"
+	//               aria-label="Close">×</button>
+	//     </header>
+	//     <p>Body content…</p>
+	//   </aside>
+	//
+	// Placement modifiers — slide in from each viewport edge:
+	//   .start   — leading edge (inline-start), full block-height
+	//   .end     — trailing edge (inline-end), full block-height [DEFAULT]
+	//   .top     — block-start edge, full inline-width, 30dvh tall
+	//   .bottom  — block-end edge, full inline-width, 30dvh tall
+	//
+	// Transition machinery — pure CSS, no JS-side class flips. The bare
+	// `aside[popover].{placement}` rule sets the OFF-SCREEN transform
+	// (the resting / closed state); the `:popover-open` rule on the
+	// same selector sets the on-screen transform (`translateX(0)`).
+	// `@starting-style` provides the from-state at the first frame of
+	// the open animation. `transition-behavior: allow-discrete` on
+	// `display` + `overlay` keeps the element in the render tree for
+	// the full transition duration on close — without this, the
+	// drawer would snap from on-screen to display:none and the slide-
+	// out never plays.
+	//
+	// Anchor positioning is OPTED OUT in `surfaces/_anchor-position.scss`
+	// (the `:not(aside)` clause in the popover-surface scope) so the
+	// drawer geometry below applies cleanly.
+	//
+	// Variant tinting — `aside[popover].{variant}` retints through the
+	// popover surface's `--set-popover-*` tokens (bg-subtle / text-
+	// emphasis / border-subtle triplet). The drawer's chrome (slide
+	// transform, fixed-edge geometry) is independent of the variant
+	// cascade so any placement composes cleanly with any variant.
+	//
+	// `useAside` (optional) layers richer behaviors on top of the chrome:
+	// backdrop scrim, body-scroll lock, focus trap, escape-key dismiss.
+	// The chrome below works without it — the composable adds polish,
+	// not geometry.
 	//
 	// What `<aside popover>` is NOT:
 	//   - NOT an alert. Alerts (`<aside role="alert">`) sit IN FLOW,
-	//     shift the document below, and announce via the implicit
-	//     `aria-live="assertive"`. The popover sits in the top layer
-	//     and does not shift content.
+	//     shift the document below, announce via `aria-live="assertive"`.
 	//   - NOT a toast. Toasts (`<output popover>`, see
-	//     `components/_output.scss`) are transient corner-anchored
-	//     status notifications with `role="status"` politeness and
-	//     auto-dismiss. `<aside popover>` is a user-controlled panel
-	//     opened by a button.
-	//   - NOT a tooltip. Tooltips (`[popover="hint"]` or
-	//     `[role="tooltip"]`) are smaller, label-style, hover-driven.
+	//     `components/_output.scss`) are corner-anchored transient
+	//     notifications with `role="status"` politeness + auto-dismiss.
+	//   - NOT a tooltip. Tooltips (`[popover="hint"]` /
+	//     `[role="tooltip"]`) are small label-style hover panels.
 	// --------------------------------------------------------------------------
+
+	// Drawer tokens — declared on `:root` so consumers can retune
+	// width / height / edge inset / z-index globally.
+	:root {
+		// Inline-axis drawer width (`.start` / `.end`) — Bootstrap's
+		// `--bs-offcanvas-width: 21.875rem` (350 px) is the canonical
+		// docs / mail / settings panel size; mobile-clamped via the
+		// rule below so the panel never overflows narrow viewports.
+		--set-aside-drawer-inline-size: 21.875rem;
+		// Block-axis drawer height (`.top` / `.bottom`) — Bootstrap's
+		// `--bs-offcanvas-height: 30vh` is a comfortable filter / picker
+		// height that leaves the page below visible.
+		--set-aside-drawer-block-size: 30dvh;
+		// Drawer z-index — above body chrome (sticky header, body grid),
+		// below modals (which use the platform top layer via
+		// `dialog.showModal()`). Matches the showcase sidebar drawer
+		// convention. Native popovers also adopt the top layer so the
+		// `z-index` is mainly a fallback hint for the transition tail.
+		--set-aside-drawer-z-index: var(--set-z-index-fixed, 50);
+	}
+
+	// Drawer chrome — applies to every `aside[popover]` so the closed
+	// state (display:none) already has drawer geometry. The on-screen
+	// transform flips via `:popover-open`; the open / close transition
+	// animates between them.
+	aside[popover] {
+		// Override popover surface defaults (which set
+		// `position: absolute; max-inline-size: 17.25rem`) — drawers
+		// are viewport-fixed and edge-to-edge along one axis.
+		// The popover surface's `max-inline-size` is computed from
+		// `min(--set-popover-max-inline-size, --set-anchor-max-inline-
+		// size, 100vw - --set-popover-viewport-inset * 2)`. Lift all
+		// three contributing tokens to 100dvw / 0 so the surface's
+		// clamp formula collapses to "no clamp" for drawers. (Surfaces
+		// sits AFTER components in cascade order, so direct property
+		// overrides without `!important` would lose; token cascade
+		// works regardless of layer order because the surface reads
+		// `var(--set-…)` resolved at the consumer's element scope.)
+		--set-popover-max-inline-size: 100dvw;
+		--set-anchor-max-inline-size: 100dvw;
+		--set-popover-viewport-inset: 0;
+
+		position: fixed;
+		margin: 0;
+		max-inline-size: 100dvw;
+		max-block-size: 100dvh;
+
+		// Inner-stack rhythm — `<header>` / body / `<footer>` flow as a
+		// flex-column with breathing space between regions. Matches the
+		// Bootstrap offcanvas header / body / footer rhythm.
+		flex-direction: column;
+		gap: calc(var(--spacing) * 4);
+
+		// Drawer shadow — subtle elevation so the panel reads as a layer
+		// above the page rather than a flush surface that slid in from
+		// nowhere. Overriding the popover surface's centered shadow with
+		// the small-elevation token gives a directional cue.
+		--set-popover-box-shadow: var(--set-box-shadow-sm);
+
+		// Transition list — `transform` + `opacity` for the slide-in,
+		// `overlay` + `display` with `allow-discrete` so the element
+		// stays in the render tree for the full duration on close.
+		// Without `allow-discrete` on `display`, the close transition
+		// would snap instantly to `display: none` and the slide-out
+		// never plays.
+		@include transition(
+			(
+				transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+				opacity 0.25s ease-out,
+				overlay 0.25s allow-discrete,
+				display 0.25s allow-discrete
+			)
+		);
+
+		// Default placement = end (inline-end edge). The block below
+		// repeats per placement; the default lives on bare
+		// `aside[popover]` so a placement-less drawer still slides
+		// in from somewhere reasonable.
+		inset-block: 0;
+		inset-inline-start: auto;
+		inset-inline-end: 0;
+		inline-size: min(var(--set-aside-drawer-inline-size), 100dvw);
+		block-size: 100dvh;
+		border-inline-start: 1px solid var(--set-popover-border-color);
+		// Closed state — off-screen via translateX (slid out to the end).
+		transform: translateX(100%);
+		opacity: 0;
+	}
+
+	// Open state — the `:popover-open` pseudo activates `display: flex`
+	// (overriding the UA `[popover]:not(:popover-open) { display: none }`
+	// rule) and animates the slide-in. Each placement re-states the
+	// on-screen transform; the bare rule sets the resting (off-screen)
+	// position for the close transition to interpolate back into.
+	aside[popover]:popover-open {
+		display: flex;
+		transform: translateX(0);
+		opacity: 1;
+	}
+
+	// `@starting-style` provides the first-frame "appearance" state for
+	// the open transition. Without it, the element would paint on-screen
+	// immediately (no slide). Targets the open-state selector so it
+	// resolves the from-state values at the transition's first frame.
+	@starting-style {
+		aside[popover]:popover-open {
+			transform: translateX(100%);
+			opacity: 0;
+		}
+	}
+
+	// ── .start — slide from the inline-start (leading) edge ──────────
+	aside[popover].start {
+		inset-inline-start: 0;
+		inset-inline-end: auto;
+		border-inline-start: 0;
+		border-inline-end: 1px solid var(--set-popover-border-color);
+		transform: translateX(-100%);
+	}
+	aside[popover].start:popover-open {
+		transform: translateX(0);
+	}
+	@starting-style {
+		aside[popover].start:popover-open {
+			transform: translateX(-100%);
+		}
+	}
+
+	// ── .end — slide from the inline-end (trailing) edge (= default) ─
+	aside[popover].end {
+		inset-inline-start: auto;
+		inset-inline-end: 0;
+		border-inline-start: 1px solid var(--set-popover-border-color);
+		border-inline-end: 0;
+		transform: translateX(100%);
+	}
+	aside[popover].end:popover-open {
+		transform: translateX(0);
+	}
+	@starting-style {
+		aside[popover].end:popover-open {
+			transform: translateX(100%);
+		}
+	}
+
+	// ── .top — slide down from the block-start edge ──────────────────
+	aside[popover].top {
+		inset-block-start: 0;
+		inset-block-end: auto;
+		inset-inline: 0;
+		inline-size: 100dvw;
+		block-size: var(--set-aside-drawer-block-size);
+		border-inline: 0;
+		border-block-start: 0;
+		border-block-end: 1px solid var(--set-popover-border-color);
+		transform: translateY(-100%);
+	}
+	aside[popover].top:popover-open {
+		transform: translateY(0);
+	}
+	@starting-style {
+		aside[popover].top:popover-open {
+			transform: translateY(-100%);
+		}
+	}
+
+	// ── .bottom — slide up from the block-end edge ───────────────────
+	aside[popover].bottom {
+		inset-block-start: auto;
+		inset-block-end: 0;
+		inset-inline: 0;
+		inline-size: 100dvw;
+		block-size: var(--set-aside-drawer-block-size);
+		border-inline: 0;
+		border-block-start: 1px solid var(--set-popover-border-color);
+		border-block-end: 0;
+		transform: translateY(100%);
+	}
+	aside[popover].bottom:popover-open {
+		transform: translateY(0);
+	}
+	@starting-style {
+		aside[popover].bottom:popover-open {
+			transform: translateY(100%);
+		}
+	}
+
+	// Variant tinting — through the popover surface's tokens so the
+	// background / color / border all retint coherently. Drawers and
+	// alerts share the same triplet (bg-subtle body, text-emphasis text,
+	// border-subtle perimeter) — the visual contract is consistent
+	// across the framework's variant surfaces.
+	@each $variant in (primary, secondary, tertiary, success, warning, danger, information) {
+		aside[popover].#{$variant} {
+			--set-popover-color: var(--color-#{$variant}-text-emphasis);
+			--set-popover-background-color: var(--color-#{$variant}-bg-subtle);
+			--set-popover-border-color: var(--color-#{$variant}-border-subtle);
+		}
+	}
+
+	// Forced-colors fallback — drop variant tints and route through the
+	// system color keywords so the drawer's shape survives Windows High
+	// Contrast mode.
+	aside[popover] {
+		@include forced-colors {
+			background-color: Canvas;
+			color: CanvasText;
+			border-color: CanvasText;
+		}
+	}
 
 	// useAside drawer chrome lives in `composables/_aside.scss` so the
 	// popover-mode geometry overrides surface defaults from a later

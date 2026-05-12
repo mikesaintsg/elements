@@ -65,22 +65,31 @@
 	// (Mailbox's `.popover-top { position-area: top; align-self: end; …` is
 	// the canonical recipe — the alignment is what turns a "somewhere in
 	// that band" placement into a "kissing the anchor edge" placement.)
-	[popover].top {
+	// `:not(aside):not(output)` — aside drawers (offcanvas, see
+	// `components/_aside.scss`) and output toasts (corner-anchored, see
+	// `components/_output.scss`) have their own viewport-fixed placement
+	// chrome that consumes the `.start` / `.end` / `.top` / `.bottom`
+	// modifier classes. Setting `position-area` on those elements would
+	// activate anchor positioning and fight their viewport-edge geometry.
+	// The `:not()` chain keeps the placement modifiers scoped to
+	// anchor-positioned popovers (dropdowns, tooltips, menus, generic
+	// `<div popover>` panels).
+	[popover]:not(aside):not(output).top {
 		position-area: block-start;
 		align-self: end;
 		justify-self: anchor-center;
 	}
-	[popover].bottom {
+	[popover]:not(aside):not(output).bottom {
 		position-area: block-end;
 		align-self: start;
 		justify-self: anchor-center;
 	}
-	[popover].start {
+	[popover]:not(aside):not(output).start {
 		position-area: inline-start;
 		align-self: anchor-center;
 		justify-self: end;
 	}
-	[popover].end {
+	[popover]:not(aside):not(output).end {
 		position-area: inline-end;
 		align-self: anchor-center;
 		justify-self: start;
@@ -126,22 +135,22 @@
 	//                        inline-END edge. `justify-self: end` puts the
 	//                        popover's end at the area's end = anchor's
 	//                        end edge.
-	[popover].top-start {
+	[popover]:not(aside):not(output).top-start {
 		position-area: block-start span-inline-end;
 		align-self: end;
 		justify-self: start;
 	}
-	[popover].top-end {
+	[popover]:not(aside):not(output).top-end {
 		position-area: block-start span-inline-start;
 		align-self: end;
 		justify-self: end;
 	}
-	[popover].bottom-start {
+	[popover]:not(aside):not(output).bottom-start {
 		position-area: block-end span-inline-end;
 		align-self: start;
 		justify-self: start;
 	}
-	[popover].bottom-end {
+	[popover]:not(aside):not(output).bottom-end {
 		position-area: block-end span-inline-start;
 		align-self: start;
 		justify-self: end;

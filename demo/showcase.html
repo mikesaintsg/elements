@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T14:51:21.608Z" />
+		<meta name="build-id" content="2026-05-12T15:22:54.525Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -8153,197 +8153,342 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										`section`,
 										{ id: `aside-popover` },
 										[
-											Y(`h2`, null, [Z(`5. Popover panel — `), Y(`code`, null, `<aside popover>`)]),
+											Y(`h2`, null, [
+												Z(`5. Drawer / offcanvas — `),
+												Y(`code`, null, `<aside popover>`),
+											]),
 											Y(`p`, null, [
 												Z(` The `),
 												Y(`code`, null, `[popover]`),
 												Z(` attribute lifts the aside into the browser's `),
 												Y(`strong`, null, `top layer`),
 												Z(
-													` — an overlay above the surrounding UI, not part of the document flow. A button with `,
+													` as a slide-in drawer (Bootstrap offcanvas parity). The drawer floats above the page — it does NOT shift the document below. A button with `,
 												),
 												Y(`code`, null, `popovertarget="…"`),
-												Z(` opens it; a second button inside the panel with `),
+												Z(` opens it; a second button inside with `),
 												Y(`code`, null, `popovertargetaction="hide"`),
 												Z(` closes it. No JS required. `),
 											]),
 											Y(`p`, null, [
-												Y(`strong`, null, `Not an alert, not a toast.`),
-												Z(` The popover panel is a `),
-												Y(`em`, null, `user-controlled`),
+												Y(`strong`, null, `Placement modifiers`),
+												Z(` pick which edge the drawer slides in from: `),
+												Y(`code`, null, `.start`),
+												Z(` (leading edge, full height), `),
+												Y(`code`, null, `.end`),
+												Z(` (trailing edge, full height — the default), `),
+												Y(`code`, null, `.top`),
+												Z(` (block-start, 30dvh tall), `),
+												Y(`code`, null, `.bottom`),
 												Z(
-													` tangential-info surface — opened on demand, dismissed by the user. Two adjacent patterns belong elsewhere: `,
+													` (block-end, 30dvh tall). The directional slide animation matches the placement — left edge slides from the left, top edge slides down from above, etc. `,
 												),
+											]),
+											Y(`p`, null, [
+												Y(`strong`, null, `Variants`),
+												Z(` retint the drawer through `),
+												Y(`code`, null, `--set-popover-*`),
+												Z(` tokens (`),
+												Y(`code`, null, `bg-subtle`),
+												Z(` body, `),
+												Y(`code`, null, `border-subtle`),
+												Z(` perimeter, `),
+												Y(`code`, null, `text-emphasis`),
+												Z(` text). Any placement composes with any variant. `),
+											]),
+											Y(`p`, null, [
+												Y(`strong`, null, `Not an alert, not a toast.`),
+												Z(` Drawers are top-layer overlays: `),
 											]),
 											Y(`ul`, null, [
 												Y(`li`, null, [
 													Y(`strong`, null, `In-flow alerts`),
-													Z(` (section\xA03 above) use `),
+													Z(` (section 3) use `),
 													Y(`code`, null, `<aside role="alert">`),
-													Z(
-														` — they sit in the document flow, push content below, and announce via `,
-													),
+													Z(` — sit in document flow, shift content below, announce via `),
 													Y(`code`, null, `aria-live="assertive"`),
 													Z(`. `),
 												]),
 												Y(`li`, null, [
 													Y(`strong`, null, `Top-layer toasts`),
-													Z(` are `),
+													Z(` use `),
 													Y(`code`, null, `<output popover>`),
-													Z(` — transient corner-anchored notifications with implicit `),
-													Y(`code`, null, `role="status"`),
-													Z(` and auto-dismiss. See the OutputPage for the toast chrome. `),
+													Z(
+														` — transient corner-anchored notifications with auto-dismiss. See OutputPage. `,
+													),
+												]),
+												Y(`li`, null, [
+													Y(`strong`, null, `Modals`),
+													Z(` use `),
+													Y(`code`, null, `<dialog>`),
+													Z(` opened with `),
+													Y(`code`, null, `.showModal()`),
+													Z(` — focus-trapped, with a backdrop. See DialogElementPage. `),
 												]),
 											]),
-											Y(`p`, null, [
-												Y(`strong`, null, `Width & placement.`),
-												Z(` The popover surface clamps the panel to `),
-												Y(
-													`code`,
-													null,
-													`min(--set-popover-max-inline-size, --set-anchor-max-inline-size, 100vw - inset×2)`,
-												),
-												Z(
-													` (default target ~17.25rem; viewport-clamped on narrow screens). Without an anchor, popovers center in the viewport. With anchor positioning, they anchor under their trigger button via `,
-												),
-												Y(`code`, null, `position-area: block-end`),
-												Z(
-													`. Mobile viewports auto-inset the panel from the screen edges so it never touches the device frame. `,
-												),
-											]),
-											Y(`p`, null, [
-												Y(`strong`, null, `Drawer mode.`),
-												Z(` When the `),
-												Y(`code`, null, `useAside`),
-												Z(` composable attaches to this same `),
-												Y(`code`, null, `<aside popover>`),
-												Z(`, it sets `),
-												Y(`code`, null, `[data-aside-open]`),
-												Z(
-													` and a composables-layer rule repaints the geometry into a full-viewport-edge slide-out drawer ( `,
-												),
-												Y(`code`, null, `.start`),
-												Z(` / `),
-												Y(`code`, null, `.end`),
-												Z(` / `),
-												Y(`code`, null, `.top`),
-												Z(` / `),
-												Y(`code`, null, `.bottom`),
-												Z(
-													` placement modifiers). The examples below stay in plain popover mode — drawer chrome is covered on the DrawerPage / composable docs. `,
-												),
-											]),
+											Y(`h3`, null, `Placement modifiers`),
+											Y(`p`, null, `Click each button to open the drawer from the matching edge.`),
 											Y(`div`, { style: { display: `flex`, 'flex-wrap': `wrap`, gap: `0.5rem` } }, [
 												Y(
 													`button`,
-													{ type: `button`, popovertarget: `aside-pop-default` },
-													`Default`,
+													{ type: `button`, popovertarget: `aside-drawer-start` },
+													`Slide from start`,
 												),
 												Y(
 													`button`,
-													{ type: `button`, popovertarget: `aside-pop-primary`, class: `primary` },
+													{ type: `button`, popovertarget: `aside-drawer-end` },
+													`Slide from end (default)`,
+												),
+												Y(
+													`button`,
+													{ type: `button`, popovertarget: `aside-drawer-top` },
+													`Slide from top`,
+												),
+												Y(
+													`button`,
+													{ type: `button`, popovertarget: `aside-drawer-bottom` },
+													`Slide from bottom`,
+												),
+											]),
+											Y(`aside`, { id: `aside-drawer-start`, popover: ``, class: `start` }, [
+												Y(`header`, null, [
+													Y(`strong`, null, `Start drawer`),
+													Y(
+														`button`,
+														{
+															type: `button`,
+															class: `subtle icon-only`,
+															popovertarget: `aside-drawer-start`,
+															popovertargetaction: `hide`,
+															'aria-label': `Close`,
+															style: { 'margin-inline-start': `auto` },
+														},
+														` × `,
+													),
+												]),
+												Y(
+													`p`,
+													{ style: { 'padding-inline': `1rem` } },
+													` Slides in from the inline-start edge (left in LTR, right in RTL). Full block-height. Ideal for primary navigation, filter panels, or workspace switchers. `,
+												),
+											]),
+											Y(`aside`, { id: `aside-drawer-end`, popover: ``, class: `end` }, [
+												Y(`header`, null, [
+													Y(`strong`, null, `End drawer`),
+													Y(
+														`button`,
+														{
+															type: `button`,
+															class: `subtle icon-only`,
+															popovertarget: `aside-drawer-end`,
+															popovertargetaction: `hide`,
+															'aria-label': `Close`,
+															style: { 'margin-inline-start': `auto` },
+														},
+														` × `,
+													),
+												]),
+												Y(
+													`p`,
+													{ style: { 'padding-inline': `1rem` } },
+													` Slides in from the inline-end edge (right in LTR). Full block-height. The default placement — ideal for inspectors, settings panels, and detail views that supplement the main content. `,
+												),
+											]),
+											Y(`aside`, { id: `aside-drawer-top`, popover: ``, class: `top` }, [
+												Y(`header`, null, [
+													Y(`strong`, null, `Top drawer`),
+													Y(
+														`button`,
+														{
+															type: `button`,
+															class: `subtle icon-only`,
+															popovertarget: `aside-drawer-top`,
+															popovertargetaction: `hide`,
+															'aria-label': `Close`,
+															style: { 'margin-inline-start': `auto` },
+														},
+														` × `,
+													),
+												]),
+												Y(
+													`p`,
+													{ style: { 'padding-inline': `1rem` } },
+													` Slides down from the block-start edge. 30dvh tall by default. Useful for command palettes, quick search, or page-level notifications that need more room than a toast. `,
+												),
+											]),
+											Y(`aside`, { id: `aside-drawer-bottom`, popover: ``, class: `bottom` }, [
+												Y(`header`, null, [
+													Y(`strong`, null, `Bottom drawer`),
+													Y(
+														`button`,
+														{
+															type: `button`,
+															class: `subtle icon-only`,
+															popovertarget: `aside-drawer-bottom`,
+															popovertargetaction: `hide`,
+															'aria-label': `Close`,
+															style: { 'margin-inline-start': `auto` },
+														},
+														` × `,
+													),
+												]),
+												Y(
+													`p`,
+													{ style: { 'padding-inline': `1rem` } },
+													` Slides up from the block-end edge. 30dvh tall by default. Common on mobile for action sheets, share menus, or contextual pickers (mirrors iOS / Material bottom sheets). `,
+												),
+											]),
+											Y(`h3`, null, `Variant cascade`),
+											Y(
+												`p`,
+												null,
+												` Any placement composes with any variant. The drawer's body, border, and text all retint through the popover surface tokens. Trigger buttons below open primary / success / warning / danger drawers, each on the end edge. `,
+											),
+											Y(`div`, { style: { display: `flex`, 'flex-wrap': `wrap`, gap: `0.5rem` } }, [
+												Y(
+													`button`,
+													{
+														type: `button`,
+														popovertarget: `aside-drawer-primary`,
+														class: `primary`,
+													},
 													`Primary`,
 												),
 												Y(
 													`button`,
-													{ type: `button`, popovertarget: `aside-pop-success`, class: `success` },
+													{
+														type: `button`,
+														popovertarget: `aside-drawer-success`,
+														class: `success`,
+													},
 													`Success`,
 												),
 												Y(
 													`button`,
-													{ type: `button`, popovertarget: `aside-pop-warning`, class: `warning` },
+													{
+														type: `button`,
+														popovertarget: `aside-drawer-warning`,
+														class: `warning`,
+													},
 													`Warning`,
 												),
 												Y(
 													`button`,
-													{ type: `button`, popovertarget: `aside-pop-danger`, class: `danger` },
+													{ type: `button`, popovertarget: `aside-drawer-danger`, class: `danger` },
 													`Danger`,
 												),
 											]),
-											Y(`aside`, { id: `aside-pop-default`, popover: `` }, [
-												Y(`p`, null, [
-													Z(
-														` Default popover panel — neutral chrome from the framework's popover surface (`,
+											Y(
+												`aside`,
+												{ id: `aside-drawer-primary`, popover: ``, class: `end primary` },
+												[
+													Y(`header`, null, [
+														Y(`strong`, null, `Primary drawer`),
+														Y(
+															`button`,
+															{
+																type: `button`,
+																class: `subtle icon-only`,
+																popovertarget: `aside-drawer-primary`,
+																popovertargetaction: `hide`,
+																'aria-label': `Close`,
+																style: { 'margin-inline-start': `auto` },
+															},
+															` × `,
+														),
+													]),
+													Y(`p`, { style: { 'padding-inline': `1rem` } }, [
+														Z(` Tinted through the popover surface's `),
+														Y(`code`, null, `--set-popover-*`),
+														Z(` token triplet (`),
+														Y(`code`, null, `bg-subtle`),
+														Z(` / `),
+														Y(`code`, null, `border-subtle`),
+														Z(` / `),
+														Y(`code`, null, `text-emphasis`),
+														Z(
+															`) — same triplet the in-flow primary alert uses, but lifted into the top layer. `,
+														),
+													]),
+												],
+											),
+											Y(
+												`aside`,
+												{ id: `aside-drawer-success`, popover: ``, class: `end success` },
+												[
+													Y(`header`, null, [
+														Y(`strong`, null, `Success drawer`),
+														Y(
+															`button`,
+															{
+																type: `button`,
+																class: `subtle icon-only`,
+																popovertarget: `aside-drawer-success`,
+																popovertargetaction: `hide`,
+																'aria-label': `Close`,
+																style: { 'margin-inline-start': `auto` },
+															},
+															` × `,
+														),
+													]),
+													Y(
+														`p`,
+														{ style: { 'padding-inline': `1rem` } },
+														` Success variant — green-tinted body, emphasis-colored text. The panel doesn't announce itself like a status banner does (no implicit live region); user-triggered, user-dismissed. `,
 													),
-													Y(`code`, null, `surfaces/_popover.scss`),
-													Z(`): perimeter border, subtle elevation, scale-in transition. `),
-												]),
-												Y(
-													`button`,
-													{
-														type: `button`,
-														class: `subtle small`,
-														popovertarget: `aside-pop-default`,
-														popovertargetaction: `hide`,
-													},
-													` Close `,
-												),
-											]),
-											Y(`aside`, { id: `aside-pop-primary`, popover: ``, class: `primary` }, [
-												Y(`p`, null, [
-													Z(` Variant classes retint the panel via `),
-													Y(`code`, null, `--set-popover-*`),
-													Z(` tokens (`),
-													Y(`code`, null, `bg-subtle`),
-													Z(` body, `),
-													Y(`code`, null, `border-subtle`),
-													Z(` perimeter, `),
-													Y(`code`, null, `text-emphasis`),
-													Z(` text). The primary variant tints toward `),
-													Y(`code`, null, `--color-primary-*`),
-													Z(`. `),
-												]),
-												Y(
-													`button`,
-													{
-														type: `button`,
-														class: `primary small`,
-														popovertarget: `aside-pop-primary`,
-														popovertargetaction: `hide`,
-													},
-													` Confirm `,
-												),
-											]),
-											Y(`aside`, { id: `aside-pop-success`, popover: ``, class: `success` }, [
-												Y(`p`, null, [
-													Z(` Success variant — uses the `),
-													Y(`code`, null, `--color-success-bg-subtle`),
-													Z(` + `),
-													Y(`code`, null, `--color-success-text-emphasis`),
-													Z(
-														` theme tokens. Same triplet as the success alert, but the panel sits in the top layer. `,
+												],
+											),
+											Y(
+												`aside`,
+												{ id: `aside-drawer-warning`, popover: ``, class: `end warning` },
+												[
+													Y(`header`, null, [
+														Y(`strong`, null, `Warning drawer`),
+														Y(
+															`button`,
+															{
+																type: `button`,
+																class: `subtle icon-only`,
+																popovertarget: `aside-drawer-warning`,
+																popovertargetaction: `hide`,
+																'aria-label': `Close`,
+																style: { 'margin-inline-start': `auto` },
+															},
+															` × `,
+														),
+													]),
+													Y(
+														`p`,
+														{ style: { 'padding-inline': `1rem` } },
+														` Warning variant — amber-tinted. Suitable for "are you sure?" confirmation drawers where the user needs to acknowledge a state change without leaving the current view. `,
+													),
+												],
+											),
+											Y(`aside`, { id: `aside-drawer-danger`, popover: ``, class: `end danger` }, [
+												Y(`header`, null, [
+													Y(`strong`, null, `Danger drawer`),
+													Y(
+														`button`,
+														{
+															type: `button`,
+															class: `subtle icon-only`,
+															popovertarget: `aside-drawer-danger`,
+															popovertargetaction: `hide`,
+															'aria-label': `Close`,
+															style: { 'margin-inline-start': `auto` },
+														},
+														` × `,
 													),
 												]),
-											]),
-											Y(`aside`, { id: `aside-pop-warning`, popover: ``, class: `warning` }, [
-												Y(`p`, null, [
+												Y(`p`, { style: { 'padding-inline': `1rem` } }, [
 													Z(
-														` Warning variant. Suitable for a user-triggered confirmation panel (e.g. "are you sure?") where the panel needs to stay visible until the user dismisses it. For automatic notifications that announce themselves and auto-dismiss, prefer a toast (`,
-													),
-													Y(`code`, null, `<output popover>`),
-													Z(`). `),
-												]),
-											]),
-											Y(`aside`, { id: `aside-pop-danger`, popover: ``, class: `danger` }, [
-												Y(`p`, null, [
-													Z(
-														` Danger variant. The popover can host an inline action — but if the action is destructive, prefer a `,
+														` Danger variant — red-tinted. For genuinely destructive actions prefer a `,
 													),
 													Y(`code`, null, `<dialog>`),
-													Z(` opened with `),
-													Y(`code`, null, `.showModal()`),
-													Z(` (focus-trapped, backdrop, screen-reader announces as modal). `),
+													Z(
+														` (modal, focus-trapped, screen-reader announces as a modal); the drawer is fine for less-final destructive flows like "remove from list" or "archive". `,
+													),
 												]),
-												Y(
-													`button`,
-													{
-														type: `button`,
-														class: `subtle small`,
-														popovertarget: `aside-pop-danger`,
-														popovertargetaction: `hide`,
-													},
-													` Close `,
-												),
 											]),
 										],
 										-1,
@@ -8903,7 +9048,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T14:51:21.608Z`)), 1),
+										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T15:22:54.525Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -12098,6 +12243,159 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						border-inline-start-color: canvastext;
 					}
 				}
+				:root {
+					--set-aside-drawer-inline-size: 21.875rem;
+					--set-aside-drawer-block-size: 30dvh;
+					--set-aside-drawer-z-index: var(--set-z-index-fixed, 50);
+				}
+				aside[popover] {
+					--set-popover-max-inline-size: 100dvw;
+					--set-anchor-max-inline-size: 100dvw;
+					--set-popover-viewport-inset: 0;
+					gap: calc(var(--spacing) * 4);
+					--set-popover-box-shadow: var(--set-box-shadow-sm);
+					max-block-size: 100dvh;
+					max-inline-size: 100dvw;
+					transition:
+						transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+						opacity 0.25s ease-out,
+						overlay 0.25s allow-discrete,
+						display 0.25s allow-discrete;
+					flex-direction: column;
+					margin: 0;
+					position: fixed;
+				}
+				@media (prefers-reduced-motion: reduce) {
+					aside[popover] {
+						transition: none;
+					}
+				}
+				aside[popover] {
+					inline-size: min(var(--set-aside-drawer-inline-size), 100dvw);
+					border-inline-start: 1px solid var(--set-popover-border-color);
+					opacity: 0;
+					block-size: 100dvh;
+					inset-block: 0;
+					inset-inline: auto 0;
+					transform: translate(100%);
+				}
+				aside[popover]:popover-open {
+					opacity: 1;
+					display: flex;
+					transform: translate(0);
+				}
+				@starting-style {
+					aside[popover]:popover-open {
+						opacity: 0;
+						transform: translate(100%);
+					}
+				}
+				aside[popover].start {
+					border-inline-start: 0;
+					border-inline-end: 1px solid var(--set-popover-border-color);
+					inset-inline: 0 auto;
+					transform: translate(-100%);
+				}
+				aside[popover].start:popover-open {
+					transform: translate(0);
+				}
+				@starting-style {
+					aside[popover].start:popover-open {
+						transform: translate(-100%);
+					}
+				}
+				aside[popover].end {
+					border-inline-start: 1px solid var(--set-popover-border-color);
+					border-inline-end: 0;
+					inset-inline: auto 0;
+					transform: translate(100%);
+				}
+				aside[popover].end:popover-open {
+					transform: translate(0);
+				}
+				@starting-style {
+					aside[popover].end:popover-open {
+						transform: translate(100%);
+					}
+				}
+				aside[popover].top {
+					inline-size: 100dvw;
+					block-size: var(--set-aside-drawer-block-size);
+					border-block-start: 0;
+					border-inline: 0;
+					border-block-end: 1px solid var(--set-popover-border-color);
+					inset-block: 0 auto;
+					inset-inline: 0;
+					transform: translateY(-100%);
+				}
+				aside[popover].top:popover-open {
+					transform: translateY(0);
+				}
+				@starting-style {
+					aside[popover].top:popover-open {
+						transform: translateY(-100%);
+					}
+				}
+				aside[popover].bottom {
+					inline-size: 100dvw;
+					block-size: var(--set-aside-drawer-block-size);
+					border-inline: 0;
+					border-block-start: 1px solid var(--set-popover-border-color);
+					border-block-end: 0;
+					inset-block: auto 0;
+					inset-inline: 0;
+					transform: translateY(100%);
+				}
+				aside[popover].bottom:popover-open {
+					transform: translateY(0);
+				}
+				@starting-style {
+					aside[popover].bottom:popover-open {
+						transform: translateY(100%);
+					}
+				}
+				aside[popover].primary {
+					--set-popover-color: var(--color-primary-text-emphasis);
+					--set-popover-background-color: var(--color-primary-bg-subtle);
+					--set-popover-border-color: var(--color-primary-border-subtle);
+				}
+				aside[popover].secondary {
+					--set-popover-color: var(--color-secondary-text-emphasis);
+					--set-popover-background-color: var(--color-secondary-bg-subtle);
+					--set-popover-border-color: var(--color-secondary-border-subtle);
+				}
+				aside[popover].tertiary {
+					--set-popover-color: var(--color-tertiary-text-emphasis);
+					--set-popover-background-color: var(--color-tertiary-bg-subtle);
+					--set-popover-border-color: var(--color-tertiary-border-subtle);
+				}
+				aside[popover].success {
+					--set-popover-color: var(--color-success-text-emphasis);
+					--set-popover-background-color: var(--color-success-bg-subtle);
+					--set-popover-border-color: var(--color-success-border-subtle);
+				}
+				aside[popover].warning {
+					--set-popover-color: var(--color-warning-text-emphasis);
+					--set-popover-background-color: var(--color-warning-bg-subtle);
+					--set-popover-border-color: var(--color-warning-border-subtle);
+				}
+				aside[popover].danger {
+					--set-popover-color: var(--color-danger-text-emphasis);
+					--set-popover-background-color: var(--color-danger-bg-subtle);
+					--set-popover-border-color: var(--color-danger-border-subtle);
+				}
+				aside[popover].information {
+					--set-popover-color: var(--color-information-text-emphasis);
+					--set-popover-background-color: var(--color-information-bg-subtle);
+					--set-popover-border-color: var(--color-information-border-subtle);
+				}
+				@media (forced-colors: active) {
+					aside[popover] {
+						color: canvastext;
+						background-color: canvas;
+						border-color: canvastext;
+					}
+				}
 				.badge {
 					--set-badge-color: var(
 						--set-variant-color,
@@ -13681,7 +13979,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-anchor-position-area: block-end;
 					--set-anchor-viewport-inset: calc(var(--spacing) * 2);
 				}
-				[popover]:not(output) {
+				[popover]:not(output):not(aside) {
 					margin: 0;
 					margin-block: var(--set-anchor-gap);
 					position-area: var(--set-anchor-position-area);
@@ -13900,141 +14198,6 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				}
 			}
 			@layer composables {
-				aside[popover][data-aside-open],
-				aside[popover][data-aside-closing] {
-					gap: calc(var(--spacing) * 4);
-					z-index: 50;
-					flex-direction: column;
-					display: flex;
-					overflow: auto;
-					opacity: 1 !important;
-					max-inline-size: 100dvw !important;
-					margin: 0 !important;
-					position: fixed !important;
-					box-shadow: 0 0.125rem 0.25rem #00000013 !important;
-				}
-				aside[popover][data-aside-open].start,
-				aside[popover][data-aside-closing].start {
-					border-inline-end: 1px solid var(--color-border);
-					block-size: 100dvh !important;
-					min-block-size: 100dvh !important;
-					max-block-size: 100dvh !important;
-					inline-size: min(21.875rem, 100dvw) !important;
-					inset-block: 0 !important;
-					inset-inline: 0 auto !important;
-				}
-				aside[popover][data-aside-open].start {
-					transform: translate(0);
-				}
-				@starting-style {
-					aside[popover].start {
-						opacity: 1;
-						transform: translate(-100%);
-					}
-				}
-				aside[popover][data-aside-closing].start {
-					transform: translate(-100%);
-				}
-				aside[popover][data-aside-open].end,
-				aside[popover][data-aside-closing].end {
-					border-inline-start: 1px solid var(--color-border);
-					block-size: 100dvh !important;
-					min-block-size: 100dvh !important;
-					max-block-size: 100dvh !important;
-					inline-size: min(21.875rem, 100dvw) !important;
-					inset-block: 0 !important;
-					inset-inline: auto 0 !important;
-				}
-				aside[popover][data-aside-open].end {
-					transform: translate(0);
-				}
-				@starting-style {
-					aside[popover].end {
-						opacity: 1;
-						transform: translate(100%);
-					}
-				}
-				aside[popover][data-aside-closing].end {
-					transform: translate(100%);
-				}
-				aside[popover][data-aside-open].top,
-				aside[popover][data-aside-closing].top {
-					border-block-end: 1px solid var(--color-border);
-					block-size: 30dvh !important;
-					max-block-size: 30dvh !important;
-					inline-size: 100dvw !important;
-					inset-block: 0 auto !important;
-					inset-inline: 0 !important;
-				}
-				aside[popover][data-aside-open].top {
-					transform: translateY(0);
-				}
-				@starting-style {
-					aside[popover].top {
-						opacity: 1;
-						transform: translateY(-100%);
-					}
-				}
-				aside[popover][data-aside-closing].top {
-					transform: translateY(-100%);
-				}
-				aside[popover][data-aside-open].bottom,
-				aside[popover][data-aside-closing].bottom {
-					border-block-start: 1px solid var(--color-border);
-					block-size: 30dvh !important;
-					max-block-size: 30dvh !important;
-					inline-size: 100dvw !important;
-					inset-block: auto 0 !important;
-					inset-inline: 0 !important;
-				}
-				aside[popover][data-aside-open].bottom {
-					transform: translateY(0);
-				}
-				@starting-style {
-					aside[popover].bottom {
-						opacity: 1;
-						transform: translateY(100%);
-					}
-				}
-				aside[popover][data-aside-closing].bottom {
-					transform: translateY(100%);
-				}
-				aside[popover][data-aside-open]:not(.start):not(.end):not(.top):not(.bottom),
-				aside[popover][data-aside-closing]:not(.start):not(.end):not(.top):not(.bottom) {
-					border-inline-start: 1px solid var(--color-border);
-					block-size: 100dvh !important;
-					min-block-size: 100dvh !important;
-					max-block-size: 100dvh !important;
-					inline-size: min(21.875rem, 100dvw) !important;
-					inset-block: 0 !important;
-					inset-inline: auto 0 !important;
-				}
-				aside[popover][data-aside-open]:not(.start):not(.end):not(.top):not(.bottom) {
-					transform: translate(0);
-				}
-				@starting-style {
-					aside[popover]:not(.start):not(.end):not(.top):not(.bottom) {
-						opacity: 1;
-						transform: translate(100%);
-					}
-				}
-				aside[popover][data-aside-closing]:not(.start):not(.end):not(.top):not(.bottom) {
-					transform: translate(100%);
-				}
-				aside[popover][data-aside-open],
-				aside[popover][data-aside-closing] {
-					transition:
-						transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
-						opacity 0.25s ease-out,
-						overlay 0.25s allow-discrete,
-						display 0.25s allow-discrete;
-				}
-				@media (prefers-reduced-motion: reduce) {
-					aside[popover][data-aside-open],
-					aside[popover][data-aside-closing] {
-						transition: none;
-					}
-				}
 				.carousel {
 					--set-carousel-block-size: 12rem;
 					--set-carousel-padding: calc(var(--spacing) * 6);
@@ -14717,39 +14880,39 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				.loading {
 					cursor: progress;
 				}
-				[popover].top {
+				[popover]:not(aside):not(output).top {
 					position-area: block-start;
 					align-self: end;
 					justify-self: anchor-center;
 				}
-				[popover].bottom {
+				[popover]:not(aside):not(output).bottom {
 					position-area: block-end;
 					align-self: start;
 					justify-self: anchor-center;
 				}
-				[popover].start {
+				[popover]:not(aside):not(output).start {
 					position-area: inline-start;
 					align-self: anchor-center;
 					justify-self: end;
 				}
-				[popover].end {
+				[popover]:not(aside):not(output).end {
 					position-area: inline-end;
 					align-self: anchor-center;
 					justify-self: start;
 				}
-				[popover].top-start {
+				[popover]:not(aside):not(output).top-start {
 					position-area: block-start span-inline-end;
 					place-self: end start;
 				}
-				[popover].top-end {
+				[popover]:not(aside):not(output).top-end {
 					position-area: block-start span-inline-start;
 					place-self: end;
 				}
-				[popover].bottom-start {
+				[popover]:not(aside):not(output).bottom-start {
 					position-area: block-end span-inline-end;
 					place-self: start;
 				}
-				[popover].bottom-end {
+				[popover]:not(aside):not(output).bottom-end {
 					position-area: block-end span-inline-start;
 					place-self: start end;
 				}

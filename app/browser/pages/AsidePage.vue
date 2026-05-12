@@ -302,121 +302,229 @@ const restore = (): void => {
 	</section>
 
 	<section id="aside-popover">
-		<h2>5. Popover panel — <code>&lt;aside popover&gt;</code></h2>
+		<h2>5. Drawer / offcanvas — <code>&lt;aside popover&gt;</code></h2>
 		<p>
 			The <code>[popover]</code> attribute lifts the aside into the browser's
-			<strong>top layer</strong>
-			— an overlay above the surrounding UI, not part of the document flow. A button with
-			<code>popovertarget="…"</code> opens it; a second button inside the panel with
+			<strong>top layer</strong> as a slide-in drawer (Bootstrap offcanvas parity). The drawer
+			floats above the page — it does NOT shift the document below. A button with
+			<code>popovertarget="…"</code> opens it; a second button inside with
 			<code>popovertargetaction="hide"</code> closes it. No JS required.
 		</p>
 		<p>
-			<strong>Not an alert, not a toast.</strong> The popover panel is a <em>user-controlled</em>
-			tangential-info surface — opened on demand, dismissed by the user. Two adjacent patterns
-			belong elsewhere:
+			<strong>Placement modifiers</strong> pick which edge the drawer slides in from:
+			<code>.start</code> (leading edge, full height), <code>.end</code> (trailing edge, full height
+			— the default), <code>.top</code> (block-start, 30dvh tall), <code>.bottom</code>
+			(block-end, 30dvh tall). The directional slide animation matches the placement — left edge
+			slides from the left, top edge slides down from above, etc.
 		</p>
+		<p>
+			<strong>Variants</strong> retint the drawer through <code>--set-popover-*</code> tokens (<code
+				>bg-subtle</code
+			>
+			body, <code>border-subtle</code> perimeter, <code>text-emphasis</code> text). Any placement
+			composes with any variant.
+		</p>
+		<p><strong>Not an alert, not a toast.</strong> Drawers are top-layer overlays:</p>
 		<ul>
 			<li>
-				<strong>In-flow alerts</strong> (section&nbsp;3 above) use
-				<code>&lt;aside role="alert"&gt;</code> — they sit in the document flow, push content below,
-				and announce via <code>aria-live="assertive"</code>.
+				<strong>In-flow alerts</strong> (section 3) use <code>&lt;aside role="alert"&gt;</code> —
+				sit in document flow, shift content below, announce via <code>aria-live="assertive"</code>.
 			</li>
 			<li>
-				<strong>Top-layer toasts</strong> are <code>&lt;output popover&gt;</code> — transient
-				corner-anchored notifications with implicit <code>role="status"</code> and auto-dismiss. See
-				the OutputPage for the toast chrome.
+				<strong>Top-layer toasts</strong> use <code>&lt;output popover&gt;</code> — transient
+				corner-anchored notifications with auto-dismiss. See OutputPage.
+			</li>
+			<li>
+				<strong>Modals</strong> use <code>&lt;dialog&gt;</code> opened with
+				<code>.showModal()</code>
+				— focus-trapped, with a backdrop. See DialogElementPage.
 			</li>
 		</ul>
-		<p>
-			<strong>Width &amp; placement.</strong> The popover surface clamps the panel to
-			<code>min(--set-popover-max-inline-size, --set-anchor-max-inline-size, 100vw - inset×2)</code>
-			(default target ~17.25rem; viewport-clamped on narrow screens). Without an anchor, popovers
-			center in the viewport. With anchor positioning, they anchor under their trigger button via
-			<code>position-area: block-end</code>. Mobile viewports auto-inset the panel from the screen
-			edges so it never touches the device frame.
-		</p>
-		<p>
-			<strong>Drawer mode.</strong> When the <code>useAside</code> composable attaches to this same
-			<code>&lt;aside popover&gt;</code>, it sets <code>[data-aside-open]</code> and a
-			composables-layer rule repaints the geometry into a full-viewport-edge slide-out drawer (
-			<code>.start</code> / <code>.end</code> / <code>.top</code> / <code>.bottom</code> placement
-			modifiers). The examples below stay in plain popover mode — drawer chrome is covered on the
-			DrawerPage / composable docs.
-		</p>
+
+		<h3>Placement modifiers</h3>
+		<p>Click each button to open the drawer from the matching edge.</p>
 		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
-			<button type="button" popovertarget="aside-pop-default">Default</button>
-			<button type="button" popovertarget="aside-pop-primary" class="primary">Primary</button>
-			<button type="button" popovertarget="aside-pop-success" class="success">Success</button>
-			<button type="button" popovertarget="aside-pop-warning" class="warning">Warning</button>
-			<button type="button" popovertarget="aside-pop-danger" class="danger">Danger</button>
+			<button type="button" popovertarget="aside-drawer-start">Slide from start</button>
+			<button type="button" popovertarget="aside-drawer-end">Slide from end (default)</button>
+			<button type="button" popovertarget="aside-drawer-top">Slide from top</button>
+			<button type="button" popovertarget="aside-drawer-bottom">Slide from bottom</button>
 		</div>
 
-		<aside id="aside-pop-default" popover>
-			<p>
-				Default popover panel — neutral chrome from the framework's popover surface
-				(<code>surfaces/_popover.scss</code>): perimeter border, subtle elevation, scale-in
-				transition.
+		<aside id="aside-drawer-start" popover class="start">
+			<header>
+				<strong>Start drawer</strong>
+				<button
+					type="button"
+					class="subtle icon-only"
+					popovertarget="aside-drawer-start"
+					popovertargetaction="hide"
+					aria-label="Close"
+					style="margin-inline-start: auto"
+				>
+					×
+				</button>
+			</header>
+			<p style="padding-inline: 1rem">
+				Slides in from the inline-start edge (left in LTR, right in RTL). Full block-height. Ideal
+				for primary navigation, filter panels, or workspace switchers.
 			</p>
-			<button
-				type="button"
-				class="subtle small"
-				popovertarget="aside-pop-default"
-				popovertargetaction="hide"
-			>
-				Close
-			</button>
 		</aside>
 
-		<aside id="aside-pop-primary" popover class="primary">
-			<p>
-				Variant classes retint the panel via <code>--set-popover-*</code> tokens (<code
+		<aside id="aside-drawer-end" popover class="end">
+			<header>
+				<strong>End drawer</strong>
+				<button
+					type="button"
+					class="subtle icon-only"
+					popovertarget="aside-drawer-end"
+					popovertargetaction="hide"
+					aria-label="Close"
+					style="margin-inline-start: auto"
+				>
+					×
+				</button>
+			</header>
+			<p style="padding-inline: 1rem">
+				Slides in from the inline-end edge (right in LTR). Full block-height. The default placement
+				— ideal for inspectors, settings panels, and detail views that supplement the main content.
+			</p>
+		</aside>
+
+		<aside id="aside-drawer-top" popover class="top">
+			<header>
+				<strong>Top drawer</strong>
+				<button
+					type="button"
+					class="subtle icon-only"
+					popovertarget="aside-drawer-top"
+					popovertargetaction="hide"
+					aria-label="Close"
+					style="margin-inline-start: auto"
+				>
+					×
+				</button>
+			</header>
+			<p style="padding-inline: 1rem">
+				Slides down from the block-start edge. 30dvh tall by default. Useful for command palettes,
+				quick search, or page-level notifications that need more room than a toast.
+			</p>
+		</aside>
+
+		<aside id="aside-drawer-bottom" popover class="bottom">
+			<header>
+				<strong>Bottom drawer</strong>
+				<button
+					type="button"
+					class="subtle icon-only"
+					popovertarget="aside-drawer-bottom"
+					popovertargetaction="hide"
+					aria-label="Close"
+					style="margin-inline-start: auto"
+				>
+					×
+				</button>
+			</header>
+			<p style="padding-inline: 1rem">
+				Slides up from the block-end edge. 30dvh tall by default. Common on mobile for action
+				sheets, share menus, or contextual pickers (mirrors iOS / Material bottom sheets).
+			</p>
+		</aside>
+
+		<h3>Variant cascade</h3>
+		<p>
+			Any placement composes with any variant. The drawer's body, border, and text all retint
+			through the popover surface tokens. Trigger buttons below open primary / success / warning /
+			danger drawers, each on the end edge.
+		</p>
+		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+			<button type="button" popovertarget="aside-drawer-primary" class="primary">Primary</button>
+			<button type="button" popovertarget="aside-drawer-success" class="success">Success</button>
+			<button type="button" popovertarget="aside-drawer-warning" class="warning">Warning</button>
+			<button type="button" popovertarget="aside-drawer-danger" class="danger">Danger</button>
+		</div>
+
+		<aside id="aside-drawer-primary" popover class="end primary">
+			<header>
+				<strong>Primary drawer</strong>
+				<button
+					type="button"
+					class="subtle icon-only"
+					popovertarget="aside-drawer-primary"
+					popovertargetaction="hide"
+					aria-label="Close"
+					style="margin-inline-start: auto"
+				>
+					×
+				</button>
+			</header>
+			<p style="padding-inline: 1rem">
+				Tinted through the popover surface's <code>--set-popover-*</code> token triplet (<code
 					>bg-subtle</code
 				>
-				body, <code>border-subtle</code> perimeter, <code>text-emphasis</code> text). The primary
-				variant tints toward <code>--color-primary-*</code>.
-			</p>
-			<button
-				type="button"
-				class="primary small"
-				popovertarget="aside-pop-primary"
-				popovertargetaction="hide"
-			>
-				Confirm
-			</button>
-		</aside>
-
-		<aside id="aside-pop-success" popover class="success">
-			<p>
-				Success variant — uses the <code>--color-success-bg-subtle</code> +
-				<code>--color-success-text-emphasis</code> theme tokens. Same triplet as the success alert,
-				but the panel sits in the top layer.
+				/ <code>border-subtle</code> / <code>text-emphasis</code>) — same triplet the in-flow
+				primary alert uses, but lifted into the top layer.
 			</p>
 		</aside>
 
-		<aside id="aside-pop-warning" popover class="warning">
-			<p>
-				Warning variant. Suitable for a user-triggered confirmation panel (e.g. "are you sure?")
-				where the panel needs to stay visible until the user dismisses it. For automatic
-				notifications that announce themselves and auto-dismiss, prefer a toast (<code
-					>&lt;output popover&gt;</code
-				>).
+		<aside id="aside-drawer-success" popover class="end success">
+			<header>
+				<strong>Success drawer</strong>
+				<button
+					type="button"
+					class="subtle icon-only"
+					popovertarget="aside-drawer-success"
+					popovertargetaction="hide"
+					aria-label="Close"
+					style="margin-inline-start: auto"
+				>
+					×
+				</button>
+			</header>
+			<p style="padding-inline: 1rem">
+				Success variant — green-tinted body, emphasis-colored text. The panel doesn't announce
+				itself like a status banner does (no implicit live region); user-triggered, user-dismissed.
 			</p>
 		</aside>
 
-		<aside id="aside-pop-danger" popover class="danger">
-			<p>
-				Danger variant. The popover can host an inline action — but if the action is destructive,
-				prefer a <code>&lt;dialog&gt;</code> opened with <code>.showModal()</code> (focus-trapped,
-				backdrop, screen-reader announces as modal).
+		<aside id="aside-drawer-warning" popover class="end warning">
+			<header>
+				<strong>Warning drawer</strong>
+				<button
+					type="button"
+					class="subtle icon-only"
+					popovertarget="aside-drawer-warning"
+					popovertargetaction="hide"
+					aria-label="Close"
+					style="margin-inline-start: auto"
+				>
+					×
+				</button>
+			</header>
+			<p style="padding-inline: 1rem">
+				Warning variant — amber-tinted. Suitable for "are you sure?" confirmation drawers where the
+				user needs to acknowledge a state change without leaving the current view.
 			</p>
-			<button
-				type="button"
-				class="subtle small"
-				popovertarget="aside-pop-danger"
-				popovertargetaction="hide"
-			>
-				Close
-			</button>
+		</aside>
+
+		<aside id="aside-drawer-danger" popover class="end danger">
+			<header>
+				<strong>Danger drawer</strong>
+				<button
+					type="button"
+					class="subtle icon-only"
+					popovertarget="aside-drawer-danger"
+					popovertargetaction="hide"
+					aria-label="Close"
+					style="margin-inline-start: auto"
+				>
+					×
+				</button>
+			</header>
+			<p style="padding-inline: 1rem">
+				Danger variant — red-tinted. For genuinely destructive actions prefer a
+				<code>&lt;dialog&gt;</code> (modal, focus-trapped, screen-reader announces as a modal); the
+				drawer is fine for less-final destructive flows like "remove from list" or "archive".
+			</p>
 		</aside>
 	</section>
 
