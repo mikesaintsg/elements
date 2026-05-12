@@ -3,7 +3,10 @@
 //
 // Browser defaults: display: block; list-style-type: decimal;
 // padding-inline-start: 40px; margin-block: 1em. Tailwind v4 preflight zeroes
-// list-style and padding; the partial leaves bare <ol> alone.
+// list-style and padding. The framework restores both for bare `<ol>` (same
+// contract `<ul>` follows in `_ul.scss`) so a numbered list still reads as
+// a numbered list. Nested `<ol>` shifts to `lower-alpha` then `lower-roman`
+// (UA convention), mirroring `<ul>`'s disc → circle → square cascade.
 //
 // Opt-in chrome — `.group` modifier
 // ---------------------------------------------------------------------------
@@ -14,10 +17,25 @@
 // Bootstrap exposes as a separate `.list-group-numbered` class. Here the
 // behaviour is implicit: ordered + grouped → numbered.
 //
-// The actual selectors live in `_ul.scss` (shared with `ul.group` to keep
-// the chrome single-sourced). This file stays a tag-pure partial so other
-// element files don't need to chase the .group rules across two locations
-// when reading the cascade.
+// The `.group` selectors live in `_ul.scss` (shared with `ul.group` to keep
+// the chrome single-sourced).
 // ============================================================================
 
-// No <ol>-only chrome — see `_ul.scss` for `.group` rules shared with `<ol>`.
+@layer elements {
+	// Bare `<ol>` — Tailwind preflight strips list-style + padding, the
+	// framework restores both so numbers actually render. Authors who
+	// want a marker-less ordered list reach for Tailwind's `list-none`.
+	ol:not(.group) {
+		padding-inline-start: 2rem;
+		list-style-type: decimal;
+	}
+
+	// UA convention for nested ordered lists.
+	ol:not(.group) ol {
+		list-style-type: lower-alpha;
+	}
+
+	ol:not(.group) ol ol {
+		list-style-type: lower-roman;
+	}
+}

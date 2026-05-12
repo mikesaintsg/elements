@@ -75,8 +75,8 @@ const variants = [
 		<h2>Bare <code>&lt;ul&gt;</code> and <code>&lt;ol&gt;</code></h2>
 		<p>
 			Bare lists ship 2rem inline indent + UA list-style. Nested <code>&lt;ul&gt;</code> cascades
-			through disc → circle → square; nested <code>&lt;ol&gt;</code> keeps decimal markers at every
-			depth.
+			disc → circle → square; nested <code>&lt;ol&gt;</code> cascades decimal → lower-alpha →
+			lower-roman (UA convention).
 		</p>
 		<div class="stack">
 			<ul>
@@ -97,12 +97,18 @@ const variants = [
 				<li>Third disc marker.</li>
 			</ul>
 			<ol>
-				<li>First ordered item.</li>
+				<li>First ordered item — decimal marker.</li>
 				<li>
-					Second ordered item with a nested ordered list:
+					Second item with a nested ordered list:
 					<ol>
-						<li>2.1 — nested decimal.</li>
-						<li>2.2 — second nested decimal.</li>
+						<li>Nested item — lower-alpha marker.</li>
+						<li>
+							Deeper still:
+							<ol>
+								<li>Three-deep — lower-roman marker.</li>
+								<li>Another roman.</li>
+							</ol>
+						</li>
 					</ol>
 				</li>
 				<li>Third ordered item.</li>
@@ -165,6 +171,62 @@ const variants = [
 			<li><a href="#lists-group-actionable">Manage billing</a></li>
 			<li><a href="#lists-group-actionable">Configure integrations</a></li>
 			<li><a href="#lists-group-actionable">Cancel subscription</a></li>
+		</ul>
+	</section>
+
+	<section id="lists-group-state">
+		<h2>State — <code>.active</code> and <code>.disabled</code></h2>
+		<p>
+			<code>.active</code> (or <code>aria-current="true"</code>) marks the current row — the
+			framework paints it with the variant's <code>--set-variant-background-color</code> chain
+			(defaults to <code>--color-primary</code>) and switches text to the matching on-fill color.
+			<code>.disabled</code> (or <code>aria-disabled="true"</code>) drops the row to
+			<code>--color-text-subtle</code> and blocks pointer events. Pair the class with the matching
+			ARIA attribute so assistive tech announces the state too.
+		</p>
+		<ul class="group">
+			<li aria-current="true"><a href="#lists-group-state">Inbox — current selection</a></li>
+			<li><a href="#lists-group-state">Drafts</a></li>
+			<li><a href="#lists-group-state">Sent</a></li>
+			<li class="disabled" aria-disabled="true">
+				<a href="#lists-group-state">Archive — disabled row</a>
+			</li>
+		</ul>
+		<p>
+			<code>.active</code> composes with the variant cascade — putting a variant class on the same
+			<code>&lt;li&gt;</code> swaps the active fill for that variant's identity color.
+		</p>
+		<ul class="group">
+			<li class="success" aria-current="true">Build passed — success-tinted active row</li>
+			<li class="danger" aria-current="true">Build failed — danger-tinted active row</li>
+		</ul>
+	</section>
+
+	<section id="lists-group-badges">
+		<h2>Trailing badges</h2>
+		<p>
+			Drop a flex utility on the row and the badge naturally pushes to the trailing edge — useful
+			for counts, status pills, or timestamps. The framework doesn't ship a dedicated row-flex class
+			because <code>flex</code> + <code>justify-between</code> via Tailwind covers the case without
+			inventing new chrome.
+		</p>
+		<ul class="group">
+			<li class="flex items-center justify-between">
+				<span>Tasks</span>
+				<span class="badge primary">14</span>
+			</li>
+			<li class="flex items-center justify-between">
+				<span>Pull requests</span>
+				<span class="badge success">2</span>
+			</li>
+			<li class="flex items-center justify-between">
+				<span>Issues</span>
+				<span class="badge warning">7</span>
+			</li>
+			<li class="flex items-center justify-between">
+				<span>Blocked</span>
+				<span class="badge danger">1</span>
+			</li>
 		</ul>
 	</section>
 
@@ -231,28 +293,6 @@ const variants = [
 				A long framework token that demonstrates the overflow-wrap behavior — wraps inside the cell
 				rather than pushing the page wider than the viewport.
 			</dd>
-		</dl>
-	</section>
-
-	<section id="lists-definition-multi">
-		<h2>Multi-value definitions</h2>
-		<p>
-			A <code>&lt;dt&gt;</code> can pair with multiple <code>&lt;dd&gt;</code> entries (one term,
-			several descriptions). Conversely, a <code>&lt;dd&gt;</code> can describe multiple
-			<code>&lt;dt&gt;</code> entries (several terms sharing a description). Both patterns are valid
-			HTML5 and the framework's grid layout handles them naturally.
-		</p>
-		<dl>
-			<dt>Variant</dt>
-			<dd>primary — saturated identity surface (blue-600 default)</dd>
-			<dd>secondary — neutral slate (slate-600)</dd>
-			<dd>tertiary — alternative action (violet-600)</dd>
-			<dt>Success</dt>
-			<dt>Affirmation</dt>
-			<dd>green-700 — confirming action color, white text on fill</dd>
-			<dt>Danger</dt>
-			<dt>Destructive</dt>
-			<dd>red-700 — calm-but-unmistakable, matches M3 error-40 / Atlassian danger-bold</dd>
 		</dl>
 	</section>
 

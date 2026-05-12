@@ -123,22 +123,6 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// .active — current item. Uses the variant cascade so consumers can mark
-	// the active item against any variant identity (`<li class="primary
-	// active">`); bare `.active` defaults to the primary identity through
-	// `--set-variant-background-color`.
-	// --------------------------------------------------------------------------
-	ul.group > li.active,
-	ol.group > li.active,
-	ul.group > li[aria-current='true'],
-	ol.group > li[aria-current='true'] {
-		z-index: 1;
-		color: var(--set-group-active-color);
-		background-color: var(--set-group-active-background-color);
-		border-color: var(--set-group-active-background-color);
-	}
-
-	// --------------------------------------------------------------------------
 	// Variant tint per row — consumes the same `--color-{variant}-bg-subtle`
 	// triplet that powers tinted surfaces elsewhere in the framework. The
 	// `--set-variant-background-color` chain is set by the modifier classes
@@ -146,11 +130,9 @@
 	// preferring the subtle-bg colour when present. To stay readable on the
 	// tint, text shifts to the variant's text-emphasis colour.
 	//
-	// Implementation: rather than @each-ing through every variant (which the
-	// SCSS port would do), we read directly from
-	// `--color-{variant}-bg-subtle` via a single attribute selector loop in
-	// pure CSS. Each class drives its own subtle colour because the values
-	// already exist as tokens.
+	// Source order matters: the .active rule below must follow these so a
+	// row marked `<li class="success active">` paints the saturated identity
+	// fill (active wins) rather than the subtle tint (variant alone).
 	// --------------------------------------------------------------------------
 	ul.group > li.primary,
 	ol.group > li.primary {
@@ -199,5 +181,23 @@
 		background-color: var(--color-information-bg-subtle);
 		color: var(--color-information-text-emphasis);
 		border-color: var(--color-information-border-subtle);
+	}
+
+	// --------------------------------------------------------------------------
+	// .active — current item. Uses the variant cascade so consumers can mark
+	// the active item against any variant identity (`<li class="success
+	// active">`); bare `.active` defaults to the primary identity through
+	// `--set-variant-background-color`. Placed AFTER the variant tint rules
+	// so a row with both classes paints the saturated identity fill (active
+	// wins) rather than the subtle tint.
+	// --------------------------------------------------------------------------
+	ul.group > li.active,
+	ol.group > li.active,
+	ul.group > li[aria-current='true'],
+	ol.group > li[aria-current='true'] {
+		z-index: 1;
+		color: var(--set-group-active-color);
+		background-color: var(--set-group-active-background-color);
+		border-color: var(--set-group-active-background-color);
 	}
 }
