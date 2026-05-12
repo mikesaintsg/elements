@@ -49,8 +49,23 @@
 
 @media (min-width: 640px) {
 	@layer elements {
+		// Two-column grid at wide viewports. The DESCRIPTION column
+		// (col 2) carries a `minmax(12rem, 1fr)` floor — 12 rem (192 px)
+		// is enough to read a 3-4 word description without
+		// hyphen-breaking every word. The TERM column (col 1) is
+		// `minmax(0, max-content)`: it sizes to its content's natural
+		// width by default, but `min: 0` lets it shrink if necessary
+		// to honour col 2's floor. Combined with `overflow-wrap:
+		// anywhere` on `<dt>`, a long compound term (e.g. three
+		// slash-separated token names) wraps inside its track instead
+		// of starving the description.
+		//
+		// Without the col-2 floor, a `<dt>` whose `max-content` width
+		// exceeded the grid width would push col 2 to 0 px and the
+		// description would render invisible — the NavPage pagination
+		// sub-surface section surfaced this on a wide viewport.
 		dl {
-			grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+			grid-template-columns: minmax(0, max-content) minmax(12rem, 1fr);
 		}
 	}
 }
