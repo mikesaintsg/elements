@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T17:11:12.424Z" />
+		<meta name="build-id" content="2026-05-12T17:22:29.471Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9040,7 +9040,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(c[11] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T17:11:12.424Z`)), 1),
+										Y(`small`, Du, `build ` + k(Yt(`2026-05-12T17:22:29.471Z`)), 1),
 									]),
 									n.value || r.value
 										? (q(),
@@ -9848,7 +9848,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						opacity var(--set-motion-duration) ease-out,
 						transform var(--set-motion-duration) var(--set-motion-timing-function),
 						overlay var(--set-motion-duration) allow-discrete,
-						display var(--set-motion-duration) allow-discrete;
+						display var(--set-motion-duration) allow-discrete,
+						position 0s var(--set-motion-duration) allow-discrete,
+						inset-block-start 0s var(--set-motion-duration) allow-discrete,
+						inset-inline-start 0s var(--set-motion-duration) allow-discrete,
+						translate 0s var(--set-motion-duration);
 					transform: scale(0.96);
 				}
 				@media (prefers-reduced-motion: reduce) {
@@ -14061,18 +14065,20 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-backdrop-backdrop-filter: blur(2px);
 					--set-backdrop-transition-duration: var(--set-transition-duration);
 				}
+				dialog::backdrop {
+					transition:
+						background-color var(--set-motion-duration) ease-out,
+						backdrop-filter var(--set-motion-duration) ease-out;
+				}
+				@media (prefers-reduced-motion: reduce) {
+					dialog::backdrop {
+						transition: none;
+					}
+				}
 				dialog:modal::backdrop {
 					background-color: var(--set-backdrop-background-color);
 					-webkit-backdrop-filter: var(--set-backdrop-backdrop-filter);
 					backdrop-filter: var(--set-backdrop-backdrop-filter);
-					transition:
-						background-color var(--set-backdrop-transition-duration),
-						backdrop-filter var(--set-backdrop-transition-duration);
-				}
-				@media (prefers-reduced-motion: reduce) {
-					dialog:modal::backdrop {
-						transition: none;
-					}
 				}
 				:root {
 					--set-focus-color: var(--set-variant-background-color, var(--color-primary));

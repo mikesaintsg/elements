@@ -119,6 +119,24 @@
 		// in the render tree for the full motion duration on close —
 		// without them, the dialog snaps to `display: none` the moment
 		// `.close()` returns and the exit animation never plays.
+		//
+		// Positioning properties (`position`, `inset-*`, `translate`)
+		// transition discretely with a delay equal to the motion
+		// duration. Why: when a NON-MODAL dialog closes, the
+		// `[open]:not(:modal)` override below stops matching the moment
+		// `[open]` is removed, so the bare-dialog rule's modal-centering
+		// (`position: fixed; inset: 50%; translate: -50%`) takes over
+		// for the 250 ms close transition tail. Without the delay, the
+		// non-modal dialog would JUMP from its inline position to
+		// viewport center while opacity fades out — a jarring "lift to
+		// center and fade" that doesn't match the disclosure-style
+		// shift users expect from inline panels. With the delay, the
+		// position change waits until the close transition has fully
+		// played AND `display: none` has taken effect, so the user
+		// never sees the position flip. For MODAL close the position
+		// doesn't change anyway (bare-dialog modal-centering matches
+		// throughout), so the delay is a no-op — no transition fires
+		// when the from-and-to values are equal.
 		@include transition(
 			(
 				color var(--set-dialog-transition-duration),
@@ -127,7 +145,11 @@
 				opacity var(--set-motion-duration) ease-out,
 				transform var(--set-motion-duration) var(--set-motion-timing-function),
 				overlay var(--set-motion-duration) allow-discrete,
-				display var(--set-motion-duration) allow-discrete
+				display var(--set-motion-duration) allow-discrete,
+				position 0s var(--set-motion-duration) allow-discrete,
+				inset-block-start 0s var(--set-motion-duration) allow-discrete,
+				inset-inline-start 0s var(--set-motion-duration) allow-discrete,
+				translate 0s var(--set-motion-duration)
 			)
 		);
 

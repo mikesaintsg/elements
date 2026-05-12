@@ -34,16 +34,35 @@
 
 	// Only modal `<dialog>` (opened via .showModal()) gets the dim-and-blur
 	// scrim. Non-modal dialogs and every popover flavour keep the UA-default
-	// transparent backdrop — exactly what a non-blocking floating panel wants.
+	// transparent backdrop — exactly what a non-blocking floating panel
+	// wants.
+	//
+	// Why TWO rules (bare `dialog::backdrop` + `dialog:modal::backdrop`):
+	// the transition list lives on the bare rule so it PERSISTS through
+	// the close transition tail. When `.close()` is called `:modal` stops
+	// matching synchronously, so any styles or transitions declared on
+	// `dialog:modal::backdrop` would disappear at frame 0 of close —
+	// the backdrop's `background-color` and `backdrop-filter` would
+	// snap from the dim scrim to the UA-default faint `rgba(0,0,0,0.1)`
+	// (Chromium's transparent-but-still-rendered default) for the 250 ms
+	// the dialog's `overlay allow-discrete` keeps the backdrop alive.
+	// That snap reads to the user as a backdrop "flash" between the
+	// dim scrim and the faint UA default. Putting the transition on the
+	// bare pseudo means the backdrop's color animates from dim → UA-
+	// transparent over the full motion duration in lockstep with the
+	// dialog's fade-out, producing a single smooth dismiss instead of
+	// a flash-then-fade.
+	dialog::backdrop {
+		@include transition(
+			(
+				background-color var(--set-motion-duration) ease-out,
+				backdrop-filter var(--set-motion-duration) ease-out
+			)
+		);
+	}
+
 	dialog:modal::backdrop {
 		background-color: var(--set-backdrop-background-color);
 		backdrop-filter: var(--set-backdrop-backdrop-filter);
-
-		@include transition(
-			(
-				background-color var(--set-backdrop-transition-duration),
-				backdrop-filter var(--set-backdrop-transition-duration)
-			)
-		);
 	}
 }
