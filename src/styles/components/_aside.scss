@@ -520,11 +520,15 @@
 		--set-anchor-max-inline-size: 100dvw;
 		--set-popover-viewport-inset: 0;
 
-		// Zero the popover surface's padding — each drawer region
-		// (header, body, footer) supplies its own padding. Matches
-		// Bootstrap's offcanvas pattern (`.offcanvas` has no padding,
-		// `.offcanvas-header` / `.offcanvas-body` each pad themselves).
-		--set-popover-padding-inline: 0;
+		// Inline-axis padding lives on the drawer container so body
+		// content sits comfortably inside the drawer without each
+		// `<p>` / `<h6>` / `<nav>` needing its own padding-inline
+		// declaration. Block-axis padding stays 0 — bands sit flush at
+		// the drawer's outer top / bottom edges (no negative-margin
+		// bleed needed); body content gets block spacing from its own
+		// margins, padding, or from element-native styling
+		// (`<p>` / `<h*>` ship with browser-default margins).
+		--set-popover-padding-inline: var(--set-aside-drawer-padding-inline);
 		--set-popover-padding-block: 0;
 
 		position: fixed;
@@ -532,11 +536,29 @@
 		max-inline-size: 100dvw;
 		max-block-size: 100dvh;
 
-		// Inner-stack — flex-column with NO gap (each region carries
-		// its own padding; a parent gap would double-count whitespace
-		// between bands and body).
+		// Inner-stack — flex-column with a drawer-band-gap between
+		// children. The gap provides visual breathing room between the
+		// header band and the first body element, between body siblings
+		// (e.g. the TOC's `<h6>` and `<nav>`), and between the last body
+		// element and the footer band. Consumers running their own
+		// flex-column split inside the drawer (e.g. the showcase's
+		// nav-rail with `<search>` + `<div class="showcase-sidebar-
+		// scroll">`) override `gap: 0` at the rail selector so their
+		// internal layout owns the rhythm — see
+		// `app/browser/styles/showcase.css` § "Rail container".
 		flex-direction: column;
-		gap: 0;
+		gap: var(--set-aside-drawer-band-gap);
+
+		// Drawer is its own scroll container when body content overflows
+		// `100dvh`. `overscroll-behavior: contain` keeps long body lists
+		// from rubber-banding the page beneath the drawer on touch.
+		// Consumers with their own internal scroll region (e.g. the
+		// showcase's nav-rail flex-column-split: filter row pinned +
+		// link list scrolling) override with `overflow: hidden` on the
+		// rail — see `app/browser/styles/showcase.css` for the worked
+		// example.
+		overflow-y: auto;
+		overscroll-behavior: contain;
 
 		// Drawer shadow — subtle elevation so the panel reads as a layer
 		// above the page rather than a flush surface that slid in from
@@ -737,23 +759,43 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// Header / footer bands + body padding.
+	// Header / footer bands.
 	//
 	// Bootstrap-parity offcanvas regions: a direct-child `<header>` (first)
 	// and / or `<footer>` (last) pad themselves to drawer-gutter values
-	// and draw a divider between band and body. The "body" is implicit —
-	// every direct child that isn't header / footer IS the body and
-	// inherits the same drawer-padding for inline + block.
-	//
-	// `flex-shrink: 0` on the bands keeps them at intrinsic height when
-	// the body grows tall and forces a scroll. Body content uses
-	// `flex: 1` + `overflow-y: auto` so the long-form list inside the
-	// drawer scrolls without the bands scrolling along with it.
+	// and draw a divider between band and body. Negative inline-margin
+	// pulls each band to the drawer's outer inline edges (the drawer
+	// container has `padding-inline: --set-aside-drawer-padding-inline`
+	// for body content; the bands bleed past it). Header bleeds
+	// `margin-block-start: -gap` so it sits flush with the drawer's
+	// outer top edge (cancelling the drawer's flex `gap` ABOVE the
+	// first child). Footer mirrors with `margin-block-end: -gap` +
+	// `margin-block-start: auto` to push to the bottom when body content
+	// is shorter than the drawer.
 	//
 	// Pattern mirrors the existing alert (`aside[role='alert']`) and
 	// dialog (`<dialog>`) header / footer chrome — close-button
 	// placement + variant-context reset are identical across all three
 	// surfaces so consumers learn the contract once.
+	//
+	// Body region — every direct child that isn't a header / footer
+	// band gets inline padding from the DRAWER CONTAINER (popover
+	// surface tokens above), so body content stays inset from the
+	// drawer edges without per-element rules. This is a deliberate
+	// simplification from the previous "auto-body chrome" approach
+	// (which forced `flex: 1 + overflow-y: auto + padding` on every
+	// non-header/footer child) — that approach broke for drawers with
+	// MULTIPLE body siblings (e.g. the showcase TOC's `<h6>` + `<nav>`,
+	// or the showcase nav-rail's `<search>` + `<div class="showcase-
+	// sidebar-scroll">`): each sibling got `flex: 1` and competed for
+	// height, creating independent scroll regions side-by-side and
+	// blocking touch-scroll propagation between regions. Now: body
+	// siblings stack naturally with the drawer's `gap` between them;
+	// the DRAWER itself owns overflow-y so long content scrolls as one
+	// continuous region; consumers with their own internal scroll
+	// region (showcase nav-rail's flex-column-split) override
+	// `overflow: hidden` on the drawer to defer scroll to the inner
+	// region.
 	// --------------------------------------------------------------------------
 
 	:is(aside, nav)[popover] > header:first-child,
@@ -762,6 +804,11 @@
 		display: flex;
 		align-items: center;
 		gap: var(--set-aside-drawer-band-gap);
+		// Bleed inline edges — pull past the drawer container's
+		// `padding-inline` so the band spans the drawer's outer edges.
+		// The negative-margin + re-padding idiom keeps the band's
+		// internal padding consistent with the drawer's gutter.
+		margin-inline: calc(var(--set-aside-drawer-padding-inline) * -1);
 		padding-inline: var(--set-aside-drawer-padding-inline);
 		padding-block: var(--set-aside-drawer-padding-block);
 		// Reset framework heading margins inside the band so the band's
@@ -776,25 +823,16 @@
 	}
 
 	:is(aside, nav)[popover] > footer:last-child {
+		// `margin-block-start: auto` pushes the footer to the bottom of
+		// the drawer's flex column when body content is shorter than
+		// the available block-size. The drawer's `padding-block: 0`
+		// already puts the footer flush at the outer bottom edge — no
+		// negative-margin bleed needed.
+		margin-block-start: auto;
 		// Trailing-action row — buttons pile up on the inline-end edge.
 		justify-content: flex-end;
 		flex-wrap: wrap;
 		border-block-start: 1px solid var(--set-popover-border-color);
-	}
-
-	// Body region — every direct child that isn't a header / footer
-	// band. Pads itself to the drawer gutter; `flex: 1 + min-block-
-	// size: 0 + overflow-y: auto` so the body scrolls independently
-	// of the bands when content overflows. `overscroll-behavior:
-	// contain` keeps a long body from rubber-banding the page behind
-	// it on touch devices (mailbox's `.offcanvas-body` pattern).
-	:is(aside, nav)[popover] > :not(header):not(footer) {
-		flex: 1 1 auto;
-		min-block-size: 0;
-		overflow-y: auto;
-		overscroll-behavior: contain;
-		padding-inline: var(--set-aside-drawer-padding-inline);
-		padding-block: var(--set-aside-drawer-padding-block);
 	}
 
 	// Close button inside a header / footer band — same idiom the

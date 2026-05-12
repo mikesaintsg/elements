@@ -159,8 +159,21 @@
 	//
 	// Per-rail tokens because nav and aside expose their own padding
 	// tokens (`--set-nav-padding-*` vs `--set-aside-padding-*`).
-	body:has(main) > nav > header,
-	body:has(main) > * > nav > header {
+	//
+	// `:not([popover])` scopes the sticky pin to NON-popover rails.
+	// When the body-shell rail opts into native popover mode (i.e. the
+	// showcase's `:popover="isMobile ? 'auto' : undefined"` Vue binding,
+	// or any consumer that puts `popover` on the rail directly), the
+	// drawer band chrome lives in `components/_aside.scss` § "Header /
+	// footer bands" instead — bands bleed inline edges via negative
+	// margin and sit flush at the drawer's outer top / bottom edges
+	// without the sticky-pin negative-block-margin (which would pull
+	// the band ABOVE the drawer's outer edge into invisible space).
+	// The split lets the rail use one band-chrome contract on desktop
+	// (sticky pin for in-flow scroll) and a different contract on
+	// mobile (drawer band) cleanly, without per-rule overrides.
+	body:has(main) > nav:not([popover]) > header,
+	body:has(main) > * > nav:not([popover]) > header {
 		margin-inline: calc(var(--set-nav-padding-inline) * -1);
 		margin-block-start: calc(var(--set-nav-padding-block) * -1);
 		position: sticky;
@@ -168,8 +181,8 @@
 		z-index: 1;
 	}
 
-	body:has(main) > aside > header,
-	body:has(main) > * > aside > header {
+	body:has(main) > aside:not([popover]) > header,
+	body:has(main) > * > aside:not([popover]) > header {
 		margin-inline: calc(var(--set-aside-padding-inline) * -1);
 		margin-block-start: calc(var(--set-aside-padding-block) * -1);
 		position: sticky;

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T17:57:36.151Z" />
+		<meta name="build-id" content="2026-05-12T18:14:20.632Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -9033,7 +9033,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Tu, `build ` + k(Yt(`2026-05-12T17:57:36.151Z`)), 1),
+										Y(`small`, Tu, `build ` + k(Yt(`2026-05-12T18:14:20.632Z`)), 1),
 									]),
 								],
 								64,
@@ -12261,8 +12261,10 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-popover-max-inline-size: 100dvw;
 					--set-anchor-max-inline-size: 100dvw;
 					--set-popover-viewport-inset: 0;
-					--set-popover-padding-inline: 0;
+					--set-popover-padding-inline: var(--set-aside-drawer-padding-inline);
 					--set-popover-padding-block: 0;
+					gap: var(--set-aside-drawer-band-gap);
+					overscroll-behavior: contain;
 					--set-popover-box-shadow: var(--set-box-shadow-sm);
 					max-block-size: 100dvh;
 					max-inline-size: 100dvw;
@@ -12272,9 +12274,9 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						overlay var(--set-motion-duration) allow-discrete,
 						display var(--set-motion-duration) allow-discrete;
 					flex-direction: column;
-					gap: 0;
 					margin: 0;
 					position: fixed;
+					overflow-y: auto;
 				}
 				@media (prefers-reduced-motion: reduce) {
 					:is(aside, nav)[popover] {
@@ -12386,6 +12388,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				:is(aside, nav)[popover] > footer:last-child {
 					align-items: center;
 					gap: var(--set-aside-drawer-band-gap);
+					margin-inline: calc(var(--set-aside-drawer-padding-inline) * -1);
 					padding-inline: var(--set-aside-drawer-padding-inline);
 					padding-block: var(--set-aside-drawer-padding-block);
 					flex-shrink: 0;
@@ -12402,14 +12405,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					border-block-start: 1px solid var(--set-popover-border-color);
 					flex-wrap: wrap;
 					justify-content: flex-end;
-				}
-				:is(aside, nav)[popover] > :not(header):not(footer) {
-					overscroll-behavior: contain;
-					min-block-size: 0;
-					padding-inline: var(--set-aside-drawer-padding-inline);
-					padding-block: var(--set-aside-drawer-padding-block);
-					flex: auto;
-					overflow-y: auto;
+					margin-block-start: auto;
 				}
 				:is(aside, nav)[popover] > header > button:last-child,
 				:is(aside, nav)[popover] > footer > button:last-child {
@@ -12942,14 +12938,20 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				body:has(main) > * > aside > header :where(a):hover {
 					color: var(--color-primary-on-canvas);
 				}
-				:is(body:has(main) > nav > header, body:has(main) > * > nav > header) {
+				:is(
+					body:has(main) > nav:not([popover]) > header,
+					body:has(main) > * > nav:not([popover]) > header
+				) {
 					margin-inline: calc(var(--set-nav-padding-inline) * -1);
 					z-index: 1;
 					margin-block-start: calc(var(--set-nav-padding-block) * -1);
 					position: sticky;
 					inset-block-start: calc(var(--set-nav-padding-block) * -1);
 				}
-				:is(body:has(main) > aside > header, body:has(main) > * > aside > header) {
+				:is(
+					body:has(main) > aside:not([popover]) > header,
+					body:has(main) > * > aside:not([popover]) > header
+				) {
 					margin-inline: calc(var(--set-aside-padding-inline) * -1);
 					z-index: 1;
 					margin-block-start: calc(var(--set-aside-padding-block) * -1);
