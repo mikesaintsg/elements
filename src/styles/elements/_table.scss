@@ -191,19 +191,43 @@
 			background-color: var(--set-table-row-selected-background-color);
 		}
 
-		// ── Expansion seam ────────────────────────────────────────────────────
-		// `createTable` pairs each body row with a sibling expansion row
-		// carrying `[data-table-expansion-panel]` inside its single <td>.
-		// When the row is collapsed (host row lacks `[data-table-expanded]`),
-		// the panel cell contributes a duplicate seam — zero its bottom
-		// padding & border so the data row above owns the divider.
-		tbody tr:has(> td > [data-table-expansion-panel]) > td {
-			padding-block: 0;
+		// ── Expansion seam — class + composable data-attribute hooks ──────────
+		// Two contracts share the same chrome:
+		//
+		//   1. STATIC / DECLARATIVE — markup the consumer writes by hand:
+		//      <tr class="expanded">…</tr>
+		//      <tr class="expansion">
+		//        <td colspan="N">
+		//          <div class="expansion-panel">…</div>
+		//        </td>
+		//      </tr>
+		//
+		//   2. COMPOSABLE — `useTable` writes / clears `data-table-expanded` on
+		//      the host row and renders the sibling `<tr>` with a panel that
+		//      carries `[data-table-expansion-panel]`. Same visual effect,
+		//      attribute hook instead of class so composable instrumentation
+		//      doesn't fight consumer-authored class lists.
+		//
+		// Both selectors are unioned everywhere the chrome is declared (here in
+		// the bare-table rule, plus the accordion-style animation rules below
+		// the table block). The data-* path tracks the original framework
+		// contract; the class path tracks the framework-wide modifier-naming
+		// convention (single English word / past-participle, no `table-`
+		// prefix) documented in plan.md §9.7.
+		tbody tr:has(> td > [data-table-expansion-panel]) > td,
+		tbody tr.expansion > td {
+			padding: 0;
+			border-block-end-width: 0;
 		}
 
-		tbody tr:not([data-table-expanded]) + tr > td > [data-table-expansion-panel] {
-			display: none;
-		}
+		// Closed-state panel visibility is handled by `block-size: 0 +
+		// overflow: clip` on the `.expansion-panel` rule below — that
+		// preserves the panel in the DOM (and in the accessibility tree)
+		// so the open / close transition can animate `block-size` from
+		// `0 → auto` via `interpolate-size: allow-keywords`. The old
+		// `display: none` rule for `[data-table-expansion-panel]` was
+		// removed because `display: none` is non-animatable and would
+		// break the accordion-style transition.
 
 		// Resize handle — visible only on hover of the host header so it
 		// doesn't compete with the sort indicator at rest.
@@ -371,6 +395,77 @@
 	// Selection still wins over hover — `[aria-selected]` re-declares after.
 	table > tbody > tr[aria-selected='true'] > * {
 		background-color: var(--set-table-row-selected-background-color);
+	}
+
+	// ── Row expansion — accordion-in-table, pure CSS via inline `<details>` ────
+	// Pattern: a sibling `<tr class="expansion">` lives in the DOM right
+	// after each data row, with a `<td colspan>` holding the
+	// `<div class="expansion-panel">`. State lives entirely in a bare
+	// `<details>` element inside the host row's last cell — the framework
+	// already ships disclosure semantics, the marker chevron (via
+	// `_summary.scss`), the `[open]` toggle, and a smooth height transition
+	// on `::details-content`. CSS `:has()` hooks `tr:has(> td > details[open])`
+	// and opens the sibling's `.expansion-panel` via the same `block-size:
+	// 0 → auto` animation `<details>::details-content` uses (declared
+	// globally via `interpolate-size: allow-keywords` on `<html>` in
+	// `_html.scss`).
+	//
+	// No JavaScript needed — the showcase demo and any production consumer
+	// get a smooth open / close behaviour from semantic HTML alone, tightly
+	// coupled with the framework's bare-accordion `<details>` so a host-page
+	// retune of the accordion timing flows through to the table expansion
+	// automatically.
+	//
+	// No accent bar, no extra emphasis on the host row — the panel's tinted
+	// background (`color-mix(currentColor 4%, transparent)`) plus its
+	// expanded padding is enough signal that "this row is open." Less
+	// opinionated; the panel-vs-row visual difference does the work.
+	//
+	// Composable parity: `useTable` writes `data-table-expanded` on the host
+	// row instead of relying on inline `<details>`. Both selectors are
+	// unioned so a composable-driven table renders the same chrome without
+	// rewriting markup.
+	table > tbody > tr.expansion > td > .expansion-panel,
+	table > tbody > tr > td > [data-table-expansion-panel] {
+		block-size: 0;
+		opacity: 0;
+		overflow: clip;
+		padding-block: 0;
+		padding-inline: var(--set-table-cell-padding-inline);
+		background-color: color-mix(in srgb, currentColor 4%, transparent);
+		// `block-size` + `padding-block` animate in lock-step from 0 →
+		// final so the closed state is genuinely 0px tall. Empirically,
+		// animating only `block-size` leaves a `padding * 2` floor on
+		// some engines where the table-cell sizes by intrinsic content +
+		// padding regardless of the child's declared block-size.
+		//
+		// `block-size: 0 → auto` requires `interpolate-size: allow-
+		// keywords` (declared globally on `<html>` in `_html.scss`). Same
+		// animation contract `<details>::details-content` uses — opening
+		// the row's inline `<details>` toggle ripples through `:has()`
+		// and the sibling panel expands with identical timing and easing.
+		@include transition((block-size 0.25s ease, padding-block 0.25s ease, opacity 0.2s ease));
+	}
+
+	table > tbody > tr:has(> td > details[open]) + tr.expansion > td > .expansion-panel,
+	table > tbody > tr[data-table-expanded] + tr > td > [data-table-expansion-panel] {
+		block-size: auto;
+		opacity: 1;
+		padding-block: calc(var(--spacing) * 3);
+	}
+
+	// `<details>` inside a table cell — strip the framework's bordered
+	// disclosure chrome so the `<summary>` reads as a bare row-level
+	// toggle. The framework's `_details.scss` baseline renders a padded,
+	// bordered box — correct for stand-alone disclosures and accordion
+	// groups, but inside a `<td>` it'd compete with the table's own chrome.
+	// The summary keeps its marker chevron (from `_summary.scss`) so the
+	// toggle still LOOKS like a disclosure — just without the box around it.
+	table > tbody > tr > td > details {
+		display: inline-block;
+		padding: 0;
+		background: transparent;
+		border: 0;
 	}
 
 	// ── Scrollable wrapper ────────────────────────────────────────────────────

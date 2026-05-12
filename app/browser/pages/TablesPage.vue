@@ -47,6 +47,32 @@
  *     (caret glyph via `--set-icon-*` mask). Interactive sort logic
  *     belongs on `UseTablePage`; this page demonstrates the static
  *     rendering only.
+ *   Row expansion — accordion-in-table, pure CSS:
+ *     A sibling `<tr class="expansion">` after each data row holds
+ *     a `<td colspan>` containing `<div class="expansion-panel">`.
+ *     Toggle state lives in a bare `<details>` inside the host row's
+ *     last cell — the framework already styles `<details>` with
+ *     accordion semantics + a `<summary>` chevron marker + the
+ *     `[open]` attribute. CSS hooks `tr:has(> td > details[open]) +
+ *     tr.expansion .expansion-panel` to open the sibling via the
+ *     same `block-size: 0 → auto` transition that powers
+ *     `<details>::details-content` (declared globally on `<html>`
+ *     via `interpolate-size: allow-keywords` in `_html.scss`). Zero
+ *     JavaScript — pure CSS, tightly coupled to the bare-details
+ *     accordion so a host-page retune of the accordion timing flows
+ *     through to the table expansion automatically. No accent bar
+ *     and no host-row emphasis — the panel's tinted background plus
+ *     its expanded padding is enough signal that "this row is open."
+ *     Exclusive accordion: sharing `name="…"` across every host
+ *     row's `<details>` makes opening one auto-close the others
+ *     (HTML5 exclusive-disclosure semantics, same mechanism the
+ *     standalone accordion on `DetailsPage` uses). Multiple-open
+ *     vs exclusive is purely a markup choice — drop the `name`
+ *     attribute and every toggle becomes independent.
+ *     Composable parity: `useTable` writes `data-table-expanded` on
+ *     the host row instead of using inline `<details>`; both
+ *     selectors are unioned in `_table.scss` so the chrome is
+ *     single-sourced.
  *   `<div class="scrollable">` wrapper — bounds horizontal overflow
  *     to the wrapper so a wide table doesn't push the viewport wider
  *     than the page. Element-agnostic (works around any wide content,
@@ -125,6 +151,12 @@ const members: readonly Member[] = [
 		last: '5 minutes ago',
 	},
 ]
+
+// No reactive state — the row-expansion demo drives entirely off
+// `<details>` toggles inside each host row. CSS hooks the `[open]`
+// attribute via `:has()` and animates the sibling row's panel. Initial
+// open / closed state is set by adding `open` to the `<details>` in
+// markup, exactly like a static `<details open>` block.
 </script>
 
 <template>
@@ -491,6 +523,765 @@ const members: readonly Member[] = [
 					<td>{{ m.name }}</td>
 					<td>{{ m.commits }}</td>
 					<td>{{ m.last }}</td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section id="tables-expansion-basic">
+		<h2>Row expansion — accordion-in-table</h2>
+		<p>
+			A sibling <code>&lt;tr class="expansion"&gt;</code> right after a data row holds the inline
+			detail panel. Toggle state lives in a bare <code>&lt;details&gt;</code> inside the host row's
+			last cell — the framework's accordion element already ships the disclosure semantics, the
+			chevron marker, and the <code>[open]</code> attribute. CSS
+			<code>tr:has(&gt; td &gt; details[open]) + tr.expansion .expansion-panel</code> opens the
+			sibling panel via the same <code>block-size: 0 → auto</code> transition
+			<code>&lt;details&gt;::details-content</code> uses (declared globally via
+			<code>interpolate-size: allow-keywords</code> on <code>&lt;html&gt;</code>). Zero JavaScript —
+			pure CSS coupled tightly to the bare-details accordion. Click any toggle.
+		</p>
+		<table>
+			<thead>
+				<tr>
+					<th>Member ID</th>
+					<th>Name</th>
+					<th>Role</th>
+					<th style="width: 8rem"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>
+						<code>AL-04</code>
+					</td>
+					<td>Ada Lovelace</td>
+					<td>Mathematician</td>
+					<td>
+						<details><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<dl>
+								<dt>Team</dt>
+								<dd>Analytical</dd>
+								<dt>Commits</dt>
+								<dd>342</dd>
+								<dt>Last activity</dt>
+								<dd>2 hours ago</dd>
+							</dl>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>GH-12</code>
+					</td>
+					<td>Grace Hopper</td>
+					<td>Compiler theorist</td>
+					<td>
+						<details open><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<dl>
+								<dt>Team</dt>
+								<dd>Mark I</dd>
+								<dt>Commits</dt>
+								<dd>287</dd>
+								<dt>Last activity</dt>
+								<dd>Yesterday</dd>
+							</dl>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>AT-21</code>
+					</td>
+					<td>Alan Turing</td>
+					<td>Cryptographer</td>
+					<td>
+						<details><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<dl>
+								<dt>Team</dt>
+								<dd>Hut 8</dd>
+								<dt>Commits</dt>
+								<dd>256</dd>
+								<dt>Last activity</dt>
+								<dd>3 days ago</dd>
+							</dl>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>KR-08</code>
+					</td>
+					<td>Katherine Johnson</td>
+					<td>Mathematician</td>
+					<td>
+						<details><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<dl>
+								<dt>Team</dt>
+								<dd>Orbital</dd>
+								<dt>Commits</dt>
+								<dd>198</dd>
+								<dt>Last activity</dt>
+								<dd>Last week</dd>
+							</dl>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section id="tables-expansion-multi">
+		<h2>Multiple open at once</h2>
+		<p>
+			Each host row's <code>&lt;details&gt;</code> toggle is independent — multiple panels can be
+			open simultaneously without coordination. The selector
+			<code>tr:has(&gt; td &gt; details[open]) + tr.expansion .expansion-panel</code> uses
+			adjacent-sibling matching, so each pair animates on its own. No JS scope to manage; the DOM is
+			the state.
+		</p>
+		<table>
+			<thead>
+				<tr>
+					<th>Member ID</th>
+					<th>Name</th>
+					<th>Team</th>
+					<th style="width: 8rem"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>
+						<code>AL-04</code>
+					</td>
+					<td>Ada Lovelace</td>
+					<td>Analytical</td>
+					<td>
+						<details open><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Ada Lovelace works on the <strong>Analytical</strong> team as a mathematician. She's
+								logged <strong>342</strong> commits over the project's lifetime; her latest activity
+								was <em>2 hours ago</em>.
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>GH-12</code>
+					</td>
+					<td>Grace Hopper</td>
+					<td>Mark I</td>
+					<td>
+						<details><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Grace Hopper works on the <strong>Mark I</strong> team as a compiler theorist.
+								<strong>287</strong> commits logged; latest activity <em>Yesterday</em>.
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>AT-21</code>
+					</td>
+					<td>Alan Turing</td>
+					<td>Hut 8</td>
+					<td>
+						<details open><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Alan Turing works on the <strong>Hut 8</strong> team as a cryptographer.
+								<strong>256</strong> commits logged; latest activity <em>3 days ago</em>.
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>KR-08</code>
+					</td>
+					<td>Katherine Johnson</td>
+					<td>Orbital</td>
+					<td>
+						<details><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Katherine Johnson works on the <strong>Orbital</strong> team as a mathematician.
+								<strong>198</strong> commits logged; latest activity <em>Last week</em>.
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>MH-15</code>
+					</td>
+					<td>Margaret Hamilton</td>
+					<td>Apollo</td>
+					<td>
+						<details><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Margaret Hamilton works on the <strong>Apollo</strong> team as a software engineer.
+								<strong>412</strong> commits logged; latest activity <em>5 minutes ago</em>.
+							</p>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section id="tables-expansion-exclusive">
+		<h2>Exclusive expansion — <code>&lt;details name="…"&gt;</code></h2>
+		<p>
+			Sharing a <code>name</code> across every host row's <code>&lt;details&gt;</code> turns the set
+			into an exclusive accordion — opening one row's toggle auto-closes the others, no JS required.
+			Same HTML5 mechanism the framework's standalone accordion in
+			<a href="#/details">DetailsPage</a> uses (<code>&lt;details name="faq-group"&gt;</code>), just
+			composed inside a table. Useful when only one detail panel should be open at a time to keep
+			the row count predictable.
+		</p>
+		<table>
+			<thead>
+				<tr>
+					<th>Step</th>
+					<th>Status</th>
+					<th>Owner</th>
+					<th style="width: 8rem"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>1. Specification</td>
+					<td>Done</td>
+					<td>Ada</td>
+					<td>
+						<details name="release-steps" open>
+							<summary>Notes</summary>
+						</details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Spec reviewed by the API council on 2026-04-30; signed off with two minor editorial
+								revisions on §3.2 (status code table) and §7 (response examples).
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>2. Implementation</td>
+					<td>In review</td>
+					<td>Grace</td>
+					<td>
+						<details name="release-steps">
+							<summary>Notes</summary>
+						</details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								PR #2918 open; 4 of 5 review threads resolved. Outstanding: telemetry sampling
+								strategy in the new <code>/v2/jobs</code> handler.
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>3. Visual QA</td>
+					<td>Pending</td>
+					<td>Margaret</td>
+					<td>
+						<details name="release-steps">
+							<summary>Notes</summary>
+						</details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Visual QA blocked on the implementation PR landing. Test plan drafted in
+								<code>docs/test-plans/2026-Q2-release.md</code>; ~20 minutes of screenshot
+								regression once unblocked.
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>4. Documentation</td>
+					<td>Not started</td>
+					<td>Alan</td>
+					<td>
+						<details name="release-steps">
+							<summary>Notes</summary>
+						</details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Will start after spec sign-off propagates through to the SDKs. Estimated 1 day of
+								writing, half a day of review.
+							</p>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<p>
+			Try it: open one row's <em>Notes</em>, then click another — the first auto-closes as the
+			second opens, both animating together. The closing-row's panel ramps `block-size: auto → 0` at
+			the same time the opening-row's panel ramps `0 → auto`. Pure HTML5 disclosure semantics + the
+			framework's `interpolate-size` transition.
+		</p>
+	</section>
+
+	<section id="tables-expansion-variants">
+		<h2>Composes with row variant tints</h2>
+		<p>
+			A host row with a variant class (<code>&lt;tr class="success"&gt;</code>) keeps its tinted
+			background when expanded — the row's variant tint and the panel's neutral tint sit at
+			different tiers (subtle <code>bg-subtle</code> vs <code>currentColor 4%</code>), so the
+			two-row group reads as a coherent stack: variant-tinted summary on top, neutral detail panel
+			below.
+		</p>
+		<table>
+			<thead>
+				<tr>
+					<th>Order</th>
+					<th>Customer</th>
+					<th>Status</th>
+					<th>Total</th>
+					<th style="width: 8rem"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="success">
+					<td>
+						<code>#1042</code>
+					</td>
+					<td>Acme Corp.</td>
+					<td>Shipped</td>
+					<td>$2,340.00</td>
+					<td>
+						<details><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="5">
+						<div class="expansion-panel">
+							<dl>
+								<dt>Shipping address</dt>
+								<dd>742 Evergreen Terrace · Springfield · OR 97477</dd>
+								<dt>Contact</dt>
+								<dd>logistics@acme.example · +1 555-0142</dd>
+								<dt>Notes</dt>
+								<dd>Tracking number FX-8821-991. Signature on delivery requested.</dd>
+							</dl>
+						</div>
+					</td>
+				</tr>
+				<tr class="information">
+					<td>
+						<code>#1043</code>
+					</td>
+					<td>Globex Inc.</td>
+					<td>Processing</td>
+					<td>$890.50</td>
+					<td>
+						<details open><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="5">
+						<div class="expansion-panel">
+							<dl>
+								<dt>Shipping address</dt>
+								<dd>120 Globex Plaza · Springfield · IL 62704</dd>
+								<dt>Contact</dt>
+								<dd>accounts@globex.example · +1 555-0188</dd>
+								<dt>Notes</dt>
+								<dd>Awaiting line-2 confirmation. Estimated dispatch in 2 business days.</dd>
+							</dl>
+						</div>
+					</td>
+				</tr>
+				<tr class="warning">
+					<td>
+						<code>#1044</code>
+					</td>
+					<td>Initech LLC</td>
+					<td>Returned</td>
+					<td>$4,120.75</td>
+					<td>
+						<details><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="5">
+						<div class="expansion-panel">
+							<dl>
+								<dt>Shipping address</dt>
+								<dd>4120 Veronica Way · Austin · TX 78701</dd>
+								<dt>Contact</dt>
+								<dd>returns@initech.example · +1 555-0166</dd>
+								<dt>Notes</dt>
+								<dd>RMA-2024-0488 received. Refund pending QA inspection of returned units.</dd>
+							</dl>
+						</div>
+					</td>
+				</tr>
+				<tr class="danger">
+					<td>
+						<code>#1045</code>
+					</td>
+					<td>Soylent Corp.</td>
+					<td>Cancelled</td>
+					<td>$650.00</td>
+					<td>
+						<details open><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="5">
+						<div class="expansion-panel">
+							<dl>
+								<dt>Shipping address</dt>
+								<dd>1 Soylent Boulevard · New Brooklyn · NY 11234</dd>
+								<dt>Contact</dt>
+								<dd>support@soylent.example</dd>
+								<dt>Notes</dt>
+								<dd>Cancelled by customer prior to fulfillment. No funds captured.</dd>
+							</dl>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section id="tables-expansion-bordered">
+		<h2>Inside a bordered table</h2>
+		<p>
+			With <code>.bordered</code>, the expansion sibling's <code>border-block-end</code> zeroes when
+			collapsed so the data row above owns the divider; on open, the panel fills the cell and the
+			table's grid pattern stays intact around it.
+		</p>
+		<table class="bordered">
+			<caption>
+				Theme palette tokens — light vs dark
+			</caption>
+			<thead>
+				<tr>
+					<th>Token</th>
+					<th>Light</th>
+					<th>Dark</th>
+					<th style="width: 8rem"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>
+						<code>--color-canvas</code>
+					</td>
+					<td>
+						<code>#fff</code>
+					</td>
+					<td>
+						<code>slate-950</code>
+					</td>
+					<td>
+						<details open><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								The base surface color — every other tier mixes against it.
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>--color-text</code>
+					</td>
+					<td>
+						<code>slate-900</code>
+					</td>
+					<td>
+						<code>slate-100</code>
+					</td>
+					<td>
+						<details><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Body text. Inverts polarity per theme; everything else derives from it via
+								<code>color-mix</code>.
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>--color-border</code>
+					</td>
+					<td>
+						<code>slate-200</code>
+					</td>
+					<td>
+						<code>slate-800</code>
+					</td>
+					<td>
+						<details><summary>Details</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Default divider color. Consumed by <code>--set-table-border-color</code>,
+								<code>--set-input-border-color</code>, and the bare list-group chrome.
+							</p>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section id="tables-expansion-striped">
+		<h2>Inside a striped table</h2>
+		<p>
+			On a <code>.striped</code> table, the panel's neutral <code>currentColor 4%</code> tint sits
+			one tier darker than the striped row tint (<code>12%</code> mix) so the open panel still reads
+			as a distinct sibling rather than blending into the alternating-row pattern.
+		</p>
+		<table class="striped">
+			<thead>
+				<tr>
+					<th>Timestamp</th>
+					<th>Level</th>
+					<th>Source</th>
+					<th>Message</th>
+					<th style="width: 8rem"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>
+						<code>14:02:11.842</code>
+					</td>
+					<td>info</td>
+					<td>auth</td>
+					<td>Session refreshed for user 42</td>
+					<td>
+						<details><summary>Context</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="5">
+						<div class="expansion-panel">
+							<pre
+								style="margin: 0; white-space: pre-wrap; word-break: break-word"
+							><code>jti=e7a1, ttl=900s, scope=read:profile read:billing</code></pre>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>14:02:11.901</code>
+					</td>
+					<td>info</td>
+					<td>db</td>
+					<td>Query took 4.3ms (cache hit)</td>
+					<td>
+						<details><summary>Context</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="5">
+						<div class="expansion-panel">
+							<pre
+								style="margin: 0; white-space: pre-wrap; word-break: break-word"
+							><code>SELECT id, name, plan FROM accounts WHERE org_id = $1 LIMIT 50</code></pre>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>14:02:12.118</code>
+					</td>
+					<td>warn</td>
+					<td>billing</td>
+					<td>Retrying webhook delivery (attempt 3 of 5)</td>
+					<td>
+						<details open><summary>Context</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="5">
+						<div class="expansion-panel">
+							<pre
+								style="margin: 0; white-space: pre-wrap; word-break: break-word"
+							><code>POST https://hooks.example.com/billing — last response: 503 Service Unavailable. Next retry in 4s with jitter.</code></pre>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<code>14:02:12.404</code>
+					</td>
+					<td>error</td>
+					<td>payments</td>
+					<td>Provider returned 503 — falling back to queue</td>
+					<td>
+						<details><summary>Context</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="5">
+						<div class="expansion-panel">
+							<pre
+								style="margin: 0; white-space: pre-wrap; word-break: break-word"
+							><code>POST /v1/charges → upstream 503. Idempotency key idem_8821 preserved; charge will retry from the durable queue.</code></pre>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+	<section id="tables-expansion-compact">
+		<h2>Compact table</h2>
+		<p>
+			<code>.small</code> scales the cell padding down via the same
+			<code>--set-table-cell-padding-*</code> tokens the panel reads, so the panel's horizontal
+			padding shrinks proportionally to match. Vertical padding inside the panel stays generous so
+			detail content keeps breathing room regardless of the host table's density.
+		</p>
+		<table class="small bordered">
+			<thead>
+				<tr>
+					<th>When</th>
+					<th>Who</th>
+					<th>What</th>
+					<th style="width: 6rem"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>2 hours ago</td>
+					<td>
+						<code>ada@example.com</code>
+					</td>
+					<td>Updated billing address</td>
+					<td>
+						<details><summary>Diff</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Old: 50 Babbage Lane → New: 742 Evergreen Terrace · Springfield · OR 97477
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>Yesterday</td>
+					<td>
+						<code>grace@example.com</code>
+					</td>
+					<td>Rotated API token</td>
+					<td>
+						<details open><summary>Diff</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								Token <code>sk_live_…ce91</code> revoked; <code>sk_live_…b4f7</code> issued. Scope
+								unchanged.
+							</p>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>Last week</td>
+					<td>
+						<code>katherine@example.com</code>
+					</td>
+					<td>Added team member</td>
+					<td>
+						<details><summary>Diff</summary></details>
+					</td>
+				</tr>
+				<tr class="expansion">
+					<td colspan="4">
+						<div class="expansion-panel">
+							<p style="margin-block: 0">
+								<code>margaret@example.com</code> invited as Editor; invite pending acceptance.
+							</p>
+						</div>
+					</td>
 				</tr>
 			</tbody>
 		</table>
