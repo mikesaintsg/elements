@@ -31,23 +31,23 @@ const onLinkClick = (event: MouseEvent, id: string): void => {
 </script>
 
 <template>
-	<!-- SiteNav renders ONLY the grouped page list. The sidebar's
-	     search filter lives in App.vue as a sibling in `<nav>` so the
-	     showcase's flex-column rail layout can split the rail cleanly
-	     into a fixed search strip on top + a scrollable list strip
-	     below (mailbox's pattern). Search OUTSIDE the scroll region
-	     means no `position: sticky` trickery, no z-index fights, and
-	     no list rows scrolling behind the search box.
+	<!-- SiteNav renders the grouped page list as alternating `<h6>` +
+	     `<menu>` sibling pairs. NO outer `<section>` wrapper around
+	     each group — `<section>` is for substantial thematic content
+	     bodies with their own region landmark, and inside a `<nav>`
+	     it nests landmarks unnecessarily AND ships framework
+	     `padding-block: 24px` that bloats the sidebar's vertical
+	     rhythm. Sibling pairs are the right semantic for "heading
+	     labels a list" — the spacing rhythm comes from
+	     `showcase.css` (h6 margins asymmetric: room above, tight
+	     below).
 
-	     Each group is its own labelled `<section>` with `<menu><li><a>`
-	     children — picks up the framework's vertical-rail menu shape
-	     from `components/_menu.scss`. The active-page anchor uses
-	     `aria-current="page"` so the framework's nav-rail menu rule
-	     paints the affordance. Group label uses `<h6>` (the smallest
-	     framework heading — 1rem, font-weight 600) so it reads as a
-	     section divider rather than a competing page heading. -->
-	<section v-for="g in grouped" :key="g.group">
-		<h6 class="text-xs uppercase tracking-wider opacity-70">{{ g.group }}</h6>
+	     `<menu>` (not `<ul>`) so the framework's nav-rail menu rules
+	     in `components/_menu.scss` paint the row chrome. The
+	     active-page anchor uses `aria-current="page"`; the framework
+	     paints the affordance. -->
+	<template v-for="g in grouped" :key="g.group">
+		<h6>{{ g.group }}</h6>
 		<menu>
 			<li v-for="r in g.entries" :key="r.id">
 				<a
@@ -59,7 +59,7 @@ const onLinkClick = (event: MouseEvent, id: string): void => {
 				</a>
 			</li>
 		</menu>
-	</section>
+	</template>
 
 	<p v-if="grouped.length === 0">
 		<small>No matches.</small>

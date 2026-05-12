@@ -100,66 +100,105 @@
 
 /* Sidebar layout — APP-SPECIFIC flex-column split.
  *
- * The showcase splits its `<nav>` rail into TWO regions:
+ * The showcase's left rail is a three-region flex column inside the
+ * framework's body-shell `<nav>`:
  *
- *   1. `.showcase-sidebar-search` — fixed-height card-shell holding
- *      the `<search>` filter. Sits at the top of the rail, flush with
- *      top + side edges, with a bottom divider separating it from the
- *      list region below.
+ *   1. `<header class="showcase-drawer-header">` — drawer close
+ *      button (visible only below 960px when the rail collapses to
+ *      an off-canvas drawer).
+ *   2. `<div class="showcase-sidebar-search">` — fixed-height card
+ *      holding the `<search>` filter. Flush with the rail's edges,
+ *      bottom divider separating it from the list region below.
+ *   3. `<div class="showcase-sidebar-list">` — the only scrolling
+ *      region in the rail; holds the grouped page list rendered by
+ *      `SiteNav.vue`.
  *
- *   2. `.showcase-sidebar-list` — flex-grow region that owns the
- *      scrollable list of nav groups. The framework's `body:has(main)
- *      > nav` rule normally puts `overflow-y: auto` on the rail
- *      itself; here we move that scroll responsibility to the inner
- *      list region instead, so the search card stays put while the
- *      list scrolls beneath it.
+ * Architectural choices and why each isn't framework-level:
  *
- * Why split this way (rather than `position: sticky` on the search):
- * mailbox's docs sidebar uses the same flex-column shape, and the
- * result is cleaner — no negative-margin gymnastics, no z-index
- * fights, no list rows ever scrolling behind the search box because
- * they're in a separate scroll container entirely. The card-shell is
- * just a normal flex child; the list region's `overflow-y: auto` is
- * the only scroll container in the rail.
+ *   a. The framework's `body:has(main) > nav` rule sets
+ *      `overflow-y: auto` on the rail itself, so the rail is a
+ *      single scroll container by default. The showcase opts into a
+ *      mailbox-style flex-column split (rail = container, only the
+ *      inner list scrolls). This is a docs-site composition choice —
+ *      product UIs and consumer apps often want the rail-as-scroller
+ *      default. So the opt-in lives here, scoped via `:has(>
+ *      .showcase-sidebar-search)` so it only fires for the showcase.
  *
- * Why this is showcase-specific (not framework): whether the search
- * is pinned to the top of the rail, lives in the app bar, or pops via
- * a command-K dialog is a product-design choice the consumer owns.
- * The framework supplies the rail geometry + the `<search>` element's
- * row chrome; the showcase composes them into this particular shape.
+ *   b. The framework's `body:has(main) > nav > header` rule applies a
+ *      negative-margin + sticky-pin to the drawer header so it
+ *      stays at the top of the rail even when the rail scrolls.
+ *      With the showcase's split, the rail itself doesn't scroll,
+ *      so the sticky pin isn't needed — and worse, the negative
+ *      margins are keyed to `--set-nav-padding-*` which the showcase
+ *      zeroes (each inner region manages its own padding). So the
+ *      showcase opts the drawer header out of the framework's
+ *      sticky/negative-margin rules and lets it sit as a normal
+ *      flex child at the top of the rail.
+ *
+ *   c. Token override: tighten the rail's padding + gap tokens
+ *      because docs sidebars read better at a denser rhythm. The
+ *      override is scoped to navs that carry the showcase-search
+ *      card; other framework consumers keep the spacious defaults
+ *      (16px / 8px).
  *
  * Composition consumes only framework tokens — no showcase-private
- * values — so the same pattern pastes cleanly into a consumer site:
- * give the nav `overflow: hidden`, put a flex-shrink: 0 search card
- * at the top, put a flex: 1; overflow-y: auto list region beneath. */
+ * values — so the pattern pastes cleanly into a consumer site that
+ * wants the same shape. */
 
-/* Make the rail itself a non-scrolling container — the inner list
- * region owns the scroll. The framework's `body:has(main) > nav`
- * rule sets `overflow-y: auto`; we override here to defer scrolling
- * to `.showcase-sidebar-list` below.
+/* Rail container — opt-in flex-column split. Override the framework's
+ * `overflow-y: auto` (scroll moves to `.showcase-sidebar-list`) and
+ * `padding` (each inner region carries its own). Tighten the rail's
+ * padding tokens since the inner regions now consume them directly.
  *
- * Token override: tighten the rail's padding + group gap below the
- * framework defaults (16px / 8px). Docs sidebars typically read
- * better at a denser rhythm — group headers don't need to breathe
- * the way primary nav links do, and the visible list is long so
- * generous gutters waste space. The override only applies to navs
- * carrying `.showcase-sidebar-search`; other framework consumers
- * still get the spacious default. */
+ * `--set-header-padding-*` retain their framework defaults so the
+ * drawer header keeps the SAME height as the body-shell `<header>`
+ * (the showcase's app bar at the top of the page). Without that
+ * parity the drawer-header would visually shrink relative to the
+ * sibling header bands across the layout. */
 body:has(main) > nav:has(> .showcase-sidebar-search),
 body:has(main) > * > nav:has(> .showcase-sidebar-search) {
 	overflow: hidden;
-	padding-block: 0;
+	padding: 0;
+	gap: 0;
 
 	--set-nav-padding-inline: calc(var(--spacing) * 2);
 	--set-nav-padding-block: calc(var(--spacing) * 2);
-	--set-nav-gap: calc(var(--spacing) * 1);
 }
 
-/* Search card — flex-shrink: 0 so it always renders at its content
- * height regardless of list length. Padding matches the rail's gutter
- * tokens so the input lines up with where the first list row would
- * have started; the inline padding extends edge-to-edge across the
- * rail width. `border-block-end` paints the divider beneath. */
+/* Drawer header — opt out of the framework's sticky/negative-margin
+ * pin. The framework targets both `body:has(main) > nav > header`
+ * AND `body:has(main) > * > nav > header` (because Vue / React
+ * mount points like `<div id="app">` stand between `<body>` and
+ * the sectioning children, and the framework's body-grid rule
+ * uses `display: contents` on the wrapper to make children behave
+ * as direct grid items). The framework's drawer-header rule pins
+ * the header with `position: sticky; margin-block-start: calc(--
+ * set-nav-padding-block * -1); ...` so it stays at the top of a
+ * scrolling rail.
+ *
+ * With the flex-column split the rail doesn't scroll itself, so
+ * the sticky machinery isn't needed — and the negative margins
+ * are keyed to `--set-nav-padding-block` which we zeroed on the
+ * rail. Force the header back to a normal flex child so it sits
+ * naturally with NO margin overhang, NO sticky offset, and the
+ * SAME height as the body app bar's `<header>` (consumer parity:
+ * the user expects the drawer header and the body header to read
+ * as siblings of equal stature).
+ *
+ * Selector uses the class alone (no body-shell prefix) so it wins
+ * both the direct-child and once-removed framework variants by
+ * specificity — `.showcase-drawer-header` adds a class-level
+ * specifier, the framework's rule is pure-element. */
+nav > header.showcase-drawer-header {
+	position: static;
+	margin: 0;
+	inset-block-start: auto;
+	border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
+}
+
+/* Search card — fixed-height flex child. Padding consumed from the
+ * rail's tighter tokens. Border below paints the divider that
+ * separates the card from the list region beneath. */
 .showcase-sidebar-search {
 	flex-shrink: 0;
 	padding-block: var(--set-nav-padding-block);
@@ -168,17 +207,53 @@ body:has(main) > * > nav:has(> .showcase-sidebar-search) {
 	border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
 }
 
-/* List region — flex-grow: 1 so it claims all remaining vertical
- * space; `overflow-y: auto` makes it the scroll container. Padding
- * restores the rail's gutter (which was zeroed on the parent `<nav>`
- * above) so list rows still sit inside the rail's inset. */
+/* List region — the rail's only scroll container. `flex: 1` claims
+ * remaining vertical space; `overflow-y: auto` enables scroll;
+ * `min-block-size: 0` lets it shrink properly inside the flex
+ * column (without this, flex-children with intrinsic content size
+ * push the rail taller than the viewport, breaking the scroll
+ * boundary). */
 .showcase-sidebar-list {
 	flex: 1 1 auto;
 	min-block-size: 0;
 	overflow-y: auto;
 	padding-block: var(--set-nav-padding-block);
 	padding-inline: var(--set-nav-padding-inline);
-	display: flex;
-	flex-direction: column;
-	gap: var(--set-nav-gap);
+}
+
+/* Group rhythm — alternating `<h6>` + `<menu>` sibling pairs (no
+ * `<section>` wrapper; see `SiteNav.vue` for why). Spacing
+ * asymmetric so the heading reads with its menu rather than apart:
+ *
+ *   - First heading: flush with the list region's top padding (no
+ *     extra top margin so the first group hugs the search card's
+ *     bottom divider).
+ *   - Subsequent headings: top margin opens a clear group separator
+ *     above (the bottom of the previous menu).
+ *   - All headings: tight bottom margin so the heading reads as a
+ *     label for the menu directly below it, not a standalone item.
+ *   - All menus: zero block margins; the framework's row chrome
+ *     gives each `<li><a>` its own padding so rows already breathe
+ *     internally.
+ *
+ * `--set-nav-font-size` and `--color-text-muted` give the headings
+ * a muted-uppercase editorial register without competing with the
+ * link rows for the eye. */
+.showcase-sidebar-list h6 {
+	margin-block-start: calc(var(--spacing) * 3);
+	margin-block-end: calc(var(--spacing) * 1);
+	padding-inline: calc(var(--spacing) * 2);
+	color: var(--color-text-muted);
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+
+.showcase-sidebar-list h6:first-child {
+	margin-block-start: 0;
+}
+
+.showcase-sidebar-list menu {
+	margin-block: 0;
 }
