@@ -140,19 +140,87 @@
 		// `composables/_dialog.scss`.
 	}
 
-	// Card-like footer inside <dialog> — actions usually live in a <footer>
-	// (or `<form method="dialog">` with a footer). The framework gives the
-	// row a sensible gap so consumers don't have to add `class="flex gap-2"`
-	// every time. On narrow viewports the row wraps cleanly so two buttons
-	// never collide; the `flex-end` justify keeps the affirmative action
-	// trailing — same convention as the platform default.
+	// --------------------------------------------------------------------------
+	// Dialog section chrome — header / body / footer.
+	//
+	// The framework treats a direct-child `<header>` and `<footer>` (whether
+	// wrapped in `<form method="dialog">` or sitting directly under
+	// `<dialog>`) as Bootstrap-style "modal-header" / "modal-footer" bands —
+	// edge-to-edge surfaces with their own internal padding, a thin divider
+	// line separating them from the body, and consistent vertical rhythm.
+	// The "body" is whatever sits between them (no class needed; "anything
+	// not header / not footer" IS the body).
+	//
+	// Implementation: each section extends edge-to-edge of the dialog's
+	// border-box via a NEGATIVE inline margin equal to the dialog's
+	// `padding-inline`. The block axis uses a negative margin on the
+	// outward edge (top for header, bottom for footer) to pull the section
+	// flush with the dialog's outer edge, and a POSITIVE margin on the
+	// inward edge (bottom for header, top for footer) to space the section
+	// off from the body content. Same pattern the drawer-header break-out
+	// in `_header.scss` uses; new tokens (`--set-dialog-section-{padding-
+	// block, border-color, gap}`) let consumers retune the band without
+	// touching the dialog padding chain.
+	//
+	// Inside `.scrollable`, the dialog becomes a flex-column with the
+	// inner `<section>` taking the scroll. The negative margins still
+	// resolve correctly on flex items — header and footer flex-shrink to
+	// their intrinsic height and the section grows to fill the remaining
+	// block-size.
+	// --------------------------------------------------------------------------
+	dialog {
+		// Internal padding for the header / footer bands. Smaller than
+		// the dialog's own padding-block so the band reads as a tighter
+		// chrome row vs the body. Mirrors Bootstrap's `--bs-modal-header-
+		// padding` / `--bs-modal-footer-padding`.
+		--set-dialog-section-padding-block: calc(var(--spacing) * 3);
+		// Divider line between the band and the body. Default falls through
+		// to the dialog's own border color so a variant-tinted dialog
+		// gets a matching divider for free.
+		--set-dialog-section-border-color: var(--set-dialog-border-color);
+		// Block gap between the header band and the body's first element
+		// (and symmetrically, between body's last element and the footer
+		// band). The header's `margin-block-end` and footer's
+		// `margin-block-start` both consume this token.
+		--set-dialog-section-gap: var(--set-dialog-padding-block);
+	}
+
+	dialog > header,
+	dialog > form > header {
+		// Extend edge-to-edge of the dialog's border-box, then re-pad.
+		margin-inline: calc(var(--set-dialog-padding-inline) * -1);
+		margin-block-start: calc(var(--set-dialog-padding-block) * -1);
+		margin-block-end: var(--set-dialog-section-gap);
+		padding-inline: var(--set-dialog-padding-inline);
+		padding-block: var(--set-dialog-section-padding-block);
+		border-block-end: 1px solid var(--set-dialog-section-border-color);
+
+		// Reset framework heading margins inside the header band — the
+		// band's own padding owns the rhythm. Without this, an `<h2>` /
+		// `<h3>` inside `<dialog> > <header>` keeps its default
+		// `margin-block-start` and pushes the band taller than the
+		// designer's spec.
+		> :is(h1, h2, h3, h4, h5, h6) {
+			margin-block: 0;
+		}
+	}
+
 	dialog > footer,
 	dialog > form > footer {
+		// Flex-row with trailing affirmative action (existing contract).
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: flex-end;
 		gap: var(--set-dialog-footer-gap);
-		margin: 0;
+
+		// Extend edge-to-edge of the dialog's border-box, then re-pad —
+		// mirror of the header rule but flipped on the block axis.
+		margin-inline: calc(var(--set-dialog-padding-inline) * -1);
+		margin-block-start: var(--set-dialog-section-gap);
+		margin-block-end: calc(var(--set-dialog-padding-block) * -1);
+		padding-inline: var(--set-dialog-padding-inline);
+		padding-block: var(--set-dialog-section-padding-block);
+		border-block-start: 1px solid var(--set-dialog-section-border-color);
 	}
 
 	// Windows High Contrast / forced-colors fallback. The dialog drops its

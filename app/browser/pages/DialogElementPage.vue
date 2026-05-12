@@ -175,7 +175,9 @@ const snippetForm = `<dialog>
 			</footer>
 		</dialog>
 		<dialog ref="dialogModal">
-			<h3>Modal dialog</h3>
+			<header>
+				<h3>Modal dialog</h3>
+			</header>
 			<p>
 				Top-layer + <code>::backdrop</code>. The native <code>Esc</code> key closes the modal — try
 				it. Clicking outside the dialog hits the backdrop, not the page.
@@ -217,7 +219,7 @@ const snippetForm = `<dialog>
 			<button @click="dialogScrollable?.showModal()">.scrollable</button>
 		</div>
 		<dialog ref="dialogSmall" class="small">
-			<h3>Small dialog</h3>
+			<header><h3>Small dialog</h3></header>
 			<p>20rem cap. Right size for a single-question prompt.</p>
 			<footer>
 				<button @click="dialogSmall?.close()">Cancel</button>
@@ -225,7 +227,7 @@ const snippetForm = `<dialog>
 			</footer>
 		</dialog>
 		<dialog ref="dialogLarge" class="large">
-			<h3>Large dialog</h3>
+			<header><h3>Large dialog</h3></header>
 			<p>
 				48rem inline-size. Multi-field forms, two-pane wizards, or any panel that needs more
 				horizontal room than the default 32rem.
@@ -242,7 +244,7 @@ const snippetForm = `<dialog>
 			</footer>
 		</dialog>
 		<dialog ref="dialogFullscreen" class="fullscreen">
-			<h3>Fullscreen dialog</h3>
+			<header><h3>Fullscreen dialog</h3></header>
 			<p>
 				Edge-to-edge sheet — covers the entire viewport with no border radius. The mobile-app
 				equivalent of a modal sheet. Tap close to exit.
@@ -286,7 +288,7 @@ const snippetForm = `<dialog>
 			<button @click="dialogFilled?.showModal()" class="primary filled">Filled primary</button>
 		</div>
 		<dialog ref="dialogPrimary" class="primary">
-			<h3>Primary dialog</h3>
+			<header><h3>Primary dialog</h3></header>
 			<p>
 				Variant border via <code>--set-variant-background-color</code>. Body chrome stays neutral by
 				default — containers don't auto-fill with their variant identity.
@@ -296,7 +298,7 @@ const snippetForm = `<dialog>
 			</footer>
 		</dialog>
 		<dialog ref="dialogDanger" class="danger">
-			<h3>Confirm deletion</h3>
+			<header><h3>Confirm deletion</h3></header>
 			<p>
 				Common pattern: danger-tinted border on a destructive-action confirmation modal. Keeps the
 				surface neutral so the body is still readable; the border signals urgency.
@@ -307,7 +309,7 @@ const snippetForm = `<dialog>
 			</footer>
 		</dialog>
 		<dialog ref="dialogFilled" class="primary filled">
-			<h3>Filled dialog</h3>
+			<header><h3>Filled dialog</h3></header>
 			<p>
 				Saturated <code>--color-primary</code> body fill with white text. Reads as a "branded" modal
 				— useful for promotional sheets, onboarding gates, and emphasis moments. Same chrome
@@ -340,7 +342,7 @@ const snippetForm = `<dialog>
 		</div>
 		<dialog ref="dialogForm" @close="lastReturn = dialogForm?.returnValue ?? ''">
 			<form method="dialog">
-				<h3>Delete this draft?</h3>
+				<header><h3>Delete this draft?</h3></header>
 				<p>
 					This action can't be undone. The form's <code>method="dialog"</code> closes the modal on
 					submit and writes the clicked button's <code>value</code> to
@@ -358,19 +360,44 @@ const snippetForm = `<dialog>
 		</details>
 	</section>
 
-	<section id="dialog-element-footer">
-		<h2>Footer chrome</h2>
+	<section id="dialog-element-sections">
+		<h2>Header / body / footer chrome</h2>
 		<p>
-			A direct-child <code>&lt;footer&gt;</code> inside <code>&lt;dialog&gt;</code> (or inside a
-			<code>&lt;dialog&gt; &gt; &lt;form&gt;</code>) auto-lays out as a flex row with trailing
-			affirmative action and consistent gap. The <code>--set-dialog-footer-gap</code> token controls
-			the spacing.
+			A direct-child <code>&lt;header&gt;</code> and <code>&lt;footer&gt;</code> inside a
+			<code>&lt;dialog&gt;</code> (or inside a <code>&lt;dialog&gt; &gt; &lt;form&gt;</code>)
+			auto-hydrate as Bootstrap-style modal-header / modal-footer bands. Three things happen without
+			any class:
+		</p>
+		<ul>
+			<li>
+				<strong>Edge-to-edge band.</strong> Each section extends to the dialog's border-box via a
+				negative inline margin, then re-applies the dialog's <code>padding-inline</code> so the
+				section's content stays aligned with the body.
+			</li>
+			<li>
+				<strong>Divider line.</strong> A 1px <code>border-block-end</code> (header) /
+				<code>border-block-start</code> (footer) separates the band from the body. Color follows the
+				dialog's own border so a variant-tinted dialog gets a matching divider.
+			</li>
+			<li>
+				<strong>Vertical rhythm.</strong> A consistent <code>--set-dialog-section-gap</code>
+				margin sits between the band and the body so the heading and the affirmative-action row
+				never crash into the body copy.
+			</li>
+		</ul>
+		<p>
+			The "body" is whatever sits between header and footer in document order. No
+			<code>&lt;section class="body"&gt;</code> wrapper required — the framework treats "anything
+			not header / footer" AS the body. For the <code>.scrollable</code> modifier the inner
+			<code>&lt;section&gt;</code> becomes the explicit scroll container so the header / footer can
+			stay pinned.
 		</p>
 		<p>
-			Convention: cancel / dismiss action on the left, primary affirmative action on the right
-			(trailing inline-end). The framework's <code>justify-content: flex-end</code> +
-			<code>flex-wrap: wrap</code> handles the layout — buttons wrap cleanly on narrow viewports
-			without colliding.
+			Footer-specific chrome: actions auto-lay out as a flex-row with
+			<code>justify-content: flex-end</code> + <code>flex-wrap: wrap</code> + a
+			<code>--set-dialog-footer-gap</code> between siblings. Convention: cancel / dismiss action on
+			the left, primary affirmative action on the right (trailing inline-end). On narrow viewports
+			the row wraps cleanly so two buttons never collide.
 		</p>
 	</section>
 

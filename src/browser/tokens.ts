@@ -678,6 +678,13 @@ export const tokens = {
 		maxInlineSize: '--set-dialog-max-inline-size',
 		maxBlockSize: '--set-dialog-max-block-size',
 		footerGap: '--set-dialog-footer-gap',
+		// Section chrome — `<dialog> > <header>` / `<dialog> > <footer>`
+		// get auto-laid-out as Bootstrap-style modal-header / modal-footer
+		// bands with their own internal padding, a divider line, and a
+		// consistent gap to the body. Three tokens control the band:
+		sectionPaddingBlock: '--set-dialog-section-padding-block',
+		sectionBorderColor: '--set-dialog-section-border-color',
+		sectionGap: '--set-dialog-section-gap',
 		boxShadow: '--set-dialog-box-shadow',
 		transitionDuration: '--set-dialog-transition-duration',
 	},
