@@ -339,8 +339,14 @@ const snippetStates = `<!-- :focus-visible — interact with any control above -
 		<div class="stack">
 			<div class="form-row">
 				<label for="volume">Volume</label>
-				<input id="volume" v-model.number="sliderValue" type="range" min="0" max="100" />
-				<output for="volume" class="filled">{{ sliderValue }}</output>
+				<!-- Range + readout stay paired across viewports — the form-row's
+				     mobile single-column stack would otherwise drop the output
+				     onto its own row at full width. A local flex wrapper keeps
+				     the chip beside the slider on every breakpoint. -->
+				<div class="form-row-range">
+					<input id="volume" v-model.number="sliderValue" type="range" min="0" max="100" />
+					<output for="volume" class="filled">{{ sliderValue }}</output>
+				</div>
 			</div>
 		</div>
 		<details>
@@ -815,6 +821,26 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 	.form-row-hint {
 		margin-inline-start: calc(12rem + var(--spacing) * 3);
 	}
+}
+
+/* Range slider + output chip pairing — keep them on the same row at
+ * every breakpoint. Inside a `.form-row`'s single-column mobile
+ * layout, a bare `<input type="range">` + `<output>` would stack
+ * vertically (output going full-width on its own line). Wrapping them
+ * in `<div class="form-row-range">` re-establishes the inline pair so
+ * the slider grows to fill the remaining track while the output sits
+ * inline-end at content width. */
+.form-row-range {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--spacing) * 3);
+}
+.form-row-range > input[type='range'] {
+	flex: 1 1 auto;
+	min-inline-size: 0;
+}
+.form-row-range > output {
+	flex: 0 0 auto;
 }
 
 /* The framework ships `<div class="stack">` (column flex) and
