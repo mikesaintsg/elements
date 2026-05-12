@@ -95,7 +95,12 @@ const onClick = (event: MouseEvent, id: string): void => {
 </script>
 
 <template>
-	<h6 class="text-xs uppercase tracking-wider opacity-70">On this page</h6>
+	<!-- Desktop-only label. On mobile the rail is a popover drawer
+	     whose `<header>` band carries the same "On this page" title,
+	     so this h6 hides via `.showcase-toc-heading { display: none }`
+	     below 960 px and reappears at the @media (min-width: 961px)
+	     breakpoint — see `app/browser/styles/showcase.css`. -->
+	<h6 class="showcase-toc-heading text-xs uppercase tracking-wider opacity-70">On this page</h6>
 	<!-- WAI-ARIA APG: the in-page TOC is a "Table of contents" navigation
 	     landmark. Framework's components/_nav.scss + the showcase rules
 	     in showcase.css paint the active-link affordance. -->

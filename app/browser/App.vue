@@ -173,7 +173,16 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 	     handle the slide-from-edge geometry + backdrop scrim, and Vue
 	     just decides whether the rail is a popover or not. -->
 	<nav id="primary-rail" aria-label="Primary" :popover="isMobile ? 'auto' : undefined">
+		<!-- Drawer header band — mobile only. Title + close button mirror
+		     the canonical `<aside popover>` offcanvas pattern on
+		     AsidePage so the body-shell rail drawers and the standalone
+		     drawer demos read as one family. The framework's
+		     `:is(aside, nav)[popover] > header:first-child` rule in
+		     `components/_aside.scss` paints the chunky band, edge
+		     bleed, divider, and the close-button pin
+		     (`margin-inline-start: auto` on the trailing button). -->
 		<header class="showcase-drawer-header">
+			<strong>Navigation</strong>
 			<button
 				type="button"
 				class="subtle icon-only"
@@ -223,6 +232,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 	     close-button + popovertarget contract. -->
 	<aside id="toc-rail" aria-label="On this page" :popover="isMobile ? 'auto' : undefined">
 		<header class="showcase-drawer-header">
+			<strong>On this page</strong>
 			<button
 				type="button"
 				class="subtle icon-only"
