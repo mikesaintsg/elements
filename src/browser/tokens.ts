@@ -681,8 +681,15 @@ export const tokens = {
 		// Section chrome — `<dialog> > <header>` / `<dialog> > <footer>`
 		// get auto-laid-out as Bootstrap-style modal-header / modal-footer
 		// bands with their own internal padding, a divider line, and a
-		// consistent gap to the body. Three tokens control the band:
+		// consistent gap to the body. Four tokens control the band:
+		// header padding-block (`--set-dialog-section-padding-block`)
+		// matches the dialog's own padding for visual continuity; footer
+		// padding-block (`--set-dialog-footer-padding-block`) sits a bit
+		// tighter so the action row doesn't dominate; the divider color
+		// follows the dialog border by default; the gap is the breathing
+		// room between band and body.
 		sectionPaddingBlock: '--set-dialog-section-padding-block',
+		footerPaddingBlock: '--set-dialog-footer-padding-block',
 		sectionBorderColor: '--set-dialog-section-border-color',
 		sectionGap: '--set-dialog-section-gap',
 		boxShadow: '--set-dialog-box-shadow',

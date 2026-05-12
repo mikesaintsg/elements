@@ -25,12 +25,34 @@
 		--set-dialog-inline-size: min(48rem, calc(100vw - calc(var(--spacing) * 4)));
 	}
 
-	dialog.fullscreen {
+	// `.fullscreen` — edge-to-edge mobile-sheet flavor. The dialog
+	// fills the viewport with zero radius. Flex-column layout pushes
+	// the footer to the bottom of the sheet (instead of letting it
+	// sit directly under the body text with a massive void below);
+	// `<header>` and `<footer>` keep their intrinsic sizes and the
+	// body slot between them grows to fill the remaining block-size.
+	// Same `[open]` gate reasoning as `.scrollable` — without it the
+	// `display: flex` rule shadows the UA `display: none` on a closed
+	// dialog.
+	dialog.fullscreen[open] {
 		--set-dialog-inline-size: 100dvw;
 		--set-dialog-max-inline-size: 100dvw;
 		--set-dialog-max-block-size: 100dvh;
 		min-block-size: 100dvh;
 		border-radius: 0;
+
+		display: flex;
+		flex-direction: column;
+
+		// Anything that isn't an auto-styled section is the "body" — it
+		// flexes to fill the remaining height between header and footer.
+		// `min-block-size: 0` lets it shrink below intrinsic content size
+		// on tiny viewports without overflowing the dialog.
+		> :where(:not(header):not(footer)),
+		> form > :where(:not(header):not(footer)) {
+			flex: 1 1 auto;
+			min-block-size: 0;
+		}
 	}
 
 	// `.scrollable` — the dialog itself stays compact, but a child
@@ -46,16 +68,26 @@
 	// pinned to the UA-default position (top-left of the containing
 	// block since `:modal` no longer matches → centering drops). User
 	// sees the dialog "move up and to the left a bit" on close and
-	// the panel never goes away. Other modifiers (`small`, `large`,
-	// `fullscreen`) don't override `display`, so they fall back to the
-	// UA `display: none` cleanly — only `.scrollable` needs the gate.
+	// the panel never goes away. Other modifiers (`small`, `large`)
+	// don't override `display`, so they fall back to the UA
+	// `display: none` cleanly — only `.scrollable` / `.fullscreen`
+	// need the gate.
 	dialog.scrollable[open] {
 		display: flex;
 		flex-direction: column;
 
+		// Scroll container — extends edge-to-edge of the dialog's
+		// border-box via negative inline margin, then re-pads its own
+		// content. The scrollbar gutter ends up flush with the dialog's
+		// inline edge (instead of sitting in a 16px gutter that reads
+		// as "where did this strip come from"). Content inside the
+		// scroll keeps the dialog's standard inline padding so the
+		// reading column stays aligned with header / footer chrome.
 		> :where(section, .body) {
 			overflow-y: auto;
 			min-block-size: 0;
+			margin-inline: calc(var(--set-dialog-padding-inline) * -1);
+			padding-inline: var(--set-dialog-padding-inline);
 		}
 	}
 }

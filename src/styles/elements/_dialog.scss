@@ -41,13 +41,21 @@
 		--set-dialog-background-color: var(--set-style-background-color, Canvas);
 		--set-dialog-border-color: var(--set-variant-background-color, var(--color-border));
 		--set-dialog-border-width: 1px;
-		--set-dialog-border-radius: var(--set-size-border-radius, var(--radius-lg));
+		// Dialog chrome (border-radius, padding, font-size) is intentionally
+		// DECOUPLED from the framework's `--set-size-*` cascade. `.small`
+		// and `.large` on a dialog are conventionally width-only choices
+		// (Bootstrap `.modal-sm` / `.modal-lg`, Mailbox follows the same)
+		// — letting the size cascade compress the dialog's padding to 4px
+		// turns a "small dialog" into a cramped strip with body text
+		// crashing into the header divider. Consumers who genuinely want
+		// a tighter dialog override `--set-dialog-padding-*` directly per
+		// instance via inline style.
+		--set-dialog-border-radius: var(--radius-lg);
 		// Padding — mailbox parity. `--bs-modal-padding: 1rem` for both
-		// inline and block. The previous `× 6 / × 5` (1.5rem / 1.25rem)
-		// read too generous against mailbox's tighter modal rhythm.
-		--set-dialog-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 4));
-		--set-dialog-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 4));
-		--set-dialog-font-size: var(--set-size-font-size, var(--text-base));
+		// inline and block.
+		--set-dialog-padding-inline: calc(var(--spacing) * 4);
+		--set-dialog-padding-block: calc(var(--spacing) * 4);
+		--set-dialog-font-size: var(--text-base);
 		--set-dialog-line-height: var(--leading-normal);
 		// `inline-size` is the dialog's preferred width; `max-inline-size`
 		// caps it. Bare modals default to a comfortable reading width
@@ -169,20 +177,31 @@
 	// block-size.
 	// --------------------------------------------------------------------------
 	dialog {
-		// Internal padding for the header / footer bands. Smaller than
-		// the dialog's own padding-block so the band reads as a tighter
-		// chrome row vs the body. Mirrors Bootstrap's `--bs-modal-header-
-		// padding` / `--bs-modal-footer-padding`.
-		--set-dialog-section-padding-block: calc(var(--spacing) * 3);
+		// Internal padding for the header band — matches the dialog's own
+		// `padding-block` so the header reads as a continuation of the
+		// dialog surface (heading sits at the same vertical rhythm as
+		// the body would without a header). Mirrors Bootstrap's
+		// `--bs-modal-header-padding: 1rem` against `--bs-modal-padding:
+		// 1rem`.
+		--set-dialog-section-padding-block: var(--set-dialog-padding-block);
+		// Footer band sits a bit tighter than the header so the action
+		// row doesn't dominate the surface — buttons add their own
+		// vertical weight (~32px tall vs ~16px text), so a 12px footer
+		// padding-block reads as visually similar to the 16px header
+		// padding-block. Bootstrap follows the same asymmetric pattern
+		// (`--bs-modal-footer-padding: 0.75rem`).
+		--set-dialog-footer-padding-block: calc(var(--spacing) * 3);
 		// Divider line between the band and the body. Default falls through
 		// to the dialog's own border color so a variant-tinted dialog
 		// gets a matching divider for free.
 		--set-dialog-section-border-color: var(--set-dialog-border-color);
 		// Block gap between the header band and the body's first element
 		// (and symmetrically, between body's last element and the footer
-		// band). The header's `margin-block-end` and footer's
-		// `margin-block-start` both consume this token.
-		--set-dialog-section-gap: var(--set-dialog-padding-block);
+		// band). 5×spacing (20px) leaves enough breathing room that a
+		// dense form's last input doesn't crash into the affirmative
+		// action row, and the body paragraph in a `.small` confirm
+		// dialog gets visible vertical air around it.
+		--set-dialog-section-gap: calc(var(--spacing) * 5);
 	}
 
 	dialog > header,
@@ -211,15 +230,20 @@
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: flex-end;
+		align-items: center;
 		gap: var(--set-dialog-footer-gap);
 
 		// Extend edge-to-edge of the dialog's border-box, then re-pad —
 		// mirror of the header rule but flipped on the block axis.
+		// Footer uses its own (tighter) padding-block token so the
+		// action row reads as visually balanced against the header
+		// despite the buttons contributing more vertical weight than
+		// the heading text.
 		margin-inline: calc(var(--set-dialog-padding-inline) * -1);
 		margin-block-start: var(--set-dialog-section-gap);
 		margin-block-end: calc(var(--set-dialog-padding-block) * -1);
 		padding-inline: var(--set-dialog-padding-inline);
-		padding-block: var(--set-dialog-section-padding-block);
+		padding-block: var(--set-dialog-footer-padding-block);
 		border-block-start: 1px solid var(--set-dialog-section-border-color);
 	}
 
