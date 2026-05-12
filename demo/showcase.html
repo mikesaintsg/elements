@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T23:20:15.005Z" />
+		<meta name="build-id" content="2026-05-12T23:26:58.509Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -10502,7 +10502,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 											{ id: `scroll-transition-scrollbar` },
 											[
 												Y(`h2`, null, [
-													Z(`1. Scrollbar — `),
+													Z(` 1. Scrollbar — `),
 													Y(`code`, null, `scrollbar-color`),
 													Z(` / `),
 													Y(`code`, null, `-width`),
@@ -10517,16 +10517,16 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 													),
 												]),
 												Y(`p`, null, [
-													Z(` Defaults (declared on `),
+													Z(`Defaults (declared on `),
 													Y(`code`, null, `:root`),
 													Z(` in `),
 													Y(`code`, null, `surfaces/_scrollbar.scss`),
-													Z(`): `),
+													Z(`):`),
 												]),
 												Y(`ul`, null, [
 													Y(`li`, null, [
 														Y(`strong`, null, [Y(`code`, null, `scrollbar-width: thin`)]),
-														Z(` — the narrower of two UA sizes.`),
+														Z(` — the narrower of two UA sizes. `),
 													]),
 													Y(`li`, null, [
 														Y(`strong`, null, [
@@ -10573,17 +10573,17 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 														Y(
 															`p`,
 															null,
-															`Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus lacinia odio vitae vestibulum.`,
+															` Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus lacinia odio vitae vestibulum. `,
 														),
 														Y(
 															`p`,
 															null,
-															`Cras mattis consectetur purus sit amet fermentum. Cras justo odio, dapibus ac facilisis in.`,
+															` Cras mattis consectetur purus sit amet fermentum. Cras justo odio, dapibus ac facilisis in. `,
 														),
 														Y(
 															`p`,
 															null,
-															`Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Praesent commodo cursus magna.`,
+															` Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Praesent commodo cursus magna. `,
 														),
 														Y(
 															`p`,
@@ -10593,12 +10593,12 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 														Y(
 															`p`,
 															null,
-															`Nullam quis risus eget urna mollis ornare vel eu leo. Maecenas faucibus mollis interdum.`,
+															` Nullam quis risus eget urna mollis ornare vel eu leo. Maecenas faucibus mollis interdum. `,
 														),
 														Y(
 															`p`,
 															null,
-															`Aenean lacinia bibendum nulla sed consectetur. Donec ullamcorper nulla non metus auctor fringilla.`,
+															` Aenean lacinia bibendum nulla sed consectetur. Donec ullamcorper nulla non metus auctor fringilla. `,
 														),
 													],
 												),
@@ -10639,7 +10639,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 																Y(
 																	`p`,
 																	null,
-																	`The wider UA scrollbar size — useful for accessibility-tuned scrollables that need a larger drag affordance.`,
+																	` The wider UA scrollbar size — useful for accessibility-tuned scrollables that need a larger drag affordance. `,
 																),
 																Y(
 																	`p`,
@@ -10683,7 +10683,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 																Y(
 																	`p`,
 																	null,
-																	`Variant-tinted scrollbar thumb. Useful for branded chrome where the scrollbar should read as part of the surface identity.`,
+																	` Variant-tinted scrollbar thumb. Useful for branded chrome where the scrollbar should read as part of the surface identity. `,
 																),
 																Y(
 																	`p`,
@@ -10738,7 +10738,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										)),
 										Y(`section`, od, [
 											(t[0] ||= Q(
-												`<h2 data-v-1204c16d>2. View transition — <code data-v-1204c16d>::view-transition-old(root)</code> / <code data-v-1204c16d>-new(root)</code></h2><p data-v-1204c16d> When the consumer wraps a DOM mutation in <code data-v-1204c16d>document.startViewTransition(callback)</code>, the browser snapshots the current rendering, runs the mutation, snapshots again, and cross-fades between the two snapshots. The framework&#39;s surface tokens the duration + timing-function on the (root) snapshot pair so a <code data-v-1204c16d>:root</code> retune flows through every transition the consumer triggers — no per-call <code data-v-1204c16d>animation-duration</code> boilerplate. </p><p data-v-1204c16d> Browser support: Chrome 111+ / Edge 111+ (same-document), Chrome 126+ (cross-document via <code data-v-1204c16d>@view-transition { navigation: auto }</code>), Safari 18+, Firefox not yet (gracefully degrades — the surface is inert when the UA doesn&#39;t run a transition). </p><h3 data-v-1204c16d>Live demo — click to morph between snapshots</h3><p data-v-1204c16d> Each click swaps the title / body / variant of the card below. The DOM mutation is wrapped in <code data-v-1204c16d>document.startViewTransition</code>, so the browser cross-fades the entire root snapshot — title, body, and the variant-tinted card surface all morph in lockstep. </p>`,
+												`<h2 data-v-81c97766>2. View transition — <code data-v-81c97766>::view-transition-old(root)</code> / <code data-v-81c97766>-new(root)</code></h2><p data-v-81c97766> When the consumer wraps a DOM mutation in <code data-v-81c97766>document.startViewTransition(callback)</code>, the browser snapshots the current rendering, runs the mutation, snapshots again, and cross-fades between the two snapshots. The framework&#39;s surface tokens the duration + timing-function on the (root) snapshot pair so a <code data-v-81c97766>:root</code> retune flows through every transition the consumer triggers — no per-call <code data-v-81c97766>animation-duration</code> boilerplate. </p><p data-v-81c97766> Browser support: Chrome 111+ / Edge 111+ (same-document), Chrome 126+ (cross-document via <code data-v-81c97766>@view-transition { navigation: auto }</code>), Safari 18+, Firefox not yet (gracefully degrades — the surface is inert when the UA doesn&#39;t run a transition). </p><h3 data-v-81c97766>Live demo — click to morph between snapshots</h3><p data-v-81c97766> Each click swaps the title / body / variant of the card below. The DOM mutation is wrapped in <code data-v-81c97766>document.startViewTransition</code>, so the browser cross-fades the entire root snapshot — title, body, and the variant-tinted card surface all morph in lockstep. </p>`,
 												5,
 											)),
 											Y(`button`, { type: `button`, onClick: i }, `Show next snapshot`),
@@ -10778,7 +10778,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 											)),
 										]),
 										(t[4] ||= Q(
-											`<section id="scroll-transition-named" data-v-1204c16d><h2 data-v-1204c16d>3. Per-element <code data-v-1204c16d>view-transition-name</code></h2><p data-v-1204c16d> Setting <code data-v-1204c16d>view-transition-name: pickAName</code> on an element makes the UA snapshot that element separately from the root and animate the pair via <code data-v-1204c16d>::view-transition-old(pickAName)</code> / <code data-v-1204c16d>-new(pickAName)</code>. Useful for shared-element transitions (a card morphing into its detail view, a thumbnail growing into a hero image, a chip animating into a filter pill). </p><p data-v-1204c16d> Per-name overrides live at the call site — the framework&#39;s surface only paints the default (<code data-v-1204c16d>(root)</code>) chrome. Authors composing a shared-element transition declare their own keyframes / durations per name. </p><pre data-v-1204c16d><code data-v-1204c16d>/* per-element morph */
+											`<section id="scroll-transition-named" data-v-81c97766><h2 data-v-81c97766>3. Per-element <code data-v-81c97766>view-transition-name</code></h2><p data-v-81c97766> Setting <code data-v-81c97766>view-transition-name: pickAName</code> on an element makes the UA snapshot that element separately from the root and animate the pair via <code data-v-81c97766>::view-transition-old(pickAName)</code> / <code data-v-81c97766>-new(pickAName)</code>. Useful for shared-element transitions (a card morphing into its detail view, a thumbnail growing into a hero image, a chip animating into a filter pill). </p><p data-v-81c97766> Per-name overrides live at the call site — the framework&#39;s surface only paints the default (<code data-v-81c97766>(root)</code>) chrome. Authors composing a shared-element transition declare their own keyframes / durations per name. </p><pre data-v-81c97766><code data-v-81c97766>/* per-element morph */
 .hero-card {
   view-transition-name: hero-card;
 }
@@ -10787,7 +10787,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 ::view-transition-new(hero-card) {
   animation-duration: 400ms;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-}</code></pre></section><section id="scroll-transition-reduced-motion" data-v-1204c16d><h2 data-v-1204c16d>Reduced motion</h2><p data-v-1204c16d> Both surfaces respect <code data-v-1204c16d>prefers-reduced-motion: reduce</code>: </p><ul data-v-1204c16d><li data-v-1204c16d><strong data-v-1204c16d>Scrollbar</strong> — no animations declared, so no override needed. The native scrollbar&#39;s hover / focus chrome is owned by the UA and follows the user&#39;s system preferences. </li><li data-v-1204c16d><strong data-v-1204c16d>View transition</strong> — the surface collapses <code data-v-1204c16d>animation-duration</code> to <code data-v-1204c16d>1 ms</code> rather than disabling the animation outright. Skipping the animation leaves the snapshot suspended in some engines; a 1 ms duration finishes synchronously and produces the right instant-cut effect. </li></ul></section><section id="scroll-transition-forced-colors" data-v-1204c16d><h2 data-v-1204c16d>Forced colors</h2><p data-v-1204c16d> In Windows High Contrast (<code data-v-1204c16d>forced-colors: active</code>): </p><ul data-v-1204c16d><li data-v-1204c16d><strong data-v-1204c16d>Scrollbar</strong> — UA paints with system colours (<code data-v-1204c16d>ButtonText</code> thumb, <code data-v-1204c16d>Canvas</code> track) regardless of the framework&#39;s tokens. The framework&#39;s chrome degrades cleanly to the OS scrollbar. </li><li data-v-1204c16d><strong data-v-1204c16d>View transition</strong> — animations still run; colour-based custom keyframes (if any are declared on a named pair) flatten to system palette via the UA&#39;s forced-colors flattening pass. </li></ul></section><section id="scroll-transition-tokens" data-v-1204c16d><h2 data-v-1204c16d>Tokens</h2><h3 data-v-1204c16d>Scrollbar</h3><dl data-v-1204c16d><dt data-v-1204c16d><code data-v-1204c16d>--set-scrollbar-thumb-color</code></dt><dd data-v-1204c16d>Thumb (the draggable handle) colour. Default <code data-v-1204c16d>var(--color-border-strong)</code> — muted, theme-aware.</dd><dt data-v-1204c16d><code data-v-1204c16d>--set-scrollbar-track-color</code></dt><dd data-v-1204c16d>Track (the rail behind the thumb) colour. Default <code data-v-1204c16d>transparent</code> so the scrollbar reads as floating on the underlying surface.</dd><dt data-v-1204c16d><code data-v-1204c16d>--set-scrollbar-width</code></dt><dd data-v-1204c16d>Scrollbar size keyword. <code data-v-1204c16d>auto</code> | <code data-v-1204c16d>thin</code> | <code data-v-1204c16d>none</code>. Default <code data-v-1204c16d>thin</code>.</dd><dt data-v-1204c16d><code data-v-1204c16d>--set-scrollbar-gutter</code></dt><dd data-v-1204c16d>Gutter reservation. <code data-v-1204c16d>auto</code> | <code data-v-1204c16d>stable</code> | <code data-v-1204c16d>stable both-edges</code>. Default <code data-v-1204c16d>stable</code> so layout doesn&#39;t shift on overflow transitions.</dd></dl><h3 data-v-1204c16d>View transition</h3><dl data-v-1204c16d><dt data-v-1204c16d><code data-v-1204c16d>--set-view-transition-duration</code></dt><dd data-v-1204c16d>Cross-fade duration on the <code data-v-1204c16d>(root)</code> pair. Default <code data-v-1204c16d>--set-transition-duration</code> (150 ms). Reduced-motion collapses to <code data-v-1204c16d>1 ms</code>.</dd><dt data-v-1204c16d><code data-v-1204c16d>--set-view-transition-timing-function</code></dt><dd data-v-1204c16d>Cross-fade easing. Default <code data-v-1204c16d>ease</code>.</dd></dl></section>`,
+}</code></pre></section><section id="scroll-transition-reduced-motion" data-v-81c97766><h2 data-v-81c97766>Reduced motion</h2><p data-v-81c97766>Both surfaces respect <code data-v-81c97766>prefers-reduced-motion: reduce</code>:</p><ul data-v-81c97766><li data-v-81c97766><strong data-v-81c97766>Scrollbar</strong> — no animations declared, so no override needed. The native scrollbar&#39;s hover / focus chrome is owned by the UA and follows the user&#39;s system preferences. </li><li data-v-81c97766><strong data-v-81c97766>View transition</strong> — the surface collapses <code data-v-81c97766>animation-duration</code> to <code data-v-81c97766>1 ms</code> rather than disabling the animation outright. Skipping the animation leaves the snapshot suspended in some engines; a 1 ms duration finishes synchronously and produces the right instant-cut effect. </li></ul></section><section id="scroll-transition-forced-colors" data-v-81c97766><h2 data-v-81c97766>Forced colors</h2><p data-v-81c97766>In Windows High Contrast (<code data-v-81c97766>forced-colors: active</code>):</p><ul data-v-81c97766><li data-v-81c97766><strong data-v-81c97766>Scrollbar</strong> — UA paints with system colours (<code data-v-81c97766>ButtonText</code> thumb, <code data-v-81c97766>Canvas</code> track) regardless of the framework&#39;s tokens. The framework&#39;s chrome degrades cleanly to the OS scrollbar. </li><li data-v-81c97766><strong data-v-81c97766>View transition</strong> — animations still run; colour-based custom keyframes (if any are declared on a named pair) flatten to system palette via the UA&#39;s forced-colors flattening pass. </li></ul></section><section id="scroll-transition-tokens" data-v-81c97766><h2 data-v-81c97766>Tokens</h2><h3 data-v-81c97766>Scrollbar</h3><dl data-v-81c97766><dt data-v-81c97766><code data-v-81c97766>--set-scrollbar-thumb-color</code></dt><dd data-v-81c97766> Thumb (the draggable handle) colour. Default <code data-v-81c97766>var(--color-border-strong)</code> — muted, theme-aware. </dd><dt data-v-81c97766><code data-v-81c97766>--set-scrollbar-track-color</code></dt><dd data-v-81c97766> Track (the rail behind the thumb) colour. Default <code data-v-81c97766>transparent</code> so the scrollbar reads as floating on the underlying surface. </dd><dt data-v-81c97766><code data-v-81c97766>--set-scrollbar-width</code></dt><dd data-v-81c97766> Scrollbar size keyword. <code data-v-81c97766>auto</code> | <code data-v-81c97766>thin</code> | <code data-v-81c97766>none</code>. Default <code data-v-81c97766>thin</code>. </dd><dt data-v-81c97766><code data-v-81c97766>--set-scrollbar-gutter</code></dt><dd data-v-81c97766> Gutter reservation. <code data-v-81c97766>auto</code> | <code data-v-81c97766>stable</code> | <code data-v-81c97766>stable both-edges</code>. Default <code data-v-81c97766>stable</code> so layout doesn&#39;t shift on overflow transitions. </dd></dl><h3 data-v-81c97766>View transition</h3><dl data-v-81c97766><dt data-v-81c97766><code data-v-81c97766>--set-view-transition-duration</code></dt><dd data-v-81c97766> Cross-fade duration on the <code data-v-81c97766>(root)</code> pair. Default <code data-v-81c97766>--set-transition-duration</code> (150 ms). Reduced-motion collapses to <code data-v-81c97766>1 ms</code>. </dd><dt data-v-81c97766><code data-v-81c97766>--set-view-transition-timing-function</code></dt><dd data-v-81c97766>Cross-fade easing. Default <code data-v-81c97766>ease</code>.</dd></dl></section>`,
 											4,
 										)),
 									],
@@ -10796,7 +10796,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 							)
 						},
 					}),
-					[[`__scopeId`, `data-v-1204c16d`]],
+					[[`__scopeId`, `data-v-81c97766`]],
 				),
 				ld = { id: `home`, title: `Home`, group: `Getting started`, page: Qo },
 				ud = [
@@ -11342,7 +11342,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Nd, `build ` + k(Jt(`2026-05-12T23:20:15.005Z`)), 1),
+										Y(`small`, Nd, `build ` + k(Jt(`2026-05-12T23:26:58.509Z`)), 1),
 									]),
 								],
 								64,
@@ -16560,9 +16560,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					--set-scrollbar-track-color: transparent;
 					--set-scrollbar-width: thin;
 					--set-scrollbar-gutter: stable;
+				}
+				*,
+				:before,
+				:after {
 					scrollbar-color: var(--set-scrollbar-thumb-color) var(--set-scrollbar-track-color);
 					scrollbar-width: var(--set-scrollbar-width);
 					scrollbar-gutter: var(--set-scrollbar-gutter);
+				}
+				:root {
 					--set-selection-background-color: var(
 						--set-variant-background-color,
 						oklch(54.6% 0.245 262.881)
@@ -19501,7 +19507,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 			.form-row-range > output[data-v-d9c74f0e] {
 				flex: none;
 			}
-			article[data-v-1204c16d] {
+			article[data-v-81c97766] {
 				view-transition-name: scroll-transition-card;
 			}
 			/*$vite$:1*/

@@ -9,6 +9,23 @@
 //   scrollbar-width         auto | thin | none
 //   scrollbar-gutter        reserve space so layout doesn't shift on overflow
 //
+// Why applied on the universal selector, not just `:root`:
+//   Per CSS Scrollbars Module Level 1, `scrollbar-color` IS an inherited
+//   property but `scrollbar-width` and `scrollbar-gutter` are NOT. Declaring
+//   the trio only on `:root` styles the root scroll container (`<html>`) but
+//   leaves every nested scroll container at the UA default. AND because var()
+//   substitution resolves AT THE DECLARING ELEMENT, a descendant that
+//   overrides `--set-scrollbar-thumb-color` doesn't re-resolve the inherited
+//   `scrollbar-color` — the descendant just inherits the value :root resolved
+//   to.
+//
+//   Applying the three properties on `*` solves both: every element
+//   re-resolves the var() chain at its own scope (so per-host overrides take
+//   effect), AND `scrollbar-width` + `scrollbar-gutter` apply to every scroll
+//   container (so nested scrollables get the thin + stable-gutter default
+//   too). The properties only HAVE A VISIBLE EFFECT on scroll containers
+//   (`overflow: auto | scroll`), so the universal application is paint-safe.
+//
 // Quirks:
 //   - `scrollbar-color` is a single shorthand: `<thumb> <track>`. We expose
 //     two separate tokens and compose them at the application site.
@@ -26,7 +43,15 @@
 		--set-scrollbar-track-color: transparent;
 		--set-scrollbar-width: thin;
 		--set-scrollbar-gutter: stable;
+	}
 
+	// Universal application — see partial header for the cascade rationale.
+	// `scrollbar-color` re-resolves the var() at each element so per-host
+	// token overrides take effect; `scrollbar-width` + `scrollbar-gutter`
+	// apply to every scroll container (the two properties don't inherit).
+	*,
+	*::before,
+	*::after {
 		scrollbar-color: var(--set-scrollbar-thumb-color) var(--set-scrollbar-track-color);
 		scrollbar-width: var(--set-scrollbar-width);
 		scrollbar-gutter: var(--set-scrollbar-gutter);
