@@ -240,7 +240,7 @@ nav > header.showcase-drawer-header {
  * a muted-uppercase editorial register without competing with the
  * link rows for the eye. */
 .showcase-sidebar-list h6 {
-	margin-block-start: calc(var(--spacing) * 3);
+	margin-block-start: calc(var(--spacing) * 6);
 	margin-block-end: calc(var(--spacing) * 1);
 	padding-inline: calc(var(--spacing) * 2);
 	color: var(--color-text-muted);

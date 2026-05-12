@@ -14,6 +14,7 @@ import TablesPage from './pages/TablesPage.vue'
 import MediaPage from './pages/MediaPage.vue'
 import FiguresPage from './pages/FiguresPage.vue'
 import SectioningPage from './pages/SectioningPage.vue'
+import ArticleCardPage from './pages/ArticleCardPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -104,6 +105,12 @@ const SECTIONING: Route = {
 	group: 'Elements — Content',
 	page: SectioningPage,
 }
+const ARTICLE_CARD: Route = {
+	id: 'article-card',
+	title: 'Article card',
+	group: 'Components',
+	page: ArticleCardPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -119,6 +126,7 @@ export const routes: readonly Route[] = [
 	MEDIA,
 	FIGURES,
 	SECTIONING,
+	ARTICLE_CARD,
 ]
 
 interface RouteLocation {
