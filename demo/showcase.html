@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T20:19:14.642Z" />
+		<meta name="build-id" content="2026-05-12T20:31:57.164Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -8502,9 +8502,438 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				tu = { id: `home`, title: `Home`, group: `Getting started`, page: Qo },
-				nu = [
-					tu,
+				tu = { id: `nav-pagination` },
+				nu = { 'aria-label': `Pagination` },
+				ru = [`aria-disabled`, `disabled`],
+				iu = [`aria-current`, `onClick`],
+				au = [`aria-disabled`, `disabled`],
+				ou = { style: { 'margin-block-start': `1rem` } },
+				su = { style: { display: `flex`, 'flex-direction': `column`, gap: `0.75rem` } },
+				cu = [`aria-label`],
+				lu = { id: `nav-tablist` },
+				uu = { role: `tablist`, 'aria-label': `Settings` },
+				du = [`aria-selected`, `tabindex`],
+				fu = [`aria-selected`, `tabindex`],
+				pu = [`aria-selected`, `tabindex`],
+				mu = [`hidden`],
+				hu = [`hidden`],
+				gu = [`hidden`],
+				_u = B({
+					__name: `NavPage`,
+					setup(e) {
+						let t = [
+								`primary`,
+								`secondary`,
+								`tertiary`,
+								`success`,
+								`warning`,
+								`danger`,
+								`information`,
+							],
+							n = L(`overview`),
+							r = (e) => {
+								n.value = e
+							},
+							i = L(2),
+							a = (e) => {
+								e < 1 || e > 7 || (i.value = e)
+							}
+						return (e, o) => (
+							q(),
+							J(
+								G,
+								null,
+								[
+									(o[18] ||= Y(
+										`section`,
+										{ id: `nav-intro` },
+										[
+											Y(`hgroup`, null, [
+												Y(`h1`, null, `Nav`),
+												Y(`p`, null, [
+													Y(`code`, null, `<nav>`),
+													Z(
+														` is the W3C-defined navigation landmark. One element, multiple visual contexts disambiguated by ancestry + content shape + `,
+													),
+													Y(`code`, null, `aria-label`),
+													Z(
+														` — never by a class on the root. Sidebar rail, breadcrumb trail, pagination row, tablist — all painted from the single `,
+													),
+													Y(`code`, null, `components/_nav.scss`),
+													Z(` partial. `),
+												]),
+											]),
+											Y(`p`, null, [
+												Z(
+													` You're already looking at one of these contexts — the page you're reading mounts inside the showcase's body-shell `,
+												),
+												Y(`code`, null, `<nav>`),
+												Z(
+													` rail to the left, and the on-this-page rail to the right is a sibling `,
+												),
+												Y(`code`, null, `<aside>`),
+												Z(
+													`. Sections below cover the four other canonical shapes the framework paints. `,
+												),
+											]),
+											Y(`aside`, { role: `status`, class: `information`, 'data-alert-open': `` }, [
+												Y(`p`, null, [
+													Y(`strong`, null, `Selector contract.`),
+													Z(` The framework paints `),
+													Y(`code`, null, `<nav>`),
+													Z(` by ancestry (`),
+													Y(`code`, null, `body > nav`),
+													Z(` = rail), inner-content shape (`),
+													Y(`code`, null, `nav > ol`),
+													Z(` = breadcrumb / pagination / horizontal list, opted in via `),
+													Y(`code`, null, `aria-label`),
+													Z(`), or ARIA role (`),
+													Y(`code`, null, `nav role="tablist"`),
+													Z(
+														` = tab strip). The bare element is a quiet block-flow container so nested navs don't stagger. `,
+													),
+												]),
+											]),
+										],
+										-1,
+									)),
+									(o[19] ||= Q(
+										`<section id="nav-rail"><h2>1. Body-shell rail — <code>body &gt; nav</code></h2><p> The primary navigation column in the body-grid layout shell. Selected via <code>body:has(main) &gt; nav</code> (plus the <code>&gt; * &gt;</code> once-removed variant for framework mount points). Fixed <code>--set-nav-inline-size</code> (16 rem default), scoped <code>--set-nav-padding-*</code>, <code>overflow-y: auto</code>, flex-column with <code>--set-nav-gap</code> between top-level children. Border on the inline-end edge by default (the rail sits leading <code>&lt;main&gt;</code>); the <code>.end</code> placement modifier flips the border to the leading edge for rails on the trailing side. </p><p> Below 960 px the showcase lifts both body-shell rails into native popover-drawer mode via <code>:popover=&quot;isMobile ? &#39;auto&#39; : undefined&quot;</code>; the framework&#39;s <code>:is(aside, nav)[popover]</code> chrome from <code>components/_aside.scss</code> takes over (slide-from-edge motion, native <code>::backdrop</code> scrim, four placement modifiers, Esc / click-outside dismiss). See <a href="#/aside">AsidePage § Drawer / offcanvas</a> for the full drawer-surface contract — rails and standalone <code>&lt;aside popover&gt;</code> drawers share one chrome family. </p><p> The grouped-sidebar pattern — <code>&lt;h6&gt;</code> + <code>&lt;menu&gt;</code> sibling pairs inside <code>&lt;nav&gt;</code> — paints each <code>&lt;li&gt;&lt;a&gt;</code> as a stacked vertical row with hover + <code>aria-current=&quot;page&quot;</code> tint. The row chrome lives in <code>_menu.scss</code>; see <a href="#/menu">MenuPage</a> for the worked example. </p><details><summary><small>Markup — body-shell rail with grouped nav targets</small></summary><pre><code>&lt;nav aria-label=&quot;Primary&quot;&gt;
+  &lt;h6&gt;Getting started&lt;/h6&gt;
+  &lt;menu&gt;
+    &lt;li&gt;&lt;a href=&quot;#/home&quot; aria-current=&quot;page&quot;&gt;Home&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#/install&quot;&gt;Install&lt;/a&gt;&lt;/li&gt;
+  &lt;/menu&gt;
+  &lt;h6&gt;Components&lt;/h6&gt;
+  &lt;menu&gt;
+    &lt;li&gt;&lt;a href=&quot;#/button&quot;&gt;Button&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#/anchor&quot;&gt;Anchor&lt;/a&gt;&lt;/li&gt;
+  &lt;/menu&gt;
+&lt;/nav&gt;</code></pre></details></section><section id="nav-breadcrumb"><h2>2. Breadcrumb — <code>nav[aria-label=&quot;Breadcrumb&quot;]</code></h2><p> Horizontal list of ancestor links. Opted in via the WAI-ARIA APG-recommended <code>aria-label=&quot;Breadcrumb&quot;</code> on <code>&lt;nav&gt;</code> wrapping an <code>&lt;ol&gt;</code>. Each non-first <code>&lt;li&gt;</code> gets a chevron <code>::before</code> separator (mask-image painted with <code>currentColor</code>); the trailing leaf carries <code>aria-current=&quot;page&quot;</code> and dims through <code>--set-nav-breadcrumb-active-color</code>. </p><nav aria-label="Breadcrumb"><ol><li><a href="#/home">Home</a></li><li><a href="#/sectioning">Components</a></li><li><a href="#/nav">Navigation</a></li><li aria-current="page">Breadcrumb</li></ol></nav><details><summary><small>Markup</small></summary><pre><code>&lt;nav aria-label=&quot;Breadcrumb&quot;&gt;
+  &lt;ol&gt;
+    &lt;li&gt;&lt;a href=&quot;#/home&quot;&gt;Home&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#/sectioning&quot;&gt;Components&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#/nav&quot;&gt;Navigation&lt;/a&gt;&lt;/li&gt;
+    &lt;li aria-current=&quot;page&quot;&gt;Breadcrumb&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/nav&gt;</code></pre></details><h3>Custom separator</h3><p> The separator glyph is a token. Override <code>--set-nav-breadcrumb-separator-image</code> at any scope to swap the chevron for a slash, a forward arrow, a custom inline SVG, etc. The color follows <code>currentColor</code> via the <code>mask-image</code> + <code>background-color</code> pattern. </p><nav aria-label="Breadcrumb" style="--set-nav-breadcrumb-separator-image:url(&#39;data:image/svg+xml;utf8,&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 16 16&quot;&gt;&lt;path fill=&quot;black&quot; d=&quot;M3 14L11 2H13L5 14z&quot;/&gt;&lt;/svg&gt;&#39;);"><ol><li><a href="#/home">Home</a></li><li><a href="#/sectioning">Components</a></li><li aria-current="page">Custom slash separator</li></ol></nav></section>`,
+										2,
+									)),
+									Y(`section`, tu, [
+										(o[9] ||= Q(
+											`<h2>3. Pagination — <code>nav[aria-label=&quot;Pagination&quot;]</code></h2><p> Bordered button row inside <code>&lt;nav aria-label=&quot;Pagination&quot;&gt;</code> wrapping an <code>&lt;ol&gt;</code>. The first / last items pick up rounded corners; intermediate items collapse their adjacent borders via a <code>margin-inline-start: -1px</code> trick (Mailbox&#39;s <code>.page-item + .page-item .page-link</code> pattern). Hover and <code>:focus-visible</code> raise <code>z-index</code> so the focused tile paints over its neighbours&#39; borders. </p><p><code>aria-current=&quot;page&quot;</code> flips the active tile to the variant fill (defaults to <code>--color-primary</code> through the <code>--set-nav-pagination-active-*</code> triplet). <code>aria-disabled=&quot;true&quot;</code> on an <code>&lt;a&gt;</code>, native <code>disabled</code> on a <code>&lt;button&gt;</code>, and the <code>.disabled</code> / <code>.active</code> class aliases all hook the same chrome — Bootstrap-parity markup migrates without rewriting. </p>`,
+											3,
+										)),
+										Y(`nav`, nu, [
+											Y(`ol`, null, [
+												Y(`li`, null, [
+													Y(
+														`button`,
+														{
+															type: `button`,
+															'aria-disabled': i.value === 1 ? `true` : void 0,
+															disabled: i.value === 1,
+															onClick: (o[0] ||= (e) => a(i.value - 1)),
+														},
+														` ‹ Prev `,
+														8,
+														ru,
+													),
+												]),
+												(q(),
+												J(
+													G,
+													null,
+													H(7, (e) =>
+														Y(`li`, { key: e }, [
+															Y(
+																`button`,
+																{
+																	type: `button`,
+																	'aria-current': i.value === e ? `page` : void 0,
+																	onClick: (t) => a(e),
+																},
+																k(e),
+																9,
+																iu,
+															),
+														]),
+													),
+													64,
+												)),
+												Y(`li`, null, [
+													Y(
+														`button`,
+														{
+															type: `button`,
+															'aria-disabled': i.value === 7 ? `true` : void 0,
+															disabled: i.value === 7,
+															onClick: (o[1] ||= (e) => a(i.value + 1)),
+														},
+														` Next › `,
+														8,
+														au,
+													),
+												]),
+											]),
+										]),
+										Y(`p`, ou, [
+											Y(`small`, null, [
+												(o[5] ||= Z(`Active page: `, -1)),
+												Y(`strong`, null, k(i.value), 1),
+												(o[6] ||= Z(` — click a number to retune.`, -1)),
+											]),
+										]),
+										(o[10] ||= Y(
+											`details`,
+											null,
+											[
+												Y(`summary`, null, [Y(`small`, null, `Markup`)]),
+												Y(`pre`, null, [
+													Y(
+														`code`,
+														null,
+														`<nav aria-label="Pagination">
+  <ol>
+    <li><a aria-disabled="true">‹ Prev</a></li>
+    <li><a href="#">1</a></li>
+    <li><a href="#" aria-current="page">2</a></li>
+    <li><a href="#">3</a></li>
+    <li><a href="#">Next ›</a></li>
+  </ol>
+</nav>`,
+													),
+												]),
+											],
+											-1,
+										)),
+										(o[11] ||= Y(`h3`, null, `Variant cascade on the active page`, -1)),
+										(o[12] ||= Y(
+											`p`,
+											null,
+											[
+												Z(` Pin `),
+												Y(`code`, null, `--set-nav-pagination-active-background-color`),
+												Z(
+													` per-instance to retint the active tile through the seven variants. The token-driven cascade means the consumer never edits the partial. `,
+												),
+											],
+											-1,
+										)),
+										Y(`div`, su, [
+											(q(),
+											J(
+												G,
+												null,
+												H(t, (e) =>
+													Y(
+														`nav`,
+														{
+															key: e,
+															'aria-label': `Pagination`,
+															style: de(
+																`--set-nav-pagination-active-background-color: var(--color-${e}); --set-nav-pagination-active-border-color: var(--color-${e});`,
+															),
+														},
+														[
+															Y(`ol`, null, [
+																Y(`li`, null, [
+																	Y(
+																		`a`,
+																		{ href: `#`, 'aria-label': `${e} pagination` },
+																		`1`,
+																		8,
+																		cu,
+																	),
+																]),
+																(o[7] ||= Y(
+																	`li`,
+																	null,
+																	[Y(`a`, { href: `#`, 'aria-current': `page` }, `2`)],
+																	-1,
+																)),
+																(o[8] ||= Y(`li`, null, [Y(`a`, { href: `#` }, `3`)], -1)),
+															]),
+														],
+														4,
+													),
+												),
+												64,
+											)),
+										]),
+									]),
+									Y(`section`, lu, [
+										(o[16] ||= Q(
+											`<h2>4. Tablist — <code>&lt;nav role=&quot;tablist&quot;&gt;</code></h2><p> Tab strip. Per the HTML LS <code>&lt;nav&gt;</code> covers &quot;navigation to other pages or parts within the page&quot; — tabs <em>do</em> navigate between sibling panels of the same page, so <code>&lt;nav&gt;</code> is the canonical host. The role-based selector also matches <code>&lt;menu role=&quot;tablist&quot;&gt;</code> / <code>&lt;div role=&quot;tablist&quot;&gt;</code> for tab groups inside cards or widgets where a landmark would be unwanted noise. </p><p> The framework paints chrome only: horizontal flex row, continuous bottom-border track on the tablist, per-tab overlap indicator that paints over the track on <code>aria-selected=&quot;true&quot;</code>. Keyboard wiring (Left / Right / Home / End / Esc, roving tabindex) lives in <code>useTabs</code> (Phase 6 composable, not yet shipped); until then consumers wire the click handlers themselves as below. </p>`,
+											3,
+										)),
+										Y(`nav`, uu, [
+											Y(
+												`button`,
+												{
+													type: `button`,
+													role: `tab`,
+													'aria-selected': n.value === `overview`,
+													tabindex: n.value === `overview` ? 0 : -1,
+													'aria-controls': `tabpanel-overview`,
+													id: `tab-overview`,
+													onClick: (o[2] ||= (e) => r(`overview`)),
+												},
+												` Overview `,
+												8,
+												du,
+											),
+											Y(
+												`button`,
+												{
+													type: `button`,
+													role: `tab`,
+													'aria-selected': n.value === `pricing`,
+													tabindex: n.value === `pricing` ? 0 : -1,
+													'aria-controls': `tabpanel-pricing`,
+													id: `tab-pricing`,
+													onClick: (o[3] ||= (e) => r(`pricing`)),
+												},
+												` Pricing `,
+												8,
+												fu,
+											),
+											Y(
+												`button`,
+												{
+													type: `button`,
+													role: `tab`,
+													'aria-selected': n.value === `support`,
+													tabindex: n.value === `support` ? 0 : -1,
+													'aria-controls': `tabpanel-support`,
+													id: `tab-support`,
+													onClick: (o[4] ||= (e) => r(`support`)),
+												},
+												` Support `,
+												8,
+												pu,
+											),
+										]),
+										Y(
+											`div`,
+											{
+												role: `tabpanel`,
+												id: `tabpanel-overview`,
+												'aria-labelledby': `tab-overview`,
+												hidden: n.value !== `overview`,
+											},
+											[
+												...(o[13] ||= [
+													Y(
+														`p`,
+														null,
+														[
+															Y(`strong`, null, `Overview panel.`),
+															Z(
+																` A short summary of what the product does, who it's for, and how it fits the surrounding workflow. Tabs let related content share a single page footprint without forcing the user to scroll through every section. `,
+															),
+														],
+														-1,
+													),
+												]),
+											],
+											8,
+											mu,
+										),
+										Y(
+											`div`,
+											{
+												role: `tabpanel`,
+												id: `tabpanel-pricing`,
+												'aria-labelledby': `tab-pricing`,
+												hidden: n.value !== `pricing`,
+											},
+											[
+												...(o[14] ||= [
+													Y(
+														`p`,
+														null,
+														[
+															Y(`strong`, null, `Pricing panel.`),
+															Z(
+																` Plans, billing cadence, fair-use policy. Tabs are appropriate when sibling sections are roughly equal in weight — a single dominant section + a few minor ones tends to read better as one scroll. `,
+															),
+														],
+														-1,
+													),
+												]),
+											],
+											8,
+											hu,
+										),
+										Y(
+											`div`,
+											{
+												role: `tabpanel`,
+												id: `tabpanel-support`,
+												'aria-labelledby': `tab-support`,
+												hidden: n.value !== `support`,
+											},
+											[
+												...(o[15] ||= [
+													Y(
+														`p`,
+														null,
+														[
+															Y(`strong`, null, `Support panel.`),
+															Z(
+																` Contact channels, response-time SLAs, links to the docs and the issue tracker. Use polite-tier `,
+															),
+															Y(`code`, null, `role="status"`),
+															Z(
+																` for any inline state updates (saving, syncing) inside a panel; reserve `,
+															),
+															Y(`code`, null, `role="alert"`),
+															Z(` for genuine urgent notices. `),
+														],
+														-1,
+													),
+												]),
+											],
+											8,
+											gu,
+										),
+										(o[17] ||= Y(
+											`details`,
+											null,
+											[
+												Y(`summary`, null, [Y(`small`, null, `Markup`)]),
+												Y(`pre`, null, [
+													Y(
+														`code`,
+														null,
+														`<nav role="tablist" aria-label="Settings">
+  <button role="tab" aria-selected="true"  aria-controls="p-1" id="t-1">Overview</button>
+  <button role="tab" aria-selected="false" aria-controls="p-2" id="t-2">Pricing</button>
+  <button role="tab" aria-selected="false" aria-controls="p-3" id="t-3">Support</button>
+</nav>
+<div role="tabpanel" id="p-1" aria-labelledby="t-1">…</div>
+<div role="tabpanel" id="p-2" aria-labelledby="t-2" hidden>…</div>
+<div role="tabpanel" id="p-3" aria-labelledby="t-3" hidden>…</div>`,
+													),
+												]),
+											],
+											-1,
+										)),
+									]),
+									(o[20] ||= Q(
+										`<section id="nav-fill-justified"><h2>5. <code>.fill</code> / <code>.justified</code> — equal-width row items</h2><p> Mailbox-parity modifiers for stretched-row nav patterns. <code>.fill</code> on the inner <code>&lt;ol&gt;</code> / <code>&lt;ul&gt;</code> grows items to share the remaining space (content-aware width). <code>.justified</code> assigns zero flex-basis so every item is exactly equal width regardless of content. Useful for stretched tablist rows and segmented controls. </p><nav aria-label="Pagination"><ol class="fill"><li><a href="#">Short</a></li><li><a href="#" aria-current="page">A noticeably longer label</a></li><li><a href="#">Mid</a></li></ol></nav><p style="margin-block-start:1rem;"><small><code>.fill</code> — items grow proportional to content.</small></p><nav aria-label="Pagination"><ol class="justified"><li><a href="#">Short</a></li><li><a href="#" aria-current="page">A noticeably longer label</a></li><li><a href="#">Mid</a></li></ol></nav><p style="margin-block-start:1rem;"><small><code>.justified</code> — items get equal flex-basis (zero), so every item is the same width regardless of content.</small></p></section><section id="nav-reduced-motion"><h2>Reduced motion</h2><p> Every <code>&lt;nav&gt;</code>-surface transition (color, border, background fade on hover / focus / active) routes through the framework&#39;s <code>@include transition()</code> mixin, which automatically collapses to instant under <code>prefers-reduced-motion: reduce</code>. The pagination tile below transitions its border-color + background-color on hover at the framework&#39;s <code>--set-transition-duration</code> (150 ms); toggle your OS reduced-motion preference and verify the hover state snaps instantly with no fade. </p><nav aria-label="Pagination"><ol><li><a href="#">Hover me</a></li></ol></nav></section><section id="nav-forced-colors"><h2>Forced colors</h2><p> In Windows High Contrast (and any <code>forced-colors: active</code> environment), the browser overrides custom backgrounds with <code>Canvas</code>, text with <code>CanvasText</code>, links with <code>LinkText</code>, and focus rings with <code>Highlight</code>. The framework chrome (border-color on rails, separator chevron via <code>currentColor</code>, pagination borders, tab indicators) survives because every color value flows through <code>--set-*</code> tokens that resolve to system color keywords under HC mode. No per-element <code>@forced-colors</code> blocks needed in <code>_nav.scss</code>; the inheritance chain handles it. </p><p> Verify in Chrome DevTools via the <em>Rendering</em> panel → &quot;Emulate CSS media feature forced-colors: active.&quot; Pagination borders should remain visible; the breadcrumb chevrons repaint with <code>CanvasText</code>; the active tablist indicator paints with <code>Highlight</code>. </p></section><section id="nav-tokens"><h2>Tokens</h2><p> Every value below flows through a <code>--set-nav-*</code> custom property declared on bare <code>&lt;nav&gt;</code>. Pin one at <code>:root</code> to retune every nav across your app; pin per-instance via inline <code>style=&quot;…&quot;</code> for a single rail / breadcrumb / pagination block. </p><h3>Rail / generic</h3><dl><dt><code>--set-nav-color</code></dt><dd>Text color of the rail. Defaults to <code>currentColor</code>.</dd><dt><code>--set-nav-background-color</code></dt><dd>Surface color of the rail. Defaults to <code>--color-surface</code>.</dd><dt><code>--set-nav-border-color</code></dt><dd>Edge border of the rail. Defaults to <code>--color-border</code>.</dd><dt><code>--set-nav-border-width</code></dt><dd>Width of the edge border. Defaults to <code>1px</code>.</dd><dt><code>--set-nav-padding-inline</code> / <code>--set-nav-padding-block</code></dt><dd>Inner padding of the rail. Defaults to <code>calc(var(--spacing) * 4)</code> (1 rem).</dd><dt><code>--set-nav-inline-size</code></dt><dd>Width of the rail column. Defaults to <code>16rem</code>.</dd><dt><code>--set-nav-gap</code></dt><dd>Vertical rhythm between top-level children of the rail. Defaults to <code>0.5 rem</code>.</dd><dt><code>--set-nav-font-size</code></dt><dd>Rail-context font size. Defaults to <code>--text-sm</code>.</dd><dt><code>--set-nav-line-height</code></dt><dd>Rail-context line height. Defaults to <code>--leading-normal</code>.</dd><dt><code>--set-nav-transition-duration</code></dt><dd>Duration of color / background / border transitions inside the rail. Defaults to <code>--set-transition-duration</code> (150 ms).</dd></dl><h3>Breadcrumb sub-surface</h3><dl><dt><code>--set-nav-breadcrumb-separator-image</code></dt><dd>Mask-image for the chevron <code>::before</code> separator. Defaults to the framework chevron-right glyph from <code>--set-icon-chevron-right</code>.</dd><dt><code>--set-nav-breadcrumb-separator-size</code></dt><dd>Inline / block size of the separator glyph. Defaults to <code>0.75em</code>.</dd><dt><code>--set-nav-breadcrumb-separator-opacity</code></dt><dd>Opacity of the separator. Defaults to <code>0.5</code>.</dd><dt><code>--set-nav-breadcrumb-active-color</code></dt><dd>Color of the trailing <code>aria-current=&quot;page&quot;</code> leaf. Defaults to <code>--color-text-muted</code>.</dd></dl><h3>Pagination sub-surface</h3><dl><dt><code>--set-nav-pagination-color</code> / <code>--set-nav-pagination-background-color</code></dt><dd>Text + surface colour of each pagination tile.</dd><dt><code>--set-nav-pagination-border-color</code> / <code>--set-nav-pagination-border-width</code></dt><dd>Border tone + width of each tile. Adjacent tiles collapse their borders via the <code>margin-inline-start: -border-width</code> trick.</dd><dt><code>--set-nav-pagination-border-radius</code></dt><dd>Outer corner radius applied only to the first / last tile. Defaults to <code>--radius-md</code>.</dd><dt><code>--set-nav-pagination-padding-inline</code> / <code>--set-nav-pagination-padding-block</code></dt><dd>Internal padding of each tile.</dd><dt><code>--set-nav-pagination-min-size</code></dt><dd>Minimum inline-size so single-digit tiles stay square. Defaults to <code>2.25rem</code>.</dd><dt><code>--set-nav-pagination-hover-background-color</code></dt><dd>Hover tint. Defaults to a translucent <code>currentColor</code> mix.</dd><dt><code>--set-nav-pagination-active-color</code> / <code>--set-nav-pagination-active-background-color</code> / <code>--set-nav-pagination-active-border-color</code></dt><dd>Filled triplet for the <code>aria-current=&quot;page&quot;</code> tile. Defaults to the <code>--color-primary</code> family.</dd><dt><code>--set-nav-pagination-disabled-opacity</code></dt><dd>Opacity multiplier for <code>aria-disabled</code> / <code>:disabled</code> tiles. Defaults to <code>0.5</code>.</dd></dl></section>`,
+										4,
+									)),
+								],
+								64,
+							)
+						)
+					},
+				}),
+				vu = { id: `home`, title: `Home`, group: `Getting started`, page: Qo },
+				yu = [
+					vu,
 					{ id: `button`, title: `Button`, group: `Elements — Interactive`, page: ys },
 					{ id: `anchor`, title: `Anchor`, group: `Elements — Interactive`, page: Is },
 					{
@@ -8529,34 +8958,35 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					{ id: `sectioning`, title: `Sectioning`, group: `Elements — Content`, page: Ul },
 					{ id: `article-card`, title: `Article card`, group: `Components`, page: ql },
 					{ id: `aside`, title: `Aside`, group: `Components`, page: eu },
+					{ id: `nav`, title: `Nav`, group: `Components`, page: _u },
 				],
-				ru = (e) => {
+				bu = (e) => {
 					let t = window.location.hash
 					if (!t.startsWith(`#/`)) return { id: e, section: null }
 					let n = t.slice(2).split(`/`),
 						r = n[0] ?? ``
 					return {
-						id: nu.some((e) => e.id === r) ? r : `home`,
+						id: yu.some((e) => e.id === r) ? r : `home`,
 						section: n.slice(1).filter(Boolean).join(`/`) || null,
 					}
 				},
-				iu = typeof window > `u` ? { id: `home`, section: null } : ru(`home`),
-				au = L(iu.id),
-				ou = L(iu.section)
+				xu = typeof window > `u` ? { id: `home`, section: null } : bu(`home`),
+				Su = L(xu.id),
+				Cu = L(xu.section)
 			typeof window < `u` &&
 				window.addEventListener(`hashchange`, () => {
-					let e = ru(au.value)
-					;((au.value = e.id), (ou.value = e.section))
+					let e = bu(Su.value)
+					;((Su.value = e.id), (Cu.value = e.section))
 				})
-			var su = au,
-				cu = ou,
-				lu = _a(() => nu.find((e) => e.id === au.value) ?? tu),
-				uu = (e, t) => {
+			var wu = Su,
+				Tu = Cu,
+				Eu = _a(() => yu.find((e) => e.id === Su.value) ?? vu),
+				Du = (e, t) => {
 					window.location.hash = t ? `#/${e}/${t}` : `#/${e}`
 				},
-				du = [`href`, `aria-current`, `onClick`],
-				fu = { key: 0 },
-				pu = B({
+				Ou = [`href`, `aria-current`, `onClick`],
+				ku = { key: 0 },
+				Au = B({
 					__name: `SiteNav`,
 					props: { routes: {}, active: {} },
 					emits: [`navigate`],
@@ -8612,7 +9042,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 																				},
 																				k(t.title),
 																				9,
-																				du,
+																				Ou,
 																			),
 																		])
 																	),
@@ -8628,7 +9058,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										128,
 									)),
 									i.value.length === 0
-										? (q(), J(`p`, fu, [...(n[0] ||= [Y(`small`, null, `No matches.`, -1)])]))
+										? (q(), J(`p`, ku, [...(n[0] ||= [Y(`small`, null, `No matches.`, -1)])]))
 										: Wi(``, !0),
 								],
 								64,
@@ -8636,11 +9066,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				mu = { key: 0, 'aria-label': `Table of contents` },
-				hu = [`data-level`],
-				gu = [`href`, `aria-current`, `onClick`],
-				_u = { key: 1 },
-				vu = B({
+				ju = { key: 0, 'aria-label': `Table of contents` },
+				Mu = [`data-level`],
+				Nu = [`href`, `aria-current`, `onClick`],
+				Pu = { key: 1 },
+				Fu = B({
 					__name: `Toc`,
 					props: { scroller: {}, currentId: {} },
 					emits: [`navigate`],
@@ -8702,7 +9132,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								e.ctrlKey ||
 								e.shiftKey ||
 								e.altKey ||
-								(e.preventDefault(), uu(n.currentId, t), r(`navigate`))
+								(e.preventDefault(), Du(n.currentId, t), r(`navigate`))
 						}
 						return (t, n) => (
 							q(),
@@ -8718,7 +9148,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									)),
 									i.value.length > 0
 										? (q(),
-											J(`nav`, mu, [
+											J(`nav`, ju, [
 												Y(`menu`, null, [
 													(q(!0),
 													J(
@@ -8741,11 +9171,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 																			},
 																			k(t.label),
 																			9,
-																			gu,
+																			Nu,
 																		),
 																	],
 																	8,
-																	hu,
+																	Mu,
 																)
 															),
 														),
@@ -8754,7 +9184,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											]))
 										: (q(),
-											J(`p`, _u, [
+											J(`p`, Pu, [
 												...(n[0] ||= [Y(`small`, null, `No sections on this page.`, -1)]),
 											])),
 								],
@@ -8763,13 +9193,13 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				yu = [`popovertarget`],
-				bu = [`aria-label`],
-				xu = [`popovertarget`],
-				Su = [`popover`],
-				Cu = { class: `showcase-sidebar-scroll` },
-				wu = [`popover`],
-				Tu = { class: `font-mono text-xs` }
+				Iu = [`popovertarget`],
+				Lu = [`aria-label`],
+				Ru = [`popovertarget`],
+				zu = [`popover`],
+				Bu = { class: `showcase-sidebar-scroll` },
+				Vu = [`popover`],
+				Hu = { class: `font-mono text-xs` }
 			mo(
 				B({
 					__name: `App`,
@@ -8784,15 +9214,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 							o = _a(() => {
 								let e = n.value.trim().toLowerCase()
 								return e
-									? nu.filter(
+									? yu.filter(
 											(t) =>
 												t.title.toLowerCase().includes(e) ||
 												t.id.toLowerCase().includes(e) ||
 												t.group.toLowerCase().includes(e),
 										)
-									: nu
+									: yu
 							}),
-							s = _a(() => lu.value.page),
+							s = _a(() => Eu.value.page),
 							c = L(null),
 							l = async (e) => {
 								await _n()
@@ -8814,7 +9244,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									t?.matches(`:popover-open`) && t.hidePopover()
 								}
 							}
-						Fn([su, cu], ([, e]) => {
+						Fn([wu, Tu], ([, e]) => {
 							;(l(e), u())
 						})
 						let d = (e) => {
@@ -8826,13 +9256,13 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 							;(a(),
 								i?.addEventListener(`change`, a),
 								document.addEventListener(`keydown`, d),
-								l(cu.value))
+								l(Tu.value))
 						}),
 							sr(() => {
 								;(i?.removeEventListener(`change`, a), document.removeEventListener(`keydown`, d))
 							}))
 						let f = (e) => {
-								;(e.preventDefault(), uu(`home`), u())
+								;(e.preventDefault(), Du(`home`), u())
 							},
 							p = () => {
 								t.toggle()
@@ -8871,7 +9301,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											],
 											8,
-											yu,
+											Iu,
 										),
 										Y(`a`, { href: `#/home`, class: `flex-1`, onClick: f }, [
 											...(i[2] ||= [Y(`strong`, null, `Elements`, -1)]),
@@ -8897,7 +9327,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												),
 											],
 											8,
-											bu,
+											Lu,
 										),
 										Y(
 											`button`,
@@ -8922,7 +9352,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											],
 											8,
-											xu,
+											Ru,
 										),
 									]),
 									Y(
@@ -8978,15 +9408,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 													),
 												]),
 											]),
-											Y(`div`, Cu, [
-												X(pu, { routes: o.value, active: Yt(lu).id, onNavigate: u }, null, 8, [
+											Y(`div`, Bu, [
+												X(Au, { routes: o.value, active: Yt(Eu).id, onNavigate: u }, null, 8, [
 													`routes`,
 													`active`,
 												]),
 											]),
 										],
 										8,
-										Su,
+										zu,
 									),
 									Y(`main`, { ref_key: `scrollerRef`, ref: c }, [(q(), Ii(mr(s.value)))], 512),
 									Y(
@@ -9023,19 +9453,19 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												-1,
 											)),
 											X(
-												vu,
-												{ scroller: c.value, 'current-id': Yt(lu).id, onNavigate: u },
+												Fu,
+												{ scroller: c.value, 'current-id': Yt(Eu).id, onNavigate: u },
 												null,
 												8,
 												[`scroller`, `current-id`],
 											),
 										],
 										8,
-										wu,
+										Vu,
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Tu, `build ` + k(Yt(`2026-05-12T20:19:14.642Z`)), 1),
+										Y(`small`, Hu, `build ` + k(Yt(`2026-05-12T20:31:57.164Z`)), 1),
 									]),
 								],
 								64,
@@ -15326,6 +15756,9 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				}
 				.p-1 {
 					padding: calc(var(--spacing) * 1);
+				}
+				.p-2 {
+					padding: calc(var(--spacing) * 2);
 				}
 				.p-3 {
 					padding: calc(var(--spacing) * 3);
