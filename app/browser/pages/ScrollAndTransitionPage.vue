@@ -66,6 +66,12 @@ const snapshots = [
 
 const snapshotIndex = ref(0)
 const current = () => snapshots[snapshotIndex.value]
+
+// Scrollbar gutter demo — toggle long content on / off so the user can
+// observe layout shift behavior between `stable` (no shift) and
+// `auto` (shift when overflow kicks in).
+const gutterLong = ref(false)
+
 const next = (): void => {
 	const advance = (): void => {
 		snapshotIndex.value = (snapshotIndex.value + 1) % snapshots.length
@@ -122,99 +128,175 @@ const next = (): void => {
 			</li>
 		</ul>
 
-		<h3>Live demo</h3>
+		<h3><code>scrollbar-width</code> — three sizes side by side</h3>
 		<p>
-			Scroll inside the box. The default thin / muted thumb appears; the gutter is reserved even
-			when the content doesn't currently overflow (toggle the long-content checkbox below).
+			<strong>Scroll inside each box to see the difference.</strong> On overlay-scrollbar platforms
+			(macOS, iOS) the thin / auto distinction collapses while the pointer is idle; the moment you
+			scroll, all three render distinctly. Windows + Linux Chrome paints all three at idle as well.
 		</p>
-		<div
-			style="
-				block-size: 12rem;
-				overflow-y: auto;
-				border: 1px solid var(--color-border);
-				border-radius: 0.5rem;
-				padding: 1rem;
-			"
-		>
-			<p>Scroll this region to see the framework's default scrollbar chrome.</p>
-			<p>
-				Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus lacinia odio vitae
-				vestibulum.
-			</p>
-			<p>
-				Cras mattis consectetur purus sit amet fermentum. Cras justo odio, dapibus ac facilisis in.
-			</p>
-			<p>
-				Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Praesent commodo cursus magna.
-			</p>
-			<p>Donec sed odio dui. Etiam porta sem malesuada magna mollis euismod.</p>
-			<p>
-				Nullam quis risus eget urna mollis ornare vel eu leo. Maecenas faucibus mollis interdum.
-			</p>
-			<p>
-				Aenean lacinia bibendum nulla sed consectetur. Donec ullamcorper nulla non metus auctor
-				fringilla.
-			</p>
-		</div>
-
-		<h3>Per-element override</h3>
-		<p>
-			Override per-host by re-declaring the tokens on the scrollable element. The two examples below
-			pin a wider auto-width scrollbar (left) and tint the thumb primary (right).
-		</p>
-		<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+		<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem">
 			<div
 				style="
 					block-size: 10rem;
-					overflow-y: auto;
+					overflow-y: scroll;
+					border: 1px solid var(--color-border);
+					border-radius: 0.5rem;
+					padding: 0.75rem;
+				"
+			>
+				<p style="margin-block: 0 0.5rem">
+					<small><code>thin</code> (default)</small>
+				</p>
+				<p>Narrower UA scrollbar. Framework default.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+			</div>
+			<div
+				style="
+					block-size: 10rem;
+					overflow-y: scroll;
 					border: 1px solid var(--color-border);
 					border-radius: 0.5rem;
 					padding: 0.75rem;
 					--set-scrollbar-width: auto;
 				"
 			>
-				<p>
-					<small><code>--set-scrollbar-width: auto</code></small>
+				<p style="margin-block: 0 0.5rem">
+					<small><code>auto</code> (OS default size)</small>
 				</p>
-				<p>
-					The wider UA scrollbar size — useful for accessibility-tuned scrollables that need a
-					larger drag affordance.
-				</p>
-				<p>Body content. Body content. Body content. Body content. Body content.</p>
-				<p>Body content. Body content. Body content. Body content. Body content.</p>
-				<p>Body content. Body content. Body content. Body content. Body content.</p>
+				<p>Wider UA scrollbar — matches the host OS default.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
 			</div>
 			<div
 				style="
 					block-size: 10rem;
+					overflow-y: scroll;
+					border: 1px solid var(--color-border);
+					border-radius: 0.5rem;
+					padding: 0.75rem;
+					--set-scrollbar-width: none;
+				"
+			>
+				<p style="margin-block: 0 0.5rem">
+					<small><code>none</code> (hidden)</small>
+				</p>
+				<p>Scrollbar fully hidden — content still scrolls. Useful for tab strips and chip rows.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
+			</div>
+		</div>
+
+		<h3><code>scrollbar-color</code> — variant-tinted thumbs</h3>
+		<p>
+			Override <code>--set-scrollbar-thumb-color</code> per-host to tint the scrollbar with any
+			colour token — variant identity, brand colour, or any custom value. Each scrollable below sets
+			its thumb to a different variant; <strong>scroll the box to see the colour</strong>.
+		</p>
+		<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
+			<div
+				v-for="v in ['primary', 'success', 'warning', 'danger'] as const"
+				:key="v"
+				:style="`
+					block-size: 8rem;
+					overflow-y: scroll;
+					border: 1px solid var(--color-border);
+					border-radius: 0.5rem;
+					padding: 0.75rem;
+					--set-scrollbar-thumb-color: var(--color-${v});
+				`"
+			>
+				<p style="margin-block: 0 0.5rem">
+					<small>
+						<code>--set-scrollbar-thumb-color: var(--color-{{ v }})</code>
+					</small>
+				</p>
+				<p>Content. Content. Content. Content.</p>
+				<p>Content. Content. Content. Content.</p>
+				<p>Content. Content. Content. Content.</p>
+				<p>Content. Content. Content. Content.</p>
+				<p>Content. Content. Content. Content.</p>
+			</div>
+		</div>
+
+		<h3><code>scrollbar-gutter</code> — reserve space, no layout shift</h3>
+		<p>
+			<code>stable</code> reserves the scrollbar gutter even when content doesn't currently
+			overflow. The text below stays in the same horizontal position whether or not the box is
+			scrollable — useful for cards / panels where content length varies between states and a
+			snap-to-wider layout would look broken. Toggle the long-content state to see the difference
+			between the two columns:
+		</p>
+		<div style="display: flex; gap: 0.5rem; margin-block-end: 1rem">
+			<button type="button" @click="gutterLong = !gutterLong">
+				{{ gutterLong ? 'Show short content' : 'Show long content (triggers overflow)' }}
+			</button>
+		</div>
+		<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+			<div
+				style="
+					block-size: 12rem;
 					overflow-y: auto;
 					border: 1px solid var(--color-border);
 					border-radius: 0.5rem;
 					padding: 0.75rem;
-					--set-scrollbar-thumb-color: var(--color-primary);
 				"
 			>
-				<p>
-					<small><code>--set-scrollbar-thumb-color: var(--color-primary)</code></small>
+				<p style="margin-block: 0 0.5rem">
+					<small><code>stable</code> (default) — text stays put</small>
 				</p>
-				<p>
-					Variant-tinted scrollbar thumb. Useful for branded chrome where the scrollbar should read
-					as part of the surface identity.
+				<p>Short content.</p>
+				<template v-if="gutterLong">
+					<p>Long content. Long content. Long content. Long content.</p>
+					<p>Long content. Long content. Long content. Long content.</p>
+					<p>Long content. Long content. Long content. Long content.</p>
+					<p>Long content. Long content. Long content. Long content.</p>
+					<p>Long content. Long content. Long content. Long content.</p>
+				</template>
+			</div>
+			<div
+				style="
+					block-size: 12rem;
+					overflow-y: auto;
+					border: 1px solid var(--color-border);
+					border-radius: 0.5rem;
+					padding: 0.75rem;
+					--set-scrollbar-gutter: auto;
+				"
+			>
+				<p style="margin-block: 0 0.5rem">
+					<small><code>auto</code> — text snaps when scrollbar appears</small>
 				</p>
-				<p>Body content. Body content. Body content. Body content. Body content.</p>
-				<p>Body content. Body content. Body content. Body content. Body content.</p>
-				<p>Body content. Body content. Body content. Body content. Body content.</p>
+				<p>Short content.</p>
+				<template v-if="gutterLong">
+					<p>Long content. Long content. Long content. Long content.</p>
+					<p>Long content. Long content. Long content. Long content.</p>
+					<p>Long content. Long content. Long content. Long content.</p>
+					<p>Long content. Long content. Long content. Long content.</p>
+					<p>Long content. Long content. Long content. Long content.</p>
+				</template>
 			</div>
 		</div>
+
 		<aside role="status" class="information" data-alert-open style="margin-block-start: 1rem">
 			<p>
-				<strong
-					>Why apply at <code>:root</code> instead of <code>html</code> / <code>body</code>?</strong
-				>
-				The scrollbar-* properties cascade per CSS Scrollbars Module Level 1 — declaring on
-				<code>:root</code> means every scrollable descendant (the body, a card, a popover, a dialog
-				body, the showcase nav rail) inherits the same default scrollbar chrome unless it explicitly
-				overrides one of the tokens. One declaration, framework-wide coverage.
+				<strong>Why universal application, not just <code>:root</code>?</strong>
+				Per CSS Scrollbars Module Level 1, <code>scrollbar-color</code> IS inherited but
+				<code>scrollbar-width</code> + <code>scrollbar-gutter</code> are NOT. Declaring the trio
+				only on <code>:root</code> styled the root <code>&lt;html&gt;</code> scrollbar and left
+				every nested scroll container at the UA default. Plus <code>var()</code>
+				substitution resolves at the declaring element, so a descendant overriding
+				<code>--set-scrollbar-thumb-color</code> never re-resolved the inherited
+				<code>scrollbar-color</code>. The surface applies the trio on
+				<code>*, *::before, *::after</code> so every element re-resolves its own
+				<code>var()</code> chain AND the non-inherited width + gutter apply at every scroll
+				container.
 			</p>
 		</aside>
 	</section>

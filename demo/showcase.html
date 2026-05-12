@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T23:26:58.509Z" />
+		<meta name="build-id" content="2026-05-12T23:44:26.110Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -300,21 +300,21 @@
 					}
 					run() {
 						if (!(this.flags & 1)) return this.fn()
-						;((this.flags |= 2), Ke(this), Ie(this))
+						;((this.flags |= 2), qe(this), Ie(this))
 						let e = j,
-							t = M
-						;((j = this), (M = !0))
+							t = Ue
+						;((j = this), (Ue = !0))
 						try {
 							return this.fn()
 						} finally {
-							;(Le(this), (j = e), (M = t), (this.flags &= -3))
+							;(Le(this), (j = e), (Ue = t), (this.flags &= -3))
 						}
 					}
 					stop() {
 						if (this.flags & 1) {
 							for (let e = this.deps; e; e = e.nextDep) Be(e)
 							;((this.deps = this.depsTail = void 0),
-								Ke(this),
+								qe(this),
 								this.onStop && this.onStop(),
 								(this.flags &= -2))
 						}
@@ -396,15 +396,15 @@
 			function ze(e) {
 				if (
 					(e.flags & 4 && !(e.flags & 16)) ||
-					((e.flags &= -17), e.globalVersion === qe) ||
-					((e.globalVersion = qe), !e.isSSR && e.flags & 128 && ((!e.deps && !e._dirty) || !Re(e)))
+					((e.flags &= -17), e.globalVersion === Je) ||
+					((e.globalVersion = Je), !e.isSSR && e.flags & 128 && ((!e.deps && !e._dirty) || !Re(e)))
 				)
 					return
 				e.flags |= 2
 				let t = e.dep,
 					n = j,
-					r = M
-				;((j = e), (M = !0))
+					r = Ue
+				;((j = e), (Ue = !0))
 				try {
 					Ie(e)
 					let n = e.fn(e._value)
@@ -412,7 +412,7 @@
 				} catch (e) {
 					throw (t.version++, e)
 				} finally {
-					;((j = n), (M = r), Le(e), (e.flags &= -3))
+					;((j = n), (Ue = r), Le(e), (e.flags &= -3))
 				}
 			}
 			function Be(e, t = !1) {
@@ -444,16 +444,16 @@
 				let r = n.run.bind(n)
 				return ((r.effect = n), r)
 			}
-			var M = !0,
-				Ue = []
-			function We() {
-				;(Ue.push(M), (M = !1))
-			}
+			var Ue = !0,
+				We = []
 			function Ge() {
-				let e = Ue.pop()
-				M = e === void 0 ? !0 : e
+				;(We.push(Ue), (Ue = !1))
 			}
-			function Ke(e) {
+			function Ke() {
+				let e = We.pop()
+				Ue = e === void 0 ? !0 : e
+			}
+			function qe(e) {
 				let { cleanup: t } = e
 				if (((e.cleanup = void 0), t)) {
 					let e = j
@@ -465,8 +465,8 @@
 					}
 				}
 			}
-			var qe = 0,
-				Je = class {
+			var Je = 0,
+				Ye = class {
 					constructor(e, t) {
 						;((this.sub = e),
 							(this.dep = t),
@@ -479,7 +479,7 @@
 									void 0))
 					}
 				},
-				Ye = class {
+				Xe = class {
 					constructor(e) {
 						;((this.computed = e),
 							(this.version = 0),
@@ -491,14 +491,14 @@
 							(this.__v_skip = !0))
 					}
 					track(e) {
-						if (!j || !M || j === this.computed) return
+						if (!j || !Ue || j === this.computed) return
 						let t = this.activeLink
 						if (t === void 0 || t.sub !== j)
-							((t = this.activeLink = new Je(j, this)),
+							((t = this.activeLink = new Ye(j, this)),
 								j.deps
 									? ((t.prevDep = j.depsTail), (j.depsTail.nextDep = t), (j.depsTail = t))
 									: (j.deps = j.depsTail = t),
-								Xe(t))
+								Ze(t))
 						else if (t.version === -1 && ((t.version = this.version), t.nextDep)) {
 							let e = t.nextDep
 							;((e.prevDep = t.prevDep),
@@ -512,7 +512,7 @@
 						return t
 					}
 					trigger(e) {
-						;(this.version++, qe++, this.notify(e))
+						;(this.version++, Je++, this.notify(e))
 					}
 					notify(e) {
 						Pe()
@@ -523,33 +523,33 @@
 						}
 					}
 				}
-			function Xe(e) {
+			function Ze(e) {
 				if ((e.dep.sc++, e.sub.flags & 4)) {
 					let t = e.dep.computed
 					if (t && !e.dep.subs) {
 						t.flags |= 20
-						for (let e = t.deps; e; e = e.nextDep) Xe(e)
+						for (let e = t.deps; e; e = e.nextDep) Ze(e)
 					}
 					let n = e.dep.subs
 					;(n !== e && ((e.prevSub = n), n && (n.nextSub = e)), (e.dep.subs = e))
 				}
 			}
-			var Ze = new WeakMap(),
-				Qe = Symbol(``),
+			var Qe = new WeakMap(),
 				$e = Symbol(``),
-				et = Symbol(``)
-			function N(e, t, n) {
-				if (M && j) {
-					let t = Ze.get(e)
-					t || Ze.set(e, (t = new Map()))
+				et = Symbol(``),
+				tt = Symbol(``)
+			function M(e, t, n) {
+				if (Ue && j) {
+					let t = Qe.get(e)
+					t || Qe.set(e, (t = new Map()))
 					let r = t.get(n)
-					;(r || (t.set(n, (r = new Ye())), (r.map = t), (r.key = n)), r.track())
+					;(r || (t.set(n, (r = new Xe())), (r.map = t), (r.key = n)), r.track())
 				}
 			}
-			function tt(e, t, n, r, i, a) {
-				let o = Ze.get(e)
+			function nt(e, t, n, r, i, a) {
+				let o = Qe.get(e)
 				if (!o) {
-					qe++
+					Je++
 					return
 				}
 				let s = (e) => {
@@ -562,123 +562,123 @@
 					if (i && n === `length`) {
 						let e = Number(r)
 						o.forEach((t, n) => {
-							;(n === `length` || n === et || (!_(n) && n >= e)) && s(t)
+							;(n === `length` || n === tt || (!_(n) && n >= e)) && s(t)
 						})
 					} else
-						switch (((n !== void 0 || o.has(void 0)) && s(o.get(n)), a && s(o.get(et)), t)) {
+						switch (((n !== void 0 || o.has(void 0)) && s(o.get(n)), a && s(o.get(tt)), t)) {
 							case `add`:
-								i ? a && s(o.get(`length`)) : (s(o.get(Qe)), f(e) && s(o.get($e)))
+								i ? a && s(o.get(`length`)) : (s(o.get($e)), f(e) && s(o.get(et)))
 								break
 							case `delete`:
-								i || (s(o.get(Qe)), f(e) && s(o.get($e)))
+								i || (s(o.get($e)), f(e) && s(o.get(et)))
 								break
 							case `set`:
-								f(e) && s(o.get(Qe))
+								f(e) && s(o.get($e))
 								break
 						}
 				}
 				Fe()
 			}
-			function nt(e) {
-				let t = F(e)
-				return t === e ? t : (N(t, `iterate`, et), P(e) ? t : t.map(I))
-			}
 			function rt(e) {
-				return (N((e = F(e)), `iterate`, et), e)
+				let t = P(e)
+				return t === e ? t : (M(t, `iterate`, tt), N(e) ? t : t.map(F))
 			}
-			function it(e, t) {
-				return Vt(e) ? Wt(Bt(e) ? I(t) : t) : I(t)
+			function it(e) {
+				return (M((e = P(e)), `iterate`, tt), e)
 			}
-			var at = {
+			function at(e, t) {
+				return Ht(e) ? Gt(Vt(e) ? F(t) : t) : F(t)
+			}
+			var ot = {
 				__proto__: null,
 				[Symbol.iterator]() {
-					return ot(this, Symbol.iterator, (e) => it(this, e))
+					return st(this, Symbol.iterator, (e) => at(this, e))
 				},
 				concat(...e) {
-					return nt(this).concat(...e.map((e) => (d(e) ? nt(e) : e)))
+					return rt(this).concat(...e.map((e) => (d(e) ? rt(e) : e)))
 				},
 				entries() {
-					return ot(this, `entries`, (e) => ((e[1] = it(this, e[1])), e))
+					return st(this, `entries`, (e) => ((e[1] = at(this, e[1])), e))
 				},
 				every(e, t) {
-					return ct(this, `every`, e, t, void 0, arguments)
+					return lt(this, `every`, e, t, void 0, arguments)
 				},
 				filter(e, t) {
-					return ct(this, `filter`, e, t, (e) => e.map((e) => it(this, e)), arguments)
+					return lt(this, `filter`, e, t, (e) => e.map((e) => at(this, e)), arguments)
 				},
 				find(e, t) {
-					return ct(this, `find`, e, t, (e) => it(this, e), arguments)
+					return lt(this, `find`, e, t, (e) => at(this, e), arguments)
 				},
 				findIndex(e, t) {
-					return ct(this, `findIndex`, e, t, void 0, arguments)
+					return lt(this, `findIndex`, e, t, void 0, arguments)
 				},
 				findLast(e, t) {
-					return ct(this, `findLast`, e, t, (e) => it(this, e), arguments)
+					return lt(this, `findLast`, e, t, (e) => at(this, e), arguments)
 				},
 				findLastIndex(e, t) {
-					return ct(this, `findLastIndex`, e, t, void 0, arguments)
+					return lt(this, `findLastIndex`, e, t, void 0, arguments)
 				},
 				forEach(e, t) {
-					return ct(this, `forEach`, e, t, void 0, arguments)
+					return lt(this, `forEach`, e, t, void 0, arguments)
 				},
 				includes(...e) {
-					return ut(this, `includes`, e)
+					return dt(this, `includes`, e)
 				},
 				indexOf(...e) {
-					return ut(this, `indexOf`, e)
+					return dt(this, `indexOf`, e)
 				},
 				join(e) {
-					return nt(this).join(e)
+					return rt(this).join(e)
 				},
 				lastIndexOf(...e) {
-					return ut(this, `lastIndexOf`, e)
+					return dt(this, `lastIndexOf`, e)
 				},
 				map(e, t) {
-					return ct(this, `map`, e, t, void 0, arguments)
+					return lt(this, `map`, e, t, void 0, arguments)
 				},
 				pop() {
-					return dt(this, `pop`)
+					return ft(this, `pop`)
 				},
 				push(...e) {
-					return dt(this, `push`, e)
+					return ft(this, `push`, e)
 				},
 				reduce(e, ...t) {
-					return lt(this, `reduce`, e, t)
+					return ut(this, `reduce`, e, t)
 				},
 				reduceRight(e, ...t) {
-					return lt(this, `reduceRight`, e, t)
+					return ut(this, `reduceRight`, e, t)
 				},
 				shift() {
-					return dt(this, `shift`)
+					return ft(this, `shift`)
 				},
 				some(e, t) {
-					return ct(this, `some`, e, t, void 0, arguments)
+					return lt(this, `some`, e, t, void 0, arguments)
 				},
 				splice(...e) {
-					return dt(this, `splice`, e)
+					return ft(this, `splice`, e)
 				},
 				toReversed() {
-					return nt(this).toReversed()
+					return rt(this).toReversed()
 				},
 				toSorted(e) {
-					return nt(this).toSorted(e)
+					return rt(this).toSorted(e)
 				},
 				toSpliced(...e) {
-					return nt(this).toSpliced(...e)
+					return rt(this).toSpliced(...e)
 				},
 				unshift(...e) {
-					return dt(this, `unshift`, e)
+					return ft(this, `unshift`, e)
 				},
 				values() {
-					return ot(this, `values`, (e) => it(this, e))
+					return st(this, `values`, (e) => at(this, e))
 				},
 			}
-			function ot(e, t, n) {
-				let r = rt(e),
+			function st(e, t, n) {
+				let r = it(e),
 					i = r[t]()
 				return (
 					r !== e &&
-						!P(e) &&
+						!N(e) &&
 						((i._next = i.next),
 						(i.next = () => {
 							let e = i._next()
@@ -687,20 +687,20 @@
 					i
 				)
 			}
-			var st = Array.prototype
-			function ct(e, t, n, r, i, a) {
-				let o = rt(e),
-					s = o !== e && !P(e),
+			var ct = Array.prototype
+			function lt(e, t, n, r, i, a) {
+				let o = it(e),
+					s = o !== e && !N(e),
 					c = o[t]
-				if (c !== st[t]) {
+				if (c !== ct[t]) {
 					let t = c.apply(e, a)
-					return s ? I(t) : t
+					return s ? F(t) : t
 				}
 				let l = n
 				o !== e &&
 					(s
 						? (l = function (t, r) {
-								return n.call(this, it(e, t), r, e)
+								return n.call(this, at(e, t), r, e)
 							})
 						: n.length > 2 &&
 							(l = function (t, r) {
@@ -709,48 +709,48 @@
 				let u = c.call(o, l, r)
 				return s && i ? i(u) : u
 			}
-			function lt(e, t, n, r) {
-				let i = rt(e),
-					a = i !== e && !P(e),
+			function ut(e, t, n, r) {
+				let i = it(e),
+					a = i !== e && !N(e),
 					o = n,
 					s = !1
 				i !== e &&
 					(a
 						? ((s = r.length === 0),
 							(o = function (t, r, i) {
-								return (s && ((s = !1), (t = it(e, t))), n.call(this, t, it(e, r), i, e))
+								return (s && ((s = !1), (t = at(e, t))), n.call(this, t, at(e, r), i, e))
 							}))
 						: n.length > 3 &&
 							(o = function (t, r, i) {
 								return n.call(this, t, r, i, e)
 							}))
 				let c = i[t](o, ...r)
-				return s ? it(e, c) : c
+				return s ? at(e, c) : c
 			}
-			function ut(e, t, n) {
-				let r = F(e)
-				N(r, `iterate`, et)
+			function dt(e, t, n) {
+				let r = P(e)
+				M(r, `iterate`, tt)
 				let i = r[t](...n)
-				return (i === -1 || i === !1) && Ht(n[0]) ? ((n[0] = F(n[0])), r[t](...n)) : i
+				return (i === -1 || i === !1) && Ut(n[0]) ? ((n[0] = P(n[0])), r[t](...n)) : i
 			}
-			function dt(e, t, n = []) {
-				;(We(), Pe())
-				let r = F(e)[t].apply(e, n)
-				return (Fe(), Ge(), r)
+			function ft(e, t, n = []) {
+				;(Ge(), Pe())
+				let r = P(e)[t].apply(e, n)
+				return (Fe(), Ke(), r)
 			}
-			var ft = e(`__proto__,__v_isRef,__isVue`),
-				pt = new Set(
+			var pt = e(`__proto__,__v_isRef,__isVue`),
+				mt = new Set(
 					Object.getOwnPropertyNames(Symbol)
 						.filter((e) => e !== `arguments` && e !== `caller`)
 						.map((e) => Symbol[e])
 						.filter(_),
 				)
-			function mt(e) {
+			function ht(e) {
 				_(e) || (e = String(e))
-				let t = F(this)
-				return (N(t, `has`, e), t.hasOwnProperty(e))
+				let t = P(this)
+				return (M(t, `has`, e), t.hasOwnProperty(e))
 			}
-			var ht = class {
+			var gt = class {
 					constructor(e = !1, t = !1) {
 						;((this._isReadonly = e), (this._isShallow = t))
 					}
@@ -762,26 +762,26 @@
 						if (t === `__v_isReadonly`) return r
 						if (t === `__v_isShallow`) return i
 						if (t === `__v_raw`)
-							return n === (r ? (i ? Nt : Mt) : i ? jt : At).get(e) ||
+							return n === (r ? (i ? Pt : Nt) : i ? Mt : jt).get(e) ||
 								Object.getPrototypeOf(e) === Object.getPrototypeOf(n)
 								? e
 								: void 0
 						let a = d(e)
 						if (!r) {
 							let e
-							if (a && (e = at[t])) return e
-							if (t === `hasOwnProperty`) return mt
+							if (a && (e = ot[t])) return e
+							if (t === `hasOwnProperty`) return ht
 						}
-						let o = Reflect.get(e, t, L(e) ? e : n)
-						if ((_(t) ? pt.has(t) : ft(t)) || (r || N(e, `get`, t), i)) return o
-						if (L(o)) {
+						let o = Reflect.get(e, t, I(e) ? e : n)
+						if ((_(t) ? mt.has(t) : pt(t)) || (r || M(e, `get`, t), i)) return o
+						if (I(o)) {
 							let e = a && C(t) ? o : o.value
-							return r && v(e) ? Rt(e) : e
+							return r && v(e) ? zt(e) : e
 						}
-						return v(o) ? (r ? Rt(o) : It(o)) : o
+						return v(o) ? (r ? zt(o) : Lt(o)) : o
 					}
 				},
-				gt = class extends ht {
+				_t = class extends gt {
 					constructor(e = !1) {
 						super(!1, e)
 					}
@@ -789,29 +789,29 @@
 						let i = e[t],
 							a = d(e) && C(t)
 						if (!this._isShallow) {
-							let e = Vt(i)
-							if ((!P(n) && !Vt(n) && ((i = F(i)), (n = F(n))), !a && L(i) && !L(n)))
+							let e = Ht(i)
+							if ((!N(n) && !Ht(n) && ((i = P(i)), (n = P(n))), !a && I(i) && !I(n)))
 								return (e || (i.value = n), !0)
 						}
 						let o = a ? Number(t) < e.length : u(e, t),
-							s = Reflect.set(e, t, n, L(e) ? e : r)
-						return (e === F(r) && (o ? E(n, i) && tt(e, `set`, t, n, i) : tt(e, `add`, t, n)), s)
+							s = Reflect.set(e, t, n, I(e) ? e : r)
+						return (e === P(r) && (o ? E(n, i) && nt(e, `set`, t, n, i) : nt(e, `add`, t, n)), s)
 					}
 					deleteProperty(e, t) {
 						let n = u(e, t),
 							r = e[t],
 							i = Reflect.deleteProperty(e, t)
-						return (i && n && tt(e, `delete`, t, void 0, r), i)
+						return (i && n && nt(e, `delete`, t, void 0, r), i)
 					}
 					has(e, t) {
 						let n = Reflect.has(e, t)
-						return ((!_(t) || !pt.has(t)) && N(e, `has`, t), n)
+						return ((!_(t) || !mt.has(t)) && M(e, `has`, t), n)
 					}
 					ownKeys(e) {
-						return (N(e, `iterate`, d(e) ? `length` : Qe), Reflect.ownKeys(e))
+						return (M(e, `iterate`, d(e) ? `length` : $e), Reflect.ownKeys(e))
 					}
 				},
-				_t = class extends ht {
+				vt = class extends gt {
 					constructor(e = !1) {
 						super(!0, e)
 					}
@@ -822,22 +822,22 @@
 						return !0
 					}
 				},
-				vt = new gt(),
 				yt = new _t(),
-				bt = new gt(!0),
-				xt = (e) => e,
-				St = (e) => Reflect.getPrototypeOf(e)
-			function Ct(e, t, n) {
+				bt = new vt(),
+				xt = new _t(!0),
+				St = (e) => e,
+				Ct = (e) => Reflect.getPrototypeOf(e)
+			function wt(e, t, n) {
 				return function (...r) {
 					let i = this.__v_raw,
-						a = F(i),
+						a = P(i),
 						o = f(a),
 						c = e === `entries` || (e === Symbol.iterator && o),
 						l = e === `keys` && o,
 						u = i[e](...r),
-						d = n ? xt : t ? Wt : I
+						d = n ? St : t ? Gt : F
 					return (
-						!t && N(a, `iterate`, l ? $e : Qe),
+						!t && M(a, `iterate`, l ? et : $e),
 						s(Object.create(u), {
 							next() {
 								let { value: e, done: t } = u.next()
@@ -847,102 +847,102 @@
 					)
 				}
 			}
-			function wt(e) {
+			function Tt(e) {
 				return function (...t) {
 					return e === `delete` ? !1 : e === `clear` ? void 0 : this
 				}
 			}
-			function Tt(e, t) {
+			function Et(e, t) {
 				let n = {
 					get(n) {
 						let r = this.__v_raw,
-							i = F(r),
-							a = F(n)
-						e || (E(n, a) && N(i, `get`, n), N(i, `get`, a))
-						let { has: o } = St(i),
-							s = t ? xt : e ? Wt : I
+							i = P(r),
+							a = P(n)
+						e || (E(n, a) && M(i, `get`, n), M(i, `get`, a))
+						let { has: o } = Ct(i),
+							s = t ? St : e ? Gt : F
 						if (o.call(i, n)) return s(r.get(n))
 						if (o.call(i, a)) return s(r.get(a))
 						r !== i && r.get(n)
 					},
 					get size() {
 						let t = this.__v_raw
-						return (!e && N(F(t), `iterate`, Qe), t.size)
+						return (!e && M(P(t), `iterate`, $e), t.size)
 					},
 					has(t) {
 						let n = this.__v_raw,
-							r = F(n),
-							i = F(t)
+							r = P(n),
+							i = P(t)
 						return (
-							e || (E(t, i) && N(r, `has`, t), N(r, `has`, i)),
+							e || (E(t, i) && M(r, `has`, t), M(r, `has`, i)),
 							t === i ? n.has(t) : n.has(t) || n.has(i)
 						)
 					},
 					forEach(n, r) {
 						let i = this,
 							a = i.__v_raw,
-							o = F(a),
-							s = t ? xt : e ? Wt : I
-						return (!e && N(o, `iterate`, Qe), a.forEach((e, t) => n.call(r, s(e), s(t), i)))
+							o = P(a),
+							s = t ? St : e ? Gt : F
+						return (!e && M(o, `iterate`, $e), a.forEach((e, t) => n.call(r, s(e), s(t), i)))
 					},
 				}
 				return (
 					s(
 						n,
 						e
-							? { add: wt(`add`), set: wt(`set`), delete: wt(`delete`), clear: wt(`clear`) }
+							? { add: Tt(`add`), set: Tt(`set`), delete: Tt(`delete`), clear: Tt(`clear`) }
 							: {
 									add(e) {
-										let n = F(this),
-											r = St(n),
-											i = F(e),
-											a = !t && !P(e) && !Vt(e) ? i : e
+										let n = P(this),
+											r = Ct(n),
+											i = P(e),
+											a = !t && !N(e) && !Ht(e) ? i : e
 										return (
 											r.has.call(n, a) ||
 												(E(e, a) && r.has.call(n, e)) ||
 												(E(i, a) && r.has.call(n, i)) ||
-												(n.add(a), tt(n, `add`, a, a)),
+												(n.add(a), nt(n, `add`, a, a)),
 											this
 										)
 									},
 									set(e, n) {
-										!t && !P(n) && !Vt(n) && (n = F(n))
-										let r = F(this),
-											{ has: i, get: a } = St(r),
+										!t && !N(n) && !Ht(n) && (n = P(n))
+										let r = P(this),
+											{ has: i, get: a } = Ct(r),
 											o = i.call(r, e)
-										o ||= ((e = F(e)), i.call(r, e))
+										o ||= ((e = P(e)), i.call(r, e))
 										let s = a.call(r, e)
 										return (
 											r.set(e, n),
-											o ? E(n, s) && tt(r, `set`, e, n, s) : tt(r, `add`, e, n),
+											o ? E(n, s) && nt(r, `set`, e, n, s) : nt(r, `add`, e, n),
 											this
 										)
 									},
 									delete(e) {
-										let t = F(this),
-											{ has: n, get: r } = St(t),
+										let t = P(this),
+											{ has: n, get: r } = Ct(t),
 											i = n.call(t, e)
-										i ||= ((e = F(e)), n.call(t, e))
+										i ||= ((e = P(e)), n.call(t, e))
 										let a = r ? r.call(t, e) : void 0,
 											o = t.delete(e)
-										return (i && tt(t, `delete`, e, void 0, a), o)
+										return (i && nt(t, `delete`, e, void 0, a), o)
 									},
 									clear() {
-										let e = F(this),
+										let e = P(this),
 											t = e.size !== 0,
 											n = e.clear()
-										return (t && tt(e, `clear`, void 0, void 0, void 0), n)
+										return (t && nt(e, `clear`, void 0, void 0, void 0), n)
 									},
 								},
 					),
 					[`keys`, `values`, `entries`, Symbol.iterator].forEach((r) => {
-						n[r] = Ct(r, e, t)
+						n[r] = wt(r, e, t)
 					}),
 					n
 				)
 			}
-			function Et(e, t) {
-				let n = Tt(e, t)
+			function Dt(e, t) {
+				let n = Et(e, t)
 				return (t, r, i) =>
 					r === `__v_isReactive`
 						? !e
@@ -952,14 +952,14 @@
 								? t
 								: Reflect.get(u(n, r) && r in t ? n : t, r, i)
 			}
-			var Dt = { get: Et(!1, !1) },
-				Ot = { get: Et(!1, !0) },
-				kt = { get: Et(!0, !1) },
-				At = new WeakMap(),
+			var Ot = { get: Dt(!1, !1) },
+				kt = { get: Dt(!1, !0) },
+				At = { get: Dt(!0, !1) },
 				jt = new WeakMap(),
 				Mt = new WeakMap(),
-				Nt = new WeakMap()
-			function Pt(e) {
+				Nt = new WeakMap(),
+				Pt = new WeakMap()
+			function Ft(e) {
 				switch (e) {
 					case `Object`:
 					case `Array`:
@@ -973,67 +973,67 @@
 						return 0
 				}
 			}
-			function Ft(e) {
-				return e.__v_skip || !Object.isExtensible(e) ? 0 : Pt(ee(e))
-			}
 			function It(e) {
-				return Vt(e) ? e : zt(e, !1, vt, Dt, At)
+				return e.__v_skip || !Object.isExtensible(e) ? 0 : Ft(ee(e))
 			}
 			function Lt(e) {
-				return zt(e, !1, bt, Ot, jt)
+				return Ht(e) ? e : Bt(e, !1, yt, Ot, jt)
 			}
 			function Rt(e) {
-				return zt(e, !0, yt, kt, Mt)
+				return Bt(e, !1, xt, kt, Mt)
 			}
-			function zt(e, t, n, r, i) {
+			function zt(e) {
+				return Bt(e, !0, bt, At, Nt)
+			}
+			function Bt(e, t, n, r, i) {
 				if (!v(e) || (e.__v_raw && !(t && e.__v_isReactive))) return e
-				let a = Ft(e)
+				let a = It(e)
 				if (a === 0) return e
 				let o = i.get(e)
 				if (o) return o
 				let s = new Proxy(e, a === 2 ? r : n)
 				return (i.set(e, s), s)
 			}
-			function Bt(e) {
-				return Vt(e) ? Bt(e.__v_raw) : !!(e && e.__v_isReactive)
-			}
 			function Vt(e) {
-				return !!(e && e.__v_isReadonly)
-			}
-			function P(e) {
-				return !!(e && e.__v_isShallow)
+				return Ht(e) ? Vt(e.__v_raw) : !!(e && e.__v_isReactive)
 			}
 			function Ht(e) {
-				return e ? !!e.__v_raw : !1
+				return !!(e && e.__v_isReadonly)
 			}
-			function F(e) {
-				let t = e && e.__v_raw
-				return t ? F(t) : e
+			function N(e) {
+				return !!(e && e.__v_isShallow)
 			}
 			function Ut(e) {
+				return e ? !!e.__v_raw : !1
+			}
+			function P(e) {
+				let t = e && e.__v_raw
+				return t ? P(t) : e
+			}
+			function Wt(e) {
 				return (!u(e, `__v_skip`) && Object.isExtensible(e) && D(e, `__v_skip`, !0), e)
 			}
-			var I = (e) => (v(e) ? It(e) : e),
-				Wt = (e) => (v(e) ? Rt(e) : e)
-			function L(e) {
+			var F = (e) => (v(e) ? Lt(e) : e),
+				Gt = (e) => (v(e) ? zt(e) : e)
+			function I(e) {
 				return e ? e.__v_isRef === !0 : !1
 			}
-			function R(e) {
-				return Kt(e, !1)
+			function L(e) {
+				return qt(e, !1)
 			}
-			function Gt(e) {
-				return Kt(e, !0)
+			function Kt(e) {
+				return qt(e, !0)
 			}
-			function Kt(e, t) {
-				return L(e) ? e : new qt(e, t)
+			function qt(e, t) {
+				return I(e) ? e : new Jt(e, t)
 			}
-			var qt = class {
+			var Jt = class {
 				constructor(e, t) {
-					;((this.dep = new Ye()),
+					;((this.dep = new Xe()),
 						(this.__v_isRef = !0),
 						(this.__v_isShallow = !1),
-						(this._rawValue = t ? e : F(e)),
-						(this._value = t ? e : I(e)),
+						(this._rawValue = t ? e : P(e)),
+						(this._value = t ? e : F(e)),
 						(this.__v_isShallow = t))
 				}
 				get value() {
@@ -1041,35 +1041,35 @@
 				}
 				set value(e) {
 					let t = this._rawValue,
-						n = this.__v_isShallow || P(e) || Vt(e)
-					;((e = n ? e : F(e)),
-						E(e, t) && ((this._rawValue = e), (this._value = n ? e : I(e)), this.dep.trigger()))
+						n = this.__v_isShallow || N(e) || Ht(e)
+					;((e = n ? e : P(e)),
+						E(e, t) && ((this._rawValue = e), (this._value = n ? e : F(e)), this.dep.trigger()))
 				}
 			}
-			function Jt(e) {
-				return L(e) ? e.value : e
+			function Yt(e) {
+				return I(e) ? e.value : e
 			}
-			var Yt = {
-				get: (e, t, n) => (t === `__v_raw` ? e : Jt(Reflect.get(e, t, n))),
+			var Xt = {
+				get: (e, t, n) => (t === `__v_raw` ? e : Yt(Reflect.get(e, t, n))),
 				set: (e, t, n, r) => {
 					let i = e[t]
-					return L(i) && !L(n) ? ((i.value = n), !0) : Reflect.set(e, t, n, r)
+					return I(i) && !I(n) ? ((i.value = n), !0) : Reflect.set(e, t, n, r)
 				},
 			}
-			function Xt(e) {
-				return Bt(e) ? e : new Proxy(e, Yt)
+			function Zt(e) {
+				return Vt(e) ? e : new Proxy(e, Xt)
 			}
-			var Zt = class {
+			var Qt = class {
 				constructor(e, t, n) {
 					;((this.fn = e),
 						(this.setter = t),
 						(this._value = void 0),
-						(this.dep = new Ye(this)),
+						(this.dep = new Xe(this)),
 						(this.__v_isRef = !0),
 						(this.deps = void 0),
 						(this.depsTail = void 0),
 						(this.flags = 16),
-						(this.globalVersion = qe - 1),
+						(this.globalVersion = Je - 1),
 						(this.next = void 0),
 						(this.effect = this),
 						(this.__v_isReadonly = !t),
@@ -1086,22 +1086,22 @@
 					this.setter && this.setter(e)
 				}
 			}
-			function Qt(e, t, n = !1) {
+			function $t(e, t, n = !1) {
 				let r, i
-				return (h(e) ? (r = e) : ((r = e.get), (i = e.set)), new Zt(r, i, n))
+				return (h(e) ? (r = e) : ((r = e.get), (i = e.set)), new Qt(r, i, n))
 			}
-			var $t = {},
-				en = new WeakMap(),
-				tn = void 0
-			function nn(e, t = !1, n = tn) {
+			var en = {},
+				tn = new WeakMap(),
+				nn = void 0
+			function rn(e, t = !1, n = nn) {
 				if (n) {
-					let t = en.get(n)
-					;(t || en.set(n, (t = [])), t.push(e))
+					let t = tn.get(n)
+					;(t || tn.set(n, (t = [])), t.push(e))
 				}
 			}
-			function rn(e, n, i = t) {
+			function an(e, n, i = t) {
 				let { immediate: a, deep: o, once: s, scheduler: l, augmentJob: u, call: f } = i,
-					p = (e) => (o ? e : P(e) || o === !1 || o === 0 ? an(e, 1) : an(e)),
+					p = (e) => (o ? e : N(e) || o === !1 || o === 0 ? on(e, 1) : on(e)),
 					m,
 					g,
 					_,
@@ -1109,17 +1109,17 @@
 					y = !1,
 					b = !1
 				if (
-					(L(e)
-						? ((g = () => e.value), (y = P(e)))
-						: Bt(e)
+					(I(e)
+						? ((g = () => e.value), (y = N(e)))
+						: Vt(e)
 							? ((g = () => p(e)), (y = !0))
 							: d(e)
 								? ((b = !0),
-									(y = e.some((e) => Bt(e) || P(e))),
+									(y = e.some((e) => Vt(e) || N(e))),
 									(g = () =>
 										e.map((e) => {
-											if (L(e)) return e.value
-											if (Bt(e)) return p(e)
+											if (I(e)) return e.value
+											if (Vt(e)) return p(e)
 											if (h(e)) return f ? f(e, 2) : e()
 										})))
 								: (g = h(e)
@@ -1129,19 +1129,19 @@
 												: e
 											: () => {
 													if (_) {
-														We()
+														Ge()
 														try {
 															_()
 														} finally {
-															Ge()
+															Ke()
 														}
 													}
-													let t = tn
-													tn = m
+													let t = nn
+													nn = m
 													try {
 														return f ? f(e, 3, [v]) : e(v)
 													} finally {
-														tn = t
+														nn = t
 													}
 												}
 										: r),
@@ -1149,7 +1149,7 @@
 				) {
 					let e = g,
 						t = o === !0 ? 1 / 0 : o
-					g = () => an(e(), t)
+					g = () => on(e(), t)
 				}
 				let x = Ee(),
 					ee = () => {
@@ -1161,20 +1161,20 @@
 						;(e(...t), ee())
 					}
 				}
-				let S = b ? Array(e.length).fill($t) : $t,
+				let S = b ? Array(e.length).fill(en) : en,
 					C = (e) => {
 						if (!(!(m.flags & 1) || (!m.dirty && !e)))
 							if (n) {
 								let e = m.run()
 								if (o || y || (b ? e.some((e, t) => E(e, S[t])) : E(e, S))) {
 									_ && _()
-									let t = tn
-									tn = m
+									let t = nn
+									nn = m
 									try {
-										let t = [e, S === $t ? void 0 : b && S[0] === $t ? [] : S, v]
+										let t = [e, S === en ? void 0 : b && S[0] === en ? [] : S, v]
 										;((S = e), f ? f(n, 3, t) : n(...t))
 									} finally {
-										tn = t
+										nn = t
 									}
 								}
 							} else m.run()
@@ -1183,14 +1183,14 @@
 					u && u(C),
 					(m = new ke(g)),
 					(m.scheduler = l ? () => l(C, !1) : C),
-					(v = (e) => nn(e, !1, m)),
+					(v = (e) => rn(e, !1, m)),
 					(_ = m.onStop =
 						() => {
-							let e = en.get(m)
+							let e = tn.get(m)
 							if (e) {
 								if (f) f(e, 4)
 								else for (let t of e) t()
-								en.delete(m)
+								tn.delete(m)
 							}
 						}),
 					n ? (a ? C(!0) : (S = m.run())) : l ? l(C.bind(null, !0), !0) : m.run(),
@@ -1200,47 +1200,47 @@
 					ee
 				)
 			}
-			function an(e, t = 1 / 0, n) {
+			function on(e, t = 1 / 0, n) {
 				if (t <= 0 || !v(e) || e.__v_skip || ((n ||= new Map()), (n.get(e) || 0) >= t)) return e
-				if ((n.set(e, t), t--, L(e))) an(e.value, t, n)
-				else if (d(e)) for (let r = 0; r < e.length; r++) an(e[r], t, n)
+				if ((n.set(e, t), t--, I(e))) on(e.value, t, n)
+				else if (d(e)) for (let r = 0; r < e.length; r++) on(e[r], t, n)
 				else if (p(e) || f(e))
 					e.forEach((e) => {
-						an(e, t, n)
+						on(e, t, n)
 					})
 				else if (S(e)) {
-					for (let r in e) an(e[r], t, n)
+					for (let r in e) on(e[r], t, n)
 					for (let r of Object.getOwnPropertySymbols(e))
-						Object.prototype.propertyIsEnumerable.call(e, r) && an(e[r], t, n)
+						Object.prototype.propertyIsEnumerable.call(e, r) && on(e[r], t, n)
 				}
 				return e
 			}
-			function on(e, t, n, r) {
+			function sn(e, t, n, r) {
 				try {
 					return r ? e(...r) : e()
 				} catch (e) {
-					cn(e, t, n)
+					ln(e, t, n)
 				}
 			}
-			function sn(e, t, n, r) {
+			function cn(e, t, n, r) {
 				if (h(e)) {
-					let i = on(e, t, n, r)
+					let i = sn(e, t, n, r)
 					return (
 						i &&
 							y(i) &&
 							i.catch((e) => {
-								cn(e, t, n)
+								ln(e, t, n)
 							}),
 						i
 					)
 				}
 				if (d(e)) {
 					let i = []
-					for (let a = 0; a < e.length; a++) i.push(sn(e[a], t, n, r))
+					for (let a = 0; a < e.length; a++) i.push(cn(e[a], t, n, r))
 					return i
 				}
 			}
-			function cn(e, n, r, i = !0) {
+			function ln(e, n, r, i = !0) {
 				let a = n ? n.vnode : null,
 					{ errorHandler: o, throwUnhandledErrorInProduction: s } = (n && n.appContext.config) || t
 				if (n) {
@@ -1255,64 +1255,64 @@
 						t = t.parent
 					}
 					if (o) {
-						;(We(), on(o, null, 10, [e, i, a]), Ge())
+						;(Ge(), sn(o, null, 10, [e, i, a]), Ke())
 						return
 					}
 				}
-				ln(e, r, a, i, s)
+				un(e, r, a, i, s)
 			}
-			function ln(e, t, n, r = !0, i = !1) {
+			function un(e, t, n, r = !0, i = !1) {
 				if (i) throw e
 				console.error(e)
 			}
-			var z = [],
-				un = -1,
-				dn = [],
-				fn = null,
-				pn = 0,
-				mn = Promise.resolve(),
-				hn = null
-			function gn(e) {
-				let t = hn || mn
+			var R = [],
+				dn = -1,
+				fn = [],
+				pn = null,
+				mn = 0,
+				hn = Promise.resolve(),
+				gn = null
+			function _n(e) {
+				let t = gn || hn
 				return e ? t.then(this ? e.bind(this) : e) : t
 			}
-			function _n(e) {
-				let t = un + 1,
-					n = z.length
+			function vn(e) {
+				let t = dn + 1,
+					n = R.length
 				for (; t < n; ) {
 					let r = (t + n) >>> 1,
-						i = z[r],
-						a = Cn(i)
+						i = R[r],
+						a = wn(i)
 					a < e || (a === e && i.flags & 2) ? (t = r + 1) : (n = r)
 				}
 				return t
 			}
-			function vn(e) {
+			function yn(e) {
 				if (!(e.flags & 1)) {
-					let t = Cn(e),
-						n = z[z.length - 1]
-					;(!n || (!(e.flags & 2) && t >= Cn(n)) ? z.push(e) : z.splice(_n(t), 0, e),
+					let t = wn(e),
+						n = R[R.length - 1]
+					;(!n || (!(e.flags & 2) && t >= wn(n)) ? R.push(e) : R.splice(vn(t), 0, e),
 						(e.flags |= 1),
-						yn())
+						bn())
 				}
 			}
-			function yn() {
-				hn ||= mn.then(wn)
+			function bn() {
+				gn ||= hn.then(Tn)
 			}
-			function bn(e) {
+			function xn(e) {
 				;(d(e)
-					? dn.push(...e)
-					: fn && e.id === -1
-						? fn.splice(pn + 1, 0, e)
-						: e.flags & 1 || (dn.push(e), (e.flags |= 1)),
-					yn())
+					? fn.push(...e)
+					: pn && e.id === -1
+						? pn.splice(mn + 1, 0, e)
+						: e.flags & 1 || (fn.push(e), (e.flags |= 1)),
+					bn())
 			}
-			function xn(e, t, n = un + 1) {
-				for (; n < z.length; n++) {
-					let t = z[n]
+			function Sn(e, t, n = dn + 1) {
+				for (; n < R.length; n++) {
+					let t = R[n]
 					if (t && t.flags & 2) {
 						if (e && t.id !== e.uid) continue
-						;(z.splice(n, 1),
+						;(R.splice(n, 1),
 							n--,
 							t.flags & 4 && (t.flags &= -2),
 							t(),
@@ -1320,91 +1320,91 @@
 					}
 				}
 			}
-			function Sn(e) {
-				if (dn.length) {
-					let e = [...new Set(dn)].sort((e, t) => Cn(e) - Cn(t))
-					if (((dn.length = 0), fn)) {
-						fn.push(...e)
+			function Cn(e) {
+				if (fn.length) {
+					let e = [...new Set(fn)].sort((e, t) => wn(e) - wn(t))
+					if (((fn.length = 0), pn)) {
+						pn.push(...e)
 						return
 					}
-					for (fn = e, pn = 0; pn < fn.length; pn++) {
-						let e = fn[pn]
+					for (pn = e, mn = 0; mn < pn.length; mn++) {
+						let e = pn[mn]
 						;(e.flags & 4 && (e.flags &= -2), e.flags & 8 || e(), (e.flags &= -2))
 					}
-					;((fn = null), (pn = 0))
+					;((pn = null), (mn = 0))
 				}
 			}
-			var Cn = (e) => (e.id == null ? (e.flags & 2 ? -1 : 1 / 0) : e.id)
-			function wn(e) {
+			var wn = (e) => (e.id == null ? (e.flags & 2 ? -1 : 1 / 0) : e.id)
+			function Tn(e) {
 				try {
-					for (un = 0; un < z.length; un++) {
-						let e = z[un]
+					for (dn = 0; dn < R.length; dn++) {
+						let e = R[dn]
 						e &&
 							!(e.flags & 8) &&
 							(e.flags & 4 && (e.flags &= -2),
-							on(e, e.i, e.i ? 15 : 14),
+							sn(e, e.i, e.i ? 15 : 14),
 							e.flags & 4 || (e.flags &= -2))
 					}
 				} finally {
-					for (; un < z.length; un++) {
-						let e = z[un]
+					for (; dn < R.length; dn++) {
+						let e = R[dn]
 						e && (e.flags &= -2)
 					}
-					;((un = -1), (z.length = 0), Sn(e), (hn = null), (z.length || dn.length) && wn(e))
+					;((dn = -1), (R.length = 0), Cn(e), (gn = null), (R.length || fn.length) && Tn(e))
 				}
 			}
-			var B = null,
-				Tn = null
-			function En(e) {
-				let t = B
-				return ((B = e), (Tn = (e && e.type.__scopeId) || null), t)
+			var z = null,
+				En = null
+			function Dn(e) {
+				let t = z
+				return ((z = e), (En = (e && e.type.__scopeId) || null), t)
 			}
-			function Dn(e, t = B, n) {
+			function On(e, t = z, n) {
 				if (!t || e._n) return e
 				let r = (...n) => {
 					r._d && Pi(-1)
-					let i = En(t),
+					let i = Dn(t),
 						a
 					try {
 						a = e(...n)
 					} finally {
-						;(En(i), r._d && Pi(1))
+						;(Dn(i), r._d && Pi(1))
 					}
 					return a
 				}
 				return ((r._n = !0), (r._c = !0), (r._d = !0), r)
 			}
-			function On(e, n) {
-				if (B === null) return e
-				let r = ma(B),
+			function kn(e, n) {
+				if (z === null) return e
+				let r = ma(z),
 					i = (e.dirs ||= [])
 				for (let e = 0; e < n.length; e++) {
 					let [a, o, s, c = t] = n[e]
 					a &&
 						(h(a) && (a = { mounted: a, updated: a }),
-						a.deep && an(o),
+						a.deep && on(o),
 						i.push({ dir: a, instance: r, value: o, oldValue: void 0, arg: s, modifiers: c }))
 				}
 				return e
 			}
-			function kn(e, t, n, r) {
+			function An(e, t, n, r) {
 				let i = e.dirs,
 					a = t && t.dirs
 				for (let o = 0; o < i.length; o++) {
 					let s = i[o]
 					a && (s.oldValue = a[o].value)
 					let c = s.dir[r]
-					c && (We(), sn(c, n, 8, [e.el, s, e, t]), Ge())
+					c && (Ge(), cn(c, n, 8, [e.el, s, e, t]), Ke())
 				}
 			}
-			function An(e, t) {
+			function jn(e, t) {
 				if ($) {
 					let n = $.provides,
 						r = $.parent && $.parent.provides
 					;(r === n && (n = $.provides = Object.create(r)), (n[e] = t))
 				}
 			}
-			function jn(e, t, n = !1) {
+			function Mn(e, t, n = !1) {
 				let r = $i()
 				if (r || zr) {
 					let i = zr
@@ -1418,19 +1418,19 @@
 					if (arguments.length > 1) return n && h(t) ? t.call(r && r.proxy) : t
 				}
 			}
-			var Mn = Symbol.for(`v-scx`),
-				Nn = () => jn(Mn)
-			function Pn(e, t, n) {
-				return Fn(e, t, n)
+			var Nn = Symbol.for(`v-scx`),
+				Pn = () => Mn(Nn)
+			function Fn(e, t, n) {
+				return In(e, t, n)
 			}
-			function Fn(e, n, i = t) {
+			function In(e, n, i = t) {
 				let { immediate: a, deep: o, flush: c, once: l } = i,
 					u = s({}, i),
 					d = (n && a) || (!n && c !== `post`),
 					f
 				if (aa) {
 					if (c === `sync`) {
-						let e = Nn()
+						let e = Pn()
 						f = e.__watcherHandles ||= []
 					} else if (!d) {
 						let e = () => {}
@@ -1438,7 +1438,7 @@
 					}
 				}
 				let p = $
-				u.call = (e, t, n) => sn(e, p, t, n)
+				u.call = (e, t, n) => cn(e, p, t, n)
 				let m = !1
 				;(c === `post`
 					? (u.scheduler = (e) => {
@@ -1447,24 +1447,24 @@
 					: c !== `sync` &&
 						((m = !0),
 						(u.scheduler = (e, t) => {
-							t ? e() : vn(e)
+							t ? e() : yn(e)
 						})),
 					(u.augmentJob = (e) => {
 						;(n && (e.flags |= 4), m && ((e.flags |= 2), p && ((e.id = p.uid), (e.i = p))))
 					}))
-				let h = rn(e, n, u)
+				let h = an(e, n, u)
 				return (aa && (f ? f.push(h) : d && h()), h)
 			}
-			function In(e, t, n) {
+			function Ln(e, t, n) {
 				let r = this.proxy,
-					i = g(e) ? (e.includes(`.`) ? Ln(r, e) : () => r[e]) : e.bind(r, r),
+					i = g(e) ? (e.includes(`.`) ? Rn(r, e) : () => r[e]) : e.bind(r, r),
 					a
 				h(t) ? (a = t) : ((a = t.handler), (n = t))
 				let o = na(this),
-					s = Fn(i, a.bind(r), n)
+					s = In(i, a.bind(r), n)
 				return (o(), s)
 			}
-			function Ln(e, t) {
+			function Rn(e, t) {
 				let n = t.split(`.`)
 				return () => {
 					let t = e
@@ -1472,26 +1472,26 @@
 					return t
 				}
 			}
-			var Rn = Symbol(`_vte`),
-				zn = (e) => e.__isTeleport,
-				Bn = Symbol(`_leaveCb`)
-			function Vn(e, t) {
+			var zn = Symbol(`_vte`),
+				Bn = (e) => e.__isTeleport,
+				Vn = Symbol(`_leaveCb`)
+			function Hn(e, t) {
 				e.shapeFlag & 6 && e.component
-					? ((e.transition = t), Vn(e.component.subTree, t))
+					? ((e.transition = t), Hn(e.component.subTree, t))
 					: e.shapeFlag & 128
 						? ((e.ssContent.transition = t.clone(e.ssContent)),
 							(e.ssFallback.transition = t.clone(e.ssFallback)))
 						: (e.transition = t)
 			}
-			function V(e, t) {
+			function B(e, t) {
 				return h(e) ? s({ name: e.name }, t, { setup: e }) : e
 			}
-			function Hn(e) {
+			function Un(e) {
 				e.ids = [e.ids[0] + e.ids[2]++ + `-`, 0, 0]
 			}
-			function Un(e) {
+			function V(e) {
 				let n = $i(),
-					r = Gt(null)
+					r = Kt(null)
 				if (n) {
 					let i = n.refs === t ? (n.refs = {}) : n.refs
 					Object.defineProperty(i, e, {
@@ -1525,20 +1525,20 @@
 					m = n && n.r,
 					_ = f.refs === t ? (f.refs = {}) : f.refs,
 					v = f.setupState,
-					y = F(v),
+					y = P(v),
 					b = v === t ? i : (e) => (Wn(_, e) ? !1 : u(y, e)),
 					x = (e, t) => !(t && Wn(_, t))
 				if (m != null && m !== p) {
 					if ((qn(n), g(m))) ((_[m] = null), b(m) && (v[m] = null))
-					else if (L(m)) {
+					else if (I(m)) {
 						let e = n
 						;(x(m, e.k) && (m.value = null), e.k && (_[e.k] = null))
 					}
 				}
-				if (h(p)) on(p, f, 12, [l, _])
+				if (h(p)) sn(p, f, 12, [l, _])
 				else {
 					let t = g(p),
-						n = L(p)
+						n = I(p)
 					if (t || n) {
 						let i = () => {
 							if (e.f) {
@@ -1601,10 +1601,10 @@
 				if (n) {
 					let i = n[e] || (n[e] = []),
 						a = (t.__weh ||= (...r) => {
-							We()
+							Ge()
 							let i = na(n),
-								a = sn(t, n, e, r)
-							return (i(), Ge(), a)
+								a = cn(t, n, e, r)
+							return (i(), Ke(), a)
 						})
 					return (r ? i.unshift(a) : i.push(a), a)
 				}
@@ -1632,7 +1632,7 @@
 				return g(e) ? hr(fr, e, !1) || e : e || pr
 			}
 			function hr(e, t, n = !0, r = !1) {
-				let i = B || $
+				let i = z || $
 				if (i) {
 					let n = i.type
 					if (e === fr) {
@@ -1651,12 +1651,12 @@
 					a = n && n[r],
 					o = d(e)
 				if (o || g(e)) {
-					let n = o && Bt(e),
+					let n = o && Vt(e),
 						r = !1,
 						s = !1
-					;(n && ((r = !P(e)), (s = Vt(e)), (e = rt(e))), (i = Array(e.length)))
+					;(n && ((r = !N(e)), (s = Ht(e)), (e = it(e))), (i = Array(e.length)))
 					for (let n = 0, o = e.length; n < o; n++)
-						i[n] = t(r ? (s ? Wt(I(e[n])) : I(e[n])) : e[n], n, void 0, a && a[n])
+						i[n] = t(r ? (s ? Gt(F(e[n])) : F(e[n])) : e[n], n, void 0, a && a[n])
 				} else if (typeof e == `number`) {
 					i = Array(e)
 					for (let n = 0; n < e; n++) i[n] = t(n + 1, n, void 0, a && a[n])
@@ -1689,10 +1689,10 @@
 					$options: (e) => Dr(e),
 					$forceUpdate: (e) =>
 						(e.f ||= () => {
-							vn(e.update)
+							yn(e.update)
 						}),
-					$nextTick: (e) => (e.n ||= gn.bind(e.proxy)),
-					$watch: (e) => In.bind(e),
+					$nextTick: (e) => (e.n ||= _n.bind(e.proxy)),
+					$watch: (e) => Ln.bind(e),
 				}),
 				yr = (e, n) => e !== t && !e.__isScriptSetup && u(e, n),
 				br = {
@@ -1729,7 +1729,7 @@
 						let d = vr[n],
 							f,
 							p
-						if (d) return (n === `$attrs` && N(e.attrs, `get`, ``), d(e))
+						if (d) return (n === `$attrs` && M(e.attrs, `get`, ``), d(e))
 						if ((f = c.__cssModules) && (f = f[n])) return f
 						if (r !== t && u(r, n)) return ((s[n] = 4), r[n])
 						if (((p = l.config.globalProperties), u(p, n))) return p[n]
@@ -1824,7 +1824,7 @@
 					}
 				if (a) {
 					let t = a.call(n, n)
-					v(t) && (e.data = It(t))
+					v(t) && (e.data = Lt(t))
 				}
 				if (((Sr = !0), o))
 					for (let e in o) {
@@ -1844,7 +1844,7 @@
 				if (l) {
 					let e = h(l) ? l.call(n) : l
 					Reflect.ownKeys(e).forEach((t) => {
-						An(t, e[t])
+						jn(t, e[t])
 					})
 				}
 				f && Tr(f, e, `c`)
@@ -1880,7 +1880,7 @@
 					ae != null && (e.inheritAttrs = ae),
 					oe && (e.components = oe),
 					E && (e.directives = E),
-					ie && Hn(e))
+					ie && Un(e))
 			}
 			function wr(e, t, n = r) {
 				d(e) && (e = Mr(e))
@@ -1889,10 +1889,10 @@
 						i
 					;((i = v(r)
 						? `default` in r
-							? jn(r.from || n, r.default, !0)
-							: jn(r.from || n)
-						: jn(r)),
-						L(i)
+							? Mn(r.from || n, r.default, !0)
+							: Mn(r.from || n)
+						: Mn(r)),
+						I(i)
 							? Object.defineProperty(t, n, {
 									enumerable: !0,
 									configurable: !0,
@@ -1903,19 +1903,19 @@
 				}
 			}
 			function Tr(e, t, n) {
-				sn(d(e) ? e.map((e) => e.bind(t.proxy)) : e.bind(t.proxy), t, n)
+				cn(d(e) ? e.map((e) => e.bind(t.proxy)) : e.bind(t.proxy), t, n)
 			}
 			function Er(e, t, n, r) {
-				let i = r.includes(`.`) ? Ln(n, r) : () => n[r]
+				let i = r.includes(`.`) ? Rn(n, r) : () => n[r]
 				if (g(e)) {
 					let n = t[e]
-					h(n) && Pn(i, n)
-				} else if (h(e)) Pn(i, e.bind(n))
+					h(n) && Fn(i, n)
+				} else if (h(e)) Fn(i, e.bind(n))
 				else if (v(e))
 					if (d(e)) e.forEach((e) => Er(e, t, n, r))
 					else {
 						let r = h(e.handler) ? e.handler.bind(n) : t[e.handler]
-						h(r) && Pn(i, r, e)
+						h(r) && Fn(i, r, e)
 					}
 			}
 			function Dr(e) {
@@ -2092,7 +2092,7 @@
 							},
 							unmount() {
 								c &&
-									(sn(o, l._instance, 16), e(null, l._container), delete l._container.__vue_app__)
+									(cn(o, l._instance, 16), e(null, l._container), delete l._container.__vue_app__)
 							},
 							provide(e, t) {
 								return ((i.provides[e] = t), l)
@@ -2124,12 +2124,12 @@
 				s && (s.trim && (a = r.map((e) => (g(e) ? e.trim() : e))), s.number && (a = r.map(ce)))
 				let c,
 					l = i[(c = oe(n))] || i[(c = oe(w(n)))]
-				;(!l && o && (l = i[(c = oe(T(n)))]), l && sn(l, e, 6, a))
+				;(!l && o && (l = i[(c = oe(T(n)))]), l && cn(l, e, 6, a))
 				let u = i[c + `Once`]
 				if (u) {
 					if (!e.emitted) e.emitted = {}
 					else if (e.emitted[c]) return
-					;((e.emitted[c] = !0), sn(u, e, 6, a))
+					;((e.emitted[c] = !0), cn(u, e, 6, a))
 				}
 			}
 			var Hr = new WeakMap()
@@ -2177,7 +2177,7 @@
 						ctx: h,
 						inheritAttrs: g,
 					} = e,
-					_ = En(e),
+					_ = Dn(e),
 					v,
 					y
 				try {
@@ -2191,7 +2191,7 @@
 							(y = t.props ? c : Kr(c)))
 					}
 				} catch (t) {
-					;((ji.length = 0), cn(t, e, 1), (v = X(ki)))
+					;((ji.length = 0), ln(t, e, 1), (v = X(ki)))
 				}
 				let b = v
 				if (y && g !== !1) {
@@ -2201,9 +2201,9 @@
 				}
 				return (
 					n.dirs && ((b = Ui(b, null, !1, !0)), (b.dirs = b.dirs ? b.dirs.concat(n.dirs) : n.dirs)),
-					n.transition && Vn(b, n.transition),
+					n.transition && Hn(b, n.transition),
 					(v = b),
-					En(_),
+					Dn(_),
 					v
 				)
 			}
@@ -2280,7 +2280,7 @@
 					a = $r()
 				;((e.propsDefaults = Object.create(null)), ri(e, t, i, a))
 				for (let t in e.propsOptions[0]) t in i || (i[t] = void 0)
-				;(n ? (e.props = r ? i : Lt(i)) : e.type.props ? (e.props = i) : (e.props = a),
+				;(n ? (e.props = r ? i : Rt(i)) : e.type.props ? (e.props = i) : (e.props = a),
 					(e.attrs = a))
 			}
 			function ni(e, t, n, r) {
@@ -2289,7 +2289,7 @@
 						attrs: a,
 						vnode: { patchFlag: o },
 					} = e,
-					s = F(i),
+					s = P(i),
 					[c] = e.propsOptions,
 					l = !1
 				if ((r || o > 0) && !(o & 16)) {
@@ -2318,7 +2318,7 @@
 								: delete i[a])
 					if (a !== s) for (let e in a) (!t || !u(t, e)) && (delete a[e], (l = !0))
 				}
-				l && tt(e.attrs, `set`, ``)
+				l && nt(e.attrs, `set`, ``)
 			}
 			function ri(e, n, r, i) {
 				let [a, o] = e.propsOptions,
@@ -2336,7 +2336,7 @@
 							: Wr(e.emitsOptions, t) || ((!(t in i) || l !== i[t]) && ((i[t] = l), (s = !0)))
 					}
 				if (o) {
-					let n = F(r),
+					let n = P(r),
 						i = c || t
 					for (let t = 0; t < o.length; t++) {
 						let s = o[t]
@@ -2422,7 +2422,7 @@
 				li = (e) => (d(e) ? e.map(Gi) : [Gi(e)]),
 				ui = (e, t, n) => {
 					if (t._n) return t
-					let r = Dn((...e) => li(t(...e)), n)
+					let r = On((...e) => li(t(...e)), n)
 					return ((r._c = !1), r)
 				},
 				di = (e, t, n) => {
@@ -2563,7 +2563,7 @@
 						if (
 							((d = e.el = l(e.type, a, m && m.is, m)),
 							h & 8 ? p(d, e.children) : h & 16 && w(e.children, d, null, r, i, vi(e, a), s, u),
-							_ && kn(e, null, r, `created`),
+							_ && An(e, null, r, `created`),
 							re(d, e, e.scopeId, s, r),
 							m)
 						) {
@@ -2571,14 +2571,14 @@
 							;(`value` in m && c(d, `value`, null, m.value, a),
 								(f = m.onVnodeBeforeMount) && Yi(f, r, e))
 						}
-						_ && kn(e, null, r, `beforeMount`)
+						_ && An(e, null, r, `beforeMount`)
 						let v = bi(i, g)
 						;(v && g.beforeEnter(d),
 							o(d, t, n),
 							((f = m && m.onVnodeMounted) || v || _) &&
 								W(() => {
 									try {
-										;(f && Yi(f, r, e), v && g.enter(d), _ && kn(e, null, r, `mounted`))
+										;(f && Yi(f, r, e), v && g.enter(d), _ && An(e, null, r, `mounted`))
 									} finally {
 									}
 								}, i))
@@ -2607,7 +2607,7 @@
 						if (
 							(r && yi(r, !1),
 							(g = h.onVnodeBeforeUpdate) && Yi(g, r, n, e),
-							f && kn(n, e, r, `beforeUpdate`),
+							f && An(n, e, r, `beforeUpdate`),
 							r && yi(r, !0),
 							((m.innerHTML && h.innerHTML == null) || (m.textContent && h.textContent == null)) &&
 								p(l, ``),
@@ -2634,7 +2634,7 @@
 						} else !s && d == null && ae(l, m, h, r, a)
 						;((g = h.onVnodeUpdated) || f) &&
 							W(() => {
-								;(g && Yi(g, r, n, e), f && kn(n, e, r, `updated`))
+								;(g && Yi(g, r, n, e), f && An(n, e, r, `updated`))
 							}, i)
 					},
 					T = (e, t, n, r, i, a, o) => {
@@ -2774,7 +2774,7 @@
 						e.scope.off()
 						let l = (e.update = c.run.bind(c)),
 							u = (e.job = c.runIfDirty.bind(c))
-						;((u.i = e), (u.id = e.uid), (c.scheduler = () => vn(u)), yi(e, !0), l())
+						;((u.i = e), (u.id = e.uid), (c.scheduler = () => yn(u)), yi(e, !0), l())
 					},
 					de = (e, t, n) => {
 						t.component = e
@@ -2783,9 +2783,9 @@
 							(e.next = null),
 							ni(e, t.props, r, n),
 							hi(e, t.children, n),
-							We(),
-							xn(e),
-							Ge())
+							Ge(),
+							Sn(e),
+							Ke())
 					},
 					fe = (e, t, n, r, i, a, o, s, c = !1) => {
 						let l = e && e.children,
@@ -2928,7 +2928,7 @@
 										e.ctx.isUnmounted ? s(a) : o(a, t, n)
 									},
 									d = () => {
-										;(a._isLeaving && a[Bn](!0),
+										;(a._isLeaving && a[Vn](!0),
 											r(a, () => {
 												;(u(), c && c())
 											}))
@@ -2952,7 +2952,7 @@
 						} = e
 						if (
 							(d === -2 && (i = !1),
-							s != null && (We(), Kn(s, null, n, e, !0), Ge()),
+							s != null && (Ge(), Kn(s, null, n, e, !0), Ke()),
 							p != null && (t.renderCache[p] = void 0),
 							u & 256)
 						) {
@@ -2969,7 +2969,7 @@
 								e.suspense.unmount(n, r)
 								return
 							}
-							;(h && kn(e, null, t, `beforeUnmount`),
+							;(h && An(e, null, t, `beforeUnmount`),
 								u & 64
 									? e.type.remove(e, t, n, Se, r)
 									: l && !l.hasOnce && (a !== G || (d > 0 && d & 64))
@@ -2980,7 +2980,7 @@
 						let v = m != null && p == null
 						;((g && (_ = o && o.onVnodeUnmounted)) || h || v) &&
 							W(() => {
-								;(_ && Yi(_, t, e), h && kn(e, null, t, `unmounted`), v && (e.el = null))
+								;(_ && Yi(_, t, e), h && An(e, null, t, `unmounted`), v && (e.el = null))
 							}, n)
 					},
 					ge = (e) => {
@@ -3026,7 +3026,7 @@
 						if (e.shapeFlag & 6) return be(e.component.subTree)
 						if (e.shapeFlag & 128) return e.suspense.next()
 						let t = h(e.anchor || e.el),
-							n = t && t[Rn]
+							n = t && t[zn]
 						return n ? h(n) : t
 					},
 					xe = !1,
@@ -3036,7 +3036,7 @@
 							? t._vnode && (O(t._vnode, null, null, !0), (r = t._vnode.component))
 							: v(t._vnode || null, e, t, null, null, null, n),
 							(t._vnode = e),
-							(xe ||= ((xe = !0), xn(r), Sn(), !1)))
+							(xe ||= ((xe = !0), Sn(r), Cn(), !1)))
 					},
 					Se = { p: v, um: O, m: he, r: ge, mt: D, mc: w, pc: fe, pbc: T, n: be, o: e },
 					Ce,
@@ -3112,7 +3112,7 @@
 			}
 			var Ei = (e) => e.__isSuspense
 			function Di(e, t) {
-				t && t.pendingBranch ? (d(e) ? t.effects.push(...e) : t.effects.push(e)) : bn(e)
+				t && t.pendingBranch ? (d(e) ? t.effects.push(...e) : t.effects.push(e)) : xn(e)
 			}
 			var G = Symbol.for(`v-fgt`),
 				Oi = Symbol.for(`v-txt`),
@@ -3148,7 +3148,7 @@
 			var zi = ({ key: e }) => e ?? null,
 				Bi = ({ ref: e, ref_key: t, ref_for: n }) => (
 					typeof e == `number` && (e = `` + e),
-					e == null ? null : g(e) || L(e) || h(e) ? { i: B, r: e, k: t, f: !!n } : e
+					e == null ? null : g(e) || I(e) || h(e) ? { i: z, r: e, k: t, f: !!n } : e
 				)
 			function Y(e, t = null, n = null, r = 0, i = null, a = e === G ? 0 : 1, o = !1, s = !1) {
 				let c = {
@@ -3158,7 +3158,7 @@
 					props: t,
 					key: t && zi(t),
 					ref: t && Bi(t),
-					scopeId: Tn,
+					scopeId: En,
 					slotScopeIds: null,
 					children: n,
 					component: null,
@@ -3178,7 +3178,7 @@
 					dynamicProps: i,
 					dynamicChildren: null,
 					appContext: null,
-					ctx: B,
+					ctx: z,
 				}
 				return (
 					s ? (qi(c, n), a & 128 && e.normalize(c)) : n && (c.shapeFlag |= g(n) ? 8 : 16),
@@ -3201,13 +3201,13 @@
 					t = Hi(t)
 					let { class: e, style: n } = t
 					;(e && !g(e) && (t.class = O(e)),
-						v(n) && (Ht(n) && !d(n) && (n = s({}, n)), (t.style = de(n))))
+						v(n) && (Ut(n) && !d(n) && (n = s({}, n)), (t.style = de(n))))
 				}
-				let o = g(e) ? 1 : Ei(e) ? 128 : zn(e) ? 64 : v(e) ? 4 : h(e) ? 2 : 0
+				let o = g(e) ? 1 : Ei(e) ? 128 : Bn(e) ? 64 : v(e) ? 4 : h(e) ? 2 : 0
 				return Y(e, t, n, r, i, o, a, !0)
 			}
 			function Hi(e) {
-				return e ? (Ht(e) || ei(e) ? s({}, e) : e) : null
+				return e ? (Ut(e) || ei(e) ? s({}, e) : e) : null
 			}
 			function Ui(e, t, n = !1, r = !1) {
 				let { props: i, ref: a, patchFlag: o, children: s, transition: c } = e,
@@ -3243,7 +3243,7 @@
 						ctx: e.ctx,
 						ce: e.ce,
 					}
-				return (c && r && Vn(u, c.clone(u)), u)
+				return (c && r && Hn(u, c.clone(u)), u)
 			}
 			function Z(e = ` `, t = 0) {
 				return X(Oi, null, e, t)
@@ -3281,12 +3281,12 @@
 						n = 32
 						let r = t._
 						!r && !ei(t)
-							? (t._ctx = B)
-							: r === 3 && B && (B.slots._ === 1 ? (t._ = 1) : ((t._ = 2), (e.patchFlag |= 1024)))
+							? (t._ctx = z)
+							: r === 3 && z && (z.slots._ === 1 ? (t._ = 1) : ((t._ = 2), (e.patchFlag |= 1024)))
 					}
 				else
 					h(t)
-						? ((t = { default: t, _ctx: B }), (n = 32))
+						? ((t = { default: t, _ctx: z }), (n = 32))
 						: ((t = String(t)), r & 64 ? ((n = 16), (t = [Z(t)])) : (n = 8))
 				;((e.children = t), (e.shapeFlag |= n))
 			}
@@ -3308,7 +3308,7 @@
 				return t
 			}
 			function Yi(e, t, n, r = null) {
-				sn(e, t, 7, [n, r])
+				cn(e, t, 7, [n, r])
 			}
 			var Xi = Ir(),
 				Zi = 0
@@ -3384,7 +3384,7 @@
 				)
 			}
 			var $ = null,
-				$i = () => $ || B,
+				$i = () => $ || z,
 				ea,
 				ta
 			{
@@ -3432,19 +3432,19 @@
 				;((e.accessCache = Object.create(null)), (e.proxy = new Proxy(e.ctx, br)))
 				let { setup: r } = n
 				if (r) {
-					We()
+					Ge()
 					let n = (e.setupContext = r.length > 1 ? pa(e) : null),
 						i = na(e),
-						a = on(r, e, 0, [e.props, n]),
+						a = sn(r, e, 0, [e.props, n]),
 						o = y(a)
-					if ((Ge(), i(), (o || e.sp) && !Jn(e) && Hn(e), o)) {
+					if ((Ke(), i(), (o || e.sp) && !Jn(e) && Un(e), o)) {
 						if ((a.then(ra, ra), t))
 							return a
 								.then((n) => {
 									ca(e, n, t)
 								})
 								.catch((t) => {
-									cn(t, e, 0)
+									ln(t, e, 0)
 								})
 						e.asyncDep = a
 					} else ca(e, a, t)
@@ -3455,7 +3455,7 @@
 					? e.type.__ssrInlineRender
 						? (e.ssrRender = t)
 						: (e.render = t)
-					: v(t) && (e.setupState = Xt(t)),
+					: v(t) && (e.setupState = Zt(t)),
 					da(e, n))
 			}
 			var la, ua
@@ -3474,17 +3474,17 @@
 				}
 				{
 					let t = na(e)
-					We()
+					Ge()
 					try {
 						Cr(e)
 					} finally {
-						;(Ge(), t())
+						;(Ke(), t())
 					}
 				}
 			}
 			var fa = {
 				get(e, t) {
-					return (N(e, `get`, ``), e[t])
+					return (M(e, `get`, ``), e[t])
 				},
 			}
 			function pa(e) {
@@ -3499,7 +3499,7 @@
 			}
 			function ma(e) {
 				return e.exposed
-					? (e.exposeProxy ||= new Proxy(Xt(Ut(e.exposed)), {
+					? (e.exposeProxy ||= new Proxy(Zt(Wt(e.exposed)), {
 							get(t, n) {
 								if (n in t) return t[n]
 								if (n in vr) return vr[n](e)
@@ -3516,7 +3516,7 @@
 			function ga(e) {
 				return h(e) && `__vccOpts` in e
 			}
-			var _a = (e, t) => Qt(e, t, aa),
+			var _a = (e, t) => $t(e, t, aa),
 				va = `3.5.34`,
 				ya = void 0,
 				ba = typeof window < `u` && window.trustedTypes
@@ -3721,7 +3721,7 @@
 				let n = (e) => {
 					if (!e._vts) e._vts = Date.now()
 					else if (e._vts <= n.attached) return
-					sn($a(e, n.value), t, 5, [e])
+					cn($a(e, n.value), t, 5, [e])
 				}
 				return ((n.value = e), (n.attached = Za()), n)
 			}
@@ -3917,7 +3917,7 @@
 			function To(e, t = {}) {
 				xo(e, `button`, `createButton`)
 				let n = Te(),
-					r = n.run(() => R(e.classList.contains(`active`)))
+					r = n.run(() => L(e.classList.contains(`active`)))
 				if (!r) throw Error(`createButton: failed to initialize reactive scope`)
 				e.setAttribute(`aria-pressed`, String(r.value))
 				let i = () => {
@@ -3931,7 +3931,7 @@
 				e.addEventListener(`click`, a)
 				let s = !1
 				return {
-					active: Rt(r),
+					active: zt(r),
 					toggle: i,
 					destroy: () => {
 						;(s || ((s = !0), o(), e.removeEventListener(`click`, a), n.stop()),
@@ -3940,11 +3940,11 @@
 					},
 				}
 			}
-			var Eo = R(`system`),
-				Do = R(`default`),
-				Oo = R(`light`),
-				ko = Qt(() => (Eo.value === `system` ? Oo.value : Eo.value)),
-				Ao = Qt(() => ko.value === `dark`),
+			var Eo = L(`system`),
+				Do = L(`default`),
+				Oo = L(`light`),
+				ko = $t(() => (Eo.value === `system` ? Oo.value : Eo.value)),
+				Ao = $t(() => ko.value === `dark`),
 				jo = Te(!0),
 				Mo = !1,
 				No = !1,
@@ -4036,9 +4036,9 @@
 					},
 					u = !1
 				return {
-					theme: Rt(t),
-					setting: Rt(n),
-					core: Rt(r),
+					theme: zt(t),
+					setting: zt(n),
+					core: zt(r),
 					dark: i,
 					toggle: s,
 					apply: c,
@@ -4049,10 +4049,10 @@
 				}
 			}
 			function Xo(e, t = {}) {
-				let n = Gt(null),
+				let n = Kt(null),
 					r = _a(() => n.value?.active.value ?? !1)
 				return (
-					Pn(
+					Fn(
 						() => e.value,
 						(e, r, i) => {
 							if (typeof window > `u` || !e) return
@@ -4082,7 +4082,7 @@
 					}
 				)
 			}
-			var Qo = V({
+			var Qo = B({
 					__name: `HomePage`,
 					setup(e) {
 						return (e, t) =>
@@ -4175,11 +4175,11 @@ import { useDialog, useToast } from &#39;@elements/browser&#39;</code></pre><p> 
     transition: none;
   }
 }`,
-				ys = V({
+				ys = B({
 					__name: `ButtonPage`,
 					setup(e) {
-						let t = Xo(Un(`toggleBtn`)),
-							n = R([]),
+						let t = Xo(V(`toggleBtn`)),
+							n = L([]),
 							r = (e) => {
 								let t = e.detail
 								;(n.value.unshift({
@@ -4548,7 +4548,7 @@ const { active, toggle } = useButton(btn, {
 													class: `primary`,
 													'onElements:button:toggle': r,
 												},
-												k(Jt(t).active.value ? `On — click to turn off` : `Off — click to turn on`),
+												k(Yt(t).active.value ? `On — click to turn off` : `Off — click to turn on`),
 												545,
 											),
 											Y(
@@ -4556,7 +4556,7 @@ const { active, toggle } = useButton(btn, {
 												{
 													type: `button`,
 													class: `subtle`,
-													onClick: (o[0] ||= (e) => Jt(t).toggle()),
+													onClick: (o[0] ||= (e) => Yt(t).toggle()),
 												},
 												`Toggle from outside`,
 											),
@@ -4564,7 +4564,7 @@ const { active, toggle } = useButton(btn, {
 										Y(`p`, null, [
 											Y(`small`, null, [
 												(o[26] ||= Z(`Live state: `, -1)),
-												Y(`code`, null, `active = ` + k(Jt(t).active.value), 1),
+												Y(`code`, null, `active = ` + k(Yt(t).active.value), 1),
 											]),
 										]),
 										n.value.length > 0
@@ -4739,7 +4739,7 @@ const { active, toggle } = useButton(btn, {
     transition: none;
   }
 }`,
-				Is = V({
+				Is = B({
 					__name: `AnchorPage`,
 					setup(e) {
 						let t = [
@@ -4751,9 +4751,9 @@ const { active, toggle } = useButton(btn, {
 								`danger`,
 								`information`,
 							],
-							n = R(typeof window > `u` ? 0 : Number(window.localStorage.getItem(Ds) ?? 0))
+							n = L(typeof window > `u` ? 0 : Number(window.localStorage.getItem(Ds) ?? 0))
 						return (
-							Pn(n, (e) => {
+							Fn(n, (e) => {
 								typeof window < `u` && window.localStorage.setItem(Ds, String(e))
 							}),
 							(e, r) => (
@@ -5251,7 +5251,7 @@ const { active, toggle } = useButton(btn, {
 
 \x3C!-- :user-invalid (after first interaction) -->
 <input type="email" required />`,
-				Mc = V({
+				Mc = B({
 					__name: `FormControlsPage`,
 					setup(e) {
 						let t = [
@@ -5277,11 +5277,11 @@ const { active, toggle } = useButton(btn, {
 								{ type: `month`, placeholder: `` },
 								{ type: `week`, placeholder: `` },
 							],
-							r = R(42),
-							i = R(35),
-							a = R(72),
-							o = R(12),
-							s = R(30),
+							r = L(42),
+							i = L(35),
+							a = L(72),
+							o = L(12),
+							s = L(30),
 							c = _a(() => o.value + s.value)
 						return (e, l) => (
 							q(),
@@ -5412,7 +5412,7 @@ const { active, toggle } = useButton(btn, {
 											Y(`div`, Ks, [
 												(l[14] ||= Y(`label`, { for: `volume` }, `Volume`, -1)),
 												Y(`div`, qs, [
-													On(
+													kn(
 														Y(
 															`input`,
 															{
@@ -5553,7 +5553,7 @@ const { active, toggle } = useButton(btn, {
 										Y(`form`, Xs, [
 											Y(`div`, Zs, [
 												(l[27] ||= Y(`label`, { for: `sum-a` }, `Left`, -1)),
-												On(
+												kn(
 													Y(
 														`input`,
 														{
@@ -5569,7 +5569,7 @@ const { active, toggle } = useButton(btn, {
 											]),
 											Y(`div`, Qs, [
 												(l[28] ||= Y(`label`, { for: `sum-b` }, `Right`, -1)),
-												On(
+												kn(
 													Y(
 														`input`,
 														{
@@ -5634,7 +5634,7 @@ const { active, toggle } = useButton(btn, {
 											]),
 											Y(`div`, oc, [
 												(l[34] ||= Y(`label`, { for: `prog-control` }, `Adjust value`, -1)),
-												On(
+												kn(
 													Y(
 														`input`,
 														{
@@ -5701,7 +5701,7 @@ const { active, toggle } = useButton(btn, {
 											)),
 											Y(`div`, dc, [
 												(l[39] ||= Y(`label`, { for: `meter-control` }, `Adjust value`, -1)),
-												On(
+												kn(
 													Y(
 														`input`,
 														{
@@ -5903,7 +5903,7 @@ const { active, toggle } = useButton(btn, {
   <p>Plus rotates to an X (45deg) when open. Swap the SVG to any glyph.</p>
 </details>`,
 				Kc = Nc(
-					V({
+					B({
 						__name: `DetailsPage`,
 						setup(e) {
 							let t = [
@@ -6135,20 +6135,20 @@ const { active, toggle } = useButton(btn, {
 
 \x3C!-- After close: dialog.returnValue === "cancel" | "delete"
      (depending on which submit button fired). -->`,
-				ol = V({
+				ol = B({
 					__name: `DialogElementPage`,
 					setup(e) {
-						let t = Un(`dialogBare`),
-							n = Un(`dialogModal`),
-							r = Un(`dialogSmall`),
-							i = Un(`dialogLarge`),
-							a = Un(`dialogFullscreen`),
-							o = Un(`dialogScrollable`),
-							s = Un(`dialogPrimary`),
-							c = Un(`dialogDanger`),
-							l = Un(`dialogFilled`),
-							u = Un(`dialogForm`),
-							d = R(``)
+						let t = V(`dialogBare`),
+							n = V(`dialogModal`),
+							r = V(`dialogSmall`),
+							i = V(`dialogLarge`),
+							a = V(`dialogFullscreen`),
+							o = V(`dialogScrollable`),
+							s = V(`dialogPrimary`),
+							c = V(`dialogDanger`),
+							l = V(`dialogFilled`),
+							u = V(`dialogForm`),
+							d = L(``)
 						return (e, f) => (
 							q(),
 							J(
@@ -6614,7 +6614,7 @@ const { active, toggle } = useButton(btn, {
 <h1>Title</h1>
 <h3>Subsection</h3> \x3C!-- skipped h2 -->
 <h1>Another title</h1> \x3C!-- second h1 on the page -->`,
-				ml = V({
+				ml = B({
 					__name: `HeadingsPage`,
 					setup(e) {
 						let t = [
@@ -6758,7 +6758,7 @@ const { active, toggle } = useButton(btn, {
 						)
 					},
 				}),
-				hl = V({
+				hl = B({
 					__name: `TypographyPage`,
 					setup(e) {
 						return (e, t) =>
@@ -6773,7 +6773,7 @@ const close = () =&gt; dialog.value?.close()</code></pre></section><section id="
 				}),
 				gl = { id: `lists-group-variants` },
 				_l = { class: `group` },
-				vl = V({
+				vl = B({
 					__name: `ListsPage`,
 					setup(e) {
 						let t = [
@@ -6852,7 +6852,7 @@ const close = () =&gt; dialog.value?.close()</code></pre></section><section id="
 				Tl = { id: `tables-responsive` },
 				El = { class: `scrollable` },
 				Dl = { class: `striped nowrap` },
-				Ol = V({
+				Ol = B({
 					__name: `TablesPage`,
 					setup(e) {
 						let t = [
@@ -7207,7 +7207,7 @@ const close = () =&gt; dialog.value?.close()</code></pre></section><section id="
 				Fl = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 480'%3E%3Cdefs%3E%3ClinearGradient id='p' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23db2777'/%3E%3Cstop offset='100%25' stop-color='%23ea580c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='320' height='480' fill='url(%23p)'/%3E%3Ccircle cx='160' cy='180' r='80' fill='white' fill-opacity='0.22'/%3E%3Cpath d='M40 480 L160 280 L280 480 Z' fill='white' fill-opacity='0.18'/%3E%3C/svg%3E`,
 				Il = `https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4`,
 				Ll = `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3`,
-				Rl = V({
+				Rl = B({
 					__name: `MediaPage`,
 					setup(e) {
 						return (
@@ -7503,7 +7503,7 @@ const close = () =&gt; dialog.value?.close()</code></pre></section><section id="
 					'aria-hidden': `true`,
 				},
 				Vl = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 360'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23059669'/%3E%3Cstop offset='100%25' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='640' height='360' fill='url(%23g)'/%3E%3Ccircle cx='180' cy='120' r='60' fill='white' fill-opacity='0.22'/%3E%3Ccircle cx='460' cy='240' r='100' fill='white' fill-opacity='0.15'/%3E%3Cpath d='M0 280 L160 200 L320 240 L480 180 L640 220 L640 360 L0 360 Z' fill='white' fill-opacity='0.18'/%3E%3C/svg%3E`,
-				Hl = V({
+				Hl = B({
 					__name: `FiguresPage`,
 					setup(e) {
 						return (e, t) => (
@@ -7658,7 +7658,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				Ul = V({
+				Ul = B({
 					__name: `SectioningPage`,
 					setup(e) {
 						return (e, t) =>
@@ -7671,7 +7671,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				Wl = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23059669'/%3E%3Cstop offset='100%25' stop-color='%230891b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='800' height='400' fill='url(%23h)'/%3E%3Ccircle cx='180' cy='120' r='60' fill='white' fill-opacity='0.22'/%3E%3Ccircle cx='620' cy='280' r='90' fill='white' fill-opacity='0.15'/%3E%3Cpath d='M0 300 L200 220 L400 270 L600 200 L800 240 L800 400 L0 400 Z' fill='white' fill-opacity='0.20'/%3E%3C/svg%3E`,
 				Gl = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cdefs%3E%3ClinearGradient id='p' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23db2777'/%3E%3Cstop offset='100%25' stop-color='%23ea580c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='400' fill='url(%23p)'/%3E%3Ccircle cx='200' cy='160' r='70' fill='white' fill-opacity='0.30'/%3E%3Cpath d='M70 400 L200 240 L330 400 Z' fill='white' fill-opacity='0.22'/%3E%3C/svg%3E`,
 				Kl = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'%3E%3Cdefs%3E%3CradialGradient id='c' cx='30%25' cy='40%25' r='80%25'%3E%3Cstop offset='0%25' stop-color='%237c3aed'/%3E%3Cstop offset='60%25' stop-color='%231e293b'/%3E%3Cstop offset='100%25' stop-color='%23020617'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='800' height='400' fill='url(%23c)'/%3E%3Ccircle cx='180' cy='130' r='45' fill='white' fill-opacity='0.35'/%3E%3Ccircle cx='600' cy='80' r='2' fill='white'/%3E%3Ccircle cx='680' cy='180' r='1.5' fill='white'/%3E%3Ccircle cx='720' cy='280' r='2.5' fill='white'/%3E%3Ccircle cx='500' cy='350' r='1.5' fill='white'/%3E%3Ccircle cx='580' cy='320' r='1' fill='white'/%3E%3C/svg%3E`,
-				ql = V({
+				ql = B({
 					__name: `ArticleCardPage`,
 					setup(e) {
 						return (e, t) => (
@@ -7844,7 +7844,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				Zl = [`data-alert-open`],
 				Ql = [`onClick`],
 				$l = { key: 0 },
-				eu = V({
+				eu = B({
 					__name: `AsidePage`,
 					setup(e) {
 						let t = [
@@ -7856,7 +7856,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								`danger`,
 								`information`,
 							],
-							n = R(new Set()),
+							n = L(new Set()),
 							r = (e) => {
 								n.value = new Set([...n.value, e])
 							},
@@ -8518,7 +8518,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				mu = [`hidden`],
 				hu = [`hidden`],
 				gu = [`hidden`],
-				_u = V({
+				_u = B({
 					__name: `NavPage`,
 					setup(e) {
 						let t = [
@@ -8530,11 +8530,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								`danger`,
 								`information`,
 							],
-							n = R(`overview`),
+							n = L(`overview`),
 							r = (e) => {
 								n.value = e
 							},
-							i = R(2),
+							i = L(2),
 							a = (e) => {
 								e < 1 || e > 7 || (i.value = e)
 							}
@@ -8932,14 +8932,14 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				Tu = { key: 0 },
 				Eu = { popover: ``, id: `demo-dropdown` },
 				Du = { popover: ``, id: `demo-dropdown-full` },
-				Ou = V({
+				Ou = B({
 					__name: `MenuPage`,
 					setup(e) {
-						let t = R(!1),
-							n = R(!1),
-							r = R(!1),
-							i = R(!1),
-							a = R(null),
+						let t = L(!1),
+							n = L(!1),
+							r = L(!1),
+							i = L(!1),
+							a = L(null),
 							o = (e) => {
 								;((a.value = e), document.getElementById(`demo-dropdown`)?.hidePopover())
 							}
@@ -9351,7 +9351,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				},
 				Gu = [`disabled`],
 				Ku = { key: 0, role: `status`, class: `spinner`, 'aria-label': `Submitting` },
-				qu = V({
+				qu = B({
 					__name: `InlineAtomsPage`,
 					setup(e) {
 						let t = [
@@ -9363,7 +9363,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								`danger`,
 								`information`,
 							],
-							n = R(new Set()),
+							n = L(new Set()),
 							r = (e) => {
 								n.value = new Set([...n.value, e])
 							},
@@ -9371,7 +9371,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								n.value = new Set()
 							},
 							a = [`frontend`, `design`, `accessibility`, `docs`, `devops`],
-							o = R(!1),
+							o = L(!1),
 							s = async () => {
 								;((o.value = !0), await new Promise((e) => setTimeout(e, 1500)), (o.value = !1))
 							}
@@ -9722,7 +9722,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				Zu = {
 					style: { display: `flex`, gap: `0.5rem`, 'flex-wrap': `wrap`, 'align-items': `center` },
 				},
-				Qu = V({
+				Qu = B({
 					__name: `PopoverSurfacesPage`,
 					setup(e) {
 						let t = (e, t = 2500) => {
@@ -9735,7 +9735,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										} catch {}
 									}, t))
 							},
-							n = R(!1)
+							n = L(!1)
 						return (e, r) => (
 							q(),
 							J(
@@ -10297,11 +10297,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 				nd = { style: { 'margin-block': `0` } },
 				rd = [`onClick`],
 				id = { style: { 'margin-block': `0` } },
-				ad = V({
+				ad = B({
 					__name: `FormSurfacesPage`,
 					setup(e) {
 						let t = [`primary`, `success`, `warning`, `danger`, `information`],
-							n = R(`primary`)
+							n = L(`primary`)
 						return (e, r) => (
 							q(),
 							J(
@@ -10437,10 +10437,34 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				od = { id: `scroll-transition-view-transition` },
-				sd = { style: { 'margin-block': `0` } },
-				cd = Nc(
-					V({
+				od = { id: `scroll-transition-scrollbar` },
+				sd = { style: { display: `grid`, 'grid-template-columns': `repeat(2, 1fr)`, gap: `1rem` } },
+				cd = { style: { 'margin-block': `0 0.5rem` } },
+				ld = { style: { display: `flex`, gap: `0.5rem`, 'margin-block-end': `1rem` } },
+				ud = { style: { display: `grid`, 'grid-template-columns': `1fr 1fr`, gap: `1rem` } },
+				dd = {
+					style: {
+						'block-size': `12rem`,
+						'overflow-y': `auto`,
+						border: `1px solid var(--color-border)`,
+						'border-radius': `0.5rem`,
+						padding: `0.75rem`,
+					},
+				},
+				fd = {
+					style: {
+						'block-size': `12rem`,
+						'overflow-y': `auto`,
+						border: `1px solid var(--color-border)`,
+						'border-radius': `0.5rem`,
+						padding: `0.75rem`,
+						'--set-scrollbar-gutter': `auto`,
+					},
+				},
+				pd = { id: `scroll-transition-view-transition` },
+				md = { style: { 'margin-block': `0` } },
+				hd = Nc(
+					B({
 						__name: `ScrollAndTransitionPage`,
 						setup(e) {
 							let t = [
@@ -10460,9 +10484,10 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										variant: `warning`,
 									},
 								],
-								n = R(0),
+								n = L(0),
 								r = () => t[n.value],
-								i = () => {
+								i = L(!1),
+								a = () => {
 									let e = () => {
 										n.value = (n.value + 1) % t.length
 									}
@@ -10476,7 +10501,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									G,
 									null,
 									[
-										(t[2] ||= Y(
+										(t[26] ||= Y(
 											`section`,
 											{ id: `scroll-transition-intro` },
 											[
@@ -10497,251 +10522,248 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 											],
 											-1,
 										)),
-										(t[3] ||= Y(
-											`section`,
-											{ id: `scroll-transition-scrollbar` },
-											[
-												Y(`h2`, null, [
-													Z(` 1. Scrollbar — `),
-													Y(`code`, null, `scrollbar-color`),
-													Z(` / `),
-													Y(`code`, null, `-width`),
-													Z(` / `),
-													Y(`code`, null, `-gutter`),
-												]),
-												Y(`p`, null, [
-													Z(` The standard CSS scrollbar properties replace the Chromium-only `),
-													Y(`code`, null, `::-webkit-scrollbar*`),
-													Z(
-														` family. Browser support: Chrome 121+ / Firefox 64+ / Safari 18.2+ for color + width; Chrome 94+ / Firefox 97+ / Safari 14.1+ for gutter. Safari < 18.2 keeps the iOS overlay scrollbar — acceptable fallback. `,
-													),
-												]),
-												Y(`p`, null, [
-													Z(`Defaults (declared on `),
-													Y(`code`, null, `:root`),
-													Z(` in `),
-													Y(`code`, null, `surfaces/_scrollbar.scss`),
-													Z(`):`),
-												]),
-												Y(`ul`, null, [
-													Y(`li`, null, [
-														Y(`strong`, null, [Y(`code`, null, `scrollbar-width: thin`)]),
-														Z(` — the narrower of two UA sizes. `),
-													]),
-													Y(`li`, null, [
-														Y(`strong`, null, [
-															Y(
-																`code`,
-																null,
-																`scrollbar-color: var(--color-border-strong) transparent`,
-															),
-														]),
-														Z(` — muted thumb on transparent track. Tracks the active theme via `),
-														Y(`code`, null, `--color-border-strong`),
-														Z(` (slate-300 in light, slate-600 in dark). `),
-													]),
-													Y(`li`, null, [
-														Y(`strong`, null, [Y(`code`, null, `scrollbar-gutter: stable`)]),
-														Z(
-															` — reserves the gutter even when content fits without overflow, so the layout doesn't shift between scrollable / not- scrollable states. `,
-														),
-													]),
-												]),
-												Y(`h3`, null, `Live demo`),
-												Y(
-													`p`,
+										Y(`section`, od, [
+											(t[20] ||= Q(
+												`<h2 data-v-75ef4c26> 1. Scrollbar — <code data-v-75ef4c26>scrollbar-color</code> / <code data-v-75ef4c26>-width</code> / <code data-v-75ef4c26>-gutter</code></h2><p data-v-75ef4c26> The standard CSS scrollbar properties replace the Chromium-only <code data-v-75ef4c26>::-webkit-scrollbar*</code> family. Browser support: Chrome 121+ / Firefox 64+ / Safari 18.2+ for color + width; Chrome 94+ / Firefox 97+ / Safari 14.1+ for gutter. Safari &lt; 18.2 keeps the iOS overlay scrollbar — acceptable fallback. </p><p data-v-75ef4c26>Defaults (declared on <code data-v-75ef4c26>:root</code> in <code data-v-75ef4c26>surfaces/_scrollbar.scss</code>):</p><ul data-v-75ef4c26><li data-v-75ef4c26><strong data-v-75ef4c26><code data-v-75ef4c26>scrollbar-width: thin</code></strong> — the narrower of two UA sizes. </li><li data-v-75ef4c26><strong data-v-75ef4c26><code data-v-75ef4c26>scrollbar-color: var(--color-border-strong) transparent</code></strong> — muted thumb on transparent track. Tracks the active theme via <code data-v-75ef4c26>--color-border-strong</code> (slate-300 in light, slate-600 in dark). </li><li data-v-75ef4c26><strong data-v-75ef4c26><code data-v-75ef4c26>scrollbar-gutter: stable</code></strong> — reserves the gutter even when content fits without overflow, so the layout doesn&#39;t shift between scrollable / not- scrollable states. </li></ul><h3 data-v-75ef4c26><code data-v-75ef4c26>scrollbar-width</code> — three sizes side by side</h3><p data-v-75ef4c26><strong data-v-75ef4c26>Scroll inside each box to see the difference.</strong> On overlay-scrollbar platforms (macOS, iOS) the thin / auto distinction collapses while the pointer is idle; the moment you scroll, all three render distinctly. Windows + Linux Chrome paints all three at idle as well. </p><div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:1rem;" data-v-75ef4c26><div style="block-size:10rem;overflow-y:scroll;border:1px solid var(--color-border);border-radius:0.5rem;padding:0.75rem;" data-v-75ef4c26><p style="margin-block:0 0.5rem;" data-v-75ef4c26><small data-v-75ef4c26><code data-v-75ef4c26>thin</code> (default)</small></p><p data-v-75ef4c26>Narrower UA scrollbar. Framework default.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p></div><div style="block-size:10rem;overflow-y:scroll;border:1px solid var(--color-border);border-radius:0.5rem;padding:0.75rem;--set-scrollbar-width:auto;" data-v-75ef4c26><p style="margin-block:0 0.5rem;" data-v-75ef4c26><small data-v-75ef4c26><code data-v-75ef4c26>auto</code> (OS default size)</small></p><p data-v-75ef4c26>Wider UA scrollbar — matches the host OS default.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p></div><div style="block-size:10rem;overflow-y:scroll;border:1px solid var(--color-border);border-radius:0.5rem;padding:0.75rem;--set-scrollbar-width:none;" data-v-75ef4c26><p style="margin-block:0 0.5rem;" data-v-75ef4c26><small data-v-75ef4c26><code data-v-75ef4c26>none</code> (hidden)</small></p><p data-v-75ef4c26>Scrollbar fully hidden — content still scrolls. Useful for tab strips and chip rows.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p><p data-v-75ef4c26>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p></div></div><h3 data-v-75ef4c26><code data-v-75ef4c26>scrollbar-color</code> — variant-tinted thumbs</h3><p data-v-75ef4c26> Override <code data-v-75ef4c26>--set-scrollbar-thumb-color</code> per-host to tint the scrollbar with any colour token — variant identity, brand colour, or any custom value. Each scrollable below sets its thumb to a different variant; <strong data-v-75ef4c26>scroll the box to see the colour</strong>. </p>`,
+												9,
+											)),
+											Y(`div`, sd, [
+												(q(),
+												J(
+													G,
 													null,
-													` Scroll inside the box. The default thin / muted thumb appears; the gutter is reserved even when the content doesn't currently overflow (toggle the long-content checkbox below). `,
-												),
-												Y(
-													`div`,
-													{
-														style: {
-															'block-size': `12rem`,
-															'overflow-y': `auto`,
-															border: `1px solid var(--color-border)`,
-															'border-radius': `0.5rem`,
-															padding: `1rem`,
-														},
-													},
-													[
-														Y(
-															`p`,
-															null,
-															`Scroll this region to see the framework's default scrollbar chrome.`,
-														),
-														Y(
-															`p`,
-															null,
-															` Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus lacinia odio vitae vestibulum. `,
-														),
-														Y(
-															`p`,
-															null,
-															` Cras mattis consectetur purus sit amet fermentum. Cras justo odio, dapibus ac facilisis in. `,
-														),
-														Y(
-															`p`,
-															null,
-															` Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Praesent commodo cursus magna. `,
-														),
-														Y(
-															`p`,
-															null,
-															`Donec sed odio dui. Etiam porta sem malesuada magna mollis euismod.`,
-														),
-														Y(
-															`p`,
-															null,
-															` Nullam quis risus eget urna mollis ornare vel eu leo. Maecenas faucibus mollis interdum. `,
-														),
-														Y(
-															`p`,
-															null,
-															` Aenean lacinia bibendum nulla sed consectetur. Donec ullamcorper nulla non metus auctor fringilla. `,
-														),
-													],
-												),
-												Y(`h3`, null, `Per-element override`),
-												Y(
-													`p`,
-													null,
-													` Override per-host by re-declaring the tokens on the scrollable element. The two examples below pin a wider auto-width scrollbar (left) and tint the thumb primary (right). `,
-												),
-												Y(
-													`div`,
-													{
-														style: {
-															display: `grid`,
-															'grid-template-columns': `1fr 1fr`,
-															gap: `1rem`,
-														},
-													},
-													[
+													H([`primary`, `success`, `warning`, `danger`], (e) =>
 														Y(
 															`div`,
 															{
-																style: {
-																	'block-size': `10rem`,
-																	'overflow-y': `auto`,
-																	border: `1px solid var(--color-border)`,
-																	'border-radius': `0.5rem`,
-																	padding: `0.75rem`,
-																	'--set-scrollbar-width': `auto`,
-																},
+																key: e,
+																style: de(`
+					block-size: 8rem;
+					overflow-y: scroll;
+					border: 1px solid var(--color-border);
+					border-radius: 0.5rem;
+					padding: 0.75rem;
+					--set-scrollbar-thumb-color: var(--color-${e});
+				`),
 															},
 															[
-																Y(`p`, null, [
-																	Y(`small`, null, [
-																		Y(`code`, null, `--set-scrollbar-width: auto`),
-																	]),
-																]),
-																Y(
-																	`p`,
-																	null,
-																	` The wider UA scrollbar size — useful for accessibility-tuned scrollables that need a larger drag affordance. `,
-																),
-																Y(
-																	`p`,
-																	null,
-																	`Body content. Body content. Body content. Body content. Body content.`,
-																),
-																Y(
-																	`p`,
-																	null,
-																	`Body content. Body content. Body content. Body content. Body content.`,
-																),
-																Y(
-																	`p`,
-																	null,
-																	`Body content. Body content. Body content. Body content. Body content.`,
-																),
-															],
-														),
-														Y(
-															`div`,
-															{
-																style: {
-																	'block-size': `10rem`,
-																	'overflow-y': `auto`,
-																	border: `1px solid var(--color-border)`,
-																	'border-radius': `0.5rem`,
-																	padding: `0.75rem`,
-																	'--set-scrollbar-thumb-color': `var(--color-primary)`,
-																},
-															},
-															[
-																Y(`p`, null, [
+																Y(`p`, cd, [
 																	Y(`small`, null, [
 																		Y(
 																			`code`,
 																			null,
-																			`--set-scrollbar-thumb-color: var(--color-primary)`,
+																			`--set-scrollbar-thumb-color: var(--color-` + k(e) + `)`,
+																			1,
 																		),
 																	]),
 																]),
-																Y(
-																	`p`,
-																	null,
-																	` Variant-tinted scrollbar thumb. Useful for branded chrome where the scrollbar should read as part of the surface identity. `,
-																),
-																Y(
-																	`p`,
-																	null,
-																	`Body content. Body content. Body content. Body content. Body content.`,
-																),
-																Y(
-																	`p`,
-																	null,
-																	`Body content. Body content. Body content. Body content. Body content.`,
-																),
-																Y(
-																	`p`,
-																	null,
-																	`Body content. Body content. Body content. Body content. Body content.`,
-																),
+																(t[1] ||= Y(`p`, null, `Content. Content. Content. Content.`, -1)),
+																(t[2] ||= Y(`p`, null, `Content. Content. Content. Content.`, -1)),
+																(t[3] ||= Y(`p`, null, `Content. Content. Content. Content.`, -1)),
+																(t[4] ||= Y(`p`, null, `Content. Content. Content. Content.`, -1)),
+																(t[5] ||= Y(`p`, null, `Content. Content. Content. Content.`, -1)),
 															],
+															4,
 														),
-													],
-												),
+													),
+													64,
+												)),
+											]),
+											(t[21] ||= Y(
+												`h3`,
+												null,
+												[
+													Y(`code`, null, `scrollbar-gutter`),
+													Z(` — reserve space, no layout shift`),
+												],
+												-1,
+											)),
+											(t[22] ||= Y(
+												`p`,
+												null,
+												[
+													Y(`code`, null, `stable`),
+													Z(
+														` reserves the scrollbar gutter even when content doesn't currently overflow. The text below stays in the same horizontal position whether or not the box is scrollable — useful for cards / panels where content length varies between states and a snap-to-wider layout would look broken. Toggle the long-content state to see the difference between the two columns: `,
+													),
+												],
+												-1,
+											)),
+											Y(`div`, ld, [
 												Y(
-													`aside`,
-													{
-														role: `status`,
-														class: `information`,
-														'data-alert-open': ``,
-														style: { 'margin-block-start': `1rem` },
-													},
-													[
-														Y(`p`, null, [
-															Y(`strong`, null, [
-																Z(`Why apply at `),
-																Y(`code`, null, `:root`),
-																Z(` instead of `),
-																Y(`code`, null, `html`),
-																Z(` / `),
-																Y(`code`, null, `body`),
-																Z(`?`),
-															]),
-															Z(
-																` The scrollbar-* properties cascade per CSS Scrollbars Module Level 1 — declaring on `,
-															),
-															Y(`code`, null, `:root`),
-															Z(
-																` means every scrollable descendant (the body, a card, a popover, a dialog body, the showcase nav rail) inherits the same default scrollbar chrome unless it explicitly overrides one of the tokens. One declaration, framework-wide coverage. `,
-															),
-														]),
-													],
+													`button`,
+													{ type: `button`, onClick: (t[0] ||= (e) => (i.value = !i.value)) },
+													k(
+														i.value
+															? `Show short content`
+															: `Show long content (triggers overflow)`,
+													),
+													1,
 												),
-											],
-											-1,
-										)),
-										Y(`section`, od, [
-											(t[0] ||= Q(
-												`<h2 data-v-81c97766>2. View transition — <code data-v-81c97766>::view-transition-old(root)</code> / <code data-v-81c97766>-new(root)</code></h2><p data-v-81c97766> When the consumer wraps a DOM mutation in <code data-v-81c97766>document.startViewTransition(callback)</code>, the browser snapshots the current rendering, runs the mutation, snapshots again, and cross-fades between the two snapshots. The framework&#39;s surface tokens the duration + timing-function on the (root) snapshot pair so a <code data-v-81c97766>:root</code> retune flows through every transition the consumer triggers — no per-call <code data-v-81c97766>animation-duration</code> boilerplate. </p><p data-v-81c97766> Browser support: Chrome 111+ / Edge 111+ (same-document), Chrome 126+ (cross-document via <code data-v-81c97766>@view-transition { navigation: auto }</code>), Safari 18+, Firefox not yet (gracefully degrades — the surface is inert when the UA doesn&#39;t run a transition). </p><h3 data-v-81c97766>Live demo — click to morph between snapshots</h3><p data-v-81c97766> Each click swaps the title / body / variant of the card below. The DOM mutation is wrapped in <code data-v-81c97766>document.startViewTransition</code>, so the browser cross-fades the entire root snapshot — title, body, and the variant-tinted card surface all morph in lockstep. </p>`,
+											]),
+											Y(`div`, ud, [
+												Y(`div`, dd, [
+													(t[11] ||= Y(
+														`p`,
+														{ style: { 'margin-block': `0 0.5rem` } },
+														[
+															Y(`small`, null, [
+																Y(`code`, null, `stable`),
+																Z(` (default) — text stays put`),
+															]),
+														],
+														-1,
+													)),
+													(t[12] ||= Y(`p`, null, `Short content.`, -1)),
+													i.value
+														? (q(),
+															J(
+																G,
+																{ key: 0 },
+																[
+																	(t[6] ||= Y(
+																		`p`,
+																		null,
+																		`Long content. Long content. Long content. Long content.`,
+																		-1,
+																	)),
+																	(t[7] ||= Y(
+																		`p`,
+																		null,
+																		`Long content. Long content. Long content. Long content.`,
+																		-1,
+																	)),
+																	(t[8] ||= Y(
+																		`p`,
+																		null,
+																		`Long content. Long content. Long content. Long content.`,
+																		-1,
+																	)),
+																	(t[9] ||= Y(
+																		`p`,
+																		null,
+																		`Long content. Long content. Long content. Long content.`,
+																		-1,
+																	)),
+																	(t[10] ||= Y(
+																		`p`,
+																		null,
+																		`Long content. Long content. Long content. Long content.`,
+																		-1,
+																	)),
+																],
+																64,
+															))
+														: Wi(``, !0),
+												]),
+												Y(`div`, fd, [
+													(t[18] ||= Y(
+														`p`,
+														{ style: { 'margin-block': `0 0.5rem` } },
+														[
+															Y(`small`, null, [
+																Y(`code`, null, `auto`),
+																Z(` — text snaps when scrollbar appears`),
+															]),
+														],
+														-1,
+													)),
+													(t[19] ||= Y(`p`, null, `Short content.`, -1)),
+													i.value
+														? (q(),
+															J(
+																G,
+																{ key: 0 },
+																[
+																	(t[13] ||= Y(
+																		`p`,
+																		null,
+																		`Long content. Long content. Long content. Long content.`,
+																		-1,
+																	)),
+																	(t[14] ||= Y(
+																		`p`,
+																		null,
+																		`Long content. Long content. Long content. Long content.`,
+																		-1,
+																	)),
+																	(t[15] ||= Y(
+																		`p`,
+																		null,
+																		`Long content. Long content. Long content. Long content.`,
+																		-1,
+																	)),
+																	(t[16] ||= Y(
+																		`p`,
+																		null,
+																		`Long content. Long content. Long content. Long content.`,
+																		-1,
+																	)),
+																	(t[17] ||= Y(
+																		`p`,
+																		null,
+																		`Long content. Long content. Long content. Long content.`,
+																		-1,
+																	)),
+																],
+																64,
+															))
+														: Wi(``, !0),
+												]),
+											]),
+											(t[23] ||= Y(
+												`aside`,
+												{
+													role: `status`,
+													class: `information`,
+													'data-alert-open': ``,
+													style: { 'margin-block-start': `1rem` },
+												},
+												[
+													Y(`p`, null, [
+														Y(`strong`, null, [
+															Z(`Why universal application, not just `),
+															Y(`code`, null, `:root`),
+															Z(`?`),
+														]),
+														Z(` Per CSS Scrollbars Module Level 1, `),
+														Y(`code`, null, `scrollbar-color`),
+														Z(` IS inherited but `),
+														Y(`code`, null, `scrollbar-width`),
+														Z(` + `),
+														Y(`code`, null, `scrollbar-gutter`),
+														Z(` are NOT. Declaring the trio only on `),
+														Y(`code`, null, `:root`),
+														Z(` styled the root `),
+														Y(`code`, null, `<html>`),
+														Z(
+															` scrollbar and left every nested scroll container at the UA default. Plus `,
+														),
+														Y(`code`, null, `var()`),
+														Z(
+															` substitution resolves at the declaring element, so a descendant overriding `,
+														),
+														Y(`code`, null, `--set-scrollbar-thumb-color`),
+														Z(` never re-resolved the inherited `),
+														Y(`code`, null, `scrollbar-color`),
+														Z(`. The surface applies the trio on `),
+														Y(`code`, null, `*, *::before, *::after`),
+														Z(` so every element re-resolves its own `),
+														Y(`code`, null, `var()`),
+														Z(
+															` chain AND the non-inherited width + gutter apply at every scroll container. `,
+														),
+													]),
+												],
+												-1,
+											)),
+										]),
+										Y(`section`, pd, [
+											(t[24] ||= Q(
+												`<h2 data-v-75ef4c26>2. View transition — <code data-v-75ef4c26>::view-transition-old(root)</code> / <code data-v-75ef4c26>-new(root)</code></h2><p data-v-75ef4c26> When the consumer wraps a DOM mutation in <code data-v-75ef4c26>document.startViewTransition(callback)</code>, the browser snapshots the current rendering, runs the mutation, snapshots again, and cross-fades between the two snapshots. The framework&#39;s surface tokens the duration + timing-function on the (root) snapshot pair so a <code data-v-75ef4c26>:root</code> retune flows through every transition the consumer triggers — no per-call <code data-v-75ef4c26>animation-duration</code> boilerplate. </p><p data-v-75ef4c26> Browser support: Chrome 111+ / Edge 111+ (same-document), Chrome 126+ (cross-document via <code data-v-75ef4c26>@view-transition { navigation: auto }</code>), Safari 18+, Firefox not yet (gracefully degrades — the surface is inert when the UA doesn&#39;t run a transition). </p><h3 data-v-75ef4c26>Live demo — click to morph between snapshots</h3><p data-v-75ef4c26> Each click swaps the title / body / variant of the card below. The DOM mutation is wrapped in <code data-v-75ef4c26>document.startViewTransition</code>, so the browser cross-fades the entire root snapshot — title, body, and the variant-tinted card surface all morph in lockstep. </p>`,
 												5,
 											)),
-											Y(`button`, { type: `button`, onClick: i }, `Show next snapshot`),
+											Y(`button`, { type: `button`, onClick: a }, `Show next snapshot`),
 											Y(
 												`article`,
 												{
@@ -10749,12 +10771,12 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 													style: { 'margin-block-start': `1rem` },
 												},
 												[
-													Y(`header`, null, [Y(`h3`, sd, k(r().title), 1)]),
+													Y(`header`, null, [Y(`h3`, md, k(r().title), 1)]),
 													Y(`p`, null, k(r().body), 1),
 												],
 												2,
 											),
-											(t[1] ||= Y(
+											(t[25] ||= Y(
 												`details`,
 												null,
 												[
@@ -10777,8 +10799,8 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												-1,
 											)),
 										]),
-										(t[4] ||= Q(
-											`<section id="scroll-transition-named" data-v-81c97766><h2 data-v-81c97766>3. Per-element <code data-v-81c97766>view-transition-name</code></h2><p data-v-81c97766> Setting <code data-v-81c97766>view-transition-name: pickAName</code> on an element makes the UA snapshot that element separately from the root and animate the pair via <code data-v-81c97766>::view-transition-old(pickAName)</code> / <code data-v-81c97766>-new(pickAName)</code>. Useful for shared-element transitions (a card morphing into its detail view, a thumbnail growing into a hero image, a chip animating into a filter pill). </p><p data-v-81c97766> Per-name overrides live at the call site — the framework&#39;s surface only paints the default (<code data-v-81c97766>(root)</code>) chrome. Authors composing a shared-element transition declare their own keyframes / durations per name. </p><pre data-v-81c97766><code data-v-81c97766>/* per-element morph */
+										(t[27] ||= Q(
+											`<section id="scroll-transition-named" data-v-75ef4c26><h2 data-v-75ef4c26>3. Per-element <code data-v-75ef4c26>view-transition-name</code></h2><p data-v-75ef4c26> Setting <code data-v-75ef4c26>view-transition-name: pickAName</code> on an element makes the UA snapshot that element separately from the root and animate the pair via <code data-v-75ef4c26>::view-transition-old(pickAName)</code> / <code data-v-75ef4c26>-new(pickAName)</code>. Useful for shared-element transitions (a card morphing into its detail view, a thumbnail growing into a hero image, a chip animating into a filter pill). </p><p data-v-75ef4c26> Per-name overrides live at the call site — the framework&#39;s surface only paints the default (<code data-v-75ef4c26>(root)</code>) chrome. Authors composing a shared-element transition declare their own keyframes / durations per name. </p><pre data-v-75ef4c26><code data-v-75ef4c26>/* per-element morph */
 .hero-card {
   view-transition-name: hero-card;
 }
@@ -10787,7 +10809,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 ::view-transition-new(hero-card) {
   animation-duration: 400ms;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-}</code></pre></section><section id="scroll-transition-reduced-motion" data-v-81c97766><h2 data-v-81c97766>Reduced motion</h2><p data-v-81c97766>Both surfaces respect <code data-v-81c97766>prefers-reduced-motion: reduce</code>:</p><ul data-v-81c97766><li data-v-81c97766><strong data-v-81c97766>Scrollbar</strong> — no animations declared, so no override needed. The native scrollbar&#39;s hover / focus chrome is owned by the UA and follows the user&#39;s system preferences. </li><li data-v-81c97766><strong data-v-81c97766>View transition</strong> — the surface collapses <code data-v-81c97766>animation-duration</code> to <code data-v-81c97766>1 ms</code> rather than disabling the animation outright. Skipping the animation leaves the snapshot suspended in some engines; a 1 ms duration finishes synchronously and produces the right instant-cut effect. </li></ul></section><section id="scroll-transition-forced-colors" data-v-81c97766><h2 data-v-81c97766>Forced colors</h2><p data-v-81c97766>In Windows High Contrast (<code data-v-81c97766>forced-colors: active</code>):</p><ul data-v-81c97766><li data-v-81c97766><strong data-v-81c97766>Scrollbar</strong> — UA paints with system colours (<code data-v-81c97766>ButtonText</code> thumb, <code data-v-81c97766>Canvas</code> track) regardless of the framework&#39;s tokens. The framework&#39;s chrome degrades cleanly to the OS scrollbar. </li><li data-v-81c97766><strong data-v-81c97766>View transition</strong> — animations still run; colour-based custom keyframes (if any are declared on a named pair) flatten to system palette via the UA&#39;s forced-colors flattening pass. </li></ul></section><section id="scroll-transition-tokens" data-v-81c97766><h2 data-v-81c97766>Tokens</h2><h3 data-v-81c97766>Scrollbar</h3><dl data-v-81c97766><dt data-v-81c97766><code data-v-81c97766>--set-scrollbar-thumb-color</code></dt><dd data-v-81c97766> Thumb (the draggable handle) colour. Default <code data-v-81c97766>var(--color-border-strong)</code> — muted, theme-aware. </dd><dt data-v-81c97766><code data-v-81c97766>--set-scrollbar-track-color</code></dt><dd data-v-81c97766> Track (the rail behind the thumb) colour. Default <code data-v-81c97766>transparent</code> so the scrollbar reads as floating on the underlying surface. </dd><dt data-v-81c97766><code data-v-81c97766>--set-scrollbar-width</code></dt><dd data-v-81c97766> Scrollbar size keyword. <code data-v-81c97766>auto</code> | <code data-v-81c97766>thin</code> | <code data-v-81c97766>none</code>. Default <code data-v-81c97766>thin</code>. </dd><dt data-v-81c97766><code data-v-81c97766>--set-scrollbar-gutter</code></dt><dd data-v-81c97766> Gutter reservation. <code data-v-81c97766>auto</code> | <code data-v-81c97766>stable</code> | <code data-v-81c97766>stable both-edges</code>. Default <code data-v-81c97766>stable</code> so layout doesn&#39;t shift on overflow transitions. </dd></dl><h3 data-v-81c97766>View transition</h3><dl data-v-81c97766><dt data-v-81c97766><code data-v-81c97766>--set-view-transition-duration</code></dt><dd data-v-81c97766> Cross-fade duration on the <code data-v-81c97766>(root)</code> pair. Default <code data-v-81c97766>--set-transition-duration</code> (150 ms). Reduced-motion collapses to <code data-v-81c97766>1 ms</code>. </dd><dt data-v-81c97766><code data-v-81c97766>--set-view-transition-timing-function</code></dt><dd data-v-81c97766>Cross-fade easing. Default <code data-v-81c97766>ease</code>.</dd></dl></section>`,
+}</code></pre></section><section id="scroll-transition-reduced-motion" data-v-75ef4c26><h2 data-v-75ef4c26>Reduced motion</h2><p data-v-75ef4c26>Both surfaces respect <code data-v-75ef4c26>prefers-reduced-motion: reduce</code>:</p><ul data-v-75ef4c26><li data-v-75ef4c26><strong data-v-75ef4c26>Scrollbar</strong> — no animations declared, so no override needed. The native scrollbar&#39;s hover / focus chrome is owned by the UA and follows the user&#39;s system preferences. </li><li data-v-75ef4c26><strong data-v-75ef4c26>View transition</strong> — the surface collapses <code data-v-75ef4c26>animation-duration</code> to <code data-v-75ef4c26>1 ms</code> rather than disabling the animation outright. Skipping the animation leaves the snapshot suspended in some engines; a 1 ms duration finishes synchronously and produces the right instant-cut effect. </li></ul></section><section id="scroll-transition-forced-colors" data-v-75ef4c26><h2 data-v-75ef4c26>Forced colors</h2><p data-v-75ef4c26>In Windows High Contrast (<code data-v-75ef4c26>forced-colors: active</code>):</p><ul data-v-75ef4c26><li data-v-75ef4c26><strong data-v-75ef4c26>Scrollbar</strong> — UA paints with system colours (<code data-v-75ef4c26>ButtonText</code> thumb, <code data-v-75ef4c26>Canvas</code> track) regardless of the framework&#39;s tokens. The framework&#39;s chrome degrades cleanly to the OS scrollbar. </li><li data-v-75ef4c26><strong data-v-75ef4c26>View transition</strong> — animations still run; colour-based custom keyframes (if any are declared on a named pair) flatten to system palette via the UA&#39;s forced-colors flattening pass. </li></ul></section><section id="scroll-transition-tokens" data-v-75ef4c26><h2 data-v-75ef4c26>Tokens</h2><h3 data-v-75ef4c26>Scrollbar</h3><dl data-v-75ef4c26><dt data-v-75ef4c26><code data-v-75ef4c26>--set-scrollbar-thumb-color</code></dt><dd data-v-75ef4c26> Thumb (the draggable handle) colour. Default <code data-v-75ef4c26>var(--color-border-strong)</code> — muted, theme-aware. </dd><dt data-v-75ef4c26><code data-v-75ef4c26>--set-scrollbar-track-color</code></dt><dd data-v-75ef4c26> Track (the rail behind the thumb) colour. Default <code data-v-75ef4c26>transparent</code> so the scrollbar reads as floating on the underlying surface. </dd><dt data-v-75ef4c26><code data-v-75ef4c26>--set-scrollbar-width</code></dt><dd data-v-75ef4c26> Scrollbar size keyword. <code data-v-75ef4c26>auto</code> | <code data-v-75ef4c26>thin</code> | <code data-v-75ef4c26>none</code>. Default <code data-v-75ef4c26>thin</code>. </dd><dt data-v-75ef4c26><code data-v-75ef4c26>--set-scrollbar-gutter</code></dt><dd data-v-75ef4c26> Gutter reservation. <code data-v-75ef4c26>auto</code> | <code data-v-75ef4c26>stable</code> | <code data-v-75ef4c26>stable both-edges</code>. Default <code data-v-75ef4c26>stable</code> so layout doesn&#39;t shift on overflow transitions. </dd></dl><h3 data-v-75ef4c26>View transition</h3><dl data-v-75ef4c26><dt data-v-75ef4c26><code data-v-75ef4c26>--set-view-transition-duration</code></dt><dd data-v-75ef4c26> Cross-fade duration on the <code data-v-75ef4c26>(root)</code> pair. Default <code data-v-75ef4c26>--set-transition-duration</code> (150 ms). Reduced-motion collapses to <code data-v-75ef4c26>1 ms</code>. </dd><dt data-v-75ef4c26><code data-v-75ef4c26>--set-view-transition-timing-function</code></dt><dd data-v-75ef4c26>Cross-fade easing. Default <code data-v-75ef4c26>ease</code>.</dd></dl></section>`,
 											4,
 										)),
 									],
@@ -10796,11 +10818,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 							)
 						},
 					}),
-					[[`__scopeId`, `data-v-81c97766`]],
+					[[`__scopeId`, `data-v-75ef4c26`]],
 				),
-				ld = { id: `home`, title: `Home`, group: `Getting started`, page: Qo },
-				ud = [
-					ld,
+				gd = { id: `home`, title: `Home`, group: `Getting started`, page: Qo },
+				_d = [
+					gd,
 					{ id: `button`, title: `Button`, group: `Elements — Interactive`, page: ys },
 					{ id: `anchor`, title: `Anchor`, group: `Elements — Interactive`, page: Is },
 					{
@@ -10834,36 +10856,36 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						id: `scroll-and-transition`,
 						title: `Scroll & transition`,
 						group: `Surfaces`,
-						page: cd,
+						page: hd,
 					},
 				],
-				dd = (e) => {
+				vd = (e) => {
 					let t = window.location.hash
 					if (!t.startsWith(`#/`)) return { id: e, section: null }
 					let n = t.slice(2).split(`/`),
 						r = n[0] ?? ``
 					return {
-						id: ud.some((e) => e.id === r) ? r : `home`,
+						id: _d.some((e) => e.id === r) ? r : `home`,
 						section: n.slice(1).filter(Boolean).join(`/`) || null,
 					}
 				},
-				fd = typeof window > `u` ? { id: `home`, section: null } : dd(`home`),
-				pd = R(fd.id),
-				md = R(fd.section)
+				yd = typeof window > `u` ? { id: `home`, section: null } : vd(`home`),
+				bd = L(yd.id),
+				xd = L(yd.section)
 			typeof window < `u` &&
 				window.addEventListener(`hashchange`, () => {
-					let e = dd(pd.value)
-					;((pd.value = e.id), (md.value = e.section))
+					let e = vd(bd.value)
+					;((bd.value = e.id), (xd.value = e.section))
 				})
-			var hd = pd,
-				gd = md,
-				_d = _a(() => ud.find((e) => e.id === pd.value) ?? ld),
-				vd = (e, t) => {
+			var Sd = bd,
+				Cd = xd,
+				wd = _a(() => _d.find((e) => e.id === bd.value) ?? gd),
+				Td = (e, t) => {
 					window.location.hash = t ? `#/${e}/${t}` : `#/${e}`
 				},
-				yd = [`href`, `aria-current`, `onClick`],
-				bd = { key: 0 },
-				xd = V({
+				Ed = [`href`, `aria-current`, `onClick`],
+				Dd = { key: 0 },
+				Od = B({
 					__name: `SiteNav`,
 					props: { routes: {}, active: {} },
 					emits: [`navigate`],
@@ -10919,7 +10941,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 																				},
 																				k(t.title),
 																				9,
-																				yd,
+																				Ed,
 																			),
 																		])
 																	),
@@ -10935,7 +10957,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										128,
 									)),
 									i.value.length === 0
-										? (q(), J(`p`, bd, [...(n[0] ||= [Y(`small`, null, `No matches.`, -1)])]))
+										? (q(), J(`p`, Dd, [...(n[0] ||= [Y(`small`, null, `No matches.`, -1)])]))
 										: Wi(``, !0),
 								],
 								64,
@@ -10943,22 +10965,22 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				Sd = { key: 0, 'aria-label': `Table of contents` },
-				Cd = [`data-level`],
-				wd = [`href`, `aria-current`, `onClick`],
-				Td = { key: 1 },
-				Ed = V({
+				kd = { key: 0, 'aria-label': `Table of contents` },
+				Ad = [`data-level`],
+				jd = [`href`, `aria-current`, `onClick`],
+				Md = { key: 1 },
+				Nd = B({
 					__name: `Toc`,
 					props: { scroller: {}, currentId: {} },
 					emits: [`navigate`],
 					setup(e, { emit: t }) {
 						let n = e,
 							r = t,
-							i = R([]),
-							a = R(null),
+							i = L([]),
+							a = L(null),
 							o = null,
 							s = async () => {
-								;(await gn(), o?.disconnect(), (o = null))
+								;(await _n(), o?.disconnect(), (o = null))
 								let e = n.scroller
 								if (!e) {
 									;((i.value = []), (a.value = null))
@@ -10991,7 +11013,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								}
 								a.value = t[0]?.id ?? null
 							}
-						;(Pn(
+						;(Fn(
 							() => [n.scroller, n.currentId],
 							() => {
 								s()
@@ -11009,7 +11031,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								e.ctrlKey ||
 								e.shiftKey ||
 								e.altKey ||
-								(e.preventDefault(), vd(n.currentId, t), r(`navigate`))
+								(e.preventDefault(), Td(n.currentId, t), r(`navigate`))
 						}
 						return (t, n) => (
 							q(),
@@ -11025,7 +11047,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									)),
 									i.value.length > 0
 										? (q(),
-											J(`nav`, Sd, [
+											J(`nav`, kd, [
 												Y(`menu`, null, [
 													(q(!0),
 													J(
@@ -11048,11 +11070,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 																			},
 																			k(t.label),
 																			9,
-																			wd,
+																			jd,
 																		),
 																	],
 																	8,
-																	Cd,
+																	Ad,
 																)
 															),
 														),
@@ -11061,7 +11083,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											]))
 										: (q(),
-											J(`p`, Td, [
+											J(`p`, Md, [
 												...(n[0] ||= [Y(`small`, null, `No sections on this page.`, -1)]),
 											])),
 								],
@@ -11070,20 +11092,20 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				Dd = [`popovertarget`],
-				Od = [`aria-label`],
-				kd = [`popovertarget`],
-				Ad = [`popover`],
-				jd = { class: `showcase-sidebar-scroll` },
-				Md = [`popover`],
-				Nd = { class: `font-mono text-xs` }
+				Pd = [`popovertarget`],
+				Fd = [`aria-label`],
+				Id = [`popovertarget`],
+				Ld = [`popover`],
+				Rd = { class: `showcase-sidebar-scroll` },
+				zd = [`popover`],
+				Bd = { class: `font-mono text-xs` }
 			mo(
-				V({
+				B({
 					__name: `App`,
 					setup(e) {
 						let t = Zo(),
-							n = R(``),
-							r = R(!1),
+							n = L(``),
+							r = L(!1),
 							i = typeof window < `u` ? window.matchMedia(`(max-width: 960px)`) : null,
 							a = () => {
 								r.value = i?.matches ?? !1
@@ -11091,18 +11113,18 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 							o = _a(() => {
 								let e = n.value.trim().toLowerCase()
 								return e
-									? ud.filter(
+									? _d.filter(
 											(t) =>
 												t.title.toLowerCase().includes(e) ||
 												t.id.toLowerCase().includes(e) ||
 												t.group.toLowerCase().includes(e),
 										)
-									: ud
+									: _d
 							}),
-							s = _a(() => _d.value.page),
-							c = R(null),
+							s = _a(() => wd.value.page),
+							c = L(null),
 							l = async (e) => {
-								await gn()
+								await _n()
 								let t = c.value
 								if (t) {
 									if (e) {
@@ -11121,7 +11143,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									t?.matches(`:popover-open`) && t.hidePopover()
 								}
 							}
-						Pn([hd, gd], ([, e]) => {
+						Fn([Sd, Cd], ([, e]) => {
 							;(l(e), u())
 						})
 						let d = (e) => {
@@ -11133,13 +11155,13 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 							;(a(),
 								i?.addEventListener(`change`, a),
 								document.addEventListener(`keydown`, d),
-								l(gd.value))
+								l(Cd.value))
 						}),
 							sr(() => {
 								;(i?.removeEventListener(`change`, a), document.removeEventListener(`keydown`, d))
 							}))
 						let f = (e) => {
-								;(e.preventDefault(), vd(`home`), u())
+								;(e.preventDefault(), Td(`home`), u())
 							},
 							p = () => {
 								t.toggle()
@@ -11178,7 +11200,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											],
 											8,
-											Dd,
+											Pd,
 										),
 										Y(`a`, { href: `#/home`, class: `flex-1`, onClick: f }, [
 											...(i[2] ||= [Y(`strong`, null, `Elements`, -1)]),
@@ -11188,7 +11210,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 											{
 												type: `button`,
 												class: `subtle`,
-												'aria-label': `Switch theme (currently ${Jt(t).theme.value})`,
+												'aria-label': `Switch theme (currently ${Yt(t).theme.value})`,
 												onClick: p,
 											},
 											[
@@ -11204,7 +11226,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												),
 											],
 											8,
-											Od,
+											Fd,
 										),
 										Y(
 											`button`,
@@ -11229,7 +11251,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											],
 											8,
-											kd,
+											Id,
 										),
 									]),
 									Y(
@@ -11268,7 +11290,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 											Y(`search`, null, [
 												Y(`label`, null, [
 													(i[4] ||= Y(`span`, { class: `sr-only` }, `Filter pages`, -1)),
-													On(
+													kn(
 														Y(
 															`input`,
 															{
@@ -11285,15 +11307,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 													),
 												]),
 											]),
-											Y(`div`, jd, [
-												X(xd, { routes: o.value, active: Jt(_d).id, onNavigate: u }, null, 8, [
+											Y(`div`, Rd, [
+												X(Od, { routes: o.value, active: Yt(wd).id, onNavigate: u }, null, 8, [
 													`routes`,
 													`active`,
 												]),
 											]),
 										],
 										8,
-										Ad,
+										Ld,
 									),
 									Y(`main`, { ref_key: `scrollerRef`, ref: c }, [(q(), Ii(mr(s.value)))], 512),
 									Y(
@@ -11330,19 +11352,19 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												-1,
 											)),
 											X(
-												Ed,
-												{ scroller: c.value, 'current-id': Jt(_d).id, onNavigate: u },
+												Nd,
+												{ scroller: c.value, 'current-id': Yt(wd).id, onNavigate: u },
 												null,
 												8,
 												[`scroller`, `current-id`],
 											),
 										],
 										8,
-										Md,
+										zd,
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Nd, `build ` + k(Jt(`2026-05-12T23:26:58.509Z`)), 1),
+										Y(`small`, Bd, `build ` + k(Yt(`2026-05-12T23:44:26.110Z`)), 1),
 									]),
 								],
 								64,
@@ -19507,7 +19529,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 			.form-row-range > output[data-v-d9c74f0e] {
 				flex: none;
 			}
-			article[data-v-81c97766] {
+			article[data-v-75ef4c26] {
 				view-transition-name: scroll-transition-card;
 			}
 			/*$vite$:1*/
