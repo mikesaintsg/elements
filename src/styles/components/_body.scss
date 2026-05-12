@@ -145,12 +145,14 @@
 			background-color: var(--color-surface);
 			box-shadow: var(--set-box-shadow-lg);
 
-			@include transition(
-				(
-					transform var(--set-drawer-transition-duration)
-						var(--set-drawer-transition-timing-function)
-				)
-			);
+			// Slide transition lives on the ELEMENT rules
+			// (`components/_nav.scss` and `_aside.scss`) so the cascade
+			// can't strip the transform entry no matter which partial
+			// loads last in the components barrel. Declaring `transition`
+			// here too would just fight the element rule via shorthand
+			// replacement and leave one rail snapping while the other
+			// slides — exactly the asymmetry this drawer block existed
+			// to fix.
 		}
 
 		body:has(main) > nav,

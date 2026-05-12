@@ -88,11 +88,22 @@
 		color: var(--set-aside-color);
 		background-color: var(--set-aside-background-color);
 
+		// `transform` is part of the element-level transition list — not
+		// just the drawer-mode rule in `_body.scss` — so import order
+		// can't break the slide animation. Today `_body.scss` loads
+		// before `_aside.scss` so the body's drawer-`@media` transition
+		// wins by cascade order for `<aside>`; mirroring the entry on
+		// the element rule keeps the slide playing even if the components
+		// barrel reshuffles later. Same idiom as `_nav.scss`. Reads from
+		// the shared drawer-transition tokens (`_tokens.scss` § Drawer-
+		// shape transition contract) so motion stays uniform with the
+		// left nav rail and the `<aside popover>` offcanvas drawers.
 		@include transition(
 			(
 				color var(--set-aside-transition-duration),
 				background-color var(--set-aside-transition-duration),
-				border-color var(--set-aside-transition-duration)
+				border-color var(--set-aside-transition-duration),
+				transform var(--set-drawer-transition-duration) var(--set-drawer-transition-timing-function)
 			)
 		);
 

@@ -153,11 +153,25 @@
 		color: var(--set-nav-color);
 		background-color: var(--set-nav-background-color);
 
+		// `transform` is part of the element-level transition list — not
+		// just the drawer-mode rule in `_body.scss` — so import order
+		// can't break the slide animation. The components barrel loads
+		// `_body.scss` before `_nav.scss`, so a transition declared in
+		// `_body.scss`'s mobile-drawer `@media` is overwritten by this
+		// element rule's `transition` shorthand. Including transform
+		// here guarantees the slide plays whether the drawer rule lands
+		// before or after the element rule in source order. On desktop
+		// the rail has no transform applied, so the transform entry is a
+		// dormant slot in the list. Reads from the shared drawer-
+		// transition tokens (`_tokens.scss` § Drawer-shape transition
+		// contract) so motion stays uniform with the right aside rail
+		// and the `<aside popover>` offcanvas drawers.
 		@include transition(
 			(
 				color var(--set-nav-transition-duration),
 				background-color var(--set-nav-transition-duration),
-				border-color var(--set-nav-transition-duration)
+				border-color var(--set-nav-transition-duration),
+				transform var(--set-drawer-transition-duration) var(--set-drawer-transition-timing-function)
 			)
 		);
 
