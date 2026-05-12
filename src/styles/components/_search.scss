@@ -70,4 +70,40 @@
 			flex-direction: column;
 		}
 	}
+
+	// --------------------------------------------------------------------------
+	// Body-shell context — `<search>` as the first child of a scrollable
+	// `<nav>` rail (the canonical "sidebar filter" pattern). Pins to the
+	// top of the rail so it stays visible while the rest of the rail
+	// scrolls, paints a card-shell that's flush with the rail's top + side
+	// edges, and gets a divider below to separate the bar from the list
+	// rows beneath.
+	//
+	//   - `position: sticky; inset-block-start: 0` pins to the top of the
+	//     scroll container (the `<nav>` itself, which has `overflow-y:
+	//     auto` from `_nav.scss`).
+	//   - `--set-search-padding-*` route through the nav's own padding
+	//     tokens so the internal bar padding matches the rail's gutter.
+	//   - Negative margins cancel the rail's outer padding so the bar
+	//     extends flush to the rail's top, leading, and trailing edges
+	//     (otherwise the rail's padding leaves a visible canvas gap
+	//     around the bar when it's pinned).
+	//   - Background inherits the rail's own background so any list rows
+	//     that scroll behind the bar are cleanly masked.
+	//   - `border-block-end` paints the divider below the bar that
+	//     separates it visually from the first list group.
+	body:has(main) > nav > search,
+	body:has(main) > * > nav > search {
+		position: sticky;
+		inset-block-start: 0;
+		z-index: 1;
+
+		--set-search-padding-inline: var(--set-nav-padding-inline);
+		--set-search-padding-block: var(--set-nav-padding-block);
+		--set-search-background-color: var(--set-nav-background-color);
+
+		margin-block-start: calc(var(--set-nav-padding-block) * -1);
+		margin-inline: calc(var(--set-nav-padding-inline) * -1);
+		border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
+	}
 }
