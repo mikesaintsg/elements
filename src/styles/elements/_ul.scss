@@ -67,8 +67,17 @@
 		--set-group-action-hover-background-color: color-mix(in oklab, currentColor 6%, transparent);
 		--set-group-action-active-background-color: color-mix(in oklab, currentColor 10%, transparent);
 		--set-group-disabled-color: var(--color-text-subtle);
-		--set-group-active-color: var(--set-variant-color, var(--color-text));
-		--set-group-active-background-color: var(--set-variant-background-color, var(--color-primary));
+		// `--set-group-active-{color,background-color}` are declared in
+		// `_li.scss` ON the `<li>` itself — NOT here on the parent. Reason:
+		// the `<li>` is where the variant class lands (`<li class="success
+		// active">`), and CSS custom-property values inherit by their
+		// computed value. If we declared `var(--set-variant-color, …)` on
+		// the parent, the substitution would resolve at the parent (where
+		// `--set-variant-color` is undefined → fallback wins), then inherit
+		// to the child as the already-substituted fallback. By declaring on
+		// the `<li>`, the variant cascade and the active-token consumer
+		// live on the same element, so the variant's color reaches the
+		// active state correctly.
 
 		// Reset preflight ul/ol padding + bullets so the group looks like a
 		// chrome panel.

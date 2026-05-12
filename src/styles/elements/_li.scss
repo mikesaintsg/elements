@@ -30,6 +30,33 @@
 @layer elements {
 	ul.group > li,
 	ol.group > li {
+		// `--set-group-active-{color,background-color}` declared on the
+		// `<li>` itself (not on the parent `ul.group` / `ol.group`) so the
+		// variant cascade reaches them. The variant class lands on the
+		// `<li>` (`<li class="success active">`), and CSS custom-property
+		// substitution resolves at the element where the var() is used.
+		// Co-locating the declaration with the consumer guarantees the
+		// variant's `--set-variant-*` tokens are in scope when the active
+		// rule reads `var(--set-group-active-color)` / `…-background-color`.
+		//
+		// `--set-group-active-color` hardcodes `white` rather than reading
+		// `var(--set-variant-color, white)` — same trick `_output.scss`
+		// `.filled` uses. Reason: `--set-variant-color` is declared at
+		// `:root` as `currentColor` (so bare elements stay text-colored),
+		// which means the fallback path NEVER activates — bare `<li
+		// class="active">` would resolve to `currentColor` (the row's
+		// inherited near-black text) over the primary-blue fill (~3:1
+		// contrast, fails WCAG AA). Hardcoding `white` matches the
+		// framework's "every variant takes white-on-fill" contract
+		// (`modifiers/_variants.scss` § per-variant comments) and keeps
+		// the bare-active case readable too. Background still routes
+		// through the variant cascade because `--set-variant-background-
+		// color` is intentionally LEFT UNDECLARED at `:root` (see
+		// `_tokens.scss` comment) — the fallback to `--color-primary`
+		// triggers correctly when no variant class is present.
+		--set-group-active-color: white;
+		--set-group-active-background-color: var(--set-variant-background-color, var(--color-primary));
+
 		position: relative;
 		display: block;
 		padding-inline: var(--set-group-item-padding-inline);
