@@ -18,6 +18,7 @@ import ArticleCardPage from './pages/ArticleCardPage.vue'
 import AsidePage from './pages/AsidePage.vue'
 import NavPage from './pages/NavPage.vue'
 import MenuPage from './pages/MenuPage.vue'
+import InlineAtomsPage from './pages/InlineAtomsPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -132,6 +133,12 @@ const MENU: Route = {
 	group: 'Components',
 	page: MenuPage,
 }
+const INLINE_ATOMS: Route = {
+	id: 'inline-atoms',
+	title: 'Inline atoms',
+	group: 'Components',
+	page: InlineAtomsPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -151,6 +158,7 @@ export const routes: readonly Route[] = [
 	ASIDE,
 	NAV,
 	MENU,
+	INLINE_ATOMS,
 ]
 
 interface RouteLocation {

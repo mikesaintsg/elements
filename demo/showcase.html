@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-12T21:54:24.714Z" />
+		<meta name="build-id" content="2026-05-12T22:27:45.516Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -300,21 +300,21 @@
 					}
 					run() {
 						if (!(this.flags & 1)) return this.fn()
-						;((this.flags |= 2), Ke(this), Ie(this))
+						;((this.flags |= 2), qe(this), Ie(this))
 						let e = j,
-							t = M
-						;((j = this), (M = !0))
+							t = Ue
+						;((j = this), (Ue = !0))
 						try {
 							return this.fn()
 						} finally {
-							;(Le(this), (j = e), (M = t), (this.flags &= -3))
+							;(Le(this), (j = e), (Ue = t), (this.flags &= -3))
 						}
 					}
 					stop() {
 						if (this.flags & 1) {
 							for (let e = this.deps; e; e = e.nextDep) Be(e)
 							;((this.deps = this.depsTail = void 0),
-								Ke(this),
+								qe(this),
 								this.onStop && this.onStop(),
 								(this.flags &= -2))
 						}
@@ -396,15 +396,15 @@
 			function ze(e) {
 				if (
 					(e.flags & 4 && !(e.flags & 16)) ||
-					((e.flags &= -17), e.globalVersion === qe) ||
-					((e.globalVersion = qe), !e.isSSR && e.flags & 128 && ((!e.deps && !e._dirty) || !Re(e)))
+					((e.flags &= -17), e.globalVersion === Je) ||
+					((e.globalVersion = Je), !e.isSSR && e.flags & 128 && ((!e.deps && !e._dirty) || !Re(e)))
 				)
 					return
 				e.flags |= 2
 				let t = e.dep,
 					n = j,
-					r = M
-				;((j = e), (M = !0))
+					r = Ue
+				;((j = e), (Ue = !0))
 				try {
 					Ie(e)
 					let n = e.fn(e._value)
@@ -412,7 +412,7 @@
 				} catch (e) {
 					throw (t.version++, e)
 				} finally {
-					;((j = n), (M = r), Le(e), (e.flags &= -3))
+					;((j = n), (Ue = r), Le(e), (e.flags &= -3))
 				}
 			}
 			function Be(e, t = !1) {
@@ -444,16 +444,16 @@
 				let r = n.run.bind(n)
 				return ((r.effect = n), r)
 			}
-			var M = !0,
-				Ue = []
-			function We() {
-				;(Ue.push(M), (M = !1))
-			}
+			var Ue = !0,
+				We = []
 			function Ge() {
-				let e = Ue.pop()
-				M = e === void 0 ? !0 : e
+				;(We.push(Ue), (Ue = !1))
 			}
-			function Ke(e) {
+			function Ke() {
+				let e = We.pop()
+				Ue = e === void 0 ? !0 : e
+			}
+			function qe(e) {
 				let { cleanup: t } = e
 				if (((e.cleanup = void 0), t)) {
 					let e = j
@@ -465,8 +465,8 @@
 					}
 				}
 			}
-			var qe = 0,
-				Je = class {
+			var Je = 0,
+				Ye = class {
 					constructor(e, t) {
 						;((this.sub = e),
 							(this.dep = t),
@@ -479,7 +479,7 @@
 									void 0))
 					}
 				},
-				Ye = class {
+				Xe = class {
 					constructor(e) {
 						;((this.computed = e),
 							(this.version = 0),
@@ -491,14 +491,14 @@
 							(this.__v_skip = !0))
 					}
 					track(e) {
-						if (!j || !M || j === this.computed) return
+						if (!j || !Ue || j === this.computed) return
 						let t = this.activeLink
 						if (t === void 0 || t.sub !== j)
-							((t = this.activeLink = new Je(j, this)),
+							((t = this.activeLink = new Ye(j, this)),
 								j.deps
 									? ((t.prevDep = j.depsTail), (j.depsTail.nextDep = t), (j.depsTail = t))
 									: (j.deps = j.depsTail = t),
-								Xe(t))
+								Ze(t))
 						else if (t.version === -1 && ((t.version = this.version), t.nextDep)) {
 							let e = t.nextDep
 							;((e.prevDep = t.prevDep),
@@ -512,7 +512,7 @@
 						return t
 					}
 					trigger(e) {
-						;(this.version++, qe++, this.notify(e))
+						;(this.version++, Je++, this.notify(e))
 					}
 					notify(e) {
 						Pe()
@@ -523,33 +523,33 @@
 						}
 					}
 				}
-			function Xe(e) {
+			function Ze(e) {
 				if ((e.dep.sc++, e.sub.flags & 4)) {
 					let t = e.dep.computed
 					if (t && !e.dep.subs) {
 						t.flags |= 20
-						for (let e = t.deps; e; e = e.nextDep) Xe(e)
+						for (let e = t.deps; e; e = e.nextDep) Ze(e)
 					}
 					let n = e.dep.subs
 					;(n !== e && ((e.prevSub = n), n && (n.nextSub = e)), (e.dep.subs = e))
 				}
 			}
-			var Ze = new WeakMap(),
-				Qe = Symbol(``),
+			var Qe = new WeakMap(),
 				$e = Symbol(``),
-				et = Symbol(``)
-			function N(e, t, n) {
-				if (M && j) {
-					let t = Ze.get(e)
-					t || Ze.set(e, (t = new Map()))
+				et = Symbol(``),
+				tt = Symbol(``)
+			function M(e, t, n) {
+				if (Ue && j) {
+					let t = Qe.get(e)
+					t || Qe.set(e, (t = new Map()))
 					let r = t.get(n)
-					;(r || (t.set(n, (r = new Ye())), (r.map = t), (r.key = n)), r.track())
+					;(r || (t.set(n, (r = new Xe())), (r.map = t), (r.key = n)), r.track())
 				}
 			}
-			function tt(e, t, n, r, i, a) {
-				let o = Ze.get(e)
+			function nt(e, t, n, r, i, a) {
+				let o = Qe.get(e)
 				if (!o) {
-					qe++
+					Je++
 					return
 				}
 				let s = (e) => {
@@ -562,123 +562,123 @@
 					if (i && n === `length`) {
 						let e = Number(r)
 						o.forEach((t, n) => {
-							;(n === `length` || n === et || (!_(n) && n >= e)) && s(t)
+							;(n === `length` || n === tt || (!_(n) && n >= e)) && s(t)
 						})
 					} else
-						switch (((n !== void 0 || o.has(void 0)) && s(o.get(n)), a && s(o.get(et)), t)) {
+						switch (((n !== void 0 || o.has(void 0)) && s(o.get(n)), a && s(o.get(tt)), t)) {
 							case `add`:
-								i ? a && s(o.get(`length`)) : (s(o.get(Qe)), f(e) && s(o.get($e)))
+								i ? a && s(o.get(`length`)) : (s(o.get($e)), f(e) && s(o.get(et)))
 								break
 							case `delete`:
-								i || (s(o.get(Qe)), f(e) && s(o.get($e)))
+								i || (s(o.get($e)), f(e) && s(o.get(et)))
 								break
 							case `set`:
-								f(e) && s(o.get(Qe))
+								f(e) && s(o.get($e))
 								break
 						}
 				}
 				Fe()
 			}
-			function nt(e) {
-				let t = F(e)
-				return t === e ? t : (N(t, `iterate`, et), P(e) ? t : t.map(Wt))
-			}
 			function rt(e) {
-				return (N((e = F(e)), `iterate`, et), e)
+				let t = P(e)
+				return t === e ? t : (M(t, `iterate`, tt), N(e) ? t : t.map(F))
 			}
-			function it(e, t) {
-				return Vt(e) ? Gt(Bt(e) ? Wt(t) : t) : Wt(t)
+			function it(e) {
+				return (M((e = P(e)), `iterate`, tt), e)
 			}
-			var at = {
+			function at(e, t) {
+				return Ht(e) ? Gt(Vt(e) ? F(t) : t) : F(t)
+			}
+			var ot = {
 				__proto__: null,
 				[Symbol.iterator]() {
-					return ot(this, Symbol.iterator, (e) => it(this, e))
+					return st(this, Symbol.iterator, (e) => at(this, e))
 				},
 				concat(...e) {
-					return nt(this).concat(...e.map((e) => (d(e) ? nt(e) : e)))
+					return rt(this).concat(...e.map((e) => (d(e) ? rt(e) : e)))
 				},
 				entries() {
-					return ot(this, `entries`, (e) => ((e[1] = it(this, e[1])), e))
+					return st(this, `entries`, (e) => ((e[1] = at(this, e[1])), e))
 				},
 				every(e, t) {
-					return ct(this, `every`, e, t, void 0, arguments)
+					return lt(this, `every`, e, t, void 0, arguments)
 				},
 				filter(e, t) {
-					return ct(this, `filter`, e, t, (e) => e.map((e) => it(this, e)), arguments)
+					return lt(this, `filter`, e, t, (e) => e.map((e) => at(this, e)), arguments)
 				},
 				find(e, t) {
-					return ct(this, `find`, e, t, (e) => it(this, e), arguments)
+					return lt(this, `find`, e, t, (e) => at(this, e), arguments)
 				},
 				findIndex(e, t) {
-					return ct(this, `findIndex`, e, t, void 0, arguments)
+					return lt(this, `findIndex`, e, t, void 0, arguments)
 				},
 				findLast(e, t) {
-					return ct(this, `findLast`, e, t, (e) => it(this, e), arguments)
+					return lt(this, `findLast`, e, t, (e) => at(this, e), arguments)
 				},
 				findLastIndex(e, t) {
-					return ct(this, `findLastIndex`, e, t, void 0, arguments)
+					return lt(this, `findLastIndex`, e, t, void 0, arguments)
 				},
 				forEach(e, t) {
-					return ct(this, `forEach`, e, t, void 0, arguments)
+					return lt(this, `forEach`, e, t, void 0, arguments)
 				},
 				includes(...e) {
-					return ut(this, `includes`, e)
+					return dt(this, `includes`, e)
 				},
 				indexOf(...e) {
-					return ut(this, `indexOf`, e)
+					return dt(this, `indexOf`, e)
 				},
 				join(e) {
-					return nt(this).join(e)
+					return rt(this).join(e)
 				},
 				lastIndexOf(...e) {
-					return ut(this, `lastIndexOf`, e)
+					return dt(this, `lastIndexOf`, e)
 				},
 				map(e, t) {
-					return ct(this, `map`, e, t, void 0, arguments)
+					return lt(this, `map`, e, t, void 0, arguments)
 				},
 				pop() {
-					return dt(this, `pop`)
+					return ft(this, `pop`)
 				},
 				push(...e) {
-					return dt(this, `push`, e)
+					return ft(this, `push`, e)
 				},
 				reduce(e, ...t) {
-					return lt(this, `reduce`, e, t)
+					return ut(this, `reduce`, e, t)
 				},
 				reduceRight(e, ...t) {
-					return lt(this, `reduceRight`, e, t)
+					return ut(this, `reduceRight`, e, t)
 				},
 				shift() {
-					return dt(this, `shift`)
+					return ft(this, `shift`)
 				},
 				some(e, t) {
-					return ct(this, `some`, e, t, void 0, arguments)
+					return lt(this, `some`, e, t, void 0, arguments)
 				},
 				splice(...e) {
-					return dt(this, `splice`, e)
+					return ft(this, `splice`, e)
 				},
 				toReversed() {
-					return nt(this).toReversed()
+					return rt(this).toReversed()
 				},
 				toSorted(e) {
-					return nt(this).toSorted(e)
+					return rt(this).toSorted(e)
 				},
 				toSpliced(...e) {
-					return nt(this).toSpliced(...e)
+					return rt(this).toSpliced(...e)
 				},
 				unshift(...e) {
-					return dt(this, `unshift`, e)
+					return ft(this, `unshift`, e)
 				},
 				values() {
-					return ot(this, `values`, (e) => it(this, e))
+					return st(this, `values`, (e) => at(this, e))
 				},
 			}
-			function ot(e, t, n) {
-				let r = rt(e),
+			function st(e, t, n) {
+				let r = it(e),
 					i = r[t]()
 				return (
 					r !== e &&
-						!P(e) &&
+						!N(e) &&
 						((i._next = i.next),
 						(i.next = () => {
 							let e = i._next()
@@ -687,20 +687,20 @@
 					i
 				)
 			}
-			var st = Array.prototype
-			function ct(e, t, n, r, i, a) {
-				let o = rt(e),
-					s = o !== e && !P(e),
+			var ct = Array.prototype
+			function lt(e, t, n, r, i, a) {
+				let o = it(e),
+					s = o !== e && !N(e),
 					c = o[t]
-				if (c !== st[t]) {
+				if (c !== ct[t]) {
 					let t = c.apply(e, a)
-					return s ? Wt(t) : t
+					return s ? F(t) : t
 				}
 				let l = n
 				o !== e &&
 					(s
 						? (l = function (t, r) {
-								return n.call(this, it(e, t), r, e)
+								return n.call(this, at(e, t), r, e)
 							})
 						: n.length > 2 &&
 							(l = function (t, r) {
@@ -709,48 +709,48 @@
 				let u = c.call(o, l, r)
 				return s && i ? i(u) : u
 			}
-			function lt(e, t, n, r) {
-				let i = rt(e),
-					a = i !== e && !P(e),
+			function ut(e, t, n, r) {
+				let i = it(e),
+					a = i !== e && !N(e),
 					o = n,
 					s = !1
 				i !== e &&
 					(a
 						? ((s = r.length === 0),
 							(o = function (t, r, i) {
-								return (s && ((s = !1), (t = it(e, t))), n.call(this, t, it(e, r), i, e))
+								return (s && ((s = !1), (t = at(e, t))), n.call(this, t, at(e, r), i, e))
 							}))
 						: n.length > 3 &&
 							(o = function (t, r, i) {
 								return n.call(this, t, r, i, e)
 							}))
 				let c = i[t](o, ...r)
-				return s ? it(e, c) : c
+				return s ? at(e, c) : c
 			}
-			function ut(e, t, n) {
-				let r = F(e)
-				N(r, `iterate`, et)
+			function dt(e, t, n) {
+				let r = P(e)
+				M(r, `iterate`, tt)
 				let i = r[t](...n)
-				return (i === -1 || i === !1) && Ht(n[0]) ? ((n[0] = F(n[0])), r[t](...n)) : i
+				return (i === -1 || i === !1) && Ut(n[0]) ? ((n[0] = P(n[0])), r[t](...n)) : i
 			}
-			function dt(e, t, n = []) {
-				;(We(), Pe())
-				let r = F(e)[t].apply(e, n)
-				return (Fe(), Ge(), r)
+			function ft(e, t, n = []) {
+				;(Ge(), Pe())
+				let r = P(e)[t].apply(e, n)
+				return (Fe(), Ke(), r)
 			}
-			var ft = e(`__proto__,__v_isRef,__isVue`),
-				pt = new Set(
+			var pt = e(`__proto__,__v_isRef,__isVue`),
+				mt = new Set(
 					Object.getOwnPropertyNames(Symbol)
 						.filter((e) => e !== `arguments` && e !== `caller`)
 						.map((e) => Symbol[e])
 						.filter(_),
 				)
-			function mt(e) {
+			function ht(e) {
 				_(e) || (e = String(e))
-				let t = F(this)
-				return (N(t, `has`, e), t.hasOwnProperty(e))
+				let t = P(this)
+				return (M(t, `has`, e), t.hasOwnProperty(e))
 			}
-			var ht = class {
+			var gt = class {
 					constructor(e = !1, t = !1) {
 						;((this._isReadonly = e), (this._isShallow = t))
 					}
@@ -762,26 +762,26 @@
 						if (t === `__v_isReadonly`) return r
 						if (t === `__v_isShallow`) return i
 						if (t === `__v_raw`)
-							return n === (r ? (i ? Nt : Mt) : i ? jt : At).get(e) ||
+							return n === (r ? (i ? Pt : Nt) : i ? Mt : jt).get(e) ||
 								Object.getPrototypeOf(e) === Object.getPrototypeOf(n)
 								? e
 								: void 0
 						let a = d(e)
 						if (!r) {
 							let e
-							if (a && (e = at[t])) return e
-							if (t === `hasOwnProperty`) return mt
+							if (a && (e = ot[t])) return e
+							if (t === `hasOwnProperty`) return ht
 						}
 						let o = Reflect.get(e, t, I(e) ? e : n)
-						if ((_(t) ? pt.has(t) : ft(t)) || (r || N(e, `get`, t), i)) return o
+						if ((_(t) ? mt.has(t) : pt(t)) || (r || M(e, `get`, t), i)) return o
 						if (I(o)) {
 							let e = a && C(t) ? o : o.value
-							return r && v(e) ? Rt(e) : e
+							return r && v(e) ? zt(e) : e
 						}
-						return v(o) ? (r ? Rt(o) : It(o)) : o
+						return v(o) ? (r ? zt(o) : Lt(o)) : o
 					}
 				},
-				gt = class extends ht {
+				_t = class extends gt {
 					constructor(e = !1) {
 						super(!1, e)
 					}
@@ -789,29 +789,29 @@
 						let i = e[t],
 							a = d(e) && C(t)
 						if (!this._isShallow) {
-							let e = Vt(i)
-							if ((!P(n) && !Vt(n) && ((i = F(i)), (n = F(n))), !a && I(i) && !I(n)))
+							let e = Ht(i)
+							if ((!N(n) && !Ht(n) && ((i = P(i)), (n = P(n))), !a && I(i) && !I(n)))
 								return (e || (i.value = n), !0)
 						}
 						let o = a ? Number(t) < e.length : u(e, t),
 							s = Reflect.set(e, t, n, I(e) ? e : r)
-						return (e === F(r) && (o ? E(n, i) && tt(e, `set`, t, n, i) : tt(e, `add`, t, n)), s)
+						return (e === P(r) && (o ? E(n, i) && nt(e, `set`, t, n, i) : nt(e, `add`, t, n)), s)
 					}
 					deleteProperty(e, t) {
 						let n = u(e, t),
 							r = e[t],
 							i = Reflect.deleteProperty(e, t)
-						return (i && n && tt(e, `delete`, t, void 0, r), i)
+						return (i && n && nt(e, `delete`, t, void 0, r), i)
 					}
 					has(e, t) {
 						let n = Reflect.has(e, t)
-						return ((!_(t) || !pt.has(t)) && N(e, `has`, t), n)
+						return ((!_(t) || !mt.has(t)) && M(e, `has`, t), n)
 					}
 					ownKeys(e) {
-						return (N(e, `iterate`, d(e) ? `length` : Qe), Reflect.ownKeys(e))
+						return (M(e, `iterate`, d(e) ? `length` : $e), Reflect.ownKeys(e))
 					}
 				},
-				_t = class extends ht {
+				vt = class extends gt {
 					constructor(e = !1) {
 						super(!0, e)
 					}
@@ -822,22 +822,22 @@
 						return !0
 					}
 				},
-				vt = new gt(),
 				yt = new _t(),
-				bt = new gt(!0),
-				xt = (e) => e,
-				St = (e) => Reflect.getPrototypeOf(e)
-			function Ct(e, t, n) {
+				bt = new vt(),
+				xt = new _t(!0),
+				St = (e) => e,
+				Ct = (e) => Reflect.getPrototypeOf(e)
+			function wt(e, t, n) {
 				return function (...r) {
 					let i = this.__v_raw,
-						a = F(i),
+						a = P(i),
 						o = f(a),
 						c = e === `entries` || (e === Symbol.iterator && o),
 						l = e === `keys` && o,
 						u = i[e](...r),
-						d = n ? xt : t ? Gt : Wt
+						d = n ? St : t ? Gt : F
 					return (
-						!t && N(a, `iterate`, l ? $e : Qe),
+						!t && M(a, `iterate`, l ? et : $e),
 						s(Object.create(u), {
 							next() {
 								let { value: e, done: t } = u.next()
@@ -847,102 +847,102 @@
 					)
 				}
 			}
-			function wt(e) {
+			function Tt(e) {
 				return function (...t) {
 					return e === `delete` ? !1 : e === `clear` ? void 0 : this
 				}
 			}
-			function Tt(e, t) {
+			function Et(e, t) {
 				let n = {
 					get(n) {
 						let r = this.__v_raw,
-							i = F(r),
-							a = F(n)
-						e || (E(n, a) && N(i, `get`, n), N(i, `get`, a))
-						let { has: o } = St(i),
-							s = t ? xt : e ? Gt : Wt
+							i = P(r),
+							a = P(n)
+						e || (E(n, a) && M(i, `get`, n), M(i, `get`, a))
+						let { has: o } = Ct(i),
+							s = t ? St : e ? Gt : F
 						if (o.call(i, n)) return s(r.get(n))
 						if (o.call(i, a)) return s(r.get(a))
 						r !== i && r.get(n)
 					},
 					get size() {
 						let t = this.__v_raw
-						return (!e && N(F(t), `iterate`, Qe), t.size)
+						return (!e && M(P(t), `iterate`, $e), t.size)
 					},
 					has(t) {
 						let n = this.__v_raw,
-							r = F(n),
-							i = F(t)
+							r = P(n),
+							i = P(t)
 						return (
-							e || (E(t, i) && N(r, `has`, t), N(r, `has`, i)),
+							e || (E(t, i) && M(r, `has`, t), M(r, `has`, i)),
 							t === i ? n.has(t) : n.has(t) || n.has(i)
 						)
 					},
 					forEach(n, r) {
 						let i = this,
 							a = i.__v_raw,
-							o = F(a),
-							s = t ? xt : e ? Gt : Wt
-						return (!e && N(o, `iterate`, Qe), a.forEach((e, t) => n.call(r, s(e), s(t), i)))
+							o = P(a),
+							s = t ? St : e ? Gt : F
+						return (!e && M(o, `iterate`, $e), a.forEach((e, t) => n.call(r, s(e), s(t), i)))
 					},
 				}
 				return (
 					s(
 						n,
 						e
-							? { add: wt(`add`), set: wt(`set`), delete: wt(`delete`), clear: wt(`clear`) }
+							? { add: Tt(`add`), set: Tt(`set`), delete: Tt(`delete`), clear: Tt(`clear`) }
 							: {
 									add(e) {
-										let n = F(this),
-											r = St(n),
-											i = F(e),
-											a = !t && !P(e) && !Vt(e) ? i : e
+										let n = P(this),
+											r = Ct(n),
+											i = P(e),
+											a = !t && !N(e) && !Ht(e) ? i : e
 										return (
 											r.has.call(n, a) ||
 												(E(e, a) && r.has.call(n, e)) ||
 												(E(i, a) && r.has.call(n, i)) ||
-												(n.add(a), tt(n, `add`, a, a)),
+												(n.add(a), nt(n, `add`, a, a)),
 											this
 										)
 									},
 									set(e, n) {
-										!t && !P(n) && !Vt(n) && (n = F(n))
-										let r = F(this),
-											{ has: i, get: a } = St(r),
+										!t && !N(n) && !Ht(n) && (n = P(n))
+										let r = P(this),
+											{ has: i, get: a } = Ct(r),
 											o = i.call(r, e)
-										o ||= ((e = F(e)), i.call(r, e))
+										o ||= ((e = P(e)), i.call(r, e))
 										let s = a.call(r, e)
 										return (
 											r.set(e, n),
-											o ? E(n, s) && tt(r, `set`, e, n, s) : tt(r, `add`, e, n),
+											o ? E(n, s) && nt(r, `set`, e, n, s) : nt(r, `add`, e, n),
 											this
 										)
 									},
 									delete(e) {
-										let t = F(this),
-											{ has: n, get: r } = St(t),
+										let t = P(this),
+											{ has: n, get: r } = Ct(t),
 											i = n.call(t, e)
-										i ||= ((e = F(e)), n.call(t, e))
+										i ||= ((e = P(e)), n.call(t, e))
 										let a = r ? r.call(t, e) : void 0,
 											o = t.delete(e)
-										return (i && tt(t, `delete`, e, void 0, a), o)
+										return (i && nt(t, `delete`, e, void 0, a), o)
 									},
 									clear() {
-										let e = F(this),
+										let e = P(this),
 											t = e.size !== 0,
 											n = e.clear()
-										return (t && tt(e, `clear`, void 0, void 0, void 0), n)
+										return (t && nt(e, `clear`, void 0, void 0, void 0), n)
 									},
 								},
 					),
 					[`keys`, `values`, `entries`, Symbol.iterator].forEach((r) => {
-						n[r] = Ct(r, e, t)
+						n[r] = wt(r, e, t)
 					}),
 					n
 				)
 			}
-			function Et(e, t) {
-				let n = Tt(e, t)
+			function Dt(e, t) {
+				let n = Et(e, t)
 				return (t, r, i) =>
 					r === `__v_isReactive`
 						? !e
@@ -952,14 +952,14 @@
 								? t
 								: Reflect.get(u(n, r) && r in t ? n : t, r, i)
 			}
-			var Dt = { get: Et(!1, !1) },
-				Ot = { get: Et(!1, !0) },
-				kt = { get: Et(!0, !1) },
-				At = new WeakMap(),
+			var Ot = { get: Dt(!1, !1) },
+				kt = { get: Dt(!1, !0) },
+				At = { get: Dt(!0, !1) },
 				jt = new WeakMap(),
 				Mt = new WeakMap(),
-				Nt = new WeakMap()
-			function Pt(e) {
+				Nt = new WeakMap(),
+				Pt = new WeakMap()
+			function Ft(e) {
 				switch (e) {
 					case `Object`:
 					case `Array`:
@@ -973,48 +973,48 @@
 						return 0
 				}
 			}
-			function Ft(e) {
-				return e.__v_skip || !Object.isExtensible(e) ? 0 : Pt(ee(e))
-			}
 			function It(e) {
-				return Vt(e) ? e : zt(e, !1, vt, Dt, At)
+				return e.__v_skip || !Object.isExtensible(e) ? 0 : Ft(ee(e))
 			}
 			function Lt(e) {
-				return zt(e, !1, bt, Ot, jt)
+				return Ht(e) ? e : Bt(e, !1, yt, Ot, jt)
 			}
 			function Rt(e) {
-				return zt(e, !0, yt, kt, Mt)
+				return Bt(e, !1, xt, kt, Mt)
 			}
-			function zt(e, t, n, r, i) {
+			function zt(e) {
+				return Bt(e, !0, bt, At, Nt)
+			}
+			function Bt(e, t, n, r, i) {
 				if (!v(e) || (e.__v_raw && !(t && e.__v_isReactive))) return e
-				let a = Ft(e)
+				let a = It(e)
 				if (a === 0) return e
 				let o = i.get(e)
 				if (o) return o
 				let s = new Proxy(e, a === 2 ? r : n)
 				return (i.set(e, s), s)
 			}
-			function Bt(e) {
-				return Vt(e) ? Bt(e.__v_raw) : !!(e && e.__v_isReactive)
-			}
 			function Vt(e) {
-				return !!(e && e.__v_isReadonly)
-			}
-			function P(e) {
-				return !!(e && e.__v_isShallow)
+				return Ht(e) ? Vt(e.__v_raw) : !!(e && e.__v_isReactive)
 			}
 			function Ht(e) {
-				return e ? !!e.__v_raw : !1
+				return !!(e && e.__v_isReadonly)
 			}
-			function F(e) {
-				let t = e && e.__v_raw
-				return t ? F(t) : e
+			function N(e) {
+				return !!(e && e.__v_isShallow)
 			}
 			function Ut(e) {
+				return e ? !!e.__v_raw : !1
+			}
+			function P(e) {
+				let t = e && e.__v_raw
+				return t ? P(t) : e
+			}
+			function Wt(e) {
 				return (!u(e, `__v_skip`) && Object.isExtensible(e) && D(e, `__v_skip`, !0), e)
 			}
-			var Wt = (e) => (v(e) ? It(e) : e),
-				Gt = (e) => (v(e) ? Rt(e) : e)
+			var F = (e) => (v(e) ? Lt(e) : e),
+				Gt = (e) => (v(e) ? zt(e) : e)
 			function I(e) {
 				return e ? e.__v_isRef === !0 : !1
 			}
@@ -1029,11 +1029,11 @@
 			}
 			var Jt = class {
 				constructor(e, t) {
-					;((this.dep = new Ye()),
+					;((this.dep = new Xe()),
 						(this.__v_isRef = !0),
 						(this.__v_isShallow = !1),
-						(this._rawValue = t ? e : F(e)),
-						(this._value = t ? e : Wt(e)),
+						(this._rawValue = t ? e : P(e)),
+						(this._value = t ? e : F(e)),
 						(this.__v_isShallow = t))
 				}
 				get value() {
@@ -1041,9 +1041,9 @@
 				}
 				set value(e) {
 					let t = this._rawValue,
-						n = this.__v_isShallow || P(e) || Vt(e)
-					;((e = n ? e : F(e)),
-						E(e, t) && ((this._rawValue = e), (this._value = n ? e : Wt(e)), this.dep.trigger()))
+						n = this.__v_isShallow || N(e) || Ht(e)
+					;((e = n ? e : P(e)),
+						E(e, t) && ((this._rawValue = e), (this._value = n ? e : F(e)), this.dep.trigger()))
 				}
 			}
 			function Yt(e) {
@@ -1057,19 +1057,19 @@
 				},
 			}
 			function Zt(e) {
-				return Bt(e) ? e : new Proxy(e, Xt)
+				return Vt(e) ? e : new Proxy(e, Xt)
 			}
 			var Qt = class {
 				constructor(e, t, n) {
 					;((this.fn = e),
 						(this.setter = t),
 						(this._value = void 0),
-						(this.dep = new Ye(this)),
+						(this.dep = new Xe(this)),
 						(this.__v_isRef = !0),
 						(this.deps = void 0),
 						(this.depsTail = void 0),
 						(this.flags = 16),
-						(this.globalVersion = qe - 1),
+						(this.globalVersion = Je - 1),
 						(this.next = void 0),
 						(this.effect = this),
 						(this.__v_isReadonly = !t),
@@ -1101,7 +1101,7 @@
 			}
 			function an(e, n, i = t) {
 				let { immediate: a, deep: o, once: s, scheduler: l, augmentJob: u, call: f } = i,
-					p = (e) => (o ? e : P(e) || o === !1 || o === 0 ? on(e, 1) : on(e)),
+					p = (e) => (o ? e : N(e) || o === !1 || o === 0 ? on(e, 1) : on(e)),
 					m,
 					g,
 					_,
@@ -1110,16 +1110,16 @@
 					b = !1
 				if (
 					(I(e)
-						? ((g = () => e.value), (y = P(e)))
-						: Bt(e)
+						? ((g = () => e.value), (y = N(e)))
+						: Vt(e)
 							? ((g = () => p(e)), (y = !0))
 							: d(e)
 								? ((b = !0),
-									(y = e.some((e) => Bt(e) || P(e))),
+									(y = e.some((e) => Vt(e) || N(e))),
 									(g = () =>
 										e.map((e) => {
 											if (I(e)) return e.value
-											if (Bt(e)) return p(e)
+											if (Vt(e)) return p(e)
 											if (h(e)) return f ? f(e, 2) : e()
 										})))
 								: (g = h(e)
@@ -1129,11 +1129,11 @@
 												: e
 											: () => {
 													if (_) {
-														We()
+														Ge()
 														try {
 															_()
 														} finally {
-															Ge()
+															Ke()
 														}
 													}
 													let t = nn
@@ -1255,7 +1255,7 @@
 						t = t.parent
 					}
 					if (o) {
-						;(We(), sn(o, null, 10, [e, i, a]), Ge())
+						;(Ge(), sn(o, null, 10, [e, i, a]), Ke())
 						return
 					}
 				}
@@ -1394,7 +1394,7 @@
 					let s = i[o]
 					a && (s.oldValue = a[o].value)
 					let c = s.dir[r]
-					c && (We(), cn(c, n, 8, [e.el, s, e, t]), Ge())
+					c && (Ge(), cn(c, n, 8, [e.el, s, e, t]), Ke())
 				}
 			}
 			function jn(e, t) {
@@ -1525,7 +1525,7 @@
 					m = n && n.r,
 					_ = f.refs === t ? (f.refs = {}) : f.refs,
 					v = f.setupState,
-					y = F(v),
+					y = P(v),
 					b = v === t ? i : (e) => (Wn(_, e) ? !1 : u(y, e)),
 					x = (e, t) => !(t && Wn(_, t))
 				if (m != null && m !== p) {
@@ -1601,10 +1601,10 @@
 				if (n) {
 					let i = n[e] || (n[e] = []),
 						a = (t.__weh ||= (...r) => {
-							We()
+							Ge()
 							let i = na(n),
 								a = cn(t, n, e, r)
-							return (i(), Ge(), a)
+							return (i(), Ke(), a)
 						})
 					return (r ? i.unshift(a) : i.push(a), a)
 				}
@@ -1651,12 +1651,12 @@
 					a = n && n[r],
 					o = d(e)
 				if (o || g(e)) {
-					let n = o && Bt(e),
+					let n = o && Vt(e),
 						r = !1,
 						s = !1
-					;(n && ((r = !P(e)), (s = Vt(e)), (e = rt(e))), (i = Array(e.length)))
+					;(n && ((r = !N(e)), (s = Ht(e)), (e = it(e))), (i = Array(e.length)))
 					for (let n = 0, o = e.length; n < o; n++)
-						i[n] = t(r ? (s ? Gt(Wt(e[n])) : Wt(e[n])) : e[n], n, void 0, a && a[n])
+						i[n] = t(r ? (s ? Gt(F(e[n])) : F(e[n])) : e[n], n, void 0, a && a[n])
 				} else if (typeof e == `number`) {
 					i = Array(e)
 					for (let n = 0; n < e; n++) i[n] = t(n + 1, n, void 0, a && a[n])
@@ -1729,7 +1729,7 @@
 						let d = vr[n],
 							f,
 							p
-						if (d) return (n === `$attrs` && N(e.attrs, `get`, ``), d(e))
+						if (d) return (n === `$attrs` && M(e.attrs, `get`, ``), d(e))
 						if ((f = c.__cssModules) && (f = f[n])) return f
 						if (r !== t && u(r, n)) return ((s[n] = 4), r[n])
 						if (((p = l.config.globalProperties), u(p, n))) return p[n]
@@ -1824,7 +1824,7 @@
 					}
 				if (a) {
 					let t = a.call(n, n)
-					v(t) && (e.data = It(t))
+					v(t) && (e.data = Lt(t))
 				}
 				if (((Sr = !0), o))
 					for (let e in o) {
@@ -2280,7 +2280,7 @@
 					a = $r()
 				;((e.propsDefaults = Object.create(null)), ri(e, t, i, a))
 				for (let t in e.propsOptions[0]) t in i || (i[t] = void 0)
-				;(n ? (e.props = r ? i : Lt(i)) : e.type.props ? (e.props = i) : (e.props = a),
+				;(n ? (e.props = r ? i : Rt(i)) : e.type.props ? (e.props = i) : (e.props = a),
 					(e.attrs = a))
 			}
 			function ni(e, t, n, r) {
@@ -2289,7 +2289,7 @@
 						attrs: a,
 						vnode: { patchFlag: o },
 					} = e,
-					s = F(i),
+					s = P(i),
 					[c] = e.propsOptions,
 					l = !1
 				if ((r || o > 0) && !(o & 16)) {
@@ -2318,7 +2318,7 @@
 								: delete i[a])
 					if (a !== s) for (let e in a) (!t || !u(t, e)) && (delete a[e], (l = !0))
 				}
-				l && tt(e.attrs, `set`, ``)
+				l && nt(e.attrs, `set`, ``)
 			}
 			function ri(e, n, r, i) {
 				let [a, o] = e.propsOptions,
@@ -2336,7 +2336,7 @@
 							: Wr(e.emitsOptions, t) || ((!(t in i) || l !== i[t]) && ((i[t] = l), (s = !0)))
 					}
 				if (o) {
-					let n = F(r),
+					let n = P(r),
 						i = c || t
 					for (let t = 0; t < o.length; t++) {
 						let s = o[t]
@@ -2783,9 +2783,9 @@
 							(e.next = null),
 							ni(e, t.props, r, n),
 							hi(e, t.children, n),
-							We(),
+							Ge(),
 							Sn(e),
-							Ge())
+							Ke())
 					},
 					fe = (e, t, n, r, i, a, o, s, c = !1) => {
 						let l = e && e.children,
@@ -2952,7 +2952,7 @@
 						} = e
 						if (
 							(d === -2 && (i = !1),
-							s != null && (We(), Kn(s, null, n, e, !0), Ge()),
+							s != null && (Ge(), Kn(s, null, n, e, !0), Ke()),
 							p != null && (t.renderCache[p] = void 0),
 							u & 256)
 						) {
@@ -3201,13 +3201,13 @@
 					t = Hi(t)
 					let { class: e, style: n } = t
 					;(e && !g(e) && (t.class = O(e)),
-						v(n) && (Ht(n) && !d(n) && (n = s({}, n)), (t.style = de(n))))
+						v(n) && (Ut(n) && !d(n) && (n = s({}, n)), (t.style = de(n))))
 				}
 				let o = g(e) ? 1 : Ei(e) ? 128 : Bn(e) ? 64 : v(e) ? 4 : h(e) ? 2 : 0
 				return Y(e, t, n, r, i, o, a, !0)
 			}
 			function Hi(e) {
-				return e ? (Ht(e) || ei(e) ? s({}, e) : e) : null
+				return e ? (Ut(e) || ei(e) ? s({}, e) : e) : null
 			}
 			function Ui(e, t, n = !1, r = !1) {
 				let { props: i, ref: a, patchFlag: o, children: s, transition: c } = e,
@@ -3432,12 +3432,12 @@
 				;((e.accessCache = Object.create(null)), (e.proxy = new Proxy(e.ctx, br)))
 				let { setup: r } = n
 				if (r) {
-					We()
+					Ge()
 					let n = (e.setupContext = r.length > 1 ? pa(e) : null),
 						i = na(e),
 						a = sn(r, e, 0, [e.props, n]),
 						o = y(a)
-					if ((Ge(), i(), (o || e.sp) && !Jn(e) && Un(e), o)) {
+					if ((Ke(), i(), (o || e.sp) && !Jn(e) && Un(e), o)) {
 						if ((a.then(ra, ra), t))
 							return a
 								.then((n) => {
@@ -3474,17 +3474,17 @@
 				}
 				{
 					let t = na(e)
-					We()
+					Ge()
 					try {
 						Cr(e)
 					} finally {
-						;(Ge(), t())
+						;(Ke(), t())
 					}
 				}
 			}
 			var fa = {
 				get(e, t) {
-					return (N(e, `get`, ``), e[t])
+					return (M(e, `get`, ``), e[t])
 				},
 			}
 			function pa(e) {
@@ -3499,7 +3499,7 @@
 			}
 			function ma(e) {
 				return e.exposed
-					? (e.exposeProxy ||= new Proxy(Zt(Ut(e.exposed)), {
+					? (e.exposeProxy ||= new Proxy(Zt(Wt(e.exposed)), {
 							get(t, n) {
 								if (n in t) return t[n]
 								if (n in vr) return vr[n](e)
@@ -3931,7 +3931,7 @@
 				e.addEventListener(`click`, a)
 				let s = !1
 				return {
-					active: Rt(r),
+					active: zt(r),
 					toggle: i,
 					destroy: () => {
 						;(s || ((s = !0), o(), e.removeEventListener(`click`, a), n.stop()),
@@ -4036,9 +4036,9 @@
 					},
 					u = !1
 				return {
-					theme: Rt(t),
-					setting: Rt(n),
-					core: Rt(r),
+					theme: zt(t),
+					setting: zt(n),
+					core: zt(r),
 					dark: i,
 					toggle: s,
 					apply: c,
@@ -9319,9 +9319,406 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				ku = { id: `home`, title: `Home`, group: `Getting started`, page: Qo },
-				Au = [
-					ku,
+				ku = { id: `atoms-badge` },
+				Au = {
+					style: { display: `flex`, 'flex-wrap': `wrap`, gap: `0.5rem`, 'align-items': `center` },
+				},
+				ju = {
+					style: { display: `flex`, 'flex-wrap': `wrap`, gap: `0.5rem`, 'align-items': `center` },
+				},
+				Mu = { id: `atoms-dot` },
+				Nu = {
+					style: { display: `flex`, 'flex-wrap': `wrap`, gap: `1rem`, 'align-items': `center` },
+				},
+				Pu = [`aria-label`],
+				Fu = { id: `atoms-tag` },
+				Iu = { style: { display: `flex`, 'flex-direction': `column`, gap: `0.5rem` } },
+				Lu = {
+					style: { display: `flex`, 'flex-wrap': `wrap`, gap: `0.5rem`, 'align-items': `center` },
+				},
+				Ru = {
+					style: { display: `flex`, 'flex-wrap': `wrap`, gap: `0.5rem`, 'align-items': `center` },
+				},
+				zu = {
+					style: { display: `flex`, 'flex-wrap': `wrap`, gap: `0.5rem`, 'align-items': `center` },
+				},
+				Bu = { key: 0, class: `tag-group` },
+				Vu = [`aria-label`, `onClick`],
+				Hu = { key: 1, style: { 'margin-block-start': `1rem` } },
+				Uu = { id: `atoms-spinner` },
+				Wu = {
+					style: { display: `flex`, 'flex-wrap': `wrap`, gap: `0.5rem`, 'align-items': `center` },
+				},
+				Gu = [`disabled`],
+				Ku = { key: 0, role: `status`, class: `spinner`, 'aria-label': `Submitting` },
+				qu = B({
+					__name: `InlineAtomsPage`,
+					setup(e) {
+						let t = [
+								`primary`,
+								`secondary`,
+								`tertiary`,
+								`success`,
+								`warning`,
+								`danger`,
+								`information`,
+							],
+							n = L(new Set()),
+							r = (e) => {
+								n.value = new Set([...n.value, e])
+							},
+							i = () => {
+								n.value = new Set()
+							},
+							a = [`frontend`, `design`, `accessibility`, `docs`, `devops`],
+							o = L(!1),
+							s = async () => {
+								;((o.value = !0), await new Promise((e) => setTimeout(e, 1500)), (o.value = !1))
+							}
+						return (e, c) => (
+							q(),
+							J(
+								G,
+								null,
+								[
+									(c[20] ||= Q(
+										`<section id="atoms-intro"><hgroup><h1>Inline atoms</h1><p> Five class-root primitives for patterns with no semantic HTML home — <code>.badge</code>, <code>.dot</code>, <code>.tag</code>, <code>.spinner</code>, and <code>.skeleton</code>. Each owns a <code>--set-{atom}-*</code> token surface and reads from the framework&#39;s seven-variant cascade, so a chip / count / status indicator / loader paints consistently with the surrounding chrome without per-instance overrides. </p></hgroup><p> Class roots, not bare HTML tags, because no element semantically means &quot;colored chip&quot; or &quot;loading shimmer.&quot; The framework&#39;s preference is always a semantic element first ( <code>&lt;article&gt;</code> for a card, <code>&lt;dialog&gt;</code> for a modal, <code>&lt;aside&gt;</code> for a sidebar) — class roots appear only when no semantic root exists. Markup is <code>&lt;span class=&quot;badge&quot;&gt;</code> / <code>&lt;div class= &quot;skeleton&quot;&gt;</code>; consumers can swap the host element if they need to nest the atom inside an interactive shell (<code>&lt;button class=&quot;tag&quot;&gt;</code>). </p></section>`,
+										1,
+									)),
+									Y(`section`, ku, [
+										(c[1] ||= Y(`h2`, null, `1. Badge — count / label / status keyword`, -1)),
+										(c[2] ||= Y(
+											`p`,
+											null,
+											[
+												Z(
+													` Small inline pill for counts, status keywords, or short labels. Defaults to a neutral subtle tint; the seven variants paint with the `,
+												),
+												Y(`code`, null, `--color-{variant}-{bg-subtle, text-emphasis}`),
+												Z(
+													` triplet so the badge reads as "this thing has identity X without shouting" — same recipe alerts, list-group active rows, and aside-popover drawers use. `,
+												),
+											],
+											-1,
+										)),
+										(c[3] ||= Y(`h3`, null, `Bare + seven variants`, -1)),
+										Y(`div`, Au, [
+											(c[0] ||= Y(`span`, { class: `badge` }, `12`, -1)),
+											(q(),
+											J(
+												G,
+												null,
+												H(t, (e) => Y(`span`, { key: e, class: O([`badge`, e]) }, k(e), 3)),
+												64,
+											)),
+										]),
+										(c[4] ||= Y(
+											`details`,
+											null,
+											[
+												Y(`summary`, null, [Y(`small`, null, `Markup`)]),
+												Y(`pre`, null, [
+													Y(
+														`code`,
+														null,
+														`<span class="badge">12</span>
+<span class="badge primary">primary</span>
+<span class="badge success">success</span>`,
+													),
+												]),
+											],
+											-1,
+										)),
+										(c[5] ||= Y(`h3`, null, `Filled — saturated identity`, -1)),
+										(c[6] ||= Y(
+											`p`,
+											null,
+											[
+												Z(` Adding `),
+												Y(`code`, null, `.filled`),
+												Z(
+													` swaps the subtle tier for the variant's saturated identity color (and white text — the framework's "every variant takes white on fill" contract). Use sparingly: subtle badges sit politely in body copy; filled badges shout for attention. `,
+												),
+											],
+											-1,
+										)),
+										Y(`div`, ju, [
+											(q(),
+											J(
+												G,
+												null,
+												H(t, (e) =>
+													Y(`span`, { key: e, class: O([`badge`, e, `filled`]) }, k(e), 3),
+												),
+												64,
+											)),
+										]),
+										(c[7] ||= Q(
+											`<h3>Pill — fully rounded</h3><p><code>.pill</code> bumps the border-radius to <code>9999px</code> for the fully-rounded chip silhouette (Mailbox <code>.tag</code> default shape). Composes with any variant. </p><div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;"><span class="badge pill">99+</span><span class="badge primary pill">new</span><span class="badge danger pill filled">live</span><span class="badge success pill">v1.2.0</span></div><h3>Trailing badge inside a button</h3><p> A common pattern: a button with a trailing count badge (inbox unread, notifications, cart items). The badge auto-nudges 1 px upward inside a <code>&lt;button&gt;</code> for optical centering against the button&#39;s baseline. </p><div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;"><button type="button"> Inbox <span class="badge primary filled">42</span></button><button type="button" class="subtle"> Mentions <span class="badge information">7</span></button><button type="button" class="primary"> Tasks <span class="badge filled" style="background-color:rgba(255, 255, 255, 0.2);">3</span></button></div><details><summary><small>Markup</small></summary><pre><code>&lt;button type=&quot;button&quot;&gt;
+  Inbox &lt;span class=&quot;badge primary filled&quot;&gt;42&lt;/span&gt;
+&lt;/button&gt;</code></pre></details>`,
+											7,
+										)),
+									]),
+									Y(`section`, Mu, [
+										(c[9] ||= Q(
+											`<h2>2. Dot — circular status indicator</h2><p> Tiny colored circle. Mailbox / GitHub / Slack all reach for one when the signal is &quot;this thing has state, glance to know which kind.&quot; Default size is <code>0.5rem</code>; <code>.small</code> / <code>.large</code> retune diameter. The fill flows through <code>--set-variant-background-color</code> so layering a variant class paints the dot in that identity color; bare dots fall back to <code>--color-text-muted</code>. </p><h3>Bare + seven variants</h3>`,
+											3,
+										)),
+										Y(`div`, Nu, [
+											(c[8] ||= Y(
+												`span`,
+												{ class: `dot`, 'aria-label': `Neutral status` },
+												null,
+												-1,
+											)),
+											(q(),
+											J(
+												G,
+												null,
+												H(t, (e) =>
+													Y(
+														`span`,
+														{ key: e, class: O([`dot`, e]), 'aria-label': `${e} status` },
+														null,
+														10,
+														Pu,
+													),
+												),
+												64,
+											)),
+										]),
+										(c[10] ||= Q(
+											`<h3>Sizes</h3><div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;"><span class="dot small success" aria-label="Small"></span><span class="dot success" aria-label="Default"></span><span class="dot large success" aria-label="Large"></span></div><h3>Pulse — animated halo</h3><p><code>.pulse</code> adds an <code>::after</code> halo that scales out and fades in a 1.6 s loop. The halo inherits the dot&#39;s bg color so any variant pulses in its own identity. <code>prefers-reduced-motion: reduce</code> drops the animation entirely (per WCAG SC 2.3.3 — there&#39;s no value in a frozen mid-pulse). </p><div style="display:flex;flex-wrap:wrap;gap:1.5rem;align-items:center;"><span class="dot success pulse" aria-label="Online — pulsing"></span><span class="dot danger pulse" aria-label="Recording — pulsing"></span><span class="dot warning pulse" aria-label="Pending — pulsing"></span></div><h3>Inline with text labels</h3><p>Common composition — dot + label inside a flex row, like a user status line.</p><ul style="display:flex;flex-direction:column;gap:0.5rem;padding:0;list-style:none;"><li style="display:flex;gap:0.5rem;align-items:center;"><span class="dot success pulse" aria-hidden="true"></span><span>Alex Rivera — <small>online</small></span></li><li style="display:flex;gap:0.5rem;align-items:center;"><span class="dot warning" aria-hidden="true"></span><span>Jordan Lee — <small>away</small></span></li><li style="display:flex;gap:0.5rem;align-items:center;"><span class="dot" aria-hidden="true"></span><span>Sam Park — <small>offline</small></span></li></ul>`,
+											8,
+										)),
+									]),
+									Y(`section`, Fu, [
+										(c[11] ||= Q(
+											`<h2>3. Tag — chip-shape inline label</h2><p> Pill-shaped chip for keywords, filter values, or short labels — distinct from <code>.badge</code> in three ways: <code>.tag</code> is pill-shaped by default, <code>.tag</code> can be interactive (when the host is a <code>&lt;button&gt;</code>), and <code>.tag</code> ships a descendant remove-button pattern. Variants paint with the same <code>bg-subtle / text-emphasis / border-subtle</code> triplet as <code>.badge</code> + alerts + drawers. </p><h3>Style modes — subtle (default) / filled / ghost</h3>`,
+											3,
+										)),
+										Y(`div`, Iu, [
+											Y(`div`, Lu, [
+												(q(),
+												J(
+													G,
+													null,
+													H(t, (e) => Y(`span`, { key: e, class: O([`tag`, e]) }, k(e), 3)),
+													64,
+												)),
+											]),
+											Y(`div`, Ru, [
+												(q(),
+												J(
+													G,
+													null,
+													H(t, (e) =>
+														Y(`span`, { key: e, class: O([`tag`, e, `filled`]) }, k(e), 3),
+													),
+													64,
+												)),
+											]),
+											Y(`div`, zu, [
+												(q(),
+												J(
+													G,
+													null,
+													H(t, (e) =>
+														Y(`span`, { key: e, class: O([`tag`, e, `ghost`]) }, k(e), 3),
+													),
+													64,
+												)),
+											]),
+										]),
+										(c[12] ||= Q(
+											`<h3>Sizes + square shape</h3><div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;"><span class="tag small primary">small</span><span class="tag primary">default</span><span class="tag large primary">large</span><span class="tag square primary">square corners</span></div><h3>Interactive chip — <code>&lt;button class=&quot;tag&quot;&gt;</code></h3><p> When the tag&#39;s host is a <code>&lt;button&gt;</code>, the framework auto-adds a state layer: hover darkens / lightens the bg via <code>color-mix(currentColor 8%, ...)</code>, active deepens to 16 %, focus paints the framework&#39;s focus ring. Same pattern the <code>&lt;button&gt;</code> baseline uses, scoped to the tag chip. </p><div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;"><button type="button" class="tag">Bare</button><button type="button" class="tag primary">primary</button><button type="button" class="tag success">success</button><button type="button" class="tag warning filled">filled warning</button></div><h3>Removable chip — <code>&lt;button class=&quot;remove&quot;&gt;</code> descendant</h3><p> A trailing <code>&lt;button class=&quot;remove&quot;&gt;</code> inside the tag paints the dismiss glyph with a quiet hover state and a focus ring. Dispatch the remove handler on click; the visual is the framework&#39;s, the lifecycle is the consumer&#39;s. </p>`,
+											7,
+										)),
+										a.some((e) => !n.value.has(e))
+											? (q(),
+												J(`div`, Bu, [
+													(q(!0),
+													J(
+														G,
+														null,
+														H(
+															a.filter((e) => !n.value.has(e)),
+															(e) => (
+																q(),
+																J(`span`, { key: e, class: `tag primary` }, [
+																	Z(` #` + k(e) + ` `, 1),
+																	Y(
+																		`button`,
+																		{
+																			type: `button`,
+																			class: `remove`,
+																			'aria-label': `Remove ${e}`,
+																			onClick: (t) => r(e),
+																		},
+																		` × `,
+																		8,
+																		Vu,
+																	),
+																])
+															),
+														),
+														128,
+													)),
+												]))
+											: Wi(``, !0),
+										n.value.size > 0
+											? (q(),
+												J(`p`, Hu, [
+													Y(
+														`button`,
+														{ type: `button`, class: `subtle small`, onClick: i },
+														`Restore dismissed tags`,
+													),
+												]))
+											: Wi(``, !0),
+										(c[13] ||= Y(
+											`details`,
+											null,
+											[
+												Y(`summary`, null, [Y(`small`, null, `Markup`)]),
+												Y(`pre`, null, [
+													Y(
+														`code`,
+														null,
+														`<div class="tag-group">
+  <span class="tag primary">
+    #frontend
+    <button class="remove" aria-label="Remove frontend">×</button>
+  </span>
+  …
+</div>`,
+													),
+												]),
+											],
+											-1,
+										)),
+									]),
+									Y(`section`, Uu, [
+										(c[16] ||= Q(
+											`<h2>4. Spinner — rotating ring loader</h2><p> Three-quarter ring with one side transparent, rotating at <code>0.75 s</code>. Color cascades through <code>--set-style-color</code> → <code>--set-variant-color</code> → <code>currentColor</code> so a spinner inside <code>&lt;button class=&quot;primary&quot;&gt;</code> paints WHITE (matching the button&#39;s label color), not the variant&#39;s identity blue — that was the visibility bug an earlier draft hit (blue spinner on blue button surface). </p><p> Reduced motion <em>slows</em> the rotation (0.75 s → 1.5 s) rather than stops it. A frozen spinner conveys nothing; a slower spinner still reads as &quot;in progress&quot; without triggering vestibular discomfort. WCAG SC 2.3.3 explicitly permits this for spinners. </p><h3>Sizes + variant color</h3>`,
+											4,
+										)),
+										(c[17] ||= Y(
+											`div`,
+											{
+												style: {
+													display: `flex`,
+													'flex-wrap': `wrap`,
+													gap: `1rem`,
+													'align-items': `center`,
+												},
+											},
+											[
+												Y(`span`, {
+													role: `status`,
+													class: `spinner small`,
+													'aria-label': `Loading (small)`,
+												}),
+												Y(`span`, {
+													role: `status`,
+													class: `spinner`,
+													'aria-label': `Loading (default)`,
+												}),
+												Y(`span`, {
+													role: `status`,
+													class: `spinner large`,
+													'aria-label': `Loading (large)`,
+												}),
+												Y(`span`, {
+													role: `status`,
+													class: `spinner primary`,
+													'aria-label': `Primary`,
+												}),
+												Y(`span`, {
+													role: `status`,
+													class: `spinner danger`,
+													'aria-label': `Danger`,
+												}),
+											],
+											-1,
+										)),
+										(c[18] ||= Y(`h3`, null, `Inline inside a loading button`, -1)),
+										(c[19] ||= Y(
+											`p`,
+											null,
+											[
+												Z(` A `),
+												Y(`code`, null, `<button class="loading">`),
+												Z(` with a child `),
+												Y(`code`, null, `.spinner`),
+												Z(
+													` auto-shrinks the spinner to the button's font-size so the indicator sits next to the label without breaking the row. Click the button to toggle the loading state. `,
+												),
+											],
+											-1,
+										)),
+										Y(`div`, Wu, [
+											Y(
+												`button`,
+												{
+													type: `button`,
+													class: O([`primary`, { loading: o.value }]),
+													disabled: o.value,
+													onClick: s,
+												},
+												[
+													o.value ? (q(), J(`span`, Ku)) : Wi(``, !0),
+													Z(` ` + k(o.value ? `Submitting…` : `Submit`), 1),
+												],
+												10,
+												Gu,
+											),
+											(c[14] ||= Y(
+												`button`,
+												{ type: `button`, class: `success loading`, disabled: `` },
+												[
+													Y(`span`, { role: `status`, class: `spinner`, 'aria-label': `Saving` }),
+													Z(` Saving `),
+												],
+												-1,
+											)),
+											(c[15] ||= Y(
+												`button`,
+												{ type: `button`, class: `subtle loading`, disabled: `` },
+												[
+													Y(`span`, { role: `status`, class: `spinner`, 'aria-label': `Loading` }),
+													Z(` Bare subtle `),
+												],
+												-1,
+											)),
+										]),
+									]),
+									(c[21] ||= Q(
+										`<section id="atoms-skeleton"><h2>5. Skeleton — shimmering loading placeholder</h2><p> A block-level placeholder masking content during loading. A 200 %-wide gradient highlight slides across a tinted base color (the highlight derives from <code>--color-text</code> mixed into the bg so the shimmer tracks the active theme automatically — pale tint in light mode, subtle lift in dark mode). Set the size with inline styles or width utilities; the framework owns the chrome. </p><p> Reduced motion strips both the animation AND the gradient — what&#39;s left is a flat tinted block. Never a frozen mid-sweep (which would read as broken). </p><h3>Block placeholder + multi-line text</h3><article style="max-inline-size:28rem;"><header style="display:flex;gap:0.75rem;align-items:center;"><div class="skeleton circle" style="inline-size:2.5rem;block-size:2.5rem;" aria-hidden="true"></div><div style="flex:1;"><div class="skeleton text" style="inline-size:60%;" aria-hidden="true"></div><div class="skeleton text" style="inline-size:40%;margin-block-start:0.375rem;" aria-hidden="true"></div></div></header><div class="skeleton" style="block-size:8rem;margin-block:1rem;" aria-hidden="true"></div><div class="skeleton text" style="inline-size:100%;" aria-hidden="true"></div><div class="skeleton text" style="inline-size:92%;margin-block-start:0.5rem;" aria-hidden="true"></div><div class="skeleton text" style="inline-size:78%;margin-block-start:0.5rem;" aria-hidden="true"></div></article><details><summary><small>Markup — skeleton card</small></summary><pre><code>&lt;article&gt;
+  &lt;header style=&quot;display: flex; gap: 0.75rem&quot;&gt;
+    &lt;div class=&quot;skeleton circle&quot; style=&quot;inline-size: 2.5rem; block-size: 2.5rem&quot;&gt;&lt;/div&gt;
+    &lt;div style=&quot;flex: 1&quot;&gt;
+      &lt;div class=&quot;skeleton text&quot; style=&quot;inline-size: 60%&quot;&gt;&lt;/div&gt;
+      &lt;div class=&quot;skeleton text&quot; style=&quot;inline-size: 40%&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
+  &lt;div class=&quot;skeleton&quot; style=&quot;block-size: 8rem&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;skeleton text&quot; style=&quot;inline-size: 100%&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;skeleton text&quot; style=&quot;inline-size: 92%&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;skeleton text&quot; style=&quot;inline-size: 78%&quot;&gt;&lt;/div&gt;
+&lt;/article&gt;</code></pre></details></section><section id="atoms-reduced-motion"><h2>Reduced motion</h2><p> Three atoms ship animations — <code>.dot.pulse</code>, <code>.spinner</code>, and <code>.skeleton</code>. Each handles <code>prefers-reduced-motion: reduce</code> per WAI guidance: </p><ul><li><strong><code>.dot.pulse</code></strong> — halo animation dropped entirely. The dot keeps its color so the static status signal still reads. </li><li><strong><code>.spinner</code></strong> — rotation <em>slows</em> from 0.75 s to 1.5 s rather than stops. A frozen spinner reads as broken; a slower spinner still conveys &quot;working&quot; without vestibular impact (WCAG SC 2.3.3). </li><li><strong><code>.skeleton</code></strong> — shimmer animation AND gradient both drop; what&#39;s left is a flat tinted block. Never a frozen mid-sweep. </li></ul><p> Toggle your OS reduced-motion preference and watch the live demos above settle into their static states. </p></section><section id="atoms-forced-colors"><h2>Forced colors</h2><p> In Windows High Contrast (or any <code>forced-colors: active</code> environment) the browser overrides custom colors with system tokens. The five atoms degrade gracefully: tinted variant backgrounds collapse to <code>Canvas</code> + <code>CanvasText</code>; the spinner&#39;s three-quarter ring still reads because <code>CanvasText</code> paints the visible arcs; the skeleton&#39;s gradient drops out and the base bg becomes <code>ButtonFace</code>, producing a flat solid block. </p></section><section id="atoms-tokens"><h2>Tokens</h2><p> Each atom&#39;s tokens live on its class root. Override globally at <code>:root</code>, or per-instance via inline <code>style=&quot;...&quot;</code>. </p><h3><code>.badge</code></h3><dl><dt><code>--set-badge-color</code></dt><dd>Text colour. Falls through variant → emphasis tier → body text.</dd><dt><code>--set-badge-background-color</code></dt><dd>Surface colour. Falls through variant → bg-subtle tier → border-subtle neutral.</dd><dt><code>--set-badge-border-radius</code></dt><dd>Default <code>0.375 rem</code>; <code>.pill</code> bumps to <code>9999 px</code>.</dd><dt><code>--set-badge-padding-inline</code> / <code>--set-badge-padding-block</code></dt><dd>Default <code>0.5em</code> / <code>0.25em</code> — scales with the host font-size.</dd><dt><code>--set-badge-font-size</code> / <code>--set-badge-font-weight</code> / <code>--set-badge-line-height</code></dt><dd>Default <code>0.75em</code> / <code>500</code> / <code>1</code>.</dd></dl><h3><code>.dot</code></h3><dl><dt><code>--set-dot-size</code></dt><dd>Diameter. Default <code>0.5 rem</code>; <code>.small</code> = <code>0.375 rem</code>; <code>.large</code> = <code>0.75 rem</code>.</dd><dt><code>--set-dot-background-color</code></dt><dd>Fill colour. Falls through variant → <code>--color-text-muted</code>.</dd><dt><code>--set-dot-pulse-duration</code> / <code>--set-dot-pulse-easing</code></dt><dd>Pulse animation timing. Default <code>1.6 s</code> / <code>ease-out</code>.</dd></dl><h3><code>.tag</code></h3><dl><dt><code>--set-tag-color</code> / <code>--set-tag-background-color</code> / <code>--set-tag-border-color</code></dt><dd>Variant tier triplet. Falls through variant → bg-subtle / text-emphasis / border-subtle / neutral.</dd><dt><code>--set-tag-border-width</code> / <code>--set-tag-border-radius</code></dt><dd>Default <code>1 px</code> / <code>9999 px</code> (pill). <code>.square</code> drops radius to <code>0.25 rem</code>.</dd><dt><code>--set-tag-padding-inline</code> / <code>--set-tag-padding-block</code> / <code>--set-tag-font-size</code></dt><dd>Default <code>0.5 rem</code> / <code>0.25 rem</code> / <code>0.75 rem</code>; sizes scale all three.</dd><dt><code>--set-tag-gap</code></dt><dd>Flex gap between tag content and the trailing remove glyph. Default <code>0.25 rem</code>.</dd><dt><code>--set-tag-transition-duration</code></dt><dd>Hover / active state-layer transition. Default <code>--set-transition-duration</code> (150 ms).</dd></dl><h3><code>.spinner</code></h3><dl><dt><code>--set-spinner-size</code></dt><dd>Outer diameter. Default <code>2em</code>; <code>.small</code> = <code>1em</code>; <code>.large</code> = <code>3em</code>.</dd><dt><code>--set-spinner-border-width</code></dt><dd>Ring thickness. Default <code>0.2em</code>; <code>.small</code> + button-loading shrink to <code>0.15em</code>.</dd><dt><code>--set-spinner-color</code></dt><dd>Ring colour. Falls through style → variant contrast → <code>currentColor</code>.</dd><dt><code>--set-spinner-duration</code></dt><dd>Rotation duration. Default <code>0.75 s</code>; reduced-motion bumps to <code>1.5 s</code>.</dd></dl><h3><code>.skeleton</code></h3><dl><dt><code>--set-skeleton-background-color</code></dt><dd>Base tinted bg. Default <code>--color-border-subtle</code>.</dd><dt><code>--set-skeleton-highlight-color</code></dt><dd>Shimmer highlight. Derived from <code>color-mix(--color-text 6%, bg)</code> so it tracks the active theme.</dd><dt><code>--set-skeleton-border-radius</code></dt><dd>Corner radius. Default <code>0.375 rem</code>; <code>.circle</code> overrides to <code>50%</code>.</dd><dt><code>--set-skeleton-duration</code></dt><dd>Shimmer animation duration. Default <code>1.5 s</code>.</dd><dt><code>--set-skeleton-line-block-size</code> / <code>--set-skeleton-line-gap</code></dt><dd><code>.text</code> shape helper line height + sibling line spacing. Defaults <code>0.75em</code> / <code>0.5em</code>.</dd></dl></section>`,
+										4,
+									)),
+								],
+								64,
+							)
+						)
+					},
+				}),
+				Ju = { id: `home`, title: `Home`, group: `Getting started`, page: Qo },
+				Yu = [
+					Ju,
 					{ id: `button`, title: `Button`, group: `Elements — Interactive`, page: ys },
 					{ id: `anchor`, title: `Anchor`, group: `Elements — Interactive`, page: Is },
 					{
@@ -9348,34 +9745,35 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 					{ id: `aside`, title: `Aside`, group: `Components`, page: eu },
 					{ id: `nav`, title: `Nav`, group: `Components`, page: _u },
 					{ id: `menu`, title: `Menu`, group: `Components`, page: Ou },
+					{ id: `inline-atoms`, title: `Inline atoms`, group: `Components`, page: qu },
 				],
-				ju = (e) => {
+				Xu = (e) => {
 					let t = window.location.hash
 					if (!t.startsWith(`#/`)) return { id: e, section: null }
 					let n = t.slice(2).split(`/`),
 						r = n[0] ?? ``
 					return {
-						id: Au.some((e) => e.id === r) ? r : `home`,
+						id: Yu.some((e) => e.id === r) ? r : `home`,
 						section: n.slice(1).filter(Boolean).join(`/`) || null,
 					}
 				},
-				Mu = typeof window > `u` ? { id: `home`, section: null } : ju(`home`),
-				Nu = L(Mu.id),
-				Pu = L(Mu.section)
+				Zu = typeof window > `u` ? { id: `home`, section: null } : Xu(`home`),
+				Qu = L(Zu.id),
+				$u = L(Zu.section)
 			typeof window < `u` &&
 				window.addEventListener(`hashchange`, () => {
-					let e = ju(Nu.value)
-					;((Nu.value = e.id), (Pu.value = e.section))
+					let e = Xu(Qu.value)
+					;((Qu.value = e.id), ($u.value = e.section))
 				})
-			var Fu = Nu,
-				Iu = Pu,
-				Lu = _a(() => Au.find((e) => e.id === Nu.value) ?? ku),
-				Ru = (e, t) => {
+			var ed = Qu,
+				td = $u,
+				nd = _a(() => Yu.find((e) => e.id === Qu.value) ?? Ju),
+				rd = (e, t) => {
 					window.location.hash = t ? `#/${e}/${t}` : `#/${e}`
 				},
-				zu = [`href`, `aria-current`, `onClick`],
-				Bu = { key: 0 },
-				Vu = B({
+				id = [`href`, `aria-current`, `onClick`],
+				ad = { key: 0 },
+				od = B({
 					__name: `SiteNav`,
 					props: { routes: {}, active: {} },
 					emits: [`navigate`],
@@ -9431,7 +9829,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 																				},
 																				k(t.title),
 																				9,
-																				zu,
+																				id,
 																			),
 																		])
 																	),
@@ -9447,7 +9845,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										128,
 									)),
 									i.value.length === 0
-										? (q(), J(`p`, Bu, [...(n[0] ||= [Y(`small`, null, `No matches.`, -1)])]))
+										? (q(), J(`p`, ad, [...(n[0] ||= [Y(`small`, null, `No matches.`, -1)])]))
 										: Wi(``, !0),
 								],
 								64,
@@ -9455,11 +9853,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				Hu = { key: 0, 'aria-label': `Table of contents` },
-				Uu = [`data-level`],
-				Wu = [`href`, `aria-current`, `onClick`],
-				Gu = { key: 1 },
-				Ku = B({
+				sd = { key: 0, 'aria-label': `Table of contents` },
+				cd = [`data-level`],
+				ld = [`href`, `aria-current`, `onClick`],
+				ud = { key: 1 },
+				dd = B({
 					__name: `Toc`,
 					props: { scroller: {}, currentId: {} },
 					emits: [`navigate`],
@@ -9521,7 +9919,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								e.ctrlKey ||
 								e.shiftKey ||
 								e.altKey ||
-								(e.preventDefault(), Ru(n.currentId, t), r(`navigate`))
+								(e.preventDefault(), rd(n.currentId, t), r(`navigate`))
 						}
 						return (t, n) => (
 							q(),
@@ -9537,7 +9935,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									)),
 									i.value.length > 0
 										? (q(),
-											J(`nav`, Hu, [
+											J(`nav`, sd, [
 												Y(`menu`, null, [
 													(q(!0),
 													J(
@@ -9560,11 +9958,11 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 																			},
 																			k(t.label),
 																			9,
-																			Wu,
+																			ld,
 																		),
 																	],
 																	8,
-																	Uu,
+																	cd,
 																)
 															),
 														),
@@ -9573,7 +9971,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											]))
 										: (q(),
-											J(`p`, Gu, [
+											J(`p`, ud, [
 												...(n[0] ||= [Y(`small`, null, `No sections on this page.`, -1)]),
 											])),
 								],
@@ -9582,13 +9980,13 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 						)
 					},
 				}),
-				qu = [`popovertarget`],
-				Ju = [`aria-label`],
-				Yu = [`popovertarget`],
-				Xu = [`popover`],
-				Zu = { class: `showcase-sidebar-scroll` },
-				Qu = [`popover`],
-				$u = { class: `font-mono text-xs` }
+				fd = [`popovertarget`],
+				pd = [`aria-label`],
+				md = [`popovertarget`],
+				hd = [`popover`],
+				gd = { class: `showcase-sidebar-scroll` },
+				_d = [`popover`],
+				vd = { class: `font-mono text-xs` }
 			mo(
 				B({
 					__name: `App`,
@@ -9603,15 +10001,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 							o = _a(() => {
 								let e = n.value.trim().toLowerCase()
 								return e
-									? Au.filter(
+									? Yu.filter(
 											(t) =>
 												t.title.toLowerCase().includes(e) ||
 												t.id.toLowerCase().includes(e) ||
 												t.group.toLowerCase().includes(e),
 										)
-									: Au
+									: Yu
 							}),
-							s = _a(() => Lu.value.page),
+							s = _a(() => nd.value.page),
 							c = L(null),
 							l = async (e) => {
 								await _n()
@@ -9633,7 +10031,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 									t?.matches(`:popover-open`) && t.hidePopover()
 								}
 							}
-						Fn([Fu, Iu], ([, e]) => {
+						Fn([ed, td], ([, e]) => {
 							;(l(e), u())
 						})
 						let d = (e) => {
@@ -9645,13 +10043,13 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 							;(a(),
 								i?.addEventListener(`change`, a),
 								document.addEventListener(`keydown`, d),
-								l(Iu.value))
+								l(td.value))
 						}),
 							sr(() => {
 								;(i?.removeEventListener(`change`, a), document.removeEventListener(`keydown`, d))
 							}))
 						let f = (e) => {
-								;(e.preventDefault(), Ru(`home`), u())
+								;(e.preventDefault(), rd(`home`), u())
 							},
 							p = () => {
 								t.toggle()
@@ -9690,7 +10088,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											],
 											8,
-											qu,
+											fd,
 										),
 										Y(`a`, { href: `#/home`, class: `flex-1`, onClick: f }, [
 											...(i[2] ||= [Y(`strong`, null, `Elements`, -1)]),
@@ -9716,7 +10114,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												),
 											],
 											8,
-											Ju,
+											pd,
 										),
 										Y(
 											`button`,
@@ -9741,7 +10139,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												]),
 											],
 											8,
-											Yu,
+											md,
 										),
 									]),
 									Y(
@@ -9797,15 +10195,15 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 													),
 												]),
 											]),
-											Y(`div`, Zu, [
-												X(Vu, { routes: o.value, active: Yt(Lu).id, onNavigate: u }, null, 8, [
+											Y(`div`, gd, [
+												X(od, { routes: o.value, active: Yt(nd).id, onNavigate: u }, null, 8, [
 													`routes`,
 													`active`,
 												]),
 											]),
 										],
 										8,
-										Xu,
+										hd,
 									),
 									Y(`main`, { ref_key: `scrollerRef`, ref: c }, [(q(), Ii(mr(s.value)))], 512),
 									Y(
@@ -9842,19 +10240,19 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 												-1,
 											)),
 											X(
-												Ku,
-												{ scroller: c.value, 'current-id': Yt(Lu).id, onNavigate: u },
+												dd,
+												{ scroller: c.value, 'current-id': Yt(nd).id, onNavigate: u },
 												null,
 												8,
 												[`scroller`, `current-id`],
 											),
 										],
 										8,
-										Qu,
+										_d,
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, $u, `build ` + k(Yt(`2026-05-12T21:54:24.714Z`)), 1),
+										Y(`small`, vd, `build ` + k(Yt(`2026-05-12T22:27:45.516Z`)), 1),
 									]),
 								],
 								64,
