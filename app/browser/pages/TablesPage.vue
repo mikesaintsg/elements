@@ -249,9 +249,15 @@ const members: readonly Member[] = [
 		<p>
 			Hairline on every cell edge plus a perimeter border. Use when the table sits on a flat canvas
 			and needs its own framing; skip it inside a card or panel where the parent's chrome already
-			provides the perimeter.
+			provides the perimeter. <code>&lt;caption&gt;</code> renders inside the perimeter (per the CSS
+			spec — the caption box is part of the table-wrapper layout), so the framework gives it the
+			same <code>padding-inline</code> as a cell and aligns the caption text with the header row
+			below it.
 		</p>
 		<table class="bordered">
+			<caption>
+				Theme color tokens — light vs dark
+			</caption>
 			<thead>
 				<tr>
 					<th>Token</th>

@@ -77,8 +77,27 @@
 		font-size: var(--set-table-font-size);
 		line-height: var(--set-table-line-height);
 
+		// ── Caption ─────────────────────────────────────────────────────────
+		// Captions sit INSIDE the table's principal box — including inside
+		// `.bordered`'s perimeter border, since the caption box is part of
+		// the table-wrapper-box layout. Without padding-inline the text
+		// touches the left perimeter on a `.bordered` table; without
+		// padding-block the caption crashes into the header band. Both
+		// pads route through the same `--set-table-cell-padding-*` tokens
+		// the cells use so caption text vertically aligns with the first
+		// header cell's text and consumers retuning padding get
+		// proportional caption spacing for free.
+		//
+		// Color and font-size shift the caption toward "metadata" register:
+		// `--color-text-muted` keeps it readable but visually subordinate
+		// to the header band, `0.875em` (relative to the table's own
+		// font-size) makes it slightly smaller — same hierarchy
+		// `<figcaption>` follows under a `<figure>`.
 		caption {
+			padding-inline: var(--set-table-cell-padding-inline);
 			padding-block: var(--set-table-cell-padding-block);
+			color: var(--color-text-muted);
+			font-size: 0.875em;
 			text-align: start;
 			caption-side: top;
 		}
@@ -278,8 +297,16 @@
 		caption-side: top;
 	}
 
+	// `.caption-bottom` flips visually + paints a `border-block-start` on
+	// the caption so it reads as separated from the last body row. The
+	// framework intentionally zeroes the last-row border-block-end (so
+	// bare tables don't double-line at the bottom edge), which leaves
+	// nothing between the body and a bottom-positioned caption without
+	// this divider. Border color tracks `--set-table-border-color` so a
+	// variant-tinted table's divider matches the rest of its chrome.
 	table.caption-bottom > caption {
 		caption-side: bottom;
+		border-block-start: var(--set-table-border-width) solid var(--set-table-border-color);
 	}
 
 	// ── Active row ─────────────────────────────────────────────────────────────
