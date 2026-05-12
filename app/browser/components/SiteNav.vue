@@ -7,7 +7,6 @@ const props = defineProps<{
 	active: string
 }>()
 
-const query = defineModel<string>('query', { default: '' })
 const emit = defineEmits<{ navigate: [id: string] }>()
 
 interface Group {
@@ -32,39 +31,21 @@ const onLinkClick = (event: MouseEvent, id: string): void => {
 </script>
 
 <template>
-	<!-- Sidebar filter — the framework's <search> + <input type="search">
-	     baselines paint the row + input chrome. Pressing "/" focuses the
-	     input via the document-level keydown listener in App.vue.
-	     The wrapping <div class="showcase-sidebar-search"> is the
-	     SHOWCASE'S card-shell around the search — it pins the search to
-	     the top of the rail, paints the rail's bg behind it so scrolling
-	     list rows are masked when they slide underneath, and provides
-	     the bottom divider that separates the search card from the
-	     first nav group. See showcase.css for the rule. -->
-	<div class="showcase-sidebar-search">
-		<search>
-			<label>
-				<span class="sr-only">Filter pages</span>
-				<input
-					id="sidebar-filter"
-					v-model="query"
-					type="search"
-					placeholder="Filter… (press /)"
-					autocomplete="off"
-				/>
-			</label>
-		</search>
-	</div>
-	<!-- Note: .sr-only is a Tailwind utility — visually hidden but accessible -->
+	<!-- SiteNav renders ONLY the grouped page list. The sidebar's
+	     search filter lives in App.vue as a sibling in `<nav>` so the
+	     showcase's flex-column rail layout can split the rail cleanly
+	     into a fixed search strip on top + a scrollable list strip
+	     below (mailbox's pattern). Search OUTSIDE the scroll region
+	     means no `position: sticky` trickery, no z-index fights, and
+	     no list rows scrolling behind the search box.
 
-	<!-- Each group is its own labelled <section>, list rendered as
-	     <menu><li><a> — picks up the framework's vertical-rail menu
-	     shape from components/_menu.scss. The active-page anchor uses
-	     aria-current="page"; the framework's nav-rail menu rule paints
-	     the affordance. Group label uses <h6> (the smallest framework
-	     heading — 1rem, font-weight 600) so it reads as a section
-	     divider rather than a competing page heading; uppercase +
-	     tracking gives it editorial sidebar character. -->
+	     Each group is its own labelled `<section>` with `<menu><li><a>`
+	     children — picks up the framework's vertical-rail menu shape
+	     from `components/_menu.scss`. The active-page anchor uses
+	     `aria-current="page"` so the framework's nav-rail menu rule
+	     paints the affordance. Group label uses `<h6>` (the smallest
+	     framework heading — 1rem, font-weight 600) so it reads as a
+	     section divider rather than a competing page heading. -->
 	<section v-for="g in grouped" :key="g.group">
 		<h6 class="text-xs uppercase tracking-wider opacity-70">{{ g.group }}</h6>
 		<menu>

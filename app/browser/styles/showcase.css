@@ -98,64 +98,75 @@
 	backdrop-filter: blur(2px);
 }
 
-/* Sidebar search CARD — APP-SPECIFIC composition, not framework chrome.
+/* Sidebar layout — APP-SPECIFIC flex-column split.
  *
- * The showcase wraps its `<search>` filter in a `<div class="showcase-
- * sidebar-search">` card-shell. The card pins to the top of the
- * scrolling nav rail, paints the rail's own background to mask list
- * rows that scroll behind it, and provides the padding + bottom divider
- * that separates the card from the first group below.
+ * The showcase splits its `<nav>` rail into TWO regions:
  *
- * Why a wrapper element (not just sticky chrome on the `<search>`
- * itself): the search element ships its own row-layout contract (flex
- * + input growth + optional submit button); layering sticky-card
- * behavior on top of that contract muddies what `<search>` IS. The
- * card-shell is a separate concern — "the chrome that holds the search
- * in place" — and a wrapper makes that concern visible in markup. A
- * consumer building their own sidebar follows the same pattern:
- * `<div class="my-sticky-card"><search>…</search></div>`.
+ *   1. `.showcase-sidebar-search` — fixed-height card-shell holding
+ *      the `<search>` filter. Sits at the top of the rail, flush with
+ *      top + side edges, with a bottom divider separating it from the
+ *      list region below.
  *
- * Why this is showcase-specific (not framework): the framework ships
- * the `<search>` element's row chrome and the body-shell nav rail.
- * Whether the search is pinned to the top of the rail, lives in the
- * app bar, or pops via a command-K dialog is a product-design choice
- * the consumer owns. So this rule lives in `app/browser/`, not
- * `src/styles/`.
+ *   2. `.showcase-sidebar-list` — flex-grow region that owns the
+ *      scrollable list of nav groups. The framework's `body:has(main)
+ *      > nav` rule normally puts `overflow-y: auto` on the rail
+ *      itself; here we move that scroll responsibility to the inner
+ *      list region instead, so the search card stays put while the
+ *      list scrolls beneath it.
  *
- * Mechanics (composes only framework tokens, no showcase-private
- * values — paste verbatim into a consumer site and it drops in clean):
+ * Why split this way (rather than `position: sticky` on the search):
+ * mailbox's docs sidebar uses the same flex-column shape, and the
+ * result is cleaner — no negative-margin gymnastics, no z-index
+ * fights, no list rows ever scrolling behind the search box because
+ * they're in a separate scroll container entirely. The card-shell is
+ * just a normal flex child; the list region's `overflow-y: auto` is
+ * the only scroll container in the rail.
  *
- *   - `position: sticky; inset-block-start: 0` pins the card to the
- *     top of the rail's scroll container (the `<nav>` itself, which
- *     has `overflow-y: auto` from the framework's body-shell rule).
- *   - Negative `margin-block-start` + `margin-inline` cancel the rail's
- *     outer padding so the card extends flush to the rail's top +
- *     side edges. Without this, the rail's padding leaves a visible
- *     strip of canvas around the card when it's pinned.
- *   - `padding-block` matches the rail's `--set-nav-padding-block` so
- *     the search input inside sits at the same vertical rhythm the
- *     rail's first list row would have started at. `padding-inline`
- *     same idea — input lines up with the list rows' inline gutter.
- *   - `background-color: var(--set-nav-background-color)` paints the
- *     rail's own background under the card so anything that scrolls
- *     behind it is cleanly masked.
- *   - `border-block-end` paints the divider below the card that
- *     separates it from the first list group (the rail's flex `gap`
- *     adds breathing room above the first group itself).
- *   - `z-index: 1` floats the card above the scrolling rows in the
- *     stacking context — without it, rows with their own bg-color
- *     would peek through the card during mid-scroll.
- */
-.showcase-sidebar-search {
-	position: sticky;
-	inset-block-start: 0;
-	z-index: 1;
+ * Why this is showcase-specific (not framework): whether the search
+ * is pinned to the top of the rail, lives in the app bar, or pops via
+ * a command-K dialog is a product-design choice the consumer owns.
+ * The framework supplies the rail geometry + the `<search>` element's
+ * row chrome; the showcase composes them into this particular shape.
+ *
+ * Composition consumes only framework tokens — no showcase-private
+ * values — so the same pattern pastes cleanly into a consumer site:
+ * give the nav `overflow: hidden`, put a flex-shrink: 0 search card
+ * at the top, put a flex: 1; overflow-y: auto list region beneath. */
 
-	margin-block-start: calc(var(--set-nav-padding-block) * -1);
-	margin-inline: calc(var(--set-nav-padding-inline) * -1);
+/* Make the rail itself a non-scrolling container — the inner list
+ * region owns the scroll. The framework's `body:has(main) > nav`
+ * rule sets `overflow-y: auto`; we override here to defer scrolling
+ * to `.showcase-sidebar-list` below. */
+body:has(main) > nav:has(> .showcase-sidebar-search),
+body:has(main) > * > nav:has(> .showcase-sidebar-search) {
+	overflow: hidden;
+	padding-block: 0;
+}
+
+/* Search card — flex-shrink: 0 so it always renders at its content
+ * height regardless of list length. Padding matches the rail's gutter
+ * tokens so the input lines up with where the first list row would
+ * have started; the inline padding extends edge-to-edge across the
+ * rail width. `border-block-end` paints the divider beneath. */
+.showcase-sidebar-search {
+	flex-shrink: 0;
 	padding-block: var(--set-nav-padding-block);
 	padding-inline: var(--set-nav-padding-inline);
-
 	background-color: var(--set-nav-background-color);
 	border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
+}
+
+/* List region — flex-grow: 1 so it claims all remaining vertical
+ * space; `overflow-y: auto` makes it the scroll container. Padding
+ * restores the rail's gutter (which was zeroed on the parent `<nav>`
+ * above) so list rows still sit inside the rail's inset. */
+.showcase-sidebar-list {
+	flex: 1 1 auto;
+	min-block-size: 0;
+	overflow-y: auto;
+	padding-block: var(--set-nav-padding-block);
+	padding-inline: var(--set-nav-padding-inline);
+	display: flex;
+	flex-direction: column;
+	gap: var(--set-nav-gap);
 }
