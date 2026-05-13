@@ -21,16 +21,22 @@
  *      opts a region out entirely (buttons, links, text inputs).
  *
  * `useDrop(elementRef, { accept, on })` is the standalone drop-target
- * — for cases that aren't list reordering (file uploads, app-to-app
- * drops). `over` flips while a compatible drag hovers; `accept` filters
- * on data-transfer types (`['Files']`, `['text/plain']`, MIME types).
+ * — for cases that aren't list reordering. Compose with a `useDrag`
+ * source on another container to move items across zones (mock-
+ * attachment tray → outbox, message row → folder), or use it alone for
+ * OS-file drops + app-to-app drops. `over` flips while a compatible
+ * drag hovers; `accept` filters on data-transfer types (`['Files']`,
+ * `['text/plain']`, MIME types).
  *
  * When you'd reach for these:
  *   - List/table reorder with the platform-default ghost.
- *   - File-drop upload zones.
- *   - App-to-app drops crossing tab/window boundaries (browser-issued
- *     drag image, OS-controlled cursor — those are features here).
- *   - Anything where "data crosses a zone boundary" is the semantic.
+ *   - Cross-zone drag — tray into basket, message into folder,
+ *     attachment into outbox. Coordinate `useDrag` source + `useDrop`
+ *     target by reading `source.indices.value` on drop; no custom MIME
+ *     data needed for in-app payloads.
+ *   - OS-file drop zones (`accept: ['Files']`) + app-to-app drops
+ *     crossing tab/window boundaries (browser-issued drag image, OS-
+ *     controlled cursor — those are features here).
  *
  * Not the right tool when the gesture is **continuous manipulation**
  * (splitters, sliders, 2D pads, scrub bars). HTML5 DnD ships an OS-
@@ -41,7 +47,9 @@
  *   1. Reorderable list — `list` ref + `[data-index]` rows.
  *   2. `.drag-handle` opt-in — only the handle starts the drag.
  *   3. Multi-select drag — Ctrl/Cmd + Shift selection, drag the set.
- *   4. File drop zone via `useDrop` — `accept: ['Files']` filter.
+ *   4. Cross-zone drag — `useDrag` source on a mock-attachment tray +
+ *      `useDrop` target on an outbox; drop handler reads
+ *      `source.indices.value` to resolve the payload.
  *   5. `on.reorder` callback — observe the in-list mutation.
  *
  * Cross-references:
@@ -126,32 +134,56 @@ const selection = useDrag<Track>(selectionHost, { list: selectionList })
 const selectionCount = computed(() => selection.selected.value.size)
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 4 — file drop zone via `useDrop`.
-// `accept: ['Files']` filters to OS file drags. The `over` ref flips
-// while a compatible drag is overhead so the zone can paint its
-// "release to drop" state without manually tracking dragenter/leave +
-// nested-children edge cases (the factory uses relatedTarget for
-// that).
+// Demo 4 — cross-zone drag: `useDrag` source + `useDrop` target.
+// A "library" tray of mock attachments on the left + an outbox drop
+// zone on the right. Drag any attachment over → it appears in the
+// outbox. The tray itself is not reordered; `items` (read-only) is
+// the right contract for a stable source library. The drop handler
+// reads from `tray.indices.value` (the currently-dragged set) to know
+// what landed — this is how a `useDrag` source and a `useDrop` target
+// coordinate without writing custom MIME data.
 // ─────────────────────────────────────────────────────────────────────
-interface DroppedFile {
+interface Attachment {
+	readonly id: string
 	readonly name: string
 	readonly size: number
 	readonly type: string
+	readonly icon: string
 }
+const tray = ref<readonly Attachment[]>([
+	{ id: 'a1', name: 'kickoff-notes.md', size: 4_211, type: 'text/markdown', icon: '📝' },
+	{ id: 'a2', name: 'wireframe.png', size: 312_488, type: 'image/png', icon: '🖼️' },
+	{ id: 'a3', name: 'budget.csv', size: 18_046, type: 'text/csv', icon: '📊' },
+	{ id: 'a4', name: 'logo.svg', size: 6_104, type: 'image/svg+xml', icon: '🎨' },
+	{ id: 'a5', name: 'brief.pdf', size: 1_204_822, type: 'application/pdf', icon: '📄' },
+	{ id: 'a6', name: 'demo-reel.mp4', size: 24_512_000, type: 'video/mp4', icon: '🎬' },
+])
+const trayHost = useTemplateRef<HTMLElement>('trayHost')
+const traySource = useDrag<Attachment>(trayHost, {
+	items: tray,
+	// The tray is a source, never a drop target. We don't want a drop
+	// onto a tray row to be interpreted as a reorder — that's not what
+	// a "library" surface means.
+	target: false,
+	// Plain-click selection isn't needed here; the gesture is "grab and
+	// move" only.
+	select: false,
+})
 const dropZone = useTemplateRef<HTMLElement>('dropZone')
-const droppedFiles = ref<DroppedFile[]>([])
+const outbox = ref<readonly Attachment[]>([])
+const outboxIds = computed(() => new Set(outbox.value.map((a) => a.id)))
 const drop = useDrop(dropZone, {
-	accept: ['Files'],
 	on: {
-		drop: (event) => {
-			const files = event.dataTransfer?.files
-			if (!files) return
-			const next: DroppedFile[] = []
-			for (let i = 0; i < files.length; i++) {
-				const f = files.item(i)
-				if (f) next.push({ name: f.name, size: f.size, type: f.type || 'unknown' })
+		drop: () => {
+			const indices = [...traySource.indices.value]
+			if (indices.length === 0) return // drop came from outside the tray
+			const next: Attachment[] = []
+			for (const i of indices) {
+				const item = tray.value[i]
+				if (item && !outboxIds.value.has(item.id)) next.push(item)
 			}
-			droppedFiles.value = [...droppedFiles.value, ...next].slice(-8)
+			if (next.length === 0) return
+			outbox.value = [...outbox.value, ...next]
 		},
 	},
 })
@@ -160,8 +192,11 @@ const formatSize = (bytes: number): string => {
 	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
 	return `${(bytes / 1024 / 1024).toFixed(2)} MB`
 }
-const clearFiles = (): void => {
-	droppedFiles.value = []
+const removeFromOutbox = (id: string): void => {
+	outbox.value = outbox.value.filter((a) => a.id !== id)
+}
+const clearOutbox = (): void => {
+	outbox.value = []
 }
 </script>
 
@@ -172,8 +207,9 @@ const clearFiles = (): void => {
 			<p>
 				HTML5 Drag-and-Drop composables. <code>useDrag</code> turns a container's direct
 				<code>[data-index]</code> children into a draggable, selectable, reorderable set;
-				<code>useDrop</code> is the standalone drop-target for everything that isn't list reorder —
-				file uploads, app-to-app drops.
+				<code>useDrop</code> is the standalone drop-target. Compose them when a drag needs to cross
+				a zone boundary — a tray into a basket, a message into a folder, an attachment into an
+				outbox.
 			</p>
 		</hgroup>
 		<p>
@@ -194,7 +230,8 @@ const clearFiles = (): void => {
 			<p>
 				<strong>State:</strong> reorder dragging
 				<code>{{ reorder.dragging.value ? 'yes' : 'no' }}</code> · selection
-				<code>{{ selectionCount }}</code> · drop zone over
+				<code>{{ selectionCount }}</code> · tray dragging
+				<code>{{ traySource.dragging.value ? 'yes' : 'no' }}</code> · outbox over
 				<code>{{ drop.over.value ? 'yes' : 'no' }}</code>
 			</p>
 		</aside>
@@ -358,51 +395,96 @@ useDrag&lt;Track&gt;(host, {
 	</section>
 
 	<section id="use-drag-drop-zone">
-		<h2>4. File drop zone — <code>useDrop</code> with type filter</h2>
+		<h2>4. Cross-zone drag — <code>useDrag</code> source + <code>useDrop</code> target</h2>
 		<p>
-			Drag files from your OS file manager into the zone below.
-			<code>useDrop(host, { accept: ['Files'] })</code> filters the drag to OS file drags via the
-			<code>dataTransfer.types</code> contract — text drags, app drags, list-row drags all fail the
-			predicate and never engage. The <code>over</code> ref flips while a compatible drag is
-			overhead; the factory tracks it correctly across nested children via the platform
-			<code>relatedTarget</code> field, so the zone doesn't flicker when the cursor crosses an
-			internal element.
+			The two composables compose: a <code>useDrag</code> source on one container and a
+			<code>useDrop</code> target on another. Drag an item from the
+			<strong>attachment library</strong> below into the <strong>outbox</strong> on the right; the
+			item is appended to the outbox without leaving the library (the library uses
+			<code>items</code> — a read-only source contract — so the original collection is stable).
 		</p>
-		<div
-			ref="dropZone"
-			class="drop-zone"
-			:class="{ active: drop.over.value }"
-			role="region"
-			aria-label="Drop files here"
-		>
-			<div class="drop-zone-prompt">
-				<strong v-if="drop.over.value">Release to drop</strong>
-				<strong v-else>Drag files here</strong>
-				<small>
-					or any number of files — the most recent
-					<code>8</code> are kept
-				</small>
-			</div>
-			<ul v-if="droppedFiles.length > 0" class="drop-zone-files">
-				<li v-for="file in droppedFiles" :key="file.name + file.size">
-					<strong>{{ file.name }}</strong>
-					<small>{{ file.type }} · {{ formatSize(file.size) }}</small>
-				</li>
-			</ul>
+		<p>
+			There's no need for a custom <code>dataTransfer</code> MIME type for in-app coordination — the
+			drop handler reads <code>traySource.indices.value</code> (the currently-dragged set from the
+			source's <code>useDrag</code>) and resolves the items locally. External drags (OS files, page
+			text) leave that ref empty so the handler short-circuits. The <code>over</code> ref on the
+			drop zone still flips for any compatible hover, which the <code>relatedTarget</code>-aware
+			factory tracks correctly across nested children.
+		</p>
+		<div class="cross-zone">
+			<section ref="trayHost" class="tray" aria-label="Attachment library">
+				<h6>Attachment library</h6>
+				<article
+					v-for="(item, index) in tray"
+					:key="item.id"
+					:data-index="index"
+					class="tray-item"
+					:aria-disabled="outboxIds.has(item.id) ? 'true' : 'false'"
+				>
+					<span class="tray-icon" aria-hidden="true">{{ item.icon }}</span>
+					<span class="tray-meta">
+						<strong>{{ item.name }}</strong>
+						<small>{{ item.type }} · {{ formatSize(item.size) }}</small>
+					</span>
+					<small v-if="outboxIds.has(item.id)" class="tray-status">in outbox</small>
+				</article>
+			</section>
+			<section
+				ref="dropZone"
+				class="drop-zone"
+				:class="{ active: drop.over.value, busy: traySource.dragging.value }"
+				aria-label="Outbox"
+			>
+				<header class="drop-zone-prompt">
+					<strong v-if="drop.over.value">Release to attach</strong>
+					<strong v-else-if="traySource.dragging.value">Drop here to attach</strong>
+					<strong v-else>Outbox</strong>
+					<small> drag from the library — already-attached items are ignored on re-drop </small>
+				</header>
+				<ul v-if="outbox.length > 0" class="drop-zone-files">
+					<li v-for="item in outbox" :key="item.id">
+						<span aria-hidden="true">{{ item.icon }}</span>
+						<span class="tray-meta">
+							<strong>{{ item.name }}</strong>
+							<small>{{ item.type }} · {{ formatSize(item.size) }}</small>
+						</span>
+						<button
+							type="button"
+							class="subtle"
+							aria-label="Remove attachment"
+							@click="removeFromOutbox(item.id)"
+						>
+							×
+						</button>
+					</li>
+				</ul>
+				<p v-else class="drop-zone-empty">
+					<small>No attachments yet.</small>
+				</p>
+			</section>
 		</div>
-		<menu v-if="droppedFiles.length > 0" style="margin-block-start: 0.75rem">
+		<menu v-if="outbox.length > 0" style="margin-block-start: 0.75rem">
 			<li>
-				<button type="button" class="subtle" @click="clearFiles">Clear list</button>
+				<button type="button" class="subtle" @click="clearOutbox">Clear outbox</button>
 			</li>
 		</menu>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>const { over } = useDrop(zone, {
-  accept: ['Files'],
+			<pre><code>const tray = ref&lt;readonly Attachment[]&gt;([...])
+const outbox = ref&lt;readonly Attachment[]&gt;([])
+
+const source = useDrag&lt;Attachment&gt;(trayRef, {
+  items: tray,
+  target: false, // tray accepts no drops itself
+  select: false, // grab-and-move only, no click selection
+})
+
+useDrop(zoneRef, {
   on: {
-    drop: (event) =&gt; {
-      const files = event.dataTransfer?.files
-      // ...read files, upload, etc.
+    drop: () =&gt; {
+      const indices = [...source.indices.value]
+      if (indices.length === 0) return // external drag — ignore
+      outbox.value = [...outbox.value, ...indices.map((i) =&gt; tray.value[i])]
     },
   },
 })</code></pre>
@@ -426,6 +508,18 @@ useDrag&lt;Track&gt;(host, {
 				in place — Vue's reactivity does the rest. When omitted, <code>useDrag</code> still wires
 				the drag-source / drop-target events but skips the splice; consume <code>on.drop</code> or
 				<code>on.reorder</code> yourself.
+			</dd>
+			<dt><code>options.items</code></dt>
+			<dd>
+				<code>Ref&lt;readonly T[]&gt;</code>. Read-only source contract. Use when the container is a
+				stable library / palette that emits items into other zones via cross-zone drag, without
+				being mutated itself. Mutually exclusive with <code>list</code> in practice — pick one.
+			</dd>
+			<dt><code>options.source</code> / <code>options.target</code></dt>
+			<dd>
+				<code>boolean</code>. Explicit overrides for the auto-derived source / target roles. Set
+				<code>target: false</code> on a library-style source to prevent its rows from also accepting
+				drops (otherwise the factory would let you drop a tray row onto itself).
 			</dd>
 			<dt><code>options.axis</code></dt>
 			<dd>
@@ -495,10 +589,13 @@ useDrag&lt;Track&gt;(host, {
 			<dt><code>useDrop(elementRef, options?): UseDropReturn</code></dt>
 			<dd>
 				Standalone drop target. <code>options.accept</code> filters on
-				<code>dataTransfer.types</code> — pass <code>['Files']</code> for OS file drags,
-				<code>['text/plain']</code> for text, or specific MIME types. <code>on.drop</code> receives
-				the raw <code>DragEvent</code>; read <code>event.dataTransfer.files</code> or
-				<code>event.dataTransfer.getData(type)</code> from there.
+				<code>dataTransfer.types</code> — pass <code>['text/plain']</code> for in-app drags from
+				<code>useDrag</code>, <code>['Files']</code> for OS file drops, or specific MIME types. When
+				the source is another <code>useDrag</code> on the same page, the simplest pattern is to
+				leave <code>accept</code> off and gate the handler on
+				<code>source.indices.value.size &gt; 0</code> — that ref reads non-empty only while the
+				source has a drag in flight, so external drags (OS files, text, other apps) short- circuit
+				cleanly.
 			</dd>
 			<dt><code>UseDropReturn.over</code></dt>
 			<dd>
@@ -607,18 +704,110 @@ useDrag&lt;Track&gt;(host, {
 	color: var(--color-text-subtle);
 }
 
-.drop-zone {
+.cross-zone {
 	display: grid;
-	place-items: center;
-	min-block-size: 9rem;
-	padding: 1.5rem;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 1rem;
+	align-items: stretch;
+}
+
+@media (max-width: 36rem) {
+	.cross-zone {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.tray {
+	display: grid;
+	gap: 0.25rem;
+	align-content: start;
+	padding: 0.75rem;
+	border: 1px solid var(--color-border);
+	border-radius: 0.5rem;
+	background: var(--color-canvas);
+}
+
+.tray h6 {
+	margin: 0 0 0.25rem;
+	color: var(--color-text-subtle);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.tray-item {
+	display: grid;
+	grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+	gap: 0.5rem;
+	align-items: center;
+	padding: 0.5rem 0.625rem;
+	border-radius: 0.375rem;
+	background: var(--color-canvas-strong);
+	cursor: grab;
+	user-select: none;
+	transition:
+		background-color 150ms ease,
+		opacity 150ms ease;
+}
+
+.tray-item:hover {
+	background: color-mix(in oklch, var(--color-primary) 8%, var(--color-canvas-strong));
+}
+
+.tray-item.dragging {
+	opacity: 0.45;
+	cursor: grabbing;
+}
+
+.tray-item[aria-disabled='true'] {
+	opacity: 0.6;
+}
+
+.tray-icon {
+	font-size: 1.25rem;
+	line-height: 1;
+	text-align: center;
+}
+
+.tray-meta {
+	display: flex;
+	flex-direction: column;
+	min-inline-size: 0;
+}
+
+.tray-meta strong {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.tray-meta small {
+	color: var(--color-text-subtle);
+	font-variant-numeric: tabular-nums;
+}
+
+.tray-status {
+	color: var(--color-text-subtle);
+	font-style: italic;
+	white-space: nowrap;
+}
+
+.drop-zone {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	min-block-size: 12rem;
+	padding: 1rem;
 	border: 2px dashed var(--color-border);
-	border-radius: 0.75rem;
+	border-radius: 0.5rem;
 	background: var(--color-canvas);
 	transition:
 		border-color 150ms ease,
 		background-color 150ms ease;
-	text-align: center;
+}
+
+.drop-zone.busy {
+	border-color: color-mix(in oklch, var(--color-primary) 60%, var(--color-border));
 }
 
 .drop-zone.active {
@@ -629,32 +818,48 @@ useDrag&lt;Track&gt;(host, {
 
 .drop-zone-prompt {
 	display: grid;
-	gap: 0.25rem;
+	gap: 0.125rem;
+	text-align: start;
+	padding-block-end: 0.25rem;
+	border-block-end: 1px dashed var(--color-border);
+}
+
+.drop-zone-prompt small {
+	color: var(--color-text-subtle);
+}
+
+.drop-zone-empty {
+	margin: 0;
+	color: var(--color-text-subtle);
 }
 
 .drop-zone-files {
 	list-style: none;
-	margin: 1rem 0 0;
+	margin: 0;
 	padding: 0;
 	display: grid;
 	gap: 0.25rem;
-	inline-size: 100%;
-	max-inline-size: 32rem;
-	text-align: start;
 }
 
 .drop-zone-files li {
-	display: flex;
-	justify-content: space-between;
-	gap: 1rem;
-	padding: 0.375rem 0.75rem;
+	display: grid;
+	grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+	gap: 0.5rem;
+	align-items: center;
+	padding: 0.375rem 0.625rem;
 	background: var(--color-canvas-strong);
 	border-radius: 0.375rem;
 }
 
-.drop-zone-files li small {
-	color: var(--color-text-subtle);
-	font-variant-numeric: tabular-nums;
-	white-space: nowrap;
+.drop-zone-files li > span[aria-hidden='true'] {
+	font-size: 1.25rem;
+	line-height: 1;
+	text-align: center;
+}
+
+.drop-zone-files li button {
+	padding-inline: 0.5rem;
+	font-size: 1rem;
+	line-height: 1;
 }
 </style>
