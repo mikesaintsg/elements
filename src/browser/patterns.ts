@@ -1423,3 +1423,637 @@ export function hasBroadHead(selector: string): boolean {
 		' ' + selector,
 	)
 }
+
+// ============================================================================
+//  Structural pairings — `parent > child` element-pair allowlist.
+//
+//  A framework rule of the form `parent > child` (where both ends are
+//  bare tag names) blesses one HTML element as the structural marker
+//  for that role inside a container. Some pairings are unavoidable —
+//  HTML spec requires them (`tr > td`, `details > summary`); some are
+//  documented framework slots filled by the universally-natural element
+//  (`article > header:first-child` for the card band, `dialog > header`
+//  for the modal title band).
+//
+//  But many candidate pairings would be element-hardcoding inside
+//  containment: arbitrary picks of one element type as a chrome
+//  trigger inside an otherwise-generic container. Example caught and
+//  reverted: `body:has(main) > nav > search` (paint a pinned filter
+//  row when a `<search>` lands inside a body-shell nav rail). `<search>`
+//  is one of many elements that could be pinned; baking the framework
+//  rule against it forces every consumer to use exactly `<search>`.
+//
+//  STRUCTURAL_PAIRINGS records the allowed pairings. Each entry names a
+//  reason category:
+//
+//    'spec'    — HTML spec mandates this nesting; no other child can
+//                fulfill the role (e.g., `tr > td`, `picture > source`).
+//
+//    'slot'    — The parent is a card/dialog/drawer-shaped container
+//                with a DOCUMENTED slot, filled by the universally-
+//                natural semantic element (`article > header:first-child`
+//                for the card band — Bootstrap parity).
+//
+//    'reset'   — The rule strips a UA default that only exists for that
+//                child element type, or zeroes a baseline value carried
+//                by the child element (`nav > ul` strips list-marker
+//                gutter; `main > section` zeroes section's own
+//                padding-block under the nesting-collapse contract).
+//
+//    'context' — The child element gets contextual chrome because of
+//                its position inside the parent's documented internal
+//                structure (`header > button:last-child` is the dismiss
+//                button trail inside an alert / drawer header band).
+//
+//  Tests at `tests/src/styles/_pairings.test.ts` enforce the allowlist
+//  across every compiled framework rule. New `parent > child` pairings
+//  must be added here with a justification (or refactored to a wrapper
+//  class / element baseline that doesn't hardcode the child element).
+// ============================================================================
+
+export type StructuralPairingKind = 'spec' | 'slot' | 'reset' | 'context'
+
+export interface StructuralPairing {
+	/** The parent tag name (e.g., `nav`, `article`, `tr`). */
+	readonly parent: string
+	/** The child tag name (e.g., `header`, `td`, `section`). */
+	readonly child: string
+	/** Reason category — see kind docstrings above. */
+	readonly kind: StructuralPairingKind
+	/** One-sentence justification, surfaced in test failures. */
+	readonly reason: string
+}
+
+export const STRUCTURAL_PAIRINGS: readonly StructuralPairing[] = [
+	// ── 'spec' — HTML LS requires this nesting ───────────────────────────────
+	{
+		parent: 'details',
+		child: 'summary',
+		kind: 'spec',
+		reason: 'HTML spec: <summary> is the disclosure trigger; only valid inside <details>.',
+	},
+	{
+		parent: 'fieldset',
+		child: 'legend',
+		kind: 'spec',
+		reason: 'HTML spec: <legend> can only live inside <fieldset>.',
+	},
+	{
+		parent: 'picture',
+		child: 'source',
+		kind: 'spec',
+		reason: 'HTML spec: <source> declares responsive variants for <picture>.',
+	},
+	{
+		parent: 'picture',
+		child: 'img',
+		kind: 'spec',
+		reason: 'HTML spec: <picture> wraps a fallback <img>.',
+	},
+	{
+		parent: 'select',
+		child: 'option',
+		kind: 'spec',
+		reason: 'HTML spec: <option> is the select choice element.',
+	},
+	{
+		parent: 'select',
+		child: 'optgroup',
+		kind: 'spec',
+		reason: 'HTML spec: <optgroup> groups options inside <select>.',
+	},
+	{
+		parent: 'optgroup',
+		child: 'option',
+		kind: 'spec',
+		reason: 'HTML spec.',
+	},
+	{
+		parent: 'table',
+		child: 'thead',
+		kind: 'spec',
+		reason: 'HTML spec.',
+	},
+	{
+		parent: 'table',
+		child: 'tbody',
+		kind: 'spec',
+		reason: 'HTML spec.',
+	},
+	{
+		parent: 'table',
+		child: 'tfoot',
+		kind: 'spec',
+		reason: 'HTML spec.',
+	},
+	{
+		parent: 'table',
+		child: 'caption',
+		kind: 'spec',
+		reason: 'HTML spec.',
+	},
+	{
+		parent: 'table',
+		child: 'colgroup',
+		kind: 'spec',
+		reason: 'HTML spec.',
+	},
+	{
+		parent: 'table',
+		child: 'tr',
+		kind: 'spec',
+		reason: 'HTML spec: <tr> rows can appear directly under <table> for thead-less tables.',
+	},
+	{
+		parent: 'thead',
+		child: 'tr',
+		kind: 'spec',
+		reason: 'HTML spec.',
+	},
+	{
+		parent: 'tbody',
+		child: 'tr',
+		kind: 'spec',
+		reason: 'HTML spec.',
+	},
+	{
+		parent: 'tfoot',
+		child: 'tr',
+		kind: 'spec',
+		reason: 'HTML spec.',
+	},
+	{
+		parent: 'tr',
+		child: 'td',
+		kind: 'spec',
+		reason: 'HTML spec: <td> data cells inside <tr>.',
+	},
+	{
+		parent: 'tr',
+		child: 'th',
+		kind: 'spec',
+		reason: 'HTML spec: <th> header cells inside <tr>.',
+	},
+	{
+		parent: 'colgroup',
+		child: 'col',
+		kind: 'spec',
+		reason: 'HTML spec.',
+	},
+	{
+		parent: 'ol',
+		child: 'li',
+		kind: 'spec',
+		reason: 'HTML spec: ordered-list items.',
+	},
+	{
+		parent: 'ul',
+		child: 'li',
+		kind: 'spec',
+		reason: 'HTML spec: unordered-list items.',
+	},
+	{
+		parent: 'menu',
+		child: 'li',
+		kind: 'spec',
+		reason: 'HTML spec: <menu> is a toolbar list of <li> command items.',
+	},
+	{
+		parent: 'dl',
+		child: 'dt',
+		kind: 'spec',
+		reason: 'HTML spec: description-term inside description-list.',
+	},
+	{
+		parent: 'dl',
+		child: 'dd',
+		kind: 'spec',
+		reason: 'HTML spec: description-detail inside description-list.',
+	},
+	{
+		parent: 'caption-top',
+		child: 'caption',
+		kind: 'spec',
+		reason: 'HTML caption-side keywords (`.caption-top` modifier on <table>).',
+	},
+	{
+		parent: 'caption-bottom',
+		child: 'caption',
+		kind: 'spec',
+		reason: 'HTML caption-side keywords (`.caption-bottom` modifier on <table>).',
+	},
+
+	// ── 'slot' — documented framework slot, universal natural child ─────────
+	{
+		parent: 'article',
+		child: 'header',
+		kind: 'slot',
+		reason: 'Card header band (article-owns-header; Bootstrap `.card-header` parity).',
+	},
+	{
+		parent: 'article',
+		child: 'footer',
+		kind: 'slot',
+		reason: 'Card footer band (Bootstrap `.card-footer` parity).',
+	},
+	{
+		parent: 'article',
+		child: 'img',
+		kind: 'slot',
+		reason: 'Card hero image (Bootstrap `.card-img-top`/`-bottom` parity, tag-driven).',
+	},
+	{
+		parent: 'article',
+		child: 'picture',
+		kind: 'slot',
+		reason: 'Card hero with responsive sources (paired with <img> fallback).',
+	},
+	{
+		parent: 'article',
+		child: 'nav',
+		kind: 'slot',
+		reason: 'In-card action group (documented composition in `_nav.scss`).',
+	},
+	{
+		parent: 'article',
+		child: 'ul',
+		kind: 'slot',
+		reason: 'Card-embedded list group (`.group` modifier).',
+	},
+	{
+		parent: 'article',
+		child: 'ol',
+		kind: 'slot',
+		reason: 'Card-embedded list group (`.group` modifier).',
+	},
+	{
+		parent: 'dialog',
+		child: 'header',
+		kind: 'slot',
+		reason: 'Modal header band (Bootstrap `.modal-header` parity).',
+	},
+	{
+		parent: 'dialog',
+		child: 'footer',
+		kind: 'slot',
+		reason: 'Modal footer band.',
+	},
+	{
+		parent: 'dialog',
+		child: 'form',
+		kind: 'slot',
+		reason:
+			'HTML spec: <form method="dialog"> + the modal-form composition that hosts header/footer bands inside the form.',
+	},
+	{
+		parent: 'nav',
+		child: 'header',
+		kind: 'slot',
+		reason: 'Rail-local header (drawer band on mobile, sticky header on desktop).',
+	},
+	{
+		parent: 'aside',
+		child: 'header',
+		kind: 'slot',
+		reason: 'Rail-local header (drawer band on mobile, sticky header on desktop).',
+	},
+	{
+		parent: 'aside',
+		child: 'footer',
+		kind: 'slot',
+		reason: 'Alert / drawer footer band — trailing-actions row (parallel to aside > header).',
+	},
+	{
+		parent: 'nav',
+		child: 'footer',
+		kind: 'slot',
+		reason: 'Drawer footer band on `<nav popover>` (parallel to nav > header).',
+	},
+	{
+		parent: 'form',
+		child: 'header',
+		kind: 'slot',
+		reason: 'Modal-form header band via `<dialog> > <form> > <header>` composition.',
+	},
+	{
+		parent: 'form',
+		child: 'footer',
+		kind: 'slot',
+		reason: 'Modal-form footer band via `<dialog> > <form> > <footer>` composition.',
+	},
+	{
+		parent: 'form',
+		child: 'section',
+		kind: 'reset',
+		reason:
+			'Section nesting-collapse inside `<dialog> > <form> > <section>` (dialog.scrollable form variant).',
+	},
+	{
+		parent: 'form',
+		child: 'input',
+		kind: 'slot',
+		reason: '<input> is THE form-control element (HTML spec); form full-width input rule.',
+	},
+	{
+		parent: 'form',
+		child: 'textarea',
+		kind: 'slot',
+		reason: '<textarea> is a form-control element; form full-width input rule.',
+	},
+	{
+		parent: 'form',
+		child: 'select',
+		kind: 'slot',
+		reason: '<select> is a form-control element; form full-width input rule.',
+	},
+	{
+		parent: 'label',
+		child: 'input',
+		kind: 'slot',
+		reason:
+			'Label-on-top stack: <label> wraps its form control (HTML spec: label associates with form controls).',
+	},
+	{
+		parent: 'label',
+		child: 'textarea',
+		kind: 'slot',
+		reason: 'Label-on-top stack: <label> wraps its form control.',
+	},
+	{
+		parent: 'label',
+		child: 'select',
+		kind: 'slot',
+		reason: 'Label-on-top stack: <label> wraps its form control.',
+	},
+	{
+		parent: 'nav',
+		child: 'h6',
+		kind: 'slot',
+		reason:
+			'Grouped-sidebar eyebrow heading — <h6> + <menu> sibling-pair pattern documented in `_menu.scss`.',
+	},
+	{
+		parent: 'aside',
+		child: 'h6',
+		kind: 'slot',
+		reason: 'TOC-rail eyebrow heading — same h6 + menu pattern as nav rail.',
+	},
+	{
+		parent: 'menu',
+		child: 'h6',
+		kind: 'slot',
+		reason: 'Dropdown section label inside `menu[popover]` (Bootstrap `.dropdown-header` parity).',
+	},
+	{
+		parent: 'menu',
+		child: 'hr',
+		kind: 'slot',
+		reason: 'Dropdown section divider inside `menu[popover]`.',
+	},
+	{
+		parent: 'form',
+		child: 'label',
+		kind: 'slot',
+		reason:
+			'<label> is THE form-control caption element (HTML spec); the label-on-top stack is the universal form pattern.',
+	},
+
+	// ── 'reset' — UA default reset / nesting collapse ──────────────────────
+	{
+		parent: 'main',
+		child: 'section',
+		kind: 'reset',
+		reason:
+			'Section nesting-collapse: parent supplies vertical gutter, child drops own padding-block.',
+	},
+	{
+		parent: 'section',
+		child: 'section',
+		kind: 'reset',
+		reason: 'Section nesting-collapse.',
+	},
+	{
+		parent: 'article',
+		child: 'section',
+		kind: 'reset',
+		reason: 'Section nesting-collapse.',
+	},
+	{
+		parent: 'nav',
+		child: 'section',
+		kind: 'reset',
+		reason: 'Section nesting-collapse.',
+	},
+	{
+		parent: 'aside',
+		child: 'section',
+		kind: 'reset',
+		reason: 'Section nesting-collapse.',
+	},
+	{
+		parent: 'dialog',
+		child: 'section',
+		kind: 'reset',
+		reason: 'Section nesting-collapse + `dialog.scrollable` inner section as scroll container.',
+	},
+	{
+		parent: 'nav',
+		child: 'ol',
+		kind: 'reset',
+		reason: 'Strip UA list-marker gutter for navigation lists (breadcrumb, pagination, etc.).',
+	},
+	{
+		parent: 'nav',
+		child: 'ul',
+		kind: 'reset',
+		reason: 'Strip UA list-marker gutter for navigation lists.',
+	},
+	{
+		parent: 'body',
+		child: 'header',
+		kind: 'reset',
+		reason: 'Body-grid placement (`grid-area: header`) — body layout shell.',
+	},
+	{
+		parent: 'body',
+		child: 'nav',
+		kind: 'reset',
+		reason: 'Body-grid placement (`grid-area: nav`).',
+	},
+	{
+		parent: 'body',
+		child: 'main',
+		kind: 'reset',
+		reason: 'Body-grid placement (`grid-area: main`).',
+	},
+	{
+		parent: 'body',
+		child: 'aside',
+		kind: 'reset',
+		reason: 'Body-grid placement (`grid-area: aside`).',
+	},
+	{
+		parent: 'body',
+		child: 'footer',
+		kind: 'reset',
+		reason: 'Body-grid placement (`grid-area: footer`).',
+	},
+
+	// ── 'context' — child-positional chrome inside parent's structure ──────
+	{
+		parent: 'header',
+		child: 'button',
+		kind: 'context',
+		reason:
+			'Trailing dismiss button in alert/drawer/dialog header band (`margin-inline-start: auto`).',
+	},
+	{
+		parent: 'footer',
+		child: 'button',
+		kind: 'context',
+		reason: 'Trailing dismiss button in alert/drawer/dialog footer band.',
+	},
+	{
+		parent: 'li',
+		child: 'button',
+		kind: 'context',
+		reason:
+			'Menu items can be <button> (HTML spec: <menu> commands accept <button> as well as <a>).',
+	},
+	{
+		parent: 'li',
+		child: 'a',
+		kind: 'context',
+		reason:
+			'Menu / nav-list items are <a> link rows by default (the other valid menu-command shape per HTML spec).',
+	},
+]
+
+/** Index for O(1) `parent > child` allowlist lookup. */
+const PAIRING_INDEX: ReadonlyMap<string, StructuralPairing> = new Map(
+	STRUCTURAL_PAIRINGS.map((p) => [`${p.parent}>${p.child}`, p]),
+)
+
+/** True when `parent > child` is on the allowlist. */
+export function isAllowedTagPair(parent: string, child: string): boolean {
+	return PAIRING_INDEX.has(`${parent}>${child}`)
+}
+
+/** Look up the allowlist entry for `parent > child`, if any. */
+export function pairingFor(parent: string, child: string): StructuralPairing | null {
+	return PAIRING_INDEX.get(`${parent}>${child}`) ?? null
+}
+
+/**
+ * Extract every `(parent-tag, child-tag)` pair joined by a child combinator
+ * (`>`) from a CSS selector. Handles selector lists (commas), descendant
+ * vs. child combinators, and functional pseudos (`:is(...)` / `:where(...)`
+ * flatten to their tag branches).
+ *
+ * Pieces that lack a tag head (classes, attributes, `*`, pseudos) generate
+ * no pair. Only pairs where BOTH sides resolve to bare tag names are
+ * returned — those are the cascade fights the framework can mis-name.
+ *
+ * Examples:
+ *   'nav > header'                       → [{ parent: 'nav', child: 'header' }]
+ *   'nav, aside > header'                → [{ parent: 'aside', child: 'header' }]
+ *   ':is(nav, aside) > header'           → [{ parent: 'nav', child: 'header' },
+ *                                            { parent: 'aside', child: 'header' }]
+ *   'body:has(main) > nav > header'      → [{ parent: 'body', child: 'nav' },
+ *                                            { parent: 'nav', child: 'header' }]
+ *   'body:has(main) > * > header'        → [{ parent: 'body', child: '*'-> skipped },
+ *                                            { parent: '*'-> skipped, child: 'header' }]
+ *                                          → []  (universal heads skipped)
+ *   '.foo > .bar'                        → []  (no tag heads)
+ *   'article > header:first-child'       → [{ parent: 'article', child: 'header' }]
+ */
+export function extractTagPairs(selector: string): readonly { parent: string; child: string }[] {
+	const out: { parent: string; child: string }[] = []
+	for (const branch of splitTopLevel(selector, ',')) {
+		const pieces = splitTopLevel(branch, '>')
+		for (let i = 0; i < pieces.length - 1; i += 1) {
+			const parents = trailingTagsOfCombinatorChain(pieces[i] ?? '')
+			const children = leadingTagsOfCompound(pieces[i + 1] ?? '')
+			for (const p of parents) for (const c of children) out.push({ parent: p, child: c })
+		}
+	}
+	return out
+}
+
+/**
+ * Split `s` by `sep` only at the top level — respecting paren and bracket
+ * nesting so functional pseudos and attribute selectors stay intact.
+ */
+function splitTopLevel(s: string, sep: string): string[] {
+	const out: string[] = []
+	let depth = 0
+	let start = 0
+	for (let i = 0; i < s.length; i += 1) {
+		const ch = s[i]
+		if (ch === '(' || ch === '[') depth += 1
+		else if (ch === ')' || ch === ']') depth = Math.max(0, depth - 1)
+		else if (ch === sep && depth === 0) {
+			const part = s.slice(start, i).trim()
+			if (part.length > 0) out.push(part)
+			start = i + 1
+		}
+	}
+	const last = s.slice(start).trim()
+	if (last.length > 0) out.push(last)
+	return out
+}
+
+/**
+ * Extract tag names from the LEADING compound of a piece (e.g., `nav` from
+ * `nav.foo[bar]:not(...)`, or `[a, b]` from `:is(a, b)`). Returns empty
+ * array if the compound has no tag head (class, attribute, `*`, pseudo).
+ */
+function leadingTagsOfCompound(piece: string): readonly string[] {
+	// A piece may be a descendant chain: `body:has(main) header` — the LEADING
+	// compound for the next `>` combinator is `body:has(main)`. Split by
+	// whitespace at top level; take the first chunk.
+	const chunks = splitTopLevel(piece, ' ')
+	return tagsInHead(chunks[0] ?? '')
+}
+
+/**
+ * Mirror of `leadingTagsOfCompound` but for the TRAILING compound (the side
+ * preceding the `>`). When a piece is `body:has(main) nav`, the relevant
+ * compound for the `>` is `nav`, not `body:has(main)`.
+ */
+function trailingTagsOfCombinatorChain(piece: string): readonly string[] {
+	const chunks = splitTopLevel(piece, ' ')
+	return tagsInHead(chunks[chunks.length - 1] ?? '')
+}
+
+/**
+ * Return the tag names at the head of a single compound selector.
+ * `:is(a, b)` / `:where(a, b)` flatten to their inner tag branches.
+ * Universal (`*`), classes, attributes, and other pseudos return empty.
+ */
+function tagsInHead(compound: string): readonly string[] {
+	const trimmed = compound.trim()
+	if (trimmed.length === 0) return []
+	if (trimmed.startsWith('&')) return []
+	if (trimmed === '*' || trimmed.startsWith('*')) return []
+
+	// :is(...) / :where(...) at start (no preceding tag) — flatten.
+	const fnMatch = trimmed.match(/^:(is|where)\(/)
+	if (fnMatch) {
+		const open = trimmed.indexOf('(')
+		let depth = 1
+		let i = open + 1
+		for (; i < trimmed.length && depth > 0; i += 1) {
+			const ch = trimmed[i]
+			if (ch === '(') depth += 1
+			else if (ch === ')') depth -= 1
+		}
+		const inner = trimmed.slice(open + 1, i - 1)
+		return splitTopLevel(inner, ',').flatMap((b) => tagsInHead(b))
+	}
+
+	// Bare tag at start. Reject leading `:`, `[`, `.`, `#`.
+	const tagMatch = trimmed.match(/^([a-z][a-z0-9]*)\b/)
+	if (tagMatch && tagMatch[1] !== undefined) return [tagMatch[1]]
+	return []
+}

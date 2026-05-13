@@ -472,10 +472,49 @@ Some composables are pure JavaScript behavior with no CSS chrome (`useAside` doe
 
 ---
 
-## 10. Reference
+## 10. Structural pairings (`parent > child` element-pair allowlist)
 
-- [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the contract data and helpers.
-- [`tests/src/styles/_contracts.test.ts`](../tests/src/styles/_contracts.test.ts) — the parity test that consumes the contract.
+A framework rule of the form `tag1 > tag2` (both bare tag names, joined by a child combinator) blesses one HTML element as the structural marker for its role inside a container. Some pairings are unavoidable — HTML spec requires them; some are documented framework slots filled by the universally-natural element. But many candidate pairings would be **element-hardcoding inside containment**: arbitrary picks of one element type as a chrome trigger inside an otherwise-generic container.
+
+The audit caught and removed `body:has(main) > nav > search` on this basis. `<search>` was one of many elements that could be pinned in a docs-sidebar rail; the framework rule against it forced every consumer to use exactly `<search>`. The pattern was moved to the showcase's wrapper-class composition.
+
+### 10.1 The four reason categories
+
+Every entry in `STRUCTURAL_PAIRINGS` (in [`src/browser/patterns.ts`](../src/browser/patterns.ts)) names one reason:
+
+| Kind      | Meaning                                                                                                                                        | Examples                                                               |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `spec`    | HTML spec requires this nesting; no other child can fulfill the role.                                                                          | `tr > td`, `details > summary`, `picture > source`, `select > option`. |
+| `slot`    | Parent is a card/dialog/drawer-shaped container with a DOCUMENTED slot, filled by the universally-natural semantic element.                    | `article > header:first-child` (card band), `dialog > header` (modal). |
+| `reset`   | The rule strips a UA default that only exists for that child element type, or zeroes a baseline value carried by the child (nesting-collapse). | `nav > ul` (list-marker reset), `main > section` (nesting-collapse).   |
+| `context` | Child gets contextual chrome because of its position inside the parent's documented internal structure.                                        | `header > button:last-child` (dismiss trail in alert/drawer band).     |
+
+### 10.2 What the test enforces
+
+[`tests/src/styles/_pairings.test.ts`](../tests/src/styles/_pairings.test.ts) scans every rule opener in every framework SCSS partial. For each selector, it extracts `(parent-tag, child-tag)` pairs (flattening `:is(...)` / `:where(...)` and respecting selector-list commas / descendant-vs-child combinators). Every pair must appear in `STRUCTURAL_PAIRINGS`.
+
+Universal heads (`*`), classes, attributes, and pseudos generate no pair — they don't single out an element type and aren't subject to this discipline.
+
+### 10.3 Adding a pairing
+
+If a new framework rule needs `parent > child` between bare tags:
+
+1. Decide if the pairing is genuinely universal (matches the `spec` / `slot` / `reset` / `context` categories above), OR
+2. If not, refactor the rule onto a wrapper class so consumers can use any child element under that wrapper. The showcase's `.showcase-sidebar-region` (any content can be a pinned region in the composed docs-sidebar shape) is the canonical example.
+
+If (1), add an entry to `STRUCTURAL_PAIRINGS` with a one-sentence justification. The justification surfaces in the test failure when the pairing is later violated, and serves as the in-tree spec for future authors.
+
+### 10.4 The `<search>` violation, and the precedent it set
+
+The framework can't decide on the consumer's behalf that "any `<search>` inside a `<nav>` rail gets pinned-filter chrome." `<search>` is a search landmark, not a positional/structural element. Many other elements (a `<form>` filter, a `<header>`-style toolbar, a status row, etc.) could equally well take the pinned slot. Hardcoding chrome against `<search>` locks the pattern to one specific markup choice.
+
+The right architectural shape: the rail provides containment (flex column, overflow management); the consumer composes regions inside; consumer styling targets WRAPPER CLASSES, not element types. Framework styling targets semantic elements with universal roles (`<header>` is THE intro band, `<footer>` is THE outro band, etc.). The boundary is enforced by this test.
+
+## 11. Reference
+
+- [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the contract data and helpers (folder contracts, file exceptions, modifier-dimension tokens, surface/component/composable contracts, structural pairings).
+- [`tests/src/styles/_contracts.test.ts`](../tests/src/styles/_contracts.test.ts) — the parity test that consumes the folder/file contracts.
+- [`tests/src/styles/_pairings.test.ts`](../tests/src/styles/_pairings.test.ts) — the parity test for `parent > child` structural pairings (§10).
 - [`tests/src/browser/patterns.test.ts`](../tests/src/browser/patterns.test.ts) — the TS-shape assertions for the contract surface itself.
 - [`taxonomy.md`](taxonomy.md) — every native HTML element + framework treatment (the per-tag complement to this per-folder doc).
 - [`styles.md`](styles.md) — top-level cascade architecture.
