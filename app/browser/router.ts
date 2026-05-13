@@ -3,6 +3,7 @@ import type { Component, ComputedRef, Ref } from 'vue'
 
 import HomePage from './pages/HomePage.vue'
 import TokensPage from './pages/TokensPage.vue'
+import ThemePage from './pages/ThemePage.vue'
 import ButtonPage from './pages/ButtonPage.vue'
 import AnchorPage from './pages/AnchorPage.vue'
 import FormControlsPage from './pages/FormControlsPage.vue'
@@ -52,6 +53,12 @@ const TOKENS: Route = {
 	title: 'Tokens',
 	group: 'Foundations',
 	page: TokensPage,
+}
+const THEME: Route = {
+	id: 'theme',
+	title: 'Theme',
+	group: 'Foundations',
+	page: ThemePage,
 }
 const BUTTON: Route = {
 	id: 'button',
@@ -213,6 +220,7 @@ const USE_TOOLTIP: Route = {
 export const routes: readonly Route[] = [
 	HOME,
 	TOKENS,
+	THEME,
 	BUTTON,
 	ANCHOR,
 	FORM_CONTROLS,

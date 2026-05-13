@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](contribute.md) to know **how to work**.
 
-Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 28 of 43 pages built; the foundation pages + composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
+Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 29 of 43 pages built; the foundation pages + composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
 
 ---
 
@@ -157,12 +157,12 @@ Every SCSS partial is held to these contracts before it can merge. The contract 
 
 ---
 
-## What's shipped — showcase pages (28 of 43)
+## What's shipped — showcase pages (29 of 43)
 
 | Group                    | Pages                                                                                       |
 | ------------------------ | ------------------------------------------------------------------------------------------- |
 | Shell + chrome           | HomePage, sidebar, TOC, theme toggle, mobile drawer                                         |
-| Foundations              | TokensPage                                                                                  |
+| Foundations              | TokensPage, ThemePage                                                                       |
 | Elements — Interactive   | ButtonPage, AnchorPage, FormControlsPage, DetailsPage, DialogElementPage                    |
 | Elements — Content       | HeadingsPage, TypographyPage, ListsPage, TablesPage, MediaPage, FiguresPage, SectioningPage |
 | Components               | ArticleCardPage, AsidePage, NavPage, MenuPage, InlineAtomsPage                              |
@@ -180,8 +180,8 @@ Element pages cover the static markup contract; the matching `Use*Page` (planned
 
 Highest leverage — every other page references them.
 
-- ✅ **TokensPage** — every `--set-*` leaf surfaced with its live computed value; retune playgrounds (radius factor, density factor, motion duration + curve); icon registry preview; elevation scale (`--set-box-shadow-small / -base / -large`); z-index scale; floater viewport budget; summary marker swap demo.
-- ⬜ **ThemePage** — light / dark / system, brand retune (`--color-primary` slider drives variant cascade across every surface on the page), inverted tier, surface / text / border tier demonstration, subtle / emphasis / border-subtle / on-canvas tiers per variant.
+- ✅ **TokensPage** — every `--set-*` leaf surfaced with its live computed value; retune playgrounds (radius factor, density factor, motion duration + curve, focus ring width + opacity); icon registry preview; elevation scale (`--set-box-shadow-small / -base / -large`); z-index scale; floater viewport budget; summary marker swap demo; "How + where to set tokens" with Tailwind v4 `@theme` integration.
+- ✅ **ThemePage** — `useTheme()` light / dark / system switcher; variant palette swatches (7 saturated bases); brand-retune playground (`<input type="color">` writes `--color-primary` and the four-tier cascade re-derives live); per-variant four-tier swatch grids (`bg-subtle` / `text-emphasis` / `border-subtle` / `on-canvas`); canvas / text / border / inverted tier demonstrations; light-vs-dark resolution explainer (data-theme + media query); customization paths (Tailwind `@theme` blocks, `:root` overrides, scoped overrides).
 - ⬜ **ModifiersPage** — variant × size × style × state × placement cascade demonstration. Single shared markup, 16+ rendered permutations.
 - ⬜ **PlacementsPage** — popover anchor positioning live (`.top`, `.bottom`, `.start`, `.end`, plus corners), `position-try-fallbacks` flip demo, viewport-clamp behaviour. Cross-refs the flattened `:not(:where(...))` scope-discipline rule (see [patterns.md](patterns.md) §5).
 
