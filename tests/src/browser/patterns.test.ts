@@ -9,16 +9,22 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+	BARE_FOCUS_REGEX,
 	FILE_EXCEPTIONS,
 	FOLDER_CONTRACTS,
+	FORCED_COLORS_INCLUDE_REGEX,
+	INTERACTIVE_ELEMENTS,
 	STATE_SELECTOR_REGEX,
 	STYLE_LAYERS,
+	TRANSITION_INCLUDE_REGEX,
 	allowedTokenPrefixes,
 	classifyHeadSelector,
 	exceptionFor,
+	hasBareFocusRule,
 	hasFreeTokenNamespace,
 	hasPseudoElement,
 	hasStateSelector,
+	isInteractive,
 	partialBasename,
 	partialFolder,
 	type SelectorKind,
@@ -263,6 +269,105 @@ describe('patterns — allowedTokenPrefixes resolves per folder + filename + exc
 })
 
 // ── 5. Exception lookup ────────────────────────────────────────────────────
+
+describe('patterns — INTERACTIVE_ELEMENTS registry', () => {
+	it('is a non-empty closed set of single-word tag names', () => {
+		expect(INTERACTIVE_ELEMENTS.size).toBeGreaterThan(0)
+		for (const tag of INTERACTIVE_ELEMENTS) {
+			expect(tag).toMatch(/^[a-z][a-z0-9-]*$/)
+		}
+	})
+
+	it('includes the documented interactive tags', () => {
+		// These ten are the framework's intentional interaction surface. If
+		// the set drifts (someone adds / removes a tag), this test surfaces
+		// it so the change is deliberate.
+		const expected = ['a', 'button', 'details', 'dialog', 'fieldset', 'input', 'label', 'select', 'summary', 'textarea']
+		for (const tag of expected) {
+			expect(INTERACTIVE_ELEMENTS.has(tag), `INTERACTIVE_ELEMENTS missing '${tag}'`).toBe(true)
+		}
+	})
+
+	it('isInteractive() mirrors the set', () => {
+		for (const tag of INTERACTIVE_ELEMENTS) {
+			expect(isInteractive(tag)).toBe(true)
+		}
+		// Passive elements never count as interactive.
+		expect(isInteractive('p')).toBe(false)
+		expect(isInteractive('section')).toBe(false)
+		expect(isInteractive('article')).toBe(false)
+		expect(isInteractive('h1')).toBe(false)
+		expect(isInteractive('not-a-tag')).toBe(false)
+	})
+})
+
+describe('patterns — BARE_FOCUS_REGEX', () => {
+	const bareFocus: readonly string[] = [
+		':focus',
+		'&:focus',
+		':focus,',
+		':focus {',
+		'a:focus',
+		'input:focus',
+	]
+	const focusVisible: readonly string[] = [
+		':focus-visible',
+		'&:focus-visible',
+		':focus-within',
+		':focus-visible, :focus-within',
+		'button:focus-visible',
+	]
+
+	it.each(bareFocus)('%s — matches bare :focus', (input) => {
+		expect(BARE_FOCUS_REGEX.test(input)).toBe(true)
+	})
+
+	it.each(focusVisible)('%s — does NOT match bare :focus', (input) => {
+		expect(BARE_FOCUS_REGEX.test(input)).toBe(false)
+	})
+})
+
+describe('patterns — hasBareFocusRule strips functional-pseudo bodies', () => {
+	it('flags bare :focus rule selectors as drift', () => {
+		expect(hasBareFocusRule('button:focus { color: red; }')).toBe(true)
+		expect(hasBareFocusRule('&:focus { outline: 2px; }')).toBe(true)
+	})
+
+	it('exempts :focus inside :not() / :is() / :where() / :has() functional pseudos', () => {
+		expect(hasBareFocusRule(':not(:focus) { color: gray; }')).toBe(false)
+		expect(hasBareFocusRule(':is(:focus, :hover) { … }')).toBe(false)
+		expect(hasBareFocusRule(':where(:focus) { … }')).toBe(false)
+		expect(hasBareFocusRule(':has(:focus) { background: white; }')).toBe(false)
+		expect(
+			hasBareFocusRule('input:invalid:not(:placeholder-shown):not(:focus) { border: 1px solid red; }'),
+		).toBe(false)
+	})
+
+	it('catches bare :focus even when surrounding text has functional pseudos elsewhere', () => {
+		expect(
+			hasBareFocusRule('input:focus { color: red; } /* unrelated */ :is(.a, .b) { … }'),
+		).toBe(true)
+	})
+
+	it('preserves :focus-visible / :focus-within as non-drift', () => {
+		expect(hasBareFocusRule(':focus-visible { outline: 2px; }')).toBe(false)
+		expect(hasBareFocusRule('&:focus-within { background: tint; }')).toBe(false)
+	})
+})
+
+describe('patterns — mixin-invocation regexes', () => {
+	it('FORCED_COLORS_INCLUDE_REGEX matches the mixin', () => {
+		expect(FORCED_COLORS_INCLUDE_REGEX.test('@include forced-colors {')).toBe(true)
+		expect(FORCED_COLORS_INCLUDE_REGEX.test('@include forced-colors;')).toBe(true)
+		expect(FORCED_COLORS_INCLUDE_REGEX.test('@include transition(...)')).toBe(false)
+	})
+
+	it('TRANSITION_INCLUDE_REGEX matches the mixin', () => {
+		expect(TRANSITION_INCLUDE_REGEX.test('@include transition(color)')).toBe(true)
+		expect(TRANSITION_INCLUDE_REGEX.test('@include transition((color, bg))')).toBe(true)
+		expect(TRANSITION_INCLUDE_REGEX.test('@include forced-colors {')).toBe(false)
+	})
+})
 
 describe('patterns — exceptionFor', () => {
 	it('composables/_aside.scss exception exists and skips state-selector check', () => {

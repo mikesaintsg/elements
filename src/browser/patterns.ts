@@ -523,3 +523,102 @@ export const STYLE_LAYERS: readonly StyleLayer[] = [
 export function folderForLayer(layer: StyleLayer): string {
 	return layer
 }
+
+// ============================================================================
+// Interactive-element registry
+// ============================================================================
+//
+// The framework paints focus / hover / disabled chrome on a specific, closed
+// set of native HTML elements. Every member of this set is held to two
+// accessibility-critical requirements, enforced by
+// `tests/src/styles/_interactive.test.ts`:
+//
+//   1. Forced-colors mode coverage — Windows High Contrast strips author
+//      colors and replaces them with system tokens. Interactive elements
+//      must include `@include forced-colors { … }` (the mixin from
+//      `_mixins.scss`) so the affordance remains visible in HC mode.
+//
+//   2. Focus-visible discipline — keyboard focus chrome must use
+//      `:focus-visible`, never bare `:focus`. The bare form fires on
+//      mouse click and produces visual noise; `:focus-visible` is the
+//      modern, accessible primitive that distinguishes keyboard focus
+//      from mouse focus.
+//
+// Adding a new tag to the set commits the partial to both rules. The set is
+// deliberately small — passive elements (paragraphs, headings, sectioning
+// containers) don't paint interaction chrome.
+
+/**
+ * Tags whose `_{tag}.scss` partial paints interaction chrome (hover /
+ * focus / active / disabled). The audit pass that produced this set walked
+ * every element partial and selected the ones that declare at least one of
+ * `:hover`, `:focus`, `:focus-visible`, `:active`, `:disabled`, `[disabled]`,
+ * or `[aria-disabled]` state rules.
+ *
+ * Excluded by design:
+ *   - Form-control parents (`<form>`, `<datalist>`, `<optgroup>`, `<option>`)
+ *     — they delegate interaction to their controls.
+ *   - Sectioning containers (`<main>`, `<section>`, `<article>`) — they
+ *     have layout chrome but no interaction surface.
+ *   - Heading / typographic elements — passive text.
+ *   - Media embeds (`<video>`, `<audio>`) — UA owns the controls.
+ */
+export const INTERACTIVE_ELEMENTS: ReadonlySet<string> = new Set([
+	'a',
+	'button',
+	'details',
+	'dialog',
+	'fieldset',
+	'input',
+	'label',
+	'select',
+	'summary',
+	'textarea',
+])
+
+/** True when the tag's element partial is expected to paint interaction chrome. */
+export function isInteractive(tag: string): boolean {
+	return INTERACTIVE_ELEMENTS.has(tag)
+}
+
+/**
+ * Regex that matches a bare `:focus` state rule (not `:focus-visible`,
+ * `:focus-within`, etc.). The bare form is the deviation — every keyboard-
+ * focus rule should be `:focus-visible`.
+ *
+ * NOTE: this regex catches every `:focus` token whether it appears as a
+ * rule selector OR inside a functional pseudo (`:not(:focus)`,
+ * `:has(:focus)`). The latter are legitimate — bare `:focus` inside a
+ * negation or relational pseudo is the correct way to test "currently
+ * focused via any input modality". Use `hasBareFocusRule(source)` for
+ * the higher-level check that strips functional-pseudo bodies first.
+ */
+export const BARE_FOCUS_REGEX = /:focus(?![-a-z])/
+
+/**
+ * True when `source` contains a bare `:focus` rule selector — `:focus`
+ * outside `:not(:focus)`, `:is(:focus, …)`, `:where(:focus)`, `:has(:focus)`
+ * functional-pseudo bodies. The bare rule selector is the deviation; the
+ * functional-pseudo usages are legitimate (negation / grouping / relational).
+ *
+ * The implementation strips functional-pseudo bodies first, then applies
+ * `BARE_FOCUS_REGEX` to the remainder.
+ */
+export function hasBareFocusRule(source: string): boolean {
+	const stripped = source.replace(/:(?:not|is|where|has)\([^)]*\)/g, '')
+	return BARE_FOCUS_REGEX.test(stripped)
+}
+
+/**
+ * Regex that matches the `@include forced-colors` mixin invocation. The
+ * mixin is defined in `src/styles/_mixins.scss`; every interactive element
+ * must invoke it at least once.
+ */
+export const FORCED_COLORS_INCLUDE_REGEX = /@include\s+forced-colors\b/
+
+/**
+ * Regex that matches the `@include transition` mixin invocation. Every
+ * `transition:` declaration in non-vendor-pseudo scope should pair with
+ * this mixin so the reduced-motion contract holds.
+ */
+export const TRANSITION_INCLUDE_REGEX = /@include\s+transition\s*\(/
