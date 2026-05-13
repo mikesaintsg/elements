@@ -340,29 +340,42 @@ const setPlacement = (p: Placement): void => {
 			<code>--set-anchor-position-try-fallbacks</code>.
 		</p>
 		<p>
-			Two anchor buttons below: the left one sits near the viewport's start edge, the right one near
-			the end edge. Both have popovers with <code>.start</code> placement (popover wants to sit to
-			the anchor's inline-start). The LEFT button's popover has no room on its left — the browser
-			flips it to <code>.end</code> automatically via
-			<code>position-try-fallbacks: flip-inline</code>. The RIGHT button's popover fits its
-			requested side, so no flip.
+			Two anchored demos below — each in its own bordered container so they stack cleanly on every
+			viewport. Both popovers request <code>.start</code> placement (popover wants to sit to the
+			anchor's inline-start). The first button sits at the inline-start edge of the page content so
+			its popover has no room on the left — the browser flips it to <code>.end</code> via
+			<code>position-try-fallbacks: flip-inline</code>. The second button sits at the inline-end
+			edge so its popover fits the requested side without flipping.
 		</p>
+
+		<h3>1. Anchor near inline-start edge — popover flips</h3>
 		<div
 			style="
 				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				padding-block: calc(var(--spacing) * 6);
+				justify-content: flex-start;
+				padding: calc(var(--spacing) * 4);
 				border: 1px solid var(--color-border);
 				border-radius: var(--radius-md);
-				padding-inline: calc(var(--spacing) * 3);
+				margin-block-end: calc(var(--spacing) * 4);
 			"
 		>
 			<button type="button" class="primary" popovertarget="placements-flip-left">
-				← Near left edge (flips)
+				Open (placement: .start)
 			</button>
+		</div>
+
+		<h3>2. Anchor near inline-end edge — popover honored</h3>
+		<div
+			style="
+				display: flex;
+				justify-content: flex-end;
+				padding: calc(var(--spacing) * 4);
+				border: 1px solid var(--color-border);
+				border-radius: var(--radius-md);
+			"
+		>
 			<button type="button" class="primary" popovertarget="placements-flip-right">
-				Near right edge (fits) →
+				Open (placement: .start)
 			</button>
 		</div>
 		<div id="placements-flip-left" popover class="start" style="min-inline-size: 12rem">

@@ -319,15 +319,19 @@ const sizeRows = [
 			"
 		>
 			<article class="primary subtle" style="padding: calc(var(--spacing) * 3)">
-				<strong>.primary.subtle</strong>
+				<p style="margin: 0; font-weight: 700; font-family: ui-monospace, monospace">
+					.primary.subtle
+				</p>
 				<p style="margin-block: var(--spacing) 0">Tinted bg + emphasis text + subtle border.</p>
 			</article>
 			<article class="primary" style="padding: calc(var(--spacing) * 3)">
-				<strong>.primary</strong>
+				<p style="margin: 0; font-weight: 700; font-family: ui-monospace, monospace">.primary</p>
 				<p style="margin-block: var(--spacing) 0">Bare — border tinted, body neutral.</p>
 			</article>
 			<article class="primary filled" style="padding: calc(var(--spacing) * 3)">
-				<strong>.primary.filled</strong>
+				<p style="margin: 0; font-weight: 700; font-family: ui-monospace, monospace">
+					.primary.filled
+				</p>
 				<p style="margin-block: var(--spacing) 0">Saturated fill + contrast text.</p>
 			</article>
 		</div>
@@ -347,7 +351,10 @@ const sizeRows = [
 			<button type="button" class="primary">Default</button>
 			<button type="button" class="primary disabled" disabled>.disabled</button>
 			<button type="button" class="primary active" aria-pressed="true">.active</button>
-			<button type="button" class="primary loading" aria-busy="true">.loading</button>
+			<button type="button" class="primary loading" aria-busy="true">
+				<span class="spinner small" role="status" aria-label="Loading"></span>
+				.loading
+			</button>
 		</div>
 		<dl>
 			<dt><code>.disabled</code></dt>
@@ -363,8 +370,11 @@ const sizeRows = [
 			</dd>
 			<dt><code>.loading</code></dt>
 			<dd>
-				Inflight spinner overlay. Paired with <code>aria-busy="true"</code> so screen-readers
-				announce the wait state.
+				Marker class — sets <code>cursor: progress</code> + pairs with
+				<code>aria-busy="true"</code> so screen-readers announce the wait state. The visible spinner
+				is consumer-provided: drop a <code>&lt;span class="spinner small"&gt;</code>
+				inside the loading button or use a composable that injects one. The framework's
+				<code>.spinner</code> class-component lives in <code>components/_spinner.scss</code>.
 			</dd>
 		</dl>
 	</section>
@@ -460,7 +470,15 @@ const sizeRows = [
 				flex-wrap: wrap;
 			"
 		>
-			<button type="button" v-bind="buttonAttrs">Composed button</button>
+			<button type="button" v-bind="buttonAttrs">
+				<span
+					v-if="pickedState === 'loading'"
+					class="spinner small"
+					role="status"
+					aria-label="Loading"
+				></span>
+				Composed button
+			</button>
 			<code style="font-size: 0.875em">
 				&lt;button class="{{ classes || '' }}"&gt;
 				<template v-if="pickedState === 'disabled'"> disabled </template>
