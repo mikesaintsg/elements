@@ -18,7 +18,7 @@
 // ============================================================================
 
 import { afterEach, describe, expect, it } from 'vitest'
-import { build, mount, rootToken, style } from '../../../setupStyles'
+import { build, mount, rootToken } from '../../../setupStyles'
 
 afterEach(() => {
 	for (const child of Array.from(document.body.children)) {

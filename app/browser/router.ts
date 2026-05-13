@@ -24,6 +24,7 @@ import FormSurfacesPage from './pages/FormSurfacesPage.vue'
 import ScrollAndTransitionPage from './pages/ScrollAndTransitionPage.vue'
 import UseFocusPage from './pages/UseFocusPage.vue'
 import UsePointerPage from './pages/UsePointerPage.vue'
+import UseDragDropPage from './pages/UseDragDropPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -174,6 +175,12 @@ const USE_POINTER: Route = {
 	group: 'Composables',
 	page: UsePointerPage,
 }
+const USE_DRAG_DROP: Route = {
+	id: 'use-drag-drop',
+	title: 'useDrag / useDrop',
+	group: 'Composables',
+	page: UseDragDropPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -199,6 +206,7 @@ export const routes: readonly Route[] = [
 	SCROLL_AND_TRANSITION,
 	USE_FOCUS,
 	USE_POINTER,
+	USE_DRAG_DROP,
 ]
 
 interface RouteLocation {
