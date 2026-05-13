@@ -87,17 +87,41 @@ useTooltip({
 })
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 3 — reactive placement via Ref<Placement>.
+// Demo 3 — placement showcase.
+// One anchor per side (top / end / bottom / start) so the reader can
+// see every placement at once without cycling through one ref. Mirrors
+// PopoverSurfacesPage's anchor-positioning section pattern — each
+// button hosts its own tooltip, the demo stage has enough padding-block
+// for every side to land without `position-try-fallbacks` flipping.
 // ─────────────────────────────────────────────────────────────────────
-const placement = ref<Placement>('top')
-const placementOptions: readonly Placement[] = ['top', 'end', 'bottom', 'start']
-const placementAnchor = useTemplateRef<HTMLButtonElement>('placementAnchor')
-const placementPanel = useTemplateRef<HTMLDivElement>('placementPanel')
-const placementTip = useTooltip({
-	anchor: placementAnchor,
-	panel: placementPanel,
-	placement,
+const topAnchor = useTemplateRef<HTMLButtonElement>('topAnchor')
+const topPanel = useTemplateRef<HTMLDivElement>('topPanel')
+useTooltip({ anchor: topAnchor, panel: topPanel, placement: 'top' })
+
+const endAnchor = useTemplateRef<HTMLButtonElement>('endAnchor')
+const endPanel = useTemplateRef<HTMLDivElement>('endPanel')
+useTooltip({ anchor: endAnchor, panel: endPanel, placement: 'end' })
+
+const bottomAnchor = useTemplateRef<HTMLButtonElement>('bottomAnchor')
+const bottomPanel = useTemplateRef<HTMLDivElement>('bottomPanel')
+useTooltip({ anchor: bottomAnchor, panel: bottomPanel, placement: 'bottom' })
+
+const startAnchor = useTemplateRef<HTMLButtonElement>('startAnchor')
+const startPanel = useTemplateRef<HTMLDivElement>('startPanel')
+useTooltip({ anchor: startAnchor, panel: startPanel, placement: 'start' })
+
+// Reactive-placement demo retained as a smaller section — proves the
+// `placement` option accepts a `Ref<Placement>` for consumers that
+// want to drive it from external state.
+const dynamicPlacement = ref<Placement>('top')
+const dynamicAnchor = useTemplateRef<HTMLButtonElement>('dynamicAnchor')
+const dynamicPanel = useTemplateRef<HTMLDivElement>('dynamicPanel')
+const dynamicTip = useTooltip({
+	anchor: dynamicAnchor,
+	panel: dynamicPanel,
+	placement: dynamicPlacement,
 })
+const placementOptions: readonly Placement[] = ['top', 'end', 'bottom', 'start']
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 4 — rich content panel.
@@ -132,7 +156,7 @@ const pulse = (): void => {
 }
 
 // Helper for the state alert.
-const anyVisible = computed(() => placementTip.visible.value || pulseTip.visible.value)
+const anyVisible = computed(() => dynamicTip.visible.value || pulseTip.visible.value)
 </script>
 
 <template>
@@ -158,8 +182,8 @@ const anyVisible = computed(() => placementTip.visible.value || pulseTip.visible
 		<aside role="status" class="information" data-alert-open>
 			<p>
 				<strong>State:</strong>
-				placement demo
-				<code>{{ placementTip.visible.value ? 'visible' : 'hidden' }}</code> · pulse demo
+				dynamic-placement demo
+				<code>{{ dynamicTip.visible.value ? 'visible' : 'hidden' }}</code> · pulse demo
 				<code>{{ pulseTip.visible.value ? 'visible' : 'hidden' }}</code>
 				<span v-if="anyVisible"> · any visible</span>
 			</p>
@@ -261,39 +285,61 @@ useTooltip({
 	</section>
 
 	<section id="use-tooltip-placement">
-		<h2>3. Reactive placement</h2>
+		<h2>3. Placement</h2>
 		<p>
-			Pass a <code>Ref&lt;Placement&gt;</code> and the composable rewrites
-			<code>position-area</code> when you mutate the ref.
-			<code>position-try-fallbacks</code> (declared on the framework's anchor-position surface)
-			still flips on overflow — try placing the tooltip on <code>start</code> while the anchor sits
-			near the viewport's left edge.
+			The <code>placement</code> option maps to <code>position-area</code> on the panel —
+			<code>top</code>, <code>end</code>, <code>bottom</code>, <code>start</code> (plus the eight
+			corner variants <code>top-start</code> / <code>bottom-end</code> / …). Each button below has
+			its own tooltip anchored to itself, so you can see every side at once. Hover or focus any of
+			them; the tooltip lands where the modifier says.
+		</p>
+		<div class="placement-stage">
+			<button ref="topAnchor" type="button" class="subtle">.top</button>
+			<button ref="endAnchor" type="button" class="subtle">.end</button>
+			<button ref="bottomAnchor" type="button" class="subtle">.bottom</button>
+			<button ref="startAnchor" type="button" class="subtle">.start</button>
+		</div>
+		<div ref="topPanel" popover>Placement: <strong>top</strong></div>
+		<div ref="endPanel" popover>Placement: <strong>end</strong></div>
+		<div ref="bottomPanel" popover>Placement: <strong>bottom</strong></div>
+		<div ref="startPanel" popover>Placement: <strong>start</strong></div>
+
+		<h3>Reactive placement via <code>Ref&lt;Placement&gt;</code></h3>
+		<p>
+			Pass a ref instead of a string and the composable rewrites
+			<code>position-area</code> when you mutate the ref. <code>position-try-fallbacks</code> still
+			flips on overflow — try placing the tooltip on <code>start</code> while the anchor sits near
+			the viewport's left edge.
 		</p>
 		<menu class="placement-picker">
 			<li v-for="option in placementOptions" :key="option">
 				<button
 					type="button"
 					class="subtle"
-					:class="{ active: placement === option }"
-					@click="placement = option"
+					:class="{ active: dynamicPlacement === option }"
+					@click="dynamicPlacement = option"
 				>
 					{{ option }}
 				</button>
 			</li>
 		</menu>
-		<div class="trigger-stage">
-			<button ref="placementAnchor" type="button">Hover or focus me</button>
+		<div class="placement-stage">
+			<button ref="dynamicAnchor" type="button">Hover or focus me</button>
 		</div>
-		<div ref="placementPanel" popover>
-			Placement: <strong>{{ placementTip.placement.value }}</strong>
+		<div ref="dynamicPanel" popover>
+			Resolved: <strong>{{ dynamicTip.placement.value }}</strong>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>const placement = ref&lt;Placement&gt;('top')
-useTooltip({ anchor, panel, placement })
+			<pre><code>// Static — one tooltip per anchor, each placed on a different side.
+useTooltip({ anchor: topRef,    panel: topPanelRef,    placement: 'top' })
+useTooltip({ anchor: endRef,    panel: endPanelRef,    placement: 'end' })
+useTooltip({ anchor: bottomRef, panel: bottomPanelRef, placement: 'bottom' })
+useTooltip({ anchor: startRef,  panel: startPanelRef,  placement: 'start' })
 
-// Mutating `placement` re-positions the tooltip live.
-// position-try-fallbacks still flips on viewport overflow.</code></pre>
+// Reactive — single tooltip, placement driven by external state.
+const placement = ref&lt;Placement&gt;('top')
+useTooltip({ anchor, panel, placement })</code></pre>
 		</details>
 	</section>
 
@@ -477,6 +523,23 @@ useTooltip({ anchor, panel, placement })
 	border: 1px dashed var(--color-border);
 	border-radius: 0.5rem;
 	background: color-mix(in oklch, var(--color-canvas-strong) 50%, var(--color-canvas));
+}
+
+/* Placement showcase — generous padding-block so every side has room
+ * to land without `position-try-fallbacks` flipping the tooltip away
+ * from the requested side. Mirrors PopoverSurfacesPage §4's stage. */
+.placement-stage {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+	gap: 0.75rem;
+	padding-block: 6rem;
+	padding-inline: 4rem;
+	border: 1px dashed var(--color-border);
+	border-radius: 0.5rem;
+	background: color-mix(in oklch, var(--color-canvas-strong) 50%, var(--color-canvas));
+	margin-block-end: 1rem;
 }
 
 .rich-tooltip {

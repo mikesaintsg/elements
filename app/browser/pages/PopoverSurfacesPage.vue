@@ -59,14 +59,17 @@
  */
 import { ref } from 'vue'
 
-// Toast demo state — output[popover=manual] requires explicit
-// hidePopover(); we wire a timeout to fake the auto-dismiss the
-// useToast composable will eventually own.
-const showToast = (id: string, ms = 2500): void => {
-	const el = document.getElementById(id)
-	if (!el) return
-	el.showPopover()
+// Manual popover demo — `popovertarget` opens the panel (the framework's
+// implicit auto-anchor wires position from the trigger), then we
+// schedule a programmatic `.hidePopover()` since `popover="manual"`
+// disables light-dismiss. Using `popovertarget` instead of a bare
+// `.showPopover()` call is what gives the panel its placement; without
+// it the browser has no anchor relationship and the popover renders at
+// viewport-top-left.
+const scheduleManualHide = (id: string, ms = 3000): void => {
 	setTimeout(() => {
+		const el = document.getElementById(id)
+		if (!el || !el.matches(':popover-open')) return
 		try {
 			el.hidePopover()
 		} catch {
@@ -146,7 +149,12 @@ const longContent = ref(false)
 			taps the surrounding canvas.
 		</p>
 		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
-			<button type="button" @click="showToast('demo-pop-manual', 3000)">
+			<button
+				type="button"
+				class="dropdown"
+				popovertarget="demo-pop-manual"
+				@click="scheduleManualHide('demo-pop-manual', 3000)"
+			>
 				Show manual popover (auto-hides in 3 s)
 			</button>
 		</div>
@@ -160,7 +168,11 @@ const longContent = ref(false)
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>&lt;button onclick="document.getElementById('panel').showPopover()"&gt;
+			<pre><code>&lt;!-- popovertarget gives the browser the implicit auto-anchor so the
+     panel positions relative to its trigger. A bare `.showPopover()`
+     call would open the panel but render it at viewport top-left
+     because no anchor relationship exists. --&gt;
+&lt;button popovertarget="panel" onclick="scheduleHide('panel', 3000)"&gt;
   Open
 &lt;/button&gt;
 &lt;div popover="manual" id="panel"&gt;

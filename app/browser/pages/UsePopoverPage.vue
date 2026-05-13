@@ -45,8 +45,53 @@ import { usePopover } from '@elements/browser'
 import type { Placement } from '@elements/browser'
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 1 — click trigger + dynamic placement via reactive ref.
+// Demo 1 — placement showcase.
+// One anchor + popover per side (top / end / bottom / start) so every
+// placement is visible at once. Mirrors PopoverSurfacesPage's anchor-
+// positioning section pattern — each button hosts its own popover, the
+// stage has generous `padding-block` so every side has room to land
+// without `position-try-fallbacks` flipping.
 // ─────────────────────────────────────────────────────────────────────
+const topAnchor = useTemplateRef<HTMLButtonElement>('topAnchor')
+const topPanel = useTemplateRef<HTMLDivElement>('topPanel')
+const topPopover = usePopover({
+	anchor: topAnchor,
+	panel: topPanel,
+	placement: 'top',
+	trigger: { click: true },
+})
+
+const endAnchor = useTemplateRef<HTMLButtonElement>('endAnchor')
+const endPanel = useTemplateRef<HTMLDivElement>('endPanel')
+const endPopover = usePopover({
+	anchor: endAnchor,
+	panel: endPanel,
+	placement: 'end',
+	trigger: { click: true },
+})
+
+const bottomAnchor = useTemplateRef<HTMLButtonElement>('bottomAnchor')
+const bottomPanel = useTemplateRef<HTMLDivElement>('bottomPanel')
+const bottomPopover = usePopover({
+	anchor: bottomAnchor,
+	panel: bottomPanel,
+	placement: 'bottom',
+	trigger: { click: true },
+})
+
+const startAnchor = useTemplateRef<HTMLButtonElement>('startAnchor')
+const startPanel = useTemplateRef<HTMLDivElement>('startPanel')
+const startPopover = usePopover({
+	anchor: startAnchor,
+	panel: startPanel,
+	placement: 'start',
+	trigger: { click: true },
+})
+
+// Reactive-placement demo — proves the `placement` option accepts a
+// `Ref<Placement>` for consumers that want to drive it from external
+// state. Kept as a smaller secondary demo since the multi-anchor stage
+// above is the more direct way to see placement at a glance.
 const placementOptions: readonly Placement[] = [
 	'top',
 	'top-start',
@@ -61,13 +106,13 @@ const placementOptions: readonly Placement[] = [
 	'end-start',
 	'end-end',
 ]
-const placement = ref<Placement>('bottom')
-const clickAnchor = useTemplateRef<HTMLButtonElement>('clickAnchor')
-const clickPanel = useTemplateRef<HTMLDivElement>('clickPanel')
-const clickPopover = usePopover({
-	anchor: clickAnchor,
-	panel: clickPanel,
-	placement,
+const dynamicPlacement = ref<Placement>('bottom')
+const dynamicAnchor = useTemplateRef<HTMLButtonElement>('dynamicAnchor')
+const dynamicPanel = useTemplateRef<HTMLDivElement>('dynamicPanel')
+const dynamicPopover = usePopover({
+	anchor: dynamicAnchor,
+	panel: dynamicPanel,
+	placement: dynamicPlacement,
 	trigger: { click: true },
 })
 
@@ -175,68 +220,100 @@ const cancelPopover = usePopover({
 		<aside role="status" class="information" data-alert-open>
 			<p>
 				<strong>State:</strong>
-				click popover <code>{{ clickPopover.visible.value ? 'open' : 'closed' }}</code> · hover
-				popover <code>{{ hoverPopover.visible.value ? 'open' : 'closed' }}</code> · multi-trigger
-				<code>{{ multiPopover.visible.value ? 'open' : 'closed' }}</code> · sticky
-				<code>{{ stickyPopover.visible.value ? 'open' : 'closed' }}</code>
+				hover popover <code>{{ hoverPopover.visible.value ? 'open' : 'closed' }}</code> ·
+				multi-trigger <code>{{ multiPopover.visible.value ? 'open' : 'closed' }}</code> · sticky
+				<code>{{ stickyPopover.visible.value ? 'open' : 'closed' }}</code> · dynamic placement
+				<code>{{ dynamicPopover.visible.value ? 'open' : 'closed' }}</code>
 			</p>
 		</aside>
 	</section>
 
 	<section id="use-popover-placement">
-		<h2>1. Reactive placement — change where the panel lands</h2>
+		<h2>1. Placement</h2>
 		<p>
-			The <code>placement</code> option accepts a string OR a <code>Ref&lt;Placement&gt;</code>.
-			Pass a ref, mutate it, and the composable rewrites <code>position-area</code> on the panel.
-			The browser's <code>position-try-fallbacks</code> (declared by the framework's anchor-
-			position surface) still flips the panel when the requested side overflows the viewport — try
-			placing it on <code>start</code> while the anchor sits near the left edge.
+			The <code>placement</code> option maps to <code>position-area</code> on the panel —
+			<code>top</code>, <code>end</code>, <code>bottom</code>, <code>start</code> plus the eight
+			corner variants (<code>top-start</code> / <code>bottom-end</code> / …). Each button below
+			hosts its own popover anchored to itself, so every side is visible at once.
+			<code>position-try-fallbacks</code> still flips a popover to the opposite side when the
+			requested side doesn't fit the viewport.
+		</p>
+		<div class="placement-stage">
+			<button ref="topAnchor" type="button" class="dropdown">.top</button>
+			<button ref="endAnchor" type="button" class="dropdown">.end</button>
+			<button ref="bottomAnchor" type="button" class="dropdown">.bottom</button>
+			<button ref="startAnchor" type="button" class="dropdown">.start</button>
+		</div>
+		<div ref="topPanel" popover class="demo-popover">
+			<small>Placement: <strong>top</strong></small>
+			<menu>
+				<li><button type="button" class="subtle" @click="topPopover.hide()">Close</button></li>
+			</menu>
+		</div>
+		<div ref="endPanel" popover class="demo-popover">
+			<small>Placement: <strong>end</strong></small>
+			<menu>
+				<li><button type="button" class="subtle" @click="endPopover.hide()">Close</button></li>
+			</menu>
+		</div>
+		<div ref="bottomPanel" popover class="demo-popover">
+			<small>Placement: <strong>bottom</strong></small>
+			<menu>
+				<li><button type="button" class="subtle" @click="bottomPopover.hide()">Close</button></li>
+			</menu>
+		</div>
+		<div ref="startPanel" popover class="demo-popover">
+			<small>Placement: <strong>start</strong></small>
+			<menu>
+				<li><button type="button" class="subtle" @click="startPopover.hide()">Close</button></li>
+			</menu>
+		</div>
+
+		<h3>Reactive placement via <code>Ref&lt;Placement&gt;</code></h3>
+		<p>
+			Pass a ref instead of a string and the composable rewrites
+			<code>position-area</code> when you mutate the ref. Useful when placement is driven by
+			external state (drawer side, user preference, viewport breakpoint). All 12 placement values
+			are exercised below — the resolved side appears inside the panel after
+			<code>position-try-fallbacks</code> has had its say.
 		</p>
 		<menu class="placement-grid" aria-label="Placement">
 			<li v-for="option in placementOptions" :key="option">
 				<button
 					type="button"
 					class="subtle"
-					:class="{ active: placement === option }"
-					@click="placement = option"
+					:class="{ active: dynamicPlacement === option }"
+					@click="dynamicPlacement = option"
 				>
 					{{ option }}
 				</button>
 			</li>
 		</menu>
 		<div class="placement-stage">
-			<button ref="clickAnchor" type="button">
-				Open popover ({{ clickPopover.visible.value ? 'open' : 'closed' }})
+			<button ref="dynamicAnchor" type="button">
+				Open popover ({{ dynamicPopover.visible.value ? 'open' : 'closed' }})
 			</button>
 		</div>
-		<div ref="clickPanel" popover class="demo-popover">
-			<h6 style="margin-block: 0 0.5rem">Panel</h6>
-			<p>
-				<small>
-					Placement: <strong>{{ clickPopover.placement.value }}</strong>
-				</small>
-			</p>
+		<div ref="dynamicPanel" popover class="demo-popover">
+			<small>
+				Requested <code>{{ dynamicPlacement }}</code> · resolved
+				<strong>{{ dynamicPopover.placement.value }}</strong>
+			</small>
 			<menu>
-				<li>
-					<button type="button" class="subtle" @click="clickPopover.hide()">Close</button>
-				</li>
+				<li><button type="button" class="subtle" @click="dynamicPopover.hide()">Close</button></li>
 			</menu>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>const placement = ref&lt;Placement&gt;('bottom')
-const anchor = useTemplateRef&lt;HTMLButtonElement&gt;('anchor')
-const panel = useTemplateRef&lt;HTMLDivElement&gt;('panel')
+			<pre><code>// Static — one popover per anchor, each placed on a different side.
+usePopover({ anchor: topRef,    panel: topPanelRef,    placement: 'top' })
+usePopover({ anchor: endRef,    panel: endPanelRef,    placement: 'end' })
+usePopover({ anchor: bottomRef, panel: bottomPanelRef, placement: 'bottom' })
+usePopover({ anchor: startRef,  panel: startPanelRef,  placement: 'start' })
 
-usePopover({
-  anchor,
-  panel,
-  placement,                  // reactive — mutate to reposition
-  trigger: { click: true },
-})
-
-// &lt;button ref="anchor"&gt;Open&lt;/button&gt;
-// &lt;div ref="panel" popover&gt;…&lt;/div&gt;</code></pre>
+// Reactive — single popover, placement driven by external state.
+const placement = ref&lt;Placement&gt;('bottom')
+usePopover({ anchor, panel, placement, trigger: { click: true } })</code></pre>
 		</details>
 	</section>
 
@@ -512,15 +589,21 @@ usePopover({
 	border-color: color-mix(in oklch, var(--color-primary) 40%, var(--color-border));
 }
 
+/* Placement showcase — generous padding-block so every side has room
+ * to land without `position-try-fallbacks` flipping the popover away
+ * from the requested side. Mirrors PopoverSurfacesPage §4's stage. */
 .placement-stage {
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: center;
 	align-items: center;
-	min-block-size: 8rem;
-	padding: 2rem;
+	gap: 0.75rem;
+	padding-block: 6rem;
+	padding-inline: 4rem;
 	border: 1px dashed var(--color-border);
 	border-radius: 0.5rem;
 	background: color-mix(in oklch, var(--color-canvas-strong) 50%, var(--color-canvas));
+	margin-block-end: 1rem;
 }
 
 .demo-popover {
