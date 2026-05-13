@@ -33,7 +33,7 @@ Tailwind's documentation is authoritative. The framework reads these via `var()`
 | Density / radius   | `--set-density-factor`, `--set-radius-factor`                                                                                                                          |
 | Baseline hydration | `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-sticky-offset`                                                                 |
 | Z-index scale      | `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}`                                                                                                    |
-| Elevation          | `--set-box-shadow-sm`, `--set-box-shadow`, `--set-box-shadow-lg`                                                                                                       |
+| Elevation          | `--set-box-shadow-small`, `--set-box-shadow`, `--set-box-shadow-large`                                                                                                       |
 | Icon               | `--set-icon-chevron-*`, `--set-icon-check`, `--set-icon-close`, …                                                                                                      |
 | Floater            | `--set-floater-gutter`, `--set-floater-inset-*`, `--set-floater-max-*`                                                                                                 |
 | Transition         | `--set-transition-duration` (150 ms, small UI tints); `--set-motion-duration` (250 ms, substantive show/hide) + `--set-motion-timing-function` (iOS stiff-decel curve) |
@@ -129,11 +129,11 @@ Same idea for corner roundness. `0` flattens every radius to a hard corner; `1.5
 ### Elevation scale
 
 ```scss
---set-box-shadow-sm: 0 0.125rem 0.25rem color-mix(in srgb, black 7.5%, transparent);
+--set-box-shadow-small: 0 0.125rem 0.25rem color-mix(in srgb, black 7.5%, transparent);
 --set-box-shadow:
 	0 0.25rem 0.75rem color-mix(in srgb, black 8%, transparent),
 	0 0.0625rem 0.1875rem color-mix(in srgb, black 6%, transparent);
---set-box-shadow-lg:
+--set-box-shadow-large:
 	0 0.5rem 2rem color-mix(in srgb, black 18%, transparent),
 	0 0.125rem 0.375rem color-mix(in srgb, black 10%, transparent);
 ```
@@ -164,7 +164,7 @@ Three-tier scale. `sm` for hover-raised list items and subtle action panels. Bas
 --set-icon-sun: url(…);
 --set-icon-moon: url(…);
 --set-icon-system: url(…);
---set-icon-info: url(…);
+--set-icon-information: url(…);
 --set-icon-success: url(…);
 --set-icon-warning: url(…);
 --set-icon-danger: url(…);
@@ -385,7 +385,7 @@ tokens.variant.backgroundColor // '--set-variant-background-color'
 tokens.size.paddingInline // '--set-size-padding-inline'
 tokens.button.borderRadius // '--set-button-border-radius'
 tokens.button.backgroundColor // '--set-button-background-color'
-tokens.boxShadow.lg // '--set-box-shadow-lg'
+tokens.boxShadow.large // '--set-box-shadow-large'
 tokens.floater.maxInlineSize // '--set-floater-max-inline-size'
 
 const value = getComputedStyle(el).getPropertyValue(tokens.color.primary)
