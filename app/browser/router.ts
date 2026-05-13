@@ -22,6 +22,7 @@ import InlineAtomsPage from './pages/InlineAtomsPage.vue'
 import PopoverSurfacesPage from './pages/PopoverSurfacesPage.vue'
 import FormSurfacesPage from './pages/FormSurfacesPage.vue'
 import ScrollAndTransitionPage from './pages/ScrollAndTransitionPage.vue'
+import UseFocusPage from './pages/UseFocusPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -160,6 +161,12 @@ const SCROLL_AND_TRANSITION: Route = {
 	group: 'Surfaces',
 	page: ScrollAndTransitionPage,
 }
+const USE_FOCUS: Route = {
+	id: 'use-focus',
+	title: 'useFocus',
+	group: 'Composables',
+	page: UseFocusPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -183,6 +190,7 @@ export const routes: readonly Route[] = [
 	POPOVER_SURFACES,
 	FORM_SURFACES,
 	SCROLL_AND_TRANSITION,
+	USE_FOCUS,
 ]
 
 interface RouteLocation {
