@@ -191,31 +191,32 @@
 			background-color: var(--set-table-row-selected-background-color);
 		}
 
-		// ── Expansion seam — class + composable data-attribute hooks ──────────
-		// Two contracts share the same chrome:
+		// ── Expansion seam — ARIA disclosure pattern ──────────────────────────
+		// Markup contract (both the showcase demo and the `useTable`
+		// composable write the same shape):
 		//
-		//   1. STATIC / DECLARATIVE — markup the consumer writes by hand:
-		//      <tr class="expanded">…</tr>
-		//      <tr class="expansion">
-		//        <td colspan="N">
-		//          <div class="expansion-panel">…</div>
-		//        </td>
-		//      </tr>
+		//   <tr [data-table-expanded]>            <!-- host row, when open -->
+		//     <td>…</td>
+		//     <td>
+		//       <button aria-expanded="true|false" aria-controls="…">…</button>
+		//     </td>
+		//   </tr>
+		//   <tr id="…">                            <!-- expansion sibling -->
+		//     <td colspan="N">
+		//       <div data-table-expansion-panel>…</div>
+		//     </td>
+		//   </tr>
 		//
-		//   2. COMPOSABLE — `useTable` writes / clears `data-table-expanded` on
-		//      the host row and renders the sibling `<tr>` with a panel that
-		//      carries `[data-table-expansion-panel]`. Same visual effect,
-		//      attribute hook instead of class so composable instrumentation
-		//      doesn't fight consumer-authored class lists.
-		//
-		// Both selectors are unioned everywhere the chrome is declared (here in
-		// the bare-table rule, plus the accordion-style animation rules below
-		// the table block). The data-* path tracks the original framework
-		// contract; the class path tracks the framework-wide modifier-naming
-		// convention (single English word / past-participle, no `table-`
-		// prefix) documented in plan.md §9.7.
-		tbody tr:has(> td > [data-table-expansion-panel]) > td,
-		tbody tr.expansion > td {
+		// The toggle is a real `<button aria-expanded aria-controls>` — the
+		// canonical ARIA disclosure pattern. An earlier draft used an empty
+		// `<details><summary>Details</summary></details>` inside the cell as
+		// a JS-free toggle, but the `<details>` was a hollow shell wrapping
+		// no actual disclosure content; the relationship between summary and
+		// the sibling row's panel was semantically dishonest. Replaced with
+		// the proper button + `aria-controls` reference at the cost of a tiny
+		// click handler (4 lines of Vue state) and gain of correct
+		// accessibility semantics.
+		tbody tr:has(> td > [data-table-expansion-panel]) > td {
 			padding: 0;
 			border-block-end-width: 0;
 		}
@@ -397,35 +398,25 @@
 		background-color: var(--set-table-row-selected-background-color);
 	}
 
-	// ── Row expansion — accordion-in-table, pure CSS via inline `<details>` ────
-	// Pattern: a sibling `<tr class="expansion">` lives in the DOM right
-	// after each data row, with a `<td colspan>` holding the
-	// `<div class="expansion-panel">`. State lives entirely in a bare
-	// `<details>` element inside the host row's last cell — the framework
-	// already ships disclosure semantics, the marker chevron (via
-	// `_summary.scss`), the `[open]` toggle, and a smooth height transition
-	// on `::details-content`. CSS `:has()` hooks `tr:has(> td > details[open])`
-	// and opens the sibling's `.expansion-panel` via the same `block-size:
-	// 0 → auto` animation `<details>::details-content` uses (declared
-	// globally via `interpolate-size: allow-keywords` on `<html>` in
-	// `_html.scss`).
-	//
-	// No JavaScript needed — the showcase demo and any production consumer
-	// get a smooth open / close behaviour from semantic HTML alone, tightly
-	// coupled with the framework's bare-accordion `<details>` so a host-page
-	// retune of the accordion timing flows through to the table expansion
-	// automatically.
+	// ── Row expansion — accordion-in-table ───────────────────────────────────
+	// Pattern: a sibling `<tr>` lives in the DOM right after each data row
+	// with a `<td colspan>` holding `<div data-table-expansion-panel>`. The
+	// host row carries `data-table-expanded` while open (set by either the
+	// showcase demo's Vue state or `useTable` from the composable layer).
+	// CSS hooks the open state via the adjacent-sibling combinator below.
 	//
 	// No accent bar, no extra emphasis on the host row — the panel's tinted
 	// background (`color-mix(currentColor 4%, transparent)`) plus its
 	// expanded padding is enough signal that "this row is open." Less
 	// opinionated; the panel-vs-row visual difference does the work.
 	//
-	// Composable parity: `useTable` writes `data-table-expanded` on the host
-	// row instead of relying on inline `<details>`. Both selectors are
-	// unioned so a composable-driven table renders the same chrome without
-	// rewriting markup.
-	table > tbody > tr.expansion > td > .expansion-panel,
+	// Earlier drafts supported a JS-free `<details>` shell as the toggle
+	// (paired with a `tr.expansion` sibling class) for "pure CSS" demos.
+	// That `<details>` wrapped no actual disclosure content — the panel
+	// was in a sibling row — so the markup was semantically dishonest. The
+	// disclosure is now expressed via a real `<button aria-expanded
+	// aria-controls>` in the host row, paired with a Vue state flag that
+	// flips `data-table-expanded`. Same chrome contract, proper semantics.
 	table > tbody > tr > td > [data-table-expansion-panel] {
 		block-size: 0;
 		opacity: 0;
@@ -441,11 +432,10 @@
 		//
 		// `block-size: 0 → auto` requires `interpolate-size: allow-
 		// keywords` (declared globally on `<html>` in `_html.scss`).
-		// Reads from the framework-wide motion tokens so opening the
-		// row's inline `<details>` toggle ripples through `:has()` and
-		// the sibling panel expands with the same iOS-stiff-decel curve
-		// and 250ms duration the disclosure animation in
-		// `elements/_details.scss` uses — same surface, same motion.
+		// Reads from the framework-wide motion tokens so the panel
+		// expands with the same iOS-stiff-decel curve and 250ms duration
+		// the disclosure animation in `elements/_details.scss` uses —
+		// same surface, same motion.
 		@include transition(
 			(
 				block-size var(--set-motion-duration) var(--set-motion-timing-function),
@@ -455,25 +445,10 @@
 		);
 	}
 
-	table > tbody > tr:has(> td > details[open]) + tr.expansion > td > .expansion-panel,
 	table > tbody > tr[data-table-expanded] + tr > td > [data-table-expansion-panel] {
 		block-size: auto;
 		opacity: 1;
 		padding-block: calc(var(--spacing) * 3);
-	}
-
-	// `<details>` inside a table cell — strip the framework's bordered
-	// disclosure chrome so the `<summary>` reads as a bare row-level
-	// toggle. The framework's `_details.scss` baseline renders a padded,
-	// bordered box — correct for stand-alone disclosures and accordion
-	// groups, but inside a `<td>` it'd compete with the table's own chrome.
-	// The summary keeps its marker chevron (from `_summary.scss`) so the
-	// toggle still LOOKS like a disclosure — just without the box around it.
-	table > tbody > tr > td > details {
-		display: inline-block;
-		padding: 0;
-		background: transparent;
-		border: 0;
 	}
 
 	// ── Scrollable wrapper ────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { ref } from 'vue'
 /**
  * TablesPage — the canonical reference for `<table>`, `<caption>`,
  * `<thead>`, `<tbody>`, `<tfoot>`, `<tr>`, `<th>`, `<td>`.
@@ -47,32 +48,28 @@
  *     (caret glyph via `--set-icon-*` mask). Interactive sort logic
  *     belongs on `UseTablePage`; this page demonstrates the static
  *     rendering only.
- *   Row expansion — accordion-in-table, pure CSS:
- *     A sibling `<tr class="expansion">` after each data row holds
- *     a `<td colspan>` containing `<div class="expansion-panel">`.
- *     Toggle state lives in a bare `<details>` inside the host row's
- *     last cell — the framework already styles `<details>` with
- *     accordion semantics + a `<summary>` chevron marker + the
- *     `[open]` attribute. CSS hooks `tr:has(> td > details[open]) +
- *     tr.expansion .expansion-panel` to open the sibling via the
- *     same `block-size: 0 → auto` transition that powers
- *     `<details>::details-content` (declared globally on `<html>`
- *     via `interpolate-size: allow-keywords` in `_html.scss`). Zero
- *     JavaScript — pure CSS, tightly coupled to the bare-details
- *     accordion so a host-page retune of the accordion timing flows
- *     through to the table expansion automatically. No accent bar
- *     and no host-row emphasis — the panel's tinted background plus
- *     its expanded padding is enough signal that "this row is open."
- *     Exclusive accordion: sharing `name="…"` across every host
- *     row's `<details>` makes opening one auto-close the others
- *     (HTML5 exclusive-disclosure semantics, same mechanism the
- *     standalone accordion on `DetailsPage` uses). Multiple-open
- *     vs exclusive is purely a markup choice — drop the `name`
- *     attribute and every toggle becomes independent.
- *     Composable parity: `useTable` writes `data-table-expanded` on
- *     the host row instead of using inline `<details>`; both
- *     selectors are unioned in `_table.scss` so the chrome is
- *     single-sourced.
+ *   Row expansion — accordion-in-table, ARIA disclosure pattern:
+ *     The host row carries `data-table-expanded` while open. The
+ *     immediately-following sibling `<tr>` holds a colspan `<td>`
+ *     containing `<div data-table-expansion-panel>` — the chrome
+ *     target. CSS in `_table.scss` hooks
+ *     `tr[data-table-expanded] + tr > td > [data-table-expansion-panel]`
+ *     to open the sibling via the same `block-size: 0 → auto`
+ *     transition that powers `<details>::details-content`, sharing
+ *     the `interpolate-size: allow-keywords` declaration on `<html>`.
+ *     The toggle button is a real `<button aria-expanded
+ *     aria-controls>` — the ARIA disclosure pattern. The button's
+ *     `aria-controls` points at the expansion row's `id`, so screen
+ *     readers resolve the relationship and the disclosure state is
+ *     announced correctly. No abuse of `<details>` as an empty shell
+ *     wrapping nothing; the markup matches the intent.
+ *     Multi-open vs exclusive: a multi-open section stores its open
+ *     rows in a `Set<string>`; the exclusive variant stores one
+ *     nullable ID. Same chrome contract, just a different toggle
+ *     handler. Composable parity: `useTable` writes
+ *     `data-table-expanded` on the host row from JS, so the same
+ *     CSS opens the same panel regardless of whether state is page-
+ *     local or composable-driven.
  *   `<div class="scrollable">` wrapper — bounds horizontal overflow
  *     to the wrapper so a wide table doesn't push the viewport wider
  *     than the page. Element-agnostic (works around any wide content,
@@ -152,11 +149,301 @@ const members: readonly Member[] = [
 	},
 ]
 
-// No reactive state — the row-expansion demo drives entirely off
-// `<details>` toggles inside each host row. CSS hooks the `[open]`
-// attribute via `:has()` and animates the sibling row's panel. Initial
-// open / closed state is set by adding `open` to the `<details>` in
-// markup, exactly like a static `<details open>` block.
+// Row-expansion demo state. Each section owns its own state ref so
+// the three demos (multi-open, multi-open with rich content,
+// exclusive) stay independent.
+//
+// The framework's expansion chrome is driven by two attributes on
+// canonical markup:
+//   • host row carries `[data-table-expanded]` while open
+//   • the immediately-following sibling `<tr>` holds a
+//     `<div data-table-expansion-panel>` inside its colspan `<td>`
+// CSS in `_table.scss` hooks the open/close transition off
+// `tr[data-table-expanded] + tr > td > [data-table-expansion-panel]`,
+// and `tbody tr:has(> td > [data-table-expansion-panel]) > td`
+// strips the expansion row's chrome so the panel sits flush.
+//
+// The toggle is a real `<button aria-expanded aria-controls>` — proper
+// ARIA disclosure pattern, point-to-the-controlled-region semantics,
+// and no abuse of `<details>` as a hollow shell wrapping nothing. The
+// expansion `<tr>` carries the controlled `id` so screen readers
+// resolve `aria-controls` correctly.
+// One shared set for every multi-open expansion section. Each row's
+// toggle key is the namespaced row ID (e.g. `basic-AL-04`,
+// `variants-1042`, `striped-line-3`) so the sets stay collision-free
+// even when the same business ID appears across demos. Seed values
+// pre-open one row per section so the page lands with visible chrome.
+const expandedRows = ref<ReadonlySet<string>>(
+	new Set([
+		'basic-GH-12',
+		'multi-AL-04',
+		'multi-AT-21',
+		'variants-1043',
+		'variants-1045',
+		'bordered-canvas',
+		'striped-warn-1',
+		'compact-yesterday',
+	]),
+)
+const toggleRow = (id: string): void => {
+	const next = new Set(expandedRows.value)
+	if (next.has(id)) next.delete(id)
+	else next.add(id)
+	expandedRows.value = next
+}
+
+// Exclusive section uses a single nullable ID instead of a set so only
+// one row can be open at a time. Same handler reassigns the ref.
+const expandedExclusive = ref<string | null>('step-1')
+const toggleExclusive = (id: string): void => {
+	expandedExclusive.value = expandedExclusive.value === id ? null : id
+}
+
+interface BasicRow {
+	readonly id: string
+	readonly name: string
+	readonly role: string
+	readonly team: string
+	readonly commits: number
+	readonly last: string
+}
+const basicRows: readonly BasicRow[] = [
+	{
+		id: 'AL-04',
+		name: 'Ada Lovelace',
+		role: 'Mathematician',
+		team: 'Analytical',
+		commits: 342,
+		last: '2 hours ago',
+	},
+	{
+		id: 'GH-12',
+		name: 'Grace Hopper',
+		role: 'Compiler theorist',
+		team: 'Mark I',
+		commits: 287,
+		last: 'Yesterday',
+	},
+	{
+		id: 'AT-21',
+		name: 'Alan Turing',
+		role: 'Cryptographer',
+		team: 'Hut 8',
+		commits: 256,
+		last: '3 days ago',
+	},
+	{
+		id: 'KR-08',
+		name: 'Katherine Johnson',
+		role: 'Mathematician',
+		team: 'Orbital',
+		commits: 198,
+		last: 'Last week',
+	},
+]
+
+interface OrderRow {
+	readonly id: string
+	readonly customer: string
+	readonly status: string
+	readonly total: string
+	readonly variant: 'success' | 'information' | 'warning' | 'danger'
+	readonly address: string
+	readonly contact: string
+	readonly notes: string
+}
+const variantOrders: readonly OrderRow[] = [
+	{
+		id: '1042',
+		customer: 'Acme Corp.',
+		status: 'Shipped',
+		total: '$2,340.00',
+		variant: 'success',
+		address: '742 Evergreen Terrace · Springfield · OR 97477',
+		contact: 'logistics@acme.example · +1 555-0142',
+		notes: 'Tracking number FX-8821-991. Signature on delivery requested.',
+	},
+	{
+		id: '1043',
+		customer: 'Globex Inc.',
+		status: 'Processing',
+		total: '$890.50',
+		variant: 'information',
+		address: '120 Globex Plaza · Springfield · IL 62704',
+		contact: 'accounts@globex.example · +1 555-0188',
+		notes: 'Awaiting line-2 confirmation. Estimated dispatch in 2 business days.',
+	},
+	{
+		id: '1044',
+		customer: 'Initech LLC',
+		status: 'Returned',
+		total: '$4,120.75',
+		variant: 'warning',
+		address: '4120 Veronica Way · Austin · TX 78701',
+		contact: 'returns@initech.example · +1 555-0166',
+		notes: 'RMA-2024-0488 received. Refund pending QA inspection of returned units.',
+	},
+	{
+		id: '1045',
+		customer: 'Soylent Corp.',
+		status: 'Cancelled',
+		total: '$650.00',
+		variant: 'danger',
+		address: '1 Soylent Boulevard · New Brooklyn · NY 11234',
+		contact: 'support@soylent.example',
+		notes: 'Cancelled by customer prior to fulfillment. No funds captured.',
+	},
+]
+
+interface ThemeTokenRow {
+	readonly id: string
+	readonly token: string
+	readonly light: string
+	readonly dark: string
+	readonly notes: string
+}
+const themeTokenRows: readonly ThemeTokenRow[] = [
+	{
+		id: 'canvas',
+		token: '--color-canvas',
+		light: '#fff',
+		dark: 'slate-950',
+		notes: 'The base surface color — every other tier mixes against it.',
+	},
+	{
+		id: 'text',
+		token: '--color-text',
+		light: 'slate-900',
+		dark: 'slate-100',
+		notes: 'Body text. Inverts polarity per theme; everything else derives from it via color-mix.',
+	},
+	{
+		id: 'border',
+		token: '--color-border',
+		light: 'slate-200',
+		dark: 'slate-800',
+		notes:
+			'Default divider color. Consumed by --set-table-border-color, --set-input-border-color, and the bare list-group chrome.',
+	},
+]
+
+interface LogRow {
+	readonly id: string
+	readonly time: string
+	readonly level: string
+	readonly source: string
+	readonly message: string
+	readonly context: string
+}
+const logRows: readonly LogRow[] = [
+	{
+		id: 'info-1',
+		time: '14:02:11.842',
+		level: 'info',
+		source: 'auth',
+		message: 'Session refreshed for user 42',
+		context: 'jti=e7a1, ttl=900s, scope=read:profile read:billing',
+	},
+	{
+		id: 'info-2',
+		time: '14:02:11.901',
+		level: 'info',
+		source: 'db',
+		message: 'Query took 4.3ms (cache hit)',
+		context: 'SELECT id, name, plan FROM accounts WHERE org_id = $1 LIMIT 50',
+	},
+	{
+		id: 'warn-1',
+		time: '14:02:12.118',
+		level: 'warn',
+		source: 'billing',
+		message: 'Retrying webhook delivery (attempt 3 of 5)',
+		context:
+			'POST https://hooks.example.com/billing — last response: 503 Service Unavailable. Next retry in 4s with jitter.',
+	},
+	{
+		id: 'error-1',
+		time: '14:02:12.404',
+		level: 'error',
+		source: 'payments',
+		message: 'Provider returned 503 — falling back to queue',
+		context:
+			'POST /v1/charges → upstream 503. Idempotency key idem_8821 preserved; charge will retry from the durable queue.',
+	},
+]
+
+interface AuditRow {
+	readonly id: string
+	readonly when: string
+	readonly who: string
+	readonly what: string
+	readonly diff: string
+}
+const auditRows: readonly AuditRow[] = [
+	{
+		id: '2h',
+		when: '2 hours ago',
+		who: 'ada@example.com',
+		what: 'Updated billing address',
+		diff: 'Old: 50 Babbage Lane → New: 742 Evergreen Terrace · Springfield · OR 97477',
+	},
+	{
+		id: 'yesterday',
+		when: 'Yesterday',
+		who: 'grace@example.com',
+		what: 'Rotated API token',
+		diff: 'Token sk_live_…ce91 revoked; sk_live_…b4f7 issued. Scope unchanged.',
+	},
+	{
+		id: 'lastweek',
+		when: 'Last week',
+		who: 'katherine@example.com',
+		what: 'Added team member',
+		diff: 'margaret@example.com invited as Editor; invite pending acceptance.',
+	},
+]
+
+interface ReleaseStep {
+	readonly id: string
+	readonly step: string
+	readonly status: string
+	readonly owner: string
+	readonly notes: string
+}
+const releaseSteps: readonly ReleaseStep[] = [
+	{
+		id: 'step-1',
+		step: '1. Specification',
+		status: 'Done',
+		owner: 'Ada',
+		notes:
+			'Spec reviewed by the API council on 2026-04-30; signed off with two minor editorial revisions on §3.2 (status code table) and §7 (response examples).',
+	},
+	{
+		id: 'step-2',
+		step: '2. Implementation',
+		status: 'In review',
+		owner: 'Grace',
+		notes:
+			'PR #2918 open; 4 of 5 review threads resolved. Outstanding: telemetry sampling strategy in the new /v2/jobs handler.',
+	},
+	{
+		id: 'step-3',
+		step: '3. Visual QA',
+		status: 'Pending',
+		owner: 'Margaret',
+		notes:
+			'Visual QA blocked on the implementation PR landing. Test plan drafted in docs/test-plans/2026-Q2-release.md; ~20 minutes of screenshot regression once unblocked.',
+	},
+	{
+		id: 'step-4',
+		step: '4. Documentation',
+		status: 'Not started',
+		owner: 'Alan',
+		notes:
+			'Documentation depends on the spec-frozen body of §3.2 + §7 from step 1, plus the final handler signatures from step 2. Drafting will begin after Visual QA signs off.',
+	},
+]
 </script>
 
 <template>
@@ -531,15 +818,20 @@ const members: readonly Member[] = [
 	<section id="tables-expansion-basic">
 		<h2>Row expansion — accordion-in-table</h2>
 		<p>
-			A sibling <code>&lt;tr class="expansion"&gt;</code> right after a data row holds the inline
-			detail panel. Toggle state lives in a bare <code>&lt;details&gt;</code> inside the host row's
-			last cell — the framework's accordion element already ships the disclosure semantics, the
-			chevron marker, and the <code>[open]</code> attribute. CSS
-			<code>tr:has(&gt; td &gt; details[open]) + tr.expansion .expansion-panel</code> opens the
-			sibling panel via the same <code>block-size: 0 → auto</code> transition
+			A second <code>&lt;tr&gt;</code> right after each data row holds the inline detail panel. The
+			host row carries <code>data-table-expanded</code> while open; the expansion row's
+			<code>&lt;div data-table-expansion-panel&gt;</code> is the chrome target. CSS
+			<code>tr[data-table-expanded] + tr &gt; td &gt; [data-table-expansion-panel]</code> opens the
+			sibling panel via the same <code>block-size: 0 → auto</code> animation
 			<code>&lt;details&gt;::details-content</code> uses (declared globally via
-			<code>interpolate-size: allow-keywords</code> on <code>&lt;html&gt;</code>). Zero JavaScript —
-			pure CSS coupled tightly to the bare-details accordion. Click any toggle.
+			<code>interpolate-size: allow-keywords</code> on <code>&lt;html&gt;</code>).
+		</p>
+		<p>
+			The toggle itself is a real <code>&lt;button aria-expanded aria-controls&gt;</code> — the ARIA
+			disclosure pattern. The button's <code>aria-controls</code> points at the expansion row's
+			<code>id</code>, so screen readers resolve the relationship correctly and the disclosure state
+			is announced. No fake <code>&lt;details&gt;</code> wrapping nothing; the markup matches what
+			the user is actually doing.
 		</p>
 		<table>
 			<thead>
@@ -551,114 +843,75 @@ const members: readonly Member[] = [
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>
-						<code>AL-04</code>
-					</td>
-					<td>Ada Lovelace</td>
-					<td>Mathematician</td>
-					<td>
-						<details><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<dl>
-								<dt>Team</dt>
-								<dd>Analytical</dd>
-								<dt>Commits</dt>
-								<dd>342</dd>
-								<dt>Last activity</dt>
-								<dd>2 hours ago</dd>
-							</dl>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>GH-12</code>
-					</td>
-					<td>Grace Hopper</td>
-					<td>Compiler theorist</td>
-					<td>
-						<details open><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<dl>
-								<dt>Team</dt>
-								<dd>Mark I</dd>
-								<dt>Commits</dt>
-								<dd>287</dd>
-								<dt>Last activity</dt>
-								<dd>Yesterday</dd>
-							</dl>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>AT-21</code>
-					</td>
-					<td>Alan Turing</td>
-					<td>Cryptographer</td>
-					<td>
-						<details><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<dl>
-								<dt>Team</dt>
-								<dd>Hut 8</dd>
-								<dt>Commits</dt>
-								<dd>256</dd>
-								<dt>Last activity</dt>
-								<dd>3 days ago</dd>
-							</dl>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>KR-08</code>
-					</td>
-					<td>Katherine Johnson</td>
-					<td>Mathematician</td>
-					<td>
-						<details><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<dl>
-								<dt>Team</dt>
-								<dd>Orbital</dd>
-								<dt>Commits</dt>
-								<dd>198</dd>
-								<dt>Last activity</dt>
-								<dd>Last week</dd>
-							</dl>
-						</div>
-					</td>
-				</tr>
+				<template v-for="row in basicRows" :key="row.id">
+					<tr :data-table-expanded="expandedRows.has(`basic-${row.id}`) ? '' : undefined">
+						<td>
+							<code>{{ row.id }}</code>
+						</td>
+						<td>{{ row.name }}</td>
+						<td>{{ row.role }}</td>
+						<td>
+							<button
+								type="button"
+								class="subtle row-toggle"
+								:aria-expanded="expandedRows.has(`basic-${row.id}`)"
+								:aria-controls="`basic-${row.id}-details`"
+								@click="toggleRow(`basic-${row.id}`)"
+							>
+								Details
+								<span class="row-toggle-marker" aria-hidden="true"></span>
+							</button>
+						</td>
+					</tr>
+					<tr :id="`basic-${row.id}-details`">
+						<td colspan="4">
+							<div data-table-expansion-panel>
+								<dl>
+									<dt>Team</dt>
+									<dd>{{ row.team }}</dd>
+									<dt>Commits</dt>
+									<dd>{{ row.commits }}</dd>
+									<dt>Last activity</dt>
+									<dd>{{ row.last }}</dd>
+								</dl>
+							</div>
+						</td>
+					</tr>
+				</template>
 			</tbody>
 		</table>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;!-- Host row: aria-controls points at the expansion row's id --&gt;
+&lt;tr :data-table-expanded="expanded.has(id) ? '' : undefined"&gt;
+  &lt;td&gt;…&lt;/td&gt;
+  &lt;td&gt;
+    &lt;button type="button"
+            :aria-expanded="expanded.has(id)"
+            :aria-controls="`row-${id}-details`"
+            @click="toggle(id)"&gt;
+      Details
+    &lt;/button&gt;
+  &lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;!-- Expansion row: id matches aria-controls --&gt;
+&lt;tr :id="`row-${id}-details`"&gt;
+  &lt;td colspan="…"&gt;
+    &lt;div data-table-expansion-panel&gt;…&lt;/div&gt;
+  &lt;/td&gt;
+&lt;/tr&gt;</code></pre>
+		</details>
 	</section>
 
 	<section id="tables-expansion-multi">
 		<h2>Multiple open at once</h2>
 		<p>
-			Each host row's <code>&lt;details&gt;</code> toggle is independent — multiple panels can be
-			open simultaneously without coordination. The selector
-			<code>tr:has(&gt; td &gt; details[open]) + tr.expansion .expansion-panel</code> uses
-			adjacent-sibling matching, so each pair animates on its own. No JS scope to manage; the DOM is
-			the state.
+			Each toggle button owns its own row. The expansion state lives in a single
+			<code>Set&lt;string&gt;</code> of open row IDs — clicking a toggle flips presence in the set.
+			Multiple panels can be open simultaneously; CSS
+			<code>tr[data-table-expanded] + tr &gt; td &gt; [data-table-expansion-panel]</code> uses
+			adjacent-sibling matching, so each pair animates on its own.
 		</p>
 		<table>
 			<thead>
@@ -670,120 +923,52 @@ const members: readonly Member[] = [
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>
-						<code>AL-04</code>
-					</td>
-					<td>Ada Lovelace</td>
-					<td>Analytical</td>
-					<td>
-						<details open><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Ada Lovelace works on the <strong>Analytical</strong> team as a mathematician. She's
-								logged <strong>342</strong> commits over the project's lifetime; her latest activity
-								was <em>2 hours ago</em>.
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>GH-12</code>
-					</td>
-					<td>Grace Hopper</td>
-					<td>Mark I</td>
-					<td>
-						<details><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Grace Hopper works on the <strong>Mark I</strong> team as a compiler theorist.
-								<strong>287</strong> commits logged; latest activity <em>Yesterday</em>.
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>AT-21</code>
-					</td>
-					<td>Alan Turing</td>
-					<td>Hut 8</td>
-					<td>
-						<details open><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Alan Turing works on the <strong>Hut 8</strong> team as a cryptographer.
-								<strong>256</strong> commits logged; latest activity <em>3 days ago</em>.
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>KR-08</code>
-					</td>
-					<td>Katherine Johnson</td>
-					<td>Orbital</td>
-					<td>
-						<details><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Katherine Johnson works on the <strong>Orbital</strong> team as a mathematician.
-								<strong>198</strong> commits logged; latest activity <em>Last week</em>.
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>MH-15</code>
-					</td>
-					<td>Margaret Hamilton</td>
-					<td>Apollo</td>
-					<td>
-						<details><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Margaret Hamilton works on the <strong>Apollo</strong> team as a software engineer.
-								<strong>412</strong> commits logged; latest activity <em>5 minutes ago</em>.
-							</p>
-						</div>
-					</td>
-				</tr>
+				<template v-for="m in members" :key="m.id">
+					<tr :data-table-expanded="expandedRows.has(`multi-${m.id}`) ? '' : undefined">
+						<td>
+							<code>{{ m.id }}</code>
+						</td>
+						<td>{{ m.name }}</td>
+						<td>{{ m.team }}</td>
+						<td>
+							<button
+								type="button"
+								class="subtle row-toggle"
+								:aria-expanded="expandedRows.has(`multi-${m.id}`)"
+								:aria-controls="`multi-${m.id}-details`"
+								@click="toggleRow(`multi-${m.id}`)"
+							>
+								Details
+								<span class="row-toggle-marker" aria-hidden="true"></span>
+							</button>
+						</td>
+					</tr>
+					<tr :id="`multi-${m.id}-details`">
+						<td colspan="4">
+							<div data-table-expansion-panel>
+								<p style="margin-block: 0">
+									{{ m.name }} works on the <strong>{{ m.team }}</strong> team as a
+									{{ m.role.toLowerCase() }}. <strong>{{ m.commits }}</strong> commits logged;
+									latest activity <em>{{ m.last }}</em
+									>.
+								</p>
+							</div>
+						</td>
+					</tr>
+				</template>
 			</tbody>
 		</table>
 	</section>
 
 	<section id="tables-expansion-exclusive">
-		<h2>Exclusive expansion — <code>&lt;details name="…"&gt;</code></h2>
+		<h2>Exclusive expansion — one open at a time</h2>
 		<p>
-			Sharing a <code>name</code> across every host row's <code>&lt;details&gt;</code> turns the set
-			into an exclusive accordion — opening one row's toggle auto-closes the others, no JS required.
-			Same HTML5 mechanism the framework's standalone accordion in
-			<a href="#/details">DetailsPage</a> uses (<code>&lt;details name="faq-group"&gt;</code>), just
-			composed inside a table. Useful when only one detail panel should be open at a time to keep
-			the row count predictable.
+			Sometimes the surface should hold ONE open panel at a time so the row count stays predictable.
+			Same chrome and same markup contract — only the toggle handler changes: instead of flipping
+			presence in a set, it stores a single ID (or
+			<code>null</code>) and overwrites on each click. Opening one row auto-closes the
+			previously-open one because the previous row no longer carries
+			<code>data-table-expanded</code> after the assignment.
 		</p>
 		<table>
 			<thead>
@@ -795,95 +980,53 @@ const members: readonly Member[] = [
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>1. Specification</td>
-					<td>Done</td>
-					<td>Ada</td>
-					<td>
-						<details name="release-steps" open>
-							<summary>Notes</summary>
-						</details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Spec reviewed by the API council on 2026-04-30; signed off with two minor editorial
-								revisions on §3.2 (status code table) and §7 (response examples).
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>2. Implementation</td>
-					<td>In review</td>
-					<td>Grace</td>
-					<td>
-						<details name="release-steps">
-							<summary>Notes</summary>
-						</details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								PR #2918 open; 4 of 5 review threads resolved. Outstanding: telemetry sampling
-								strategy in the new <code>/v2/jobs</code> handler.
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>3. Visual QA</td>
-					<td>Pending</td>
-					<td>Margaret</td>
-					<td>
-						<details name="release-steps">
-							<summary>Notes</summary>
-						</details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Visual QA blocked on the implementation PR landing. Test plan drafted in
-								<code>docs/test-plans/2026-Q2-release.md</code>; ~20 minutes of screenshot
-								regression once unblocked.
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>4. Documentation</td>
-					<td>Not started</td>
-					<td>Alan</td>
-					<td>
-						<details name="release-steps">
-							<summary>Notes</summary>
-						</details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Will start after spec sign-off propagates through to the SDKs. Estimated 1 day of
-								writing, half a day of review.
-							</p>
-						</div>
-					</td>
-				</tr>
+				<template v-for="step in releaseSteps" :key="step.id">
+					<tr :data-table-expanded="expandedExclusive === step.id ? '' : undefined">
+						<td>{{ step.step }}</td>
+						<td>{{ step.status }}</td>
+						<td>{{ step.owner }}</td>
+						<td>
+							<button
+								type="button"
+								class="subtle row-toggle"
+								:aria-expanded="expandedExclusive === step.id"
+								:aria-controls="`step-${step.id}-details`"
+								@click="toggleExclusive(step.id)"
+							>
+								Notes
+								<span class="row-toggle-marker" aria-hidden="true"></span>
+							</button>
+						</td>
+					</tr>
+					<tr :id="`step-${step.id}-details`">
+						<td colspan="4">
+							<div data-table-expansion-panel>
+								<p style="margin-block: 0">{{ step.notes }}</p>
+							</div>
+						</td>
+					</tr>
+				</template>
 			</tbody>
 		</table>
 		<p>
 			Try it: open one row's <em>Notes</em>, then click another — the first auto-closes as the
-			second opens, both animating together. The closing-row's panel ramps `block-size: auto → 0` at
-			the same time the opening-row's panel ramps `0 → auto`. Pure HTML5 disclosure semantics + the
-			framework's `interpolate-size` transition.
+			second opens, both animating together. The closing-row's panel ramps
+			<code>block-size: auto → 0</code> at the same time the opening-row's panel ramps
+			<code>0 → auto</code>, sharing the framework's <code>interpolate-size</code> transition.
 		</p>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>// State: a single ID (or null) instead of a Set.
+const expanded = ref&lt;string | null&gt;('step-1')
+
+const toggle = (id: string): void =&gt; {
+  expanded.value = expanded.value === id ? null : id
+}
+
+// Markup is identical to the multi-open pattern; the handler is the
+// only difference. Same `data-table-expanded` + `[data-table-
+// expansion-panel]` chrome contract.</code></pre>
+		</details>
 	</section>
 
 	<section id="tables-expansion-variants">
@@ -906,106 +1049,45 @@ const members: readonly Member[] = [
 				</tr>
 			</thead>
 			<tbody>
-				<tr class="success">
-					<td>
-						<code>#1042</code>
-					</td>
-					<td>Acme Corp.</td>
-					<td>Shipped</td>
-					<td>$2,340.00</td>
-					<td>
-						<details><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="5">
-						<div class="expansion-panel">
-							<dl>
-								<dt>Shipping address</dt>
-								<dd>742 Evergreen Terrace · Springfield · OR 97477</dd>
-								<dt>Contact</dt>
-								<dd>logistics@acme.example · +1 555-0142</dd>
-								<dt>Notes</dt>
-								<dd>Tracking number FX-8821-991. Signature on delivery requested.</dd>
-							</dl>
-						</div>
-					</td>
-				</tr>
-				<tr class="information">
-					<td>
-						<code>#1043</code>
-					</td>
-					<td>Globex Inc.</td>
-					<td>Processing</td>
-					<td>$890.50</td>
-					<td>
-						<details open><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="5">
-						<div class="expansion-panel">
-							<dl>
-								<dt>Shipping address</dt>
-								<dd>120 Globex Plaza · Springfield · IL 62704</dd>
-								<dt>Contact</dt>
-								<dd>accounts@globex.example · +1 555-0188</dd>
-								<dt>Notes</dt>
-								<dd>Awaiting line-2 confirmation. Estimated dispatch in 2 business days.</dd>
-							</dl>
-						</div>
-					</td>
-				</tr>
-				<tr class="warning">
-					<td>
-						<code>#1044</code>
-					</td>
-					<td>Initech LLC</td>
-					<td>Returned</td>
-					<td>$4,120.75</td>
-					<td>
-						<details><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="5">
-						<div class="expansion-panel">
-							<dl>
-								<dt>Shipping address</dt>
-								<dd>4120 Veronica Way · Austin · TX 78701</dd>
-								<dt>Contact</dt>
-								<dd>returns@initech.example · +1 555-0166</dd>
-								<dt>Notes</dt>
-								<dd>RMA-2024-0488 received. Refund pending QA inspection of returned units.</dd>
-							</dl>
-						</div>
-					</td>
-				</tr>
-				<tr class="danger">
-					<td>
-						<code>#1045</code>
-					</td>
-					<td>Soylent Corp.</td>
-					<td>Cancelled</td>
-					<td>$650.00</td>
-					<td>
-						<details open><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="5">
-						<div class="expansion-panel">
-							<dl>
-								<dt>Shipping address</dt>
-								<dd>1 Soylent Boulevard · New Brooklyn · NY 11234</dd>
-								<dt>Contact</dt>
-								<dd>support@soylent.example</dd>
-								<dt>Notes</dt>
-								<dd>Cancelled by customer prior to fulfillment. No funds captured.</dd>
-							</dl>
-						</div>
-					</td>
-				</tr>
+				<template v-for="o in variantOrders" :key="o.id">
+					<tr
+						:class="o.variant"
+						:data-table-expanded="expandedRows.has(`variants-${o.id}`) ? '' : undefined"
+					>
+						<td>
+							<code>#{{ o.id }}</code>
+						</td>
+						<td>{{ o.customer }}</td>
+						<td>{{ o.status }}</td>
+						<td>{{ o.total }}</td>
+						<td>
+							<button
+								type="button"
+								class="subtle row-toggle"
+								:aria-expanded="expandedRows.has(`variants-${o.id}`)"
+								:aria-controls="`variants-${o.id}-details`"
+								@click="toggleRow(`variants-${o.id}`)"
+							>
+								Details
+								<span class="row-toggle-marker" aria-hidden="true"></span>
+							</button>
+						</td>
+					</tr>
+					<tr :id="`variants-${o.id}-details`">
+						<td colspan="5">
+							<div data-table-expansion-panel>
+								<dl>
+									<dt>Shipping address</dt>
+									<dd>{{ o.address }}</dd>
+									<dt>Contact</dt>
+									<dd>{{ o.contact }}</dd>
+									<dt>Notes</dt>
+									<dd>{{ o.notes }}</dd>
+								</dl>
+							</div>
+						</td>
+					</tr>
+				</template>
 			</tbody>
 		</table>
 	</section>
@@ -1030,77 +1112,38 @@ const members: readonly Member[] = [
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>
-						<code>--color-canvas</code>
-					</td>
-					<td>
-						<code>#fff</code>
-					</td>
-					<td>
-						<code>slate-950</code>
-					</td>
-					<td>
-						<details open><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								The base surface color — every other tier mixes against it.
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>--color-text</code>
-					</td>
-					<td>
-						<code>slate-900</code>
-					</td>
-					<td>
-						<code>slate-100</code>
-					</td>
-					<td>
-						<details><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Body text. Inverts polarity per theme; everything else derives from it via
-								<code>color-mix</code>.
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>--color-border</code>
-					</td>
-					<td>
-						<code>slate-200</code>
-					</td>
-					<td>
-						<code>slate-800</code>
-					</td>
-					<td>
-						<details><summary>Details</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Default divider color. Consumed by <code>--set-table-border-color</code>,
-								<code>--set-input-border-color</code>, and the bare list-group chrome.
-							</p>
-						</div>
-					</td>
-				</tr>
+				<template v-for="t in themeTokenRows" :key="t.id">
+					<tr :data-table-expanded="expandedRows.has(`bordered-${t.id}`) ? '' : undefined">
+						<td>
+							<code>{{ t.token }}</code>
+						</td>
+						<td>
+							<code>{{ t.light }}</code>
+						</td>
+						<td>
+							<code>{{ t.dark }}</code>
+						</td>
+						<td>
+							<button
+								type="button"
+								class="subtle row-toggle"
+								:aria-expanded="expandedRows.has(`bordered-${t.id}`)"
+								:aria-controls="`bordered-${t.id}-details`"
+								@click="toggleRow(`bordered-${t.id}`)"
+							>
+								Details
+								<span class="row-toggle-marker" aria-hidden="true"></span>
+							</button>
+						</td>
+					</tr>
+					<tr :id="`bordered-${t.id}-details`">
+						<td colspan="4">
+							<div data-table-expansion-panel>
+								<p style="margin-block: 0">{{ t.notes }}</p>
+							</div>
+						</td>
+					</tr>
+				</template>
 			</tbody>
 		</table>
 	</section>
@@ -1123,86 +1166,37 @@ const members: readonly Member[] = [
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>
-						<code>14:02:11.842</code>
-					</td>
-					<td>info</td>
-					<td>auth</td>
-					<td>Session refreshed for user 42</td>
-					<td>
-						<details><summary>Context</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="5">
-						<div class="expansion-panel">
-							<pre
-								style="margin: 0; white-space: pre-wrap; word-break: break-word"
-							><code>jti=e7a1, ttl=900s, scope=read:profile read:billing</code></pre>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>14:02:11.901</code>
-					</td>
-					<td>info</td>
-					<td>db</td>
-					<td>Query took 4.3ms (cache hit)</td>
-					<td>
-						<details><summary>Context</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="5">
-						<div class="expansion-panel">
-							<pre
-								style="margin: 0; white-space: pre-wrap; word-break: break-word"
-							><code>SELECT id, name, plan FROM accounts WHERE org_id = $1 LIMIT 50</code></pre>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>14:02:12.118</code>
-					</td>
-					<td>warn</td>
-					<td>billing</td>
-					<td>Retrying webhook delivery (attempt 3 of 5)</td>
-					<td>
-						<details open><summary>Context</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="5">
-						<div class="expansion-panel">
-							<pre
-								style="margin: 0; white-space: pre-wrap; word-break: break-word"
-							><code>POST https://hooks.example.com/billing — last response: 503 Service Unavailable. Next retry in 4s with jitter.</code></pre>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						<code>14:02:12.404</code>
-					</td>
-					<td>error</td>
-					<td>payments</td>
-					<td>Provider returned 503 — falling back to queue</td>
-					<td>
-						<details><summary>Context</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="5">
-						<div class="expansion-panel">
-							<pre
-								style="margin: 0; white-space: pre-wrap; word-break: break-word"
-							><code>POST /v1/charges → upstream 503. Idempotency key idem_8821 preserved; charge will retry from the durable queue.</code></pre>
-						</div>
-					</td>
-				</tr>
+				<template v-for="r in logRows" :key="r.id">
+					<tr :data-table-expanded="expandedRows.has(`striped-${r.id}`) ? '' : undefined">
+						<td>
+							<code>{{ r.time }}</code>
+						</td>
+						<td>{{ r.level }}</td>
+						<td>{{ r.source }}</td>
+						<td>{{ r.message }}</td>
+						<td>
+							<button
+								type="button"
+								class="subtle row-toggle"
+								:aria-expanded="expandedRows.has(`striped-${r.id}`)"
+								:aria-controls="`striped-${r.id}-details`"
+								@click="toggleRow(`striped-${r.id}`)"
+							>
+								Context
+								<span class="row-toggle-marker" aria-hidden="true"></span>
+							</button>
+						</td>
+					</tr>
+					<tr :id="`striped-${r.id}-details`">
+						<td colspan="5">
+							<div data-table-expansion-panel>
+								<pre
+									style="margin: 0; white-space: pre-wrap; word-break: break-word"
+								><code>{{ r.context }}</code></pre>
+							</div>
+						</td>
+					</tr>
+				</template>
 			</tbody>
 		</table>
 	</section>
@@ -1225,64 +1219,34 @@ const members: readonly Member[] = [
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>2 hours ago</td>
-					<td>
-						<code>ada@example.com</code>
-					</td>
-					<td>Updated billing address</td>
-					<td>
-						<details><summary>Diff</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Old: 50 Babbage Lane → New: 742 Evergreen Terrace · Springfield · OR 97477
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>Yesterday</td>
-					<td>
-						<code>grace@example.com</code>
-					</td>
-					<td>Rotated API token</td>
-					<td>
-						<details open><summary>Diff</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								Token <code>sk_live_…ce91</code> revoked; <code>sk_live_…b4f7</code> issued. Scope
-								unchanged.
-							</p>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td>Last week</td>
-					<td>
-						<code>katherine@example.com</code>
-					</td>
-					<td>Added team member</td>
-					<td>
-						<details><summary>Diff</summary></details>
-					</td>
-				</tr>
-				<tr class="expansion">
-					<td colspan="4">
-						<div class="expansion-panel">
-							<p style="margin-block: 0">
-								<code>margaret@example.com</code> invited as Editor; invite pending acceptance.
-							</p>
-						</div>
-					</td>
-				</tr>
+				<template v-for="a in auditRows" :key="a.id">
+					<tr :data-table-expanded="expandedRows.has(`compact-${a.id}`) ? '' : undefined">
+						<td>{{ a.when }}</td>
+						<td>
+							<code>{{ a.who }}</code>
+						</td>
+						<td>{{ a.what }}</td>
+						<td>
+							<button
+								type="button"
+								class="subtle row-toggle"
+								:aria-expanded="expandedRows.has(`compact-${a.id}`)"
+								:aria-controls="`compact-${a.id}-details`"
+								@click="toggleRow(`compact-${a.id}`)"
+							>
+								Diff
+								<span class="row-toggle-marker" aria-hidden="true"></span>
+							</button>
+						</td>
+					</tr>
+					<tr :id="`compact-${a.id}-details`">
+						<td colspan="4">
+							<div data-table-expansion-panel>
+								<p style="margin-block: 0">{{ a.diff }}</p>
+							</div>
+						</td>
+					</tr>
+				</template>
 			</tbody>
 		</table>
 	</section>
@@ -1499,3 +1463,39 @@ const members: readonly Member[] = [
 		</ul>
 	</section>
 </template>
+
+<style scoped>
+/* Row-expansion toggle button — small, inline, with a chevron marker
+ * that rotates 180° when `aria-expanded="true"`. Matches the framework's
+ * dropdown / details marker idiom without pulling in either component's
+ * full chrome (a tooltip-anchor button, not a dropdown trigger). */
+.row-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding-inline: 0.625rem;
+	padding-block: 0.25rem;
+	font-size: 0.875rem;
+}
+
+.row-toggle-marker {
+	display: inline-block;
+	inline-size: 0.75em;
+	block-size: 0.75em;
+	background-color: currentColor;
+	mask-image: var(--set-icon-chevron-down);
+	-webkit-mask-image: var(--set-icon-chevron-down);
+	mask-size: contain;
+	-webkit-mask-size: contain;
+	mask-repeat: no-repeat;
+	-webkit-mask-repeat: no-repeat;
+	mask-position: center;
+	-webkit-mask-position: center;
+	opacity: 0.7;
+	transition: transform var(--set-transition-duration) ease;
+}
+
+.row-toggle[aria-expanded='true'] .row-toggle-marker {
+	transform: rotate(180deg);
+}
+</style>
