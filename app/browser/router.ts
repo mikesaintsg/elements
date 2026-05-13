@@ -27,6 +27,7 @@ import UsePointerPage from './pages/UsePointerPage.vue'
 import UseDragDropPage from './pages/UseDragDropPage.vue'
 import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
 import UsePopoverPage from './pages/UsePopoverPage.vue'
+import UseTooltipPage from './pages/UseTooltipPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -195,6 +196,12 @@ const USE_POPOVER: Route = {
 	group: 'Composables',
 	page: UsePopoverPage,
 }
+const USE_TOOLTIP: Route = {
+	id: 'use-tooltip',
+	title: 'useTooltip',
+	group: 'Composables',
+	page: UseTooltipPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -223,6 +230,7 @@ export const routes: readonly Route[] = [
 	USE_DRAG_DROP,
 	USE_THEME_BUTTON,
 	USE_POPOVER,
+	USE_TOOLTIP,
 ]
 
 interface RouteLocation {
