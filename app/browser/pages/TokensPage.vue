@@ -282,6 +282,128 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 		</p>
 	</section>
 
+	<section id="tokens-customization">
+		<h2>How + where to set tokens</h2>
+		<p>
+			The framework's <code>--set-*</code> namespace is intentionally separate from Tailwind's
+			<code>--color-*</code> / <code>--spacing-*</code> / <code>--radius-*</code> design tokens.
+			Both cascade through <code>:root</code>, but they serve different roles: Tailwind's tokens
+			power utility classes (<code>text-blue-500</code>, <code>p-4</code>); the framework's
+			<code>--set-*</code> tokens power semantic-element chrome (<code
+				>&lt;button class="primary"&gt;</code
+			>, <code>&lt;dialog&gt;</code>). Override either independently.
+		</p>
+
+		<h3>1. Project entry CSS</h3>
+		<p>
+			Three lines order matters. Declare the cascade layer order BEFORE importing Tailwind so
+			Tailwind's <code>@layer theme, base, components, utilities</code> declaration merges as a
+			no-op against the wider framework order. Then import Tailwind, then the framework. Later
+			layers win.
+		</p>
+		<pre><code>/* src/styles/main.css (or your project's entry CSS) */
+@layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
+
+@import 'tailwindcss';
+@import '@elements/styles';
+
+/* Your overrides live here. Land in the cascade AFTER the framework
+   imports, so they win without `!important`. Use `:root` for global
+   retunes; use any element selector for scoped retunes. */
+:root {
+  --set-radius-factor: 1.25;
+  --set-motion-duration: 300ms;
+  --set-focus-box-shadow-width: 0.3125rem;
+}</code></pre>
+
+		<h3>2. Component-scope override</h3>
+		<p>
+			Any element scope is a valid override surface — useful for theming one part of an app
+			differently from the rest, or for one-off retunes inside a feature module:
+		</p>
+		<pre><code>/* Compact density inside a data-dense admin shell, default elsewhere. */
+.admin-shell {
+  --set-density-factor: 0.75;
+}
+
+/* Sharper modal radii, leave page chrome rounded. */
+dialog {
+  --set-dialog-border-radius: 0.25rem;
+}</code></pre>
+
+		<h3>3. Per-instance inline style</h3>
+		<p>For one-off tweaks on a single host. The override applies only to that subtree:</p>
+		<pre><code>&lt;article style="--set-article-border-radius: 1rem; --set-article-padding-block: 2rem"&gt;
+  …
+&lt;/article&gt;</code></pre>
+
+		<h3>4. Tailwind v4 — <code>@theme</code> blocks</h3>
+		<p>
+			Tailwind v4's <code>@theme</code> directive registers Tailwind-tracked design tokens
+			(<code>--color-*</code>, <code>--spacing-*</code>, <code>--radius-*</code>, etc.) that drive
+			its utility generators. The framework already declares its
+			<strong>variant palette</strong> (<code>--color-primary</code>,
+			<code>--color-success-bg-subtle</code>, …) in a <code>@theme</code> block inside
+			<code>src/styles/_theme.scss</code>, so Tailwind picks them up automatically. To retune
+			Tailwind's tokens, declare your own <code>@theme</code> block in the consumer's entry CSS:
+		</p>
+		<pre><code>/* src/styles/main.css */
+@import 'tailwindcss';
+@import '@elements/styles';
+
+@theme {
+  /* Override Tailwind tokens. Cascades to BOTH Tailwind utilities
+     AND the framework's variant cascade (since framework variants
+     read from --color-{name}). */
+  --color-primary: oklch(0.65 0.18 250);
+  --radius-md: 0.5rem;
+}
+
+/* `--set-*` tokens belong on `:root`, not inside `@theme`. */
+:root {
+  --set-radius-factor: 1.1;
+}</code></pre>
+		<p>
+			<strong>Which token namespace to override?</strong>
+		</p>
+		<ul>
+			<li>
+				Tailwind <code>--color-*</code> / <code>--spacing-*</code> in <code>@theme</code> — retunes
+				Tailwind utility classes (<code>text-blue-500</code>, <code>p-4</code>) AND cascades into
+				the framework's variant palette.
+			</li>
+			<li>
+				Framework <code>--set-*</code> on <code>:root</code> — retunes the framework's chrome
+				directly without touching Tailwind utilities.
+			</li>
+		</ul>
+
+		<h3>5. Some tokens have to land on the property itself</h3>
+		<p>
+			Element baselines declare their per-tag tokens (<code>--set-button-border-radius</code>,
+			<code>--set-aside-padding-inline</code>, …) <em>on the element selector</em>, which shadows
+			any inherited override from a wrapping ancestor. Two patterns work around this:
+		</p>
+		<ul>
+			<li>
+				Override at the element scope, not on an ancestor:
+				<code>button { --set-button-border-radius: 0 }</code>.
+			</li>
+			<li>
+				Or apply the CSS property directly:
+				<code>&lt;button style="border-radius: 0"&gt;</code> — useful for one-off retunes (the
+				radius / density playgrounds on this page use this pattern).
+			</li>
+		</ul>
+		<p>
+			The factor tokens (<code>--set-radius-factor</code>, <code>--set-density-factor</code>) are
+			the consumer-facing way to express "multiply this by a global rhythm." Components that opt in
+			wrap their math in <code>calc(default * var(--set-{factor}))</code>; the shipped components
+			don't opt in by default (the comment in <code>_tokens.scss</code> notes this is consumer
+			territory). The retune playgrounds further down demonstrate the opt-in pattern.
+		</p>
+	</section>
+
 	<section id="tokens-motion">
 		<h2>Motion contract — <code>--set-motion-{duration, timing-function}</code></h2>
 		<p>
