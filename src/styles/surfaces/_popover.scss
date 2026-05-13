@@ -258,9 +258,9 @@
 		// the demand equal the natural content height so the requested
 		// side wins unless there's genuinely no room.
 		--set-popover-hint-max-block-size: max-content;
-		// Tooltip elevation — flows through the global `--set-box-shadow-sm`
+		// Tooltip elevation — flows through the global `--set-box-shadow-small`
 		// scale so a single `:root` retune retunes every floating chrome.
-		--set-popover-hint-box-shadow: var(--set-box-shadow-sm);
+		--set-popover-hint-box-shadow: var(--set-box-shadow-small);
 	}
 
 	[popover='hint'],
@@ -337,7 +337,7 @@
 		// tooltips above their anchors in tight viewports.
 		--set-anchor-max-block-size: var(--set-popover-hint-max-block-size);
 		// Tooltips are transient; a smaller shadow keeps them visually
-		// lighter than a full menu / dropdown panel — `--set-box-shadow-sm`
+		// lighter than a full menu / dropdown panel — `--set-box-shadow-small`
 		// rather than the panel-tier `--set-box-shadow` base.
 		box-shadow: var(--set-popover-hint-box-shadow);
 	}

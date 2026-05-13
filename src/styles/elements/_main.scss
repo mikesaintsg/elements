@@ -47,6 +47,17 @@
 
 @layer elements {
 	main {
+		// Page-shell group requires `color` + `background-color` on every
+		// member so consumers can retune the whole shell uniformly (see
+		// taxonomy.ts § TOKEN_GROUPS.page-shell). Both fall through to
+		// `currentColor` / `transparent` by default — the bare `<main>`
+		// reads the body's canvas, but a consumer setting
+		// `<main style="--set-main-background-color: var(--color-surface)">`
+		// can paint a tinted content well without overriding the body.
+		// `currentColor` (not `inherit`) so the custom property resolves
+		// to a real value under getComputedStyle.
+		--set-main-color: currentColor;
+		--set-main-background-color: transparent;
 		--set-main-padding-inline: clamp(1rem, 5vw, calc(var(--spacing) * 10));
 		--set-main-padding-block: calc(var(--spacing) * 8);
 		--set-main-gap: calc(var(--spacing) * 8);
@@ -56,5 +67,7 @@
 		gap: var(--set-main-gap);
 		padding-inline: var(--set-main-padding-inline);
 		padding-block: var(--set-main-padding-block);
+		color: var(--set-main-color);
+		background-color: var(--set-main-background-color);
 	}
 }

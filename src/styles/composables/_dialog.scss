@@ -48,8 +48,8 @@
 		// flexes to fill the remaining height between header and footer.
 		// `min-block-size: 0` lets it shrink below intrinsic content size
 		// on tiny viewports without overflowing the dialog.
-		> :where(:not(header):not(footer)),
-		> form > :where(:not(header):not(footer)) {
+		> :where(:not(:where(header, footer))),
+		> form > :where(:not(:where(header, footer))) {
 			flex: 1 1 auto;
 			min-block-size: 0;
 		}

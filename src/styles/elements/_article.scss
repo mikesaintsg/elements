@@ -5,7 +5,7 @@
 //
 // Hydration: chrome lives in `components/_article.scss` (card surface,
 // descendant <header> / <footer> as card-header / card-footer, `.filled`
-// surface fill, `--set-article-box-shadow` flowing from `--set-box-shadow-sm`).
+// surface fill, `--set-article-box-shadow` flowing from `--set-box-shadow-small`).
 // This element-layer partial intentionally emits no rule — element vs
 // component layering ensures the card chrome stays in the components layer
 // where utilities can override it cleanly.

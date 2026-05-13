@@ -195,53 +195,15 @@
 	// row marked `<li class="success active">` paints the saturated identity
 	// fill (active wins) rather than the subtle tint (variant alone).
 	// --------------------------------------------------------------------------
-	ul.group > li.primary,
-	ol.group > li.primary {
-		--set-group-item-background-color: var(--color-primary-bg-subtle);
-		color: var(--color-primary-text-emphasis);
-		border-color: var(--color-primary-border-subtle);
-	}
-
-	ul.group > li.secondary,
-	ol.group > li.secondary {
-		--set-group-item-background-color: var(--color-secondary-bg-subtle);
-		color: var(--color-secondary-text-emphasis);
-		border-color: var(--color-secondary-border-subtle);
-	}
-
-	ul.group > li.tertiary,
-	ol.group > li.tertiary {
-		--set-group-item-background-color: var(--color-tertiary-bg-subtle);
-		color: var(--color-tertiary-text-emphasis);
-		border-color: var(--color-tertiary-border-subtle);
-	}
-
-	ul.group > li.success,
-	ol.group > li.success {
-		--set-group-item-background-color: var(--color-success-bg-subtle);
-		color: var(--color-success-text-emphasis);
-		border-color: var(--color-success-border-subtle);
-	}
-
-	ul.group > li.warning,
-	ol.group > li.warning {
-		--set-group-item-background-color: var(--color-warning-bg-subtle);
-		color: var(--color-warning-text-emphasis);
-		border-color: var(--color-warning-border-subtle);
-	}
-
-	ul.group > li.danger,
-	ol.group > li.danger {
-		--set-group-item-background-color: var(--color-danger-bg-subtle);
-		color: var(--color-danger-text-emphasis);
-		border-color: var(--color-danger-border-subtle);
-	}
-
-	ul.group > li.information,
-	ol.group > li.information {
-		--set-group-item-background-color: var(--color-information-bg-subtle);
-		color: var(--color-information-text-emphasis);
-		border-color: var(--color-information-border-subtle);
+	// Iterated via the canonical `palette-each` mixin so adding a variant
+	// flows through without touching this rule.
+	@include palette-each using ($variant) {
+		ul.group > li.#{$variant},
+		ol.group > li.#{$variant} {
+			--set-group-item-background-color: var(--color-#{$variant}-bg-subtle);
+			color: var(--color-#{$variant}-text-emphasis);
+			border-color: var(--color-#{$variant}-border-subtle);
+		}
 	}
 
 	// --------------------------------------------------------------------------

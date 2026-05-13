@@ -100,6 +100,19 @@
 
 			@include transition((rotate var(--set-summary-transition-duration)));
 		}
+
+		// Windows High Contrast / forced-colors fallback. Summary is the
+		// disclosure trigger — it receives focus when the user tabs to the
+		// host <details>. Map text to CanvasText, focus chrome to Highlight.
+		@include forced-colors {
+			color: CanvasText;
+
+			&:focus-visible {
+				outline: 2px solid Highlight;
+				outline-offset: 2px;
+				box-shadow: none;
+			}
+		}
 	}
 
 	details[open] > summary::before {

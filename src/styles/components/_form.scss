@@ -82,9 +82,9 @@
 	// fill their container.
 	form
 		> label
-		> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select),
+		> :is(input:not(:where([type='checkbox'], [type='radio'], [type='color'])), textarea, select),
 	form
-		> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select) {
+		> :is(input:not(:where([type='checkbox'], [type='radio'], [type='color'])), textarea, select) {
 		inline-size: 100%;
 	}
 
@@ -98,9 +98,9 @@
 	}
 	form.row
 		> label
-		> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select),
+		> :is(input:not(:where([type='checkbox'], [type='radio'], [type='color'])), textarea, select),
 	form.row
-		> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select) {
+		> :is(input:not(:where([type='checkbox'], [type='radio'], [type='color'])), textarea, select) {
 		inline-size: auto;
 	}
 

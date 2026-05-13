@@ -62,5 +62,19 @@
 			cursor: not-allowed;
 			opacity: var(--set-label-disabled-opacity);
 		}
+
+		// Windows High Contrast / forced-colors fallback. Labels are
+		// associated phrasing — color falls back to `CanvasText` so the
+		// label reads against the system canvas. Disabled labels render
+		// as `GrayText` per the system token convention.
+		@include forced-colors {
+			color: CanvasText;
+
+			&[aria-disabled='true'],
+			&.disabled,
+			fieldset:disabled & {
+				color: GrayText;
+			}
+		}
 	}
 }

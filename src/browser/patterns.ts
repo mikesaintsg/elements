@@ -1144,12 +1144,12 @@ export const COMPOSABLE_CONTRACTS: Readonly<Record<string, ComposableContract>> 
 			'transition-duration',
 			'transition-easing',
 			'control-size',
-			'control-bg',
+			'control-background-color',
 			'control-icon',
 			'indicator-size',
 			'indicator-active-size',
-			'indicator-bg',
-			'indicator-bg-active',
+			'indicator-background-color',
+			'indicator-background-color-active',
 		],
 		stateSelectors: ['aria-attribute', 'role-attribute'],
 		animated: true,
@@ -1355,11 +1355,33 @@ export const TRANSITION_INCLUDE_REGEX = /@include\s+transition\s*\(/
  * surface here.
  */
 export function hasChainedTagNots(selector: string): boolean {
-	// Match :not(content) where content is a tag name (`[a-z][a-z0-9-]*`)
-	// or an attribute selector (`[…]`). Pseudo-class :not() chains are
-	// out of scope.
-	const matches = selector.match(/:not\((?:[a-z][a-z0-9-]*|\[[^\]]+\])\)/g) ?? []
-	return matches.length >= 2
+	// The anti-pattern is "two or more :not()s chained on ONE simple
+	// selector" (e.g. `[popover]:not(a):not(b)`). Two :not()s spread
+	// across different branches of a selector list (`a:not(x), b:not(x)`)
+	// are NOT chained — each branch keeps its own :not() at single
+	// specificity. Split branches respecting paren-depth before counting.
+	const branches: string[] = []
+	let depth = 0
+	let start = 0
+	for (let i = 0; i < selector.length; i += 1) {
+		const ch = selector[i]
+		if (ch === '(' || ch === '[') depth += 1
+		else if (ch === ')' || ch === ']') depth = Math.max(0, depth - 1)
+		else if (ch === ',' && depth === 0) {
+			branches.push(selector.slice(start, i))
+			start = i + 1
+		}
+	}
+	branches.push(selector.slice(start))
+
+	// Per-branch check: 2+ :not(tag) or :not([attr]) sequences on a
+	// single simple selector. Pseudo-class :not() chains are exempt.
+	const NOT_TAG_OR_ATTR = /:not\((?:[a-z][a-z0-9-]*|\[[^\]]+\])\)/g
+	for (const branch of branches) {
+		const matches = branch.match(NOT_TAG_OR_ATTR) ?? []
+		if (matches.length >= 2) return true
+	}
+	return false
 }
 
 /**

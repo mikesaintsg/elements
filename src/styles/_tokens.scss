@@ -186,11 +186,11 @@
 	// Consumer override at `:root` (eg sharper monochrome shadows on a
 	// brutalist theme) retunes every floating surface at once.
 	// --------------------------------------------------------------------------
-	--set-box-shadow-sm: 0 0.125rem 0.25rem color-mix(in srgb, black 7.5%, transparent);
+	--set-box-shadow-small: 0 0.125rem 0.25rem color-mix(in srgb, black 7.5%, transparent);
 	--set-box-shadow:
 		0 0.25rem 0.75rem color-mix(in srgb, black 8%, transparent),
 		0 0.0625rem 0.1875rem color-mix(in srgb, black 6%, transparent);
-	--set-box-shadow-lg:
+	--set-box-shadow-large:
 		0 0.5rem 2rem color-mix(in srgb, black 18%, transparent),
 		0 0.125rem 0.375rem color-mix(in srgb, black 10%, transparent);
 
@@ -291,7 +291,7 @@
 	--set-icon-system: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='3' width='12' height='8' rx='1'/%3E%3Cpath d='M6 14h4M8 11v3'/%3E%3C/svg%3E");
 
 	// ── Status / variant indicators ────────────────────────────────────────────
-	--set-icon-info: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 7v4M8 5h.01'/%3E%3C/svg%3E");
+	--set-icon-information: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 7v4M8 5h.01'/%3E%3C/svg%3E");
 	--set-icon-success: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='m5 8 2 2 4-4'/%3E%3C/svg%3E");
 	--set-icon-warning: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2 1.5 13.5h13z'/%3E%3Cpath d='M8 6v4M8 12h.01'/%3E%3C/svg%3E");
 	--set-icon-danger: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 4v5M8 11h.01'/%3E%3C/svg%3E");

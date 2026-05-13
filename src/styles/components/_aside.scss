@@ -325,8 +325,8 @@
 		padding-block: 0;
 	}
 
-	aside[role='alert']:has(> header) > :not(header):not(footer),
-	aside[role='alert']:has(> footer) > :not(header):not(footer) {
+	aside[role='alert']:has(> header) > :not(:where(header, footer)),
+	aside[role='alert']:has(> footer) > :not(:where(header, footer)) {
 		padding-inline: var(--set-alert-padding-inline);
 		padding-block: var(--set-alert-padding-block);
 	}
@@ -564,7 +564,7 @@
 		// above the page rather than a flush surface that slid in from
 		// nowhere. Overriding the popover surface's centered shadow with
 		// the small-elevation token gives a directional cue.
-		--set-popover-box-shadow: var(--set-box-shadow-sm);
+		--set-popover-box-shadow: var(--set-box-shadow-small);
 
 		// Transition list — `transform` + `opacity` for the slide-in,
 		// `overlay` + `display` with `allow-discrete` so the element

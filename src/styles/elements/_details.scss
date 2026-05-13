@@ -88,6 +88,31 @@
 			block-size: auto;
 			opacity: 1;
 		}
+
+		// Keyboard focus on the disclosure itself (rare — focus normally
+		// lands on `<summary>`, not the host `<details>`). Provide an
+		// explicit focus-visible ring so the affordance is visible if the
+		// host receives focus programmatically (`element.focus()` from a
+		// composable, autofocus on open).
+		&:focus-visible {
+			outline: none;
+			@include focus-ring();
+		}
+
+		// Windows High Contrast / forced-colors fallback. Containers fall
+		// back to system Canvas / CanvasText / ButtonText tokens so the
+		// disclosure border + body survives in HC mode.
+		@include forced-colors {
+			color: CanvasText;
+			background-color: Canvas;
+			border-color: ButtonText;
+
+			&:focus-visible {
+				outline: 2px solid Highlight;
+				outline-offset: 2px;
+				box-shadow: none;
+			}
+		}
 	}
 
 	// --------------------------------------------------------------------------
