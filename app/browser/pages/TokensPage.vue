@@ -102,6 +102,30 @@ const radiusFactor = ref(1)
 const densityFactor = ref(1)
 const motionDuration = ref(250)
 const motionTimingFunction = ref<'iOS' | 'ease' | 'linear' | 'snappy'>('iOS')
+const focusWidth = ref(0.25) // rem
+const focusOpacity = ref(0.35)
+
+const focusRingFor = (variant: string): string => {
+	return `0 0 0 ${focusWidth.value}rem color-mix(in oklab, var(--color-${variant}) ${(
+		focusOpacity.value * 100
+	).toFixed(0)}%, transparent)`
+}
+
+const applyFocusWidth = (): void => {
+	document.documentElement.style.setProperty(
+		'--set-focus-box-shadow-width',
+		`${focusWidth.value}rem`,
+	)
+	refresh()
+}
+
+const applyFocusOpacity = (): void => {
+	document.documentElement.style.setProperty(
+		'--set-focus-box-shadow-opacity',
+		String(focusOpacity.value),
+	)
+	refresh()
+}
 
 const timingFunctionFor = (key: typeof motionTimingFunction.value): string => {
 	switch (key) {
@@ -144,6 +168,8 @@ const resetTokens = (): void => {
 		'--set-density-factor',
 		'--set-motion-duration',
 		'--set-motion-timing-function',
+		'--set-focus-box-shadow-width',
+		'--set-focus-box-shadow-opacity',
 	]) {
 		root.style.removeProperty(property)
 	}
@@ -151,6 +177,8 @@ const resetTokens = (): void => {
 	densityFactor.value = 1
 	motionDuration.value = 250
 	motionTimingFunction.value = 'iOS'
+	focusWidth.value = 0.25
+	focusOpacity.value = 0.35
 	refresh()
 }
 
@@ -440,42 +468,47 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 			</label>
 		</form>
 		<p>
-			The demo surfaces below opt into the factor by re-declaring their radius tokens as
-			<code>calc(default * var(--set-radius-factor))</code> in an inline style. The shipped
-			components don't currently consume the factor by default — it's the consumer's opt-in for
-			their own components or scoped overrides.
+			The demo surfaces below opt into the factor by binding their
+			<code>border-radius</code> directly to <code>calc(default * var(--set-radius-factor))</code>.
+			The shipped components declare their <code>--set-{tag}-border-radius</code> on the element
+			scope, which would shadow an inherited wrapper-level override — so the override has to land on
+			the property itself.
 		</p>
-		<div
-			class="cluster"
-			style="
-				--set-button-border-radius: calc(0.375rem * var(--set-radius-factor));
-				--set-article-border-radius: calc(0.5rem * var(--set-radius-factor));
-				--set-badge-border-radius: calc(0.375rem * var(--set-radius-factor));
-				justify-content: flex-start;
-			"
-		>
-			<button type="button" class="primary">Primary</button>
-			<button type="button" class="secondary">Secondary</button>
+		<div class="cluster" style="justify-content: flex-start; align-items: center">
+			<button
+				type="button"
+				class="primary"
+				:style="{ borderRadius: `calc(0.375rem * ${radiusFactor})` }"
+			>
+				Primary
+			</button>
+			<button
+				type="button"
+				class="secondary"
+				:style="{ borderRadius: `calc(0.375rem * ${radiusFactor})` }"
+			>
+				Secondary
+			</button>
 			<article
-				style="
-					background-color: var(--color-surface);
-					padding: calc(var(--spacing) * 3);
-					inline-size: 12rem;
-				"
+				:style="{
+					backgroundColor: 'var(--color-surface)',
+					padding: 'calc(var(--spacing) * 3)',
+					inlineSize: '12rem',
+					borderRadius: `calc(0.5rem * ${radiusFactor})`,
+				}"
 			>
 				<p style="margin-block: 0">An article card watching the radius factor.</p>
 			</article>
-			<span class="badge primary">Badge</span>
+			<span class="badge primary" :style="{ borderRadius: `calc(0.375rem * ${radiusFactor})` }">
+				Badge
+			</span>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>&lt;div style="
-  --set-button-border-radius: calc(0.375rem * var(--set-radius-factor));
-  --set-article-border-radius: calc(0.5rem * var(--set-radius-factor));
-"&gt;
-  &lt;button class="primary"&gt;Primary&lt;/button&gt;
-  &lt;article&gt;…&lt;/article&gt;
-&lt;/div&gt;</code></pre>
+			<pre><code>&lt;button class="primary" style="border-radius: calc(0.375rem * var(--set-radius-factor))"&gt;
+  Primary
+&lt;/button&gt;
+&lt;article style="border-radius: calc(0.5rem * var(--set-radius-factor))"&gt;…&lt;/article&gt;</code></pre>
 		</details>
 	</section>
 
@@ -501,21 +534,42 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 			</label>
 		</form>
 		<p>
-			The demo buttons below opt in by declaring their padding tokens as
-			<code>calc(default * var(--set-density-factor))</code>. Drag the slider to see them inflate /
-			compact.
+			The demo buttons below opt in by binding their <code>padding-inline</code> +
+			<code>padding-block</code> directly to <code>calc(default * var(--set-density-factor))</code>.
+			Same caveat as the radius playground above — element-scoped padding tokens shadow
+			wrapper-level overrides, so the binding lands on the property itself.
 		</p>
-		<div
-			class="cluster"
-			style="
-				--set-button-padding-inline: calc(0.75rem * var(--set-density-factor));
-				--set-button-padding-block: calc(0.375rem * var(--set-density-factor));
-				justify-content: flex-start;
-			"
-		>
-			<button type="button" class="primary">Primary</button>
-			<button type="button" class="secondary">Secondary</button>
-			<button type="button" class="success">Success</button>
+		<div class="cluster" style="justify-content: flex-start">
+			<button
+				type="button"
+				class="primary"
+				:style="{
+					paddingInline: `calc(0.75rem * ${densityFactor})`,
+					paddingBlock: `calc(0.375rem * ${densityFactor})`,
+				}"
+			>
+				Primary
+			</button>
+			<button
+				type="button"
+				class="secondary"
+				:style="{
+					paddingInline: `calc(0.75rem * ${densityFactor})`,
+					paddingBlock: `calc(0.375rem * ${densityFactor})`,
+				}"
+			>
+				Secondary
+			</button>
+			<button
+				type="button"
+				class="success"
+				:style="{
+					paddingInline: `calc(0.75rem * ${densityFactor})`,
+					paddingBlock: `calc(0.375rem * ${densityFactor})`,
+				}"
+			>
+				Success
+			</button>
 		</div>
 		<p style="margin-block-start: calc(var(--spacing) * 4)">
 			Reset clears every inline override on this page so the framework defaults return.
@@ -554,7 +608,8 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 		<p>
 			Sub-tokens consumed by the <code>@include focus-ring()</code> mixin (in
 			<code>src/styles/_mixins.scss</code>). Width is the ring thickness; opacity is the alpha mix
-			against the active variant color.
+			against the active variant color. The ring is painted via <code>box-shadow</code>, so it stays
+			outside the element's box without contributing to layout.
 		</p>
 		<dl>
 			<dt><code>--set-focus-box-shadow-width</code></dt>
@@ -568,9 +623,79 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 				>. Default <code>0.35</code>.
 			</dd>
 		</dl>
+
+		<h3>Retune playground</h3>
 		<p>
-			Try it — tab to the buttons below to see the live ring. The ring color tracks the active
-			variant's <code>--set-variant-background-color</code>, so each button glows in its own tint.
+			Drag the sliders to retune the global ring shape. The static demo below paints the ring
+			directly via <code>box-shadow</code> so the chrome is visible on touch devices that can't tab;
+			the live button row beneath demonstrates the actual <code>:focus-visible</code> rule on
+			keyboard-capable browsers.
+		</p>
+		<form class="row" @submit.prevent>
+			<label>
+				<span>Ring width ({{ focusWidth.toFixed(2) }}rem)</span>
+				<input
+					type="range"
+					v-model.number="focusWidth"
+					min="0"
+					max="0.75"
+					step="0.05"
+					@input="applyFocusWidth"
+				/>
+			</label>
+			<label>
+				<span>Ring opacity ({{ focusOpacity.toFixed(2) }})</span>
+				<input
+					type="range"
+					v-model.number="focusOpacity"
+					min="0"
+					max="1"
+					step="0.05"
+					@input="applyFocusOpacity"
+				/>
+			</label>
+		</form>
+
+		<h3>Static ring preview — visible on every device</h3>
+		<p>
+			Each button below has <code>box-shadow</code> set directly to the current width / opacity
+			values, so the ring is always visible. The variant determines the color via
+			<code>color-mix(in oklab, var(--color-{variant}), transparent)</code>.
+		</p>
+		<div
+			style="
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(min(8rem, 100%), 1fr));
+				gap: calc(var(--spacing) * 4);
+				padding-block: calc(var(--spacing) * 2);
+				padding-inline: calc(var(--spacing) * 2);
+			"
+		>
+			<button type="button" class="primary" :style="{ boxShadow: focusRingFor('primary') }">
+				Primary
+			</button>
+			<button type="button" class="secondary" :style="{ boxShadow: focusRingFor('secondary') }">
+				Secondary
+			</button>
+			<button type="button" class="success" :style="{ boxShadow: focusRingFor('success') }">
+				Success
+			</button>
+			<button type="button" class="warning" :style="{ boxShadow: focusRingFor('warning') }">
+				Warning
+			</button>
+			<button type="button" class="danger" :style="{ boxShadow: focusRingFor('danger') }">
+				Danger
+			</button>
+			<button type="button" class="information" :style="{ boxShadow: focusRingFor('information') }">
+				Information
+			</button>
+		</div>
+
+		<h3>Keyboard demo</h3>
+		<p>
+			Tab through the buttons below on a desktop keyboard to see the actual
+			<code>:focus-visible</code> rule fire. The width + opacity tokens are now whatever the sliders
+			pinned them to, so the keyboard-driven ring matches the static preview above.
 		</p>
 		<div class="cluster" style="justify-content: flex-start; row-gap: calc(var(--spacing) * 2)">
 			<button type="button" class="primary">Primary</button>
