@@ -14,6 +14,7 @@ import {
 	generateId,
 	resolvePopoverSide,
 	runTransition,
+	selfsForPopoverPlacement,
 	sideOf,
 } from '../helpers.js'
 
@@ -85,6 +86,19 @@ export function createTooltip(
 	const applyPlacement = (): void => {
 		if (!placed || placementOpt === false) return
 		panel.style.positionArea = areaForPopoverPlacement(placementOpt)
+		// `align-self` / `justify-self` paired with `position-area` —
+		// the surface default (`align-self: start; justify-self:
+		// anchor-center`) only renders correctly for the `'bottom'`
+		// placement. Every other placement (`top`, `start`, `end`, every
+		// corner, etc.) needs an override or the tooltip pins to the
+		// edge of the available area (e.g. `position-area: top` +
+		// `align-self: start` = tooltip stuck at viewport-top instead of
+		// hugging the anchor's top edge). Mirrors `createPopover`'s same
+		// step — the tooltip factory was previously missing this and
+		// every non-bottom placement misrendered.
+		const [alignSelf, justifySelf] = selfsForPopoverPlacement(placementOpt)
+		panel.style.alignSelf = alignSelf
+		panel.style.justifySelf = justifySelf
 		panel.dataset.tooltipSide = sideOf(placementOpt)
 		panel.dataset.tooltipStrategy = strategy
 		panel.dataset.tooltipOffset = String(offset)
@@ -108,6 +122,8 @@ export function createTooltip(
 		delete panel.dataset.tooltipStrategy
 		delete panel.dataset.tooltipOffset
 		panel.style.positionArea = ''
+		panel.style.alignSelf = ''
+		panel.style.justifySelf = ''
 		if (panel.matches(':popover-open')) panel.hidePopover()
 	}
 

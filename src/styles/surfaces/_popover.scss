@@ -272,24 +272,49 @@
 		padding-block: var(--set-popover-hint-padding-block);
 		font-size: var(--set-popover-hint-font-size);
 
-		// Nested elements that paint their own muted / subtle text color
-		// against the page CANVAS (text-muted / text-subtle, declared in
-		// `_address.scss`, `_dd.scss`, `_dt.scss`, `_figcaption.scss`,
-		// `_hgroup.scss > p`, `_small.scss` via the strong→muted chain)
-		// would inherit-break the inversion: a `<dd>` painted slate-600
-		// inside the dark-inverted hint reads as a low-contrast smudge.
+		// Nested elements that paint their own canvas-tier text color
+		// would inherit-break the inversion. Categories:
+		//
+		//   1. Muted / subtle copy (`<dd>`, `<small>`, `<address>`,
+		//      `<figcaption>`, `<hgroup> p`) — sourced from
+		//      `--color-text-muted` / `--color-text-subtle`. A slate-600
+		//      `<dd>` on a dark-inverted hint reads as a low-contrast
+		//      smudge.
+		//   2. Strong-emphasis copy (`<strong>`) — sourced from
+		//      `--color-text-strong` (slate-950 in light mode, white in
+		//      dark mode). Both are catastrophic when inverted: in
+		//      light theme the tooltip is dark-bg + white-text and
+		//      `<strong>` flips to slate-950 (invisible); in dark theme
+		//      the tooltip is light-bg + dark-text and `<strong>` flips
+		//      to white (invisible). Same shape as `_h1-h6.scss`'s
+		//      `--color-text-strong` override — heading elements have
+		//      no place in a tooltip but if a consumer drops one in
+		//      it should still read.
+		//   3. `<mark>` — sourced from `--color-mark-{color,background}`
+		//      which is a canvas-tier yellow-on-yellow chip. Resetting
+		//      color alone keeps the mark's yellow bg visually
+		//      coherent against the inverted host.
+		//
 		// The hint surface is a SEPARATE color universe — descendants
 		// should follow the hint's own `--set-popover-hint-color`, not
-		// the canvas-tier muted token. Reset to `inherit` so the
-		// inversion flows. Variant-tinted children (`.primary`,
-		// `.danger`, …) override at higher specificity and still paint
-		// their intended hue.
+		// the canvas-tier tokens. Reset to `inherit` so the inversion
+		// flows. Variant-tinted children (`.primary`, `.danger`, …)
+		// override at higher specificity and still paint their intended
+		// hue.
+		strong,
 		small,
 		dt,
 		dd,
 		address,
 		figcaption,
-		hgroup p {
+		hgroup p,
+		h1,
+		h2,
+		h3,
+		h4,
+		h5,
+		h6,
+		mark {
 			color: inherit;
 		}
 		// Width clamp via TOKEN RETUNE, not a direct `max-inline-size`

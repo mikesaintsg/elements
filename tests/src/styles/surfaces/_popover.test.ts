@@ -121,26 +121,29 @@ describe('popover — hint variant (tooltip)', () => {
 		el.hidePopover()
 	})
 
-	it('descendant muted-color elements inherit the inverted hint color', () => {
-		// Regression: a `<dd>`, `<small>`, `<figcaption>`, etc. inside a
-		// tooltip painted its canvas-tier `--color-text-muted` (slate-600
-		// in light mode, slate-400 in dark mode) instead of inheriting the
-		// hint's own inverted color. A slate-600 `<dd>` on a slate-900
-		// inverted hint background reads as a low-contrast smudge. Fix:
-		// hint scope explicitly resets `color: inherit` on the known
-		// muted-color offenders so the inversion flows.
+	it('descendant color-override elements inherit the inverted hint color', () => {
+		// Regression: descendants that paint canvas-tier text colors
+		// (`<strong>` → text-strong, `<dd>` / `<small>` / `<figcaption>`
+		// → text-muted) inherit-broke the inversion. The worst case is
+		// `<strong>`: in light mode `--color-text-strong` = slate-950
+		// (invisible on the dark hint bg); in dark mode it's white
+		// (invisible on the light hint bg). Fix: hint scope explicitly
+		// resets `color: inherit` on the known offenders so the
+		// inversion flows end-to-end.
 		const el = buildHint()
-		el.innerHTML = '<dd>nested</dd><small>tiny</small>'
+		el.innerHTML = '<strong>bold</strong><small>tiny</small><dd>def</dd><h3>heading</h3>'
 		el.showPopover()
-		const dd = el.querySelector('dd')
-		const small = el.querySelector('small')
-		expect(dd).toBeTruthy()
-		expect(small).toBeTruthy()
-		if (!dd || !small) return
-		// Both descendants render in the hint's color (not slate-600 / muted).
 		const hintColor = style(el, 'color')
-		expect(style(dd, 'color')).toBe(hintColor)
+		const strong = el.querySelector('strong')
+		const small = el.querySelector('small')
+		const dd = el.querySelector('dd')
+		const h3 = el.querySelector('h3')
+		expect(strong && small && dd && h3).toBeTruthy()
+		if (!strong || !small || !dd || !h3) return
+		expect(style(strong, 'color')).toBe(hintColor)
 		expect(style(small, 'color')).toBe(hintColor)
+		expect(style(dd, 'color')).toBe(hintColor)
+		expect(style(h3, 'color')).toBe(hintColor)
 		el.hidePopover()
 	})
 

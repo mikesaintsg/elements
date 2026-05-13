@@ -60,6 +60,41 @@ describe('createTooltip', () => {
 		expect(panel.style.positionArea).toBe('top')
 	})
 
+	it('show writes align-self + justify-self per placement (regression)', () => {
+		// Regression: createTooltip used to write only `position-area`,
+		// missing the `align-self` / `justify-self` pair that the surface
+		// default (`align-self: start; justify-self: anchor-center`) only
+		// resolves correctly for the `'bottom'` placement. With
+		// `position-area: top` + the surface default `align-self: start`,
+		// the tooltip pinned to the TOP of the available area
+		// (viewport-top) instead of hugging the anchor's top edge. The
+		// fix mirrors `createPopover`'s same step — both factories now
+		// write the placement-specific self values.
+		const { anchor: a1, panel: p1 } = createTooltipElements()
+		const [api1] = createFactoryFixture(() =>
+			createTooltip({ anchor: a1, panel: p1 }, { placement: 'top' }),
+		)
+		api1.show()
+		expect(p1.style.alignSelf).toBe('end')
+		expect(p1.style.justifySelf).toBe('anchor-center')
+
+		const { anchor: a2, panel: p2 } = createTooltipElements()
+		const [api2] = createFactoryFixture(() =>
+			createTooltip({ anchor: a2, panel: p2 }, { placement: 'end' }),
+		)
+		api2.show()
+		expect(p2.style.alignSelf).toBe('anchor-center')
+		expect(p2.style.justifySelf).toBe('start')
+
+		const { anchor: a3, panel: p3 } = createTooltipElements()
+		const [api3] = createFactoryFixture(() =>
+			createTooltip({ anchor: a3, panel: p3 }, { placement: 'start' }),
+		)
+		api3.show()
+		expect(p3.style.alignSelf).toBe('anchor-center')
+		expect(p3.style.justifySelf).toBe('end')
+	})
+
 	it('Escape dismisses by default', () => {
 		const { anchor, panel } = createTooltipElements()
 		const [api] = createFactoryFixture(() => createTooltip({ anchor, panel }))
