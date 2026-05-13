@@ -101,8 +101,9 @@
 		);
 
 		// `transition-behavior: allow-discrete` is set PER-PROPERTY in the
-		// transition shorthands (both in this surface's `:not(aside)` block
-		// below and in `components/_aside.scss`'s aside-specific block), on
+		// transition shorthands (both in this surface's
+		// `:not(:where(aside, dialog, nav))` block below and in
+		// `components/_aside.scss`'s aside-specific block), on
 		// `overlay` and `display` only. A standalone
 		// `transition-behavior: allow-discrete` declaration here would
 		// overwrite those per-property values to apply allow-discrete to
@@ -125,7 +126,7 @@
 	// puts the drawer's full fade-slide cascade in one place and lets
 	// @starting-style resolve cleanly. Toasts (`<output popover>`) and
 	// generic popovers keep the surface's scale-in defaults.
-	[popover]:not(aside):not(nav) {
+	[popover]:not(:where(aside, dialog, nav)) {
 		opacity: 0;
 		transform: scale(0.98);
 
@@ -170,7 +171,7 @@
 	// Open-state target — opacity + transform reset for the non-aside
 	// popover family. Aside drawers own their own `:popover-open` rule
 	// in `components/_aside.scss` (opacity: 1 + transform: translate(0)).
-	[popover]:not(aside):not(nav):popover-open {
+	[popover]:not(:where(aside, dialog, nav)):popover-open {
 		opacity: 1;
 		transform: none;
 	}
@@ -183,12 +184,14 @@
 		// resolution. Popover-open elements always match `[popover]`
 		// (the popover attribute doesn't disappear when shown), so this
 		// selector still resolves the from-state values @starting-style
-		// needs at the transition's first frame. `:not(aside)` keeps the
-		// surface's scale-in starting transform AND its opacity-fade
-		// from-state from defeating the drawer's slide-in starting
-		// transform AND the drawer's own opacity from-state (both
-		// declared in `components/_aside.scss`'s own `@starting-style`
-		// rule on `aside[popover]:popover-open`). The drawer needs its
+		// needs at the transition's first frame.
+		// `:not(:where(aside, dialog, nav))` keeps the surface's scale-in
+		// starting transform AND its opacity-fade from-state from defeating
+		// the drawer's slide-in starting transform AND the drawer's own
+		// opacity from-state (both declared in `components/_aside.scss`'s
+		// own `@starting-style` rule on `aside[popover]:popover-open`) AND
+		// the dialog's own open/close chrome (in `elements/_dialog.scss`).
+		// The drawer needs its
 		// from-state declarations to live in a SINGLE @starting-style
 		// rule for the same selector — Chrome's @starting-style cascade
 		// resolution doesn't reliably merge from-state values across
@@ -197,7 +200,7 @@
 		// to interpolate while others snap. Scoping the surface
 		// @starting-style away from aside keeps each surface family's
 		// from-state values in one place.
-		[popover]:not(aside):not(nav) {
+		[popover]:not(:where(aside, dialog, nav)) {
 			opacity: 0;
 			transform: scale(0.98);
 		}
@@ -258,9 +261,9 @@
 		// the demand equal the natural content height so the requested
 		// side wins unless there's genuinely no room.
 		--set-popover-hint-max-block-size: max-content;
-		// Tooltip elevation — flows through the global `--set-box-shadow-sm`
+		// Tooltip elevation — flows through the global `--set-box-shadow-small`
 		// scale so a single `:root` retune retunes every floating chrome.
-		--set-popover-hint-box-shadow: var(--set-box-shadow-sm);
+		--set-popover-hint-box-shadow: var(--set-box-shadow-small);
 	}
 
 	[popover='hint'],
@@ -319,7 +322,7 @@
 		}
 		// Width clamp via TOKEN RETUNE, not a direct `max-inline-size`
 		// declaration. The anchor-position surface's
-		// `[popover]:not(output):not(aside):not(nav)` rule has higher
+		// `[popover]:not(:where(aside, dialog, nav, output))` rule has higher
 		// specificity (0,4,0) than `[popover='hint']` (0,1,0) and would
 		// win for a direct `max-inline-size: 12.5rem` declaration here —
 		// the tooltip was rendering at the panel's default 17.25 rem
@@ -337,7 +340,7 @@
 		// tooltips above their anchors in tight viewports.
 		--set-anchor-max-block-size: var(--set-popover-hint-max-block-size);
 		// Tooltips are transient; a smaller shadow keeps them visually
-		// lighter than a full menu / dropdown panel — `--set-box-shadow-sm`
+		// lighter than a full menu / dropdown panel — `--set-box-shadow-small`
 		// rather than the panel-tier `--set-box-shadow` base.
 		box-shadow: var(--set-popover-hint-box-shadow);
 	}

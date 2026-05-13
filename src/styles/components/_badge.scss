@@ -56,34 +56,14 @@
 
 	// Variant subtle — tinted bg + saturated text (the default badge mode).
 	// Reads through the same `--color-{variant}-{bg-subtle, text-emphasis}`
-	// triplet used by alert / aside / toast.
-	.badge.primary {
-		--set-badge-background-color: var(--color-primary-bg-subtle);
-		--set-badge-color: var(--color-primary-text-emphasis);
-	}
-	.badge.secondary {
-		--set-badge-background-color: var(--color-secondary-bg-subtle);
-		--set-badge-color: var(--color-secondary-text-emphasis);
-	}
-	.badge.tertiary {
-		--set-badge-background-color: var(--color-tertiary-bg-subtle);
-		--set-badge-color: var(--color-tertiary-text-emphasis);
-	}
-	.badge.success {
-		--set-badge-background-color: var(--color-success-bg-subtle);
-		--set-badge-color: var(--color-success-text-emphasis);
-	}
-	.badge.warning {
-		--set-badge-background-color: var(--color-warning-bg-subtle);
-		--set-badge-color: var(--color-warning-text-emphasis);
-	}
-	.badge.danger {
-		--set-badge-background-color: var(--color-danger-bg-subtle);
-		--set-badge-color: var(--color-danger-text-emphasis);
-	}
-	.badge.information {
-		--set-badge-background-color: var(--color-information-bg-subtle);
-		--set-badge-color: var(--color-information-text-emphasis);
+	// triplet used by alert / aside / toast. Iterates via the framework's
+	// canonical `palette-each` mixin so adding a variant flows through
+	// without touching this rule (per AGENTS.md §1.5 / guides/modifiers.md).
+	@include palette-each using ($variant) {
+		.badge.#{$variant} {
+			--set-badge-background-color: var(--color-#{$variant}-bg-subtle);
+			--set-badge-color: var(--color-#{$variant}-text-emphasis);
+		}
 	}
 
 	// Filled — saturated bg, white-on-color (uses variant context tokens set

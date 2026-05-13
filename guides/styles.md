@@ -38,7 +38,7 @@ Any modifier dimension works on any element that consumes the right context toke
 
 ### 1.4 Tailwind v4 is the base
 
-Tailwind owns the color ramps, the scale tokens, every utility class, and preflight (the UA reset). The framework does not redeclare any of it. Modifier and utility classes compose freely on the same element: `<button class="primary large ghost rounded-full m-4 shadow-lg">`. Tailwind v4 ships through `@tailwindcss/postcss` so it runs after Sass and sees the compiled output — this is required for `@theme` blocks authored in SCSS to expand into `:root`.
+Tailwind owns the color ramps, the scale tokens, every utility class, and preflight (the UA reset). The framework does not redeclare any of it. Modifier and utility classes compose freely on the same element: `<button class="primary large subtle rounded-full m-4 shadow-lg">`. Tailwind v4 ships through `@tailwindcss/postcss` so it runs after Sass and sees the compiled output — this is required for `@theme` blocks authored in SCSS to expand into `:root`.
 
 ### 1.5 TypeScript mirrors anything with a CSS identity
 
@@ -63,7 +63,7 @@ The framework ships **non-color baseline tokens** alongside the color palette so
 
 - `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-sticky-offset` declared on `:root` so unsized elements have sensible defaults.
 - `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}` — single canonical layering scale (Bootstrap-aligned) for every floating surface.
-- `--set-box-shadow-sm`, `--set-box-shadow` (un-suffixed base tier — Bootstrap-aligned `--bs-box-shadow` convention), `--set-box-shadow-lg` — three-tier elevation scale consumed by every floating chrome partial.
+- `--set-box-shadow-small`, `--set-box-shadow` (un-suffixed base tier — Bootstrap-aligned `--bs-box-shadow` convention), `--set-box-shadow-large` — three-tier elevation scale consumed by every floating chrome partial.
 - `--set-focus-box-shadow-{width,opacity}` — focus-ring composition consumed by the `focus-ring()` mixin so every interactive element rings consistently.
 
 The baseline is **deliberately unopinionated**: a slate ramp for surfaces, a Tailwind `-600`-step palette for variant identities, a 0.375rem default radius, a 1px default border. Consumers who want a brand identity override at `:root` and the cascade re-tunes every consumer at once. The framework feels coherent the moment it loads; opinions stay optional.
@@ -107,7 +107,8 @@ src/styles/
 └── modifiers/               token-setters, never property-setters
     ├── _variants.scss          .primary .secondary .tertiary .success .warning .danger .information
     ├── _sizes.scss             .small .large
-    ├── _styles.scss            .ghost .filled
+    ├── _styles.scss            .subtle .filled
+    ├── _local.scss             form.row, button.dropdown, … — element-local modifiers
     ├── _states.scss            .disabled .active .loading
     ├── _placements.scss        .top .bottom .start .end .top-start .top-end .bottom-start .bottom-end
     └── index.scss
@@ -136,7 +137,7 @@ Naming summary:
 | Modifier partial   | `_{dimension}.scss` (plural)        | `_variants.scss`, `_sizes.scss`                      |
 | Sass `@use`        | `'{name}'` (no underscore)          | `@use 'tokens'`, `@use 'mixins' as *`                |
 | CSS variable       | `--set-[scope-]property[-modifier]` | `--set-button-padding-inline`, `--set-variant-color` |
-| Modifier class     | spelled-out semantic adjective      | `.primary`, `.large`, `.ghost`                       |
+| Modifier class     | spelled-out semantic adjective      | `.primary`, `.large`, `.subtle`                      |
 | Event name         | `elements:{source}:{verb}`          | `elements:dialog:show`, `elements:toast:close`       |
 
 ---
@@ -160,7 +161,7 @@ Later layers win. Unlayered rules win against any layered rule. Tokens stay unla
 | `components`  | framework | element compositions (card via `<article>`, sidebar via `body > aside`, …) — static chrome                              |
 | `surfaces`    | framework | pseudo-elements + attribute APIs (`[popover]`, `::backdrop`, scrollbar, anchor, `::placeholder`, `::marker`, …)         |
 | `composables` | framework | component chrome gated on a composable's state attribute (`dialog.scrollable[open]`, `aside[popover][data-aside-open]`) |
-| `modifiers`   | framework | `.primary`, `.large`, `.ghost`, `.disabled`, `.top` — token-setters only                                                |
+| `modifiers`   | framework | `.primary`, `.large`, `.subtle`, `.disabled`, `.top` — token-setters only                                               |
 | `utilities`   | Tailwind  | `.bg-blue-500`, `.p-4`, `.rounded-md` — last-mile per-element overrides                                                 |
 
 **Why this order:**

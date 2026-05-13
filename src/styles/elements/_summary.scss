@@ -68,13 +68,17 @@
 		// which CSS doesn't transition.
 		margin-block-end: 0;
 
-		// Margin transition matches the `::details-content` body
-		// height-collapse duration in `_details.scss` (0.25s) so summary
-		// and body fade in / out in sync. The previous behavior snapped
-		// the 8px bottom margin instantly when `[open]` was removed,
-		// producing a noticeable twitch ~0.25s before the body finished
-		// collapsing. Paired with reduced-motion via `@include transition`.
-		@include transition((margin-block-end 0.25s ease));
+		// Margin transition matches the `::details-content` height-
+		// collapse duration + curve in `_details.scss` so the summary's
+		// bottom-margin opens / closes in lockstep with the disclosed
+		// body. The previous behavior snapped the bottom margin
+		// instantly when `[open]` was removed, producing a noticeable
+		// twitch before the body finished collapsing. Reads from the
+		// framework-wide `--set-motion-{duration, timing-function}`
+		// tokens so the disclosure motion family stays uniform.
+		@include transition(
+			(margin-block-end var(--set-motion-duration) var(--set-motion-timing-function))
+		);
 
 		// Suppress the UA marker; we paint our own as a ::before pseudo so
 		// it can track text color via mask + currentColor reliably.
@@ -99,6 +103,19 @@
 			mask-size: contain;
 
 			@include transition((rotate var(--set-summary-transition-duration)));
+		}
+
+		// Windows High Contrast / forced-colors fallback. Summary is the
+		// disclosure trigger — it receives focus when the user tabs to the
+		// host <details>. Map text to CanvasText, focus chrome to Highlight.
+		@include forced-colors {
+			color: CanvasText;
+
+			&:focus-visible {
+				outline: 2px solid Highlight;
+				outline-offset: 2px;
+				box-shadow: none;
+			}
 		}
 	}
 

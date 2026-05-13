@@ -54,12 +54,20 @@
 		// stay legible against the pale `color-mix` slide tints in light mode
 		// AND the deep tints in dark mode. The chip is a translucent fill of
 		// the foreground; the arrow glyph + indicator dots are solid.
-		--set-carousel-control-bg: color-mix(in oklab, var(--color-text) 12%, transparent);
+		--set-carousel-control-background-color: color-mix(
+			in oklab,
+			var(--color-text) 12%,
+			transparent
+		);
 		--set-carousel-control-icon: var(--color-text);
 		--set-carousel-indicator-size: calc(var(--spacing) * 4);
 		--set-carousel-indicator-active-size: calc(var(--spacing) * 8);
-		--set-carousel-indicator-bg: color-mix(in oklab, var(--color-text) 35%, transparent);
-		--set-carousel-indicator-bg-active: var(--color-text);
+		--set-carousel-indicator-background-color: color-mix(
+			in oklab,
+			var(--color-text) 35%,
+			transparent
+		);
+		--set-carousel-indicator-background-color-active: var(--color-text);
 
 		position: relative;
 		overflow: hidden;
@@ -153,8 +161,9 @@
 			// lifecycle classes are removed doesn't animate.
 			&.carousel-item-start,
 			&.carousel-item-end {
-				transition: transform var(--set-carousel-transition-duration)
-					var(--set-carousel-transition-easing);
+				@include transition(
+					(transform var(--set-carousel-transition-duration) var(--set-carousel-transition-easing))
+				);
 			}
 
 			// INCOMING's slide-into-view target — kicks off the slide
@@ -184,9 +193,12 @@
 			align-items: center;
 			justify-content: center;
 			opacity: 0;
-			transition:
-				opacity 0.2s ease-out,
-				background-color 0.2s ease-out;
+			@include transition(
+				(
+					opacity var(--set-carousel-transition-duration) ease-out,
+					background-color var(--set-carousel-transition-duration) ease-out
+				)
+			);
 
 			// Two stacked pseudos: ::before paints the round chip, ::after
 			// paints the arrow glyph as a mask filled from the foreground
@@ -201,8 +213,8 @@
 				inline-size: var(--set-carousel-control-size);
 				block-size: var(--set-carousel-control-size);
 				border-radius: 50%;
-				background-color: var(--set-carousel-control-bg);
-				box-shadow: var(--set-box-shadow-sm);
+				background-color: var(--set-carousel-control-background-color);
+				box-shadow: var(--set-box-shadow-small);
 			}
 
 			&::after {
@@ -292,11 +304,14 @@
 				padding: 0;
 				border: 0;
 				border-radius: 999px;
-				background-color: var(--set-carousel-indicator-bg);
+				background-color: var(--set-carousel-indicator-background-color);
 				cursor: pointer;
-				transition:
-					background-color 0.2s ease-out,
-					inline-size 0.2s ease-out;
+				@include transition(
+					(
+						background-color var(--set-carousel-transition-duration) ease-out,
+						inline-size var(--set-carousel-transition-duration) ease-out
+					)
+				);
 
 				&:hover {
 					background-color: color-mix(in oklab, var(--color-text) 70%, transparent);
@@ -304,7 +319,7 @@
 
 				&[aria-selected='true'] {
 					inline-size: var(--set-carousel-indicator-active-size);
-					background-color: var(--set-carousel-indicator-bg-active);
+					background-color: var(--set-carousel-indicator-background-color-active);
 				}
 			}
 		}

@@ -36,19 +36,22 @@
 // Scroll-container model:
 //   The body-shell rail is a SINGLE scroll container by default: the
 //   `<nav>` itself has `overflow-y: auto` so all its content (drawer
-//   header + any inner regions + menus) scrolls together. This is the
-//   right baseline for product navs and toolboxes — drop links in, the
-//   rail handles the scroll.
+//   header + grouped `<h6>` / `<menu>` pairs) scrolls together. This
+//   is the right baseline for product navs and toolboxes — drop links
+//   in, the rail handles the scroll.
 //
-//   Docs-style sidebars often want a SPLIT scroll container instead:
-//   a fixed-height search / filter at top, a separately-scrolling list
-//   below. That's a consumer composition, not a framework chrome —
-//   the consumer turns `<nav>` into a flex column with `overflow:
-//   hidden`, drops in a `flex-shrink: 0` filter card, and a
-//   `flex: 1; overflow-y: auto` list region. See `app/browser/
-//   styles/showcase.css` for a worked example. Consumers using this
-//   pattern must ALSO opt the drawer header out of its framework
-//   sticky pin (see `_header.scss` § Drawer-header opt-out).
+//   Composed rails (a pinned filter region above a separately-
+//   scrolling list, the docs-sidebar shape) are a CONSUMER composition
+//   on top of the bare containment. The framework deliberately does
+//   not single out one element (`<search>`, `<form>`, `<header>`,
+//   etc.) as the pinning trigger — the rail is a flex container, the
+//   consumer wraps each region in whatever element fits the content,
+//   and the consumer's wrapper class carries the chrome (card padding,
+//   pinned `flex-shrink: 0`, scrolling `flex: 1 + overflow-y: auto`).
+//   This keeps the rail's framework contract narrow: provide
+//   containment, expose padding/gap/overflow via tokens, leave region
+//   composition to the markup. See `app/browser/styles/showcase.css`
+//   for the docs-sidebar pattern composed this way.
 // ============================================================================
 
 @use '../mixins' as *;

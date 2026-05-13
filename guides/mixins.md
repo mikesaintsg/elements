@@ -15,32 +15,30 @@ Cross-references:
 
 - [styles.md](styles.md) — top-level architecture
 - [tokens.md](tokens.md) — the variation surface the mixins read through
-- [modifiers.md](modifiers.md) — the four-dimension cascade `palette-each` iterates
+- [modifiers.md](modifiers.md) — the five-dimension cascade `palette-each` iterates
 - [components.md](components.md) / [composables.md](composables.md) — examples of mixin consumers
 
 ---
 
 ## 2. Sass list constants
 
-The four modifier-dimension lists below — plus the placement list — drive every `@each` loop across the codebase. They are the source of truth for the modifier vocabulary.
+The four cross-cutting-modifier lists below drive every `@each` loop and every `palette-each` invocation across the codebase. They are the source of truth for the framework's modifier vocabulary.
 
 ```scss
 $variants: (primary, secondary, tertiary, success, warning, danger, information) !default;
-$sizes: (small, large, huge) !default;
-$styles: (outline, ghost, filled) !default;
-$shapes: (rounded, pill, square) !default;
+$sizes: (small, large) !default;
+$styles: (subtle, filled) !default;
 $states: (disabled, active, loading) !default;
-$placements: (top, end, bottom, start, top-start, top-end, bottom-start, bottom-end) !default;
 ```
 
-| List          | Role                                                                                                |
-| ------------- | --------------------------------------------------------------------------------------------------- |
-| `$variants`   | Seven semantic palette roles. Iterated by `_variants.scss` and every per-variant tint emitter.      |
-| `$sizes`      | Three non-default sizes. `medium` is the default and is intentionally absent.                       |
-| `$styles`     | Three appearance styles applied on top of a variant.                                                |
-| `$shapes`     | Three corner shapes.                                                                                |
-| `$states`     | Three interaction / lifecycle states.                                                               |
-| `$placements` | Eight anchored-surface placements for tooltip, popover, dropdown, and any anchor-positioned target. |
+| List        | Role                                                                                                                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `$variants` | Seven semantic palette roles. Iterated by `_variants.scss` and every per-variant tint emitter.                                                               |
+| `$sizes`    | Two non-default sizes. `medium` is the bare-element default and is intentionally absent.                                                                     |
+| `$styles`   | Two fill treatments applied on top of a variant. (`.outline` removed — Tailwind owns it; `.ghost` removed — failed WCAG AA on 4 of 7 variants in dark mode.) |
+| `$states`   | Three interaction / lifecycle states.                                                                                                                        |
+
+No `$shapes` list — corner roundness flows through `--set-radius-factor` at `:root` ([modifiers.md](modifiers.md) §1). Placement values are emitted directly in `_placements.scss` without a Sass list because the eight values don't compose with anything else.
 
 The `!default` flag lets a consumer override any list via `@use 'mixins' with ($variants: (primary, accent, warning, danger))` to ship a project-specific palette without forking the framework.
 

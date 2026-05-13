@@ -188,19 +188,26 @@
 	// fixed` + viewport corner insets via the components-layer rule — that
 	// rule wins because @layer components beats @layer surfaces.
 	// --------------------------------------------------------------------------
-	// `:not(output):not(aside):not(nav)` scopes the surface defaults to anchor-
-	// anchored popovers and tooltips. Two viewport-fixed exclusions:
-	//   - `<output popover>` (toasts) — corner-anchored notifications.
+	// `:not(:where(aside, dialog, nav, output))` scopes the surface defaults to anchor-
+	// anchored popovers and tooltips. Four exclusions, each with its own
+	// non-anchor placement geometry:
 	//   - `<aside popover>` (drawers / offcanvas) — full-viewport-edge
 	//     slide-in panels (see `components/_aside.scss` for the drawer
 	//     geometry + per-edge slide transforms).
-	// Both override `position: absolute` to `position: fixed` with
-	// explicit insets. Cascade order (theme < base < elements <
-	// components < surfaces < modifiers < utilities) means the SURFACES
-	// layer wins over components when selectors collide; excluding both
-	// here lets their component-layer rules resolve without `!important`
-	// or layer reshuffling.
-	[popover]:not(output):not(aside):not(nav) {
+	//   - `<dialog popover>` — modal / non-modal dialogs are viewport-
+	//     centered via the user-agent top-layer placement; anchor
+	//     positioning would fight that centering.
+	//   - `<nav popover>` — site navigation / menu panels use their own
+	//     placement chrome (see `components/_nav.scss`).
+	//   - `<output popover>` (toasts) — corner-anchored notifications
+	//     with `position: fixed` + viewport-corner insets.
+	// All four override `position: absolute` to `position: fixed` (or
+	// rely on the UA top-layer placement) with explicit insets. Cascade
+	// order (theme < base < elements < components < surfaces < modifiers
+	// < utilities) means the SURFACES layer wins over components when
+	// selectors collide; excluding the four here lets their component-
+	// layer rules resolve without `!important` or layer reshuffling.
+	[popover]:not(:where(aside, dialog, nav, output)) {
 		// Take the panel out of normal flow. Top-layer popovers default
 		// to `position: fixed` (pinned to viewport coordinates), which
 		// means scrolling a nested ancestor doesn't relayout the popover.

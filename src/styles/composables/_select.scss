@@ -31,6 +31,8 @@
 // expect it to apply consistently.
 // ============================================================================
 
+@use '../mixins' as *;
+
 @layer composables {
 	.select {
 		--set-select-max-inline-size: 28rem;
@@ -82,7 +84,7 @@
 				// token so a host-page icon-set swap retunes the listbox /
 				// combobox toggle alongside every other chevron consumer.
 				mask: var(--set-icon-chevron-down) no-repeat center / contain;
-				transition: transform 0.2s;
+				@include transition((transform var(--set-transition-duration)));
 			}
 
 			&[aria-expanded='true']::after {

@@ -155,13 +155,17 @@
 		--set-alert-padding-block: calc(var(--spacing) * 3);
 		--set-alert-gap: calc(var(--spacing) * 3);
 		--set-alert-border-radius: 0.375rem;
-		// Maximum inline-size — caps alerts on wide viewports so they
-		// don't span the full page width. Mobile relies on the parent
-		// container's gutter (`<main>`'s `--set-main-padding-inline`)
-		// for the inline margin; the alert just fills its parent and
-		// the parent's padding does the work. On wide viewports the
-		// alert tops out at 32rem so reading width stays comfortable.
-		--set-alert-max-inline-size: 32rem;
+		// Maximum inline-size — defaults to `none` so the alert reads as
+		// a banner spanning the full inline width of its parent's content
+		// area. The earlier 32rem cap framed alerts as toast-shaped
+		// reading-width strips, but `<aside role="alert">` is part of
+		// the UI announcing across a region, not a transient overlay —
+		// toasts live on `<output popover>` with corner-anchored
+		// placement, see `components/_output.scss`. Consumers who want a
+		// reading-width cap on a specific banner opt in per-instance:
+		//   `<aside role="alert" style="--set-alert-max-inline-size: 32rem">`
+		// or globally via `:root { --set-alert-max-inline-size: 32rem }`.
+		--set-alert-max-inline-size: none;
 		// Band tint inside the alert — slightly lighter or darker than
 		// the alert's own bg, derived from `currentColor` so it adapts
 		// to every variant (light slate band on bare alerts, slightly
@@ -174,10 +178,39 @@
 	// --------------------------------------------------------------------------
 	// Alert / status banner — `<aside role="alert">` (or `role="status"`).
 	//
-	// `<aside>` is "tangentially-related content" and per ARIA, `role="alert"`
-	// makes it an assertive live region (announces immediately) while
-	// `role="status"` makes it polite (announces when idle). Both share the
-	// same banner chrome — only the live-region politeness differs.
+	// IN-FLOW BANNER, dismissible. `<aside>` is "tangentially-related
+	// content" and per ARIA, `role="alert"` makes it an assertive live
+	// region (announces immediately) while `role="status"` makes it polite
+	// (announces when idle). Both share the same banner chrome — only the
+	// live-region politeness differs.
+	//
+	// Banner-shaped — the alert spans the full inline width of its parent's
+	// content area, carries a saturated leading bar (variant-tinted on
+	// `<aside class="{variant}" role="alert">`), and sits in flow between
+	// siblings. Reads as "the framework is announcing something across
+	// this region." NOT capped to a reading width by default; the alert is
+	// part of the UI, not a transient overlay.
+	//
+	// Optional card-like composition — when richer alert content is
+	// needed (a title row + dismiss + multi-button footer), drop a
+	// direct-child `<header>` and / or `<footer>` band. The `:has(>
+	// header)` / `:has(> footer)` rules below switch the flex-row banner
+	// into a flex-column stack and paint each band with the alert's
+	// tinted band-bg + 1px divider. Same composition pattern `<article>`
+	// + `<dialog>` use for their bands so consumers learn the contract
+	// once.
+	//
+	// Banner vs. toast — the framework keeps these distinct:
+	//   - Alert  → `<aside role="alert">` in flow, banner-shaped, fills
+	//              its parent's content area, sits between siblings,
+	//              dismissed by the user or by `useAlert`. Reads as
+	//              "part of the UI, currently announcing." No width cap
+	//              by default.
+	//   - Toast  → `<output popover>` in the top layer, corner-anchored
+	//              via the placement modifier, auto-dismisses, stacks /
+	//              decks via `useToast`. See `components/_output.scss`
+	//              for the toast surface. Reads as "transient overlay,
+	//              briefly visible."
 	//
 	// Markup contract:
 	//   <aside role="alert" class="danger">
@@ -190,9 +223,10 @@
 	// accent bar — same convention as the article callout above. `.filled`
 	// is the explicit opt-in for tinted-surface alerts.
 	//
-	// The banner shape is flex-row: leading content grows to fill, optional
-	// trailing dismiss `<button>` is intrinsic-width. Composition pairs
-	// naturally with `<button aria-label="Dismiss">` for the close affordance.
+	// The bare banner shape is flex-row: leading content grows to fill,
+	// optional trailing dismiss `<button>` is intrinsic-width. Composition
+	// pairs naturally with `<button aria-label="Dismiss">` for the close
+	// affordance.
 	//
 	// Note: alerts are meant to sit inside `<main>` (or any container that
 	// isn't the body-shell sidebar slot). An `<aside role="alert">` placed
@@ -207,11 +241,12 @@
 		align-items: center;
 		gap: var(--set-alert-gap);
 
-		// Width: caps at `--set-alert-max-inline-size` on wide viewports.
-		// On narrow viewports `inline-size: auto` lets the alert fill its
-		// parent, and the parent (typically `<main>`'s padding-inline)
-		// supplies the viewport gutter — no explicit mobile breakpoint
-		// needed because the parent already provides one.
+		// Width: spans the full inline width of its parent's content area
+		// (banner-shaped). `--set-alert-max-inline-size` defaults to
+		// `none` (declared above) so the alert never caps itself — the
+		// parent supplies the inline gutter just like every other in-
+		// flow element. Consumers who want a reading-width cap on a
+		// specific banner opt in via the token.
 		inline-size: 100%;
 		max-inline-size: var(--set-alert-max-inline-size);
 
@@ -239,20 +274,35 @@
 		// `[data-alert-open]` attribute (mirrored by `aria-hidden`). The
 		// closed state collapses the alert to zero height + opacity so
 		// dismissed alerts disappear visually — without this rule the
-		// composable's attribute flips have no on-screen effect. The
-		// `interpolate-size: allow-keywords` declaration on `<html>` lets
-		// `block-size: auto ↔ 0` participate in the transition.
+		// composable's attribute flips have no on-screen effect.
+		//
+		// Animation contract mirrors `::details-content` in
+		// `_details.scss` — the framework's gold-standard smooth-panel
+		// transition: `block-size: auto ↔ 0` interpolates via the
+		// `interpolate-size: allow-keywords` declaration on `<html>`;
+		// `opacity` fades with `ease-out`; `visibility` flips
+		// discretely (`allow-discrete`) so the element stays in the
+		// render tree for the full close transition. Reads from the
+		// framework-wide `--set-motion-{duration, timing-function}`
+		// tokens so the alert collapse feels uniform with disclosure
+		// panels, drawers, dialogs, and table-row expansions.
+		// `@include transition()` participates in the reduced-motion
+		// contract; the wrapper isn't needed for the discrete
+		// `visibility` line because it never animates a length.
 		opacity: 0;
 		block-size: 0;
 		padding-block: 0;
 		border-inline-start-width: 0;
 		visibility: hidden;
-		transition:
-			opacity 0.2s ease-out,
-			block-size 0.25s ease,
-			padding-block 0.25s ease,
-			border-inline-start-width 0.2s ease,
-			visibility 0.25s allow-discrete;
+		@include transition(
+			(
+				block-size var(--set-motion-duration) var(--set-motion-timing-function),
+				padding-block var(--set-motion-duration) var(--set-motion-timing-function),
+				border-inline-start-width var(--set-motion-duration) var(--set-motion-timing-function),
+				opacity var(--set-motion-duration) ease-out,
+				visibility var(--set-motion-duration) allow-discrete
+			)
+		);
 
 		&[data-alert-open] {
 			opacity: 1;
@@ -325,8 +375,8 @@
 		padding-block: 0;
 	}
 
-	aside[role='alert']:has(> header) > :not(header):not(footer),
-	aside[role='alert']:has(> footer) > :not(header):not(footer) {
+	aside[role='alert']:has(> header) > :not(:where(header, footer)),
+	aside[role='alert']:has(> footer) > :not(:where(header, footer)) {
 		padding-inline: var(--set-alert-padding-inline);
 		padding-block: var(--set-alert-padding-block);
 	}
@@ -539,24 +589,23 @@
 		// Inner-stack — flex-column with a drawer-band-gap between
 		// children. The gap provides visual breathing room between the
 		// header band and the first body element, between body siblings
-		// (e.g. the TOC's `<h6>` and `<nav>`), and between the last body
-		// element and the footer band. Consumers running their own
-		// flex-column split inside the drawer (e.g. the showcase's
-		// nav-rail with `<search>` + `<div class="showcase-sidebar-
-		// scroll">`) override `gap: 0` at the rail selector so their
-		// internal layout owns the rhythm — see
-		// `app/browser/styles/showcase.css` § "Rail container".
+		// (e.g. a TOC's `<h6>` and `<nav>`), and between the last body
+		// element and the footer band. Consumers composing a drawer
+		// with their own internal regions (a pinned filter card + a
+		// separately-scrolling list, the docs-sidebar shape) override
+		// `gap: 0` at their own rail class so the regions sit flush
+		// and their internal layout owns the rhythm.
 		flex-direction: column;
 		gap: var(--set-aside-drawer-band-gap);
 
 		// Drawer is its own scroll container when body content overflows
 		// `100dvh`. `overscroll-behavior: contain` keeps long body lists
 		// from rubber-banding the page beneath the drawer on touch.
-		// Consumers with their own internal scroll region (e.g. the
-		// showcase's nav-rail flex-column-split: filter row pinned +
-		// link list scrolling) override with `overflow: hidden` on the
-		// rail — see `app/browser/styles/showcase.css` for the worked
-		// example.
+		// Consumers composing a drawer with an internal scroll region
+		// (pinned filter + scrolling list) override with `overflow:
+		// hidden` on the rail so their inner region becomes the scroll
+		// surface — see `app/browser/styles/showcase.css` for the
+		// docs-sidebar pattern composed this way.
 		overflow-y: auto;
 		overscroll-behavior: contain;
 
@@ -564,7 +613,7 @@
 		// above the page rather than a flush surface that slid in from
 		// nowhere. Overriding the popover surface's centered shadow with
 		// the small-elevation token gives a directional cue.
-		--set-popover-box-shadow: var(--set-box-shadow-sm);
+		--set-popover-box-shadow: var(--set-box-shadow-small);
 
 		// Transition list — `transform` + `opacity` for the slide-in,
 		// `overlay` + `display` with `allow-discrete` so the element
@@ -785,17 +834,17 @@
 	// simplification from the previous "auto-body chrome" approach
 	// (which forced `flex: 1 + overflow-y: auto + padding` on every
 	// non-header/footer child) — that approach broke for drawers with
-	// MULTIPLE body siblings (e.g. the showcase TOC's `<h6>` + `<nav>`,
-	// or the showcase nav-rail's `<search>` + `<div class="showcase-
-	// sidebar-scroll">`): each sibling got `flex: 1` and competed for
-	// height, creating independent scroll regions side-by-side and
-	// blocking touch-scroll propagation between regions. Now: body
-	// siblings stack naturally with the drawer's `gap` between them;
-	// the DRAWER itself owns overflow-y so long content scrolls as one
-	// continuous region; consumers with their own internal scroll
-	// region (showcase nav-rail's flex-column-split) override
-	// `overflow: hidden` on the drawer to defer scroll to the inner
-	// region.
+	// MULTIPLE body siblings (e.g. an aside-TOC's `<h6>` + `<nav>`, or
+	// a nav-rail with a pinned filter card + scrolling list region):
+	// each sibling got `flex: 1` and competed for height, creating
+	// independent scroll regions side-by-side and blocking touch-
+	// scroll propagation between regions. Now: body siblings stack
+	// naturally with the drawer's `gap` between them; the DRAWER
+	// itself owns overflow-y so long content scrolls as one
+	// continuous region. Consumers composing internal regions (the
+	// docs-sidebar pattern) override `overflow: hidden` + `gap: 0` on
+	// their own rail class to defer scroll to a chosen inner region —
+	// see `app/browser/styles/showcase.css` for an example.
 	// --------------------------------------------------------------------------
 
 	:is(aside, nav)[popover] > header:first-child,

@@ -52,40 +52,14 @@
 	}
 
 	// Variant subtle — tinted bg + emphasis text + matching subtle border.
-	.tag.primary {
-		--set-tag-background-color: var(--color-primary-bg-subtle);
-		--set-tag-color: var(--color-primary-text-emphasis);
-		--set-tag-border-color: var(--color-primary-border-subtle);
-	}
-	.tag.secondary {
-		--set-tag-background-color: var(--color-secondary-bg-subtle);
-		--set-tag-color: var(--color-secondary-text-emphasis);
-		--set-tag-border-color: var(--color-secondary-border-subtle);
-	}
-	.tag.tertiary {
-		--set-tag-background-color: var(--color-tertiary-bg-subtle);
-		--set-tag-color: var(--color-tertiary-text-emphasis);
-		--set-tag-border-color: var(--color-tertiary-border-subtle);
-	}
-	.tag.success {
-		--set-tag-background-color: var(--color-success-bg-subtle);
-		--set-tag-color: var(--color-success-text-emphasis);
-		--set-tag-border-color: var(--color-success-border-subtle);
-	}
-	.tag.warning {
-		--set-tag-background-color: var(--color-warning-bg-subtle);
-		--set-tag-color: var(--color-warning-text-emphasis);
-		--set-tag-border-color: var(--color-warning-border-subtle);
-	}
-	.tag.danger {
-		--set-tag-background-color: var(--color-danger-bg-subtle);
-		--set-tag-color: var(--color-danger-text-emphasis);
-		--set-tag-border-color: var(--color-danger-border-subtle);
-	}
-	.tag.information {
-		--set-tag-background-color: var(--color-information-bg-subtle);
-		--set-tag-color: var(--color-information-text-emphasis);
-		--set-tag-border-color: var(--color-information-border-subtle);
+	// Iterated via the canonical `palette-each` mixin so adding a variant
+	// flows through without touching this rule.
+	@include palette-each using ($variant) {
+		.tag.#{$variant} {
+			--set-tag-background-color: var(--color-#{$variant}-bg-subtle);
+			--set-tag-color: var(--color-#{$variant}-text-emphasis);
+			--set-tag-border-color: var(--color-#{$variant}-border-subtle);
+		}
 	}
 
 	// Filled — saturated bg using variant identity color.

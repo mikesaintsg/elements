@@ -10,12 +10,20 @@
 		--set-var-color: currentColor;
 		--set-var-background-color: var(--color-surface-raised);
 		--set-var-padding-inline: 0.25em;
+		// Tiny block padding so `<var>` reads as a chip with breathing room
+		// above / below, matching the rest of the inline-chip group
+		// (--set-{code,kbd,samp,mark}-padding-block). Defaults to 0 so the
+		// baseline alignment stays flush with surrounding text; raise via
+		// `:root { --set-var-padding-block: 0.125em }` for a more pronounced
+		// chip silhouette.
+		--set-var-padding-block: 0;
 		--set-var-border-radius: 0.25em;
 		--set-var-font-size: 0.95em;
 
 		color: var(--set-var-color);
 		background-color: var(--set-var-background-color);
 		padding-inline: var(--set-var-padding-inline);
+		padding-block: var(--set-var-padding-block);
 		border-radius: var(--set-var-border-radius);
 		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 		font-size: var(--set-var-font-size);

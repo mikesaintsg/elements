@@ -32,10 +32,13 @@
 			flex: 1 1 auto;
 		}
 
-		// Hover / focus / active rises above the shared edge so the variant
-		// border-color paints over its neighbour rather than under.
+		// Hover / focus-visible / active rises above the shared edge so the
+		// variant border-color paints over its neighbour rather than under.
+		// `:focus-visible` (not bare `:focus`) — bare `:focus` fires on mouse
+		// click and produces visual noise; per the framework's focus-visible
+		// discipline (guides/patterns.md § 6.6 + tests/src/styles/_interactive.test.ts).
 		> button:hover,
-		> button:focus,
+		> button:focus-visible,
 		> button:active,
 		> button.active {
 			z-index: 1;

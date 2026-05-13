@@ -277,12 +277,28 @@ const restore = (): void => {
 
 		<h3>Width behavior</h3>
 		<p>
-			Alerts cap at <code>--set-alert-max-inline-size</code> (default <code>32rem</code>) on wide
-			viewports — they don't span the full page width even if their parent is wider. Mobile relies
-			on the parent container's gutter (typically <code>&lt;main&gt;</code>'s fluid
-			<code>--set-main-padding-inline</code>) for the inline margin from screen edges — the alert
-			fills its parent and the parent's padding does the work, so there's no explicit mobile
-			breakpoint to maintain.
+			Alerts span the full inline width of their parent's content area by default — they read as
+			in-flow <strong>banners</strong>, sitting between siblings and announcing across the region.
+			<code>--set-alert-max-inline-size</code> defaults to <code>none</code>; consumers who want a
+			reading-width cap on a specific banner opt in per-instance (<code
+				>style="--set-alert-max-inline-size: 32rem"</code
+			>) or globally at <code>:root</code>. Mobile gutter comes from the parent (typically
+			<code>&lt;main&gt;</code>'s fluid <code>--set-main-padding-inline</code>) — same idiom as
+			every other in-flow element.
+		</p>
+		<p>
+			The banner ALSO supports card-like composition when richer alert content is needed: a
+			direct-child <code>&lt;header&gt;</code> + / or <code>&lt;footer&gt;</code> band switches the
+			alert into a flex-column stack with tinted band-bg + divider on each band. Same composition
+			pattern <code>&lt;article&gt;</code> and <code>&lt;dialog&gt;</code> use for their header /
+			footer bands. See § "Alert with header + footer bands" below for the worked example.
+		</p>
+		<p>
+			<strong>Alert is NOT a toast.</strong> If the intent is a top-layer transient notification
+			(corner-anchored, auto-dismissing, deck-stacking), reach for
+			<code>&lt;output popover&gt;</code> instead — see
+			<a href="#/popover-surfaces">PopoverSurfacesPage</a>. Alert is in-flow banner chrome
+			(announces as part of the UI); toast is overlay chrome (briefly visible, dismissed quickly).
 		</p>
 	</section>
 

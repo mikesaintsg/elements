@@ -33,14 +33,13 @@ const onLinkClick = (event: MouseEvent, id: string): void => {
 <template>
 	<!-- SiteNav renders each group as an `<h6>` + `<menu>` sibling pair
 	     (the framework's documented grouped-sidebar pattern — see
-	     `components/_menu.scss` § Grouped sidebars). No `<section>`
-	     wrapper: the framework's anti-pattern note explains why
-	     (`<section>` nests a region landmark inside the `<nav>`
-	     landmark and ships `padding-block` that fights the rail's
-	     gap rhythm). Inter-group rhythm comes from `<h6>` asymmetric
-	     margins in `showcase.css` — room above each heading, tight
-	     below, so the heading reads as a label for the menu directly
-	     beneath it.
+	     `components/_menu.scss` § Grouped-sidebar rhythm). No
+	     `<section>` wrapper: the framework's anti-pattern note explains
+	     why (`<section>` nests a region landmark inside the `<nav>`
+	     landmark and ships `padding-block` that fights the rail's gap
+	     rhythm). Inter-group rhythm (asymmetric h6 margins, zeroed menu
+	     margins, uppercase eyebrow typography) is painted by the
+	     framework.
 
 	     `<menu>` (not `<ul>`) so the framework's nav-rail menu rules in
 	     `components/_menu.scss` paint the row chrome. The active-page

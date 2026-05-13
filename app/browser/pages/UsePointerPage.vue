@@ -237,7 +237,7 @@ const draggingNow = computed(
 						borderRadius: '50%',
 						background: 'var(--color-canvas)',
 						border: '2px solid var(--color-primary)',
-						boxShadow: 'var(--set-box-shadow-sm)',
+						boxShadow: 'var(--set-box-shadow-small)',
 						transform: 'translate(-50%, -50%)',
 						cursor: slider.dragging.value ? 'grabbing' : 'grab',
 						touchAction: 'none',
@@ -380,7 +380,7 @@ usePointer(handle, {
 						borderRadius: '50%',
 						background: swatch,
 						border: '2px solid white',
-						boxShadow: '0 0 0 1px var(--color-border-strong), var(--set-box-shadow-sm)',
+						boxShadow: '0 0 0 1px var(--color-border-strong), var(--set-box-shadow-small)',
 						transform: 'translate(-50%, -50%)',
 						pointerEvents: 'none',
 					}"

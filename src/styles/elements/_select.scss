@@ -138,6 +138,29 @@
 				);
 		}
 
+		// Windows High Contrast / forced-colors fallback. Selects are form
+		// controls — map to Field / FieldText / ButtonText, with Highlight
+		// outline on focus and GrayText for disabled.
+		@include forced-colors {
+			background-color: Field;
+			color: FieldText;
+			border-color: ButtonText;
+
+			&:focus-visible {
+				outline: 2px solid Highlight;
+				outline-offset: 2px;
+				box-shadow: none;
+				border-color: ButtonText;
+			}
+
+			&:disabled,
+			&[disabled],
+			&.disabled {
+				color: GrayText;
+				border-color: GrayText;
+			}
+		}
+
 		// Native popup option chrome — Chromium / Firefox read each `<option>`'s
 		// own color / background-color rather than the trigger's, so unstyled
 		// options paint UA-default white-on-black even on themed selects. The

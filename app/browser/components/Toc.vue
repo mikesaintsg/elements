@@ -99,8 +99,11 @@ const onClick = (event: MouseEvent, id: string): void => {
 	     whose `<header>` band carries the same "On this page" title,
 	     so this h6 hides via `.showcase-toc-heading { display: none }`
 	     below 960 px and reappears at the @media (min-width: 961px)
-	     breakpoint — see `app/browser/styles/showcase.css`. -->
-	<h6 class="showcase-toc-heading text-xs uppercase tracking-wider opacity-70">On this page</h6>
+	     breakpoint — see `app/browser/styles/showcase.css`. The
+	     uppercase-eyebrow typography comes from the framework's
+	     `body:has(main) > :where(nav, aside) h6` rule in
+	     `components/_menu.scss` § Grouped-sidebar rhythm. -->
+	<h6 class="showcase-toc-heading">On this page</h6>
 	<!-- WAI-ARIA APG: the in-page TOC is a "Table of contents" navigation
 	     landmark. Framework's components/_nav.scss + the showcase rules
 	     in showcase.css paint the active-link affordance. -->

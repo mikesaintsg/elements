@@ -438,7 +438,7 @@ const bookmark = useButton(button)
 .theme-picker button.active {
 	background: var(--color-canvas);
 	color: var(--color-text-strong);
-	box-shadow: var(--set-box-shadow-sm);
+	box-shadow: var(--set-box-shadow-small);
 }
 
 .mode-display {

@@ -61,4 +61,33 @@
 		gap: var(--set-cluster-gap);
 		align-items: var(--set-cluster-align);
 	}
+
+	// --------------------------------------------------------------------------
+	// .scrollable — generic horizontal-scroll wrapper.
+	//
+	// Element-agnostic wrapper for content too wide for the viewport.
+	// Classic use: `<div class="scrollable"><table>…</table></div>` lets a
+	// wide table scroll inside its bounding box; the same wrapper works for
+	// a wide `<pre>` block, an inline-flex toolbar, or any other wide
+	// content. `:not(dialog)` excludes `dialog.scrollable[open]` which has
+	// its own composable-state-gated rule in `composables/_dialog.scss`
+	// (the dialog's body section scrolls on overflow there).
+	//
+	// `overscroll-behavior-inline: contain` keeps the swipe gesture local
+	// so touchpad users don't rubber-band the page when the wrapper
+	// reaches its scroll limit.
+	//
+	// Naming: matches `dialog.scrollable` already in the framework — the
+	// unifying semantic is "this surface scrolls when its content
+	// overflows." Bootstrap's `.table-responsive` was rejected because
+	// the `table-` prefix violates the framework's no-element-name-prefix
+	// rule and ties a general-purpose wrapper to one element family.
+	// --------------------------------------------------------------------------
+	.scrollable:not(dialog) {
+		inline-size: 100%;
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior-inline: contain;
+	}
 }

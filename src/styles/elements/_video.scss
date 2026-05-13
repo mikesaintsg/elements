@@ -1,18 +1,22 @@
 // ============================================================================
 // video — Embedded video player.
 //
-// Override — block-level + max-width 100% so embedded video respects
-// container width. Optional border-radius via token so consumers can
-// match the surrounding card chrome without per-instance utilities.
+// Override — block-level + max-inline-size: 100% so embedded video respects
+// container width. Optional border-radius + background-color via tokens so
+// consumers can match the surrounding card chrome without per-instance
+// utilities. `--set-video-max-inline-size` exposes the same containment
+// vocabulary the other embed-style media elements (iframe, embed, object,
+// canvas, svg) ship — see taxonomy.ts § `media-embed` group.
 // ============================================================================
 
 @layer elements {
 	video {
+		--set-video-max-inline-size: 100%;
 		--set-video-border-radius: 0;
 		--set-video-background-color: black;
 
 		display: block;
-		max-inline-size: 100%;
+		max-inline-size: var(--set-video-max-inline-size);
 		block-size: auto;
 		border-radius: var(--set-video-border-radius);
 		background-color: var(--set-video-background-color);

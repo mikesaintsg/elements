@@ -62,9 +62,9 @@
 		--set-article-font-size: var(--set-size-font-size, var(--text-base));
 		--set-article-line-height: var(--leading-normal);
 		// Card elevation flows through the global elevation scale so a
-		// consumer retuning `--set-box-shadow-sm` at `:root` retunes
+		// consumer retuning `--set-box-shadow-small` at `:root` retunes
 		// every card alongside every other "small lift" surface.
-		--set-article-box-shadow: var(--set-box-shadow-sm);
+		--set-article-box-shadow: var(--set-box-shadow-small);
 		--set-article-transition-duration: var(--set-transition-duration);
 		--set-article-disabled-opacity: 0.5;
 

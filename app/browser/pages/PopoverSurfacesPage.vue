@@ -435,7 +435,7 @@ const longContent = ref(false)
 			<dt><code>--set-popover-hint-max-inline-size</code></dt>
 			<dd>Narrower than panel cap. Default <code>12.5 rem</code> (mailbox parity).</dd>
 			<dt><code>--set-popover-hint-box-shadow</code></dt>
-			<dd>Lighter elevation. Default <code>--set-box-shadow-sm</code>.</dd>
+			<dd>Lighter elevation. Default <code>--set-box-shadow-small</code>.</dd>
 		</dl>
 
 		<h3>Anchor positioning</h3>

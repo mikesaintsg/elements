@@ -99,13 +99,42 @@
 		// `<form>` rule (checkbox / radio / color keep their fixed sizes;
 		// text-like inputs / textarea / select / range / file fill the row).
 		> label
-			> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select),
-		> :is(input:not([type='checkbox']):not([type='radio']):not([type='color']), textarea, select) {
+			> :is(input:not(:where([type='checkbox'], [type='radio'], [type='color'])), textarea, select),
+		> :is(input:not(:where([type='checkbox'], [type='radio'], [type='color'])), textarea, select) {
 			inline-size: 100%;
 		}
 
 		&:disabled {
 			opacity: var(--set-fieldset-disabled-opacity);
+		}
+
+		// `<fieldset>` is keyboard-focusable when given `tabindex` (rare,
+		// but consumers do use it for legend-as-group-name patterns).
+		// Provide an explicit focus-visible ring so the affordance is
+		// painted when focus lands on the host.
+		&:focus-visible {
+			outline: none;
+			@include focus-ring();
+		}
+
+		// Windows High Contrast / forced-colors fallback. Fieldsets are
+		// containers — map to Canvas / CanvasText / ButtonText. Disabled
+		// renders as GrayText per the system tokens.
+		@include forced-colors {
+			color: CanvasText;
+			background-color: Canvas;
+			border-color: ButtonText;
+
+			&:focus-visible {
+				outline: 2px solid Highlight;
+				outline-offset: 2px;
+				box-shadow: none;
+			}
+
+			&:disabled {
+				color: GrayText;
+				border-color: GrayText;
+			}
 		}
 	}
 }

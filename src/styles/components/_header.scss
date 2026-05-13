@@ -39,21 +39,26 @@
 //   itself is the scroll container (the framework's default) — the
 //   header stays visible while the rail's contents scroll past.
 //
-//   Consumers using a flex-column split rail (rail container + inner
-//   list scroller, see `_nav.scss` § Scroll-container model) need to
-//   opt the drawer header OUT of the sticky pin. The rail no longer
-//   scrolls so the pin isn't needed, AND the negative margins fight
-//   the consumer's own padding choices. Override via a higher-
-//   specificity rule keyed to the consumer's class:
+//   Consumers composing a rail with multiple regions (a pinned filter
+//   card + a separately-scrolling list, the docs-sidebar shape) need
+//   to opt the drawer header OUT of the sticky pin. The rail no
+//   longer scrolls so the pin isn't needed; the negative margins also
+//   fight a composed rail's zeroed padding. The opt-out is consumer-
+//   scoped: override via a higher-specificity rule keyed to the
+//   consumer's rail class:
 //
-//      nav > header.your-drawer-header-class {
+//      nav.your-composed-rail > header {
 //          position: static;
 //          margin: 0;
 //          inset-block-start: auto;
 //      }
 //
 //   The header keeps its `--set-header-padding-*` height, so it stays
-//   the same height as the body app bar across the layout.
+//   the same height as the body app bar across the layout. The
+//   framework deliberately leaves this opt-out to the consumer — every
+//   consumer's composed shape differs slightly, and the framework
+//   doesn't try to detect "composed mode" by sniffing structural cues
+//   (a direct-child `<search>`, a wrapping `<form>`, etc.).
 // ============================================================================
 
 @use '../mixins' as *;

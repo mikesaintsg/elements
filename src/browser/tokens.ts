@@ -149,12 +149,14 @@ export const tokens = {
 	radiusFactor: '--set-radius-factor',
 
 	// Elevation scale — three distinct "lift" levels for floating surfaces
-	// (popovers, toasts, dialogs, drawers). Mirrors mailbox's
-	// `--bs-box-shadow-{sm,base,lg}`.
+	// (popovers, toasts, dialogs, drawers). Tier names spell out
+	// (`small` / `base` / `large`) to match the framework's
+	// no-abbreviations naming rule (AGENTS.md §21, see also
+	// `FORBIDDEN_TOKEN_SEGMENTS` in `taxonomy.ts`).
 	boxShadow: {
-		sm: '--set-box-shadow-sm',
+		small: '--set-box-shadow-small',
 		base: '--set-box-shadow',
-		lg: '--set-box-shadow-lg',
+		large: '--set-box-shadow-large',
 	},
 
 	// Focus ring sub-tokens.
@@ -200,7 +202,7 @@ export const tokens = {
 		sun: '--set-icon-sun',
 		moon: '--set-icon-moon',
 		system: '--set-icon-system',
-		info: '--set-icon-info',
+		information: '--set-icon-information',
 		success: '--set-icon-success',
 		warning: '--set-icon-warning',
 		danger: '--set-icon-danger',
@@ -569,12 +571,12 @@ export const tokens = {
 		transitionDuration: '--set-carousel-transition-duration',
 		transitionEasing: '--set-carousel-transition-easing',
 		controlSize: '--set-carousel-control-size',
-		controlBg: '--set-carousel-control-bg',
+		controlBackgroundColor: '--set-carousel-control-background-color',
 		controlIcon: '--set-carousel-control-icon',
 		indicatorSize: '--set-carousel-indicator-size',
 		indicatorActiveSize: '--set-carousel-indicator-active-size',
-		indicatorBg: '--set-carousel-indicator-bg',
-		indicatorBgActive: '--set-carousel-indicator-bg-active',
+		indicatorBackgroundColor: '--set-carousel-indicator-background-color',
+		indicatorBackgroundColorActive: '--set-carousel-indicator-background-color-active',
 	},
 
 	// Element-scoped tokens declared on `output` itself.
@@ -879,6 +881,8 @@ export const tokens = {
 	// main on a doc page or inside the body grid ships with consistent
 	// spacing for its top-level children.
 	main: {
+		color: '--set-main-color',
+		backgroundColor: '--set-main-background-color',
 		paddingInline: '--set-main-padding-inline',
 		paddingBlock: '--set-main-padding-block',
 		gap: '--set-main-gap',
@@ -984,6 +988,7 @@ export const tokens = {
 		color: '--set-var-color',
 		backgroundColor: '--set-var-background-color',
 		paddingInline: '--set-var-padding-inline',
+		paddingBlock: '--set-var-padding-block',
 		borderRadius: '--set-var-border-radius',
 		fontSize: '--set-var-font-size',
 	},
@@ -1055,6 +1060,7 @@ export const tokens = {
 	},
 
 	video: {
+		maxInlineSize: '--set-video-max-inline-size',
 		borderRadius: '--set-video-border-radius',
 		backgroundColor: '--set-video-background-color',
 	},

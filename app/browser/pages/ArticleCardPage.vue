@@ -79,7 +79,7 @@ const cosmicImageDataUri =
 	<section id="article-bare">
 		<h2>Bare <code>&lt;article&gt;</code></h2>
 		<p>
-			No classes. Token-driven defaults: <code>--set-box-shadow-sm</code> elevation,
+			No classes. Token-driven defaults: <code>--set-box-shadow-small</code> elevation,
 			<code>--set-article-padding-*</code> for the inset, <code>--set-article-gap</code> between
 			top-level children. Container-query named <code>article</code> so descendants can adapt to the
 			card's intrinsic inline-size.

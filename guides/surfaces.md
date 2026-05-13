@@ -81,7 +81,7 @@ The most important surface. [`_popover.scss`](../src/styles/surfaces/_popover.sc
 **Variants.** Two shapes:
 
 - **Bare `[popover]`** — the full panel. Background = `--color-surface` (tracks the active theme — flips to slate in dark mode). Max-width capped at `min(--set-popover-max-inline-size, --set-anchor-max-inline-size)`. Used by menu, dialog (non-modal), drawer-mode aside.
-- **`[popover='hint'], [role='tooltip']`** — the tooltip shape. Smaller padding, inverted chrome (white text on `rgb(15 23 42 / 0.95)` dark background), narrower max-width (12.5rem), lighter shadow. The hint background uses an explicit dark literal rather than `currentColor` to dodge the chicken-and-egg of `color` and `background-color` both being set on the same selector.
+- **`[popover='hint'], [role='tooltip']`** — the tooltip shape. Smaller padding, inverted chrome (the bg reads `color-mix(in srgb, var(--color-inverted) 95%, transparent)` so the tooltip stays always-distinct against the canvas in both light and dark modes — inverted text on inverted bg), narrower max-width (12.5rem via the `--set-popover-hint-max-inline-size` extension), lighter shadow. The hint background runs through `--color-inverted` rather than `currentColor` to dodge the chicken-and-egg of `color` and `background-color` both being set on the same selector.
 
 **Theme tracking.** Tokens reference `--color-surface`, `--color-text`, `--color-border` — when the consumer flips `data-theme="dark"`, popovers / menus / dropdowns track without per-host overrides.
 

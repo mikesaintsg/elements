@@ -32,11 +32,26 @@
 @use '../mixins' as *;
 
 @layer elements {
-	input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
-			[type='file']
-		):not([type='hidden']):not([type='image']):not([type='submit']):not([type='reset']):not(
+	// Text-like input scope — every type EXCEPT the nine listed here, which
+	// have their own bespoke chrome (checkbox/radio/range/color/file are
+	// painted in this file via per-type rules below; hidden/image/submit/
+	// reset/button delegate to the button element). Flattened blocklist via
+	// `:not(:where(...))` per guides/patterns.md § 5 (scope discipline) —
+	// keeps the rule at 0,1,0 specificity instead of 0,9,0.
+	input:not(
+		:where(
+			[type='checkbox'],
+			[type='radio'],
+			[type='range'],
+			[type='color'],
+			[type='file'],
+			[type='hidden'],
+			[type='image'],
+			[type='submit'],
+			[type='reset'],
 			[type='button']
-		) {
+		)
+	) {
 		// ----------------------------------------------------------------------
 		// Element-scoped tokens — fallback chains let any modifier override.
 		// ----------------------------------------------------------------------
@@ -311,9 +326,9 @@
 	input[type='checkbox'],
 	input[type='radio'] {
 		--set-check-size: 1em;
-		--set-check-bg: var(--color-canvas, Canvas);
+		--set-check-background-color: var(--color-canvas, Canvas);
 		--set-check-border-color: var(--color-border-strong);
-		--set-check-checked-bg: var(--color-primary);
+		--set-check-checked-background-color: var(--color-primary);
 		--set-check-checked-border-color: var(--color-primary);
 		// Glyph assets — pulled from the shared `--set-icon-*` tokens in
 		// `_tokens.scss` so a host-page icon-set swap retunes the check / dash
@@ -330,7 +345,7 @@
 		block-size: var(--set-check-size);
 		margin-block-start: 0.25em;
 		vertical-align: top;
-		background-color: var(--set-check-bg);
+		background-color: var(--set-check-background-color);
 		background-repeat: no-repeat;
 		background-position: center;
 		background-size: contain;
@@ -370,7 +385,7 @@
 			// Per-variant overrides (`<input class="success">`) can re-pin
 			// `color:` to match the variant's `--set-variant-color`.
 			color: white;
-			background-color: var(--set-check-checked-bg);
+			background-color: var(--set-check-checked-background-color);
 			border-color: var(--set-check-checked-border-color);
 		}
 
@@ -392,7 +407,7 @@
 		&:indeterminate {
 			// Same fixed-white reasoning as `&:checked` above — see comment.
 			color: white;
-			background-color: var(--set-check-checked-bg);
+			background-color: var(--set-check-checked-background-color);
 			border-color: var(--set-check-checked-border-color);
 			background-image: var(--set-check-dash-svg);
 		}
@@ -412,12 +427,12 @@
 		// Thumb glyphs — pulled from the shared `--set-icon-switch-*` tokens
 		// in `_tokens.scss`. Off uses a muted grey fill; on flips to white
 		// so the thumb reads against the checked-state fill.
-		--set-switch-bg: var(--set-icon-switch-off);
-		--set-switch-bg-checked: var(--set-icon-switch-on);
+		--set-switch-background-color: var(--set-icon-switch-off);
+		--set-switch-checked-background-color: var(--set-icon-switch-on);
 
 		inline-size: 2em;
 		border-radius: 2em;
-		background-image: var(--set-switch-bg);
+		background-image: var(--set-switch-background-color);
 		background-position: left center;
 		transition:
 			background-position var(--set-transition-duration),
@@ -426,7 +441,7 @@
 			box-shadow var(--set-transition-duration);
 
 		&:checked {
-			background-image: var(--set-switch-bg-checked);
+			background-image: var(--set-switch-checked-background-color);
 			background-position: right center;
 		}
 	}
@@ -439,8 +454,8 @@
 	input[type='range'] {
 		--set-range-track-block-size: 0.5rem;
 		--set-range-thumb-size: 1.25rem;
-		--set-range-track-bg: var(--color-border);
-		--set-range-thumb-bg: var(--color-primary);
+		--set-range-track-background-color: var(--color-border);
+		--set-range-thumb-background-color: var(--color-primary);
 		--set-range-thumb-ring: Canvas;
 
 		inline-size: 100%;
@@ -462,7 +477,7 @@
 		&::-webkit-slider-runnable-track {
 			inline-size: 100%;
 			block-size: var(--set-range-track-block-size);
-			background-color: var(--set-range-track-bg);
+			background-color: var(--set-range-track-background-color);
 			border-radius: 1rem;
 			cursor: pointer;
 		}
@@ -473,7 +488,7 @@
 			);
 			inline-size: var(--set-range-thumb-size);
 			block-size: var(--set-range-thumb-size);
-			background-color: var(--set-range-thumb-bg);
+			background-color: var(--set-range-thumb-background-color);
 			border: 2px solid var(--set-range-thumb-ring);
 			border-radius: 50%;
 			appearance: none;
@@ -487,7 +502,7 @@
 		&::-moz-range-track {
 			inline-size: 100%;
 			block-size: var(--set-range-track-block-size);
-			background-color: var(--set-range-track-bg);
+			background-color: var(--set-range-track-background-color);
 			border: 0;
 			border-radius: 1rem;
 			cursor: pointer;
@@ -496,7 +511,7 @@
 		&::-moz-range-thumb {
 			inline-size: var(--set-range-thumb-size);
 			block-size: var(--set-range-thumb-size);
-			background-color: var(--set-range-thumb-bg);
+			background-color: var(--set-range-thumb-background-color);
 			border: 2px solid var(--set-range-thumb-ring);
 			border-radius: 50%;
 			cursor: pointer;

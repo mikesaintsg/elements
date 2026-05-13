@@ -172,5 +172,30 @@
 			pointer-events: none;
 			opacity: var(--set-a-disabled-opacity);
 		}
+
+		// Windows High Contrast / forced-colors fallback. UA preserves
+		// `LinkText` for anchors automatically; the framework retunes
+		// :hover / :active / :focus-visible / disabled to system tokens
+		// so the link affordance survives in HC mode where the variant
+		// palette is forced to system equivalents.
+		@include forced-colors {
+			color: LinkText;
+
+			&:hover,
+			&:active {
+				color: ActiveText;
+			}
+
+			&:focus-visible {
+				outline: 2px solid Highlight;
+				outline-offset: 2px;
+				box-shadow: none;
+			}
+
+			&[aria-disabled='true'],
+			&.disabled {
+				color: GrayText;
+			}
+		}
 	}
 }

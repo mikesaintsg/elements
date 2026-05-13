@@ -75,7 +75,7 @@
 		// dominating the page. Pulls from the framework's `--set-box-
 		// shadow-lg` so a host-page elevation theme retunes dialogs in
 		// lockstep with toasts and other lifted surfaces.
-		--set-dialog-box-shadow: var(--set-box-shadow-lg);
+		--set-dialog-box-shadow: var(--set-box-shadow-large);
 		--set-dialog-transition-duration: var(--set-transition-duration);
 
 		inline-size: var(--set-dialog-inline-size);
@@ -363,6 +363,15 @@
 		border-block-start: 1px solid var(--set-dialog-section-border-color);
 	}
 
+	// Dialog itself is focusable when modal (UA places focus on the dialog
+	// before its first focusable descendant). Provide an explicit
+	// focus-visible ring so the affordance is painted when focus lands on
+	// the dialog body rather than a child control.
+	dialog:focus-visible {
+		outline: none;
+		@include focus-ring();
+	}
+
 	// Windows High Contrast / forced-colors fallback. The dialog drops its
 	// custom background and shadow (HC mode forces Canvas anyway), keeps a
 	// visible perimeter via CanvasText, and lets the `::backdrop` fall back
@@ -373,6 +382,12 @@
 			color: CanvasText;
 			border-color: CanvasText;
 			box-shadow: none;
+
+			&:focus-visible {
+				outline: 2px solid Highlight;
+				outline-offset: 2px;
+				box-shadow: none;
+			}
 		}
 	}
 }
