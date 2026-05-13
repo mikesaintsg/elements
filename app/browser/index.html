@@ -2,13 +2,28 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<!-- Inline SVG favicon — encoded as a data: URL so it resolves
+		     in BOTH the dev server (http://) AND the single-file
+		     showcase opened over file:// (the latter has no asset
+		     pipeline to serve a separate `/favicon.svg`).
+		     Design: rounded square in the framework's primary blue
+		     (`#2563eb` ≈ blue-600), with three white horizontal bars
+		     forming a stylized "E" silhouette / cascade-layer stack.
+		     The mark reads both as "Elements" (the letter E) and as
+		     "a stack of cascade layers" (the framework's architecture
+		     in one glyph). 32×32 viewBox renders cleanly at 16px tab
+		     scale. -->
+		<link
+			rel="icon"
+			type="image/svg+xml"
+			href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Crect x='9' y='8' width='14' height='3' rx='1.5' fill='white'/%3E%3Crect x='9' y='14.5' width='10' height='3' rx='1.5' fill='white'/%3E%3Crect x='9' y='21' width='14' height='3' rx='1.5' fill='white'/%3E%3C/svg%3E"
+		/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 		<!-- Showcase is opened over file:// — defeat the browser cache so each rebuild loads fresh. -->
 		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 		<meta http-equiv="Pragma" content="no-cache" />
 		<meta http-equiv="Expires" content="0" />
-		<title>My App</title>
+		<title>Elements</title>
 	</head>
 	<body>
 		<div id="app"></div>
