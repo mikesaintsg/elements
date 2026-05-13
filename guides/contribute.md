@@ -45,7 +45,7 @@ The quality bar applies even when the patch looks small. Adding one token withou
 
 ### 3.1 Spec before code
 
-Every change starts with the spec, not the existing source. Read the matching guide section first — `styles.md`, `tokens.md`, `modifiers.md`, `taxonomy.md`, `elements.md`, `components.md`, `surfaces.md`, `composables.md`, `mixins.md`. Form the production-correct vision from the spec, then compare to what's there, then close the gap. **Existing code is not ground truth** — it's something to verify.
+Every change starts with the spec, not the existing source. Read the matching guide section first — `styles.md`, `tokens.md`, `modifiers.md`, `taxonomy.md`, `patterns.md`, `elements.md`, `components.md`, `surfaces.md`, `composables.md`, `mixins.md`. Form the production-correct vision from the spec, then compare to what's there, then close the gap. **Existing code is not ground truth** — it's something to verify. When writing or refactoring a SCSS partial specifically, consult [`patterns.md`](patterns.md) — the per-folder structural contract is codified there and enforced by `tests/src/styles/_contracts.test.ts`.
 
 ### 3.2 No backwards compatibility
 
@@ -465,6 +465,7 @@ guides/
   contribute.md      ← this file — the workflow for humans + agents
   plan.md            ← phase-by-phase blueprint (the "what to do")
   taxonomy.md        ← every native HTML element + framework treatment
+  patterns.md        ← per-folder SCSS structural contracts
   styles.md          ← top-level architecture
   tokens.md          ← token surface
   mixins.md          ← Sass mixin registry
@@ -481,6 +482,7 @@ src/
     modifiers.ts     ← TS mirror of every modifier class
     elements.ts      ← TS registry of element-layer substantive baselines
     taxonomy.ts      ← TS taxonomy + token-group registry
+    patterns.ts      ← per-folder structural contracts (FOLDER_CONTRACTS, FILE_EXCEPTIONS, selector classification helpers)
     events.ts        ← namespaced event-name registry
     helpers.ts       ← assertElement, attachListeners, …
     constants.ts     ← UPPER_SNAKE_CASE values, EVENT_MAPS, selectors

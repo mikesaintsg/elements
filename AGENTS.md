@@ -10,7 +10,8 @@ These are the rules and conventions that govern every project. Follow them stric
 2. **[`guides/contribute.md`](guides/contribute.md)** — the **workflow** for humans and agents. How to add an element, a modifier, a composable, a showcase page. Quality bar. Step-by-step procedures with the exact parity-test commands to gate every change.
 3. **[`guides/plan.md`](guides/plan.md)** — phase-by-phase blueprint and current work-in-progress roster.
 4. **[`guides/taxonomy.md`](guides/taxonomy.md)** — every native HTML element + the framework's treatment of it. The first place to look before authoring a new element or class-component.
-5. **[`guides/modifiers.md`](guides/modifiers.md)**, **[`guides/styles.md`](guides/styles.md)**, **[`guides/tokens.md`](guides/tokens.md)** — the specifications for the modifier surface, cascade architecture, and token namespace.
+5. **[`guides/patterns.md`](guides/patterns.md)** — per-folder structural contracts for SCSS partials (layer wrapping, allowed selector kinds, token namespace policy). The first place to look before writing or refactoring an SCSS partial.
+6. **[`guides/modifiers.md`](guides/modifiers.md)**, **[`guides/styles.md`](guides/styles.md)**, **[`guides/tokens.md`](guides/tokens.md)** — the specifications for the modifier surface, cascade architecture, and token namespace.
 
 When in doubt about *how* to do something, read `contribute.md`. When in doubt about *what* to write, read the matching spec. Existing code is not ground truth — it is something to verify against the spec.
 
@@ -663,6 +664,8 @@ Update the relevant guide `.md` file with new types, methods, and behavior.
 The styles layer mirrors the TypeScript centralization principles. Every rule here has a TypeScript analogue — read the parallel section first to understand the intent.
 
 This framework is layered on **Tailwind v4**. Tailwind owns the palette (`--color-blue-500`, …), scales (`--spacing-*`, `--radius-*`, `--text-*`), the reset, and utility classes. The framework owns element baselines, semantic modifiers, composed widgets, browser-surface styles, and a TS-mirrored API for everything it authors. The compile pipeline is **Sass → PostCSS** with the `@tailwindcss/postcss` plugin (not the Vite plugin) so Tailwind sees the post-Sass CSS and tree-shakes correctly.
+
+**Per-folder structural contract is codified.** Every SCSS partial under `src/styles/{elements,modifiers,surfaces,components,composables}/` is held to the matching contract in [`src/browser/patterns.ts`](src/browser/patterns.ts) (`FOLDER_CONTRACTS` + `FILE_EXCEPTIONS`). The contract names the cascade layer, allowed root selector kinds, forbidden root selector kinds, state-selector requirement, token namespace policy, and comment-only policy per folder. The parity test at [`tests/src/styles/_contracts.test.ts`](tests/src/styles/_contracts.test.ts) drives every partial against its contract. The prose explanation lives in [`guides/patterns.md`](guides/patterns.md) — read that BEFORE writing or refactoring a partial, and consult it when classifying an outlier as a real-drift signal vs. a legitimate exception.
 
 ### 21.1 Centralized files (the §5 analogue for SCSS)
 
