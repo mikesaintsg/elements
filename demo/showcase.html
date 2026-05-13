@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-13T00:17:42.386Z" />
+		<meta name="build-id" content="2026-05-13T00:36:18.105Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -11416,18 +11416,33 @@ const { active, activate, deactivate } = useFocus(host)
 					},
 				},
 				Kd = { id: `use-pointer-accept` },
-				qd = {
+				qd = { style: { 'margin-block': `0 1rem` } },
+				Jd = [`aria-pressed`],
+				Yd = {
 					style: {
 						overflow: `hidden`,
+						padding: `1.5rem`,
+						border: `1px dashed var(--color-border)`,
+						'border-radius': `0.5rem`,
+						'min-block-size': `9rem`,
+					},
+				},
+				Xd = { id: `use-pointer-clear` },
+				Zd = {
+					style: {
+						display: `flex`,
+						'flex-direction': `column`,
+						'align-items': `center`,
+						gap: `1rem`,
 						padding: `2rem`,
 						border: `1px dashed var(--color-border)`,
 						'border-radius': `0.5rem`,
 					},
 				},
-				Jd = { id: `use-pointer-clear` },
-				Yd = { style: { display: `flex`, 'align-items': `center`, gap: `1rem` } },
-				Xd = [`disabled`],
-				Zd = B({
+				Qd = { style: { 'font-variant-numeric': `tabular-nums` } },
+				$d = { key: 0, style: { color: `var(--color-danger-text-emphasis)` } },
+				ef = 120,
+				tf = B({
 					__name: `UsePointerPage`,
 					setup(e) {
 						let t = V(`sliderTrack`),
@@ -11443,34 +11458,42 @@ const { active, activate, deactivate } = useFocus(host)
 							a = ns(n, { cursor: `grabbing`, on: { start: i, move: i } }),
 							o = V(`gatedBox`),
 							s = I({ x: 0, y: 0 }),
-							c = { x: 0, y: 0 },
-							l = ns(o, {
+							c = I(!1),
+							l = { x: 0, y: 0 },
+							u = ns(o, {
 								cursor: `move`,
-								accept: (e) => e.button === 0 && e.shiftKey,
+								accept: () => c.value,
 								on: {
 									start: (e) => {
-										c = { x: e.clientX - s.value.x, y: e.clientY - s.value.y }
+										l = { x: e.clientX - s.value.x, y: e.clientY - s.value.y }
 									},
 									move: (e) => {
-										s.value = { x: e.clientX - c.x, y: e.clientY - c.y }
+										s.value = { x: e.clientX - l.x, y: e.clientY - l.y }
 									},
 								},
 							}),
-							u = V(`cancelBox`),
-							d = I(0),
-							f = 0,
-							p = ns(u, {
-								cursor: `ew-resize`,
+							d = V(`cancelBox`),
+							f = I({ x: 0, y: 0 }),
+							p = I(!1),
+							m = { x: 0, y: 0 },
+							h = ns(d, {
+								cursor: `grabbing`,
 								on: {
 									start: (e) => {
-										f = e.clientX - d.value
+										;((m = { x: e.clientX - f.value.x, y: e.clientY - f.value.y }), (p.value = !1))
 									},
 									move: (e) => {
-										d.value = e.clientX - f
+										let t = e.clientX - m.x,
+											n = e.clientY - m.y
+										if (Math.hypot(t, n) > ef) {
+											;((f.value = { x: 0, y: 0 }), (p.value = !0), h.clear())
+											return
+										}
+										f.value = { x: t, y: n }
 									},
 								},
 							}),
-							m = $(() => a.dragging.value || l.dragging.value || p.dragging.value)
+							g = $(() => a.dragging.value || u.dragging.value || h.dragging.value)
 						return (e, i) => (
 							q(),
 							J(
@@ -11485,7 +11508,7 @@ const { active, activate, deactivate } = useFocus(host)
 										Y(`aside`, Vd, [
 											Y(`p`, null, [
 												(i[1] ||= Y(`strong`, null, `Dragging:`, -1)),
-												Y(`code`, null, k(m.value ? `yes` : `no`), 1),
+												Y(`code`, null, k(g.value ? `yes` : `no`), 1),
 												(i[2] ||= X(` — `, -1)),
 												(i[3] ||= Y(
 													`small`,
@@ -11609,37 +11632,55 @@ usePointer(thumb, {
 										)),
 									]),
 									Y(`section`, Kd, [
-										(i[9] ||= Z(
-											`<h2>2. <code>accept</code> predicate — gate which pointerdowns engage</h2><p> The <code>accept</code> option is a pure decision function — return <code>false</code> to reject a <code>pointerdown</code>. The drag never starts, no body cursor change, no capture. Useful for primary-button-only drags, modifier-gated handles (&quot;hold Shift to rearrange&quot;), or rejecting touch-only / mouse-only paths. </p><p><strong>Hold Shift</strong> while dragging the box below — it accepts the drag. Without Shift, <code>pointerdown</code> is rejected and the box stays put. </p>`,
+										(i[8] ||= Z(
+											`<h2>2. <code>accept</code> predicate — gate which pointerdowns engage</h2><p> The <code>accept</code> option is a pure decision function — return <code>false</code> to reject a <code>pointerdown</code>. The drag never starts, no body cursor change, no capture. Common patterns: primary-button-only drags, role-gated handles (&quot;only draggable in edit mode&quot;), rejecting specific pointer types. </p><p> Toggle <strong>Edit mode</strong> below. When off, dragging the box does nothing — the predicate rejects every pointerdown. When on, the box becomes draggable. The predicate reads reactive state at the moment of the down event, so flipping the toggle takes effect on the NEXT pointerdown without re-instantiating the factory. Touch-friendly: no modifier keys, no two-finger interactions. </p>`,
 											3,
 										)),
-										Y(`div`, qd, [
+										Y(`menu`, qd, [
+											Y(`li`, null, [
+												Y(
+													`button`,
+													{
+														type: `button`,
+														class: O([`small`, c.value ? `primary` : `subtle`]),
+														'aria-pressed': c.value,
+														onClick: (i[0] ||= (e) => (c.value = !c.value)),
+													},
+													k(c.value ? `✓ Edit mode on` : `Edit mode off`),
+													11,
+													Jd,
+												),
+											]),
+										]),
+										Y(`div`, Yd, [
 											Y(
 												`div`,
 												{
 													ref_key: `gatedBox`,
 													ref: o,
 													style: D({
-														inlineSize: `8rem`,
+														inlineSize: `7rem`,
 														blockSize: `5rem`,
 														padding: `0.75rem`,
-														background: L(l).dragging.value
+														background: L(u).dragging.value
 															? `var(--color-primary-bg-subtle)`
-															: `var(--color-surface-raised)`,
-														border: `1px solid var(--color-border)`,
+															: c.value
+																? `var(--color-surface-raised)`
+																: `var(--color-canvas)`,
+														border: `2px ${c.value ? `solid` : `dashed`} var(--color-${c.value ? `primary` : `border`})`,
 														borderRadius: `0.5rem`,
 														transform: `translate(${s.value.x}px, ${s.value.y}px)`,
-														cursor: `move`,
+														cursor: c.value ? `move` : `not-allowed`,
 														userSelect: `none`,
 														touchAction: `none`,
-														transition: `background-color 150ms ease`,
+														transition: `background-color 150ms ease, border-color 150ms ease`,
 													}),
 												},
-												[...(i[8] ||= [Y(`small`, null, `Shift + drag`, -1)])],
+												[Y(`small`, null, k(c.value ? `Drag me` : `Locked`), 1)],
 												4,
 											),
 										]),
-										(i[10] ||= Y(
+										(i[9] ||= Y(
 											`details`,
 											null,
 											[
@@ -11648,9 +11689,12 @@ usePointer(thumb, {
 													Y(
 														`code`,
 														null,
-														`usePointer(box, {
+														`const editMode = ref(false)
+usePointer(box, {
   cursor: 'move',
-  accept: (event) => event.button === 0 && event.shiftKey,
+  // Predicate reads reactive state at pointerdown time —
+  // flipping the toggle is reflected on the next down event.
+  accept: () => editMode.value,
   on: { start, move },
 })`,
 													),
@@ -11659,8 +11703,8 @@ usePointer(thumb, {
 											-1,
 										)),
 									]),
-									Y(`section`, Jd, [
-										(i[13] ||= Y(
+									Y(`section`, Xd, [
+										(i[18] ||= Y(
 											`h2`,
 											null,
 											[
@@ -11670,63 +11714,76 @@ usePointer(thumb, {
 											],
 											-1,
 										)),
-										(i[14] ||= Y(
+										(i[19] ||= Y(
 											`p`,
 											null,
 											[
-												X(` Drag the handle horizontally. While dragging, click `),
-												Y(`strong`, null, `Cancel drag`),
+												Y(`code`, null, `clear()`),
+												X(` forcibly releases pointer capture, restores body styles, and flips `),
+												Y(`code`, null, `dragging`),
+												X(` to `),
+												Y(`code`, null, `false`),
 												X(
-													` to forcibly release the pointer capture and restore body styles. Useful when an external event (route change, modal open, timeout, network error) needs to end the drag without waiting for the user to lift. `,
+													` — without waiting for the user to lift. Useful when an external condition needs to end the drag: route change, modal opening, network error, max-extent reached, idle timeout. `,
 												),
 											],
 											-1,
 										)),
-										Y(`div`, Yd, [
+										Y(`p`, null, [
+											(i[10] ||= X(` The box below has a `, -1)),
+											Y(`strong`, null, k(ef) + ` px boundary`),
+											(i[11] ||= X(
+												` from its origin. Drag in any direction; once you exceed the boundary, the move handler calls `,
+												-1,
+											)),
+											(i[12] ||= Y(`code`, null, `clear()`, -1)),
+											(i[13] ||= X(` from inside `, -1)),
+											(i[14] ||= Y(`code`, null, `on.move`, -1)),
+											(i[15] ||= X(
+												` — the drag snaps back and ends automatically. Demonstrates the external-trigger pattern without requiring a second simultaneous touch (which would be impossible on single-touch devices). `,
+												-1,
+											)),
+										]),
+										Y(`div`, Zd, [
 											Y(
 												`div`,
 												{
 													ref_key: `cancelBox`,
-													ref: u,
+													ref: d,
 													style: D({
-														position: `relative`,
-														inlineSize: `3rem`,
-														blockSize: `3rem`,
-														transform: `translateX(${d.value}px)`,
-														background: L(p).dragging.value
+														inlineSize: `4rem`,
+														blockSize: `4rem`,
+														transform: `translate(${f.value.x}px, ${f.value.y}px)`,
+														background: L(h).dragging.value
 															? `var(--color-warning-bg-subtle)`
-															: `var(--color-surface-raised)`,
-														border: `2px solid var(--color-warning)`,
+															: p.value
+																? `var(--color-danger-bg-subtle)`
+																: `var(--color-surface-raised)`,
+														border: `2px solid var(--color-${p.value ? `danger` : `warning`})`,
 														borderRadius: `0.5rem`,
-														cursor: `ew-resize`,
+														cursor: `grab`,
 														userSelect: `none`,
 														touchAction: `none`,
-														transition: `background-color 150ms ease`,
+														transition: L(h).dragging.value
+															? `background-color 150ms ease, border-color 150ms ease`
+															: `transform 200ms ease, background-color 150ms ease, border-color 150ms ease`,
 													}),
 												},
 												null,
 												4,
 											),
-											Y(
-												`button`,
-												{
-													type: `button`,
-													class: `subtle`,
-													disabled: !L(p).dragging.value,
-													onClick: (i[0] ||= (...e) => L(p).clear && L(p).clear(...e)),
-												},
-												` Cancel drag `,
-												8,
-												Xd,
-											),
-											Y(`small`, null, [
-												(i[11] ||= X(` dragging: `, -1)),
-												Y(`strong`, null, k(L(p).dragging.value ? `yes` : `no`), 1),
-												(i[12] ||= X(`; offset: `, -1)),
-												Y(`strong`, null, k(d.value) + `px`, 1),
+											Y(`small`, Qd, [
+												(i[16] ||= X(` dragging: `, -1)),
+												Y(`strong`, null, k(L(h).dragging.value ? `yes` : `no`), 1),
+												(i[17] ||= X(` · distance: `, -1)),
+												Y(`strong`, null, k(Math.round(Math.hypot(f.value.x, f.value.y))), 1),
+												X(` / ` + k(ef) + ` `),
+												p.value
+													? (q(), J(`span`, $d, ` · auto-cancelled at boundary `))
+													: Gi(``, !0),
 											]),
 										]),
-										(i[15] ||= Y(
+										(i[20] ||= Y(
 											`details`,
 											null,
 											[
@@ -11735,17 +11792,29 @@ usePointer(thumb, {
 													Y(
 														`code`,
 														null,
-														`const { dragging, clear } = usePointer(box, { ... })
-
-// elsewhere — cancel in response to external state
-watch(routeChange, () => clear())`,
+														`const { dragging, clear } = usePointer(box, {
+  cursor: 'grabbing',
+  on: {
+    start: (event) => { ... },
+    move: (event) => {
+      const dx = event.clientX - origin.x
+      const dy = event.clientY - origin.y
+      if (Math.hypot(dx, dy) > BOUNDARY) {
+        offset.value = { x: 0, y: 0 }
+        clear() // auto-end the drag
+        return
+      }
+      offset.value = { x: dx, y: dy }
+    },
+  },
+})`,
 													),
 												]),
 											],
 											-1,
 										)),
 									]),
-									(i[16] ||= Z(
+									(i[21] ||= Z(
 										`<section id="use-pointer-api"><h2>API reference</h2><dl><dt><code>usePointer(elementRef, options?): UsePointerReturn</code></dt><dd> Vue composable. <code>elementRef</code> is a <code>Ref&lt;HTMLElement | null&gt;</code> pointing at the drag host. Element-agnostic: any HTMLElement works. </dd><dt><code>options.cursor</code></dt><dd><code>string</code>. CSS cursor keyword applied to <code>document.body</code> for the duration of the drag. Restored on <code>pointerup</code> / <code>pointercancel</code> / <code>clear()</code>. </dd><dt><code>options.accept</code></dt><dd><code>(event: PointerEvent) =&gt; boolean</code>. Pure decision function. Return <code>false</code> to reject a <code>pointerdown</code> — drag never engages. </dd><dt><code>options.on.start</code></dt><dd><code>(event: PointerEvent) =&gt; void</code>. Fires when a <code>pointerdown</code> is accepted and capture is set. The raw <code>PointerEvent</code> is passed (NOT boxed in a synthetic <code>CustomEvent</code> — consumers need <code>clientX / clientY / button</code> + modifier keys). </dd><dt><code>options.on.move</code></dt><dd><code>(event: PointerEvent) =&gt; void</code>. Fires for every <code>pointermove</code> while captured. </dd><dt><code>options.on.end</code></dt><dd><code>(event: PointerEvent) =&gt; void</code>. Fires on <code>pointerup</code> / <code>pointercancel</code>. </dd><dt><code>UsePointerReturn.dragging</code></dt><dd><code>Readonly&lt;Ref&lt;boolean&gt;&gt;</code>. Reactive flag — true between <code>start</code> and <code>end</code>. Bind to template / class to paint a &quot;while dragging&quot; visual state. </dd><dt><code>UsePointerReturn.clear()</code></dt><dd> Programmatic cancel. Releases pointer capture, restores body cursor + user-select, flips <code>dragging</code> to <code>false</code>. No-op if not currently dragging. </dd></dl></section>`,
 										1,
 									)),
@@ -11755,9 +11824,9 @@ watch(routeChange, () => clear())`,
 						)
 					},
 				}),
-				Qd = { id: `home`, title: `Home`, group: `Getting started`, page: is },
-				$d = [
-					Qd,
+				nf = { id: `home`, title: `Home`, group: `Getting started`, page: is },
+				rf = [
+					nf,
 					{ id: `button`, title: `Button`, group: `Elements — Interactive`, page: Ts },
 					{ id: `anchor`, title: `Anchor`, group: `Elements — Interactive`, page: Hs },
 					{
@@ -11794,35 +11863,35 @@ watch(routeChange, () => clear())`,
 						page: xd,
 					},
 					{ id: `use-focus`, title: `useFocus`, group: `Composables`, page: zd },
-					{ id: `use-pointer`, title: `usePointer`, group: `Composables`, page: Zd },
+					{ id: `use-pointer`, title: `usePointer`, group: `Composables`, page: tf },
 				],
-				ef = (e) => {
+				af = (e) => {
 					let t = window.location.hash
 					if (!t.startsWith(`#/`)) return { id: e, section: null }
 					let n = t.slice(2).split(`/`),
 						r = n[0] ?? ``
 					return {
-						id: $d.some((e) => e.id === r) ? r : `home`,
+						id: rf.some((e) => e.id === r) ? r : `home`,
 						section: n.slice(1).filter(Boolean).join(`/`) || null,
 					}
 				},
-				tf = typeof window > `u` ? { id: `home`, section: null } : ef(`home`),
-				nf = I(tf.id),
-				rf = I(tf.section)
+				of = typeof window > `u` ? { id: `home`, section: null } : af(`home`),
+				sf = I(of.id),
+				cf = I(of.section)
 			typeof window < `u` &&
 				window.addEventListener(`hashchange`, () => {
-					let e = ef(nf.value)
-					;((nf.value = e.id), (rf.value = e.section))
+					let e = af(sf.value)
+					;((sf.value = e.id), (cf.value = e.section))
 				})
-			var af = nf,
-				of = rf,
-				sf = $(() => $d.find((e) => e.id === nf.value) ?? Qd),
-				cf = (e, t) => {
+			var lf = sf,
+				uf = cf,
+				df = $(() => rf.find((e) => e.id === sf.value) ?? nf),
+				ff = (e, t) => {
 					window.location.hash = t ? `#/${e}/${t}` : `#/${e}`
 				},
-				lf = [`href`, `aria-current`, `onClick`],
-				uf = { key: 0 },
-				df = B({
+				pf = [`href`, `aria-current`, `onClick`],
+				mf = { key: 0 },
+				hf = B({
 					__name: `SiteNav`,
 					props: { routes: {}, active: {} },
 					emits: [`navigate`],
@@ -11878,7 +11947,7 @@ watch(routeChange, () => clear())`,
 																				},
 																				k(t.title),
 																				9,
-																				lf,
+																				pf,
 																			),
 																		])
 																	),
@@ -11894,7 +11963,7 @@ watch(routeChange, () => clear())`,
 										128,
 									)),
 									i.value.length === 0
-										? (q(), J(`p`, uf, [...(n[0] ||= [Y(`small`, null, `No matches.`, -1)])]))
+										? (q(), J(`p`, mf, [...(n[0] ||= [Y(`small`, null, `No matches.`, -1)])]))
 										: Gi(``, !0),
 								],
 								64,
@@ -11902,11 +11971,11 @@ watch(routeChange, () => clear())`,
 						)
 					},
 				}),
-				ff = { key: 0, 'aria-label': `Table of contents` },
-				pf = [`data-level`],
-				mf = [`href`, `aria-current`, `onClick`],
-				hf = { key: 1 },
-				gf = B({
+				gf = { key: 0, 'aria-label': `Table of contents` },
+				_f = [`data-level`],
+				vf = [`href`, `aria-current`, `onClick`],
+				yf = { key: 1 },
+				bf = B({
 					__name: `Toc`,
 					props: { scroller: {}, currentId: {} },
 					emits: [`navigate`],
@@ -11968,7 +12037,7 @@ watch(routeChange, () => clear())`,
 								e.ctrlKey ||
 								e.shiftKey ||
 								e.altKey ||
-								(e.preventDefault(), cf(n.currentId, t), r(`navigate`))
+								(e.preventDefault(), ff(n.currentId, t), r(`navigate`))
 						}
 						return (t, n) => (
 							q(),
@@ -11984,7 +12053,7 @@ watch(routeChange, () => clear())`,
 									)),
 									i.value.length > 0
 										? (q(),
-											J(`nav`, ff, [
+											J(`nav`, gf, [
 												Y(`menu`, null, [
 													(q(!0),
 													J(
@@ -12007,11 +12076,11 @@ watch(routeChange, () => clear())`,
 																			},
 																			k(t.label),
 																			9,
-																			mf,
+																			vf,
 																		),
 																	],
 																	8,
-																	pf,
+																	_f,
 																)
 															),
 														),
@@ -12020,7 +12089,7 @@ watch(routeChange, () => clear())`,
 												]),
 											]))
 										: (q(),
-											J(`p`, hf, [
+											J(`p`, yf, [
 												...(n[0] ||= [Y(`small`, null, `No sections on this page.`, -1)]),
 											])),
 								],
@@ -12029,13 +12098,13 @@ watch(routeChange, () => clear())`,
 						)
 					},
 				}),
-				_f = [`popovertarget`],
-				vf = [`aria-label`],
-				yf = [`popovertarget`],
-				bf = [`popover`],
-				xf = { class: `showcase-sidebar-scroll` },
-				Sf = [`popover`],
-				Cf = { class: `font-mono text-xs` }
+				xf = [`popovertarget`],
+				Sf = [`aria-label`],
+				Cf = [`popovertarget`],
+				wf = [`popover`],
+				Tf = { class: `showcase-sidebar-scroll` },
+				Ef = [`popover`],
+				Df = { class: `font-mono text-xs` }
 			mo(
 				B({
 					__name: `App`,
@@ -12050,15 +12119,15 @@ watch(routeChange, () => clear())`,
 							o = $(() => {
 								let e = n.value.trim().toLowerCase()
 								return e
-									? $d.filter(
+									? rf.filter(
 											(t) =>
 												t.title.toLowerCase().includes(e) ||
 												t.id.toLowerCase().includes(e) ||
 												t.group.toLowerCase().includes(e),
 										)
-									: $d
+									: rf
 							}),
-							s = $(() => sf.value.page),
+							s = $(() => df.value.page),
 							c = I(null),
 							l = async (e) => {
 								await _n()
@@ -12080,7 +12149,7 @@ watch(routeChange, () => clear())`,
 									t?.matches(`:popover-open`) && t.hidePopover()
 								}
 							}
-						Fn([af, of], ([, e]) => {
+						Fn([lf, uf], ([, e]) => {
 							;(l(e), u())
 						})
 						let d = (e) => {
@@ -12092,13 +12161,13 @@ watch(routeChange, () => clear())`,
 							;(a(),
 								i?.addEventListener(`change`, a),
 								document.addEventListener(`keydown`, d),
-								l(of.value))
+								l(uf.value))
 						}),
 							sr(() => {
 								;(i?.removeEventListener(`change`, a), document.removeEventListener(`keydown`, d))
 							}))
 						let f = (e) => {
-								;(e.preventDefault(), cf(`home`), u())
+								;(e.preventDefault(), ff(`home`), u())
 							},
 							p = () => {
 								t.toggle()
@@ -12137,7 +12206,7 @@ watch(routeChange, () => clear())`,
 												]),
 											],
 											8,
-											_f,
+											xf,
 										),
 										Y(`a`, { href: `#/home`, class: `flex-1`, onClick: f }, [
 											...(i[2] ||= [Y(`strong`, null, `Elements`, -1)]),
@@ -12163,7 +12232,7 @@ watch(routeChange, () => clear())`,
 												),
 											],
 											8,
-											vf,
+											Sf,
 										),
 										Y(
 											`button`,
@@ -12188,7 +12257,7 @@ watch(routeChange, () => clear())`,
 												]),
 											],
 											8,
-											yf,
+											Cf,
 										),
 									]),
 									Y(
@@ -12244,15 +12313,15 @@ watch(routeChange, () => clear())`,
 													),
 												]),
 											]),
-											Y(`div`, xf, [
-												Vi(df, { routes: o.value, active: L(sf).id, onNavigate: u }, null, 8, [
+											Y(`div`, Tf, [
+												Vi(hf, { routes: o.value, active: L(df).id, onNavigate: u }, null, 8, [
 													`routes`,
 													`active`,
 												]),
 											]),
 										],
 										8,
-										bf,
+										wf,
 									),
 									Y(`main`, { ref_key: `scrollerRef`, ref: c }, [(q(), Ii(mr(s.value)))], 512),
 									Y(
@@ -12289,19 +12358,19 @@ watch(routeChange, () => clear())`,
 												-1,
 											)),
 											Vi(
-												gf,
-												{ scroller: c.value, 'current-id': L(sf).id, onNavigate: u },
+												bf,
+												{ scroller: c.value, 'current-id': L(df).id, onNavigate: u },
 												null,
 												8,
 												[`scroller`, `current-id`],
 											),
 										],
 										8,
-										Sf,
+										Ef,
 									),
 									Y(`footer`, null, [
 										(i[7] ||= Y(`small`, null, `Elements framework`, -1)),
-										Y(`small`, Cf, `build ` + k(L(`2026-05-13T00:17:42.386Z`)), 1),
+										Y(`small`, Df, `build ` + k(L(`2026-05-13T00:36:18.105Z`)), 1),
 									]),
 								],
 								64,

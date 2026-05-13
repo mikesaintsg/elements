@@ -67,18 +67,23 @@ const slider = usePointer(sliderThumb, {
 })
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 2 — modifier-gated drag.
-// Only engage when the SHIFT key is held; otherwise the pointer down
-// passes through and the box behaves like a static panel.
+// Demo 2 — accept predicate gated by reactive state.
+// An "edit mode" toggle controls whether the box accepts drags.
+// Works on touch + mouse equally (no modifier key required — those
+// are unavailable on touch keyboards, which would make the demo
+// desktop-only otherwise).
 // ─────────────────────────────────────────────────────────────────────
 const gatedBox = useTemplateRef<HTMLDivElement>('gatedBox')
 const gatedOffset = ref({ x: 0, y: 0 })
+const editMode = ref(false)
 let gatedStart = { x: 0, y: 0 }
 const gated = usePointer(gatedBox, {
 	cursor: 'move',
-	// Only accept primary-button + Shift-held pointer downs. Right-click,
-	// middle-click, or unmodified pointer downs all reject.
-	accept: (event) => event.button === 0 && event.shiftKey,
+	// Reject every pointerdown while edit mode is off. The predicate is
+	// pure — it reads reactive state at the moment of the down event, so
+	// flipping the toggle takes effect on the NEXT pointerdown without
+	// re-instantiating the pointer factory.
+	accept: () => editMode.value,
 	on: {
 		start: (event) => {
 			gatedStart = {
@@ -93,22 +98,42 @@ const gated = usePointer(gatedBox, {
 })
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 3 — programmatic clear().
-// A button calls `clear()` to forcibly cancel an in-progress drag.
-// Useful when an external event (route change, modal open, timeout)
-// needs to release the drag without waiting for the user to lift.
+// Demo 3 — `clear()` triggered from within `on.move`.
+// A boundary check inside the move handler auto-cancels the drag when
+// the user moves past a threshold (here: 120 px from origin in any
+// direction). Demonstrates clear() being called from external logic
+// instead of a sibling button (which would require a second
+// simultaneous touch on mobile — impossible on single-touch devices).
 // ─────────────────────────────────────────────────────────────────────
 const cancelBox = useTemplateRef<HTMLDivElement>('cancelBox')
-const cancelDx = ref(0)
-let cancelStartX = 0
+const cancelOffset = ref({ x: 0, y: 0 })
+const cancelled = ref(false)
+const CANCEL_BOUNDARY = 120
+let cancelStart = { x: 0, y: 0 }
 const cancel = usePointer(cancelBox, {
-	cursor: 'ew-resize',
+	cursor: 'grabbing',
 	on: {
 		start: (event) => {
-			cancelStartX = event.clientX - cancelDx.value
+			cancelStart = {
+				x: event.clientX - cancelOffset.value.x,
+				y: event.clientY - cancelOffset.value.y,
+			}
+			cancelled.value = false
 		},
 		move: (event) => {
-			cancelDx.value = event.clientX - cancelStartX
+			const dx = event.clientX - cancelStart.x
+			const dy = event.clientY - cancelStart.y
+			// Boundary check — if the drag exceeds the threshold, snap
+			// back and force-end the drag via clear(). This is the
+			// canonical "external condition cancels the drag" pattern:
+			// route change, max-extent reached, network error, etc.
+			if (Math.hypot(dx, dy) > CANCEL_BOUNDARY) {
+				cancelOffset.value = { x: 0, y: 0 }
+				cancelled.value = true
+				cancel.clear()
+				return
+			}
+			cancelOffset.value = { x: dx, y: dy }
 		},
 	},
 })
@@ -231,47 +256,68 @@ usePointer(thumb, {
 		<p>
 			The <code>accept</code> option is a pure decision function — return <code>false</code> to
 			reject a <code>pointerdown</code>. The drag never starts, no body cursor change, no capture.
-			Useful for primary-button-only drags, modifier-gated handles ("hold Shift to rearrange"), or
-			rejecting touch-only / mouse-only paths.
+			Common patterns: primary-button-only drags, role-gated handles ("only draggable in edit
+			mode"), rejecting specific pointer types.
 		</p>
 		<p>
-			<strong>Hold Shift</strong> while dragging the box below — it accepts the drag. Without Shift,
-			<code>pointerdown</code> is rejected and the box stays put.
+			Toggle <strong>Edit mode</strong> below. When off, dragging the box does nothing — the
+			predicate rejects every pointerdown. When on, the box becomes draggable. The predicate reads
+			reactive state at the moment of the down event, so flipping the toggle takes effect on the
+			NEXT pointerdown without re-instantiating the factory. Touch-friendly: no modifier keys, no
+			two-finger interactions.
 		</p>
+		<menu style="margin-block: 0 1rem">
+			<li>
+				<button
+					type="button"
+					:class="['small', editMode ? 'primary' : 'subtle']"
+					:aria-pressed="editMode"
+					@click="editMode = !editMode"
+				>
+					{{ editMode ? '✓ Edit mode on' : 'Edit mode off' }}
+				</button>
+			</li>
+		</menu>
 		<div
 			style="
 				overflow: hidden;
-				padding: 2rem;
+				padding: 1.5rem;
 				border: 1px dashed var(--color-border);
 				border-radius: 0.5rem;
+				min-block-size: 9rem;
 			"
 		>
 			<div
 				ref="gatedBox"
 				:style="{
-					inlineSize: '8rem',
+					inlineSize: '7rem',
 					blockSize: '5rem',
 					padding: '0.75rem',
 					background: gated.dragging.value
 						? 'var(--color-primary-bg-subtle)'
-						: 'var(--color-surface-raised)',
-					border: '1px solid var(--color-border)',
+						: editMode
+							? 'var(--color-surface-raised)'
+							: 'var(--color-canvas)',
+					border: `2px ${editMode ? 'solid' : 'dashed'} var(--color-${editMode ? 'primary' : 'border'})`,
 					borderRadius: '0.5rem',
 					transform: `translate(${gatedOffset.x}px, ${gatedOffset.y}px)`,
-					cursor: 'move',
+					cursor: editMode ? 'move' : 'not-allowed',
 					userSelect: 'none',
 					touchAction: 'none',
-					transition: 'background-color 150ms ease',
+					transition: 'background-color 150ms ease, border-color 150ms ease',
 				}"
 			>
-				<small>Shift + drag</small>
+				<small>{{ editMode ? 'Drag me' : 'Locked' }}</small>
 			</div>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>usePointer(box, {
+			<pre><code>const editMode = ref(false)
+usePointer(box, {
   cursor: 'move',
-  accept: (event) =&gt; event.button === 0 &amp;&amp; event.shiftKey,
+  // Predicate reads reactive state at pointerdown time —
+  // flipping the toggle is reflected on the next down event.
+  accept: () =&gt; editMode.value,
   on: { start, move },
 })</code></pre>
 		</details>
@@ -280,44 +326,77 @@ usePointer(thumb, {
 	<section id="use-pointer-clear">
 		<h2>3. <code>clear()</code> — programmatic drag cancellation</h2>
 		<p>
-			Drag the handle horizontally. While dragging, click <strong>Cancel drag</strong> to forcibly
-			release the pointer capture and restore body styles. Useful when an external event (route
-			change, modal open, timeout, network error) needs to end the drag without waiting for the user
-			to lift.
+			<code>clear()</code> forcibly releases pointer capture, restores body styles, and flips
+			<code>dragging</code> to <code>false</code> — without waiting for the user to lift. Useful
+			when an external condition needs to end the drag: route change, modal opening, network error,
+			max-extent reached, idle timeout.
 		</p>
-		<div style="display: flex; align-items: center; gap: 1rem">
+		<p>
+			The box below has a <strong>{{ CANCEL_BOUNDARY }} px boundary</strong> from its origin. Drag
+			in any direction; once you exceed the boundary, the move handler calls
+			<code>clear()</code> from inside <code>on.move</code> — the drag snaps back and ends
+			automatically. Demonstrates the external-trigger pattern without requiring a second
+			simultaneous touch (which would be impossible on single-touch devices).
+		</p>
+		<div
+			style="
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 1rem;
+				padding: 2rem;
+				border: 1px dashed var(--color-border);
+				border-radius: 0.5rem;
+			"
+		>
 			<div
 				ref="cancelBox"
 				:style="{
-					position: 'relative',
-					inlineSize: '3rem',
-					blockSize: '3rem',
-					transform: `translateX(${cancelDx}px)`,
+					inlineSize: '4rem',
+					blockSize: '4rem',
+					transform: `translate(${cancelOffset.x}px, ${cancelOffset.y}px)`,
 					background: cancel.dragging.value
 						? 'var(--color-warning-bg-subtle)'
-						: 'var(--color-surface-raised)',
-					border: '2px solid var(--color-warning)',
+						: cancelled
+							? 'var(--color-danger-bg-subtle)'
+							: 'var(--color-surface-raised)',
+					border: `2px solid var(--color-${cancelled ? 'danger' : 'warning'})`,
 					borderRadius: '0.5rem',
-					cursor: 'ew-resize',
+					cursor: 'grab',
 					userSelect: 'none',
 					touchAction: 'none',
-					transition: 'background-color 150ms ease',
+					transition: cancel.dragging.value
+						? 'background-color 150ms ease, border-color 150ms ease'
+						: 'transform 200ms ease, background-color 150ms ease, border-color 150ms ease',
 				}"
 			></div>
-			<button type="button" class="subtle" :disabled="!cancel.dragging.value" @click="cancel.clear">
-				Cancel drag
-			</button>
-			<small>
-				dragging: <strong>{{ cancel.dragging.value ? 'yes' : 'no' }}</strong
-				>; offset: <strong>{{ cancelDx }}px</strong>
+			<small style="font-variant-numeric: tabular-nums">
+				dragging: <strong>{{ cancel.dragging.value ? 'yes' : 'no' }}</strong> · distance:
+				<strong>{{ Math.round(Math.hypot(cancelOffset.x, cancelOffset.y)) }}</strong> /
+				{{ CANCEL_BOUNDARY }}
+				<span v-if="cancelled" style="color: var(--color-danger-text-emphasis)">
+					· auto-cancelled at boundary
+				</span>
 			</small>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>const { dragging, clear } = usePointer(box, { ... })
-
-// elsewhere — cancel in response to external state
-watch(routeChange, () =&gt; clear())</code></pre>
+			<pre><code>const { dragging, clear } = usePointer(box, {
+  cursor: 'grabbing',
+  on: {
+    start: (event) =&gt; { ... },
+    move: (event) =&gt; {
+      const dx = event.clientX - origin.x
+      const dy = event.clientY - origin.y
+      if (Math.hypot(dx, dy) &gt; BOUNDARY) {
+        offset.value = { x: 0, y: 0 }
+        clear() // auto-end the drag
+        return
+      }
+      offset.value = { x: dx, y: dy }
+    },
+  },
+})</code></pre>
 		</details>
 	</section>
 
