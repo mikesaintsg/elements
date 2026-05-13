@@ -303,7 +303,56 @@ See [`taxonomy.md` § 1](taxonomy.md) for the full token-group catalog.
 
 ---
 
-## 7. Reference
+## 7. Per-surface contracts
+
+Each file in [`src/styles/surfaces/`](../src/styles/surfaces/) paints a single browser-rendered pseudo-element / attribute surface and owns a dedicated `--set-{surface}-*` token namespace. The contract is codified in [`SURFACE_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts).
+
+### 7.1 The shape
+
+Each surface contract records four things:
+
+| Field | Meaning |
+| --- | --- |
+| `name` | Filename basename (`anchor-position`, `backdrop`, `focus`, …). |
+| `tokenPrefix` | Token namespace prefix. Defaults to `name`. Set explicitly when the filename names the CSS feature (`anchor-position`) while the tokens live under a shorter prefix (`anchor`). |
+| `selectorKinds` | Selector head kinds the partial uses (`pseudo-element`, `pseudo-class`, `attribute`, `universal`, `tag`). Constrains where the surface paints. |
+| `requiredTokens` | Property suffixes the partial MUST declare on `:root`. The full token name is `--set-{tokenPrefix}-{suffix}`. |
+| `animated` | True when the partial paints motion. Triggers the reduced-motion mixin requirement. |
+| `notes` | One-sentence description shown in failure messages. |
+
+### 7.2 The nine surfaces
+
+| Surface | Selector | Required tokens | Animated |
+| --- | --- | --- | --- |
+| `anchor-position` | `[popover]:not(:where(output, aside, nav))` | `gap`, `max-block-size`, `max-inline-size`, `position-area`, `position-try-fallbacks`, `position-try-order`, `viewport-inset` | no |
+| `backdrop` | `dialog::backdrop`, `:is(aside, nav)[popover]::backdrop` | `background-color`, `backdrop-filter`, `transition-duration` | yes |
+| `focus` | `:focus-visible` | `color` | no |
+| `marker` | `::marker` | `color`, `content` | no |
+| `placeholder` | `::placeholder` | `color`, `opacity` | no |
+| `popover` | `[popover]` (+ `[popover]:not(:where(aside, nav))`) | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `box-shadow`, `transition-duration`, `max-inline-size`, `viewport-inset` | yes |
+| `scrollbar` | `*`, `*::before`, `*::after` | `thumb-color`, `track-color`, `width`, `gutter` | no |
+| `selection` | `::selection` | `background-color`, `color` | no |
+| `view-transition` | `::view-transition-old(root)`, `::view-transition-new(root)` | `duration`, `timing-function` | yes |
+
+### 7.3 Animated-surface contract
+
+Surfaces marked `animated: true` MUST invoke either `@include transition(...)` or `@include reduced-motion { ... }`. Bare `transition: ...` declarations break the `prefers-reduced-motion` opt-out.
+
+Additionally, **any surface that declares a `transition-duration` or `duration` token must invoke a motion mixin**, regardless of the `animated` flag. Exposing the customizability surface without the reduced-motion contract is a coverage gap — consumers can retune the duration but can't opt out of motion.
+
+### 7.4 Cross-surface composition
+
+Surfaces freely read each other's tokens via `var()` chains. `_popover.scss` reads `--set-anchor-*` declared in `_anchor-position.scss`; `_backdrop.scss` reads `--set-transition-duration` declared in `_tokens.scss`. These reads are documented in `FILE_EXCEPTIONS.additionalTokenPrefixes` so the namespace check at `_contracts.test.ts` allows them.
+
+### 7.5 Adding a new surface
+
+1. Add the partial under `src/styles/surfaces/_{name}.scss`.
+2. Add a `SURFACE_CONTRACTS` entry with the canonical token + animation discipline.
+3. The parity test catches drift in both directions (partial without contract, contract without partial).
+
+---
+
+## 8. Reference
 
 - [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the contract data and helpers.
 - [`tests/src/styles/_contracts.test.ts`](../tests/src/styles/_contracts.test.ts) — the parity test that consumes the contract.

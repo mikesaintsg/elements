@@ -618,6 +618,158 @@ export const MODIFIER_DIMENSION_TOKENS: Readonly<Record<string, ModifierDimensio
 }
 
 // ============================================================================
+// Surface contracts
+// ============================================================================
+//
+// Each file in `src/styles/surfaces/` paints a single browser-rendered
+// pseudo-element / attribute surface (`::backdrop`, `[popover]`,
+// `:focus-visible`, etc.) and owns a dedicated `--set-{surface}-*` token
+// namespace. SURFACE_CONTRACTS records the per-surface contract:
+//
+//   - `selectorKinds` — which selector heads the partial may use. Each
+//     surface has ONE canonical head (`::marker` for marker, `[popover]`
+//     for popover) plus occasional siblings (dialog::backdrop and
+//     [popover]::backdrop share the backdrop surface).
+//
+//   - `requiredTokens` — property suffixes the partial MUST declare on
+//     `:root` (or accessible scope). Pseudo-elements can't carry
+//     `--set-*` declarations directly, so surface tokens live on `:root`
+//     by design.
+//
+//   - `animated` — when true, the partial MUST use `@include transition(…)`
+//     OR `@include reduced-motion { … }` somewhere. Surfaces that
+//     animate without the mixin break the reduced-motion contract.
+//
+// Adding a new surface is a deliberate framework decision: add the
+// partial, add the entry here, add the parity test will verify the
+// token coverage + mixin discipline.
+
+export interface SurfaceContract {
+	/** Filename basename (no `_` prefix, no `.scss` suffix). */
+	readonly name: string
+	/**
+	 * Token-namespace prefix the partial declares. Usually equals `name`,
+	 * but some surfaces are named after the CSS feature (anchor-position)
+	 * while their tokens live under a shorter prefix (anchor). Defaults
+	 * to `name` when omitted.
+	 */
+	readonly tokenPrefix?: string
+	/** Selector head kinds the partial uses as rule openers. */
+	readonly selectorKinds: readonly SelectorKind[]
+	/**
+	 * Property suffixes every surface MUST declare. The full token name
+	 * is `--set-{tokenPrefix ?? name}-{suffix}`.
+	 */
+	readonly requiredTokens: readonly string[]
+	/**
+	 * True when the surface paints motion (transition or animation). The
+	 * partial MUST invoke `@include transition(...)` OR
+	 * `@include reduced-motion { ... }` somewhere.
+	 */
+	readonly animated: boolean
+	/** One-sentence description shown in failure messages. */
+	readonly notes: string
+}
+
+export const SURFACE_CONTRACTS: Readonly<Record<string, SurfaceContract>> = {
+	'anchor-position': {
+		name: 'anchor-position',
+		tokenPrefix: 'anchor',
+		selectorKinds: ['attribute'],
+		requiredTokens: [
+			'gap',
+			'max-block-size',
+			'max-inline-size',
+			'position-area',
+			'position-try-fallbacks',
+			'position-try-order',
+			'viewport-inset',
+		],
+		animated: false,
+		notes:
+			'Anchor positioning surface for popover hosts. Reads cross-surface anchor tokens via var() composition. Filename names the CSS feature; tokens live under --set-anchor-*.',
+	},
+	backdrop: {
+		name: 'backdrop',
+		selectorKinds: ['pseudo-element', 'tag'],
+		requiredTokens: ['background-color', 'backdrop-filter', 'transition-duration'],
+		animated: true,
+		notes:
+			'Top-layer scrim for modal <dialog> and offcanvas drawer popovers. Animates on open / close.',
+	},
+	focus: {
+		name: 'focus',
+		selectorKinds: ['pseudo-class'],
+		requiredTokens: ['color'],
+		animated: false,
+		notes:
+			'Universal focus-ring surface. Reads --set-variant-background-color so the ring tints with the active variant.',
+	},
+	marker: {
+		name: 'marker',
+		selectorKinds: ['pseudo-element'],
+		requiredTokens: ['color', 'content'],
+		animated: false,
+		notes: 'List-item marker surface. <summary> opts out via its own ::before marker.',
+	},
+	placeholder: {
+		name: 'placeholder',
+		selectorKinds: ['pseudo-element'],
+		requiredTokens: ['color', 'opacity'],
+		animated: false,
+		notes: 'Form-control placeholder text surface (<input>, <textarea>).',
+	},
+	popover: {
+		name: 'popover',
+		selectorKinds: ['attribute'],
+		requiredTokens: [
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+			'border-radius',
+			'padding-inline',
+			'padding-block',
+			'box-shadow',
+			'transition-duration',
+			'max-inline-size',
+			'viewport-inset',
+		],
+		animated: true,
+		notes:
+			'Top-layer floating panel surface (auto / hint variants). Full chrome with motion + anchor composition.',
+	},
+	scrollbar: {
+		name: 'scrollbar',
+		selectorKinds: ['universal'],
+		requiredTokens: ['thumb-color', 'track-color', 'width', 'gutter'],
+		animated: false,
+		notes:
+			'CSS Scrollbars Level 1 surface. Uses * because scrollbar-width / scrollbar-gutter do not inherit.',
+	},
+	selection: {
+		name: 'selection',
+		selectorKinds: ['pseudo-element'],
+		requiredTokens: ['background-color', 'color'],
+		animated: false,
+		notes: 'Text-selection highlight surface (::selection).',
+	},
+	'view-transition': {
+		name: 'view-transition',
+		selectorKinds: ['pseudo-element'],
+		requiredTokens: ['duration', 'timing-function'],
+		animated: true,
+		notes:
+			'View Transitions API surface. Cross-page / cross-state snapshot tween with reduced-motion compliance.',
+	},
+}
+
+/** Read the surface contract for a partial basename, or null. */
+export function surfaceContractFor(name: string): SurfaceContract | null {
+	return SURFACE_CONTRACTS[name] ?? null
+}
+
+// ============================================================================
 // Interactive-element registry
 // ============================================================================
 //
