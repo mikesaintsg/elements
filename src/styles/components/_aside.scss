@@ -156,13 +156,13 @@
 		--set-alert-gap: calc(var(--spacing) * 3);
 		--set-alert-border-radius: 0.375rem;
 		// Maximum inline-size — defaults to `none` so the alert reads as
-		// an in-flow card filling its parent's content area, the same way
-		// `<article>` does. The earlier 32rem cap framed alerts as toast-
-		// shaped (a short reading-width banner), but `<aside role="alert">`
-		// is part of the UI, not a transient overlay — toasts live on
-		// `<output popover>` with corner-anchored placement, see
-		// `components/_output.scss`. Consumers who want a reading-width
-		// cap on a specific alert opt in per-instance:
+		// a banner spanning the full inline width of its parent's content
+		// area. The earlier 32rem cap framed alerts as toast-shaped
+		// reading-width strips, but `<aside role="alert">` is part of
+		// the UI announcing across a region, not a transient overlay —
+		// toasts live on `<output popover>` with corner-anchored
+		// placement, see `components/_output.scss`. Consumers who want a
+		// reading-width cap on a specific banner opt in per-instance:
 		//   `<aside role="alert" style="--set-alert-max-inline-size: 32rem">`
 		// or globally via `:root { --set-alert-max-inline-size: 32rem }`.
 		--set-alert-max-inline-size: none;
@@ -178,19 +178,34 @@
 	// --------------------------------------------------------------------------
 	// Alert / status banner — `<aside role="alert">` (or `role="status"`).
 	//
-	// IN-FLOW CARD, dismissible. `<aside>` is "tangentially-related content"
-	// and per ARIA, `role="alert"` makes it an assertive live region
-	// (announces immediately) while `role="status"` makes it polite
-	// (announces when idle). Both share the same card chrome — only the
+	// IN-FLOW BANNER, dismissible. `<aside>` is "tangentially-related
+	// content" and per ARIA, `role="alert"` makes it an assertive live
+	// region (announces immediately) while `role="status"` makes it polite
+	// (announces when idle). Both share the same banner chrome — only the
 	// live-region politeness differs.
 	//
-	// Card vs. toast — the framework keeps these distinct:
-	//   - Alert  → `<aside role="alert">` in flow, fills its parent's
-	//              content area, sits between siblings, dismissed by the
-	//              user or by `useAlert`. Same visual language as
-	//              `<article>` (border + radius + padding + dismiss
-	//              affordance). Reads as "part of the UI, currently
-	//              announcing." No width cap by default.
+	// Banner-shaped — the alert spans the full inline width of its parent's
+	// content area, carries a saturated leading bar (variant-tinted on
+	// `<aside class="{variant}" role="alert">`), and sits in flow between
+	// siblings. Reads as "the framework is announcing something across
+	// this region." NOT capped to a reading width by default; the alert is
+	// part of the UI, not a transient overlay.
+	//
+	// Optional card-like composition — when richer alert content is
+	// needed (a title row + dismiss + multi-button footer), drop a
+	// direct-child `<header>` and / or `<footer>` band. The `:has(>
+	// header)` / `:has(> footer)` rules below switch the flex-row banner
+	// into a flex-column stack and paint each band with the alert's
+	// tinted band-bg + 1px divider. Same composition pattern `<article>`
+	// + `<dialog>` use for their bands so consumers learn the contract
+	// once.
+	//
+	// Banner vs. toast — the framework keeps these distinct:
+	//   - Alert  → `<aside role="alert">` in flow, banner-shaped, fills
+	//              its parent's content area, sits between siblings,
+	//              dismissed by the user or by `useAlert`. Reads as
+	//              "part of the UI, currently announcing." No width cap
+	//              by default.
 	//   - Toast  → `<output popover>` in the top layer, corner-anchored
 	//              via the placement modifier, auto-dismisses, stacks /
 	//              decks via `useToast`. See `components/_output.scss`
@@ -204,13 +219,14 @@
 	//   </aside>
 	//
 	// Variant cascade tints the LEADING BAR (a thicker inline-start border)
-	// rather than the full surface, so an alert reads as a card with an
+	// rather than the full surface, so an alert reads as a banner with an
 	// accent bar — same convention as the article callout above. `.filled`
 	// is the explicit opt-in for tinted-surface alerts.
 	//
-	// The card shape is flex-row: leading content grows to fill, optional
-	// trailing dismiss `<button>` is intrinsic-width. Composition pairs
-	// naturally with `<button aria-label="Dismiss">` for the close affordance.
+	// The bare banner shape is flex-row: leading content grows to fill,
+	// optional trailing dismiss `<button>` is intrinsic-width. Composition
+	// pairs naturally with `<button aria-label="Dismiss">` for the close
+	// affordance.
 	//
 	// Note: alerts are meant to sit inside `<main>` (or any container that
 	// isn't the body-shell sidebar slot). An `<aside role="alert">` placed
@@ -225,11 +241,12 @@
 		align-items: center;
 		gap: var(--set-alert-gap);
 
-		// Width: fills its parent's content area (card-shaped, same as
-		// `<article>`). `--set-alert-max-inline-size` defaults to `none`
-		// (declared above) so the alert never caps itself — the parent
-		// supplies the inline gutter just like every other in-flow card.
-		// Consumers who want a reading-width cap opt in via the token.
+		// Width: spans the full inline width of its parent's content area
+		// (banner-shaped). `--set-alert-max-inline-size` defaults to
+		// `none` (declared above) so the alert never caps itself — the
+		// parent supplies the inline gutter just like every other in-
+		// flow element. Consumers who want a reading-width cap on a
+		// specific banner opt in via the token.
 		inline-size: 100%;
 		max-inline-size: var(--set-alert-max-inline-size);
 
