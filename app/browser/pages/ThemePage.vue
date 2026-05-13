@@ -257,7 +257,7 @@ const invertedTier = computed<readonly PaletteEntry[]>(() => [
 		</dl>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>&lt;script setup&gt;
+			<pre v-pre><code>&lt;script setup&gt;
 import { useTheme } from '@elements/browser'
 
 const theme = useTheme()
