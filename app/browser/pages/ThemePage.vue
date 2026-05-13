@@ -176,14 +176,11 @@ const borderTier = computed<readonly PaletteEntry[]>(() => [
 	},
 ])
 
-const invertedTier = computed<readonly PaletteEntry[]>(() => [
-	{ token: '--color-inverted', label: 'inverted', resolved: read('--color-inverted') },
-	{
-		token: '--color-inverted-text',
-		label: 'inverted-text',
-		resolved: read('--color-inverted-text'),
-	},
-])
+// Inverted tier — no array because the two tokens (`--color-inverted` +
+// `--color-inverted-text`) are a tightly-coupled pair that must render
+// together, not as parallel swatches. The template reads each token
+// directly via `read(...)` to display its resolved value in the worked
+// pair-demo card.
 </script>
 
 <template>
@@ -532,35 +529,51 @@ const theme = useTheme()
 		<h2>Inverted tier — contrast accent</h2>
 		<p>
 			A single high-contrast surface for "always stands out" affordances — tooltip backgrounds,
-			snackbar shells, focus highlights on subtle inputs. In light mode,
-			<code>--color-inverted</code> is near-black with <code>--color-inverted-text</code> white; in
-			dark mode, it's near-white with dark text. Switch themes to see the flip.
+			snackbar shells, focus highlights on subtle inputs. The two tokens are designed as a
+			<strong>pair</strong>: <code>--color-inverted</code> is the surface fill,
+			<code>--color-inverted-text</code> is the foreground for text + icons on top of it. In light
+			mode the surface is near-black and the text is white; in dark mode the surface flips to
+			near-white with dark text. Switch themes to see it pivot.
 		</p>
-		<div
-			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
-				gap: calc(var(--spacing) * 2);
-			"
+		<article
+			:style="{
+				padding: 'calc(var(--spacing) * 4)',
+				backgroundColor: 'var(--color-inverted)',
+				color: 'var(--color-inverted-text)',
+			}"
 		>
-			<article
-				v-for="entry in invertedTier"
-				:key="entry.token"
-				:style="{
-					padding: 'calc(var(--spacing) * 3)',
-					backgroundColor:
-						entry.token === '--color-inverted' ? `var(${entry.token})` : 'var(--color-surface)',
-					color:
-						entry.token === '--color-inverted'
-							? 'var(--color-inverted-text)'
-							: `var(${entry.token})`,
-				}"
+			<p style="margin: 0 0 calc(var(--spacing) * 2); font-weight: 500; font-size: 1.125rem">
+				Sample text on the inverted surface
+			</p>
+			<p style="margin: 0; opacity: 0.85">
+				Background uses <code>--color-inverted</code>; this text uses
+				<code>--color-inverted-text</code>. Both tokens resolve to:
+			</p>
+			<dl
+				style="
+					margin-block-start: calc(var(--spacing) * 2);
+					display: grid;
+					grid-template-columns: auto 1fr;
+					gap: 0.25rem calc(var(--spacing) * 2);
+				"
 			>
-				<p style="margin: 0 0 0.5rem; font-weight: 500">Sample text on this surface</p>
-				<strong style="font-size: 0.875em">{{ entry.label }}</strong>
-				<code style="display: block; font-size: 0.75em; opacity: 0.7">{{ entry.token }}</code>
-			</article>
-		</div>
+				<dt><code>--color-inverted</code></dt>
+				<dd style="margin: 0">
+					<code>{{ read('--color-inverted') }}</code>
+				</dd>
+				<dt><code>--color-inverted-text</code></dt>
+				<dd style="margin: 0">
+					<code>{{ read('--color-inverted-text') }}</code>
+				</dd>
+			</dl>
+		</article>
+		<p style="margin-block-start: calc(var(--spacing) * 3)">
+			The two tokens are NOT meant to be used independently — using
+			<code>--color-inverted-text</code> as a foreground over any other background (including the
+			page canvas) will fail WCAG contrast in one of the two themes. Reach for
+			<code>--color-text-strong</code> for "always-contrasted text" instead; reach for the pair only
+			when you want the entire surface to invert.
+		</p>
 	</section>
 
 	<section id="theme-data-attribute">
