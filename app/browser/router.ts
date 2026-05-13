@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import type { Component, ComputedRef, Ref } from 'vue'
 
 import HomePage from './pages/HomePage.vue'
+import TokensPage from './pages/TokensPage.vue'
 import ButtonPage from './pages/ButtonPage.vue'
 import AnchorPage from './pages/AnchorPage.vue'
 import FormControlsPage from './pages/FormControlsPage.vue'
@@ -46,6 +47,12 @@ export interface Route {
 }
 
 const HOME: Route = { id: 'home', title: 'Home', group: 'Getting started', page: HomePage }
+const TOKENS: Route = {
+	id: 'tokens',
+	title: 'Tokens',
+	group: 'Foundations',
+	page: TokensPage,
+}
 const BUTTON: Route = {
 	id: 'button',
 	title: 'Button',
@@ -205,6 +212,7 @@ const USE_TOOLTIP: Route = {
 
 export const routes: readonly Route[] = [
 	HOME,
+	TOKENS,
 	BUTTON,
 	ANCHOR,
 	FORM_CONTROLS,
