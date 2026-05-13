@@ -1,19 +1,51 @@
-// <mark> – Highlighted / marked text
-// Browser defaults: background-color: yellow; color: black
-// Use for search-result highlights or reference highlights — not for general emphasis (<em>)
-// Quirk: hardcoded yellow clashes in dark mode and ignores user color preference
-// Quirk: screen readers don't announce highlights by default; add visually-hidden labels if meaningful
+// ============================================================================
+// <mark> — Highlighted / marked text.
 //
-// Tailwind preflight doesn't touch <mark>. The framework swaps the UA's
-// hardcoded yellow/black for the system `mark` / `marktext` keywords (which
-// honor user color preferences and forced-colors mode), with an explicit
-// dark-mode override that uses the more visible `highlight` / `highlighttext`
-// system colors.
+// HTML spec: <mark> represents text marked or highlighted for
+// reference purposes (search-result highlights, reader-tool
+// annotations) — NOT general emphasis (use <em>) and NOT importance
+// (use <strong>).
+//
+// Quirks:
+//   - UA default `background-color: yellow; color: black` clashes in
+//     dark mode and ignores user color preferences.
+//   - Screen readers don't announce highlights by default — add a
+//     visually-hidden label if the mark carries meaning beyond
+//     decoration.
+//
+// Color cascade — `style → variant-subtle → system mark`:
+//
+//   1. `--set-style-color` / `--set-style-background-color` —
+//      set by .filled / .subtle. `<mark class="warning filled">`
+//      paints filled-warning bg + variant-text-color (white).
+//
+//   2. `--set-variant-subtle-color` / `--set-variant-subtle-background-color` —
+//      set by bare .{variant} on the mark. `<mark class="warning">`
+//      paints warning-bg-subtle bg + warning-text-emphasis text
+//      WITHOUT requiring a style modifier — the variant directly
+//      makes the highlight variant-aware. Mirrors how `<aside
+//      role="alert">` consumes the SUBTLE tier as its bare-variant
+//      default.
+//
+//   3. System `mark` / `marktext` — the bare-default highlight that
+//      honors `prefers-color-scheme`, user accent colors, and forced-
+//      colors mode. With no variant or style on the mark, the chip
+//      uses the OS-supplied highlight — same chrome dark-mode and
+//      Windows High Contrast users already expect from browser
+//      "find on page" matches.
+//
+// The chip chrome (padding + radius) stays unconditional — `<mark>`
+// always reads as a pill-shaped highlight, regardless of which color
+// tier wins. Padding tokens are exposed for retune.
+// ============================================================================
 
 @layer elements {
 	mark {
-		--set-mark-color: marktext;
-		--set-mark-background-color: mark;
+		--set-mark-color: var(--set-style-color, var(--set-variant-subtle-color, marktext));
+		--set-mark-background-color: var(
+			--set-style-background-color,
+			var(--set-variant-subtle-background-color, mark)
+		);
 		--set-mark-padding-inline: 0.1875em;
 		--set-mark-padding-block: 0;
 		--set-mark-border-radius: 0.1875em;
@@ -24,9 +56,18 @@
 		padding-block: var(--set-mark-padding-block);
 		border-radius: var(--set-mark-border-radius);
 
+		// Dark-mode override for the bare-default system colors. The
+		// `highlight` / `highlighttext` system keywords are more visible
+		// than `mark` / `marktext` against a dark background. Cascade
+		// hooks above still win when set, so a `<mark class="warning">`
+		// in dark mode picks up warning-subtle (the variant cascade
+		// already retunes per-mode through _theme.scss).
 		@media (prefers-color-scheme: dark) {
-			--set-mark-color: highlighttext;
-			--set-mark-background-color: highlight;
+			--set-mark-color: var(--set-style-color, var(--set-variant-subtle-color, highlighttext));
+			--set-mark-background-color: var(
+				--set-style-background-color,
+				var(--set-variant-subtle-background-color, highlight)
+			);
 		}
 	}
 }

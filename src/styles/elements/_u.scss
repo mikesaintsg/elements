@@ -1,22 +1,38 @@
 // ============================================================================
 // u — Unarticulated non-textual annotation.
 //
-// Browser defaults: `text-decoration: underline` (solid, currentColor).
+// HTML spec: <u> represents a span of inline text with non-textual
+// annotation (proper nouns in Chinese text, misspellings, labelled
+// terms) — NOT stylistic underline (reach for a text-decoration
+// utility for that) and NOT links (use <a>).
 //
-// Use for proper nouns in Chinese text, misspellings, or other
-// "labelled" annotations — NOT for stylistic underline (`text-decoration`
-// utility) and NOT for links (use <a>).
+// Browser default is `text-decoration: underline` (solid, currentColor).
+// The framework routes the decoration through a `dashed` style + a
+// cascade-aware color so <u> reads as "annotated, not linked"
+// (different visual register from <a>'s solid underline).
 //
-// Override — visually disambiguate <u> from a hyperlink by routing the
-// underline through a muted color and a `dashed` style. Bare <a> uses
-// `solid` underline + `--color-primary`; <u> now reads as "annotated"
-// rather than "linked." Consumers retune via the two tokens at `:root`
-// (e.g. `--set-u-text-decoration-style: wavy` for spelling-flag UX).
+// Color cascade — `style → text-muted`:
+//
+//   1. `--set-style-color` — set by .filled / .subtle. Inside a
+//      styled container the underline picks up the container's text
+//      color, so the annotation stays visible against any styled
+//      surface (e.g. white dashed underline on a `.primary.filled`
+//      blue card).
+//
+//   2. `--color-text-muted` — the bare-canvas default. Mutes the
+//      underline below the surrounding text color so it reads as
+//      "annotation, not link" against body copy.
+//
+// No variant fallback — same rationale as <strong>: variant tinting
+// the underline of an annotated word would read as chrome, not as a
+// reading-flow annotation. Consumers wanting variant-tinted
+// underlines reach for the style cascade (`<u class="primary subtle">`
+// → underline picks up the variant-subtle text color via style).
 // ============================================================================
 
 @layer elements {
 	u {
-		--set-u-text-decoration-color: var(--color-text-muted);
+		--set-u-text-decoration-color: var(--set-style-color, var(--color-text-muted));
 		--set-u-text-decoration-style: dashed;
 
 		text-decoration-color: var(--set-u-text-decoration-color);
