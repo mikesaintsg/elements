@@ -10,8 +10,13 @@
 @layer elements {
 	kbd {
 		--set-kbd-color: currentColor;
-		--set-kbd-background-color: var(--color-surface-raised);
-		--set-kbd-border-color: var(--color-border-strong);
+		// Chrome derived from currentColor so the chip always reads against
+		// its inherited text color — bare prose, filled variant cards, and
+		// inverted tooltip / hint chrome all work without per-context
+		// overrides. Same recipe `<code>` uses (see _code.scss): 12% tint
+		// for the surface, 22% for the border.
+		--set-kbd-background-color: color-mix(in oklab, currentColor 12%, transparent);
+		--set-kbd-border-color: color-mix(in oklab, currentColor 22%, transparent);
 		--set-kbd-padding-inline: 0.375em;
 		--set-kbd-padding-block: 0.0625em;
 		--set-kbd-border-radius: 0.25em;

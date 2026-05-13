@@ -96,6 +96,19 @@ describe('kbd — keycap chrome', () => {
 		k.textContent = 'Esc'
 		expect(pixels(k, 'border-top-width')).toBe(1)
 	})
+
+	it('background + border derive from currentColor so the chip reads on any host bg', () => {
+		// Same context-aware chrome as `<code>`. Without this, a `<kbd>`
+		// inside an inverted surface (popover hint / tooltip / filled
+		// variant card) painted with `--color-surface-raised` clashes
+		// with the host bg. Token resolves to a `color-mix(currentColor)`
+		// recipe; checking the literal token value is sufficient because
+		// the actual contrast is a function of the host's text color.
+		const k = render('kbd', '')
+		k.textContent = 'Esc'
+		expect(token(k, '--set-kbd-background-color')).toMatch(/color-mix.*currentColor/i)
+		expect(token(k, '--set-kbd-border-color')).toMatch(/color-mix.*currentColor/i)
+	})
 })
 
 describe('pre — block code', () => {

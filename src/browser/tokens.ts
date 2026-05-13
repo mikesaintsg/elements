@@ -1127,6 +1127,7 @@ export const tokens = {
 			paddingBlock: '--set-popover-hint-padding-block',
 			fontSize: '--set-popover-hint-font-size',
 			maxInlineSize: '--set-popover-hint-max-inline-size',
+			maxBlockSize: '--set-popover-hint-max-block-size',
 			boxShadow: '--set-popover-hint-box-shadow',
 		},
 	},

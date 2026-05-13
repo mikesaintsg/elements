@@ -102,6 +102,48 @@ describe('popover — hint variant (tooltip)', () => {
 		el.hidePopover()
 	})
 
+	it('clamps `max-block-size` to content size so position-try-fallbacks does not spuriously flip', () => {
+		// Regression: the anchor-position surface declared
+		// `max-block-size: var(--set-anchor-max-block-size)` (default
+		// 18 rem / 288 px — the dropdown demand) at higher specificity
+		// (0,4,0) than the hint scope. A 28 px tooltip would demand
+		// 288 px, and the browser would flip the popover above the
+		// anchor whenever there was <288 px of room below it — wrong
+		// for tiny labels. Fix: re-pin `--set-anchor-max-block-size` at
+		// the hint scope to the new `--set-popover-hint-max-block-size`
+		// token (default `max-content`) so the demand equals the actual
+		// content height.
+		const el = buildHint()
+		el.showPopover()
+		// The hint-scope retune flows through the anchor surface's
+		// `max-block-size` declaration.
+		expect(token(el, '--set-anchor-max-block-size').trim()).toBe('max-content')
+		el.hidePopover()
+	})
+
+	it('descendant muted-color elements inherit the inverted hint color', () => {
+		// Regression: a `<dd>`, `<small>`, `<figcaption>`, etc. inside a
+		// tooltip painted its canvas-tier `--color-text-muted` (slate-600
+		// in light mode, slate-400 in dark mode) instead of inheriting the
+		// hint's own inverted color. A slate-600 `<dd>` on a slate-900
+		// inverted hint background reads as a low-contrast smudge. Fix:
+		// hint scope explicitly resets `color: inherit` on the known
+		// muted-color offenders so the inversion flows.
+		const el = buildHint()
+		el.innerHTML = '<dd>nested</dd><small>tiny</small>'
+		el.showPopover()
+		const dd = el.querySelector('dd')
+		const small = el.querySelector('small')
+		expect(dd).toBeTruthy()
+		expect(small).toBeTruthy()
+		if (!dd || !small) return
+		// Both descendants render in the hint's color (not slate-600 / muted).
+		const hintColor = style(el, 'color')
+		expect(style(dd, 'color')).toBe(hintColor)
+		expect(style(small, 'color')).toBe(hintColor)
+		el.hidePopover()
+	})
+
 	it('paints a smaller font-size than the generic panel', () => {
 		const el = buildHint()
 		el.showPopover()
