@@ -48,17 +48,18 @@ The quality bar applies even when the patch looks small. Adding one token withou
 
 Every change starts with the spec, not the existing source. Read the matching guide section first — [`styles.md`](styles.md), [`tokens.md`](tokens.md), [`modifiers.md`](modifiers.md), [`taxonomy.md`](taxonomy.md), [`patterns.md`](patterns.md), [`elements.md`](elements.md), [`components.md`](components.md), [`surfaces.md`](surfaces.md), [`composables.md`](composables.md), [`mixins.md`](mixins.md). Form the production-correct vision from the spec, then compare to what's there, then close the gap. **Existing code is not ground truth** — it's something to verify.
 
-When writing or refactoring a SCSS partial, [`patterns.md`](patterns.md) is the operational reference. Eight contracts apply to every change:
+When writing or refactoring a SCSS partial, [`patterns.md`](patterns.md) is the operational reference. Nine contracts apply to every change:
 
-| Section                  | Contract                                                                                                         | Enforcer                                                           |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| §1–4 Folder structural   | Layer wrapping, allowed selector kinds, token namespace policy, comment-only policy                              | [`_contracts.test.ts`](../tests/src/styles/_contracts.test.ts)     |
-| §5 Scope discipline      | Flatten `:not(t1):not(t2)` → `:not(:where(...))`; explicit scope on cross-cutting modifier compounds             | [`_scope.test.ts`](../tests/src/styles/_scope.test.ts)             |
-| §6 Modifier dimensions   | Variant 8 / size 4 / style 4 required context tokens per class                                                   | [`_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts)   |
-| §6.6 Interactive minimum | Every `INTERACTIVE_ELEMENTS` member declares `transition-duration` + `@include forced-colors` + `:focus-visible` | [`_interactive.test.ts`](../tests/src/styles/_interactive.test.ts) |
-| §7 Surfaces              | Per-surface required tokens + animated-mixin discipline                                                          | [`_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts)       |
-| §8 Components            | Per-component required tokens + animated-mixin discipline                                                        | [`_components.test.ts`](../tests/src/styles/_components.test.ts)   |
-| §9 Composables           | Per-composable tokens + state-selector vocabulary + factory pairing + animated discipline                        | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts) |
+| Section                  | Contract                                                                                                                      | Enforcer                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| §1–4 Folder structural   | Layer wrapping, allowed selector kinds, token namespace policy, comment-only policy                                           | [`_contracts.test.ts`](../tests/src/styles/_contracts.test.ts)     |
+| §5 Scope discipline      | Flatten `:not(t1):not(t2)` → `:not(:where(...))`; explicit scope on cross-cutting modifier compounds                          | [`_scope.test.ts`](../tests/src/styles/_scope.test.ts)             |
+| §6 Modifier dimensions   | Variant 8 / size 4 / style 4 required context tokens per class                                                                | [`_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts)   |
+| §6.6 Interactive minimum | Every `INTERACTIVE_ELEMENTS` member declares `transition-duration` + `@include forced-colors` + `:focus-visible`              | [`_interactive.test.ts`](../tests/src/styles/_interactive.test.ts) |
+| §7 Surfaces              | Per-surface required tokens + animated-mixin discipline                                                                       | [`_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts)       |
+| §8 Components            | Per-component required tokens + animated-mixin discipline                                                                     | [`_components.test.ts`](../tests/src/styles/_components.test.ts)   |
+| §9 Composables           | Per-composable tokens + state-selector vocabulary + factory pairing + animated discipline                                     | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts) |
+| §10 Structural pairings  | Every `parent > child` bare-tag pair must appear in `STRUCTURAL_PAIRINGS` with a `spec` / `slot` / `reset` / `context` reason | [`_pairings.test.ts`](../tests/src/styles/_pairings.test.ts)       |
 
 [`taxonomy.md`](taxonomy.md) is the reference for **what element to reach for**: every native HTML tag with its framework treatment (substantive / reset / composable / passthrough / class-component). When a new design problem arises, walk the taxonomy first.
 
@@ -94,7 +95,7 @@ Lint + typecheck (`npm run check`) is required before any "done" claim. The full
 
 ## 4. Architecture rules — TL;DR
 
-The full rules live in [`AGENTS.md`](../AGENTS.md). The seven that come up most often:
+The full rules live in [`AGENTS.md`](../AGENTS.md). The eight that come up most often:
 
 1. **Cascade layer order** (declared once in consumer entry CSS, before `@import 'tailwindcss'`):
 
@@ -115,6 +116,8 @@ The full rules live in [`AGENTS.md`](../AGENTS.md). The seven that come up most 
 6. **Scope discipline on cross-cutting selectors.** Flatten `:not(t1):not(t2):not(t3)` → `:not(:where(t1, t2, t3))` to keep specificity flat. Every cross-cutting modifier compound (`[popover].top`) must explicitly enumerate its scope via `:not(:where(...))` blocklist or `:is(...)` allowlist. See [`patterns.md`](patterns.md) §5.
 
 7. **Accessibility-critical mixins are non-negotiable.** Every `transition:` pairs with `@include transition()` (reduced-motion); every interactive element invokes `@include forced-colors { … }` (Windows HC); every keyboard-focus rule uses `:focus-visible`, never bare `:focus`. The parity tests enforce all three.
+
+8. **No element-hardcoding inside containment.** A rule that combines two bare tag names with `>` (e.g. `nav > search`, `article > div`) blesses one element as the structural marker for a role inside a container. Only allowed when the pairing is on the `STRUCTURAL_PAIRINGS` allowlist with a `spec` / `slot` / `reset` / `context` reason: HTML-spec required nesting, a documented framework slot filled by the universally-natural element, a UA-default reset, or contextual chrome inside the parent's documented internal structure. Anything else moves to a wrapper class that the consumer styles — framework provides containment, consumer composes regions. See [`patterns.md`](patterns.md) §10.
 
 ---
 
@@ -454,6 +457,7 @@ These are failures previous work fell into. Don't repeat them.
 - **Chained `:not(t1):not(t2)` qualifiers.** Each `:not(tag)` adds 0,0,1 to specificity. Collapse to `:not(:where(t1, t2, ...))`. [`_scope.test.ts`](../tests/src/styles/_scope.test.ts) enforces this.
 - **Bare `transition:` declarations** outside `@include transition()`. Breaks the reduced-motion contract. The surface / component / composable contracts enforce mixin usage on every animated partial.
 - **Bare `:focus { … }` rules.** Use `:focus-visible`. The interactive contract enforces this across the whole `src/styles/` tree.
+- **Element-hardcoding inside containment.** Rules like `nav > search` (chrome painted on a specific child element type) lock a pattern to one markup choice and force consumers to use exactly that element. Move the chrome to a wrapper class the consumer adds (`<nav><div class="my-region"><search>…</search></div></nav>`); style the wrapper, not its content. [`_pairings.test.ts`](../tests/src/styles/_pairings.test.ts) fails any new `tag1 > tag2` pair that isn't on `STRUCTURAL_PAIRINGS`.
 
 ---
 
@@ -518,7 +522,7 @@ src/
     modifiers.ts     ← TS mirror of every modifier class
     elements.ts      ← TS registry of element-layer substantive baselines
     taxonomy.ts      ← TS taxonomy + TOKEN_GROUPS + INTERACTIVE_ELEMENTS
-    patterns.ts      ← FOLDER_CONTRACTS + FILE_EXCEPTIONS + SURFACE/COMPONENT/COMPOSABLE_CONTRACTS + MODIFIER_DIMENSION_TOKENS + scope-discipline helpers
+    patterns.ts      ← FOLDER_CONTRACTS + FILE_EXCEPTIONS + SURFACE/COMPONENT/COMPOSABLE_CONTRACTS + MODIFIER_DIMENSION_TOKENS + STRUCTURAL_PAIRINGS + scope-discipline helpers
     events.ts        ← namespaced event-name registry
     helpers.ts       ← assertElement, attachListeners, focus-ring helpers, …
     constants.ts     ← UPPER_SNAKE_CASE values, EVENT_MAPS, selectors
@@ -556,6 +560,7 @@ tests/
       _surfaces.test.ts      ← per-surface required tokens + animated discipline
       _components.test.ts    ← per-component required tokens + animated discipline
       _composables.test.ts   ← per-composable tokens + state-selector vocab + factory pairing
+      _pairings.test.ts      ← structural parent > child element-pair allowlist
       _naming.test.ts        ← --set-* shape + abbreviation black-list
       _handrolled.test.ts    ← no manual variant enumeration
       _isolation.test.ts     ← modifier classes only in modifiers/

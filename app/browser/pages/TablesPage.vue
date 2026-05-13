@@ -54,15 +54,17 @@ import { ref } from 'vue'
  *     containing `<div data-table-expansion-panel>` — the chrome
  *     target. CSS in `_table.scss` hooks
  *     `tr[data-table-expanded] + tr > td > [data-table-expansion-panel]`
- *     to open the sibling via the same `block-size: 0 → auto`
- *     transition that powers `<details>::details-content`, sharing
- *     the `interpolate-size: allow-keywords` declaration on `<html>`.
- *     The toggle button is a real `<button aria-expanded
- *     aria-controls>` — the ARIA disclosure pattern. The button's
- *     `aria-controls` points at the expansion row's `id`, so screen
- *     readers resolve the relationship and the disclosure state is
- *     announced correctly. No abuse of `<details>` as an empty shell
- *     wrapping nothing; the markup matches the intent.
+ *     and animates `block-size: 0 → auto` via the framework's global
+ *     `interpolate-size: allow-keywords` declaration on `<html>` (the
+ *     same CSS feature that lets any height transition resolve, the
+ *     framework simply opts in once for everyone). The toggle button
+ *     is a real `<button aria-expanded aria-controls>` — the ARIA
+ *     disclosure pattern. The button's `aria-controls` points at the
+ *     expansion row's `id`, so screen readers resolve the
+ *     relationship and the disclosure state is announced correctly.
+ *     Markup is a plain pair of sibling `<tr>`s; no `<details>` shell,
+ *     no `<summary>` button surrogate — the row IS the disclosed
+ *     surface, opened by the framework's CSS sibling hook.
  *     Multi-open vs exclusive: a multi-open section stores its open
  *     rows in a `Set<string>`; the exclusive variant stores one
  *     nullable ID. Same chrome contract, just a different toggle
@@ -819,19 +821,21 @@ const releaseSteps: readonly ReleaseStep[] = [
 		<h2>Row expansion — accordion-in-table</h2>
 		<p>
 			A second <code>&lt;tr&gt;</code> right after each data row holds the inline detail panel. The
-			host row carries <code>data-table-expanded</code> while open; the expansion row's
-			<code>&lt;div data-table-expansion-panel&gt;</code> is the chrome target. CSS
-			<code>tr[data-table-expanded] + tr &gt; td &gt; [data-table-expansion-panel]</code> opens the
-			sibling panel via the same <code>block-size: 0 → auto</code> animation
-			<code>&lt;details&gt;::details-content</code> uses (declared globally via
-			<code>interpolate-size: allow-keywords</code> on <code>&lt;html&gt;</code>).
+			host row carries <code>data-table-expanded</code> while open; the expansion row contains a
+			<code>&lt;div data-table-expansion-panel&gt;</code> wrapper that owns the chrome. CSS
+			<code>tr[data-table-expanded] + tr &gt; td &gt; [data-table-expansion-panel]</code> animates
+			the sibling panel from <code>block-size: 0 → auto</code> — the height interpolation works
+			because the framework declares <code>interpolate-size: allow-keywords</code> on
+			<code>&lt;html&gt;</code> once, globally, so any element's <code>block-size</code> can animate
+			to or from <code>auto</code>.
 		</p>
 		<p>
-			The toggle itself is a real <code>&lt;button aria-expanded aria-controls&gt;</code> — the ARIA
+			The toggle is a real <code>&lt;button aria-expanded aria-controls&gt;</code> — the ARIA
 			disclosure pattern. The button's <code>aria-controls</code> points at the expansion row's
 			<code>id</code>, so screen readers resolve the relationship correctly and the disclosure state
-			is announced. No fake <code>&lt;details&gt;</code> wrapping nothing; the markup matches what
-			the user is actually doing.
+			is announced. The disclosed surface is the second <code>&lt;tr&gt;</code> itself; there's no
+			<code>&lt;details&gt;</code> wrapper, no <code>&lt;summary&gt;</code> button surrogate. The
+			markup matches the user's intent: a button toggles a sibling row open.
 		</p>
 		<table>
 			<thead>
@@ -1009,7 +1013,8 @@ const releaseSteps: readonly ReleaseStep[] = [
 			Try it: open one row's <em>Notes</em>, then click another — the first auto-closes as the
 			second opens, both animating together. The closing-row's panel ramps
 			<code>block-size: auto → 0</code> at the same time the opening-row's panel ramps
-			<code>0 → auto</code>, sharing the framework's <code>interpolate-size</code> transition.
+			<code>0 → auto</code>, both interpolating cleanly because of the framework's global
+			<code>interpolate-size: allow-keywords</code> declaration.
 		</p>
 		<details>
 			<summary><small>Markup</small></summary>

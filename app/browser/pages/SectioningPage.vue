@@ -242,9 +242,11 @@
 		<p>
 			<code>&lt;search&gt;</code> is the HTML Living Standard's landmark for search / filter UI
 			(Baseline 2023+). The framework treats bare <code>&lt;search&gt;</code> as a flex row hosting
-			an <code>&lt;input&gt;</code> + optional submit button. The page sidebar's filter is a
-			<code>&lt;search&gt;</code>; it ALSO sits sticky at the top of the scrollable rail because the
-			framework's body-shell rule pins it there.
+			an <code>&lt;input&gt;</code> + optional submit button. The framework provides the row chrome;
+			positioning inside a body-shell rail (pinned, scrolling, in-flow) is a consumer composition.
+			The showcase sidebar wraps its <code>&lt;search&gt;</code> in a
+			<code>.showcase-sidebar-region</code> wrapper that pins as a card above a separately-scrolling
+			link list — see <code>app/browser/styles/showcase.css</code> for the composed-rail pattern.
 		</p>
 		<search>
 			<label>
