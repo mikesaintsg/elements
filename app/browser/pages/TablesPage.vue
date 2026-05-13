@@ -853,13 +853,12 @@ const releaseSteps: readonly ReleaseStep[] = [
 						<td>
 							<button
 								type="button"
-								class="subtle row-toggle"
+								class="subtle dropdown small"
 								:aria-expanded="expandedRows.has(`basic-${row.id}`)"
 								:aria-controls="`basic-${row.id}-details`"
 								@click="toggleRow(`basic-${row.id}`)"
 							>
 								Details
-								<span class="row-toggle-marker" aria-hidden="true"></span>
 							</button>
 						</td>
 					</tr>
@@ -933,13 +932,12 @@ const releaseSteps: readonly ReleaseStep[] = [
 						<td>
 							<button
 								type="button"
-								class="subtle row-toggle"
+								class="subtle dropdown small"
 								:aria-expanded="expandedRows.has(`multi-${m.id}`)"
 								:aria-controls="`multi-${m.id}-details`"
 								@click="toggleRow(`multi-${m.id}`)"
 							>
 								Details
-								<span class="row-toggle-marker" aria-hidden="true"></span>
 							</button>
 						</td>
 					</tr>
@@ -988,13 +986,12 @@ const releaseSteps: readonly ReleaseStep[] = [
 						<td>
 							<button
 								type="button"
-								class="subtle row-toggle"
+								class="subtle dropdown small"
 								:aria-expanded="expandedExclusive === step.id"
 								:aria-controls="`step-${step.id}-details`"
 								@click="toggleExclusive(step.id)"
 							>
 								Notes
-								<span class="row-toggle-marker" aria-hidden="true"></span>
 							</button>
 						</td>
 					</tr>
@@ -1063,13 +1060,12 @@ const toggle = (id: string): void =&gt; {
 						<td>
 							<button
 								type="button"
-								class="subtle row-toggle"
+								class="subtle dropdown small"
 								:aria-expanded="expandedRows.has(`variants-${o.id}`)"
 								:aria-controls="`variants-${o.id}-details`"
 								@click="toggleRow(`variants-${o.id}`)"
 							>
 								Details
-								<span class="row-toggle-marker" aria-hidden="true"></span>
 							</button>
 						</td>
 					</tr>
@@ -1126,13 +1122,12 @@ const toggle = (id: string): void =&gt; {
 						<td>
 							<button
 								type="button"
-								class="subtle row-toggle"
+								class="subtle dropdown small"
 								:aria-expanded="expandedRows.has(`bordered-${t.id}`)"
 								:aria-controls="`bordered-${t.id}-details`"
 								@click="toggleRow(`bordered-${t.id}`)"
 							>
 								Details
-								<span class="row-toggle-marker" aria-hidden="true"></span>
 							</button>
 						</td>
 					</tr>
@@ -1177,13 +1172,12 @@ const toggle = (id: string): void =&gt; {
 						<td>
 							<button
 								type="button"
-								class="subtle row-toggle"
+								class="subtle dropdown small"
 								:aria-expanded="expandedRows.has(`striped-${r.id}`)"
 								:aria-controls="`striped-${r.id}-details`"
 								@click="toggleRow(`striped-${r.id}`)"
 							>
 								Context
-								<span class="row-toggle-marker" aria-hidden="true"></span>
 							</button>
 						</td>
 					</tr>
@@ -1229,13 +1223,12 @@ const toggle = (id: string): void =&gt; {
 						<td>
 							<button
 								type="button"
-								class="subtle row-toggle"
+								class="subtle dropdown small"
 								:aria-expanded="expandedRows.has(`compact-${a.id}`)"
 								:aria-controls="`compact-${a.id}-details`"
 								@click="toggleRow(`compact-${a.id}`)"
 							>
 								Diff
-								<span class="row-toggle-marker" aria-hidden="true"></span>
 							</button>
 						</td>
 					</tr>
@@ -1463,39 +1456,3 @@ const toggle = (id: string): void =&gt; {
 		</ul>
 	</section>
 </template>
-
-<style scoped>
-/* Row-expansion toggle button — small, inline, with a chevron marker
- * that rotates 180° when `aria-expanded="true"`. Matches the framework's
- * dropdown / details marker idiom without pulling in either component's
- * full chrome (a tooltip-anchor button, not a dropdown trigger). */
-.row-toggle {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.375rem;
-	padding-inline: 0.625rem;
-	padding-block: 0.25rem;
-	font-size: 0.875rem;
-}
-
-.row-toggle-marker {
-	display: inline-block;
-	inline-size: 0.75em;
-	block-size: 0.75em;
-	background-color: currentColor;
-	mask-image: var(--set-icon-chevron-down);
-	-webkit-mask-image: var(--set-icon-chevron-down);
-	mask-size: contain;
-	-webkit-mask-size: contain;
-	mask-repeat: no-repeat;
-	-webkit-mask-repeat: no-repeat;
-	mask-position: center;
-	-webkit-mask-position: center;
-	opacity: 0.7;
-	transition: transform var(--set-transition-duration) ease;
-}
-
-.row-toggle[aria-expanded='true'] .row-toggle-marker {
-	transform: rotate(180deg);
-}
-</style>

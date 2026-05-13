@@ -231,6 +231,16 @@
 			--set-button-dropdown-caret-image: var(--set-icon-chevron-down);
 			--set-button-dropdown-caret-size: 0.75em;
 			--set-button-dropdown-caret-opacity: 0.7;
+			// Rotation on `[aria-expanded="true"]` — turns the resting
+			// chevron-down into a chevron-up so a dropdown trigger that
+			// owns a disclosure relationship (popover open, accordion
+			// expanded, expandable table row open, …) flips the same way
+			// the `<summary>` chevron does. `:root`-scoped so consumers
+			// can retune the rotation amount globally (e.g. 90deg for a
+			// plus → cross effect) or per-instance via the same token.
+			// Same scope-pattern + same default-value contract as
+			// `--set-summary-marker-open-rotate`.
+			--set-button-dropdown-caret-open-rotate: 180deg;
 		}
 
 		// Sized + glyph-sourced to match the framework's other chevron /
@@ -247,6 +257,17 @@
 		// idiom `<summary>` uses, not per-glyph `margin-inline-start`,
 		// so the spacing stays consistent across every chevron / caret
 		// surface.
+		//
+		// `[aria-expanded]` rotation: when the button owns a disclosure
+		// relationship — popover trigger with `aria-expanded`, accordion
+		// row toggle, expandable table-row button — the chevron rotates
+		// to mirror the open state. The framework's `<summary>::before`
+		// applies the same rotation contract for native `<details>`, so
+		// a row-expansion `<button class="subtle dropdown">` and a
+		// `<summary>` toggle in the same UI feel identical at the
+		// affordance level. Transitions through the framework-shared
+		// `--set-transition-duration` so the rotation animates in sync
+		// with every other "open this thing" affordance on the page.
 		button.dropdown::after {
 			content: '';
 			flex: none;
@@ -258,6 +279,11 @@
 			mask-position: center;
 			mask-size: contain;
 			opacity: var(--set-button-dropdown-caret-opacity);
+			@include transition(rotate var(--set-transition-duration));
+		}
+
+		button.dropdown[aria-expanded='true']::after {
+			rotate: var(--set-button-dropdown-caret-open-rotate);
 		}
 	}
 }

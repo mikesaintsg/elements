@@ -282,6 +282,7 @@ export const tokens = {
 		dropdownCaretImage: '--set-button-dropdown-caret-image',
 		dropdownCaretSize: '--set-button-dropdown-caret-size',
 		dropdownCaretOpacity: '--set-button-dropdown-caret-opacity',
+		dropdownCaretOpenRotate: '--set-button-dropdown-caret-open-rotate',
 	},
 
 	// Element-scoped tokens declared on `a` itself.
