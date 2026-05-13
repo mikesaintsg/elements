@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-13T17:29:26.484Z" />
+		<meta name="build-id" content="2026-05-13T17:48:54.682Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -17044,7 +17044,7 @@ useTooltip({ anchor, panel, placement })`,
 									),
 									q(`footer`, null, [
 										(i[7] ||= q(`small`, null, `Elements framework`, -1)),
-										q(`small`, Gh, `build ` + P(B(`2026-05-13T17:29:26.484Z`)), 1),
+										q(`small`, Gh, `build ` + P(B(`2026-05-13T17:48:54.682Z`)), 1),
 									]),
 								],
 								64,
@@ -20242,12 +20242,13 @@ useTooltip({ anchor, panel, placement })`,
 					font-style: italic;
 				}
 				video {
+					--set-video-max-inline-size: 100%;
 					--set-video-border-radius: 0;
 					--set-video-background-color: black;
+					max-inline-size: var(--set-video-max-inline-size);
 					border-radius: var(--set-video-border-radius);
 					background-color: var(--set-video-background-color);
 					block-size: auto;
-					max-inline-size: 100%;
 					display: block;
 				}
 			}
@@ -24026,8 +24027,18 @@ useTooltip({ anchor, panel, placement })`,
 				.italic {
 					font-style: italic;
 				}
+				.oldstyle-nums {
+					--tw-numeric-figure: oldstyle-nums;
+					font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,)
+						var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);
+				}
 				.ordinal {
 					--tw-ordinal: ordinal;
+					font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,)
+						var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);
+				}
+				.proportional-nums {
+					--tw-numeric-spacing: proportional-nums;
 					font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,)
 						var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);
 				}

@@ -364,6 +364,11 @@ export type TokenGroup =
 	| 'floating-surface'
 	| 'inline-chip'
 	| 'disclosure'
+	| 'media-embed'
+	| 'progress-indicator'
+	| 'numeric-data'
+	| 'boxed-container'
+	| 'class-chip'
 
 export interface TokenGroupDefinition {
 	/** Token property suffixes every member must declare (after the `--set-{tag}-` prefix). */
@@ -472,6 +477,88 @@ export const TOKEN_GROUPS: Readonly<Record<TokenGroup, TokenGroupDefinition>> = 
 	disclosure: {
 		members: ['details', 'summary'],
 		required: ['transition-duration'],
+	},
+
+	// Embedded media — `<video>` / `<iframe>` / `<embed>` / `<object>` /
+	// `<canvas>` / `<svg>`. Each MUST expose `--set-{tag}-max-inline-size`
+	// so consumers retune the viewport-containment cap with one override
+	// per element. `<audio>` is intentionally absent: its native chrome is
+	// narrow and the framework uses `inline-size: 100%` to fill the slot
+	// (it's NOT a wide-element capped at the container; it's a small-
+	// element stretched). `<img>` + `<picture>` are reset-only (no token
+	// surface) — UA `max-width: 100%` is already correct without consumer
+	// customization. `<math>` is text-shaped, not embed-shaped, so it
+	// uses a font-family token instead.
+	'media-embed': {
+		members: ['video', 'iframe', 'embed', 'object', 'canvas', 'svg'],
+		required: ['max-inline-size'],
+	},
+
+	// Progress indicators — `<progress>` (determinate) + `<meter>` (gauge).
+	// Both repaint UA appearance into a track + fill chrome with shared
+	// vocabulary: same `block-size` thickness, same pill-shaped
+	// `border-radius`, same `track-color` for the empty channel, same
+	// `transition-duration` for the fill animation. (The fill colors
+	// diverge — `progress` uses one variant-tinted fill; `meter` uses
+	// three thresholded colors for optimum / sub-optimum / even-less-
+	// good — so fill-color isn't a uniform-required suffix.)
+	'progress-indicator': {
+		members: ['progress', 'meter'],
+		required: ['block-size', 'border-radius', 'track-color', 'transition-duration'],
+	},
+
+	// Inline numeric annotations — `<data value>` (machine-readable values)
+	// and `<time datetime>` (date / time labels). Both opt into
+	// `font-variant-numeric: tabular-nums` so columns of figures align in
+	// data-dense layouts. One shared required suffix per member; consumers
+	// retune both at `:root` to switch the family to `oldstyle-nums` or
+	// `proportional-nums` in one move.
+	'numeric-data': {
+		members: ['data', 'time'],
+		required: ['font-variant-numeric'],
+	},
+
+	// Boxed in-flow containers — `<fieldset>` (form grouping) +
+	// `<details>` (disclosure widget). Different semantic intent but the
+	// same visual contract: a contained box with explicit border + padding
+	// + radius, transition-duration on color shifts. Bare `<fieldset>` and
+	// bare `<details>` paint identically — both lean on the same UA-reset
+	// + framework chrome pattern. The contract enforces parity so a future
+	// boxed-container addition can't silently ship without a border or
+	// radius token. `<article>` is its own (`card-region`) group because
+	// it also requires a `gap` token for card-stack rhythm.
+	'boxed-container': {
+		members: ['fieldset', 'details'],
+		required: [
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+			'border-radius',
+			'padding-inline',
+			'padding-block',
+			'transition-duration',
+		],
+	},
+
+	// Class-component chips — `.badge` + `.tag` (carried by `<span>`).
+	// Both render as inline pills with consumer-facing chip vocabulary:
+	// color, background-color, border-radius, padding (inline + block),
+	// font-size. The parallel `inline-chip` group covers SEMANTIC inline
+	// text atoms (`<code>` / `<kbd>` / `<samp>` / `<var>` / `<mark>`) —
+	// chip-shaped but tag-driven, not class-applied. Splitting the two
+	// keeps the conceptual lines clean while enforcing the same shape on
+	// both sides.
+	'class-chip': {
+		members: ['badge', 'tag'],
+		required: [
+			'color',
+			'background-color',
+			'border-radius',
+			'padding-inline',
+			'padding-block',
+			'font-size',
+		],
 	},
 }
 

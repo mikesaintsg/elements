@@ -192,7 +192,32 @@ Documented here so authors don't reinvent them. Each lives in [`src/styles/compo
 
 ---
 
-## 4. Cross-references
+## 4. Token-uniformity groups
+
+Logical families of tags / class-components that share a minimum token surface. Members of each group MUST declare every required suffix (with the `--set-{member}-` prefix), so a consumer who wants to retune the family can do so with one override per member. The contract data lives in [`src/browser/taxonomy.ts § TOKEN_GROUPS`](../src/browser/taxonomy.ts); the parity test is [`tests/src/styles/_uniformity.test.ts`](../tests/src/styles/_uniformity.test.ts).
+
+| Group                | Members                                                                                           | Required suffixes (per member, after `--set-{member}-`)                                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `interactive`        | `a`, `button`, `details`, `dialog`, `fieldset`, `input`, `label`, `select`, `summary`, `textarea` | `transition-duration`                                                                                                                                         |
+| `form-control`       | `button`, `input`, `textarea`, `select`                                                           | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `font-size`, `transition-duration`, `cursor` |
+| `page-shell`         | `header`, `footer`, `nav`, `aside`, `main`                                                        | `color`, `background-color`, `padding-inline`, `padding-block`                                                                                                |
+| `card-region`        | `article`                                                                                         | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `gap`                                        |
+| `floating-surface`   | `dialog`, `output`                                                                                | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `transition-duration`                        |
+| `inline-chip`        | `code`, `kbd`, `samp`, `var`, `mark`                                                              | `color`, `background-color`, `padding-inline`, `padding-block`, `border-radius`                                                                               |
+| `disclosure`         | `details`, `summary`                                                                              | `transition-duration`                                                                                                                                         |
+| `media-embed`        | `video`, `iframe`, `embed`, `object`, `canvas`, `svg`                                             | `max-inline-size`                                                                                                                                             |
+| `progress-indicator` | `progress`, `meter`                                                                               | `block-size`, `border-radius`, `track-color`, `transition-duration`                                                                                           |
+| `numeric-data`       | `data`, `time`                                                                                    | `font-variant-numeric`                                                                                                                                        |
+| `boxed-container`    | `fieldset`, `details`                                                                             | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `transition-duration`                        |
+| `class-chip`         | `badge`, `tag` (class-components)                                                                 | `color`, `background-color`, `border-radius`, `padding-inline`, `padding-block`, `font-size`                                                                  |
+
+A tag can belong to multiple groups — `<fieldset>` is `interactive` (transition-duration) + `form-control` peer (no, fieldset isn't a `form-control` because it groups them) + `boxed-container` (full chrome). `<details>` is `interactive` + `disclosure` + `boxed-container`. The required-suffix sets are unioned: each member declares the superset of every group's required tokens it's in.
+
+The 12 groups in the table above are the framework's current uniformity contracts. When a NEW element / class-component is added to the framework, audit it against this table — if it shares the visual shape of an existing group, add it as a member; if it introduces a new shared shape across multiple elements, register a new group with both as members. The parity test will surface any member that doesn't declare every required suffix.
+
+---
+
+## 5. Cross-references
 
 - [modifiers.md](modifiers.md) — what `.primary`, `.large`, `.subtle`, `.disabled`, `.top` mean and which elements consume them.
 - [tokens.md](tokens.md) — the `--set-{tag}-*` namespace each substantive element owns.

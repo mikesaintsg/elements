@@ -30,6 +30,7 @@ import {
 	MODIFIABLE_TAGS,
 	TOKEN_GROUPS,
 	GROUPS_BY_TAG,
+	COMPONENT_CONTRACTS,
 	groupsForTag,
 	isKnownTag,
 	isSubstantive,
@@ -158,14 +159,24 @@ describe('taxonomy — elements.ts is a subset of substantive + composable', () 
 
 // ── 5. Token groups ────────────────────────────────────────────────────────
 
+// Class-component group members are framework class names (e.g. `.badge`,
+// `.tag`) carried by neutral HTML wrappers (`<span>`). They aren't HTML
+// tags so `isKnownTag` returns false, but they're legitimate framework
+// symbols enumerated as keys in `COMPONENT_CONTRACTS`. Accept either
+// source.
+const CLASS_COMPONENT_NAMES: ReadonlySet<string> = new Set(Object.keys(COMPONENT_CONTRACTS))
+
 describe('taxonomy — TOKEN_GROUPS', () => {
-	it('every group member is a known taxonomy tag', () => {
+	it('every group member is a known taxonomy tag or class-component', () => {
 		for (const [name, definition] of Object.entries(TOKEN_GROUPS) as readonly [
 			TokenGroup,
 			(typeof TOKEN_GROUPS)[TokenGroup],
 		][]) {
 			for (const member of definition.members) {
-				expect(isKnownTag(member), `${name} group member '${member}' is not in taxonomy`).toBe(true)
+				expect(
+					isKnownTag(member) || CLASS_COMPONENT_NAMES.has(member),
+					`${name} group member '${member}' is not in taxonomy and is not a class-component`,
+				).toBe(true)
 			}
 		}
 	})

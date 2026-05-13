@@ -1060,6 +1060,7 @@ export const tokens = {
 	},
 
 	video: {
+		maxInlineSize: '--set-video-max-inline-size',
 		borderRadius: '--set-video-border-radius',
 		backgroundColor: '--set-video-background-color',
 	},
