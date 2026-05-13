@@ -770,6 +770,317 @@ export function surfaceContractFor(name: string): SurfaceContract | null {
 }
 
 // ============================================================================
+// Component contracts
+// ============================================================================
+//
+// Each file in `src/styles/components/` paints either a tag-rooted shell
+// composition (`<article>` card, `<form>` stack, `<nav>` rails) or a
+// class-component primitive that has no semantic root (`.badge`, `.dot`,
+// `.spinner`). COMPONENT_CONTRACTS records the per-component contract:
+//
+//   - `tokenPrefix` — the primary `--set-{prefix}-*` namespace. Multi-
+//     namespace components (`_aside.scss`, `_div.scss`, `_output.scss`,
+//     `_nav.scss`) record additional prefixes through FILE_EXCEPTIONS so
+//     the namespace check at `_contracts.test.ts` honors them.
+//
+//   - `requiredTokens` — the minimum token surface the component MUST
+//     declare. Locks in the shipped contract; future removal of a token
+//     fails the parity test.
+//
+//   - `animated` — true when the partial declares a `transition-duration`
+//     or `*-duration` token. The partial MUST invoke `@include transition()`
+//     OR `@include reduced-motion { … }` (same rule as surfaces).
+//
+//   - `notes` — one-sentence description for failure messages.
+
+export interface ComponentContract {
+	readonly name: string
+	readonly tokenPrefix?: string // defaults to `name`
+	readonly requiredTokens: readonly string[]
+	readonly animated: boolean
+	readonly notes: string
+}
+
+export const COMPONENT_CONTRACTS: Readonly<Record<string, ComponentContract>> = {
+	// ── Tag-rooted shell compositions ──────────────────────────────────────
+	article: {
+		name: 'article',
+		requiredTokens: [
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+			'border-radius',
+			'padding-inline',
+			'padding-block',
+			'gap',
+			'font-size',
+			'line-height',
+			'box-shadow',
+			'transition-duration',
+			'disabled-opacity',
+		],
+		animated: true,
+		notes: "Card surface. Full chrome (color, bg, border, padding, gap, box-shadow, motion).",
+	},
+	aside: {
+		name: 'aside',
+		requiredTokens: [
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+			'padding-inline',
+			'padding-block',
+			'inline-size',
+			'gap',
+			'font-size',
+			'line-height',
+			'transition-duration',
+			// Drawer sub-namespace (still under --set-aside-drawer-*).
+			'drawer-inline-size',
+			'drawer-block-size',
+			'drawer-z-index',
+			'drawer-padding-inline',
+			'drawer-padding-block',
+			'drawer-band-gap',
+		],
+		animated: true,
+		notes:
+			"<aside> plays three roles (sidebar / callout / alert) + drawer variant. Multi-namespace contract; callout-* and alert-* are recorded via FILE_EXCEPTIONS.",
+	},
+	body: {
+		name: 'body',
+		requiredTokens: ['rail-width'],
+		animated: false,
+		notes: 'Body-grid shell. One token: --set-body-rail-width tunes the sidebar / TOC rails.',
+	},
+	footer: {
+		name: 'footer',
+		requiredTokens: [
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+			'padding-inline',
+			'padding-block',
+			'font-size',
+			'line-height',
+			'transition-duration',
+		],
+		animated: true,
+		notes: 'Page footer chrome. Mirrors the header surface.',
+	},
+	form: {
+		name: 'form',
+		requiredTokens: ['gap', 'row-gap', 'label-gap', 'transition-duration'],
+		animated: true,
+		notes: 'Form-control stack. Layout-only; chrome flows from the per-control element files.',
+	},
+	header: {
+		name: 'header',
+		requiredTokens: [
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+			'padding-inline',
+			'padding-block',
+			'font-size',
+			'line-height',
+			'transition-duration',
+		],
+		animated: true,
+		notes: 'Page app-bar chrome. Mirrors the footer surface.',
+	},
+	main: {
+		name: 'main',
+		requiredTokens: [],
+		animated: false,
+		notes:
+			'Layout-only main content area. No --set-main-* tokens by design; spacing flows from --set-stack-spacing / --set-gap.',
+	},
+	menu: {
+		name: 'menu',
+		requiredTokens: [
+			'color',
+			'background-color',
+			'gap',
+			'padding-inline',
+			'padding-block',
+			'justify-content',
+			'transition-duration',
+		],
+		animated: true,
+		notes: 'Toolbar / action-row component + dropdown panel chrome.',
+	},
+	nav: {
+		name: 'nav',
+		requiredTokens: [
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+			'inline-size',
+			'padding-inline',
+			'padding-block',
+			'gap',
+			'font-size',
+			'line-height',
+			'transition-duration',
+			// Breadcrumb sub-namespace.
+			'breadcrumb-separator-image',
+			'breadcrumb-separator-size',
+			'breadcrumb-separator-opacity',
+			'breadcrumb-active-color',
+			// Pagination sub-namespace.
+			'pagination-color',
+			'pagination-background-color',
+			'pagination-border-color',
+			'pagination-border-width',
+			'pagination-border-radius',
+			'pagination-padding-inline',
+			'pagination-padding-block',
+			'pagination-min-size',
+			'pagination-hover-background-color',
+			'pagination-active-color',
+			'pagination-active-background-color',
+			'pagination-active-border-color',
+			'pagination-disabled-opacity',
+		],
+		animated: true,
+		notes:
+			'<nav> carries sidebar rail, breadcrumb, and pagination patterns. Sub-namespaces declared under --set-nav-{breadcrumb,pagination}-*.',
+	},
+	output: {
+		name: 'output',
+		tokenPrefix: 'toast',
+		requiredTokens: [
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+			'border-radius',
+			'padding-inline',
+			'padding-block',
+			'gap',
+			'min-inline-size',
+			'max-inline-size',
+			'font-size',
+			'box-shadow',
+			'edge-inset',
+			'z-index',
+			'spacing',
+			'stack-offset',
+			'stack-index',
+			'stack-depth',
+			'peek-height',
+			'scale-step',
+			'opacity-step',
+			'front-height',
+			'hidden-count',
+		],
+		animated: false, // _output.scss has no own duration token; motion lives in composables/_toast.scss
+		notes:
+			'<output popover> becomes a toast. Tokens live under --set-toast-* (filename names the element; namespace names the surface).',
+	},
+	'role-group': {
+		name: 'role-group',
+		requiredTokens: ['border-width'],
+		animated: false,
+		notes:
+			'ARIA [role=group] / [role=toolbar] component. Minimal contract — most chrome flows from descendant elements.',
+	},
+	search: {
+		name: 'search',
+		requiredTokens: [
+			'color',
+			'background-color',
+			'padding-inline',
+			'padding-block',
+			'gap',
+			'transition-duration',
+		],
+		animated: true,
+		notes: 'Search-bar wrapper component.',
+	},
+
+	// ── Class-component primitives ─────────────────────────────────────────
+	badge: {
+		name: 'badge',
+		requiredTokens: [
+			'color',
+			'background-color',
+			'border-radius',
+			'padding-inline',
+			'padding-block',
+			'font-size',
+			'font-weight',
+			'line-height',
+		],
+		animated: false,
+		notes: '.badge — inline pill for counts and status keywords.',
+	},
+	div: {
+		name: 'div',
+		tokenPrefix: 'stack',
+		requiredTokens: ['gap'],
+		animated: false,
+		notes:
+			'.stack and .cluster class-component primitives carried by <div>. Additional --set-cluster-* prefix via FILE_EXCEPTIONS.',
+	},
+	dot: {
+		name: 'dot',
+		requiredTokens: ['size', 'background-color', 'pulse-duration', 'pulse-easing'],
+		animated: true,
+		notes: '.dot — colored circle indicator (status / presence).',
+	},
+	skeleton: {
+		name: 'skeleton',
+		requiredTokens: [
+			'background-color',
+			'highlight-color',
+			'border-radius',
+			'duration',
+			'line-block-size',
+			'line-gap',
+		],
+		animated: true,
+		notes: '.skeleton — loading placeholder with animated shimmer.',
+	},
+	spinner: {
+		name: 'spinner',
+		requiredTokens: ['size', 'color', 'border-width', 'duration'],
+		animated: true,
+		notes: '.spinner — animated loading indicator.',
+	},
+	tag: {
+		name: 'tag',
+		requiredTokens: [
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+			'border-radius',
+			'padding-inline',
+			'padding-block',
+			'font-size',
+			'font-weight',
+			'line-height',
+			'gap',
+			'transition-duration',
+		],
+		animated: true,
+		notes: '.tag — chip label with optional close affordance.',
+	},
+}
+
+/** Read the component contract for a partial basename. */
+export function componentContractFor(name: string): ComponentContract | null {
+	return COMPONENT_CONTRACTS[name] ?? null
+}
+
+// ============================================================================
 // Interactive-element registry
 // ============================================================================
 //

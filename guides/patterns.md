@@ -352,7 +352,73 @@ Surfaces freely read each other's tokens via `var()` chains. `_popover.scss` rea
 
 ---
 
-## 8. Reference
+## 8. Per-component contracts
+
+Each file in [`src/styles/components/`](../src/styles/components/) paints either a tag-rooted shell composition (`<article>` card, `<form>` stack, `<nav>` rails) or a class-component primitive that has no semantic root (`.badge`, `.dot`, `.spinner`). The contract is codified in [`COMPONENT_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/_components.test.ts`](../tests/src/styles/_components.test.ts).
+
+### 8.1 The shape
+
+Mirrors `SURFACE_CONTRACTS` (see §7.1). Each entry carries `name`, `tokenPrefix` (optional, defaults to `name`), `requiredTokens`, `animated`, `notes`. The animation rule + customizability-gap rule apply identically: every component with a duration token MUST invoke `@include transition()` or `@include reduced-motion`.
+
+### 8.2 The nineteen components
+
+Grouped by role:
+
+**Tag-rooted shell compositions** (page-grid sections + tag-keyed widgets):
+
+| Component | Required tokens (suffixes) | Animated |
+| --- | --- | --- |
+| `article` | color, bg, border-{color,width,radius}, padding-{inline,block}, gap, font-{size,line-height}, box-shadow, transition-duration, disabled-opacity | yes |
+| `aside` | color, bg, border-{color,width}, padding-{inline,block}, inline-size, gap, font-{size,line-height}, transition-duration + drawer-* sub-namespace | yes |
+| `body` | rail-width | no |
+| `footer` | color, bg, border-{color,width}, padding-{inline,block}, font-{size,line-height}, transition-duration | yes |
+| `form` | gap, row-gap, label-gap, transition-duration | yes |
+| `header` | same as footer | yes |
+| `main` | (none — layout only, by design) | no |
+| `menu` | color, bg, gap, padding-{inline,block}, justify-content, transition-duration | yes |
+| `nav` | core 11 tokens + breadcrumb-* + pagination-* sub-namespaces | yes |
+| `output` | `--set-toast-*` namespace (tokens live under toast, not output) | no¹ |
+| `role-group` | border-width | no |
+| `search` | color, bg, padding-{inline,block}, gap, transition-duration | yes |
+
+¹ `_output.scss` ships no own duration token. Motion lives in `composables/_toast.scss` (the toast deck is a composable surface).
+
+**Class-component primitives** (no semantic root):
+
+| Component | Carrier element | Required tokens (suffixes) | Animated |
+| --- | --- | --- | --- |
+| `badge` | `<span class="badge">` | color, bg, border-radius, padding-{inline,block}, font-{size,weight,line-height} | no |
+| `div` | `<div class="stack">` / `<div class="cluster">` | gap (under `--set-stack-*`; `cluster` prefix via FILE_EXCEPTIONS) | no |
+| `dot` | `<span class="dot">` | size, bg, pulse-duration, pulse-easing | yes |
+| `skeleton` | `<div class="skeleton">` | bg, highlight-color, border-radius, duration, line-block-size, line-gap | yes |
+| `spinner` | `<span class="spinner" role="status">` | size, color, border-width, duration | yes |
+| `tag` | `<span class="tag">` | color, bg, border-{color,width,radius}, padding-{inline,block}, font-{size,weight,line-height}, gap, transition-duration | yes |
+
+### 8.3 Cross-namespace components
+
+Four components ship tokens under namespaces that differ from their filename:
+
+- `_aside.scss` — `aside`, `callout`, `alert` + drawer overrides for `variant`, `popover`, `anchor` (multi-role element + drawer cascade)
+- `_div.scss` — `stack`, `cluster` (class-component carriers; no `--set-div-*`)
+- `_output.scss` — `toast` (filename names the element; tokens name the surface)
+- `_nav.scss` — `nav` + `tablist`, `tab`, `tabpanel` (multi-pattern element)
+
+The additional prefixes are declared in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts) so the namespace check at `_contracts.test.ts` allows them; the per-component contract documents the canonical primary prefix.
+
+### 8.4 Animated-component contract
+
+Same as §7.3 (surfaces). Any component that declares a `transition-duration`, `*-duration`, or `pulse-duration` token MUST invoke `@include transition(...)` or `@include reduced-motion`. The test catches the customizability gap when duration tokens are exposed without the reduced-motion opt-out.
+
+### 8.5 Adding a new component
+
+1. Add the partial under `src/styles/components/_{name}.scss`.
+2. Add a `COMPONENT_CONTRACTS` entry with the canonical token + animation discipline.
+3. If the partial declares tokens under a namespace other than its filename, add the extras to `FILE_EXCEPTIONS.additionalTokenPrefixes`.
+4. The parity test catches drift in both directions (partial without contract, contract without partial).
+
+---
+
+## 9. Reference
 
 - [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the contract data and helpers.
 - [`tests/src/styles/_contracts.test.ts`](../tests/src/styles/_contracts.test.ts) — the parity test that consumes the contract.
