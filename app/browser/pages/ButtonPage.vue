@@ -109,6 +109,22 @@ const snippetLink = `<!-- <a> opts into button chrome via .filled and a variant 
 <a href="#button-link" class="primary filled">Primary anchor-as-button</a>
 <a href="#button-link" class="success subtle">Success anchor, subtle style</a>`
 
+const snippetDropdown = `<!-- .dropdown paints a chevron-down caret after the label via
+     button::after + mask-image (--set-button-dropdown-caret-image).
+     Same caret + currentColor recipe <summary>::before uses, so the
+     affordance reads identically across the framework. -->
+<button class="dropdown" popovertarget="my-menu">Open menu</button>
+
+<!-- When the button also carries [aria-expanded] (popover trigger,
+     row-expansion toggle, accordion summary, anything), the caret
+     rotates 180° on aria-expanded="true" — same rotation contract
+     <summary>::before uses on details[open]. Token-driven, so a
+     consumer can flip to chevron-up + 0deg or to 45deg for plus/×
+     pairs via a single :root override. -->
+<button class="dropdown" aria-expanded="false" aria-controls="row-1">
+  Details
+</button>`
+
 const snippetGroups = `<!-- Connected button group: a [role="group"] wrapping buttons
      produces a single bonded control. -->
 <div role="group" aria-label="Text alignment">
@@ -381,6 +397,64 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre><code>{{ snippetIcon }}</code></pre>
+		</details>
+	</section>
+
+	<section id="button-dropdown">
+		<h2>Dropdown caret — <code>.dropdown</code></h2>
+		<p>
+			Opt-in caret affordance for buttons that open a dropdown panel, a popover, or any disclosure
+			relationship. Painted via <code>button::after</code> with a mask-image so the glyph picks up
+			<code>currentColor</code> and tints correctly through every variant / theme / forced-colors
+			combination — same recipe <code>&lt;summary&gt;::before</code> uses for the disclosure marker.
+			Tokens live on <code>:root</code>: <code>--set-button-dropdown-caret-image</code>,
+			<code>--set-button-dropdown-caret-size</code>,
+			<code>--set-button-dropdown-caret-opacity</code>,
+			<code>--set-button-dropdown-caret-open-rotate</code>.
+		</p>
+		<p>
+			<strong>Opt-in, not auto-painted.</strong> A button can target many kinds of popover — drawer,
+			dialog, dropdown menu, tooltip — and only the dropdown shape conventionally carries a caret
+			affordance. Slapping one on every <code>popovertarget</code> would put a chevron on the
+			hamburger, the theme toggle, the close button. The <code>.dropdown</code> modifier matches
+			Bootstrap's <code>.dropdown-toggle</code> opt-in but in the framework's single-English-word
+			convention.
+		</p>
+		<div class="cluster">
+			<button type="button" class="primary dropdown" popovertarget="button-dropdown-menu">
+				Open menu
+			</button>
+			<menu popover id="button-dropdown-menu">
+				<li><button type="button" class="subtle">Profile</button></li>
+				<li><button type="button" class="subtle">Settings</button></li>
+				<li><button type="button" class="subtle">Sign out</button></li>
+			</menu>
+			<button type="button" class="secondary dropdown small">Small dropdown</button>
+			<button type="button" class="subtle dropdown">Subtle dropdown</button>
+			<button type="button" class="success filled dropdown large">Large + filled</button>
+		</div>
+		<h3 style="margin-block-start: 1.5rem">Caret rotation on <code>aria-expanded</code></h3>
+		<p>
+			When the same button drives a disclosure relationship — a popover trigger reading its
+			<code>aria-expanded</code>, an accordion toggle, an expandable-row button — the caret rotates
+			180° on <code>aria-expanded="true"</code>. Same rotation contract
+			<code>&lt;summary&gt;::before</code> applies to <code>details[open]</code>, transitioned
+			through <code>--set-transition-duration</code> so it animates in sync with every other "open
+			this thing" affordance on the page.
+		</p>
+		<div class="cluster">
+			<button type="button" class="subtle dropdown" aria-expanded="false">
+				aria-expanded="false"
+			</button>
+			<button type="button" class="subtle dropdown" aria-expanded="true">
+				aria-expanded="true"
+			</button>
+			<button type="button" class="primary dropdown" aria-expanded="false">Variant + aria</button>
+			<button type="button" class="primary dropdown" aria-expanded="true">Variant + aria</button>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetDropdown }}</code></pre>
 		</details>
 	</section>
 
