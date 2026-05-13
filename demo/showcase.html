@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-13T17:19:44.986Z" />
+		<meta name="build-id" content="2026-05-13T17:29:26.484Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -17044,7 +17044,7 @@ useTooltip({ anchor, panel, placement })`,
 									),
 									q(`footer`, null, [
 										(i[7] ||= q(`small`, null, `Elements framework`, -1)),
-										q(`small`, Gh, `build ` + P(B(`2026-05-13T17:19:44.986Z`)), 1),
+										q(`small`, Gh, `build ` + P(B(`2026-05-13T17:29:26.484Z`)), 1),
 									]),
 								],
 								64,
@@ -19647,8 +19647,8 @@ useTooltip({ anchor, panel, placement })`,
 					font-size: var(--set-summary-font-size);
 					font-weight: var(--set-summary-font-weight);
 					cursor: var(--set-summary-cursor);
+					transition: margin-block-end var(--set-motion-duration) var(--set-motion-timing-function);
 					margin-block-end: 0;
-					transition: margin-block-end 0.25s;
 					display: flex;
 				}
 				@media (prefers-reduced-motion: reduce) {
@@ -20516,15 +20516,20 @@ useTooltip({ anchor, panel, placement })`,
 					block-size: 0;
 					min-block-size: 0;
 					transition:
-						opacity 0.2s ease-out,
-						block-size 0.25s ease,
-						padding-block 0.25s ease,
-						border-inline-start-width 0.2s ease,
-						visibility 0.25s allow-discrete;
+						block-size var(--set-motion-duration) var(--set-motion-timing-function),
+						padding-block var(--set-motion-duration) var(--set-motion-timing-function),
+						border-inline-start-width var(--set-motion-duration) var(--set-motion-timing-function),
+						opacity var(--set-motion-duration) ease-out,
+						visibility var(--set-motion-duration) allow-discrete;
 					border-inline-start-width: 0;
 					padding-block: 0;
 					display: flex;
 					overflow: hidden;
+				}
+				@media (prefers-reduced-motion: reduce) {
+					aside[role='alert'] {
+						transition: none;
+					}
 				}
 				aside[role='alert'][data-alert-open] {
 					opacity: 1;
@@ -23662,6 +23667,9 @@ useTooltip({ anchor, panel, placement })`,
 				}
 				.table-column-group {
 					display: table-column-group;
+				}
+				.table-row {
+					display: table-row;
 				}
 				.table-row-group {
 					display: table-row-group;

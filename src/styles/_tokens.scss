@@ -65,8 +65,26 @@
 	//   - Offcanvas drawers (`<aside popover>` at any viewport)
 	//   - Modals / non-modals (`<dialog>`)
 	//   - Disclosure expansions (`<details>::details-content`)
-	//   - Table row expansion (`tr.expansion .expansion-panel`)
+	//   - Disclosure summary trailing-margin (`<summary>` in
+	//     `_summary.scss`, locked to the body's collapse rate)
+	//   - Table row expansion (`<tr data-table-expanded>` + sibling
+	//     `<tr> > <td> > [data-table-expansion-panel]`)
+	//   - Alert open / close (`aside[role='alert'][data-alert-open]`)
 	//   - Drawer backdrops (consumer-owned scrims in `showcase.css`)
+	//
+	// Reference behavior is `<details>::details-content` — the modern
+	// native disclosure animation Chromium 131+ / Safari 18.4+ paint:
+	// height tweens cleanly between 0 and `auto` (because of the
+	// `interpolate-size: allow-keywords` declaration on `<html>` in
+	// `_html.scss`), opacity fades in lockstep, and the discrete
+	// `content-visibility` flip uses `transition-behavior: allow-
+	// discrete` so the element stays in the render tree for the full
+	// close transition. Every panel in the list above MATCHES this
+	// contract — same duration, same curve, same `allow-discrete` for
+	// any discrete property (visibility, content-visibility, display,
+	// overlay). The framework reaches the same smoothness `::details-
+	// content` ships with by reusing the same mechanism, not
+	// reinventing it.
 	//
 	// Distinct from `--set-transition-duration` (150 ms, used for small
 	// UI tints — hover, focus, color/border fades): substantial motion
@@ -89,7 +107,8 @@
 	// Consumers retune both at `:root` to change every motion's feel
 	// at once, or per-component by overriding the consumer-scoped
 	// token (`dialog { --set-motion-duration: 400ms }`) for one
-	// surface family.
+	// surface family. The tokens cascade through every consumer in
+	// the list above so a single override retunes the entire family.
 	// --------------------------------------------------------------------------
 	--set-motion-duration: 250ms;
 	--set-motion-timing-function: cubic-bezier(0.32, 0.72, 0, 1);

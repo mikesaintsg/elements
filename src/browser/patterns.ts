@@ -1259,6 +1259,65 @@ export function isInteractive(tag: string): boolean {
 	return INTERACTIVE_ELEMENTS.has(tag)
 }
 
+// ============================================================================
+//  Motion contract — panel-reveal partials must reach for the framework's
+//  `--set-motion-duration` + `--set-motion-timing-function` tokens.
+//
+//  The framework declares one shared pair of motion tokens for every
+//  "substantial reveal" surface (see `src/styles/_tokens.scss` §
+//  Framework-wide motion contract). The reference smoothness is
+//  `<details>::details-content`'s native animation — height tweens
+//  cleanly between 0 and `auto` because `<html>` declares
+//  `interpolate-size: allow-keywords`; opacity fades alongside; the
+//  discrete `content-visibility` flip uses
+//  `transition-behavior: allow-discrete` so the element stays in the
+//  render tree for the full close transition.
+//
+//  Every panel partial in `MOTION_CONTRACT_PARTIALS` matches that
+//  contract — same duration, same iOS-stiff-decel curve, same
+//  `allow-discrete` for discrete properties. Consumers retune both
+//  tokens at `:root` to change every motion's feel at once, or per-
+//  consumer (e.g. `dialog { --set-motion-duration: 400ms }`) to slow
+//  one family. Drift happens when a partial author hardcodes a
+//  numeric duration / curve directly — `0.25s ease` instead of
+//  `var(--set-motion-duration) var(--set-motion-timing-function)`.
+//  The parity test at `tests/src/styles/_motion.test.ts` scans each
+//  registered partial and fails if the motion tokens are missing.
+// ============================================================================
+
+export interface MotionContractPartial {
+	/** Path relative to `src/styles/` (e.g. `elements/_details.scss`). */
+	readonly path: string
+	/** One-sentence description of the panel motion the partial paints. */
+	readonly reason: string
+}
+
+export const MOTION_CONTRACT_PARTIALS: readonly MotionContractPartial[] = [
+	{
+		path: 'elements/_details.scss',
+		reason:
+			'`<details>::details-content` block-size + opacity + content-visibility (reference behavior).',
+	},
+	{
+		path: 'elements/_summary.scss',
+		reason: 'Summary trailing-margin transition — locked to the details body height-collapse rate.',
+	},
+	{
+		path: 'elements/_dialog.scss',
+		reason: 'Modal / non-modal open / close — opacity + transform + overlay + display.',
+	},
+	{
+		path: 'elements/_table.scss',
+		reason:
+			'`[data-table-expansion-panel]` block-size + padding-block + opacity (sibling-row disclosure).',
+	},
+	{
+		path: 'components/_aside.scss',
+		reason:
+			'Drawer slide-in (transform + opacity + overlay + display) AND alert open / close (block-size + opacity + visibility).',
+	},
+]
+
 /**
  * Regex that matches a bare `:focus` state rule (not `:focus-visible`,
  * `:focus-within`, etc.). The bare form is the deviation — every keyboard-

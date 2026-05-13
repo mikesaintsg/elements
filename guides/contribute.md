@@ -50,16 +50,17 @@ Every change starts with the spec, not the existing source. Read the matching gu
 
 When writing or refactoring a SCSS partial, [`patterns.md`](patterns.md) is the operational reference. Nine contracts apply to every change:
 
-| Section                  | Contract                                                                                                                      | Enforcer                                                           |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| §1–4 Folder structural   | Layer wrapping, allowed selector kinds, token namespace policy, comment-only policy                                           | [`_contracts.test.ts`](../tests/src/styles/_contracts.test.ts)     |
-| §5 Scope discipline      | Flatten `:not(t1):not(t2)` → `:not(:where(...))`; explicit scope on cross-cutting modifier compounds                          | [`_scope.test.ts`](../tests/src/styles/_scope.test.ts)             |
-| §6 Modifier dimensions   | Variant 8 / size 4 / style 4 required context tokens per class                                                                | [`_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts)   |
-| §6.6 Interactive minimum | Every `INTERACTIVE_ELEMENTS` member declares `transition-duration` + `@include forced-colors` + `:focus-visible`              | [`_interactive.test.ts`](../tests/src/styles/_interactive.test.ts) |
-| §7 Surfaces              | Per-surface required tokens + animated-mixin discipline                                                                       | [`_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts)       |
-| §8 Components            | Per-component required tokens + animated-mixin discipline                                                                     | [`_components.test.ts`](../tests/src/styles/_components.test.ts)   |
-| §9 Composables           | Per-composable tokens + state-selector vocabulary + factory pairing + animated discipline                                     | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts) |
-| §10 Structural pairings  | Every `parent > child` bare-tag pair must appear in `STRUCTURAL_PAIRINGS` with a `spec` / `slot` / `reset` / `context` reason | [`_pairings.test.ts`](../tests/src/styles/_pairings.test.ts)       |
+| Section                  | Contract                                                                                                                                                                                        | Enforcer                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| §1–4 Folder structural   | Layer wrapping, allowed selector kinds, token namespace policy, comment-only policy                                                                                                             | [`_contracts.test.ts`](../tests/src/styles/_contracts.test.ts)     |
+| §5 Scope discipline      | Flatten `:not(t1):not(t2)` → `:not(:where(...))`; explicit scope on cross-cutting modifier compounds                                                                                            | [`_scope.test.ts`](../tests/src/styles/_scope.test.ts)             |
+| §6 Modifier dimensions   | Variant 8 / size 4 / style 4 required context tokens per class                                                                                                                                  | [`_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts)   |
+| §6.6 Interactive minimum | Every `INTERACTIVE_ELEMENTS` member declares `transition-duration` + `@include forced-colors` + `:focus-visible`                                                                                | [`_interactive.test.ts`](../tests/src/styles/_interactive.test.ts) |
+| §7 Surfaces              | Per-surface required tokens + animated-mixin discipline                                                                                                                                         | [`_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts)       |
+| §8 Components            | Per-component required tokens + animated-mixin discipline                                                                                                                                       | [`_components.test.ts`](../tests/src/styles/_components.test.ts)   |
+| §9 Composables           | Per-composable tokens + state-selector vocabulary + factory pairing + animated discipline                                                                                                       | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts) |
+| §10 Structural pairings  | Every `parent > child` bare-tag pair must appear in `STRUCTURAL_PAIRINGS` with a `spec` / `slot` / `reset` / `context` reason                                                                   | [`_pairings.test.ts`](../tests/src/styles/_pairings.test.ts)       |
+| Motion contract          | Every `MOTION_CONTRACT_PARTIALS` member references both `var(--set-motion-duration)` AND `var(--set-motion-timing-function)`; panel-reveal transitions never hardcode numeric duration literals | [`_motion.test.ts`](../tests/src/styles/_motion.test.ts)           |
 
 [`taxonomy.md`](taxonomy.md) is the reference for **what element to reach for**: every native HTML tag with its framework treatment (substantive / reset / composable / passthrough / class-component). When a new design problem arises, walk the taxonomy first.
 
@@ -561,6 +562,7 @@ tests/
       _components.test.ts    ← per-component required tokens + animated discipline
       _composables.test.ts   ← per-composable tokens + state-selector vocab + factory pairing
       _pairings.test.ts      ← structural parent > child element-pair allowlist
+      _motion.test.ts        ← panel-reveal partials must use motion tokens (--set-motion-{duration, timing-function})
       _naming.test.ts        ← --set-* shape + abbreviation black-list
       _handrolled.test.ts    ← no manual variant enumeration
       _isolation.test.ts     ← modifier classes only in modifiers/

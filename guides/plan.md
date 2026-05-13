@@ -24,13 +24,13 @@ Status of every layer is recorded below. Sections marked ✅ are fully shipped (
 | 11        | Invariant verification                                                     | ✅     |
 | **Audit** | **5-folder file-by-file audit + 8 codified contracts + parity tests**      | ✅     |
 
-**Tests:** `src:browser` 1210/1210 · `src:styles` 3790/3790 · total **5000/5000 pass**.
+**Tests:** `src:browser` 1210/1210 · `src:styles` 3806/3806 · total **5016/5016 pass**.
 
 ---
 
 ## What's shipped — the audit phase outputs
 
-The 5-folder audit (elements → modifiers → surfaces → components → composables) landed a codified contract surface in [`src/browser/patterns.ts`](../src/browser/patterns.ts) + [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts), enforced by 10 parity tests:
+The 5-folder audit (elements → modifiers → surfaces → components → composables) landed a codified contract surface in [`src/browser/patterns.ts`](../src/browser/patterns.ts) + [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts), enforced by 11 parity tests:
 
 | Contract             | Source                                                                    | Test                                                                                                                              |
 | -------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,9 +43,10 @@ The 5-folder audit (elements → modifiers → surfaces → components → compo
 | Component contracts  | `COMPONENT_CONTRACTS`                                                     | [`_components.test.ts`](../tests/src/styles/_components.test.ts)                                                                  |
 | Composable contracts | `COMPOSABLE_CONTRACTS`                                                    | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts)                                                                |
 | Structural pairings  | `STRUCTURAL_PAIRINGS`, `extractTagPairs`, `isAllowedTagPair`              | [`_pairings.test.ts`](../tests/src/styles/_pairings.test.ts)                                                                      |
+| Motion contract      | `MOTION_CONTRACT_PARTIALS`                                                | [`_motion.test.ts`](../tests/src/styles/_motion.test.ts)                                                                          |
 | TS shape             | (the registries themselves)                                               | [`browser/patterns.test.ts`](../tests/src/browser/patterns.test.ts)                                                               |
 
-Every new SCSS partial added under `src/styles/` is held to **nine contracts** before it can merge. See [`patterns.md`](patterns.md) for the prose explanation of each.
+Every new SCSS partial added under `src/styles/` is held to **ten contracts** before it can merge. See [`patterns.md`](patterns.md) for the prose explanation of each.
 
 ---
 
