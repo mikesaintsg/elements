@@ -1,17 +1,41 @@
-// <strong> – Strong importance / seriousness
-// Browser defaults: font-weight: bold
-// Use for genuinely important, serious, or urgent content (warnings, critical info)
-// Nesting increases the level of importance
-// Do not use for stylistic bold — use <b> or CSS font-weight for that
+// <strong> — Strong importance / seriousness.
 //
-// Tailwind preflight ships `font-weight: bolder` on `b, strong`. The framework
-// bumps to 700 (bold) explicitly and pairs with the body-text-strong color so
-// strong terms pop slightly against muted body copy. Bootstrap / mailbox both
-// use the same "bolder" convention.
+// HTML spec: <strong> represents strong importance, seriousness, or
+// urgency. It's a SEMANTIC element, not a presentational one — the
+// spec leaves color to inheritance and only suggests bolder weight.
+//
+// Tailwind preflight ships `font-weight: bolder` on `b, strong`; the
+// framework bumps to a deterministic 700 (bold) for cross-browser
+// parity.
+//
+// Color cascade — strong inherits the surrounding text color so the
+// emphasis stays in flow with whatever container it's inside. The
+// chain reads `style → text-strong`:
+//
+//   1. `--set-style-color` — set by the `.filled` / `.subtle` style
+//      modifiers (and by any host scope that overrides the style
+//      token). Strong inside `<article class="primary filled">`
+//      picks up the article's white-on-blue text; strong inside
+//      `<aside class="success subtle">` picks up the success
+//      emphasis-text color. The strong stays readable against the
+//      styled container's surface without per-context overrides.
+//
+//   2. `--color-text-strong` — the body's emphasis-text tier
+//      (slate-950 in light, white in dark). Applied when no style
+//      is active, so strong on the body canvas reads slightly darker
+//      than surrounding body copy — the conventional emphasis bump.
+//
+// No variant fallback in the chain. Variant tinting on inline text
+// would tint the emphasized word with the variant color (e.g. blue
+// "important" word inside a primary-bordered article body), which
+// reads as a chrome affordance, not text flow. Headings DO take a
+// variant fallback because headings paint themselves as a tinted
+// title block; strong is part of the prose and should respect prose
+// color discipline.
 
 @layer elements {
 	strong {
-		--set-strong-color: var(--color-text-strong);
+		--set-strong-color: var(--set-style-color, var(--color-text-strong));
 		--set-strong-font-weight: 700;
 
 		color: var(--set-strong-color);

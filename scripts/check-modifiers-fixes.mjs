@@ -23,13 +23,16 @@ await page.waitForTimeout(300)
 const filledArticleColors = await page.evaluate(() => {
 	const article = document.querySelector('article.primary.filled')
 	if (!article) return { error: 'no-filled-article' }
-	const label = article.querySelector('p')
-	if (!label) return { error: 'no-label-p' }
+	const strong = article.querySelector('strong')
+	const paragraph = article.querySelector('p')
+	if (!strong || !paragraph) return { error: 'no-label' }
 	const articleCs = getComputedStyle(article)
-	const labelCs = getComputedStyle(label)
+	const strongCs = getComputedStyle(strong)
+	const paragraphCs = getComputedStyle(paragraph)
 	return {
 		articleBg: articleCs.backgroundColor,
-		labelColor: labelCs.color,
+		strongColor: strongCs.color,
+		paragraphColor: paragraphCs.color,
 	}
 })
 console.log('Filled-article styles section:', filledArticleColors)

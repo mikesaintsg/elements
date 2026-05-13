@@ -319,19 +319,15 @@ const sizeRows = [
 			"
 		>
 			<article class="primary subtle" style="padding: calc(var(--spacing) * 3)">
-				<p style="margin: 0; font-weight: 700; font-family: ui-monospace, monospace">
-					.primary.subtle
-				</p>
+				<strong>.primary.subtle</strong>
 				<p style="margin-block: var(--spacing) 0">Tinted bg + emphasis text + subtle border.</p>
 			</article>
 			<article class="primary" style="padding: calc(var(--spacing) * 3)">
-				<p style="margin: 0; font-weight: 700; font-family: ui-monospace, monospace">.primary</p>
+				<strong>.primary</strong>
 				<p style="margin-block: var(--spacing) 0">Bare — border tinted, body neutral.</p>
 			</article>
 			<article class="primary filled" style="padding: calc(var(--spacing) * 3)">
-				<p style="margin: 0; font-weight: 700; font-family: ui-monospace, monospace">
-					.primary.filled
-				</p>
+				<strong>.primary.filled</strong>
 				<p style="margin-block: var(--spacing) 0">Saturated fill + contrast text.</p>
 			</article>
 		</div>
