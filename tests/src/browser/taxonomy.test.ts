@@ -61,7 +61,10 @@ describe('taxonomy — shape', () => {
 			if (entry.treatment === 'composable') {
 				expect(entry.composable, `${entry.tag} is composable but has no factory key`).not.toBeNull()
 			} else {
-				expect(entry.composable, `${entry.tag} (${entry.treatment}) carries a stray factory key`).toBeNull()
+				expect(
+					entry.composable,
+					`${entry.tag} (${entry.treatment}) carries a stray factory key`,
+				).toBeNull()
 			}
 		}
 	})

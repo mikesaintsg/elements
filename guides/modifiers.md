@@ -12,13 +12,13 @@ This means every modifier dimension works on every element that consumes the rig
 
 Each dimension is orthogonal — an element takes at most one value from each.
 
-| Dimension | Values | Context tokens it writes | Partial |
-| --- | --- | --- | --- |
-| **Variant** (semantic identity) | `.primary`, `.secondary`, `.tertiary`, `.success`, `.warning`, `.danger`, `.information` | FILLED: `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`, `--set-variant-border-width`. SUBTLE: `--set-variant-subtle-color`, `--set-variant-subtle-background-color`, `--set-variant-subtle-border-color`. ON-CANVAS: `--set-variant-on-canvas-color`. | [`_variants.scss`](../src/styles/modifiers/_variants.scss) |
-| **Size** (physical scale) | `.small`, `.large` (no `.medium` — bare element is medium) | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius` | [`_sizes.scss`](../src/styles/modifiers/_sizes.scss) |
-| **Style** (fill treatment) | `.subtle`, `.filled` | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`, `--set-style-border-width` | [`_styles.scss`](../src/styles/modifiers/_styles.scss) |
-| **State** (interaction state) | `.disabled`, `.active`, `.loading` | (typically toggles existing element rules; no dedicated context tokens) | [`_states.scss`](../src/styles/modifiers/_states.scss) |
-| **Placement** (anchored surface placement) | `.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end` | Maps to CSS `position-area` keywords plus matching `align-self` / `justify-self` | [`_placements.scss`](../src/styles/modifiers/_placements.scss) |
+| Dimension                                  | Values                                                                                        | Context tokens it writes                                                                                                                                                                                                                                                                     | Partial                                                        |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **Variant** (semantic identity)            | `.primary`, `.secondary`, `.tertiary`, `.success`, `.warning`, `.danger`, `.information`      | FILLED: `--set-variant-color`, `--set-variant-background-color`, `--set-variant-border-color`, `--set-variant-border-width`. SUBTLE: `--set-variant-subtle-color`, `--set-variant-subtle-background-color`, `--set-variant-subtle-border-color`. ON-CANVAS: `--set-variant-on-canvas-color`. | [`_variants.scss`](../src/styles/modifiers/_variants.scss)     |
+| **Size** (physical scale)                  | `.small`, `.large` (no `.medium` — bare element is medium)                                    | `--set-size-padding-inline`, `--set-size-padding-block`, `--set-size-font-size`, `--set-size-border-radius`                                                                                                                                                                                  | [`_sizes.scss`](../src/styles/modifiers/_sizes.scss)           |
+| **Style** (fill treatment)                 | `.subtle`, `.filled`                                                                          | `--set-style-color`, `--set-style-background-color`, `--set-style-border-color`, `--set-style-border-width`                                                                                                                                                                                  | [`_styles.scss`](../src/styles/modifiers/_styles.scss)         |
+| **State** (interaction state)              | `.disabled`, `.active`, `.loading`                                                            | (typically toggles existing element rules; no dedicated context tokens)                                                                                                                                                                                                                      | [`_states.scss`](../src/styles/modifiers/_states.scss)         |
+| **Placement** (anchored surface placement) | `.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end` | Maps to CSS `position-area` keywords plus matching `align-self` / `justify-self`                                                                                                                                                                                                             | [`_placements.scss`](../src/styles/modifiers/_placements.scss) |
 
 The dimensions compose freely. `<button class="primary large filled">` resolves all three through the cascade in one pass.
 
@@ -64,12 +64,12 @@ Walk through `<button class="primary large filled">`:
    ```css
    --set-button-color: var(--set-style-color, var(--set-variant-color, currentColor));
    --set-button-background-color: var(
-     --set-style-background-color,
-     var(--set-variant-background-color, transparent)
+   	--set-style-background-color,
+   	var(--set-variant-background-color, transparent)
    );
    --set-button-border-color: var(
-     --set-style-border-color,
-     var(--set-variant-border-color, transparent)
+   	--set-style-border-color,
+   	var(--set-variant-border-color, transparent)
    );
    --set-button-border-width: var(--set-style-border-width, var(--set-variant-border-width, 0));
    --set-button-border-radius: var(--set-size-border-radius, var(--radius-md));
@@ -88,23 +88,23 @@ Seven semantic identities. Each `.{variant}` class sets EIGHT context tokens acr
 
 ```scss
 .primary {
-  // FILLED — saturated identity surface (consumed by `.filled` style and
-  // by bare element variants that paint with a fill).
-  --set-variant-color: white;
-  --set-variant-background-color: var(--color-primary);
-  --set-variant-border-color: var(--color-primary);
-  --set-variant-border-width: 1px;
+	// FILLED — saturated identity surface (consumed by `.filled` style and
+	// by bare element variants that paint with a fill).
+	--set-variant-color: white;
+	--set-variant-background-color: var(--color-primary);
+	--set-variant-border-color: var(--color-primary);
+	--set-variant-border-width: 1px;
 
-  // SUBTLE — tinted bg + emphasis text + subtle border (consumed by
-  // `.subtle` style). The triplet is theme-aware via `_theme.scss`.
-  --set-variant-subtle-color: var(--color-primary-text-emphasis);
-  --set-variant-subtle-background-color: var(--color-primary-bg-subtle);
-  --set-variant-subtle-border-color: var(--color-primary-border-subtle);
+	// SUBTLE — tinted bg + emphasis text + subtle border (consumed by
+	// `.subtle` style). The triplet is theme-aware via `_theme.scss`.
+	--set-variant-subtle-color: var(--color-primary-text-emphasis);
+	--set-variant-subtle-background-color: var(--color-primary-bg-subtle);
+	--set-variant-subtle-border-color: var(--color-primary-border-subtle);
 
-  // ON-CANVAS — single-token tier for variant text painted directly on
-  // `--color-canvas` (no tinted container). Tuned per-mode so the same
-  // token clears WCAG AA in both light and dark themes.
-  --set-variant-on-canvas-color: var(--color-primary-on-canvas);
+	// ON-CANVAS — single-token tier for variant text painted directly on
+	// `--color-canvas` (no tinted container). Tuned per-mode so the same
+	// token clears WCAG AA in both light and dark themes.
+	--set-variant-on-canvas-color: var(--color-primary-on-canvas);
 }
 ```
 
@@ -118,11 +118,11 @@ Seven semantic identities. Each `.{variant}` class sets EIGHT context tokens acr
 
 When to reach for which:
 
-| Surface under the glyph | Token to consume |
-| --- | --- |
-| Variant fill (`.filled`, primary button bg) | `--set-variant-background-color` for bg, `--set-variant-color` for fg |
-| Variant-tinted container (`.subtle`, alert, callout) | `--set-variant-subtle-background-color` for bg, `--set-variant-subtle-color` for fg |
-| Body canvas — no tinted container (bare anchor, label) | `--set-variant-on-canvas-color` for fg |
+| Surface under the glyph                                | Token to consume                                                                    |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| Variant fill (`.filled`, primary button bg)            | `--set-variant-background-color` for bg, `--set-variant-color` for fg               |
+| Variant-tinted container (`.subtle`, alert, callout)   | `--set-variant-subtle-background-color` for bg, `--set-variant-subtle-color` for fg |
+| Body canvas — no tinted container (bare anchor, label) | `--set-variant-on-canvas-color` for fg                                              |
 
 The variant context tokens are also consumed by element baselines that need a tint without a class — alerts and callouts read `--color-{variant}-bg-subtle`, `--color-{variant}-text-emphasis`, `--color-{variant}-border-subtle` directly from the theme layer.
 
@@ -134,16 +134,16 @@ Two scale steps plus the default (no `.medium` class — the bare element IS med
 
 ```scss
 .small {
-  --set-size-padding-inline: calc(var(--spacing) * 2); // 0.5rem  / 8px
-  --set-size-padding-block: calc(var(--spacing) * 1);  // 0.25rem / 4px
-  --set-size-font-size: var(--text-xs);                 // 0.75rem  / 12px
-  --set-size-border-radius: var(--radius-sm);           // 0.25rem / 4px
+	--set-size-padding-inline: calc(var(--spacing) * 2); // 0.5rem  / 8px
+	--set-size-padding-block: calc(var(--spacing) * 1); // 0.25rem / 4px
+	--set-size-font-size: var(--text-xs); // 0.75rem  / 12px
+	--set-size-border-radius: var(--radius-sm); // 0.25rem / 4px
 }
 .large {
-  --set-size-padding-inline: calc(var(--spacing) * 4); // 1rem  / 16px
-  --set-size-padding-block: calc(var(--spacing) * 2);  // 0.5rem / 8px
-  --set-size-font-size: var(--text-base);               // 1rem   / 16px
-  --set-size-border-radius: var(--radius-lg);           // 0.5rem / 8px
+	--set-size-padding-inline: calc(var(--spacing) * 4); // 1rem  / 16px
+	--set-size-padding-block: calc(var(--spacing) * 2); // 0.5rem / 8px
+	--set-size-font-size: var(--text-base); // 1rem   / 16px
+	--set-size-border-radius: var(--radius-lg); // 0.5rem / 8px
 }
 ```
 
@@ -159,16 +159,16 @@ Two fill treatments. Each consumes the variant context — meaning the same `.su
 
 ```scss
 .subtle {
-  --set-style-color: var(--set-variant-subtle-color, currentColor);
-  --set-style-background-color: var(--set-variant-subtle-background-color, transparent);
-  --set-style-border-color: var(--set-variant-subtle-border-color, transparent);
-  --set-style-border-width: 1px;
+	--set-style-color: var(--set-variant-subtle-color, currentColor);
+	--set-style-background-color: var(--set-variant-subtle-background-color, transparent);
+	--set-style-border-color: var(--set-variant-subtle-border-color, transparent);
+	--set-style-border-width: 1px;
 }
 .filled {
-  --set-style-color: var(--set-variant-color, currentColor);
-  --set-style-background-color: var(--set-variant-background-color, transparent);
-  --set-style-border-color: var(--set-variant-border-color, transparent);
-  --set-style-border-width: 1px;
+	--set-style-color: var(--set-variant-color, currentColor);
+	--set-style-background-color: var(--set-variant-background-color, transparent);
+	--set-style-border-color: var(--set-variant-border-color, transparent);
+	--set-style-border-width: 1px;
 }
 ```
 
@@ -186,16 +186,16 @@ State classes mirror existing element pseudo-classes for hosts that don't expose
 
 ```scss
 .disabled {
-  cursor: not-allowed;
-  pointer-events: none;
-  opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
+	opacity: 0.5;
 }
 .active {
-  /* marker class — element files paint per-element active chrome */
+	/* marker class — element files paint per-element active chrome */
 }
 .loading {
-  cursor: progress;
-  /* element partials / composables paint a spinner overlay */
+	cursor: progress;
+	/* element partials / composables paint a spinner overlay */
 }
 ```
 
@@ -213,14 +213,14 @@ Eight values map to CSS `position-area` keywords plus paired `align-self` / `jus
 
 ```scss
 [popover]:not(aside):not(nav):not(output).top {
-  position-area: block-start;
-  align-self: end;
-  justify-self: anchor-center;
+	position-area: block-start;
+	align-self: end;
+	justify-self: anchor-center;
 }
 [popover]:not(aside):not(nav):not(output).bottom-start {
-  position-area: block-end span-inline-end;
-  align-self: start;
-  justify-self: start;
+	position-area: block-end span-inline-end;
+	align-self: start;
+	justify-self: start;
 }
 /* … six more cardinal + corner placements, see _placements.scss */
 ```
@@ -237,38 +237,38 @@ For non-popover surfaces (`<aside>` drawer, `<output>` toast, `<nav>` rail), the
 
 ```ts
 export const modifiers = {
-  variant: {
-    primary: 'primary',
-    secondary: 'secondary',
-    tertiary: 'tertiary',
-    success: 'success',
-    warning: 'warning',
-    danger: 'danger',
-    information: 'information',
-  },
-  size: {
-    small: 'small',
-    large: 'large',
-  },
-  style: {
-    subtle: 'subtle',
-    filled: 'filled',
-  },
-  state: {
-    disabled: 'disabled',
-    active: 'active',
-    loading: 'loading',
-  },
-  placement: {
-    top: 'top',
-    bottom: 'bottom',
-    start: 'start',
-    end: 'end',
-    'top-start': 'top-start',
-    'top-end': 'top-end',
-    'bottom-start': 'bottom-start',
-    'bottom-end': 'bottom-end',
-  },
+	variant: {
+		primary: 'primary',
+		secondary: 'secondary',
+		tertiary: 'tertiary',
+		success: 'success',
+		warning: 'warning',
+		danger: 'danger',
+		information: 'information',
+	},
+	size: {
+		small: 'small',
+		large: 'large',
+	},
+	style: {
+		subtle: 'subtle',
+		filled: 'filled',
+	},
+	state: {
+		disabled: 'disabled',
+		active: 'active',
+		loading: 'loading',
+	},
+	placement: {
+		top: 'top',
+		bottom: 'bottom',
+		start: 'start',
+		end: 'end',
+		'top-start': 'top-start',
+		'top-end': 'top-end',
+		'bottom-start': 'bottom-start',
+		'bottom-end': 'bottom-end',
+	},
 } as const
 
 export type Variant = (typeof modifiers.variant)[keyof typeof modifiers.variant]

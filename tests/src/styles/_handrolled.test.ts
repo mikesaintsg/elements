@@ -20,11 +20,14 @@
 import { describe, expect, it } from 'vitest'
 import { modifiers } from '@elements/browser'
 
-const sources = import.meta.glob('../../../src/styles/{elements,components,surfaces,composables}/_*.scss', {
-	query: '?raw',
-	import: 'default',
-	eager: true,
-}) as Record<string, string>
+const sources = import.meta.glob(
+	'../../../src/styles/{elements,components,surfaces,composables}/_*.scss',
+	{
+		query: '?raw',
+		import: 'default',
+		eager: true,
+	},
+) as Record<string, string>
 
 const variantNames: readonly string[] = Object.values(modifiers.variant)
 

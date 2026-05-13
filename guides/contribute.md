@@ -25,17 +25,17 @@ The framework's most important visual goal: dropping it into a page should make 
 
 Every element, component, composable, and showcase page must be **production-ready** across all of:
 
-| Dimension | What "production-ready" means |
-| --- | --- |
-| **Colors** | WCAG AA contrast on every variant in both light and dark mode; subtle / emphasis / on-canvas / border-subtle triplets resolve cleanly; no inline hex outside `_theme.scss`'s `@theme` block. |
-| **Sizes** | `.small` / default / `.large` all readable; padding scales coherently; font-size jumps intentional, not arbitrary. |
-| **Placements** | Anchor positioning lands where the modifier name says; viewport overflow falls back gracefully via `position-try-fallbacks`. |
-| **Alignments** | Headings balance (`text-wrap: balance`); buttons center text+icon; form labels align with inputs; cards align children predictably. |
-| **Animations** | Every `transition:` paired with `prefers-reduced-motion: reduce` via the `@include transition()` mixin. Every `animation:` paired with `@include reduced-motion { animation: none }`. |
-| **Transitions** | Popover / dialog / toast use `@starting-style` for entry and `transition-behavior: allow-discrete` for exit; durations consume `--set-transition-duration`. |
-| **Interactions** | hover / focus-visible / active / disabled all painted; focus uses the `focus-ring()` mixin; cursor changes match (`pointer` / `not-allowed` / `progress`). |
-| **Themes** | Variant retune (`--color-primary: brand-red` at `:root`) cascades through every consumer. Light ↔ dark flip is instant. |
-| **Customizability** | Every visible value flows through a `--set-*` token. Consumer overrides at `:root` or per-element scope without forking. |
+| Dimension           | What "production-ready" means                                                                                                                                                                |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Colors**          | WCAG AA contrast on every variant in both light and dark mode; subtle / emphasis / on-canvas / border-subtle triplets resolve cleanly; no inline hex outside `_theme.scss`'s `@theme` block. |
+| **Sizes**           | `.small` / default / `.large` all readable; padding scales coherently; font-size jumps intentional, not arbitrary.                                                                           |
+| **Placements**      | Anchor positioning lands where the modifier name says; viewport overflow falls back gracefully via `position-try-fallbacks`.                                                                 |
+| **Alignments**      | Headings balance (`text-wrap: balance`); buttons center text+icon; form labels align with inputs; cards align children predictably.                                                          |
+| **Animations**      | Every `transition:` paired with `prefers-reduced-motion: reduce` via the `@include transition()` mixin. Every `animation:` paired with `@include reduced-motion { animation: none }`.        |
+| **Transitions**     | Popover / dialog / toast use `@starting-style` for entry and `transition-behavior: allow-discrete` for exit; durations consume `--set-transition-duration`.                                  |
+| **Interactions**    | hover / focus-visible / active / disabled all painted; focus uses the `focus-ring()` mixin; cursor changes match (`pointer` / `not-allowed` / `progress`).                                   |
+| **Themes**          | Variant retune (`--color-primary: brand-red` at `:root`) cascades through every consumer. Light ↔ dark flip is instant.                                                                      |
+| **Customizability** | Every visible value flows through a `--set-*` token. Consumer overrides at `:root` or per-element scope without forking.                                                                     |
 
 The quality bar applies even when the patch looks small. Adding one token without the parity test, one modifier without the docs row, one new file without the charter comment is what produces the drift the audit caught.
 
@@ -90,9 +90,11 @@ Lint + typecheck (`npm run check`) is required before any "done" claim. The full
 The full rules live in [`AGENTS.md`](../AGENTS.md). The five that come up most often:
 
 1. **Cascade layer order** (declared once in consumer entry CSS, before `@import 'tailwindcss'`):
+
    ```css
    @layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
    ```
+
    Modifiers sit after composables so `.primary` reliably tints a `<dialog>` even when composables set position-specific backgrounds. Utilities last so an explicit `class="p-8"` always wins.
 
 2. **Five orthogonal modifier dimensions** (`variant`, `size`, `style`, `state`, `placement` — see [`modifiers.md`](modifiers.md) §1).
@@ -355,18 +357,18 @@ One section per API dimension. Each section follows the same shape:
 
 Real verification via the preview server. Sample 3 variants × 3 states per page; capture screenshots at 375 / 768 / 1440 px.
 
-| # | Row | How to verify |
-| --- | --- | --- |
-| 1 | **Light mode contrast** | Read computed styles for representative selectors. WCAG AA = 4.5:1 for normal text, 3:1 for large text + UI components. |
-| 2 | **Dark mode contrast** | `document.documentElement.dataset.theme = 'dark'` + 200ms wait. Re-sample. Variant + on-canvas tiers both flip cleanly. |
-| 3 | **Variant cascade** | Every variant rendered (not "a sample"). |
-| 4 | **State coverage** | Hover / focus / active / disabled / aria-current / aria-selected / loading — render or describe each state the element supports. |
-| 5 | **Viewport responsiveness** | 375 / 768 / 1440 px. No horizontal scroll on mobile; body grid reflows; drawers / TOC accessible. |
-| 6 | **Reduced motion** | Either toggle the OS preference, or rely on the framework's `@include transition()` mixin everywhere. |
-| 7 | **Forced colors / a11y** | For variant chrome that carries semantic signal, verify in Chrome DevTools' "Emulate CSS media feature forced-colors: active". |
-| 8 | **Keyboard nav** | Tab through interactives; Esc dismisses popovers, Enter activates buttons, arrow keys follow APG patterns. |
-| 9 | **Console clean** | Zero error / warning logs after a full reload. |
-| 10 | **SiteNav + TOC integration** | The page appears in `SiteNav` under its group; sections have `id` attributes the TOC picks up. |
+| #   | Row                           | How to verify                                                                                                                    |
+| --- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Light mode contrast**       | Read computed styles for representative selectors. WCAG AA = 4.5:1 for normal text, 3:1 for large text + UI components.          |
+| 2   | **Dark mode contrast**        | `document.documentElement.dataset.theme = 'dark'` + 200ms wait. Re-sample. Variant + on-canvas tiers both flip cleanly.          |
+| 3   | **Variant cascade**           | Every variant rendered (not "a sample").                                                                                         |
+| 4   | **State coverage**            | Hover / focus / active / disabled / aria-current / aria-selected / loading — render or describe each state the element supports. |
+| 5   | **Viewport responsiveness**   | 375 / 768 / 1440 px. No horizontal scroll on mobile; body grid reflows; drawers / TOC accessible.                                |
+| 6   | **Reduced motion**            | Either toggle the OS preference, or rely on the framework's `@include transition()` mixin everywhere.                            |
+| 7   | **Forced colors / a11y**      | For variant chrome that carries semantic signal, verify in Chrome DevTools' "Emulate CSS media feature forced-colors: active".   |
+| 8   | **Keyboard nav**              | Tab through interactives; Esc dismisses popovers, Enter activates buttons, arrow keys follow APG patterns.                       |
+| 9   | **Console clean**             | Zero error / warning logs after a full reload.                                                                                   |
+| 10  | **SiteNav + TOC integration** | The page appears in `SiteNav` under its group; sections have `id` attributes the TOC picks up.                                   |
 
 **Per row, the format**:
 

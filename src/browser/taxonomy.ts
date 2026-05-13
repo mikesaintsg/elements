@@ -380,7 +380,18 @@ export const TOKEN_GROUPS: Readonly<Record<TokenGroup, TokenGroupDefinition>> = 
 	// element-specific contracts (form controls, disclosure, etc.) extend
 	// it through their own groups.
 	interactive: {
-		members: ['a', 'button', 'details', 'dialog', 'fieldset', 'input', 'label', 'select', 'summary', 'textarea'],
+		members: [
+			'a',
+			'button',
+			'details',
+			'dialog',
+			'fieldset',
+			'input',
+			'label',
+			'select',
+			'summary',
+			'textarea',
+		],
 		required: ['transition-duration'],
 	},
 

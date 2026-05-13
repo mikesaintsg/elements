@@ -142,8 +142,7 @@ export const FOLDER_CONTRACTS: Readonly<Record<StyleLayer, FolderContract>> = {
 			},
 			{
 				kind: 'data-attribute',
-				recommendation:
-					'composable-state attributes belong in composables/{matching-name}.scss',
+				recommendation: 'composable-state attributes belong in composables/{matching-name}.scss',
 			},
 		],
 		tokenNamespace: { kind: 'dimension' },
@@ -405,7 +404,10 @@ export function classifyHeadSelector(selector: string): SelectorKind {
 			else if (ch === ')') depth -= 1
 		}
 		const inner = trimmed.slice(open + 1, i - 1).trim()
-		const branches = inner.split(',').map((b) => b.trim()).filter((b) => b.length > 0)
+		const branches = inner
+			.split(',')
+			.map((b) => b.trim())
+			.filter((b) => b.length > 0)
 		const firstBranch = branches[0] ?? inner
 		if (firstBranch.length > 0) return classifyHeadSelector(firstBranch)
 		return 'pseudo-class'
@@ -556,15 +558,7 @@ export interface ModifierDimensionContract {
 
 export const MODIFIER_DIMENSION_TOKENS: Readonly<Record<string, ModifierDimensionContract>> = {
 	variant: {
-		classes: [
-			'primary',
-			'secondary',
-			'tertiary',
-			'success',
-			'warning',
-			'danger',
-			'information',
-		],
+		classes: ['primary', 'secondary', 'tertiary', 'success', 'warning', 'danger', 'information'],
 		requiredTokens: [
 			// FILLED tier — saturated identity surface.
 			'color',
@@ -583,23 +577,13 @@ export const MODIFIER_DIMENSION_TOKENS: Readonly<Record<string, ModifierDimensio
 	},
 	size: {
 		classes: ['small', 'large'],
-		requiredTokens: [
-			'padding-inline',
-			'padding-block',
-			'font-size',
-			'border-radius',
-		],
+		requiredTokens: ['padding-inline', 'padding-block', 'font-size', 'border-radius'],
 		rationale:
 			'Size classes bundle the four geometry tokens elements consume to scale chrome coherently. Missing one leaves the element half-resized.',
 	},
 	style: {
 		classes: ['subtle', 'filled'],
-		requiredTokens: [
-			'color',
-			'background-color',
-			'border-color',
-			'border-width',
-		],
+		requiredTokens: ['color', 'background-color', 'border-color', 'border-width'],
 		rationale:
 			'Style classes rewrite the element surface from the variant tier. The four tokens must move together; partial coverage leaves the surface inconsistent.',
 	},
@@ -610,7 +594,16 @@ export const MODIFIER_DIMENSION_TOKENS: Readonly<Record<string, ModifierDimensio
 			'State classes emit direct CSS properties (cursor, pointer-events, opacity). No context tokens are required today; future refactor may expose `--set-state-disabled-opacity` for global retuning.',
 	},
 	placement: {
-		classes: ['top', 'bottom', 'start', 'end', 'top-start', 'top-end', 'bottom-start', 'bottom-end'],
+		classes: [
+			'top',
+			'bottom',
+			'start',
+			'end',
+			'top-start',
+			'top-end',
+			'bottom-start',
+			'bottom-end',
+		],
 		requiredTokens: [], // direct CSS properties (position-area, align-self, justify-self)
 		rationale:
 			'Placement classes emit `position-area` + `align-self` + `justify-self` directly. The cascade composes these with anchor positioning; no tokens are tunable.',
@@ -821,7 +814,7 @@ export const COMPONENT_CONTRACTS: Readonly<Record<string, ComponentContract>> = 
 			'disabled-opacity',
 		],
 		animated: true,
-		notes: "Card surface. Full chrome (color, bg, border, padding, gap, box-shadow, motion).",
+		notes: 'Card surface. Full chrome (color, bg, border, padding, gap, box-shadow, motion).',
 	},
 	aside: {
 		name: 'aside',
@@ -847,7 +840,7 @@ export const COMPONENT_CONTRACTS: Readonly<Record<string, ComponentContract>> = 
 		],
 		animated: true,
 		notes:
-			"<aside> plays three roles (sidebar / callout / alert) + drawer variant. Multi-namespace contract; callout-* and alert-* are recorded via FILE_EXCEPTIONS.",
+			'<aside> plays three roles (sidebar / callout / alert) + drawer variant. Multi-namespace contract; callout-* and alert-* are recorded via FILE_EXCEPTIONS.',
 	},
 	body: {
 		name: 'body',
@@ -1165,7 +1158,7 @@ export const COMPOSABLE_CONTRACTS: Readonly<Record<string, ComposableContract>> 
 		animated: false,
 		factoryName: 'createDialog',
 		notes:
-			"Sizing extensions for dialog.scrollable[open] and dialog:modal. Motion lives on the element layer + popover surface.",
+			'Sizing extensions for dialog.scrollable[open] and dialog:modal. Motion lives on the element layer + popover surface.',
 	},
 	select: {
 		name: 'select',

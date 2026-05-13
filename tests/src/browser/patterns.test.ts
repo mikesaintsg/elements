@@ -218,9 +218,17 @@ describe('patterns — path helpers', () => {
 	}> = [
 		{ path: 'src/styles/elements/_button.scss', folder: 'elements', basename: 'button' },
 		{ path: 'src/styles/elements/_h1-h6.scss', folder: 'elements', basename: 'h1-h6' },
-		{ path: 'src/styles/components/_role-group.scss', folder: 'components', basename: 'role-group' },
+		{
+			path: 'src/styles/components/_role-group.scss',
+			folder: 'components',
+			basename: 'role-group',
+		},
 		{ path: 'src/styles/modifiers/_local.scss', folder: 'modifiers', basename: 'local' },
-		{ path: 'src/styles/surfaces/_anchor-position.scss', folder: 'surfaces', basename: 'anchor-position' },
+		{
+			path: 'src/styles/surfaces/_anchor-position.scss',
+			folder: 'surfaces',
+			basename: 'anchor-position',
+		},
 		{ path: 'src/styles/composables/_dialog.scss', folder: 'composables', basename: 'dialog' },
 		{ path: 'src/styles/_tokens.scss', folder: null, basename: 'tokens' },
 		// index.scss has no `_` prefix → partialFolder + partialBasename both return null/'' by design;
@@ -285,7 +293,18 @@ describe('patterns — INTERACTIVE_ELEMENTS registry', () => {
 		// These ten are the framework's intentional interaction surface. If
 		// the set drifts (someone adds / removes a tag), this test surfaces
 		// it so the change is deliberate.
-		const expected = ['a', 'button', 'details', 'dialog', 'fieldset', 'input', 'label', 'select', 'summary', 'textarea']
+		const expected = [
+			'a',
+			'button',
+			'details',
+			'dialog',
+			'fieldset',
+			'input',
+			'label',
+			'select',
+			'summary',
+			'textarea',
+		]
 		for (const tag of expected) {
 			expect(INTERACTIVE_ELEMENTS.has(tag), `INTERACTIVE_ELEMENTS missing '${tag}'`).toBe(true)
 		}
@@ -342,14 +361,16 @@ describe('patterns — hasBareFocusRule strips functional-pseudo bodies', () => 
 		expect(hasBareFocusRule(':where(:focus) { … }')).toBe(false)
 		expect(hasBareFocusRule(':has(:focus) { background: white; }')).toBe(false)
 		expect(
-			hasBareFocusRule('input:invalid:not(:placeholder-shown):not(:focus) { border: 1px solid red; }'),
+			hasBareFocusRule(
+				'input:invalid:not(:placeholder-shown):not(:focus) { border: 1px solid red; }',
+			),
 		).toBe(false)
 	})
 
 	it('catches bare :focus even when surrounding text has functional pseudos elsewhere', () => {
-		expect(
-			hasBareFocusRule('input:focus { color: red; } /* unrelated */ :is(.a, .b) { … }'),
-		).toBe(true)
+		expect(hasBareFocusRule('input:focus { color: red; } /* unrelated */ :is(.a, .b) { … }')).toBe(
+			true,
+		)
 	})
 
 	it('preserves :focus-visible / :focus-within as non-drift', () => {
@@ -376,7 +397,9 @@ describe('patterns — scope-discipline helpers', () => {
 	it('hasChainedTagNots flags 2+ sequential :not(tag) or :not([attr]) qualifiers', () => {
 		expect(hasChainedTagNots('[popover]:not(aside):not(nav)')).toBe(true)
 		expect(hasChainedTagNots(':not(a):not(b):not(c)')).toBe(true)
-		expect(hasChainedTagNots('input:not([type=checkbox]):not([type=radio]):not([type=range])')).toBe(true)
+		expect(
+			hasChainedTagNots('input:not([type=checkbox]):not([type=radio]):not([type=range])'),
+		).toBe(true)
 	})
 
 	it('hasChainedTagNots accepts single :not() or flattened :not(:where(...))', () => {

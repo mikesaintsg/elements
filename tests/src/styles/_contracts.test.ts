@@ -118,7 +118,10 @@ function extractRuleOpeners(source: string): readonly RuleOpener[] {
 		// We collect until we hit `{`, `;`, or `}`.
 		buffer.push(trimmed)
 		if (trimmed.endsWith('{')) {
-			const text = buffer.join(' ').replace(/\s*\{\s*$/, '').trim()
+			const text = buffer
+				.join(' ')
+				.replace(/\s*\{\s*$/, '')
+				.trim()
 			buffer = []
 			// Skip at-rule openers — they don't introduce a selector-keyed
 			// rule body in the cascade-rule sense.
@@ -268,9 +271,7 @@ describe('contracts — every rule head is one of the folder allowed selector ki
 					const kind = classifyHeadSelector(branch)
 					if (allowed.has(kind)) continue
 					if (forbidden.has(kind)) {
-						violations.push(
-							`'${branch}' (kind: ${kind}) — ${forbidden.get(kind)}`,
-						)
+						violations.push(`'${branch}' (kind: ${kind}) — ${forbidden.get(kind)}`)
 						continue
 					}
 					if (kind === 'unknown') continue

@@ -19,11 +19,14 @@ import { describe, expect, it } from 'vitest'
 import { modifiers } from '@elements/browser'
 import { TAILWIND_SINGLE_TOKEN_UTILITIES } from '../../setupStyles.ts'
 
-const sources = import.meta.glob('../../../src/styles/{elements,components,surfaces,composables}/_*.scss', {
-	query: '?raw',
-	import: 'default',
-	eager: true,
-}) as Record<string, string>
+const sources = import.meta.glob(
+	'../../../src/styles/{elements,components,surfaces,composables}/_*.scss',
+	{
+		query: '?raw',
+		import: 'default',
+		eager: true,
+	},
+) as Record<string, string>
 
 function leaves(node: unknown): readonly string[] {
 	if (typeof node === 'string') return [node]

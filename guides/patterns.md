@@ -11,7 +11,7 @@ The contract data lives in [`src/browser/patterns.ts`](../src/browser/patterns.t
 Each folder's contract names:
 
 1. **The cascade layer** — `@layer {folder}`. Every rule body in the folder MUST wrap in this layer. The parity test rejects unlayered rules and rejects rules wrapped in a foreign layer.
-2. **Allowed root selector kinds** — what kinds of selectors the rule's *head* (first simple selector) may be (tag, class, pseudo-element, attribute, data-attribute, etc.). The test classifies every rule opener; mismatches surface with a recommended target folder for the misfiled rule.
+2. **Allowed root selector kinds** — what kinds of selectors the rule's _head_ (first simple selector) may be (tag, class, pseudo-element, attribute, data-attribute, etc.). The test classifies every rule opener; mismatches surface with a recommended target folder for the misfiled rule.
 3. **Forbidden root selector kinds** — selectors that have a clearly-better home elsewhere. The failure message names the right folder.
 4. **State-selector requirement** — `composables/` is the only folder where every rule must gate on a composable-state selector (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`). Other folders' rules may or may not gate on state.
 5. **Token namespace policy** — which `--set-*` prefixes the partial is allowed to declare. Three modes: `filename` (basename of the partial; e.g. `_button.scss` → `--set-button-*`), `dimension` (one of `variant`, `size`, `style`, `state`, `placement`), or `free` (no namespace check — composables override any token by design).
@@ -25,14 +25,14 @@ Each folder's contract names:
 
 > One partial per HTML tag. Substantive partials declare `--set-{tag}-*` tokens via a fallback chain (style → variant → size → element default); reset partials normalize UA defaults only; passthrough partials are comment-only stubs.
 
-| Clause | Value |
-| --- | --- |
-| Layer | `@layer elements` |
-| Allow comment-only | **yes** (passthrough stubs document why the framework has no opinion) |
-| Require state selector | no |
-| Allowed head kinds | `tag`, `root` (for nested global token blocks like `button.dropdown` caret defaults), `nested` (Sass `&`-prefixed state pseudos), `at-rule` |
-| Forbidden head kinds | `data-attribute` (→ `composables/_{name}.scss`), `class` (→ `modifiers/_{dimension}.scss` or `components/_{name}.scss`), `pseudo-element` (→ `surfaces/`) |
-| Token namespace | `filename` — `_button.scss` may declare `--set-button-*`; `_input.scss` may declare `--set-input-*` |
+| Clause                 | Value                                                                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layer                  | `@layer elements`                                                                                                                                         |
+| Allow comment-only     | **yes** (passthrough stubs document why the framework has no opinion)                                                                                     |
+| Require state selector | no                                                                                                                                                        |
+| Allowed head kinds     | `tag`, `root` (for nested global token blocks like `button.dropdown` caret defaults), `nested` (Sass `&`-prefixed state pseudos), `at-rule`               |
+| Forbidden head kinds   | `data-attribute` (→ `composables/_{name}.scss`), `class` (→ `modifiers/_{dimension}.scss` or `components/_{name}.scss`), `pseudo-element` (→ `surfaces/`) |
+| Token namespace        | `filename` — `_button.scss` may declare `--set-button-*`; `_input.scss` may declare `--set-input-*`                                                       |
 
 **Canonical substantive partial** (button is the reference):
 
@@ -68,30 +68,30 @@ Each folder's contract names:
 - Sass `&`-prefixed state pseudos: `&:hover`, `&:focus-visible`, `&:disabled`. These nest under the tag's selector and inherit its classification.
 - Bare `transition:` declarations inside vendor pseudo-elements (`::file-selector-button`, `::details-content`) where `@include transition()` can't reach. Document the reduced-motion handling at the partial level.
 
-**Known passthrough partials** (34): `_article.scss`, `_aside.scss`, `_bdi.scss`, `_bdo.scss`, `_caption.scss`, `_cite.scss`, `_col.scss`, `_colgroup.scss`, `_datalist.scss`, `_del.scss`, `_dfn.scss`, `_div.scss`, `_em.scss`, `_footer.scss`, `_form.scss`, `_header.scss`, `_ins.scss`, `_menu.scss`, `_nav.scss`, `_optgroup.scss`, `_option.scss`, `_q.scss`, `_rp.scss`, `_rt.scss`, `_ruby.scss`, `_s.scss`, `_search.scss`, `_span.scss`, `_tbody.scss`, `_td.scss`, `_tfoot.scss`, `_th.scss`, `_thead.scss`, `_tr.scss`. (Several of these are passthrough at the *elements* layer because their substantive baseline lives in `components/_{tag}.scss` — see [`taxonomy.md`](taxonomy.md).)
+**Known passthrough partials** (34): `_article.scss`, `_aside.scss`, `_bdi.scss`, `_bdo.scss`, `_caption.scss`, `_cite.scss`, `_col.scss`, `_colgroup.scss`, `_datalist.scss`, `_del.scss`, `_dfn.scss`, `_div.scss`, `_em.scss`, `_footer.scss`, `_form.scss`, `_header.scss`, `_ins.scss`, `_menu.scss`, `_nav.scss`, `_optgroup.scss`, `_option.scss`, `_q.scss`, `_rp.scss`, `_rt.scss`, `_ruby.scss`, `_s.scss`, `_search.scss`, `_span.scss`, `_tbody.scss`, `_td.scss`, `_tfoot.scss`, `_th.scss`, `_thead.scss`, `_tr.scss`. (Several of these are passthrough at the _elements_ layer because their substantive baseline lives in `components/_{tag}.scss` — see [`taxonomy.md`](taxonomy.md).)
 
 ### 2.2 `modifiers/`
 
 > Cross-cutting modifier classes (5 dimensions) + `_local.scss` for element-local modifiers. Modifiers set `--set-{dimension}-*` context tokens; elements consume them.
 
-| Clause | Value |
-| --- | --- |
-| Layer | `@layer modifiers` |
-| Allow comment-only | no (even `_local.scss` ships its charter comment block) |
-| Require state selector | no |
-| Allowed head kinds | `class` (bare `.primary`, `.small`, `.filled`, `.disabled`), `attribute` (`[popover]:not(aside):not(nav):not(output).{name}` in `_placements.scss`), `tag` (`form.row`, `button.dropdown` in `_local.scss`), `at-rule` |
-| Forbidden head kinds | `pseudo-element` (→ `surfaces/`), `data-attribute` (→ `composables/_{name}.scss`) |
-| Token namespace | `dimension` — `_variants.scss` may declare `--set-variant-*`; `_sizes.scss` may declare `--set-size-*`; `_styles.scss` may declare `--set-style-*`. `_states.scss` and `_placements.scss` legitimately declare no `--set-*` tokens (they emit direct CSS properties for layout / cursor) |
+| Clause                 | Value                                                                                                                                                                                                                                                                                    |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layer                  | `@layer modifiers`                                                                                                                                                                                                                                                                       |
+| Allow comment-only     | no (even `_local.scss` ships its charter comment block)                                                                                                                                                                                                                                  |
+| Require state selector | no                                                                                                                                                                                                                                                                                       |
+| Allowed head kinds     | `class` (bare `.primary`, `.small`, `.filled`, `.disabled`), `attribute` (`[popover]:not(aside):not(nav):not(output).{name}` in `_placements.scss`), `tag` (`form.row`, `button.dropdown` in `_local.scss`), `at-rule`                                                                   |
+| Forbidden head kinds   | `pseudo-element` (→ `surfaces/`), `data-attribute` (→ `composables/_{name}.scss`)                                                                                                                                                                                                        |
+| Token namespace        | `dimension` — `_variants.scss` may declare `--set-variant-*`; `_sizes.scss` may declare `--set-size-*`; `_styles.scss` may declare `--set-style-*`. `_states.scss` and `_placements.scss` legitimately declare no `--set-*` tokens (they emit direct CSS properties for layout / cursor) |
 
 **Cross-cutting modifiers** are bare class rules in their dimension partial:
 
 ```scss
 @layer modifiers {
-    .primary {
-        --set-variant-color: white;
-        --set-variant-background-color: var(--color-primary);
-        /* … */
-    }
+	.primary {
+		--set-variant-color: white;
+		--set-variant-background-color: var(--color-primary);
+		/* … */
+	}
 }
 ```
 
@@ -99,9 +99,16 @@ Each folder's contract names:
 
 ```scss
 @layer modifiers {
-    form.row { flex-direction: row; flex-wrap: wrap; }
-    button.dropdown { /* caret-on-trigger chrome */ }
-    details.flush { padding-inline: 0; }
+	form.row {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+	button.dropdown {
+		/* caret-on-trigger chrome */
+	}
+	details.flush {
+		padding-inline: 0;
+	}
 }
 ```
 
@@ -115,14 +122,14 @@ The contract test enforces:
 
 > Pseudo-elements + attribute selectors. Each surface owns a `--set-{surface}-*` token namespace and may read tokens from sibling surfaces via `var()`.
 
-| Clause | Value |
-| --- | --- |
-| Layer | `@layer surfaces` |
-| Allow comment-only | no |
-| Require state selector | no |
-| Allowed head kinds | `pseudo-element` (`::backdrop`, `::marker`, `::placeholder`, `::selection`, `::view-transition-*`), `pseudo-class` (`:focus-visible`), `attribute` (`[popover]`), `role-attribute` (`[role='tooltip']` for the popover hint variant), `universal` (`*`, `*::before`, `*::after` for scrollbar — CSS Scrollbars L1 inheritance quirk), `root`, `tag` (`dialog::backdrop` — head is the tag, pseudo follows), `nested`, `at-rule` |
-| Forbidden head kinds | `class` (→ `components/_{name}.scss` or `modifiers/_{dimension}.scss`), `data-attribute` (→ `composables/_{name}.scss`) |
-| Token namespace | `filename` — `_backdrop.scss` → `--set-backdrop-*`; `_marker.scss` → `--set-marker-*` |
+| Clause                 | Value                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layer                  | `@layer surfaces`                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Allow comment-only     | no                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Require state selector | no                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Allowed head kinds     | `pseudo-element` (`::backdrop`, `::marker`, `::placeholder`, `::selection`, `::view-transition-*`), `pseudo-class` (`:focus-visible`), `attribute` (`[popover]`), `role-attribute` (`[role='tooltip']` for the popover hint variant), `universal` (`*`, `*::before`, `*::after` for scrollbar — CSS Scrollbars L1 inheritance quirk), `root`, `tag` (`dialog::backdrop` — head is the tag, pseudo follows), `nested`, `at-rule` |
+| Forbidden head kinds   | `class` (→ `components/_{name}.scss` or `modifiers/_{dimension}.scss`), `data-attribute` (→ `composables/_{name}.scss`)                                                                                                                                                                                                                                                                                                         |
+| Token namespace        | `filename` — `_backdrop.scss` → `--set-backdrop-*`; `_marker.scss` → `--set-marker-*`                                                                                                                                                                                                                                                                                                                                           |
 
 **Cross-surface composition is OK** — `surfaces/_popover.scss` reads `var(--set-anchor-*)` declared in `surfaces/_anchor-position.scss`. Inline-comment the dependency.
 
@@ -130,27 +137,27 @@ The contract test enforces:
 
 > Element compositions (`article`, `form`, `nav`) + class-component primitives (`.badge`, `.dot`, `.tag`). Substantive baselines for tags whose chrome is too rich for `elements/`.
 
-| Clause | Value |
-| --- | --- |
-| Layer | `@layer components` |
-| Allow comment-only | no |
-| Require state selector | no |
-| Allowed head kinds | `tag` (`article`, `aside`, `body`, `footer`, `form`, `header`, `main`, `menu`, `nav`, `output`, `search`), `class` (`.badge`, `.dot`, `.skeleton`, `.spinner`, `.tag`, `.stack`, `.cluster`), `attribute` (`[popover]` for the menu / nav drawer), `role-attribute` (`[role='tablist']`, `[role='tab']`, `[role='tabpanel']`, `[role='group']`, `[role='toolbar']`), `pseudo-class` (`:is(aside, nav)` / `:where(…)` for selector grouping), `root` (consumer-overridable global tokens), `nested`, `at-rule` |
-| Forbidden head kinds | `pseudo-element` (→ `surfaces/`) |
-| Token namespace | `filename` — `_article.scss` → `--set-article-*`; adjacent namespaces opt in via `FILE_EXCEPTIONS` (see §3) |
+| Clause                 | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layer                  | `@layer components`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Allow comment-only     | no                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Require state selector | no                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Allowed head kinds     | `tag` (`article`, `aside`, `body`, `footer`, `form`, `header`, `main`, `menu`, `nav`, `output`, `search`), `class` (`.badge`, `.dot`, `.skeleton`, `.spinner`, `.tag`, `.stack`, `.cluster`), `attribute` (`[popover]` for the menu / nav drawer), `role-attribute` (`[role='tablist']`, `[role='tab']`, `[role='tabpanel']`, `[role='group']`, `[role='toolbar']`), `pseudo-class` (`:is(aside, nav)` / `:where(…)` for selector grouping), `root` (consumer-overridable global tokens), `nested`, `at-rule` |
+| Forbidden head kinds   | `pseudo-element` (→ `surfaces/`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Token namespace        | `filename` — `_article.scss` → `--set-article-*`; adjacent namespaces opt in via `FILE_EXCEPTIONS` (see §3)                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ### 2.5 `composables/`
 
 > Chrome partials gated on composable state (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`). Filename matches a `use{Name}` factory.
 
-| Clause | Value |
-| --- | --- |
-| Layer | `@layer composables` |
-| Allow comment-only | yes (only `_aside.scss` — `useAside` is behavior-only) |
-| Require state selector | **yes** — every partial must use at least one state selector somewhere |
-| Allowed head kinds | `tag` (`dialog.scrollable[open]`), `class` (`.carousel-item-next` lifecycle classes), `attribute` (`[popover]`, `[open]`), `data-attribute` (`[data-toast-stack]`), `aria-attribute` (`[aria-expanded='true']`), `role-attribute` (`[role='tablist']`), `pseudo-class` (`:popover-open`), `nested`, `at-rule` |
-| Forbidden head kinds | `pseudo-element` (→ `surfaces/`) |
-| Token namespace | `free` — composables read and override any namespace by design (a `useDialog` chrome partial routinely overrides `--set-popover-*` and `--set-variant-*` to retune the modal cascade) |
+| Clause                 | Value                                                                                                                                                                                                                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layer                  | `@layer composables`                                                                                                                                                                                                                                                                                          |
+| Allow comment-only     | yes (only `_aside.scss` — `useAside` is behavior-only)                                                                                                                                                                                                                                                        |
+| Require state selector | **yes** — every partial must use at least one state selector somewhere                                                                                                                                                                                                                                        |
+| Allowed head kinds     | `tag` (`dialog.scrollable[open]`), `class` (`.carousel-item-next` lifecycle classes), `attribute` (`[popover]`, `[open]`), `data-attribute` (`[data-toast-stack]`), `aria-attribute` (`[aria-expanded='true']`), `role-attribute` (`[role='tablist']`), `pseudo-class` (`:popover-open`), `nested`, `at-rule` |
+| Forbidden head kinds   | `pseudo-element` (→ `surfaces/`)                                                                                                                                                                                                                                                                              |
+| Token namespace        | `free` — composables read and override any namespace by design (a `useDialog` chrome partial routinely overrides `--set-popover-*` and `--set-variant-*` to retune the modal cascade)                                                                                                                         |
 
 **Filename ↔ factory parity** — every `composables/_{name}.scss` must have a matching `create{Name}.ts` in `src/browser/factories/`. The contract test fails if you add a partial without the factory or vice versa.
 
@@ -160,18 +167,18 @@ The contract test enforces:
 
 Six known-good outliers are recorded in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts) so the contract test exempts them cleanly. Each exception names what it relaxes and why.
 
-| Path | Relaxation | Reason |
-| --- | --- | --- |
-| `composables/_aside.scss` | `skipStateSelectorCheck`, `allowCommentOnly` | `useAside` is a behavior-only composable; drawer geometry lives in `components/_aside.scss`. |
-| `components/_aside.scss` | `additionalTokenPrefixes: [callout, alert, variant, popover, anchor]` | `<aside>` plays three roles (sidebar / callout / alert); drawer variant overrides variant/popover/anchor cascade. |
-| `components/_output.scss` | `additionalTokenPrefixes: [toast]` | `<output popover>` becomes a toast — `useToast` shares the `--set-toast-*` namespace. |
-| `components/_div.scss` | `additionalTokenPrefixes: [stack, cluster]` | Class-component primitives carried by `<div>`. |
-| `components/_nav.scss` | `additionalTokenPrefixes: [tablist, tab, tabpanel]` | `<nav>` carries breadcrumb / pagination / tablist patterns. |
-| `surfaces/_popover.scss` | `additionalTokenPrefixes: [popover-hint, anchor]` | Tooltip variant extends with the hint namespace; reads anchor tokens from `_anchor-position.scss`. |
-| `surfaces/_anchor-position.scss` | `additionalTokenPrefixes: [anchor]` | File basename names the CSS feature; tokens live under `--set-anchor-*`. |
-| `elements/_h1-h6.scss` | `additionalTokenPrefixes: [heading]` | Multi-tag partial covering `h1`–`h6`; tokens share the `--set-heading-*` namespace. |
-| `elements/_input.scss` | `additionalTokenPrefixes: [check, switch, range, color, file]` | `<input>` subtypes (`checkbox` / `radio` / `switch` / `range` / `color` / `file`) ship dedicated namespaces. |
-| `elements/_li.scss`, `elements/_ul.scss` | `additionalTokenPrefixes: [group]` | `<ul class="group">` list-group component carried by both elements. |
+| Path                                     | Relaxation                                                            | Reason                                                                                                            |
+| ---------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `composables/_aside.scss`                | `skipStateSelectorCheck`, `allowCommentOnly`                          | `useAside` is a behavior-only composable; drawer geometry lives in `components/_aside.scss`.                      |
+| `components/_aside.scss`                 | `additionalTokenPrefixes: [callout, alert, variant, popover, anchor]` | `<aside>` plays three roles (sidebar / callout / alert); drawer variant overrides variant/popover/anchor cascade. |
+| `components/_output.scss`                | `additionalTokenPrefixes: [toast]`                                    | `<output popover>` becomes a toast — `useToast` shares the `--set-toast-*` namespace.                             |
+| `components/_div.scss`                   | `additionalTokenPrefixes: [stack, cluster]`                           | Class-component primitives carried by `<div>`.                                                                    |
+| `components/_nav.scss`                   | `additionalTokenPrefixes: [tablist, tab, tabpanel]`                   | `<nav>` carries breadcrumb / pagination / tablist patterns.                                                       |
+| `surfaces/_popover.scss`                 | `additionalTokenPrefixes: [popover-hint, anchor]`                     | Tooltip variant extends with the hint namespace; reads anchor tokens from `_anchor-position.scss`.                |
+| `surfaces/_anchor-position.scss`         | `additionalTokenPrefixes: [anchor]`                                   | File basename names the CSS feature; tokens live under `--set-anchor-*`.                                          |
+| `elements/_h1-h6.scss`                   | `additionalTokenPrefixes: [heading]`                                  | Multi-tag partial covering `h1`–`h6`; tokens share the `--set-heading-*` namespace.                               |
+| `elements/_input.scss`                   | `additionalTokenPrefixes: [check, switch, range, color, file]`        | `<input>` subtypes (`checkbox` / `radio` / `switch` / `range` / `color` / `file`) ship dedicated namespaces.      |
+| `elements/_li.scss`, `elements/_ul.scss` | `additionalTokenPrefixes: [group]`                                    | `<ul class="group">` list-group component carried by both elements.                                               |
 
 **Adding an exception** is a deliberate change. Every entry carries a `note` explaining the architectural reason; if the note can't be written in one sentence, the exception probably isn't justified.
 
@@ -179,7 +186,7 @@ Six known-good outliers are recorded in [`FILE_EXCEPTIONS`](../src/browser/patte
 
 ## 4. The selector classification helpers
 
-[`classifyHeadSelector(selector)`](../src/browser/patterns.ts) returns the kind of the rule's *head* — the first simple selector. Key behaviors:
+[`classifyHeadSelector(selector)`](../src/browser/patterns.ts) returns the kind of the rule's _head_ — the first simple selector. Key behaviors:
 
 - Compound selectors classify by their head: `button.dropdown::after` → `tag` (head is `button`).
 - Descendant selectors classify by their leftmost head: `body:has(main) > main` → `tag` (head is `body`).
@@ -230,6 +237,7 @@ The parity test exempts pseudo-class chains (`:not(:first-child):not(:last-child
 ```
 
 The rule is gated to **cross-cutting modifier compounds** specifically — selectors where:
+
 - Every branch's head is an attribute, pseudo-class, pseudo-element, role-attribute, data-attribute, aria-attribute, or universal selector.
 - AND at least one class qualifier matches the cross-cutting modifier vocabulary (`modifiers.variant`, `.size`, `.style`, `.state`, `.placement`).
 
@@ -263,11 +271,11 @@ The contract is codified in [`MODIFIER_DIMENSION_TOKENS`](../src/browser/pattern
 
 Every `.{variant}` class declares all eight `--set-variant-*` tokens:
 
-| Tier | Token suffix | Consumer |
-| --- | --- | --- |
-| FILLED | `color`, `background-color`, `border-color`, `border-width` | `.filled` style, bare-variant action surfaces |
-| SUBTLE | `subtle-color`, `subtle-background-color`, `subtle-border-color` | `.subtle` style |
-| ON-CANVAS | `on-canvas-color` | bare variant text painted directly on the body canvas (anchors, labels) |
+| Tier      | Token suffix                                                     | Consumer                                                                |
+| --------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| FILLED    | `color`, `background-color`, `border-color`, `border-width`      | `.filled` style, bare-variant action surfaces                           |
+| SUBTLE    | `subtle-color`, `subtle-background-color`, `subtle-border-color` | `.subtle` style                                                         |
+| ON-CANVAS | `on-canvas-color`                                                | bare variant text painted directly on the body canvas (anchors, labels) |
 
 Dropping a tier token silently breaks the cascade — `.filled` falls back to `currentColor` / `transparent`, `.subtle` similarly. The test asserts all 7 variants × 8 tokens.
 
@@ -311,28 +319,28 @@ Each file in [`src/styles/surfaces/`](../src/styles/surfaces/) paints a single b
 
 Each surface contract records four things:
 
-| Field | Meaning |
-| --- | --- |
-| `name` | Filename basename (`anchor-position`, `backdrop`, `focus`, …). |
-| `tokenPrefix` | Token namespace prefix. Defaults to `name`. Set explicitly when the filename names the CSS feature (`anchor-position`) while the tokens live under a shorter prefix (`anchor`). |
-| `selectorKinds` | Selector head kinds the partial uses (`pseudo-element`, `pseudo-class`, `attribute`, `universal`, `tag`). Constrains where the surface paints. |
-| `requiredTokens` | Property suffixes the partial MUST declare on `:root`. The full token name is `--set-{tokenPrefix}-{suffix}`. |
-| `animated` | True when the partial paints motion. Triggers the reduced-motion mixin requirement. |
-| `notes` | One-sentence description shown in failure messages. |
+| Field            | Meaning                                                                                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`           | Filename basename (`anchor-position`, `backdrop`, `focus`, …).                                                                                                                  |
+| `tokenPrefix`    | Token namespace prefix. Defaults to `name`. Set explicitly when the filename names the CSS feature (`anchor-position`) while the tokens live under a shorter prefix (`anchor`). |
+| `selectorKinds`  | Selector head kinds the partial uses (`pseudo-element`, `pseudo-class`, `attribute`, `universal`, `tag`). Constrains where the surface paints.                                  |
+| `requiredTokens` | Property suffixes the partial MUST declare on `:root`. The full token name is `--set-{tokenPrefix}-{suffix}`.                                                                   |
+| `animated`       | True when the partial paints motion. Triggers the reduced-motion mixin requirement.                                                                                             |
+| `notes`          | One-sentence description shown in failure messages.                                                                                                                             |
 
 ### 7.2 The nine surfaces
 
-| Surface | Selector | Required tokens | Animated |
-| --- | --- | --- | --- |
-| `anchor-position` | `[popover]:not(:where(output, aside, nav))` | `gap`, `max-block-size`, `max-inline-size`, `position-area`, `position-try-fallbacks`, `position-try-order`, `viewport-inset` | no |
-| `backdrop` | `dialog::backdrop`, `:is(aside, nav)[popover]::backdrop` | `background-color`, `backdrop-filter`, `transition-duration` | yes |
-| `focus` | `:focus-visible` | `color` | no |
-| `marker` | `::marker` | `color`, `content` | no |
-| `placeholder` | `::placeholder` | `color`, `opacity` | no |
-| `popover` | `[popover]` (+ `[popover]:not(:where(aside, nav))`) | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `box-shadow`, `transition-duration`, `max-inline-size`, `viewport-inset` | yes |
-| `scrollbar` | `*`, `*::before`, `*::after` | `thumb-color`, `track-color`, `width`, `gutter` | no |
-| `selection` | `::selection` | `background-color`, `color` | no |
-| `view-transition` | `::view-transition-old(root)`, `::view-transition-new(root)` | `duration`, `timing-function` | yes |
+| Surface           | Selector                                                     | Required tokens                                                                                                                                                                           | Animated |
+| ----------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `anchor-position` | `[popover]:not(:where(output, aside, nav))`                  | `gap`, `max-block-size`, `max-inline-size`, `position-area`, `position-try-fallbacks`, `position-try-order`, `viewport-inset`                                                             | no       |
+| `backdrop`        | `dialog::backdrop`, `:is(aside, nav)[popover]::backdrop`     | `background-color`, `backdrop-filter`, `transition-duration`                                                                                                                              | yes      |
+| `focus`           | `:focus-visible`                                             | `color`                                                                                                                                                                                   | no       |
+| `marker`          | `::marker`                                                   | `color`, `content`                                                                                                                                                                        | no       |
+| `placeholder`     | `::placeholder`                                              | `color`, `opacity`                                                                                                                                                                        | no       |
+| `popover`         | `[popover]` (+ `[popover]:not(:where(aside, nav))`)          | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `box-shadow`, `transition-duration`, `max-inline-size`, `viewport-inset` | yes      |
+| `scrollbar`       | `*`, `*::before`, `*::after`                                 | `thumb-color`, `track-color`, `width`, `gutter`                                                                                                                                           | no       |
+| `selection`       | `::selection`                                                | `background-color`, `color`                                                                                                                                                               | no       |
+| `view-transition` | `::view-transition-old(root)`, `::view-transition-new(root)` | `duration`, `timing-function`                                                                                                                                                             | yes      |
 
 ### 7.3 Animated-surface contract
 
@@ -366,33 +374,33 @@ Grouped by role:
 
 **Tag-rooted shell compositions** (page-grid sections + tag-keyed widgets):
 
-| Component | Required tokens (suffixes) | Animated |
-| --- | --- | --- |
-| `article` | color, bg, border-{color,width,radius}, padding-{inline,block}, gap, font-{size,line-height}, box-shadow, transition-duration, disabled-opacity | yes |
-| `aside` | color, bg, border-{color,width}, padding-{inline,block}, inline-size, gap, font-{size,line-height}, transition-duration + drawer-* sub-namespace | yes |
-| `body` | rail-width | no |
-| `footer` | color, bg, border-{color,width}, padding-{inline,block}, font-{size,line-height}, transition-duration | yes |
-| `form` | gap, row-gap, label-gap, transition-duration | yes |
-| `header` | same as footer | yes |
-| `main` | (none — layout only, by design) | no |
-| `menu` | color, bg, gap, padding-{inline,block}, justify-content, transition-duration | yes |
-| `nav` | core 11 tokens + breadcrumb-* + pagination-* sub-namespaces | yes |
-| `output` | `--set-toast-*` namespace (tokens live under toast, not output) | no¹ |
-| `role-group` | border-width | no |
-| `search` | color, bg, padding-{inline,block}, gap, transition-duration | yes |
+| Component    | Required tokens (suffixes)                                                                                                                        | Animated |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `article`    | color, bg, border-{color,width,radius}, padding-{inline,block}, gap, font-{size,line-height}, box-shadow, transition-duration, disabled-opacity   | yes      |
+| `aside`      | color, bg, border-{color,width}, padding-{inline,block}, inline-size, gap, font-{size,line-height}, transition-duration + drawer-\* sub-namespace | yes      |
+| `body`       | rail-width                                                                                                                                        | no       |
+| `footer`     | color, bg, border-{color,width}, padding-{inline,block}, font-{size,line-height}, transition-duration                                             | yes      |
+| `form`       | gap, row-gap, label-gap, transition-duration                                                                                                      | yes      |
+| `header`     | same as footer                                                                                                                                    | yes      |
+| `main`       | (none — layout only, by design)                                                                                                                   | no       |
+| `menu`       | color, bg, gap, padding-{inline,block}, justify-content, transition-duration                                                                      | yes      |
+| `nav`        | core 11 tokens + breadcrumb-_ + pagination-_ sub-namespaces                                                                                       | yes      |
+| `output`     | `--set-toast-*` namespace (tokens live under toast, not output)                                                                                   | no¹      |
+| `role-group` | border-width                                                                                                                                      | no       |
+| `search`     | color, bg, padding-{inline,block}, gap, transition-duration                                                                                       | yes      |
 
 ¹ `_output.scss` ships no own duration token. Motion lives in `composables/_toast.scss` (the toast deck is a composable surface).
 
 **Class-component primitives** (no semantic root):
 
-| Component | Carrier element | Required tokens (suffixes) | Animated |
-| --- | --- | --- | --- |
-| `badge` | `<span class="badge">` | color, bg, border-radius, padding-{inline,block}, font-{size,weight,line-height} | no |
-| `div` | `<div class="stack">` / `<div class="cluster">` | gap (under `--set-stack-*`; `cluster` prefix via FILE_EXCEPTIONS) | no |
-| `dot` | `<span class="dot">` | size, bg, pulse-duration, pulse-easing | yes |
-| `skeleton` | `<div class="skeleton">` | bg, highlight-color, border-radius, duration, line-block-size, line-gap | yes |
-| `spinner` | `<span class="spinner" role="status">` | size, color, border-width, duration | yes |
-| `tag` | `<span class="tag">` | color, bg, border-{color,width,radius}, padding-{inline,block}, font-{size,weight,line-height}, gap, transition-duration | yes |
+| Component  | Carrier element                                 | Required tokens (suffixes)                                                                                               | Animated |
+| ---------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------- |
+| `badge`    | `<span class="badge">`                          | color, bg, border-radius, padding-{inline,block}, font-{size,weight,line-height}                                         | no       |
+| `div`      | `<div class="stack">` / `<div class="cluster">` | gap (under `--set-stack-*`; `cluster` prefix via FILE_EXCEPTIONS)                                                        | no       |
+| `dot`      | `<span class="dot">`                            | size, bg, pulse-duration, pulse-easing                                                                                   | yes      |
+| `skeleton` | `<div class="skeleton">`                        | bg, highlight-color, border-radius, duration, line-block-size, line-gap                                                  | yes      |
+| `spinner`  | `<span class="spinner" role="status">`          | size, color, border-width, duration                                                                                      | yes      |
+| `tag`      | `<span class="tag">`                            | color, bg, border-{color,width,radius}, padding-{inline,block}, font-{size,weight,line-height}, gap, transition-duration | yes      |
 
 ### 8.3 Cross-namespace components
 
@@ -426,23 +434,23 @@ Each file in [`src/styles/composables/`](../src/styles/composables/) paints chro
 
 Each entry adds two clauses beyond the surface / component contract:
 
-| Field | Meaning |
-| --- | --- |
+| Field            | Meaning                                                                                                                                                                    |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `stateSelectors` | Composable-state selector kinds the partial uses (`pseudo-class`, `attribute`, `data-attribute`, `aria-attribute`, `role-attribute`). Empty for behavior-only composables. |
-| `factoryName` | The matching `create{Name}` factory in `src/browser/factories/`. The parity test asserts the file exists. |
+| `factoryName`    | The matching `create{Name}` factory in `src/browser/factories/`. The parity test asserts the file exists.                                                                  |
 
 Plus the standard `name`, `tokenPrefix`, `requiredTokens`, `animated`, `notes`.
 
 ### 9.2 The six composables
 
-| Composable | Token namespace | State selectors | Animated | Factory |
-| --- | --- | --- | --- | --- |
-| `aside` | (none — behavior-only) | (none — chrome lives in `components/_aside.scss`) | no | `createAside` |
-| `carousel` | `--set-carousel-*` (13 tokens) | `[aria-selected="true"]`, `[role="list"]`, `[role="listitem"]` | yes | `createCarousel` |
-| `dialog` | `--set-dialog-*` (3 sizing extensions) | `:modal`, `[open]` | no¹ | `createDialog` |
-| `select` | `--set-select-*` (5 menu / toggle sizing) | `[aria-expanded="true"]`, `[data-hidden]`, `[popover]` | no | `createSelect` |
-| `tabs` | (none — reads from `components/_nav.scss`) | `[role="tablist"]`, `[role="tab"]`, `[aria-selected="true"]` | no | `createTabs` |
-| `toast` | `--set-toast-stack-offset` | `:popover-open`, `[data-toast-stack]`, `[data-stack-*]`, `[popover]` | yes | `createToast` |
+| Composable | Token namespace                            | State selectors                                                      | Animated | Factory          |
+| ---------- | ------------------------------------------ | -------------------------------------------------------------------- | -------- | ---------------- |
+| `aside`    | (none — behavior-only)                     | (none — chrome lives in `components/_aside.scss`)                    | no       | `createAside`    |
+| `carousel` | `--set-carousel-*` (13 tokens)             | `[aria-selected="true"]`, `[role="list"]`, `[role="listitem"]`       | yes      | `createCarousel` |
+| `dialog`   | `--set-dialog-*` (3 sizing extensions)     | `:modal`, `[open]`                                                   | no¹      | `createDialog`   |
+| `select`   | `--set-select-*` (5 menu / toggle sizing)  | `[aria-expanded="true"]`, `[data-hidden]`, `[popover]`               | no       | `createSelect`   |
+| `tabs`     | (none — reads from `components/_nav.scss`) | `[role="tablist"]`, `[role="tab"]`, `[aria-selected="true"]`         | no       | `createTabs`     |
+| `toast`    | `--set-toast-stack-offset`                 | `:popover-open`, `[data-toast-stack]`, `[data-stack-*]`, `[popover]` | yes      | `createToast`    |
 
 ¹ `_dialog.scss` declares sizing extensions only; motion lives on `elements/_dialog.scss` + `surfaces/_popover.scss`.
 

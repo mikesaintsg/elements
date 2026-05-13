@@ -47,10 +47,7 @@ function declaresToken(source: string, prefix: string, suffix: string): boolean 
 }
 
 function usesMotionMixin(source: string): boolean {
-	return (
-		/@include\s+transition\s*\(/.test(source) ||
-		/@include\s+reduced-motion\b/.test(source)
-	)
+	return /@include\s+transition\s*\(/.test(source) || /@include\s+reduced-motion\b/.test(source)
 }
 
 // ============================================================================

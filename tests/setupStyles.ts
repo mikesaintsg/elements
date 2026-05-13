@@ -413,4 +413,3 @@ export const STYLES: readonly Style[] = Object.values(modifiers.style)
 
 /** Three interaction states — `disabled`, `active`, `loading`. */
 export const STATES: readonly State[] = Object.values(modifiers.state)
-

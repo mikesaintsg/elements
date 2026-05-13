@@ -39,19 +39,19 @@
 	// `:not(:where(...))` per guides/patterns.md § 5 (scope discipline) —
 	// keeps the rule at 0,1,0 specificity instead of 0,9,0.
 	input:not(
-			:where(
-				[type='checkbox'],
-				[type='radio'],
-				[type='range'],
-				[type='color'],
-				[type='file'],
-				[type='hidden'],
-				[type='image'],
-				[type='submit'],
-				[type='reset'],
-				[type='button']
-			)
-		) {
+		:where(
+			[type='checkbox'],
+			[type='radio'],
+			[type='range'],
+			[type='color'],
+			[type='file'],
+			[type='hidden'],
+			[type='image'],
+			[type='submit'],
+			[type='reset'],
+			[type='button']
+		)
+	) {
 		// ----------------------------------------------------------------------
 		// Element-scoped tokens — fallback chains let any modifier override.
 		// ----------------------------------------------------------------------

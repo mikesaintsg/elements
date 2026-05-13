@@ -63,7 +63,10 @@ function extractRuleOpeners(source: string): readonly string[] {
 		}
 		buffer.push(trimmed)
 		if (trimmed.endsWith('{')) {
-			const text = buffer.join(' ').replace(/\s*\{\s*$/, '').trim()
+			const text = buffer
+				.join(' ')
+				.replace(/\s*\{\s*$/, '')
+				.trim()
 			buffer = []
 			if (text.startsWith('@')) continue // at-rule
 			if (text.length === 0) continue
