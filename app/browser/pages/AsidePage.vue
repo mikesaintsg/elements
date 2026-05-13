@@ -277,12 +277,20 @@ const restore = (): void => {
 
 		<h3>Width behavior</h3>
 		<p>
-			Alerts cap at <code>--set-alert-max-inline-size</code> (default <code>32rem</code>) on wide
-			viewports — they don't span the full page width even if their parent is wider. Mobile relies
-			on the parent container's gutter (typically <code>&lt;main&gt;</code>'s fluid
-			<code>--set-main-padding-inline</code>) for the inline margin from screen edges — the alert
-			fills its parent and the parent's padding does the work, so there's no explicit mobile
-			breakpoint to maintain.
+			Alerts fill their parent's content area by default — they read as in-flow cards, the same way
+			<code>&lt;article&gt;</code> does. <code>--set-alert-max-inline-size</code> defaults to
+			<code>none</code>; consumers who want a reading-width cap on a specific alert opt in
+			per-instance (<code>style="--set-alert-max-inline-size: 32rem"</code>) or globally at
+			<code>:root</code>. Mobile gutter comes from the parent (typically <code>&lt;main&gt;</code>'s
+			fluid <code>--set-main-padding-inline</code>) — same idiom as every other in-flow card.
+		</p>
+		<p>
+			<strong>Alert is NOT a toast.</strong> If the intent is a top-layer transient notification
+			(corner-anchored, auto-dismissing, deck-stacking), reach for
+			<code>&lt;output popover&gt;</code> instead — see
+			<a href="#/popover-surfaces">PopoverSurfacesPage</a>. The framework keeps the two surfaces
+			separate: alert is in-flow card chrome (announces as part of the UI); toast is overlay chrome
+			(briefly visible, dismissed quickly).
 		</p>
 	</section>
 

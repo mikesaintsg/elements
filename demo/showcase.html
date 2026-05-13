@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-13T17:48:54.682Z" />
+		<meta name="build-id" content="2026-05-13T18:16:25.902Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -10119,7 +10119,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 								W,
 								null,
 								[
-									(a[14] ||= q(
+									(a[13] ||= q(
 										`section`,
 										{ id: `aside-intro` },
 										[
@@ -10160,7 +10160,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										],
 										-1,
 									)),
-									(a[15] ||= Y(
+									(a[14] ||= Y(
 										`<section id="aside-sidebar-context"><h2>1. Body-shell sidebar — <code>&lt;body&gt; &gt; &lt;aside&gt;</code></h2><p> The showcase&#39;s right rail. Selected via <code>body:has(main) &gt; aside</code> (plus the <code>&gt; *&gt;</code> once-removed variant for framework mount points) so <code>&lt;aside&gt;</code> outside the shell isn&#39;t auto-styled. Fixed <code>--set-aside-inline-size</code>, scoped <code>--set-aside-padding-*</code>, <code>overflow-y: auto</code>, flex-column with <code>--set-aside-gap</code> between children. Border on the inline-start edge (the rail sits trailing the main content); <code>.start</code> flips the border for asides on the leading side. </p><p> Under 960px the rail collapses to an off-canvas drawer driven by <code>[data-open]</code>. The chrome stays the same — only the positioning context flips between persistent grid item and fixed drawer. See <a href="#/sectioning">SectioningPage § Aside</a> for the body-grid layout discussion. </p></section>`,
 										1,
 									)),
@@ -10338,29 +10338,12 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 											],
 											-1,
 										)),
-										(a[12] ||= q(`h3`, null, `Width behavior`, -1)),
-										(a[13] ||= q(
-											`p`,
-											null,
-											[
-												J(` Alerts cap at `),
-												q(`code`, null, `--set-alert-max-inline-size`),
-												J(` (default `),
-												q(`code`, null, `32rem`),
-												J(
-													`) on wide viewports — they don't span the full page width even if their parent is wider. Mobile relies on the parent container's gutter (typically `,
-												),
-												q(`code`, null, `<main>`),
-												J(`'s fluid `),
-												q(`code`, null, `--set-main-padding-inline`),
-												J(
-													`) for the inline margin from screen edges — the alert fills its parent and the parent's padding does the work, so there's no explicit mobile breakpoint to maintain. `,
-												),
-											],
-											-1,
+										(a[12] ||= Y(
+											`<h3>Width behavior</h3><p> Alerts fill their parent&#39;s content area by default — they read as in-flow cards, the same way <code>&lt;article&gt;</code> does. <code>--set-alert-max-inline-size</code> defaults to <code>none</code>; consumers who want a reading-width cap on a specific alert opt in per-instance (<code>style=&quot;--set-alert-max-inline-size: 32rem&quot;</code>) or globally at <code>:root</code>. Mobile gutter comes from the parent (typically <code>&lt;main&gt;</code>&#39;s fluid <code>--set-main-padding-inline</code>) — same idiom as every other in-flow card. </p><p><strong>Alert is NOT a toast.</strong> If the intent is a top-layer transient notification (corner-anchored, auto-dismissing, deck-stacking), reach for <code>&lt;output popover&gt;</code> instead — see <a href="#/popover-surfaces">PopoverSurfacesPage</a>. The framework keeps the two surfaces separate: alert is in-flow card chrome (announces as part of the UI); toast is overlay chrome (briefly visible, dismissed quickly). </p>`,
+											3,
 										)),
 									]),
-									(a[16] ||= q(
+									(a[15] ||= q(
 										`section`,
 										{ id: `aside-status` },
 										[
@@ -10399,7 +10382,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										],
 										-1,
 									)),
-									(a[17] ||= q(
+									(a[16] ||= q(
 										`section`,
 										{ id: `aside-popover` },
 										[
@@ -10735,7 +10718,7 @@ console.log(fibonacci(10)) // 55</code></pre><figcaption> Listing 1 — Naive re
 										],
 										-1,
 									)),
-									(a[18] ||= Y(
+									(a[17] ||= Y(
 										`<section id="aside-forced-colors"><h2>Forced-colors fallback</h2><p> In Windows High Contrast mode (and any <code>forced-colors: active</code> environment), the alert banner drops its variant tints — HC mode forces backgrounds to <code>Canvas</code> anyway — and falls back to a single perimeter border + leading bar painted with <code>CanvasText</code> so the banner&#39;s shape survives: </p><pre><code>aside[role=&quot;alert&quot;] {
   @include forced-colors {
     background-color: Canvas;
@@ -17044,7 +17027,7 @@ useTooltip({ anchor, panel, placement })`,
 									),
 									q(`footer`, null, [
 										(i[7] ||= q(`small`, null, `Elements framework`, -1)),
-										q(`small`, Gh, `build ` + P(B(`2026-05-13T17:48:54.682Z`)), 1),
+										q(`small`, Gh, `build ` + P(B(`2026-05-13T18:16:25.902Z`)), 1),
 									]),
 								],
 								64,
@@ -20484,7 +20467,7 @@ useTooltip({ anchor, panel, placement })`,
 					--set-alert-padding-block: calc(var(--spacing) * 3);
 					--set-alert-gap: calc(var(--spacing) * 3);
 					--set-alert-border-radius: 0.375rem;
-					--set-alert-max-inline-size: 32rem;
+					--set-alert-max-inline-size: none;
 					--set-alert-band-background-color: currentColor;
 				}
 				@supports (color: color-mix(in lab, red, red)) {

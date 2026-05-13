@@ -134,6 +134,17 @@ Identified but not started. Open the matching contribute.md workflow when pickin
 - ⬜ **Element-local modifier consolidation** — survey component partials for `{tag}.{modifier}` rules that should migrate to `modifiers/_local.scss` (e.g. `form.row` in `components/_form.scss`).
 - ⬜ **Page-shell uniformity** — `_main.scss` declares minimum tokens to satisfy the page-shell group; revisit whether `main` belongs in the group or warrants its own contract.
 
+### Floating-surface styling pass (toast + popover + tooltip + menu-popover)
+
+The framework's floating-surface family (`<output popover>` toasts, generic `[popover]`, `[popover=hint]` tooltips, `<menu popover>` dropdowns, the in-flow callouts on `<aside>`, the modal chrome on `<dialog>`) already shares the same `--set-popover-*` surface tokens for fill / border / radius / shadow / transition. But the per-surface chrome (toast deck-stacking, tooltip arrow, dropdown row chrome, etc.) has accumulated without a single styling-philosophy pass to confirm:
+
+- ⬜ **Visual language uniformity** — each floating surface paints chrome (corner radius, elevation, padding, border) that reads as one family across the framework. Verify the bare-popover, toast, tooltip, dropdown all reach for the same surface tokens (vs. each declaring its own one-off literal). Decide which differences are meaningful (toast: deck offset; tooltip: smaller padding; dropdown: row chrome) and which are accidental drift.
+- ⬜ **Surface-vs-placement separation** — placement modifiers (`.top`, `.bottom-start`, etc.) live in `modifiers/_placements.scss` and apply to every `[popover]` host. Surface chrome lives in `surfaces/_popover.scss` + per-component partials. Confirm the boundary: placement modifiers should set position only (`position-area` + alignment); surfaces own background, border, shadow, radius, padding. No surface partial should hardcode a placement; no placement modifier should reach into surface tokens.
+- ⬜ **Toast-vs-alert disambiguation across the framework** — the alert (`<aside role="alert">`) is an in-flow card; the toast (`<output popover>`) is a top-layer transient. They share the variant palette (bg-subtle / text-emphasis / border-subtle) but NOT the geometry (card fills parent; toast is corner-anchored). Audit every page + guide for language conflating the two.
+- ⬜ **Tooltip + dropdown styling parity** — currently the popover surface paints `[popover]:not(:where(aside, dialog, nav))` with scale-in chrome (the generic popover entry transition). Verify tooltips (`[popover=hint]`) inherit cleanly without override drift, and that dropdown menus (`<menu popover>`) keep their row chrome from `_menu.scss` without fighting the surface defaults.
+
+Outcome: one styling philosophy across every floating surface, codified in `surfaces.md` § "Floating surface family" and enforced by a parity test that asserts each surface declares the canonical token superset.
+
 ### Cross-cutting
 
 - ⬜ **README consumer-setup snippet** — finalise the public-facing README with install / cascade-layer-order / token-override examples.
