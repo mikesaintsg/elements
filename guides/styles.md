@@ -107,7 +107,8 @@ src/styles/
 └── modifiers/               token-setters, never property-setters
     ├── _variants.scss          .primary .secondary .tertiary .success .warning .danger .information
     ├── _sizes.scss             .small .large
-    ├── _styles.scss            .ghost .filled
+    ├── _styles.scss            .subtle .filled
+    ├── _local.scss             form.row, button.dropdown, … — element-local modifiers
     ├── _states.scss            .disabled .active .loading
     ├── _placements.scss        .top .bottom .start .end .top-start .top-end .bottom-start .bottom-end
     └── index.scss
@@ -136,7 +137,7 @@ Naming summary:
 | Modifier partial   | `_{dimension}.scss` (plural)        | `_variants.scss`, `_sizes.scss`                      |
 | Sass `@use`        | `'{name}'` (no underscore)          | `@use 'tokens'`, `@use 'mixins' as *`                |
 | CSS variable       | `--set-[scope-]property[-modifier]` | `--set-button-padding-inline`, `--set-variant-color` |
-| Modifier class     | spelled-out semantic adjective      | `.primary`, `.large`, `.ghost`                       |
+| Modifier class     | spelled-out semantic adjective      | `.primary`, `.large`, `.subtle`                      |
 | Event name         | `elements:{source}:{verb}`          | `elements:dialog:show`, `elements:toast:close`       |
 
 ---
@@ -160,7 +161,7 @@ Later layers win. Unlayered rules win against any layered rule. Tokens stay unla
 | `components`  | framework | element compositions (card via `<article>`, sidebar via `body > aside`, …) — static chrome                              |
 | `surfaces`    | framework | pseudo-elements + attribute APIs (`[popover]`, `::backdrop`, scrollbar, anchor, `::placeholder`, `::marker`, …)         |
 | `composables` | framework | component chrome gated on a composable's state attribute (`dialog.scrollable[open]`, `aside[popover][data-aside-open]`) |
-| `modifiers`   | framework | `.primary`, `.large`, `.ghost`, `.disabled`, `.top` — token-setters only                                                |
+| `modifiers`   | framework | `.primary`, `.large`, `.subtle`, `.disabled`, `.top` — token-setters only                                               |
 | `utilities`   | Tailwind  | `.bg-blue-500`, `.p-4`, `.rounded-md` — last-mile per-element overrides                                                 |
 
 **Why this order:**

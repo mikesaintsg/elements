@@ -1,0 +1,202 @@
+# HTML Taxonomy
+
+> Authoritative reference for every native HTML element the framework has an opinion on. For each element: **what HTML says it is**, **how the framework treats it**, and **how new use cases should hang off it**.
+
+This document is the source of truth for:
+
+- Which tags the framework styles substantively versus normalizes versus leaves alone.
+- Which tags are paired with a composable in [`src/browser/composables/`](../src/browser/composables/).
+- Which tags are valid hosts for the modifier system.
+- What semantic root a new design problem should reach for before considering a class-only primitive.
+
+It is mirrored programmatically in [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts). The parity test at [`tests/src/styles/_taxonomy.test.ts`](../tests/src/styles/_taxonomy.test.ts) fails if a row here, a file in [`src/styles/elements/`](../src/styles/elements/), or an entry in `taxonomy.ts` drifts out of step.
+
+---
+
+## 1. Treatment legend
+
+Every row in §3 carries one of five **Treatment** values:
+
+| Treatment | Meaning | Where the rules live | Modifier-system host? |
+| --- | --- | --- | --- |
+| **substantive** | The framework declares `--set-{tag}-*` tokens and paints chrome. The element is enumerated in [`src/browser/elements.ts`](../src/browser/elements.ts). | `src/styles/elements/_{tag}.scss` | Yes — consumes the variant / size / style / state cascade. |
+| **reset** | The framework normalizes UA defaults (margins, font scale, color inheritance, layout primitives) but doesn't declare element-scoped tokens. | `src/styles/elements/_{tag}.scss` (no `--set-{tag}-*`) | No — bare element only. |
+| **composable** | Paired with a `use{Name}` / `create{Name}` factory; element baseline + composable chrome split between `elements/`, `surfaces/`, and `composables/`. | Same as substantive, plus `src/browser/composables/{name}.ts` and `src/browser/factories/{name}.ts` | Yes. |
+| **class-component** | No native HTML root maps to this concept. Lives as a class selector under `components/_{name}.scss`. Use `<span>` / `<div>` as the carrier element. | `src/styles/components/_{name}.scss` | Yes, on the class. |
+| **passthrough** | The framework has no opinion. The bare element does its UA-defined job and is documented here only so authors don't reinvent it. | (none, or a comment-only stub in `elements/`) | No. |
+
+---
+
+## 2. Authoring rules
+
+When a new design need arises, walk the decision in this order:
+
+1. **Find the semantic HTML root.** Open §3, scan the **Purpose** column for the concept. If a tag matches, the markup is decided — `<article>` for a card, `<dialog>` for a modal, `<details>` for a disclosure. The tag IS the component.
+2. **Determine the treatment.** If the tag is `substantive` or `composable`, the design slot already exists; you're consuming or extending the framework's surface, not adding a new primitive.
+3. **Reach for a class-component only if no HTML root applies.** "Inline pill" → no element exists → `.badge` on a `<span>`. Document the new class-component in [`components.md`](components.md) and add a row to §3 below (Treatment column: `class-component`).
+4. **Never invent a parallel root.** A `.card` div is wrong; the framework's card lives on `<article>`. A `.modal` div is wrong; modals live on `<dialog>`. The framework's contract is "semantic HTML works"; new application primitives that fork that contract make every consumer's mental model worse.
+5. **Run the parity tests.** If §3 lists a tag as `substantive` but the partial declares no `--set-{tag}-*` token, `_taxonomy.test.ts` fails. If `elements.ts` lists a tag but §3 doesn't, the same test fails. Treat the test as the binding contract; treat this document as its prose explanation.
+
+---
+
+## 3. Reference catalog
+
+Grouped by [MDN content category](https://developer.mozilla.org/en-US/docs/Web/HTML/Element). One row per native element the framework ships an opinion on. Elements not listed are either purely script-facing (`<head>`, `<meta>`, `<link>`, `<base>`, `<title>`, `<noscript>`, `<script>`, `<style>`, `<template>`, `<slot>`) or covered by a parent row (`<source>`, `<track>`, `<area>`, `<map>`, `<param>`).
+
+### 3.1 Main root + sectioning root
+
+| Tag | Purpose | Treatment | Framework usage |
+| --- | --- | --- | --- |
+| `<html>` | The document root. Carries `lang`, `dir`, color-scheme hints. | reset | Carries `color-scheme: light dark`, container queries off, and a `min-block-size: 100%` so `<body>` can be a layout grid. |
+| `<body>` | The document body. Container for all visible content. | reset | When the body contains a `<main>`, the framework promotes `<body>` to a 3×3 template-area grid: `<nav>` rails on inline axes, `<header>` / `<footer>` on block axes, `<main>` in the center. Below the 960px breakpoint the rails detach to fixed off-canvas drawers. See [`components/_body.scss`](../src/styles/components/_body.scss). |
+
+### 3.2 Content sectioning
+
+| Tag | Purpose | Treatment | Framework usage |
+| --- | --- | --- | --- |
+| `<header>` | Introductory content for the nearest sectioning ancestor. | substantive | As a child of the body grid, paints the top app bar. Inside `<article>`, paints the card header. Inside `<dialog>`, paints the modal header band (with divider + padding). Token-driven via `--set-header-*` in [`components/_header.scss`](../src/styles/components/_header.scss); no composable pairing — chrome is static. |
+| `<nav>` | Major navigation block. | composable | As a child of the body grid, paints the sidebar rail. With `<ol>` / `<ul>` inside, paints breadcrumb or pagination chrome based on `aria-label`. As `<nav popover>`, becomes a navigation drawer paired with `useNav` (drawers are tag-neutral over `[is(aside,nav)[popover]]`). |
+| `<main>` | Dominant content of the document body. | substantive | Hydrated padding gutters + flex-column rhythm. Default scroll-marker for sectioning content. Tokens: `--set-main-padding-{inline,block}`, `--set-main-gap`. |
+| `<section>` | Thematic grouping of content. | substantive | Vertical padding + flex-column gap; `scroll-margin` clears any sticky header. Tokens: `--set-section-padding-block`, `--set-section-gap`, `--set-section-scroll-margin`. |
+| `<article>` | Self-contained composition. | substantive | The framework's **card**. Article > header / footer auto-lay-out as card chrome. Variant + style modifiers tint the surface. Tokens: `--set-article-{color, background-color, border-*, padding-*, gap, box-shadow}`. Token-driven via [`components/_article.scss`](../src/styles/components/_article.scss) — no element-layer baseline because every `<article>` ships as a card by convention. |
+| `<aside>` | Tangentially related content. | composable | As a child of the body grid, paints the secondary rail (TOC, callouts). As `<aside popover>` becomes an off-canvas drawer (paired with `useAside`). Inside `<article>`, paints an inline callout. Inside `<main>` with `role=alert/status`, paints an alert banner. |
+| `<footer>` | Footer content for the nearest sectioning ancestor. | substantive | As a child of the body grid, paints the page footer. Inside `<article>`, paints the card footer. Inside `<dialog>`, paints the modal action row (right-aligned buttons + tighter padding). Token-driven via `--set-footer-*` in [`components/_footer.scss`](../src/styles/components/_footer.scss). |
+| `<address>` | Contact info for the nearest `<article>` / `<body>` ancestor. | substantive | Resets UA italic; subdued small metadata block via `--set-address-{color, font-size, line-height, margin-block-end}`. |
+| `<search>` | Search input region. | substantive | [`components/_search.scss`](../src/styles/components/_search.scss) paints a search-bar layout when the element wraps an `<input type="search">` + optional `<button>`. Tokens: `--set-search-{color, background-color, padding-*, gap, transition-duration}`. |
+| `<h1>`–`<h6>` | Section headings. | reset | Tailwind preflight collapses heading sizes; framework re-tunes weight + line-height + bottom margin for vertical rhythm. Variant context propagates into headings inside `.filled` cards via `--set-variant-background-color` → `--set-heading-color` fallback. |
+| `<hgroup>` | Heading + adjacent tagline / subhead grouping. | substantive | Tight stack; subdued tagline. Tokens: `--set-hgroup-gap`, `--set-hgroup-tagline-{color, font-size}`. |
+
+### 3.3 Text content
+
+| Tag | Purpose | Treatment | Framework usage |
+| --- | --- | --- | --- |
+| `<div>` | Generic flow container with no semantic meaning. | passthrough | Use only when no semantic root applies. [`components/_div.scss`](../src/styles/components/_div.scss) holds class-only layout primitives (`.stack`, `.cluster`, `.row`) when they need a `<div>` carrier. |
+| `<p>` | Paragraph. | reset | Block; UA margin-bottom retained. No element-scoped tokens — typography is body-wide. |
+| `<hr>` | Thematic break. | substantive | Re-tuned to a soft divider via `--set-hr-{color, opacity}`. Used inside dialog footer / aside-as-alert chrome. |
+| `<blockquote>` | Extended quotation. | substantive | UA 40-px margins reset; framework paints a left bar via `--set-blockquote-{color, bar-width, padding-inline, margin-block-end}`. |
+| `<pre>` | Preformatted text block. | substantive | Monospaced; tinted surface; padded. Tokens: `--set-pre-{color, background-color, border-color, padding-*, border-radius, font-size, line-height}`. |
+| `<ol>` / `<ul>` | Ordered / unordered list. | reset | UA list-style retained; padding-inline-start preserved so markers stay visible. Spacing rhythm tunes via `--set-stack-spacing`. Nested-list compaction in [`elements/_li.scss`](../src/styles/elements/_li.scss). |
+| `<li>` | List item. | reset | UA marker preserved; participates in `<details>` disclosure-content rhythm. |
+| `<menu>` | Toolbar / action row of commands. | composable | Component file [`components/_menu.scss`](../src/styles/components/_menu.scss) paints the action-row layout. Tokens: `--set-menu-*`. Paired with `useMenu` / `createMenu` for keyboard navigation when promoted to `[role=menu]`. |
+| `<dl>` / `<dt>` / `<dd>` | Description / definition list. | substantive | Two-column grid layout by default. Tokens: `--set-dl-{row-gap, column-gap}`, `--set-dt-{color, font-weight}`, `--set-dd-{color}`. |
+| `<figure>` / `<figcaption>` | Figure with caption. | substantive | Tight gap; caption subdued. Tokens: `--set-figure-gap`, `--set-figcaption-{color, font-size, line-height}`. |
+
+### 3.4 Inline text semantics
+
+| Tag | Purpose | Treatment | Framework usage |
+| --- | --- | --- | --- |
+| `<a>` | Hyperlink. | substantive | Bare anchor keeps `currentColor` + underline. Variant swaps text color via the **on-canvas** tier (WCAG AA on the body canvas). `.filled` paints variant fill + drops underline; `.subtle` tints the surface and keeps the underline against the bg-subtle tier. State: `.disabled` adds dim opacity + `pointer-events: none` (pair with `aria-disabled="true"`). |
+| `<abbr>` | Abbreviation / acronym. Carries `title`. | reset | UA `text-decoration: underline dotted` retained; framework adds `cursor: help`. |
+| `<b>` | Stylistically offset text without extra importance. | reset | Bold weight retained; no semantic emphasis. Prefer `<strong>` for real importance. |
+| `<bdi>` / `<bdo>` | Bidirectional isolation / override. | passthrough | Crucial for mixed RTL / LTR rendering. No framework opinion. |
+| `<br>` | Line break. | passthrough | UA only. |
+| `<cite>` | Citation reference. | passthrough | UA italic retained. |
+| `<code>` | Inline code. | substantive | Monospaced; tinted chip. Tokens: `--set-code-{color, background-color, padding-*, border-radius, font-size}`. |
+| `<data>` | Machine-readable annotation. Carries `value`. | substantive | Tabular-nums by default via `--set-data-font-variant-numeric` so columns align. |
+| `<dfn>` | Defining instance of a term. | passthrough | UA italic retained. |
+| `<em>` | Stress emphasis. | passthrough | UA italic retained. |
+| `<i>` | Idiomatic / alternate voice. | reset | Italic retained. |
+| `<kbd>` | Keyboard input. | substantive | Monospaced; raised chip with border. Tokens: `--set-kbd-{color, background-color, border-color, padding-*, border-radius, font-size}`. |
+| `<mark>` | Highlighted text. | substantive | Tinted chip with padding + radius — reads as a marker rather than a flat backsplash. Tokens: `--set-mark-{color, background-color, padding-*, border-radius}`. |
+| `<q>` | Inline quotation. | passthrough | UA quotation marks retained. |
+| `<rp>` / `<rt>` / `<ruby>` | Ruby annotation. | passthrough | Crucial for East Asian typography. No framework opinion. |
+| `<s>` | No-longer-accurate text. | passthrough | UA strikethrough retained. |
+| `<samp>` | Sample output from a program. | substantive | Monospaced chip mirroring `<code>` with separate token namespace for theming. |
+| `<small>` | Side comment / fine print. | substantive | Restores Bootstrap-pattern `0.875em` reduction (Tailwind preflight collapses to `inherit`). Token: `--set-small-font-size`. |
+| `<span>` | Generic inline container. | passthrough | Carrier for class-components (`.badge`, `.dot`, `.tag`). Use only when no semantic root applies. |
+| `<strong>` | Strong importance. | substantive | Variant cascade reaches `text-strong` + weight 700 so emphasized terms pop against muted body. Tokens: `--set-strong-{color, font-weight}`. |
+| `<sub>` / `<sup>` | Subscript / superscript. | reset | UA position retained; framework prevents line-height blow-out via `line-height: 0`. |
+| `<time>` | Date / time annotation. | substantive | Tabular-nums via `--set-time-font-variant-numeric` so columns of times align. |
+| `<u>` | Unarticulated annotation. | substantive | Muted dashed underline (`--set-u-text-decoration-{color, style}`) so the annotation reads as labelled, not linked. |
+| `<var>` | Variable in a mathematical expression. | substantive | Math italic + tinted chip for inline-math distinction. Tokens: `--set-var-{color, background-color, padding-inline, border-radius, font-size}`. |
+| `<wbr>` | Word break opportunity. | passthrough | UA only. |
+
+### 3.5 Image and multimedia
+
+| Tag | Purpose | Treatment | Framework usage |
+| --- | --- | --- | --- |
+| `<img>` | Embedded image. | reset | `max-inline-size: 100%; block-size: auto` so authored images respect their container. |
+| `<picture>` | Container for `<source>` + fallback `<img>`. | reset | `display: contents` so children inherit grid / flex placement from the picture's parent. |
+| `<audio>` | Embedded audio player. | substantive | `display: block; inline-size: 100%` so native controls fill their slot. Token: `--set-audio-inline-size`. |
+| `<video>` | Embedded video. | substantive | `block-size: auto`, rounded corners (`--set-video-border-radius`), tinted backplate (`--set-video-background-color`) so letterboxing reads as deliberate. |
+
+### 3.6 Embedded content
+
+| Tag | Purpose | Treatment | Framework usage |
+| --- | --- | --- | --- |
+| `<embed>` | Embed external resource. | substantive | Max-inline-size guard. Token: `--set-embed-max-inline-size`. |
+| `<iframe>` | Embedded browsing context. | substantive | Zero border by default; max-inline-size guard. Tokens: `--set-iframe-{border-width, max-inline-size}`. |
+| `<object>` | Generic external resource. | substantive | Same overflow treatment as `<iframe>` / `<embed>`. |
+| `<canvas>` | Bitmap rendering surface. | substantive | Inline-size capped to container; intrinsic pixel grid still comes from HTML `width` / `height` attributes (set both for HiDPI). Tokens: `--set-canvas-{max-inline-size, block-size}`. |
+| `<svg>` | Inline SVG. | substantive | Same overflow treatment as `<canvas>`. Authored viewBox-only SVGs respect container width and preserve aspect ratio. |
+| `<math>` | MathML formula. | substantive | Math-aware `font-family` chain so consumers without STIX / Latin Modern Math installed still get correct operator / symbol glyphs. Token: `--set-math-font-family`. |
+
+### 3.7 Demarcating edits
+
+| Tag | Purpose | Treatment | Framework usage |
+| --- | --- | --- | --- |
+| `<del>` | Deleted text. | passthrough | UA strikethrough retained. |
+| `<ins>` | Inserted text. | passthrough | UA underline retained. |
+
+### 3.8 Table content
+
+| Tag | Purpose | Treatment | Framework usage |
+| --- | --- | --- | --- |
+| `<table>` | Tabular data. | composable | Substantively styled — cell padding, dividers, header weight, hover / striped / selected row tints, sort-indicator chrome. Paired with `useTable` / `createTable` for sorting, selection, expansion. Tokens: `--set-table-{color, background-color, border-*, font-*, cell.padding-*, header.{font-weight, background-color}, row.{hover, striped, active, selected}.background-color, sort.indicator.{color, opacity}, divider.width}`. |
+| `<caption>` | Title for a table. | passthrough | UA caption-side: top retained. |
+| `<col>` / `<colgroup>` | Column-spanning attributes. | passthrough | UA only. |
+| `<thead>` / `<tbody>` / `<tfoot>` | Table row groups. | passthrough | UA only; the `<table>` rules reach into them via descendant selectors. |
+| `<tr>` / `<th>` / `<td>` | Row / cell. | passthrough | Styled via `<table>`'s descendant rules. |
+
+### 3.9 Forms
+
+| Tag | Purpose | Treatment | Framework usage |
+| --- | --- | --- | --- |
+| `<form>` | User-input form. | composable | Vertical flex stack with consistent gap; `<form class="row">` flips to inline. `<form > label>` becomes a vertical label-on-top stack. Paired with `useForm` / `createForm` for validation. Tokens: `--set-form-{gap, row-gap, label-gap, transition-duration}`. |
+| `<button>` | Interactive control. | substantive + composable | The framework's primary action surface. Full variant / size / style / state cascade. Optional `.dropdown` (paired with `[aria-expanded]`) rotates a chevron when the popover target opens. Paired with `useButton` for toggle state. Element-local modifier: `<button class="dropdown">`. Tokens: 14 `--set-button-*`. |
+| `<input>` | Text / numeric / boolean / file form control. | substantive | UA per-type appearance reset; type-specific layouts re-implemented from primitives (`checkbox`, `radio`, `color`, `range`, `file`). Tokens: `--set-input-*` shared across all text-like types; type-specific tokens declared in [`elements/_input.scss`](../src/styles/elements/_input.scss). |
+| `<textarea>` | Multi-line text input. | substantive | Resize-vertical by default; min-block-size guard. Same token shape as `<input>`. |
+| `<select>` | Single / multi-select dropdown. | substantive + composable | UA appearance reset; custom chevron via `--set-select-background-image`. Paired with `useSelect` / `createSelect` for listbox / combobox chrome (component selector is `.select`; the listbox shares the `--set-select-*` namespace). |
+| `<label>` | Caption for a form control. | substantive | Subdued color; cursor pointer when paired with a focusable control. Tokens: `--set-label-{color, font-size, font-weight, line-height, cursor, transition-duration, disabled.opacity}`. |
+| `<fieldset>` | Group of related form controls. | substantive | Optional border + padded; `:disabled` propagates to all descendants. Tokens: `--set-fieldset-{color, background-color, border-*, padding-*, gap, transition-duration, disabled.opacity}`. |
+| `<legend>` | Caption for a `<fieldset>`. | substantive | Inline padding; bold. Tokens: `--set-legend-{color, font-size, font-weight, padding-inline}`. |
+| `<datalist>` | Predefined option set for an `<input>`. | passthrough | UA only. |
+| `<optgroup>` / `<option>` | `<select>` option group / option. | passthrough | UA only. |
+| `<output>` | Result of a calculation or user action. | substantive + composable | As an inline chip, paints the calc-result chrome (`--set-output-*`). As `<output popover>` becomes a **toast** (paired with `useToast` / `createToast`) — viewport-fixed corner placement, deck-stacking, dismiss animations. The toast component shares the `--set-output-*` namespace plus a parallel `--set-toast-*` set for deck-specific geometry. |
+| `<progress>` | Task progress indicator. | substantive | Repainted track + fill (UA per-platform appearance reset). Tokens: `--set-progress-{block-size, border-radius, track-color, fill-color, transition-duration}`. |
+| `<meter>` | Scalar measurement within a known range. | substantive | Three fill colors mapped to UA's optimum / sub-optimum / even-less-good classifications. Tokens: `--set-meter-{block-size, border-radius, track-color, optimum-color, suboptimum-color, even-less-good-color, transition-duration}`. |
+
+### 3.10 Interactive elements
+
+| Tag | Purpose | Treatment | Framework usage |
+| --- | --- | --- | --- |
+| `<details>` | Disclosure widget. | substantive + composable | Marker-image override via `--set-summary-marker-image`; animated `::details-content` reveal. Paired with `useDetails` / `createDetails` for programmatic open / close and accordion grouping. Element-local modifier: `<details class="flush">` (un-padded). Tokens: 8 `--set-details-*` + 9 `--set-summary-*`. |
+| `<summary>` | Heading for a `<details>`. | substantive | Cursor pointer; custom marker via mask-image. Tokens listed above. |
+| `<dialog>` | Modal / non-modal dialog. | substantive + composable | The framework's modal surface. Substantive sizing tokens, `:modal` chrome via `surfaces/_popover.scss` baseline + composables/_dialog.scss specialization. Header / footer slots auto-lay-out as Bootstrap-style modal-header / modal-footer bands. Paired with `useDialog` / `createDialog` for show / hide lifecycle, focus trap, scroll lock. Tokens: 18 `--set-dialog-*`. |
+
+### 3.11 Class-component primitives (no semantic root)
+
+Documented here so authors don't reinvent them. Each lives in [`src/styles/components/`](../src/styles/components/) and is enumerated in [`src/browser/tokens.ts`](../src/browser/tokens.ts) under its class namespace.
+
+| Class | Purpose | Carrier element | Tokens |
+| --- | --- | --- | --- |
+| `.badge` | Inline pill — counts, labels, status keywords. | `<span class="badge">` | `--set-badge-{color, background-color, border-radius, padding-*, font-*}` |
+| `.dot` | Colored circle — presence / status indicator. | `<span class="dot">` | `--set-dot-{size, background-color, pulse-duration, pulse-easing}` |
+| `.tag` | Chip-shape inline label with optional close affordance. | `<span class="tag">` | `--set-tag-{color, background-color, border-*, padding-*, font-*, gap}` |
+| `.spinner` | Loading indicator. | `<span class="spinner" role="status">` | `--set-spinner-{size, border-width, color, duration}` |
+| `.skeleton` | Loading placeholder block. | `<div class="skeleton">` | `--set-skeleton-{background-color, highlight-color, border-radius, duration, line-block-size, line-gap}` |
+| `.alert` | Banner inside `<aside role="alert">`. | `<aside role="alert">` | `--set-alert-{color, background-color, border-color, bar-width, padding-*, gap, border-radius}` |
+| `.toast` | Floating notification inside `<output popover>`. | `<output popover>` | `--set-toast-*` (deck-stacking, edge-inset, etc.) |
+| `.carousel` | Horizontal / vertical scroll carousel. | `<div class="carousel">` | `--set-carousel-*` |
+| `.tablist` / `.tab` / `.tabpanel` | Tabbed navigation (ARIA pattern). | `[role=tablist]` / `[role=tab]` / `[role=tabpanel]` | `--set-tablist-*`, `--set-tab-*`, `--set-tabpanel-*` |
+
+---
+
+## 4. Cross-references
+
+- [modifiers.md](modifiers.md) — what `.primary`, `.large`, `.subtle`, `.disabled`, `.top` mean and which elements consume them.
+- [tokens.md](tokens.md) — the `--set-{tag}-*` namespace each substantive element owns.
+- [elements.md](elements.md) — the legacy per-element reference (will eventually fold into this taxonomy).
+- [components.md](components.md) — class-component primitives in `src/styles/components/`.
+- [composables.md](composables.md) — the `use{Name}` / `create{Name}` factories paired with substantive elements.
+- [styles.md](styles.md) — top-level cascade architecture.

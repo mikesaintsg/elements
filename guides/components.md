@@ -152,7 +152,7 @@ State classes — `.disabled`, `.active`, `.loading` — come from the modifier 
 
 - Wrap rules in `@layer components`.
 - Declare tokens on the component root with fallback chains (style → variant → element default).
-- Don't hand-roll `&.primary` / `&.large` / `&.ghost` — the variant / size / style cascades already feed `--set-{name}-*` via the fallback chain. Only declare per-modifier rules when the component genuinely needs them (e.g. `<form>.row` flips flex-direction, which can't come from a token).
+- Don't hand-roll `&.primary` / `&.large` / `&.subtle` — the variant / size / style cascades already feed `--set-{name}-*` via the fallback chain. Element-local modifiers that genuinely can't come from a token (e.g. `<form>.row` flips flex-direction) belong in [`src/styles/modifiers/_local.scss`](../src/styles/modifiers/_local.scss), not in component or element files. The [`_handrolled.test.ts`](../tests/src/styles/_handrolled.test.ts) parity test fails when three or more `.X.{variant}` rules appear in one non-modifier file.
 - Logical CSS properties (`padding-inline`, `margin-block`, `inset-inline-start`).
 - Reduced-motion-paired transitions via `@include transition(…)`.
 - Bidirectional parity test maintained: every `--set-{name}-*` you add appears as a leaf in [src/browser/tokens.ts](../src/browser/tokens.ts).

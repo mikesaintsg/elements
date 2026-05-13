@@ -1,0 +1,87 @@
+// ============================================================================
+// Local modifiers — element-local modifier classes.
+//
+// Some modifier classes only make sense on one specific HTML element. They are
+// not part of the five cross-cutting dimensions (variant / size / style /
+// state / placement) because they affect a single element's layout primitive
+// — typically something that cannot be expressed by setting a context token.
+// "Local" here is the single-word naming convention for "modifiers whose
+// effect is local to one tag." Cross-cutting modifiers live in the dimension
+// partials (`_variants.scss`, `_sizes.scss`, `_styles.scss`, `_states.scss`,
+// `_placements.scss`). Element-local modifiers live here. Canonical examples:
+//
+//   form.row           flip the form's flex-direction from column to row
+//   button.dropdown    rotate a chevron when paired with [aria-expanded]
+//   details.flush      drop the disclosure's left padding for inline use
+//
+// These rules belong here in the modifier layer (not in elements/ or
+// components/) so the cascade order matches the conceptual role: they ARE
+// modifiers, they ARE deliberate consumer signals, they should beat element
+// baselines + component chrome but lose to utilities.
+//
+// ── Charter — what this file MUST contain ──
+//
+//   1. Every rule's selector starts with an element type (`form.row`,
+//      `button.dropdown`, never bare `.row` or `.dropdown`). The element
+//      scope is what makes these modifiers element-LOCAL.
+//
+//   2. The class name MUST NOT collide with:
+//        - The five cross-cutting modifier dimensions in modifiers.ts
+//          (`variant`, `size`, `style`, `state`, `placement`).
+//        - The Tailwind single-token utility set in tests/setupStyles.ts
+//          (`block`, `flex`, `grid`, `rounded`, `outline`, `inline`, …).
+//      The parity test at tests/src/styles/modifiers/_local.test.ts
+//      enforces these collisions.
+//
+//   3. Rules wrap in `@layer modifiers` so the cascade puts them after
+//      elements + components + surfaces + composables and just before
+//      utilities — same as every other modifier partial.
+//
+//   4. Tokens may be written here, but only `--set-{tag}-*` tokens scoped to
+//      the same element the selector targets. Writing `--set-variant-*` or
+//      `--set-button-*` from a `form.row` rule would be cross-cutting and
+//      belongs in the appropriate dimension's partial.
+//
+// ── Charter — what this file MUST NOT contain ──
+//
+//   - Bare class selectors (`.row`, `.dropdown`, `.flush`). Those are the
+//     cross-cutting modifier dimensions' territory.
+//   - Composable-state attribute selectors (`[data-form-validated]`,
+//     `[data-aside-open]`). Those live in `composables/`.
+//   - Pseudo-element rules (`::placeholder`, `::marker`). Those live in
+//     `surfaces/`.
+//   - Element baseline declarations (the bare-element appearance). Those
+//     live in `elements/_{tag}.scss`.
+//
+// ── Authoring procedure ──
+//
+//   1. Confirm no cross-cutting dimension would express the same intent.
+//      (If a new variant of an existing dimension would do the job, extend
+//      the dimension instead — single source of truth.)
+//
+//   2. Pick the single element tag the modifier applies to. Write the rule
+//      as `{tag}.{name}`. If two elements need the same modifier, the rule
+//      is cross-cutting and belongs in one of the five dimensions' files.
+//
+//   3. Add the rule below, grouped alphabetically by element tag with a
+//      brief comment naming the layout primitive being flipped.
+//
+//   4. Run the parity test:
+//        npm run test -- tests/src/styles/modifiers/_local.test.ts
+//
+// ============================================================================
+
+@layer modifiers {
+	// (Initial scaffold — element-local rules currently living in
+	// components/_form.scss and components/_badge.scss will migrate here
+	// in a follow-up refactor. The charter above defines the migration
+	// destination so the move is mechanical.)
+	//
+	// Reserved future rules — placeholders are intentional. Adding a real
+	// rule means deleting the matching comment and writing the selector
+	// + declaration block.
+
+	// form.row { flex-direction: row; flex-wrap: wrap; align-items: end; }
+	// button.dropdown { &::after { content: var(--set-button-dropdown-caret-image); } }
+	// details.flush { padding-inline: 0; }
+}

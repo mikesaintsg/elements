@@ -51,7 +51,7 @@ Tokens flow through a four-tier cascade. Each tier writes context tokens that th
 modifier class    →  context tokens    →  element-scoped token    →  CSS property
 .primary             --set-variant-*       --set-button-color         color
 .small               --set-size-*          --set-button-padding-*     padding-inline
-.ghost               --set-style-*         --set-button-background-*  background-color
+.subtle              --set-style-*         --set-button-background-*  background-color
 ```
 
 **Element-scoped tokens** declare the resolution chain on the element selector:
@@ -82,9 +82,9 @@ button {
 }
 ```
 
-Cascade priority on every element: `--set-style-* → --set-variant-* → --set-size-* → element default`. Style wins over variant because `.ghost` and `.filled` deliberately re-paint a variant surface; variant wins over size because density tweaks must never overwrite identity.
+Cascade priority on every element: `--set-style-* → --set-variant-* → --set-size-* → element default`. Style wins over variant because `.subtle` and `.filled` deliberately re-paint a variant surface; variant wins over size because density tweaks must never overwrite identity.
 
-See [modifiers.md](modifiers.md) for the full four-dimension cascade (variant, size, style, shape) and the exact values each class writes.
+See [modifiers.md](modifiers.md) for the full five-dimension cascade (variant, size, style, state, placement) and the exact values each class writes.
 
 ---
 

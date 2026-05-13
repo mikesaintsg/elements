@@ -371,392 +371,46 @@ export function walkKeyframes(rules: CSSRuleList, name: string): boolean {
 // ── Theme helpers ──────────────────────────────────────────────────────────
 
 /**
- * Switch the document's `data-bs-theme` attribute for the duration of the
- * current test. The original value is restored automatically.
+ * Switch the document's `data-theme` attribute for the duration of the current
+ * test. The original value is restored automatically. The attribute name
+ * matches the selectors in `src/styles/_theme.scss` (`[data-theme='light']`
+ * / `[data-theme='dark']`); the previous `data-bs-theme` form was a leftover
+ * from the Bootstrap port and never matched the framework's cascade.
  */
 export function setTheme(value: 'light' | 'dark'): void {
-	const previous = document.documentElement.getAttribute('data-bs-theme')
-	document.documentElement.setAttribute('data-bs-theme', value)
+	const previous = document.documentElement.getAttribute('data-theme')
+	document.documentElement.setAttribute('data-theme', value)
 	STYLE_TEARDOWNS.push(() => {
-		if (previous === null) document.documentElement.removeAttribute('data-bs-theme')
-		else document.documentElement.setAttribute('data-bs-theme', previous)
+		if (previous === null) document.documentElement.removeAttribute('data-theme')
+		else document.documentElement.setAttribute('data-theme', previous)
 	})
 }
 
-// ── Color palette constants ────────────────────────────────────────────────
-
-/**
- * The canonical Bootstrap-compatible semantic color list. Mirrors
- * `mixins.$bs-colors` from `_mixins.scss` — every per-color `@each` loop in
- * the framework iterates this set, so style tests use it for `it.each`-style
- * variant tables.
- */
-export const BS_COLORS = [
-	'primary',
-	'secondary',
-	'success',
-	'info',
-	'warning',
-	'danger',
-	'light',
-	'dark',
-] as const
-
-export type BsColor = (typeof BS_COLORS)[number]
-
-// ── Element factories ──────────────────────────────────────────────────────
+// ── Framework variant + dimension re-exports ───────────────────────────────
 //
-//  Each factory returns a real DOM node ready to mount. They follow the same
-//  `create{Entity}Element` naming as `setupBrowser.ts`. Factories never call
-//  `mount()` themselves — the test composes the parent fixture and decides
-//  what to mount.
-
-/** Plain `<button class="btn …">` builder. */
-export function createButtonElement(extra = ''): HTMLButtonElement {
-	return build('button', `btn ${extra}`.trim())
-}
-
-/**
- * `<button class="btn btn-primary {modifier}"><i><span class="btn-label">…</span></button>`
- * — the documented `.btn-reveal` markup contract.
- */
-export function createRevealButton(
-	modifier: 'btn-reveal' | 'btn-reveal-end' = 'btn-reveal',
-	label = 'Add new',
-): {
-	button: HTMLButtonElement
-	icon: HTMLElement
-	label: HTMLSpanElement
-} {
-	const button = build('button', `btn btn-primary ${modifier}`)
-	const icon = build('i', 'bi bi-plus')
-	icon.setAttribute('aria-hidden', 'true')
-	const labelEl = build('span', 'btn-label', label)
-	button.append(icon, labelEl)
-	return { button, icon, label: labelEl }
-}
-
-/**
- * `<input class="btn-check"> + <label class="btn …">` companion pair — the
- * documented segmented-control markup contract.
- */
-export function createCheckPair(
-	checked = false,
-	classes = 'btn btn-primary',
-): {
-	input: HTMLInputElement
-	label: HTMLLabelElement
-} {
-	const input = build('input', 'btn-check')
-	input.type = 'checkbox'
-	input.id = `check-${Math.random().toString(36).slice(2)}`
-	input.checked = checked
-	const label = build('label', classes, 'Toggle')
-	label.htmlFor = input.id
-	return { input, label }
-}
-
-/**
- * `<div class="btn-group-{size}"><button class="btn …">…</div>` — for size
- * inheritance assertions.
- */
-export function createButtonGroup(
-	size: 'sm' | 'lg',
-	classes = 'btn btn-primary',
-): {
-	group: HTMLDivElement
-	button: HTMLButtonElement
-} {
-	const group = build('div', `btn-group-${size}`)
-	const button = build('button', classes)
-	group.appendChild(button)
-	return { group, button }
-}
-
-/**
- * Build a parent + N children fixture. The children list is callable so
- * each test can compose any tag/class combination.
- */
-export function createParentWithChildren<
-	P extends keyof HTMLElementTagNameMap,
-	C extends keyof HTMLElementTagNameMap,
->(
-	parentTag: P,
-	parentClasses: string,
-	childTag: C,
-	childClasses: string,
-	count: number,
-): {
-	parent: HTMLElementTagNameMap[P]
-	children: readonly HTMLElementTagNameMap[C][]
-} {
-	const parent = build(parentTag, parentClasses)
-	const children: HTMLElementTagNameMap[C][] = []
-	for (let i = 0; i < count; i += 1) {
-		const child = build(childTag, childClasses)
-		parent.appendChild(child)
-		children.push(child)
-	}
-	return { parent, children }
-}
-
-// ── Generic per-color factory ──────────────────────────────────────────────
+// Style tests reach for the shipped modifier vocabulary in two patterns:
+//   1. `it.each(VARIANTS)(...)` — drive a parameterized assertion across the
+//      seven variants without rebuilding the array per test.
+//   2. `expect(token(el, '--set-variant-color')).not.toBe('')` after layering
+//      a known modifier class.
 //
-//  Most components ship a `.{component}-{color}` modifier family. Instead of
-//  hand-building eight elements per partial, use the helpers below to drive
-//  `it.each` rows. They follow §4.3 — `{verb}{Noun}` — and live in setup so
-//  the second consumer never re-invents them.
+// Importing from `@elements/browser` keeps the test surface in lock-step
+// with what's shipped — if a variant is added / removed from `modifiers.ts`,
+// every test that touches `VARIANTS` updates with it. The bidirectional
+// parity test at `tests/src/browser/modifiers.test.ts` guarantees the import
+// is the source of truth.
 
-/** Render `<{tag} class="{base} {base}-{color}">` and return it mounted. */
-export function renderColorVariant<K extends keyof HTMLElementTagNameMap>(
-	tag: K,
-	base: string,
-	color: string,
-	extra = '',
-): HTMLElementTagNameMap[K] {
-	const className = `${base} ${base}-${color} ${extra}`.trim()
-	return render(tag, className)
-}
+import { modifiers, type Variant, type Size, type Style, type State } from '@elements/browser'
 
-// ── it.each row builders ───────────────────────────────────────────────────
-//
-//  Reusable row tables for `it.each`. Each builder returns a frozen object
-//  array — `it.each` interpolates `$field` into the test title, so single-
-//  field rows give the best diagnostic output.
+/** Seven semantic variants — `primary` through `information`. */
+export const VARIANTS: readonly Variant[] = Object.values(modifiers.variant)
 
-/** `[{ color: 'primary' }, …]` — every Bootstrap color. */
-export function colorRows(): readonly { readonly color: BsColor }[] {
-	return BS_COLORS.map((color) => ({ color }))
-}
+/** Two scale steps — `small`, `large`. (Default size is the bare element.) */
+export const SIZES: readonly Size[] = Object.values(modifiers.size)
 
-/** Same as `colorRows()` but excludes the named colors. */
-export function colorRowsExcept(
-	...excluded: readonly BsColor[]
-): readonly { readonly color: BsColor }[] {
-	const skip = new Set(excluded)
-	return BS_COLORS.filter((c) => !skip.has(c)).map((color) => ({ color }))
-}
+/** Two style treatments — `subtle`, `filled`. */
+export const STYLES: readonly Style[] = Object.values(modifiers.style)
 
-/**
- * Cartesian product of any list with `BS_COLORS`. Used when a per-color
- * table also needs to vary a property/token.
- */
-export function colorRowsWith<T extends Record<string, unknown>>(
-	rows: readonly T[],
-): readonly (T & { readonly color: BsColor })[] {
-	const out: (T & { readonly color: BsColor })[] = []
-	for (const color of BS_COLORS) {
-		for (const row of rows) out.push({ ...row, color })
-	}
-	return out
-}
+/** Three interaction states — `disabled`, `active`, `loading`. */
+export const STATES: readonly State[] = Object.values(modifiers.state)
 
-// ── Element factories ──────────────────────────────────────────────────────
-//
-//  Each factory returns a real DOM node ready to mount. They follow the same
-//  `create{Entity}Element` naming as `setupBrowser.ts`. Factories never call
-//  `mount()` themselves — the test composes the parent fixture and decides
-//  what to mount.
-
-/** `<span class="badge {extra}">…</span>` */
-export function createBadgeElement(extra = '', text = '1'): HTMLSpanElement {
-	return build('span', `badge ${extra}`.trim(), text)
-}
-
-/** `<span class="dot {extra}"></span>` */
-export function createDotElement(extra = ''): HTMLSpanElement {
-	return build('span', `dot ${extra}`.trim())
-}
-
-/** `<kbd>…</kbd>` */
-export function createKbdElement(text = 'K'): HTMLElement {
-	return build('kbd', '', text)
-}
-
-/** `<code>…</code>` */
-export function createCodeElement(text = 'code'): HTMLElement {
-	return build('code', '', text)
-}
-
-/** `<button class="btn-close" aria-label="Close"></button>` */
-export function createCloseButton(extra = ''): HTMLButtonElement {
-	const button = build('button', `btn-close ${extra}`.trim())
-	button.type = 'button'
-	button.setAttribute('aria-label', 'Close')
-	return button
-}
-
-/** `<div class="spinner-border" role="status"><span class="visually-hidden">…</span></div>` */
-export function createSpinnerElement(
-	variant: 'spinner-border' | 'spinner-grow' = 'spinner-border',
-	extra = '',
-): HTMLDivElement {
-	const root = build('div', `${variant} ${extra}`.trim())
-	root.setAttribute('role', 'status')
-	const sr = build('span', 'visually-hidden', 'Loading...')
-	root.appendChild(sr)
-	return root
-}
-
-/** `<div class="placeholder {extra}"></div>` */
-export function createPlaceholderElement(extra = ''): HTMLSpanElement {
-	return build('span', `placeholder ${extra}`.trim())
-}
-
-/** `<div class="skeleton {extra}"></div>` */
-export function createSkeletonElement(extra = ''): HTMLDivElement {
-	return build('div', `skeleton ${extra}`.trim())
-}
-
-/** `<div class="avatar {extra}"><img …/></div>` (image optional). */
-export function createAvatarElement(
-	extra = '',
-	withImage = false,
-): { root: HTMLDivElement; image: HTMLImageElement | null } {
-	const root = build('div', `avatar ${extra}`.trim())
-	let image: HTMLImageElement | null = null
-	if (withImage) {
-		image = build('img')
-		image.alt = ''
-		image.src =
-			'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22/%3E'
-		root.appendChild(image)
-	}
-	return { root, image }
-}
-
-/** `<div class="alert alert-{color}" role="alert">…</div>` */
-export function createAlertElement(color: BsColor = 'primary', extra = ''): HTMLDivElement {
-	const root = build('div', `alert alert-${color} ${extra}`.trim(), 'Heads up!')
-	root.setAttribute('role', 'alert')
-	return root
-}
-
-/** `<span class="tag {extra}">…</span>` */
-export function createTagElement(extra = '', text = 'tag'): HTMLSpanElement {
-	return build('span', `tag ${extra}`.trim(), text)
-}
-
-/** `<nav><ol class="breadcrumb"><li class="breadcrumb-item">…</li>…</ol></nav>` */
-export function createBreadcrumbElement(labels: readonly string[] = ['Home', 'Library', 'Data']): {
-	nav: HTMLElement
-	ol: HTMLOListElement
-	items: readonly HTMLLIElement[]
-} {
-	const nav = build('nav')
-	nav.setAttribute('aria-label', 'breadcrumb')
-	const ol = build('ol', 'breadcrumb')
-	const items: HTMLLIElement[] = []
-	for (let i = 0; i < labels.length; i += 1) {
-		const li = build('li', 'breadcrumb-item', labels[i])
-		if (i === labels.length - 1) li.classList.add('active')
-		ol.appendChild(li)
-		items.push(li)
-	}
-	nav.appendChild(ol)
-	return { nav, ol, items }
-}
-
-/** `<ul class="pagination"><li class="page-item"><a class="page-link">…</a></li>…</ul>` */
-export function createPaginationElement(count = 3): {
-	ul: HTMLUListElement
-	items: readonly HTMLLIElement[]
-	links: readonly HTMLAnchorElement[]
-} {
-	const ul = build('ul', 'pagination')
-	const items: HTMLLIElement[] = []
-	const links: HTMLAnchorElement[] = []
-	for (let i = 0; i < count; i += 1) {
-		const li = build('li', 'page-item')
-		const a = build('a', 'page-link', `${i + 1}`)
-		a.href = '#'
-		li.appendChild(a)
-		ul.appendChild(li)
-		items.push(li)
-		links.push(a)
-	}
-	return { ul, items, links }
-}
-
-/** `<div class="progress"><div class="progress-bar" style="width: {pct}%"></div></div>` */
-export function createProgressElement(
-	percent = 50,
-	extra = '',
-): { root: HTMLDivElement; bar: HTMLDivElement } {
-	const root = build('div', `progress ${extra}`.trim())
-	root.setAttribute('role', 'progressbar')
-	const bar = build('div', 'progress-bar')
-	bar.style.width = `${percent}%`
-	root.appendChild(bar)
-	return { root, bar }
-}
-
-/** `<div class="empty-state">…</div>` */
-export function createEmptyStateElement(extra = ''): HTMLDivElement {
-	return build('div', `empty-state ${extra}`.trim(), 'Nothing here')
-}
-
-/** `<div class="stat">…</div>` */
-export function createStatElement(extra = ''): HTMLDivElement {
-	return build('div', `stat ${extra}`.trim(), '42')
-}
-
-/**
- * `<ol class="stepper"><li class="stepper-item"><span class="stepper-dot">…</span>
- *  <span class="stepper-label">…</span></li>…</ol>`
- *
- * Each item is composed of a dot + label pair. The caller can set
- * `.active` / `.completed` on individual items to test the state rules.
- */
-export function createStepperElement(count = 3): {
-	root: HTMLOListElement
-	items: readonly HTMLLIElement[]
-	dots: readonly HTMLSpanElement[]
-	labels: readonly HTMLSpanElement[]
-} {
-	const root = build('ol', 'stepper')
-	const items: HTMLLIElement[] = []
-	const dots: HTMLSpanElement[] = []
-	const labels: HTMLSpanElement[] = []
-	for (let i = 0; i < count; i += 1) {
-		const item = build('li', 'stepper-item')
-		const dot = build('span', 'stepper-dot', String(i + 1))
-		const label = build('span', 'stepper-label', `Step ${i + 1}`)
-		item.append(dot, label)
-		root.appendChild(item)
-		items.push(item)
-		dots.push(dot)
-		labels.push(label)
-	}
-	return { root, items, dots, labels }
-}
-
-/**
- * `<ul class="timeline"><li class="timeline-item"><span class="timeline-marker"></span>
- *  <div class="timeline-content">…</div></li>…</ul>`
- *
- * Each item is composed of a marker + content pair. The marker accepts an
- * optional `markerExtra` per item (e.g. `'timeline-marker-success'`).
- */
-export function createTimelineElement(count = 3): {
-	root: HTMLUListElement
-	items: readonly HTMLLIElement[]
-	markers: readonly HTMLSpanElement[]
-	contents: readonly HTMLDivElement[]
-} {
-	const root = build('ul', 'timeline')
-	const items: HTMLLIElement[] = []
-	const markers: HTMLSpanElement[] = []
-	const contents: HTMLDivElement[] = []
-	for (let i = 0; i < count; i += 1) {
-		const item = build('li', 'timeline-item')
-		const marker = build('span', 'timeline-marker')
-		const content = build('div', 'timeline-content', `Event ${i + 1}`)
-		item.append(marker, content)
-		root.appendChild(item)
-		items.push(item)
-		markers.push(marker)
-		contents.push(content)
-	}
-	return { root, items, markers, contents }
-}
