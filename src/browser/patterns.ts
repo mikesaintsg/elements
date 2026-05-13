@@ -525,6 +525,99 @@ export function folderForLayer(layer: StyleLayer): string {
 }
 
 // ============================================================================
+// Modifier-dimension token contracts
+// ============================================================================
+//
+// Every modifier class in a dimension MUST declare the dimension's full
+// required context-token set. This is the contract that lets element
+// partials consume `var(--set-{dimension}-X)` with confidence — if a
+// variant class drops `--set-variant-border-color`, every consumer's
+// fallback chain silently degrades to a transparent border. The parity
+// test at `tests/src/styles/_dimensions.test.ts` enforces the coverage.
+//
+// The token names are property suffixes (no `--set-{dimension}-` prefix);
+// the test builds the full token name per dimension when matching.
+
+export interface ModifierDimensionContract {
+	/** The class-name set for the dimension, from `modifiers.{dim}`. */
+	readonly classes: readonly string[]
+	/**
+	 * Property suffixes every class in the dimension MUST declare. The full
+	 * declaration name is `--set-{dimension}-{suffix}`.
+	 *
+	 * Empty when the dimension emits direct CSS properties instead of
+	 * context tokens (state classes hard-code `opacity` / `cursor`;
+	 * placement classes hard-code `position-area`).
+	 */
+	readonly requiredTokens: readonly string[]
+	/** One-sentence rationale shown in failure messages. */
+	readonly rationale: string
+}
+
+export const MODIFIER_DIMENSION_TOKENS: Readonly<Record<string, ModifierDimensionContract>> = {
+	variant: {
+		classes: [
+			'primary',
+			'secondary',
+			'tertiary',
+			'success',
+			'warning',
+			'danger',
+			'information',
+		],
+		requiredTokens: [
+			// FILLED tier — saturated identity surface.
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+			// SUBTLE tier — tinted bg + emphasis text + subtle border.
+			'subtle-color',
+			'subtle-background-color',
+			'subtle-border-color',
+			// ON-CANVAS tier — unboxed variant text safe against body canvas.
+			'on-canvas-color',
+		],
+		rationale:
+			'Variant classes drive three downstream treatments (FILLED, SUBTLE, ON-CANVAS). Dropping a tier token silently breaks the fallback chain in every consumer.',
+	},
+	size: {
+		classes: ['small', 'large'],
+		requiredTokens: [
+			'padding-inline',
+			'padding-block',
+			'font-size',
+			'border-radius',
+		],
+		rationale:
+			'Size classes bundle the four geometry tokens elements consume to scale chrome coherently. Missing one leaves the element half-resized.',
+	},
+	style: {
+		classes: ['subtle', 'filled'],
+		requiredTokens: [
+			'color',
+			'background-color',
+			'border-color',
+			'border-width',
+		],
+		rationale:
+			'Style classes rewrite the element surface from the variant tier. The four tokens must move together; partial coverage leaves the surface inconsistent.',
+	},
+	state: {
+		classes: ['disabled', 'active', 'loading'],
+		requiredTokens: [], // direct CSS properties (opacity, cursor, pointer-events)
+		rationale:
+			'State classes emit direct CSS properties (cursor, pointer-events, opacity). No context tokens are required today; future refactor may expose `--set-state-disabled-opacity` for global retuning.',
+	},
+	placement: {
+		classes: ['top', 'bottom', 'start', 'end', 'top-start', 'top-end', 'bottom-start', 'bottom-end'],
+		requiredTokens: [], // direct CSS properties (position-area, align-self, justify-self)
+		rationale:
+			'Placement classes emit `position-area` + `align-self` + `justify-self` directly. The cascade composes these with anchor positioning; no tokens are tunable.',
+	},
+}
+
+// ============================================================================
 // Interactive-element registry
 // ============================================================================
 //

@@ -253,7 +253,57 @@ CSS is built around **broad defaults + narrow exceptions**, with the cascade res
 
 ---
 
-## 6. Reference
+## 6. Per-dimension required tokens
+
+Every modifier class in a dimension MUST declare the dimension's full required context-token set. This is the cascade contract that lets element partials consume `var(--set-{dimension}-X)` with confidence — if a variant class drops a token, every consumer's fallback chain silently degrades.
+
+The contract is codified in [`MODIFIER_DIMENSION_TOKENS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts).
+
+### 6.1 Variant — 8 tokens per class (FILLED + SUBTLE + ON-CANVAS tiers)
+
+Every `.{variant}` class declares all eight `--set-variant-*` tokens:
+
+| Tier | Token suffix | Consumer |
+| --- | --- | --- |
+| FILLED | `color`, `background-color`, `border-color`, `border-width` | `.filled` style, bare-variant action surfaces |
+| SUBTLE | `subtle-color`, `subtle-background-color`, `subtle-border-color` | `.subtle` style |
+| ON-CANVAS | `on-canvas-color` | bare variant text painted directly on the body canvas (anchors, labels) |
+
+Dropping a tier token silently breaks the cascade — `.filled` falls back to `currentColor` / `transparent`, `.subtle` similarly. The test asserts all 7 variants × 8 tokens.
+
+### 6.2 Size — 4 tokens per class
+
+Every `.{size}` class declares: `padding-inline`, `padding-block`, `font-size`, `border-radius`. These are the four geometry tokens elements consume to scale chrome coherently. Missing one leaves the element half-resized.
+
+### 6.3 Style — 4 tokens per class
+
+Every `.{style}` class declares: `color`, `background-color`, `border-color`, `border-width`. These rewrite the element surface from the variant tier (`.subtle` reads `--set-variant-subtle-*`; `.filled` reads `--set-variant-*`). Partial coverage leaves the surface inconsistent across consumers.
+
+### 6.4 State — direct CSS properties, no tokens (current state)
+
+`.disabled`, `.active`, `.loading` emit direct properties (`cursor`, `pointer-events`, `opacity`). No context tokens are required today.
+
+**Known customizability gap:** `.disabled { opacity: 0.5; }` hard-codes the opacity. A future refactor could expose `--set-state-disabled-opacity` so a single `:root` override retunes the disabled affordance framework-wide. Tracked in `MODIFIER_DIMENSION_TOKENS.state.rationale` for visibility; not enforced.
+
+### 6.5 Placement — direct CSS properties, no tokens by design
+
+Placement classes emit `position-area` + `align-self` + `justify-self` directly. The cascade composes these with anchor positioning; no tokens are tunable. This is intentional — placement is a layout primitive, not a chrome dial.
+
+### 6.6 Interactive elements — minimum `transition-duration`
+
+The `interactive` entry in [`TOKEN_GROUPS`](../src/browser/taxonomy.ts) declares the universal interactive contract: every element in [`INTERACTIVE_ELEMENTS`](../src/browser/patterns.ts) (a, button, details, dialog, fieldset, input, label, select, summary, textarea) MUST declare `--set-{tag}-transition-duration`. State changes (hover, focus, disabled) animate; consumers need a single override point to retune motion centrally.
+
+Element-specific contracts extend the universal minimum:
+
+- **form-control** (button, input, textarea, select) extends with `color`, `background-color`, `border-*`, `padding-*`, `font-size`, `cursor`.
+- **disclosure** (details, summary) extends with `transition-duration` already covered.
+- **floating-surface** (dialog, output-as-toast) extends with `box-shadow` + popover geometry.
+
+See [`taxonomy.md` § 1](taxonomy.md) for the full token-group catalog.
+
+---
+
+## 7. Reference
 
 - [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the contract data and helpers.
 - [`tests/src/styles/_contracts.test.ts`](../tests/src/styles/_contracts.test.ts) — the parity test that consumes the contract.

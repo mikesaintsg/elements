@@ -357,6 +357,7 @@ export const FORBIDDEN_TOKEN_SEGMENTS: ReadonlySet<string> = new Set([
 // ── Uniformity groups ───────────────────────────────────────────────────────
 
 export type TokenGroup =
+	| 'interactive'
 	| 'form-control'
 	| 'page-shell'
 	| 'card-region'
@@ -372,6 +373,17 @@ export interface TokenGroupDefinition {
 }
 
 export const TOKEN_GROUPS: Readonly<Record<TokenGroup, TokenGroupDefinition>> = {
+	// Every interactive element (the set in `INTERACTIVE_ELEMENTS` —
+	// elements that paint focus / hover / disabled chrome) must expose
+	// `--set-{tag}-transition-duration` so consumers can retune state
+	// animation centrally. This is the universal interactive minimum;
+	// element-specific contracts (form controls, disclosure, etc.) extend
+	// it through their own groups.
+	interactive: {
+		members: ['a', 'button', 'details', 'dialog', 'fieldset', 'input', 'label', 'select', 'summary', 'textarea'],
+		required: ['transition-duration'],
+	},
+
 	// Native form controls — every one of these is a `<input>` / `<textarea>`
 	// / `<select>` / `<button>` peer. Customizability contract: a consumer
 	// who wants to retune all form controls must be able to do so with a
