@@ -364,13 +364,13 @@ Twenty composables ship today. Each has a paired showcase page under [`app/brows
 
 ### Behavioural primitives
 
-| Composable   | Wraps                 | Owns                                                                                                            |
-| ------------ | --------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `useFocus`   | Any container ref     | Tab-trap loop with `activate()` / `deactivate()`. Used by drawer-like surfaces without native focus management. |
-| `useDrag`    | `[data-index]` rows   | HTML5 drag-source pipeline. Emits `tap`, `start`, `over`, `drop`, `end`, `reorder`.                             |
-| `useDrop`    | Drop-target container | Drop-zone with `relatedTarget`-aware `over` tracking. Pairs with `useDrag`.                                     |
-| `usePointer` | Any element           | `pointerdown → pointermove* → pointerup` multiplex with body cursor lock. Foundation for splitter / slider.     |
-| `useTheme`   | Document root         | Singleton theme controller — `data-theme` + `data-core` attributes; `prefers-color-scheme` follow.              |
+| Composable   | Wraps                 | Owns                                                                                                                                                                      |
+| ------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useFocus`   | Any container ref     | Tab-trap loop with `activate()` / `deactivate()`. Used by drawer-like surfaces without native focus management.                                                           |
+| `useDrag`    | `[data-index]` rows   | HTML5 drag-source pipeline. Emits `tap`, `start`, `over`, `drop`, `end`, `reorder`.                                                                                       |
+| `useDrop`    | Drop-target container | Drop-zone with `relatedTarget`-aware `over` tracking. Pairs with `useDrag`.                                                                                               |
+| `usePointer` | Any element           | `pointerdown → pointermove* → pointerup` multiplex with body cursor lock. Foundation for splitter / slider.                                                               |
+| `useTheme`   | Document root         | Singleton theme controller — `data-theme` explicit pin OR attribute-absent (CSS-owned `prefers-color-scheme` follow). JS reactivity reserved for the resolved `mode` ref. |
 
 **`useReducedMotion` is deliberately not shipped.** Tailwind v4 exposes the media query as a class variant, and the framework's `transition` mixin honours `@media (prefers-reduced-motion: reduce)` directly. A composable would be redundant.
 

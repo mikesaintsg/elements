@@ -1,234 +1,165 @@
-import type {
-	CreateThemeInstance,
-	CreateThemeOptions,
-	ThemeCore,
-	ThemeMode,
-	ThemeModeSetting,
-} from '../types.js'
-import {
-	computed,
-	effect,
-	effectScope,
-	readonly,
-	ref,
-	type ComputedRef,
-	type Ref,
-} from '@vue/reactivity'
+import type { CreateThemeInstance, CreateThemeOptions, ThemeMode, ThemeSetting } from '../types.js'
+import { computed, readonly, ref, watch, type ComputedRef, type WatchHandle } from '@vue/reactivity'
 import { STORAGE_KEY_THEME, THEME_EVENTS } from '../constants.js'
 import { emit, listen } from '../helpers.js'
 
 // ── Singleton state ───────────────────────────────────────────────────────
-//  Two refs drive the system:
-//    - `setting`: user's choice (`'light' | 'dark' | 'system'`). Persisted.
-//    - `systemPref`: live result of `prefers-color-scheme` (`'light' |
-//      'dark'`). Updated by a media-query listener so changing the OS
-//      preference at runtime propagates to every consumer with no manual
-//      glue. When the OS / browser doesn't expose the preference (or runs
-//      in a non-`window` environment), it stays at `'light'`.
-//  The DOM-applied mode is computed: `setting === 'system' ? systemPref :
-//  setting`. Consumers read the resolved `mode` ref; UI that lets the user
-//  pick between the three semantic settings reads `setting`.
+// One theme per page. Multiple `createTheme()` callers share these refs;
+// mutations propagate to every caller without per-instance fan-out.
+//
+// Reactivity surface is intentionally minimal — CSS does the heavy lifting:
+//   • When `setting === 'system'`, we REMOVE `data-theme` from `<html>` and
+//     the stylesheet's `@media (prefers-color-scheme: dark)` block handles
+//     the OS-follow automatically. No JS rewrite on OS-preference changes.
+//   • When `setting === 'light' | 'dark'`, we WRITE `data-theme=<setting>`
+//     so the explicit pin overrides the media query.
+//
+// The `matchMedia` listener exists ONLY so `mode` (the resolved ref) can
+// reflect what CSS is currently rendering — useful for UI affordances like
+// a sun/moon icon swap. No DOM mutation hangs off `systemDark`.
 
-const themeSetting = ref<ThemeModeSetting>('system')
-const themeCore = ref<ThemeCore>('default')
-const systemPref = ref<ThemeMode>('light')
-
-const themeMode: ComputedRef<ThemeMode> = computed(() =>
-	themeSetting.value === 'system' ? systemPref.value : themeSetting.value,
+const setting = ref<ThemeSetting>('system')
+const systemDark = ref<boolean>(false)
+const mode: ComputedRef<ThemeMode> = computed(() =>
+	setting.value === 'system' ? (systemDark.value ? 'dark' : 'light') : setting.value,
 )
-const themeDark: ComputedRef<boolean> = computed(() => themeMode.value === 'dark')
 
-let syncScope = effectScope(true)
-let initialized = false
-let syncStarted = false
-let mediaListenerAttached = false
+let bootstrapped = false
 let mediaQuery: MediaQueryList | null = null
 let mediaListener: ((event: MediaQueryListEvent) => void) | null = null
+let stopApply: WatchHandle | null = null
+let storageKey: string | null = STORAGE_KEY_THEME
 
-// ── Private helpers ───────────────────────────────────────────────────────
+const isSetting = (value: unknown): value is ThemeSetting =>
+	value === 'light' || value === 'dark' || value === 'system'
 
-const isSetting = (value: string | null): value is ThemeModeSetting =>
-	value === 'dark' || value === 'light' || value === 'system'
-
-const isCore = (value: string | null): value is ThemeCore =>
-	typeof value === 'string' && value !== ''
-
-const settingOf = (value: string | undefined): ThemeModeSetting | null => {
-	const next = value ?? null
-	return isSetting(next) ? next : null
-}
-
-const coreOf = (value: string | undefined): ThemeCore | null => {
-	const next = value ?? null
-	return isCore(next) ? next : null
-}
-
-const parseStored = (
-	value: string | null,
-): { readonly setting: ThemeModeSetting; readonly core: ThemeCore } | null => {
-	if (!value) return null
-	const [setting, core] = value.split(':')
-	const nextSetting = settingOf(setting)
-	if (!nextSetting) return null
-	return { setting: nextSetting, core: coreOf(core) ?? 'default' }
-}
-
-const serializeStored = (setting: ThemeModeSetting, core: ThemeCore): string => `${setting}:${core}`
-
-const resolveKey = (options: CreateThemeOptions = {}): string | null => {
-	const { storage } = options
-	return storage === false ? null : (storage?.key ?? STORAGE_KEY_THEME)
-}
-
-const resolveSetting = (initial: ThemeModeSetting, key: string | null): ThemeModeSetting => {
-	if (typeof window === 'undefined') return initial
-	const stored = key ? localStorage.getItem(key) : null
-	const parsed = parseStored(stored)
-	if (parsed) return parsed.setting
-	if (isSetting(stored)) return stored
-	return initial
-}
-
-const resolveCore = (options: CreateThemeOptions = {}, key: string | null): ThemeCore => {
-	const fallback = coreOf(options.core) ?? 'default'
-	if (typeof window === 'undefined') return fallback
-	const stored = key ? localStorage.getItem(key) : null
-	const parsed = parseStored(stored)
-	if (parsed) return parsed.core
-	return fallback
-}
-
-/**
- * Bind to `prefers-color-scheme` and keep `systemPref` in sync. Called once
- * on first `ensureTheme()` — subsequent calls are no-ops. The listener is
- * never torn down at runtime; `resetTheme()` (test-only) clears it.
- */
-const startSystemPrefSync = (): void => {
-	if (mediaListenerAttached) return
-	if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
-	mediaListenerAttached = true
-	mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-	systemPref.value = mediaQuery.matches ? 'dark' : 'light'
-	mediaListener = (event) => {
-		systemPref.value = event.matches ? 'dark' : 'light'
+const loadStored = (key: string): ThemeSetting | null => {
+	try {
+		const raw = localStorage.getItem(key)
+		if (!raw) return null
+		// Tolerate the legacy `'mode:core'` storage format from the earlier
+		// API — take the first segment, validate it. Anything else returns
+		// null so the caller can fall back to options / 'system'.
+		const head = raw.split(':')[0] ?? ''
+		return isSetting(head) ? head : null
+	} catch {
+		return null
 	}
-	mediaQuery.addEventListener('change', mediaListener)
 }
 
-// ── Public API ────────────────────────────────────────────────────────────
+const writeAttribute = (next: ThemeSetting): void => {
+	if (typeof document === 'undefined') return
+	const root = document.documentElement
+	if (next === 'system') root.removeAttribute('data-theme')
+	else root.setAttribute('data-theme', next)
+}
 
-/**
- * Internal helper used by both `createTheme` and the Vue adapter to obtain
- * the singleton state lazily. Subscribes to `prefers-color-scheme` on first
- * call so the resolved `mode` follows the OS preference reactively.
- */
-export const ensureTheme = (
-	options: CreateThemeOptions = {},
-): {
-	readonly mode: ComputedRef<ThemeMode>
-	readonly setting: Ref<ThemeModeSetting>
-	readonly core: Ref<ThemeCore>
-	readonly dark: ComputedRef<boolean>
-	readonly key: string | null
-} => {
-	const key = resolveKey(options)
-	if (!initialized) {
-		initialized = true
-		startSystemPrefSync()
-		themeSetting.value = resolveSetting(options.initial ?? 'system', key)
-		themeCore.value = resolveCore(options, key)
+const writeStorage = (key: string | null, next: ThemeSetting): void => {
+	if (!key) return
+	try {
+		localStorage.setItem(key, next)
+	} catch {
+		// Storage unavailable (quota, privacy mode, file:// origin) — silent no-op.
 	}
-	return { mode: themeMode, setting: themeSetting, core: themeCore, dark: themeDark, key }
 }
 
-/**
- * Start the singleton DOM-sync watcher. Idempotent — safe to call on every
- * `createTheme()` invocation; only the first call takes effect.
- *
- * The watcher reads the *resolved* `themeMode` (computed), so any change to
- * the user's `themeSetting` *or* the OS `systemPref` (when setting is
- * `'system'`) automatically retunes the DOM, persists the user-facing
- * setting, and emits the change event.
- */
-export const startSync = (key: string | null): void => {
-	if (syncStarted) return
-	syncStarted = true
-	syncScope.run(() => {
-		effect(() => {
-			if (typeof document === 'undefined') return
-			const root = document.documentElement
-			root.setAttribute('data-theme', themeMode.value)
-			root.setAttribute('data-core', themeCore.value)
-			if (key) localStorage.setItem(key, serializeStored(themeSetting.value, themeCore.value))
-			emit(root, THEME_EVENTS.change, {
-				mode: themeMode.value,
-				setting: themeSetting.value,
-				core: themeCore.value,
-			})
-		})
+const fireChange = (): void => {
+	if (typeof document === 'undefined') return
+	emit(document.documentElement, THEME_EVENTS.change, {
+		mode: mode.value,
+		setting: setting.value,
 	})
 }
 
-/** Reset all singleton state. Intended for use in tests only. */
+const bootstrap = (options: CreateThemeOptions): void => {
+	if (bootstrapped) return
+	bootstrapped = true
+
+	const key = options.storage === false ? null : (options.storage?.key ?? STORAGE_KEY_THEME)
+	storageKey = key
+
+	// Resolve initial: stored > options.initial > 'system'.
+	const stored = key && typeof window !== 'undefined' ? loadStored(key) : null
+	setting.value = stored ?? options.initial ?? 'system'
+
+	// Wire `prefers-color-scheme` ONCE. Updates feed only `systemDark` —
+	// the DOM `data-theme` attribute is intentionally NOT rewritten on
+	// OS-preference changes because we WANT the CSS media query to handle
+	// that automatically (no `data-theme` attribute = CSS owns the flip).
+	if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+		mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+		systemDark.value = mediaQuery.matches
+		mediaListener = (event) => {
+			systemDark.value = event.matches
+		}
+		mediaQuery.addEventListener('change', mediaListener)
+	}
+
+	// Apply current setting to the DOM + persist + emit. One watcher,
+	// `immediate: true` so the initial setting is applied on first
+	// bootstrap. `@vue/reactivity`'s `watch` fires synchronously on signal
+	// change by default — no scheduler needed.
+	stopApply = watch(
+		() => setting.value,
+		(next) => {
+			writeAttribute(next)
+			writeStorage(storageKey, next)
+			fireChange()
+		},
+		{ immediate: true },
+	)
+}
+
+/** Reset all singleton state. Intended for tests only. */
 export const resetTheme = (): void => {
-	syncScope.stop()
-	syncScope = effectScope(true)
 	if (mediaQuery && mediaListener) mediaQuery.removeEventListener('change', mediaListener)
 	mediaQuery = null
 	mediaListener = null
-	mediaListenerAttached = false
-	initialized = false
-	syncStarted = false
-	themeSetting.value = 'system'
-	themeCore.value = 'default'
-	systemPref.value = 'light'
+	stopApply?.()
+	stopApply = null
+	storageKey = STORAGE_KEY_THEME
+	bootstrapped = false
+	setting.value = 'system'
+	systemDark.value = false
 }
 
 /**
- * Framework-agnostic singleton theme controller. Every call returns the
- * same reactive refs — one theme per page, not one per call. Mutations
- * propagate to every other caller and fire `elements:theme:change` on
- * `document.documentElement`.
+ * Framework-agnostic theme controller. Singleton — every call returns refs
+ * pointing at the same shared state, so multiple consumers stay in sync
+ * with no plumbing.
  *
- * The default `initial: 'system'` makes the resolved mode follow the OS
- * `prefers-color-scheme` preference reactively. `toggle()` switches between
- * explicit `'light'` and `'dark'` (anchoring to the user's choice and
- * stopping the system-follow); `apply('system')` opts back into reactive
- * follow.
+ * **CSS owns OS follow.** When `setting === 'system'` (the default), the
+ * factory removes `data-theme` from `<html>` and lets the stylesheet's
+ * `@media (prefers-color-scheme: dark)` rule do its job. When the user
+ * picks an explicit `'light'` or `'dark'`, the factory pins it via
+ * `data-theme=<setting>`. There is exactly one matchMedia listener for the
+ * entire page; it feeds `systemDark` so the `mode` ref can report what's
+ * being rendered (for sun/moon icon swaps), but it does NOT rewrite the
+ * DOM on OS-preference changes — CSS handles that for free.
  *
- * `destroy()` removes the per-instance `on.change` listener (when supplied)
- * but does NOT tear down the singleton DOM-sync watcher or the
- * `prefers-color-scheme` listener — other callers may still rely on them.
- * Use `resetTheme()` (test-only) to nuke the singleton entirely.
+ * `destroy()` removes the per-instance `on.change` listener. The singleton
+ * matchMedia listener and DOM-apply watcher survive — they're owned by the
+ * page, not by any one caller. Use `resetTheme()` (test-only) to nuke them.
  */
 export function createTheme(options: CreateThemeOptions = {}): CreateThemeInstance {
-	const { mode, setting, core, dark, key } = ensureTheme(options)
+	bootstrap(options)
 
 	let offChange: (() => void) | null = null
 	if (typeof document !== 'undefined' && options.on?.change) {
 		offChange = listen(document.documentElement, THEME_EVENTS.change, options.on.change)
 	}
 
-	startSync(key)
-
-	const toggle = (): void => {
-		// Toggle reads the *resolved* mode so a `'system'` user who is
-		// currently dark gets toggled to explicit `'light'` (and vice versa).
-		// This is what users expect from a binary toggle: flip what's on
-		// screen, anchor the choice. To opt back into system follow, call
-		// `apply('system')` explicitly.
-		setting.value = mode.value === 'dark' ? 'light' : 'dark'
-	}
-
-	const apply = (next: ThemeModeSetting): void => {
+	const set = (next: ThemeSetting): void => {
+		if (!isSetting(next)) return
 		if (setting.value === next) return
 		setting.value = next
 	}
 
-	const select = (next: ThemeCore): void => {
-		if (next === '') return
-		if (core.value === next) return
-		core.value = next
+	const toggle = (): void => {
+		// Binary flip on the resolved mode — a `'system'` user on a dark OS
+		// toggles to explicit `'light'`. To opt back into system follow,
+		// call `set('system')`.
+		set(mode.value === 'dark' ? 'light' : 'dark')
 	}
 
 	let destroyed = false
@@ -240,13 +171,10 @@ export function createTheme(options: CreateThemeOptions = {}): CreateThemeInstan
 	}
 
 	return {
-		theme: readonly(mode),
 		setting: readonly(setting),
-		core: readonly(core),
-		dark,
+		mode: readonly(mode),
+		set,
 		toggle,
-		apply,
-		select,
 		destroy,
 	}
 }

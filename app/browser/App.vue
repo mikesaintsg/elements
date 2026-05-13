@@ -113,12 +113,12 @@ const cycleTheme = (): void => {
 	themeCtl.toggle()
 }
 
-const themeIcon = computed(() => {
-	const t = themeCtl.theme.value
-	if (t === 'dark') return 'moon'
-	if (t === 'light') return 'sun'
-	return 'system'
-})
+// The header's sun/moon icon reads off the RESOLVED mode (`mode`), not
+// the raw `setting` — so a `'system'` user on a dark OS sees the moon,
+// matching what's actually rendered. `useTheme()` updates `mode`
+// reactively when the OS preference flips (matchMedia listener inside
+// the factory), so the icon stays in sync automatically.
+const themeIcon = computed(() => (themeCtl.mode.value === 'dark' ? 'moon' : 'sun'))
 
 // Build stamp surfaced in the footer so the user can verify a fresh
 // build loaded. `__BUILD_ID__` is injected at build time by the
@@ -147,7 +147,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		<button
 			type="button"
 			class="subtle"
-			:aria-label="`Switch theme (currently ${themeCtl.theme.value})`"
+			:aria-label="`Switch theme (currently ${themeCtl.mode.value})`"
 			@click="cycleTheme"
 		>
 			<i class="icon" aria-hidden="true" :style="{ '--icon': `var(--set-icon-${themeIcon})` }"></i>

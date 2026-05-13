@@ -22,27 +22,26 @@
 // Theme primitives
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Theme color mode applied to `<html data-theme="…">`. */
+/** Theme color mode currently rendered. Written to `<html data-theme="…">`
+ *  ONLY when the user has pinned an explicit choice — when the user is on
+ *  `'system'` the attribute is removed and CSS handles the OS-follow via
+ *  `@media (prefers-color-scheme: dark)`. */
 export type ThemeMode = 'light' | 'dark'
 
 /**
- * User-facing setting for the theme mode. `'system'` defers to the OS
- * `prefers-color-scheme` media query reactively — the resolved mode tracks
- * the system preference until the user explicitly picks `'light'` or
- * `'dark'`. The factory's `theme` ref always returns the resolved
- * `ThemeMode`; the `setting` ref returns this raw choice.
+ * User-facing theme setting. `'system'` is the default and defers entirely
+ * to the OS `prefers-color-scheme` media query at the CSS layer — the
+ * composable removes `<html data-theme="…">` so the framework stylesheet
+ * owns the flip. `'light'` and `'dark'` are explicit pins that write the
+ * attribute and override the media query.
  */
-export type ThemeModeSetting = ThemeMode | 'system'
-
-/** Theme core / palette key applied to `<html data-core="…">`. */
-export type ThemeCore = string
+export type ThemeSetting = ThemeMode | 'system'
 
 export interface ThemeChangeDetail {
-	/** Resolved mode (`'light' | 'dark'`) actually applied to `<html>`. */
+	/** Resolved mode (`'light' | 'dark'`) currently rendered. */
 	readonly mode: ThemeMode
 	/** Raw user setting (`'light' | 'dark' | 'system'`) before resolution. */
-	readonly setting: ThemeModeSetting
-	readonly core: ThemeCore
+	readonly setting: ThemeSetting
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -317,47 +316,45 @@ export interface UseThemeEventMap {
 
 export interface CreateThemeOptions {
 	/**
-	 * Initial mode when nothing is stored. Defaults to `'system'` — the
-	 * resolved mode follows `prefers-color-scheme` reactively until the user
-	 * explicitly picks `'light'` or `'dark'`.
+	 * Initial setting when nothing is stored. Defaults to `'system'` —
+	 * `<html>` carries no `data-theme` attribute and the stylesheet's
+	 * `@media (prefers-color-scheme: dark)` rule handles the OS-follow on
+	 * its own. Pick `'light'` or `'dark'` for an explicit pin.
 	 */
-	readonly initial?: ThemeModeSetting
-	/** Initial core when nothing is stored — defaults to `'default'`. */
-	readonly core?: ThemeCore
+	readonly initial?: ThemeSetting
+	/** Persistence. Defaults to `localStorage` under the framework's
+	 *  `STORAGE_KEY_THEME`. `false` disables it; an object with `key`
+	 *  overrides the storage key. */
 	readonly storage?: false | { readonly key?: string }
 	readonly on?: Partial<UseThemeEventMap>
 }
 
 export interface CreateThemeInstance {
-	/** Resolved mode applied to `<html data-theme="…">` — `'light'` or `'dark'`. */
-	readonly theme: Readonly<Ref<ThemeMode>>
-	/** Raw user setting (`'light' | 'dark' | 'system'`). UI surfaces that let
-	 *  the user pick between the three (e.g. tri-state segmented button)
-	 *  read this; surfaces that only need the resolved mode read `theme`. */
-	readonly setting: Readonly<Ref<ThemeModeSetting>>
-	readonly core: Readonly<Ref<ThemeCore>>
-	readonly dark: Readonly<Ref<boolean>>
+	/** User's raw choice (`'light' | 'dark' | 'system'`). Use this for
+	 *  tri-state UI surfaces (segmented button, dropdown). */
+	readonly setting: Readonly<Ref<ThemeSetting>>
+	/** Resolved mode (`'light' | 'dark'`) currently rendered. Tracks
+	 *  `setting` when explicit; mirrors `prefers-color-scheme` when
+	 *  `setting === 'system'`. Use this for binary UI affordances (sun /
+	 *  moon icon swap). */
+	readonly mode: Readonly<Ref<ThemeMode>>
+	/** Pick light, dark, or system. No-op when the value matches the
+	 *  current setting. */
+	readonly set: (next: ThemeSetting) => void
+	/** Binary flip between explicit light and dark — anchors the choice
+	 *  away from `'system'`. Call `set('system')` to opt back into OS
+	 *  follow. */
 	readonly toggle: () => void
-	readonly apply: (mode: ThemeModeSetting) => void
-	readonly select: (core: ThemeCore) => void
 	readonly destroy: () => void
 }
 
-export interface UseThemeOptions {
-	readonly initial?: ThemeModeSetting
-	readonly core?: ThemeCore
-	readonly storage?: false | { readonly key?: string }
-	readonly on?: Partial<UseThemeEventMap>
-}
+export interface UseThemeOptions extends CreateThemeOptions {}
 
 export interface UseThemeReturn {
-	readonly theme: Readonly<Ref<ThemeMode>>
-	readonly setting: Readonly<Ref<ThemeModeSetting>>
-	readonly core: Readonly<Ref<ThemeCore>>
-	readonly dark: Readonly<Ref<boolean>>
+	readonly setting: Readonly<Ref<ThemeSetting>>
+	readonly mode: Readonly<Ref<ThemeMode>>
+	readonly set: (next: ThemeSetting) => void
 	readonly toggle: () => void
-	readonly apply: (mode: ThemeModeSetting) => void
-	readonly select: (core: ThemeCore) => void
 }
 
 // `ComputedRef` is re-exported here so per-composable blocks below can use

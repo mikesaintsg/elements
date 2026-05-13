@@ -25,6 +25,7 @@ import ScrollAndTransitionPage from './pages/ScrollAndTransitionPage.vue'
 import UseFocusPage from './pages/UseFocusPage.vue'
 import UsePointerPage from './pages/UsePointerPage.vue'
 import UseDragDropPage from './pages/UseDragDropPage.vue'
+import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -181,6 +182,12 @@ const USE_DRAG_DROP: Route = {
 	group: 'Composables',
 	page: UseDragDropPage,
 }
+const USE_THEME_BUTTON: Route = {
+	id: 'use-theme-button',
+	title: 'useTheme / useButton',
+	group: 'Composables',
+	page: UseThemeButtonPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -207,6 +214,7 @@ export const routes: readonly Route[] = [
 	USE_FOCUS,
 	USE_POINTER,
 	USE_DRAG_DROP,
+	USE_THEME_BUTTON,
 ]
 
 interface RouteLocation {

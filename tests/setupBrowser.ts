@@ -431,7 +431,6 @@ afterEach(() => {
 	document.body.className = ''
 	document.body.style.cssText = ''
 	document.documentElement.removeAttribute('data-theme')
-	document.documentElement.removeAttribute('data-core')
 	window.localStorage.removeItem(STORAGE_KEY_THEME)
 	resetTheme()
 	vi.restoreAllMocks()
