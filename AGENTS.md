@@ -665,7 +665,18 @@ The styles layer mirrors the TypeScript centralization principles. Every rule he
 
 This framework is layered on **Tailwind v4**. Tailwind owns the palette (`--color-blue-500`, …), scales (`--spacing-*`, `--radius-*`, `--text-*`), the reset, and utility classes. The framework owns element baselines, semantic modifiers, composed widgets, browser-surface styles, and a TS-mirrored API for everything it authors. The compile pipeline is **Sass → PostCSS** with the `@tailwindcss/postcss` plugin (not the Vite plugin) so Tailwind sees the post-Sass CSS and tree-shakes correctly.
 
-**Per-folder structural contract is codified.** Every SCSS partial under `src/styles/{elements,modifiers,surfaces,components,composables}/` is held to the matching contract in [`src/browser/patterns.ts`](src/browser/patterns.ts) (`FOLDER_CONTRACTS` + `FILE_EXCEPTIONS`). The contract names the cascade layer, allowed root selector kinds, forbidden root selector kinds, state-selector requirement, token namespace policy, and comment-only policy per folder. The parity test at [`tests/src/styles/_contracts.test.ts`](tests/src/styles/_contracts.test.ts) drives every partial against its contract. The prose explanation lives in [`guides/patterns.md`](guides/patterns.md) — read that BEFORE writing or refactoring a partial, and consult it when classifying an outlier as a real-drift signal vs. a legitimate exception.
+**Per-folder structural contract is codified.** Every SCSS partial under `src/styles/{elements,modifiers,surfaces,components,composables}/` is held to a layered contract in [`src/browser/patterns.ts`](src/browser/patterns.ts):
+
+- **`FOLDER_CONTRACTS`** — per-folder cascade layer + allowed/forbidden root selector kinds + state-selector requirement + token namespace policy + comment-only policy. Enforced by [`tests/src/styles/_contracts.test.ts`](tests/src/styles/_contracts.test.ts).
+- **`FILE_EXCEPTIONS`** — named overrides for known-good outliers (`composables/_aside.scss` chrome-free, `components/_aside.scss` multi-namespace, `surfaces/_anchor-position.scss` tokenPrefix=anchor, etc.).
+- **`MODIFIER_DIMENSION_TOKENS`** — per-modifier-dimension required context tokens (variant: 8 tokens, size: 4, style: 4; state + placement emit direct CSS by design). Enforced by [`tests/src/styles/_dimensions.test.ts`](tests/src/styles/_dimensions.test.ts).
+- **`SURFACE_CONTRACTS`** — per-surface required token namespace + selector-head kinds + animated flag + reduced-motion mixin discipline. Enforced by [`tests/src/styles/_surfaces.test.ts`](tests/src/styles/_surfaces.test.ts).
+- **`COMPONENT_CONTRACTS`** — per-component required token namespace + animated flag + reduced-motion mixin discipline. Enforced by [`tests/src/styles/_components.test.ts`](tests/src/styles/_components.test.ts).
+- **`COMPOSABLE_CONTRACTS`** — per-composable required tokens + state-selector vocabulary + factory pairing + animated flag. Enforced by [`tests/src/styles/_composables.test.ts`](tests/src/styles/_composables.test.ts).
+- **`INTERACTIVE_ELEMENTS`** — closed set of native tags that paint interaction chrome. Each member is held to forced-colors + `:focus-visible` discipline. Enforced by [`tests/src/styles/_interactive.test.ts`](tests/src/styles/_interactive.test.ts).
+- **Scope-discipline helpers** (`hasChainedTagNots`, `hasScopingFunction`, `classQualifiers`) — flag the specificity-inflation anti-pattern (`:not(t1):not(t2):not(t3)` → `:not(:where(t1, t2, t3))`) and the unscoped-cross-cutting anti-pattern. Enforced by [`tests/src/styles/_scope.test.ts`](tests/src/styles/_scope.test.ts).
+
+The prose explanation across all eight contracts lives in [`guides/patterns.md`](guides/patterns.md) — read that BEFORE writing or refactoring a partial, and consult it when classifying an outlier as a real-drift signal vs. a legitimate exception.
 
 ### 21.1 Centralized files (the §5 analogue for SCSS)
 

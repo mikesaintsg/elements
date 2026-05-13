@@ -1081,6 +1081,135 @@ export function componentContractFor(name: string): ComponentContract | null {
 }
 
 // ============================================================================
+// Composable contracts
+// ============================================================================
+//
+// Each file in `src/styles/composables/` paints chrome gated on state set
+// by a `use{Name}` / `create{Name}` factory. Composables sit in the
+// cascade between surfaces and modifiers — they BOTH declare new
+// composable-scoped tokens AND override existing element / component /
+// surface tokens to retune chrome for the composable's state.
+//
+// COMPOSABLE_CONTRACTS records the per-composable contract:
+//
+//   - `tokenPrefix` — primary new namespace the partial owns. Optional
+//     (some composables, like `_tabs.scss`, declare no own tokens — they
+//     only paint state-gated chrome reading from the element / component
+//     layers).
+//
+//   - `requiredTokens` — composable-scoped tokens the partial MUST
+//     declare. Empty for behavior-only composables.
+//
+//   - `stateSelectors` — the composable-state selector kinds the partial
+//     MUST gate on. The _contracts.test.ts check enforces "at least one"
+//     state selector; this list enforces the specific vocabulary.
+//
+//   - `animated` — true when the partial paints `transition:` or
+//     `animation:` declarations. Must invoke `@include transition()` or
+//     `@include reduced-motion`.
+//
+//   - `factoryName` — the matching `create{Name}` / `use{Name}` pairing.
+//     Already cross-checked by _contracts.test.ts; recorded here for the
+//     guides + the per-composable failure messages.
+
+export interface ComposableContract {
+	readonly name: string
+	readonly tokenPrefix?: string
+	readonly requiredTokens: readonly string[]
+	/** Selector kinds the partial uses to gate on composable state. */
+	readonly stateSelectors: readonly string[]
+	readonly animated: boolean
+	readonly factoryName: string
+	readonly notes: string
+}
+
+export const COMPOSABLE_CONTRACTS: Readonly<Record<string, ComposableContract>> = {
+	aside: {
+		name: 'aside',
+		requiredTokens: [],
+		stateSelectors: [],
+		animated: false,
+		factoryName: 'createAside',
+		notes:
+			'Behavior-only composable. Drawer geometry lives in components/_aside.scss; this partial is a placeholder so composables/ mirrors browser/composables/.',
+	},
+	carousel: {
+		name: 'carousel',
+		tokenPrefix: 'carousel',
+		requiredTokens: [
+			'block-size',
+			'padding',
+			'border-color',
+			'border-radius',
+			'transition-duration',
+			'transition-easing',
+			'control-size',
+			'control-bg',
+			'control-icon',
+			'indicator-size',
+			'indicator-active-size',
+			'indicator-bg',
+			'indicator-bg-active',
+		],
+		stateSelectors: ['aria-attribute', 'role-attribute'],
+		animated: true,
+		factoryName: 'createCarousel',
+		notes:
+			'Carousel chrome — controls, indicators, slide transitions. Paints :aria-selected="true" active state.',
+	},
+	dialog: {
+		name: 'dialog',
+		tokenPrefix: 'dialog',
+		requiredTokens: ['inline-size', 'max-block-size', 'max-inline-size'],
+		stateSelectors: ['pseudo-class', 'attribute'],
+		animated: false,
+		factoryName: 'createDialog',
+		notes:
+			"Sizing extensions for dialog.scrollable[open] and dialog:modal. Motion lives on the element layer + popover surface.",
+	},
+	select: {
+		name: 'select',
+		tokenPrefix: 'select',
+		requiredTokens: [
+			'caret-min-inline-size',
+			'max-inline-size',
+			'menu-min-inline-size',
+			'toggle-min-block-size',
+			'toggle-padding-inline-end',
+		],
+		stateSelectors: ['aria-attribute', 'data-attribute', 'attribute'],
+		animated: false,
+		factoryName: 'createSelect',
+		notes:
+			'Combobox / listbox chrome. Toggle + menu + caret sizing reads from the element-layer --set-select-* surface.',
+	},
+	tabs: {
+		name: 'tabs',
+		requiredTokens: [], // tokens declared in components/_nav.scss under --set-tab-* and --set-tablist-*
+		stateSelectors: ['aria-attribute', 'role-attribute'],
+		animated: false,
+		factoryName: 'createTabs',
+		notes:
+			'Tab list chrome via [role="tablist"] / [role="tab"] / [aria-selected="true"]. Tokens declared in components/_nav.scss (via FILE_EXCEPTIONS); this partial paints state.',
+	},
+	toast: {
+		name: 'toast',
+		tokenPrefix: 'toast',
+		requiredTokens: ['stack-offset'],
+		stateSelectors: ['pseudo-class', 'attribute', 'data-attribute'],
+		animated: true,
+		factoryName: 'createToast',
+		notes:
+			'Toast deck stacking + animation chrome. Stack-offset is composable-managed (createToast.stack() writes the per-toast value inline); the element-layer --set-toast-* declares the static surface.',
+	},
+}
+
+/** Read the composable contract for a partial basename. */
+export function composableContractFor(name: string): ComposableContract | null {
+	return COMPOSABLE_CONTRACTS[name] ?? null
+}
+
+// ============================================================================
 // Interactive-element registry
 // ============================================================================
 //

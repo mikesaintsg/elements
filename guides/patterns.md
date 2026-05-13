@@ -418,7 +418,53 @@ Same as §7.3 (surfaces). Any component that declares a `transition-duration`, `
 
 ---
 
-## 9. Reference
+## 9. Per-composable contracts
+
+Each file in [`src/styles/composables/`](../src/styles/composables/) paints chrome gated on state set by a `use{Name}` / `create{Name}` factory. The contract is codified in [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/_composables.test.ts`](../tests/src/styles/_composables.test.ts).
+
+### 9.1 The shape
+
+Each entry adds two clauses beyond the surface / component contract:
+
+| Field | Meaning |
+| --- | --- |
+| `stateSelectors` | Composable-state selector kinds the partial uses (`pseudo-class`, `attribute`, `data-attribute`, `aria-attribute`, `role-attribute`). Empty for behavior-only composables. |
+| `factoryName` | The matching `create{Name}` factory in `src/browser/factories/`. The parity test asserts the file exists. |
+
+Plus the standard `name`, `tokenPrefix`, `requiredTokens`, `animated`, `notes`.
+
+### 9.2 The six composables
+
+| Composable | Token namespace | State selectors | Animated | Factory |
+| --- | --- | --- | --- | --- |
+| `aside` | (none — behavior-only) | (none — chrome lives in `components/_aside.scss`) | no | `createAside` |
+| `carousel` | `--set-carousel-*` (13 tokens) | `[aria-selected="true"]`, `[role="list"]`, `[role="listitem"]` | yes | `createCarousel` |
+| `dialog` | `--set-dialog-*` (3 sizing extensions) | `:modal`, `[open]` | no¹ | `createDialog` |
+| `select` | `--set-select-*` (5 menu / toggle sizing) | `[aria-expanded="true"]`, `[data-hidden]`, `[popover]` | no | `createSelect` |
+| `tabs` | (none — reads from `components/_nav.scss`) | `[role="tablist"]`, `[role="tab"]`, `[aria-selected="true"]` | no | `createTabs` |
+| `toast` | `--set-toast-stack-offset` | `:popover-open`, `[data-toast-stack]`, `[data-stack-*]`, `[popover]` | yes | `createToast` |
+
+¹ `_dialog.scss` declares sizing extensions only; motion lives on `elements/_dialog.scss` + `surfaces/_popover.scss`.
+
+### 9.3 Animated-composable contract
+
+Composables that declare `transition:` or `animation:` properties — OR are marked `animated: true` — MUST invoke `@include transition()` or `@include reduced-motion`. Bare `transition:` declarations break the `prefers-reduced-motion` opt-out for users who need it.
+
+### 9.4 Behavior-only composables
+
+Some composables are pure JavaScript behavior with no CSS chrome (`useAside` does scroll lock + focus trap + light dismiss; the visual chrome lives in `components/_aside.scss`). The partial exists as a placeholder so `src/styles/composables/` mirrors `src/browser/composables/`. `FILE_EXCEPTIONS['composables/_aside.scss']` records this with `skipStateSelectorCheck: true` and `allowCommentOnly: true`.
+
+### 9.5 Adding a new composable
+
+1. Add `create{Name}.ts` to `src/browser/factories/`.
+2. Add `use{Name}.ts` to `src/browser/composables/`.
+3. Add `composables/_{name}.scss` (or a comment-only placeholder if behavior-only).
+4. Add a `COMPOSABLE_CONTRACTS` entry with the token + state-selector + animation discipline.
+5. The parity test catches drift in both directions (partial without contract, contract without partial / factory).
+
+---
+
+## 10. Reference
 
 - [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the contract data and helpers.
 - [`tests/src/styles/_contracts.test.ts`](../tests/src/styles/_contracts.test.ts) — the parity test that consumes the contract.

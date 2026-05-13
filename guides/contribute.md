@@ -45,7 +45,15 @@ The quality bar applies even when the patch looks small. Adding one token withou
 
 ### 3.1 Spec before code
 
-Every change starts with the spec, not the existing source. Read the matching guide section first — `styles.md`, `tokens.md`, `modifiers.md`, `taxonomy.md`, `patterns.md`, `elements.md`, `components.md`, `surfaces.md`, `composables.md`, `mixins.md`. Form the production-correct vision from the spec, then compare to what's there, then close the gap. **Existing code is not ground truth** — it's something to verify. When writing or refactoring a SCSS partial specifically, consult [`patterns.md`](patterns.md) — the per-folder structural contract is codified there and enforced by `tests/src/styles/_contracts.test.ts`.
+Every change starts with the spec, not the existing source. Read the matching guide section first — `styles.md`, `tokens.md`, `modifiers.md`, `taxonomy.md`, `patterns.md`, `elements.md`, `components.md`, `surfaces.md`, `composables.md`, `mixins.md`. Form the production-correct vision from the spec, then compare to what's there, then close the gap. **Existing code is not ground truth** — it's something to verify. When writing or refactoring a SCSS partial specifically, consult [`patterns.md`](patterns.md) — the framework's full structural contract surface is codified there:
+
+- **§5 Scope discipline** — flatten `:not(t1):not(t2)` to `:not(:where(...))`; explicit scope on cross-cutting modifier compounds.
+- **§6 Per-dimension required tokens** — variant / size / style classes must declare their full token set.
+- **§7 Per-surface contracts** — each pseudo-element / attribute surface owns a token namespace + animated-mixin discipline.
+- **§8 Per-component contracts** — each component partial documents its required tokens + animated-mixin discipline.
+- **§9 Per-composable contracts** — each `use{Name}` chrome partial documents its tokens + state-selector vocabulary + factory pairing.
+
+Each section names the test file that enforces the contract.
 
 ### 3.2 No backwards compatibility
 
