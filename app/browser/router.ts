@@ -30,6 +30,7 @@ import UseFocusPage from './pages/UseFocusPage.vue'
 import UsePointerPage from './pages/UsePointerPage.vue'
 import UseDragDropPage from './pages/UseDragDropPage.vue'
 import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
+import UseMenuPage from './pages/UseMenuPage.vue'
 import UsePopoverPage from './pages/UsePopoverPage.vue'
 import UseTooltipPage from './pages/UseTooltipPage.vue'
 
@@ -218,6 +219,12 @@ const USE_THEME_BUTTON: Route = {
 	group: 'Composables',
 	page: UseThemeButtonPage,
 }
+const USE_MENU: Route = {
+	id: 'use-menu',
+	title: 'useMenu',
+	group: 'Composables',
+	page: UseMenuPage,
+}
 const USE_POPOVER: Route = {
 	id: 'use-popover',
 	title: 'usePopover',
@@ -261,6 +268,7 @@ export const routes: readonly Route[] = [
 	USE_POINTER,
 	USE_DRAG_DROP,
 	USE_THEME_BUTTON,
+	USE_MENU,
 	USE_POPOVER,
 	USE_TOOLTIP,
 ]

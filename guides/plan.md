@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](contribute.md) to know **how to work**.
 
-Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 31 of 43 pages built (all 4 Foundation pages complete); composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
+Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 32 of 43 pages built (all 4 Foundation pages complete; first of 12 composable-bound pages, **UseMenuPage**, shipped); remaining composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
 
 ---
 
@@ -157,24 +157,25 @@ Every SCSS partial is held to these contracts before it can merge. The contract 
 
 ---
 
-## What's shipped — showcase pages (31 of 43)
+## What's shipped — showcase pages (32 of 43)
 
-| Group                    | Pages                                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------- |
-| Shell + chrome           | HomePage, sidebar, TOC, theme toggle, mobile drawer                                         |
-| Foundations              | TokensPage, ThemePage, ModifiersPage, PlacementsPage                                        |
-| Elements — Interactive   | ButtonPage, AnchorPage, FormControlsPage, DetailsPage, DialogElementPage                    |
-| Elements — Content       | HeadingsPage, TypographyPage, ListsPage, TablesPage, MediaPage, FiguresPage, SectioningPage |
-| Components               | ArticleCardPage, AsidePage, NavPage, MenuPage, InlineAtomsPage                              |
-| Surfaces                 | PopoverSurfacesPage, FormSurfacesPage, ScrollAndTransitionPage                              |
-| Composables — Primitives | UseFocusPage, UsePointerPage, UseDragDropPage, UseThemeButtonPage                           |
-| Composables — Floating   | UsePopoverPage, UseTooltipPage                                                              |
+| Group                       | Pages                                                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| Shell + chrome              | HomePage, sidebar, TOC, theme toggle, mobile drawer                                         |
+| Foundations                 | TokensPage, ThemePage, ModifiersPage, PlacementsPage                                        |
+| Elements — Interactive      | ButtonPage, AnchorPage, FormControlsPage, DetailsPage, DialogElementPage                    |
+| Elements — Content          | HeadingsPage, TypographyPage, ListsPage, TablesPage, MediaPage, FiguresPage, SectioningPage |
+| Components                  | ArticleCardPage, AsidePage, NavPage, MenuPage, InlineAtomsPage                              |
+| Surfaces                    | PopoverSurfacesPage, FormSurfacesPage, ScrollAndTransitionPage                              |
+| Composables — Primitives    | UseFocusPage, UsePointerPage, UseDragDropPage, UseThemeButtonPage                           |
+| Composables — Floating      | UsePopoverPage, UseTooltipPage                                                              |
+| Composables — Element-bound | UseMenuPage                                                                                 |
 
 Element pages cover the static markup contract; the matching `Use*Page` (planned, §9.2) covers the JS interaction layer — `DetailsPage` proves the bare `<details>` element baseline, `UseDetailsPage` (planned) proves the `useDetails` programmatic open/close. Both pages exist for elements with composables.
 
 ---
 
-## Remaining work — Phase 9 (16 pages)
+## Remaining work — Phase 9 (11 pages)
 
 ### 9.1 Foundation pages (4)
 
@@ -185,11 +186,11 @@ Highest leverage — every other page references them.
 - ✅ **ModifiersPage** — variant × size × style × state × placement cascade. Cascade walk-through with resolved tokens; 7-variant grids across FILLED / SUBTLE / ON-CANVAS tiers; size table with concrete values; action-vs-container style demos; state demos with paired ARIA attributes (`disabled`, `active`, `loading`); 8-placement reference grid; interactive combination picker (variant × size × style × state) with live button + class-list output; customization guidance for retuning context tokens.
 - ✅ **PlacementsPage** — 8-class vocabulary table (`.top` / `.bottom` / `.start` / `.end` + 4 corners), interactive live demo (select placement → re-anchored popover), 3×3 grid metaphor, `position-try-fallbacks` flip demo (two anchor buttons at opposite edges; left flips, right honored), scope-discipline explainer (the `:not(:where(aside, dialog, nav, output))` drawer exclusion list), logical-axis / RTL note, and customization for `--set-anchor-{gap, max-inline-size, max-block-size, position-try-fallbacks}` tokens.
 
-### 9.2 Composable pages — element-bound (12)
+### 9.2 Composable pages — element-bound (11 remaining of 12)
 
 Each page proves the `use{Name}` factory's JS layer on top of the matching element page.
 
-- ⬜ **UseMenuPage** — `<menu popover>` panel + toggle, arrow-key roving, Home / End, click-outside dismiss.
+- ✅ **UseMenuPage** — `<menu popover>` panel + toggle, ArrowDown / ArrowUp roving, Home / End, item-click dismiss, three independent dismiss-policy flags (`outside` / `escape` / `inside`), `flip` threshold demo (`flip: 0` vs `flip: 8`), reactive `Ref<Placement>`, cancellable lifecycle + namespaced DOM events (`elements:menu:{show,open,hide,close}`).
 - ⬜ **UseDialogPage** — modal vs non-modal, every dismissal path (Esc, backdrop, programmatic), `'static'` mode (no backdrop dismiss), scrollable + fullscreen modifiers, non-modal scroll-lock.
 - ⬜ **UseAsidePage** — drawer mode (`<aside popover="manual">`) at every edge (`.start`, `.end`, `.top`, `.bottom`), backdrop dismiss, `[data-aside-closing]` lifecycle exposed.
 - ⬜ **UseDetailsPage** — programmatic open / close synced with native `toggle`, animated height (the `::details-content` reference behavior the framework's motion contract matches), group accordion (one-open-at-a-time pattern).
@@ -233,6 +234,7 @@ Selected updates surfaced during page authoring + audit phases:
 - **No element-hardcoding inside containment** — removed an early absorption that singled out `<search>` as the structural marker for docs-sidebar pinned-filter chrome (`nav:has(> search)` + `nav > search` rules). Composed-rail patterns now live on consumer wrapper classes (`.showcase-sidebar*` in `app/browser/styles/showcase.css`); framework keeps the rail's bare-default single-scroller. The architectural rule is codified as `STRUCTURAL_PAIRINGS` (51-entry allowlist with `spec` / `slot` / `reset` / `context` kinds), enforced by `_pairings.test.ts` — see [patterns.md](patterns.md) §10.
 - **`<h6>` + `<menu>` rail rhythm** — paid for the grouped-sidebar pattern `_menu.scss` already documented: uppercase eyebrow chrome on `<h6>` inside body-shell `<nav>` / `<aside>` rails, asymmetric inter-group margins, zeroed `<menu>` block margins.
 - **Token-group expansion** — added 5 new uniformity groups (`media-embed`, `progress-indicator`, `numeric-data`, `boxed-container`, `class-chip`) bringing the total to 12. Surfaced a `<video>` drift (raw `max-inline-size: 100%` instead of the `--set-video-max-inline-size` token used by every other embed); fixed.
+- **Roving keyboard focus now skips non-focusable wrappers** — `focusableItems` (called by `createMenu`'s ArrowDown / ArrowUp / Home / End handler) used to return both spec-required `<li>` wrappers AND their inner `<a>` / `<button>` children for a `<menu><li><button>…` panel. Roving landed on the `<li>` first, `.focus()` was a silent no-op (default `tabIndex = -1`), and the user saw nothing happen. Now filters to `tabIndex >= 0` so the wrapper is skipped while keeping the case where `<li tabindex="0">` is the intentional tab-stop. Surfaced while authoring UseMenuPage; covered by the page-level Playwright probe (`scripts/check-use-menu.mjs`).
 
 ---
 

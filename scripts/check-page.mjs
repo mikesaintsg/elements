@@ -42,11 +42,13 @@ await probe(devUrl, 'tokens', 'tokens')
 await probe(devUrl, 'theme', 'theme')
 await probe(devUrl, 'modifiers', 'modifiers')
 await probe(devUrl, 'placements', 'placements')
+await probe(devUrl, 'use-menu', 'use-menu')
 
 console.log('\n=== Minified showcase (file://) ===')
 await probe(fileUrl, 'tokens', 'tokens')
 await probe(fileUrl, 'theme', 'theme')
 await probe(fileUrl, 'modifiers', 'modifiers')
 await probe(fileUrl, 'placements', 'placements')
+await probe(fileUrl, 'use-menu', 'use-menu')
 
 await browser.close()
