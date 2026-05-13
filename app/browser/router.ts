@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage.vue'
 import TokensPage from './pages/TokensPage.vue'
 import ThemePage from './pages/ThemePage.vue'
 import ModifiersPage from './pages/ModifiersPage.vue'
+import PlacementsPage from './pages/PlacementsPage.vue'
 import ButtonPage from './pages/ButtonPage.vue'
 import AnchorPage from './pages/AnchorPage.vue'
 import FormControlsPage from './pages/FormControlsPage.vue'
@@ -66,6 +67,12 @@ const MODIFIERS: Route = {
 	title: 'Modifiers',
 	group: 'Foundations',
 	page: ModifiersPage,
+}
+const PLACEMENTS: Route = {
+	id: 'placements',
+	title: 'Placements',
+	group: 'Foundations',
+	page: PlacementsPage,
 }
 const BUTTON: Route = {
 	id: 'button',
@@ -229,6 +236,7 @@ export const routes: readonly Route[] = [
 	TOKENS,
 	THEME,
 	MODIFIERS,
+	PLACEMENTS,
 	BUTTON,
 	ANCHOR,
 	FORM_CONTROLS,

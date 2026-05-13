@@ -41,10 +41,12 @@ console.log('=== Dev server ===')
 await probe(devUrl, 'tokens', 'tokens')
 await probe(devUrl, 'theme', 'theme')
 await probe(devUrl, 'modifiers', 'modifiers')
+await probe(devUrl, 'placements', 'placements')
 
 console.log('\n=== Minified showcase (file://) ===')
 await probe(fileUrl, 'tokens', 'tokens')
 await probe(fileUrl, 'theme', 'theme')
 await probe(fileUrl, 'modifiers', 'modifiers')
+await probe(fileUrl, 'placements', 'placements')
 
 await browser.close()
