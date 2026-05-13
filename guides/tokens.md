@@ -450,7 +450,7 @@ Scope and context segments (`variant`, `size`, `style`, `shape`, `button`, …) 
 ## Cross-references
 
 - [styles.md](styles.md) — top-level styles architecture and cascade layer order.
-- [modifiers.md](modifiers.md) — four-dimension cascade (variant, size, style, shape) and the context tokens each class writes.
+- [modifiers.md](modifiers.md) — five-dimension cascade (variant, size, style, state, placement) and the context tokens each class writes.
 - [mixins.md](mixins.md) — `transition()`, `focus-ring()`, and `floater-*` mixins that consume tokens.
 - [elements.md](elements.md) — per-element catalog with every tag's token chain.
 - [composables.md](composables.md) — composable-level tokens (toast deck stacking, floater bounds, tabs indicator coordinates).

@@ -38,7 +38,7 @@ Any modifier dimension works on any element that consumes the right context toke
 
 ### 1.4 Tailwind v4 is the base
 
-Tailwind owns the color ramps, the scale tokens, every utility class, and preflight (the UA reset). The framework does not redeclare any of it. Modifier and utility classes compose freely on the same element: `<button class="primary large ghost rounded-full m-4 shadow-lg">`. Tailwind v4 ships through `@tailwindcss/postcss` so it runs after Sass and sees the compiled output — this is required for `@theme` blocks authored in SCSS to expand into `:root`.
+Tailwind owns the color ramps, the scale tokens, every utility class, and preflight (the UA reset). The framework does not redeclare any of it. Modifier and utility classes compose freely on the same element: `<button class="primary large subtle rounded-full m-4 shadow-lg">`. Tailwind v4 ships through `@tailwindcss/postcss` so it runs after Sass and sees the compiled output — this is required for `@theme` blocks authored in SCSS to expand into `:root`.
 
 ### 1.5 TypeScript mirrors anything with a CSS identity
 

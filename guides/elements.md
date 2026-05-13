@@ -24,7 +24,7 @@ A framework rule only ships when neither Tailwind preflight nor the UA default s
 
 - **UA quirk that breaks layout / accessibility / forced-colors.** `<fieldset>` zeroes `min-inline-size` (UA `min-content` blocks shrinking inside flex/grid). `<mark>` swaps UA hardcoded `yellow`/`black` for the system `mark` / `marktext` keywords plus a `prefers-color-scheme: dark` override using `highlight` / `highlighttext`. `<address>` resets `font-style: normal` because the UA italic is a widely-rejected quirk.
 - **Affordance preflight strips.** `<a>` keeps an underline (preflight drops it via `text-decoration: inherit`; the framework wants links visually distinct). `<abbr>` adds `cursor: help` (preflight covers the dotted underline; cursor is a separate signal). `<p>` adds `p + p { margin-block-start: 1em }` to restore inter-paragraph rhythm after preflight's universal `* { margin: 0 }` strip.
-- **Earns the full modifier cascade.** Interactive controls (`<button>`, `<a>`, `<input>`, `<select>`, `<textarea>`, `<label>`, `<fieldset>`, `<legend>`), disclosure / dialog roots (`<details>`, `<summary>`, `<dialog>`, `<aside>`), gauges (`<meter>`, `<progress>`, `<output>`), and structural primitives (`<form>`, `<menu>`, `<nav>`, `<search>`, `<h1>`–`<h6>`, the `<table>` family) all carry element-scoped tokens and the four-dimension cascade described in [modifiers.md](modifiers.md).
+- **Earns the full modifier cascade.** Interactive controls (`<button>`, `<a>`, `<input>`, `<select>`, `<textarea>`, `<label>`, `<fieldset>`, `<legend>`), disclosure / dialog roots (`<details>`, `<summary>`, `<dialog>`, `<aside>`), gauges (`<meter>`, `<progress>`, `<output>`), and structural primitives (`<form>`, `<menu>`, `<nav>`, `<search>`, `<h1>`–`<h6>`, the `<table>` family) all carry element-scoped tokens and the five-dimension cascade described in [modifiers.md](modifiers.md).
 
 If a future element needs framework rules, the test is: **does preflight already do it?** If yes, no partial rules. If no, but it is just an opinionated style choice, no rules — let consumers add utilities. If no, AND it is a real semantic gap (UA quirk needing reset, affordance preflight strips, or an element worth the full cascade) — then the rule earns its place.
 
@@ -248,7 +248,7 @@ Most `🚫 n/a` entries stay that way indefinitely. Promote to `🟡 override` o
 - [`tests/src/browser/elements.test.ts`](../tests/src/browser/elements.test.ts) — bidirectional parity contract
 - [`tests/src/styles/elements/`](../tests/src/styles/elements/) — per-element behaviour tests
 - [styles.md](styles.md) — top-level architecture and author's contract
-- [modifiers.md](modifiers.md) — four-dimension cascade elements consume
+- [modifiers.md](modifiers.md) — five-dimension cascade elements consume
 - [tokens.md](tokens.md) — token surface elements declare against
 - [components.md](components.md) — element compositions + class-root widgets; §8 composable pairings
 - [composables.md](composables.md) — Vue + framework-agnostic behaviour layer; §3 open / closed lifecycle discipline
