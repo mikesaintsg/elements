@@ -194,7 +194,66 @@ Six known-good outliers are recorded in [`FILE_EXCEPTIONS`](../src/browser/patte
 
 ---
 
-## 5. Reference
+## 5. Scope discipline (cascade-first selector design)
+
+Cross-cutting modifier rules — selectors that combine an attribute or pseudo head (e.g. `[popover]`) with a class qualifier from the modifier vocabulary (`.top`, `.subtle`, `.disabled`) — need explicit scoping. Two anti-patterns the parity test at [`tests/src/styles/_scope.test.ts`](../tests/src/styles/_scope.test.ts) catches:
+
+### 5.1 Chained tag / attribute `:not()` qualifiers — collapse to `:not(:where(...))`
+
+```scss
+/* ❌ Chained :not()s inflate specificity. */
+[popover]:not(aside):not(nav):not(output).top { … }    /* specificity 0,2,3 */
+
+/* ✓ Flattened blocklist. `:where()` contributes 0 to specificity. */
+[popover]:not(:where(aside, nav, output)).top { … }    /* specificity 0,2,0 */
+```
+
+Each `:not(tag)` adds 0,0,1 and each `:not([attr])` adds 0,1,0. Three of them inflate `[popover].top` from the intended 0,2,0 to 0,2,3, which can out-fight unrelated rules in the cascade. The `:not(:where(t1, t2, t3))` form keeps the exception list at zero specificity — adding or removing an opt-out is a single-token edit.
+
+The parity test exempts pseudo-class chains (`:not(:first-child):not(:last-child)`, `:not(:placeholder-shown):not(:focus)`) because they're position / state checks where the idiom is well-known and the inflation rarely matters.
+
+### 5.2 Unscoped cross-cutting modifier rules — add a scope clause
+
+```scss
+/* ❌ Unscoped. Applies to every popover host, including those with
+   intrinsic placement chrome (drawers, toasts). Future popover-able
+   elements silently inherit the rule. */
+[popover].top { … }
+
+/* ✓ Blocklist — broad default + narrow exceptions. Preferred when the
+   exception set is small and bounded. */
+[popover]:not(:where(aside, nav, output)).top { … }
+
+/* ✓ Allowlist — enumerate the tags that opt in. Preferred when the
+   accepting set is small and bounded forever. */
+:is(dialog, div, menu)[popover].top { … }
+```
+
+The rule is gated to **cross-cutting modifier compounds** specifically — selectors where:
+- Every branch's head is an attribute, pseudo-class, pseudo-element, role-attribute, data-attribute, aria-attribute, or universal selector.
+- AND at least one class qualifier matches the cross-cutting modifier vocabulary (`modifiers.variant`, `.size`, `.style`, `.state`, `.placement`).
+
+Tag-headed rules (`output[popover].drawer`, `nav[aria-label='Breadcrumb'] > ol > li.active`, `button.dropdown`) are already element-scoped — they don't bleed and don't trigger the check.
+
+Bare attribute rules without a modifier class (`[popover] { … }` for popover surface defaults) are intentionally broad — that's how the surface paints the default chrome on every popover host.
+
+### 5.3 Cascade-design rationale
+
+CSS is built around **broad defaults + narrow exceptions**, with the cascade resolving conflicts. The scope-discipline rules align selector form with that design:
+
+- **Blocklists honor the cascade.** A new popover-able element you didn't anticipate (`<details popover>`, `<section popover>`) automatically inherits the default placement — no silent failure.
+- **Flattened specificity prevents accidental cascade fights.** A 0,2,0 rule loses cleanly to a 0,2,1 rule when the consumer adds one. An inflated 0,2,3 rule fights specificity in ways that surprise authors.
+- **Single edit point.** Adding or removing an opt-out is one token; chained `:not()`s require editing every branch of every rule.
+
+### 5.4 Where the rule is enforced
+
+- [`src/browser/patterns.ts`](../src/browser/patterns.ts) — `hasChainedTagNots()`, `hasScopingFunction()`, `classQualifiers()` helpers.
+- [`tests/src/styles/_scope.test.ts`](../tests/src/styles/_scope.test.ts) — drives every partial in `src/styles/` against both anti-patterns.
+- This document — prose rationale + canonical examples.
+
+---
+
+## 6. Reference
 
 - [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the contract data and helpers.
 - [`tests/src/styles/_contracts.test.ts`](../tests/src/styles/_contracts.test.ts) — the parity test that consumes the contract.

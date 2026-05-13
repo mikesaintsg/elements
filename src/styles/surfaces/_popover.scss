@@ -125,7 +125,7 @@
 	// puts the drawer's full fade-slide cascade in one place and lets
 	// @starting-style resolve cleanly. Toasts (`<output popover>`) and
 	// generic popovers keep the surface's scale-in defaults.
-	[popover]:not(aside):not(nav) {
+	[popover]:not(:where(aside, nav)) {
 		opacity: 0;
 		transform: scale(0.98);
 
@@ -170,7 +170,7 @@
 	// Open-state target — opacity + transform reset for the non-aside
 	// popover family. Aside drawers own their own `:popover-open` rule
 	// in `components/_aside.scss` (opacity: 1 + transform: translate(0)).
-	[popover]:not(aside):not(nav):popover-open {
+	[popover]:not(:where(aside, nav)):popover-open {
 		opacity: 1;
 		transform: none;
 	}
@@ -197,7 +197,7 @@
 		// to interpolate while others snap. Scoping the surface
 		// @starting-style away from aside keeps each surface family's
 		// from-state values in one place.
-		[popover]:not(aside):not(nav) {
+		[popover]:not(:where(aside, nav)) {
 			opacity: 0;
 			transform: scale(0.98);
 		}
@@ -319,7 +319,7 @@
 		}
 		// Width clamp via TOKEN RETUNE, not a direct `max-inline-size`
 		// declaration. The anchor-position surface's
-		// `[popover]:not(output):not(aside):not(nav)` rule has higher
+		// `[popover]:not(:where(output, aside, nav))` rule has higher
 		// specificity (0,4,0) than `[popover='hint']` (0,1,0) and would
 		// win for a direct `max-inline-size: 12.5rem` declaration here —
 		// the tooltip was rendering at the panel's default 17.25 rem

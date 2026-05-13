@@ -349,7 +349,7 @@
 	// touch events from descendants (links / buttons) and blocks
 	// scroll-on-tap, so swiping a finger on a sidebar link would do
 	// nothing — only swipes that originated on non-interactive
-	// whitespace scrolled the rail. The `:not(aside):not(nav)` clause
+	// whitespace scrolled the rail. The `:not(:where(aside, nav))` clause
 	// excludes drawer surfaces and leaves the dropdown wrapping pattern
 	// intact for all other popover hosts (`<div popover>`,
 	// `<section popover>`, etc.).
@@ -366,8 +366,8 @@
 	// transform animate across the full duration, leaving the menu
 	// to revert to bare-tag toolbar layout for 150 ms).
 	menu[popover],
-	[popover]:not(aside):not(nav) menu,
-	[popover]:not(aside):not(nav) > menu {
+	[popover]:not(:where(aside, nav)) menu,
+	[popover]:not(:where(aside, nav)) > menu {
 		flex-direction: column;
 		align-items: stretch;
 		justify-content: flex-start;
@@ -430,15 +430,15 @@
 	// covers canonical `menu[popover]` AND wrapped `[popover] menu`
 	// patterns, EXCLUDES `:is(aside, nav)[popover]` drawer surfaces.
 	menu[popover] > li,
-	[popover]:not(aside):not(nav) menu > li,
-	[popover]:not(aside):not(nav) > menu > li {
+	[popover]:not(:where(aside, nav)) menu > li,
+	[popover]:not(:where(aside, nav)) > menu > li {
 		list-style: none;
 		margin: 0;
 	}
 
 	menu[popover] > li > :where(button, a),
-	[popover]:not(aside):not(nav) menu > li > :where(button, a),
-	[popover]:not(aside):not(nav) > menu > li > :where(button, a) {
+	[popover]:not(:where(aside, nav)) menu > li > :where(button, a),
+	[popover]:not(:where(aside, nav)) > menu > li > :where(button, a) {
 		display: flex;
 		align-items: center;
 		// Reset `justify-content` from the bare `<button>` element rule,
@@ -518,8 +518,8 @@
 	// selector because menus inside those render with nav-rail chrome.
 	// --------------------------------------------------------------------------
 	menu[popover] > h6,
-	[popover]:not(aside):not(nav) menu > h6,
-	[popover]:not(aside):not(nav) > menu > h6 {
+	[popover]:not(:where(aside, nav)) menu > h6,
+	[popover]:not(:where(aside, nav)) > menu > h6 {
 		margin: 0;
 		padding-inline: calc(var(--spacing) * 2.5);
 		padding-block: calc(var(--spacing) * 1.5) calc(var(--spacing) * 1);
@@ -531,8 +531,8 @@
 	}
 
 	menu[popover] > hr,
-	[popover]:not(aside):not(nav) menu > hr,
-	[popover]:not(aside):not(nav) > menu > hr {
+	[popover]:not(:where(aside, nav)) menu > hr,
+	[popover]:not(:where(aside, nav)) > menu > hr {
 		margin-block: calc(var(--spacing) * 1);
 		// Negative inline margin pulls the divider past the menu's own
 		// `padding-inline` (0 inside the popover, but the popover

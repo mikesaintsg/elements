@@ -622,3 +622,104 @@ export const FORCED_COLORS_INCLUDE_REGEX = /@include\s+forced-colors\b/
  * this mixin so the reduced-motion contract holds.
  */
 export const TRANSITION_INCLUDE_REGEX = /@include\s+transition\s*\(/
+
+// ============================================================================
+// Scope discipline
+// ============================================================================
+//
+// Cross-cutting selectors that combine an attribute / pseudo-element head
+// with a modifier-class qualifier (e.g. `[popover].top`,
+// `dialog::backdrop.modal`) need explicit scoping to prevent bleeding into
+// elements whose intrinsic chrome conflicts with the rule. Two anti-
+// patterns the parity test catches:
+//
+//   1. CHAINED NOTS — `[popover]:not(aside):not(nav):not(output).top`
+//      Each `:not(tag)` adds 0,0,1 to specificity. Three of them inflate
+//      the rule to 0,2,3 instead of the intended 0,2,0. Collapse to
+//      `:not(:where(t1, t2, t3))` — `:where()` contributes 0 to
+//      specificity, keeping the rule's weight flat.
+//
+//   2. UNSCOPED CROSS-CUTTING — `[popover].top` with no scoping at all.
+//      Applies to every popover host including those with intrinsic
+//      placement chrome (aside drawers, nav rails, output toasts). New
+//      popover-able elements added later silently inherit the rule. The
+//      fix is either a `:not(:where(...))` blocklist or an `:is(...)`
+//      allowlist; both make the rule's scope explicit.
+//
+// The "modifier-class compound" check looks at rules whose selector
+// contains BOTH an attribute / pseudo head AND a `.{name}` class
+// qualifier where `{name}` is in the cross-cutting modifier vocabulary.
+// Bare attribute rules (`[popover] { … }`) without a modifier class are
+// broad-default and don't trigger the check — that's by design.
+
+/**
+ * True when the selector contains two or more chained `:not(TAG)` or
+ * `:not([ATTR])` qualifiers — the specificity-inflation anti-pattern.
+ *
+ * Each `:not(tag)` adds 0,0,1 and each `:not([attr])` adds 0,1,0 to the
+ * rule's specificity. Three of them lift a `[popover].top` rule from
+ * the intended 0,2,0 to 0,2,3, which can out-fight unrelated rules in
+ * the cascade. The fix is collapsing to a single
+ * `:not(:where(t1, t2, t3))` — `:where()` contributes 0 to specificity
+ * regardless of how many tags it contains.
+ *
+ * Pseudo-class `:not()` chains (e.g. `:not(:first-child):not(:last-child)`,
+ * `:not(:placeholder-shown):not(:focus)`) are NOT flagged — they're
+ * position / state checks where the inflation rarely matters and the
+ * idiom is widely recognized. Only tag and attribute `:not()` chains
+ * surface here.
+ */
+export function hasChainedTagNots(selector: string): boolean {
+	// Match :not(content) where content is a tag name (`[a-z][a-z0-9-]*`)
+	// or an attribute selector (`[…]`). Pseudo-class :not() chains are
+	// out of scope.
+	const matches = selector.match(/:not\((?:[a-z][a-z0-9-]*|\[[^\]]+\])\)/g) ?? []
+	return matches.length >= 2
+}
+
+/**
+ * @deprecated Use `hasChainedTagNots` instead. This helper flagged any
+ * chained `:not()` including pseudo-class chains, which produced too many
+ * false positives. Kept for backwards compatibility with the early
+ * scope-discipline draft; new tests should use `hasChainedTagNots`.
+ */
+export function hasChainedNots(selector: string): boolean {
+	return hasChainedTagNots(selector)
+}
+
+/**
+ * True when the selector includes a `:where(...)` or `:is(...)`
+ * functional pseudo containing a tag list — the canonical scope-
+ * discipline construct. A rule with this form has explicit scoping.
+ */
+export function hasScopingFunction(selector: string): boolean {
+	return /:(?:where|is)\([^)]+\)/.test(selector)
+}
+
+/**
+ * Extract class qualifiers from a selector. Examples:
+ *   '[popover].top' → ['top']
+ *   'button.primary.large' → ['primary', 'large']
+ *   ':is(aside, nav)[popover].drawer' → ['drawer']
+ *   'h1' → []
+ */
+export function classQualifiers(selector: string): readonly string[] {
+	const out: string[] = []
+	const regex = /\.([a-z][a-z0-9-]*)/g
+	let match: RegExpExecArray | null
+	while ((match = regex.exec(selector)) !== null) {
+		if (match[1]) out.push(match[1])
+	}
+	return out
+}
+
+/**
+ * Detect whether a selector contains an attribute or pseudo head — the
+ * "broad" half of a cross-cutting selector. Includes `[attr]`, `[attr=…]`,
+ * `:pseudo-class`, and `::pseudo-element` heads.
+ */
+export function hasBroadHead(selector: string): boolean {
+	return /(?:^|\s|>|\+|~|,)\s*(?:\[[^\]]+\]|:(?!root\b)(?!is\b)(?!where\b)(?!not\b)(?!has\b)[a-z-]+(?:\([^)]*\))?|::[a-z-]+)/.test(
+		' ' + selector,
+	)
+}

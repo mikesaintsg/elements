@@ -18,11 +18,14 @@ import {
 	STYLE_LAYERS,
 	TRANSITION_INCLUDE_REGEX,
 	allowedTokenPrefixes,
+	classQualifiers,
 	classifyHeadSelector,
 	exceptionFor,
 	hasBareFocusRule,
+	hasChainedTagNots,
 	hasFreeTokenNamespace,
 	hasPseudoElement,
+	hasScopingFunction,
 	hasStateSelector,
 	isInteractive,
 	partialBasename,
@@ -366,6 +369,46 @@ describe('patterns — mixin-invocation regexes', () => {
 		expect(TRANSITION_INCLUDE_REGEX.test('@include transition(color)')).toBe(true)
 		expect(TRANSITION_INCLUDE_REGEX.test('@include transition((color, bg))')).toBe(true)
 		expect(TRANSITION_INCLUDE_REGEX.test('@include forced-colors {')).toBe(false)
+	})
+})
+
+describe('patterns — scope-discipline helpers', () => {
+	it('hasChainedTagNots flags 2+ sequential :not(tag) or :not([attr]) qualifiers', () => {
+		expect(hasChainedTagNots('[popover]:not(aside):not(nav)')).toBe(true)
+		expect(hasChainedTagNots(':not(a):not(b):not(c)')).toBe(true)
+		expect(hasChainedTagNots('input:not([type=checkbox]):not([type=radio]):not([type=range])')).toBe(true)
+	})
+
+	it('hasChainedTagNots accepts single :not() or flattened :not(:where(...))', () => {
+		expect(hasChainedTagNots(':not(aside)')).toBe(false)
+		expect(hasChainedTagNots(':not(:where(aside, nav, output))')).toBe(false)
+		expect(hasChainedTagNots('[popover].top')).toBe(false)
+	})
+
+	it('hasChainedTagNots exempts pseudo-class chains (state / position)', () => {
+		expect(hasChainedTagNots(':not(:first-child):not(:last-child)')).toBe(false)
+		expect(hasChainedTagNots('input:not(:placeholder-shown):not(:focus)')).toBe(false)
+		expect(hasChainedTagNots('button:not(:disabled):not(.loading)')).toBe(false)
+	})
+
+	it('hasScopingFunction recognizes :where() and :is() functional pseudos', () => {
+		expect(hasScopingFunction(':where(aside, nav)')).toBe(true)
+		expect(hasScopingFunction(':is(button, a)')).toBe(true)
+		expect(hasScopingFunction(':not(:where(aside, nav, output))')).toBe(true)
+	})
+
+	it('hasScopingFunction rejects unscoped / bare selectors', () => {
+		expect(hasScopingFunction('[popover].top')).toBe(false)
+		expect(hasScopingFunction('button.dropdown')).toBe(false)
+		expect(hasScopingFunction(':not(button)')).toBe(false)
+	})
+
+	it('classQualifiers returns class-name qualifiers in source order', () => {
+		expect(classQualifiers('[popover].top')).toEqual(['top'])
+		expect(classQualifiers('.badge.primary.large')).toEqual(['badge', 'primary', 'large'])
+		expect(classQualifiers(':is(button, a)[popover].drawer.subtle')).toEqual(['drawer', 'subtle'])
+		expect(classQualifiers('h1')).toEqual([])
+		expect(classQualifiers('::backdrop')).toEqual([])
 	})
 })
 
