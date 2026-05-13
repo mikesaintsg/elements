@@ -331,27 +331,57 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 			tighter contact shadow so the surface reads as a discrete floating layer rather than an
 			inflated drop.
 		</p>
-		<div class="cluster">
-			<article style="box-shadow: var(--set-box-shadow-small); padding: var(--spacing)">
-				<h3 style="margin-block: 0"><code>small</code></h3>
-				<p style="margin-block: var(--spacing) 0">
+		<div
+			style="
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+				gap: calc(var(--spacing) * 6);
+				padding-block: calc(var(--spacing) * 2);
+			"
+		>
+			<article
+				style="
+					background-color: var(--color-surface);
+					padding: calc(var(--spacing) * 4);
+					border-radius: var(--radius-md);
+					box-shadow: var(--set-box-shadow-small);
+				"
+			>
+				<h3 style="margin-block: 0"><code>--set-box-shadow-small</code></h3>
+				<p style="margin-block: calc(var(--spacing) * 2) 0">
 					List-group hover, dropdown items, subtle action panels.
 				</p>
 			</article>
-			<article style="box-shadow: var(--set-box-shadow); padding: var(--spacing)">
-				<h3 style="margin-block: 0"><code>base</code></h3>
-				<p style="margin-block: var(--spacing) 0">Popover panels, dropdown menus.</p>
+			<article
+				style="
+					background-color: var(--color-surface);
+					padding: calc(var(--spacing) * 4);
+					border-radius: var(--radius-md);
+					box-shadow: var(--set-box-shadow);
+				"
+			>
+				<h3 style="margin-block: 0"><code>--set-box-shadow</code> <small>(base)</small></h3>
+				<p style="margin-block: calc(var(--spacing) * 2) 0">Popover panels, dropdown menus.</p>
 			</article>
-			<article style="box-shadow: var(--set-box-shadow-large); padding: var(--spacing)">
-				<h3 style="margin-block: 0"><code>large</code></h3>
-				<p style="margin-block: var(--spacing) 0">Modal dialogs, toasts, drawer chrome.</p>
+			<article
+				style="
+					background-color: var(--color-surface);
+					padding: calc(var(--spacing) * 4);
+					border-radius: var(--radius-md);
+					box-shadow: var(--set-box-shadow-large);
+				"
+			>
+				<h3 style="margin-block: 0"><code>--set-box-shadow-large</code></h3>
+				<p style="margin-block: calc(var(--spacing) * 2) 0">
+					Modal dialogs, toasts, drawer chrome.
+				</p>
 			</article>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>&lt;article style="box-shadow: var(--set-box-shadow-small)"&gt;
-  …
-&lt;/article&gt;</code></pre>
+			<pre><code>&lt;article style="box-shadow: var(--set-box-shadow-small)"&gt;…&lt;/article&gt;
+&lt;article style="box-shadow: var(--set-box-shadow)"&gt;…&lt;/article&gt;
+&lt;article style="box-shadow: var(--set-box-shadow-large)"&gt;…&lt;/article&gt;</code></pre>
 		</details>
 	</section>
 
@@ -392,9 +422,9 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 			<code>--set-border-radius</code> (live: <code>{{ read('--set-border-radius') }}</code
 			>) is the framework default; per-component radius tokens fall back to it.
 			<code>--set-radius-factor</code> (live: <code>{{ read('--set-radius-factor') }}</code
-			>) is a global multiplier: <code>0</code> = sharp / angular, <code>1</code> = default,
-			<code>1.5</code>
-			= very rounded.
+			>) is a global multiplier consumers can apply to any element-scoped radius via
+			<code>calc(value * var(--set-radius-factor))</code>: <code>0</code> = sharp / angular,
+			<code>1</code> = default, <code>1.5</code> = very rounded.
 		</p>
 		<form class="row" @submit.prevent>
 			<label>
@@ -409,24 +439,53 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 				/>
 			</label>
 		</form>
-		<div class="cluster">
-			<button type="button" class="primary">Primary button</button>
+		<p>
+			The demo surfaces below opt into the factor by re-declaring their radius tokens as
+			<code>calc(default * var(--set-radius-factor))</code> in an inline style. The shipped
+			components don't currently consume the factor by default — it's the consumer's opt-in for
+			their own components or scoped overrides.
+		</p>
+		<div
+			class="cluster"
+			style="
+				--set-button-border-radius: calc(0.375rem * var(--set-radius-factor));
+				--set-article-border-radius: calc(0.5rem * var(--set-radius-factor));
+				--set-badge-border-radius: calc(0.375rem * var(--set-radius-factor));
+				justify-content: flex-start;
+			"
+		>
+			<button type="button" class="primary">Primary</button>
 			<button type="button" class="secondary">Secondary</button>
-			<article style="padding: var(--spacing)">
+			<article
+				style="
+					background-color: var(--color-surface);
+					padding: calc(var(--spacing) * 3);
+					inline-size: 12rem;
+				"
+			>
 				<p style="margin-block: 0">An article card watching the radius factor.</p>
 			</article>
 			<span class="badge primary">Badge</span>
-			<span class="tag information">Tag</span>
 		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;div style="
+  --set-button-border-radius: calc(0.375rem * var(--set-radius-factor));
+  --set-article-border-radius: calc(0.5rem * var(--set-radius-factor));
+"&gt;
+  &lt;button class="primary"&gt;Primary&lt;/button&gt;
+  &lt;article&gt;…&lt;/article&gt;
+&lt;/div&gt;</code></pre>
+		</details>
 	</section>
 
 	<section id="tokens-density">
 		<h2>Density — <code>--set-density-factor</code></h2>
 		<p>
 			Global multiplier for spacing rhythm. <code>0.75</code> = compact (mailbox-style desktop),
-			<code>1</code> = default, <code>1.25</code> = spacious (touch-first). Components that opt in
-			wrap their padding math in <code>calc(value * var(--set-density-factor))</code> so the shift
-			propagates from a single host-page declaration.
+			<code>1</code> = default, <code>1.25</code> = spacious (touch-first). Same opt-in shape as
+			<code>--set-radius-factor</code>: consumers wrap padding tokens in
+			<code>calc(value * var(--set-density-factor))</code>.
 		</p>
 		<form class="row" @submit.prevent>
 			<label>
@@ -442,8 +501,24 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 			</label>
 		</form>
 		<p>
-			Current density-aware consumers will retune in lockstep. Reset all sliders below to restore
-			defaults across the page.
+			The demo buttons below opt in by declaring their padding tokens as
+			<code>calc(default * var(--set-density-factor))</code>. Drag the slider to see them inflate /
+			compact.
+		</p>
+		<div
+			class="cluster"
+			style="
+				--set-button-padding-inline: calc(0.75rem * var(--set-density-factor));
+				--set-button-padding-block: calc(0.375rem * var(--set-density-factor));
+				justify-content: flex-start;
+			"
+		>
+			<button type="button" class="primary">Primary</button>
+			<button type="button" class="secondary">Secondary</button>
+			<button type="button" class="success">Success</button>
+		</div>
+		<p style="margin-block-start: calc(var(--spacing) * 4)">
+			Reset clears every inline override on this page so the framework defaults return.
 		</p>
 		<button type="button" class="subtle" @click="resetTokens">Reset all token overrides</button>
 	</section>
@@ -493,11 +568,17 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 				>. Default <code>0.35</code>.
 			</dd>
 		</dl>
-		<p>Try it — tab to the button below to see the live ring:</p>
-		<div class="cluster">
+		<p>
+			Try it — tab to the buttons below to see the live ring. The ring color tracks the active
+			variant's <code>--set-variant-background-color</code>, so each button glows in its own tint.
+		</p>
+		<div class="cluster" style="justify-content: flex-start; row-gap: calc(var(--spacing) * 2)">
 			<button type="button" class="primary">Primary</button>
+			<button type="button" class="secondary">Secondary</button>
 			<button type="button" class="success">Success</button>
+			<button type="button" class="warning">Warning</button>
 			<button type="button" class="danger">Danger</button>
+			<button type="button" class="information">Information</button>
 		</div>
 	</section>
 
@@ -559,8 +640,11 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
   --set-icon-chevron-down: url("/icons/heroicons/chevron-down.svg");
 }</code></pre>
 		<div
-			class="cluster"
-			style="gap: calc(var(--spacing) * 2); --icon-color: var(--color-text); align-items: stretch"
+			style="
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+				gap: calc(var(--spacing) * 2);
+			"
 		>
 			<article
 				v-for="icon in icons"
@@ -569,15 +653,16 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 					display: flex;
 					align-items: center;
 					gap: var(--spacing);
-					padding-block: calc(var(--spacing) * 1.5);
+					padding-block: calc(var(--spacing) * 2);
 					padding-inline: calc(var(--spacing) * 2);
-					inline-size: 18rem;
+					background-color: var(--color-surface);
 				"
 			>
 				<i
 					aria-hidden="true"
 					:style="{
 						display: 'inline-block',
+						flex: 'none',
 						inlineSize: '1.25rem',
 						blockSize: '1.25rem',
 						backgroundColor: 'currentColor',
@@ -587,9 +672,26 @@ const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
 						maskSize: 'contain',
 					}"
 				></i>
-				<div style="display: flex; flex-direction: column; gap: 0.125rem; min-inline-size: 0">
-					<strong>{{ icon.label }}</strong>
-					<code style="font-size: 0.75em; opacity: 0.7">{{ icon.token }}</code>
+				<div
+					style="
+						display: flex;
+						flex-direction: column;
+						gap: 0.125rem;
+						min-inline-size: 0;
+						overflow: hidden;
+					"
+				>
+					<strong style="line-height: 1.2">{{ icon.label }}</strong>
+					<code
+						style="
+							font-size: 0.75em;
+							opacity: 0.7;
+							overflow: hidden;
+							text-overflow: ellipsis;
+							white-space: nowrap;
+						"
+						>{{ icon.token }}</code
+					>
 				</div>
 			</article>
 		</div>
