@@ -31,7 +31,7 @@
 //   landing page that uses `<header>` outside a shell isn't auto-styled as
 //   a compact app bar — heroes should stay free-form.
 //
-// Drawer-header sticky pin (and how to opt out):
+// Drawer-header sticky pin (and the docs-sidebar opt-out):
 //   The framework's drawer-header rule (`body:has(main) > nav > header`
 //   plus its `> * >` once-removed variant for Vue / React mount points)
 //   pins the header with `position: sticky` + negative margins keyed to
@@ -39,21 +39,13 @@
 //   itself is the scroll container (the framework's default) — the
 //   header stays visible while the rail's contents scroll past.
 //
-//   Consumers using a flex-column split rail (rail container + inner
-//   list scroller, see `_nav.scss` § Scroll-container model) need to
-//   opt the drawer header OUT of the sticky pin. The rail no longer
-//   scrolls so the pin isn't needed, AND the negative margins fight
-//   the consumer's own padding choices. Override via a higher-
-//   specificity rule keyed to the consumer's class:
-//
-//      nav > header.your-drawer-header-class {
-//          position: static;
-//          margin: 0;
-//          inset-block-start: auto;
-//      }
-//
-//   The header keeps its `--set-header-padding-*` height, so it stays
-//   the same height as the body app bar across the layout.
+//   When the rail opts into the docs-sidebar shape (`nav:has(> search)`,
+//   see `_nav.scss` § Docs-sidebar split), the rail itself no longer
+//   scrolls — its inner scroll region does — so the sticky pin isn't
+//   needed AND its negative margins would push the band past the
+//   rail's zeroed padding into invisible space. The framework cancels
+//   the pin automatically for that shape (rule below); consumers don't
+//   need a class.
 // ============================================================================
 
 @use '../mixins' as *;
@@ -188,5 +180,19 @@
 		position: sticky;
 		inset-block-start: calc(var(--set-aside-padding-block) * -1);
 		z-index: 1;
+	}
+
+	// Docs-sidebar split — when the rail opts into the flex-column-split
+	// shape (`nav:has(> search)`, see `_nav.scss` § Docs-sidebar split),
+	// the rail itself no longer scrolls (its inner scroll region does),
+	// so the sticky pin is unnecessary AND the negative inline margins
+	// would push the band past the rail's zeroed `padding-inline: 0` into
+	// invisible space. Cancel both. The header keeps its own padding +
+	// height so it still reads as a band.
+	body:has(main) > nav:not([popover]):has(> search) > header,
+	body:has(main) > * > nav:not([popover]):has(> search) > header {
+		position: static;
+		margin: 0;
+		inset-block-start: auto;
 	}
 }

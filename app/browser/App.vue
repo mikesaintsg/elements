@@ -213,12 +213,13 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			</label>
 		</search>
 
-		<!-- Scrolling links region. The `<div>` is layout-only — it owns the
-		     `flex: 1 + overflow-y: auto` scroll container so the sibling
-		     `<header>` and `<search>` above can stay at fixed height
-		     outside the overflow. Inside, SiteNav renders the framework's
-		     documented `<h6>` + `<menu>` sibling-pair pattern. -->
-		<div class="showcase-sidebar-scroll">
+		<!-- Scrolling links region. The framework matches this `<div>`
+		     structurally as `nav:has(> search) > :not(header, search):
+		     last-child` and paints the `flex: 1 + overflow-y: auto`
+		     scroll container — see `components/_nav.scss` § Docs-sidebar
+		     split. Inside, SiteNav renders the framework's documented
+		     `<h6>` + `<menu>` sibling-pair pattern. -->
+		<div>
 			<SiteNav :routes="filteredRoutes" :active="current.id" @navigate="closeRailDrawers" />
 		</div>
 	</nav>

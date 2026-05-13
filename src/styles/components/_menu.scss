@@ -310,6 +310,59 @@
 	}
 
 	// --------------------------------------------------------------------------
+	// Grouped-sidebar rhythm — `<h6>` + `<menu>` sibling pairs inside `<nav>`
+	// (primary rail) and `<aside>` (TOC rail).
+	//
+	// The header docstring at the top of this file documents the markup
+	// contract: alternating `<h6>` group labels and `<menu>` link lists.
+	// This block PAYS for it. Without the implementation, consumers writing
+	// the documented pattern have to re-discover the rhythm themselves —
+	// every docs site reinvents "uppercase eyebrow label, tight gap below,
+	// generous gap above the next group."
+	//
+	// Asymmetric margins do the work:
+	//   • Top of each heading: spacing × 3 — generous gap clears the
+	//     previous group's menu.
+	//   • Bottom of each heading: spacing × 1 — tight, so the heading
+	//     reads as a LABEL for the menu directly beneath it, not as a
+	//     standalone item that floats between groups.
+	//   • First heading: no top margin. The rail's own padding-block
+	//     supplies the gap from the rail edge. Handles two cases:
+	//       - bare rail: h6 is the direct first child of <nav> / <aside>.
+	//       - docs-sidebar split: h6 is the first child of the rail's
+	//         scroll-region wrapper (last child of `nav:has(> search)`).
+	//   • Menus: zero block margins. Headings carry the inter-group
+	//     rhythm — menus shouldn't compete with their own margins.
+	// --------------------------------------------------------------------------
+	body:has(main) > :where(nav, aside) h6,
+	body:has(main) > * > :where(nav, aside) h6 {
+		margin-block-start: calc(var(--spacing) * 3);
+		margin-block-end: calc(var(--spacing) * 1);
+		padding-inline: calc(var(--spacing) * 2);
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+	}
+
+	// First-heading top-margin reset. Three selectors cover the patterns:
+	//   - bare nav / aside rail: h6 is the rail's first child.
+	//   - docs-sidebar split: h6 lives inside the rail's last child
+	//     (the scroll-region wrapper after the `<search>` row).
+	body:has(main) > :where(nav, aside) > h6:first-child,
+	body:has(main) > * > :where(nav, aside) > h6:first-child,
+	body:has(main) > nav:has(> search) > :last-child > h6:first-child,
+	body:has(main) > * > nav:has(> search) > :last-child > h6:first-child {
+		margin-block-start: 0;
+	}
+
+	body:has(main) > :where(nav, aside) menu,
+	body:has(main) > * > :where(nav, aside) menu {
+		margin-block: 0;
+	}
+
+	// --------------------------------------------------------------------------
 	// Dropdown menu — `<menu popover>` paired with a `<button popovertarget>`.
 	//
 	// Markup contract:
