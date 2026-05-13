@@ -66,7 +66,7 @@
 	// the canonical recipe — the alignment is what turns a "somewhere in
 	// that band" placement into a "kissing the anchor edge" placement.)
 	//
-	// `:not(:where(aside, nav, output))` — aside drawers (offcanvas, see
+	// `:not(:where(aside, dialog, nav, output))` — aside drawers (offcanvas, see
 	// `components/_aside.scss`) and output toasts (corner-anchored, see
 	// `components/_output.scss`) have their own viewport-fixed placement
 	// chrome that consumes the `.start` / `.end` / `.top` / `.bottom`
@@ -74,7 +74,7 @@
 	// activate anchor positioning and fight their viewport-edge geometry.
 	//
 	// The `:where()` wrapper FLATTENS the exclusion list to zero
-	// specificity — `:not(:where(aside, nav, output))` carries the same
+	// specificity — `:not(:where(aside, dialog, nav, output))` carries the same
 	// specificity as `:not(aside)` alone (0,0,1), so the three exceptions
 	// don't inflate the rule's weight in the cascade. This is the
 	// framework's "scope discipline" pattern (see `guides/patterns.md`):
@@ -84,22 +84,22 @@
 	// popover-able elements you didn't anticipate (`<section popover>`,
 	// `<details popover>`, etc.) automatically inherit the default
 	// placement — no silent failure.
-	[popover]:not(:where(aside, nav, output)).top {
+	[popover]:not(:where(aside, dialog, nav, output)).top {
 		position-area: block-start;
 		align-self: end;
 		justify-self: anchor-center;
 	}
-	[popover]:not(:where(aside, nav, output)).bottom {
+	[popover]:not(:where(aside, dialog, nav, output)).bottom {
 		position-area: block-end;
 		align-self: start;
 		justify-self: anchor-center;
 	}
-	[popover]:not(:where(aside, nav, output)).start {
+	[popover]:not(:where(aside, dialog, nav, output)).start {
 		position-area: inline-start;
 		align-self: anchor-center;
 		justify-self: end;
 	}
-	[popover]:not(:where(aside, nav, output)).end {
+	[popover]:not(:where(aside, dialog, nav, output)).end {
 		position-area: inline-end;
 		align-self: anchor-center;
 		justify-self: start;
@@ -145,22 +145,22 @@
 	//                        inline-END edge. `justify-self: end` puts the
 	//                        popover's end at the area's end = anchor's
 	//                        end edge.
-	[popover]:not(:where(aside, nav, output)).top-start {
+	[popover]:not(:where(aside, dialog, nav, output)).top-start {
 		position-area: block-start span-inline-end;
 		align-self: end;
 		justify-self: start;
 	}
-	[popover]:not(:where(aside, nav, output)).top-end {
+	[popover]:not(:where(aside, dialog, nav, output)).top-end {
 		position-area: block-start span-inline-start;
 		align-self: end;
 		justify-self: end;
 	}
-	[popover]:not(:where(aside, nav, output)).bottom-start {
+	[popover]:not(:where(aside, dialog, nav, output)).bottom-start {
 		position-area: block-end span-inline-end;
 		align-self: start;
 		justify-self: start;
 	}
-	[popover]:not(:where(aside, nav, output)).bottom-end {
+	[popover]:not(:where(aside, dialog, nav, output)).bottom-end {
 		position-area: block-end span-inline-start;
 		align-self: start;
 		justify-self: end;
