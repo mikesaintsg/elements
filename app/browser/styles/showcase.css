@@ -8,13 +8,12 @@
  *   │               │ <h2> / <h6> / <menu> chrome; <i class="icon"> mask   │
  *   │ components    │ body-grid layout shell, per-rail chrome (header     │
  *   │               │ band, nav rail, main scroller, aside rail, footer    │
- *   │               │ band), docs-sidebar split (nav:has(> search) →       │
- *   │               │ pinned filter + scrolling list region), in-rail nav  │
- *   │               │ menu, in-aside TOC menu, h6+menu grouped-sidebar     │
- *   │               │ rhythm, `aria-current=page` / `aria-current=location`│
- *   │               │ styling, native-popover offcanvas drawer chrome on   │
- *   │               │ mobile: slide-from-edge, ::backdrop scrim, Esc +     │
- *   │               │ click-out dismiss, header band edge bleed + divider │
+ *   │               │ band), in-rail nav menu, in-aside TOC menu,          │
+ *   │               │ h6+menu grouped-sidebar rhythm, `aria-current=page` /│
+ *   │               │ `aria-current=location` styling, native-popover      │
+ *   │               │ offcanvas drawer chrome on mobile: slide-from-edge,  │
+ *   │               │ ::backdrop scrim, Esc + click-out dismiss, header   │
+ *   │               │ band edge bleed + divider                            │
  *   │ surfaces      │ scrollbar styling, focus ring, ::selection,          │
  *   │               │ ::backdrop dim+blur scrim                            │
  *   │ modifiers     │ `.subtle` on icon buttons; `.primary` highlights     │
@@ -25,19 +24,36 @@
  *
  * What's left, and lives here:
  *
- *   Responsive visibility for the showcase's UX decision — drawer
- *   bands and the body-header toggle buttons live on mobile only;
- *   the aside-TOC h6 lives on desktop only (the drawer band carries
- *   the title in drawer mode). The framework can't decide this: a
- *   different consumer might want the body-header toggles on desktop
- *   too, or no h6 anywhere. The class names are arbitrary; the
- *   showcase declares them and toggles via a media query.
+ *   1. Responsive visibility — drawer bands and the body-header
+ *      toggle buttons live on mobile only; the aside-TOC h6 lives on
+ *      desktop only (the drawer band carries the title in drawer
+ *      mode). The framework can't decide this — a different consumer
+ *      might want the body-header toggles on desktop too, or no h6
+ *      anywhere. The class names are arbitrary; the showcase declares
+ *      them and toggles via a media query.
+ *
+ *   2. Composed sidebar (the LEFT nav rail) — a rail with multiple
+ *      regions: drawer band, pinned filter, scrolling link list. The
+ *      framework's bare nav-rail default is single-scroller (every
+ *      child scrolls together). The showcase needs a composed shape,
+ *      so `.showcase-sidebar` opts the rail into containment-only
+ *      mode (rail clips overflow; each region inside owns its own
+ *      chrome). The RIGHT aside-TOC rail stays bare (single-scroller
+ *      is the right shape for a TOC).
+ *
+ *      Rule of thumb the showcase follows: framework styling targets
+ *      semantic elements; consumer styling targets wrapper CLASSES.
+ *      No selector here references `<search>` or any other element
+ *      directly — the styling lives on `.showcase-sidebar-region` /
+ *      `.showcase-sidebar-scroll`, so what each region CONTAINS is a
+ *      content decision, not a styling trigger.
  */
 
-/* hmr-touch 62 */
+/* hmr-touch 64 */
 
-/* Mobile-only chrome — drawer toggles in the body header AND drawer
- * header bands inside each rail (holding title + close button).
+/* ============================================================================
+ * Responsive visibility — mobile-only toggles + drawer bands +
+ * desktop-only aside heading.
  *
  * On desktop the rails are in-flow grid columns so they never collapse
  * and need neither the toggle button nor the drawer-internal header.
@@ -48,7 +64,8 @@
  * `components/_aside.scss`'s `:is(aside, nav)[popover]` drawer rules.
  *
  * Rule ordering matters: defaults FIRST, the @media reveal SECOND.
- * Equal-specificity declarations resolve by source order. */
+ * Equal-specificity declarations resolve by source order.
+ * ============================================================================ */
 .showcase-nav-toggle,
 .showcase-toc-toggle,
 .showcase-drawer-header,
@@ -80,4 +97,115 @@
 	.showcase-toc-heading {
 		display: block;
 	}
+}
+
+/* ============================================================================
+ * Composed sidebar — `.showcase-sidebar` opts the LEFT nav rail into
+ * containment-only mode so the showcase can stack three regions:
+ *
+ *   1. drawer header band (mobile only — `.showcase-drawer-header`)
+ *   2. pinned filter region   (`.showcase-sidebar-region`)
+ *   3. scrolling link list    (`.showcase-sidebar-scroll`)
+ *
+ * Framework boundary: the framework's bare nav-rail default is
+ * single-scroller — rail itself owns `overflow-y: auto`, every child
+ * scrolls together. That's the right baseline for product navs
+ * (drop in links, framework handles scroll). The showcase's docs-
+ * sidebar shape is a CONSUMER composition: the rail switches to
+ * `overflow: hidden` so the inner scroll region can own scrolling
+ * without competing; the rail's own padding + gap zero out so each
+ * region owns its own gutter and dividers paint edge-to-edge.
+ *
+ * Why the styling lives on wrappers, not on `<search>`: the framework
+ * doesn't single out `<search>` (or `<header>`, or any element type)
+ * as the trigger for composed-mode chrome — that would lock the
+ * pattern to one specific markup. Wrappers separate concerns
+ * cleanly: any content can go inside a `.showcase-sidebar-region`
+ * (filter, toolbar, status row, breadcrumb…) and inherit the
+ * pinned-card chrome via its parent's class.
+ * ============================================================================ */
+
+/* Rail container — switch from single-scroller to containment-only.
+ * The framework's `body:has(main) > nav` rule supplies the flex-
+ * column, the inline-size, the border-inline-end, and the typography;
+ * we just override the scroll model + zero the rail's own padding +
+ * gap so each region owns its own. */
+.showcase-sidebar {
+	overflow: hidden;
+	padding-inline: 0;
+	padding-block: 0;
+	gap: 0;
+}
+
+/* Pinned region — card-like wrapper with its own padding + bottom
+ * divider, never compresses. The wrapper is the consumer's vocabulary
+ * for "a pinned section in a composed rail"; any child content (a
+ * `<search>`, a `<form>`, a `<header>`-style toolbar, etc.) gets the
+ * same chrome by virtue of sitting inside this wrapper. Tones key off
+ * `--set-nav-*` so desktop-mode tracks the rail's chrome, and the
+ * popover-mode override below retunes for drawer-mode. */
+.showcase-sidebar-region {
+	flex-shrink: 0;
+	padding-inline: var(--set-nav-padding-inline);
+	padding-block: var(--set-nav-padding-block);
+	background-color: var(--set-nav-background-color);
+	border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
+}
+
+/* Scroll region — claims remaining height, owns vertical scroll for
+ * its content. `flex: 1 1 0` (NOT `1 1 auto`) + `min-block-size: 0`
+ * is the canonical flex-shrink-below-content recipe: `flex-basis: 0`
+ * starts the item at zero so `flex-grow: 1` allocates exactly the
+ * remaining space; `min-block-size: 0` lets the item shrink below its
+ * intrinsic content size so `overflow-y: auto` engages cleanly.
+ * Safari is the strict reader here — Chromium / Firefox tolerate
+ * `flex: 1 1 auto` for this shape, but Safari can leave the scroll
+ * region at its full content height and push the rail past 100dvh. */
+.showcase-sidebar-scroll {
+	flex: 1 1 0;
+	min-block-size: 0;
+	overflow-y: auto;
+	padding-inline: var(--set-nav-padding-inline);
+	padding-block: var(--set-nav-padding-block);
+}
+
+/* Drawer-mode overrides — when the rail opens in popover (mobile)
+ * mode, it picks up the framework's popover surface chrome. Retune
+ * the inner regions' padding + tones to match the drawer's gutter +
+ * popover surface so the regions read as part of the drawer, not
+ * left-over rail bands. */
+.showcase-sidebar[popover] .showcase-sidebar-region {
+	padding-inline: var(--set-aside-drawer-padding-inline);
+	padding-block: var(--set-aside-drawer-padding-block);
+	background-color: var(--set-popover-background-color);
+	border-block-end-color: var(--set-popover-border-color);
+}
+
+.showcase-sidebar[popover] .showcase-sidebar-scroll {
+	padding-inline: var(--set-aside-drawer-padding-inline);
+	padding-block: var(--set-aside-drawer-padding-block);
+}
+
+/* Drawer-header bleed cancellation — the framework's `:is(aside,
+ * nav)[popover] > header:first-child` rule in `_aside.scss` paints
+ * the drawer band with `margin-inline: calc(-1 * --set-aside-drawer-
+ * padding-inline)` so the band bleeds past the rail's gutter. In
+ * composed mode the rail's `padding-inline: 0`, so the bleed would
+ * push the band off-screen to the inline-start. Cancel it; the
+ * band's own padding-inline (declared by the framework rule) keeps
+ * its internal gutter intact. */
+.showcase-sidebar[popover] > .showcase-drawer-header {
+	margin-inline: 0;
+}
+
+/* Sticky-pin opt-out — the framework pins `nav:not([popover]) >
+ * header` with `position: sticky` + negative margins so the band
+ * stays visible while the rail scrolls. In composed mode the rail
+ * no longer scrolls (the inner scroll region does) AND the negative
+ * margins would push the band past the rail's zeroed padding. Cancel
+ * the pin; the band stays at intrinsic height via flex layout. */
+.showcase-sidebar:not([popover]) > .showcase-drawer-header {
+	position: static;
+	margin: 0;
+	inset-block-start: auto;
 }

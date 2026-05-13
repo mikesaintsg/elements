@@ -33,7 +33,7 @@ Tailwind's documentation is authoritative. The framework reads these via `var()`
 | Density / radius   | `--set-density-factor`, `--set-radius-factor`                                                                                                                          |
 | Baseline hydration | `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-sticky-offset`                                                                 |
 | Z-index scale      | `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}`                                                                                                    |
-| Elevation          | `--set-box-shadow-small`, `--set-box-shadow`, `--set-box-shadow-large`                                                                                                       |
+| Elevation          | `--set-box-shadow-small`, `--set-box-shadow`, `--set-box-shadow-large`                                                                                                 |
 | Icon               | `--set-icon-chevron-*`, `--set-icon-check`, `--set-icon-close`, …                                                                                                      |
 | Floater            | `--set-floater-gutter`, `--set-floater-inset-*`, `--set-floater-max-*`                                                                                                 |
 | Transition         | `--set-transition-duration` (150 ms, small UI tints); `--set-motion-duration` (250 ms, substantive show/hide) + `--set-motion-timing-function` (iOS stiff-decel curve) |

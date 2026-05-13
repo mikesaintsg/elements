@@ -31,12 +31,12 @@ $styles: (subtle, filled) !default;
 $states: (disabled, active, loading) !default;
 ```
 
-| List        | Role                                                                                                |
-| ----------- | --------------------------------------------------------------------------------------------------- |
-| `$variants` | Seven semantic palette roles. Iterated by `_variants.scss` and every per-variant tint emitter.      |
-| `$sizes`    | Two non-default sizes. `medium` is the bare-element default and is intentionally absent.            |
+| List        | Role                                                                                                                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `$variants` | Seven semantic palette roles. Iterated by `_variants.scss` and every per-variant tint emitter.                                                               |
+| `$sizes`    | Two non-default sizes. `medium` is the bare-element default and is intentionally absent.                                                                     |
 | `$styles`   | Two fill treatments applied on top of a variant. (`.outline` removed — Tailwind owns it; `.ghost` removed — failed WCAG AA on 4 of 7 variants in dark mode.) |
-| `$states`   | Three interaction / lifecycle states.                                                               |
+| `$states`   | Three interaction / lifecycle states.                                                                                                                        |
 
 No `$shapes` list — corner roundness flows through `--set-radius-factor` at `:root` ([modifiers.md](modifiers.md) §1). Placement values are emitted directly in `_placements.scss` without a Sass list because the eight values don't compose with anything else.
 

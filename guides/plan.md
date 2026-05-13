@@ -8,21 +8,21 @@ Status of every layer is recorded below. Sections marked ✅ are fully shipped (
 
 ## At a glance
 
-| Phase | Description | Status |
-| --- | --- | --- |
-| 0 | Repo bootstrap (deps, scripts, vite + vitest projects) | ✅ |
-| 1 | Cascade layer order + style entry | ✅ |
-| 2 | Tokens (variant palette, `--set-*` namespace, theme) | ✅ |
-| 3 | Mixins + Sass-list constants | ✅ |
-| 4 | Modifiers (5 dimensions × full required-token coverage) | ✅ |
-| 5 | Element baselines (94 partials; 49 substantive, 8 reset, rest passthrough) | ✅ |
-| 6 | Components (19 partials; tag-rooted + class-component primitives) | ✅ |
-| 7 | Surfaces (9 partials; pseudo-element + attribute) | ✅ |
-| 8 | Composables (20 use/create pairs + 6 chrome partials) | ✅ |
-| 9 | Showcase pages | 🟡 |
-| 10 | Distribution (build + pack) | ✅ |
-| 11 | Invariant verification | ✅ |
-| **Audit** | **5-folder file-by-file audit + 8 codified contracts + parity tests** | ✅ |
+| Phase     | Description                                                                | Status |
+| --------- | -------------------------------------------------------------------------- | ------ |
+| 0         | Repo bootstrap (deps, scripts, vite + vitest projects)                     | ✅     |
+| 1         | Cascade layer order + style entry                                          | ✅     |
+| 2         | Tokens (variant palette, `--set-*` namespace, theme)                       | ✅     |
+| 3         | Mixins + Sass-list constants                                               | ✅     |
+| 4         | Modifiers (5 dimensions × full required-token coverage)                    | ✅     |
+| 5         | Element baselines (94 partials; 49 substantive, 8 reset, rest passthrough) | ✅     |
+| 6         | Components (19 partials; tag-rooted + class-component primitives)          | ✅     |
+| 7         | Surfaces (9 partials; pseudo-element + attribute)                          | ✅     |
+| 8         | Composables (20 use/create pairs + 6 chrome partials)                      | ✅     |
+| 9         | Showcase pages                                                             | 🟡     |
+| 10        | Distribution (build + pack)                                                | ✅     |
+| 11        | Invariant verification                                                     | ✅     |
+| **Audit** | **5-folder file-by-file audit + 8 codified contracts + parity tests**      | ✅     |
 
 **Tests:** `src:browser` 1210/1210 · `src:styles` 3646/3646 · total **4856/4856 pass**.
 
@@ -32,17 +32,17 @@ Status of every layer is recorded below. Sections marked ✅ are fully shipped (
 
 The 5-folder audit (elements → modifiers → surfaces → components → composables) landed a codified contract surface in [`src/browser/patterns.ts`](../src/browser/patterns.ts) + [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts), enforced by 9 parity tests:
 
-| Contract | Source | Test |
-| --- | --- | --- |
-| Folder structural | `FOLDER_CONTRACTS`, `FILE_EXCEPTIONS` | [`_contracts.test.ts`](../tests/src/styles/_contracts.test.ts) |
-| HTML taxonomy | `taxonomy`, `TAXONOMY_BY_TAG`, `TOKEN_GROUPS` | [`_taxonomy.test.ts`](../tests/src/styles/_taxonomy.test.ts), [`browser/taxonomy.test.ts`](../tests/src/browser/taxonomy.test.ts) |
-| Interactive elements | `INTERACTIVE_ELEMENTS`, `FORCED_COLORS_INCLUDE_REGEX`, `hasBareFocusRule` | [`_interactive.test.ts`](../tests/src/styles/_interactive.test.ts) |
-| Scope discipline | `hasChainedTagNots`, `hasScopingFunction` | [`_scope.test.ts`](../tests/src/styles/_scope.test.ts) |
-| Modifier dimensions | `MODIFIER_DIMENSION_TOKENS` | [`_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts) |
-| Surface contracts | `SURFACE_CONTRACTS` | [`_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts) |
-| Component contracts | `COMPONENT_CONTRACTS` | [`_components.test.ts`](../tests/src/styles/_components.test.ts) |
-| Composable contracts | `COMPOSABLE_CONTRACTS` | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts) |
-| TS shape | (the registries themselves) | [`browser/patterns.test.ts`](../tests/src/browser/patterns.test.ts) |
+| Contract             | Source                                                                    | Test                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Folder structural    | `FOLDER_CONTRACTS`, `FILE_EXCEPTIONS`                                     | [`_contracts.test.ts`](../tests/src/styles/_contracts.test.ts)                                                                    |
+| HTML taxonomy        | `taxonomy`, `TAXONOMY_BY_TAG`, `TOKEN_GROUPS`                             | [`_taxonomy.test.ts`](../tests/src/styles/_taxonomy.test.ts), [`browser/taxonomy.test.ts`](../tests/src/browser/taxonomy.test.ts) |
+| Interactive elements | `INTERACTIVE_ELEMENTS`, `FORCED_COLORS_INCLUDE_REGEX`, `hasBareFocusRule` | [`_interactive.test.ts`](../tests/src/styles/_interactive.test.ts)                                                                |
+| Scope discipline     | `hasChainedTagNots`, `hasScopingFunction`                                 | [`_scope.test.ts`](../tests/src/styles/_scope.test.ts)                                                                            |
+| Modifier dimensions  | `MODIFIER_DIMENSION_TOKENS`                                               | [`_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts)                                                                  |
+| Surface contracts    | `SURFACE_CONTRACTS`                                                       | [`_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts)                                                                      |
+| Component contracts  | `COMPONENT_CONTRACTS`                                                     | [`_components.test.ts`](../tests/src/styles/_components.test.ts)                                                                  |
+| Composable contracts | `COMPOSABLE_CONTRACTS`                                                    | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts)                                                                |
+| TS shape             | (the registries themselves)                                               | [`browser/patterns.test.ts`](../tests/src/browser/patterns.test.ts)                                                               |
 
 Every new SCSS partial added under `src/styles/` is held to **eight contracts** before it can merge. See [`patterns.md`](patterns.md) for the prose explanation of each.
 
@@ -94,15 +94,15 @@ The current flat sidebar list works for 1–14 pages. By the time the roster hit
 
 26 of 42 pages built. Each page passes the per-page rubric in [contribute.md §6](contribute.md#6-authoring-a-showcase-page).
 
-| Group | Pages |
-| --- | --- |
-| Shell + chrome | sidebar, TOC, theme toggle, mobile drawer (with edge-aware close + drawer-header parity) |
-| Elements — Interactive | ButtonPage, AnchorPage, FormControlsPage, DetailsPage, DialogElementPage |
-| Elements — Content | HeadingsPage, TypographyPage, ListsPage, TablesPage, MediaPage, FiguresPage, SectioningPage |
-| Components | ArticleCardPage, AsidePage, NavPage, MenuPage, InlineAtomsPage |
-| Surfaces | PopoverSurfacesPage, FormSurfacesPage, ScrollAndTransitionPage |
-| Composables — Primitives | UseFocusPage, UsePointerPage, UseDragDropPage, UseThemeButtonPage |
-| Composables — Floating | UsePopoverPage, UseTooltipPage |
+| Group                    | Pages                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------- |
+| Shell + chrome           | sidebar, TOC, theme toggle, mobile drawer (with edge-aware close + drawer-header parity)    |
+| Elements — Interactive   | ButtonPage, AnchorPage, FormControlsPage, DetailsPage, DialogElementPage                    |
+| Elements — Content       | HeadingsPage, TypographyPage, ListsPage, TablesPage, MediaPage, FiguresPage, SectioningPage |
+| Components               | ArticleCardPage, AsidePage, NavPage, MenuPage, InlineAtomsPage                              |
+| Surfaces                 | PopoverSurfacesPage, FormSurfacesPage, ScrollAndTransitionPage                              |
+| Composables — Primitives | UseFocusPage, UsePointerPage, UseDragDropPage, UseThemeButtonPage                           |
+| Composables — Floating   | UsePopoverPage, UseTooltipPage                                                              |
 
 Cross-cutting framework changes surfaced and resolved during page authoring (selected):
 

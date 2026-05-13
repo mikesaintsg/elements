@@ -171,8 +171,24 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 	     showcase: the framework's `nav[popover]:popover-open` rules
 	     (mirrored from `aside[popover]` in `components/_aside.scss`)
 	     handle the slide-from-edge geometry + backdrop scrim, and Vue
-	     just decides whether the rail is a popover or not. -->
-	<nav id="primary-rail" aria-label="Primary" :popover="isMobile ? 'auto' : undefined">
+	     just decides whether the rail is a popover or not.
+
+	     `.showcase-sidebar` opts this rail into composed-mode (multiple
+	     internal regions). The framework's bare-rail default is single-
+	     scroller; the showcase needs a pinned filter card above a
+	     separately-scrolling link list, so it overrides the rail's
+	     containment + zeroes the rail's own padding/gap (in
+	     `showcase.css`). Each region inside owns its own chrome via its
+	     wrapper class — the framework deliberately doesn't single out
+	     one element type (`<search>`, `<form>`, etc.) as the pinning
+	     trigger; regions are styled by their wrapper, not their
+	     content. -->
+	<nav
+		id="primary-rail"
+		aria-label="Primary"
+		class="showcase-sidebar"
+		:popover="isMobile ? 'auto' : undefined"
+	>
 		<!-- Drawer header band — mobile only. Title + close button mirror
 		     the canonical `<aside popover>` offcanvas pattern on
 		     AsidePage so the body-shell rail drawers and the standalone
@@ -194,32 +210,36 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			</button>
 		</header>
 
-		<!-- `<search>` is the HTML5 search landmark. Mounted as a
-		     separate, NON-scrolling row of the nav rail's flex column
-		     (`showcase.css` switches the rail to a flex-column split
-		     when it carries a `> search` child). The links list below
-		     gets its own scroll region — the search stays anchored at
-		     the top, the rest scrolls. -->
-		<search>
-			<label>
-				<span class="sr-only">Filter pages</span>
-				<input
-					id="sidebar-filter"
-					v-model="filterQuery"
-					type="search"
-					placeholder="Filter… (press /)"
-					autocomplete="off"
-				/>
-			</label>
-		</search>
+		<!-- Pinned filter region. Card-like wrapper (`.showcase-sidebar-
+		     region`) gives this part its own padding + bottom divider
+		     so the filter sits flush with the rail edges and reads as
+		     a separate region from the scrolling list below. The
+		     framework doesn't single out `<search>` — the styling
+		     lives on the wrapper class, so any pinned content (filter,
+		     toolbar, status row, etc.) can use the same vocabulary.
+		     The wrapper inherits `flex-shrink: 0` from
+		     `.showcase-sidebar-region`. -->
+		<div class="showcase-sidebar-region">
+			<search>
+				<label>
+					<span class="sr-only">Filter pages</span>
+					<input
+						id="sidebar-filter"
+						v-model="filterQuery"
+						type="search"
+						placeholder="Filter… (press /)"
+						autocomplete="off"
+					/>
+				</label>
+			</search>
+		</div>
 
-		<!-- Scrolling links region. The framework matches this `<div>`
-		     structurally as `nav:has(> search) > :not(header, search):
-		     last-child` and paints the `flex: 1 + overflow-y: auto`
-		     scroll container — see `components/_nav.scss` § Docs-sidebar
-		     split. Inside, SiteNav renders the framework's documented
+		<!-- Scrolling links region. `.showcase-sidebar-scroll` claims
+		     remaining vertical space + owns `overflow-y: auto`, so the
+		     long link list scrolls without consuming the pinned filter
+		     above. Inside, SiteNav renders the framework's documented
 		     `<h6>` + `<menu>` sibling-pair pattern. -->
-		<div>
+		<div class="showcase-sidebar-scroll">
 			<SiteNav :routes="filteredRoutes" :active="current.id" @navigate="closeRailDrawers" />
 		</div>
 	</nav>

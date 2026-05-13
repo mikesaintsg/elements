@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta name="build-id" content="2026-05-13T15:02:01.339Z" />
+		<meta name="build-id" content="2026-05-13T16:38:35.023Z" />
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -16723,12 +16723,7 @@ useTooltip({ anchor, panel, placement })`,
 								W,
 								null,
 								[
-									(n[1] ||= q(
-										`h6`,
-										{ class: `showcase-toc-heading text-xs uppercase tracking-wider opacity-70` },
-										`On this page`,
-										-1,
-									)),
+									(n[1] ||= q(`h6`, { class: `showcase-toc-heading` }, `On this page`, -1)),
 									i.value.length > 0
 										? (G(),
 											K(`nav`, Nh, [
@@ -16780,9 +16775,10 @@ useTooltip({ anchor, panel, placement })`,
 				zh = [`aria-label`],
 				Bh = [`popovertarget`],
 				Vh = [`popover`],
-				Hh = { class: `showcase-sidebar-scroll` },
-				Uh = [`popover`],
-				Wh = { class: `font-mono text-xs` }
+				Hh = { class: `showcase-sidebar-region` },
+				Uh = { class: `showcase-sidebar-scroll` },
+				Wh = [`popover`],
+				Gh = { class: `font-mono text-xs` }
 			yo(
 				V({
 					__name: `App`,
@@ -16940,6 +16936,7 @@ useTooltip({ anchor, panel, placement })`,
 										{
 											id: `primary-rail`,
 											'aria-label': `Primary`,
+											class: `showcase-sidebar`,
 											popover: r.value ? `auto` : void 0,
 										},
 										[
@@ -16968,27 +16965,29 @@ useTooltip({ anchor, panel, placement })`,
 												],
 												-1,
 											)),
-											q(`search`, null, [
-												q(`label`, null, [
-													(i[4] ||= q(`span`, { class: `sr-only` }, `Filter pages`, -1)),
-													On(
-														q(
-															`input`,
-															{
-																id: `sidebar-filter`,
-																'onUpdate:modelValue': (i[0] ||= (e) => (n.value = e)),
-																type: `search`,
-																placeholder: `Filter… (press /)`,
-																autocomplete: `off`,
-															},
-															null,
-															512,
+											q(`div`, Hh, [
+												q(`search`, null, [
+													q(`label`, null, [
+														(i[4] ||= q(`span`, { class: `sr-only` }, `Filter pages`, -1)),
+														On(
+															q(
+																`input`,
+																{
+																	id: `sidebar-filter`,
+																	'onUpdate:modelValue': (i[0] ||= (e) => (n.value = e)),
+																	type: `search`,
+																	placeholder: `Filter… (press /)`,
+																	autocomplete: `off`,
+																},
+																null,
+																512,
+															),
+															[[uo, n.value]],
 														),
-														[[uo, n.value]],
-													),
+													]),
 												]),
 											]),
-											q(`div`, Hh, [
+											q(`div`, Uh, [
 												Ui(Mh, { routes: o.value, active: B(Oh).id, onNavigate: u }, null, 8, [
 													`routes`,
 													`active`,
@@ -17041,11 +17040,11 @@ useTooltip({ anchor, panel, placement })`,
 											),
 										],
 										8,
-										Uh,
+										Wh,
 									),
 									q(`footer`, null, [
 										(i[7] ||= q(`small`, null, `Elements framework`, -1)),
-										q(`small`, Wh, `build ` + P(B(`2026-05-13T15:02:01.339Z`)), 1),
+										q(`small`, Gh, `build ` + P(B(`2026-05-13T16:38:35.023Z`)), 1),
 									]),
 								],
 								64,
@@ -21519,6 +21518,30 @@ useTooltip({ anchor, panel, placement })`,
 				) {
 					padding-inline-start: calc(var(--spacing) * 3);
 				}
+				:is(body:has(main) > :where(nav, aside) h6, body:has(main) > * > :where(nav, aside) h6) {
+					padding-inline: calc(var(--spacing) * 2);
+					color: var(--color-text-muted);
+					font-size: var(--text-xs);
+					letter-spacing: 0.05em;
+					text-transform: uppercase;
+					margin-block-start: calc(var(--spacing) * 3);
+					margin-block-end: calc(var(--spacing) * 1);
+					font-weight: 600;
+				}
+				:is(
+					body:has(main) > :where(nav, aside) > h6:first-child,
+					body:has(main) > * > :where(nav, aside) > h6:first-child,
+					body:has(main) > :where(nav, aside) > * > h6:first-child,
+					body:has(main) > * > :where(nav, aside) > * > h6:first-child
+				) {
+					margin-block-start: 0;
+				}
+				:is(
+					body:has(main) > :where(nav, aside) menu,
+					body:has(main) > * > :where(nav, aside) menu
+				) {
+					margin-block: 0;
+				}
 				menu[popover],
 				[popover]:not(:where(aside, nav)) menu,
 				[popover]:not(:where(aside, nav)) > menu {
@@ -22439,7 +22462,7 @@ useTooltip({ anchor, panel, placement })`,
 					--set-anchor-position-area: block-end;
 					--set-anchor-viewport-inset: calc(var(--spacing) * 2);
 				}
-				[popover]:not(:where(output, aside, nav)) {
+				[popover]:not(:where(aside, dialog, nav, output)) {
 					margin: 0;
 					margin-block: var(--set-anchor-gap);
 					position-area: var(--set-anchor-position-area);
@@ -22559,7 +22582,7 @@ useTooltip({ anchor, panel, placement })`,
 						100vw - var(--set-popover-viewport-inset) * 2
 					);
 				}
-				[popover]:not(:where(aside, nav)) {
+				[popover]:not(:where(aside, dialog, nav)) {
 					opacity: 0;
 					transition:
 						opacity var(--set-popover-transition-duration),
@@ -22569,16 +22592,16 @@ useTooltip({ anchor, panel, placement })`,
 					transform: scale(0.98);
 				}
 				@media (prefers-reduced-motion: reduce) {
-					[popover]:not(:where(aside, nav)) {
+					[popover]:not(:where(aside, dialog, nav)) {
 						transition: none;
 					}
 				}
-				[popover]:not(:where(aside, nav)):popover-open {
+				[popover]:not(:where(aside, dialog, nav)):popover-open {
 					opacity: 1;
 					transform: none;
 				}
 				@starting-style {
-					[popover]:not(:where(aside, nav)) {
+					[popover]:not(:where(aside, dialog, nav)) {
 						opacity: 0;
 						transform: scale(0.98);
 					}
@@ -23428,39 +23451,39 @@ useTooltip({ anchor, panel, placement })`,
 				.loading {
 					cursor: progress;
 				}
-				[popover]:not(:where(aside, nav, output)).top {
+				[popover]:not(:where(aside, dialog, nav, output)).top {
 					position-area: block-start;
 					align-self: end;
 					justify-self: anchor-center;
 				}
-				[popover]:not(:where(aside, nav, output)).bottom {
+				[popover]:not(:where(aside, dialog, nav, output)).bottom {
 					position-area: block-end;
 					align-self: start;
 					justify-self: anchor-center;
 				}
-				[popover]:not(:where(aside, nav, output)).start {
+				[popover]:not(:where(aside, dialog, nav, output)).start {
 					position-area: inline-start;
 					align-self: anchor-center;
 					justify-self: end;
 				}
-				[popover]:not(:where(aside, nav, output)).end {
+				[popover]:not(:where(aside, dialog, nav, output)).end {
 					position-area: inline-end;
 					align-self: anchor-center;
 					justify-self: start;
 				}
-				[popover]:not(:where(aside, nav, output)).top-start {
+				[popover]:not(:where(aside, dialog, nav, output)).top-start {
 					position-area: block-start span-inline-end;
 					place-self: end start;
 				}
-				[popover]:not(:where(aside, nav, output)).top-end {
+				[popover]:not(:where(aside, dialog, nav, output)).top-end {
 					position-area: block-start span-inline-start;
 					place-self: end;
 				}
-				[popover]:not(:where(aside, nav, output)).bottom-start {
+				[popover]:not(:where(aside, dialog, nav, output)).bottom-start {
 					position-area: block-end span-inline-end;
 					place-self: start;
 				}
-				[popover]:not(:where(aside, nav, output)).bottom-end {
+				[popover]:not(:where(aside, dialog, nav, output)).bottom-end {
 					position-area: block-end span-inline-start;
 					place-self: start end;
 				}
@@ -25309,65 +25332,43 @@ useTooltip({ anchor, panel, placement })`,
 					display: block;
 				}
 			}
-			:is(body:has(main) > nav:has(> search), body:has(main) > * > nav:has(> search)) {
+			.showcase-sidebar {
 				gap: 0;
-				padding: 0;
+				padding-block: 0;
+				padding-inline: 0;
 				overflow: hidden;
 			}
-			:is(
-				body:has(main) > nav[popover]:has(> search) > header:first-child,
-				body:has(main) > * > nav[popover]:has(> search) > header:first-child
-			) {
-				margin-inline: 0;
-			}
-			:is(body:has(main) > nav > search, body:has(main) > * > nav > search) {
+			.showcase-sidebar-region {
 				padding-inline: var(--set-nav-padding-inline);
 				padding-block: var(--set-nav-padding-block);
 				background-color: var(--set-nav-background-color);
 				border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
 				flex-shrink: 0;
 			}
-			:is(body:has(main) > nav[popover] > search, body:has(main) > * > nav[popover] > search) {
-				padding-inline: var(--set-aside-drawer-padding-inline);
-				padding-block: var(--set-aside-drawer-padding-block);
-				background-color: var(--set-popover-background-color);
-				border-block-end-color: var(--set-popover-border-color);
-			}
-			:is(
-				body:has(main) > nav > .showcase-sidebar-scroll,
-				body:has(main) > * > nav > .showcase-sidebar-scroll
-			) {
+			.showcase-sidebar-scroll {
 				min-block-size: 0;
 				padding-inline: var(--set-nav-padding-inline);
 				padding-block: var(--set-nav-padding-block);
 				flex: 1 1 0;
 				overflow-y: auto;
 			}
-			:is(
-				body:has(main) > nav[popover] > .showcase-sidebar-scroll,
-				body:has(main) > * > nav[popover] > .showcase-sidebar-scroll
-			) {
+			.showcase-sidebar[popover] .showcase-sidebar-region {
+				padding-inline: var(--set-aside-drawer-padding-inline);
+				padding-block: var(--set-aside-drawer-padding-block);
+				background-color: var(--set-popover-background-color);
+				border-block-end-color: var(--set-popover-border-color);
+			}
+			.showcase-sidebar[popover] .showcase-sidebar-scroll {
 				padding-inline: var(--set-aside-drawer-padding-inline);
 				padding-block: var(--set-aside-drawer-padding-block);
 			}
-			:is(body:has(main) > nav h6, body:has(main) > * > nav h6) {
-				padding-inline: calc(var(--spacing) * 2);
-				color: var(--color-text-muted);
-				font-size: var(--text-xs);
-				letter-spacing: 0.05em;
-				text-transform: uppercase;
-				margin-block-start: calc(var(--spacing) * 3);
-				margin-block-end: calc(var(--spacing) * 1);
-				font-weight: 600;
+			.showcase-sidebar[popover] > .showcase-drawer-header {
+				margin-inline: 0;
 			}
-			:is(
-				body:has(main) > nav .showcase-sidebar-scroll > h6:first-child,
-				body:has(main) > * > nav .showcase-sidebar-scroll > h6:first-child
-			) {
-				margin-block-start: 0;
-			}
-			:is(body:has(main) > nav menu, body:has(main) > * > nav menu) {
-				margin-block: 0;
+			.showcase-sidebar:not([popover]) > .showcase-drawer-header {
+				margin: 0;
+				position: static;
+				inset-block-start: auto;
 			}
 			#app {
 				display: contents;
@@ -25649,6 +25650,7 @@ useTooltip({ anchor, panel, placement })`,
 			}
 			.track-list[data-v-5c5bc55d] {
 				border: 1px solid var(--color-border);
+				padding: 0;
 				background: var(--color-canvas);
 				border-radius: 0.5rem;
 				gap: 0.25rem;

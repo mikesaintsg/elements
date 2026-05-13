@@ -539,21 +539,23 @@
 		// Inner-stack — flex-column with a drawer-band-gap between
 		// children. The gap provides visual breathing room between the
 		// header band and the first body element, between body siblings
-		// (e.g. the TOC's `<h6>` and `<nav>`), and between the last body
-		// element and the footer band. The docs-sidebar split shape
-		// (`nav:has(> search)`, see `_nav.scss` § Docs-sidebar split)
-		// overrides this `gap` to 0 so its internal layout owns the
-		// rhythm; the framework handles that path automatically.
+		// (e.g. a TOC's `<h6>` and `<nav>`), and between the last body
+		// element and the footer band. Consumers composing a drawer
+		// with their own internal regions (a pinned filter card + a
+		// separately-scrolling list, the docs-sidebar shape) override
+		// `gap: 0` at their own rail class so the regions sit flush
+		// and their internal layout owns the rhythm.
 		flex-direction: column;
 		gap: var(--set-aside-drawer-band-gap);
 
 		// Drawer is its own scroll container when body content overflows
 		// `100dvh`. `overscroll-behavior: contain` keeps long body lists
-		// from rubber-banding the page beneath the drawer on touch. The
-		// docs-sidebar split shape (`nav:has(> search)`) overrides this
-		// to `overflow: hidden` so the inner scroll region (a direct
-		// child of the rail after the search row) becomes the scroll
-		// surface — see `_nav.scss` § Docs-sidebar split.
+		// from rubber-banding the page beneath the drawer on touch.
+		// Consumers composing a drawer with an internal scroll region
+		// (pinned filter + scrolling list) override with `overflow:
+		// hidden` on the rail so their inner region becomes the scroll
+		// surface — see `app/browser/styles/showcase.css` for the
+		// docs-sidebar pattern composed this way.
 		overflow-y: auto;
 		overscroll-behavior: contain;
 
@@ -783,16 +785,16 @@
 	// (which forced `flex: 1 + overflow-y: auto + padding` on every
 	// non-header/footer child) — that approach broke for drawers with
 	// MULTIPLE body siblings (e.g. an aside-TOC's `<h6>` + `<nav>`, or
-	// a nav-rail's `<search>` + scrolling list region): each sibling
-	// got `flex: 1` and competed for height, creating independent
-	// scroll regions side-by-side and blocking touch-scroll
-	// propagation between regions. Now: body siblings stack naturally
-	// with the drawer's `gap` between them; the DRAWER itself owns
-	// overflow-y so long content scrolls as one continuous region.
-	// The docs-sidebar split shape (`nav:has(> search)`, see
-	// `_nav.scss` § Docs-sidebar split) defers scroll to its inner
-	// region by zeroing the rail's overflow + gap + padding via
-	// framework rules; consumers don't compose this themselves.
+	// a nav-rail with a pinned filter card + scrolling list region):
+	// each sibling got `flex: 1` and competed for height, creating
+	// independent scroll regions side-by-side and blocking touch-
+	// scroll propagation between regions. Now: body siblings stack
+	// naturally with the drawer's `gap` between them; the DRAWER
+	// itself owns overflow-y so long content scrolls as one
+	// continuous region. Consumers composing internal regions (the
+	// docs-sidebar pattern) override `overflow: hidden` + `gap: 0` on
+	// their own rail class to defer scroll to a chosen inner region —
+	// see `app/browser/styles/showcase.css` for an example.
 	// --------------------------------------------------------------------------
 
 	:is(aside, nav)[popover] > header:first-child,
@@ -817,21 +819,6 @@
 
 	:is(aside, nav)[popover] > header:first-child {
 		border-block-end: 1px solid var(--set-popover-border-color);
-	}
-
-	// Docs-sidebar drawer mode — when the rail also runs the
-	// `nav:has(> search)` flex-column-split shape (see `_nav.scss`
-	// § Docs-sidebar split), the rail's `padding-inline` is zeroed so
-	// each region owns its own gutter. The default drawer-band
-	// `margin-inline: calc(-1 * --set-aside-drawer-padding-inline)`
-	// bleed (above) would then push the band off-screen to the inline-
-	// start because there's no rail padding to cancel against. Zero
-	// the bleed so the band sits at the rail's outer edges via its
-	// own padding-inline (declared above). All other band properties
-	// (flex row, gap, padding-block, border) still apply.
-	body:has(main) > nav[popover]:has(> search) > header:first-child,
-	body:has(main) > * > nav[popover]:has(> search) > header:first-child {
-		margin-inline: 0;
 	}
 
 	:is(aside, nav)[popover] > footer:last-child {

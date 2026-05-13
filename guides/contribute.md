@@ -25,18 +25,18 @@ Plus a Vue 3 showcase (`app/browser/`) that doubles as living documentation, a V
 
 Every element, component, composable, and showcase page must be **production-ready** across all of:
 
-| Dimension | What "production-ready" means |
-| --- | --- |
-| **Colors** | WCAG AA contrast on every variant in both light and dark mode; subtle / emphasis / on-canvas / border-subtle triplets resolve cleanly; no inline hex outside `_theme.scss`'s `@theme` block. |
-| **Sizes** | `.small` / default / `.large` all readable; padding scales coherently; font-size jumps intentional, not arbitrary. |
-| **Placements** | Anchor positioning lands where the modifier name says; viewport overflow falls back gracefully via `position-try-fallbacks`. |
-| **Alignments** | Headings balance (`text-wrap: balance`); buttons center text+icon; form labels align with inputs; cards align children predictably. |
-| **Animations** | Every `transition:` paired with `prefers-reduced-motion: reduce` via the `@include transition()` mixin. Every `animation:` paired with `@include reduced-motion { animation: none }`. |
-| **Transitions** | Popover / dialog / toast use `@starting-style` for entry and `transition-behavior: allow-discrete` for exit; durations consume `--set-transition-duration`. |
-| **Interactions** | hover / focus-visible / active / disabled all painted; focus uses the `focus-ring()` mixin; cursor changes match (`pointer` / `not-allowed` / `progress`). |
-| **Forced colors** | Every interactive element invokes `@include forced-colors { … }` so Windows High Contrast keeps the affordance visible. |
-| **Themes** | Variant retune (`--color-primary: brand-red` at `:root`) cascades through every consumer. Light ↔ dark flip is instant. |
-| **Customizability** | Every visible value flows through a `--set-*` token. Consumer overrides at `:root` or per-element scope without forking. |
+| Dimension           | What "production-ready" means                                                                                                                                                                |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Colors**          | WCAG AA contrast on every variant in both light and dark mode; subtle / emphasis / on-canvas / border-subtle triplets resolve cleanly; no inline hex outside `_theme.scss`'s `@theme` block. |
+| **Sizes**           | `.small` / default / `.large` all readable; padding scales coherently; font-size jumps intentional, not arbitrary.                                                                           |
+| **Placements**      | Anchor positioning lands where the modifier name says; viewport overflow falls back gracefully via `position-try-fallbacks`.                                                                 |
+| **Alignments**      | Headings balance (`text-wrap: balance`); buttons center text+icon; form labels align with inputs; cards align children predictably.                                                          |
+| **Animations**      | Every `transition:` paired with `prefers-reduced-motion: reduce` via the `@include transition()` mixin. Every `animation:` paired with `@include reduced-motion { animation: none }`.        |
+| **Transitions**     | Popover / dialog / toast use `@starting-style` for entry and `transition-behavior: allow-discrete` for exit; durations consume `--set-transition-duration`.                                  |
+| **Interactions**    | hover / focus-visible / active / disabled all painted; focus uses the `focus-ring()` mixin; cursor changes match (`pointer` / `not-allowed` / `progress`).                                   |
+| **Forced colors**   | Every interactive element invokes `@include forced-colors { … }` so Windows High Contrast keeps the affordance visible.                                                                      |
+| **Themes**          | Variant retune (`--color-primary: brand-red` at `:root`) cascades through every consumer. Light ↔ dark flip is instant.                                                                      |
+| **Customizability** | Every visible value flows through a `--set-*` token. Consumer overrides at `:root` or per-element scope without forking.                                                                     |
 
 The quality bar applies even when the patch looks small. Adding one token without the parity test, one modifier without the docs row, one new file without the charter comment is what produces the drift the audit phase caught.
 
@@ -50,15 +50,15 @@ Every change starts with the spec, not the existing source. Read the matching gu
 
 When writing or refactoring a SCSS partial, [`patterns.md`](patterns.md) is the operational reference. Eight contracts apply to every change:
 
-| Section | Contract | Enforcer |
-| --- | --- | --- |
-| §1–4 Folder structural | Layer wrapping, allowed selector kinds, token namespace policy, comment-only policy | [`_contracts.test.ts`](../tests/src/styles/_contracts.test.ts) |
-| §5 Scope discipline | Flatten `:not(t1):not(t2)` → `:not(:where(...))`; explicit scope on cross-cutting modifier compounds | [`_scope.test.ts`](../tests/src/styles/_scope.test.ts) |
-| §6 Modifier dimensions | Variant 8 / size 4 / style 4 required context tokens per class | [`_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts) |
+| Section                  | Contract                                                                                                         | Enforcer                                                           |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| §1–4 Folder structural   | Layer wrapping, allowed selector kinds, token namespace policy, comment-only policy                              | [`_contracts.test.ts`](../tests/src/styles/_contracts.test.ts)     |
+| §5 Scope discipline      | Flatten `:not(t1):not(t2)` → `:not(:where(...))`; explicit scope on cross-cutting modifier compounds             | [`_scope.test.ts`](../tests/src/styles/_scope.test.ts)             |
+| §6 Modifier dimensions   | Variant 8 / size 4 / style 4 required context tokens per class                                                   | [`_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts)   |
 | §6.6 Interactive minimum | Every `INTERACTIVE_ELEMENTS` member declares `transition-duration` + `@include forced-colors` + `:focus-visible` | [`_interactive.test.ts`](../tests/src/styles/_interactive.test.ts) |
-| §7 Surfaces | Per-surface required tokens + animated-mixin discipline | [`_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts) |
-| §8 Components | Per-component required tokens + animated-mixin discipline | [`_components.test.ts`](../tests/src/styles/_components.test.ts) |
-| §9 Composables | Per-composable tokens + state-selector vocabulary + factory pairing + animated discipline | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts) |
+| §7 Surfaces              | Per-surface required tokens + animated-mixin discipline                                                          | [`_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts)       |
+| §8 Components            | Per-component required tokens + animated-mixin discipline                                                        | [`_components.test.ts`](../tests/src/styles/_components.test.ts)   |
+| §9 Composables           | Per-composable tokens + state-selector vocabulary + factory pairing + animated discipline                        | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts) |
 
 [`taxonomy.md`](taxonomy.md) is the reference for **what element to reach for**: every native HTML tag with its framework treatment (substantive / reset / composable / passthrough / class-component). When a new design problem arises, walk the taxonomy first.
 
@@ -374,18 +374,18 @@ One section per API dimension. Each section follows the same shape:
 
 Real verification via the preview server. Sample 3 variants × 3 states per page; capture screenshots at 375 / 768 / 1440 px.
 
-| # | Row | How to verify |
-| --- | --- | --- |
-| 1 | **Light mode contrast** | Read computed styles for representative selectors. WCAG AA = 4.5:1 for normal text, 3:1 for large text + UI components. |
-| 2 | **Dark mode contrast** | `document.documentElement.dataset.theme = 'dark'` + 200ms wait. Re-sample. Variant + on-canvas tiers both flip cleanly. |
-| 3 | **Variant cascade** | Every variant rendered (not "a sample"). |
-| 4 | **State coverage** | Hover / focus / active / disabled / aria-current / aria-selected / loading — render or describe each state the element supports. |
-| 5 | **Viewport responsiveness** | 375 / 768 / 1440 px. No horizontal scroll on mobile; body grid reflows; drawers / TOC accessible. |
-| 6 | **Reduced motion** | Either toggle the OS preference, or rely on the framework's `@include transition()` mixin everywhere. |
-| 7 | **Forced colors / a11y** | For variant chrome that carries semantic signal, verify in Chrome DevTools' "Emulate CSS media feature forced-colors: active". |
-| 8 | **Keyboard nav** | Tab through interactives; Esc dismisses popovers, Enter activates buttons, arrow keys follow APG patterns. |
-| 9 | **Console clean** | Zero error / warning logs after a full reload. |
-| 10 | **SiteNav + TOC integration** | The page appears in `SiteNav` under its group; sections have `id` attributes the TOC picks up. |
+| #   | Row                           | How to verify                                                                                                                    |
+| --- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Light mode contrast**       | Read computed styles for representative selectors. WCAG AA = 4.5:1 for normal text, 3:1 for large text + UI components.          |
+| 2   | **Dark mode contrast**        | `document.documentElement.dataset.theme = 'dark'` + 200ms wait. Re-sample. Variant + on-canvas tiers both flip cleanly.          |
+| 3   | **Variant cascade**           | Every variant rendered (not "a sample").                                                                                         |
+| 4   | **State coverage**            | Hover / focus / active / disabled / aria-current / aria-selected / loading — render or describe each state the element supports. |
+| 5   | **Viewport responsiveness**   | 375 / 768 / 1440 px. No horizontal scroll on mobile; body grid reflows; drawers / TOC accessible.                                |
+| 6   | **Reduced motion**            | Either toggle the OS preference, or rely on the framework's `@include transition()` mixin everywhere.                            |
+| 7   | **Forced colors / a11y**      | For variant chrome that carries semantic signal, verify in Chrome DevTools' "Emulate CSS media feature forced-colors: active".   |
+| 8   | **Keyboard nav**              | Tab through interactives; Esc dismisses popovers, Enter activates buttons, arrow keys follow APG patterns.                       |
+| 9   | **Console clean**             | Zero error / warning logs after a full reload.                                                                                   |
+| 10  | **SiteNav + TOC integration** | The page appears in `SiteNav` under its group; sections have `id` attributes the TOC picks up.                                   |
 
 **Per row, the format**:
 

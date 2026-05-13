@@ -36,19 +36,22 @@
 // Scroll-container model:
 //   The body-shell rail is a SINGLE scroll container by default: the
 //   `<nav>` itself has `overflow-y: auto` so all its content (drawer
-//   header + any inner regions + menus) scrolls together. This is the
-//   right baseline for product navs and toolboxes — drop links in, the
-//   rail handles the scroll.
+//   header + grouped `<h6>` / `<menu>` pairs) scrolls together. This
+//   is the right baseline for product navs and toolboxes — drop links
+//   in, the rail handles the scroll.
 //
-//   Docs-style sidebars opt into a SPLIT scroll container by adding a
-//   direct-child `<search>` filter row. The framework detects `nav:has
-//   (> search)` and switches the rail to flex-column-split: search row
-//   pinned at top, the LAST non-(header, search) child becomes the
-//   scrolling list region. See § Docs-sidebar split below for the full
-//   contract. The matching opt-outs for the sticky drawer header and
-//   the drawer-band inline bleed live in `_header.scss` and
-//   `_aside.scss` respectively, gated on the same `:has(> search)`
-//   selector so the three rules stay aligned.
+//   Composed rails (a pinned filter region above a separately-
+//   scrolling list, the docs-sidebar shape) are a CONSUMER composition
+//   on top of the bare containment. The framework deliberately does
+//   not single out one element (`<search>`, `<form>`, `<header>`,
+//   etc.) as the pinning trigger — the rail is a flex container, the
+//   consumer wraps each region in whatever element fits the content,
+//   and the consumer's wrapper class carries the chrome (card padding,
+//   pinned `flex-shrink: 0`, scrolling `flex: 1 + overflow-y: auto`).
+//   This keeps the rail's framework contract narrow: provide
+//   containment, expose padding/gap/overflow via tokens, leave region
+//   composition to the markup. See `app/browser/styles/showcase.css`
+//   for the docs-sidebar pattern composed this way.
 // ============================================================================
 
 @use '../mixins' as *;
@@ -182,108 +185,6 @@
 			border-inline-end: 0;
 			border-inline-start: var(--set-nav-border-width) solid var(--set-nav-border-color);
 		}
-	}
-
-	// --------------------------------------------------------------------------
-	// Docs-sidebar split — `<nav>` rail with a pinned `<search>` filter row.
-	//
-	// Single-scroller is the rail default (declared above): the `<nav>` itself
-	// is `overflow-y: auto` and every child scrolls together. That's the right
-	// baseline for product navs and toolboxes.
-	//
-	// Docs-style sidebars want a SPLIT instead — a fixed-height filter pinned
-	// at the top, a separately-scrolling link list below — so the filter stays
-	// reachable while the list scrolls past. The framework detects this shape
-	// from semantic markup: a `<nav>` with a direct-child `<search>` opts the
-	// rail into flex-column-split.
-	//
-	// Markup contract:
-	//
-	//   <nav>
-	//     <header>…optional drawer band…</header>      ← stays at top (display
-	//                                                    rule lives in
-	//                                                    `_header.scss`)
-	//     <search><input type="search" …></search>     ← pinned filter row
-	//     <div>                                          ← scroll region:
-	//       <h6>Group</h6><menu>…</menu>                 first non-(header,
-	//       …                                            search) descendant
-	//     </div>                                         after the search row.
-	//   </nav>                                           Conventionally a
-	//                                                    bare `<div>` — no
-	//                                                    semantic element fits
-	//                                                    "scrolling pane."
-	//
-	// Layout: the rail kills its OWN padding-inline / padding-block / gap so
-	// each region owns its own gutter and dividers paint edge-to-edge. The
-	// rail still has `overflow: hidden` so it doesn't itself become a
-	// competing scroll container.
-	//
-	// The drawer header opts out of its sticky pin via a sibling rule in
-	// `_header.scss` § Drawer-header sticky pin (`nav:not([popover]):has(>
-	// search) > header` → static).
-	// --------------------------------------------------------------------------
-	body:has(main) > nav:has(> search),
-	body:has(main) > * > nav:has(> search) {
-		overflow: hidden;
-		padding-inline: 0;
-		padding-block: 0;
-		gap: 0;
-	}
-
-	// Search row — pinned below the (optional) drawer header, edge-to-edge.
-	// `<search>` outside the body shell keeps its bare flex-row baseline
-	// from `_search.scss`; this rule paints the rail-context chrome only.
-	body:has(main) > nav > search,
-	body:has(main) > * > nav > search {
-		flex-shrink: 0;
-		padding-inline: var(--set-nav-padding-inline);
-		padding-block: var(--set-nav-padding-block);
-		background-color: var(--set-nav-background-color);
-		border-block-end: var(--set-nav-border-width) solid var(--set-nav-border-color);
-	}
-
-	// Drawer-mode override — `<nav popover>` in popover (mobile) mode picks
-	// up the popover surface's chrome from `_aside.scss`'s `:is(aside,
-	// nav)[popover]` rule. The search row retunes its padding + tones to
-	// match (drawer gutter + popover bg/border) so the row reads as part
-	// of the drawer instead of a left-over rail band.
-	body:has(main) > nav[popover] > search,
-	body:has(main) > * > nav[popover] > search {
-		padding-inline: var(--set-aside-drawer-padding-inline);
-		padding-block: var(--set-aside-drawer-padding-block);
-		background-color: var(--set-popover-background-color);
-		border-block-end-color: var(--set-popover-border-color);
-	}
-
-	// Scroll region — the first non-(header / search) direct child after the
-	// search row. Typically `<div>` (no semantic alternative for "scroll
-	// pane"); the framework matches it structurally so consumers don't need
-	// an arbitrary class.
-	//
-	// `flex: 1 1 0` (not `1 1 auto`) is deliberate. `flex-basis: auto`
-	// resolves to intrinsic content size; if the list is taller than the
-	// available rail space, Safari can fail to shrink the item back to its
-	// allocated size even with `min-block-size: 0`, leaving the scroll
-	// container at its full content height and pushing the rail past the
-	// 100dvh container. `flex-basis: 0` starts at zero and lets flex-grow
-	// allocate exactly the remaining space; `min-block-size: 0` keeps the
-	// item shrinkable so `overflow-y: auto` engages cleanly.
-	body:has(main) > nav:has(> search) > :not(header, search):last-child,
-	body:has(main) > * > nav:has(> search) > :not(header, search):last-child {
-		flex: 1 1 0;
-		min-block-size: 0;
-		overflow-y: auto;
-		padding-inline: var(--set-nav-padding-inline);
-		padding-block: var(--set-nav-padding-block);
-	}
-
-	// Drawer-mode override for the scroll region — switch to drawer gutter
-	// tokens so the region's inline / block padding matches the rest of
-	// the drawer.
-	body:has(main) > nav[popover]:has(> search) > :not(header, search):last-child,
-	body:has(main) > * > nav[popover]:has(> search) > :not(header, search):last-child {
-		padding-inline: var(--set-aside-drawer-padding-inline);
-		padding-block: var(--set-aside-drawer-padding-block);
 	}
 
 	// --------------------------------------------------------------------------

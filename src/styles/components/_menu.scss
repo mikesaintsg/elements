@@ -327,10 +327,14 @@
 	//     reads as a LABEL for the menu directly beneath it, not as a
 	//     standalone item that floats between groups.
 	//   • First heading: no top margin. The rail's own padding-block
-	//     supplies the gap from the rail edge. Handles two cases:
-	//       - bare rail: h6 is the direct first child of <nav> / <aside>.
-	//       - docs-sidebar split: h6 is the first child of the rail's
-	//         scroll-region wrapper (last child of `nav:has(> search)`).
+	//     (or its inner region's padding-block when the consumer
+	//     composes regions) supplies the gap from the rail edge.
+	//     Handles two structural patterns:
+	//       - bare rail: h6 is the rail's direct first child.
+	//       - composed rail: h6 is the first child of any region
+	//         wrapper inside the rail (a drawer band, a pinned card,
+	//         a scrolling list region). The wrapper element type
+	//         doesn't matter; structure does.
 	//   • Menus: zero block margins. Headings carry the inter-group
 	//     rhythm — menus shouldn't compete with their own margins.
 	// --------------------------------------------------------------------------
@@ -346,14 +350,17 @@
 		text-transform: uppercase;
 	}
 
-	// First-heading top-margin reset. Three selectors cover the patterns:
-	//   - bare nav / aside rail: h6 is the rail's first child.
-	//   - docs-sidebar split: h6 lives inside the rail's last child
-	//     (the scroll-region wrapper after the `<search>` row).
+	// First-heading top-margin reset. Two patterns covered, both
+	// element-agnostic:
+	//   - bare rail: h6 is the rail's direct first child.
+	//   - composed rail: h6 is the first child of a region wrapper
+	//     inside the rail (a drawer band, a pinned card, a scrolling
+	//     list region — whatever the consumer composes). The wrapper
+	//     element type doesn't matter; structure does.
 	body:has(main) > :where(nav, aside) > h6:first-child,
 	body:has(main) > * > :where(nav, aside) > h6:first-child,
-	body:has(main) > nav:has(> search) > :last-child > h6:first-child,
-	body:has(main) > * > nav:has(> search) > :last-child > h6:first-child {
+	body:has(main) > :where(nav, aside) > * > h6:first-child,
+	body:has(main) > * > :where(nav, aside) > * > h6:first-child {
 		margin-block-start: 0;
 	}
 
