@@ -4,6 +4,7 @@ import type { Component, ComputedRef, Ref } from 'vue'
 import HomePage from './pages/HomePage.vue'
 import TokensPage from './pages/TokensPage.vue'
 import ThemePage from './pages/ThemePage.vue'
+import ModifiersPage from './pages/ModifiersPage.vue'
 import ButtonPage from './pages/ButtonPage.vue'
 import AnchorPage from './pages/AnchorPage.vue'
 import FormControlsPage from './pages/FormControlsPage.vue'
@@ -59,6 +60,12 @@ const THEME: Route = {
 	title: 'Theme',
 	group: 'Foundations',
 	page: ThemePage,
+}
+const MODIFIERS: Route = {
+	id: 'modifiers',
+	title: 'Modifiers',
+	group: 'Foundations',
+	page: ModifiersPage,
 }
 const BUTTON: Route = {
 	id: 'button',
@@ -221,6 +228,7 @@ export const routes: readonly Route[] = [
 	HOME,
 	TOKENS,
 	THEME,
+	MODIFIERS,
 	BUTTON,
 	ANCHOR,
 	FORM_CONTROLS,
