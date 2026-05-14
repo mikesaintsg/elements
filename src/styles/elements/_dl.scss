@@ -10,12 +10,17 @@
 //     <dd> get the full width. A 2-column grid at phone width starves
 //     the description track (the term wraps to full width and the
 //     description collapses to 0).
-//   - Wide viewports (≥640px): two-column grid — term in col 1
-//     (`minmax(0, max-content)` so a long term can shrink instead of
-//     pushing the page wider), description in col 2 (`minmax(0, 1fr)`
-//     fills the remainder). `overflow-wrap: anywhere` on <dt>/<dd> lets
-//     unbreakable strings (long tokens, URLs, identifiers) wrap inside
-//     the grid track instead of forcing it wide.
+//   - Wide viewports (≥640px): two-column grid with a 1fr (term) :
+//     2fr (description) ratio. The description gets twice the inline
+//     space because a description IS more text by nature — and the
+//     ratio is consistent so adjacent rows visually align regardless
+//     of any single term's length. A `max-content` term column (the
+//     prior shape) let a long term consume all available width and
+//     starve the description down to its 12-rem floor; with a fixed
+//     1:2 ratio a long term wraps inside its 1fr track instead.
+//     `overflow-wrap: anywhere` on <dt>/<dd> lets unbreakable strings
+//     (long tokens, URLs, identifiers) wrap inside the grid track
+//     instead of forcing it wide.
 //
 // Mirrors the `<pre>` and responsive-table contracts: content stays
 // inside its container, the page width is owned by the viewport.
@@ -49,23 +54,25 @@
 
 @media (min-width: 640px) {
 	@layer elements {
-		// Two-column grid at wide viewports. The DESCRIPTION column
-		// (col 2) carries a `minmax(12rem, 1fr)` floor — 12 rem (192 px)
-		// is enough to read a 3-4 word description without
-		// hyphen-breaking every word. The TERM column (col 1) is
-		// `minmax(0, max-content)`: it sizes to its content's natural
-		// width by default, but `min: 0` lets it shrink if necessary
-		// to honour col 2's floor. Combined with `overflow-wrap:
-		// anywhere` on `<dt>`, a long compound term (e.g. three
-		// slash-separated token names) wraps inside its track instead
-		// of starving the description.
+		// Two-column grid at wide viewports with a fixed 1:2 ratio —
+		// term in col 1 (`minmax(0, 1fr)`), description in col 2
+		// (`minmax(0, 2fr)`). The `min: 0` floors are critical: without
+		// them, a long unbroken term (long token name, URL, identifier)
+		// would force col 1 to its `min-content` width and break the
+		// ratio. With `min: 0` + `overflow-wrap: anywhere` declared on
+		// `<dt>` / `<dd>` in the base rule, long content wraps inside
+		// its own track and the columns hold their 1:2 proportion.
 		//
-		// Without the col-2 floor, a `<dt>` whose `max-content` width
-		// exceeded the grid width would push col 2 to 0 px and the
-		// description would render invisible — the NavPage pagination
-		// sub-surface section surfaced this on a wide viewport.
+		// Why 1:2 (term:description) rather than 1:1 — a description is
+		// by nature more text than its term, and a consistent ratio
+		// means adjacent rows visually align regardless of any single
+		// term's length. The previous shape (`minmax(0, max-content)
+		// minmax(12rem, 1fr)`) let a long term consume all available
+		// width and squish the description down to its 12 rem floor,
+		// which surfaced on the UseTable API reference at wide
+		// viewports.
 		dl {
-			grid-template-columns: minmax(0, max-content) minmax(12rem, 1fr);
+			grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
 		}
 	}
 }
