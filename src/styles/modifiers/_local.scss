@@ -238,16 +238,17 @@
 		// a variant modifier).
 		background-color: transparent;
 
-		// Hover reveal — same subtle backdrop the `.flat` variant paints, so
-		// flush controls are discoverable as interactive surfaces inside
-		// their host (without it, a fully-transparent flush input reads as
-		// non-interactive text). `currentColor 4%` is theme-aware: a flush
-		// input in a `.danger` cell reveals a danger-tinted backdrop; one in
-		// a neutral cell reveals a neutral tint. The exclusion chain
-		// (`:not(:disabled):not([readonly]):not(:focus-visible):not(:user-
-		// invalid)`) mirrors the flat rule so disabled / focused / invalid
-		// states paint their own chrome without competition.
-		&:hover:not(:disabled):not([readonly]):not(:focus-visible):not(:user-invalid) {
+		// Discoverability backdrop — same subtle tint the `.flat` variant
+		// paints. Visible on `:hover` AND `:focus-visible` so the user can
+		// SEE the active field while editing (the flush variant otherwise
+		// strips every chrome cue — without this, a focused flush input is
+		// indistinguishable from the surrounding cell content). The
+		// `currentColor 4%` tint is theme-aware: a flush input in a
+		// `.danger` cell reveals a danger-tinted backdrop; one in a neutral
+		// cell reveals a neutral tint. Disabled / readonly / user-invalid
+		// states are excluded so the element baselines own those affordances.
+		&:hover:not(:disabled):not([readonly]):not(:user-invalid),
+		&:focus-visible:not(:disabled):not([readonly]):not(:user-invalid) {
 			background-color: color-mix(in oklab, currentColor 4%, transparent);
 		}
 

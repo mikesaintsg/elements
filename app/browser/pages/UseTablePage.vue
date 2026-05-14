@@ -618,8 +618,10 @@ const reset = (): void => {
 			scroll. Cell content wraps by default; <code>table.nowrap</code> + horizontal scroll is the
 			alternative idiom (see TablesPage).
 		</p>
-		<fieldset role="toolbar" aria-label="Table actions">
-			<legend><small>Actions</small></legend>
+		<p>
+			<small>Actions:</small>
+		</p>
+		<div role="toolbar" aria-label="Table actions">
 			<button type="button" class="subtle small" @click="main.selection.select()">
 				Select all on page
 			</button>
@@ -634,7 +636,7 @@ const reset = (): void => {
 			</button>
 			<button type="button" class="subtle small" @click="main.sort.clear()">Clear sort</button>
 			<button type="button" class="subtle small" @click="reset">Reset</button>
-		</fieldset>
+		</div>
 		<div
 			class="scrollable"
 			style="
