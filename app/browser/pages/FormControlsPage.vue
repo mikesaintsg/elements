@@ -814,6 +814,162 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 		</details>
 	</section>
 
+	<section id="form-controls-flat-flush-controls">
+		<h2>
+			<code>input.flat</code> / <code>.flush</code> · <code>select</code> · <code>textarea</code>
+		</h2>
+		<p>
+			Two paired modifiers for form controls inside dense surfaces (table cells, accordion headers,
+			list-group rows, card bodies):
+		</p>
+		<ul>
+			<li>
+				<strong><code>.flat</code></strong> — transparent rest, subtle backdrop reveal on hover,
+				focus promotes to the element's full bordered baseline with variant focus ring.
+				<code>:user-invalid</code> still paints the danger border. Use when the control should
+				signal it's interactive only on engagement (the chrome is there, just dissolved at rest).
+			</li>
+			<li>
+				<strong><code>.flush</code></strong> — no margin / border / radius / ring at any state;
+				inherits the host's <code>border-radius</code>; fills the host on both axes; subtle backdrop
+				reveals on hover AND focus so the focused control stays visible. Use when the host cell IS
+				the surface and the control should occupy every pixel inside it.
+			</li>
+		</ul>
+		<h3>Flat — transparent rest, full chrome on focus</h3>
+		<p>Click into any field below to see the chrome promote to the bordered baseline:</p>
+		<div class="stack" style="max-inline-size: 32rem">
+			<label>
+				Display name
+				<input class="flat" type="text" placeholder="Ada Lovelace" />
+			</label>
+			<label>
+				Email
+				<input class="flat" type="email" placeholder="ada@example.com" />
+			</label>
+			<label>
+				Plan
+				<select class="flat">
+					<option>Free</option>
+					<option>Pro</option>
+					<option>Enterprise</option>
+				</select>
+			</label>
+			<label>
+				Bio
+				<textarea class="flat" rows="3" placeholder="A short introduction"></textarea>
+			</label>
+		</div>
+		<h3>Flush — cell IS the surface</h3>
+		<p>
+			The form controls live inside a card whose cells own the visual chrome. Each control fuses to
+			its host's edges; on hover / focus a subtle backdrop confirms the active surface.
+		</p>
+		<article style="padding: 0; overflow: clip; max-inline-size: 32rem">
+			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+				<h3 style="margin: 0">Profile</h3>
+			</header>
+			<div
+				style="
+					display: grid;
+					grid-template-columns: 8rem 1fr;
+					align-items: stretch;
+					border-block-end: 1px solid var(--color-border);
+				"
+			>
+				<label
+					for="flush-name"
+					style="padding: 0.75rem 1rem; margin: 0; border-inline-end: 1px solid var(--color-border)"
+				>
+					Name
+				</label>
+				<input
+					id="flush-name"
+					class="flush"
+					type="text"
+					value="Ada Lovelace"
+					style="padding: 0.75rem 1rem"
+				/>
+			</div>
+			<div
+				style="
+					display: grid;
+					grid-template-columns: 8rem 1fr;
+					align-items: stretch;
+					border-block-end: 1px solid var(--color-border);
+				"
+			>
+				<label
+					for="flush-email"
+					style="padding: 0.75rem 1rem; margin: 0; border-inline-end: 1px solid var(--color-border)"
+				>
+					Email
+				</label>
+				<input
+					id="flush-email"
+					class="flush"
+					type="email"
+					value="ada@example.com"
+					style="padding: 0.75rem 1rem"
+				/>
+			</div>
+			<div
+				style="
+					display: grid;
+					grid-template-columns: 8rem 1fr;
+					align-items: stretch;
+					border-block-end: 1px solid var(--color-border);
+				"
+			>
+				<label
+					for="flush-plan"
+					style="padding: 0.75rem 1rem; margin: 0; border-inline-end: 1px solid var(--color-border)"
+				>
+					Plan
+				</label>
+				<select id="flush-plan" class="flush" style="padding: 0.75rem 1rem">
+					<option>Free</option>
+					<option selected>Pro</option>
+					<option>Enterprise</option>
+				</select>
+			</div>
+			<div style="display: grid; grid-template-columns: 8rem 1fr; align-items: stretch">
+				<label
+					for="flush-bio"
+					style="padding: 0.75rem 1rem; margin: 0; border-inline-end: 1px solid var(--color-border)"
+				>
+					Bio
+				</label>
+				<textarea
+					id="flush-bio"
+					class="flush"
+					rows="3"
+					style="padding: 0.75rem 1rem; resize: none"
+					placeholder="Tell us about yourself"
+				></textarea>
+			</div>
+		</article>
+		<p>
+			<small>
+				The card cells own the perimeter; each <code>.flush</code> control inherits the host's inner
+				radius and fills its cell. The grid keeps the label column at a fixed 8rem so the flush
+				input gets the remaining track.
+			</small>
+		</p>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;label&gt;Display name &lt;input class="flat" type="text" /&gt;&lt;/label&gt;
+&lt;label&gt;Plan &lt;select class="flat"&gt;…&lt;/select&gt;&lt;/label&gt;
+
+&lt;article style="padding: 0"&gt;
+  &lt;div class="row"&gt;
+    &lt;label&gt;Name&lt;/label&gt;
+    &lt;input class="flush" type="text" /&gt;
+  &lt;/div&gt;
+&lt;/article&gt;</code></pre>
+		</details>
+	</section>
+
 	<section id="form-controls-forced-colors">
 		<h2>Forced colors and reduced motion</h2>
 		<p>

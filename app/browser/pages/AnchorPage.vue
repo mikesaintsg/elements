@@ -347,61 +347,110 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 			<code>.flush</code> fuses the anchor INTO its host: <code>display: block</code>, fills both
 			axes, inherits the host's <code>border-radius</code>, drops the underline + the link-blue
 			identity (color inherits from the host). The whole tile becomes clickable; the host owns the
-			visual chrome.
+			visual chrome. Hover any tile to see the 4% backdrop affordance reveal — the trailing arrow
+			signals the navigation target.
 		</p>
-		<p>Three neutral tiles, each entirely clickable:</p>
+		<p>Three neutral tiles, each entirely clickable end-to-end:</p>
 		<div class="cluster" style="gap: 1rem; flex-wrap: wrap">
-			<article style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px">
-				<a class="flush" href="#anchor-flush" style="padding: 1rem">
-					<header><h3 style="margin: 0 0 0.25rem">Documentation</h3></header>
-					<p style="margin: 0">Setup, cascade, taxonomy.</p>
+			<article style="padding: 0; overflow: clip; inline-size: 16rem; block-size: 1px">
+				<a
+					class="flush"
+					href="#anchor-flush"
+					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
+				>
+					<header
+						style="
+							display: flex;
+							justify-content: space-between;
+							align-items: baseline;
+							padding: 0;
+							background: transparent;
+							border: 0;
+						"
+					>
+						<strong>Documentation</strong>
+						<small aria-hidden="true">→</small>
+					</header>
+					<small style="color: var(--color-text-muted)">Setup, cascade, taxonomy.</small>
 				</a>
 			</article>
-			<article style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px">
-				<a class="flush" href="#anchor-flush" style="padding: 1rem">
-					<header><h3 style="margin: 0 0 0.25rem">Showcase</h3></header>
-					<p style="margin: 0">Every element, in context.</p>
+			<article style="padding: 0; overflow: clip; inline-size: 16rem; block-size: 1px">
+				<a
+					class="flush"
+					href="#anchor-flush"
+					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
+				>
+					<header
+						style="
+							display: flex;
+							justify-content: space-between;
+							align-items: baseline;
+							padding: 0;
+							background: transparent;
+							border: 0;
+						"
+					>
+						<strong>Showcase</strong>
+						<small aria-hidden="true">→</small>
+					</header>
+					<small style="color: var(--color-text-muted)">Every element, in context.</small>
 				</a>
 			</article>
-			<article style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px">
-				<a class="flush" href="#anchor-flush" style="padding: 1rem">
-					<header><h3 style="margin: 0 0 0.25rem">API reference</h3></header>
-					<p style="margin: 0">Composables, factories, types.</p>
+			<article style="padding: 0; overflow: clip; inline-size: 16rem; block-size: 1px">
+				<a
+					class="flush"
+					href="#anchor-flush"
+					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
+				>
+					<header
+						style="
+							display: flex;
+							justify-content: space-between;
+							align-items: baseline;
+							padding: 0;
+							background: transparent;
+							border: 0;
+						"
+					>
+						<strong>API reference</strong>
+						<small aria-hidden="true">→</small>
+					</header>
+					<small style="color: var(--color-text-muted)">Composables, factories, types.</small>
 				</a>
 			</article>
 		</div>
 		<p>
-			The variant cascade still flows through to a flush anchor's host — a
-			<code>&lt;article class="primary filled"&gt;</code> with a <code>flush</code> anchor inside
-			fills the tile in primary blue and the anchor's <code>color: inherit</code> reads white
-			against it:
+			Variant cascade still flows through — an
+			<code>&lt;article class="primary filled"&gt;</code> fills the tile in primary blue and the
+			anchor's <code>color: inherit</code> reads white against it. Hover any tile to confirm the
+			click area covers the entire surface:
 		</p>
 		<div class="cluster" style="gap: 1rem; flex-wrap: wrap">
 			<article
-				class="primary filled"
-				style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px"
+				v-for="v in ['primary', 'success', 'warning', 'danger']"
+				:key="v"
+				:class="`${v} filled`"
+				style="padding: 0; overflow: clip; inline-size: 16rem; block-size: 1px"
 			>
-				<a class="flush" href="#anchor-flush" style="padding: 1rem">
-					<header><h3 style="margin: 0 0 0.25rem">Primary filled tile</h3></header>
-					<p style="margin: 0">Whole card is a link.</p>
-				</a>
-			</article>
-			<article
-				class="success filled"
-				style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px"
-			>
-				<a class="flush" href="#anchor-flush" style="padding: 1rem">
-					<header><h3 style="margin: 0 0 0.25rem">Success filled tile</h3></header>
-					<p style="margin: 0">Whole card is a link.</p>
-				</a>
-			</article>
-			<article
-				class="danger filled"
-				style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px"
-			>
-				<a class="flush" href="#anchor-flush" style="padding: 1rem">
-					<header><h3 style="margin: 0 0 0.25rem">Danger filled tile</h3></header>
-					<p style="margin: 0">Whole card is a link.</p>
+				<a
+					class="flush"
+					href="#anchor-flush"
+					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
+				>
+					<header
+						style="
+							display: flex;
+							justify-content: space-between;
+							align-items: baseline;
+							padding: 0;
+							background: transparent;
+							border: 0;
+						"
+					>
+						<strong style="text-transform: capitalize">{{ v }} tile</strong>
+						<small aria-hidden="true">→</small>
+					</header>
+					<small>Whole card is the link.</small>
 				</a>
 			</article>
 		</div>

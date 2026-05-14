@@ -356,6 +356,96 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		</details>
 	</section>
 
+	<section id="button-flush">
+		<h2>Flush — fill a host's content box</h2>
+		<p>
+			<code>.flush</code> on a button drops every margin / border / radius / shadow and inflates the
+			button to <code>100% × 100%</code> of its host. The host owns the visual chrome; the button is
+			the active surface inside it. Useful for full-width CTAs at the bottom of a card, full-cell
+			buttons in a table, or grid tiles where the host IS the click target. A subtle backdrop
+			reveals on hover + focus so the button stays discoverable inside the dissolved chrome.
+		</p>
+		<p>Three article tiles, each with a flush button filling the bottom strip:</p>
+		<div class="cluster" style="gap: 1rem; flex-wrap: wrap">
+			<article style="padding: 0; overflow: clip; inline-size: 16rem">
+				<div style="padding: 1rem">
+					<strong>Quick action</strong>
+					<p style="margin: 0.25rem 0 0">
+						<small>Neutral flush — fills the card's bottom edge.</small>
+					</p>
+				</div>
+				<div style="block-size: 2.5rem">
+					<button class="flush" type="button">Run</button>
+				</div>
+			</article>
+			<article class="primary subtle" style="padding: 0; overflow: clip; inline-size: 16rem">
+				<div style="padding: 1rem">
+					<strong>Primary tile</strong>
+					<p style="margin: 0.25rem 0 0">
+						<small>Variant cascade reaches the flush button's text.</small>
+					</p>
+				</div>
+				<div style="block-size: 2.5rem">
+					<button class="primary flush" type="button">Confirm</button>
+				</div>
+			</article>
+			<article class="danger subtle" style="padding: 0; overflow: clip; inline-size: 16rem">
+				<div style="padding: 1rem">
+					<strong>Destructive tile</strong>
+					<p style="margin: 0.25rem 0 0">
+						<small>Danger flush sits flush against the card's edges.</small>
+					</p>
+				</div>
+				<div style="block-size: 2.5rem">
+					<button class="danger flush" type="button">Delete</button>
+				</div>
+			</article>
+		</div>
+		<p>
+			Inside a table cell — the <code>&lt;td block-size: 1px&gt;</code> trick coerces the cell to
+			its row's intrinsic height so the flush button's <code>block-size: 100%</code> resolves:
+		</p>
+		<table class="striped" style="max-inline-size: 32rem">
+			<thead>
+				<tr>
+					<th>Task</th>
+					<th style="inline-size: 10rem">Action</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Run nightly sync</td>
+					<td style="padding: 0; block-size: 1px">
+						<button class="primary flush" type="button">Run</button>
+					</td>
+				</tr>
+				<tr>
+					<td>Archive backups</td>
+					<td style="padding: 0; block-size: 1px">
+						<button class="warning flush" type="button">Archive</button>
+					</td>
+				</tr>
+				<tr>
+					<td>Delete stale jobs</td>
+					<td style="padding: 0; block-size: 1px">
+						<button class="danger flush" type="button">Delete</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;article style="padding: 0"&gt;
+  &lt;div style="padding: 1rem"&gt;…&lt;/div&gt;
+  &lt;button class="primary flush"&gt;Confirm&lt;/button&gt;
+&lt;/article&gt;
+
+&lt;td style="padding: 0; block-size: 1px"&gt;
+  &lt;button class="danger flush"&gt;Delete&lt;/button&gt;
+&lt;/td&gt;</code></pre>
+		</details>
+	</section>
+
 	<section id="button-states">
 		<h2>States</h2>
 		<p>

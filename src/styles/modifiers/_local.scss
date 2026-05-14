@@ -296,9 +296,12 @@
 		border-color: transparent;
 		box-shadow: none;
 
+		// Hover reveal is JUST the underline — no backdrop. The underline
+		// is itself the affordance; pairing it with a backdrop reads as
+		// overdesigned for an inline link. Variant color still flows so
+		// `.success.flat` keeps the success tint.
 		&:hover:not(:focus-visible) {
 			text-decoration: underline;
-			background-color: color-mix(in oklab, currentColor 4%, transparent);
 		}
 
 		&:focus-visible {
@@ -353,6 +356,13 @@
 		background-color: transparent;
 		border-color: transparent;
 		box-shadow: none;
+		// Text color reads in the variant's on-canvas tier — the framework's
+		// WCAG-AA-against-body-canvas variant color. Without this override
+		// the button baseline's `--set-button-color` resolves to white (the
+		// variant's on-FILL color) and a flat button against the body canvas
+		// reads white-on-white. The on-canvas tier is the right tier for
+		// any chromeless / dissolved-bg variant text.
+		color: var(--set-variant-on-canvas-color, var(--set-button-color, currentColor));
 
 		&:hover:not(:disabled):not(:focus-visible) {
 			background-color: color-mix(in oklab, currentColor 4%, transparent);
@@ -405,12 +415,13 @@
 		border-radius: inherit;
 		box-shadow: none;
 		background-color: transparent;
-		// Adjacent flush-details share a divider rule between siblings —
-		// the host's `border-block-end: 1px solid var(--color-border)` on
-		// every-but-last is the canonical accordion-item shape; consumers
-		// who want it set it on the parent surface (the framework doesn't
-		// paint it here because the flush variant must work in any host
-		// shape, including ones where the host already provides dividers).
+		// Variant text-emphasis flows even when outer chrome is dissolved.
+		// The bare `<details>` only paints variant on its border (which
+		// flush strips), so without this fallback `.success.flush` looks
+		// identical to `.danger.flush`. Reading the on-canvas tier means a
+		// flush details on the body canvas keeps the variant's WCAG-AA
+		// readable text colour; uncolored details inherit from the host.
+		color: var(--set-variant-on-canvas-color, currentColor);
 	}
 
 	// ── aside[role='alert'].flat / aside[role='alert'].flush ────────────────
@@ -468,6 +479,8 @@
 		// taking the platform's auto-content-width centering shape.
 		inline-size: 100%;
 		max-inline-size: none;
+		// Variant text-emphasis flows (same reasoning as `details.flush`).
+		color: var(--set-variant-on-canvas-color, currentColor);
 	}
 
 	// ── article.flush / form.flush / section.flush ──────────────────────────
@@ -485,6 +498,29 @@
 		border-radius: inherit;
 		box-shadow: none;
 		background-color: transparent;
+		// Variant text-emphasis flows (same reasoning as `details.flush`).
+		color: var(--set-variant-on-canvas-color, currentColor);
+	}
+
+	// ── Adjacent-sibling dividers for stacked flush containers ──────────────
+	// When two flush containers stack inside a host, their own block-axis
+	// padding doubles at the seam (bottom-of-A + top-of-B) and reads as a
+	// "doubled gap" against the host's single-padding outer edges. A 1 px
+	// neutral divider between adjacent siblings turns that doubled gap
+	// into a deliberate seam — the items read as distinct rows in an
+	// accordion-shape host instead of a single mass with uneven spacing.
+	// First-of-stack and last-of-stack siblings keep their natural padding
+	// against the host (no extra border on the outer edges) because `+`
+	// only matches adjacent successors.
+	//
+	// Color comes from `--color-border` (the framework's canonical neutral
+	// divider). Variant alerts / cards keep their own internal chrome; the
+	// divider stays neutral so it doesn't fight per-item variant identity.
+	details.flush + details.flush,
+	article.flush + article.flush,
+	aside[role='alert'].flush + aside[role='alert'].flush,
+	dialog.flush:not(:modal) + dialog.flush:not(:modal) {
+		border-block-start: 1px solid var(--color-border);
 	}
 
 	// `form.flush`: fill card body. Form has no outer chrome by default,
