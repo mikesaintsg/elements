@@ -22,12 +22,9 @@ describe('createAside', () => {
 
 	it('respects options.popover: "manual" for sticky panels', () => {
 		const aside = buildElement('aside')
-		const [_api, , controller] = createFactoryFixture(() =>
-			createAside(aside, { popover: 'manual' }),
-		)
+		const [_api] = createFactoryFixture(() => createAside(aside, { popover: 'manual' }))
 		expect(aside.popover).toBe('manual')
 		void _api
-		void controller
 	})
 
 	it('options.popover: false leaves the author-declared attribute untouched', () => {
