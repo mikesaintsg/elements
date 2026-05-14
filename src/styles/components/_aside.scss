@@ -598,16 +598,18 @@
 		flex-direction: column;
 		gap: var(--set-aside-drawer-band-gap);
 
-		// Drawer is its own scroll container when body content overflows
-		// `100dvh`. `overscroll-behavior: contain` keeps long body lists
-		// from rubber-banding the page beneath the drawer on touch.
-		// Consumers composing a drawer with an internal scroll region
-		// (pinned filter + scrolling list) override with `overflow:
-		// hidden` on the rail so their inner region becomes the scroll
-		// surface — see `app/browser/styles/showcase.css` for the
-		// docs-sidebar pattern composed this way.
-		overflow-y: auto;
-		overscroll-behavior: contain;
+		// Drawer is NOT its own scroll container — `overflow: hidden`
+		// here keeps the outer chrome (header + footer bands, drawer
+		// border + shadow) pinned to the viewport edges while the body
+		// region between them takes the scroll. The pin pattern is
+		// declared further down on `> header` / `> footer` (flex: 0 0
+		// auto) and on the implicit middle (`> :not(header):not(footer)`
+		// gets `flex: 1 1 0; min-block-size: 0; overflow-y: auto`).
+		// Consumers composing a drawer with their own internal regions
+		// (pinned filter + scrolling list) get the same shape "for free"
+		// because their content slot inherits the middle's flex
+		// behavior.
+		overflow: hidden;
 
 		// Drawer shadow — subtle elevation so the panel reads as a layer
 		// above the page rather than a flush surface that slid in from
@@ -673,6 +675,36 @@
 			transform: translateX(100%);
 			opacity: 0;
 		}
+	}
+
+	// ── Header / footer / middle pin contract ────────────────────────
+	//
+	// The drawer's outer chrome — title strip, action footer, border,
+	// shadow — stays anchored to the viewport edges; only the body
+	// region between header and footer takes the scroll. This matters
+	// most for `.top` / `.bottom` drawers whose total content can
+	// exceed `--set-aside-drawer-block-size` (30 dvh by default) — the
+	// previous version with `overflow-y: auto` on the drawer itself
+	// scrolled the WHOLE drawer (header + content + footer all moved),
+	// so footers full of action buttons could scroll off-screen on
+	// small viewports.
+	//
+	// Selector targets BOTH `:is(aside, nav)[popover] > header` and
+	// `:is(aside, nav)[popover] > footer` — the framework's banded
+	// chrome convention. Anything else inside is a "middle" sibling
+	// and takes `flex: 1 1 0; min-block-size: 0; overflow-y: auto`, so
+	// it absorbs the remaining space and scrolls if its intrinsic size
+	// exceeds the slot. Multiple middle siblings share remaining space
+	// (each `flex: 1 1 0`); consumers who want a single scroll region
+	// wrap their middle content in one container.
+	:is(aside, nav)[popover] > :is(header, footer) {
+		flex: 0 0 auto;
+	}
+	:is(aside, nav)[popover] > :not(:where(header, footer)) {
+		flex: 1 1 0;
+		min-block-size: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
 	}
 
 	// ── .start — slide from the inline-start (leading) edge ──────────
