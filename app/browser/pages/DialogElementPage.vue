@@ -348,7 +348,7 @@ const snippetForm = `<dialog>
 				overflow: clip;
 			"
 		>
-			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+			<header>
 				<h3 style="margin: 0">Account changes</h3>
 			</header>
 			<dialog open class="flush">
@@ -383,7 +383,7 @@ const snippetForm = `<dialog>
 					<button type="button" class="danger filled">Delete</button>
 				</footer>
 			</dialog>
-			<footer style="padding-inline: 1rem; padding-block: 0.75rem">
+			<footer>
 				<small
 					>Three inline dialogs, no outer chrome — host (this article) owns the perimeter.</small
 				>

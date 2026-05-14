@@ -866,6 +866,10 @@ export const tokens = {
 		paddingInline: '--set-article-padding-inline',
 		paddingBlock: '--set-article-padding-block',
 		gap: '--set-article-gap',
+		band: {
+			paddingInline: '--set-article-band-padding-inline',
+			paddingBlock: '--set-article-band-padding-block',
+		},
 		fontSize: '--set-article-font-size',
 		lineHeight: '--set-article-line-height',
 		boxShadow: '--set-article-box-shadow',

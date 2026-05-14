@@ -366,16 +366,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 					href="#anchor-flush"
 					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
 				>
-					<header
-						style="
-							display: flex;
-							justify-content: space-between;
-							align-items: baseline;
-							padding: 0;
-							background: transparent;
-							border: 0;
-						"
-					>
+					<header style="display: flex; justify-content: space-between; align-items: baseline">
 						<strong>Documentation</strong>
 						<small aria-hidden="true">→</small>
 					</header>
@@ -396,16 +387,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 					href="#anchor-flush"
 					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
 				>
-					<header
-						style="
-							display: flex;
-							justify-content: space-between;
-							align-items: baseline;
-							padding: 0;
-							background: transparent;
-							border: 0;
-						"
-					>
+					<header style="display: flex; justify-content: space-between; align-items: baseline">
 						<strong>Showcase</strong>
 						<small aria-hidden="true">→</small>
 					</header>
@@ -426,16 +408,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 					href="#anchor-flush"
 					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
 				>
-					<header
-						style="
-							display: flex;
-							justify-content: space-between;
-							align-items: baseline;
-							padding: 0;
-							background: transparent;
-							border: 0;
-						"
-					>
+					<header style="display: flex; justify-content: space-between; align-items: baseline">
 						<strong>API reference</strong>
 						<small aria-hidden="true">→</small>
 					</header>
@@ -467,16 +440,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 					href="#anchor-flush"
 					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
 				>
-					<header
-						style="
-							display: flex;
-							justify-content: space-between;
-							align-items: baseline;
-							padding: 0;
-							background: transparent;
-							border: 0;
-						"
-					>
+					<header style="display: flex; justify-content: space-between; align-items: baseline">
 						<strong style="text-transform: capitalize">{{ v }} tile</strong>
 						<small aria-hidden="true">→</small>
 					</header>

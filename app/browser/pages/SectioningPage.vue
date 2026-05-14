@@ -138,7 +138,7 @@
 				max-width: 32rem;
 			"
 		>
-			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+			<header>
 				<h3 style="margin: 0">Tabbed status panel</h3>
 			</header>
 			<section class="flush" style="padding-inline: 1rem; padding-block: 1rem">
@@ -160,7 +160,7 @@
 					</small>
 				</p>
 			</section>
-			<footer style="padding-inline: 1rem; padding-block: 0.75rem">
+			<footer>
 				<small>Refreshes every 30 seconds.</small>
 			</footer>
 		</article>

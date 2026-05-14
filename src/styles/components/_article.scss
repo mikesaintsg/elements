@@ -59,6 +59,24 @@
 		--set-article-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 5));
 		--set-article-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 5));
 		--set-article-gap: calc(var(--spacing) * 4);
+		// Auto-banded header / footer content padding — its own token
+		// surface, DECOUPLED from `--set-article-padding-*` so consumers
+		// writing the "flush composition host" pattern
+		// (`<article style="--set-article-padding-{inline,block}: 0">`)
+		// keep the header / footer band's content padding at the
+		// framework default while zeroing the article's outer padding.
+		//
+		// Defaults pull from the SAME `--set-size-padding-*` chain the
+		// article's own padding tokens use — NOT through `--set-article-
+		// padding-*`. That way overriding the article tokens leaves the
+		// band tokens alone (and vice-versa). Without this independence,
+		// every flush composition demo had to override the header padding
+		// inline (`<header style="padding: 0.75rem 1rem">`) — clear bleed
+		// of framework token coupling into app pages.
+		--set-article-band-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 5));
+		--set-article-band-padding-block: calc(
+			var(--set-size-padding-block, calc(var(--spacing) * 5)) * 0.625
+		);
 		--set-article-font-size: var(--set-size-font-size, var(--text-base));
 		--set-article-line-height: var(--leading-normal);
 		// Card elevation flows through the global elevation scale so a
@@ -174,9 +192,16 @@
 
 	article > header:first-child,
 	article > footer:last-child {
+		// Bleed margin pulls from the ARTICLE padding token so the band's
+		// outer edge always lines up with where the article's padding-inline
+		// would end. Content padding pulls from the BAND tokens (declared
+		// above) so the consumer can keep the band's content breathing room
+		// even when the article itself is unpadded (flush composition host
+		// pattern). Defaults track the article padding tokens so the
+		// typical card's band behavior is unchanged.
 		margin-inline: calc(var(--set-article-padding-inline) * -1);
-		padding-inline: var(--set-article-padding-inline);
-		padding-block: calc(var(--set-article-padding-block) * 0.625);
+		padding-inline: var(--set-article-band-padding-inline);
+		padding-block: var(--set-article-band-padding-block);
 
 		// Band tint is a tonal shift of the card's OWN color, not a fixed
 		// `--color-surface-raised`. The fixed slate-100 / slate-800 surface

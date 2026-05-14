@@ -381,7 +381,7 @@ const cosmicImageDataUri =
 				max-width: 32rem;
 			"
 		>
-			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+			<header>
 				<h3 style="margin: 0">Deployment summary</h3>
 			</header>
 			<article class="success flush">
@@ -396,7 +396,7 @@ const cosmicImageDataUri =
 				<header><h4 style="margin: 0">Awaiting review</h4></header>
 				<p style="margin: 0">Deploy starts in 60 seconds unless cancelled.</p>
 			</article>
-			<footer style="padding-inline: 1rem; padding-block: 0.75rem">
+			<footer>
 				<small>Last updated 12 seconds ago.</small>
 			</footer>
 		</article>

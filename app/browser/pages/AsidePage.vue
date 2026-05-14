@@ -349,7 +349,7 @@ const restore = (): void => {
 				overflow: clip;
 			"
 		>
-			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+			<header>
 				<h3 style="margin: 0">Deployment status</h3>
 			</header>
 			<aside role="alert" class="success flush" data-alert-open>
@@ -361,7 +361,7 @@ const restore = (): void => {
 			<aside role="alert" class="information flush" data-alert-open>
 				<div>Deploy starts in 60 seconds unless cancelled.</div>
 			</aside>
-			<footer style="padding-inline: 1rem; padding-block: 0.75rem">
+			<footer>
 				<small>Last updated 12 seconds ago.</small>
 			</footer>
 		</article>

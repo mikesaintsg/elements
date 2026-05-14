@@ -786,7 +786,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 				max-inline-size: 32rem;
 			"
 		>
-			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+			<header>
 				<h3 style="margin: 0">Profile</h3>
 			</header>
 			<form class="flush" style="padding: 1rem">
@@ -803,7 +803,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 					<textarea rows="3" placeholder="A short introduction"></textarea>
 				</label>
 			</form>
-			<footer style="padding-inline: 1rem; padding-block: 0.75rem">
+			<footer>
 				<button type="button">Cancel</button>
 				<button type="button" class="primary filled">Save changes</button>
 			</footer>
@@ -886,7 +886,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 				max-inline-size: 32rem;
 			"
 		>
-			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+			<header>
 				<h3 style="margin: 0">Profile</h3>
 			</header>
 			<div
@@ -968,7 +968,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 				>
 					Plan
 				</label>
-				<select id="flush-plan" class="flush" style="padding-inline: 1rem; padding-block: 0.75rem">
+				<select id="flush-plan" class="flush">
 					<option>Free</option>
 					<option selected>Pro</option>
 					<option>Enterprise</option>
