@@ -238,20 +238,6 @@
 		// a variant modifier).
 		background-color: transparent;
 
-		// Discoverability backdrop — same subtle tint the `.flat` variant
-		// paints. Visible on `:hover` AND `:focus-visible` so the user can
-		// SEE the active field while editing (the flush variant otherwise
-		// strips every chrome cue — without this, a focused flush input is
-		// indistinguishable from the surrounding cell content). The
-		// `currentColor 4%` tint is theme-aware: a flush input in a
-		// `.danger` cell reveals a danger-tinted backdrop; one in a neutral
-		// cell reveals a neutral tint. Disabled / readonly / user-invalid
-		// states are excluded so the element baselines own those affordances.
-		&:hover:not(:disabled):not([readonly]):not(:user-invalid),
-		&:focus-visible:not(:disabled):not([readonly]):not(:user-invalid) {
-			background-color: color-mix(in oklab, currentColor 4%, transparent);
-		}
-
 		&:focus-visible {
 			outline: none;
 		}
@@ -263,6 +249,25 @@
 		@include forced-colors {
 			background-color: Field;
 		}
+	}
+
+	// Discoverability backdrop for FORM-CONTROL flush only —
+	// `<button>` gets its own bare-button-matching cascade below (12% /
+	// 22% text-strong) which would be defeated by this 4% currentColor
+	// backdrop if `button.flush` stayed in the selector list (the form-
+	// control rule's specificity, padded by `:not([readonly]):not
+	// (:user-invalid)`, would beat button's narrower state rules).
+	// `<input>` / `<select>` / `<textarea>` are the data-entry controls
+	// where the subtle tint reads as "engaged for editing"; `<button>`
+	// is a command surface and gets a stronger press tint to match bare
+	// button feedback.
+	input.flush:hover:not(:disabled):not([readonly]):not(:user-invalid),
+	select.flush:hover:not(:disabled):not([readonly]):not(:user-invalid),
+	textarea.flush:hover:not(:disabled):not([readonly]):not(:user-invalid),
+	input.flush:focus-visible:not(:disabled):not([readonly]):not(:user-invalid),
+	select.flush:focus-visible:not(:disabled):not([readonly]):not(:user-invalid),
+	textarea.flush:focus-visible:not(:disabled):not([readonly]):not(:user-invalid) {
+		background-color: color-mix(in oklab, currentColor 4%, transparent);
 	}
 
 	// `<input>` text-like controls keep their text padding so the caret
@@ -287,17 +292,19 @@
 		padding: 0;
 		color: var(--set-variant-on-canvas-color, var(--set-button-color, currentColor));
 
-		// Hover + active mirror `button.flat` (which itself mirrors bare
-		// button's `--color-text-strong` mix cascade — 88% hover, 78%
-		// active). `button.flush` already inherits the hover backdrop from
-		// the shared `input.flush / select.flush / textarea.flush /
-		// button.flush` rule above (4% currentColor); restate at the same
-		// 12% / 22% text-strong tints so flush buttons in tile / card /
-		// table-cell contexts read as deliberately interactive against
-		// any host backdrop, light or dark.
-		&:hover:not(:disabled):not(:focus-visible) {
+		// State cascade matches `button.flat` exactly — same bare-button
+		// mix-with-text-strong stride (12% hover, 22% active), same EQUAL-
+		// SPECIFICITY shape so `:active` can override `:hover` via source
+		// order rather than being shadowed by it. See the comment on
+		// `button.flat` above for the full reasoning. `button.flush` is
+		// excluded from the shared form-control 4% backdrop selector list
+		// above so that rule's higher specificity doesn't outrank these
+		// state rules.
+		&:hover:not(:disabled),
+		&:focus-visible:not(:disabled) {
 			background-color: color-mix(in srgb, transparent 88%, var(--color-text-strong));
 		}
+
 		&:active:not(:disabled) {
 			background-color: color-mix(in srgb, transparent 78%, var(--color-text-strong));
 		}
@@ -384,31 +391,33 @@
 		// any chromeless / dissolved-bg variant text.
 		color: var(--set-variant-on-canvas-color, var(--set-button-color, currentColor));
 
-		// Hover + active mirror the bare-button cascade
-		// (`_button.scss:143` `:hover` mixes with `--color-text-strong` at
-		// 88%; `:active` at 78%). For a transparent flat surface, the
-		// equivalent is `color-mix(in srgb, transparent {88,78}%, text-
-		// strong)` — 12% / 22% text-strong on transparent. Theme-aware:
-		// darkens against light canvas, lightens against dark. Visible
-		// pressed feedback across both themes without breaking the
-		// "dissolved chrome" semantic.
-		&:hover:not(:disabled):not(:focus-visible) {
+		// State chrome mirrors the bare-button cascade exactly:
+		//   hover → 12% text-strong on transparent  (bare button's 88% mix)
+		//   focus → 12% + focus ring                (same backdrop + ring)
+		//   active → 22% text-strong on transparent (bare button's 78% mix)
+		//
+		// CRITICAL: every state rule has EQUAL SPECIFICITY (0,3,1). Earlier
+		// shapes paired `:hover:not(:disabled):not(:focus-visible)` (0,4,1)
+		// with `:active:not(:disabled)` (0,3,1) — and `:hover` won at every
+		// press because specificity beats source order. Both rules now use
+		// only `:not(:disabled)`, so source order (later wins) lets
+		// `:active` override `:hover` when both match on press. The
+		// `:focus-visible` rule shares the same specificity and adds the
+		// focus ring; its bg matches hover so a focused-but-not-pressed
+		// button reads the same as a hovered one. Pressing while focused
+		// still flips to the 22% active tint because `:active` is later
+		// in source order.
+		&:hover:not(:disabled),
+		&:focus-visible:not(:disabled) {
 			background-color: color-mix(in srgb, transparent 88%, var(--color-text-strong));
 			border-color: var(--color-border);
 		}
 
-		&:focus-visible {
+		&:focus-visible:not(:disabled) {
 			outline: none;
-			background-color: color-mix(in srgb, transparent 88%, var(--color-text-strong));
-			border-color: var(--color-border);
 			box-shadow: var(--set-button-focus-box-shadow);
 		}
 
-		// Pressed feel — 22% text-strong on transparent (vs 12% on hover)
-		// matches the bare button's `:hover` 88% / `:active` 78% mix-with-
-		// text-strong stride. Clearly darker than hover; no `translateY`
-		// (bare button doesn't translate, so the flat / flush variants
-		// don't either — keeps the interaction model uniform).
 		&:active:not(:disabled) {
 			background-color: color-mix(in srgb, transparent 78%, var(--color-text-strong));
 			border-color: var(--color-border);
