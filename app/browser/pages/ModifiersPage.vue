@@ -210,7 +210,7 @@ const sizeRows = [
 			Bare variant — saturated FILLED tier on action surfaces (<code>&lt;button&gt;</code>,
 			<code>&lt;a&gt;</code>):
 		</p>
-		<div class="cluster" style="justify-content: flex-start">
+		<div class="cluster justify-start">
 			<button v-for="v in variants" :key="v" type="button" :class="v">
 				{{ v.charAt(0).toUpperCase() + v.slice(1) }}
 			</button>
@@ -218,13 +218,13 @@ const sizeRows = [
 		<p class="mt-3">
 			With <code>.filled</code> — every variant paints saturated regardless of element default:
 		</p>
-		<div class="cluster" style="justify-content: flex-start">
+		<div class="cluster justify-start">
 			<span v-for="v in variants" :key="v" class="badge filled" :class="v">{{ v }}</span>
 		</div>
 		<p class="mt-3">
 			With <code>.subtle</code> — tinted bg + emphasis text + subtle border:
 		</p>
-		<div class="cluster" style="justify-content: flex-start">
+		<div class="cluster justify-start">
 			<button v-for="v in variants" :key="v" type="button" class="subtle" :class="v">
 				{{ v.charAt(0).toUpperCase() + v.slice(1) }}
 			</button>
@@ -232,7 +232,7 @@ const sizeRows = [
 		<p class="mt-3">
 			ON-CANVAS — variant text on body canvas. Bare <code>&lt;a&gt;</code> uses this tier:
 		</p>
-		<div class="cluster" style="justify-content: flex-start; gap: calc(var(--spacing) * 4)">
+		<div class="cluster gap-4 justify-start">
 			<a v-for="v in variants" :key="v" href="#" :class="v" @click.prevent>
 				{{ v.charAt(0).toUpperCase() + v.slice(1) }} anchor
 			</a>
@@ -249,7 +249,7 @@ const sizeRows = [
 			lockstep, so a single <code>.large</code> on a parent could theoretically retune every child
 			(but in practice it's applied per element to avoid surprise).
 		</p>
-		<div class="cluster" style="justify-content: flex-start; align-items: center">
+		<div class="cluster justify-start">
 			<button type="button" class="primary small">Small</button>
 			<button type="button" class="primary">Default</button>
 			<button type="button" class="primary large">Large</button>
@@ -301,7 +301,7 @@ const sizeRows = [
 			Action surfaces fill by default — the bare-variant action button paints saturated. The style
 			values stack ON TOP of that default:
 		</p>
-		<div class="cluster" style="justify-content: flex-start">
+		<div class="cluster justify-start">
 			<button type="button" class="primary subtle">Subtle</button>
 			<button type="button" class="primary">Default (filled)</button>
 			<button type="button" class="primary filled">Filled (explicit)</button>
@@ -312,23 +312,20 @@ const sizeRows = [
 			fill:
 		</p>
 		<div
-			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
-				gap: calc(var(--spacing) * 2);
-			"
+			class="showcase-tile-grid"
+			style="--showcase-tile-grid-min: min(13rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
 		>
-			<article class="primary subtle" style="padding: calc(var(--spacing) * 3)">
+			<article class="primary subtle p-3">
 				<strong>.primary.subtle</strong>
-				<p style="margin-block: var(--spacing) 0">Tinted bg + emphasis text + subtle border.</p>
+				<p class="mt-1 mb-0">Tinted bg + emphasis text + subtle border.</p>
 			</article>
-			<article class="primary" style="padding: calc(var(--spacing) * 3)">
+			<article class="primary p-3">
 				<strong>.primary</strong>
-				<p style="margin-block: var(--spacing) 0">Bare — border tinted, body neutral.</p>
+				<p class="mt-1 mb-0">Bare — border tinted, body neutral.</p>
 			</article>
-			<article class="primary filled" style="padding: calc(var(--spacing) * 3)">
+			<article class="primary filled p-3">
 				<strong>.primary.filled</strong>
-				<p style="margin-block: var(--spacing) 0">Saturated fill + contrast text.</p>
+				<p class="mt-1 mb-0">Saturated fill + contrast text.</p>
 			</article>
 		</div>
 	</section>
@@ -343,7 +340,7 @@ const sizeRows = [
 			<code>aria-pressed</code> / <code>aria-current</code>; <code>.loading</code> pairs with
 			<code>aria-busy</code>.
 		</p>
-		<div class="cluster" style="justify-content: flex-start">
+		<div class="cluster justify-start">
 			<button type="button" class="primary">Default</button>
 			<button type="button" class="primary disabled" disabled>.disabled</button>
 			<button type="button" class="primary active" aria-pressed="true">.active</button>
@@ -390,23 +387,16 @@ const sizeRows = [
 			RTL + vertical-writing-mode pages flip automatically.
 		</p>
 		<div
-			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
-				gap: calc(var(--spacing) * 2);
-			"
+			class="showcase-tile-grid"
+			style="--showcase-tile-grid-min: min(10rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
 		>
 			<article
 				v-for="p in placements"
 				:key="p"
-				style="
-					padding: calc(var(--spacing) * 2);
-					background-color: var(--color-surface);
-					text-align: center;
-				"
+				class="p-2 text-center"
 			>
-				<strong style="display: block">.{{ p }}</strong>
-				<code style="font-size: 0.75em; opacity: 0.7">.{{ p }}</code>
+				<strong class="block">.{{ p }}</strong>
+				<code class="text-xs opacity-70">.{{ p }}</code>
 			</article>
 		</div>
 		<p class="mt-3">
@@ -424,7 +414,7 @@ const sizeRows = [
 			composed cascade. The output element's class list is shown live below the picker; copy it as
 			your starting point.
 		</p>
-		<form class="row" @submit.prevent style="align-items: end">
+		<form class="row items-end" @submit.prevent>
 			<label>
 				<span>Variant</span>
 				<select v-model="pickedVariant">
@@ -457,15 +447,7 @@ const sizeRows = [
 				</select>
 			</label>
 		</form>
-		<div
-			style="
-				display: flex;
-				align-items: center;
-				gap: calc(var(--spacing) * 3);
-				padding-block: calc(var(--spacing) * 3);
-				flex-wrap: wrap;
-			"
-		>
+		<div class="cluster gap-3 py-3">
 			<button type="button" v-bind="buttonAttrs">
 				<span
 					v-if="pickedState === 'loading'"

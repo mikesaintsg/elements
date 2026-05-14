@@ -466,7 +466,7 @@ dialog {
 		</form>
 		<details :open="motionOpen">
 			<summary>Disclosure — reveal uses the motion tokens</summary>
-			<p style="margin-block: var(--spacing); padding-inline: var(--spacing)">
+			<p class="my-1 px-1">
 				<code>::details-content</code> animates <code>block-size: 0 → auto</code> +
 				<code>opacity: 0 → 1</code> using the current motion tokens. Change them above and click
 				<em>Replay</em> to see the difference.
@@ -482,12 +482,8 @@ dialog {
 			inflated drop.
 		</p>
 		<div
-			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
-				gap: calc(var(--spacing) * 6);
-				padding-block: calc(var(--spacing) * 2);
-			"
+			class="showcase-tile-grid py-2"
+			style="--showcase-tile-grid-min: min(14rem, 100%); --showcase-tile-grid-gap: 1.5rem; --showcase-tile-grid-flow: auto-fit"
 		>
 			<article
 				style="
@@ -498,7 +494,7 @@ dialog {
 				"
 			>
 				<h3><code>--set-box-shadow-small</code></h3>
-				<p style="margin-block: calc(var(--spacing) * 2) 0">
+				<p class="mt-2 mb-0">
 					List-group hover, dropdown items, subtle action panels.
 				</p>
 			</article>
@@ -511,7 +507,7 @@ dialog {
 				"
 			>
 				<h3><code>--set-box-shadow</code> <small>(base)</small></h3>
-				<p style="margin-block: calc(var(--spacing) * 2) 0">Popover panels, dropdown menus.</p>
+				<p class="mt-2 mb-0">Popover panels, dropdown menus.</p>
 			</article>
 			<article
 				style="
@@ -522,7 +518,7 @@ dialog {
 				"
 			>
 				<h3><code>--set-box-shadow-large</code></h3>
-				<p style="margin-block: calc(var(--spacing) * 2) 0">
+				<p class="mt-2 mb-0">
 					Modal dialogs, toasts, drawer chrome.
 				</p>
 			</article>

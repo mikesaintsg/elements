@@ -352,63 +352,27 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		</p>
 		<p>Three neutral tiles, each entirely clickable end-to-end:</p>
 		<div class="cluster gap-4">
-			<article
-				style="
-					--set-article-padding-inline: 0;
-					--set-article-padding-block: 0;
-					--set-article-gap: 0;
-					overflow: clip;
-					inline-size: 16rem;
-				"
-			>
-				<a
-					class="flush"
-					href="#anchor-flush"
-					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
-				>
-					<header style="display: flex; justify-content: space-between; align-items: baseline">
+			<article class="showcase-flush-host showcase-tile">
+				<a class="flush showcase-tile-link" href="#anchor-flush">
+					<header class="flex justify-between items-baseline">
 						<strong>Documentation</strong>
 						<small aria-hidden="true">→</small>
 					</header>
 					<small class="showcase-muted">Setup, cascade, taxonomy.</small>
 				</a>
 			</article>
-			<article
-				style="
-					--set-article-padding-inline: 0;
-					--set-article-padding-block: 0;
-					--set-article-gap: 0;
-					overflow: clip;
-					inline-size: 16rem;
-				"
-			>
-				<a
-					class="flush"
-					href="#anchor-flush"
-					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
-				>
-					<header style="display: flex; justify-content: space-between; align-items: baseline">
+			<article class="showcase-flush-host showcase-tile">
+				<a class="flush showcase-tile-link" href="#anchor-flush">
+					<header class="flex justify-between items-baseline">
 						<strong>Showcase</strong>
 						<small aria-hidden="true">→</small>
 					</header>
 					<small class="showcase-muted">Every element, in context.</small>
 				</a>
 			</article>
-			<article
-				style="
-					--set-article-padding-inline: 0;
-					--set-article-padding-block: 0;
-					--set-article-gap: 0;
-					overflow: clip;
-					inline-size: 16rem;
-				"
-			>
-				<a
-					class="flush"
-					href="#anchor-flush"
-					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
-				>
-					<header style="display: flex; justify-content: space-between; align-items: baseline">
+			<article class="showcase-flush-host showcase-tile">
+				<a class="flush showcase-tile-link" href="#anchor-flush">
+					<header class="flex justify-between items-baseline">
 						<strong>API reference</strong>
 						<small aria-hidden="true">→</small>
 					</header>
@@ -426,21 +390,10 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 			<article
 				v-for="v in ['primary', 'success', 'warning', 'danger']"
 				:key="v"
-				:class="`${v} filled`"
-				style="
-					--set-article-padding-inline: 0;
-					--set-article-padding-block: 0;
-					--set-article-gap: 0;
-					overflow: clip;
-					inline-size: 16rem;
-				"
+				:class="`${v} filled showcase-flush-host showcase-tile`"
 			>
-				<a
-					class="flush"
-					href="#anchor-flush"
-					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
-				>
-					<header style="display: flex; justify-content: space-between; align-items: baseline">
+				<a class="flush showcase-tile-link" href="#anchor-flush">
+					<header class="flex justify-between items-baseline">
 						<strong class="capitalize">{{ v }} tile</strong>
 						<small aria-hidden="true">→</small>
 					</header>

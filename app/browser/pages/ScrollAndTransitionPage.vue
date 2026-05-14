@@ -134,16 +134,8 @@ const next = (): void => {
 			(macOS, iOS) the thin / auto distinction collapses while the pointer is idle; the moment you
 			scroll, all three render distinctly. Windows + Linux Chrome paints all three at idle as well.
 		</p>
-		<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem">
-			<div
-				style="
-					block-size: 10rem;
-					overflow-y: scroll;
-					border: 1px solid var(--color-border);
-					border-radius: 0.5rem;
-					padding: 0.75rem;
-				"
-			>
+		<div class="grid grid-cols-3 gap-4">
+			<div class="showcase-scroll-stage">
 				<p class="mt-0 mb-2">
 					<small><code>thin</code> (default)</small>
 				</p>
@@ -153,16 +145,7 @@ const next = (): void => {
 				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
 				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
 			</div>
-			<div
-				style="
-					block-size: 10rem;
-					overflow-y: scroll;
-					border: 1px solid var(--color-border);
-					border-radius: 0.5rem;
-					padding: 0.75rem;
-					--set-scrollbar-width: auto;
-				"
-			>
+			<div class="showcase-scroll-stage" style="--set-scrollbar-width: auto">
 				<p class="mt-0 mb-2">
 					<small><code>auto</code> (OS default size)</small>
 				</p>
@@ -172,16 +155,7 @@ const next = (): void => {
 				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
 				<p>Lorem ipsum. Lorem ipsum. Lorem ipsum. Lorem ipsum.</p>
 			</div>
-			<div
-				style="
-					block-size: 10rem;
-					overflow-y: scroll;
-					border: 1px solid var(--color-border);
-					border-radius: 0.5rem;
-					padding: 0.75rem;
-					--set-scrollbar-width: none;
-				"
-			>
+			<div class="showcase-scroll-stage" style="--set-scrollbar-width: none">
 				<p class="mt-0 mb-2">
 					<small><code>none</code> (hidden)</small>
 				</p>
@@ -199,18 +173,13 @@ const next = (): void => {
 			colour token — variant identity, brand colour, or any custom value. Each scrollable below sets
 			its thumb to a different variant; <strong>scroll the box to see the colour</strong>.
 		</p>
-		<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem">
+		<div class="grid grid-cols-2 gap-4">
 			<div
 				v-for="v in ['primary', 'success', 'warning', 'danger'] as const"
 				:key="v"
-				:style="`
-					block-size: 8rem;
-					overflow-y: scroll;
-					border: 1px solid var(--color-border);
-					border-radius: 0.5rem;
-					padding: 0.75rem;
-					--set-scrollbar-thumb-color: var(--color-${v});
-				`"
+				class="showcase-scroll-stage"
+				style="--showcase-scroll-stage-height: 8rem"
+				:style="`--set-scrollbar-thumb-color: var(--color-${v})`"
 			>
 				<p class="mt-0 mb-2">
 					<small>
@@ -233,20 +202,15 @@ const next = (): void => {
 			snap-to-wider layout would look broken. Toggle the long-content state to see the difference
 			between the two columns:
 		</p>
-		<div style="display: flex; gap: 0.5rem; margin-block-end: 1rem">
+		<div class="flex gap-2 mb-4">
 			<button type="button" @click="gutterLong = !gutterLong">
 				{{ gutterLong ? 'Show short content' : 'Show long content (triggers overflow)' }}
 			</button>
 		</div>
-		<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+		<div class="grid grid-cols-2 gap-4">
 			<div
-				style="
-					block-size: 12rem;
-					overflow-y: auto;
-					border: 1px solid var(--color-border);
-					border-radius: 0.5rem;
-					padding: 0.75rem;
-				"
+				class="showcase-scroll-stage-conditional"
+				style="--showcase-scroll-stage-height: 12rem"
 			>
 				<p class="mt-0 mb-2">
 					<small><code>stable</code> (default) — text stays put</small>
@@ -261,14 +225,8 @@ const next = (): void => {
 				</template>
 			</div>
 			<div
-				style="
-					block-size: 12rem;
-					overflow-y: auto;
-					border: 1px solid var(--color-border);
-					border-radius: 0.5rem;
-					padding: 0.75rem;
-					--set-scrollbar-gutter: auto;
-				"
+				class="showcase-scroll-stage-conditional"
+				style="--showcase-scroll-stage-height: 12rem; --set-scrollbar-gutter: auto"
 			>
 				<p class="mt-0 mb-2">
 					<small><code>auto</code> — text snaps when scrollbar appears</small>
@@ -326,7 +284,7 @@ const next = (): void => {
 		<button type="button" @click="next">Show next snapshot</button>
 		<article :class="['filled', current().variant, 'mt-4']">
 			<header>
-				<h3 style="margin-block: 0">{{ current().title }}</h3>
+				<h3>{{ current().title }}</h3>
 			</header>
 			<p>{{ current().body }}</p>
 		</article>

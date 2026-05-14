@@ -306,6 +306,18 @@
 	overflow: clip;
 }
 
+/* Tile link — `<a class="flush showcase-tile-link">` fills the
+ * inside of a `.showcase-flush-host` article (or any tile container)
+ * with a padded vertical stack. Used in card-as-link demos where the
+ * whole tile is the click target: anchor or button.flush handles
+ * interaction state, this class supplies the internal layout. */
+.showcase-tile-link {
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
 /* Footer-actions row — the trailing button cluster inside an
  * `<article> > <footer>`. The framework's footer chrome is opinion-
  * free on internal layout; consumers reach for this when they want
@@ -376,6 +388,32 @@
 	font-size: 0.875rem;
 	color: var(--color-text-muted);
 	font-weight: 400;
+}
+
+/* ── Scrollbar demo stage (ScrollAndTransitionPage) ────────────────
+ * A fixed-height bordered box that overflows so the scrollbar is
+ * always visible. Used in the scrollbar-width / scrollbar-color /
+ * scrollbar-gutter demos. The token-demonstration (e.g. `--set-
+ * scrollbar-width: auto`) goes inline on the consumer — only the
+ * layout shell lives here. Block-size is parameterized so the same
+ * class covers the 8rem / 10rem / 12rem variants the page uses. */
+.showcase-scroll-stage {
+	block-size: var(--showcase-scroll-stage-height, 10rem);
+	overflow-y: scroll;
+	border: 1px solid var(--color-border);
+	border-radius: 0.5rem;
+	padding: 0.75rem;
+}
+
+/* `overflow-y: auto` instead of `scroll` — for demos where the
+ * scrollbar appears only when content overflows (gutter `stable` vs
+ * `auto`). Same shell otherwise. */
+.showcase-scroll-stage-conditional {
+	block-size: var(--showcase-scroll-stage-height, 10rem);
+	overflow-y: auto;
+	border: 1px solid var(--color-border);
+	border-radius: 0.5rem;
+	padding: 0.75rem;
 }
 
 /* ── Placement grid (PlacementsPage) ────────────────────────────────
