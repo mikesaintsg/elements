@@ -112,6 +112,38 @@
 		// instead of interpolating. (We hit this bug: opacity on aside
 		// drawers snapping to 1 instead of fading in over 250ms.) Keep
 		// the behavior on per-property tails only.
+
+		// Suppress the universal `scrollbar-gutter: stable` from
+		// `surfaces/_scrollbar.scss` on popover hosts. The stable gutter
+		// reserves a vertical strip on the inline-end side for a
+		// scrollbar — useful on page-shell scroll containers (`<main>`,
+		// `<body>`) so layout doesn't shift when a scrollbar appears, but
+		// pure overhead on top-layer popovers. Two visible bugs without
+		// this override:
+		//
+		//   1. `<aside popover>` drawer reserves a gutter on the panel
+		//      itself (the drawer has `overflow: hidden`, so a scrollbar
+		//      NEVER appears — `stable` is pure waste). Visible as a
+		//      ~14 px gap on the inline-end edge: header / footer borders
+		//      stop short of the drawer's right edge, the `.top` /
+		//      `.bottom` drawers don't span `100dvw` despite their
+		//      `inline-size: 100dvw` declaration.
+		//   2. Same bug applies inside the drawer at the middle
+		//      `overflow-y: auto` slot — gutter reserved even when the
+		//      content fits — and on every other top-layer popover
+		//      surface (dropdown menus, toasts, dialog content) when
+		//      content fits.
+		//
+		// `[popover] *` covers descendants because `scrollbar-gutter`
+		// doesn't inherit; the universal rule wrote `stable` on every
+		// element individually, so the override has to do the same.
+		// Top-layer surfaces have no page-flow layout-shift to prevent
+		// — a scrollbar inside a popover only shifts content within the
+		// popover, which is local visual feedback the user expects.
+	}
+	[popover],
+	[popover] * {
+		scrollbar-gutter: auto;
 	}
 
 	// Closed-state values + scale-in transition — scoped to non-aside
