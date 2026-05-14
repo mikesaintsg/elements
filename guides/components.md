@@ -106,6 +106,26 @@ Class roots are reserved for:
 
 ---
 
+## 4.5. Surface families — in-flow vs top-layer
+
+Three disambiguations the framework uses repeatedly:
+
+| Family                  | Members                                                                                | Shared chrome                                                                                                                                                                                                                                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **In-flow**             | `<aside role="alert">` (banner), `dialog[open]:not(:modal)` (non-modal dialog)         | Sits in document flow, shifts surrounding content. Header / footer pin if present (`:has()`-gated flex column). `scrollbar-gutter: auto` so divider borders reach the inline-end edge. Entry animation = `opacity 0 → 1` + `transform: translateY(-0.5rem) → 0` (subtle slide). Reads from `--set-motion-{duration, timing-function}`. |
+| **Top-layer modal**     | `dialog.showModal()`, `<aside popover>` / `<nav popover>` (drawer)                     | Renders in the browser's top layer. Native `::backdrop` scrim. `popover="auto"` enables platform light-dismiss (Esc + outside-click). Drawer slides from an edge; modal centers with `transform: scale(0.96) → none` fade-zoom.                                                                                                        |
+| **Top-layer transient** | `<output popover>` (toast), `[popover]` / `[popover='hint']` (popover panel + tooltip) | Top-layer, anchored to a position (corner for toast, anchor element for popover / tooltip). Transient by default — auto-dismiss timer on toast, hover / focus-driven for tooltip. No layout shift on appearance.                                                                                                                       |
+
+The split-by-family clarifies common confusions:
+
+- **Banner alert vs. toast.** Both communicate transient status, but the alert shifts UI (in-flow) while the toast overlays it (top-layer). Use `<aside role="alert">` for "X failed, here's what to do" inline messages; use `<output popover>` (via `useToast`) for "saved" / "copied" floating notifications.
+- **Non-modal dialog vs. modal dialog.** Both are `<dialog>`, but `.showModal()` joins the top-layer family (centered, backdrop, focus trap) while `.show()` / `[open]` keeps the dialog in-flow alongside the page. The in-flow non-modal dialog reads as "supplementary panel" — Apple's `.sheets`, settings inspectors, persistent step indicators. Use `useDialog({ modal: false })` to enter the in-flow family.
+- **In-flow surfaces share an animation feel.** Banner alert + non-modal dialog use a height-collapse / opacity-fade / subtle Y-slide combo. Drawer + modal use a slide-from-edge or scale-zoom — different family, different feel. Choose by family, not by tag.
+
+The toast-vs-alert disambiguation in §3.1 (above) maps each "if you'd reach for X" pattern to the right family member.
+
+---
+
 ## 5. Naming
 
 **Element-driven component** — file name mirrors the HTML tag: `_aside.scss`, `_article.scss`, `_nav.scss`. The selector targets the bare tag. No class root anywhere on the file.

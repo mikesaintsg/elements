@@ -289,16 +289,26 @@
 		// `@include transition()` participates in the reduced-motion
 		// contract; the wrapper isn't needed for the discrete
 		// `visibility` line because it never animates a length.
+		//
+		// `transform: translateY(-0.5rem)` on the closed state adds a
+		// subtle drawer-family slide to the open / close transition.
+		// The height tween still does the layout work (no jump as the
+		// banner appears between siblings); the small inward translate
+		// reads as "settling into place" rather than "unfolding from
+		// 0." Matches the in-flow surface family's "drawer feel"
+		// without conflicting with the height-collapse layout shift.
 		opacity: 0;
 		block-size: 0;
 		padding-block: 0;
 		border-inline-start-width: 0;
 		visibility: hidden;
+		transform: translateY(-0.5rem);
 		@include transition(
 			(
 				block-size var(--set-motion-duration) var(--set-motion-timing-function),
 				padding-block var(--set-motion-duration) var(--set-motion-timing-function),
 				border-inline-start-width var(--set-motion-duration) var(--set-motion-timing-function),
+				transform var(--set-motion-duration) var(--set-motion-timing-function),
 				opacity var(--set-motion-duration) ease-out,
 				visibility var(--set-motion-duration) allow-discrete
 			)
@@ -310,6 +320,7 @@
 			padding-block: var(--set-alert-padding-block);
 			border-inline-start-width: var(--set-alert-bar-width);
 			visibility: visible;
+			transform: translateY(0);
 		}
 
 		// Trailing dismiss: any direct-child button with `aria-label`

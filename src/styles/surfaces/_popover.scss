@@ -154,9 +154,20 @@
 		// layer order `elements, components, surfaces, …` means an
 		// `elements`-scoped override loses to a `surfaces`-scoped
 		// universal rule regardless of specificity).
+		//
+		// `aside[role='alert']` joins the same family for the same
+		// reason: the in-flow banner has `overflow: hidden` (from its
+		// height-collapse animation rule in `components/_aside.scss`)
+		// so it qualifies as a scroll container too. With `stable` the
+		// banner reserves an inline-end strip and header / footer
+		// divider lines stop short of the right edge. Banner alerts
+		// have the same "top-layer-equivalent" property as popovers
+		// for this purpose: their layout-shift concern is local to the
+		// banner's own content area, not the surrounding document
+		// flow. So `auto` is correct.
 	}
-	:is([popover], dialog),
-	:is([popover], dialog) * {
+	:is([popover], dialog, aside[role='alert']),
+	:is([popover], dialog, aside[role='alert']) * {
 		scrollbar-gutter: auto;
 	}
 

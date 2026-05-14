@@ -264,6 +264,49 @@
 		}
 	}
 
+	// Non-modal dialog (`.show()` / `[open]` without `:modal`) is an
+	// in-flow surface — it sits in document flow alongside other
+	// content, shifting siblings rather than overlaying the page. The
+	// modal's centered fade-zoom (`transform: scale(0.96)`) reads as
+	// "popping in over the page" — wrong feel for an in-flow surface.
+	// Override the ENTRY @starting-style to a subtle Y-slide so non-
+	// modal dialogs match the in-flow surface family's "drawer feel"
+	// (matches `aside[role='alert']` in `components/_aside.scss`):
+	//
+	//   - Modal dialog: centered top-layer, fade + scale-zoom entry.
+	//   - Non-modal dialog: in-flow, fade + Y-slide entry.
+	//   - Banner alert: in-flow, height-collapse + Y-slide entry.
+	//
+	// Why only ENTRY is customized (and the close keeps the base
+	// scale tween):
+	//
+	// `[open]` is removed at close-time. `:modal` only matches WHILE
+	// the dialog is actively modal — once `.close()` runs, the
+	// pseudo-class stops matching. CSS can't distinguish "closing
+	// FROM modal state" vs "closing FROM non-modal state" at the
+	// instant the close transition begins, because both end up
+	// `:not([open]):not(:modal)`. If we DID set a non-modal-specific
+	// close-state (e.g. `dialog:not(:modal):not([open]) { transform:
+	// translateY(-0.5rem) }`), it would ALSO match closing-from-
+	// modal dialogs and break the modal's intended scale-zoom close.
+	//
+	// Asymmetry is fine: open feels in-flow (Y-slide), close fades
+	// out with the same scale-zoom both modes share. The opacity
+	// fade masks the transform-function snap (none → scale(0.96))
+	// so the close still reads as smooth.
+	//
+	// Specificity note (Chrome 148+ @starting-style cascade): targets
+	// `dialog:not(:modal)` (specificity 0,1,1) so the starting-state
+	// body stays one step below `dialog[open]:not(:modal)` (would be
+	// 0,2,1) — same cascade-leak workaround the surface popover and
+	// the existing `dialog[open] { ... }` rule above use.
+	@starting-style {
+		dialog:not(:modal) {
+			opacity: 0;
+			transform: translateY(-0.5rem);
+		}
+	}
+
 	// --------------------------------------------------------------------------
 	// Dialog section chrome — header / body / footer.
 	//
