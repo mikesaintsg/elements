@@ -99,7 +99,7 @@ const snippetFlat = `<!-- .flat: no underline at rest; hover restores underline 
 
 const snippetFlush = `<!-- .flush: link IS the surface — fills host, inherits radius,
      drops underline, inherits color. -->
-<article style="padding: 0">
+<article class="p-0">
   <a class="flush" href="#a-flush">
     <header>
       <h3>Tile-as-link</h3>
@@ -351,7 +351,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 			signals the navigation target.
 		</p>
 		<p>Three neutral tiles, each entirely clickable end-to-end:</p>
-		<div class="cluster" style="gap: 1rem; flex-wrap: wrap">
+		<div class="cluster" class="flex flex-wrap gap-4">
 			<article
 				style="
 					--set-article-padding-inline: 0;
@@ -370,7 +370,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 						<strong>Documentation</strong>
 						<small aria-hidden="true">→</small>
 					</header>
-					<small style="color: var(--color-text-muted)">Setup, cascade, taxonomy.</small>
+					<small class="showcase-muted">Setup, cascade, taxonomy.</small>
 				</a>
 			</article>
 			<article
@@ -391,7 +391,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 						<strong>Showcase</strong>
 						<small aria-hidden="true">→</small>
 					</header>
-					<small style="color: var(--color-text-muted)">Every element, in context.</small>
+					<small class="showcase-muted">Every element, in context.</small>
 				</a>
 			</article>
 			<article
@@ -412,7 +412,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 						<strong>API reference</strong>
 						<small aria-hidden="true">→</small>
 					</header>
-					<small style="color: var(--color-text-muted)">Composables, factories, types.</small>
+					<small class="showcase-muted">Composables, factories, types.</small>
 				</a>
 			</article>
 		</div>
@@ -422,7 +422,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 			anchor's <code>color: inherit</code> reads white against it. Hover any tile to confirm the
 			click area covers the entire surface:
 		</p>
-		<div class="cluster" style="gap: 1rem; flex-wrap: wrap">
+		<div class="cluster" class="flex flex-wrap gap-4">
 			<article
 				v-for="v in ['primary', 'success', 'warning', 'danger']"
 				:key="v"
@@ -441,7 +441,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 					style="padding: 1rem; display: flex; flex-direction: column; gap: 0.25rem"
 				>
 					<header style="display: flex; justify-content: space-between; align-items: baseline">
-						<strong style="text-transform: capitalize">{{ v }} tile</strong>
+						<strong class="capitalize">{{ v }} tile</strong>
 						<small aria-hidden="true">→</small>
 					</header>
 					<small>Whole card is the link.</small>

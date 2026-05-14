@@ -280,7 +280,7 @@ const eventsDrawer = useAside(eventsRef, {
 				<button type="button" class="primary" @click="eventsDrawer.hide()">Close</button>
 			</footer>
 		</aside>
-		<small style="display: block; margin-block-start: 0.5rem">
+		<small class="block mt-2">
 			<strong>Event log:</strong>
 			<span v-if="eventsLog.length === 0">open / close the drawer</span>
 			<span v-else>{{ eventsLog.join(' → ') }}</span>

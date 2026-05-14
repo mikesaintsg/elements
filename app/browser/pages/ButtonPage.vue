@@ -342,7 +342,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 			</div>
 		</div>
 		<p>As a toolbar row using the framework's <code>[role="toolbar"]</code> host:</p>
-		<div role="toolbar" aria-label="Editor actions" style="margin-block-start: 0.5rem">
+		<div role="toolbar" aria-label="Editor actions" class="mt-2">
 			<button class="flat" type="button">Bold</button>
 			<button class="flat" type="button">Italic</button>
 			<button class="flat" type="button">Underline</button>
@@ -366,7 +366,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 			reveals on hover + focus so the button stays discoverable inside the dissolved chrome.
 		</p>
 		<p>Three article tiles, each with a flush button filling the bottom strip:</p>
-		<div class="cluster" style="gap: 1rem; flex-wrap: wrap">
+		<div class="cluster" class="flex flex-wrap gap-4">
 			<article
 				style="
 					--set-article-padding-inline: 0;
@@ -376,7 +376,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 					inline-size: 16rem;
 				"
 			>
-				<div style="padding: 1rem">
+				<div class="p-4">
 					<strong>Quick action</strong>
 					<p style="margin: 0.25rem 0 0">
 						<small>Neutral flush — fills the card's bottom edge.</small>
@@ -396,7 +396,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 					inline-size: 16rem;
 				"
 			>
-				<div style="padding: 1rem">
+				<div class="p-4">
 					<strong>Primary tile</strong>
 					<p style="margin: 0.25rem 0 0">
 						<small>Variant cascade reaches the flush button's text.</small>
@@ -416,7 +416,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 					inline-size: 16rem;
 				"
 			>
-				<div style="padding: 1rem">
+				<div class="p-4">
 					<strong>Destructive tile</strong>
 					<p style="margin: 0.25rem 0 0">
 						<small>Danger flush sits flush against the card's edges.</small>
@@ -461,8 +461,8 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		</table>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre><code>&lt;article style="padding: 0"&gt;
-  &lt;div style="padding: 1rem"&gt;…&lt;/div&gt;
+			<pre><code>&lt;article class="p-0"&gt;
+  &lt;div class="p-4"&gt;…&lt;/div&gt;
   &lt;button class="primary flush"&gt;Confirm&lt;/button&gt;
 &lt;/article&gt;
 

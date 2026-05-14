@@ -488,14 +488,36 @@
 		padding-block: var(--set-dialog-section-padding-block);
 		border-block-end: 1px solid var(--set-dialog-section-border-color);
 
-		// Reset framework heading margins inside the header band — the
-		// band's own padding owns the rhythm. Without this, an `<h2>` /
-		// `<h3>` inside `<dialog> > <header>` keeps its default
-		// `margin-block-start` and pushes the band taller than the
-		// designer's spec.
-		> :is(h1, h2, h3, h4, h5, h6) {
+		// Reset framework heading / paragraph margins inside the header band —
+		// the band's own padding owns the rhythm. Without this, an `<h2>` /
+		// `<h3>` / subtitle `<p>` inside `<dialog> > <header>` keeps its
+		// default `margin-block-start` and pushes the band taller than the
+		// designer's spec. `<p>` is included so subtitle copy stacks cleanly.
+		> :where(h1, h2, h3, h4, h5, h6, p) {
 			margin-block: 0;
 		}
+	}
+
+	// Mirror of the header > h*/p reset for the footer band. Bare dialog
+	// footers (action rows) typically only carry buttons; the rule is
+	// here for parity in case a consumer writes `<footer><h4>…</h4></
+	// footer>` or `<footer><p>…</p></footer>`.
+	dialog > footer > :where(h1, h2, h3, h4, h5, h6, p),
+	dialog > form > footer > :where(h1, h2, h3, h4, h5, h6, p) {
+		margin-block: 0;
+	}
+
+	// Dialog body slot — when the dialog is a flex column with header /
+	// footer pinned, direct heading / paragraph children of the dialog
+	// (not the bands) are the body content. Their browser-default block
+	// margin stacks on top of the band's `margin-block-{start,end}` and
+	// the dialog's section-gap, producing the same "feels too tall" trap
+	// that every demo fixes with inline `margin: 0`. Owning that here
+	// keeps the markup clean. `:where()` keeps specificity at 0 so a
+	// consumer can override per-instance without `!important`.
+	dialog:where(:has(> :is(header, footer))) > :where(h1, h2, h3, h4, h5, h6, p),
+	dialog:where(:has(> form > :is(header, footer))) > form > :where(h1, h2, h3, h4, h5, h6, p) {
+		margin-block: 0;
 	}
 
 	dialog > footer,

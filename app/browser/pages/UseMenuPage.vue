@@ -233,7 +233,7 @@ const lifecycleDropdown = useMenu(lifecycleToggle, lifecycleMenu, {
 			<hr />
 			<li><button type="button" @click="onCommand('Sign out')">Sign out</button></li>
 		</menu>
-		<small style="display: block; margin-block-start: 0.5rem">
+		<small class="block mt-2">
 			<strong>Last picked:</strong>
 			<span v-if="lastCommand">{{ lastCommand }}</span>
 			<span v-else>(none yet — open the menu and pick an item)</span>
@@ -347,7 +347,7 @@ useMenu(toggleRef, menuRef, { placement: 'bottom-start', flip: 8 })
 			<strong>persistent filter menu</strong> (<code>inside: false</code>) where the user toggles
 			multiple checkboxes before pressing Escape or clicking outside.
 		</p>
-		<div class="dropdown-stage" style="gap: 1rem; flex-wrap: wrap">
+		<div class="dropdown-stage" class="flex flex-wrap gap-4">
 			<button ref="stickyToggle" type="button" class="dropdown">Sticky — all dismiss off</button>
 			<button ref="filterToggle" type="button" class="dropdown">
 				Filters ({{ filterSummary }})
@@ -412,7 +412,7 @@ useMenu(toggleRef, menuRef, {
 			<code>elements:menu:close</code>), so external scripts that can't import the composable can
 			still listen.
 		</p>
-		<menu style="margin-block: 0 1rem">
+		<menu class="mt-0 mb-4">
 			<li>
 				<label>
 					<input v-model="allowOpen" type="checkbox" />
@@ -427,7 +427,7 @@ useMenu(toggleRef, menuRef, {
 			<li><button type="button">First action</button></li>
 			<li><button type="button">Second action</button></li>
 		</menu>
-		<small style="display: block; margin-block-start: 0.5rem">
+		<small class="block mt-2">
 			<strong>Lifecycle log:</strong>
 			<span v-if="lifecycleLog.length === 0">click the button to trigger events</span>
 			<span v-else>{{ lifecycleLog.join(' → ') }}</span>

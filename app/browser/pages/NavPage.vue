@@ -254,7 +254,7 @@ const goto = (n: number): void => {
 				</li>
 			</ol>
 		</nav>
-		<p style="margin-block-start: 1rem">
+		<p class="mt-4">
 			<small
 				>Active page: <strong>{{ page }}</strong> — click a number to retune.</small
 			>
@@ -440,7 +440,7 @@ const goto = (n: number): void => {
 				<li><a href="#">Mid</a></li>
 			</ol>
 		</nav>
-		<p style="margin-block-start: 1rem">
+		<p class="mt-4">
 			<small><code>.fill</code> — items grow proportional to content.</small>
 		</p>
 		<nav aria-label="Pagination">
@@ -450,7 +450,7 @@ const goto = (n: number): void => {
 				<li><a href="#">Mid</a></li>
 			</ol>
 		</nav>
-		<p style="margin-block-start: 1rem">
+		<p class="mt-4">
 			<small
 				><code>.justified</code> — items get equal flex-basis (zero), so every item is the same
 				width regardless of content.</small

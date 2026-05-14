@@ -300,7 +300,7 @@ const tab3 = useTabs(trigger3, { pane: pane3, group })
 				the previously-active tab stays active.
 			</p>
 		</section>
-		<small style="display: block; margin-block-start: 0.5rem">
+		<small class="block mt-2">
 			<strong>Lifecycle log:</strong>
 			<span v-if="lifecycleLog.length === 0">click a tab to trigger events</span>
 			<span v-else>{{ lifecycleLog.join(' → ') }}</span>

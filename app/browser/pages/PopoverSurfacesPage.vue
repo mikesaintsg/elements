@@ -113,14 +113,14 @@ const longContent = ref(false)
 			<code>&lt;button popovertarget="id"&gt;</code> opens the popover by id; the framework's
 			auto-anchor surface positions it below the button.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+		<div class="cluster gap-2">
 			<button type="button" class="dropdown" popovertarget="demo-pop-auto">
 				Open auto popover
 			</button>
 		</div>
 		<div popover id="demo-pop-auto" style="min-inline-size: 16rem">
-			<h6 style="margin-block: 0 0.5rem">Auto popover</h6>
-			<p style="margin-block: 0">
+			<h6 class="mt-0 mb-2">Auto popover</h6>
+			<p>
 				Click outside or press <strong>Esc</strong> to dismiss — no JS required, the browser handles
 				both. The framework supplies the chrome: surface colour, border, radius, shadow, scale-in
 				transition.
@@ -148,7 +148,7 @@ const longContent = ref(false)
 			stay open until the user picks a path, sticky filters that shouldn't dismiss when the user
 			taps the surrounding canvas.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+		<div class="cluster gap-2">
 			<button
 				type="button"
 				class="dropdown"
@@ -159,8 +159,8 @@ const longContent = ref(false)
 			</button>
 		</div>
 		<div popover="manual" id="demo-pop-manual" style="min-inline-size: 18rem">
-			<h6 style="margin-block: 0 0.5rem">Manual lifecycle</h6>
-			<p style="margin-block: 0">
+			<h6 class="mt-0 mb-2">Manual lifecycle</h6>
+			<p>
 				Esc and click-outside <em>do not</em> dismiss this popover. A scheduled timeout calls
 				<code>.hidePopover()</code> in 3 s; in production <code>useToast</code> /
 				<code>useDialog</code> own this lifecycle.
@@ -195,7 +195,7 @@ const longContent = ref(false)
 			without the popover API gets the same chrome. Pair with WAI-ARIA's
 			<code>aria-describedby</code> on the labelled element to expose the tooltip to assistive tech.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center">
+		<div class="cluster gap-4">
 			<button type="button" popovertarget="demo-pop-hint">Hover-ish trigger</button>
 			<small
 				>(Click to show; native popover API doesn't yet ship hover-trigger semantics —
@@ -295,7 +295,7 @@ const longContent = ref(false)
 			</button>
 		</div>
 		<div popover id="demo-pop-long">
-			<h6 style="margin-block: 0 0.5rem">Scroll inside the popover</h6>
+			<h6 class="mt-0 mb-2">Scroll inside the popover</h6>
 			<p>
 				Long content scrolls inside the popover — the surface ships
 				<code>overflow: auto</code> + <code>overscroll-behavior: contain</code> so wheel events

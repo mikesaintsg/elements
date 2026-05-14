@@ -281,7 +281,7 @@ const bookmark = useButton(button)
 				</button>
 			</li>
 		</menu>
-		<small style="display: block; margin-block-start: 0.5rem">
+		<small class="block mt-2">
 			Notifications: <strong>{{ notify.active.value ? 'on' : 'off' }}</strong> · this button's
 			<code>active</code> ref is independent of the bookmark button above.
 		</small>
@@ -307,7 +307,7 @@ const bookmark = useButton(button)
 				</button>
 			</li>
 		</menu>
-		<small style="display: block; margin-block-start: 0.5rem">
+		<small class="block mt-2">
 			<strong>Log:</strong>
 			<span v-if="muteLog.length === 0">click to fire `on.toggle`</span>
 			<span v-else>{{ muteLog.join(' · ') }}</span>

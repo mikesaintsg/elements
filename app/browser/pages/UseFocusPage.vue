@@ -117,7 +117,7 @@ const focusedTag = computed(() => {
 			<strong>Deactivate</strong> (or use the panel's own Close button) to restore focus to whatever
 			button you clicked Activate from.
 		</p>
-		<menu style="margin-block: 0 1rem">
+		<menu class="mt-0 mb-4">
 			<li>
 				<button
 					type="button"
@@ -150,7 +150,7 @@ const focusedTag = computed(() => {
 				Tab through these controls. The trap holds focus inside this box — Tabbing past the last
 				item wraps back to the first.
 			</p>
-			<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+			<div class="cluster gap-2">
 				<button type="button">First button</button>
 				<input type="text" placeholder="Text input" />
 				<button type="button" class="primary">Primary action</button>
@@ -158,7 +158,7 @@ const focusedTag = computed(() => {
 				<button type="button" class="subtle" @click="basicDeactivate">Deactivate</button>
 			</div>
 		</div>
-		<small style="margin-block-start: 0.5rem; display: block">
+		<small class="block mt-2">
 			Trap is <strong>{{ basic.active.value ? 'active' : 'inactive' }}</strong
 			>.
 			<span v-if="basicLog.length > 0">Log: {{ basicLog.join(' → ') }}</span>
@@ -183,7 +183,7 @@ const { active, activate, deactivate } = useFocus(host)
 			useful for forms where the primary input should auto-focus, or for confirm dialogs where the
 			destructive button should NOT.
 		</p>
-		<menu style="margin-block: 0 1rem">
+		<menu class="mt-0 mb-4">
 			<li>
 				<button type="button" :disabled="initial.active.value" @click="initial.activate()">
 					Activate (focus the email field)
@@ -213,7 +213,7 @@ const { active, activate, deactivate } = useFocus(host)
 					<small>Password</small>
 					<input type="password" name="password" />
 				</label>
-				<div style="display: flex; gap: 0.5rem">
+				<div class="flex gap-2">
 					<button type="button" class="subtle" @click="initial.deactivate()">Cancel</button>
 					<button type="submit" class="primary">Submit</button>
 				</div>
@@ -235,7 +235,7 @@ const { active, activate, deactivate } = useFocus(host)
 			useful when the trigger element is removed during the panel's lifecycle (e.g. a "delete me"
 			button inside a wizard step that's then thrown away).
 		</p>
-		<menu style="margin-block: 0 1rem">
+		<menu class="mt-0 mb-4">
 			<li>
 				<button
 					type="button"

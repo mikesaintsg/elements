@@ -317,7 +317,7 @@ const inline = useDialog(inlineRef, { modal: false }) // dialog.show()
 				<button type="button" @click="formDialog.show()">Open prompt dialog</button>
 			</li>
 		</menu>
-		<small style="display: block; margin-block-start: 0.5rem">
+		<small class="block mt-2">
 			<strong>Last return value:</strong>
 			<code v-if="lastReturn">{{ lastReturn }}</code>
 			<span v-else>(open the dialog and pick an option)</span>
@@ -437,7 +437,7 @@ const inline = useDialog(inlineRef, { modal: false }) // dialog.show()
 				<button type="button" class="primary" @click="lifecycleDialog.hide()">Close</button>
 			</footer>
 		</dialog>
-		<small style="display: block; margin-block-start: 0.5rem">
+		<small class="block mt-2">
 			<strong>Lifecycle log:</strong>
 			<span v-if="lifecycleLog.length === 0">flip a checkbox and click the button</span>
 			<span v-else>{{ lifecycleLog.join(' → ') }}</span>

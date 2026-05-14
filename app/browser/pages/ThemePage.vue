@@ -296,7 +296,7 @@ const theme = useTheme()
 					}"
 				></div>
 				<div style="padding: calc(var(--spacing) * 2)">
-					<strong style="text-transform: capitalize">{{ entry.label }}</strong>
+					<strong class="capitalize">{{ entry.label }}</strong>
 					<code
 						style="display: block; font-size: 0.75em; opacity: 0.7; margin-block-start: 0.25rem"
 						>{{ entry.token }}</code
@@ -342,7 +342,7 @@ const theme = useTheme()
 			role="status"
 			class="primary"
 			data-alert-open
-			style="margin-block-start: calc(var(--spacing) * 4)"
+			class="mt-4"
 		>
 			<p>
 				<strong>Alert banner.</strong> Bg uses <code>--color-primary-bg-subtle</code>; the leading
@@ -390,7 +390,7 @@ const theme = useTheme()
 		<div
 			v-for="block in variantTiers"
 			:key="block.variant"
-			style="margin-block-start: calc(var(--spacing) * 4)"
+			class="mt-4"
 		>
 			<h3 style="text-transform: capitalize; margin-block-end: calc(var(--spacing) * 2)">
 				{{ block.variant }}
@@ -414,7 +414,7 @@ const theme = useTheme()
 						}"
 					></div>
 					<div style="padding: calc(var(--spacing) * 1.5)">
-						<strong style="font-size: 0.875em">{{ entry.label }}</strong>
+						<strong class="text-sm">{{ entry.label }}</strong>
 						<code
 							style="display: block; font-size: 0.75em; opacity: 0.6; margin-block-start: 0.25rem"
 							>{{ entry.token }}</code
@@ -451,7 +451,7 @@ const theme = useTheme()
 					}"
 				></div>
 				<div style="padding: calc(var(--spacing) * 1.5); background-color: var(--color-surface)">
-					<strong style="font-size: 0.875em">{{ entry.label }}</strong>
+					<strong class="text-sm">{{ entry.label }}</strong>
 					<code style="display: block; font-size: 0.75em; opacity: 0.6">{{ entry.token }}</code>
 				</div>
 			</article>
@@ -489,7 +489,7 @@ const theme = useTheme()
 				>
 					The quick brown fox
 				</p>
-				<strong style="font-size: 0.875em">{{ entry.label }}</strong>
+				<strong class="text-sm">{{ entry.label }}</strong>
 				<code style="display: block; font-size: 0.75em; opacity: 0.6">{{ entry.token }}</code>
 			</article>
 		</div>
@@ -519,7 +519,7 @@ const theme = useTheme()
 					backgroundColor: 'var(--color-surface)',
 				}"
 			>
-				<strong style="font-size: 0.875em">{{ entry.label }}</strong>
+				<strong class="text-sm">{{ entry.label }}</strong>
 				<code style="display: block; font-size: 0.75em; opacity: 0.6">{{ entry.token }}</code>
 			</article>
 		</div>
@@ -567,7 +567,7 @@ const theme = useTheme()
 				</dd>
 			</dl>
 		</article>
-		<p style="margin-block-start: calc(var(--spacing) * 3)">
+		<p class="mt-3">
 			The two tokens are NOT meant to be used independently — using
 			<code>--color-inverted-text</code> as a foreground over any other background (including the
 			page canvas) will fail WCAG contrast in one of the two themes. Reach for

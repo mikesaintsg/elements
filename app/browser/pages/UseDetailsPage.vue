@@ -250,7 +250,7 @@ useDetails(cRef, { accordion: groupRef })
 				The log below records each event as it fires.
 			</p>
 		</details>
-		<small style="display: block; margin-block-start: 0.5rem">
+		<small class="block mt-2">
 			<strong>Lifecycle log:</strong>
 			<span v-if="lifecycleLog.length === 0">flip a checkbox and toggle the disclosure</span>
 			<span v-else>{{ lifecycleLog.join(' → ') }}</span>

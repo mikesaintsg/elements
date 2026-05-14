@@ -693,7 +693,7 @@ dialog {
 				Success
 			</button>
 		</div>
-		<p style="margin-block-start: calc(var(--spacing) * 4)">
+		<p class="mt-4">
 			Reset clears every inline override on this page so the framework defaults return.
 		</p>
 		<button type="button" class="subtle" @click="resetTokens">Reset all token overrides</button>

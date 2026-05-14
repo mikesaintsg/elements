@@ -268,7 +268,7 @@ const clearOutbox = (): void => {
 				</span>
 			</li>
 		</ol>
-		<small v-if="reorderLog.length > 0" style="margin-block-start: 0.5rem; display: block">
+		<small v-if="reorderLog.length > 0" class="block mt-2">
 			Log: {{ reorderLog.join(' · ') }}
 		</small>
 		<details>
@@ -328,7 +328,7 @@ useDrag&lt;Track&gt;(host, {
 				</button>
 			</li>
 		</menu>
-		<small v-if="handlePlayed" style="margin-block-start: 0.5rem; display: block">
+		<small v-if="handlePlayed" class="block mt-2">
 			Playing:
 			<strong>{{ handleList.find((t) => t.id === handlePlayed)?.title }}</strong>
 			— click never started a drag.
@@ -374,7 +374,7 @@ useDrag&lt;Track&gt;(host, {
 				</span>
 			</li>
 		</ol>
-		<small style="margin-block-start: 0.5rem; display: block">
+		<small class="block mt-2">
 			<strong>{{ selectionCount }}</strong> selected
 			<span v-if="selectionCount > 0">
 				— indices [{{ [...selection.selected.value].sort((a, b) => a - b).join(', ') }}]

@@ -349,11 +349,11 @@ const snippetForm = `<dialog>
 			"
 		>
 			<header>
-				<h3 style="margin: 0">Account changes</h3>
+				<h3>Account changes</h3>
 			</header>
 			<dialog open class="flush">
-				<header><h4 style="margin: 0">Email updated</h4></header>
-				<p style="margin: 0">
+				<header><h4>Email updated</h4></header>
+				<p>
 					New email confirmed: <code>ada@example.com</code>. The change applies to every signed-in
 					session immediately.
 				</p>
@@ -362,22 +362,22 @@ const snippetForm = `<dialog>
 				</footer>
 			</dialog>
 			<dialog open class="success flush">
-				<header><h4 style="margin: 0">Backup complete</h4></header>
-				<p style="margin: 0">
+				<header><h4>Backup complete</h4></header>
+				<p>
 					Snapshot stored. Variant cascade reaches the border + header band; outer perimeter still
 					dissolves.
 				</p>
 			</dialog>
 			<dialog open class="warning flush">
-				<header><h4 style="margin: 0">Session expiring</h4></header>
-				<p style="margin: 0">You'll be signed out in 5 minutes unless you re-authenticate.</p>
+				<header><h4>Session expiring</h4></header>
+				<p>You'll be signed out in 5 minutes unless you re-authenticate.</p>
 				<footer>
 					<button type="button" class="warning">Re-authenticate</button>
 				</footer>
 			</dialog>
 			<dialog open class="danger flush">
-				<header><h4 style="margin: 0">Delete account?</h4></header>
-				<p style="margin: 0">This action cannot be undone.</p>
+				<header><h4>Delete account?</h4></header>
+				<p>This action cannot be undone.</p>
 				<footer>
 					<button type="button">Cancel</button>
 					<button type="button" class="danger filled">Delete</button>

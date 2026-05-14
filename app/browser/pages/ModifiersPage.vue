@@ -215,13 +215,13 @@ const sizeRows = [
 				{{ v.charAt(0).toUpperCase() + v.slice(1) }}
 			</button>
 		</div>
-		<p style="margin-block-start: calc(var(--spacing) * 3)">
+		<p class="mt-3">
 			With <code>.filled</code> — every variant paints saturated regardless of element default:
 		</p>
 		<div class="cluster" style="justify-content: flex-start">
 			<span v-for="v in variants" :key="v" class="badge filled" :class="v">{{ v }}</span>
 		</div>
-		<p style="margin-block-start: calc(var(--spacing) * 3)">
+		<p class="mt-3">
 			With <code>.subtle</code> — tinted bg + emphasis text + subtle border:
 		</p>
 		<div class="cluster" style="justify-content: flex-start">
@@ -229,7 +229,7 @@ const sizeRows = [
 				{{ v.charAt(0).toUpperCase() + v.slice(1) }}
 			</button>
 		</div>
-		<p style="margin-block-start: calc(var(--spacing) * 3)">
+		<p class="mt-3">
 			ON-CANVAS — variant text on body canvas. Bare <code>&lt;a&gt;</code> uses this tier:
 		</p>
 		<div class="cluster" style="justify-content: flex-start; gap: calc(var(--spacing) * 4)">
@@ -409,7 +409,7 @@ const sizeRows = [
 				<code style="font-size: 0.75em; opacity: 0.7">.{{ p }}</code>
 			</article>
 		</div>
-		<p style="margin-block-start: calc(var(--spacing) * 3)">
+		<p class="mt-3">
 			See <a href="#/placements">PlacementsPage</a> for the live anchor-positioning demos —
 			<code>position-try-fallbacks</code> flips, viewport-clamp behavior, and the
 			<code>:not(:where(aside, dialog, nav, output))</code> scope rule that keeps drawer-shaped
@@ -475,7 +475,7 @@ const sizeRows = [
 				></span>
 				Composed button
 			</button>
-			<code style="font-size: 0.875em">
+			<code class="text-sm">
 				&lt;button class="{{ classes || '' }}"&gt;
 				<template v-if="pickedState === 'disabled'"> disabled </template>
 				<template v-if="pickedState === 'loading'"> aria-busy="true" </template>

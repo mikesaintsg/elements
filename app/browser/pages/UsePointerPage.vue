@@ -278,7 +278,7 @@ const draggingNow = computed(
 			}"
 		>
 			<div style="padding: 1rem; overflow: auto">
-				<h6 style="margin-block: 0 0.5rem">Left pane</h6>
+				<h6 class="mt-0 mb-2">Left pane</h6>
 				<p>
 					<small>
 						Width: <strong>{{ splitPercent }}%</strong>
@@ -304,7 +304,7 @@ const draggingNow = computed(
 				}"
 			></div>
 			<div style="padding: 1rem; overflow: auto">
-				<h6 style="margin-block: 0 0.5rem">Right pane</h6>
+				<h6 class="mt-0 mb-2">Right pane</h6>
 				<p>
 					<small>
 						Width: <strong>{{ 100 - splitPercent }}%</strong>
@@ -395,7 +395,7 @@ usePointer(handle, {
 						max="360"
 						step="1"
 						v-model.number="hue"
-						style="inline-size: 100%"
+						class="w-full"
 					/>
 				</label>
 				<div

@@ -108,7 +108,7 @@ const submit = async (): Promise<void> => {
 			aside-popover drawers use.
 		</p>
 		<h3>Bare + seven variants</h3>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+		<div class="cluster gap-2">
 			<span class="badge">12</span>
 			<span v-for="v in variants" :key="v" :class="['badge', v]">{{ v }}</span>
 		</div>
@@ -125,7 +125,7 @@ const submit = async (): Promise<void> => {
 			(and white text — the framework's "every variant takes white on fill" contract). Use
 			sparingly: subtle badges sit politely in body copy; filled badges shout for attention.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+		<div class="cluster gap-2">
 			<span v-for="v in variants" :key="v" :class="['badge', v, 'filled']">{{ v }}</span>
 		</div>
 
@@ -134,7 +134,7 @@ const submit = async (): Promise<void> => {
 			<code>.pill</code> bumps the border-radius to <code>9999px</code> for the fully-rounded chip
 			silhouette (Mailbox <code>.tag</code> default shape). Composes with any variant.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+		<div class="cluster gap-2">
 			<span class="badge pill">99+</span>
 			<span class="badge primary pill">new</span>
 			<span class="badge danger pill filled">live</span>
@@ -147,7 +147,7 @@ const submit = async (): Promise<void> => {
 			items). The badge auto-nudges 1 px upward inside a <code>&lt;button&gt;</code> for optical
 			centering against the button's baseline.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+		<div class="cluster gap-2">
 			<button type="button">Inbox <span class="badge primary filled">42</span></button>
 			<button type="button" class="subtle">
 				Mentions <span class="badge information">7</span>
@@ -174,13 +174,13 @@ const submit = async (): Promise<void> => {
 			identity color; bare dots fall back to <code>--color-text-muted</code>.
 		</p>
 		<h3>Bare + seven variants</h3>
-		<div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center">
+		<div class="cluster gap-4">
 			<span class="dot" aria-label="Neutral status"></span>
 			<span v-for="v in variants" :key="v" :class="['dot', v]" :aria-label="`${v} status`"></span>
 		</div>
 
 		<h3>Sizes</h3>
-		<div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center">
+		<div class="cluster gap-4">
 			<span class="dot small success" aria-label="Small"></span>
 			<span class="dot success" aria-label="Default"></span>
 			<span class="dot large success" aria-label="Large"></span>
@@ -193,7 +193,7 @@ const submit = async (): Promise<void> => {
 			<code>prefers-reduced-motion: reduce</code> drops the animation entirely (per WCAG SC 2.3.3 —
 			there's no value in a frozen mid-pulse).
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center">
+		<div class="cluster gap-6">
 			<span class="dot success pulse" aria-label="Online — pulsing"></span>
 			<span class="dot danger pulse" aria-label="Recording — pulsing"></span>
 			<span class="dot warning pulse" aria-label="Pending — pulsing"></span>
@@ -201,16 +201,16 @@ const submit = async (): Promise<void> => {
 
 		<h3>Inline with text labels</h3>
 		<p>Common composition — dot + label inside a flex row, like a user status line.</p>
-		<ul style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0; list-style: none">
-			<li style="display: flex; gap: 0.5rem; align-items: center">
+		<ul class="flex flex-col gap-2">
+			<li class="flex items-center gap-2">
 				<span class="dot success pulse" aria-hidden="true"></span>
 				<span>Alex Rivera — <small>online</small></span>
 			</li>
-			<li style="display: flex; gap: 0.5rem; align-items: center">
+			<li class="flex items-center gap-2">
 				<span class="dot warning" aria-hidden="true"></span>
 				<span>Jordan Lee — <small>away</small></span>
 			</li>
-			<li style="display: flex; gap: 0.5rem; align-items: center">
+			<li class="flex items-center gap-2">
 				<span class="dot" aria-hidden="true"></span>
 				<span>Sam Park — <small>offline</small></span>
 			</li>
@@ -228,20 +228,20 @@ const submit = async (): Promise<void> => {
 			+ drawers.
 		</p>
 		<h3>Style modes — subtle (default) / filled / ghost</h3>
-		<div style="display: flex; flex-direction: column; gap: 0.5rem">
-			<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+		<div class="stack" style="--set-stack-gap: 0.5rem">
+			<div class="cluster gap-2">
 				<span v-for="v in variants" :key="v" :class="['tag', v]">{{ v }}</span>
 			</div>
-			<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+			<div class="cluster gap-2">
 				<span v-for="v in variants" :key="v" :class="['tag', v, 'filled']">{{ v }}</span>
 			</div>
-			<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+			<div class="cluster gap-2">
 				<span v-for="v in variants" :key="v" :class="['tag', v, 'ghost']">{{ v }}</span>
 			</div>
 		</div>
 
 		<h3>Sizes + square shape</h3>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+		<div class="cluster gap-2">
 			<span class="tag small primary">small</span>
 			<span class="tag primary">default</span>
 			<span class="tag large primary">large</span>
@@ -255,7 +255,7 @@ const submit = async (): Promise<void> => {
 			deepens to 16 %, focus paints the framework's focus ring. Same pattern the
 			<code>&lt;button&gt;</code> baseline uses, scoped to the tag chip.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+		<div class="cluster gap-2">
 			<button type="button" class="tag">Bare</button>
 			<button type="button" class="tag primary">primary</button>
 			<button type="button" class="tag success">success</button>
@@ -276,7 +276,7 @@ const submit = async (): Promise<void> => {
 				</button>
 			</span>
 		</div>
-		<p v-if="removed.size > 0" style="margin-block-start: 1rem">
+		<p v-if="removed.size > 0" class="mt-4">
 			<button type="button" class="subtle small" @click="restore">Restore dismissed tags</button>
 		</p>
 		<details>
@@ -306,7 +306,7 @@ const submit = async (): Promise<void> => {
 			vestibular discomfort. WCAG SC 2.3.3 explicitly permits this for spinners.
 		</p>
 		<h3>Sizes + variant color</h3>
-		<div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center">
+		<div class="cluster gap-4">
 			<span role="status" class="spinner small" aria-label="Loading (small)"></span>
 			<span role="status" class="spinner" aria-label="Loading (default)"></span>
 			<span role="status" class="spinner large" aria-label="Loading (large)"></span>
@@ -320,7 +320,7 @@ const submit = async (): Promise<void> => {
 			auto-shrinks the spinner to the button's font-size so the indicator sits next to the label
 			without breaking the row. Click the button to toggle the loading state.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+		<div class="cluster gap-2">
 			<button
 				type="button"
 				class="primary"
@@ -358,13 +358,13 @@ const submit = async (): Promise<void> => {
 
 		<h3>Block placeholder + multi-line text</h3>
 		<article style="max-inline-size: 28rem">
-			<header style="display: flex; gap: 0.75rem; align-items: center">
+			<header class="cluster gap-3">
 				<div
 					class="skeleton circle"
 					style="inline-size: 2.5rem; block-size: 2.5rem"
 					aria-hidden="true"
 				></div>
-				<div style="flex: 1">
+				<div class="flex-1">
 					<div class="skeleton text" style="inline-size: 60%" aria-hidden="true"></div>
 					<div
 						class="skeleton text"
@@ -374,7 +374,7 @@ const submit = async (): Promise<void> => {
 				</div>
 			</header>
 			<div class="skeleton" style="block-size: 8rem; margin-block: 1rem" aria-hidden="true"></div>
-			<div class="skeleton text" style="inline-size: 100%" aria-hidden="true"></div>
+			<div class="skeleton text" class="w-full" aria-hidden="true"></div>
 			<div
 				class="skeleton text"
 				style="inline-size: 92%; margin-block-start: 0.5rem"
@@ -397,7 +397,7 @@ const submit = async (): Promise<void> => {
     &lt;/div&gt;
   &lt;/header&gt;
   &lt;div class="skeleton" style="block-size: 8rem"&gt;&lt;/div&gt;
-  &lt;div class="skeleton text" style="inline-size: 100%"&gt;&lt;/div&gt;
+  &lt;div class="skeleton text" class="w-full"&gt;&lt;/div&gt;
   &lt;div class="skeleton text" style="inline-size: 92%"&gt;&lt;/div&gt;
   &lt;div class="skeleton text" style="inline-size: 78%"&gt;&lt;/div&gt;
 &lt;/article&gt;</code></pre>

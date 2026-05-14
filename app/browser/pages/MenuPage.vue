@@ -268,7 +268,7 @@ const onCommand = (label: string): void => {
 			aren't dropdowns don't pick up a stray caret. Retune the glyph via
 			<code>--set-button-dropdown-caret-image</code> at <code>:root</code> or per-instance.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center">
+		<div class="cluster gap-2">
 			<button type="button" class="dropdown" popovertarget="demo-dropdown">Account</button>
 			<small v-if="lastCommand"
 				>Last picked: <strong>{{ lastCommand }}</strong></small
@@ -343,7 +343,7 @@ const onCommand = (label: string): void => {
 			button. Useful when the trigger sits in a corner where the default
 			<code>block-end</code> placement would clip against the viewport.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+		<div class="cluster gap-2">
 			<button type="button" class="dropdown" popovertarget="demo-dd-start">Open from start</button>
 			<button type="button" class="dropdown" popovertarget="demo-dd-end">Open from end</button>
 			<button type="button" class="dropdown" popovertarget="demo-dd-top">Open above</button>

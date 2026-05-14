@@ -188,7 +188,7 @@ const restore = (): void => {
 			filled-amber against the tinted bg.
 		</p>
 
-		<div style="display: flex; flex-direction: column; gap: 0.75rem">
+		<div class="stack" style="--set-stack-gap: 0.75rem">
 			<aside role="alert" data-alert-open>
 				<div>
 					<strong>Default alert.</strong> Neutral leading bar, no tinted bg. Use for generic notices
@@ -229,13 +229,13 @@ const restore = (): void => {
 			success alerts get a slightly more saturated green band, neutral alerts get a subtle slate
 			band, etc.
 		</p>
-		<div style="display: flex; flex-direction: column; gap: 1rem">
+		<div class="stack" style="--set-stack-gap: 1rem">
 			<aside role="alert" class="information" data-alert-open>
 				<header>
 					<strong>Scheduled maintenance</strong>
 					<button type="button" aria-label="Dismiss">×</button>
 				</header>
-				<p style="margin-block: 0">
+				<p>
 					Database maintenance tonight 02:00–04:00 UTC. The app will be read-only during that
 					window. Reports and exports will queue and run after the window closes.
 				</p>
@@ -251,7 +251,7 @@ const restore = (): void => {
 					<strong>Payment failed</strong>
 					<button type="button" aria-label="Dismiss">×</button>
 				</header>
-				<p style="margin-block: 0">
+				<p>
 					Your subscription couldn't be renewed because the card on file was declined. Update the
 					billing method to restore access. You have 7 days before the account is suspended.
 				</p>
@@ -268,7 +268,7 @@ const restore = (): void => {
 					<strong>Build passed</strong>
 					<button type="button" aria-label="Dismiss">×</button>
 				</header>
-				<p style="margin-block: 0">
+				<p>
 					All 1,420 tests passing on <code>main</code>. The deploy will start in 60 seconds unless
 					cancelled.
 				</p>
@@ -341,16 +341,9 @@ const restore = (): void => {
 			The alert lives inside an <code>&lt;article&gt;</code>; <code>.flush</code> drops the outer
 			perimeter so the alert sits between siblings as a separator with the variant's leading bar.
 		</p>
-		<article
-			style="
-				--set-article-padding-inline: 0;
-				--set-article-padding-block: 0;
-				--set-article-gap: 0;
-				overflow: clip;
-			"
-		>
+		<article class="showcase-flush-host">
 			<header>
-				<h3 style="margin: 0">Deployment status</h3>
+				<h3>Deployment status</h3>
 			</header>
 			<aside role="alert" class="success flush" data-alert-open>
 				<div><strong>All tests passed.</strong> 1,420 / 1,420 on <code>main</code>.</div>
@@ -435,7 +428,7 @@ const restore = (): void => {
 
 		<h3>Placement modifiers</h3>
 		<p>Click each button to open the drawer from the matching edge.</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+		<div class="cluster gap-2">
 			<button type="button" popovertarget="aside-drawer-start">Slide from start</button>
 			<button type="button" popovertarget="aside-drawer-end">Slide from end (default)</button>
 			<button type="button" popovertarget="aside-drawer-top">Slide from top</button>
@@ -524,7 +517,7 @@ const restore = (): void => {
 			through the popover surface tokens. Trigger buttons below open primary / success / warning /
 			danger drawers, each on the end edge.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+		<div class="cluster gap-2">
 			<button type="button" popovertarget="aside-drawer-primary" class="primary">Primary</button>
 			<button type="button" popovertarget="aside-drawer-success" class="success">Success</button>
 			<button type="button" popovertarget="aside-drawer-warning" class="warning">Warning</button>

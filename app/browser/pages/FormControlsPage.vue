@@ -789,7 +789,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			<header>
 				<h3 style="margin: 0">Profile</h3>
 			</header>
-			<form class="flush" style="padding: 1rem">
+			<form class="flush" class="p-4">
 				<label>
 					Display name
 					<input type="text" placeholder="Ada Lovelace" />
@@ -1009,7 +1009,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			<pre><code>&lt;label&gt;Display name &lt;input class="flat" type="text" /&gt;&lt;/label&gt;
 &lt;label&gt;Plan &lt;select class="flat"&gt;…&lt;/select&gt;&lt;/label&gt;
 
-&lt;article style="padding: 0"&gt;
+&lt;article class="p-0"&gt;
   &lt;div class="row"&gt;
     &lt;label&gt;Name&lt;/label&gt;
     &lt;input class="flush" type="text" /&gt;

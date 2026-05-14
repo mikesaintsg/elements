@@ -276,7 +276,7 @@ const states = computed(() => ({
 				outside-click to dismiss, hover sets the active descendant.
 			</small>
 		</p>
-		<div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end">
+		<div class="cluster gap-4 items-end">
 			<div class="select" style="min-inline-size: 14rem">
 				<button ref="singleToggle" type="button" class="select-toggle">
 					<span class="select-value">{{ singleSelect.value.value ?? 'Choose a fruit…' }}</span>
@@ -353,7 +353,7 @@ const select = useSelect(toggleRef, {
 				Escape; the toggle label flattens the array.
 			</small>
 		</p>
-		<div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end">
+		<div class="cluster gap-4 items-end">
 			<div class="select" style="min-inline-size: 14rem">
 				<button ref="multiToggle" type="button" class="select-toggle">
 					<span class="select-value">
@@ -427,7 +427,7 @@ const select = useSelect(toggleRef, {
 				subset shifts. Type a non-matching string to see the empty-state hint + Enter-to-commit.
 			</small>
 		</p>
-		<div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end">
+		<div class="cluster gap-4 items-end">
 			<div class="select" style="min-inline-size: 18rem">
 				<button ref="comboToggle" type="button" class="select-toggle">
 					<span class="select-value">{{ comboSelect.value.value ?? 'Choose a city…' }}</span>
@@ -480,7 +480,7 @@ const select = useSelect(toggleRef, {
 				</button>
 			</li>
 		</menu>
-		<div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end">
+		<div class="cluster gap-4 items-end">
 			<div class="select" style="min-inline-size: 12rem">
 				<button ref="lifecycleToggle" type="button" class="select-toggle">
 					<span class="select-value">
@@ -494,7 +494,7 @@ const select = useSelect(toggleRef, {
 				</menu>
 			</div>
 		</div>
-		<small style="display: block; margin-block-start: 0.5rem">
+		<small class="block mt-2">
 			<strong>Lifecycle log:</strong>
 			<span v-if="lifecycleLog.length === 0">flip the checkbox and click Try to toggle</span>
 			<span v-else>{{ lifecycleLog.join(' → ') }}</span>
@@ -524,7 +524,7 @@ const select = useSelect(toggleRef, {
 				</label>
 			</li>
 		</menu>
-		<div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end">
+		<div class="cluster gap-4 items-end">
 			<div class="select" style="min-inline-size: 14rem">
 				<button ref="placementToggle" type="button" class="select-toggle">
 					<span class="select-value">{{ placementSelect.value.value ?? 'Choose a size…' }}</span>

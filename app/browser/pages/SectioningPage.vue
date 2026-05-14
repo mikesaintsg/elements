@@ -272,7 +272,7 @@
 				too. Both bands extend edge-to-edge of the card via the framework's article-header /
 				article-footer chrome rules.
 			</p>
-			<footer style="display: flex; gap: 0.5rem">
+			<footer class="flex gap-2">
 				<button type="button" class="primary">Save</button>
 				<button type="button" class="subtle">Cancel</button>
 			</footer>
