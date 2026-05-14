@@ -777,7 +777,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			Drop a flush form into a card body, an aside, or an expanded list-group item and it fills
 			edge-to-edge with the host's chrome owning the perimeter:
 		</p>
-		<article class="frame" style="max-inline-size: 32rem">
+		<article class="frame max-w-lg">
 			<header>
 				<h3>Profile</h3>
 			</header>
@@ -838,7 +838,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 		</ul>
 		<h3>Flat — transparent rest, full chrome on focus</h3>
 		<p>Click into any field below to see the chrome promote to the bordered baseline:</p>
-		<div class="stack" style="max-inline-size: 32rem">
+		<div class="stack max-w-lg">
 			<label>
 				Display name
 				<input class="flat" type="text" placeholder="Ada Lovelace" />
@@ -869,7 +869,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			<code>align-items: stretch</code> produces when the input baseline sits in the middle of its
 			content box).
 		</p>
-		<article class="frame" style="max-inline-size: 32rem">
+		<article class="frame max-w-lg">
 			<header>
 				<h3>Profile</h3>
 			</header>

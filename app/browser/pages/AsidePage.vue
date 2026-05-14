@@ -240,7 +240,7 @@ const restore = (): void => {
 					window. Reports and exports will queue and run after the window closes.
 				</p>
 				<footer>
-					<a href="#aside-alert" style="margin-inline-end: auto">View status page →</a>
+					<a href="#aside-alert" class="me-auto">View status page →</a>
 					<button type="button" class="subtle small">Snooze 1h</button>
 					<button type="button" class="primary small">Acknowledge</button>
 				</footer>
@@ -256,7 +256,7 @@ const restore = (): void => {
 					billing method to restore access. You have 7 days before the account is suspended.
 				</p>
 				<footer>
-					<button type="button" class="subtle small" style="margin-inline-end: auto">
+					<button type="button" class="subtle small me-auto">
 						Contact support
 					</button>
 					<button type="button" class="danger small">Update card</button>
@@ -381,7 +381,7 @@ const restore = (): void => {
 		<aside role="status" class="success" data-alert-open>
 			<div><strong>Saved.</strong> All changes synced 12 seconds ago.</div>
 		</aside>
-		<aside role="status" class="information" data-alert-open style="margin-block-start: 0.75rem">
+		<aside role="status" class="information mt-3" data-alert-open>
 			<div><strong>Sync in progress.</strong> Uploading 4 of 12 files…</div>
 		</aside>
 	</section>

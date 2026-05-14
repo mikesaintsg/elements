@@ -516,6 +516,21 @@
 		padding-block: calc(var(--spacing) * 3);
 	}
 
+	// Panel-internal text-content reset — direct heading / paragraph /
+	// preformatted-block children of an expansion panel get
+	// `margin-block: 0` so the panel's own `padding-block` (set on the
+	// expanded state above) owns the rhythm. Without this, browser-
+	// default `<p>` / `<h*>` / `<pre>` margins stack on top of the
+	// panel's padding and the expanded row's visible height drifts
+	// above the designed 3-spacing inset. Mirrors the same reset the
+	// framework ships for `<article> > <header> > :where(h*, p)` (see
+	// components/_article.scss). `:where()` keeps specificity at 0 so a
+	// consumer who genuinely wants a margin still wins without
+	// `!important`.
+	table > tbody > tr > td > [data-table-expansion-panel] > :where(h1, h2, h3, h4, h5, h6, p, pre) {
+		margin-block: 0;
+	}
+
 	// ── Row-expansion indicator ───────────────────────────────────────────────
 	// Decorative chevron painted via `::before` on the FIRST `<td>` of any
 	// data row that has a sibling `<tr data-table-expansion>`. The pseudo

@@ -371,7 +371,7 @@ const onCommand = (label: string): void => {
 			regression-guarded behavior captured during the iOS scroll-on-link audit).
 		</p>
 		<button type="button" class="dropdown" popovertarget="demo-wrapped">Open wrapped panel</button>
-		<div popover id="demo-wrapped" style="min-inline-size: 16rem">
+		<div popover id="demo-wrapped" class="min-w-64">
 			<header
 				style="
 					padding-block-end: 0.5rem;

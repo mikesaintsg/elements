@@ -335,7 +335,7 @@ const cosmicImageDataUri =
 			Useful for settings sheets, menu cards, and any pattern where a header / footer band frames a
 			list of rows.
 		</p>
-		<article style="max-width: 28rem">
+		<article class="max-w-md">
 			<header>
 				<h3>Notifications</h3>
 			</header>
@@ -363,7 +363,7 @@ const cosmicImageDataUri =
 			on nested cards even when the outer perimeter is dissolved.
 		</p>
 		<p>Three nested articles inside one outer card — each is itself a fully-composed card:</p>
-		<article class="frame" style="max-width: 32rem">
+		<article class="frame max-w-lg">
 			<header>
 				<h3>Deployment summary</h3>
 			</header>
@@ -411,7 +411,7 @@ const cosmicImageDataUri =
 		</p>
 
 		<h3>Profile card</h3>
-		<article style="max-width: 24rem">
+		<article class="max-w-sm">
 			<header class="showcase-profile-header">
 				<img
 					:src="portraitImageDataUri"

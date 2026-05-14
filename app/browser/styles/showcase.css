@@ -236,11 +236,23 @@
  * Audit rule: `app/browser/pages/*.vue` MUST NOT carry inline
  * `style="..."` attributes for anything except (1) a value bound to
  * reactive state via `:style`, (2) a per-instance dimensional value
- * (`max-width: 28rem` on a single demo), or (3) a value that
- * genuinely demonstrates a token (e.g., a swatch's `background-
- * color`). The flush-composition-host pattern is owned by the
- * framework now (`<article class="frame">`). See
- * `guides/contribute.md` § "No inline styles in showcase pages".
+ * (single-property, off Tailwind's scale, not recurring — most
+ * dimensional values should land on `w-32` / `max-w-md` / `min-w-56`
+ * Tailwind utilities), or (3) a value that genuinely demonstrates a
+ * token (icon `style="--icon: var(--set-icon-plus)"`, swatch
+ * `style="background-color: var(--color-primary)"`, shadow demo
+ * `style="box-shadow: var(--set-box-shadow-small)"`).
+ *
+ * Spacing-shape primitives are FRAMEWORK-OWNED — never inline them:
+ *   • `<div class="stack">`    flex column with gap > 0
+ *   • `<div class="cluster">`  flex wrap with gap > 0
+ *   • `<div class="frame">`    flex column, gap = 0, padding = 0,
+ *                              overflow clip (children fill edges)
+ *   • `<article class="frame">` / `<td class="frame">` — element-local
+ *     versions of `.frame` that also retune `--set-{tag}-*` tokens.
+ *
+ * See `guides/contribute.md` § "Hard rules during demo authoring"
+ * for the full five-step triage.
  * ============================================================================ */
 
 /* Muted-text utility — generic "fine print" color (`<small>`
@@ -537,6 +549,17 @@
 
 .showcase-swatch-meta-tight {
 	padding: calc(var(--spacing) * 1.5);
+}
+
+/* Inverted-token demo's key/value list — a tight two-column grid
+ * (label | value) used inside the theme-inverted swatch article to
+ * show the pair of `--color-inverted` / `--color-inverted-text`
+ * tokens with their resolved values. Auto-track the label width so
+ * a `<code>` term stays as narrow as its text needs. */
+.showcase-inverted-key-value {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.25rem calc(var(--spacing) * 2);
 }
 
 /* Swatch caption — small monospaced token label below the variant

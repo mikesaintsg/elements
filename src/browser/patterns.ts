@@ -306,8 +306,8 @@ export const FILE_EXCEPTIONS: Readonly<Record<string, FileException>> = {
 	// token. As `_local.scss` grows it will need other element prefixes —
 	// extend the list then.
 	'modifiers/_local.scss': {
-		additionalTokenPrefixes: ['article'],
-		note: 'element-local modifiers may declare --set-{tag}-* tokens for the element their selector targets',
+		additionalTokenPrefixes: ['article', 'table-cell'],
+		note: 'element-local modifiers may declare --set-{tag}-* tokens for the element their selector targets (article.frame, td.frame)',
 	},
 
 	// components/_nav.scss — declares --set-tablist-* and --set-tab-* on

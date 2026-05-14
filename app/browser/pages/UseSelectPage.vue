@@ -230,7 +230,7 @@ const states = computed(() => ({
 			or <code>size</code>) suppresses the chevron and reverts the right-side padding via the same
 			token — single-sourced.
 		</p>
-		<form class="stack" style="max-inline-size: 28rem">
+		<form class="stack max-w-md">
 			<label>
 				<span>Single-select</span>
 				<select name="bare-single">
@@ -277,7 +277,7 @@ const states = computed(() => ({
 			</small>
 		</p>
 		<div class="cluster gap-4 items-end">
-			<div class="select" style="min-inline-size: 14rem">
+			<div class="select min-w-56">
 				<button ref="singleToggle" type="button" class="select-toggle">
 					<span class="select-value">{{ singleSelect.value.value ?? 'Choose a fruit…' }}</span>
 				</button>
@@ -354,7 +354,7 @@ const select = useSelect(toggleRef, {
 			</small>
 		</p>
 		<div class="cluster gap-4 items-end">
-			<div class="select" style="min-inline-size: 14rem">
+			<div class="select min-w-56">
 				<button ref="multiToggle" type="button" class="select-toggle">
 					<span class="select-value">
 						{{
@@ -428,7 +428,7 @@ const select = useSelect(toggleRef, {
 			</small>
 		</p>
 		<div class="cluster gap-4 items-end">
-			<div class="select" style="min-inline-size: 18rem">
+			<div class="select min-w-72">
 				<button ref="comboToggle" type="button" class="select-toggle">
 					<span class="select-value">{{ comboSelect.value.value ?? 'Choose a city…' }}</span>
 				</button>
@@ -481,7 +481,7 @@ const select = useSelect(toggleRef, {
 			</li>
 		</menu>
 		<div class="cluster gap-4 items-end">
-			<div class="select" style="min-inline-size: 12rem">
+			<div class="select min-w-48">
 				<button ref="lifecycleToggle" type="button" class="select-toggle">
 					<span class="select-value">
 						{{ lifecycleSelect.value.value ?? 'Choose…' }}
@@ -525,7 +525,7 @@ const select = useSelect(toggleRef, {
 			</li>
 		</menu>
 		<div class="cluster gap-4 items-end">
-			<div class="select" style="min-inline-size: 14rem">
+			<div class="select min-w-56">
 				<button ref="placementToggle" type="button" class="select-toggle">
 					<span class="select-value">{{ placementSelect.value.value ?? 'Choose a size…' }}</span>
 				</button>

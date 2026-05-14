@@ -463,7 +463,7 @@ useDrag&lt;Track&gt;(host, {
 				</p>
 			</section>
 		</div>
-		<menu v-if="outbox.length > 0" style="margin-block-start: 0.75rem">
+		<menu v-if="outbox.length > 0" class="mt-3">
 			<li>
 				<button type="button" class="subtle" @click="clearOutbox">Clear outbox</button>
 			</li>

@@ -357,11 +357,11 @@ const submit = async (): Promise<void> => {
 		</p>
 
 		<h3>Block placeholder + multi-line text</h3>
-		<article style="max-inline-size: 28rem">
+		<article class="max-w-md">
 			<header class="cluster gap-3">
 				<div
 					class="skeleton circle"
-					style="inline-size: 2.5rem; block-size: 2.5rem"
+					class="w-10 h-10"
 					aria-hidden="true"
 				></div>
 				<div class="flex-1">
@@ -390,7 +390,7 @@ const submit = async (): Promise<void> => {
 			<summary><small>Markup — skeleton card</small></summary>
 			<pre><code>&lt;article&gt;
   &lt;header style="display: flex; gap: 0.75rem"&gt;
-    &lt;div class="skeleton circle" style="inline-size: 2.5rem; block-size: 2.5rem"&gt;&lt;/div&gt;
+    &lt;div class="skeleton circle w-10 h-10"&gt;&lt;/div&gt;
     &lt;div style="flex: 1"&gt;
       &lt;div class="skeleton text" style="inline-size: 60%"&gt;&lt;/div&gt;
       &lt;div class="skeleton text" style="inline-size: 40%"&gt;&lt;/div&gt;

@@ -145,7 +145,7 @@ const focusedTag = computed(() => {
 				transition: 'opacity 150ms ease',
 			}"
 		>
-			<h3 style="margin-block-start: 0">Trapped panel</h3>
+			<h3 class="mt-0">Trapped panel</h3>
 			<p>
 				Tab through these controls. The trap holds focus inside this box — Tabbing past the last
 				item wraps back to the first.
@@ -200,7 +200,7 @@ const { active, activate, deactivate } = useFocus(host)
 				transition: 'opacity 150ms ease',
 			}"
 		>
-			<form style="display: grid; gap: 0.75rem; max-inline-size: 20rem">
+			<form class="max-w-xs" style="--set-form-gap: 0.75rem">
 				<label>
 					<small>Username (default first focusable, but skipped)</small>
 					<input type="text" name="username" />

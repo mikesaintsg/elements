@@ -722,7 +722,7 @@ const reset = (): void => {
 			<code>sort.auto: false</code> when the consumer is driving a server-paged refetch on the
 			<code>elements:table:sort</code> event.
 		</p>
-		<table ref="sortRef" class="striped" style="max-inline-size: 36rem">
+		<table ref="sortRef" class="striped max-w-xl">
 			<tbody>
 				<tr data-id="s1">
 					<td>S-001</td>
@@ -768,7 +768,7 @@ const reset = (): void => {
 			<code>total</code> options, but it does NOT hide rows. The consumer drives row visibility
 			(here: a Vue computed slice over the source array).
 		</p>
-		<table ref="pgRef" class="striped" style="max-inline-size: 36rem">
+		<table ref="pgRef" class="striped max-w-xl">
 			<tbody>
 				<tr v-for="(name, i) in pgVisible" :key="`${pgPage}-${name}`" :data-id="name">
 					<td>
@@ -842,7 +842,7 @@ const reset = (): void => {
 			survive. The action log below records button clicks; if a button click SELECTED the row by
 			mistake, the row tint would flash.
 		</p>
-		<table ref="selRef" class="striped" style="max-inline-size: 48rem">
+		<table ref="selRef" class="striped max-w-3xl">
 			<tbody>
 				<tr data-id="u1">
 					<td>U-001</td>
@@ -926,7 +926,7 @@ const reset = (): void => {
 			full-area CTAs in cards / tiles / table cells.
 		</p>
 		<h3>5a — <code>.flat</code> (transparent rest, full chrome on focus)</h3>
-		<table ref="editRef" class="striped" style="max-inline-size: 48rem">
+		<table ref="editRef" class="striped max-w-3xl">
 			<thead>
 				<tr>
 					<th>SKU</th>
@@ -973,7 +973,7 @@ const reset = (): void => {
 			box on both axes. Useful when the host cell carries variant tint / radius and the input should
 			read as the cell's surface.
 		</p>
-		<table ref="editFlushRef" class="striped" style="max-inline-size: 48rem">
+		<table ref="editFlushRef" class="striped max-w-3xl">
 			<thead>
 				<tr>
 					<th>SKU</th>
@@ -986,7 +986,7 @@ const reset = (): void => {
 					<td>
 						<code>{{ row.sku }}</code>
 					</td>
-					<td style="padding: 0; block-size: 1px">
+					<td class="frame">
 						<input
 							v-model="row.name"
 							class="flush"
@@ -994,7 +994,7 @@ const reset = (): void => {
 							:aria-label="`Flush name for ${row.sku}`"
 						/>
 					</td>
-					<td style="padding: 0; block-size: 1px">
+					<td class="frame">
 						<button type="button" class="subtle flush" @click="note(`flush action ${row.sku}`)">
 							Run
 						</button>
@@ -1048,7 +1048,7 @@ const reset = (): void => {
 			below share the same dataset so the behavioural difference is legible at a glance.
 		</p>
 		<h3>6a — <code>multiple: true</code> (independent toggles, default)</h3>
-		<table ref="expRef" class="striped" style="max-inline-size: 48rem">
+		<table ref="expRef" class="striped max-w-3xl">
 			<tbody>
 				<template
 					v-for="t in [
@@ -1091,7 +1091,7 @@ const reset = (): void => {
 			>
 		</p>
 		<h3>6b — <code>multiple: false</code> (exclusive — accordion shape)</h3>
-		<table ref="expExclusiveRef" class="striped" style="max-inline-size: 48rem">
+		<table ref="expExclusiveRef" class="striped max-w-3xl">
 			<tbody>
 				<template
 					v-for="t in [
@@ -1181,7 +1181,7 @@ const reset = (): void => {
 			<code>tabindex="0"</code> lives on the focused cell; siblings <code>tabindex="-1"</code> —
 			canonical APG roving pattern.
 		</p>
-		<table ref="fcRef" class="striped" style="max-inline-size: 24rem">
+		<table ref="fcRef" class="striped max-w-sm">
 			<tbody>
 				<tr data-id="g1">
 					<td>A1</td>

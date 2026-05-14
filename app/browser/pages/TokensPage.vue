@@ -950,7 +950,7 @@ dialog {
 		</p>
 		<details>
 			<summary>Default marker (chevron, 90deg rotate)</summary>
-			<p style="margin-block: var(--spacing) 0">Standard <code>&lt;details&gt;</code> rotation.</p>
+			<p class="mt-1 mb-0">Standard <code>&lt;details&gt;</code> rotation.</p>
 		</details>
 		<details
 			style="
@@ -960,7 +960,7 @@ dialog {
 			"
 		>
 			<summary>Plus marker (rotates 45deg → ×)</summary>
-			<p style="margin-block: var(--spacing) 0">
+			<p class="mt-1 mb-0">
 				This <code>&lt;details&gt;</code> declares
 				<code>--set-summary-marker-image: var(--set-icon-plus)</code> +
 				<code>--set-summary-marker-open-rotate: 45deg</code> inline. Same animation contract,

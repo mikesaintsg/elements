@@ -278,11 +278,8 @@ const theme = useTheme()
 			re-derive automatically.
 		</p>
 		<div
-			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
-				gap: calc(var(--spacing) * 3);
-			"
+			class="showcase-tile-grid"
+			style="--showcase-tile-grid-min: min(11rem, 100%); --showcase-tile-grid-gap: 0.75rem; --showcase-tile-grid-flow: auto-fit"
 		>
 			<article
 				v-for="entry in variantBases"
@@ -320,7 +317,7 @@ const theme = useTheme()
 			tags, focus rings, and active-row tints across the page (and the framework as a whole) all
 			retune together. This is the live proof of the framework's customizability contract.
 		</p>
-		<form class="row" @submit.prevent style="align-items: center">
+		<form class="row items-center" @submit.prevent>
 			<label>
 				<span>Brand color</span>
 				<input type="color" v-model="brandColor" @input="applyBrand" />
@@ -331,7 +328,7 @@ const theme = useTheme()
 			<button type="button" class="subtle" @click="resetBrand">Reset</button>
 		</form>
 		<p>Cascade preview:</p>
-		<div class="cluster" style="justify-content: flex-start; align-items: center">
+		<div class="cluster justify-start">
 			<button type="button" class="primary">Primary button</button>
 			<span class="badge primary">Badge</span>
 			<span class="tag primary">Tag</span>
@@ -387,15 +384,12 @@ const theme = useTheme()
 			:key="block.variant"
 			class="mt-4"
 		>
-			<h3 style="text-transform: capitalize; margin-block-end: calc(var(--spacing) * 2)">
+			<h3 class="capitalize mb-2">
 				{{ block.variant }}
 			</h3>
 			<div
-				style="
-					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
-					gap: calc(var(--spacing) * 2);
-				"
+				class="showcase-tile-grid"
+				style="--showcase-tile-grid-min: min(12rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
 			>
 				<article
 					v-for="entry in block.entries"
@@ -428,24 +422,17 @@ const theme = useTheme()
 			lifts further (code blocks, alerts on canvas).
 		</p>
 		<div
-			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
-				gap: calc(var(--spacing) * 2);
-			"
+			class="showcase-tile-grid"
+			style="--showcase-tile-grid-min: min(12rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
 		>
-			<article
-				v-for="entry in canvasTier"
-				:key="entry.token"
-				style="padding: 0; overflow: hidden; border: 1px solid var(--color-border)"
-			>
+			<article v-for="entry in canvasTier" :key="entry.token" class="frame">
 				<div
 					:style="{
 						blockSize: '4rem',
 						backgroundColor: `var(${entry.token})`,
 					}"
 				></div>
-				<div style="padding: calc(var(--spacing) * 1.5); background-color: var(--color-surface)">
+				<div class="showcase-swatch-meta-tight">
 					<strong class="text-sm">{{ entry.label }}</strong>
 					<code class="showcase-swatch-label-quiet">{{ entry.token }}</code>
 				</div>
@@ -462,16 +449,13 @@ const theme = useTheme()
 			(placeholders, disabled hint).
 		</p>
 		<div
-			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
-				gap: calc(var(--spacing) * 2);
-			"
+			class="showcase-tile-grid"
+			style="--showcase-tile-grid-min: min(12rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
 		>
 			<article
 				v-for="entry in textTier"
 				:key="entry.token"
-				style="padding: calc(var(--spacing) * 2); background-color: var(--color-surface)"
+				class="p-2"
 			>
 				<p
 					:style="{
@@ -499,20 +483,14 @@ const theme = useTheme()
 			than a hard line).
 		</p>
 		<div
-			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
-				gap: calc(var(--spacing) * 2);
-			"
+			class="showcase-tile-grid"
+			style="--showcase-tile-grid-min: min(12rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
 		>
 			<article
 				v-for="entry in borderTier"
 				:key="entry.token"
-				:style="{
-					padding: 'calc(var(--spacing) * 2)',
-					border: `2px solid var(${entry.token})`,
-					backgroundColor: 'var(--color-surface)',
-				}"
+				class="p-2"
+				:style="{ border: `2px solid var(${entry.token})` }"
 			>
 				<strong class="text-sm">{{ entry.label }}</strong>
 				<code class="showcase-swatch-label-quiet">{{ entry.token }}</code>
@@ -537,27 +515,18 @@ const theme = useTheme()
 				color: 'var(--color-inverted-text)',
 			}"
 		>
-			<p style="margin: 0 0 calc(var(--spacing) * 2); font-weight: 500; font-size: 1.125rem">
-				Sample text on the inverted surface
-			</p>
-			<p style="margin: 0; opacity: 0.85">
+			<h3 class="mb-2">Sample text on the inverted surface</h3>
+			<p class="opacity-85">
 				Background uses <code>--color-inverted</code>; this text uses
 				<code>--color-inverted-text</code>. Both tokens resolve to:
 			</p>
-			<dl
-				style="
-					margin-block-start: calc(var(--spacing) * 2);
-					display: grid;
-					grid-template-columns: auto 1fr;
-					gap: 0.25rem calc(var(--spacing) * 2);
-				"
-			>
+			<dl class="showcase-inverted-key-value mt-2">
 				<dt><code>--color-inverted</code></dt>
-				<dd style="margin: 0">
+				<dd>
 					<code>{{ read('--color-inverted') }}</code>
 				</dd>
 				<dt><code>--color-inverted-text</code></dt>
-				<dd style="margin: 0">
+				<dd>
 					<code>{{ read('--color-inverted-text') }}</code>
 				</dd>
 			</dl>

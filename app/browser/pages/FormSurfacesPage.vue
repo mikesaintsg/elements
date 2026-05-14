@@ -98,7 +98,7 @@ const selectionVariant = ref<(typeof variants)[number]>('primary')
 			<code>:user-invalid</code> + focus combination can paint a danger-tinted ring without the
 			generic surface ring stomping it.
 		</p>
-		<form style="display: grid; gap: 0.75rem; max-inline-size: 24rem">
+		<form class="max-w-sm" style="--set-form-gap: 0.75rem">
 			<label>
 				<small>Email</small>
 				<input type="email" placeholder="you@example.com" />
@@ -141,7 +141,7 @@ const selectionVariant = ref<(typeof variants)[number]>('primary')
 			<code>currentColor</code> chain (a <code>&lt;input class="danger"&gt;</code> shows a
 			danger-tinted placeholder).
 		</p>
-		<form style="display: grid; gap: 0.75rem; max-inline-size: 24rem">
+		<form class="max-w-sm" style="--set-form-gap: 0.75rem">
 			<label>
 				<small>Bare input</small>
 				<input type="text" placeholder="Type a name…" />

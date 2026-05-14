@@ -397,14 +397,19 @@ One section per API dimension. Each section follows the same shape:
 - **No utility classes inside framework demos.** If `<button class="primary">` doesn't render right without a `bg-blue-500` rescue, the framework is broken. Fix the framework, not the demo.
 - **No inline `style="…"` for layout or chrome.** Pages that lean on inline styles are hiding framework gaps or duplicating chrome the framework already paints. Every inline-style instance you'd consider writing first goes through this triage:
   1. **Does the framework already do this when the markup is correct?** Most "spacing fixes" are signals that `<article>` / `<dialog>` / `<header>` / `<footer>` chrome is being asked to do its job and the consumer is paying for the framework to NOT do it. Strip the inline; the framework owns vertical rhythm inside its surfaces.
-  2. **Is this a repeating layout primitive?** `display: flex; gap: …` is `.cluster` (horizontal) or `.stack` (vertical). Single-property gap retunes use `style="--set-{cluster,stack}-gap: …"` — a knob-tune, not a re-implementation.
-  3. **Is this single-property dimensional?** `max-inline-size`, `inline-size`, `min-block-size` on a single demo element — Tailwind utility (`w-full`, `max-w-md`) or, when the value doesn't fit the scale, an inline style is acceptable.
+  2. **Is this a repeating spacing-shape primitive?** The framework ships three layout-shape primitives carried by `<div>` (with element-local variants for elements that need them):
+     - `<div class="stack">` — flex column with gap > 0 (vertical rhythm).
+     - `<div class="cluster">` — flex wrap with gap > 0 (horizontal rhythm, chip rows, button rows).
+     - `<div class="frame">` — flex column with gap = 0, padding = 0, `overflow: clip` (children fill edge-to-edge).
+     - `<article class="frame">` / `<td class="frame">` — element-local versions of `.frame` that retune the element's own `--set-{tag}-*` tokens so descendant chrome reading them collapses correctly.
+     Single-property gap retunes use `style="--set-{stack,cluster}-gap: …"` — a knob-tune, not a re-implementation.
+  3. **Is this single-property dimensional?** Reach for a Tailwind utility first (`w-32` = 8rem, `max-w-md` = 28rem, `min-w-56` = 14rem, `mt-3`, `me-auto`, `w-10`). Inline only when the value isn't on Tailwind's scale and doesn't recur enough to centralize.
   4. **Is it page chrome shared with other pages?** Extract to `app/browser/styles/showcase.css` as a `.showcase-{name}` class so the pattern is centralized and the diff is auditable. The file is the showcase's CSS — it is NOT the framework. Anything that lives in the framework cannot live here; anything that lives here is intentionally page-only.
-  5. **Is the inline style the demo's payload?** Showing `<button style="border-radius: 0">` to demonstrate the per-instance retune is exactly that — the inline style is the lesson. Keep.
+  5. **Is the inline style the demo's payload?** Showing `<button style="border-radius: 0">` to demonstrate the per-instance retune is exactly that — the inline style is the lesson. Same for `<i class="icon" style="--icon: var(--set-icon-plus)">` (the icon framework's documented API), swatch backgrounds (`style="background-color: var(--color-primary)"`), and shadow demos (`style="box-shadow: var(--set-box-shadow-small)"`). Keep.
 
   Three categories survive the triage as legitimate inline styles in pages:
   - **Reactive `:style` bindings.** `:style="{ borderRadius: \`calc(0.375rem * ${factor})\` }"` reads a Vue ref. Inline is the only path.
-  - **Single-property dimensional values that don't recur** — `style="max-width: 28rem"` on one demo article. Don't extract a class for a one-off.
+  - **Single-property dimensional values that don't recur** — `style="max-width: 28rem"` on one demo article. Don't extract a class for a one-off (but DO reach for a Tailwind utility if one fits).
   - **Demonstrating a token.** A swatch with `style="background-color: var(--color-primary)"` or an `<article style="box-shadow: var(--set-box-shadow-small)">` IS the proof of the token; the inline declaration is intentional.
 
   Everything else moves to the framework or to `showcase.css`. The audit phase reviews every `<page>.vue` for inline `style="..."` and asks "which of the five triage answers justifies this one?" If the answer is "none," fix the page; if the answer is "the framework should but doesn't," fix the framework; if the answer is "it recurs across pages," lift to `showcase.css`.

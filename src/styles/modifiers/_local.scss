@@ -539,21 +539,26 @@
 	}
 
 	// ── article.frame ───────────────────────────────────────────────────────
-	// Layout primitive: an article whose internal spacing is zero. Pairs
-	// conceptually with `.stack` (vertical-gap container) and `.cluster`
-	// (horizontal-gap container) — three spacing primitives, three
-	// different layout shapes:
+	// Element-local sibling of `div.frame` (in components/_div.scss). Both
+	// belong to the framework's spacing-shape family:
 	//
-	//   .stack    → flex column, gap > 0
-	//   .cluster  → flex wrap, gap > 0
-	//   article.frame → flex column, gap = 0, padding = 0, clip overflow
+	//   div.stack     → flex column, gap > 0       (vertical rhythm)
+	//   div.cluster   → flex wrap,   gap > 0       (horizontal rhythm)
+	//   div.frame     → flex column, gap = 0       (no internal rhythm)
+	//   article.frame → same shape on `<article>`  (preserves card chrome,
+	//                   retunes article-scoped tokens so descendant chrome
+	//                   reading them collapses correctly)
 	//
-	// The frame KEEPS the article's outer chrome (border, radius, shadow)
-	// — it is still a card — but delegates internal spacing entirely to
-	// its children. Useful for any composition where the children own
-	// their own edge-to-edge layout: stacked flush articles, edge-to-edge
-	// forms, banded headers + sectioned bodies, image strips with a
-	// flush call-to-action, list-group-style row stacks.
+	// The article-local form exists alongside the generic div primitive
+	// because `<article>` has token state — auto-banded `<header>` /
+	// `<footer>` bleed margins read `--set-article-padding-inline`; nested
+	// `<ul class="group">` reads `--set-article-padding-*` for its own
+	// edge-bleed math. Setting raw `padding: 0` on the article would leave
+	// those calc()s pointing at the framework default and the descendants
+	// would bleed past the article's outer edge. Retuning the TOKENS
+	// instead keeps the cascade self-consistent: when the article reports
+	// "I have no inset" through its tokens, every dependent rule reports
+	// the same.
 	//
 	// Three responsibilities:
 	//
@@ -591,6 +596,35 @@
 		--set-article-gap: 0;
 
 		overflow: clip;
+	}
+
+	// ── td.frame ────────────────────────────────────────────────────────────
+	// Table-cell sibling of `article.frame` / `div.frame`. A `<td class=
+	// "frame">` zeroes its own padding and collapses to its row's height
+	// so a child flush control (`button.flush`, `a.flush`, `input.flush`)
+	// fills the cell edge-to-edge.
+	//
+	// Mechanism: the `block-size: 1px` declaration triggers the legacy
+	// percentage-height-in-table-cell idiom documented under `button.flush`
+	// in this file (see lines ~221-229). A `<td>` with `block-size: 1px`
+	// reports a determinant height to its child; that child can then size
+	// to `block-size: 100%` of the row's intrinsic height. Without the
+	// `1px` declaration, the cell auto-sizes to its content and the
+	// child's percentage height resolves against `auto` — yielding nothing.
+	//
+	// Use cases: action cells (Run / Edit / Delete buttons in admin tables),
+	// inline-editing cells (flush `<input>` filling a cell), composed
+	// pagination rows. The "flush button in a table" pattern shipped as the
+	// `<td style="padding: 0; block-size: 1px">` inline incantation in
+	// ButtonPage's `.flush` demo; the modifier moves that incantation into
+	// the framework.
+	td.frame {
+		--set-table-cell-padding-inline: 0;
+		--set-table-cell-padding-block: 0;
+
+		padding-inline: 0;
+		padding-block: 0;
+		block-size: 1px;
 	}
 
 	// ── article.flush / form.flush / section.flush ──────────────────────────

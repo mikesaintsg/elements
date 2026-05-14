@@ -415,19 +415,19 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 			<tbody>
 				<tr>
 					<td>Run nightly sync</td>
-					<td style="padding: 0; block-size: 1px">
+					<td class="frame">
 						<button class="primary flush" type="button">Run</button>
 					</td>
 				</tr>
 				<tr>
 					<td>Archive backups</td>
-					<td style="padding: 0; block-size: 1px">
+					<td class="frame">
 						<button class="warning flush" type="button">Archive</button>
 					</td>
 				</tr>
 				<tr>
 					<td>Delete stale jobs</td>
-					<td style="padding: 0; block-size: 1px">
+					<td class="frame">
 						<button class="danger flush" type="button">Delete</button>
 					</td>
 				</tr>

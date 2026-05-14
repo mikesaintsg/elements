@@ -118,7 +118,7 @@ const longContent = ref(false)
 				Open auto popover
 			</button>
 		</div>
-		<div popover id="demo-pop-auto" style="min-inline-size: 16rem">
+		<div popover id="demo-pop-auto" class="min-w-64">
 			<h6 class="mt-0 mb-2">Auto popover</h6>
 			<p>
 				Click outside or press <strong>Esc</strong> to dismiss — no JS required, the browser handles
@@ -158,7 +158,7 @@ const longContent = ref(false)
 				Show manual popover (auto-hides in 3 s)
 			</button>
 		</div>
-		<div popover="manual" id="demo-pop-manual" style="min-inline-size: 18rem">
+		<div popover="manual" id="demo-pop-manual" class="min-w-72">
 			<h6 class="mt-0 mb-2">Manual lifecycle</h6>
 			<p>
 				Esc and click-outside <em>do not</em> dismiss this popover. A scheduled timeout calls
