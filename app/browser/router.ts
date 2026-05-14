@@ -35,6 +35,7 @@ import UseDialogPage from './pages/UseDialogPage.vue'
 import UseAsidePage from './pages/UseAsidePage.vue'
 import UseTabsPage from './pages/UseTabsPage.vue'
 import UseDetailsPage from './pages/UseDetailsPage.vue'
+import UseAlertPage from './pages/UseAlertPage.vue'
 import UseFormPage from './pages/UseFormPage.vue'
 import UseNavPage from './pages/UseNavPage.vue'
 import UseSelectPage from './pages/UseSelectPage.vue'
@@ -288,6 +289,12 @@ const USE_NAV: Route = {
 	group: 'Composables',
 	page: UseNavPage,
 }
+const USE_ALERT: Route = {
+	id: 'use-alert',
+	title: 'useAlert',
+	group: 'Composables',
+	page: UseAlertPage,
+}
 const USE_POPOVER: Route = {
 	id: 'use-popover',
 	title: 'usePopover',
@@ -341,6 +348,7 @@ export const routes: readonly Route[] = [
 	USE_TABLE,
 	USE_FORM,
 	USE_NAV,
+	USE_ALERT,
 	USE_POPOVER,
 	USE_TOOLTIP,
 ]

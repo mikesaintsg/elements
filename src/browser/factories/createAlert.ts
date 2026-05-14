@@ -32,15 +32,12 @@ export function createAlert(
 		if (!role) element.setAttribute('role', 'alert')
 	}
 
-	// Initial visibility resolution (highest precedence first):
-	//   1. Explicit `options.initial` from the consumer.
-	//   2. The `[data-alert-open]` attribute on the host (Vue / React
-	//      bindings often emit this on mount).
-	//   3. Default `true` — `<aside role="alert">` is meaningless when
-	//      hidden, so the framework opens by default rather than
-	//      requiring every author to seed the attribute.
-	const initialFromAttr = element.hasAttribute('data-alert-open')
-	const initialOpen = options.initial ?? (initialFromAttr || true)
+	// Initial visibility: `options.initial` wins; otherwise default open.
+	// `<aside role="alert">` is meaningless when hidden, so the framework
+	// opens by default rather than requiring every author to seed the
+	// state. Authors who need a closed-on-mount alert pass
+	// `initial: false`.
+	const initialOpen = options.initial ?? true
 
 	const scope = effectScope()
 	const visible = scope.run(() => ref(initialOpen))

@@ -600,3 +600,31 @@
 	border-radius: 50%;
 	flex-shrink: 0;
 }
+
+/* ── Scroll-spy demo nav (UseNavPage) ───────────────────────────────
+ * The framework's TOC chrome paints `aria-current="location"` only
+ * inside body-shell `<aside>` rails (see `components/_menu.scss`'s
+ * `body:has(main) > aside menu > li > a[aria-current='location']`
+ * rule). UseNavPage's in-page demo `<aside>` rails are nested several
+ * levels deep inside `<main>`, so the framework rule doesn't apply.
+ * This class re-creates the same visual contract (saturated text +
+ * weight + leading bar) scoped to the demo wrapper so the active
+ * link reads obviously without re-scoping the framework rule. */
+.showcase-nav-demo a {
+	display: block;
+	padding-block: 0.25rem;
+	border-inline-start: 2px solid transparent;
+	padding-inline-start: 0.5rem;
+	color: var(--color-text-muted);
+	text-decoration: none;
+}
+
+.showcase-nav-demo a:hover {
+	color: var(--color-text);
+}
+
+.showcase-nav-demo a[aria-current='location'] {
+	color: var(--color-primary-on-canvas);
+	border-inline-start-color: var(--color-primary);
+	font-weight: 500;
+}

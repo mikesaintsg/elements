@@ -178,7 +178,7 @@ const removeSection = (): void => {
 		</p>
 		<div class="showcase-tile-grid" style="--showcase-tile-grid-min: min(20rem, 100%)">
 			<aside>
-				<nav ref="basicNav" aria-label="In-article navigation">
+				<nav ref="basicNav" aria-label="In-article navigation" class="showcase-nav-demo">
 					<menu>
 						<li><a href="#basic-overview">Overview</a></li>
 						<li><a href="#basic-installation">Installation</a></li>
@@ -293,7 +293,7 @@ useNav(containerRef, { nav: navRef })
 		</label>
 		<div class="showcase-tile-grid" style="--showcase-tile-grid-min: min(20rem, 100%)">
 			<aside>
-				<nav ref="offsetNav" aria-label="Offset demo navigation">
+				<nav ref="offsetNav" aria-label="Offset demo navigation" class="showcase-nav-demo">
 					<menu>
 						<li><a href="#offset-one">Section one</a></li>
 						<li><a href="#offset-two">Section two</a></li>
@@ -301,6 +301,11 @@ useNav(containerRef, { nav: navRef })
 						<li><a href="#offset-four">Section four</a></li>
 					</menu>
 				</nav>
+				<p>
+					<small class="showcase-muted">
+						Active id: <code>{{ offset.active.value ?? 'none' }}</code>
+					</small>
+				</p>
 			</aside>
 			<article ref="offsetContainer" class="overflow-auto" style="block-size: 20rem">
 				<section id="offset-one">
@@ -391,13 +396,18 @@ useNav(containerRef, { nav: navRef })
 		</div>
 		<div class="showcase-tile-grid mt-3" style="--showcase-tile-grid-min: min(20rem, 100%)">
 			<aside>
-				<nav ref="refreshNav" aria-label="Refresh demo navigation">
+				<nav ref="refreshNav" aria-label="Refresh demo navigation" class="showcase-nav-demo">
 					<menu>
 						<li v-for="label in refreshSections" :key="label">
 							<a :href="`#refresh-${label.toLowerCase()}`">{{ label }}</a>
 						</li>
 					</menu>
 				</nav>
+				<p>
+					<small class="showcase-muted">
+						Active id: <code>{{ refresh.active.value ?? 'none' }}</code>
+					</small>
+				</p>
 			</aside>
 			<article ref="refreshContainer" class="overflow-auto" style="block-size: 18rem">
 				<section
