@@ -36,6 +36,7 @@ import UseAsidePage from './pages/UseAsidePage.vue'
 import UseTabsPage from './pages/UseTabsPage.vue'
 import UseDetailsPage from './pages/UseDetailsPage.vue'
 import UseSelectPage from './pages/UseSelectPage.vue'
+import UseTablePage from './pages/UseTablePage.vue'
 import UseToastPage from './pages/UseToastPage.vue'
 import UsePopoverPage from './pages/UsePopoverPage.vue'
 import UseTooltipPage from './pages/UseTooltipPage.vue'
@@ -267,6 +268,12 @@ const USE_SELECT: Route = {
 	group: 'Composables',
 	page: UseSelectPage,
 }
+const USE_TABLE: Route = {
+	id: 'use-table',
+	title: 'useTable',
+	group: 'Composables',
+	page: UseTablePage,
+}
 const USE_POPOVER: Route = {
 	id: 'use-popover',
 	title: 'usePopover',
@@ -317,6 +324,7 @@ export const routes: readonly Route[] = [
 	USE_DETAILS,
 	USE_TOAST,
 	USE_SELECT,
+	USE_TABLE,
 	USE_POPOVER,
 	USE_TOOLTIP,
 ]

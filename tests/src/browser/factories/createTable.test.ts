@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createTable, TABLE_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
+import { createTable, TABLE_EVENTS } from '@elements/browser'
 import {
 	assertCleanDispose,
 	buildElement,
 	createFactoryFixture,
 	createRecorder,
-	fireTransitionEnd,
 } from '../../../setupBrowser'
 
 function buildTable(): HTMLTableElement {
@@ -269,7 +268,7 @@ describe('createTable', () => {
 		expect(change.count).toBeGreaterThanOrEqual(2)
 	})
 
-	it('expansion.expand / collapse toggles [data-table-expanded] + [hidden] panel', () => {
+	it('expansion.expand / collapse toggles [data-table-expanded] + [inert] panel', () => {
 		const table = buildTable()
 		const [api] = createFactoryFixture(() => {
 			const instance = createTable(table, { rows: [['a'], ['b']] })
@@ -284,7 +283,7 @@ describe('createTable', () => {
 				const cell = document.createElement('td')
 				const panel = document.createElement('div')
 				panel.setAttribute('data-table-expansion-panel', '')
-				panel.setAttribute('hidden', '')
+				panel.setAttribute('inert', '')
 				panel.textContent = `Detail for ${row.dataset.id}`
 				cell.appendChild(panel)
 				detail.appendChild(cell)
@@ -298,11 +297,11 @@ describe('createTable', () => {
 		expect(row0.hasAttribute('data-table-expanded')).toBe(true)
 		const detail0 = row0.nextElementSibling as HTMLElement
 		const panel0 = detail0.querySelector<HTMLElement>('[data-table-expansion-panel]')!
-		expect(panel0.hasAttribute('hidden')).toBe(false)
+		expect(panel0.hasAttribute('inert')).toBe(false)
 
 		api.expansion.collapse('r0')
 		expect(row0.hasAttribute('data-table-expanded')).toBe(false)
-		expect(panel0.hasAttribute('hidden')).toBe(true)
+		expect(panel0.hasAttribute('inert')).toBe(true)
 	})
 
 	it('expansion.multiple:false keeps only one row open at a time', async () => {
@@ -329,13 +328,20 @@ describe('createTable', () => {
 		expect(api.expansion.expanded.has('r0')).toBe(false)
 	})
 
-	it('expansion.animate:true drives a height transition via [data-collapsing]', async () => {
+	it('expansion drives the CSS-owned tween via [data-table-expanded] + [inert] on the panel', () => {
+		// Earlier versions of `createTable` hand-rolled the height tween in JS
+		// (`[data-collapsing]` + `style.height = 0 → scrollHeight`, awaiting
+		// `transitionend`). The motion is now owned by `elements/_table.scss`
+		// § "Row expansion panel" via `interpolate-size: allow-keywords` on
+		// the `block-size: 0 → auto` transition keyed off `tr[data-table-
+		// expanded] + tr > td > [data-table-expansion-panel]`. The factory's
+		// only DOM writes for expansion are `[data-table-expanded]` on the
+		// data row and `[inert]` on the panel (replaces the previous
+		// `[hidden]` toggle, which would have frozen the CSS tween by
+		// forcing `display: none`).
 		const table = buildTable()
 		const [api] = createFactoryFixture(() => {
-			const instance = createTable(table, {
-				rows: [['a']],
-				expansion: { animate: true },
-			})
+			const instance = createTable(table, { rows: [['a']] })
 			const row = instance.rows.row(0)!
 			row.dataset.id = 'r0'
 			const detail = document.createElement('tr')
@@ -343,7 +349,7 @@ describe('createTable', () => {
 			const cell = document.createElement('td')
 			const panel = document.createElement('div')
 			panel.setAttribute('data-table-expansion-panel', '')
-			panel.setAttribute('hidden', '')
+			panel.setAttribute('inert', '')
 			panel.textContent = 'Detail'
 			cell.appendChild(panel)
 			detail.appendChild(cell)
@@ -355,21 +361,21 @@ describe('createTable', () => {
 		const panel = (row0.nextElementSibling as HTMLElement).querySelector<HTMLElement>(
 			'[data-table-expansion-panel]',
 		)!
-		// Kick off the animated open. While pending, the panel carries
-		// `[data-collapsing]` and an inline height; both clear on the
-		// `transitionend` callback.
-		const opening = api.expansion.expand('r0')
-		await Promise.resolve()
-		expect(panel.hasAttribute('data-collapsing')).toBe(true)
-		// Fire transitionend manually to settle the runTransition wait.
-		fireTransitionEnd(panel)
-		await opening
+		// Synchronous expand: the public `expand()` no longer returns a
+		// Promise, and there's no `runTransition` wait — the SCSS owns
+		// the visual timing.
+		api.expansion.expand('r0')
 		expect(api.expansion.expanded.has('r0')).toBe(true)
+		expect(row0.hasAttribute('data-table-expanded')).toBe(true)
+		expect(panel.hasAttribute('inert')).toBe(false)
+		// No leftover legacy markers from the previous JS animation.
 		expect(panel.hasAttribute('data-collapsing')).toBe(false)
-		expect(panel.hasAttribute('hidden')).toBe(false)
 		expect(panel.style.height).toBe('')
-		// Sanity: the runTransition fallback timer is bounded.
-		expect(TRANSITION_FALLBACK_MS).toBeGreaterThan(0)
+
+		api.expansion.collapse('r0')
+		expect(api.expansion.expanded.has('r0')).toBe(false)
+		expect(row0.hasAttribute('data-table-expanded')).toBe(false)
+		expect(panel.hasAttribute('inert')).toBe(true)
 	})
 
 	it('destroy reverses every listener and ARIA', () => {

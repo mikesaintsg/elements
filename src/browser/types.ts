@@ -1419,12 +1419,6 @@ export interface CreateTableOptions {
 		readonly multiple?: boolean
 		/** Row ids to expand at construction (stale ids silently ignored). */
 		readonly initial?: readonly string[]
-		/** Animate the inner panel between `0` and `scrollHeight`. Default
-		 *  `false`. When true, the factory drives a height-transition on the
-		 *  `[data-table-expansion-panel]` element via the `[data-collapsing]`
-		 *  attribute (mirrors `createDetails` semantics). When false, the
-		 *  panel toggles `hidden` synchronously. */
-		readonly animate?: boolean
 	}
 	readonly selection?: {
 		/** Scope for select-all operations. Default `'page'`. */

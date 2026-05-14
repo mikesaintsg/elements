@@ -95,20 +95,6 @@ const JS_ONLY: Readonly<Record<string, string>> = {
 	// on `.dragging` / `.selected` class names that the factory applies.
 	'data-drag-source': 'JS-only drag-source marker; styling reads `.dragging` class.',
 	'data-drag-target': 'JS-only drop-target marker; styling reads `.drop-indicator` class.',
-	// STRIP CANDIDATE (recorded in plan.md §Future work → Native-platform
-	// redundancy audit, with createTable). `[data-collapsing]` is set on
-	// the table expansion panel while the JS manually animates inline
-	// `style.height` from 0 → scrollHeight → ''. The CSS in
-	// `elements/_table.scss:420-446` ALREADY animates the panel via
-	// `[data-table-expansion-panel]` + `[data-table-expanded]` on the
-	// parent row, using `interpolate-size: allow-keywords` to tween
-	// `block-size: 0 → auto`. The JS height-pinning machinery is
-	// redundant. Address when UseTablePage is authored: drop the
-	// inline-style animation + the `data-collapsing` marker + the
-	// associated `runTransition` wait, lean on the CSS transition. Until
-	// then the attribute is allowed via this exception.
-	'data-collapsing':
-		'STRIP CANDIDATE — redundant with CSS-driven row-expansion transition; see plan.md.',
 }
 
 // ── 4. The contract ────────────────────────────────────────────────────────
