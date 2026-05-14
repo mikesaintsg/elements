@@ -777,17 +777,9 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			Drop a flush form into a card body, an aside, or an expanded list-group item and it fills
 			edge-to-edge with the host's chrome owning the perimeter:
 		</p>
-		<article
-			style="
-				--set-article-padding-inline: 0;
-				--set-article-padding-block: 0;
-				--set-article-gap: 0;
-				overflow: clip;
-				max-inline-size: 32rem;
-			"
-		>
+		<article class="showcase-flush-host" style="max-inline-size: 32rem">
 			<header>
-				<h3 style="margin: 0">Profile</h3>
+				<h3>Profile</h3>
 			</header>
 			<form class="flush p-4">
 				<label>
@@ -877,122 +869,42 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			<code>align-items: stretch</code> produces when the input baseline sits in the middle of its
 			content box).
 		</p>
-		<article
-			style="
-				--set-article-padding-inline: 0;
-				--set-article-padding-block: 0;
-				--set-article-gap: 0;
-				overflow: clip;
-				max-inline-size: 32rem;
-			"
-		>
+		<article class="showcase-flush-host" style="max-inline-size: 32rem">
 			<header>
-				<h3 style="margin: 0">Profile</h3>
+				<h3>Profile</h3>
 			</header>
-			<div
-				style="
-					display: grid;
-					grid-template-columns: 8rem 1fr;
-					align-items: center;
-					border-block-end: 1px solid var(--color-border);
-				"
-			>
-				<label
-					for="flush-name"
-					style="
-						padding-inline: 1rem;
-						margin: 0;
-						align-self: stretch;
-						display: flex;
-						align-items: center;
-						border-inline-end: 1px solid var(--color-border);
-					"
-				>
-					Name
-				</label>
+			<div class="showcase-form-row">
+				<label for="flush-name" class="showcase-form-row-label">Name</label>
 				<input
 					id="flush-name"
-					class="flush"
+					class="flush showcase-form-row-input"
 					type="text"
 					value="Ada Lovelace"
-					style="padding-inline: 1rem; padding-block: 0.75rem"
 				/>
 			</div>
-			<div
-				style="
-					display: grid;
-					grid-template-columns: 8rem 1fr;
-					align-items: center;
-					border-block-end: 1px solid var(--color-border);
-				"
-			>
-				<label
-					for="flush-email"
-					style="
-						padding-inline: 1rem;
-						margin: 0;
-						align-self: stretch;
-						display: flex;
-						align-items: center;
-						border-inline-end: 1px solid var(--color-border);
-					"
-				>
-					Email
-				</label>
+			<div class="showcase-form-row">
+				<label for="flush-email" class="showcase-form-row-label">Email</label>
 				<input
 					id="flush-email"
-					class="flush"
+					class="flush showcase-form-row-input"
 					type="email"
 					value="ada@example.com"
-					style="padding-inline: 1rem; padding-block: 0.75rem"
 				/>
 			</div>
-			<div
-				style="
-					display: grid;
-					grid-template-columns: 8rem 1fr;
-					align-items: center;
-					border-block-end: 1px solid var(--color-border);
-				"
-			>
-				<label
-					for="flush-plan"
-					style="
-						padding-inline: 1rem;
-						margin: 0;
-						align-self: stretch;
-						display: flex;
-						align-items: center;
-						border-inline-end: 1px solid var(--color-border);
-					"
-				>
-					Plan
-				</label>
+			<div class="showcase-form-row">
+				<label for="flush-plan" class="showcase-form-row-label">Plan</label>
 				<select id="flush-plan" class="flush">
 					<option>Free</option>
 					<option selected>Pro</option>
 					<option>Enterprise</option>
 				</select>
 			</div>
-			<div style="display: grid; grid-template-columns: 8rem 1fr; align-items: stretch">
-				<label
-					for="flush-bio"
-					style="
-						padding-inline: 1rem;
-						padding-block: 0.75rem;
-						margin: 0;
-						display: flex;
-						align-items: flex-start;
-						border-inline-end: 1px solid var(--color-border);
-					"
-				>
-					Bio
-				</label>
+			<div class="showcase-form-row-tall">
+				<label for="flush-bio" class="showcase-form-row-label-top">Bio</label>
 				<textarea
 					id="flush-bio"
-					class="flush"
+					class="flush showcase-form-row-input resize-none"
 					rows="3"
-					style="padding: 0.75rem 1rem; resize: none"
 					placeholder="Tell us about yourself"
 				></textarea>
 			</div>

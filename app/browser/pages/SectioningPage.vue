@@ -105,7 +105,7 @@
 				article's own padding-block owns the outer rhythm; each section's
 				<code>padding-block: 0</code> kicks in via the nesting-collapse rule.
 			</p>
-			<section style="border-block-end: 1px dashed var(--color-border)">
+			<section class="showcase-bordered-dashed-bottom">
 				<h4>First nested section</h4>
 				<p>Children here flow with the section's <code>gap</code> rhythm.</p>
 			</section>
@@ -129,31 +129,23 @@
 			<code>.flush</code> is the explicit opt-out: zeroes both <code>margin</code> and
 			<code>padding</code> so the section butts against the host's edges.
 		</p>
-		<article
-			style="
-				--set-article-padding-inline: 0;
-				--set-article-padding-block: 0;
-				--set-article-gap: 0;
-				overflow: clip;
-				max-width: 32rem;
-			"
-		>
+		<article class="showcase-flush-host" style="max-width: 32rem">
 			<header>
-				<h3 style="margin: 0">Tabbed status panel</h3>
+				<h3>Tabbed status panel</h3>
 			</header>
-			<section class="flush" style="padding-inline: 1rem; padding-block: 1rem">
-				<h4 style="margin: 0 0 0.25rem">Active session</h4>
-				<p style="margin: 0">
+			<section class="flush p-4">
+				<h4 class="mt-0 mb-1">Active session</h4>
+				<p class="m-0">
 					<small>
 						Section butts against the host's header and the next sibling — no gutter, no margin. The
 						host (<code>&lt;article&gt;</code>) owns vertical rhythm.
 					</small>
 				</p>
 			</section>
-			<hr style="margin: 0" />
-			<section class="flush" style="padding-inline: 1rem; padding-block: 1rem">
-				<h4 style="margin: 0 0 0.25rem">Recent activity</h4>
-				<p style="margin: 0">
+			<hr class="m-0" />
+			<section class="flush p-4">
+				<h4 class="mt-0 mb-1">Recent activity</h4>
+				<p class="m-0">
 					<small>
 						Two flush sections separated by a <code>&lt;hr&gt;</code>; both share the host's
 						perimeter without any extra block space.
@@ -188,7 +180,7 @@
 		<article>
 			<header>
 				<h3>Article title</h3>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
+				<p class="showcase-card-subtitle">
 					Published 2026-04-30 · 3 min read
 				</p>
 			</header>
@@ -198,7 +190,7 @@
 				matching dividers without any extra classes.
 			</p>
 			<footer>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
+				<p class="showcase-card-subtitle">
 					Filed under <a href="#sectioning-article">architecture</a>,
 					<a href="#sectioning-article">tokens</a>.
 				</p>
@@ -220,7 +212,7 @@
 			</li>
 		</ul>
 		<aside>
-			<p style="margin-block: 0">
+			<p class="m-0">
 				<strong>Callout:</strong> this <code>&lt;aside&gt;</code> sits inside a
 				<code>&lt;section&gt;</code> which sits inside <code>&lt;main&gt;</code>, so it paints as a
 				tinted inline callout — not a rail. Variant classes (<code>.primary</code>,
@@ -229,13 +221,13 @@
 			</p>
 		</aside>
 		<aside class="success">
-			<p style="margin-block: 0">
+			<p class="m-0">
 				<strong>Success callout</strong> — same element, <code>.success</code> variant class. The
 				whole framework's variant cascade applies.
 			</p>
 		</aside>
 		<aside class="warning">
-			<p style="margin-block: 0">
+			<p class="m-0">
 				<strong>Warning callout</strong> — pair the color with a text cue so the meaning survives
 				color-blind and forced-colors readers.
 			</p>

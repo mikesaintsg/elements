@@ -306,6 +306,52 @@
 	overflow: clip;
 }
 
+/* ── Flush form-row pattern (FormControlsPage) ─────────────────────
+ * The "label cell + input cell" row inside a card-as-form. Each row
+ * is a 2-track grid (fixed 8rem label, remaining 1fr input) with a
+ * dividing border between rows. The label cell is itself a flex
+ * container so the text vertically centers against the input height;
+ * a vertical divider separates label from input. Three classes carry
+ * the chrome; consumers compose by stacking rows inside an
+ * `.showcase-flush-host` article. */
+.showcase-form-row {
+	display: grid;
+	grid-template-columns: 8rem 1fr;
+	align-items: center;
+	border-block-end: 1px solid var(--color-border);
+}
+
+/* For multiline inputs (textarea) — top-align so the label sits
+ * against the top edge of the textarea content area. */
+.showcase-form-row-tall {
+	display: grid;
+	grid-template-columns: 8rem 1fr;
+	align-items: stretch;
+}
+
+.showcase-form-row-label {
+	padding-inline: 1rem;
+	margin: 0;
+	align-self: stretch;
+	display: flex;
+	align-items: center;
+	border-inline-end: 1px solid var(--color-border);
+}
+
+.showcase-form-row-label-top {
+	padding-inline: 1rem;
+	padding-block: 0.75rem;
+	margin: 0;
+	display: flex;
+	align-items: flex-start;
+	border-inline-end: 1px solid var(--color-border);
+}
+
+.showcase-form-row-input {
+	padding-inline: 1rem;
+	padding-block: 0.75rem;
+}
+
 /* Tile link — `<a class="flush showcase-tile-link">` fills the
  * inside of a `.showcase-flush-host` article (or any tile container)
  * with a padded vertical stack. Used in card-as-link demos where the
@@ -449,6 +495,14 @@
 	padding-block: calc(var(--spacing) * 8);
 	background-color: var(--color-surface);
 	border-radius: var(--radius-md);
+}
+
+/* Dashed bottom border — used by SectioningPage's nested-section
+ * demo to visualize where one nested section ends and the next
+ * begins. Centralized so the dashed-divider chrome is consistent if
+ * other pages adopt the same demo idiom. */
+.showcase-bordered-dashed-bottom {
+	border-block-end: 1px dashed var(--color-border);
 }
 
 /* Bordered demo container — used by flip-fallback demos where each
