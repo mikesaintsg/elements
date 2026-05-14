@@ -253,6 +253,39 @@ Identified but not started. Open the matching contribute.md workflow when pickin
 - ⬜ **Element-local modifier consolidation** — survey component partials for `{tag}.{modifier}` rules that should migrate to `modifiers/_local.scss` (e.g. `form.row` in `components/_form.scss`).
 - ⬜ **Page-shell uniformity** — `_main.scss` declares minimum tokens to satisfy the page-shell group; revisit whether `main` belongs in the group or warrants its own contract.
 
+### Native-platform redundancy audit (per-composable strip candidates)
+
+After the `createAside` strip (close latency 400 ms → 73 ms by dropping dead `[data-aside-open]` / `[data-aside-closing]` writes + the `runTransition` wait that preceded the native lifecycle call), every other factory was audited against the same marker list:
+
+1. **Dead lifecycle attributes** — `setAttribute('data-X-{open,closing,opening,…}')` calls whose attribute is not referenced anywhere in `src/styles/`.
+2. **`runTransition` BEFORE the native lifecycle call** — e.g. waiting on `transitionend` and then calling `hidePopover()` inside the callback. The transition can't have started because the native call hasn't been made.
+3. **Re-implemented Escape / outside-click dismiss** when the platform already provides it via `popover="auto"`.
+4. **JS-driven ARIA chrome** (`aria-modal`, `role`, `inert`) the consumer markup could declare directly.
+5. **Hand-written `lockBodyScroll`** when the platform already pins the page (modal `<dialog>`, top-layer popovers).
+6. **Cancellable wrappers around natively non-cancellable events** (`beforetoggle` for popover is informational only — `preventDefault()` on a wrapper that's already called the native method doesn't undo anything).
+
+Results — every factory in `src/browser/factories/`:
+
+#### Clean (no action) — confirmed by direct read
+
+- `createButton`, `createDialog`, `createMenu`, `createPopover`, `createTooltip`, `createFocus`, `createDrag`, `createDrop`, `createPointer`, `createTheme`, `createNav`, `createDetails`, `createForm`, `createTable`, `createCarousel`, `createSelect`, `createToast` — either lean shims, or every JS-driven attribute is consumed by CSS, or the `runTransition` is correctly called AFTER the native lifecycle method (so it waits on a real platform-triggered transition).
+
+The frequently-misread cases worth recording:
+
+- **`createDialog`**: `runTransition` is called AFTER `element.showModal()` / `element.close()`, so it's waiting on the actual entry / exit transition. Not the same as the aside anti-pattern.
+- **`createTooltip`**: the document-level Escape keydown listener IS correct — WAI-ARIA APG explicitly recommends Escape dismissal for tooltips. (The factory uses `popover="manual"` because hover / focus trigger semantics are JS-driven; the auto-light-dismiss the platform gives to `popover="auto"` is also not what tooltips want.)
+- **`createPopover`**: same — uses `popover="manual"` deliberately and re-implements Escape + outside-click. Not redundant.
+- **`createToast`**: `runTransition` IS called after `popover.show()` / `popover.hide()`, and the `[data-toast-stack*]` attributes ARE consumed by `composables/_toast.scss` (verified: 29 grep hits in `src/styles/`).
+- **`createForm`**: `[data-form-validated]` and `aria-invalid` are both consumed by `components/_form.scss` + `elements/_form.scss`.
+
+#### Strip candidates — act when the matching `Use*Page` is authored
+
+- ⬜ **`createTabs` strip + visibility bug** — when **UseTabsPage** lands. The factory writes `[data-tab-open]` on/off (`createTabs.ts:76,88,163`) but `src/styles/` has **zero references** to that attribute. Separately, the panel-hide chrome on `components/_nav.scss:399-407` keys off the HTML `[hidden]` attribute, but the JS toggles `[aria-hidden]` instead — so neither the dead-attribute write nor the live ARIA flip actually drives `display: none`. Visually, panels likely don't hide on tab switch. **Strip target**: drop the `[data-tab-open]` writes, switch the JS to toggle `[hidden]` (or update the CSS comment + selector to match whatever the factory should be writing — pick one source of truth), and decide whether `runTransition` on the pane is still wanted given `[hidden]` flips to `display: none` synchronously.
+
+#### Cross-cutting (audit on next pass)
+
+- ⬜ **Composable state-attribute consumption audit** — generalize the "find every `setAttribute('data-{name}-*')` call in `src/browser/factories/` and verify it's referenced in `src/styles/`" check into an automated test. Catches the createTabs / createAside class of bug before it ships. Pair with the existing "Composable state-attribute audit" bullet above (currently scoped to naming consistency; this extends it to liveness).
+
 ### Floating-surface styling pass (toast + popover + tooltip + menu-popover)
 
 The framework's floating-surface family (`<output popover>` toasts, generic `[popover]`, `[popover=hint]` tooltips, `<menu popover>` dropdowns, in-flow callouts on `<aside>`, modal chrome on `<dialog>`) already shares the same `--set-popover-*` surface tokens for fill / border / radius / shadow / transition. The per-surface chrome has accumulated without a single styling-philosophy pass to confirm:
