@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](contribute.md) to know **how to work**.
 
-Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 34 of 43 pages built (all 4 Foundation pages complete; 3 of 12 composable-bound pages shipped: **UseMenuPage**, **UseDialogPage**, **UseAsidePage**); remaining composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
+Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 35 of 43 pages built (all 4 Foundation pages complete; 4 of 12 composable-bound pages shipped: **UseMenuPage**, **UseDialogPage**, **UseAsidePage**, **UseTabsPage**); remaining composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
 
 ---
 
@@ -157,7 +157,7 @@ Every SCSS partial is held to these contracts before it can merge. The contract 
 
 ---
 
-## What's shipped — showcase pages (34 of 43)
+## What's shipped — showcase pages (35 of 43)
 
 | Group                       | Pages                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------- |
@@ -169,13 +169,13 @@ Every SCSS partial is held to these contracts before it can merge. The contract 
 | Surfaces                    | PopoverSurfacesPage, FormSurfacesPage, ScrollAndTransitionPage                              |
 | Composables — Primitives    | UseFocusPage, UsePointerPage, UseDragDropPage, UseThemeButtonPage                           |
 | Composables — Floating      | UsePopoverPage, UseTooltipPage                                                              |
-| Composables — Element-bound | UseMenuPage, UseDialogPage, UseAsidePage                                                    |
+| Composables — Element-bound | UseMenuPage, UseDialogPage, UseAsidePage, UseTabsPage                                       |
 
 Element pages cover the static markup contract; the matching `Use*Page` (planned, §9.2) covers the JS interaction layer — `DetailsPage` proves the bare `<details>` element baseline, `UseDetailsPage` (planned) proves the `useDetails` programmatic open/close. Both pages exist for elements with composables.
 
 ---
 
-## Remaining work — Phase 9 (9 pages)
+## Remaining work — Phase 9 (8 pages)
 
 ### 9.1 Foundation pages (4)
 
@@ -186,22 +186,23 @@ Highest leverage — every other page references them.
 - ✅ **ModifiersPage** — variant × size × style × state × placement cascade. Cascade walk-through with resolved tokens; 7-variant grids across FILLED / SUBTLE / ON-CANVAS tiers; size table with concrete values; action-vs-container style demos; state demos with paired ARIA attributes (`disabled`, `active`, `loading`); 8-placement reference grid; interactive combination picker (variant × size × style × state) with live button + class-list output; customization guidance for retuning context tokens.
 - ✅ **PlacementsPage** — 8-class vocabulary table (`.top` / `.bottom` / `.start` / `.end` + 4 corners), interactive live demo (select placement → re-anchored popover), 3×3 grid metaphor, `position-try-fallbacks` flip demo (two anchor buttons at opposite edges; left flips, right honored), scope-discipline explainer (the `:not(:where(aside, dialog, nav, output))` drawer exclusion list), logical-axis / RTL note, and customization for `--set-anchor-{gap, max-inline-size, max-block-size, position-try-fallbacks}` tokens.
 
-### 9.2 Composable pages — element-bound (9 remaining of 12)
+### 9.2 Composable pages — element-bound (8 remaining of 12)
 
 Each page proves the `use{Name}` factory's JS layer on top of the matching element page.
+
+**Per-page procedure** (since the `createAside` and `createTabs` strips both surfaced real bugs while authoring the page): _before_ building the demo, walk the [Native-platform redundancy checklist](../guides/contribute.md#541-native-platform-redundancy-checklist) (`contribute.md` §5.4.1) against the matching factory. If it lists strip candidates, address them in the same PR as the page — the page IS the verification that the strip didn't regress anything visible. The parity test ([`_native-redundancy.test.ts`](../tests/src/styles/_native-redundancy.test.ts)) will catch dead-attribute writes at commit time.
 
 - ✅ **UseMenuPage** — `<menu popover>` panel + toggle, ArrowDown / ArrowUp roving, Home / End, item-click dismiss, three independent dismiss-policy flags (`outside` / `escape` / `inside`), `flip` threshold demo (`flip: 0` vs `flip: 8`), reactive `Ref<Placement>`, cancellable lifecycle + namespaced DOM events (`elements:menu:{show,open,hide,close}`).
 - ✅ **UseDialogPage** — modal vs non-modal toggle (`showModal()` vs `show()`), three backdrop modes (`true` / `false` / `'static'` with the `prevent` shake-hook), Escape suppression, `<form method="dialog">` return-value capture, opt-in body scroll-lock for non-modal, cancellable lifecycle + namespaced DOM events (`elements:dialog:{show,open,hide,close,prevent}`). Cross-references DialogElementPage for the bare-element chrome.
 - ✅ **UseAsidePage** — `<aside popover="manual">` programmatic drawer at all four edges (`.start` / `.end` / `.top` / `.bottom`), three backdrop modes + Escape policy + opt-out body scroll-lock, cancellable lifecycle + namespaced DOM events, and the `[data-aside-open]` ↔ `[data-aside-closing]` attribute pair that keeps drawer geometry alive across the popover surface's discrete-transition tail (with a live attribute readout). Cross-references AsidePage for the bare-element chrome + the other three `<aside>` contexts.
-- ⬜ **UseAsidePage** — drawer mode (`<aside popover="manual">`) at every edge (`.start`, `.end`, `.top`, `.bottom`), backdrop dismiss, `[data-aside-closing]` lifecycle exposed.
+- ✅ **UseTabsPage** — `[role="tablist"]` activation, `.pills` style modifier, cancellable lifecycle. Shipped after a strip pass on `createTabs`: dropped the dead `[data-tab-open]` writes (no SCSS reference), switched the hide mechanism from `[aria-hidden]` to the HTML `[hidden]` attribute (matching the `[role='tabpanel'][hidden] { display: none }` rule in `components/_nav.scss` — fixed a real visibility bug where panels never hid on switch), and dropped the `runTransition` machinery chasing a non-existent CSS transition. Factory shrunk 200 → 158 lines.
 - ⬜ **UseDetailsPage** — programmatic open / close synced with native `toggle`, animated height (the `::details-content` reference behavior the framework's motion contract matches), group accordion (one-open-at-a-time pattern).
 - ⬜ **UseToastPage** — `<output popover>` toast surface. Linear stack (default), Sonner-deck mode (`[data-toast-stack]`), auto-hide timer + pause-on-hover, swipe-to-dismiss, variant tinting, hidden-overflow indicator. Covers the toast end of the toast-vs-alert disambiguation (banner alert lives on `AsidePage`).
 - ⬜ **UseSelectPage** — listbox + combobox + multi-select + autocomplete + typeahead filter. Three sub-demos: native select repaint, custom listbox, combobox with sticky search.
-- ⬜ **UseTablePage** — sort (one / multi-column), paginate, multi-select with shift-range, row expansion (sync + animated), column resize, focus management, sticky header.
+- ⬜ **UseTablePage — strip alongside the page**. `[data-collapsing]` is written by `createTable` during the row-expansion animation but no SCSS file references it, AND the JS manually animates inline `style.height` from 0 → scrollHeight → '' even though `elements/_table.scss:420-446` ALREADY animates the panel via `[data-table-expanded]` + `interpolate-size: allow-keywords`. Strip target. Page demos: sort (one / multi-column), paginate, multi-select with shift-range, row expansion (sync + animated), column resize, focus management, sticky header.
 - ⬜ **UseFormPage** — constraint-validation pipeline, `[data-form-validated]` after first submit, per-field `aria-invalid` mirror, summary error region, submit-disabled-on-invalid.
 - ⬜ **UseNavPage** — scroll-spy on a long article with anchored sections; `aria-current="location"` flips as scroll position passes section boundaries.
 - ⬜ **UseAlertPage** — `useAlert` open / dismiss lifecycle, transition collapse, polite vs assertive (`role="alert"` vs `role="status"`), persistence across re-mounts.
-- ⬜ **UseTabsPage** — `[role="tablist"]` arrow-key roving, lazy panel mount, vertical vs horizontal orientation, manual vs automatic activation.
 - ⬜ **UseCarouselPage** — slide nav, autoplay + pause-on-hover, touch / swipe, indicator dots, variant-tinted slides, every-axis transition lifecycle.
 
 ### 9.3 Sidebar nav adjustments (before page #15)
@@ -278,13 +279,14 @@ The frequently-misread cases worth recording:
 - **`createToast`**: `runTransition` IS called after `popover.show()` / `popover.hide()`, and the `[data-toast-stack*]` attributes ARE consumed by `composables/_toast.scss` (verified: 29 grep hits in `src/styles/`).
 - **`createForm`**: `[data-form-validated]` and `aria-invalid` are both consumed by `components/_form.scss` + `elements/_form.scss`.
 
+#### Automated guard
+
+The "factory `setAttribute('data-*', …)` writes must have a `src/styles/` reference" contract is now enforced by [`tests/src/styles/_native-redundancy.test.ts`](../tests/src/styles/_native-redundancy.test.ts). Adding a dead-attribute write to a factory fails the parity suite at commit time. Legitimately JS-only attributes opt in via the `JS_ONLY` map in that test file, with a one-line rationale each. This catches the `createAside` / `createTabs` class of bug going forward.
+
 #### Strip candidates — act when the matching `Use*Page` is authored
 
-- ⬜ **`createTabs` strip + visibility bug** — when **UseTabsPage** lands. The factory writes `[data-tab-open]` on/off (`createTabs.ts:76,88,163`) but `src/styles/` has **zero references** to that attribute. Separately, the panel-hide chrome on `components/_nav.scss:399-407` keys off the HTML `[hidden]` attribute, but the JS toggles `[aria-hidden]` instead — so neither the dead-attribute write nor the live ARIA flip actually drives `display: none`. Visually, panels likely don't hide on tab switch. **Strip target**: drop the `[data-tab-open]` writes, switch the JS to toggle `[hidden]` (or update the CSS comment + selector to match whatever the factory should be writing — pick one source of truth), and decide whether `runTransition` on the pane is still wanted given `[hidden]` flips to `display: none` synchronously.
-
-#### Cross-cutting (audit on next pass)
-
-- ⬜ **Composable state-attribute consumption audit** — generalize the "find every `setAttribute('data-{name}-*')` call in `src/browser/factories/` and verify it's referenced in `src/styles/`" check into an automated test. Catches the createTabs / createAside class of bug before it ships. Pair with the existing "Composable state-attribute audit" bullet above (currently scoped to naming consistency; this extends it to liveness).
+- ✅ **`createTabs` strip + visibility bug** — shipped alongside UseTabsPage in §9.2. The factory used to write `[data-tab-open]` that no SCSS file referenced, AND toggled `[aria-hidden]` while the pane-hide chrome on `components/_nav.scss` keyed off the HTML `[hidden]` attribute. Panels didn't visually hide on switch. Stripped: dropped the dead attribute, switched the hide mechanism to `[hidden]`, dropped the `runTransition` machinery (was waiting on a `transitionend` event the chrome doesn't declare). Factory shrunk 200 → 158 lines.
+- ⬜ **`createTable` `[data-collapsing]` strip** — currently allow-listed in the parity test via `JS_ONLY` with a `STRIP CANDIDATE` rationale. The factory manually animates inline `style.height` from `0 → scrollHeight → ''` and uses `data-collapsing` to mark the in-flight state, but `elements/_table.scss:420-446` ALREADY animates the panel via the `[data-table-expansion-panel]` + parent-row `[data-table-expanded]` selector pair using `interpolate-size: allow-keywords`. Address when **UseTablePage** is authored: drop the inline-style height pinning, drop `data-collapsing`, drop the row-expansion `runTransition` wait, lean on the CSS transition. Remove the entry from `JS_ONLY` afterwards so the parity test guards against re-introduction.
 
 ### Floating-surface styling pass (toast + popover + tooltip + menu-popover)
 

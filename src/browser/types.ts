@@ -1087,9 +1087,9 @@ export interface CreateTabsOptions {
 	readonly on?: Partial<UseTabsEventMap>
 	/**
 	 * Force this tab to be the initially active one. When `true` the trigger
-	 * is seeded with `aria-selected="true"` and its pane with
-	 * `data-tab-open` before the first paint, so consumers don't have to
-	 * pre-author the markup. Defaults to reading
+	 * is seeded with `aria-selected="true"` and its pane's `[hidden]`
+	 * attribute is removed before the first paint, so consumers don't have
+	 * to pre-author the markup. Defaults to reading
 	 * `aria-selected="true"` from the trigger.
 	 */
 	readonly initial?: boolean
