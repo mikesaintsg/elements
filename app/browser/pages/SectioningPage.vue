@@ -129,7 +129,14 @@
 			<code>.flush</code> is the explicit opt-out: zeroes both <code>margin</code> and
 			<code>padding</code> so the section butts against the host's edges.
 		</p>
-		<article style="padding: 0; overflow: clip; max-width: 32rem">
+		<article
+			style="
+				--set-article-padding-inline: 0;
+				--set-article-padding-block: 0;
+				overflow: clip;
+				max-width: 32rem;
+			"
+		>
 			<header style="padding-inline: 1rem; padding-block: 0.75rem">
 				<h3 style="margin: 0">Tabbed status panel</h3>
 			</header>

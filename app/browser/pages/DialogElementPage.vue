@@ -340,7 +340,9 @@ const snippetForm = `<dialog>
 			affordance) that should read as part of its host surface — a card body, an expandable region —
 			instead of paint its own outer card.
 		</p>
-		<article style="padding: 0; overflow: clip">
+		<article
+			style="--set-article-padding-inline: 0; --set-article-padding-block: 0; overflow: clip"
+		>
 			<header style="padding-inline: 1rem; padding-block: 0.75rem">
 				<h3 style="margin: 0">Account changes</h3>
 			</header>

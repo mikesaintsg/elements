@@ -777,7 +777,14 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			Drop a flush form into a card body, an aside, or an expanded list-group item and it fills
 			edge-to-edge with the host's chrome owning the perimeter:
 		</p>
-		<article style="padding: 0; overflow: clip; max-inline-size: 32rem">
+		<article
+			style="
+				--set-article-padding-inline: 0;
+				--set-article-padding-block: 0;
+				overflow: clip;
+				max-inline-size: 32rem;
+			"
+		>
 			<header style="padding-inline: 1rem; padding-block: 0.75rem">
 				<h3 style="margin: 0">Profile</h3>
 			</header>
@@ -865,7 +872,14 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			The form controls live inside a card whose cells own the visual chrome. Each control fuses to
 			its host's edges; on hover / focus a subtle backdrop confirms the active surface.
 		</p>
-		<article style="padding: 0; overflow: clip; max-inline-size: 32rem">
+		<article
+			style="
+				--set-article-padding-inline: 0;
+				--set-article-padding-block: 0;
+				overflow: clip;
+				max-inline-size: 32rem;
+			"
+		>
 			<header style="padding-inline: 1rem; padding-block: 0.75rem">
 				<h3 style="margin: 0">Profile</h3>
 			</header>

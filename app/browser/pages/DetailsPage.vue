@@ -432,7 +432,9 @@ const snippetCustomMarker = `<details style="--set-summary-marker-image: url('â€
 			doesn't paint internal dividers here so the consumer keeps full control over how items
 			separate.
 		</p>
-		<article style="padding: 0; overflow: clip">
+		<article
+			style="--set-article-padding-inline: 0; --set-article-padding-block: 0; overflow: clip"
+		>
 			<details class="flush">
 				<summary>Item one</summary>
 				<p>
@@ -459,7 +461,9 @@ const snippetCustomMarker = `<details style="--set-summary-marker-image: url('â€
 			With variant text-emphasis on each item â€” variant cascade still reaches the summary text even
 			when the outer chrome is dissolved:
 		</p>
-		<article style="padding: 0; overflow: clip">
+		<article
+			style="--set-article-padding-inline: 0; --set-article-padding-block: 0; overflow: clip"
+		>
 			<details class="success flush">
 				<summary>Success flush</summary>
 				<p><small>Summary text picks up the success variant's text-emphasis color.</small></p>

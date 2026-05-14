@@ -279,8 +279,13 @@
 	// `<button>` is a pure visual surface — drop ALL padding so the
 	// button's text/icon centers against the host's content box without
 	// the element baseline's button padding pushing it off-center.
+	// Text colour pulls from the variant's on-canvas tier so a
+	// `.primary.flush` button reads in primary-on-canvas instead of
+	// white-on-fill (which would be invisible against the transparent
+	// flush background). Same reasoning as `button.flat` above.
 	button.flush {
 		padding: 0;
+		color: var(--set-variant-on-canvas-color, var(--set-button-color, currentColor));
 	}
 
 	// ── a.flat / a.flush ────────────────────────────────────────────────────
@@ -415,6 +420,13 @@
 		border-radius: inherit;
 		box-shadow: none;
 		background-color: transparent;
+		// Zero block-axis padding so adjacent flush siblings produce a
+		// single-pixel seam (the divider rule below) instead of stacking
+		// their own paddings into a doubled visual gap. The summary's
+		// own line-height defines each row's height; consumers wanting
+		// breathing room around opened content paint it on the host or
+		// on `details.flush[open]`.
+		padding-block: 0;
 		// Variant text-emphasis flows even when outer chrome is dissolved.
 		// The bare `<details>` only paints variant on its border (which
 		// flush strips), so without this fallback `.success.flush` looks

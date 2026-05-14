@@ -352,7 +352,14 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		</p>
 		<p>Three neutral tiles, each entirely clickable end-to-end:</p>
 		<div class="cluster" style="gap: 1rem; flex-wrap: wrap">
-			<article style="padding: 0; overflow: clip; inline-size: 16rem; block-size: 1px">
+			<article
+				style="
+					--set-article-padding-inline: 0;
+					--set-article-padding-block: 0;
+					overflow: clip;
+					inline-size: 16rem;
+				"
+			>
 				<a
 					class="flush"
 					href="#anchor-flush"
@@ -374,7 +381,14 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 					<small style="color: var(--color-text-muted)">Setup, cascade, taxonomy.</small>
 				</a>
 			</article>
-			<article style="padding: 0; overflow: clip; inline-size: 16rem; block-size: 1px">
+			<article
+				style="
+					--set-article-padding-inline: 0;
+					--set-article-padding-block: 0;
+					overflow: clip;
+					inline-size: 16rem;
+				"
+			>
 				<a
 					class="flush"
 					href="#anchor-flush"
@@ -396,7 +410,14 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 					<small style="color: var(--color-text-muted)">Every element, in context.</small>
 				</a>
 			</article>
-			<article style="padding: 0; overflow: clip; inline-size: 16rem; block-size: 1px">
+			<article
+				style="
+					--set-article-padding-inline: 0;
+					--set-article-padding-block: 0;
+					overflow: clip;
+					inline-size: 16rem;
+				"
+			>
 				<a
 					class="flush"
 					href="#anchor-flush"
@@ -430,7 +451,12 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 				v-for="v in ['primary', 'success', 'warning', 'danger']"
 				:key="v"
 				:class="`${v} filled`"
-				style="padding: 0; overflow: clip; inline-size: 16rem; block-size: 1px"
+				style="
+					--set-article-padding-inline: 0;
+					--set-article-padding-block: 0;
+					overflow: clip;
+					inline-size: 16rem;
+				"
 			>
 				<a
 					class="flush"

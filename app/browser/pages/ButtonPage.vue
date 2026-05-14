@@ -367,7 +367,14 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		</p>
 		<p>Three article tiles, each with a flush button filling the bottom strip:</p>
 		<div class="cluster" style="gap: 1rem; flex-wrap: wrap">
-			<article style="padding: 0; overflow: clip; inline-size: 16rem">
+			<article
+				style="
+					--set-article-padding-inline: 0;
+					--set-article-padding-block: 0;
+					overflow: clip;
+					inline-size: 16rem;
+				"
+			>
 				<div style="padding: 1rem">
 					<strong>Quick action</strong>
 					<p style="margin: 0.25rem 0 0">
@@ -378,7 +385,15 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 					<button class="flush" type="button">Run</button>
 				</div>
 			</article>
-			<article class="primary subtle" style="padding: 0; overflow: clip; inline-size: 16rem">
+			<article
+				class="primary subtle"
+				style="
+					--set-article-padding-inline: 0;
+					--set-article-padding-block: 0;
+					overflow: clip;
+					inline-size: 16rem;
+				"
+			>
 				<div style="padding: 1rem">
 					<strong>Primary tile</strong>
 					<p style="margin: 0.25rem 0 0">
@@ -389,7 +404,15 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 					<button class="primary flush" type="button">Confirm</button>
 				</div>
 			</article>
-			<article class="danger subtle" style="padding: 0; overflow: clip; inline-size: 16rem">
+			<article
+				class="danger subtle"
+				style="
+					--set-article-padding-inline: 0;
+					--set-article-padding-block: 0;
+					overflow: clip;
+					inline-size: 16rem;
+				"
+			>
 				<div style="padding: 1rem">
 					<strong>Destructive tile</strong>
 					<p style="margin: 0.25rem 0 0">

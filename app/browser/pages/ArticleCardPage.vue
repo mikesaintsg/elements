@@ -372,7 +372,14 @@ const cosmicImageDataUri =
 			on nested cards even when the outer perimeter is dissolved.
 		</p>
 		<p>Three nested articles inside one outer card — each is itself a fully-composed card:</p>
-		<article style="padding: 0; overflow: clip; max-width: 32rem">
+		<article
+			style="
+				--set-article-padding-inline: 0;
+				--set-article-padding-block: 0;
+				overflow: clip;
+				max-width: 32rem;
+			"
+		>
 			<header style="padding-inline: 1rem; padding-block: 0.75rem">
 				<h3 style="margin: 0">Deployment summary</h3>
 			</header>
