@@ -497,7 +497,7 @@ dialog {
 					box-shadow: var(--set-box-shadow-small);
 				"
 			>
-				<h3 style="margin-block: 0"><code>--set-box-shadow-small</code></h3>
+				<h3><code>--set-box-shadow-small</code></h3>
 				<p style="margin-block: calc(var(--spacing) * 2) 0">
 					List-group hover, dropdown items, subtle action panels.
 				</p>
@@ -510,7 +510,7 @@ dialog {
 					box-shadow: var(--set-box-shadow);
 				"
 			>
-				<h3 style="margin-block: 0"><code>--set-box-shadow</code> <small>(base)</small></h3>
+				<h3><code>--set-box-shadow</code> <small>(base)</small></h3>
 				<p style="margin-block: calc(var(--spacing) * 2) 0">Popover panels, dropdown menus.</p>
 			</article>
 			<article
@@ -521,7 +521,7 @@ dialog {
 					box-shadow: var(--set-box-shadow-large);
 				"
 			>
-				<h3 style="margin-block: 0"><code>--set-box-shadow-large</code></h3>
+				<h3><code>--set-box-shadow-large</code></h3>
 				<p style="margin-block: calc(var(--spacing) * 2) 0">
 					Modal dialogs, toasts, drawer chrome.
 				</p>
@@ -596,7 +596,7 @@ dialog {
 			scope, which would shadow an inherited wrapper-level override — so the override has to land on
 			the property itself.
 		</p>
-		<div class="cluster" style="justify-content: flex-start; align-items: center">
+		<div class="cluster justify-start">
 			<button
 				type="button"
 				class="primary"
@@ -619,7 +619,7 @@ dialog {
 					borderRadius: `calc(0.5rem * ${radiusFactor})`,
 				}"
 			>
-				<p style="margin-block: 0">An article card watching the radius factor.</p>
+				<p>An article card watching the radius factor.</p>
 			</article>
 			<span class="badge primary" :style="{ borderRadius: `calc(0.375rem * ${radiusFactor})` }">
 				Badge
@@ -661,7 +661,7 @@ dialog {
 			Same caveat as the radius playground above — element-scoped padding tokens shadow
 			wrapper-level overrides, so the binding lands on the property itself.
 		</p>
-		<div class="cluster" style="justify-content: flex-start">
+		<div class="cluster justify-start">
 			<button
 				type="button"
 				class="primary"
