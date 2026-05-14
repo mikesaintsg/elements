@@ -134,15 +134,29 @@
 		//      surface (dropdown menus, toasts, dialog content) when
 		//      content fits.
 		//
-		// `[popover] *` covers descendants because `scrollbar-gutter`
-		// doesn't inherit; the universal rule wrote `stable` on every
-		// element individually, so the override has to do the same.
-		// Top-layer surfaces have no page-flow layout-shift to prevent
-		// — a scrollbar inside a popover only shifts content within the
-		// popover, which is local visual feedback the user expects.
+		// `[popover] *` (and `dialog *`) covers descendants because
+		// `scrollbar-gutter` doesn't inherit; the universal rule wrote
+		// `stable` on every element individually, so the override has
+		// to do the same. Top-layer surfaces have no page-flow
+		// layout-shift to prevent — a scrollbar inside a popover only
+		// shifts content within the popover, which is local visual
+		// feedback the user expects.
+		//
+		// `<dialog>` joins `[popover]` here because both are top-layer
+		// surfaces with the same constraint: `<dialog>` now declares
+		// `overflow: hidden` when it hosts header / footer slots (the
+		// pin-chrome rule in `elements/_dialog.scss`), which qualifies
+		// it as a scroll container — the universal `scrollbar-gutter:
+		// stable` then reserves a ~14 px strip on the inline-end side,
+		// visible as a gap where header / footer divider borders stop
+		// short of the dialog's right edge. The override has to live
+		// in `@layer surfaces` to beat the universal rule (the cascade
+		// layer order `elements, components, surfaces, …` means an
+		// `elements`-scoped override loses to a `surfaces`-scoped
+		// universal rule regardless of specificity).
 	}
-	[popover],
-	[popover] * {
+	:is([popover], dialog),
+	:is([popover], dialog) * {
 		scrollbar-gutter: auto;
 	}
 

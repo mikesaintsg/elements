@@ -348,12 +348,25 @@
 	// When a `<form method="dialog">` is the direct child wrapping the
 	// dialog's contents, the form itself needs to be a flex-column
 	// passthrough so its inner header / footer / body can pin / scroll.
+	// `flex: 1 1 auto` (not `1 1 0`): the dialog has no fixed
+	// block-size, so a `flex: 1 1 0` form starts at preferred size 0
+	// and the dialog collapses to a thin empty rectangle. `1 1 auto`
+	// gives the form a preferred size equal to its content's natural
+	// height — dialog grows to fit, clamps at max-block-size, form
+	// shrinks to fit, body inside the form absorbs overflow.
 	dialog[open]:where(:has(> form > :is(header, footer))) > form {
 		display: flex;
 		flex-direction: column;
-		flex: 1 1 0;
+		flex: 1 1 auto;
 		min-block-size: 0;
 	}
+
+	// Suppress the universal `scrollbar-gutter: stable` from
+	// `surfaces/_scrollbar.scss` lives next to its `[popover]` sibling
+	// in `surfaces/_popover.scss` — that file's `@layer surfaces` scope
+	// is the only place an override can beat the universal rule (the
+	// elements layer is cascaded BEFORE surfaces, so an `elements`-
+	// scoped override loses). See `[popover], dialog` selector there.
 	dialog {
 		// Internal padding for the header band — matches the dialog's own
 		// `padding-block` so the header reads as a continuation of the
