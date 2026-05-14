@@ -165,9 +165,27 @@
 		// for this purpose: their layout-shift concern is local to the
 		// banner's own content area, not the surrounding document
 		// flow. So `auto` is correct.
+		//
+		// Sidebar rails — `body:has(main) > nav` and
+		// `body:has(main) > aside` (and one-level-deeper wrappers,
+		// `body:has(main) > * > nav` / `> * > aside`) — qualify too.
+		// `components/_nav.scss` and `components/_aside.scss` declare
+		// `overflow-y: auto` on these rails so long contents scroll
+		// independently of `<main>`. With `stable` the universal rule
+		// reserves a ~14 px inline-end strip even when contents fit,
+		// visible as a gap between the rail's inline-end border and any
+		// header / footer divider lines pinned inside it. The rails
+		// have the same "internal-scroll, no page-flow shift" property
+		// the banner has — the scrollbar (when it appears) only shifts
+		// rail contents within the rail. `auto` lets the gutter appear
+		// on demand without reserving the strip permanently.
 	}
 	:is([popover], dialog, aside[role='alert']),
-	:is([popover], dialog, aside[role='alert']) * {
+	:is([popover], dialog, aside[role='alert']) *,
+	body:has(main) > :is(nav, aside),
+	body:has(main) > :is(nav, aside) *,
+	body:has(main) > * > :is(nav, aside),
+	body:has(main) > * > :is(nav, aside) * {
 		scrollbar-gutter: auto;
 	}
 

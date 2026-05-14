@@ -459,36 +459,63 @@ const toast = useToast(ref) // default autohide
 				</button>
 			</li>
 		</menu>
-		<div class="placement-stage">
-			<output ref="cBottomEnd" popover class="information">
-				<p><strong>Bottom-end.</strong> Default corner — viewport bottom-right (LTR).</p>
-				<button type="button" class="subtle" aria-label="Dismiss" @click="corners.bottomEnd.hide()">
-					×
-				</button>
-			</output>
-			<output ref="cBottomStart" popover class="information start">
-				<p><strong>Bottom-start.</strong> Viewport bottom-left (LTR) / bottom-right (RTL).</p>
-				<button
-					type="button"
-					class="subtle"
-					aria-label="Dismiss"
-					@click="corners.bottomStart.hide()"
-				>
-					×
-				</button>
-			</output>
-			<output ref="cTopEnd" popover class="information top">
-				<p><strong>Top-end.</strong> Viewport top-right (LTR).</p>
-				<button type="button" class="subtle" aria-label="Dismiss" @click="corners.topEnd.hide()">
-					×
-				</button>
-			</output>
-			<output ref="cTopStart" popover class="information start top">
-				<p><strong>Top-start.</strong> Viewport top-left (LTR).</p>
-				<button type="button" class="subtle" aria-label="Dismiss" @click="corners.topStart.hide()">
-					×
-				</button>
-			</output>
+		<p>
+			<small>
+				Each corner toast lives in its <strong>own container</strong> — the factory computes
+				<code>--set-toast-stack-offset</code> across an <code>&lt;output popover&gt;</code>'s
+				siblings, so co-locating toasts at different corners inside one container would have them
+				shift each other. Toasts at the same corner share one container (see the linear-stack and
+				deck demos above).
+			</small>
+		</p>
+		<div class="placement-stage" style="display: grid; gap: 0.5rem">
+			<div>
+				<output ref="cBottomEnd" popover class="information">
+					<p><strong>Bottom-end.</strong> Default corner — viewport bottom-right (LTR).</p>
+					<button
+						type="button"
+						class="subtle"
+						aria-label="Dismiss"
+						@click="corners.bottomEnd.hide()"
+					>
+						×
+					</button>
+				</output>
+			</div>
+			<div>
+				<output ref="cBottomStart" popover class="information start">
+					<p><strong>Bottom-start.</strong> Viewport bottom-left (LTR) / bottom-right (RTL).</p>
+					<button
+						type="button"
+						class="subtle"
+						aria-label="Dismiss"
+						@click="corners.bottomStart.hide()"
+					>
+						×
+					</button>
+				</output>
+			</div>
+			<div>
+				<output ref="cTopEnd" popover class="information top">
+					<p><strong>Top-end.</strong> Viewport top-right (LTR).</p>
+					<button type="button" class="subtle" aria-label="Dismiss" @click="corners.topEnd.hide()">
+						×
+					</button>
+				</output>
+			</div>
+			<div>
+				<output ref="cTopStart" popover class="information start top">
+					<p><strong>Top-start.</strong> Viewport top-left (LTR).</p>
+					<button
+						type="button"
+						class="subtle"
+						aria-label="Dismiss"
+						@click="corners.topStart.hide()"
+					>
+						×
+					</button>
+				</output>
+			</div>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>

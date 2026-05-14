@@ -231,6 +231,14 @@
 	[data-toast-stack]:focus-within > output[popover],
 	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open {
 		block-size: auto;
+		// `overflow: visible` is required so the `::after` hit-area
+		// extension below (which bridges the gap between expanded cards
+		// for pointer capture) actually paints. Without it, the
+		// collapsed-deck rule's `overflow: hidden` clips the pseudo to
+		// the card's box and the pointer can fall into the gap, which
+		// kills the container's `:hover` and collapses the deck —
+		// visible as a twitch when the cursor crosses card edges.
+		overflow: visible;
 		opacity: 1;
 		pointer-events: auto;
 		transform: translateY(

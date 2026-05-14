@@ -242,14 +242,26 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// Banded header / footer slots — mirror `aside[role='alert']`'s pattern.
-	// When a toast contains `<header>` or `<footer>` as a direct child, the
-	// toast switches from inline row to flex-column with banded chrome:
-	// the header / footer paint a tinted strip (color-mix from currentColor)
-	// pinned to the toast's edges, and the body rows inset by the toast's
-	// padding values. A trailing dismiss `<button>` inside a band resets
-	// its variant tokens so it reads as a quiet icon button (matches
-	// aside-alert's band-dismiss treatment for cross-surface uniformity).
+	// Banded header / footer slots — same negative-margin bleed pattern as
+	// `<dialog> > header / footer`. The toast keeps its intrinsic padding for
+	// the body region; the bands escape that padding via `margin-inline:
+	// calc(var(--set-toast-padding-inline) * -1)` so they reach the toast's
+	// outer edges, then re-apply their own padding for the band's internal
+	// gutter. Block-axis bleed uses the matching block-axis padding so the
+	// band sits flush against the top (header) or bottom (footer) edge of
+	// the toast's border-box.
+	//
+	// `overflow: hidden` on the toast root when a band is present is
+	// required so the band's tinted background respects the toast's
+	// `border-radius`. Without it, the bled background paints past the
+	// rounded corners and the band appears to have square corners against
+	// a rounded toast.
+	//
+	// Rules live in components/ rather than composables/ because they
+	// describe `<output>`'s structural chrome (the same shape applies
+	// whether the toast is opened by `useToast` or driven manually) —
+	// matches the `<aside role="alert">` band rules that also live in
+	// `components/_aside.scss`.
 	// --------------------------------------------------------------------------
 	output[popover]:has(> header),
 	output[popover]:has(> footer),
@@ -257,17 +269,8 @@
 	output[role='status']:not(.filled):has(> footer) {
 		flex-direction: column;
 		align-items: stretch;
-		gap: 0;
-		padding-inline: 0;
-		padding-block: 0;
-	}
-
-	output[popover]:has(> header) > :not(:where(header, footer)),
-	output[popover]:has(> footer) > :not(:where(header, footer)),
-	output[role='status']:not(.filled):has(> header) > :not(:where(header, footer)),
-	output[role='status']:not(.filled):has(> footer) > :not(:where(header, footer)) {
-		padding-inline: var(--set-toast-padding-inline);
-		padding-block: var(--set-toast-padding-block);
+		gap: var(--set-toast-gap);
+		overflow: hidden;
 	}
 
 	output[popover] > header:first-child,
@@ -277,18 +280,34 @@
 		display: flex;
 		align-items: center;
 		gap: var(--set-toast-gap);
+		// Bleed past the toast's inline padding so the band reaches the
+		// toast's outer edges, then re-pad for the band's own gutter.
+		margin-inline: calc(var(--set-toast-padding-inline) * -1);
 		padding-inline: var(--set-toast-padding-inline);
 		padding-block: calc(var(--set-toast-padding-block) * 0.625);
 		background-color: var(--set-toast-band-background-color);
+
+		// Reset framework heading margins inside a band — the band's own
+		// padding owns the rhythm. Without this, an `<h*>` inside the
+		// header keeps its default `margin-block` and pushes the band
+		// taller than the band's tokenised padding spec. Matches dialog's
+		// header-band reset.
+		> :is(h1, h2, h3, h4, h5, h6) {
+			margin-block: 0;
+		}
 	}
 
 	output[popover] > header:first-child,
 	output[role='status']:not(.filled) > header:first-child {
+		// Bleed past the toast's block-start padding so the header sits
+		// flush against the toast's top edge.
+		margin-block-start: calc(var(--set-toast-padding-block) * -1);
 		border-block-end: 1px solid var(--set-toast-band-border-color);
 	}
 
 	output[popover] > footer:last-child,
 	output[role='status']:not(.filled) > footer:last-child {
+		margin-block-end: calc(var(--set-toast-padding-block) * -1);
 		border-block-start: 1px solid var(--set-toast-band-border-color);
 	}
 
