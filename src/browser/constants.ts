@@ -85,9 +85,9 @@ export const TABLE_RESIZABLE_ATTR = 'data-table-resizable'
 /** Toast deck container opt-in attribute (replaces `.toast-stack`). */
 export const TOAST_STACK_ATTR = 'data-toast-stack'
 /** On toasts beyond `--set-toast-stack-depth` — paired with `aria-hidden`. */
-export const TOAST_STACK_HIDDEN_ATTR = 'data-stack-hidden'
+export const TOAST_STACK_HIDDEN_ATTR = 'data-toast-stack-hidden'
 /** On the deck container while a child toast is running its close transition. */
-export const TOAST_STACK_CLOSING_ATTR = 'data-stack-closing'
+export const TOAST_STACK_CLOSING_ATTR = 'data-toast-stack-closing'
 /** On the container — count of toasts beyond `--set-toast-stack-depth`. */
 export const TOAST_HIDDEN_COUNT_ATTR = 'data-toast-hidden-count'
 

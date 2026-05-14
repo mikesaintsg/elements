@@ -1,0 +1,423 @@
+<script lang="ts" setup>
+/**
+ * UseToastPage — JS-driven `<output popover>` toast composable.
+ *
+ * `useToast(elementRef, options?)` is the framework's adapter over
+ * `createToast`. The platform owns top-layer rendering + the popover
+ * lifecycle; the composable adds the transient-notification layer:
+ *
+ *   1. **Auto-hide timer.** `options.autohide` defaults to a built-in
+ *      delay; passing `false` keeps the toast sticky. The timer starts
+ *      AFTER the entry transition completes (so the toast doesn't
+ *      vanish mid-fade).
+ *   2. **Pause-on-hover + pause-on-focus.** `mouseenter` / `focusin`
+ *      pause the timer; `mouseleave` / `focusout` resume it. The
+ *      composable exposes `pause()` / `resume()` so consumers can
+ *      drive this from external state too.
+ *   3. **Linear stack (default).** Toasts share a placement-anchored
+ *      container; each opening toast writes `--set-toast-stack-offset`
+ *      so cards stack vertically with the framework's spacing token.
+ *   4. **Sonner-deck mode.** Set `[data-toast-stack]` on the parent
+ *      container and the factory swaps to a deck layout: cards peek
+ *      behind the front card (scaled + offset by index), the deck is
+ *      depth-clamped via `--set-toast-stack-depth`, and overflow cards
+ *      get `aria-hidden` + a `data-toast-hidden-count` indicator on
+ *      the container.
+ *   5. **Cancellable lifecycle.** `on.show` / `on.hide` fire BEFORE the
+ *      popover transition; `preventDefault()` aborts. `on.open` /
+ *      `on.close` fire AFTER. All four also dispatch as DOM events
+ *      (`elements:toast:{show,open,hide,close}`).
+ *
+ * What this page is NOT: the bare `<output>` element chrome (in-flow
+ * status chip, `--set-output-*` token surface). For all of that, see
+ * the static element surface in `src/styles/elements/_output.scss`.
+ * This page proves the JS / chrome interaction.
+ *
+ * Audit note: the framework's prior docs claimed "swipe-to-dismiss"
+ * for toast. After auditing the factory directly (`createToast.ts`
+ * has no `pointerdown` / `pointermove` / `touch*` handlers), the
+ * claim was struck from the guides. The composable supports
+ * pause / resume via pointer + focus only.
+ */
+import { ref, useTemplateRef } from 'vue'
+import { useToast } from '@elements/browser'
+
+// ─────────────────────────────────────────────────────────────────────
+// Demo 1 — single linear toast. Default auto-hide, pause-on-hover.
+// ─────────────────────────────────────────────────────────────────────
+const linearRef = useTemplateRef<HTMLOutputElement>('linearRef')
+const linear = useToast(linearRef)
+
+// ─────────────────────────────────────────────────────────────────────
+// Demo 2 — linear stack: multiple toasts share a placement-anchored
+// container, no `[data-toast-stack]`. Cumulative vertical offset.
+// ─────────────────────────────────────────────────────────────────────
+const stack1Ref = useTemplateRef<HTMLOutputElement>('stack1Ref')
+const stack2Ref = useTemplateRef<HTMLOutputElement>('stack2Ref')
+const stack3Ref = useTemplateRef<HTMLOutputElement>('stack3Ref')
+const stack1 = useToast(stack1Ref, { autohide: false })
+const stack2 = useToast(stack2Ref, { autohide: false })
+const stack3 = useToast(stack3Ref, { autohide: false })
+
+const showAllLinear = (): void => {
+	stack1.show()
+	stack2.show()
+	stack3.show()
+}
+const hideAllLinear = (): void => {
+	stack1.hide()
+	stack2.hide()
+	stack3.hide()
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Demo 3 — Sonner-deck mode: parent container has `[data-toast-stack]`,
+// cards peek behind each other, depth-clamped, hidden-count indicator.
+// 5 toasts; default depth=3 means 2 get the hidden-count overflow.
+// ─────────────────────────────────────────────────────────────────────
+const deck1Ref = useTemplateRef<HTMLOutputElement>('deck1Ref')
+const deck2Ref = useTemplateRef<HTMLOutputElement>('deck2Ref')
+const deck3Ref = useTemplateRef<HTMLOutputElement>('deck3Ref')
+const deck4Ref = useTemplateRef<HTMLOutputElement>('deck4Ref')
+const deck5Ref = useTemplateRef<HTMLOutputElement>('deck5Ref')
+const deck1 = useToast(deck1Ref, { autohide: false })
+const deck2 = useToast(deck2Ref, { autohide: false })
+const deck3 = useToast(deck3Ref, { autohide: false })
+const deck4 = useToast(deck4Ref, { autohide: false })
+const deck5 = useToast(deck5Ref, { autohide: false })
+
+const showAllDeck = (): void => {
+	deck1.show()
+	deck2.show()
+	deck3.show()
+	deck4.show()
+	deck5.show()
+}
+const hideAllDeck = (): void => {
+	deck1.hide()
+	deck2.hide()
+	deck3.hide()
+	deck4.hide()
+	deck5.hide()
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Demo 4 — variant tinting. .primary / .success / .warning / .danger
+// all flow through the variant-context cascade.
+// ─────────────────────────────────────────────────────────────────────
+const variantRefs = {
+	primary: useTemplateRef<HTMLOutputElement>('vPrimary'),
+	success: useTemplateRef<HTMLOutputElement>('vSuccess'),
+	warning: useTemplateRef<HTMLOutputElement>('vWarning'),
+	danger: useTemplateRef<HTMLOutputElement>('vDanger'),
+} as const
+
+const variants = {
+	primary: useToast(variantRefs.primary),
+	success: useToast(variantRefs.success),
+	warning: useToast(variantRefs.warning),
+	danger: useToast(variantRefs.danger),
+} as const
+
+// ─────────────────────────────────────────────────────────────────────
+// Demo 5 — cancellable lifecycle. preventDefault on on.show vetoes.
+// ─────────────────────────────────────────────────────────────────────
+const lifecycleRef = useTemplateRef<HTMLOutputElement>('lifecycleRef')
+const lifecycleLog = ref<string[]>([])
+const allowShow = ref(true)
+const note = (line: string): void => {
+	lifecycleLog.value = [...lifecycleLog.value.slice(-5), line]
+}
+const lifecycle = useToast(lifecycleRef, {
+	autohide: false,
+	on: {
+		show: (event: CustomEvent) => {
+			if (!allowShow.value) {
+				event.preventDefault()
+				note('show vetoed via preventDefault()')
+				return
+			}
+			note('show')
+		},
+		open: () => note('open (after entry transition)'),
+		hide: () => note('hide'),
+		close: () => note('close (after exit transition)'),
+	},
+})
+</script>
+
+<template>
+	<section id="use-toast-intro">
+		<hgroup>
+			<h1>useToast</h1>
+			<p>
+				JS-driven adapter for the native <code>&lt;output popover&gt;</code> toast surface. Pass a
+				<code>Ref&lt;HTMLOutputElement&gt;</code> + optional <code>autohide</code> /
+				<code>on</code> handlers — the composable wires the popover lifecycle, manages the auto-hide
+				timer (pause-on-hover, pause-on-focus), and coordinates linear-stack or Sonner-deck layout
+				via the parent container's <code>[data-toast-stack]</code> opt-in.
+			</p>
+		</hgroup>
+		<p>
+			Toast surface family disambiguation (per <a href="#/aside">AsidePage</a> + the surface- family
+			table in <code>guides/components.md §4.5</code>): toast is the
+			<strong>top-layer transient</strong>
+			that overlays the page in a corner; banner alert (<code>&lt;aside role="alert"&gt;</code>) is
+			the <strong>in-flow surface</strong> that shifts UI between siblings. Both can carry the same
+			variant palette; the difference is geometry. Reach for toast when "Saved" / "Copied" / "Failed
+			to fetch" needs to surface without disturbing the user's reading flow.
+		</p>
+		<aside role="status" class="information" data-alert-open>
+			<p>
+				<strong>State:</strong>
+				linear <code>{{ linear.visible.value ? 'open' : 'closed' }}</code> · stack1
+				<code>{{ stack1.visible.value ? 'open' : 'closed' }}</code> · stack2
+				<code>{{ stack2.visible.value ? 'open' : 'closed' }}</code> · stack3
+				<code>{{ stack3.visible.value ? 'open' : 'closed' }}</code> · deck (5)
+				<code>{{ [deck1, deck2, deck3, deck4, deck5].filter((d) => d.visible.value).length }}</code>
+				open · lifecycle <code>{{ lifecycle.visible.value ? 'open' : 'closed' }}</code>
+			</p>
+		</aside>
+	</section>
+
+	<section id="use-toast-linear-single">
+		<h2>1. Single toast — auto-hide + pause-on-hover</h2>
+		<p>
+			Default <code>autohide</code> = built-in delay (see <code>DEFAULT_TOAST_DELAY_MS</code> in
+			<code>src/browser/constants.ts</code>). The timer starts AFTER the entry transition completes
+			— important so the toast isn't already fading out the moment the user reads it. Hover the
+			toast (or focus a control inside) to pause the timer; the resume on <code>mouseleave</code> /
+			<code>focusout</code>.
+		</p>
+		<menu>
+			<li><button type="button" @click="linear.show()">Show toast</button></li>
+			<li><button type="button" @click="linear.hide()">Hide toast</button></li>
+			<li><button type="button" @click="linear.pause()">Pause timer</button></li>
+			<li><button type="button" @click="linear.resume()">Resume timer</button></li>
+		</menu>
+		<div class="placement-stage end bottom">
+			<output ref="linearRef" popover>
+				<p><strong>Saved.</strong> Your changes are in. Hover here to pause the auto-hide timer.</p>
+			</output>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre v-pre><code>const ref = useTemplateRef&lt;HTMLOutputElement&gt;('ref')
+const toast = useToast(ref) // default autohide
+
+&lt;button @click="toast.show()"&gt;Show&lt;/button&gt;
+&lt;output ref="ref" popover&gt;
+  &lt;p&gt;Saved. …&lt;/p&gt;
+&lt;/output&gt;</code></pre>
+		</details>
+	</section>
+
+	<section id="use-toast-linear-stack">
+		<h2>2. Linear stack — multiple toasts, cumulative vertical offset</h2>
+		<p>
+			When multiple <code>&lt;output popover&gt;</code> elements share the same placement-anchored
+			ancestor (here a container with <code>class="end bottom"</code>), the factory writes
+			<code>--set-toast-stack-offset</code> on each open toast so they stack vertically with the
+			framework's <code>--set-toast-spacing</code> gap. The newest open toast goes to the bottom of
+			the stack (or top, in a top-anchored container — set <code>data-toast-position="top"</code> on
+			the container to reverse). Sticky here (<code>autohide: false</code>) so you can compare
+			layout shifts.
+		</p>
+		<menu>
+			<li><button type="button" @click="showAllLinear">Show all 3</button></li>
+			<li><button type="button" @click="hideAllLinear">Hide all 3</button></li>
+			<li><button type="button" @click="stack2.hide()">Hide middle</button></li>
+		</menu>
+		<div ref="linearStackContainerRef" class="placement-stage end bottom">
+			<output ref="stack1Ref" popover class="information">
+				<p><strong>1.</strong> First toast — sticky.</p>
+			</output>
+			<output ref="stack2Ref" popover class="information">
+				<p><strong>2.</strong> Middle toast — sticky. Hide me to see the others reflow.</p>
+			</output>
+			<output ref="stack3Ref" popover class="information">
+				<p><strong>3.</strong> Last toast — sticky.</p>
+			</output>
+		</div>
+	</section>
+
+	<section id="use-toast-deck">
+		<h2>3. Sonner-deck mode — <code>[data-toast-stack]</code></h2>
+		<p>
+			Add <code>data-toast-stack</code> to the parent container and the layout swaps to a deck:
+			cards peek behind the front card (scaled + Y-offset by their stack index), the deck is
+			depth-clamped via <code>--set-toast-stack-depth</code> (default 3), and toasts past the depth
+			become <code>aria-hidden</code>'d with a <code>data-toast-hidden-count</code> indicator on the
+			container (e.g. <em>+ 2 more</em>). Hover the deck to expand it (all cards rise to full
+			opacity); on <code>mouseleave</code> it collapses back to the peek view.
+		</p>
+		<menu>
+			<li><button type="button" @click="showAllDeck">Show all 5</button></li>
+			<li><button type="button" @click="hideAllDeck">Hide all 5</button></li>
+			<li><button type="button" @click="deck1.hide()">Hide toast 1</button></li>
+		</menu>
+		<div data-toast-stack class="placement-stage end bottom">
+			<output ref="deck1Ref" popover class="information">
+				<p><strong>1.</strong> Deck card.</p>
+			</output>
+			<output ref="deck2Ref" popover class="information">
+				<p><strong>2.</strong> Deck card.</p>
+			</output>
+			<output ref="deck3Ref" popover class="information">
+				<p><strong>3.</strong> Deck card.</p>
+			</output>
+			<output ref="deck4Ref" popover class="information">
+				<p><strong>4.</strong> Deck card.</p>
+			</output>
+			<output ref="deck5Ref" popover class="information">
+				<p><strong>5.</strong> Deck card.</p>
+			</output>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre v-pre><code>&lt;div data-toast-stack class="end bottom"&gt;
+  &lt;output popover&gt;…&lt;/output&gt;
+  &lt;output popover&gt;…&lt;/output&gt;
+  …
+&lt;/div&gt;
+
+// `useToast` writes per-toast:
+//   --set-toast-stack-index    (0 = front card; 1, 2, 3 = behind)
+//   --set-toast-stack-offset   (used in linear mode only)
+//   [data-toast-stack-hidden]  (set on cards beyond depth)
+//
+// …and on the container:
+//   --set-toast-front-height   (front card height — cards align to it)
+//   [data-toast-hidden-count]  (overflow count for the indicator)</code></pre>
+		</details>
+	</section>
+
+	<section id="use-toast-variants">
+		<h2>4. Variant tinting</h2>
+		<p>
+			Toasts pick up the framework's variant cascade through their host class. The toast surface
+			repaints <code>--set-toast-{color, background-color, border-color}</code> from the
+			<code>--color-{variant}-{text-emphasis, bg-subtle, border-subtle}</code> triplet — subtle tier
+			by default to keep the toast readable as a transient note (versus the saturated fill that
+			<code>.alert .filled</code> uses for explicit "I'm a status banner" framing).
+		</p>
+		<menu>
+			<li>
+				<button type="button" class="primary" @click="variants.primary.show()">Primary</button>
+			</li>
+			<li>
+				<button type="button" class="success" @click="variants.success.show()">Success</button>
+			</li>
+			<li>
+				<button type="button" class="warning" @click="variants.warning.show()">Warning</button>
+			</li>
+			<li>
+				<button type="button" class="danger" @click="variants.danger.show()">Danger</button>
+			</li>
+		</menu>
+		<div class="placement-stage end top">
+			<output ref="vPrimary" popover class="primary">
+				<p><strong>New release.</strong> Read the changelog.</p>
+			</output>
+			<output ref="vSuccess" popover class="success">
+				<p><strong>Saved.</strong> Your changes are live.</p>
+			</output>
+			<output ref="vWarning" popover class="warning">
+				<p><strong>Heads up.</strong> Your session expires in 5 minutes.</p>
+			</output>
+			<output ref="vDanger" popover class="danger">
+				<p><strong>Failed to fetch.</strong> Check your connection.</p>
+			</output>
+		</div>
+	</section>
+
+	<section id="use-toast-lifecycle">
+		<h2>5. Cancellable lifecycle</h2>
+		<p>
+			<code>on.show</code> fires BEFORE the popover entry with a cancellable
+			<code>CustomEvent</code>; <code>event.preventDefault()</code> aborts the open.
+			<code>on.hide</code> is the mirror for close. <code>on.open</code> / <code>on.close</code>
+			fire AFTER (informational). All four also dispatch as DOM events
+			(<code>elements:toast:{show,open,hide,close}</code>).
+		</p>
+		<menu>
+			<li>
+				<label>
+					<input v-model="allowShow" type="checkbox" />
+					allow <code>show</code> to proceed
+				</label>
+			</li>
+			<li>
+				<button type="button" @click="lifecycle.show()">Try to show</button>
+			</li>
+			<li>
+				<button type="button" @click="lifecycle.hide()">Hide</button>
+			</li>
+		</menu>
+		<div class="placement-stage end bottom">
+			<output ref="lifecycleRef" popover>
+				<p><strong>Lifecycle toast.</strong> Toggle the checkbox to veto the next open.</p>
+			</output>
+		</div>
+		<small style="display: block; margin-block-start: 0.5rem">
+			<strong>Lifecycle log:</strong>
+			<span v-if="lifecycleLog.length === 0">flip the checkbox and click Try to show</span>
+			<span v-else>{{ lifecycleLog.join(' → ') }}</span>
+		</small>
+	</section>
+
+	<section id="use-toast-api">
+		<h2>API reference</h2>
+		<dl>
+			<dt><code>useToast(elementRef, options?): UseToastReturn</code></dt>
+			<dd>
+				Composable. <code>elementRef</code> MUST point at an <code>HTMLOutputElement</code> — the
+				factory throws on mismatch.
+			</dd>
+			<dt><code>options.autohide</code></dt>
+			<dd>
+				<code>false | { delay?: number }</code>. Defaults to the framework's
+				<code>DEFAULT_TOAST_DELAY_MS</code>. Pass <code>false</code> for sticky toasts that only
+				close via the inner dismiss button or a programmatic <code>hide()</code>.
+			</dd>
+			<dt><code>options.on</code></dt>
+			<dd>
+				<code>{ show?, open?, hide?, close? }</code>. <code>show</code> + <code>hide</code> are
+				pre-transition cancellable; <code>open</code> + <code>close</code> are post-transition
+				informational.
+			</dd>
+			<dt><code>UseToastReturn.visible</code></dt>
+			<dd>
+				<code>Readonly&lt;Ref&lt;boolean&gt;&gt;</code>. Reflects
+				<code>element.matches(':popover-open')</code>.
+			</dd>
+			<dt><code>UseToastReturn.show()</code> / <code>.hide()</code></dt>
+			<dd>Programmatic lifecycle. Honor the cancellable-event contract.</dd>
+			<dt><code>UseToastReturn.pause()</code> / <code>.resume()</code></dt>
+			<dd>
+				Manually pause / resume the auto-hide timer. The composable already pauses on
+				<code>mouseenter</code> + <code>focusin</code> and resumes on <code>mouseleave</code> +
+				<code>focusout</code> — these methods cover external triggers (e.g. a sibling modal that
+				should pause the toast).
+			</dd>
+		</dl>
+		<p>
+			<strong>Audit note (this PR):</strong> the prior guides claimed "swipe-to-dismiss" — the
+			factory does NOT implement it (no <code>pointerdown</code> / <code>touch*</code> handlers).
+			Claim struck from <code>guides/composables.md</code> + <code>guides/plan.md</code>. Track as a
+			future enhancement if the project needs touch dismissal.
+		</p>
+	</section>
+</template>
+
+<style scoped>
+.placement-stage {
+	position: relative;
+	min-block-size: 16rem;
+	padding: 1rem;
+	border: 1px dashed var(--color-border);
+	border-radius: 0.5rem;
+	background: color-mix(in oklch, var(--color-canvas-strong) 50%, var(--color-canvas));
+	overflow: hidden;
+}
+</style>

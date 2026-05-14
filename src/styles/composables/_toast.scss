@@ -18,14 +18,14 @@
 //      container. Mirrors Sonner's card-stack visuals: the most recent
 //      toast sits in front, older ones peek out as smaller, dimmer
 //      edges. Toasts beyond `--set-toast-stack-depth` are hidden
-//      (`data-stack-hidden` + `aria-hidden`) and counted by
+//      (`data-toast-stack-hidden` + `aria-hidden`) and counted by
 //      `[data-toast-indicator]`.
 //
 //   3. Hover / focus expand — the deck spreads out as a vertical list
 //      while the pointer hovers (or focus is inside). `:hover` walks
 //      the DOM ancestry, not the layout box, so it reaches the
 //      container even though the toast lives in the top layer.
-//      `[data-stack-closing]` pins the expanded layout while a card's
+//      `[data-toast-stack-closing]` pins the expanded layout while a card's
 //      close transition plays out so the deck doesn't collapse and
 //      re-expand mid-animation.
 //
@@ -61,8 +61,8 @@
 //   [data-toast-stack]            container opt-in for deck mode
 //   [data-toast-stack][data-toast-position="top"]
 //                                 top-anchored deck (default is bottom)
-//   [data-stack-hidden]           per-toast hidden marker (depth overflow)
-//   [data-stack-closing]          container pin during a card's close
+//   [data-toast-stack-hidden]           per-toast hidden marker (depth overflow)
+//   [data-toast-stack-closing]          container pin during a card's close
 //   [data-toast-hidden-count]     container — count of overflow toasts
 //   [data-toast-indicator]        consumer-authored child surfacing the
 //                                 hidden count (`+N hidden`)
@@ -173,9 +173,9 @@
 		z-index: calc(var(--set-toast-z-index) - var(--set-toast-stack-index, 0));
 		@include transition(
 			(
-				transform var(--set-transition-duration, 200ms) ease,
-				opacity var(--set-transition-duration, 200ms) ease,
-				block-size var(--set-transition-duration, 200ms) ease
+				transform var(--set-transition-duration) ease,
+				opacity var(--set-transition-duration) ease,
+				block-size var(--set-transition-duration) ease
 			)
 		);
 	}
@@ -209,7 +209,7 @@
 	// so the autohide timer keeps running and the front-card slot rotates
 	// as older toasts expire. `aria-hidden="true"` is written by the
 	// factory for the assistive-tech contract.
-	[data-toast-stack] > output[popover][data-stack-hidden] {
+	[data-toast-stack] > output[popover][data-toast-stack-hidden] {
 		opacity: 0;
 		pointer-events: none;
 	}
@@ -222,14 +222,14 @@
 	// each card by `index × (front-height + spacing)` instead of
 	// reflowing them.
 	//
-	// `[data-stack-closing]` is the pin the factory writes during a deck-
+	// `[data-toast-stack-closing]` is the pin the factory writes during a deck-
 	// card close so the deck doesn't collapse and re-expand when the
 	// pointer briefly loses the close button. The closing card itself is
 	// excluded with `:not(:popover-open)`-style scoping (`:popover-open`
 	// here) so its own fade-out plays through cleanly.
 	[data-toast-stack]:hover > output[popover],
 	[data-toast-stack]:focus-within > output[popover],
-	[data-toast-stack][data-stack-closing] > output[popover]:popover-open {
+	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open {
 		block-size: auto;
 		opacity: 1;
 		pointer-events: auto;
@@ -243,7 +243,8 @@
 
 	[data-toast-stack][data-toast-position='top']:hover > output[popover],
 	[data-toast-stack][data-toast-position='top']:focus-within > output[popover],
-	[data-toast-stack][data-toast-position='top'][data-stack-closing] > output[popover]:popover-open {
+	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
+		> output[popover]:popover-open {
 		transform: translateY(
 			calc(
 				var(--set-toast-stack-index, 0) * (var(--set-toast-front-height) + var(--set-toast-spacing))
@@ -279,7 +280,7 @@
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-full, 9999px);
 		pointer-events: none;
-		@include transition((opacity var(--set-transition-duration, 200ms) ease));
+		@include transition((opacity var(--set-transition-duration) ease));
 	}
 
 	[data-toast-stack][data-toast-hidden-count]:not([data-toast-hidden-count='0'])

@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](contribute.md) to know **how to work**.
 
-Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 36 of 43 pages built (all 4 Foundation pages complete; 5 of 12 composable-bound pages shipped: **UseMenuPage**, **UseDialogPage**, **UseAsidePage**, **UseTabsPage**, **UseDetailsPage**); remaining composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
+Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 37 of 43 pages built (all 4 Foundation pages complete; 6 of 12 composable-bound pages shipped: **UseMenuPage**, **UseDialogPage**, **UseAsidePage**, **UseTabsPage**, **UseDetailsPage**, **UseToastPage**); remaining composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
 
 ---
 
@@ -169,13 +169,13 @@ Every SCSS partial is held to these contracts before it can merge. The contract 
 | Surfaces                    | PopoverSurfacesPage, FormSurfacesPage, ScrollAndTransitionPage                              |
 | Composables — Primitives    | UseFocusPage, UsePointerPage, UseDragDropPage, UseThemeButtonPage                           |
 | Composables — Floating      | UsePopoverPage, UseTooltipPage                                                              |
-| Composables — Element-bound | UseMenuPage, UseDialogPage, UseAsidePage, UseTabsPage, UseDetailsPage                       |
+| Composables — Element-bound | UseMenuPage, UseDialogPage, UseAsidePage, UseTabsPage, UseDetailsPage, UseToastPage         |
 
 Element pages cover the static markup contract; the matching `Use*Page` (planned, §9.2) covers the JS interaction layer — `DetailsPage` proves the bare `<details>` element baseline, `UseDetailsPage` (planned) proves the `useDetails` programmatic open/close. Both pages exist for elements with composables.
 
 ---
 
-## Remaining work — Phase 9 (7 pages)
+## Remaining work — Phase 9 (6 pages)
 
 ### 9.1 Foundation pages (4)
 
@@ -186,7 +186,7 @@ Highest leverage — every other page references them.
 - ✅ **ModifiersPage** — variant × size × style × state × placement cascade. Cascade walk-through with resolved tokens; 7-variant grids across FILLED / SUBTLE / ON-CANVAS tiers; size table with concrete values; action-vs-container style demos; state demos with paired ARIA attributes (`disabled`, `active`, `loading`); 8-placement reference grid; interactive combination picker (variant × size × style × state) with live button + class-list output; customization guidance for retuning context tokens.
 - ✅ **PlacementsPage** — 8-class vocabulary table (`.top` / `.bottom` / `.start` / `.end` + 4 corners), interactive live demo (select placement → re-anchored popover), 3×3 grid metaphor, `position-try-fallbacks` flip demo (two anchor buttons at opposite edges; left flips, right honored), scope-discipline explainer (the `:not(:where(aside, dialog, nav, output))` drawer exclusion list), logical-axis / RTL note, and customization for `--set-anchor-{gap, max-inline-size, max-block-size, position-try-fallbacks}` tokens.
 
-### 9.2 Composable pages — element-bound (7 remaining of 12)
+### 9.2 Composable pages — element-bound (6 remaining of 12)
 
 Each page proves the `use{Name}` factory's JS layer on top of the matching element page.
 
@@ -197,7 +197,7 @@ Each page proves the `use{Name}` factory's JS layer on top of the matching eleme
 - ✅ **UseAsidePage** — `<aside popover="manual">` programmatic drawer at all four edges (`.start` / `.end` / `.top` / `.bottom`), three backdrop modes + Escape policy + opt-out body scroll-lock, cancellable lifecycle + namespaced DOM events, and the `[data-aside-open]` ↔ `[data-aside-closing]` attribute pair that keeps drawer geometry alive across the popover surface's discrete-transition tail (with a live attribute readout). Cross-references AsidePage for the bare-element chrome + the other three `<aside>` contexts.
 - ✅ **UseTabsPage** — `[role="tablist"]` activation, `.pills` style modifier, cancellable lifecycle. Shipped after a strip pass on `createTabs`: dropped the dead `[data-tab-open]` writes (no SCSS reference), switched the hide mechanism from `[aria-hidden]` to the HTML `[hidden]` attribute (matching the `[role='tabpanel'][hidden] { display: none }` rule in `components/_nav.scss` — fixed a real visibility bug where panels never hid on switch), and dropped the `runTransition` machinery chasing a non-existent CSS transition. Factory shrunk 200 → 158 lines.
 - ✅ **UseDetailsPage** — programmatic open / close synced with native `toggle`, group accordion (one-open-at-a-time via `accordion: Ref<HTMLElement>`), cancellable lifecycle. Authoring pass surfaced + fixed a real bug in `createDetails`: the cancellable lifecycle the docstring promises only worked for programmatic `show()` / `hide()` — native `<summary>` clicks bypassed it because the factory only bridged the post-flip `toggle` event. Added a `<summary>` click bridge that dispatches the cancellable show / hide event; if a consumer's handler calls `event.preventDefault()`, we `preventDefault()` on the click, which the HTML activation-behavior spec says aborts the platform's `[open]` flip. (Used the click bridge instead of `beforetoggle` on `<details>` because chromium-1217 doesn't fire `beforetoggle` on details — the event was added to `<details>` later than the popover variant and isn't reliably available.)
-- ⬜ **UseToastPage** — `<output popover>` toast surface. Linear stack (default), Sonner-deck mode (`[data-toast-stack]`), auto-hide timer + pause-on-hover, swipe-to-dismiss, variant tinting, hidden-overflow indicator. Covers the toast end of the toast-vs-alert disambiguation (banner alert lives on `AsidePage`).
+- ✅ **UseToastPage** — `<output popover>` toast surface. 5 demos: single linear toast w/ auto-hide + pause-on-hover, linear stack (cumulative offset), Sonner-deck mode (`[data-toast-stack]` opt-in with depth-clamp + hidden-count indicator), 7-variant tinting cascade, cancellable lifecycle. Audit pass surfaced + fixed: (a) swipe-to-dismiss claim in guides was struck — the factory never implemented it (track as future enhancement in §Future work below); (b) `[data-stack-hidden]` / `[data-stack-closing]` constants didn't match the documented `data-toast-stack-*` naming convention from `composables.md §2` — renamed both with paired SCSS rename; (c) hardcoded `200ms` transition-duration fallbacks in `composables/_toast.scss` dropped (the framework-wide token is always declared on `:root`).
 - ⬜ **UseSelectPage** — listbox + combobox + multi-select + autocomplete + typeahead filter. Three sub-demos: native select repaint, custom listbox, combobox with sticky search.
 - ⬜ **UseTablePage — strip alongside the page**. `[data-collapsing]` is written by `createTable` during the row-expansion animation but no SCSS file references it, AND the JS manually animates inline `style.height` from 0 → scrollHeight → '' even though `elements/_table.scss:420-446` ALREADY animates the panel via `[data-table-expanded]` + `interpolate-size: allow-keywords`. Strip target. Page demos: sort (one / multi-column), paginate, multi-select with shift-range, row expansion (sync + animated), column resize, focus management, sticky header.
 - ⬜ **UseFormPage** — constraint-validation pipeline, `[data-form-validated]` after first submit, per-field `aria-invalid` mirror, summary error region, submit-disabled-on-invalid.
@@ -253,6 +253,10 @@ Identified but not started. Open the matching contribute.md workflow when pickin
 
 - ⬜ **Element-local modifier consolidation** — survey component partials for `{tag}.{modifier}` rules that should migrate to `modifiers/_local.scss` (e.g. `form.row` in `components/_form.scss`).
 - ⬜ **Page-shell uniformity** — `_main.scss` declares minimum tokens to satisfy the page-shell group; revisit whether `main` belongs in the group or warrants its own contract.
+
+### Future enhancements
+
+- ⬜ **Toast swipe-to-dismiss** — the framework's prior docs claimed `useToast` supports swipe-to-dismiss; the factory audit (UseToastPage PR) found it was never implemented (no `pointerdown` / `pointermove` / `touch*` handlers in `createToast.ts`). Claim was struck from `composables.md` + the §9.2 row, but the gesture itself remains a worthy enhancement — Sonner-parity. **Build path**: leverage the existing `usePointer` composable inside `createToast` (or as a sibling primitive the consumer composes on the toast element) to track horizontal drag; threshold the drag distance against `--set-toast-swipe-threshold` (new token, default ~80 px); on commit dispatch the cancellable `elements:toast:hide` event so consumers can veto; on cancel snap back to origin via the motion-contract tokens. Accessibility note: every swipe gesture needs a keyboard equivalent (an inner `<button>` with `aria-label="Dismiss"` is the obvious one — the framework's `output[popover] > button:last-child` rule already pins a trailing close button). Estimate: 1 new option (`swipe?: false | { threshold?: number }`), 1 token, ~40 LOC factory delta, 1 new page demo section. Pair with a page-probe that simulates pointer drag to confirm threshold + veto behavior.
 
 ### Native-platform redundancy audit (per-composable strip candidates)
 
