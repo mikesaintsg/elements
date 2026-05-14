@@ -1802,6 +1802,13 @@ export const STRUCTURAL_PAIRINGS: readonly StructuralPairing[] = [
 			'Toast footer band — trailing-actions row when `<output popover>` carries a `<footer>` (parallel to aside-alert).',
 	},
 	{
+		parent: 'output',
+		child: 'button',
+		kind: 'context',
+		reason:
+			'Trailing dismiss button in the toast body row (`<output popover> > button:last-child`) — variant-context reset paints it as a quiet icon regardless of host variant (parallel to aside-alert).',
+	},
+	{
 		parent: 'nav',
 		child: 'footer',
 		kind: 'slot',

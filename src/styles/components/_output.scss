@@ -257,14 +257,25 @@
 	// rounded corners and the band appears to have square corners against
 	// a rounded toast.
 	//
+	// Selector specificity note: `:popover-open` is REQUIRED on the
+	// `output[popover]:has(> …)` band-mode selectors so the rule outranks
+	// the open-state row layout above
+	// (`output[popover]:popover-open` paints `display: flex` +
+	// `align-items: center`; without `:popover-open` on the band-mode rule,
+	// `:has(> header)` carries only `(0,0,1)` arg specificity vs
+	// `:popover-open`'s `(0,1,0)`, and the open-state's `align-items: center`
+	// wins — the bands then size to their content width and the negative
+	// `margin-inline` bleed only shifts position rather than extending the
+	// band edge-to-edge of the toast's border-box).
+	//
 	// Rules live in components/ rather than composables/ because they
 	// describe `<output>`'s structural chrome (the same shape applies
 	// whether the toast is opened by `useToast` or driven manually) —
 	// matches the `<aside role="alert">` band rules that also live in
 	// `components/_aside.scss`.
 	// --------------------------------------------------------------------------
-	output[popover]:has(> header),
-	output[popover]:has(> footer),
+	output[popover]:popover-open:has(> header),
+	output[popover]:popover-open:has(> footer),
 	output[role='status']:not(.filled):has(> header),
 	output[role='status']:not(.filled):has(> footer) {
 		flex-direction: column;
@@ -311,22 +322,61 @@
 		border-block-start: 1px solid var(--set-toast-band-border-color);
 	}
 
-	// Variant-context reset for dismiss / close buttons sitting at the
-	// trailing edge of a header or footer band. Matches the aside-alert
-	// pattern so the dismiss reads as a quiet icon regardless of the
-	// surface variant. Covers the bare-variant tier AND the `.subtle`
-	// modifier tier so consumers get consistent behavior whether the
-	// dismiss is a bare `<button>` or `<button class="subtle">`.
+	// Variant-context reset for trailing dismiss / close buttons across
+	// EVERY toast slot — body row (`<output popover> > button:last-child`)
+	// AND banded header / footer (`> header > button:last-child` /
+	// `> footer > button:last-child`). Mirrors the aside-alert pattern
+	// (`components/_aside.scss` line 342) so the dismiss reads as a quiet
+	// icon regardless of the surface variant. Without this reset, a
+	// `<output class="warning">` would propagate its yellow variant tokens
+	// down into the dismiss `<button>` and paint the close affordance
+	// filled-yellow.
+	//
+	// Covers the bare-variant tier AND the `.subtle` modifier tier so
+	// consumers get the same flat-icon dismiss whether they write
+	// `<button>` or `<button class="subtle">`. The trailing-button layout
+	// (`margin-inline-start: auto` + `flex-shrink: 0` + `align-self:
+	// center`) used to live in `composables/_toast.scss` § "Trailing-edge
+	// close button"; folded in here so all dismiss chrome is in one
+	// rule and consumers driving the toast manually (without `useToast`)
+	// get the same affordance.
+	output[popover] > button:last-child,
 	output[popover] > header > button:last-child,
 	output[popover] > footer > button:last-child,
+	output[role='status']:not(.filled) > button:last-child,
 	output[role='status']:not(.filled) > header > button:last-child,
 	output[role='status']:not(.filled) > footer > button:last-child {
 		margin-inline-start: auto;
+		flex-shrink: 0;
+		align-self: center;
 		--set-variant-background-color: transparent;
 		--set-variant-color: currentColor;
 		--set-variant-border-color: transparent;
 		--set-variant-subtle-background-color: transparent;
 		--set-variant-subtle-color: currentColor;
 		--set-variant-subtle-border-color: transparent;
+	}
+
+	// --------------------------------------------------------------------------
+	// Mobile retune — narrow viewports get a nearly-edge-to-edge toast.
+	// At desktop widths the toast lives at its design `--set-toast-inline-
+	// size` (22rem ≈ 350px) so it reads as a discrete corner notification.
+	// On a 375px phone, the toast would land at min(22rem, dvw - 2 *
+	// edge-inset) = 343px — already 91% of viewport, but the leftover
+	// 32px of inset can read as "stranded card" framing on phones where
+	// users expect status messages to span the screen. Shrink the
+	// edge-inset to ~half on mobile so the budget grows and the toast
+	// fills the viewport minus a comfortable gutter (375px - 16px = 359px,
+	// ≈ 96% of viewport). Same pattern `elements/_dialog.scss` line 221
+	// uses to widen the modal on phones. The design tokens declared on
+	// `:root` above stay desktop-tuned; the override only fires below the
+	// mobile breakpoint.
+	// --------------------------------------------------------------------------
+	@media (max-width: 480px) {
+		:root {
+			--set-toast-edge-inset: calc(var(--spacing) * 2);
+			--set-toast-inline-size: calc(100dvw - calc(var(--spacing) * 4));
+			--set-toast-padding-inline: calc(var(--spacing) * 3);
+		}
 	}
 }

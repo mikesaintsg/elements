@@ -105,30 +105,32 @@
 		padding-block: var(--set-toast-padding-block);
 		box-shadow: var(--set-toast-box-shadow);
 
+		// Re-state the inline-size triplet here too. `surfaces/_popover.scss`
+		// (which beats components in cascade order) writes
+		// `max-inline-size: min(--set-popover-max-inline-size /* 17.25rem */,
+		// --set-anchor-max-inline-size, calc(100vw - viewport-inset * 2))`
+		// on every `[popover]` — that 17.25rem cap is tuned for dropdown
+		// menus + anchored hints (Bootstrap-style narrow surfaces) and
+		// clamps toasts to 276px regardless of their own 22rem design
+		// width or 28rem max. Without this re-paint, the mobile `@media`
+		// retune in `_output.scss` (which expands `--set-toast-inline-size`
+		// to `100dvw - 16px` for full-width toasts) is silently ignored
+		// and the toast stays stranded at 276px on a 375px phone.
+		// Composables sits after surfaces, so this rule wins.
+		@include floater-bounds('toast', 'inline-size');
+		min-inline-size: var(--set-toast-min-inline-size);
+		max-inline-size: var(--set-toast-max-inline-size);
+
 		&.top {
 			inset-block-start: calc(var(--set-toast-edge-inset) + var(--set-toast-stack-offset));
 			inset-block-end: auto;
 		}
 
-		// Trailing-edge close button — the last direct-child `<button>` of
-		// a toast is treated as the dismiss control and pushed to the
-		// trailing inline edge. Mirrors mailbox's `.toast > .btn-close`
-		// rule. The selector keys off `:last-child` rather than a class
-		// or aria-label so the framework remains markup-agnostic: any
-		// trailing button works (`.subtle.small`, a bare `<button>`, an
-		// inline-svg icon button) without consumers reaching for a
-		// project-specific `.toast-close` modifier. `flex-shrink: 0`
-		// stops the button from collapsing if the toast text is long
-		// enough to consume the row's free space; `align-self: center`
-		// keeps the close vertically centered when the toast wraps to
-		// multiple lines (`align-items: center` on the parent only
-		// centers single-line content; per-item alignment beats it on
-		// wrapped flex rows).
-		> button:last-child {
-			margin-inline-start: auto;
-			flex-shrink: 0;
-			align-self: center;
-		}
+		// Trailing-edge close button chrome (margin-inline-start: auto +
+		// flex-shrink: 0 + align-self: center + variant-context reset)
+		// lives in `components/_output.scss` so the same affordance
+		// applies to both body-context and band-context dismiss buttons
+		// regardless of which composable opens the toast.
 	}
 
 	// ── Deck stacking mode ────────────────────────────────────────────────────
@@ -222,13 +224,22 @@
 	// each card by `index × (front-height + spacing)` instead of
 	// reflowing them.
 	//
-	// `[data-toast-stack-closing]` is the pin the factory writes during a deck-
-	// card close so the deck doesn't collapse and re-expand when the
-	// pointer briefly loses the close button. The closing card itself is
-	// excluded with `:not(:popover-open)`-style scoping (`:popover-open`
-	// here) so its own fade-out plays through cleanly.
-	[data-toast-stack]:hover > output[popover],
-	[data-toast-stack]:focus-within > output[popover],
+	// `:has(> output[popover]:popover-open:hover)` gates the expansion on
+	// the popover ITSELF being hovered, not the container. The previous
+	// `[data-toast-stack]:hover` selector matched whenever ANY descendant
+	// was hovered — fine when the container sits at the anchored corner
+	// and only the popover cards live inside it, but wrong when the
+	// container also holds the consumer's trigger buttons (the UseToastPage
+	// demos co-locate the `<output>` siblings with the buttons that emit
+	// them so the factory's `parentElement.children` walk can sibling-stack).
+	// Without the `:has` gate, hovering the trigger panel from across the
+	// page expanded a deck whose cards were sitting in the opposite
+	// viewport corner. The gate also covers focus-within (tabbing into the
+	// deck's controls expands), and the `[data-toast-stack-closing]` pin
+	// (kept ungated since it's set by the factory only while a card's
+	// close transition plays out — strictly bracketed lifetime).
+	[data-toast-stack]:has(> output[popover]:popover-open:hover) > output[popover],
+	[data-toast-stack]:has(> output[popover]:popover-open:focus-within) > output[popover],
 	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open {
 		block-size: auto;
 		// `overflow: visible` is required so the `::after` hit-area
@@ -249,8 +260,10 @@
 		);
 	}
 
-	[data-toast-stack][data-toast-position='top']:hover > output[popover],
-	[data-toast-stack][data-toast-position='top']:focus-within > output[popover],
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:hover)
+		> output[popover],
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:focus-within)
+		> output[popover],
 	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
 		> output[popover]:popover-open {
 		transform: translateY(
@@ -270,8 +283,10 @@
 	// default bottom-anchored deck) or above (for top-anchored decks).
 	// Only paints while the deck is expanded so the linear / non-deck
 	// modes are unaffected.
-	[data-toast-stack]:hover > output[popover]:popover-open::after,
-	[data-toast-stack]:focus-within > output[popover]:popover-open::after,
+	[data-toast-stack]:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::after,
+	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::after,
 	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::after {
 		content: '';
 		position: absolute;
@@ -280,8 +295,10 @@
 		block-size: var(--set-toast-spacing);
 	}
 
-	[data-toast-stack][data-toast-position='top']:hover > output[popover]:popover-open::after,
-	[data-toast-stack][data-toast-position='top']:focus-within > output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::after,
 	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
 		> output[popover]:popover-open::after {
 		inset-block-start: auto;
