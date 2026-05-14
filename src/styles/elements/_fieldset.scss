@@ -137,4 +137,20 @@
 			}
 		}
 	}
+
+	// `<fieldset role="toolbar">` — horizontal cluster of action chrome
+	// (button bar above a table, group of filter chips, etc.). The bare
+	// `<fieldset>` is `flex-direction: column` because the canonical
+	// fieldset shape is a vertical stack of label+control pairs; the
+	// `role="toolbar"` ARIA pattern (WAI-ARIA APG) is conventionally
+	// horizontal, so the modifier flips direction + adds wrap so the
+	// chrome breaks into multiple rows on narrow viewports. Per-row
+	// alignment defaults to `center` so mixed control heights line up
+	// against a shared baseline.
+	fieldset[role='toolbar'] {
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: calc(var(--spacing) * 2);
+	}
 }

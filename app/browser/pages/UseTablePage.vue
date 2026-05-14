@@ -310,7 +310,7 @@ const main = useTable(mainRef, {
 	pagination: { size: pageSize },
 	offset: offsetForPage,
 	total: issues.length,
-	expansion: { multiple: true, initial: ['i1'] },
+	expansion: { multiple: false, initial: ['i1'] },
 	selection: { strategy: 'page', click: true },
 	resize: { min: 64, max: 480 },
 	focus: { keyboard: true, wrap: true },
@@ -450,13 +450,21 @@ const editFlush = useTable(editFlushRef, {
 })
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 6 — Expansion isolation. 3 rows; one always-open; the SCSS rule
-// shown inline. Visual proof of the `interpolate-size` tween.
+// Demo 6 — Expansion isolation. Two tables side-by-side: `multiple:
+// true` (default, accordion-multi) and `multiple: false` (exclusive
+// — opening one row closes any other open row, same shape as the
+// `<details accordion="…">` group). Both share the same dataset to
+// make the behavioral difference legible at a glance.
 // ─────────────────────────────────────────────────────────────────────
 const expRef = useTemplateRef<HTMLTableElement>('expRef')
 const exp = useTable(expRef, {
 	headers: ['ID', 'Topic'],
 	expansion: { multiple: true, initial: ['t1'] },
+})
+const expExclusiveRef = useTemplateRef<HTMLTableElement>('expExclusiveRef')
+const expExclusive = useTable(expExclusiveRef, {
+	headers: ['ID', 'Topic'],
+	expansion: { multiple: false, initial: ['t1'] },
 })
 
 // ─────────────────────────────────────────────────────────────────────
@@ -1030,6 +1038,14 @@ const reset = (): void => {
 			<code>block-size: 0 → auto</code> animation: <code>display: none</code> would freeze the
 			transition.
 		</p>
+		<p>
+			<code>expansion.multiple</code> controls whether multiple rows can stay open at once. Default
+			<code>true</code> behaves like an accordion-multi (every clicked row toggles independently);
+			<code>false</code> is the exclusive mode (opening one row closes any other open row — same
+			shape as the platform's <code>&lt;details accordion="…"&gt;</code> group). The two tables
+			below share the same dataset so the behavioural difference is legible at a glance.
+		</p>
+		<h3>6a — <code>multiple: true</code> (independent toggles, default)</h3>
 		<table ref="expRef" class="striped" style="max-inline-size: 48rem">
 			<tbody>
 				<template
@@ -1068,7 +1084,51 @@ const reset = (): void => {
 		</table>
 		<p>
 			<small
-				>Expanded: <code>[{{ Array.from(exp.expansion.expanded).join(', ') }}]</code></small
+				>Multi-mode expanded:
+				<code>[{{ Array.from(exp.expansion.expanded).join(', ') }}]</code></small
+			>
+		</p>
+		<h3>6b — <code>multiple: false</code> (exclusive — accordion shape)</h3>
+		<table ref="expExclusiveRef" class="striped" style="max-inline-size: 48rem">
+			<tbody>
+				<template
+					v-for="t in [
+						{
+							id: 't1',
+							topic: 'Why `[inert]` not `[hidden]`',
+							body: '`[hidden]` forces display:none, which disables CSS transitions. `[inert]` blocks focus + pointer + a11y without affecting the display value, so `block-size: 0 → auto` still animates.',
+						},
+						{
+							id: 't2',
+							topic: '`interpolate-size: allow-keywords`',
+							body: 'Declared globally on `<html>` in `_html.scss`. Without it, browsers refuse to tween between an intrinsic size keyword (`auto`) and a length (`0`).',
+						},
+						{
+							id: 't3',
+							topic: 'Motion-contract tokens',
+							body: '`--set-motion-duration` + `--set-motion-timing-function` drive every framework disclosure — `<details>::details-content`, `<dialog>`, drawer animations, this panel — so the page feels rhythmically uniform.',
+						},
+					]"
+					:key="`ex-${t.id}`"
+				>
+					<tr :data-id="t.id">
+						<td>
+							<code>{{ t.id }}</code>
+						</td>
+						<td>{{ t.topic }}</td>
+					</tr>
+					<tr data-table-expansion>
+						<td colspan="2">
+							<div data-table-expansion-panel inert>{{ t.body }}</div>
+						</td>
+					</tr>
+				</template>
+			</tbody>
+		</table>
+		<p>
+			<small
+				>Exclusive-mode expanded:
+				<code>[{{ Array.from(expExclusive.expansion.expanded).join(', ') }}]</code></small
 			>
 		</p>
 	</section>
