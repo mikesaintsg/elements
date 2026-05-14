@@ -359,11 +359,7 @@ const submit = async (): Promise<void> => {
 		<h3>Block placeholder + multi-line text</h3>
 		<article class="max-w-md">
 			<header class="cluster gap-3">
-				<div
-					class="skeleton circle"
-					class="w-10 h-10"
-					aria-hidden="true"
-				></div>
+				<div class="skeleton circle w-10 h-10" aria-hidden="true"></div>
 				<div class="flex-1">
 					<div class="skeleton text" style="inline-size: 60%" aria-hidden="true"></div>
 					<div

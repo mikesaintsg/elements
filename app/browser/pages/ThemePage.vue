@@ -279,13 +279,13 @@ const theme = useTheme()
 		</p>
 		<div
 			class="showcase-tile-grid"
-			style="--showcase-tile-grid-min: min(11rem, 100%); --showcase-tile-grid-gap: 0.75rem; --showcase-tile-grid-flow: auto-fit"
+			style="
+				--showcase-tile-grid-min: min(11rem, 100%);
+				--showcase-tile-grid-gap: 0.75rem;
+				--showcase-tile-grid-flow: auto-fit;
+			"
 		>
-			<article
-				v-for="entry in variantBases"
-				:key="entry.token"
-				class="showcase-swatch"
-			>
+			<article v-for="entry in variantBases" :key="entry.token" class="showcase-swatch">
 				<div
 					:style="{
 						blockSize: '4.5rem',
@@ -294,14 +294,8 @@ const theme = useTheme()
 				></div>
 				<div class="showcase-swatch-meta">
 					<strong class="capitalize">{{ entry.label }}</strong>
-					<code
-						class="showcase-swatch-label"
-						>{{ entry.token }}</code
-					>
-					<code
-						class="showcase-swatch-label-quiet"
-						>{{ entry.resolved }}</code
-					>
+					<code class="showcase-swatch-label">{{ entry.token }}</code>
+					<code class="showcase-swatch-label-quiet">{{ entry.resolved }}</code>
 				</div>
 			</article>
 		</div>
@@ -379,23 +373,19 @@ const theme = useTheme()
 				text to recover contrast.
 			</dd>
 		</dl>
-		<div
-			v-for="block in variantTiers"
-			:key="block.variant"
-			class="mt-4"
-		>
+		<div v-for="block in variantTiers" :key="block.variant" class="mt-4">
 			<h3 class="capitalize mb-2">
 				{{ block.variant }}
 			</h3>
 			<div
 				class="showcase-tile-grid"
-				style="--showcase-tile-grid-min: min(12rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
+				style="
+					--showcase-tile-grid-min: min(12rem, 100%);
+					--showcase-tile-grid-gap: 0.5rem;
+					--showcase-tile-grid-flow: auto-fit;
+				"
 			>
-				<article
-					v-for="entry in block.entries"
-					:key="entry.token"
-					class="showcase-swatch"
-				>
+				<article v-for="entry in block.entries" :key="entry.token" class="showcase-swatch">
 					<div
 						:style="{
 							blockSize: '3.5rem',
@@ -404,10 +394,7 @@ const theme = useTheme()
 					></div>
 					<div class="showcase-swatch-meta-tight">
 						<strong class="text-sm">{{ entry.label }}</strong>
-						<code
-							class="showcase-swatch-label-quiet"
-							>{{ entry.token }}</code
-						>
+						<code class="showcase-swatch-label-quiet">{{ entry.token }}</code>
 					</div>
 				</article>
 			</div>
@@ -423,7 +410,11 @@ const theme = useTheme()
 		</p>
 		<div
 			class="showcase-tile-grid"
-			style="--showcase-tile-grid-min: min(12rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
+			style="
+				--showcase-tile-grid-min: min(12rem, 100%);
+				--showcase-tile-grid-gap: 0.5rem;
+				--showcase-tile-grid-flow: auto-fit;
+			"
 		>
 			<article v-for="entry in canvasTier" :key="entry.token" class="frame">
 				<div
@@ -450,13 +441,13 @@ const theme = useTheme()
 		</p>
 		<div
 			class="showcase-tile-grid"
-			style="--showcase-tile-grid-min: min(12rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
+			style="
+				--showcase-tile-grid-min: min(12rem, 100%);
+				--showcase-tile-grid-gap: 0.5rem;
+				--showcase-tile-grid-flow: auto-fit;
+			"
 		>
-			<article
-				v-for="entry in textTier"
-				:key="entry.token"
-				class="p-2"
-			>
+			<article v-for="entry in textTier" :key="entry.token" class="p-2">
 				<p
 					:style="{
 						color: `var(${entry.token})`,
@@ -484,7 +475,11 @@ const theme = useTheme()
 		</p>
 		<div
 			class="showcase-tile-grid"
-			style="--showcase-tile-grid-min: min(12rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
+			style="
+				--showcase-tile-grid-min: min(12rem, 100%);
+				--showcase-tile-grid-gap: 0.5rem;
+				--showcase-tile-grid-flow: auto-fit;
+			"
 		>
 			<article
 				v-for="entry in borderTier"

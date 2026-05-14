@@ -208,10 +208,7 @@ const next = (): void => {
 			</button>
 		</div>
 		<div class="grid grid-cols-2 gap-4">
-			<div
-				class="showcase-scroll-stage-conditional"
-				style="--showcase-scroll-stage-height: 12rem"
-			>
+			<div class="showcase-scroll-stage-conditional" style="--showcase-scroll-stage-height: 12rem">
 				<p class="mt-0 mb-2">
 					<small><code>stable</code> (default) — text stays put</small>
 				</p>

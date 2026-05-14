@@ -221,9 +221,7 @@ const sizeRows = [
 		<div class="cluster justify-start">
 			<span v-for="v in variants" :key="v" class="badge filled" :class="v">{{ v }}</span>
 		</div>
-		<p class="mt-3">
-			With <code>.subtle</code> — tinted bg + emphasis text + subtle border:
-		</p>
+		<p class="mt-3">With <code>.subtle</code> — tinted bg + emphasis text + subtle border:</p>
 		<div class="cluster justify-start">
 			<button v-for="v in variants" :key="v" type="button" class="subtle" :class="v">
 				{{ v.charAt(0).toUpperCase() + v.slice(1) }}
@@ -313,7 +311,11 @@ const sizeRows = [
 		</p>
 		<div
 			class="showcase-tile-grid"
-			style="--showcase-tile-grid-min: min(13rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
+			style="
+				--showcase-tile-grid-min: min(13rem, 100%);
+				--showcase-tile-grid-gap: 0.5rem;
+				--showcase-tile-grid-flow: auto-fit;
+			"
 		>
 			<article class="primary subtle p-3">
 				<strong>.primary.subtle</strong>
@@ -388,13 +390,13 @@ const sizeRows = [
 		</p>
 		<div
 			class="showcase-tile-grid"
-			style="--showcase-tile-grid-min: min(10rem, 100%); --showcase-tile-grid-gap: 0.5rem; --showcase-tile-grid-flow: auto-fit"
+			style="
+				--showcase-tile-grid-min: min(10rem, 100%);
+				--showcase-tile-grid-gap: 0.5rem;
+				--showcase-tile-grid-flow: auto-fit;
+			"
 		>
-			<article
-				v-for="p in placements"
-				:key="p"
-				class="p-2 text-center"
-			>
+			<article v-for="p in placements" :key="p" class="p-2 text-center">
 				<strong class="block">.{{ p }}</strong>
 				<code class="text-xs opacity-70">.{{ p }}</code>
 			</article>

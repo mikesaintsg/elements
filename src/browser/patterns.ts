@@ -2011,43 +2011,50 @@ export const STRUCTURAL_PAIRINGS: readonly StructuralPairing[] = [
 		parent: 'form',
 		child: 'h1',
 		kind: 'reset',
-		reason: 'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
+		reason:
+			'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
 	},
 	{
 		parent: 'form',
 		child: 'h2',
 		kind: 'reset',
-		reason: 'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
+		reason:
+			'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
 	},
 	{
 		parent: 'form',
 		child: 'h3',
 		kind: 'reset',
-		reason: 'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
+		reason:
+			'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
 	},
 	{
 		parent: 'form',
 		child: 'h4',
 		kind: 'reset',
-		reason: 'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
+		reason:
+			'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
 	},
 	{
 		parent: 'form',
 		child: 'h5',
 		kind: 'reset',
-		reason: 'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
+		reason:
+			'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
 	},
 	{
 		parent: 'form',
 		child: 'h6',
 		kind: 'reset',
-		reason: 'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
+		reason:
+			'Zero heading margin inside form-wrapped dialog body (form passes through dialog flex column).',
 	},
 	{
 		parent: 'form',
 		child: 'p',
 		kind: 'reset',
-		reason: 'Zero paragraph margin inside form-wrapped dialog body (form passes through dialog flex column).',
+		reason:
+			'Zero paragraph margin inside form-wrapped dialog body (form passes through dialog flex column).',
 	},
 	{
 		parent: 'article',

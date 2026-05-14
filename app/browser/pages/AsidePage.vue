@@ -256,9 +256,7 @@ const restore = (): void => {
 					billing method to restore access. You have 7 days before the account is suspended.
 				</p>
 				<footer>
-					<button type="button" class="subtle small me-auto">
-						Contact support
-					</button>
+					<button type="button" class="subtle small me-auto">Contact support</button>
 					<button type="button" class="danger small">Update card</button>
 				</footer>
 			</aside>

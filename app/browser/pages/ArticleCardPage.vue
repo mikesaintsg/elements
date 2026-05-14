@@ -143,39 +143,27 @@ const cosmicImageDataUri =
 		<div class="showcase-tile-grid">
 			<article class="primary">
 				<h4>Primary</h4>
-				<p class="showcase-card-subtitle">
-					Identity-bordered card.
-				</p>
+				<p class="showcase-card-subtitle">Identity-bordered card.</p>
 			</article>
 			<article class="success">
 				<h4>Success</h4>
-				<p class="showcase-card-subtitle">
-					Confirmation context.
-				</p>
+				<p class="showcase-card-subtitle">Confirmation context.</p>
 			</article>
 			<article class="warning">
 				<h4>Warning</h4>
-				<p class="showcase-card-subtitle">
-					Caution context.
-				</p>
+				<p class="showcase-card-subtitle">Caution context.</p>
 			</article>
 			<article class="danger">
 				<h4>Danger</h4>
-				<p class="showcase-card-subtitle">
-					Destructive context.
-				</p>
+				<p class="showcase-card-subtitle">Destructive context.</p>
 			</article>
 			<article class="information">
 				<h4>Information</h4>
-				<p class="showcase-card-subtitle">
-					Neutral notice context.
-				</p>
+				<p class="showcase-card-subtitle">Neutral notice context.</p>
 			</article>
 			<article class="tertiary">
 				<h4>Tertiary</h4>
-				<p class="showcase-card-subtitle">
-					Alternative action context.
-				</p>
+				<p class="showcase-card-subtitle">Alternative action context.</p>
 			</article>
 		</div>
 	</section>
@@ -191,9 +179,7 @@ const cosmicImageDataUri =
 		<div class="showcase-tile-grid">
 			<article class="success subtle">
 				<h4>Build passed</h4>
-				<p>
-					All 1,420 tests passing on <code>main</code>. Ready to deploy.
-				</p>
+				<p>All 1,420 tests passing on <code>main</code>. Ready to deploy.</p>
 			</article>
 			<article class="warning subtle">
 				<h4>Quota warning</h4>
@@ -201,15 +187,11 @@ const cosmicImageDataUri =
 			</article>
 			<article class="danger subtle">
 				<h4>Payment failed</h4>
-				<p>
-					Your subscription couldn't be renewed. Update your billing method.
-				</p>
+				<p>Your subscription couldn't be renewed. Update your billing method.</p>
 			</article>
 			<article class="information subtle">
 				<h4>Scheduled maintenance</h4>
-				<p>
-					Database maintenance tonight 02:00–04:00 UTC. Expect brief downtime.
-				</p>
+				<p>Database maintenance tonight 02:00–04:00 UTC. Expect brief downtime.</p>
 			</article>
 		</div>
 	</section>
@@ -222,7 +204,10 @@ const cosmicImageDataUri =
 			layout. Headers and footers inside a filled article inherit the fill — the band chrome reads
 			as a tonal shift within the same surface, not a separate tier.
 		</p>
-		<div class="showcase-tile-grid" style="--showcase-tile-grid-min: 18rem; --showcase-tile-grid-flow: auto-fit">
+		<div
+			class="showcase-tile-grid"
+			style="--showcase-tile-grid-min: 18rem; --showcase-tile-grid-flow: auto-fit"
+		>
 			<article class="primary filled">
 				<header>
 					<h3>Welcome to Pro</h3>
@@ -258,9 +243,7 @@ const cosmicImageDataUri =
 		<div class="stack">
 			<article class="small">
 				<h4>Small card</h4>
-				<p class="showcase-card-subtitle">
-					Compact density for tight grids and inline tiles.
-				</p>
+				<p class="showcase-card-subtitle">Compact density for tight grids and inline tiles.</p>
 			</article>
 			<article>
 				<h3>Default card</h3>
@@ -288,7 +271,11 @@ const cosmicImageDataUri =
 		</p>
 		<div
 			class="showcase-tile-grid"
-			style="--showcase-tile-grid-min: 20rem; --showcase-tile-grid-flow: auto-fit; --showcase-tile-grid-gap: 1.5rem"
+			style="
+				--showcase-tile-grid-min: 20rem;
+				--showcase-tile-grid-flow: auto-fit;
+				--showcase-tile-grid-gap: 1.5rem;
+			"
 		>
 			<article>
 				<img
@@ -309,9 +296,7 @@ const cosmicImageDataUri =
 			<article>
 				<header>
 					<h3>Aurora notes</h3>
-					<p class="showcase-card-subtitle">
-						Mountain expedition log
-					</p>
+					<p class="showcase-card-subtitle">Mountain expedition log</p>
 				</header>
 				<p>
 					Six days, three peaks, one unforgettable midnight sky. Field journal excerpts and trail
@@ -422,14 +407,10 @@ const cosmicImageDataUri =
 				/>
 				<div>
 					<h3>Ada Lovelace</h3>
-					<p class="showcase-card-subtitle">
-						Mathematician · Analytical team
-					</p>
+					<p class="showcase-card-subtitle">Mathematician · Analytical team</p>
 				</div>
 			</header>
-			<p>
-				342 commits over the project's lifetime. Latest activity 2 hours ago.
-			</p>
+			<p>342 commits over the project's lifetime. Latest activity 2 hours ago.</p>
 			<footer class="cluster">
 				<button type="button" class="primary">Message</button>
 				<button type="button" class="subtle">View profile</button>
@@ -468,9 +449,7 @@ const cosmicImageDataUri =
 			<article>
 				<header>
 					<h4>Free</h4>
-					<p class="showcase-card-subtitle">
-						For solo builders
-					</p>
+					<p class="showcase-card-subtitle">For solo builders</p>
 				</header>
 				<p class="showcase-price">
 					$0
@@ -488,9 +467,7 @@ const cosmicImageDataUri =
 			<article class="primary">
 				<header>
 					<h4>Pro</h4>
-					<p class="showcase-card-subtitle">
-						For growing teams
-					</p>
+					<p class="showcase-card-subtitle">For growing teams</p>
 				</header>
 				<p class="showcase-price">
 					$24
@@ -509,9 +486,7 @@ const cosmicImageDataUri =
 			<article>
 				<header>
 					<h4>Enterprise</h4>
-					<p class="showcase-card-subtitle">
-						For organizations
-					</p>
+					<p class="showcase-card-subtitle">For organizations</p>
 				</header>
 				<p class="showcase-price">Custom</p>
 				<ul>

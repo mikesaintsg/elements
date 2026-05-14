@@ -260,8 +260,7 @@
 	// at 0 so a consumer that genuinely wants a margin still wins without
 	// `!important`.
 	article > :where(h1, h2, h3, h4, h5, h6, p),
-	article > :is(header:first-child, footer:last-child)
-		> :where(h1, h2, h3, h4, h5, h6, p) {
+	article > :is(header:first-child, footer:last-child) > :where(h1, h2, h3, h4, h5, h6, p) {
 		margin-block: 0;
 	}
 

@@ -180,9 +180,7 @@
 		<article>
 			<header>
 				<h3>Article title</h3>
-				<p class="showcase-card-subtitle">
-					Published 2026-04-30 · 3 min read
-				</p>
+				<p class="showcase-card-subtitle">Published 2026-04-30 · 3 min read</p>
 			</header>
 			<p>
 				Article body. The card's chrome (border, radius, padding) comes from the framework's article

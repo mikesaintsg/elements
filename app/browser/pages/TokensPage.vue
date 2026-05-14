@@ -483,7 +483,11 @@ dialog {
 		</p>
 		<div
 			class="showcase-tile-grid py-2"
-			style="--showcase-tile-grid-min: min(14rem, 100%); --showcase-tile-grid-gap: 1.5rem; --showcase-tile-grid-flow: auto-fit"
+			style="
+				--showcase-tile-grid-min: min(14rem, 100%);
+				--showcase-tile-grid-gap: 1.5rem;
+				--showcase-tile-grid-flow: auto-fit;
+			"
 		>
 			<article
 				style="
@@ -494,9 +498,7 @@ dialog {
 				"
 			>
 				<h3><code>--set-box-shadow-small</code></h3>
-				<p class="mt-2 mb-0">
-					List-group hover, dropdown items, subtle action panels.
-				</p>
+				<p class="mt-2 mb-0">List-group hover, dropdown items, subtle action panels.</p>
 			</article>
 			<article
 				style="
@@ -518,9 +520,7 @@ dialog {
 				"
 			>
 				<h3><code>--set-box-shadow-large</code></h3>
-				<p class="mt-2 mb-0">
-					Modal dialogs, toasts, drawer chrome.
-				</p>
+				<p class="mt-2 mb-0">Modal dialogs, toasts, drawer chrome.</p>
 			</article>
 		</div>
 		<details>

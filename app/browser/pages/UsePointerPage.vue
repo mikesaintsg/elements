@@ -389,14 +389,7 @@ usePointer(handle, {
 			<div class="stack min-w-48" style="--set-stack-gap: 0.5rem">
 				<label class="stack" style="--set-stack-gap: 0.25rem">
 					<small>Hue (slide to change pad gradient)</small>
-					<input
-						type="range"
-						min="0"
-						max="360"
-						step="1"
-						v-model.number="hue"
-						class="w-full"
-					/>
+					<input type="range" min="0" max="360" step="1" v-model.number="hue" class="w-full" />
 				</label>
 				<div
 					:style="{
