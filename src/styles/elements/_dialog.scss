@@ -293,28 +293,61 @@
 	// block-size.
 	// --------------------------------------------------------------------------
 
-	// Pin chrome for bare `<dialog>` with header / footer slots — when the
+	// Pin chrome for `<dialog>` with header / footer slots — when the
 	// dialog hosts a `<header>` or `<footer>` (directly OR wrapped in
-	// `<form method="dialog">`), swap to flex-column so header and footer
-	// pin to the dialog's top / bottom edges and the body slot scrolls if
-	// content exceeds `--set-dialog-max-block-size`. The platform default
-	// (`display: block` + UA `overflow: auto` on the dialog itself) scrolled
-	// the WHOLE dialog when content overflowed — header and footer dragged
-	// with the body, action buttons could disappear off the bottom edge.
-	// Same anti-pattern the `<aside popover>` drawer was hitting.
+	// `<form method="dialog">`), the dialog becomes a flex-column so
+	// header and footer pin to the dialog's top / bottom edges and the
+	// body slot scrolls if content exceeds `--set-dialog-max-block-size`.
+	// The platform default (`display: block` + UA `overflow: auto` on
+	// the dialog itself) scrolled the WHOLE dialog when content
+	// overflowed — header and footer dragged with the body, action
+	// buttons could disappear off the bottom edge. Same anti-pattern
+	// the `<aside popover>` drawer was hitting.
 	//
-	// `:has()` gates the rule so dialogs without header/footer keep their
-	// `display: block` flow — no flex assumptions imposed on simple
-	// confirm prompts. The `.scrollable` / `.fullscreen` modifiers in
-	// `composables/_dialog.scss` cascade on top of this with their own
-	// flex-column rules (same `display: flex` value; no cascade fight).
+	// `:has()` gates the rule so dialogs without header/footer keep
+	// their `display: block` flow — no flex assumptions imposed on
+	// simple confirm prompts. The `.scrollable` / `.fullscreen`
+	// modifiers in `composables/_dialog.scss` cascade on top of this
+	// with their own flex-column rules (same `display: flex` value;
+	// no cascade fight).
+	//
+	// CASCADE SPLIT — `display: flex` is the ONLY declaration gated
+	// on `[open]`. Everything else (`flex-direction: column`,
+	// `overflow: hidden`, children `flex` shorthands) is structural
+	// and applies whenever `:has()` matches, regardless of `[open]`.
+	//
+	// Why split: `dialog.close()` removes `[open]` synchronously, but
+	// `display` is in the transition list with `allow-discrete` —
+	// `display` stays at the FROM-value (flex) for ~50% of the close
+	// transition before snapping to the new value (none). During that
+	// hold, the dialog is laid out as flex.
+	//
+	//   - If `flex-direction: column` were also gated on `[open]`, it
+	//     would snap back to the default `row` the moment `[open]`
+	//     was removed — the dialog's three pinned children would
+	//     re-arrange into a horizontal row WHILE display is still
+	//     flex (held by allow-discrete), and the user would see the
+	//     dialog "collapse onto itself" before the fade completes.
+	//
+	//   - With `flex-direction: column` ungated, the column layout
+	//     persists through the entire close transition; only `display`
+	//     snaps from flex to none at the 50% mark. The dialog fades
+	//     out with its layout intact.
+	//
+	//   - `display: flex` MUST stay gated on `[open]` because closed
+	//     dialogs need to be hidden. Without the gate, this author
+	//     `display: flex` would beat the UA `dialog:not([open]) {
+	//     display: none }` (author origin > UA origin), and a
+	//     fully-closed dialog would stay visible.
 	dialog[open]:where(:has(> :is(header, footer)), :has(> form > :is(header, footer))) {
 		display: flex;
+	}
+	dialog:where(:has(> :is(header, footer)), :has(> form > :is(header, footer))) {
 		flex-direction: column;
 		overflow: hidden;
 	}
-	dialog[open] > :is(header, footer),
-	dialog[open] > form > :is(header, footer) {
+	dialog:where(:has(> :is(header, footer))) > :is(header, footer),
+	dialog:where(:has(> form > :is(header, footer))) > form > :is(header, footer) {
 		flex: 0 0 auto;
 	}
 	// Body slot — anything that isn't header / footer. Flexes to fill the
@@ -338,8 +371,8 @@
 	// and the body's `shrink: 1` lets it absorb the overflow as
 	// internal scroll. Same outcome as `1 1 0` in fixed-height parents
 	// (drawers); strictly more correct for max-height-only parents.
-	dialog[open]:where(:has(> :is(header, footer))) > :not(:where(header, footer)),
-	dialog[open]:where(:has(> form > :is(header, footer))) > form > :not(:where(header, footer)) {
+	dialog:where(:has(> :is(header, footer))) > :not(:where(header, footer)),
+	dialog:where(:has(> form > :is(header, footer))) > form > :not(:where(header, footer)) {
 		flex: 1 1 auto;
 		min-block-size: 0;
 		overflow-y: auto;
@@ -348,14 +381,17 @@
 	// When a `<form method="dialog">` is the direct child wrapping the
 	// dialog's contents, the form itself needs to be a flex-column
 	// passthrough so its inner header / footer / body can pin / scroll.
-	// `flex: 1 1 auto` (not `1 1 0`): the dialog has no fixed
-	// block-size, so a `flex: 1 1 0` form starts at preferred size 0
-	// and the dialog collapses to a thin empty rectangle. `1 1 auto`
-	// gives the form a preferred size equal to its content's natural
-	// height — dialog grows to fit, clamps at max-block-size, form
-	// shrinks to fit, body inside the form absorbs overflow.
+	// Same `display: flex` vs structural-rest cascade split as the
+	// dialog itself — `display: flex` gated on `dialog[open]` so the
+	// form snaps to its UA `display: block` when fully closed, but the
+	// flex-direction + flex shorthand persist through the close
+	// transition's `allow-discrete` tail. `flex: 1 1 auto` (not `1 1
+	// 0`) — the dialog has no fixed block-size; preferred size 0
+	// would collapse the form to a thin rectangle.
 	dialog[open]:where(:has(> form > :is(header, footer))) > form {
 		display: flex;
+	}
+	dialog:where(:has(> form > :is(header, footer))) > form {
 		flex-direction: column;
 		flex: 1 1 auto;
 		min-block-size: 0;
