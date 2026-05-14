@@ -197,12 +197,13 @@ const lifecycle = useToast(lifecycleRef, {
 			to fetch" needs to surface without disturbing the user's reading flow.
 		</p>
 		<p>
-			<strong>Note on the demo stages below.</strong> Each demo embeds the
-			<code>&lt;output&gt;</code>
-			in a dashed-bordered stage for the markup-locality view, but the toast itself elevates to the
-			<em>browser top layer</em> when opened (popover semantics) — it appears at the configured
-			viewport corner, not inside the dashed box. The trailing <code>×</code> button in every demo
-			is the dismiss control; the framework styles the last direct-child
+			<strong>Note on the demo panels below.</strong> Each panel is the consumer's
+			<em>trigger surface</em> — the bit of UI that holds the buttons that emit toasts. The
+			<code>&lt;output&gt;</code> element lives inside the panel as a DOM sibling of those buttons
+			(the factory reads <code>parentElement.children</code> for stack grouping), but when opened it
+			elevates to the browser <em>top layer</em> and renders at the viewport corner indicated by
+			each panel's caption — not inside the panel itself. The trailing <code>×</code> button in
+			every toast is the dismiss control; the framework styles the last direct-child
 			<code>&lt;button&gt;</code> as the close.
 		</p>
 		<aside role="status" class="information" data-alert-open>
@@ -227,13 +228,14 @@ const lifecycle = useToast(lifecycleRef, {
 			toast (or focus a control inside) to pause the timer; the resume on <code>mouseleave</code> /
 			<code>focusout</code>.
 		</p>
-		<menu>
-			<li><button type="button" @click="linear.show()">Show toast</button></li>
-			<li><button type="button" @click="linear.hide()">Hide toast</button></li>
-			<li><button type="button" @click="linear.pause()">Pause timer</button></li>
-			<li><button type="button" @click="linear.resume()">Resume timer</button></li>
-		</menu>
-		<div class="placement-stage end bottom">
+		<div class="toast-trigger">
+			<small class="renders-at">Renders at <code>bottom-end</code> of viewport</small>
+			<menu>
+				<li><button type="button" @click="linear.show()">Show toast</button></li>
+				<li><button type="button" @click="linear.hide()">Hide toast</button></li>
+				<li><button type="button" @click="linear.pause()">Pause timer</button></li>
+				<li><button type="button" @click="linear.resume()">Resume timer</button></li>
+			</menu>
 			<output ref="linearRef" popover>
 				<p><strong>Saved.</strong> Your changes are in. Hover here to pause the auto-hide timer.</p>
 				<button
@@ -270,12 +272,16 @@ const toast = useToast(ref) // default autohide
 			the container to reverse). Sticky here (<code>autohide: false</code>) so you can compare
 			layout shifts.
 		</p>
-		<menu>
-			<li><button type="button" @click="showAllLinear">Show all 3</button></li>
-			<li><button type="button" @click="hideAllLinear">Hide all 3</button></li>
-			<li><button type="button" @click="stack2.hide()">Hide middle</button></li>
-		</menu>
-		<div class="placement-stage end bottom">
+		<div class="toast-trigger">
+			<small class="renders-at">
+				Renders at <code>bottom-end</code>, stacked vertically with
+				<code>--set-toast-spacing</code> between cards
+			</small>
+			<menu>
+				<li><button type="button" @click="showAllLinear">Show all 3</button></li>
+				<li><button type="button" @click="hideAllLinear">Hide all 3</button></li>
+				<li><button type="button" @click="stack2.hide()">Hide middle</button></li>
+			</menu>
 			<output ref="stack1Ref" popover class="information">
 				<p><strong>1.</strong> First toast — sticky.</p>
 				<button
@@ -324,12 +330,16 @@ const toast = useToast(ref) // default autohide
 			expanded cards include an invisible pointer-capture strip so the deck doesn't twitch when the
 			pointer passes between cards.
 		</p>
-		<menu>
-			<li><button type="button" @click="showAllDeck">Show all 5</button></li>
-			<li><button type="button" @click="hideAllDeck">Hide all 5</button></li>
-			<li><button type="button" @click="deck1.hide()">Hide toast 1</button></li>
-		</menu>
-		<div data-toast-stack class="placement-stage end bottom">
+		<div data-toast-stack class="toast-trigger">
+			<small class="renders-at">
+				Renders at <code>bottom-end</code>, stacked as a Sonner-style deck (peek behind) — depth
+				clamp 3, overflow gets <code>aria-hidden</code>
+			</small>
+			<menu>
+				<li><button type="button" @click="showAllDeck">Show all 5</button></li>
+				<li><button type="button" @click="hideAllDeck">Hide all 5</button></li>
+				<li><button type="button" @click="deck1.hide()">Hide toast 1</button></li>
+			</menu>
 			<output ref="deck1Ref" popover class="information">
 				<p><strong>1.</strong> Deck card.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="deck1.hide()">×</button>
@@ -379,21 +389,24 @@ const toast = useToast(ref) // default autohide
 			by default to keep the toast readable as a transient note (versus the saturated fill that
 			<code>.alert .filled</code> uses for explicit "I'm a status banner" framing).
 		</p>
-		<menu>
-			<li>
-				<button type="button" class="primary" @click="variants.primary.show()">Primary</button>
-			</li>
-			<li>
-				<button type="button" class="success" @click="variants.success.show()">Success</button>
-			</li>
-			<li>
-				<button type="button" class="warning" @click="variants.warning.show()">Warning</button>
-			</li>
-			<li>
-				<button type="button" class="danger" @click="variants.danger.show()">Danger</button>
-			</li>
-		</menu>
-		<div class="placement-stage end top">
+		<div class="toast-trigger">
+			<small class="renders-at">
+				Renders at <code>top-end</code> (every toast carries <code>.top</code> on its element)
+			</small>
+			<menu>
+				<li>
+					<button type="button" class="primary" @click="variants.primary.show()">Primary</button>
+				</li>
+				<li>
+					<button type="button" class="success" @click="variants.success.show()">Success</button>
+				</li>
+				<li>
+					<button type="button" class="warning" @click="variants.warning.show()">Warning</button>
+				</li>
+				<li>
+					<button type="button" class="danger" @click="variants.danger.show()">Danger</button>
+				</li>
+			</menu>
 			<output ref="vPrimary" popover class="primary top">
 				<p><strong>New release.</strong> Read the changelog.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="variants.primary.hide()">
@@ -430,46 +443,21 @@ const toast = useToast(ref) // default autohide
 			<code>.start.top</code>. Click each button to anchor a sticky toast at the matching corner —
 			they live in the top layer simultaneously so you can compare placements side-by-side.
 		</p>
-		<menu>
-			<li>
-				<button type="button" @click="corners.bottomEnd.show()">Bottom-end (default)</button>
-			</li>
-			<li>
-				<button type="button" @click="corners.bottomStart.show()">Bottom-start</button>
-			</li>
-			<li>
-				<button type="button" @click="corners.topEnd.show()">Top-end</button>
-			</li>
-			<li>
-				<button type="button" @click="corners.topStart.show()">Top-start</button>
-			</li>
-			<li>
-				<button
-					type="button"
-					@click="
-						() => {
-							corners.bottomEnd.hide()
-							corners.bottomStart.hide()
-							corners.topEnd.hide()
-							corners.topStart.hide()
-						}
-					"
-				>
-					Hide all
-				</button>
-			</li>
-		</menu>
 		<p>
 			<small>
-				Each corner toast lives in its <strong>own container</strong> — the factory computes
-				<code>--set-toast-stack-offset</code> across an <code>&lt;output popover&gt;</code>'s
+				Each corner toast lives in its <strong>own trigger panel</strong> — the factory computes
+				<code>--set-toast-stack-offset</code> across an <code>&lt;output popover&gt;</code>'s DOM
 				siblings, so co-locating toasts at different corners inside one container would have them
-				shift each other. Toasts at the same corner share one container (see the linear-stack and
-				deck demos above).
+				shift each other.
 			</small>
 		</p>
-		<div class="placement-stage" style="display: grid; gap: 0.5rem">
-			<div>
+		<div class="toast-trigger-grid">
+			<div class="toast-trigger">
+				<small class="renders-at">Renders at <code>bottom-end</code></small>
+				<menu>
+					<li><button type="button" @click="corners.bottomEnd.show()">Show</button></li>
+					<li><button type="button" @click="corners.bottomEnd.hide()">Hide</button></li>
+				</menu>
 				<output ref="cBottomEnd" popover class="information">
 					<p><strong>Bottom-end.</strong> Default corner — viewport bottom-right (LTR).</p>
 					<button
@@ -482,7 +470,12 @@ const toast = useToast(ref) // default autohide
 					</button>
 				</output>
 			</div>
-			<div>
+			<div class="toast-trigger">
+				<small class="renders-at">Renders at <code>bottom-start</code></small>
+				<menu>
+					<li><button type="button" @click="corners.bottomStart.show()">Show</button></li>
+					<li><button type="button" @click="corners.bottomStart.hide()">Hide</button></li>
+				</menu>
 				<output ref="cBottomStart" popover class="information start">
 					<p><strong>Bottom-start.</strong> Viewport bottom-left (LTR) / bottom-right (RTL).</p>
 					<button
@@ -495,7 +488,12 @@ const toast = useToast(ref) // default autohide
 					</button>
 				</output>
 			</div>
-			<div>
+			<div class="toast-trigger">
+				<small class="renders-at">Renders at <code>top-end</code></small>
+				<menu>
+					<li><button type="button" @click="corners.topEnd.show()">Show</button></li>
+					<li><button type="button" @click="corners.topEnd.hide()">Hide</button></li>
+				</menu>
 				<output ref="cTopEnd" popover class="information top">
 					<p><strong>Top-end.</strong> Viewport top-right (LTR).</p>
 					<button type="button" class="subtle" aria-label="Dismiss" @click="corners.topEnd.hide()">
@@ -503,7 +501,12 @@ const toast = useToast(ref) // default autohide
 					</button>
 				</output>
 			</div>
-			<div>
+			<div class="toast-trigger">
+				<small class="renders-at">Renders at <code>top-start</code></small>
+				<menu>
+					<li><button type="button" @click="corners.topStart.show()">Show</button></li>
+					<li><button type="button" @click="corners.topStart.hide()">Hide</button></li>
+				</menu>
 				<output ref="cTopStart" popover class="information start top">
 					<p><strong>Top-start.</strong> Viewport top-left (LTR).</p>
 					<button
@@ -543,24 +546,27 @@ const toast = useToast(ref) // default autohide
 			the variant-context reset (transparent background, currentColor text) so it reads as a quiet
 			icon regardless of the host variant.
 		</p>
-		<menu>
-			<li><button type="button" @click="bandHeader.show()">Show header-band toast</button></li>
-			<li><button type="button" @click="bandFooter.show()">Show footer-band toast</button></li>
-			<li>
-				<button
-					type="button"
-					@click="
-						() => {
-							bandHeader.hide()
-							bandFooter.hide()
-						}
-					"
-				>
-					Hide both
-				</button>
-			</li>
-		</menu>
-		<div class="placement-stage end bottom">
+		<div class="toast-trigger">
+			<small class="renders-at"
+				>Renders at <code>bottom-end</code>; bands bleed to toast edges</small
+			>
+			<menu>
+				<li><button type="button" @click="bandHeader.show()">Show header-band toast</button></li>
+				<li><button type="button" @click="bandFooter.show()">Show footer-band toast</button></li>
+				<li>
+					<button
+						type="button"
+						@click="
+							() => {
+								bandHeader.hide()
+								bandFooter.hide()
+							}
+						"
+					>
+						Hide both
+					</button>
+				</li>
+			</menu>
 			<output ref="bandHeaderRef" popover class="success">
 				<header>
 					<strong>Deployment complete</strong>
@@ -617,33 +623,34 @@ const toast = useToast(ref) // default autohide
 			fire AFTER (informational). All four also dispatch as DOM events
 			(<code>elements:toast:{show,open,hide,close}</code>).
 		</p>
-		<menu>
-			<li>
-				<label>
-					<input v-model="allowShow" type="checkbox" />
-					allow <code>show</code> to proceed
-				</label>
-			</li>
-			<li>
-				<button type="button" @click="lifecycle.show()">Try to show</button>
-			</li>
-			<li>
-				<button type="button" @click="lifecycle.hide()">Hide</button>
-			</li>
-		</menu>
-		<div class="placement-stage end bottom">
+		<div class="toast-trigger">
+			<small class="renders-at">Renders at <code>bottom-end</code></small>
+			<menu>
+				<li>
+					<label>
+						<input v-model="allowShow" type="checkbox" />
+						allow <code>show</code> to proceed
+					</label>
+				</li>
+				<li>
+					<button type="button" @click="lifecycle.show()">Try to show</button>
+				</li>
+				<li>
+					<button type="button" @click="lifecycle.hide()">Hide</button>
+				</li>
+			</menu>
 			<output ref="lifecycleRef" popover>
 				<p><strong>Lifecycle toast.</strong> Toggle the checkbox to veto the next open.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="lifecycle.hide()">
 					×
 				</button>
 			</output>
+			<small class="lifecycle-log">
+				<strong>Lifecycle log:</strong>
+				<span v-if="lifecycleLog.length === 0">flip the checkbox and click Try to show</span>
+				<span v-else>{{ lifecycleLog.join(' → ') }}</span>
+			</small>
 		</div>
-		<small style="display: block; margin-block-start: 0.5rem">
-			<strong>Lifecycle log:</strong>
-			<span v-if="lifecycleLog.length === 0">flip the checkbox and click Try to show</span>
-			<span v-else>{{ lifecycleLog.join(' → ') }}</span>
-		</small>
 	</section>
 
 	<section id="use-toast-api">
@@ -691,13 +698,38 @@ const toast = useToast(ref) // default autohide
 </template>
 
 <style scoped>
-.placement-stage {
-	position: relative;
-	min-block-size: 16rem;
-	padding: 1rem;
-	border: 1px dashed var(--color-border);
+/* Trigger panel — the consumer's surface that emits toasts. Holds the
+ * buttons + the `<output popover>` elements as DOM siblings (the factory
+ * reads `parentElement.children` for stack grouping). The toast itself
+ * elevates to the top layer and renders at the viewport corner indicated
+ * by its placement modifier — NOT inside this box. The `.renders-at`
+ * caption tells the reader where to look. */
+.toast-trigger {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.5rem;
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--color-border);
 	border-radius: 0.5rem;
-	background: color-mix(in oklch, var(--color-canvas-strong) 50%, var(--color-canvas));
-	overflow: hidden;
+	background: color-mix(in oklch, var(--color-canvas-strong) 25%, var(--color-canvas));
+}
+.toast-trigger > menu {
+	margin-block: 0;
+}
+.toast-trigger > .renders-at {
+	color: var(--color-text-muted, var(--color-text));
+	font-size: var(--text-xs, 0.75rem);
+}
+.toast-trigger > .lifecycle-log {
+	display: block;
+	font-size: var(--text-xs, 0.75rem);
+}
+/* Grid wrapper for the placement-corners demo — 2-column on wide
+ * viewports so the four trigger panels read as a 2x2 corner map. */
+.toast-trigger-grid {
+	display: grid;
+	gap: 0.75rem;
+	grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
 }
 </style>

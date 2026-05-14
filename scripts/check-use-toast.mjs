@@ -115,7 +115,7 @@ const vetoState = await page.evaluate(() => {
 	const t = document.querySelector('#use-toast-lifecycle output[popover]')
 	return t instanceof HTMLOutputElement && t.matches(':popover-open')
 })
-const log = await page.locator('#use-toast-lifecycle > small').first().textContent()
+const log = await page.locator('#use-toast-lifecycle .lifecycle-log').first().textContent()
 console.log(`\nlifecycle veto: still closed = ${!vetoState}; log = ${log?.trim()}`)
 
 // ───── Auto-hide timer pause-on-hover (auditable indirectly via factory probe) ─────
