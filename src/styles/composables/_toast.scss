@@ -252,6 +252,34 @@
 		);
 	}
 
+	// Hit-area extension into the gap between expanded deck cards. When the
+	// deck spreads on hover, `--set-toast-spacing` produces a transparent
+	// strip between each card. Without a hit target inside that strip the
+	// pointer can fall into a layout hole, the container's `:hover` flips
+	// off, the deck collapses, and the pointer immediately re-enters a
+	// card and re-expands — visible as a twitch. The `::after` pseudo
+	// extends each card's pointer-capture into the gap below (for the
+	// default bottom-anchored deck) or above (for top-anchored decks).
+	// Only paints while the deck is expanded so the linear / non-deck
+	// modes are unaffected.
+	[data-toast-stack]:hover > output[popover]:popover-open::after,
+	[data-toast-stack]:focus-within > output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		inset-block-start: 100%;
+		block-size: var(--set-toast-spacing);
+	}
+
+	[data-toast-stack][data-toast-position='top']:hover > output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-position='top']:focus-within > output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
+		> output[popover]:popover-open::after {
+		inset-block-start: auto;
+		inset-block-end: 100%;
+	}
+
 	// ── Stack indicator ───────────────────────────────────────────────────────
 	// `[data-toast-indicator]` inside a `[data-toast-stack]` container
 	// surfaces the number of toasts hidden beyond `--set-toast-stack-depth`.

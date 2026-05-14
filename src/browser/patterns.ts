@@ -274,10 +274,14 @@ export const FILE_EXCEPTIONS: Readonly<Record<string, FileException>> = {
 
 	// components/_output.scss — `<output popover>` becomes a toast.
 	// Toast-deck geometry uses --set-toast-* in addition to the bare-output
-	// --set-output-* namespace. Pairing with useToast / createToast.
+	// --set-output-* namespace. Pairing with useToast / createToast. The
+	// banded header/footer chrome's trailing dismiss button overrides
+	// --set-variant-* on the button to read as a quiet icon regardless of
+	// the surface variant — same cross-namespace pattern aside-alert uses
+	// for its dismiss reset (see `components/_aside.scss` exception above).
 	'components/_output.scss': {
-		additionalTokenPrefixes: ['toast'],
-		note: '<output popover> promotes to toast — useToast shares the --set-toast-* namespace',
+		additionalTokenPrefixes: ['toast', 'variant'],
+		note: '<output popover> promotes to toast; band-dismiss button overrides --set-variant-* (parallel to aside-alert)',
 	},
 
 	// components/_div.scss — class-component primitives .stack and .cluster
@@ -1782,6 +1786,20 @@ export const STRUCTURAL_PAIRINGS: readonly StructuralPairing[] = [
 		child: 'footer',
 		kind: 'slot',
 		reason: 'Alert / drawer footer band — trailing-actions row (parallel to aside > header).',
+	},
+	{
+		parent: 'output',
+		child: 'header',
+		kind: 'slot',
+		reason:
+			'Toast header band — title + trailing dismiss row when `<output popover>` carries a `<header>` (parallel to aside-alert).',
+	},
+	{
+		parent: 'output',
+		child: 'footer',
+		kind: 'slot',
+		reason:
+			'Toast footer band — trailing-actions row when `<output popover>` carries a `<footer>` (parallel to aside-alert).',
 	},
 	{
 		parent: 'nav',

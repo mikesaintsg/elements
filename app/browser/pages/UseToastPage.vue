@@ -120,7 +120,36 @@ const variants = {
 } as const
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 5 — cancellable lifecycle. preventDefault on on.show vetoes.
+// Demo 5 — placement corners. The toast component's placement modifiers
+// (`.top`, `.start`) flip the corner; combinations cover all four.
+// ─────────────────────────────────────────────────────────────────────
+const cornerRefs = {
+	bottomEnd: useTemplateRef<HTMLOutputElement>('cBottomEnd'),
+	bottomStart: useTemplateRef<HTMLOutputElement>('cBottomStart'),
+	topEnd: useTemplateRef<HTMLOutputElement>('cTopEnd'),
+	topStart: useTemplateRef<HTMLOutputElement>('cTopStart'),
+} as const
+
+const corners = {
+	bottomEnd: useToast(cornerRefs.bottomEnd, { autohide: false }),
+	bottomStart: useToast(cornerRefs.bottomStart, { autohide: false }),
+	topEnd: useToast(cornerRefs.topEnd, { autohide: false }),
+	topStart: useToast(cornerRefs.topStart, { autohide: false }),
+} as const
+
+// ─────────────────────────────────────────────────────────────────────
+// Demo 6 — banded header / footer. Mirrors aside-alert's banded
+// chrome: a `<header>` or `<footer>` child switches the toast to
+// flex-column with a tinted band; trailing dismiss button gets the
+// variant-context reset (reads as a quiet icon).
+// ─────────────────────────────────────────────────────────────────────
+const bandHeaderRef = useTemplateRef<HTMLOutputElement>('bandHeaderRef')
+const bandFooterRef = useTemplateRef<HTMLOutputElement>('bandFooterRef')
+const bandHeader = useToast(bandHeaderRef, { autohide: false })
+const bandFooter = useToast(bandFooterRef, { autohide: false })
+
+// ─────────────────────────────────────────────────────────────────────
+// Demo 7 — cancellable lifecycle. preventDefault on on.show vetoes.
 // ─────────────────────────────────────────────────────────────────────
 const lifecycleRef = useTemplateRef<HTMLOutputElement>('lifecycleRef')
 const lifecycleLog = ref<string[]>([])
@@ -167,6 +196,15 @@ const lifecycle = useToast(lifecycleRef, {
 			variant palette; the difference is geometry. Reach for toast when "Saved" / "Copied" / "Failed
 			to fetch" needs to surface without disturbing the user's reading flow.
 		</p>
+		<p>
+			<strong>Note on the demo stages below.</strong> Each demo embeds the
+			<code>&lt;output&gt;</code>
+			in a dashed-bordered stage for the markup-locality view, but the toast itself elevates to the
+			<em>browser top layer</em> when opened (popover semantics) — it appears at the configured
+			viewport corner, not inside the dashed box. The trailing <code>×</code> button in every demo
+			is the dismiss control; the framework styles the last direct-child
+			<code>&lt;button&gt;</code> as the close.
+		</p>
 		<aside role="status" class="information" data-alert-open>
 			<p>
 				<strong>State:</strong>
@@ -198,6 +236,14 @@ const lifecycle = useToast(lifecycleRef, {
 		<div class="placement-stage end bottom">
 			<output ref="linearRef" popover>
 				<p><strong>Saved.</strong> Your changes are in. Hover here to pause the auto-hide timer.</p>
+				<button
+					type="button"
+					class="subtle"
+					aria-label="Dismiss notification"
+					@click="linear.hide()"
+				>
+					×
+				</button>
 			</output>
 		</div>
 		<details>
@@ -208,6 +254,7 @@ const toast = useToast(ref) // default autohide
 &lt;button @click="toast.show()"&gt;Show&lt;/button&gt;
 &lt;output ref="ref" popover&gt;
   &lt;p&gt;Saved. …&lt;/p&gt;
+  &lt;button @click="toast.hide()" aria-label="Dismiss"&gt;×&lt;/button&gt;
 &lt;/output&gt;</code></pre>
 		</details>
 	</section>
@@ -228,15 +275,39 @@ const toast = useToast(ref) // default autohide
 			<li><button type="button" @click="hideAllLinear">Hide all 3</button></li>
 			<li><button type="button" @click="stack2.hide()">Hide middle</button></li>
 		</menu>
-		<div ref="linearStackContainerRef" class="placement-stage end bottom">
+		<div class="placement-stage end bottom">
 			<output ref="stack1Ref" popover class="information">
 				<p><strong>1.</strong> First toast — sticky.</p>
+				<button
+					type="button"
+					class="subtle"
+					aria-label="Dismiss notification 1"
+					@click="stack1.hide()"
+				>
+					×
+				</button>
 			</output>
 			<output ref="stack2Ref" popover class="information">
 				<p><strong>2.</strong> Middle toast — sticky. Hide me to see the others reflow.</p>
+				<button
+					type="button"
+					class="subtle"
+					aria-label="Dismiss notification 2"
+					@click="stack2.hide()"
+				>
+					×
+				</button>
 			</output>
 			<output ref="stack3Ref" popover class="information">
 				<p><strong>3.</strong> Last toast — sticky.</p>
+				<button
+					type="button"
+					class="subtle"
+					aria-label="Dismiss notification 3"
+					@click="stack3.hide()"
+				>
+					×
+				</button>
 			</output>
 		</div>
 	</section>
@@ -249,7 +320,9 @@ const toast = useToast(ref) // default autohide
 			depth-clamped via <code>--set-toast-stack-depth</code> (default 3), and toasts past the depth
 			become <code>aria-hidden</code>'d with a <code>data-toast-hidden-count</code> indicator on the
 			container (e.g. <em>+ 2 more</em>). Hover the deck to expand it (all cards rise to full
-			opacity); on <code>mouseleave</code> it collapses back to the peek view.
+			opacity); on <code>mouseleave</code> it collapses back to the peek view. The gaps between
+			expanded cards include an invisible pointer-capture strip so the deck doesn't twitch when the
+			pointer passes between cards.
 		</p>
 		<menu>
 			<li><button type="button" @click="showAllDeck">Show all 5</button></li>
@@ -259,18 +332,23 @@ const toast = useToast(ref) // default autohide
 		<div data-toast-stack class="placement-stage end bottom">
 			<output ref="deck1Ref" popover class="information">
 				<p><strong>1.</strong> Deck card.</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="deck1.hide()">×</button>
 			</output>
 			<output ref="deck2Ref" popover class="information">
 				<p><strong>2.</strong> Deck card.</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="deck2.hide()">×</button>
 			</output>
 			<output ref="deck3Ref" popover class="information">
 				<p><strong>3.</strong> Deck card.</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="deck3.hide()">×</button>
 			</output>
 			<output ref="deck4Ref" popover class="information">
 				<p><strong>4.</strong> Deck card.</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="deck4.hide()">×</button>
 			</output>
 			<output ref="deck5Ref" popover class="information">
 				<p><strong>5.</strong> Deck card.</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="deck5.hide()">×</button>
 			</output>
 		</div>
 		<details>
@@ -316,23 +394,195 @@ const toast = useToast(ref) // default autohide
 			</li>
 		</menu>
 		<div class="placement-stage end top">
-			<output ref="vPrimary" popover class="primary">
+			<output ref="vPrimary" popover class="primary top">
 				<p><strong>New release.</strong> Read the changelog.</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="variants.primary.hide()">
+					×
+				</button>
 			</output>
-			<output ref="vSuccess" popover class="success">
+			<output ref="vSuccess" popover class="success top">
 				<p><strong>Saved.</strong> Your changes are live.</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="variants.success.hide()">
+					×
+				</button>
 			</output>
-			<output ref="vWarning" popover class="warning">
+			<output ref="vWarning" popover class="warning top">
 				<p><strong>Heads up.</strong> Your session expires in 5 minutes.</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="variants.warning.hide()">
+					×
+				</button>
 			</output>
-			<output ref="vDanger" popover class="danger">
+			<output ref="vDanger" popover class="danger top">
 				<p><strong>Failed to fetch.</strong> Check your connection.</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="variants.danger.hide()">
+					×
+				</button>
 			</output>
 		</div>
 	</section>
 
+	<section id="use-toast-placements">
+		<h2>5. Placement corners</h2>
+		<p>
+			The component placement modifiers (<code>.start</code> / <code>.end</code>,
+			<code>.top</code> / <code>.bottom</code>) flip the toast's viewport corner. Default is
+			<strong>bottom-end</strong>; the others compose as <code>.top</code>, <code>.start</code>, or
+			<code>.start.top</code>. Click each button to anchor a sticky toast at the matching corner —
+			they live in the top layer simultaneously so you can compare placements side-by-side.
+		</p>
+		<menu>
+			<li>
+				<button type="button" @click="corners.bottomEnd.show()">Bottom-end (default)</button>
+			</li>
+			<li>
+				<button type="button" @click="corners.bottomStart.show()">Bottom-start</button>
+			</li>
+			<li>
+				<button type="button" @click="corners.topEnd.show()">Top-end</button>
+			</li>
+			<li>
+				<button type="button" @click="corners.topStart.show()">Top-start</button>
+			</li>
+			<li>
+				<button
+					type="button"
+					@click="
+						() => {
+							corners.bottomEnd.hide()
+							corners.bottomStart.hide()
+							corners.topEnd.hide()
+							corners.topStart.hide()
+						}
+					"
+				>
+					Hide all
+				</button>
+			</li>
+		</menu>
+		<div class="placement-stage">
+			<output ref="cBottomEnd" popover class="information">
+				<p><strong>Bottom-end.</strong> Default corner — viewport bottom-right (LTR).</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="corners.bottomEnd.hide()">
+					×
+				</button>
+			</output>
+			<output ref="cBottomStart" popover class="information start">
+				<p><strong>Bottom-start.</strong> Viewport bottom-left (LTR) / bottom-right (RTL).</p>
+				<button
+					type="button"
+					class="subtle"
+					aria-label="Dismiss"
+					@click="corners.bottomStart.hide()"
+				>
+					×
+				</button>
+			</output>
+			<output ref="cTopEnd" popover class="information top">
+				<p><strong>Top-end.</strong> Viewport top-right (LTR).</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="corners.topEnd.hide()">
+					×
+				</button>
+			</output>
+			<output ref="cTopStart" popover class="information start top">
+				<p><strong>Top-start.</strong> Viewport top-left (LTR).</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="corners.topStart.hide()">
+					×
+				</button>
+			</output>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre v-pre><code>&lt;!-- Default: bottom-end --&gt;
+&lt;output popover&gt;…&lt;/output&gt;
+
+&lt;!-- Bottom-start --&gt;
+&lt;output popover class="start"&gt;…&lt;/output&gt;
+
+&lt;!-- Top-end --&gt;
+&lt;output popover class="top"&gt;…&lt;/output&gt;
+
+&lt;!-- Top-start --&gt;
+&lt;output popover class="start top"&gt;…&lt;/output&gt;</code></pre>
+		</details>
+	</section>
+
+	<section id="use-toast-bands">
+		<h2>6. Banded header / footer</h2>
+		<p>
+			A <code>&lt;header&gt;</code> or <code>&lt;footer&gt;</code> as a direct child switches the
+			toast to flex-column layout and paints a tinted band over the heading / footer row. Mirrors
+			the chrome used by <code>&lt;aside role="alert"&gt;</code> banners so consumers get one
+			pattern for both surfaces. A trailing dismiss <code>&lt;button&gt;</code> inside the band gets
+			the variant-context reset (transparent background, currentColor text) so it reads as a quiet
+			icon regardless of the host variant.
+		</p>
+		<menu>
+			<li><button type="button" @click="bandHeader.show()">Show header-band toast</button></li>
+			<li><button type="button" @click="bandFooter.show()">Show footer-band toast</button></li>
+			<li>
+				<button
+					type="button"
+					@click="
+						() => {
+							bandHeader.hide()
+							bandFooter.hide()
+						}
+					"
+				>
+					Hide both
+				</button>
+			</li>
+		</menu>
+		<div class="placement-stage end bottom">
+			<output ref="bandHeaderRef" popover class="success">
+				<header>
+					<strong>Deployment complete</strong>
+					<button type="button" class="subtle" aria-label="Dismiss" @click="bandHeader.hide()">
+						×
+					</button>
+				</header>
+				<p>
+					Build <code>v1.4.2</code> shipped to production at 14:32 UTC. Logs and rollback are in the
+					dashboard.
+				</p>
+			</output>
+			<output ref="bandFooterRef" popover class="warning">
+				<p>
+					<strong>Session expiring.</strong> You'll be signed out in 5 minutes unless you extend the
+					session.
+				</p>
+				<footer>
+					<button type="button" class="warning small">Extend session</button>
+					<button type="button" class="subtle" aria-label="Dismiss" @click="bandFooter.hide()">
+						×
+					</button>
+				</footer>
+			</output>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre v-pre><code>&lt;!-- Header band --&gt;
+&lt;output popover class="success"&gt;
+  &lt;header&gt;
+    &lt;strong&gt;Deployment complete&lt;/strong&gt;
+    &lt;button class="subtle" aria-label="Dismiss"&gt;×&lt;/button&gt;
+  &lt;/header&gt;
+  &lt;p&gt;Build v1.4.2 shipped …&lt;/p&gt;
+&lt;/output&gt;
+
+&lt;!-- Footer band --&gt;
+&lt;output popover class="warning"&gt;
+  &lt;p&gt;Session expiring …&lt;/p&gt;
+  &lt;footer&gt;
+    &lt;button class="warning small"&gt;Extend session&lt;/button&gt;
+    &lt;button class="subtle" aria-label="Dismiss"&gt;×&lt;/button&gt;
+  &lt;/footer&gt;
+&lt;/output&gt;</code></pre>
+		</details>
+	</section>
+
 	<section id="use-toast-lifecycle">
-		<h2>5. Cancellable lifecycle</h2>
+		<h2>7. Cancellable lifecycle</h2>
 		<p>
 			<code>on.show</code> fires BEFORE the popover entry with a cancellable
 			<code>CustomEvent</code>; <code>event.preventDefault()</code> aborts the open.
@@ -357,6 +607,9 @@ const toast = useToast(ref) // default autohide
 		<div class="placement-stage end bottom">
 			<output ref="lifecycleRef" popover>
 				<p><strong>Lifecycle toast.</strong> Toggle the checkbox to veto the next open.</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="lifecycle.hide()">
+					×
+				</button>
 			</output>
 		</div>
 		<small style="display: block; margin-block-start: 0.5rem">

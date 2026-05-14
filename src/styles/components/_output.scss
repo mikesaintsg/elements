@@ -52,8 +52,15 @@
 	// the rule consumes `var(--set-style-…, var(--set-variant-…, fallback))`
 	// chains via the toast token defaults.
 	:root {
-		--set-toast-color: currentColor;
-		--set-toast-background-color: var(--color-white, Canvas);
+		// Theme-aware surface tokens so toast contrast survives both modes —
+		// `--color-text` flips dark in light theme and light in dark theme,
+		// `--color-surface` flips white in light and slate-900 in dark.
+		// Earlier defaults (`currentColor` + `--color-white`) gave dark-mode
+		// users a light-text-on-white-bg miss; canvas-tier tokens fix both
+		// modes from a single declaration. Variant classes still override
+		// via the `@each` cascade below.
+		--set-toast-color: var(--color-text);
+		--set-toast-background-color: var(--color-surface);
 		--set-toast-border-color: var(--color-border);
 		--set-toast-border-width: 1px;
 		--set-toast-border-radius: 0.5rem;
@@ -79,15 +86,17 @@
 		// means a host-page elevation theme retunes toasts in lockstep with
 		// modals, drawers, and other lifted surfaces.
 		--set-toast-box-shadow: var(--set-box-shadow-large);
-		// Linear stack rhythm — the gap between the bottom of one toast
-		// and the bottom of the next when multiple toasts share a
-		// `<Teleport>` container without `[data-toast-stack]`. The factory
-		// reads this value (`createToast.stack()` → `length(--set-toast-
-		// spacing)`) and accumulates each toast's height + this gap into
-		// `--set-toast-stack-offset` (declared as `0px` below as the
-		// parity-test default; the factory writes per-toast offsets
-		// inline on each `<output>`).
-		--set-toast-spacing: calc(var(--spacing) * 3);
+		// Linear stack rhythm — the gap between adjacent toasts when
+		// multiple share a placement-anchored container. Declared as a
+		// PLAIN length (`0.75rem`) rather than `calc(var(--spacing) * 3)`
+		// because the factory's `length()` helper parses the value via
+		// `parseFloat()` — `calc()` expressions resolve to `NaN`, which
+		// silently zeroed the gap and made toasts touch borders. The
+		// plain `0.75rem` matches the previous calc result (3 ×
+		// 0.25 rem = 0.75 rem) so visual rhythm is identical, but it
+		// parses correctly. Consumers retune via `:root { --set-toast-
+		// spacing: 1rem }` for a roomier stack.
+		--set-toast-spacing: 0.75rem;
 		--set-toast-stack-offset: 0px;
 		--set-toast-stack-index: 0;
 		// Deck-mode tokens — drive the Sonner-style card-stack visual in
@@ -111,6 +120,14 @@
 		// non-popover toast (`output[role='status']` outside the deck)
 		// can pin a sensible value too.
 		--set-toast-z-index: 1090;
+		// Header / footer band chrome — `output[popover]:has(> header)`
+		// and `:has(> footer)` switch to flex-column with banded chrome
+		// (mirrors `aside[role='alert']`'s pattern). The band tint
+		// resolves from `currentColor` so it adapts to the active
+		// variant tint (`color-mix(in srgb, currentColor 8%,
+		// transparent)` — slight emphasis over the body bg).
+		--set-toast-band-background-color: color-mix(in srgb, currentColor 8%, transparent);
+		--set-toast-band-border-color: color-mix(in srgb, currentColor 12%, transparent);
 	}
 
 	// --------------------------------------------------------------------------
@@ -222,5 +239,75 @@
 			inset-inline-start: var(--set-toast-edge-inset);
 			inset-inline-end: auto;
 		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Banded header / footer slots — mirror `aside[role='alert']`'s pattern.
+	// When a toast contains `<header>` or `<footer>` as a direct child, the
+	// toast switches from inline row to flex-column with banded chrome:
+	// the header / footer paint a tinted strip (color-mix from currentColor)
+	// pinned to the toast's edges, and the body rows inset by the toast's
+	// padding values. A trailing dismiss `<button>` inside a band resets
+	// its variant tokens so it reads as a quiet icon button (matches
+	// aside-alert's band-dismiss treatment for cross-surface uniformity).
+	// --------------------------------------------------------------------------
+	output[popover]:has(> header),
+	output[popover]:has(> footer),
+	output[role='status']:not(.filled):has(> header),
+	output[role='status']:not(.filled):has(> footer) {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0;
+		padding-inline: 0;
+		padding-block: 0;
+	}
+
+	output[popover]:has(> header) > :not(:where(header, footer)),
+	output[popover]:has(> footer) > :not(:where(header, footer)),
+	output[role='status']:not(.filled):has(> header) > :not(:where(header, footer)),
+	output[role='status']:not(.filled):has(> footer) > :not(:where(header, footer)) {
+		padding-inline: var(--set-toast-padding-inline);
+		padding-block: var(--set-toast-padding-block);
+	}
+
+	output[popover] > header:first-child,
+	output[popover] > footer:last-child,
+	output[role='status']:not(.filled) > header:first-child,
+	output[role='status']:not(.filled) > footer:last-child {
+		display: flex;
+		align-items: center;
+		gap: var(--set-toast-gap);
+		padding-inline: var(--set-toast-padding-inline);
+		padding-block: calc(var(--set-toast-padding-block) * 0.625);
+		background-color: var(--set-toast-band-background-color);
+	}
+
+	output[popover] > header:first-child,
+	output[role='status']:not(.filled) > header:first-child {
+		border-block-end: 1px solid var(--set-toast-band-border-color);
+	}
+
+	output[popover] > footer:last-child,
+	output[role='status']:not(.filled) > footer:last-child {
+		border-block-start: 1px solid var(--set-toast-band-border-color);
+	}
+
+	// Variant-context reset for dismiss / close buttons sitting at the
+	// trailing edge of a header or footer band. Matches the aside-alert
+	// pattern so the dismiss reads as a quiet icon regardless of the
+	// surface variant. Covers the bare-variant tier AND the `.subtle`
+	// modifier tier so consumers get consistent behavior whether the
+	// dismiss is a bare `<button>` or `<button class="subtle">`.
+	output[popover] > header > button:last-child,
+	output[popover] > footer > button:last-child,
+	output[role='status']:not(.filled) > header > button:last-child,
+	output[role='status']:not(.filled) > footer > button:last-child {
+		margin-inline-start: auto;
+		--set-variant-background-color: transparent;
+		--set-variant-color: currentColor;
+		--set-variant-border-color: transparent;
+		--set-variant-subtle-background-color: transparent;
+		--set-variant-subtle-color: currentColor;
+		--set-variant-subtle-border-color: transparent;
 	}
 }
