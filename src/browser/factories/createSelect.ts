@@ -292,6 +292,30 @@ export function createSelect(
 		setActive(item)
 	}
 
+	// IME composition guard. While the user is composing a multi-keystroke
+	// character sequence (Chinese / Japanese / Korean input methods, dead-
+	// key sequences on Latin keyboards), the browser fires `input` events
+	// for the intermediate compositional state — typing the pinyin for
+	// "北京" produces input events for `b`, `bei`, etc. before "北" lands.
+	// Filtering on each intermediate event makes the dropdown thrash
+	// (matches disappear and reappear as the composition tokens change)
+	// AND can hide rows the user is mid-way to selecting. Defer filtering
+	// until `compositionend` fires; then re-run `onInput` with the final
+	// committed string.
+	let composing = false
+	const onCompositionStart = (): void => {
+		composing = true
+	}
+	const onCompositionEnd = (event: Event): void => {
+		composing = false
+		// Re-emit as a synthetic input event so the filter applies to the
+		// just-committed string. The browser DOES NOT fire `input` after
+		// `compositionend` on its own — that's a Chromium / WebKit
+		// behaviour the spec acknowledges (input may or may not fire
+		// after composition; relying on it is undefined).
+		if (event.target instanceof HTMLInputElement) onInput(event)
+	}
+
 	// Note: there's intentionally NO click handler here. `createMenu`
 	// (which `dropdown` wraps) already binds `click` on the toggle to
 	// `dropdown.toggle()`. Adding our own click listener fired the
@@ -327,13 +351,28 @@ export function createSelect(
 				if (v !== null) {
 					event.preventDefault()
 					select(v)
+					return
 				}
+			}
+			// Autocomplete mode: no active descendant means the user's
+			// typed string didn't match any option, AND the typed string
+			// has already been committed to `value` / `values` by the
+			// `onInput` handler. Treat Enter as "I'm done — accept what
+			// I've typed" and close the dropdown. Without this branch,
+			// Enter was a no-op on free-text queries and users were
+			// forced to outside-click to dismiss after typing a value
+			// that didn't match the list.
+			if (autocomplete) {
+				event.preventDefault()
+				dropdown.hide()
 			}
 		}
 	}
 
 	const onInput = (event: Event): void => {
 		if (!(event.target instanceof HTMLInputElement)) return
+		// IME composition guard — see onCompositionStart / End above.
+		if (composing) return
 		query.value = event.target.value
 		filter(query.value)
 		if (autocomplete) {
@@ -346,12 +385,17 @@ export function createSelect(
 			})
 		}
 		emit(toggleEl, SELECT_EVENTS.input, { query: query.value })
-		const hasMatches = visibleItems().length > 0
-		if (autocomplete && !hasMatches) {
-			if (visible.value) dropdown.hide()
-		} else if (!visible.value) {
-			dropdown.show()
-		}
+		// Open the dropdown if closed so the user can see how their
+		// typing affects the visible options. Previously we auto-HID
+		// the dropdown when the filter rejected every option — but in
+		// autocomplete mode the typed string IS the committed value,
+		// so hiding the dropdown looked like "your entry was refused"
+		// when in reality the entry had already been accepted. Keep
+		// the dropdown open; the SCSS empty-state in
+		// `composables/_select.scss` paints a "no matches" hint via
+		// `:has()` when every option is hidden, so the empty box never
+		// reads as "the widget broke."
+		if (!visible.value) dropdown.show()
 	}
 
 	const onInputFocus = (): void => {
@@ -375,6 +419,8 @@ export function createSelect(
 		? attachListeners(input, [
 				{ name: 'input', handler: onInput },
 				{ name: 'keydown', handler: onKeydown },
+				{ name: 'compositionstart', handler: onCompositionStart },
+				{ name: 'compositionend', handler: onCompositionEnd },
 				...(autocomplete ? [{ name: 'focus', handler: onInputFocus }] : []),
 			])
 		: () => {}

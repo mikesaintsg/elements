@@ -380,6 +380,13 @@ export const tokens = {
 		togglePaddingInlineEnd: '--set-select-toggle-padding-inline-end',
 		caretMinInlineSize: '--set-select-caret-min-inline-size',
 		menuMinInlineSize: '--set-select-menu-min-inline-size',
+		// `content`-value token consumed by the empty-state hint that
+		// paints when a typeahead filter rejects every option (see
+		// `composables/_select.scss` § "Empty-state hint"). Quote-wrapped
+		// at the declaration site so `content: var(...)` resolves to a
+		// valid string. Consumers localise via `:root { --set-select-empty-
+		// text: '"Aucun résultat"' }` — note the nested-quote shape.
+		emptyText: '--set-select-empty-text',
 	},
 
 	// Element-scoped tokens declared on `label` itself.

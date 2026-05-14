@@ -406,10 +406,25 @@ const select = useSelect(toggleRef, {
 			— no Bootstrap utility-class soup. Substring match against the option's text content.
 		</p>
 		<p>
+			<strong>Free-text entry.</strong> Autocomplete mode treats the typed query string AS the
+			committed value — the factory writes <code>value</code> + <code>values</code> on every
+			keystroke. Type something that doesn't match any option (e.g. <code>"Vancouver"</code>) and
+			the input stays editable, the dropdown stays open, and a <code>"No matches"</code> empty-state
+			hint paints in the menu via a <code>:has()</code> rule on <code>.select-menu</code>. Press
+			<kbd>Enter</kbd> to dismiss the dropdown — your typed value is already committed to
+			<code>comboSelect.value</code>.
+		</p>
+		<p>
+			<strong>IME-safe.</strong> The factory defers filter application until
+			<code>compositionend</code> fires, so multi-keystroke input methods (Chinese / Japanese /
+			Korean pinyin, dead-key sequences) don't thrash the visible row set as the user composes a
+			character.
+		</p>
+		<p>
 			<small>
 				Try: open, type "to" to filter to Tokyo + Stockholm; clear the filter to see the full list
 				return; use ArrowDown / Enter to commit; the active descendant stays valid as the visible
-				subset shifts.
+				subset shifts. Type a non-matching string to see the empty-state hint + Enter-to-commit.
 			</small>
 		</p>
 		<div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end">
