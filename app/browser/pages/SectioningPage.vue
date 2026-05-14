@@ -129,7 +129,7 @@
 			<code>.flush</code> is the explicit opt-out: zeroes both <code>margin</code> and
 			<code>padding</code> so the section butts against the host's edges.
 		</p>
-		<article class="showcase-flush-host" style="max-width: 32rem">
+		<article class="flush-host" style="max-width: 32rem">
 			<header>
 				<h3>Tabbed status panel</h3>
 			</header>

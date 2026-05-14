@@ -777,7 +777,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			Drop a flush form into a card body, an aside, or an expanded list-group item and it fills
 			edge-to-edge with the host's chrome owning the perimeter:
 		</p>
-		<article class="showcase-flush-host" style="max-inline-size: 32rem">
+		<article class="flush-host" style="max-inline-size: 32rem">
 			<header>
 				<h3>Profile</h3>
 			</header>
@@ -869,7 +869,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			<code>align-items: stretch</code> produces when the input baseline sits in the middle of its
 			content box).
 		</p>
-		<article class="showcase-flush-host" style="max-inline-size: 32rem">
+		<article class="flush-host" style="max-inline-size: 32rem">
 			<header>
 				<h3>Profile</h3>
 			</header>

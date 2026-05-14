@@ -227,18 +227,19 @@
  * every site would (a) drift apart visually and (b) hide the fact that
  * a pattern is shared. The framework owns semantic-element chrome;
  * these classes own SHOWCASE-PAGE LAYOUT — tile grids, fixed-width
- * tile cells, subtitle typography, the flush composition host
- * incantation. Every new repeated inline-style pattern in a page
- * should either:
+ * tile cells, subtitle typography, swatch chrome, etc. Every new
+ * repeated inline-style pattern in a page should either:
  *   (a) become a framework feature (if the pattern is universal), or
  *   (b) land here as a `.showcase-*` class (if it's a showcase-only
  *       layout choice).
  *
  * Audit rule: `app/browser/pages/*.vue` MUST NOT carry inline
  * `style="..."` attributes for anything except (1) a value bound to
- * reactive state via `:style`, (2) the blessed flush-composition-host
- * token incantation on `<article>`, or (3) a value that genuinely
- * demonstrates a token (e.g., a swatch's `background-color`). See
+ * reactive state via `:style`, (2) a per-instance dimensional value
+ * (`max-width: 28rem` on a single demo), or (3) a value that
+ * genuinely demonstrates a token (e.g., a swatch's `background-
+ * color`). The flush-composition-host pattern is owned by the
+ * framework now (`<article class="flush-host">`). See
  * `guides/contribute.md` § "No inline styles in showcase pages".
  * ============================================================================ */
 
@@ -293,19 +294,6 @@
 	max-inline-size: 32rem;
 }
 
-/* Flush composition host — the article-as-frame pattern. Zeroes the
- * three article-spacing tokens and clips children to the article's
- * own radius. The framework supports this directly via the tokens;
- * this class is sugar so consumers don't have to remember the four-
- * declaration incantation. A consumer can still write the tokens
- * inline if a single demo needs a different combination. */
-.showcase-flush-host {
-	--set-article-padding-inline: 0;
-	--set-article-padding-block: 0;
-	--set-article-gap: 0;
-	overflow: clip;
-}
-
 /* ── Flush form-row pattern (FormControlsPage) ─────────────────────
  * The "label cell + input cell" row inside a card-as-form. Each row
  * is a 2-track grid (fixed 8rem label, remaining 1fr input) with a
@@ -313,7 +301,7 @@
  * container so the text vertically centers against the input height;
  * a vertical divider separates label from input. Three classes carry
  * the chrome; consumers compose by stacking rows inside an
- * `.showcase-flush-host` article. */
+ * `article.flush-host`. */
 .showcase-form-row {
 	display: grid;
 	grid-template-columns: 8rem 1fr;
@@ -353,9 +341,9 @@
 }
 
 /* Tile link — `<a class="flush showcase-tile-link">` fills the
- * inside of a `.showcase-flush-host` article (or any tile container)
- * with a padded vertical stack. Used in card-as-link demos where the
- * whole tile is the click target: anchor or button.flush handles
+ * inside of an `article.flush-host` (or any tile container) with a
+ * padded vertical stack. Used in card-as-link demos where the whole
+ * tile is the click target: anchor or button.flush handles
  * interaction state, this class supplies the internal layout. */
 .showcase-tile-link {
 	padding: 1rem;

@@ -538,6 +538,53 @@
 		color: var(--set-variant-on-canvas-color, currentColor);
 	}
 
+	// ── article.flush-host ──────────────────────────────────────────────────
+	// The HOST side of the flush composition pattern. Pairs with
+	// `article.flush`, `dialog.flush:not(:modal)`, `aside[role='alert'].
+	// flush`, `details.flush`, `section.flush`, `form.flush`, `a.flush`,
+	// `button.flush` — every framework modifier that means "fuse into the
+	// parent surface, no outer chrome."
+	//
+	// Three responsibilities:
+	//
+	//   1. Zero the article's outer inset (`--set-article-padding-{inline,
+	//      block}: 0`) so the flush children paint edge-to-edge against
+	//      the article's own border. The framework's `--set-article-band-
+	//      padding-*` tokens are DECOUPLED from the outer padding (see
+	//      `components/_article.scss` lines 62-75) so internal `<header>` /
+	//      `<footer>` band content keeps its rhythm even when the article
+	//      itself is inset-zero.
+	//
+	//   2. Zero the article's flex `gap` (`--set-article-gap: 0`) so the
+	//      stacked flush children meet at seams owned by the half-padding
+	//      sibling rules below, not by the host's gap.
+	//
+	//   3. `overflow: clip` so the children's outer corners (which sit
+	//      flat at `border-radius: 0` per the `.flush` rules) are
+	//      visually clipped to the article's own rounded outer corners.
+	//      Without this, sharp child corners would peek past the host's
+	//      curvature at first / last position.
+	//
+	// Distinct from `article.flush` (the CHILD side): a flush host KEEPS
+	// its outer border / radius / shadow — it IS the card; only its
+	// inset and gap dissolve. A flush child drops outer chrome — it
+	// dissolves INTO the host's surface.
+	//
+	// Token-override path stays open for consumers who need partial
+	// flush (e.g. zero block padding but keep inline padding): write
+	// the `--set-article-padding-{inline,block}` tokens inline. The
+	// modifier just bundles the common "zero everything" case so the
+	// markup stays clean (`<article class="flush-host">` reads at the
+	// scale of `<article class="flush">` instead of the four-token
+	// inline incantation every consumer used to write).
+	article.flush-host {
+		--set-article-padding-inline: 0;
+		--set-article-padding-block: 0;
+		--set-article-gap: 0;
+
+		overflow: clip;
+	}
+
 	// ── article.flush / form.flush / section.flush ──────────────────────────
 	// Container variants for nested composition. Each drops its own outer
 	// chrome so the host (a parent article, list-group row, card body,

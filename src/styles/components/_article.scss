@@ -60,11 +60,10 @@
 		--set-article-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 5));
 		--set-article-gap: calc(var(--spacing) * 4);
 		// Auto-banded header / footer content padding — its own token
-		// surface, DECOUPLED from `--set-article-padding-*` so consumers
-		// writing the "flush composition host" pattern
-		// (`<article style="--set-article-padding-{inline,block}: 0">`)
-		// keep the header / footer band's content padding at the
-		// framework default while zeroing the article's outer padding.
+		// surface, DECOUPLED from `--set-article-padding-*` so the
+		// flush-host modifier (`article.flush-host` in `modifiers/
+		// _local.scss`) can zero the article's outer inset while the
+		// band's content padding stays at the framework default.
 		//
 		// Defaults pull from the SAME `--set-size-padding-*` chain the
 		// article's own padding tokens use — NOT through `--set-article-

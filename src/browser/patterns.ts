@@ -292,6 +292,25 @@ export const FILE_EXCEPTIONS: Readonly<Record<string, FileException>> = {
 		note: '.stack and .cluster class-component primitives carried by <div>',
 	},
 
+	// modifiers/_local.scss — element-local modifier classes (article.flush-
+	// host, form.row, button.dropdown, …). Each rule's selector starts with
+	// an element tag; rules MAY declare `--set-{tag}-*` tokens scoped to
+	// that same element (per the file's charter — quote: "Tokens may be
+	// written here, but only `--set-{tag}-*` tokens scoped to the same
+	// element the selector targets"). The article-flush-host rule retunes
+	// the article's outer inset + gap via its `--set-article-padding-*` /
+	// `--set-article-gap` tokens so consumer overrides flow through the
+	// same cascade an inline-token incantation used to; declaring the
+	// token (vs. the raw `padding: 0`) is the framework-correct path
+	// because `<article> > <header>`'s bleed margin reads from the same
+	// token. As `_local.scss` grows it will need other element prefixes
+	// (`details.flush-host`, `dialog.flush-host` etc.) — extend the list
+	// then.
+	'modifiers/_local.scss': {
+		additionalTokenPrefixes: ['article'],
+		note: 'element-local modifiers may declare --set-{tag}-* tokens for the element their selector targets',
+	},
+
 	// components/_nav.scss — declares --set-tablist-* and --set-tab-* on
 	// `[role='tablist']` / `[role='tab']` because the breadcrumb / pagination
 	// / tabs patterns all share <nav> as their root.
