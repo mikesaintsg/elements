@@ -133,6 +133,41 @@
 		// regardless of which composable opens the toast.
 	}
 
+	// ── Mobile retune — symmetric gutters via dual insets, not width math ─────
+	// On desktop the toast lands at its design width (22rem ≈ 352px) anchored
+	// at one corner, so width and position derive from independent tokens.
+	// On mobile we want the toast to span nearly the full viewport with
+	// EQUAL gutters on each side. The naive approach — keep the corner
+	// anchor and compute `inline-size: 100dvw - 2 × edge-inset` — fails
+	// because `dvw` is the FULL viewport including the OS scrollbar gutter,
+	// while `inset-inline-end` anchors to the layout viewport (scrollbar
+	// excluded). The two reference frames differ by the scrollbar width,
+	// so the toast overflows past one edge.
+	//
+	// Cleaner strategy: drop the explicit `inline-size` on mobile and
+	// drive width from BOTH `inset-inline-start` AND `inset-inline-end`
+	// set to the same edge-inset. With `inline-size: auto`, the browser
+	// computes width = layout-viewport - 2 × edge-inset for us, using a
+	// single reference frame so the result is symmetric by construction.
+	// `.start` / `.top` / `.bottom` placement modifiers still flip the
+	// vertical anchor but the horizontal placement is identical on mobile
+	// for every toast — matching the platform convention (iOS / Android
+	// system toasts always span the screen width regardless of which
+	// vertical edge they're anchored to).
+	//
+	// `max-inline-size: none` undoes the desktop 28rem cap so the toast
+	// can grow to fill mobile-wide viewports (e.g. 480-px breakpoint
+	// edge) without leaving a gap on one side.
+	@media (max-width: 480px) {
+		output[popover],
+		output[role='status']:not(.filled) {
+			inset-inline-start: var(--set-toast-edge-inset);
+			inset-inline-end: var(--set-toast-edge-inset);
+			inline-size: auto;
+			max-inline-size: none;
+		}
+	}
+
 	// ── Deck stacking mode ────────────────────────────────────────────────────
 	// Opt-in via `[data-toast-stack]` on the toast container. Without it,
 	// linear stacking (above) is the default and is unchanged.
@@ -278,23 +313,86 @@
 	// strip between each card. Without a hit target inside that strip the
 	// pointer can fall into a layout hole, the container's `:hover` flips
 	// off, the deck collapses, and the pointer immediately re-enters a
-	// card and re-expands — visible as a twitch. The `::after` pseudo
-	// extends each card's pointer-capture into the gap below (for the
-	// default bottom-anchored deck) or above (for top-anchored decks).
-	// Only paints while the deck is expanded so the linear / non-deck
-	// modes are unaffected.
+	// card and re-expands — visible as a twitch / momentary collapse as
+	// the cursor traverses card edges.
+	//
+	// Bulletproof bridging strategy: every expanded card carries BOTH a
+	// `::before` (bridging UP to the card above) and an `::after` (bridging
+	// DOWN to the card below), and each pseudo is sized to `--set-toast-
+	// spacing × 2` — twice the geometric gap. The 2× sizing serves two
+	// independent failure modes:
+	//
+	//   1. Sub-pixel rounding. The expanded translate uses
+	//      `--set-toast-front-height + --set-toast-spacing` as the per-
+	//      step displacement, but each expanded card sizes to its OWN
+	//      natural height (`block-size: auto`). When the natural height
+	//      drifts from the measured front-height by even half a pixel,
+	//      the actual gap between adjacent cards drifts the same amount.
+	//      A pseudo sized to the nominal `spacing` may end up a hair
+	//      short and the pointer can fall through. Doubling the size
+	//      gives `spacing` worth of overlap into the next card's body
+	//      on each side, absorbing any drift up to `spacing` in either
+	//      direction.
+	//
+	//   2. Diagonal pointer travel. When the cursor moves diagonally
+	//      across the deck (e.g. user lifts their finger off the
+	//      trackpad), it can skip across a tiny gap in a single frame.
+	//      Paired ::before + ::after extensions mean the pointer's
+	//      trajectory crosses TWO overlapping hit zones for every gap,
+	//      catching the hover before the container's `:has` re-evaluates.
+	//
+	// Both pseudos are transparent and only paint while the deck is
+	// expanded (the `:has(... :hover)` / `:has(... :focus-within)` /
+	// `[data-toast-stack-closing]` triple gate), so the linear / non-deck
+	// modes are unaffected. The `pointer-events: auto` declaration is
+	// defensive — composables-layer rule paints `pointer-events: auto`
+	// on the host card, but a future refactor could land a global
+	// `pointer-events: none` on `::before` / `::after` and silently
+	// break the bridge; re-stating here is cheap insurance.
+	[data-toast-stack]:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::before,
+	[data-toast-stack]:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::after,
+	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::before,
+	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::before,
+	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		block-size: calc(var(--set-toast-spacing) * 2);
+		pointer-events: auto;
+	}
+
+	// `::after` extends DOWN from each card's bottom edge into the gap
+	// below — bridging to the card visually beneath (lower stack index)
+	// for bottom-anchored decks.
 	[data-toast-stack]:has(> output[popover]:popover-open:hover)
 		> output[popover]:popover-open::after,
 	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
 		> output[popover]:popover-open::after,
 	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::after {
-		content: '';
-		position: absolute;
-		inset-inline: 0;
 		inset-block-start: 100%;
-		block-size: var(--set-toast-spacing);
 	}
 
+	// `::before` extends UP from each card's top edge into the gap above
+	// — bridging to the card visually above (higher stack index). The
+	// `inset-block-end: 100%` puts the pseudo's bottom flush against the
+	// card's top edge, extending upward.
+	[data-toast-stack]:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::before,
+	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::before,
+	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::before {
+		inset-block-end: 100%;
+	}
+
+	// Top-anchored decks — flip the inset direction. `::after` now
+	// extends UP (cards stack downward, so a card's "below-the-fold"
+	// neighbour is above its top edge), `::before` extends DOWN. Same
+	// 2× spacing buffer.
 	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:hover)
 		> output[popover]:popover-open::after,
 	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:focus-within)
@@ -303,6 +401,16 @@
 		> output[popover]:popover-open::after {
 		inset-block-start: auto;
 		inset-block-end: 100%;
+	}
+
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::before,
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::before,
+	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
+		> output[popover]:popover-open::before {
+		inset-block-end: auto;
+		inset-block-start: 100%;
 	}
 
 	// ── Stack indicator ───────────────────────────────────────────────────────
