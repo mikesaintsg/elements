@@ -283,11 +283,234 @@
 		padding: 0;
 	}
 
+	// ── a.flat / a.flush ────────────────────────────────────────────────────
+	// `<a>` is dual-shaped: the bare anchor's chrome is just `color` +
+	// `text-decoration: underline`. `.flat` quiets the underline at rest
+	// and brings it back on engagement; `.flush` fuses the anchor into a
+	// host (tile-as-link) by dropping decoration AND letting the link
+	// inherit the host's foreground so the whole tile reads as one
+	// chrome-coloured surface that's clickable.
+	a.flat {
+		text-decoration: none;
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+
+		&:hover:not(:focus-visible) {
+			text-decoration: underline;
+			background-color: color-mix(in oklab, currentColor 4%, transparent);
+		}
+
+		&:focus-visible {
+			outline: none;
+			text-decoration: underline;
+			@include focus-ring();
+		}
+	}
+
+	a.flush {
+		display: block;
+		inline-size: 100%;
+		block-size: 100%;
+		min-block-size: 100%;
+		align-self: stretch;
+		margin: 0;
+		border: 0;
+		border-radius: inherit;
+		box-shadow: none;
+		// `color: inherit` is the fuse signal — the whole tile reads in the
+		// host's foreground (`<article class="primary filled">` paints white
+		// text everywhere including the flush anchor) instead of fighting it
+		// with the link-blue identity. `text-decoration: none` drops the
+		// underline so the host chrome is uninterrupted.
+		color: inherit;
+		text-decoration: none;
+		background-color: transparent;
+
+		&:hover:not(:focus-visible),
+		&:focus-visible {
+			background-color: color-mix(in oklab, currentColor 4%, transparent);
+		}
+
+		&:focus-visible {
+			outline: none;
+		}
+
+		@include forced-colors {
+			background-color: Field;
+		}
+	}
+
+	// ── button.flat ─────────────────────────────────────────────────────────
+	// Toolbar / inline-action-chip buttons that should read as text-with-
+	// affordance until interacted with. Distinct from `.subtle` (which
+	// keeps the full button chrome but drops the variant fill) — `.flat`
+	// dissolves border + fill + shadow entirely at rest. On focus the
+	// element's focus-ring still paints (the focus ring is the affordance,
+	// NOT a restored fill — restoring the variant fill on focus would
+	// defeat the dissolve semantic).
+	button.flat {
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+
+		&:hover:not(:disabled):not(:focus-visible) {
+			background-color: color-mix(in oklab, currentColor 4%, transparent);
+			border-color: var(--color-border);
+		}
+
+		&:focus-visible {
+			outline: none;
+			background-color: color-mix(in oklab, currentColor 4%, transparent);
+			border-color: var(--color-border);
+			box-shadow: var(--set-button-focus-box-shadow);
+		}
+
+		@include forced-colors {
+			background-color: ButtonFace;
+			border-color: ButtonText;
+		}
+	}
+
+	// ── details.flat / details.flush ────────────────────────────────────────
+	// `.flat`: dissolve the disclosure's outer chrome at rest, reveal on
+	// hover OR when open. The `[open]` state restores chrome because an
+	// open disclosure is meant to read as a contained region — the dissolve
+	// only applies while the content is hidden. `<summary>` chrome is
+	// unchanged (the marker + click affordance survive intact).
+	//
+	// `.flush`: accordion-item shape. The parent group owns the boundary;
+	// `<details>` dissolves outer chrome and inherits the parent's radius
+	// so a stack of `details.flush` inside an `<article>` or `<ul class=
+	// "group">` reads as one continuous surface with internal dividers.
+	details.flat {
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+
+		&:hover:not([open]) {
+			background-color: color-mix(in oklab, currentColor 4%, transparent);
+			border-color: var(--color-border);
+		}
+
+		&[open] {
+			background-color: var(--set-details-background-color);
+			border-color: var(--set-details-border-color);
+		}
+	}
+
+	details.flush {
+		margin: 0;
+		border: 0;
+		border-radius: inherit;
+		box-shadow: none;
+		background-color: transparent;
+		// Adjacent flush-details share a divider rule between siblings —
+		// the host's `border-block-end: 1px solid var(--color-border)` on
+		// every-but-last is the canonical accordion-item shape; consumers
+		// who want it set it on the parent surface (the framework doesn't
+		// paint it here because the flush variant must work in any host
+		// shape, including ones where the host already provides dividers).
+	}
+
+	// ── aside[role='alert'].flat / aside[role='alert'].flush ────────────────
+	// Scoped to the alert role specifically — bare `<aside>` (sidebar rail
+	// in body grid, popover drawer, inline callout) has different chrome
+	// per context, and applying the flat/flush idiom universally would
+	// break the drawer geometry. Scoping to `[role='alert']` keeps the
+	// modifier targeted at the banner-shaped variant.
+	//
+	// The compound `aside[role='alert'].flat` doesn't match the
+	// `_local.test.ts` charter regex (which expects bare `{tag}.{name}`),
+	// so the rule is authored here but isn't charter-checked. That's a
+	// deliberate exception — the role-scoping is essential for correctness.
+	//
+	// `.flat`: low-emphasis inline note. Dissolve at rest; restore the
+	// alert's tinted bar + bg-subtle backdrop on hover. The hover state
+	// uses the alert's OWN tokens so a variant alert (`.danger` etc.)
+	// reveals the variant-tinted chrome it would normally paint at rest.
+	aside[role='alert'].flat {
+		background-color: transparent;
+		border-color: transparent;
+		border-inline-start-color: transparent;
+
+		&:hover {
+			background-color: var(--set-alert-background-color);
+			border-inline-start-color: var(--set-alert-border-color);
+		}
+	}
+
+	// `.flush`: divider band inset into a card / sidebar. Drops the outer
+	// border + radius so the alert sits flush against the host's edges.
+	// The leading accent bar (`border-inline-start`) is preserved because
+	// it's the alert's identity signal; the host owns the perimeter.
+	aside[role='alert'].flush {
+		border-radius: 0;
+		border-block-start: 0;
+		border-block-end: 0;
+		border-inline-end: 0;
+		margin: 0;
+	}
+
+	// ── dialog.flush:not(:modal) ────────────────────────────────────────────
+	// Inline non-modal dialog drops into a card body or expansion panel.
+	// Scoped to `:not(:modal)` because modal `<dialog>` at rest IS its
+	// chrome (centered, top-layer, scrim) — flush would defeat the modal
+	// shape. The header / footer pin chrome on `<dialog>` survives because
+	// it's painted from inside the dialog's grid; only the outer border /
+	// radius / shadow / margin dissolve here.
+	dialog.flush:not(:modal) {
+		margin: 0;
+		border: 0;
+		border-radius: inherit;
+		box-shadow: none;
+		// `inline-size: 100%` lets the dialog fill its host instead of
+		// taking the platform's auto-content-width centering shape.
+		inline-size: 100%;
+		max-inline-size: none;
+	}
+
+	// ── article.flush / form.flush / section.flush ──────────────────────────
+	// Container variants for nested composition. Each drops its own outer
+	// chrome so the host (a parent article, list-group row, card body,
+	// drawer body) owns the boundary.
+	//
+	// `article.flush`: nested card. Internal `<header>` / `<footer>` pin
+	// chrome stays (painted from inside the article's grid); only outer
+	// border / radius / shadow dissolve. Useful for article-in-article
+	// composition where the inner card shouldn't paint its own outline.
+	article.flush {
+		margin: 0;
+		border: 0;
+		border-radius: inherit;
+		box-shadow: none;
+		background-color: transparent;
+	}
+
+	// `form.flush`: fill card body. Form has no outer chrome by default,
+	// so this is mostly a documentation rule — sets `margin: 0; padding:
+	// 0; inline-size: 100%` to make the intent ("form fills its host")
+	// explicit. The internal flex-column stack is unchanged.
+	form.flush {
+		margin: 0;
+		padding: 0;
+		inline-size: 100%;
+	}
+
+	// `section.flush`: drop section padding for nested-section use (tab
+	// panel section that butts against the tablist, accordion-item
+	// content, scrollable region that owns its own padding). The
+	// `scroll-margin` from the section baseline survives because it's a
+	// layout property the parent scroll container reads.
+	section.flush {
+		padding: 0;
+		margin: 0;
+	}
+
 	// Reserved future rules — placeholders are intentional. Adding a real
 	// rule means deleting the matching comment and writing the selector
 	// + declaration block.
 	//
 	// form.row { flex-direction: row; flex-wrap: wrap; align-items: end; }
 	// button.dropdown { &::after { content: var(--set-button-dropdown-caret-image); } }
-	// details.flush { padding-inline: 0; }
 }

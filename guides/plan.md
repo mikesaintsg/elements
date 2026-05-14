@@ -302,77 +302,59 @@ Notes that apply to every flush rule:
 
 #### Per-element applicability matrix
 
-Tier ordering follows authoring priority — Tier 1 is shipped, Tier 2 is highest-value next, Tier 5 is stretch.
+Tier ordering follows authoring priority — Tier 1 is shipped, Tier 2 is the active push, Tier 3 covers the container surfaces with concrete consumer use. Media / class-component / rare-cases variants are explicitly out of scope: media-fill is better handled by the consumer wrapper carrying `object-fit` + `aspect-ratio`, and the class-component primitives (`.badge`, `.tag`, `.spinner`, `.skeleton`) are already minimal enough that adding `.flat` / `.flush` doesn't earn its weight against the audit cost.
 
-| Element                                    | `.flat`                         | `.flush` | Notes / quirks                                                                                                                                                                                                                       |
-| ------------------------------------------ | ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Tier 1 — shipped**                       |                                 |          |                                                                                                                                                                                                                                      |
-| `input`                                    | ✅                              | ✅       | Element-baseline padding preserved on `.flush` (padding-inline only — block-axis zeroed for height-fill).                                                                                                                            |
-| `select`                                   | ✅                              | ✅       | Chevron mask (`--set-select-background-image`) — flush keeps the chevron via element's own background-image cascade.                                                                                                                 |
-| `textarea`                                 | ✅                              | ✅       | `resize: vertical` + `field-sizing: content` baseline preserved; flush only drops chrome.                                                                                                                                            |
-| `button`                                   | ⬜ (Tier 2)                     | ✅       | Flush button: all padding zeroed (text/icon centers against host's content box).                                                                                                                                                     |
-| `ul.group` / `ol.group`                    | —                               | ✅       | Predates the split; semantic aligned with the new flush family. Audit: confirm hover backdrop alignment with the new contract.                                                                                                       |
-| **Tier 2 — highest value**                 |                                 |          |                                                                                                                                                                                                                                      |
-| `a`                                        | ⬜                              | ⬜       | `.flat`: drop underline at rest, restore on hover. `.flush`: link fills the host (tile-as-link); drop underline + color shift, inherit foreground. Host's `:focus-within` paints focus ring.                                         |
-| `details`                                  | ⬜                              | ⬜       | `.flat`: drop outer border, hover reveal, summary chrome intact. `.flush`: accordion-item shape — parent group owns the boundary, `<details>` dissolves outer chrome and shares the parent's radius. `[open]` state still indicates. |
-| `aside[role='alert']`                      | ⬜                              | ⬜       | `.flat`: low-emphasis inline note that brightens on hover. `.flush`: divider band inset into a card or sidebar; drops outer border + radius.                                                                                         |
-| `dialog`                                   | —                               | ⬜       | Modal at rest IS its chrome; flat doesn't apply. `.flush` scoped to `dialog[open]:not(:modal)` (inline non-modal); drops outer border + radius, keeps header / footer pin chrome.                                                    |
-| `button`                                   | ⬜                              | ✅       | `.flat` for toolbar / inline action chips — overrides variant background fill at rest, restores on hover. Distinct from `.subtle` (which keeps full chrome but drops variant fill); flat dissolves the chrome entirely.              |
-| **Tier 3 — container surfaces**            |                                 |          |                                                                                                                                                                                                                                      |
-| `article`                                  | ⬜                              | ⬜       | `.flat`: card chrome dissolves at rest (use for nested cards). `.flush`: outer chrome entirely dropped (nested card inside another article or list-group row).                                                                       |
-| `fieldset`                                 | ⬜                              | ⬜       | `.flat`: drop border at rest. `.flush`: drop all outer chrome. CAVEAT: `<legend>` notch — flush may need to suppress the legend's notch via `legend { float: left }` or similar.                                                     |
-| `form`                                     | —                               | ⬜       | `.flush`: fill card body. Form's internal vertical gap stays; only outer chrome (rarely present) dropped. Most useful as documentation that the form fills its container.                                                            |
-| `section`                                  | —                               | ⬜       | `.flush`: drop section padding for nested-section use (e.g. tab panel section that should butt against the tablist).                                                                                                                 |
-| **Tier 4 — media / embed surfaces**        |                                 |          |                                                                                                                                                                                                                                      |
-| `img`                                      | —                               | ⬜       | `.flush`: fill host slot with `object-fit: cover`; consumer sets `aspect-ratio` on the host or uses a height-1px wrapper.                                                                                                            |
-| `video`                                    | —                               | ⬜       | Same as `img.flush`; framework's tinted backplate (`--set-video-background-color`) overridable per-instance.                                                                                                                         |
-| `iframe`, `embed`, `object`                | —                               | ⬜       | `.flush`: fill embed slot. Aspect ratio is the consumer's responsibility.                                                                                                                                                            |
-| `canvas`, `svg`                            | —                               | ⬜       | `.flush`: fill bitmap / vector slot. `svg.flush` retains `preserveAspectRatio`.                                                                                                                                                      |
-| **Tier 5 — class-components + rare cases** |                                 |          |                                                                                                                                                                                                                                      |
-| `.badge`, `.tag`                           | —                               | ⬜       | `.flush`: chip fills its slot (rare — usually badges sit inline). Audit need before authoring.                                                                                                                                       |
-| `.spinner`, `.skeleton`                    | —                               | ⬜       | `.flush`: fills loading region (skeleton fills card body during fetch). Common use case.                                                                                                                                             |
-| `.alert` (`<aside role='alert'>`)          | (same as `aside[role='alert']`) | (same)   | The `.alert` class-component IS `aside[role='alert']`; alignment audit when `aside` variant lands.                                                                                                                                   |
-| `menu`, `nav`                              | —                               | ⬜       | `.flush`: fill rail. Less common; consumer usually fills via `flex: 1 1 auto` on the rail body.                                                                                                                                      |
-| `label`, `legend`                          | —                               | ⬜       | `.flush`: fill card body label area. Rare but consistent.                                                                                                                                                                            |
+| Element                                    | `.flat`     | `.flush` | Notes / quirks                                                                                                                                                                                                                       |
+| ------------------------------------------ | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Tier 1 — shipped**                       |             |          |                                                                                                                                                                                                                                      |
+| `input`                                    | ✅          | ✅       | Element-baseline padding preserved on `.flush` (padding-inline only — block-axis zeroed for height-fill).                                                                                                                            |
+| `select`                                   | ✅          | ✅       | Chevron mask (`--set-select-background-image`) — flush keeps the chevron via element's own background-image cascade.                                                                                                                 |
+| `textarea`                                 | ✅          | ✅       | `resize: vertical` + `field-sizing: content` baseline preserved; flush only drops chrome.                                                                                                                                            |
+| `button`                                   | ⬜ (Tier 2) | ✅       | Flush button: all padding zeroed (text/icon centers against host's content box).                                                                                                                                                     |
+| `ul.group` / `ol.group`                    | —           | ✅       | Predates the split; semantic aligned with the new flush family. Audit: confirm hover backdrop alignment with the new contract.                                                                                                       |
+| **Tier 2 — the active push**               |             |          |                                                                                                                                                                                                                                      |
+| `a`                                        | ⬜          | ⬜       | `.flat`: drop underline at rest, restore on hover. `.flush`: link fills the host (tile-as-link); drop underline + color shift, inherit foreground. Host's `:focus-within` paints focus ring.                                         |
+| `details`                                  | ⬜          | ⬜       | `.flat`: drop outer border, hover reveal, summary chrome intact. `.flush`: accordion-item shape — parent group owns the boundary, `<details>` dissolves outer chrome and shares the parent's radius. `[open]` state still indicates. |
+| `aside[role='alert']`                      | ⬜          | ⬜       | `.flat`: low-emphasis inline note that brightens on hover. `.flush`: divider band inset into a card or sidebar; drops outer border + radius.                                                                                         |
+| `dialog`                                   | —           | ⬜       | Modal at rest IS its chrome; flat doesn't apply. `.flush` scoped to `dialog.flush:not(:modal)` (inline non-modal); drops outer border + radius, keeps header / footer pin chrome.                                                    |
+| `button`                                   | ⬜          | ✅       | `.flat` for toolbar / inline action chips — overrides variant background fill at rest, restores on hover. Distinct from `.subtle` (which keeps full chrome but drops variant fill); flat dissolves the chrome entirely.              |
+| **Tier 3 — high-value container surfaces** |             |          |                                                                                                                                                                                                                                      |
+| `article`                                  | —           | ⬜       | `.flush`: outer chrome entirely dropped (nested card inside another article or list-group row). Internal header / footer pin chrome stays.                                                                                           |
+| `form`                                     | —           | ⬜       | `.flush`: fill card body. Form's internal vertical gap stays; only outer chrome (rarely present) dropped. Most useful as documentation that the form fills its container.                                                            |
+| `section`                                  | —           | ⬜       | `.flush`: drop section padding for nested-section use (e.g. tab panel section that should butt against the tablist).                                                                                                                 |
 
 #### Elements where neither modifier applies
 
-For completeness — explicitly **not** in scope:
+Explicitly **not** in scope. If a consumer hits one of these and genuinely needs the behavior, the case earns its own row above through a small, justified PR — not a default we ship preemptively.
 
 - **Pure-text elements** (`p`, `blockquote`, `code`, `kbd`, `mark`, `samp`, `small`, `strong`, `em`, `i`, `u`, `time`, `data`, `var`, etc.) — inline-flow, chrome IS the content; dissolving makes them invisible.
 - **Reset elements** (`html`, `body`, `h1`–`h6`, `hr`, `ol`, `ul`, `li` outside `.group`) — no chrome to dissolve.
-- **Class-only primitives without chrome** (`.dot`) — already minimal.
-- **Top-layer toast** (`<output popover>`) — chrome IS the floating geometry; flush doesn't apply.
+- **Class-only primitives** (`.dot`, `.badge`, `.tag`, `.spinner`, `.skeleton`) — already minimal; flush adds little over their existing tokens.
+- **Top-layer surfaces** (`<output popover>` toast, `[popover]` floaters) — chrome IS the floating geometry; flush doesn't apply.
 - **`<table>` itself** — table's chrome is per-cell, not per-table.
+- **`<fieldset>`** — `<legend>` notch interaction with `border-radius: inherit` + `inline-size: 100%` is fragile; revisit only with a concrete consumer use.
+- **Media surfaces** (`img`, `video`, `iframe`, `embed`, `object`, `canvas`, `svg`) — fill-the-container is better done by the consumer wrapping the embed in a sized container with `object-fit` and `aspect-ratio`; framework variant would have to make a choice that's wrong half the time.
+- **`menu`, `nav`, `label`, `legend`** — fill-rail / fill-card-label use cases are better solved by the consumer's flex / grid layout than a tag-local modifier.
 
-#### Button-group logic (parallel audit)
+#### Button-group logic (parallel audit, separate from `.flat` / `.flush`)
 
-The framework's current "group" pattern lives on `<ul class="group">` / `<ol class="group">` (declared in `_ul.scss` + `_li.scss`). There's no dedicated button-group pattern (Bootstrap's `.btn-group` shape — adjacent buttons sharing borders, end-cap radius on first / last; framework currently uses `[role="group"]` declared in `components/_role-group.scss`). Audit:
+The framework's button-group lives on `[role="group"]` in `components/_role-group.scss` (overlap-border, first / last radius, vertical orientation). Outstanding audit:
 
-- ⬜ Confirm `[role="group"]` is the canonical button-group host (it is — `components/_role-group.scss` handles overlap-border, first / last radius, vertical orientation).
-- ⬜ Adjacent-border collapse uses negative `margin-inline-start` on `button + button` — same idiom as `nav[aria-label='Pagination']`. Already shipped; verify the parity.
 - ⬜ Variant cascading: a single `<div role="group" class="success">` should tint every button inside. Today buttons don't inherit variant via parent context. Audit whether this is desirable (might conflict with mixed-variant button rows).
 
 #### Authoring phases
 
-Each phase ships:
+Each phase ships SCSS in `modifiers/_local.scss` + a demo on the matching element / use page + the `_local.test.ts` charter assertions (automatic as rules land). Doc updates in [modifiers.md](modifiers.md) and the affected element row in [taxonomy.md](taxonomy.md) follow the SCSS.
 
-1. SCSS rules in `modifiers/_local.scss` (extending the existing flat/flush blocks).
-2. Demo on the matching element page (or a dedicated section on the appropriate Use\*Page).
-3. `_local.test.ts` charter assertions land automatically as rules are added.
-4. Doc updates in [modifiers.md](modifiers.md) and the affected element row in [taxonomy.md](taxonomy.md).
-
-| Phase | Scope                                                                                 | Demo home(s)                                                           |
-| ----- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| A     | `ul.group.flush` / `ol.group.flush` alignment audit + hover parity                    | ListsPage `<ul class="group flush">` demo update                       |
-| B     | `details.flat` / `details.flush`                                                      | DetailsPage + UseDetailsPage (accordion-item shape demo)               |
-| C     | `aside.flat` / `aside.flush` (for `role='alert'`)                                     | AsidePage callout / alert variations                                   |
-| D     | `dialog.flush`                                                                        | DialogElementPage + UseDialogPage (inline non-modal inset into a card) |
-| E     | `a.flat` / `a.flush`                                                                  | AnchorPage tile-as-link demo + ArticleCardPage clickable-card demo     |
-| F     | `button.flat`                                                                         | ButtonPage toolbar / inline-action-chip demo                           |
-| G     | `article.flush` / `fieldset.flat` / `fieldset.flush` / `form.flush`                   | ArticleCardPage nested cards + FormControlsPage + FormSurfacesPage     |
-| H     | Media `.flush` (`img`, `video`, `iframe`, `embed`, `object`, `canvas`, `svg`)         | MediaPage hero-image demo + FiguresPage embed-fill demo                |
-| I     | Class-component alignment (`.alert.flush`, `.spinner.flush`, `.skeleton.flush`, etc.) | InlineAtomsPage loading-state demos                                    |
+| Phase | Scope                                                              | Demo home(s)                                                           |
+| ----- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| A     | `ul.group.flush` / `ol.group.flush` alignment audit + hover parity | ListsPage `<ul class="group flush">` demo update                       |
+| B     | `details.flat` / `details.flush`                                   | DetailsPage + UseDetailsPage (accordion-item shape demo)               |
+| C     | `aside.flat` / `aside.flush` (for `role='alert'`)                  | AsidePage callout / alert variations                                   |
+| D     | `dialog.flush:not(:modal)`                                         | DialogElementPage + UseDialogPage (inline non-modal inset into a card) |
+| E     | `a.flat` / `a.flush`                                               | AnchorPage tile-as-link demo + ArticleCardPage clickable-card demo     |
+| F     | `button.flat`                                                      | ButtonPage toolbar / inline-action-chip demo                           |
+| G     | `article.flush` / `form.flush` / `section.flush`                   | ArticleCardPage nested cards + FormControlsPage + SectioningPage       |
 
 #### Audit deliverable
 
