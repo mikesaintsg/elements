@@ -303,7 +303,11 @@
 	@starting-style {
 		dialog:not(:modal) {
 			opacity: 0;
-			transform: translateY(-0.5rem);
+			// Slide distance tokenized via `--set-motion-slide-distance`
+			// (declared in `_tokens.scss`, also used by the in-flow
+			// `aside[role='alert']` Y-slide in `components/_aside.scss`).
+			// Single token retunes the entire in-flow surface family.
+			transform: translateY(calc(var(--set-motion-slide-distance) * -1));
 		}
 	}
 

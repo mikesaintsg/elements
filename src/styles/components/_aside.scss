@@ -290,19 +290,23 @@
 		// contract; the wrapper isn't needed for the discrete
 		// `visibility` line because it never animates a length.
 		//
-		// `transform: translateY(-0.5rem)` on the closed state adds a
-		// subtle drawer-family slide to the open / close transition.
-		// The height tween still does the layout work (no jump as the
-		// banner appears between siblings); the small inward translate
-		// reads as "settling into place" rather than "unfolding from
-		// 0." Matches the in-flow surface family's "drawer feel"
-		// without conflicting with the height-collapse layout shift.
+		// `transform: translateY(calc(--set-motion-slide-distance * -1))`
+		// on the closed state adds a subtle drawer-family slide to the
+		// open / close transition. The height tween still does the
+		// layout work (no jump as the banner appears between siblings);
+		// the small inward translate reads as "settling into place"
+		// rather than "unfolding from 0." Matches the in-flow surface
+		// family's "drawer feel" without conflicting with the height-
+		// collapse layout shift. Slide distance is tokenized so
+		// consumers retune the in-flow family centrally — the same
+		// token also drives the non-modal `<dialog>` Y-slide entry in
+		// `elements/_dialog.scss`.
 		opacity: 0;
 		block-size: 0;
 		padding-block: 0;
 		border-inline-start-width: 0;
 		visibility: hidden;
-		transform: translateY(-0.5rem);
+		transform: translateY(calc(var(--set-motion-slide-distance) * -1));
 		@include transition(
 			(
 				block-size var(--set-motion-duration) var(--set-motion-timing-function),

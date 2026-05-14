@@ -116,6 +116,7 @@ export const tokens = {
 	// rationale.
 	motionDuration: '--set-motion-duration',
 	motionTimingFunction: '--set-motion-timing-function',
+	motionSlideDistance: '--set-motion-slide-distance',
 
 	// Baseline hydration — non-color defaults so a bare element renders
 	// with consistent border-radius, gap, sticky offset, and z-index
