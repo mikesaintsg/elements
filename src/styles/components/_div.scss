@@ -39,7 +39,10 @@
 	// Override `--set-stack-gap` per-instance for tighter or looser spacing.
 	// --------------------------------------------------------------------------
 	div.stack {
-		--set-stack-gap: calc(var(--spacing) * 4);
+		// Local gap consumes the global `--set-stack-spacing` token so a
+		// host-page-level override (or a per-instance inline override) retunes
+		// every `.stack` without having to know about a different local name.
+		--set-stack-gap: var(--set-stack-spacing, calc(var(--spacing) * 4));
 
 		display: flex;
 		flex-direction: column;
@@ -53,7 +56,10 @@
 	// `--set-cluster-align` for top-aligned button rows etc.
 	// --------------------------------------------------------------------------
 	div.cluster {
-		--set-cluster-gap: calc(var(--spacing) * 3);
+		// Same pattern as `.stack` — local `--set-cluster-gap` resolves to the
+		// global `--set-cluster-spacing` token so consumers can retune cluster
+		// rhythm at any scope without learning the local name.
+		--set-cluster-gap: var(--set-cluster-spacing, calc(var(--spacing) * 3));
 		--set-cluster-align: center;
 
 		display: flex;

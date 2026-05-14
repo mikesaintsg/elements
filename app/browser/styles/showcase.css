@@ -220,3 +220,181 @@
 	margin: 0;
 	inset-block-start: auto;
 }
+
+/* ============================================================================
+ * Demo-page chrome — the parts of the showcase that are NOT framework
+ * concerns but recur often enough across pages that inlining them on
+ * every site would (a) drift apart visually and (b) hide the fact that
+ * a pattern is shared. The framework owns semantic-element chrome;
+ * these classes own SHOWCASE-PAGE LAYOUT — tile grids, fixed-width
+ * tile cells, subtitle typography, the flush composition host
+ * incantation. Every new repeated inline-style pattern in a page
+ * should either:
+ *   (a) become a framework feature (if the pattern is universal), or
+ *   (b) land here as a `.showcase-*` class (if it's a showcase-only
+ *       layout choice).
+ *
+ * Audit rule: `app/browser/pages/*.vue` MUST NOT carry inline
+ * `style="..."` attributes for anything except (1) a value bound to
+ * reactive state via `:style`, (2) the blessed flush-composition-host
+ * token incantation on `<article>`, or (3) a value that genuinely
+ * demonstrates a token (e.g., a swatch's `background-color`). See
+ * `guides/contribute.md` § "No inline styles in showcase pages".
+ * ============================================================================ */
+
+/* Muted-text utility — generic "fine print" color (`<small>`
+ * captions, footer attributions, byline credits). Reaches for
+ * `--color-text-muted` so light / dark / forced-colors themes
+ * resolve at the consumer level. Centralized so every page reads
+ * "muted" through one class rather than 14 different inline
+ * `color: var(--color-text-muted)` strings. */
+.showcase-muted {
+	color: var(--color-text-muted);
+}
+
+/* Subtitle pattern — `<p class="showcase-card-subtitle">` below a
+ * heading inside an article band. Muted color + slightly smaller than
+ * body text. Framework already zeros margin inside `<article> >
+ * <header>`, so this class only carries the typography choice. */
+.showcase-card-subtitle {
+	color: var(--color-text-muted);
+	font-size: 0.875em;
+}
+
+/* Tile grids — the "row of equal-ish width cards / articles / links"
+ * layout used on AnchorPage, ArticleCardPage, ButtonPage, etc.
+ * `auto-fill` lets the grid wrap responsively; the minmax floor sets
+ * the smallest comfortable tile width. The three knobs are exposed
+ * as custom properties so the same class covers tight 12rem stat
+ * grids, default 16rem card grids, and wide 20rem image grids — a
+ * per-instance `style="--showcase-tile-grid-min: 20rem"` is the
+ * intended escape hatch (knob-tuning a centralized class, not
+ * inlining a whole grid declaration). */
+.showcase-tile-grid {
+	display: grid;
+	grid-template-columns: repeat(
+		var(--showcase-tile-grid-flow, auto-fill),
+		minmax(var(--showcase-tile-grid-min, 16rem), 1fr)
+	);
+	gap: var(--showcase-tile-grid-gap, 1rem);
+}
+
+/* Single fixed-width tile — `<article class="showcase-tile">` inside
+ * a non-grid demo where the tile sets its own width. 16rem matches
+ * the tile-grid floor so a lone tile reads at the same width as a
+ * row of tiles. */
+.showcase-tile {
+	inline-size: 16rem;
+}
+
+/* Constrained readable width — useful for prose / form demos that
+ * shouldn't stretch the full column. */
+.showcase-readable {
+	max-inline-size: 32rem;
+}
+
+/* Flush composition host — the article-as-frame pattern. Zeroes the
+ * three article-spacing tokens and clips children to the article's
+ * own radius. The framework supports this directly via the tokens;
+ * this class is sugar so consumers don't have to remember the four-
+ * declaration incantation. A consumer can still write the tokens
+ * inline if a single demo needs a different combination. */
+.showcase-flush-host {
+	--set-article-padding-inline: 0;
+	--set-article-padding-block: 0;
+	--set-article-gap: 0;
+	overflow: clip;
+}
+
+/* Footer-actions row — the trailing button cluster inside an
+ * `<article> > <footer>`. The framework's footer chrome is opinion-
+ * free on internal layout; consumers reach for this when they want
+ * "icon + spacer + button row." It's just `.cluster` with end-
+ * justified main-axis alignment. */
+.showcase-footer-actions {
+	justify-content: flex-end;
+}
+
+/* Split-aligned footer — caption on the start, action on the end.
+ * Used by settings-card footers ("Changes save automatically …
+ * Reset to defaults"). Mid-axis alignment so the small caption
+ * sits centered against the larger button. */
+.showcase-footer-split {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+/* ── Stat card demo helpers (article-as-stat-tile pattern) ──────────────
+ * The "Active users · 12,402 · ↑ 4.2%" tile uses three typographic
+ * roles inside one small article: eyebrow label (uppercase), big
+ * value (display number), and delta caption (success / danger /
+ * muted color). Each is a thin typography class — the article's
+ * own flex-column + gap already supplies layout. */
+.showcase-stat-label {
+	color: var(--color-text-muted);
+	font-size: 0.75em;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.showcase-stat-value {
+	font-size: 1.875rem;
+	font-weight: 600;
+	line-height: 1;
+}
+
+/* Delta caption — pair with one of the three tone modifiers below
+ * to set the directional color. */
+.showcase-stat-delta {
+	font-size: 0.875em;
+}
+
+.showcase-stat-delta-up {
+	color: var(--color-success-on-canvas);
+}
+
+.showcase-stat-delta-down {
+	color: var(--color-danger-on-canvas);
+}
+
+.showcase-stat-delta-flat {
+	color: var(--color-text-muted);
+}
+
+/* ── Pricing card demo helpers ──────────────────────────────────────────
+ * Big price number + small "/ month" unit. Same shape as the stat
+ * value but slightly larger for the visual emphasis a pricing card
+ * deserves. */
+.showcase-price {
+	font-size: 2rem;
+	font-weight: 600;
+	line-height: 1;
+}
+
+.showcase-price-unit {
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+	font-weight: 400;
+}
+
+/* ── Profile-card header (avatar + identity block) ──────────────────────
+ * The framework's auto-banded `<article> > <header>` paints the
+ * subtle tinted band by default. A profile card opts out: drop the
+ * band paint + divider so the avatar sits against the card body
+ * directly. This is a SHOWCASE-ONLY override — not a framework
+ * pattern — because most real cards want the band. */
+.showcase-profile-header {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+	background-color: transparent;
+	border-block-end: 0;
+}
+
+.showcase-profile-avatar {
+	inline-size: 4rem;
+	block-size: 4rem;
+	border-radius: 50%;
+	flex-shrink: 0;
+}

@@ -251,6 +251,21 @@
 		border-end-end-radius: calc(var(--set-article-border-radius) - var(--set-article-border-width));
 	}
 
+	// The article is a flex column with its own `--set-article-gap`, so any
+	// vertical margin on direct heading / paragraph children (including those
+	// nested inside a header or footer band) stacks on top of the gap / band
+	// padding instead of collapsing — producing the "headings look too tall"
+	// trap that every consumer fixes with inline `margin-block: 0`. Owning
+	// that here keeps `<article><h3>Title</h3><p>Body</p></article>` and the
+	// banded variant clean at the markup level. `:where()` keeps specificity
+	// at 0 so a consumer that genuinely wants a margin still wins without
+	// `!important`.
+	article > :where(h1, h2, h3, h4, h5, h6, p),
+	article > :is(header:first-child, footer:last-child)
+		> :where(h1, h2, h3, h4, h5, h6, p) {
+		margin-block: 0;
+	}
+
 	// --------------------------------------------------------------------------
 	// Card image — first / last <img> or <picture> child of <article>.
 	//

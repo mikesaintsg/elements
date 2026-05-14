@@ -147,6 +147,7 @@
 	// hasn't been pinned to a specific rhythm.
 	--set-gap: calc(var(--spacing) * 3); // 0.75rem / 12px
 	--set-stack-spacing: 1em; // sibling vertical rhythm — relative to local font-size
+	--set-cluster-spacing: calc(var(--spacing) * 3); // chip / button-row gap
 
 	// Anchor-jump / scroll-snap offset so a sticky toolbar (consumer sets
 	// per app: `:root { --set-sticky-offset: 4rem; }`) never covers the

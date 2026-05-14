@@ -126,6 +126,7 @@ export const tokens = {
 	borderWidth: '--set-border-width',
 	gap: '--set-gap',
 	stackSpacing: '--set-stack-spacing',
+	clusterSpacing: '--set-cluster-spacing',
 	stickyOffset: '--set-sticky-offset',
 
 	// Z-index scale for floating chrome. Native popovers + `<dialog>:modal`
