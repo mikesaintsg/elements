@@ -260,21 +260,35 @@ export function createToast(
 
 	// ── Swipe-to-dismiss ─────────────────────────────────────────────────
 	// Composes `createPointer` to capture the `pointerdown → pointermove* →
-	// pointerup` lifecycle. Setup is consciously thin: the factory writes
-	// `--set-toast-swipe-offset` (inline-axis displacement) and
-	// `--set-toast-swipe-opacity` (fade) per frame; `_toast.scss` composables-
-	// layer rules consume those tokens via `translate` (standalone property
-	// composes with the deck's `transform: translateY()`) and `opacity`,
-	// gating the snap-back transition on the absence of `[data-toast-
-	// swiping]`. Bidirectional horizontal — either direction commits when
-	// `|dx| > threshold`. The `accept` predicate rejects pointer-downs on
-	// the trailing dismiss `<button>` (so button clicks survive) and
-	// non-primary buttons.
+	// pointerup` lifecycle. The factory writes `--set-toast-swipe-offset`
+	// (inline-axis displacement) and `--set-toast-swipe-opacity` (fade) per
+	// frame; `_toast.scss` consumes them via the standalone `translate`
+	// property (composes with the deck's `transform: translateY()`) and
+	// `opacity`, gating the snap-back transition on the absence of
+	// `[data-toast-swiping]`.
+	//
+	// Interaction model — "touch the bounds, dismiss" (Sonner / iOS / Demo
+	// 4 of UsePointerPage). The toast follows the pointer 1:1 along the
+	// inline axis, but the visual translate is CAPPED at the swipe
+	// threshold so the toast can't be dragged unreasonably far. The moment
+	// the drag REACHES the bounds (|dx| ≥ threshold), we auto-commit
+	// dismiss without waiting for pointerup: pointer.clear() ends the drag
+	// programmatically (same idiom as the resizable-card demo's max-extent
+	// auto-end), and the close animation flies the toast off the inline-
+	// end edge via the `±100vw` offset the move handler writes. If the
+	// pointer is released BEFORE reaching the bounds, the end handler
+	// clears the inline overrides and the motion-contract transition
+	// (gated on `:not([data-toast-swiping])`) snaps the toast home.
+	//
+	// `accept` rejects pointer-downs on the trailing dismiss `<button>` so
+	// button clicks survive, and non-primary buttons (right-click stays
+	// available for the OS context menu).
 	let pointer: CreatePointerInstance | null = null
 	if (swipeEnabled) {
 		let startX = 0
 		let startY = 0
 		let axisLocked: 'inline' | 'block' | null = null
+		let committed = false // true once auto-dismiss has fired in `move`
 		const LOCK_THRESHOLD = 6 // px before we commit to an axis
 		pointer = createPointer(element, {
 			accept: (event) => {
@@ -289,10 +303,12 @@ export function createToast(
 					startX = event.clientX
 					startY = event.clientY
 					axisLocked = null
+					committed = false
 					pause()
 					element.setAttribute('data-toast-swiping', '')
 				},
 				move: (event) => {
+					if (committed) return
 					const dx = event.clientX - startX
 					const dy = event.clientY - startY
 					if (axisLocked === null) {
@@ -306,27 +322,49 @@ export function createToast(
 						// host (page scroll). We don't dismiss on vertical swipes.
 						return
 					}
-					element.style.setProperty('--set-toast-swipe-offset', `${dx}px`)
-					const opacity = Math.max(0, 1 - Math.abs(dx) / (swipeThreshold * 2))
+					const absDx = Math.abs(dx)
+					const sign = Math.sign(dx) || 1
+					// Visual cap at the threshold — past it, the toast stops
+					// moving with the pointer. The cap establishes a clear
+					// "you've reached the dismiss bound" affordance: visual
+					// stops, opacity hits floor, the next frame fires
+					// auto-dismiss below. Without the cap, the toast would
+					// follow the pointer arbitrarily far off-screen, which
+					// reads as "I'm flinging this away" — natural-feeling at
+					// first but with no defined dismiss commit point.
+					const cappedDx = absDx >= swipeThreshold ? sign * swipeThreshold : dx
+					element.style.setProperty('--set-toast-swipe-offset', `${cappedDx}px`)
+					// Opacity tapers across the threshold: full at origin,
+					// 0.4 at the bound, 0 in the post-commit fly-off. The
+					// 0.4 floor (not 0) keeps the toast readable mid-swipe
+					// so users can hesitate / cancel without it disappearing
+					// before they decide.
+					const opacity = Math.max(0.4, 1 - (absDx / swipeThreshold) * 0.6)
 					element.style.setProperty('--set-toast-swipe-opacity', String(opacity))
-				},
-				end: (event) => {
-					element.removeAttribute('data-toast-swiping')
-					const dx = event.clientX - startX
-					if (axisLocked === 'inline' && Math.abs(dx) > swipeThreshold) {
-						// Commit dismiss — translate off the inline-end edge then
-						// fire `hide()`. The hide path runs the popover lifecycle,
-						// which dispatches the cancellable `elements:toast:hide`
-						// event; if a consumer vetoes, the snap-back applies on
-						// the next frame because the inline style is still set.
-						const sign = Math.sign(dx) || 1
+
+					if (absDx >= swipeThreshold) {
+						// Touched the bounds → auto-dismiss without waiting
+						// for pointerup. Same pattern as the resizable-card
+						// demo (UsePointerPage § 4 — `resizer.clear()` at max).
+						committed = true
+						element.removeAttribute('data-toast-swiping')
 						element.style.setProperty('--set-toast-swipe-offset', `${sign * window.innerWidth}px`)
 						element.style.setProperty('--set-toast-swipe-opacity', '0')
+						pointer?.clear()
 						hide()
+					}
+				},
+				end: () => {
+					if (committed) {
+						// Auto-dismiss already ran in `move` — leave the inline
+						// styles in place so the close animation plays out.
 						return
 					}
-					// Snap back to origin — clear the inline overrides so the CSS
-					// transition (defined in `_toast.scss`) carries us home.
+					element.removeAttribute('data-toast-swiping')
+					// User released before reaching the bounds — snap back to
+					// origin. Removing the inline overrides lets the CSS
+					// transition (motion-contract tokens, gated on
+					// `:not([data-toast-swiping])`) carry the toast home.
 					element.style.removeProperty('--set-toast-swipe-offset')
 					element.style.removeProperty('--set-toast-swipe-opacity')
 					resume()

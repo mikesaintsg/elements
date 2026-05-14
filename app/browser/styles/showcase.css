@@ -145,7 +145,18 @@
  * `--set-nav-*` so desktop-mode tracks the rail's chrome, and the
  * popover-mode override below retunes for drawer-mode. */
 .showcase-sidebar-region {
-	flex-shrink: 0;
+	/* `flex: none` (= 0 0 auto) overrides the framework's drawer-body
+	 * rule `:is(aside, nav)[popover] > :not(:where(header, footer)) {
+	 * flex: 1 1 auto }` for the PINNED region of a composed rail. That
+	 * framework rule is correct for the common drawer shape (header +
+	 * body + footer; the body grows). In composed mode we have a pinned
+	 * region + a separately-scrolling region, and only the SCROLLING
+	 * region should grow — the pinned region must size to its content
+	 * (filter input ≈ 35 px + padding) and stay there. Writing only
+	 * `flex-shrink: 0` (as the previous version did) left `flex-grow: 1`
+	 * intact and the region ballooned to ~390 px on mobile, leaving a
+	 * huge empty stripe between the filter and the link list. */
+	flex: none;
 	padding-inline: var(--set-nav-padding-inline);
 	padding-block: var(--set-nav-padding-block);
 	background-color: var(--set-nav-background-color);
