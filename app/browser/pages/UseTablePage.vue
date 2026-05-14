@@ -422,8 +422,8 @@ const note = (line: string): void => {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 5 — Inline editing via flush form controls. The `input.flush` /
-// `select.flush` modifiers (modifiers/_local.scss) make a real `<input>`
+// Demo 5 — Inline editing via .flat / .flush form controls. The
+// `input.flat` / `select.flat` modifiers (modifiers/_local.scss) make a real `<input>`
 // / `<select>` read as plain table text until the user engages — no
 // `contenteditable` on random elements, so the validation contract +
 // type-specific UI + screen-reader affordances stay intact.
@@ -443,6 +443,10 @@ const editRows = ref<EditRow[]>([
 const editRef = useTemplateRef<HTMLTableElement>('editRef')
 const edit = useTable(editRef, {
 	headers: ['SKU', 'Name', 'Stock', 'Bucket'],
+})
+const editFlushRef = useTemplateRef<HTMLTableElement>('editFlushRef')
+const editFlush = useTable(editFlushRef, {
+	headers: ['SKU', 'Name', 'Quick action'],
 })
 
 // ─────────────────────────────────────────────────────────────────────
@@ -566,11 +570,31 @@ const reset = (): void => {
 				<code>[data-table-expanded]</code> — §6 demonstrates.
 			</li>
 			<li>
-				<code>modifiers/_local.scss</code> adds <code>input.flush</code> /
-				<code>select.flush</code> / <code>textarea.flush</code> for in-cell editing. Transparent at
-				rest, subtle backdrop on hover, full bordered focus chrome — §5 demonstrates. The flush
-				modifier preserves the validation contract + type-specific UI that
-				<code>contenteditable</code> on random elements throws away.
+				<code>modifiers/_local.scss</code> adds a paired modifier set for in-host elements:
+				<strong><code>.flat</code></strong> (transparent rest, hover reveal, focus promotes to
+				bordered baseline — applies to <code>input</code> / <code>select</code> /
+				<code>textarea</code>) and <strong><code>.flush</code></strong> (no margin / border / radius
+				/ ring; inherits the parent's radius; fills the host on both axes — applies to
+				<code>input</code> / <code>select</code> / <code>textarea</code> / <code>button</code>). §5
+				demonstrates both side-by-side; the underlying real form controls preserve the validation
+				contract + type-specific UI that <code>contenteditable</code> on random elements throws
+				away.
+			</li>
+			<li>
+				<code>createTable</code> now wires row-click → expansion toggle. Default
+				<code>expansion.click: true</code> (synonym <code>'row'</code>) toggles on any
+				non-interactive click inside an expandable row; <code>'caret'</code> narrows the trigger to
+				descendants of <code>[data-table-expansion-trigger]</code>; <code>false</code> disables.
+				Same interactive-descendant opt-out shape as <code>selection.click</code>. The bare
+				<code>&lt;table tabindex="0"&gt;</code> also now seeds the first cell on focus so the APG
+				roving keyboard model has a starting cursor — Tab into the table, then ArrowKeys.
+			</li>
+			<li>
+				<code>components/_nav.scss</code> pagination chrome now reads
+				<code>--set-nav-pagination-font-size</code> (default <code>var(--text-sm)</code>) so the
+				bare <code>&lt;nav aria-label="Pagination"&gt;</code> aligns with table density without a
+				per-consumer override. <code>.small</code> / <code>.large</code> size modifiers still retune
+				via the size cascade.
 			</li>
 		</ul>
 	</section>
@@ -586,32 +610,23 @@ const reset = (): void => {
 			scroll. Cell content wraps by default; <code>table.nowrap</code> + horizontal scroll is the
 			alternative idiom (see TablesPage).
 		</p>
-		<menu>
-			<li>
-				<button type="button" class="subtle small" @click="main.selection.select()">
-					Select all on page
-				</button>
-			</li>
-			<li>
-				<button type="button" class="subtle small" @click="main.selection.clear()">
-					Clear selection
-				</button>
-			</li>
-			<li>
-				<button type="button" class="subtle small" @click="main.expansion.expand(issues[0].id)">
-					Expand first
-				</button>
-			</li>
-			<li>
-				<button type="button" class="subtle small" @click="main.expansion.collapse()">
-					Collapse all
-				</button>
-			</li>
-			<li>
-				<button type="button" class="subtle small" @click="main.sort.clear()">Clear sort</button>
-			</li>
-			<li><button type="button" class="subtle small" @click="reset">Reset</button></li>
-		</menu>
+		<fieldset role="toolbar" aria-label="Table actions">
+			<legend><small>Actions</small></legend>
+			<button type="button" class="subtle small" @click="main.selection.select()">
+				Select all on page
+			</button>
+			<button type="button" class="subtle small" @click="main.selection.clear()">
+				Clear selection
+			</button>
+			<button type="button" class="subtle small" @click="main.expansion.expand(issues[0].id)">
+				Expand first
+			</button>
+			<button type="button" class="subtle small" @click="main.expansion.collapse()">
+				Collapse all
+			</button>
+			<button type="button" class="subtle small" @click="main.sort.clear()">Clear sort</button>
+			<button type="button" class="subtle small" @click="reset">Reset</button>
+		</fieldset>
 		<div
 			class="scrollable"
 			style="
@@ -882,18 +897,25 @@ const reset = (): void => {
 	</section>
 
 	<section id="use-table-edit">
-		<h2>5. Inline editing — <code>input.flush</code> / <code>select.flush</code></h2>
+		<h2>
+			5. Inline editing — <code>.flat</code> (with chrome on focus) vs <code>.flush</code> (fills
+			cell)
+		</h2>
 		<p>
-			Inline editing in table cells uses real <code>&lt;input&gt;</code> /
-			<code>&lt;select&gt;</code> form controls modified by <code>.flush</code> — declared in
-			<code>modifiers/_local.scss</code>. The control reads as plain table text at rest (transparent
-			background + transparent border); hover reveals a subtle backdrop tint so the affordance
-			announces itself; focus promotes to the full bordered baseline with the variant focus ring;
-			<code>:user-invalid</code> still paints the danger border after the user touches the field.
-			Using the right element preserves the validation contract, <code>type</code>-specific UI, IME
-			composition, and screen-reader affordances — <code>contenteditable</code> on random elements
-			throws all of that away.
+			Inline editing uses real <code>&lt;input&gt;</code> / <code>&lt;select&gt;</code> form
+			controls. <strong><code>.flat</code></strong> keeps the element's own padding + intrinsic size
+			and dissolves only the chrome: transparent rest, subtle backdrop on hover, full bordered
+			baseline + variant focus ring on focus, <code>:user-invalid</code> danger border still paints.
+			<strong><code>.flush</code></strong> fuses the control INTO the cell — no margin, no border,
+			no radius, no focus ring; the control inherits the cell's radius and inflates to
+			<code>100% × 100%</code> of the parent. Use <code>.flat</code> when the control should signal
+			"editable text" at rest with a clear focus state; use <code>.flush</code> when the cell IS the
+			surface and the control should occupy every pixel inside it. Both are declared in
+			<code>modifiers/_local.scss</code> and bound to <code>input</code> / <code>select</code> /
+			<code>textarea</code>; <code>.flush</code> additionally binds to <code>button</code> for
+			full-area CTAs in cards / tiles / table cells.
 		</p>
+		<h3>5a — <code>.flat</code> (transparent rest, full chrome on focus)</h3>
 		<table ref="editRef" class="striped" style="max-inline-size: 48rem">
 			<thead>
 				<tr>
@@ -911,7 +933,7 @@ const reset = (): void => {
 					<td>
 						<input
 							v-model="row.name"
-							class="flush"
+							class="flat"
 							type="text"
 							:aria-label="`Name for ${row.sku}`"
 						/>
@@ -919,14 +941,14 @@ const reset = (): void => {
 					<td>
 						<input
 							v-model.number="row.stock"
-							class="flush"
+							class="flat"
 							type="number"
 							min="0"
 							:aria-label="`Stock for ${row.sku}`"
 						/>
 					</td>
 					<td>
-						<select v-model="row.bucket" class="flush" :aria-label="`Bucket for ${row.sku}`">
+						<select v-model="row.bucket" class="flat" :aria-label="`Bucket for ${row.sku}`">
 							<option value="in">In stock</option>
 							<option value="low">Low</option>
 							<option value="out">Out</option>
@@ -935,11 +957,56 @@ const reset = (): void => {
 				</tr>
 			</tbody>
 		</table>
+		<h3>5b — <code>.flush</code> (fills the cell; cell owns the boundary)</h3>
+		<p>
+			The cell is the surface; the control inherits the cell's radius and fills the cell's content
+			box on both axes. Useful when the host cell carries variant tint / radius and the input should
+			read as the cell's surface.
+		</p>
+		<table ref="editFlushRef" class="striped" style="max-inline-size: 48rem">
+			<thead>
+				<tr>
+					<th>SKU</th>
+					<th>Name</th>
+					<th>Quick action</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr v-for="row in editRows" :key="`flush-${row.id}`" :data-id="`flush-${row.id}`">
+					<td>
+						<code>{{ row.sku }}</code>
+					</td>
+					<td style="padding: 0; block-size: 1px">
+						<input
+							v-model="row.name"
+							class="flush"
+							type="text"
+							:aria-label="`Flush name for ${row.sku}`"
+						/>
+					</td>
+					<td style="padding: 0; block-size: 1px">
+						<button type="button" class="subtle flush" @click="note(`flush action ${row.sku}`)">
+							Run
+						</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<p>
+			<small>
+				The cells in the flush demo declare <code>block-size: 1px</code> — the legacy
+				<code>&lt;td height="1px"&gt;</code> trick that coerces the cell to its row's intrinsic
+				height, so the percentage-height flush child resolves cleanly to the row height. Without it,
+				percentage block-size on a child of <code>&lt;td&gt;</code> falls back to
+				<code>auto</code> on every engine.
+			</small>
+		</p>
 		<p>
 			<small>
 				Live row state:
-				<code>{{ editRows.map((r) => `${r.sku}:${r.stock}:${r.bucket}`).join(' · ') }}</code> ·
-				factory ready: <code>{{ edit.ready.value }}</code>
+				<code>{{ editRows.map((r) => `${r.sku}:${r.stock}:${r.bucket}`).join(' · ') }}</code> · flat
+				factory ready: <code>{{ edit.ready.value }}</code> · flush factory ready:
+				<code>{{ editFlush.ready.value }}</code>
 			</small>
 		</p>
 	</section>
@@ -947,8 +1014,17 @@ const reset = (): void => {
 	<section id="use-table-expand">
 		<h2>6. Expansion — CSS-driven via <code>interpolate-size</code></h2>
 		<p>
-			Click a row's leading <code>id</code> cell to disclose the detail row.
-			<code>elements/_table.scss</code> drives the visual tween — the factory's only writes are
+			Click anywhere on a row to disclose its detail row.
+			<code>createTable</code> wires the click handler when <code>expansion.click</code> is
+			<code>true</code> (default) or <code>'row'</code>; clicks on interactive descendants (<code
+				>a</code
+			>
+			/ <code>button</code> / <code>input</code> / <code>select</code> / <code>textarea</code> /
+			<code>label</code> / <code>[data-no-select]</code>) are skipped so row-internal action chrome
+			survives. Pass <code>expansion.click: 'caret'</code> to scope the trigger to descendants of
+			<code>[data-table-expansion-trigger]</code> only; <code>false</code> disables the auto-handler
+			so consumers can drive <code>expansion.toggle(id)</code> themselves.
+			<code>elements/_table.scss</code> drives the visual tween — the factory's only DOM writes are
 			<code>[data-table-expanded]</code> on the data row + <code>[inert]</code> on the panel.
 			<code>[inert]</code> rather than <code>[hidden]</code> is what allows the
 			<code>block-size: 0 → auto</code> animation: <code>display: none</code> would freeze the

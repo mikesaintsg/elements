@@ -750,6 +750,7 @@ export const tokens = {
 
 		// Pagination chrome — bordered button row inside
 		// `<nav aria-label="Pagination">`. See `components/_nav.scss`.
+		paginationFontSize: '--set-nav-pagination-font-size',
 		paginationColor: '--set-nav-pagination-color',
 		paginationBackgroundColor: '--set-nav-pagination-background-color',
 		paginationBorderColor: '--set-nav-pagination-border-color',

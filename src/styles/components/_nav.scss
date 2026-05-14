@@ -92,6 +92,15 @@
 		// Pagination tokens — declared on bare `<nav>` so any `<nav
 		// aria-label="Pagination">` resolves them. Same chrome contract
 		// as `<button>`: bordered, padded, hover/focus tints.
+		// Density — `nav[aria-label='Pagination']` is most often placed
+		// alongside dense surfaces (tables, list-groups, lookup result
+		// cards) where the body type is the framework's compact `--text-sm`.
+		// `--set-nav-pagination-font-size` defaults to `--text-sm` (with a
+		// `--set-size-font-size` cascade so the `.small` / `.large` size
+		// modifier still retunes) so the bare pagination row reads at the
+		// same text scale as a default table cell, without a per-consumer
+		// override.
+		--set-nav-pagination-font-size: var(--set-size-font-size, var(--text-sm));
 		--set-nav-pagination-color: var(--set-style-color, currentColor);
 		--set-nav-pagination-background-color: var(
 			--set-style-background-color,
@@ -483,6 +492,7 @@
 		min-inline-size: var(--set-nav-pagination-min-size);
 		padding-inline: var(--set-nav-pagination-padding-inline);
 		padding-block: var(--set-nav-pagination-padding-block);
+		font-size: var(--set-nav-pagination-font-size);
 		color: var(--set-nav-pagination-color);
 		background-color: var(--set-nav-pagination-background-color);
 		border: var(--set-nav-pagination-border-width) solid var(--set-nav-pagination-border-color);

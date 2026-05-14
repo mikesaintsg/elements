@@ -132,6 +132,15 @@
 		}
 
 		th {
+			// `position: relative` is the anchor for every absolutely-
+			// positioned `<th>` descendant — sort indicator `::after`, resize
+			// handle `[data-table-resize-handle]`, and any future header
+			// affordance. Previously only `th[data-key]` (sortable headers)
+			// declared relative positioning, which meant resize handles in
+			// non-sortable tables floated against the table's coordinate
+			// system instead of the cell's edge and the drag affordance
+			// landed in the wrong place (silently broken).
+			position: relative;
 			font-weight: var(--set-table-header-font-weight);
 			background-color: var(--set-table-header-background-color);
 		}
@@ -427,6 +436,17 @@
 		position: sticky;
 		inset-block-start: var(--set-sticky-offset, 0);
 		z-index: 1;
+		// Opaque backdrop — without this the sticky band reads transparent on
+		// every theme (the header's striped / muted tint resolves with alpha)
+		// and the scrolling body shows through. `--color-canvas` is the
+		// theme-aware page background; the existing
+		// `--set-table-header-background-color` token paints on top so themed
+		// header tints still apply, just opaquely.
+		background-color: var(--color-canvas, Canvas);
+		background-image: linear-gradient(
+			var(--set-table-header-background-color),
+			var(--set-table-header-background-color)
+		);
 	}
 
 	// ── Hover override over striped / variant tints ───────────────────────────

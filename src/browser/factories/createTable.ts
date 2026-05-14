@@ -120,6 +120,19 @@ export function createTable(
 	const sortAuto = options.sort?.auto ?? true
 
 	const expansionMultiple = options.expansion?.multiple ?? true
+	// `expansion.click` — controls how row-clicks toggle expansion:
+	//   `true` / `'row'` (default): clicking anywhere on a row that has a
+	//     sibling `<tr data-table-expansion>` toggles. Interactive
+	//     descendants (`a, button, input, textarea, select, label`,
+	//     `[data-no-select]`) are skipped so action chrome still works —
+	//     same opt-out shape `selection.click` uses.
+	//   `'caret'`: only clicks on `[data-table-expansion-trigger]` toggle.
+	//     Consumers wire the trigger explicitly (e.g. a leading-cell
+	//     button) when they want the rest of the row to behave as plain
+	//     content.
+	//   `false`: no built-in click handler; consumers drive the toggle
+	//     via `expansion.toggle(id)` directly.
+	const expansionClick = options.expansion?.click ?? true
 
 	const selectionStrategy: TableStrategy = options.selection?.strategy ?? 'page'
 	const selectablePredicate = options.selection?.selectable
@@ -1290,6 +1303,19 @@ export function createTable(
 		if (focusDomain.move(direction)) event.preventDefault()
 	}
 
+	// When the bare `<table tabindex="0">` receives focus (Tab keyboard
+	// navigation lands here first because the table itself is the focus
+	// anchor for the APG grid pattern), seed the first cell as the active
+	// roving target so the next ArrowKey has something to move FROM.
+	// Without this, the keyboard handler above silently no-ops on every
+	// first keypress because `focusedCell.value` is `null`.
+	const onTableFocus = (event: Event): void => {
+		if (event.target !== element) return
+		if (focusedCell.value) return
+		if (rowCount.value === 0 || columnCount.value === 0) return
+		focusDomain.focus({ row: 0, column: 0 })
+	}
+
 	// ── Sort click / keyboard handlers ────────────────────────────────────
 	// Delegated on the `<table>` element so consumers don't need to wire
 	// per-header listeners. A click on a `thead th[data-key]` whose schema
@@ -1416,6 +1442,58 @@ export function createTable(
 		selectionClear()
 	}
 
+	// ── Expansion click handler ──────────────────────────────────────────
+	// Clicks on an expandable row (one that has a sibling `<tr data-table-
+	// expansion>` carrying the detail panel) toggle its expansion state.
+	// Mirrors the selection click handler's opt-out shape: clicks on
+	// interactive descendants or inside `[data-no-select]` are skipped so
+	// row-internal action chrome survives. Clicks inside the detail panel
+	// itself are also skipped — the panel is its own surface.
+	//
+	// `expansion.click: 'caret'` narrows the trigger to descendants of
+	// `[data-table-expansion-trigger]`, so consumers wanting an explicit
+	// caret button (and rows that read as plain content otherwise) can opt
+	// in. `expansion.click: false` disables this entirely.
+	const isInsideExpansionPanel = (target: EventTarget | null): boolean => {
+		if (!(target instanceof Element)) return false
+		const cell = target.closest('tr')
+		return cell?.hasAttribute(TABLE_EXPANSION_ATTR) === true
+	}
+
+	const expandableRowFor = (target: EventTarget | null): HTMLTableRowElement | null => {
+		if (!(target instanceof Element)) return null
+		const row = target.closest('tr[data-id]')
+		if (!(row instanceof HTMLTableRowElement)) return null
+		if (row.hasAttribute(TABLE_EXPANSION_ATTR)) return null
+		const tbody = row.closest('tbody')
+		if (!tbody || tbody.parentElement !== element) return null
+		const sibling = row.nextElementSibling
+		if (!sibling || !(sibling instanceof HTMLTableRowElement)) return null
+		if (!sibling.hasAttribute(TABLE_EXPANSION_ATTR)) return null
+		return row
+	}
+
+	const onExpansionClick = (event: Event): void => {
+		if (!(event instanceof MouseEvent)) return
+		if (event.button !== 0) return
+		if (isInsideExpansionPanel(event.target)) return
+		if (expansionClick === 'caret') {
+			if (
+				!(event.target instanceof Element) ||
+				!event.target.closest('[data-table-expansion-trigger]')
+			) {
+				return
+			}
+		} else if (isInteractiveTarget(event.target)) {
+			return
+		}
+		const row = expandableRowFor(event.target)
+		if (!row) return
+		const id = extractRowId(row)
+		if (!id) return
+		expansionToggle(id)
+	}
+
 	// ── Teardown ─────────────────────────────────────────────────────────
 	const teardown = (): void => {
 		const el = element
@@ -1479,11 +1557,17 @@ export function createTable(
 			}
 		}
 		expandedIds.clear()
-		if (keyboard) element.removeEventListener('keydown', onKeydown)
+		if (keyboard) {
+			element.removeEventListener('keydown', onKeydown)
+			element.removeEventListener('focus', onTableFocus)
+		}
 		if (selectionClick) {
 			element.removeEventListener('click', onSelectionClick)
 			element.removeEventListener('pointerdown', onSelectionPointerDown)
 			document.removeEventListener('pointerdown', onDocumentSelectionDown, true)
+		}
+		if (expansionClick !== false) {
+			element.removeEventListener('click', onExpansionClick)
 		}
 		element.removeEventListener('click', onSortClick)
 		element.removeEventListener('keydown', onSortKeydown)
@@ -1521,11 +1605,17 @@ export function createTable(
 	initTotal()
 	initSize()
 	refresh()
-	if (keyboard) element.addEventListener('keydown', onKeydown)
+	if (keyboard) {
+		element.addEventListener('keydown', onKeydown)
+		element.addEventListener('focus', onTableFocus)
+	}
 	if (selectionClick) {
 		element.addEventListener('click', onSelectionClick)
 		element.addEventListener('pointerdown', onSelectionPointerDown)
 		document.addEventListener('pointerdown', onDocumentSelectionDown, true)
+	}
+	if (expansionClick !== false) {
+		element.addEventListener('click', onExpansionClick)
 	}
 	// Sort delegation runs unconditionally — `sortableHeaderFor()` no-ops
 	// for non-sortable headers, so this costs nothing on tables that don't

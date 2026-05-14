@@ -1419,6 +1419,20 @@ export interface CreateTableOptions {
 		readonly multiple?: boolean
 		/** Row ids to expand at construction (stale ids silently ignored). */
 		readonly initial?: readonly string[]
+		/**
+		 * Wire row-click → expansion toggle.
+		 *  - `true` / `'row'` (default): clicking anywhere on an expandable
+		 *    row (one with a sibling `<tr data-table-expansion>`) toggles.
+		 *    Interactive descendants (`a, button, input, textarea, select,
+		 *    label, [data-no-select]`) are skipped so row-internal action
+		 *    chrome survives.
+		 *  - `'caret'`: only descendants of `[data-table-expansion-trigger]`
+		 *    toggle. Use when the rest of the row should read as plain
+		 *    content (e.g. a leading-cell caret button).
+		 *  - `false`: no built-in handler; consumers drive
+		 *    `expansion.toggle(id)` themselves.
+		 */
+		readonly click?: boolean | 'row' | 'caret'
 	}
 	readonly selection?: {
 		/** Scope for select-all operations. Default `'page'`. */

@@ -79,11 +79,11 @@
 	// in a follow-up refactor. The charter above defines the migration
 	// destination so the move is mechanical.)
 
-	// ── input.flush / select.flush / textarea.flush ─────────────────────────
-	// "Flush" form controls dissolve into their surrounding surface (table
+	// ── input.flat / select.flat / textarea.flat ─────────────────────────
+	// `.flat` form controls dissolve into their surrounding surface (table
 	// cell, accordion header, list-group row) by going transparent at rest
-	// — no background, no border, no chrome shift. Interaction promotes the
-	// control to the full bordered baseline:
+	// while preserving their own padding + intrinsic size. Interaction
+	// promotes the control to its full bordered baseline:
 	//
 	//   • Rest        — transparent bg + transparent border (control reads
 	//                   as plain text in the parent surface).
@@ -98,12 +98,12 @@
 	//   • Readonly    — stays transparent (no editable affordance, so no
 	//                   hover reveal either).
 	//   • Validation  — `:user-invalid` paints the danger border the same
-	//                   way the bare control does, so a flush control in a
+	//                   way the bare control does, so a flat control in a
 	//                   table cell still flags red after the user touches
 	//                   the field.
 	//
 	// Design intent matches Bootstrap's `.form-control-flush` precedent:
-	// flush inputs are for inline-editing patterns (table cells, accordion
+	// flat inputs are for inline-editing patterns (table cells, accordion
 	// headers, list-group rows) where the form control should *look* like
 	// text content until the user engages with it. Using a real `<input>`
 	// here is the semantic answer — `contenteditable` on random elements
@@ -111,14 +111,14 @@
 	// type-specific UI (date pickers, number spinners), and screen-reader
 	// affordances that come free with form controls.
 	//
-	// Tokens are component-scoped on the `.flush` selector so they can be
-	// retuned per-consumer without leaking into bare-control resolution
-	// (the token-parity test renders bare `<input>` / `<select>` and would
-	// flag any new `--set-input-*` leaf declared on the bare element).
+	// Distinct from `.flush` (below): `.flat` keeps the element's own
+	// padding + intrinsic size and only drops the chrome at rest; `.flush`
+	// drops every margin / border / radius / ring AND inflates the control
+	// to fill its container (`100% × 100%`, `border-radius: inherit`).
 
-	input.flush,
-	select.flush,
-	textarea.flush {
+	input.flat,
+	select.flat,
+	textarea.flat {
 		background-color: transparent;
 		border-color: transparent;
 		box-shadow: none;
@@ -127,9 +127,7 @@
 		// announces affordance without shouting. The literal values are
 		// theme-aware: `currentColor 4%` rides whichever foreground the
 		// parent surface sets, `--color-border` is the framework's
-		// canonical neutral border. No `--set-flush-*` token surface
-		// because the flush idiom is intentionally minimal — consumers
-		// retune via the underlying `--color-*` theme tokens.
+		// canonical neutral border.
 		//
 		// `:not(:focus-visible)` ensures focus chrome wins; `:not(:user-
 		// invalid)` lets the danger border below paint through; `:not(:
@@ -141,24 +139,13 @@
 
 		// Focus — promote to the element's baseline focus chrome. The
 		// variant fallback chain stays intact because we read the same
-		// `--set-{tag}-focus-*` tokens the element rule reads. Re-authored
-		// at modifier specificity because the `elements` layer's
-		// `:focus-visible` rule would otherwise lose to the bare `.flush`
-		// declarations above (layer order: elements < modifiers).
+		// `--set-{tag}-focus-*` tokens the element rule reads.
 		&:focus-visible {
 			outline: none;
 		}
 
-		// Disabled / readonly — stay transparent (no border reveal). The
-		// element baseline still handles `cursor` + `opacity`, so this
-		// only needs to defeat the hover reveal selector above (which
-		// already excludes these states).
-
 		// Validation — same danger border the bare control paints, so a
-		// flush control in a table cell still flags red after touch. The
-		// element baseline's `:user-invalid` rule fires through because
-		// we don't override `border-color` here, but the modifier layer's
-		// `border-color: transparent` would otherwise win — so restate.
+		// flat control in a table cell still flags red after touch.
 		&:user-invalid {
 			border-color: var(--color-danger);
 		}
@@ -176,22 +163,110 @@
 	// the variant fallback chain (`--set-variant-background-color`) stays
 	// intact. Authored as three separate rules because each control's
 	// focus tokens live under a different namespace.
-	input.flush:focus-visible {
+	input.flat:focus-visible {
 		border-color: var(--set-input-focus-border-color);
 		box-shadow: var(--set-input-focus-box-shadow);
 		background-color: var(--set-input-background-color);
 	}
 
-	select.flush:focus-visible {
+	select.flat:focus-visible {
 		border-color: var(--set-select-focus-border-color);
 		box-shadow: var(--set-select-focus-box-shadow);
 		background-color: var(--set-select-background-color);
 	}
 
-	textarea.flush:focus-visible {
+	textarea.flat:focus-visible {
 		border-color: var(--set-textarea-focus-border-color);
 		box-shadow: var(--set-textarea-focus-box-shadow);
 		background-color: var(--set-textarea-background-color);
+	}
+
+	// ── input.flush / select.flush / textarea.flush / button.flush ─────────
+	// `.flush` means the element is FUSED INTO its parent surface — no
+	// margin, no border, no radius of its own, no focus ring; the element
+	// inherits the parent's border-radius and inflates to fill the
+	// parent's content box on both axes. The natural home is a host that
+	// IS the surface (a table cell, a card body, a list-group item) where
+	// the host owns the boundary and the control should occupy every
+	// available pixel inside it.
+	//
+	// Distinct from `.flat` (above): `.flat` is "transparent at rest, full
+	// chrome on focus"; `.flush` is "no chrome at any state, fills the
+	// host." A flush <input> inside a card body becomes the card's text
+	// field; a flush <button> inside a tile becomes the tile's CTA.
+	//
+	// `border-radius: inherit` reads the host's radius (cards, list-group
+	// items, badge surfaces all set their own corner radii) so the flush
+	// element tracks the surface curvature. `inline-size: 100%` /
+	// `block-size: 100%` inflate the element to the host's content box;
+	// `padding-block: 0` defeats the element baselines' vertical padding
+	// (which would otherwise leave a strip of the host's bg visible).
+	//
+	// Focus chrome is intentionally minimal — a flush element shouldn't
+	// paint its OWN focus ring inside a host that may have its own. The
+	// parent surface is expected to declare a `:focus-within` chrome if
+	// the focus state needs to be visible. `outline: none` only — no box-
+	// shadow ring — so the host's `:focus-within` rule (if any) is the
+	// single source of focus truth.
+
+	input.flush,
+	select.flush,
+	textarea.flush,
+	button.flush {
+		margin: 0;
+		border: 0;
+		border-radius: inherit;
+		box-shadow: none;
+		inline-size: 100%;
+		// `block-size: 100%` + `min-block-size: 100%` is the percentage-height
+		// idiom that resolves cleanly when the parent has a determinant
+		// block-size (flex / grid item, an absolutely positioned ancestor, or
+		// a `<td>` whose row has determinant height — for tables, the legacy
+		// `<td style="height: 1px">` trick coerces the cell to expand to its
+		// row's intrinsic height so the percent-height child fills it).
+		// `align-self: stretch` is the flex/grid path. The trio covers every
+		// common parent shape; consumers wanting fill in an arbitrary block
+		// parent should ensure the parent has an explicit block-size.
+		block-size: 100%;
+		min-block-size: 100%;
+		align-self: stretch;
+		// Background tracks the host's surface — a flush control inside a
+		// `<table>` cell, a card body, or a list-group item should paint
+		// the parent's fill, not its own. `transparent` lets the host's
+		// bg show through; consumers wanting a tinted flush surface set
+		// `background-color` on the host (or on the element directly via
+		// a variant modifier).
+		background-color: transparent;
+
+		&:focus-visible {
+			outline: none;
+		}
+
+		// Disabled / readonly behave as the bare element does — the
+		// modifier doesn't paint its own affordance, so the element
+		// baseline's `cursor: not-allowed` + `opacity` declarations win.
+
+		@include forced-colors {
+			background-color: Field;
+		}
+	}
+
+	// `<input>` text-like controls keep their text padding so the caret
+	// has breathing room against the host's border-edge; the modifier
+	// resets BLOCK padding only (height-fills the host) and leaves
+	// padding-inline at the element's baseline value. `<select>` is
+	// excluded because the chevron padding-inline-end is asymmetric on
+	// the bare element and a uniform reset would clip the glyph.
+	input.flush,
+	textarea.flush {
+		padding-block: 0;
+	}
+
+	// `<button>` is a pure visual surface — drop ALL padding so the
+	// button's text/icon centers against the host's content box without
+	// the element baseline's button padding pushing it off-center.
+	button.flush {
+		padding: 0;
 	}
 
 	// Reserved future rules — placeholders are intentional. Adding a real
