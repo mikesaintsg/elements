@@ -292,10 +292,34 @@ export function createToast(
 		const LOCK_THRESHOLD = 6 // px before we commit to an axis
 		pointer = createPointer(element, {
 			accept: (event) => {
+				// Primary button only — secondary / aux buttons keep the
+				// platform's right-click / middle-click semantics
+				// available. On touch, `event.button` is always 0, so this
+				// is a no-op for touch.
 				if (event.button !== 0) return false
+				// Toast must be open. `popover-open` is the source of
+				// truth; we don't engage swipe on a closed toast even if
+				// pointerdown somehow fires on it.
 				if (!popover.visible.value) return false
+				// Reject pointer-down on any interactive descendant so
+				// link / button / form-control clicks all survive. The
+				// trailing `× dismiss` is the headline case (single-tap
+				// dismiss must work), but a banded toast can also host
+				// action buttons (`<button class="warning">Extend
+				// session</button>`), and rich toasts might contain
+				// `<a>` links or inputs. The `closest()` walk stops at
+				// the toast itself if it doesn't match — `<output>`
+				// isn't in the interactive set, so a pointer-down on a
+				// non-interactive descendant (paragraph text, decorative
+				// `<span>`, the `<header>` band background) correctly
+				// engages the swipe.
 				const target = event.target
-				if (target instanceof Element && target.closest('button')) return false
+				if (
+					target instanceof Element &&
+					target.closest('a, button, input, textarea, select, [role="button"]')
+				) {
+					return false
+				}
 				return true
 			},
 			on: {

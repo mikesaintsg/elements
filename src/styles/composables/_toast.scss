@@ -96,6 +96,21 @@
 	output[popover] {
 		translate: var(--set-toast-swipe-offset, 0px) 0;
 		opacity: var(--set-toast-swipe-opacity, 1);
+		// `touch-action: pan-y` declares the touch contract directly: the
+		// element accepts vertical pan gestures (page scroll passes
+		// through) AND tap (button clicks survive), but EVERYTHING ELSE —
+		// horizontal pan, pinch-zoom, double-tap-zoom, OS-level swipe-
+		// back — is reserved for our `createPointer` handler. CRITICAL on
+		// mobile: the default `touch-action: auto` asks the browser to
+		// "figure it out" based on the gesture's initial direction, and
+		// for horizontal swipes on a top-layer popover the heuristic
+		// fails — the browser routes the gesture to its own default
+		// action (page-pan or swipe-back nav) BEFORE our `pointermove`
+		// listener fires, and the toast never translates. Same framework
+		// idiom `components/_menu.scss` line 211 uses for nav-rail items
+		// inside fixed-position drawers (the canonical "top-layer popover
+		// + interactive element + touch" combination).
+		touch-action: pan-y;
 	}
 
 	output[popover]:not([data-toast-swiping]) {
@@ -109,17 +124,10 @@
 
 	output[popover][data-toast-swiping] {
 		// Active drag — no transition; translate follows pointer per-frame.
-		// `touch-action: pan-y` lets vertical page scroll pass through (the
-		// factory's axis-lock only commits horizontal drags). On commit,
-		// `cursor: grabbing` reinforces the affordance for mouse users.
+		// `cursor: grabbing` reinforces the affordance for mouse users
+		// (touch users get the visual feedback from the translate itself).
 		transition: none;
 		cursor: grabbing;
-		// Defensive: while the pointer-capture lifecycle is active the deck
-		// container's `:has(:hover)` evaluation can flicker as the pointer
-		// crosses card edges; pin the closing-class equivalent via
-		// `[data-toast-swiping]` on the card so the deck doesn't snap shut
-		// mid-swipe.
-		touch-action: pan-y;
 	}
 
 	// While ANY visible deck card is being swiped, pin the deck expanded —
