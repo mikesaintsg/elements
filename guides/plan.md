@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](contribute.md) to know **how to work**.
 
-Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 37 of 43 pages built (4 Foundations + 9 composable-bound: **UseMenu**, **UseDialog**, **UseAside**, **UseTabs**, **UseDetails**, **UseToast**, **UseSelect**, **UseTable**, **UseForm**); 3 composable-bound pages queued. The most-recent cross-cutting passes are complete: the **`.flat` / `.flush` modifier family rollout** (Tier 1–3 shipped) and the **inline-style audit + `.frame` spacing-shape primitive family** (`div.frame` / `article.frame` / `td.frame` + dialog & table-expansion margin-reset rules + page-side migration). Both summarized under §"Cross-cutting changes — recently shipped".
+Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 38 of 43 pages built (4 Foundations + 10 composable-bound: **UseMenu**, **UseDialog**, **UseAside**, **UseTabs**, **UseDetails**, **UseToast**, **UseSelect**, **UseTable**, **UseForm**, **UseNav**); 2 composable-bound pages queued. The most-recent cross-cutting passes are complete: the **`.flat` / `.flush` modifier family rollout** (Tier 1–3 shipped) and the **inline-style audit + `.frame` spacing-shape primitive family** (`div.frame` / `article.frame` / `td.frame` + dialog & table-expansion margin-reset rules + page-side migration). Both summarized under §"Cross-cutting changes — recently shipped".
 
 ---
 
@@ -108,14 +108,14 @@ Element pages cover the static markup contract; the matching `Use*Page` covers t
 
 ---
 
-## Remaining work — Phase 9 (3 composable-bound pages + cross-page polish)
+## Remaining work — Phase 9 (2 composable-bound pages + cross-page polish)
 
-### 9.1 Composable pages — element-bound (3 of 12 remaining)
+### 9.1 Composable pages — element-bound (2 of 12 remaining)
 
 Each page proves the matching `use{Name}` factory's JS layer on top of the matching element page. **Per-page procedure**: _before_ authoring the demo, walk the [Native-platform redundancy checklist](contribute.md#541-native-platform-redundancy-checklist) (`contribute.md` §5.4.1) against the factory — strip dead writes, fix anti-patterns, ship the strip in the same PR as the page. Every prior page in this set surfaced at least one redundancy worth fixing.
 
 - ✅ **UseFormPage** — constraint-validation pipeline, `[data-form-validated]` after first submit, per-field `aria-invalid` mirror, summary error region with `fields.focus(name)` jump-back, `validity.mark()` custom-rule path, `validate.input` live mode, `reset()` vs `clear()` distinction. Factory was clean — no redundancy strip needed.
-- ⬜ **UseNavPage** — scroll-spy on a long article with anchored sections; `aria-current="location"` flips as scroll position passes section boundaries.
+- ✅ **UseNavPage** — IntersectionObserver-driven scroll-spy on a scrollable container + optional `<nav>` link list. `aria-current="location"` flips on the matching link as each `[id]` section scrolls into view. Demos cover the four `intersection` knobs (offset, margin, threshold), the `activate` event, and `refresh()` for dynamic section sets. Factory was clean — no redundancy strip needed.
 - ⬜ **UseAlertPage** — `useAlert` open / dismiss lifecycle, transition collapse, polite vs assertive (`role="alert"` vs `role="status"`), persistence across re-mounts.
 - ⬜ **UseCarouselPage** — slide nav, autoplay + pause-on-hover, touch / swipe, indicator dots, variant-tinted slides, every-axis transition lifecycle.
 
