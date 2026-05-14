@@ -141,7 +141,7 @@
 			<header style="padding-inline: 1rem; padding-block: 0.75rem">
 				<h3 style="margin: 0">Tabbed status panel</h3>
 			</header>
-			<section class="flush" style="padding-inline: 1rem">
+			<section class="flush" style="padding-inline: 1rem; padding-block: 1rem">
 				<h4 style="margin: 0 0 0.25rem">Active session</h4>
 				<p style="margin: 0">
 					<small>
@@ -151,7 +151,7 @@
 				</p>
 			</section>
 			<hr style="margin: 0" />
-			<section class="flush" style="padding-inline: 1rem">
+			<section class="flush" style="padding-inline: 1rem; padding-block: 1rem">
 				<h4 style="margin: 0 0 0.25rem">Recent activity</h4>
 				<p style="margin: 0">
 					<small>

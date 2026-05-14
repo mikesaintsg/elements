@@ -287,12 +287,12 @@
 		padding: 0;
 		color: var(--set-variant-on-canvas-color, var(--set-button-color, currentColor));
 
-		// Pressed feel — same 12% backdrop + 1 px translate as `button.flat`
-		// so flush buttons in tile / card / table-cell contexts still read
-		// as deliberately tapped instead of silently absorbed by the host.
+		// Pressed feel — same darker backdrop as `button.flat` (3× the hover
+		// tint) so flush buttons in tile / card / table-cell contexts read
+		// as deliberately tapped. No `transform: translateY` (bare button
+		// doesn't shift on press; uniform interaction model).
 		&:active:not(:disabled) {
 			background-color: color-mix(in oklab, currentColor 12%, transparent);
-			transform: translateY(1px);
 		}
 	}
 
@@ -389,16 +389,15 @@
 			box-shadow: var(--set-button-focus-box-shadow);
 		}
 
-		// Pressed feel — `:active` darkens the backdrop 3× the hover tint and
-		// shifts the button down 1 px so the touch reads as a deliberate
-		// affordance, not a hover artefact. Same shape across both flat AND
-		// flush so toolbars / inline-action chips / cell buttons all feel
-		// alive under the pointer. `:not(:disabled)` keeps the chrome quiet
-		// for the disabled state.
+		// Pressed feel — `:active` darkens the backdrop 3× the hover tint to
+		// match the bare-button cascade (which mixes background-color toward
+		// `--color-text-strong` at 78% on `:active` vs 88% on `:hover`). No
+		// `transform: translateY` — bare button doesn't shift on press, so
+		// the flat / flush variants don't either; the chrome-only feedback
+		// keeps the interaction model uniform across every button variant.
 		&:active:not(:disabled) {
 			background-color: color-mix(in oklab, currentColor 12%, transparent);
 			border-color: var(--color-border);
-			transform: translateY(1px);
 		}
 
 		@include forced-colors {
@@ -440,13 +439,6 @@
 		border-radius: inherit;
 		box-shadow: none;
 		background-color: transparent;
-		// Zero block-axis padding so adjacent flush siblings produce a
-		// single-pixel seam (the divider rule below) instead of stacking
-		// their own paddings into a doubled visual gap. The summary's
-		// own line-height defines each row's height; consumers wanting
-		// breathing room around opened content paint it on the host or
-		// on `details.flush[open]`.
-		padding-block: 0;
 		// Variant text-emphasis flows even when outer chrome is dissolved.
 		// The bare `<details>` only paints variant on its border (which
 		// flush strips), so without this fallback `.success.flush` looks
@@ -534,25 +526,66 @@
 		color: var(--set-variant-on-canvas-color, currentColor);
 	}
 
-	// ── Adjacent-sibling dividers for stacked flush containers ──────────────
-	// When two flush containers stack inside a host, their own block-axis
-	// padding doubles at the seam (bottom-of-A + top-of-B) and reads as a
-	// "doubled gap" against the host's single-padding outer edges. A 1 px
-	// neutral divider between adjacent siblings turns that doubled gap
-	// into a deliberate seam — the items read as distinct rows in an
-	// accordion-shape host instead of a single mass with uneven spacing.
-	// First-of-stack and last-of-stack siblings keep their natural padding
-	// against the host (no extra border on the outer edges) because `+`
-	// only matches adjacent successors.
+	// ── Adjacent-sibling chrome for stacked flush containers ───────────────
+	// Two problems happen when flush containers stack inside a host:
 	//
-	// Color comes from `--color-border` (the framework's canonical neutral
-	// divider). Variant alerts / cards keep their own internal chrome; the
-	// divider stays neutral so it doesn't fight per-item variant identity.
+	//   1. No visual seam between siblings — the items merge into one mass.
+	//   2. Their own block-axis padding doubles at the seam
+	//      (`bottom-of-A + top-of-B`) and reads as a "doubled gap" against
+	//      the host's single-padding outer edges (top of first / bottom of
+	//      last each get one item-padding). The middle gaps then look ~2×
+	//      the outer ones.
+	//
+	// Two paired rules fix both at once:
+	//
+	//   • A 1-px neutral seam on the trailing sibling's block-start
+	//     (`details.flush + details.flush`) acts as the visible divider —
+	//     consumers read distinct rows in an accordion-shape host.
+	//   • Halve the block padding on adjacent edges:
+	//     - Items with a flush successor halve their `padding-block-end`
+	//       (selected via `:has(+ {tag}.flush)` — Baseline 2024).
+	//     - Items with a flush predecessor halve their `padding-block-start`
+	//       (selected via the `+` combinator).
+	//     The first-of-stack keeps its full top padding, the last keeps its
+	//     full bottom padding, and every interior seam totals
+	//     `half + half = 1× padding-block` — matching the outer edges. Inner
+	//     gaps now visually equal outer gaps within a 1-px divider tolerance.
+	//
+	// `:has()` browser support: Chromium 105+ / Firefox 121+ / Safari 15.4+.
+	// The framework's Baseline target accepts `:has()` for this purpose.
 	details.flush + details.flush,
 	article.flush + article.flush,
 	aside[role='alert'].flush + aside[role='alert'].flush,
 	dialog.flush:not(:modal) + dialog.flush:not(:modal) {
 		border-block-start: 1px solid var(--color-border);
+	}
+
+	details.flush:has(+ details.flush) {
+		padding-block-end: calc(var(--set-details-padding-block) / 2);
+	}
+	details.flush + details.flush {
+		padding-block-start: calc(var(--set-details-padding-block) / 2);
+	}
+
+	article.flush:has(+ article.flush) {
+		padding-block-end: calc(var(--set-article-padding-block) / 2);
+	}
+	article.flush + article.flush {
+		padding-block-start: calc(var(--set-article-padding-block) / 2);
+	}
+
+	aside[role='alert'].flush:has(+ aside[role='alert'].flush) {
+		padding-block-end: calc(var(--set-alert-padding-block) / 2);
+	}
+	aside[role='alert'].flush + aside[role='alert'].flush {
+		padding-block-start: calc(var(--set-alert-padding-block) / 2);
+	}
+
+	dialog.flush:not(:modal):has(+ dialog.flush:not(:modal)) {
+		padding-block-end: calc(var(--set-dialog-padding-block) / 2);
+	}
+	dialog.flush:not(:modal) + dialog.flush:not(:modal) {
+		padding-block-start: calc(var(--set-dialog-padding-block) / 2);
 	}
 
 	// `form.flush`: fill card body. Form has no outer chrome by default,
