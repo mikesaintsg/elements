@@ -384,6 +384,31 @@
 		white-space: nowrap;
 	}
 
+	// ── Sticky header ──────────────────────────────────────────────────────────
+	// Opt-in: pin `<thead>` cells to the top of the nearest scrolling ancestor
+	// so column labels stay visible as the user scrolls through long datasets.
+	// `position: sticky` on `<th>` (rather than `<thead>`) is the broadly
+	// reliable shape — Chromium / Firefox support sticky on the row group,
+	// but Safari historically deferred. Sticking each cell sidesteps the
+	// engine difference and matches mailbox / Bootstrap precedent.
+	//
+	// Requires a scrolling ancestor — the framework's `<div class="scrollable">`
+	// (x-axis), a custom `overflow-y: auto` wrapper, or the page itself.
+	// `z-index: 1` keeps the header above body rows when the table has
+	// background-tinted rows (`.striped` / `[aria-selected]`); the
+	// `--set-table-header-background-color` token already opaquely fills the
+	// cell so the sticky band reads as a solid bar.
+	//
+	// `inset-block-start: 0` sticks to the scroll-container's top edge. If
+	// the page header itself is sticky and overlaps the table, consumers
+	// retune via `--set-sticky-offset` (framework-wide token) at the
+	// `<table>` scope.
+	table.sticky > thead > tr > th {
+		position: sticky;
+		inset-block-start: var(--set-sticky-offset, 0);
+		z-index: 1;
+	}
+
 	// ── Hover override over striped / variant tints ───────────────────────────
 	// Same-shape selector as `.striped > tbody > tr:nth-of-type(odd) > *` so
 	// specificity matches; declared after the modifiers so source order

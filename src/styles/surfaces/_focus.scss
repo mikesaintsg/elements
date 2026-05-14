@@ -59,7 +59,16 @@
 	// (variant-tinted border + matching box-shadow) so `:user-invalid`
 	// + focus combinations can paint a danger-tinted ring without the
 	// generic surface ring stomping it.
-	:focus-visible:not(:where(input, textarea, select)) {
+	//
+	// `table[role="grid"]` is the WAI-ARIA grid pattern's focus anchor.
+	// `createTable` (when `focus.keyboard: true`) writes `tabindex="0"`
+	// on the `<table>` so users can tab INTO the grid; arrow keys then
+	// roving-tabindex move focus to individual cells. The TABLE element
+	// is never the visual focus target — the focused CELL is — so a
+	// ring around the entire table on modifier-clicks / programmatic
+	// focus is misleading. Exclude it from the universal ring; the
+	// cell's own `:focus-visible` paints the visible focus signal.
+	:focus-visible:not(:where(input, textarea, select, table[role='grid'])) {
 		outline: none;
 		box-shadow: 0 0 0 var(--set-focus-box-shadow-width)
 			color-mix(
@@ -70,7 +79,7 @@
 	}
 
 	@include forced-colors {
-		:focus-visible:not(:where(input, textarea, select)) {
+		:focus-visible:not(:where(input, textarea, select, table[role='grid'])) {
 			outline: 2px solid Highlight;
 			outline-offset: 2px;
 			box-shadow: none;
