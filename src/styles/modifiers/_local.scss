@@ -287,12 +287,19 @@
 		padding: 0;
 		color: var(--set-variant-on-canvas-color, var(--set-button-color, currentColor));
 
-		// Pressed feel — same darker backdrop as `button.flat` (3× the hover
-		// tint) so flush buttons in tile / card / table-cell contexts read
-		// as deliberately tapped. No `transform: translateY` (bare button
-		// doesn't shift on press; uniform interaction model).
+		// Hover + active mirror `button.flat` (which itself mirrors bare
+		// button's `--color-text-strong` mix cascade — 88% hover, 78%
+		// active). `button.flush` already inherits the hover backdrop from
+		// the shared `input.flush / select.flush / textarea.flush /
+		// button.flush` rule above (4% currentColor); restate at the same
+		// 12% / 22% text-strong tints so flush buttons in tile / card /
+		// table-cell contexts read as deliberately interactive against
+		// any host backdrop, light or dark.
+		&:hover:not(:disabled):not(:focus-visible) {
+			background-color: color-mix(in srgb, transparent 88%, var(--color-text-strong));
+		}
 		&:active:not(:disabled) {
-			background-color: color-mix(in oklab, currentColor 12%, transparent);
+			background-color: color-mix(in srgb, transparent 78%, var(--color-text-strong));
 		}
 	}
 
@@ -377,26 +384,33 @@
 		// any chromeless / dissolved-bg variant text.
 		color: var(--set-variant-on-canvas-color, var(--set-button-color, currentColor));
 
+		// Hover + active mirror the bare-button cascade
+		// (`_button.scss:143` `:hover` mixes with `--color-text-strong` at
+		// 88%; `:active` at 78%). For a transparent flat surface, the
+		// equivalent is `color-mix(in srgb, transparent {88,78}%, text-
+		// strong)` — 12% / 22% text-strong on transparent. Theme-aware:
+		// darkens against light canvas, lightens against dark. Visible
+		// pressed feedback across both themes without breaking the
+		// "dissolved chrome" semantic.
 		&:hover:not(:disabled):not(:focus-visible) {
-			background-color: color-mix(in oklab, currentColor 4%, transparent);
+			background-color: color-mix(in srgb, transparent 88%, var(--color-text-strong));
 			border-color: var(--color-border);
 		}
 
 		&:focus-visible {
 			outline: none;
-			background-color: color-mix(in oklab, currentColor 4%, transparent);
+			background-color: color-mix(in srgb, transparent 88%, var(--color-text-strong));
 			border-color: var(--color-border);
 			box-shadow: var(--set-button-focus-box-shadow);
 		}
 
-		// Pressed feel — `:active` darkens the backdrop 3× the hover tint to
-		// match the bare-button cascade (which mixes background-color toward
-		// `--color-text-strong` at 78% on `:active` vs 88% on `:hover`). No
-		// `transform: translateY` — bare button doesn't shift on press, so
-		// the flat / flush variants don't either; the chrome-only feedback
-		// keeps the interaction model uniform across every button variant.
+		// Pressed feel — 22% text-strong on transparent (vs 12% on hover)
+		// matches the bare button's `:hover` 88% / `:active` 78% mix-with-
+		// text-strong stride. Clearly darker than hover; no `translateY`
+		// (bare button doesn't translate, so the flat / flush variants
+		// don't either — keeps the interaction model uniform).
 		&:active:not(:disabled) {
-			background-color: color-mix(in oklab, currentColor 12%, transparent);
+			background-color: color-mix(in srgb, transparent 78%, var(--color-text-strong));
 			border-color: var(--color-border);
 		}
 
@@ -436,7 +450,12 @@
 	details.flush {
 		margin: 0;
 		border: 0;
-		border-radius: inherit;
+		// Flat corners by default: stacked flush items shouldn't paint
+		// their own rounded corners at the seams (would peek through
+		// adjacent siblings' backgrounds). The host's `overflow: clip`
+		// owns the outer rounding. Single-instance flush opt back into
+		// the host's radius via `:only-of-type` below.
+		border-radius: 0;
 		box-shadow: none;
 		background-color: transparent;
 		// Variant text-emphasis flows even when outer chrome is dissolved.
@@ -497,7 +516,10 @@
 	dialog.flush:not(:modal) {
 		margin: 0;
 		border: 0;
-		border-radius: inherit;
+		// Flat corners by default — host's `overflow: clip` owns the
+		// outer rounding (same reasoning as `details.flush` above).
+		// `:only-of-type` below opts single instances back into inherit.
+		border-radius: 0;
 		box-shadow: none;
 		// `inline-size: 100%` lets the dialog fill its host instead of
 		// taking the platform's auto-content-width centering shape.
@@ -519,46 +541,35 @@
 	article.flush {
 		margin: 0;
 		border: 0;
-		border-radius: inherit;
+		// Flat corners by default — same reasoning as `details.flush` /
+		// `dialog.flush` (host's overflow:clip owns outer rounding;
+		// stacked items shouldn't paint their own corners at seams).
+		// `:only-of-type` below opts single instances back into inherit.
+		border-radius: 0;
 		box-shadow: none;
-		background-color: transparent;
 		// Variant text-emphasis flows (same reasoning as `details.flush`).
 		color: var(--set-variant-on-canvas-color, currentColor);
 	}
 
-	// ── Adjacent-sibling chrome for stacked flush containers ───────────────
-	// Two problems happen when flush containers stack inside a host:
+	// ── Adjacent-sibling padding for stacked flush containers ──────────────
+	// When flush containers stack inside a host, their own block-axis
+	// padding doubles at the seam (`bottom-of-A + top-of-B`) and reads
+	// as a "doubled gap" against the host's single-padding outer edges.
+	// Halving the block padding on EDGES TOUCHING ANOTHER FLUSH SIBLING
+	// makes every gap — outer and inner — equal one `--set-{tag}-padding-
+	// block`:
 	//
-	//   1. No visual seam between siblings — the items merge into one mass.
-	//   2. Their own block-axis padding doubles at the seam
-	//      (`bottom-of-A + top-of-B`) and reads as a "doubled gap" against
-	//      the host's single-padding outer edges (top of first / bottom of
-	//      last each get one item-padding). The middle gaps then look ~2×
-	//      the outer ones.
+	//   • Items with a flush successor halve their `padding-block-end`
+	//     (via `:has(+ {tag}.flush)` — Baseline 2024).
+	//   • Items with a flush predecessor halve their `padding-block-start`
+	//     (via the `+` combinator).
 	//
-	// Two paired rules fix both at once:
-	//
-	//   • A 1-px neutral seam on the trailing sibling's block-start
-	//     (`details.flush + details.flush`) acts as the visible divider —
-	//     consumers read distinct rows in an accordion-shape host.
-	//   • Halve the block padding on adjacent edges:
-	//     - Items with a flush successor halve their `padding-block-end`
-	//       (selected via `:has(+ {tag}.flush)` — Baseline 2024).
-	//     - Items with a flush predecessor halve their `padding-block-start`
-	//       (selected via the `+` combinator).
-	//     The first-of-stack keeps its full top padding, the last keeps its
-	//     full bottom padding, and every interior seam totals
-	//     `half + half = 1× padding-block` — matching the outer edges. Inner
-	//     gaps now visually equal outer gaps within a 1-px divider tolerance.
-	//
-	// `:has()` browser support: Chromium 105+ / Firefox 121+ / Safari 15.4+.
-	// The framework's Baseline target accepts `:has()` for this purpose.
-	details.flush + details.flush,
-	article.flush + article.flush,
-	aside[role='alert'].flush + aside[role='alert'].flush,
-	dialog.flush:not(:modal) + dialog.flush:not(:modal) {
-		border-block-start: 1px solid var(--color-border);
-	}
+	// First-of-stack keeps its full top padding, last keeps its full
+	// bottom padding, only-of-type keeps both. Every interior seam totals
+	// `half + half = 1× padding-block` — the exact rhythm the host's
+	// outer paddings already use, so the whole stack reads with uniform
+	// spacing. NO divider border between siblings — variants paint their
+	// own subtle background tint and the consistent gap is the seam.
 
 	details.flush:has(+ details.flush) {
 		padding-block-end: calc(var(--set-details-padding-block) / 2);
@@ -586,6 +597,20 @@
 	}
 	dialog.flush:not(:modal) + dialog.flush:not(:modal) {
 		padding-block-start: calc(var(--set-dialog-padding-block) / 2);
+	}
+
+	// ── Single-instance flush — inherit host's radius ──────────────────────
+	// When a flush container is the only one of its kind inside a host
+	// (no sibling stack to worry about), opt back into the host's
+	// border-radius so the element paints rounded outer corners that
+	// match the host's perimeter. Useful for a single nested card / inset
+	// alert / inline non-modal dialog inside a card body where the host
+	// might NOT have `overflow: clip` and the consumer wants the inner
+	// element's own corners to track the host's curvature.
+	details.flush:only-of-type,
+	article.flush:only-of-type,
+	dialog.flush:not(:modal):only-of-type {
+		border-radius: inherit;
 	}
 
 	// `form.flush`: fill card body. Form has no outer chrome by default,
