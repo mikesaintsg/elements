@@ -4,10 +4,13 @@ import { computed, shallowRef, watch } from 'vue'
 import { createAside } from '../factories/createAside.js'
 
 /**
- * `<aside>` slide-in drawer adapter. Vue wrapper over `createAside` —
- * resolves the host ref and delegates the show/hide pipeline (popover-API
- * top-layer rendering, scroll lock, Escape dismiss, backdrop click) to
- * the framework-agnostic factory.
+ * `<aside>` drawer adapter. Thin Vue wrapper over `createAside` — a
+ * programmatic shim around the native Popover API. The framework's CSS
+ * already drives the slide animation via `:popover-open` +
+ * `@starting-style` + `transition-behavior: allow-discrete`; this
+ * composable just resolves the host ref, sets `popover="auto"` (default)
+ * or `"manual"` per options, and exposes `show()` / `hide()` / `toggle()`
+ * + a reactive `visible` ref + native-popover-event bridges.
  *
  * Element gating: the host MUST be `<aside>`. The factory throws on a
  * mismatch so consumers don't shadow the semantic landmark with a `<div>`.
@@ -26,8 +29,7 @@ export function useAside(
 		(el, _previous, onCleanup) => {
 			if (typeof window === 'undefined' || !el) return
 			const instance = createAside(el, {
-				dismiss: options.dismiss,
-				scroll: options.scroll,
+				popover: options.popover,
 				on: options.on,
 			})
 			factory.value = instance

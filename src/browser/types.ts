@@ -548,17 +548,18 @@ export interface UseAsideEventMap {
 	readonly open: (event: CustomEvent) => void
 	readonly hide: (event: CustomEvent) => void
 	readonly close: (event: CustomEvent) => void
-	readonly prevent: (event: CustomEvent) => void
 }
 
 export interface CreateAsideOptions {
-	readonly dismiss?: {
-		readonly backdrop?: boolean | 'static'
-		readonly escape?: boolean
-	}
-	readonly scroll?: {
-		readonly lock?: boolean
-	}
+	/**
+	 * Initial popover mode. `'auto'` (default) opts into native
+	 * light-dismiss (Escape + outside-click). `'manual'` opts out — the
+	 * panel only closes via a programmatic `hide()` or an inner
+	 * `popovertargetaction="hide"` button. `false` leaves whatever the
+	 * author put on the element (use when the markup already declares
+	 * `popover="manual"` and you don't want the composable to overwrite).
+	 */
+	readonly popover?: 'auto' | 'manual' | false
 	readonly on?: Partial<UseAsideEventMap>
 }
 

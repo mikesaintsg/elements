@@ -247,15 +247,16 @@ export interface FileException {
 }
 
 export const FILE_EXCEPTIONS: Readonly<Record<string, FileException>> = {
-	// composables/_aside.scss — useAside is a behavior-only composable (scroll
-	// lock + focus trap + light dismiss); the drawer's geometry lives in
-	// components/_aside.scss as the `aside[popover]` rule. This partial
-	// exists as a placeholder so the composables/ inventory mirrors the
-	// browser/composables/ inventory.
+	// composables/_aside.scss — useAside is a thin programmatic shim over
+	// the native Popover API; the drawer's geometry + slide animation lives
+	// in components/_aside.scss as the `aside[popover]` rule (driven by
+	// `:popover-open` + `@starting-style` + `allow-discrete`, no JS-side
+	// lifecycle attributes). This partial exists as a placeholder so the
+	// composables/ inventory mirrors the browser/composables/ inventory.
 	'composables/_aside.scss': {
 		skipStateSelectorCheck: true,
 		allowCommentOnly: true,
-		note: 'useAside is a behavior-only composable; chrome lives in components/_aside.scss',
+		note: 'useAside is a programmatic shim; chrome lives in components/_aside.scss',
 	},
 
 	// components/_aside.scss — declares three sibling namespaces because

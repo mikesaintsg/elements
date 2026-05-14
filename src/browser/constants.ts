@@ -246,7 +246,6 @@ export const ASIDE_EVENTS = {
 	open: 'elements:aside:open',
 	hide: 'elements:aside:hide',
 	close: 'elements:aside:close',
-	prevent: 'elements:aside:prevent',
 } as const
 
 export const POPOVER_EVENTS = {

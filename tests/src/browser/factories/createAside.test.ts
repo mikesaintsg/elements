@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ASIDE_EVENTS, createAside, TRANSITION_FALLBACK_MS } from '@elements/browser'
+import { describe, expect, it } from 'vitest'
+import { ASIDE_EVENTS, createAside } from '@elements/browser'
 import {
 	assertCleanDispose,
 	buildElement,
@@ -8,83 +8,70 @@ import {
 } from '../../../setupBrowser'
 
 describe('createAside', () => {
-	beforeEach(() => {
-		vi.useFakeTimers()
-	})
-	afterEach(() => {
-		vi.useRealTimers()
-	})
-
 	it('rejects non-<aside> hosts', () => {
 		const wrong = buildElement('div')
 		expect(() => createAside(wrong)).toThrowError(/aside/i)
 	})
 
-	it('starts hidden, sets popover=manual, marks the panel inert', () => {
+	it('defaults popover to "auto" so native light-dismiss kicks in', () => {
 		const aside = buildElement('aside')
 		const [api] = createFactoryFixture(() => createAside(aside))
 		expect(api.visible.value).toBe(false)
-		expect(aside.popover).toBe('manual')
-		// `inert` (instead of `aria-hidden`) — `aria-hidden` triggers a
-		// browser console warning if a descendant retains focus when the
-		// attribute is set; `inert` blurs descendants automatically and is
-		// the W3C-recommended alternative for the closed-state contract.
-		expect(aside.hasAttribute('inert')).toBe(true)
+		expect(aside.popover).toBe('auto')
 	})
 
-	it('show opens the popover, sets data-aside-open + ARIA, locks scroll', () => {
+	it('respects options.popover: "manual" for sticky panels', () => {
 		const aside = buildElement('aside')
-		const open = createRecorder<[CustomEvent]>()
-		const [api] = createFactoryFixture(() => createAside(aside, { on: { open: open.handler } }))
-		api.show()
-		expect(api.visible.value).toBe(true)
-		expect(aside.matches(':popover-open')).toBe(true)
-		expect(aside.hasAttribute('data-aside-open')).toBe(true)
-		expect(aside.getAttribute('aria-modal')).toBe('true')
-		expect(aside.getAttribute('role')).toBe('dialog')
-		expect(document.body.hasAttribute('data-elements-scroll-locked')).toBe(true)
-		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
-		expect(open.count).toBe(1)
-	})
-
-	it('hide closes the popover and emits close after transition', () => {
-		const aside = buildElement('aside')
-		const close = createRecorder<[CustomEvent]>()
-		const [api] = createFactoryFixture(() => createAside(aside, { on: { close: close.handler } }))
-		api.show()
-		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
-		api.hide()
-		expect(api.visible.value).toBe(false)
-		expect(aside.hasAttribute('data-aside-open')).toBe(false)
-		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
-		expect(close.count).toBe(1)
-		expect(aside.matches(':popover-open')).toBe(false)
-		expect(document.body.hasAttribute('data-elements-scroll-locked')).toBe(false)
-	})
-
-	it('Escape dismisses by default; dismiss.escape:false fires prevent on static backdrop', () => {
-		const aside = buildElement('aside')
-		const prevent = createRecorder<[CustomEvent]>()
-		const [api] = createFactoryFixture(() =>
-			createAside(aside, {
-				dismiss: { escape: false, backdrop: 'static' },
-				on: { prevent: prevent.handler },
-			}),
+		const [_api, , controller] = createFactoryFixture(() =>
+			createAside(aside, { popover: 'manual' }),
 		)
-		api.show()
-		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
-		expect(api.visible.value).toBe(true)
-		expect(prevent.count).toBe(1)
+		expect(aside.popover).toBe('manual')
+		void _api
+		void controller
 	})
 
-	it('uses namespaced event names', () => {
+	it('options.popover: false leaves the author-declared attribute untouched', () => {
+		const aside = buildElement('aside')
+		aside.setAttribute('popover', 'manual')
+		const [_api] = createFactoryFixture(() => createAside(aside, { popover: false }))
+		expect(aside.popover).toBe('manual')
+		void _api
+	})
+
+	it('show opens the popover and flips visible via the native toggle event', () => {
+		const aside = buildElement('aside')
+		const [api] = createFactoryFixture(() => createAside(aside))
+		api.show()
+		expect(aside.matches(':popover-open')).toBe(true)
+		expect(api.visible.value).toBe(true)
+	})
+
+	it('hide closes the popover and flips visible back', () => {
+		const aside = buildElement('aside')
+		const [api] = createFactoryFixture(() => createAside(aside))
+		api.show()
+		api.hide()
+		expect(aside.matches(':popover-open')).toBe(false)
+		expect(api.visible.value).toBe(false)
+	})
+
+	it('emits namespaced show / open / hide / close events bridged from beforetoggle + toggle', () => {
 		const aside = buildElement('aside')
 		const show = createRecorder<[Event]>()
+		const open = createRecorder<[Event]>()
+		const hide = createRecorder<[Event]>()
+		const close = createRecorder<[Event]>()
 		aside.addEventListener(ASIDE_EVENTS.show, show.handler)
+		aside.addEventListener(ASIDE_EVENTS.open, open.handler)
+		aside.addEventListener(ASIDE_EVENTS.hide, hide.handler)
+		aside.addEventListener(ASIDE_EVENTS.close, close.handler)
 		const [api] = createFactoryFixture(() => createAside(aside))
 		api.show()
 		expect(show.count).toBe(1)
+		expect(open.count).toBe(1)
+		api.hide()
+		expect(hide.count).toBe(1)
+		expect(close.count).toBe(1)
 	})
 
 	it('destroy is idempotent and reverses every listener', () => {

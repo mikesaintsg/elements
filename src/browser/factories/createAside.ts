@@ -1,29 +1,54 @@
 import type { CreateAsideInstance, CreateAsideOptions } from '../types.js'
 import { effectScope, readonly, ref } from '@vue/reactivity'
 import { ASIDE_EVENTS } from '../constants.js'
-import {
-	assertElement,
-	attachListeners,
-	bindEventMap,
-	dispatch,
-	emit,
-	lockBodyScroll,
-	runTransition,
-	unlockBodyScroll,
-} from '../helpers.js'
+import { assertElement, attachListeners, bindEventMap, emit } from '../helpers.js'
 
 /**
- * Framework-agnostic `<aside>` slide-in drawer factory. Uses the native
- * popover API (`popover="manual"`) so the panel renders in the top layer
- * and gets the native `::backdrop` pseudo-element for scrim styling. The
- * factory owns:
+ * Framework-agnostic `<aside>` drawer factory. Thin programmatic shim
+ * over the native Popover API — the platform already gives us:
  *
- *   - cancellable `elements:aside:show / hide` pipeline,
- *   - body scroll lock while open,
- *   - Escape dismiss (popover="manual" opts out of native light-dismiss,
- *     so we wire it ourselves to honor `dismiss.escape`),
- *   - backdrop-click dismiss with `'static'` mode that fires `prevent`,
- *   - `[data-aside-open]` attribute mirror for CSS slide-in transitions.
+ *   - Top-layer rendering (`[popover]:popover-open { display: flex }`),
+ *   - Light-dismiss for `popover="auto"` (outside-click + Escape),
+ *   - The native `::backdrop` pseudo (styled in `surfaces/_backdrop.scss`),
+ *   - Slide-in / slide-out animation via `:popover-open` +
+ *     `@starting-style` + `transition-behavior: allow-discrete` (declared
+ *     in `components/_aside.scss`),
+ *   - `beforetoggle` / `toggle` lifecycle events.
+ *
+ * So the factory is now just:
+ *
+ *   1. Element gating (must be `<aside>`),
+ *   2. Sets `popover` to `'auto'` (default) or `'manual'` on attach so
+ *      authors who hand-wired `popovertarget` keep working AND
+ *      composable-driven asides get a sensible default. Pass `false` to
+ *      leave whatever the author already put on the element.
+ *   3. Bridges native `beforetoggle` → `elements:aside:show` /
+ *      `elements:aside:hide` (informational; not cancellable — the
+ *      native event isn't either),
+ *   4. Bridges native `toggle` → `elements:aside:open` /
+ *      `elements:aside:close`,
+ *   5. Programmatic `show()` / `hide()` / `toggle()` map to the native
+ *      `showPopover()` / `hidePopover()` / `togglePopover()`,
+ *   6. Reactive `visible` mirrors `element.matches(':popover-open')`,
+ *      synced on every `toggle` event.
+ *
+ * Removed (deliberately, see commit history):
+ *
+ *   - `[data-aside-open]` / `[data-aside-closing]` attribute writes —
+ *     the CSS doesn't key on them; the slide is driven entirely by
+ *     `:popover-open` + `@starting-style` + `allow-discrete`.
+ *   - `runTransition` wait before `hidePopover()` — caused a ~400 ms
+ *     dead wait on close (the transition we were waiting for hadn't
+ *     started yet because `hidePopover()` is what triggers it).
+ *   - `aria-modal` / `role="dialog"` / `inert` auto-wiring — the static
+ *     element chrome handles a11y; consumers who need modal semantics
+ *     wire those directly on the markup.
+ *   - Body scroll lock — the popover is already top-layer; consumers
+ *     who want the body locked too compose `useAside` with
+ *     `lockBodyScroll()` themselves (or use `<dialog>`).
+ *   - Custom Escape + backdrop-click dismiss — `popover="auto"` is the
+ *     contract for light-dismiss; `popover="manual"` is the contract
+ *     for sticky panels. The factory doesn't reimplement either.
  *
  * Semantic gating: throws if the host is not `<aside>`.
  */
@@ -33,170 +58,85 @@ export function createAside(
 ): CreateAsideInstance {
 	assertElement(element, 'aside', 'createAside')
 
-	const backdropMode = options.dismiss?.backdrop ?? true
-	const escape = options.dismiss?.escape ?? true
-	const lock = options.scroll?.lock ?? true
-
 	const scope = effectScope()
 	const visible = scope.run(() => ref(false))
 	if (!visible) throw new Error('createAside: failed to initialize reactive scope')
 
-	let locked = false
-	let transition: (() => void) | null = null
-
-	const cancelTransition = (): void => {
-		transition?.()
-		transition = null
-	}
-
-	// Set up the popover API early so the surface CSS rule
-	// (`[popover]:not(output)`) applies. Authors who want a different
-	// chrome can override via the aside's own CSS.
 	const previousPopover = element.popover
-	element.popover = 'manual'
-
-	// A11y wiring uses the `inert` attribute (rather than `aria-hidden`) for
-	// the closed state. `aria-hidden` triggers a browser console warning if
-	// any descendant retains focus when the attribute is set — focus must
-	// not be hidden from assistive tech, and a closing transition can leave
-	// a focused button inside the panel for several frames before the
-	// popover machinery's automatic blur fires.
-	//
-	// `inert` is the platform-blessed alternative the W3C points to in the
-	// aria-hidden spec note. Setting `inert` on an element:
-	//   1. immediately blurs any focused descendant (no warning),
-	//   2. removes the subtree from the accessibility tree (same a11y goal
-	//      as aria-hidden), and
-	//   3. blocks pointer events on the subtree (matches "the panel is
-	//      closed" semantics — the user can't interact with controls
-	//      inside a hidden drawer).
-	//
-	// Browser support: Chrome 102+, Firefox 112+, Safari 15.5+ — already a
-	// hard prerequisite for the popover API this composable depends on.
-	const openAria = (): void => {
-		element.removeAttribute('inert')
-		element.setAttribute('aria-modal', 'true')
-		element.setAttribute('role', 'dialog')
-	}
-	const closeAria = (): void => {
-		element.setAttribute('inert', '')
-		element.removeAttribute('aria-modal')
-		element.removeAttribute('role')
+	if (options.popover !== false) {
+		element.popover = options.popover ?? 'auto'
 	}
 
-	const show = (): void => {
-		if (visible.value) return
-		if (!dispatch(element, ASIDE_EVENTS.show)) return
+	const isOpen = (): boolean => element.matches(':popover-open')
+	visible.value = isOpen()
 
-		visible.value = true
-		if (lock) {
-			lockBodyScroll()
-			locked = true
+	// Counters track pending native events we want to suppress because
+	// we've already emitted the namespaced equivalents synchronously
+	// from show() / hide(). External state changes (Escape,
+	// outside-click, an inner popovertargetaction button) leave the
+	// counters at 0 and the bridge fires normally.
+	let suppressBeforeToggle = 0
+	let suppressToggle = 0
+
+	const onBeforeToggle = (event: Event): void => {
+		if (!('newState' in event)) return
+		if (suppressBeforeToggle > 0) {
+			suppressBeforeToggle--
+			return
 		}
-
-		openAria()
-		// Clear any lingering closing attribute from the previous hide()
-		// before flipping to open. We intentionally keep `data-aside-closing`
-		// set after a close completes (see hide() for the rationale — it
-		// keeps the drawer geometry alive during the popover surface's
-		// discrete-transition tail so the panel doesn't flash at the top
-		// of the page). Removing it here lets the open-state per-placement
-		// rules (transform: translateX(0), etc.) win uncontested.
-		element.removeAttribute('data-aside-closing')
-		element.setAttribute('data-aside-open', '')
-		if (!element.matches(':popover-open')) element.showPopover()
-
-		cancelTransition()
-		transition = runTransition(element, () => {
-			transition = null
-			emit(element, ASIDE_EVENTS.open)
-		})
+		const newState = (event as ToggleEvent).newState
+		visible.value = newState === 'open'
+		emit(element, newState === 'open' ? ASIDE_EVENTS.show : ASIDE_EVENTS.hide)
 	}
 
-	const hide = (): void => {
-		if (!visible.value) return
-		if (!dispatch(element, ASIDE_EVENTS.hide)) return
-
-		visible.value = false
-		// Swap `[data-aside-open]` for `[data-aside-closing]` synchronously so
-		// `composables/_aside.scss` keeps the drawer geometry alive (position:
-		// fixed, block-size: 100dvh) while flipping the slide transform to its
-		// off-screen value — driving a clean slide-out instead of collapsing
-		// back to popover-surface defaults (288px tall, position: absolute).
-		// The closing attribute is removed in the transition completion below.
-		element.removeAttribute('data-aside-open')
-		element.setAttribute('data-aside-closing', '')
-
-		cancelTransition()
-		transition = runTransition(element, () => {
-			transition = null
-			closeAria()
-			if (element.matches(':popover-open')) element.hidePopover()
-			// Intentionally LEAVE `data-aside-closing` on the element after
-			// the slide completes. Removing it synchronously here flips the
-			// cascade off the drawer-geometry block (`aside[popover][data-
-			// aside-open], aside[popover][data-aside-closing]`), so for the
-			// 150 ms popover-surface discrete-transition tail (display:none
-			// hasn't fired yet — `transition-behavior: allow-discrete` keeps
-			// the element in the render tree) the panel SNAPS to the popover
-			// surface defaults: `position: absolute; inset: auto; max-block-
-			// size: 18rem` (from `surfaces/_anchor-position.scss`). The user
-			// sees a small (~288 px tall) ghost flash at the top of the page
-			// before display:none finally lands. Leaving the attribute set
-			// keeps the drawer geometry alive (`position: fixed`, full-height
-			// inset, `transform: translateX(±100%)`) until display:none, so
-			// the panel stays parked off-screen and invisibly disappears.
-			// `show()` removes the attribute on the next open. `destroy()`
-			// removes it as part of teardown.
-			if (locked) {
-				unlockBodyScroll()
-				locked = false
-			}
-			emit(element, ASIDE_EVENTS.close)
-		})
+	const onToggle = (event: Event): void => {
+		if (!('newState' in event)) return
+		if (suppressToggle > 0) {
+			suppressToggle--
+			return
+		}
+		const newState = (event as ToggleEvent).newState
+		visible.value = newState === 'open'
+		emit(element, newState === 'open' ? ASIDE_EVENTS.open : ASIDE_EVENTS.close)
 	}
-
-	const toggle = (): void => (visible.value ? hide() : show())
-
-	const onKeydown = (event: Event): void => {
-		if (!(event instanceof KeyboardEvent)) return
-		if (!visible.value || event.key !== 'Escape') return
-		if (escape) hide()
-		else if (backdropMode === 'static') emit(element, ASIDE_EVENTS.prevent)
-	}
-
-	// Backdrop-click: a click whose target is the aside itself (not a
-	// descendant) means the user clicked the ::backdrop pseudo.
-	const onClick = (event: Event): void => {
-		if (!visible.value || event.target !== element) return
-		if (backdropMode === true) hide()
-		else if (backdropMode === 'static') emit(element, ASIDE_EVENTS.prevent)
-	}
-
-	closeAria()
 
 	const offBound = bindEventMap(element, ASIDE_EVENTS, options.on)
-	const offDoc = attachListeners(document, [{ name: 'keydown', handler: onKeydown }])
-	const offClick = attachListeners(element, [{ name: 'click', handler: onClick }])
+	const offNative = attachListeners(element, [
+		{ name: 'beforetoggle', handler: onBeforeToggle },
+		{ name: 'toggle', handler: onToggle },
+	])
+
+	const show = (): void => {
+		if (isOpen()) return
+		suppressBeforeToggle++
+		suppressToggle++
+		element.showPopover()
+		visible.value = true
+		emit(element, ASIDE_EVENTS.show)
+		emit(element, ASIDE_EVENTS.open)
+	}
+	const hide = (): void => {
+		if (!isOpen()) return
+		suppressBeforeToggle++
+		suppressToggle++
+		element.hidePopover()
+		visible.value = false
+		emit(element, ASIDE_EVENTS.hide)
+		emit(element, ASIDE_EVENTS.close)
+	}
+	const toggle = (): void => {
+		if (isOpen()) hide()
+		else show()
+	}
 
 	let destroyed = false
 	const destroy = (): void => {
-		if (!destroyed) {
-			destroyed = true
-			offBound()
-			offDoc()
-			offClick()
-			scope.stop()
-		}
-		cancelTransition()
-		if (locked) {
-			unlockBodyScroll()
-			locked = false
-		}
-		if (element.matches(':popover-open')) element.hidePopover()
-		element.removeAttribute('data-aside-open')
-		element.removeAttribute('data-aside-closing')
-		closeAria()
+		if (destroyed) return
+		destroyed = true
+		offBound()
+		offNative()
+		scope.stop()
+		if (isOpen()) element.hidePopover()
 		element.popover = previousPopover
 		visible.value = false
 	}

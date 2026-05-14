@@ -99,6 +99,18 @@
 	}
 
 	// --------------------------------------------------------------------------
+	// Body scroll-lock — set by `lockBodyScroll()` (helpers.ts), called by
+	// composables like `useDialog` when a non-modal dialog opens with
+	// `scroll: { lock: true }`. (Modal dialogs and app-shell `<body>:has(main)`
+	// layouts already lock scroll via the platform / the grid above; this
+	// rule is the bridge for plain document-flow pages that need to hold the
+	// viewport while a non-modal floating surface is open.)
+	// --------------------------------------------------------------------------
+	body[data-elements-scroll-locked] {
+		overflow: hidden;
+	}
+
+	// --------------------------------------------------------------------------
 	// Responsive rail drawer — `<nav>` + `<aside>` body-shell rails opt
 	// into the framework's native-popover offcanvas drawer surface for
 	// mobile rendering by toggling the `popover` attribute below the
