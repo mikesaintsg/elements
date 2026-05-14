@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](contribute.md) to know **how to work**.
 
-Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 36 of 43 pages built (4 Foundations + 8 composable-bound: **UseMenu**, **UseDialog**, **UseAside**, **UseTabs**, **UseDetails**, **UseToast**, **UseSelect**, **UseTable**); 4 composable-bound pages queued. The current cross-cutting push is the **`.flat` / `.flush` modifier family** rollout — see §Future work.
+Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 36 of 43 pages built (4 Foundations + 8 composable-bound: **UseMenu**, **UseDialog**, **UseAside**, **UseTabs**, **UseDetails**, **UseToast**, **UseSelect**, **UseTable**); 4 composable-bound pages queued. The most-recent cross-cutting passes are complete: the **`.flat` / `.flush` modifier family rollout** (Tier 1–3 shipped) and the **inline-style audit + `.frame` spacing-shape primitive family** (`div.frame` / `article.frame` / `td.frame` + dialog & table-expansion margin-reset rules + page-side migration). Both summarized under §"Cross-cutting changes — recently shipped".
 
 ---
 
@@ -24,7 +24,7 @@ Status: every framework layer (tokens, theme, mixins, modifiers, elements, compo
 | 11        | Invariant verification (11 codified contracts)                             | ✅     |
 | **Audit** | **Element-hardcoding, motion contract, token-group uniformity sweeps**     | ✅     |
 
-**Tests:** `src:browser` + `src:styles` total **5108/5108 pass**.
+**Tests:** `src:browser` + `src:styles` total **5154/5154 pass**.
 
 ---
 
@@ -53,7 +53,7 @@ Functions, mixins, and Sass-list registries. Documented in [mixins.md](mixins.md
 | `style`       | `subtle`, `filled`                                                                                        | [`_styles.scss`](../src/styles/modifiers/_styles.scss)         |
 | `state`       | `disabled`, `active`, `loading`                                                                           | [`_states.scss`](../src/styles/modifiers/_states.scss)         |
 | `placement`   | `top`, `bottom`, `start`, `end`, `top-start`, `top-end`, `bottom-start`, `bottom-end`                     | [`_placements.scss`](../src/styles/modifiers/_placements.scss) |
-| element-local | `form.row`, `button.dropdown`, `table.striped`, `{tag}.flat`, `{tag}.flush`, … (single-element modifiers) | [`_local.scss`](../src/styles/modifiers/_local.scss)           |
+| element-local | `form.row`, `button.dropdown`, `table.striped`, `{tag}.flat`, `{tag}.flush`, `article.frame`, `td.frame` (single-element modifiers) | [`_local.scss`](../src/styles/modifiers/_local.scss)           |
 
 Full reference in [modifiers.md](modifiers.md). Required tokens per dimension in [patterns.md](patterns.md) § 6.
 
@@ -174,7 +174,7 @@ Per-variant text-on-canvas tier with per-mode `color-mix` tuning so bare variant
 
 ### Structural pairing discipline
 
-No element-hardcoding inside containment. A rule that combines two bare tag names with `>` (e.g. `nav > search`, `article > div`) requires an entry in `STRUCTURAL_PAIRINGS` (51-entry allowlist, `spec` / `slot` / `reset` / `context` kinds) — `_pairings.test.ts` fails any new pair without a reason. Consumer wrappers carry composed-rail patterns (`.showcase-sidebar*` in `app/browser/styles/showcase.css`); the framework provides containment, the consumer composes regions.
+No element-hardcoding inside containment. A rule that combines two bare tag names with `>` (e.g. `nav > search`, `article > div`) requires an entry in `STRUCTURAL_PAIRINGS` (80+ entry allowlist, `spec` / `slot` / `reset` / `context` kinds) — `_pairings.test.ts` fails any new pair without a reason. The audit pass added 22 `reset`-kind pairings for the cross-container margin-zero rules (`article > h*/p`, `article > header/footer > h*/p`, `dialog > h*/p`, `dialog > footer > h*/p`, `form > h*/p` for `<dialog><form>` body wrap, `header > h*/p`, `footer > h*/p`). Consumer wrappers carry composed-rail patterns (`.showcase-sidebar*` in `app/browser/styles/showcase.css`); the framework provides containment, the consumer composes regions.
 
 ### Toast lifecycle — recurring fix patterns
 
@@ -196,20 +196,65 @@ No element-hardcoding inside containment. A rule that combines two bare tag name
 
 Uppercase eyebrow chrome on `<h6>` inside body-shell `<nav>` / `<aside>` rails; asymmetric inter-group margins; zeroed `<menu>` block margins. Pattern documented in `_menu.scss`.
 
-### `.flat` / `.flush` modifier family (in progress — see Future work §"The `.flat` / `.flush` rollout")
+### `.flat` / `.flush` modifier family (Tier 1–3 shipped)
 
 The framework distinguishes two surface-dissolution idioms:
 
 - **`.flat`** — transparent at rest, hover / focus reveal subtle backdrop, focus promotes to the element's full bordered baseline. Keeps the element's own padding + intrinsic size. Use when the element should _signal_ it's interactive on engagement.
 - **`.flush`** — no margin / border / radius / ring at any state; `border-radius: inherit`; fills the host's content box on both axes (`inline-size: 100%` + `block-size: 100%` + `min-block-size: 100%` + `align-self: stretch`). Hover / focus reveals a subtle backdrop for discoverability. The HOST owns the boundary.
 
-Shipped variants: `input.flat`, `select.flat`, `textarea.flat`, `input.flush`, `select.flush`, `textarea.flush`, `button.flush`, `ul.group.flush`, `ol.group.flush`. The remainder is the active push — see Future work §"The `.flat` / `.flush` rollout" below for the per-element matrix and authoring plan.
+Shipped (all 3 tiers): form controls (`input.{flat,flush}`, `select.{flat,flush}`, `textarea.{flat,flush}`), interactive (`button.{flat,flush}`, `a.{flat,flush}`), disclosure (`details.{flat,flush}`), surface (`aside[role='alert'].{flat,flush}`, `dialog.flush:not(:modal)`), container (`article.flush`, `form.flush`, `section.flush`), list-group (`ul.group.flush`, `ol.group.flush`). Sibling-stack padding-halving (`.flush + .flush` half-padding rule) ships uniformly across `details`, `article`, `aside-alert`, and non-modal `dialog`. Per-element matrix recorded under §"Future work — post-Phase 9" for reference.
+
+### `.frame` spacing-shape primitive family (shipped — Audit pass)
+
+`.frame` is the third spacing-shape primitive, peer to `.stack` and `.cluster`:
+
+| Primitive    | Layout                                       |
+| ------------ | -------------------------------------------- |
+| `div.stack`  | flex column, gap > 0 (vertical rhythm)       |
+| `div.cluster`| flex wrap, gap > 0 (horizontal rhythm)       |
+| `div.frame`  | flex column, gap = 0, padding = 0, overflow clip (children fill edge-to-edge) |
+
+Element-local variants live in [`modifiers/_local.scss`](../src/styles/modifiers/_local.scss):
+
+- **`article.frame`** — retunes `--set-article-padding-{inline,block}` and `--set-article-gap` to zero so the article's outer chrome (border / radius / shadow) is preserved while children paint edge-to-edge. Token-tuned (not raw `padding: 0`) so descendant chrome reading `--set-article-padding-inline` — auto-banded header bleed margins, nested `<ul class="group">` edge-bleed math — collapses correctly alongside the article itself.
+- **`td.frame`** — retunes `--set-table-cell-padding-{inline,block}` to zero and sets `block-size: 1px` (the legacy percentage-height-in-table-cell idiom). Hosts a `<button class="flush">` / `<a class="flush">` / `<input class="flush">` that fills the cell edge-to-edge.
+
+Composes with the `.flush` family: a `.frame` host most often contains `.flush` children, but the modifier is **not** named for its caller — any consumer that wants a container with delegated internal spacing writes `class="frame"`. The pairing reads in markup as "frame hosts flush" without baking that into either name.
+
+### Inline-style audit pass (shipped)
+
+Sweep across all 36 showcase pages eliminated ~310 of ~451 inline `style="..."` attributes by (a) closing framework gaps so the chrome is hydrated correctly without an inline patch, (b) extracting repeated demo chrome to centralized `.showcase-*` classes in `app/browser/styles/showcase.css`, and (c) re-routing dimensional one-offs through Tailwind utilities.
+
+Framework gaps closed during the audit:
+
+- `article > :where(h*, p)` and `article > header:first-child / footer:last-child > :where(h*, p)` now ship `margin-block: 0` (the article's flex gap + band padding-block already own the rhythm). Closes ~50 inline `style="margin-block: 0"` instances.
+- Same pattern extended to `dialog > :where(h*, p)` (body slot when the dialog has header / footer bands) and `dialog > footer > :where(h*, p)` / `form > :where(h*, p)` (form-wrapped dialog body).
+- `[data-table-expansion-panel] > :where(h*, p, pre)` margin-zero — table row-expansion panels own their `padding-block` once expanded; direct text children no longer stack browser-default margins on top of it.
+- `div.stack` and `div.cluster` now consume `--set-stack-spacing` and `--set-cluster-spacing` global tokens (previously the local `--set-{stack,cluster}-gap` resolved to a hardcoded `calc(var(--spacing) * N)` and consumer overrides of the global tokens were silently no-ops).
+- `--set-cluster-spacing` added to `:root` baseline alongside the pre-existing `--set-stack-spacing`.
+
+Showcase additions (`app/browser/styles/showcase.css`, all `.showcase-*` namespace):
+
+- Layout: `.showcase-tile-grid` (parameterized via `--showcase-tile-grid-{min,gap,flow}` knobs), `.showcase-anchor-stage`, `.showcase-bordered-stage`, `.showcase-bordered-dashed-bottom`, `.showcase-placement-grid`, `.showcase-placement-cell`, `.showcase-placement-anchor`, `.showcase-scroll-stage`, `.showcase-scroll-stage-conditional` (height parameterized).
+- Typography / chrome: `.showcase-muted`, `.showcase-card-subtitle`, `.showcase-stat-{label,value,delta,delta-up,delta-down,delta-flat}`, `.showcase-price`, `.showcase-price-unit`, `.showcase-tile-link`, `.showcase-footer-actions`, `.showcase-footer-split`, `.showcase-profile-{header,avatar}`, `.showcase-readable`, `.showcase-tile`.
+- Swatch chrome: `.showcase-swatch`, `.showcase-swatch-meta`, `.showcase-swatch-meta-tight`, `.showcase-swatch-label`, `.showcase-swatch-label-quiet`, `.showcase-inverted-key-value`.
+- Form-row composition: `.showcase-form-row`, `.showcase-form-row-tall`, `.showcase-form-row-label`, `.showcase-form-row-label-top`, `.showcase-form-row-input`.
+
+Triage rule codified in [contribute.md](contribute.md) §6.4 ("No inline `style="…"` for layout or chrome"). Three categories of inline style survive as legitimate: reactive `:style` bindings, single-property dimensional one-offs (off Tailwind's scale, non-recurring), and intentional token demonstrations (icon `--icon`, swatch backgrounds, shadow demos).
 
 ---
 
 ## Cross-cutting changes — recently shipped
 
-Selected updates from the most recent push (UseTablePage v3-v5 + dl ratio fix):
+### Inline-style audit pass + `.frame` primitive family (latest)
+
+See the dedicated entries under §"Consequential learnings" (above) for the framework-level summary. Selected per-page touch-points:
+
+- **Page-side migration** — all 16 affected pages converted from inline `style="..."` to centralized `.showcase-*` classes or Tailwind utilities. Dimensional one-offs (`width: 8rem`, `max-inline-size: 48rem`, `min-inline-size: 14rem`, etc.) rerouted through Tailwind (`w-32`, `max-w-3xl`, `min-w-56`); repeated swatch / tile-grid / form-row patterns landed in `app/browser/styles/showcase.css`.
+- **Test additions** — `tests/src/styles/components/_div.test.ts` covers the new `div.frame` primitive (display / direction / zero gap + padding / overflow clip / element-scope sanity). The 22 new structural pairings added to `src/browser/patterns.ts` are validated by `_pairings.test.ts`.
+
+### UseTablePage v3-v5 + dl ratio fix
 
 - **`createTable` row-click expansion** — new `expansion.click: true | 'row' | 'caret' | false` option. Default `true` toggles on any non-interactive click inside an expandable row (mirrors `selection.click` opt-out shape). `onTableFocus` seeds the first cell when the bare `<table tabindex="0">` receives focus so the APG roving model has a starting cursor.
 - **`table.sticky` modifier + opaque backdrop** — pins `<thead> > <th>` via `position: sticky` with paired `background-color: var(--color-canvas)` + `background-image` overlay so scrolling rows don't bleed through the header tint.
@@ -223,9 +268,9 @@ Selected updates from the most recent push (UseTablePage v3-v5 + dl ratio fix):
 
 ## Future work — post-Phase 9
 
-### The `.flat` / `.flush` rollout
+### The `.flat` / `.flush` rollout (Tier 1–3 ✅ shipped)
 
-The framework's surface-dissolution modifier family is the active cross-cutting push. The shared style contract and per-element matrix below are the authoring guide for every remaining variant.
+The framework's surface-dissolution modifier family is **complete** across the per-element matrix below. The shared style contract is retained here as the authoring reference for any future addition to the family (e.g. if a new tag earns its own `.flush` row); the per-element rows are marked ✅ to record what's shipped.
 
 #### Shared style contract — `.flat`
 
@@ -304,24 +349,23 @@ Notes that apply to every flush rule:
 
 Tier ordering follows authoring priority — Tier 1 is shipped, Tier 2 is the active push, Tier 3 covers the container surfaces with concrete consumer use. Media / class-component / rare-cases variants are explicitly out of scope: media-fill is better handled by the consumer wrapper carrying `object-fit` + `aspect-ratio`, and the class-component primitives (`.badge`, `.tag`, `.spinner`, `.skeleton`) are already minimal enough that adding `.flat` / `.flush` doesn't earn its weight against the audit cost.
 
-| Element                                    | `.flat`     | `.flush` | Notes / quirks                                                                                                                                                                                                                       |
-| ------------------------------------------ | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Tier 1 — shipped**                       |             |          |                                                                                                                                                                                                                                      |
-| `input`                                    | ✅          | ✅       | Element-baseline padding preserved on `.flush` (padding-inline only — block-axis zeroed for height-fill).                                                                                                                            |
-| `select`                                   | ✅          | ✅       | Chevron mask (`--set-select-background-image`) — flush keeps the chevron via element's own background-image cascade.                                                                                                                 |
-| `textarea`                                 | ✅          | ✅       | `resize: vertical` + `field-sizing: content` baseline preserved; flush only drops chrome.                                                                                                                                            |
-| `button`                                   | ⬜ (Tier 2) | ✅       | Flush button: all padding zeroed (text/icon centers against host's content box).                                                                                                                                                     |
-| `ul.group` / `ol.group`                    | —           | ✅       | Predates the split; semantic aligned with the new flush family. Audit: confirm hover backdrop alignment with the new contract.                                                                                                       |
-| **Tier 2 — the active push**               |             |          |                                                                                                                                                                                                                                      |
-| `a`                                        | ⬜          | ⬜       | `.flat`: drop underline at rest, restore on hover. `.flush`: link fills the host (tile-as-link); drop underline + color shift, inherit foreground. Host's `:focus-within` paints focus ring.                                         |
-| `details`                                  | ⬜          | ⬜       | `.flat`: drop outer border, hover reveal, summary chrome intact. `.flush`: accordion-item shape — parent group owns the boundary, `<details>` dissolves outer chrome and shares the parent's radius. `[open]` state still indicates. |
-| `aside[role='alert']`                      | ⬜          | ⬜       | `.flat`: low-emphasis inline note that brightens on hover. `.flush`: divider band inset into a card or sidebar; drops outer border + radius.                                                                                         |
-| `dialog`                                   | —           | ⬜       | Modal at rest IS its chrome; flat doesn't apply. `.flush` scoped to `dialog.flush:not(:modal)` (inline non-modal); drops outer border + radius, keeps header / footer pin chrome.                                                    |
-| `button`                                   | ⬜          | ✅       | `.flat` for toolbar / inline action chips — overrides variant background fill at rest, restores on hover. Distinct from `.subtle` (which keeps full chrome but drops variant fill); flat dissolves the chrome entirely.              |
-| **Tier 3 — high-value container surfaces** |             |          |                                                                                                                                                                                                                                      |
-| `article`                                  | —           | ⬜       | `.flush`: outer chrome entirely dropped (nested card inside another article or list-group row). Internal header / footer pin chrome stays.                                                                                           |
-| `form`                                     | —           | ⬜       | `.flush`: fill card body. Form's internal vertical gap stays; only outer chrome (rarely present) dropped. Most useful as documentation that the form fills its container.                                                            |
-| `section`                                  | —           | ⬜       | `.flush`: drop section padding for nested-section use (e.g. tab panel section that should butt against the tablist).                                                                                                                 |
+| Element                                    | `.flat` | `.flush` | Notes / quirks                                                                                                                                                                                                                       |
+| ------------------------------------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Tier 1 — form controls**                 |         |          |                                                                                                                                                                                                                                      |
+| `input`                                    | ✅      | ✅       | Element-baseline padding preserved on `.flush` (padding-inline only — block-axis zeroed for height-fill).                                                                                                                            |
+| `select`                                   | ✅      | ✅       | Chevron mask (`--set-select-background-image`) — flush keeps the chevron via element's own background-image cascade.                                                                                                                 |
+| `textarea`                                 | ✅      | ✅       | `resize: vertical` + `field-sizing: content` baseline preserved; flush only drops chrome.                                                                                                                                            |
+| `button`                                   | ✅      | ✅       | Flush button: all padding zeroed (text/icon centers against host's content box). `.flat` for toolbar / inline action chips — overrides variant background fill at rest.                                                              |
+| `ul.group` / `ol.group`                    | —       | ✅       | Predates the split; semantic aligned with the new flush family. Hover backdrop conforms to the shared contract.                                                                                                                      |
+| **Tier 2 — disclosure / surface**          |         |          |                                                                                                                                                                                                                                      |
+| `a`                                        | ✅      | ✅       | `.flat`: drop underline at rest, restore on hover. `.flush`: link fills the host (tile-as-link); drop underline + color shift, inherit foreground.                                                                                   |
+| `details`                                  | ✅      | ✅       | `.flat`: drop outer border, hover reveal, summary chrome intact. `.flush`: accordion-item shape — parent group owns the boundary, `<details>` dissolves outer chrome and shares the parent's radius. `[open]` state still indicates. |
+| `aside[role='alert']`                      | ✅      | ✅       | `.flat`: low-emphasis inline note that brightens on hover. `.flush`: divider band inset into a card or sidebar; drops outer border + radius.                                                                                         |
+| `dialog`                                   | —       | ✅       | Modal at rest IS its chrome; flat doesn't apply. `.flush` scoped to `dialog.flush:not(:modal)` (inline non-modal); drops outer border + radius, keeps header / footer pin chrome.                                                    |
+| **Tier 3 — container surfaces**            |         |          |                                                                                                                                                                                                                                      |
+| `article`                                  | —       | ✅       | `.flush`: outer chrome entirely dropped (nested card inside another article or list-group row). Internal header / footer pin chrome stays. Pair with `article.frame` on the parent for the full flush-host composition.              |
+| `form`                                     | —       | ✅       | `.flush`: fill card body. Form's internal vertical gap stays; only outer chrome (rarely present) dropped.                                                                                                                            |
+| `section`                                  | —       | ✅       | `.flush`: drop section padding for nested-section use (e.g. tab panel section that should butt against the tablist).                                                                                                                 |
 
 #### Elements where neither modifier applies
 
@@ -342,29 +386,29 @@ The framework's button-group lives on `[role="group"]` in `components/_role-grou
 
 - ⬜ Variant cascading: a single `<div role="group" class="success">` should tint every button inside. Today buttons don't inherit variant via parent context. Audit whether this is desirable (might conflict with mixed-variant button rows).
 
-#### Authoring phases
+#### Authoring phases (historical reference — all phases ✅ shipped)
 
-Each phase ships SCSS in `modifiers/_local.scss` + a demo on the matching element / use page + the `_local.test.ts` charter assertions (automatic as rules land). Doc updates in [modifiers.md](modifiers.md) and the affected element row in [taxonomy.md](taxonomy.md) follow the SCSS.
+Each phase shipped SCSS in `modifiers/_local.scss` + a demo on the matching element / use page + the `_local.test.ts` charter assertions (automatic as rules land). Doc updates in [modifiers.md](modifiers.md) and the affected element row in [taxonomy.md](taxonomy.md) followed the SCSS.
 
-| Phase | Scope                                                              | Demo home(s)                                                           |
-| ----- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| A     | `ul.group.flush` / `ol.group.flush` alignment audit + hover parity | ListsPage `<ul class="group flush">` demo update                       |
-| B     | `details.flat` / `details.flush`                                   | DetailsPage + UseDetailsPage (accordion-item shape demo)               |
-| C     | `aside.flat` / `aside.flush` (for `role='alert'`)                  | AsidePage callout / alert variations                                   |
-| D     | `dialog.flush:not(:modal)`                                         | DialogElementPage + UseDialogPage (inline non-modal inset into a card) |
-| E     | `a.flat` / `a.flush`                                               | AnchorPage tile-as-link demo + ArticleCardPage clickable-card demo     |
-| F     | `button.flat`                                                      | ButtonPage toolbar / inline-action-chip demo                           |
-| G     | `article.flush` / `form.flush` / `section.flush`                   | ArticleCardPage nested cards + FormControlsPage + SectioningPage       |
+| Phase | Scope                                                              | Demo home(s)                                                           | Status |
+| ----- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- | ------ |
+| A     | `ul.group.flush` / `ol.group.flush` alignment audit + hover parity | ListsPage `<ul class="group flush">` demo update                       | ✅     |
+| B     | `details.flat` / `details.flush`                                   | DetailsPage + UseDetailsPage (accordion-item shape demo)               | ✅     |
+| C     | `aside.flat` / `aside.flush` (for `role='alert'`)                  | AsidePage callout / alert variations                                   | ✅     |
+| D     | `dialog.flush:not(:modal)`                                         | DialogElementPage + UseDialogPage (inline non-modal inset into a card) | ✅     |
+| E     | `a.flat` / `a.flush`                                               | AnchorPage tile-as-link demo + ArticleCardPage clickable-card demo     | ✅     |
+| F     | `button.flat`                                                      | ButtonPage toolbar / inline-action-chip demo                           | ✅     |
+| G     | `article.flush` / `form.flush` / `section.flush`                   | ArticleCardPage nested cards + FormControlsPage + SectioningPage       | ✅     |
 
-#### Audit deliverable
+#### Audit deliverable (✅ complete)
 
-By the end of the rollout:
+1. ✅ Every element in the matrix has its `.flat` / `.flush` rule declared in `modifiers/_local.scss` (with `ul.group.flush` in `_ul.scss` keeping its existing home).
+2. ✅ [modifiers.md](modifiers.md) §9 covers element-local modifiers — the `.flat` / `.flush` family, the new `.frame` family, and the per-rule charter (single-element selector, no cross-cutting name collision, no Tailwind collision).
+3. ✅ Each affected row in [taxonomy.md](taxonomy.md) names its `flat` / `flush` / `frame` annotations.
+4. ✅ `_local.test.ts` green.
+5. ✅ Element + composable pages demo the variants side-by-side (DetailsPage, AsidePage, DialogElementPage, AnchorPage, ButtonPage, ArticleCardPage, FormControlsPage, SectioningPage).
 
-1. Every element in the matrix has its `.flat` / `.flush` rule declared in `modifiers/_local.scss` (or aligned to the existing precedent in its element partial, e.g. `ul.group.flush` in `_ul.scss`).
-2. [modifiers.md](modifiers.md) gains a new section naming `.flat` as the "transparent-rest, full-chrome-on-engagement" family and `.flush` as the "no-chrome-ever, fuse-into-parent" family — with the shared style contracts above as the reference.
-3. Each affected row in [taxonomy.md](taxonomy.md) gets a `flat` / `flush` annotation in its "Framework usage" column.
-4. The `_local.test.ts` charter test stays green (taxonomy entry + non-cross-cutting name + no Tailwind collision — automatic as rules land).
-5. A dedicated section on the appropriate Use\*Page or a new `FlatAndFlushPage` enumerates every variant side-by-side for visual + interaction parity.
+The follow-on **inline-style audit + `.frame` primitive family** (recorded under §"Cross-cutting changes — recently shipped" above) carries the same composition idea HOST-side: pair `article.flush` children with an `article.frame` parent for the canonical flush-host pattern, and `<button class="flush">` children with `<td class="frame">` for the table-cell action pattern.
 
 ### Token surface refinements
 

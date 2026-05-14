@@ -285,16 +285,19 @@ The bidirectional parity test at [`tests/src/browser/modifiers.test.ts`](../test
 
 ---
 
-## 9. Element-scoped modifiers
+## 9. Element-local modifiers
 
-A small set of modifiers only make sense on one specific element — for example `<form>.row` (flip the form's flex direction from column to row) or `<button>.dropdown` (rotate a chevron when paired with `[aria-expanded]`). These do not belong in any of the five cross-cutting dimensions, but they DO belong in the modifier layer so the cascade order matches the conceptual role.
+A small set of modifiers only make sense on one specific element — for example `<form>.row` (flip the form's flex direction from column to row), `<button>.dropdown` (rotate a chevron when paired with `[aria-expanded]`), or `<article>.frame` (zero the article's outer inset + gap so children fill edge-to-edge). These do not belong in any of the five cross-cutting dimensions, but they DO belong in the modifier layer so the cascade order matches the conceptual role.
 
-They live in [`src/styles/modifiers/_element-scoped.scss`](../src/styles/modifiers/_element-scoped.scss), grouped by element. The file's charter rejects:
+They live in [`src/styles/modifiers/_local.scss`](../src/styles/modifiers/_local.scss), grouped alphabetically by element. The file's charter rejects:
 
 - Class names that match the cross-cutting modifier vocabulary (a `.row` rule that only applied to forms but used the unscoped `.row` selector would collide with other elements' rules).
-- Rules that aren't gated to a single element selector (`form.row`, `button.dropdown`, `details.flush` — never bare `.row` / `.dropdown`).
+- Class names that collide with Tailwind single-token utilities (`block`, `flex`, `grid`, `rounded`, `outline`, etc.).
+- Rules that aren't gated to a single element selector (`form.row`, `button.dropdown`, `details.flush`, `article.frame`, `td.frame` — never bare `.row` / `.dropdown` / `.frame`).
 
-The element-local test at [`tests/src/styles/modifiers/_element-scoped.test.ts`](../tests/src/styles/modifiers/_element-scoped.test.ts) enforces the charter.
+Rules MAY declare `--set-{tag}-*` tokens scoped to the same element the selector targets (e.g., `article.frame` writes `--set-article-padding-{inline,block}: 0` so descendant chrome reading those tokens — auto-banded header bleed margins — collapses to zero alongside the padding). Per-element token namespaces are recorded as `additionalTokenPrefixes` in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts).
+
+The element-local test at [`tests/src/styles/modifiers/_local.test.ts`](../tests/src/styles/modifiers/_local.test.ts) enforces the charter.
 
 ---
 

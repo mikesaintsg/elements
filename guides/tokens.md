@@ -31,7 +31,7 @@ Tailwind's documentation is authoritative. The framework reads these via `var()`
 | Variant context    | `--set-variant-color`, `--set-variant-background-color`                                                                                                                                                                                          |
 | Modifier context   | `--set-style-*`, `--set-size-*`                                                                                                                                                                                                                  |
 | Density / radius   | `--set-density-factor`, `--set-radius-factor`                                                                                                                                                                                                    |
-| Baseline hydration | `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-sticky-offset`                                                                                                                                           |
+| Baseline hydration | `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-cluster-spacing`, `--set-sticky-offset`                                                                                                                  |
 | Z-index scale      | `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}`                                                                                                                                                                              |
 | Elevation          | `--set-box-shadow-small`, `--set-box-shadow`, `--set-box-shadow-large`                                                                                                                                                                           |
 | Icon               | `--set-icon-chevron-*`, `--set-icon-check`, `--set-icon-close`, …                                                                                                                                                                                |
@@ -245,11 +245,12 @@ These exist so the framework feels **already wired up** the moment a consumer dr
 --set-border-radius: var(--radius-md); /* Tailwind --radius-md = 0.375rem */
 --set-border-width: 1px;
 --set-gap: calc(var(--spacing) * 3); /* 0.75rem default flex/grid gap */
---set-stack-spacing: 1em; /* sibling vertical rhythm relative to local font-size */
+--set-stack-spacing: 1em; /* `.stack` gap default — sibling vertical rhythm */
+--set-cluster-spacing: calc(var(--spacing) * 3); /* `.cluster` gap default */
 --set-sticky-offset: 0px; /* consumer sets per app: `:root { --set-sticky-offset: 4rem; }` */
 ```
 
-`--set-border-radius` and `--set-border-width` are the "default" answer when no `.small` / `.large` size modifier is active and no element-scoped chain provides a more specific value. `--set-gap` is the default `flex` / `grid` `gap` for layout primitives (`.stack`, `.cluster`, `<form>` control list, `<menu>` toolbar). `--set-stack-spacing` drives sibling vertical rhythm (e.g. `p + p { margin-block-start: var(--set-stack-spacing) }`). `--set-sticky-offset` is consumed by `<html>`'s `scroll-padding-block-start` so anchor jumps clear a sticky toolbar.
+`--set-border-radius` and `--set-border-width` are the "default" answer when no `.small` / `.large` size modifier is active and no element-scoped chain provides a more specific value. `--set-gap` is the default `flex` / `grid` `gap` for layout primitives (`<form>` control list, `<menu>` toolbar). `--set-stack-spacing` and `--set-cluster-spacing` are the global tunables for `<div class="stack">` and `<div class="cluster">` — the local `--set-stack-gap` / `--set-cluster-gap` declared inside those rules resolves to the global token, so a single `:root { --set-stack-spacing: 0.5rem }` retunes every stack on the page without learning the local name. (`.frame` — the third spacing-shape primitive — declares no gap token because its whole point is `gap: 0`.) `--set-sticky-offset` is consumed by `<html>`'s `scroll-padding-block-start` so anchor jumps clear a sticky toolbar.
 
 ### Z-index scale
 
