@@ -71,6 +71,16 @@ const snippetStyles = `<button class="primary">Bare (outline-ish)</button>
 <button class="primary subtle">Ghost — text only</button>
 <button class="primary filled">Filled — solid surface</button>`
 
+const snippetFlat = `<!-- .flat: no fill, no border, no shadow at rest. Hover + focus
+     reveal a 4% backdrop + neutral border. Focus ring still paints. -->
+<div role="toolbar" aria-label="Editor actions">
+  <button class="flat" type="button">Bold</button>
+  <button class="flat" type="button">Italic</button>
+  <button class="flat" type="button">Strike</button>
+  <button class="primary flat" type="button">Save</button>
+  <button class="danger flat" type="button">Delete</button>
+</div>`
+
 const snippetStates = `<button class="primary">Default</button>
 <button class="primary active">.active (toggled)</button>
 <button class="primary" disabled>[disabled]</button>
@@ -306,6 +316,43 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre><code>{{ snippetStyles }}</code></pre>
+		</details>
+	</section>
+
+	<section id="button-flat">
+		<h2>Flat — toolbar / inline action chip</h2>
+		<p>
+			<code>.flat</code> is the fourth fill treatment:
+			<strong>no chrome at rest, chrome on engagement</strong>. Distinct from
+			<code>.subtle</code> (which keeps full button chrome but drops the variant fill) —
+			<code>.flat</code> dissolves border + fill + shadow entirely so the button reads as
+			text-with-affordance until hovered. Focus paints the focus-ring as the affordance, NOT a
+			restored variant fill (restoring would defeat the dissolve semantic).
+		</p>
+		<p>
+			Designed for toolbars, inline action chips inside table cells / list items, and any context
+			where a button bar needs to read as quiet typography that brightens only on interaction. Hover
+			any button below to see the 4% neutral backdrop reveal:
+		</p>
+		<div class="stack">
+			<div v-for="v in variants" :key="`flat-${v}`" class="cluster">
+				<button type="button" :class="`${v} flat`">{{ v }} flat</button>
+				<button type="button" :class="`${v} flat`">Action</button>
+				<button type="button" :class="`${v} flat`" disabled>Disabled</button>
+			</div>
+		</div>
+		<p>As a toolbar row using the framework's <code>[role="toolbar"]</code> host:</p>
+		<div role="toolbar" aria-label="Editor actions" style="margin-block-start: 0.5rem">
+			<button class="flat" type="button">Bold</button>
+			<button class="flat" type="button">Italic</button>
+			<button class="flat" type="button">Underline</button>
+			<button class="flat" type="button">Strike</button>
+			<button class="primary flat" type="button">Save</button>
+			<button class="danger flat" type="button">Delete</button>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetFlat }}</code></pre>
 		</details>
 	</section>
 

@@ -763,6 +763,57 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 		</details>
 	</section>
 
+	<section id="form-controls-flush">
+		<h2><code>form.flush</code> — fill a host's body</h2>
+		<p>
+			<code>.flush</code> on a <code>&lt;form&gt;</code> resets margin + padding to zero and writes
+			<code>inline-size: 100%</code>. The form has no outer chrome by default (the bare
+			<code>&lt;form&gt;</code> is just a flex-column stack with consistent gap rhythm), so this is
+			mostly a documentation rule that makes the "fill the host" intent explicit and predictable
+			across consumer compositions. The internal vertical gap between control + label pairs is
+			unchanged — that's where <code>&lt;form&gt;</code> earns its keep.
+		</p>
+		<p>
+			Drop a flush form into a card body, an aside, or an expanded list-group item and it fills
+			edge-to-edge with the host's chrome owning the perimeter:
+		</p>
+		<article style="padding: 0; overflow: clip; max-inline-size: 32rem">
+			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+				<h3 style="margin: 0">Profile</h3>
+			</header>
+			<form class="flush" style="padding: 1rem">
+				<label>
+					Display name
+					<input type="text" placeholder="Ada Lovelace" />
+				</label>
+				<label>
+					Email
+					<input type="email" placeholder="ada@example.com" />
+				</label>
+				<label>
+					Bio
+					<textarea rows="3" placeholder="A short introduction"></textarea>
+				</label>
+			</form>
+			<footer style="padding-inline: 1rem; padding-block: 0.75rem">
+				<button type="button">Cancel</button>
+				<button type="button" class="primary filled">Save changes</button>
+			</footer>
+		</article>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;article&gt;
+  &lt;header&gt;…&lt;/header&gt;
+  &lt;form class="flush"&gt;
+    &lt;label&gt;…&lt;input type="text" /&gt;&lt;/label&gt;
+    &lt;label&gt;…&lt;input type="email" /&gt;&lt;/label&gt;
+    &lt;label&gt;…&lt;textarea&gt;&lt;/textarea&gt;&lt;/label&gt;
+  &lt;/form&gt;
+  &lt;footer&gt;…&lt;/footer&gt;
+&lt;/article&gt;</code></pre>
+		</details>
+	</section>
+
 	<section id="form-controls-forced-colors">
 		<h2>Forced colors and reduced motion</h2>
 		<p>

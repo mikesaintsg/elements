@@ -361,6 +361,57 @@ const cosmicImageDataUri =
 		</article>
 	</section>
 
+	<section id="article-flush">
+		<h2>Nested cards — <code>article.flush</code></h2>
+		<p>
+			<code>.flush</code> drops the article's outer border, radius, shadow, and margin so a nested
+			<code>&lt;article&gt;</code> inside a parent card / region surface reads as one continuous
+			boundary owned by the host. Internal <code>&lt;header&gt;</code> / <code>&lt;footer&gt;</code>
+			pin chrome survives because it's painted from inside the article's grid. Variant cascade still
+			flows through to the article's internal chrome — variant headers / footers / borders show up
+			on nested cards even when the outer perimeter is dissolved.
+		</p>
+		<p>Three nested articles inside one outer card — each is itself a fully-composed card:</p>
+		<article style="padding: 0; overflow: clip; max-width: 32rem">
+			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+				<h3 style="margin: 0">Deployment summary</h3>
+			</header>
+			<article class="success flush">
+				<header><h4 style="margin: 0">Build passed</h4></header>
+				<p style="margin: 0">All 1,420 tests passing on <code>main</code>.</p>
+			</article>
+			<article class="warning flush">
+				<header><h4 style="margin: 0">1 deprecation warning</h4></header>
+				<p style="margin: 0">See build log for the call site.</p>
+			</article>
+			<article class="information flush">
+				<header><h4 style="margin: 0">Awaiting review</h4></header>
+				<p style="margin: 0">Deploy starts in 60 seconds unless cancelled.</p>
+			</article>
+			<footer style="padding-inline: 1rem; padding-block: 0.75rem">
+				<small>Last updated 12 seconds ago.</small>
+			</footer>
+		</article>
+		<p>
+			Useful for status panels, settings group cards with internal section dividers, and any pattern
+			where a parent card frames multiple structured sub-regions without each sub-region painting
+			its own outline.
+		</p>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;article&gt;
+  &lt;header&gt;…&lt;/header&gt;
+  &lt;article class="success flush"&gt;
+    &lt;header&gt;&lt;h4&gt;Build passed&lt;/h4&gt;&lt;/header&gt;
+    &lt;p&gt;…&lt;/p&gt;
+  &lt;/article&gt;
+  &lt;article class="warning flush"&gt;…&lt;/article&gt;
+  &lt;article class="information flush"&gt;…&lt;/article&gt;
+  &lt;footer&gt;…&lt;/footer&gt;
+&lt;/article&gt;</code></pre>
+		</details>
+	</section>
+
 	<section id="article-compositions">
 		<h2>Real-world compositions</h2>
 		<p>

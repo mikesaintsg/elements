@@ -302,6 +302,75 @@ const restore = (): void => {
 		</p>
 	</section>
 
+	<section id="aside-alert-flat-flush">
+		<h2>3a. Alert · <code>.flat</code> and <code>.flush</code></h2>
+		<p>
+			Two surface-dissolution modifiers for alerts inset into another framework surface (card body,
+			sidebar rail, list-group row). <code>.flat</code> dissolves the alert's chrome at rest and
+			restores it on hover — useful for low-emphasis inline notes that brighten only when the user
+			engages. <code>.flush</code> drops the outer border + radius + top/bottom borders entirely
+			(leading 4-px bar preserved because it's the variant identity signal), letting the alert sit
+			flush against the host's edges as a divider band.
+		</p>
+		<h3>Flat — chrome on hover</h3>
+		<p>
+			Variant cascade still flows through: a <code>.success.flat</code> alert reveals success-tinted
+			bar + bg-subtle backdrop on hover; rest state reads as plain inline copy.
+		</p>
+		<div class="stack" style="--set-stack-spacing: 0.5rem">
+			<aside role="alert" class="flat" data-alert-open>
+				<div>Neutral flat alert — hover to reveal the bar + backdrop.</div>
+			</aside>
+			<aside role="alert" class="information flat" data-alert-open>
+				<div><strong>Heads up.</strong> Information-flat reveals on hover.</div>
+			</aside>
+			<aside role="alert" class="success flat" data-alert-open>
+				<div>
+					<strong>Looking good.</strong> Success-flat — quiet at rest, success-tinted on hover.
+				</div>
+			</aside>
+			<aside role="alert" class="warning flat" data-alert-open>
+				<div><strong>Caution.</strong> Warning-flat — amber bar reveals on hover.</div>
+			</aside>
+			<aside role="alert" class="danger flat" data-alert-open>
+				<div><strong>Trouble.</strong> Danger-flat — red bar reveals on hover.</div>
+			</aside>
+		</div>
+		<h3>Flush — divider band inset into a card</h3>
+		<p>
+			The alert lives inside an <code>&lt;article&gt;</code>; <code>.flush</code> drops the outer
+			perimeter so the alert sits between siblings as a separator with the variant's leading bar.
+		</p>
+		<article style="padding: 0; overflow: clip">
+			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+				<h3 style="margin: 0">Deployment status</h3>
+			</header>
+			<aside role="alert" class="success flush" data-alert-open>
+				<div><strong>All tests passed.</strong> 1,420 / 1,420 on <code>main</code>.</div>
+			</aside>
+			<aside role="alert" class="warning flush" data-alert-open>
+				<div><strong>1 deprecation warning.</strong> See build log for details.</div>
+			</aside>
+			<aside role="alert" class="information flush" data-alert-open>
+				<div>Deploy starts in 60 seconds unless cancelled.</div>
+			</aside>
+			<footer style="padding-inline: 1rem; padding-block: 0.75rem">
+				<small>Last updated 12 seconds ago.</small>
+			</footer>
+		</article>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;aside role="alert" class="success flat"&gt;…&lt;/aside&gt;
+
+&lt;article&gt;
+  &lt;header&gt;…&lt;/header&gt;
+  &lt;aside role="alert" class="success flush"&gt;…&lt;/aside&gt;
+  &lt;aside role="alert" class="warning flush"&gt;…&lt;/aside&gt;
+  &lt;footer&gt;…&lt;/footer&gt;
+&lt;/article&gt;</code></pre>
+		</details>
+	</section>
+
 	<section id="aside-status">
 		<h2>4. Status banner — <code>&lt;aside role="status"&gt;</code></h2>
 		<p>

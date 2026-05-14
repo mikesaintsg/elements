@@ -88,6 +88,26 @@ const snippetStyles = `<!-- Bare anchor: inline link, primary color + underline,
      saturated fill is sufficient affordance on its own. -->
 <a href="#a-styles" class="primary filled">Filled button-shaped link</a>`
 
+const snippetFlat = `<!-- .flat: no underline at rest; hover restores underline + 4% backdrop. -->
+<p>
+  Read the <a class="flat" href="#a-flat">framework documentation</a>
+  to learn more about hydrated semantics.
+</p>
+
+<!-- Variant cascades through — the link colour still reads as the variant. -->
+<a class="success flat" href="#a-flat">Success flat link</a>`
+
+const snippetFlush = `<!-- .flush: link IS the surface — fills host, inherits radius,
+     drops underline, inherits color. -->
+<article style="padding: 0">
+  <a class="flush" href="#a-flush">
+    <header>
+      <h3>Tile-as-link</h3>
+    </header>
+    <p>Clicking anywhere on this card navigates. The link covers the entire host.</p>
+  </a>
+</article>`
+
 const snippetStates = `<a href="#a-states" class="primary">Hover me (color darkens 20%)</a>
 <a href="#a-states" class="primary active">.active (color darkens 35%)</a>
 <a href="#a-states" class="primary disabled">.disabled (opacity 0.5, no pointer events)</a>
@@ -284,6 +304,110 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre><code>{{ snippetStyles }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-flat">
+		<h2>Flat — quiet inline link</h2>
+		<p>
+			<code>.flat</code> drops the underline at rest and restores it on hover (paired with a 4%
+			backdrop). Use for inline references in editorial copy where the underline introduces visual
+			noise but the affordance should still be obvious on engagement. Variant colour cascades
+			through unchanged.
+		</p>
+		<div class="stack">
+			<p>
+				Visit the
+				<a class="flat" href="#anchor-flat">framework documentation</a> for setup instructions and
+				see the <a class="success flat" href="#anchor-flat">latest release notes</a> for migration
+				details. Cross-reference the
+				<a class="information flat" href="#anchor-flat">community channels</a> if you hit a snag,
+				and report any <a class="danger flat" href="#anchor-flat">production incidents</a> through
+				the on-call rotation.
+			</p>
+			<p>
+				Every variant ({{ variants.length }} of them) renders flat in the cluster below so the
+				per-variant text colour is legible side-by-side.
+			</p>
+			<div class="cluster">
+				<a v-for="v in variants" :key="v" class="flat" :class="v" href="#anchor-flat">
+					{{ v }} flat
+				</a>
+			</div>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetFlat }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-flush">
+		<h2>Flush — tile-as-link</h2>
+		<p>
+			<code>.flush</code> fuses the anchor INTO its host: <code>display: block</code>, fills both
+			axes, inherits the host's <code>border-radius</code>, drops the underline + the link-blue
+			identity (color inherits from the host). The whole tile becomes clickable; the host owns the
+			visual chrome.
+		</p>
+		<p>Three neutral tiles, each entirely clickable:</p>
+		<div class="cluster" style="gap: 1rem; flex-wrap: wrap">
+			<article style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px">
+				<a class="flush" href="#anchor-flush" style="padding: 1rem">
+					<header><h3 style="margin: 0 0 0.25rem">Documentation</h3></header>
+					<p style="margin: 0">Setup, cascade, taxonomy.</p>
+				</a>
+			</article>
+			<article style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px">
+				<a class="flush" href="#anchor-flush" style="padding: 1rem">
+					<header><h3 style="margin: 0 0 0.25rem">Showcase</h3></header>
+					<p style="margin: 0">Every element, in context.</p>
+				</a>
+			</article>
+			<article style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px">
+				<a class="flush" href="#anchor-flush" style="padding: 1rem">
+					<header><h3 style="margin: 0 0 0.25rem">API reference</h3></header>
+					<p style="margin: 0">Composables, factories, types.</p>
+				</a>
+			</article>
+		</div>
+		<p>
+			The variant cascade still flows through to a flush anchor's host — a
+			<code>&lt;article class="primary filled"&gt;</code> with a <code>flush</code> anchor inside
+			fills the tile in primary blue and the anchor's <code>color: inherit</code> reads white
+			against it:
+		</p>
+		<div class="cluster" style="gap: 1rem; flex-wrap: wrap">
+			<article
+				class="primary filled"
+				style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px"
+			>
+				<a class="flush" href="#anchor-flush" style="padding: 1rem">
+					<header><h3 style="margin: 0 0 0.25rem">Primary filled tile</h3></header>
+					<p style="margin: 0">Whole card is a link.</p>
+				</a>
+			</article>
+			<article
+				class="success filled"
+				style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px"
+			>
+				<a class="flush" href="#anchor-flush" style="padding: 1rem">
+					<header><h3 style="margin: 0 0 0.25rem">Success filled tile</h3></header>
+					<p style="margin: 0">Whole card is a link.</p>
+				</a>
+			</article>
+			<article
+				class="danger filled"
+				style="padding: 0; overflow: clip; inline-size: 14rem; block-size: 1px"
+			>
+				<a class="flush" href="#anchor-flush" style="padding: 1rem">
+					<header><h3 style="margin: 0 0 0.25rem">Danger filled tile</h3></header>
+					<p style="margin: 0">Whole card is a link.</p>
+				</a>
+			</article>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetFlush }}</code></pre>
 		</details>
 	</section>
 

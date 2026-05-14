@@ -118,6 +118,54 @@
 			Also: <code>scroll-margin-block-start</code> consumes <code>--set-sticky-offset</code> so
 			anchor navigation (<code>#section-id</code>) lands the heading clear of any sticky app bar.
 		</p>
+		<h3><code>section.flush</code> — explicit gutter strip</h3>
+		<p>
+			The nesting-collapse rule covers the most common case automatically:
+			<code>&lt;section&gt;</code> inside <code>&lt;main&gt;</code> / <code>&lt;section&gt;</code> /
+			<code>&lt;article&gt;</code> / <code>&lt;dialog&gt;</code> drops its own
+			<code>padding-block</code> so siblings don't double-pad. But when a
+			<code>&lt;section&gt;</code> lives inside a non-section parent (a tab panel, a card body, a
+			custom layout), the collapse doesn't fire and the section keeps its block gutter.
+			<code>.flush</code> is the explicit opt-out: zeroes both <code>margin</code> and
+			<code>padding</code> so the section butts against the host's edges.
+		</p>
+		<article style="padding: 0; overflow: clip; max-width: 32rem">
+			<header style="padding-inline: 1rem; padding-block: 0.75rem">
+				<h3 style="margin: 0">Tabbed status panel</h3>
+			</header>
+			<section class="flush" style="padding-inline: 1rem">
+				<h4 style="margin: 0 0 0.25rem">Active session</h4>
+				<p style="margin: 0">
+					<small>
+						Section butts against the host's header and the next sibling — no gutter, no margin. The
+						host (<code>&lt;article&gt;</code>) owns vertical rhythm.
+					</small>
+				</p>
+			</section>
+			<hr style="margin: 0" />
+			<section class="flush" style="padding-inline: 1rem">
+				<h4 style="margin: 0 0 0.25rem">Recent activity</h4>
+				<p style="margin: 0">
+					<small>
+						Two flush sections separated by a <code>&lt;hr&gt;</code>; both share the host's
+						perimeter without any extra block space.
+					</small>
+				</p>
+			</section>
+			<footer style="padding-inline: 1rem; padding-block: 0.75rem">
+				<small>Refreshes every 30 seconds.</small>
+			</footer>
+		</article>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;article&gt;
+  &lt;header&gt;…&lt;/header&gt;
+  &lt;section class="flush"&gt;…&lt;/section&gt;
+  &lt;hr /&gt;
+  &lt;section class="flush"&gt;…&lt;/section&gt;
+  &lt;footer&gt;…&lt;/footer&gt;
+&lt;/article&gt;</code></pre>
+		</details>
 	</section>
 
 	<section id="sectioning-article">
