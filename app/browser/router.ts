@@ -32,6 +32,7 @@ import UseDragDropPage from './pages/UseDragDropPage.vue'
 import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
 import UseMenuPage from './pages/UseMenuPage.vue'
 import UseDialogPage from './pages/UseDialogPage.vue'
+import UseAsidePage from './pages/UseAsidePage.vue'
 import UsePopoverPage from './pages/UsePopoverPage.vue'
 import UseTooltipPage from './pages/UseTooltipPage.vue'
 
@@ -232,6 +233,12 @@ const USE_DIALOG: Route = {
 	group: 'Composables',
 	page: UseDialogPage,
 }
+const USE_ASIDE: Route = {
+	id: 'use-aside',
+	title: 'useAside',
+	group: 'Composables',
+	page: UseAsidePage,
+}
 const USE_POPOVER: Route = {
 	id: 'use-popover',
 	title: 'usePopover',
@@ -277,6 +284,7 @@ export const routes: readonly Route[] = [
 	USE_THEME_BUTTON,
 	USE_MENU,
 	USE_DIALOG,
+	USE_ASIDE,
 	USE_POPOVER,
 	USE_TOOLTIP,
 ]

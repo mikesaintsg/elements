@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](contribute.md) to know **how to work**.
 
-Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 33 of 43 pages built (all 4 Foundation pages complete; 2 of 12 composable-bound pages shipped: **UseMenuPage**, **UseDialogPage**); remaining composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
+Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 34 of 43 pages built (all 4 Foundation pages complete; 3 of 12 composable-bound pages shipped: **UseMenuPage**, **UseDialogPage**, **UseAsidePage**); remaining composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
 
 ---
 
@@ -157,7 +157,7 @@ Every SCSS partial is held to these contracts before it can merge. The contract 
 
 ---
 
-## What's shipped — showcase pages (33 of 43)
+## What's shipped — showcase pages (34 of 43)
 
 | Group                       | Pages                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------- |
@@ -169,13 +169,13 @@ Every SCSS partial is held to these contracts before it can merge. The contract 
 | Surfaces                    | PopoverSurfacesPage, FormSurfacesPage, ScrollAndTransitionPage                              |
 | Composables — Primitives    | UseFocusPage, UsePointerPage, UseDragDropPage, UseThemeButtonPage                           |
 | Composables — Floating      | UsePopoverPage, UseTooltipPage                                                              |
-| Composables — Element-bound | UseMenuPage, UseDialogPage                                                                  |
+| Composables — Element-bound | UseMenuPage, UseDialogPage, UseAsidePage                                                    |
 
 Element pages cover the static markup contract; the matching `Use*Page` (planned, §9.2) covers the JS interaction layer — `DetailsPage` proves the bare `<details>` element baseline, `UseDetailsPage` (planned) proves the `useDetails` programmatic open/close. Both pages exist for elements with composables.
 
 ---
 
-## Remaining work — Phase 9 (10 pages)
+## Remaining work — Phase 9 (9 pages)
 
 ### 9.1 Foundation pages (4)
 
@@ -186,12 +186,13 @@ Highest leverage — every other page references them.
 - ✅ **ModifiersPage** — variant × size × style × state × placement cascade. Cascade walk-through with resolved tokens; 7-variant grids across FILLED / SUBTLE / ON-CANVAS tiers; size table with concrete values; action-vs-container style demos; state demos with paired ARIA attributes (`disabled`, `active`, `loading`); 8-placement reference grid; interactive combination picker (variant × size × style × state) with live button + class-list output; customization guidance for retuning context tokens.
 - ✅ **PlacementsPage** — 8-class vocabulary table (`.top` / `.bottom` / `.start` / `.end` + 4 corners), interactive live demo (select placement → re-anchored popover), 3×3 grid metaphor, `position-try-fallbacks` flip demo (two anchor buttons at opposite edges; left flips, right honored), scope-discipline explainer (the `:not(:where(aside, dialog, nav, output))` drawer exclusion list), logical-axis / RTL note, and customization for `--set-anchor-{gap, max-inline-size, max-block-size, position-try-fallbacks}` tokens.
 
-### 9.2 Composable pages — element-bound (10 remaining of 12)
+### 9.2 Composable pages — element-bound (9 remaining of 12)
 
 Each page proves the `use{Name}` factory's JS layer on top of the matching element page.
 
 - ✅ **UseMenuPage** — `<menu popover>` panel + toggle, ArrowDown / ArrowUp roving, Home / End, item-click dismiss, three independent dismiss-policy flags (`outside` / `escape` / `inside`), `flip` threshold demo (`flip: 0` vs `flip: 8`), reactive `Ref<Placement>`, cancellable lifecycle + namespaced DOM events (`elements:menu:{show,open,hide,close}`).
 - ✅ **UseDialogPage** — modal vs non-modal toggle (`showModal()` vs `show()`), three backdrop modes (`true` / `false` / `'static'` with the `prevent` shake-hook), Escape suppression, `<form method="dialog">` return-value capture, opt-in body scroll-lock for non-modal, cancellable lifecycle + namespaced DOM events (`elements:dialog:{show,open,hide,close,prevent}`). Cross-references DialogElementPage for the bare-element chrome.
+- ✅ **UseAsidePage** — `<aside popover="manual">` programmatic drawer at all four edges (`.start` / `.end` / `.top` / `.bottom`), three backdrop modes + Escape policy + opt-out body scroll-lock, cancellable lifecycle + namespaced DOM events, and the `[data-aside-open]` ↔ `[data-aside-closing]` attribute pair that keeps drawer geometry alive across the popover surface's discrete-transition tail (with a live attribute readout). Cross-references AsidePage for the bare-element chrome + the other three `<aside>` contexts.
 - ⬜ **UseAsidePage** — drawer mode (`<aside popover="manual">`) at every edge (`.start`, `.end`, `.top`, `.bottom`), backdrop dismiss, `[data-aside-closing]` lifecycle exposed.
 - ⬜ **UseDetailsPage** — programmatic open / close synced with native `toggle`, animated height (the `::details-content` reference behavior the framework's motion contract matches), group accordion (one-open-at-a-time pattern).
 - ⬜ **UseToastPage** — `<output popover>` toast surface. Linear stack (default), Sonner-deck mode (`[data-toast-stack]`), auto-hide timer + pause-on-hover, swipe-to-dismiss, variant tinting, hidden-overflow indicator. Covers the toast end of the toast-vs-alert disambiguation (banner alert lives on `AsidePage`).
