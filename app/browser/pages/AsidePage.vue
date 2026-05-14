@@ -342,7 +342,12 @@ const restore = (): void => {
 			perimeter so the alert sits between siblings as a separator with the variant's leading bar.
 		</p>
 		<article
-			style="--set-article-padding-inline: 0; --set-article-padding-block: 0; overflow: clip"
+			style="
+				--set-article-padding-inline: 0;
+				--set-article-padding-block: 0;
+				--set-article-gap: 0;
+				overflow: clip;
+			"
 		>
 			<header style="padding-inline: 1rem; padding-block: 0.75rem">
 				<h3 style="margin: 0">Deployment status</h3>

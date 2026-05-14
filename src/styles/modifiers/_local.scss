@@ -286,6 +286,14 @@
 	button.flush {
 		padding: 0;
 		color: var(--set-variant-on-canvas-color, var(--set-button-color, currentColor));
+
+		// Pressed feel — same 12% backdrop + 1 px translate as `button.flat`
+		// so flush buttons in tile / card / table-cell contexts still read
+		// as deliberately tapped instead of silently absorbed by the host.
+		&:active:not(:disabled) {
+			background-color: color-mix(in oklab, currentColor 12%, transparent);
+			transform: translateY(1px);
+		}
 	}
 
 	// ── a.flat / a.flush ────────────────────────────────────────────────────
@@ -379,6 +387,18 @@
 			background-color: color-mix(in oklab, currentColor 4%, transparent);
 			border-color: var(--color-border);
 			box-shadow: var(--set-button-focus-box-shadow);
+		}
+
+		// Pressed feel — `:active` darkens the backdrop 3× the hover tint and
+		// shifts the button down 1 px so the touch reads as a deliberate
+		// affordance, not a hover artefact. Same shape across both flat AND
+		// flush so toolbars / inline-action chips / cell buttons all feel
+		// alive under the pointer. `:not(:disabled)` keeps the chrome quiet
+		// for the disabled state.
+		&:active:not(:disabled) {
+			background-color: color-mix(in oklab, currentColor 12%, transparent);
+			border-color: var(--color-border);
+			transform: translateY(1px);
 		}
 
 		@include forced-colors {

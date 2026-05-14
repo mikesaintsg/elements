@@ -781,6 +781,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			style="
 				--set-article-padding-inline: 0;
 				--set-article-padding-block: 0;
+				--set-article-gap: 0;
 				overflow: clip;
 				max-inline-size: 32rem;
 			"
@@ -870,12 +871,17 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 		<h3>Flush — cell IS the surface</h3>
 		<p>
 			The form controls live inside a card whose cells own the visual chrome. Each control fuses to
-			its host's edges; on hover / focus a subtle backdrop confirms the active surface.
+			its host's edges; on hover / focus a subtle backdrop confirms the active surface. Rows use
+			<code>align-items: center</code> so the label text vertical-centres against the input's
+			text-baseline (avoids the "label at top, input text below" mis-alignment that
+			<code>align-items: stretch</code> produces when the input baseline sits in the middle of its
+			content box).
 		</p>
 		<article
 			style="
 				--set-article-padding-inline: 0;
 				--set-article-padding-block: 0;
+				--set-article-gap: 0;
 				overflow: clip;
 				max-inline-size: 32rem;
 			"
@@ -887,13 +893,20 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 				style="
 					display: grid;
 					grid-template-columns: 8rem 1fr;
-					align-items: stretch;
+					align-items: center;
 					border-block-end: 1px solid var(--color-border);
 				"
 			>
 				<label
 					for="flush-name"
-					style="padding: 0.75rem 1rem; margin: 0; border-inline-end: 1px solid var(--color-border)"
+					style="
+						padding-inline: 1rem;
+						margin: 0;
+						align-self: stretch;
+						display: flex;
+						align-items: center;
+						border-inline-end: 1px solid var(--color-border);
+					"
 				>
 					Name
 				</label>
@@ -902,20 +915,27 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 					class="flush"
 					type="text"
 					value="Ada Lovelace"
-					style="padding: 0.75rem 1rem"
+					style="padding-inline: 1rem; padding-block: 0.75rem"
 				/>
 			</div>
 			<div
 				style="
 					display: grid;
 					grid-template-columns: 8rem 1fr;
-					align-items: stretch;
+					align-items: center;
 					border-block-end: 1px solid var(--color-border);
 				"
 			>
 				<label
 					for="flush-email"
-					style="padding: 0.75rem 1rem; margin: 0; border-inline-end: 1px solid var(--color-border)"
+					style="
+						padding-inline: 1rem;
+						margin: 0;
+						align-self: stretch;
+						display: flex;
+						align-items: center;
+						border-inline-end: 1px solid var(--color-border);
+					"
 				>
 					Email
 				</label>
@@ -924,24 +944,31 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 					class="flush"
 					type="email"
 					value="ada@example.com"
-					style="padding: 0.75rem 1rem"
+					style="padding-inline: 1rem; padding-block: 0.75rem"
 				/>
 			</div>
 			<div
 				style="
 					display: grid;
 					grid-template-columns: 8rem 1fr;
-					align-items: stretch;
+					align-items: center;
 					border-block-end: 1px solid var(--color-border);
 				"
 			>
 				<label
 					for="flush-plan"
-					style="padding: 0.75rem 1rem; margin: 0; border-inline-end: 1px solid var(--color-border)"
+					style="
+						padding-inline: 1rem;
+						margin: 0;
+						align-self: stretch;
+						display: flex;
+						align-items: center;
+						border-inline-end: 1px solid var(--color-border);
+					"
 				>
 					Plan
 				</label>
-				<select id="flush-plan" class="flush" style="padding: 0.75rem 1rem">
+				<select id="flush-plan" class="flush" style="padding-inline: 1rem; padding-block: 0.75rem">
 					<option>Free</option>
 					<option selected>Pro</option>
 					<option>Enterprise</option>
@@ -950,7 +977,14 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			<div style="display: grid; grid-template-columns: 8rem 1fr; align-items: stretch">
 				<label
 					for="flush-bio"
-					style="padding: 0.75rem 1rem; margin: 0; border-inline-end: 1px solid var(--color-border)"
+					style="
+						padding-inline: 1rem;
+						padding-block: 0.75rem;
+						margin: 0;
+						display: flex;
+						align-items: flex-start;
+						border-inline-end: 1px solid var(--color-border);
+					"
 				>
 					Bio
 				</label>

@@ -371,6 +371,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 				style="
 					--set-article-padding-inline: 0;
 					--set-article-padding-block: 0;
+					--set-article-gap: 0;
 					overflow: clip;
 					inline-size: 16rem;
 				"
@@ -390,6 +391,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 				style="
 					--set-article-padding-inline: 0;
 					--set-article-padding-block: 0;
+					--set-article-gap: 0;
 					overflow: clip;
 					inline-size: 16rem;
 				"
@@ -409,6 +411,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 				style="
 					--set-article-padding-inline: 0;
 					--set-article-padding-block: 0;
+					--set-article-gap: 0;
 					overflow: clip;
 					inline-size: 16rem;
 				"

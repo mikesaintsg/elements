@@ -433,7 +433,12 @@ const snippetCustomMarker = `<details style="--set-summary-marker-image: url('â€
 			separate.
 		</p>
 		<article
-			style="--set-article-padding-inline: 0; --set-article-padding-block: 0; overflow: clip"
+			style="
+				--set-article-padding-inline: 0;
+				--set-article-padding-block: 0;
+				--set-article-gap: 0;
+				overflow: clip;
+			"
 		>
 			<details class="flush">
 				<summary>Item one</summary>
@@ -462,7 +467,12 @@ const snippetCustomMarker = `<details style="--set-summary-marker-image: url('â€
 			when the outer chrome is dissolved:
 		</p>
 		<article
-			style="--set-article-padding-inline: 0; --set-article-padding-block: 0; overflow: clip"
+			style="
+				--set-article-padding-inline: 0;
+				--set-article-padding-block: 0;
+				--set-article-gap: 0;
+				overflow: clip;
+			"
 		>
 			<details class="success flush">
 				<summary>Success flush</summary>

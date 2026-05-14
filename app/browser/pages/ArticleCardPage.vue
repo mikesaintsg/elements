@@ -376,6 +376,7 @@ const cosmicImageDataUri =
 			style="
 				--set-article-padding-inline: 0;
 				--set-article-padding-block: 0;
+				--set-article-gap: 0;
 				overflow: clip;
 				max-width: 32rem;
 			"
