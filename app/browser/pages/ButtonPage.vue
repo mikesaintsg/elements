@@ -366,63 +366,37 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 			reveals on hover + focus so the button stays discoverable inside the dissolved chrome.
 		</p>
 		<p>Three article tiles, each with a flush button filling the bottom strip:</p>
-		<div class="cluster" class="flex flex-wrap gap-4">
-			<article
-				style="
-					--set-article-padding-inline: 0;
-					--set-article-padding-block: 0;
-					--set-article-gap: 0;
-					overflow: clip;
-					inline-size: 16rem;
-				"
-			>
+		<div class="cluster gap-4">
+			<article class="showcase-flush-host showcase-tile">
 				<div class="p-4">
 					<strong>Quick action</strong>
-					<p style="margin: 0.25rem 0 0">
+					<p class="mt-1">
 						<small>Neutral flush — fills the card's bottom edge.</small>
 					</p>
 				</div>
-				<div style="block-size: 2.5rem">
+				<div class="h-10">
 					<button class="flush" type="button">Run</button>
 				</div>
 			</article>
-			<article
-				class="primary subtle"
-				style="
-					--set-article-padding-inline: 0;
-					--set-article-padding-block: 0;
-					--set-article-gap: 0;
-					overflow: clip;
-					inline-size: 16rem;
-				"
-			>
+			<article class="primary subtle showcase-flush-host showcase-tile">
 				<div class="p-4">
 					<strong>Primary tile</strong>
-					<p style="margin: 0.25rem 0 0">
+					<p class="mt-1">
 						<small>Variant cascade reaches the flush button's text.</small>
 					</p>
 				</div>
-				<div style="block-size: 2.5rem">
+				<div class="h-10">
 					<button class="primary flush" type="button">Confirm</button>
 				</div>
 			</article>
-			<article
-				class="danger subtle"
-				style="
-					--set-article-padding-inline: 0;
-					--set-article-padding-block: 0;
-					--set-article-gap: 0;
-					overflow: clip;
-					inline-size: 16rem;
-				"
-			>
+			<article class="danger subtle showcase-flush-host showcase-tile">
 				<div class="p-4">
 					<strong>Destructive tile</strong>
-					<p style="margin: 0.25rem 0 0">
+					<p class="mt-1">
 						<small>Danger flush sits flush against the card's edges.</small>
 					</p>
 				</div>
-				<div style="block-size: 2.5rem">
+				<div class="h-10">
 					<button class="danger flush" type="button">Delete</button>
 				</div>
 			</article>
@@ -431,11 +405,11 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 			Inside a table cell — the <code>&lt;td block-size: 1px&gt;</code> trick coerces the cell to
 			its row's intrinsic height so the flush button's <code>block-size: 100%</code> resolves:
 		</p>
-		<table class="striped" style="max-inline-size: 32rem">
+		<table class="striped max-w-md">
 			<thead>
 				<tr>
 					<th>Task</th>
-					<th style="inline-size: 10rem">Action</th>
+					<th class="w-40">Action</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -596,7 +570,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 			<button type="button" class="subtle dropdown">Subtle dropdown</button>
 			<button type="button" class="success filled dropdown large">Large + filled</button>
 		</div>
-		<h3 style="margin-block-start: 1.5rem">Caret rotation on <code>aria-expanded</code></h3>
+		<h3 class="mt-6">Caret rotation on <code>aria-expanded</code></h3>
 		<p>
 			When the same button drives a disclosure relationship — a popover trigger reading its
 			<code>aria-expanded</code>, an accordion toggle, an expandable-row button — the caret rotates

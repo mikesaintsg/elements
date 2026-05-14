@@ -351,7 +351,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 			signals the navigation target.
 		</p>
 		<p>Three neutral tiles, each entirely clickable end-to-end:</p>
-		<div class="cluster" class="flex flex-wrap gap-4">
+		<div class="cluster gap-4">
 			<article
 				style="
 					--set-article-padding-inline: 0;
@@ -422,7 +422,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 			anchor's <code>color: inherit</code> reads white against it. Hover any tile to confirm the
 			click area covers the entire surface:
 		</p>
-		<div class="cluster" class="flex flex-wrap gap-4">
+		<div class="cluster gap-4">
 			<article
 				v-for="v in ['primary', 'success', 'warning', 'danger']"
 				:key="v"

@@ -378,6 +378,105 @@
 	font-weight: 400;
 }
 
+/* ── Placement grid (PlacementsPage) ────────────────────────────────
+ * The 3×3 grid that visualizes `position-area` placement values.
+ * Container: 3 columns × 3 rows of fixed-size cells with a 4-pixel
+ * gap, centered on the page. Cells: small <article> tiles painted
+ * with a variant `bg-subtle` to show the placement keyword spelled
+ * out. The center cell uses the saturated `--color-primary` with
+ * canvas text to mark the anchor's bounding area. */
+.showcase-placement-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 7rem);
+	grid-template-rows: repeat(3, 4rem);
+	gap: 4px;
+	justify-content: center;
+	padding-block: calc(var(--spacing) * 3);
+}
+
+.showcase-placement-cell {
+	display: grid;
+	place-items: center;
+	font-size: 0.875em;
+}
+
+/* The anchor stage — a wide centered surface that the demo button
+ * sits inside, so the popover has room to land in any of the eight
+ * placement positions without clipping. Used in PlacementsPage's
+ * live "pick a placement" demo. */
+.showcase-anchor-stage {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding-block: calc(var(--spacing) * 8);
+	background-color: var(--color-surface);
+	border-radius: var(--radius-md);
+}
+
+/* Bordered demo container — used by flip-fallback demos where each
+ * anchor needs its own boxed environment to make the viewport-edge
+ * proximity visible. Pair with Tailwind `justify-start` /
+ * `justify-end` to position the inner anchor. */
+.showcase-bordered-stage {
+	display: flex;
+	padding: calc(var(--spacing) * 4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+}
+
+/* The center "anchor" cell of the placement grid. Filled with the
+ * saturated primary so it reads as "this is the anchor element"
+ * against the eight surrounding subtle-tinted placement cells. */
+.showcase-placement-anchor {
+	background: var(--color-primary);
+	color: var(--color-canvas);
+	display: grid;
+	place-items: center;
+	font-size: 0.875em;
+	font-weight: 600;
+}
+
+/* ── Color-swatch demo (ThemePage) ───────────────────────────────────
+ * A swatch is an <article> with two stacked regions: the COLOR cap
+ * (a colored bar/square at the top) and the META region (label +
+ * token name + resolved value). The article zeroes its own padding
+ * and clips overflow so the colored cap can paint edge-to-edge. The
+ * meta region re-pads internally. Each swatch demonstrates one
+ * `--color-*` token so the inline `:style="{ backgroundColor: var
+ * (entry.token) }"` on the cap is the demo payload — the rest of
+ * the chrome is shared layout. */
+.showcase-swatch {
+	padding: 0;
+	overflow: hidden;
+	background-color: var(--color-surface);
+}
+
+.showcase-swatch-meta {
+	padding: calc(var(--spacing) * 2);
+}
+
+.showcase-swatch-meta-tight {
+	padding: calc(var(--spacing) * 1.5);
+}
+
+/* Swatch caption — small monospaced token label below the variant
+ * name. `display: block` puts each line on its own row; reduced
+ * opacity backs it off visually so the variant name stays the
+ * dominant cue. */
+.showcase-swatch-label {
+	display: block;
+	font-size: 0.75em;
+	opacity: 0.7;
+	margin-block-start: 0.25rem;
+}
+
+.showcase-swatch-label-quiet {
+	display: block;
+	font-size: 0.75em;
+	opacity: 0.6;
+	margin-block-start: 0.25rem;
+}
+
 /* ── Profile-card header (avatar + identity block) ──────────────────────
  * The framework's auto-banded `<article> > <header>` paints the
  * subtle tinted band by default. A profile card opts out: drop the

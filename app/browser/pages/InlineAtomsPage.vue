@@ -374,7 +374,7 @@ const submit = async (): Promise<void> => {
 				</div>
 			</header>
 			<div class="skeleton" style="block-size: 8rem; margin-block: 1rem" aria-hidden="true"></div>
-			<div class="skeleton text" class="w-full" aria-hidden="true"></div>
+			<div class="skeleton text w-full" aria-hidden="true"></div>
 			<div
 				class="skeleton text"
 				style="inline-size: 92%; margin-block-start: 0.5rem"

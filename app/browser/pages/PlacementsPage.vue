@@ -179,23 +179,14 @@ const setPlacement = (p: Placement): void => {
 				</select>
 			</label>
 		</form>
-		<div
-			style="
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				padding-block: calc(var(--spacing) * 8);
-				background-color: var(--color-surface);
-				border-radius: var(--radius-md);
-			"
-		>
+		<div class="showcase-anchor-stage">
 			<button type="button" class="primary" popovertarget="placements-live-popover">
 				Open popover ↓
 			</button>
 		</div>
-		<div id="placements-live-popover" popover :class="livePlacement" style="min-inline-size: 14rem">
-			<p style="margin: 0 0 0.5rem"><strong>Popover panel</strong></p>
-			<p style="margin: 0; font-size: 0.875em">
+		<div id="placements-live-popover" popover :class="livePlacement" class="min-w-56">
+			<p class="mt-0 mb-2"><strong>Popover panel</strong></p>
+			<p class="m-0 text-sm">
 				Placement: <code>.{{ livePlacement }}</code
 				>. The browser anchors to the trigger button; if the chosen side has no room,
 				<code>position-try-fallbacks</code> flips it to the opposite side.
@@ -217,106 +208,30 @@ const setPlacement = (p: Placement): void => {
 			extends the grid outward to cover the 8 surrounding cells. A placement class picks one cell
 			(or a span of cells) for the popover to land in.
 		</p>
-		<div
-			style="
-				display: grid;
-				grid-template-columns: repeat(3, 7rem);
-				grid-template-rows: repeat(3, 4rem);
-				gap: 4px;
-				justify-content: center;
-				padding-block: calc(var(--spacing) * 3);
-			"
-		>
-			<article
-				style="
-					background: var(--color-information-bg-subtle);
-					display: grid;
-					place-items: center;
-					font-size: 0.875em;
-				"
-			>
+		<div class="showcase-placement-grid">
+			<article class="showcase-placement-cell information">
 				<code>.top-start</code>
 			</article>
-			<article
-				style="
-					background: var(--color-information-bg-subtle);
-					display: grid;
-					place-items: center;
-					font-size: 0.875em;
-				"
-			>
+			<article class="showcase-placement-cell information">
 				<code>.top</code>
 			</article>
-			<article
-				style="
-					background: var(--color-information-bg-subtle);
-					display: grid;
-					place-items: center;
-					font-size: 0.875em;
-				"
-			>
+			<article class="showcase-placement-cell information">
 				<code>.top-end</code>
 			</article>
-			<article
-				style="
-					background: var(--color-secondary-bg-subtle);
-					display: grid;
-					place-items: center;
-					font-size: 0.875em;
-				"
-			>
+			<article class="showcase-placement-cell secondary">
 				<code>.start</code>
 			</article>
-			<article
-				style="
-					background: var(--color-primary);
-					color: var(--color-canvas);
-					display: grid;
-					place-items: center;
-					font-size: 0.875em;
-					font-weight: 600;
-				"
-			>
-				anchor
-			</article>
-			<article
-				style="
-					background: var(--color-secondary-bg-subtle);
-					display: grid;
-					place-items: center;
-					font-size: 0.875em;
-				"
-			>
+			<article class="showcase-placement-anchor">anchor</article>
+			<article class="showcase-placement-cell secondary">
 				<code>.end</code>
 			</article>
-			<article
-				style="
-					background: var(--color-information-bg-subtle);
-					display: grid;
-					place-items: center;
-					font-size: 0.875em;
-				"
-			>
+			<article class="showcase-placement-cell information">
 				<code>.bottom-start</code>
 			</article>
-			<article
-				style="
-					background: var(--color-information-bg-subtle);
-					display: grid;
-					place-items: center;
-					font-size: 0.875em;
-				"
-			>
+			<article class="showcase-placement-cell information">
 				<code>.bottom</code>
 			</article>
-			<article
-				style="
-					background: var(--color-information-bg-subtle);
-					display: grid;
-					place-items: center;
-					font-size: 0.875em;
-				"
-			>
+			<article class="showcase-placement-cell information">
 				<code>.bottom-end</code>
 			</article>
 		</div>
@@ -349,45 +264,28 @@ const setPlacement = (p: Placement): void => {
 		</p>
 
 		<h3>1. Anchor near inline-start edge — popover flips</h3>
-		<div
-			style="
-				display: flex;
-				justify-content: flex-start;
-				padding: calc(var(--spacing) * 4);
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius-md);
-				margin-block-end: calc(var(--spacing) * 4);
-			"
-		>
+		<div class="showcase-bordered-stage justify-start mb-4">
 			<button type="button" class="primary" popovertarget="placements-flip-left">
 				Open (placement: .start)
 			</button>
 		</div>
 
 		<h3>2. Anchor near inline-end edge — popover honored</h3>
-		<div
-			style="
-				display: flex;
-				justify-content: flex-end;
-				padding: calc(var(--spacing) * 4);
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius-md);
-			"
-		>
+		<div class="showcase-bordered-stage justify-end">
 			<button type="button" class="primary" popovertarget="placements-flip-right">
 				Open (placement: .start)
 			</button>
 		</div>
-		<div id="placements-flip-left" popover class="start" style="min-inline-size: 12rem">
-			<p style="margin: 0 0 0.5rem"><strong>Flipped popover</strong></p>
-			<p style="margin: 0; font-size: 0.875em">
+		<div id="placements-flip-left" popover class="start min-w-48">
+			<p class="mt-0 mb-2"><strong>Flipped popover</strong></p>
+			<p class="m-0 text-sm">
 				Requested <code>.start</code> (left of anchor). No room — browser flipped to
 				<code>.end</code>.
 			</p>
 		</div>
-		<div id="placements-flip-right" popover class="start" style="min-inline-size: 12rem">
-			<p style="margin: 0 0 0.5rem"><strong>Honored placement</strong></p>
-			<p style="margin: 0; font-size: 0.875em">
+		<div id="placements-flip-right" popover class="start min-w-48">
+			<p class="mt-0 mb-2"><strong>Honored placement</strong></p>
+			<p class="m-0 text-sm">
 				Requested <code>.start</code> (left of anchor). Fit found — no flip.
 			</p>
 		</div>

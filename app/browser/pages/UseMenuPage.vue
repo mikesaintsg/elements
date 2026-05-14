@@ -347,7 +347,7 @@ useMenu(toggleRef, menuRef, { placement: 'bottom-start', flip: 8 })
 			<strong>persistent filter menu</strong> (<code>inside: false</code>) where the user toggles
 			multiple checkboxes before pressing Escape or clicking outside.
 		</p>
-		<div class="dropdown-stage" class="flex flex-wrap gap-4">
+		<div class="dropdown-stage flex flex-wrap gap-4">
 			<button ref="stickyToggle" type="button" class="dropdown">Sticky — all dismiss off</button>
 			<button ref="filterToggle" type="button" class="dropdown">
 				Filters ({{ filterSummary }})

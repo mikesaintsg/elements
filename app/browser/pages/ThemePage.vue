@@ -287,7 +287,7 @@ const theme = useTheme()
 			<article
 				v-for="entry in variantBases"
 				:key="entry.token"
-				style="padding: 0; overflow: hidden; background-color: var(--color-surface)"
+				class="showcase-swatch"
 			>
 				<div
 					:style="{
@@ -295,14 +295,14 @@ const theme = useTheme()
 						backgroundColor: `var(${entry.token})`,
 					}"
 				></div>
-				<div style="padding: calc(var(--spacing) * 2)">
+				<div class="showcase-swatch-meta">
 					<strong class="capitalize">{{ entry.label }}</strong>
 					<code
-						style="display: block; font-size: 0.75em; opacity: 0.7; margin-block-start: 0.25rem"
+						class="showcase-swatch-label"
 						>{{ entry.token }}</code
 					>
 					<code
-						style="display: block; font-size: 0.75em; opacity: 0.6; margin-block-start: 0.25rem"
+						class="showcase-swatch-label-quiet"
 						>{{ entry.resolved }}</code
 					>
 				</div>
@@ -338,12 +338,7 @@ const theme = useTheme()
 			<span class="dot primary" aria-label="Status"></span>
 			<a href="#" @click.prevent>Anchor</a>
 		</div>
-		<aside
-			role="status"
-			class="primary"
-			data-alert-open
-			class="mt-4"
-		>
+		<aside role="status" class="primary mt-4" data-alert-open>
 			<p>
 				<strong>Alert banner.</strong> Bg uses <code>--color-primary-bg-subtle</code>; the leading
 				bar uses <code>--color-primary-text-emphasis</code>; the text uses
@@ -405,7 +400,7 @@ const theme = useTheme()
 				<article
 					v-for="entry in block.entries"
 					:key="entry.token"
-					style="padding: 0; overflow: hidden; background-color: var(--color-surface)"
+					class="showcase-swatch"
 				>
 					<div
 						:style="{
@@ -413,10 +408,10 @@ const theme = useTheme()
 							backgroundColor: `var(${entry.token})`,
 						}"
 					></div>
-					<div style="padding: calc(var(--spacing) * 1.5)">
+					<div class="showcase-swatch-meta-tight">
 						<strong class="text-sm">{{ entry.label }}</strong>
 						<code
-							style="display: block; font-size: 0.75em; opacity: 0.6; margin-block-start: 0.25rem"
+							class="showcase-swatch-label-quiet"
 							>{{ entry.token }}</code
 						>
 					</div>
@@ -452,7 +447,7 @@ const theme = useTheme()
 				></div>
 				<div style="padding: calc(var(--spacing) * 1.5); background-color: var(--color-surface)">
 					<strong class="text-sm">{{ entry.label }}</strong>
-					<code style="display: block; font-size: 0.75em; opacity: 0.6">{{ entry.token }}</code>
+					<code class="showcase-swatch-label-quiet">{{ entry.token }}</code>
 				</div>
 			</article>
 		</div>
@@ -490,7 +485,7 @@ const theme = useTheme()
 					The quick brown fox
 				</p>
 				<strong class="text-sm">{{ entry.label }}</strong>
-				<code style="display: block; font-size: 0.75em; opacity: 0.6">{{ entry.token }}</code>
+				<code class="showcase-swatch-label-quiet">{{ entry.token }}</code>
 			</article>
 		</div>
 	</section>
@@ -520,7 +515,7 @@ const theme = useTheme()
 				}"
 			>
 				<strong class="text-sm">{{ entry.label }}</strong>
-				<code style="display: block; font-size: 0.75em; opacity: 0.6">{{ entry.token }}</code>
+				<code class="showcase-swatch-label-quiet">{{ entry.token }}</code>
 			</article>
 		</div>
 	</section>

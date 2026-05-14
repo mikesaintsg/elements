@@ -384,7 +384,7 @@ usePopover({ anchor, panel, placement, trigger: { click: true } })</code></pre>
 			or a filter sheet that closes only via an explicit <code>.hide()</code> call (lock the user in
 			until they confirm).
 		</p>
-		<div class="placement-stage" class="flex flex-wrap gap-4">
+		<div class="placement-stage flex flex-wrap gap-4">
 			<button ref="stickyAnchor" type="button">Sticky — both off (button only)</button>
 			<button ref="escapeAnchor" type="button">Escape only</button>
 		</div>
