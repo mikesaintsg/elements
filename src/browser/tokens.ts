@@ -948,6 +948,11 @@ export const tokens = {
 			},
 		},
 		divider: { width: '--set-table-divider-width' },
+		expansion: {
+			icon: '--set-table-expansion-icon',
+			iconSize: '--set-table-expansion-icon-size',
+			iconGap: '--set-table-expansion-icon-gap',
+		},
 	},
 
 	// ── Phase 3 typographic overrides ──────────────────────────────────────

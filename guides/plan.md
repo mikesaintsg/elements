@@ -219,7 +219,7 @@ Each page proves the `use{Name}` factory's JS layer on top of the matching eleme
   - **`expansion.animate` option** dropped — uniform with framework motion contract; `prefers-reduced-motion` honoured by the `@include transition()` mixin.
   - **`[hidden]` toggle on the panel** replaced with `[inert]`: `[hidden]` forces `display: none` which freezes the CSS `block-size` tween (transitions don't run from `display: none`); `[inert]` suppresses focus / pointer / a11y on the visually clipped closed state while leaving rendering intact. Baseline-2022 in every engine the framework targets.
     `runTransition` import dropped from `createTable.ts`; expansion paths now synchronous (public `expand()` / `collapse()` / `toggle()` no longer wrap `Promise.all`). Factory dropped ~80 lines. The factory test that depended on `[data-collapsing]` was rewritten to verify the new attribute-only flow (`[data-table-expanded]` + `[inert]`).
-    8 demo sections: live multi-feature surface (24-row dataset of framework-issue records, scrollable wrapper), sort (single + shift-multi-column with `aria-sort` mirror), pagination (`Ref<number>` size + reactive `page` / `count` / `offset` driving a Vue-computed `visibleIssues` slice + `aria-rowindex` parity to the full dataset position), selection (shift / ctrl / cmd / outside-click clear), expansion (full SCSS rule shown + `[inert]` rationale), resize (pointer-capture handles + `[data-table-resizing]` marker), focus + sticky header (APG roving-tabindex + element-layer sticky chrome), API reference. Probe: 4 viewport × theme combos clean (375 / 768 / 1280 × light / dark), 22 / 22 page-walk routes after adding `use-table` to `scripts/check-page.mjs`.
+    9 demo sections: comprehensive integrated surface (24-row dataset of framework-issue records, scrollable wrapper, every feature wired), sort (single + shift-multi-column with `aria-sort` mirror), pagination (`Ref<number>` size + reactive `page` / `count` / `offset` driving a Vue-computed `visibleIssues` slice + `aria-rowindex` parity to the full dataset position), selection (shift / ctrl / cmd / outside-click clear), inline editing (`input.flush` / `select.flush` form controls dissolving into table cells — transparent rest, hover reveal, focus promotes to bordered baseline; validation contract + type-specific UI + IME composition preserved by using real form controls, not `contenteditable`), expansion (full SCSS rule shown + `[inert]` rationale; chevron `::before` rotates 90° on `[data-table-expanded]` via the new `--set-table-expansion-icon{,-size,-gap}` tokens), resize (pointer-capture handles + `[data-table-resizing]` marker), focus (APG roving-tabindex), sticky header (`table.sticky` modifier), API reference. Framework changes shipped alongside: `surfaces/_focus.scss` excludes `table[role='grid']` from the universal `:focus-visible` ring; `table.sticky` modifier in `elements/_table.scss`; row-expansion chevron tokens + `::before` rule; `input.flush` / `select.flush` / `textarea.flush` modifiers in `modifiers/_local.scss`. Pagination demos use the framework's `<nav aria-label="Pagination">` chrome (declared in `components/_nav.scss:450+`) — no custom button rows. Probe: 4 viewport × theme combos clean, 24 / 24 page-walk routes (dev + minified showcase, all 12 pages each).
 - ⬜ **UseFormPage** — constraint-validation pipeline, `[data-form-validated]` after first submit, per-field `aria-invalid` mirror, summary error region, submit-disabled-on-invalid.
 - ⬜ **UseNavPage** — scroll-spy on a long article with anchored sections; `aria-current="location"` flips as scroll position passes section boundaries.
 - ⬜ **UseAlertPage** — `useAlert` open / dismiss lifecycle, transition collapse, polite vs assertive (`role="alert"` vs `role="status"`), persistence across re-mounts.
@@ -274,6 +274,29 @@ Identified but not started. Open the matching contribute.md workflow when pickin
 
 - ⬜ **Element-local modifier consolidation** — survey component partials for `{tag}.{modifier}` rules that should migrate to `modifiers/_local.scss` (e.g. `form.row` in `components/_form.scss`).
 - ⬜ **Page-shell uniformity** — `_main.scss` declares minimum tokens to satisfy the page-shell group; revisit whether `main` belongs in the group or warrants its own contract.
+
+### Flush-variant audit (systematic per-element treatment)
+
+`.flush` is the framework's "drop the surface chrome so the element sits snugly inside a parent surface" idiom. Currently shipped:
+
+- ✅ **`ul.group.flush` / `ol.group.flush`** — list-group inset variant (drops outer border + radius). Declared in `elements/_ul.scss`.
+- ✅ **`input.flush` / `select.flush` / `textarea.flush`** — inline-edit form controls (transparent rest, hover reveal, focus promotes to bordered baseline; validation chain intact). Declared in `modifiers/_local.scss`; consumed by `UseTablePage` §5 for table-cell editing without falling back to `contenteditable` on random elements.
+
+Still to author — each should follow the same pattern (transparent / borderless rest, hover reveal where it makes sense, focus promotes to baseline, forced-colors fallback intact):
+
+- ⬜ **`details.flush`** — drop the disclosure's inline padding + outer border for inline use (sidebar disclosure rows, list-group nested disclosures). Placeholder already noted in `modifiers/_local.scss` charter.
+- ⬜ **Accordion-style nested element flush** — when a `<details>` / `<dialog>` / `aside[role='alert']` sits inside a card, list-group row, or table expansion panel, it should drop its own outer chrome (border, radius, shadow) so the parent surface owns the boundary. Audit: which framework surfaces commonly nest these? Card body, accordion item content, table expansion panel, drawer body.
+- ⬜ **`dialog.flush`** — inline non-modal dialog without its own border / radius (drops into a card body or expansion panel). The header / footer pin chrome stays; only the outer surface dissolves.
+- ⬜ **`aside.flush` for `role='alert'`** — banner alerts inset into a card or sidebar drop their outer border + radius, becoming a horizontal divider band.
+- ⬜ **`button.flush` for inline action chips** — toolbar buttons inside a list-group row / table cell that should read as text-with-affordance until hovered. Distinct from `.subtle` (which keeps its full chrome but drops the variant fill).
+
+Audit deliverable:
+
+1. List every element that currently nests inside another framework surface (card body, list-group item, accordion item content, table expansion panel, drawer body).
+2. For each, decide whether the nested element should compose its full chrome or dissolve it via `.flush`.
+3. Add the missing `{tag}.flush` rule to `modifiers/_local.scss` (or to the element partial if the precedent is already there, e.g. `ul.group.flush` in `_ul.scss`).
+4. Document the pattern in [modifiers.md](modifiers.md) — `.flush` is the framework's general "surface dissolves into parent" idiom; this section names the families and points to their tokens.
+5. Add `_local.test.ts` charter assertions for the new rules (taxonomy entry + non-cross-cutting name + no Tailwind collision — the existing test will cover this automatically as the rules land).
 
 ### Future enhancements
 

@@ -71,16 +71,133 @@
 //
 // ============================================================================
 
+@use '../mixins' as *;
+
 @layer modifiers {
 	// (Initial scaffold — element-local rules currently living in
 	// components/_form.scss and components/_badge.scss will migrate here
 	// in a follow-up refactor. The charter above defines the migration
 	// destination so the move is mechanical.)
+
+	// ── input.flush / select.flush / textarea.flush ─────────────────────────
+	// "Flush" form controls dissolve into their surrounding surface (table
+	// cell, accordion header, list-group row) by going transparent at rest
+	// — no background, no border, no chrome shift. Interaction promotes the
+	// control to the full bordered baseline:
 	//
+	//   • Rest        — transparent bg + transparent border (control reads
+	//                   as plain text in the parent surface).
+	//   • Hover       — subtle bg + border reveal (only when not focused /
+	//                   disabled / readonly / invalid; signals affordance).
+	//   • Focus       — promote to the element's full focus chrome (border
+	//                   color + focus ring) — re-authored here because the
+	//                   `modifiers` layer beats the `elements` layer, so
+	//                   `:focus-visible` rules in `_input.scss` lose if we
+	//                   don't restate them at modifier specificity.
+	//   • Disabled    — stays transparent (reads as plain text label).
+	//   • Readonly    — stays transparent (no editable affordance, so no
+	//                   hover reveal either).
+	//   • Validation  — `:user-invalid` paints the danger border the same
+	//                   way the bare control does, so a flush control in a
+	//                   table cell still flags red after the user touches
+	//                   the field.
+	//
+	// Design intent matches Bootstrap's `.form-control-flush` precedent:
+	// flush inputs are for inline-editing patterns (table cells, accordion
+	// headers, list-group rows) where the form control should *look* like
+	// text content until the user engages with it. Using a real `<input>`
+	// here is the semantic answer — `contenteditable` on random elements
+	// strips the validation contract, the `:user-invalid` pseudo-class,
+	// type-specific UI (date pickers, number spinners), and screen-reader
+	// affordances that come free with form controls.
+	//
+	// Tokens are component-scoped on the `.flush` selector so they can be
+	// retuned per-consumer without leaking into bare-control resolution
+	// (the token-parity test renders bare `<input>` / `<select>` and would
+	// flag any new `--set-input-*` leaf declared on the bare element).
+
+	input.flush,
+	select.flush,
+	textarea.flush {
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+
+		// Hover reveal — subtle backdrop + visible border so the control
+		// announces affordance without shouting. The literal values are
+		// theme-aware: `currentColor 4%` rides whichever foreground the
+		// parent surface sets, `--color-border` is the framework's
+		// canonical neutral border. No `--set-flush-*` token surface
+		// because the flush idiom is intentionally minimal — consumers
+		// retune via the underlying `--color-*` theme tokens.
+		//
+		// `:not(:focus-visible)` ensures focus chrome wins; `:not(:user-
+		// invalid)` lets the danger border below paint through; `:not(:
+		// disabled):not([readonly])` keeps non-interactive states quiet.
+		&:hover:not(:disabled):not([readonly]):not(:focus-visible):not(:user-invalid) {
+			background-color: color-mix(in oklab, currentColor 4%, transparent);
+			border-color: var(--color-border);
+		}
+
+		// Focus — promote to the element's baseline focus chrome. The
+		// variant fallback chain stays intact because we read the same
+		// `--set-{tag}-focus-*` tokens the element rule reads. Re-authored
+		// at modifier specificity because the `elements` layer's
+		// `:focus-visible` rule would otherwise lose to the bare `.flush`
+		// declarations above (layer order: elements < modifiers).
+		&:focus-visible {
+			outline: none;
+		}
+
+		// Disabled / readonly — stay transparent (no border reveal). The
+		// element baseline still handles `cursor` + `opacity`, so this
+		// only needs to defeat the hover reveal selector above (which
+		// already excludes these states).
+
+		// Validation — same danger border the bare control paints, so a
+		// flush control in a table cell still flags red after touch. The
+		// element baseline's `:user-invalid` rule fires through because
+		// we don't override `border-color` here, but the modifier layer's
+		// `border-color: transparent` would otherwise win — so restate.
+		&:user-invalid {
+			border-color: var(--color-danger);
+		}
+
+		// Forced-colors — fall back to the system Field / ButtonText
+		// scheme. Without this, a transparent border renders as the
+		// Window background and the control loses its outline in HC mode.
+		@include forced-colors {
+			background-color: Field;
+			border-color: ButtonText;
+		}
+	}
+
+	// Per-element focus-promote — read the element's own focus tokens so
+	// the variant fallback chain (`--set-variant-background-color`) stays
+	// intact. Authored as three separate rules because each control's
+	// focus tokens live under a different namespace.
+	input.flush:focus-visible {
+		border-color: var(--set-input-focus-border-color);
+		box-shadow: var(--set-input-focus-box-shadow);
+		background-color: var(--set-input-background-color);
+	}
+
+	select.flush:focus-visible {
+		border-color: var(--set-select-focus-border-color);
+		box-shadow: var(--set-select-focus-box-shadow);
+		background-color: var(--set-select-background-color);
+	}
+
+	textarea.flush:focus-visible {
+		border-color: var(--set-textarea-focus-border-color);
+		box-shadow: var(--set-textarea-focus-box-shadow);
+		background-color: var(--set-textarea-background-color);
+	}
+
 	// Reserved future rules — placeholders are intentional. Adding a real
 	// rule means deleting the matching comment and writing the selector
 	// + declaration block.
-
+	//
 	// form.row { flex-direction: row; flex-wrap: wrap; align-items: end; }
 	// button.dropdown { &::after { content: var(--set-button-dropdown-caret-image); } }
 	// details.flush { padding-inline: 0; }

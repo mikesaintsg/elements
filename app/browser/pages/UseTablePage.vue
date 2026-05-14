@@ -5,8 +5,8 @@
  * `useTable(tableRef, options)` is the framework's adapter over
  * `createTable`. Each section below is a SELF-CONTAINED demo of one
  * sub-domain so the feature lives next to its description; the §1
- * god-tier demo at the top weaves every feature together at production
- * scale.
+ * comprehensive integrated demo at the top weaves every feature
+ * together at production scale.
  *
  * API surface coverage (from Phase 1 audit):
  *   1. Headers + rows + cells + footer + caption — read / append /
@@ -52,7 +52,7 @@ import { computed, ref, useTemplateRef } from 'vue'
 import { useTable } from '@elements/browser'
 
 // ─────────────────────────────────────────────────────────────────────
-// Shared dataset for the §1 god-tier demo.
+// Shared dataset for the §1 comprehensive integrated demo.
 // ─────────────────────────────────────────────────────────────────────
 interface Issue {
 	id: string
@@ -283,19 +283,19 @@ const issues: readonly Issue[] = [
 ]
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 1 — god-tier integrated table. Every feature, one surface.
+// Demo 1 — comprehensive integrated table. Every feature, one surface.
 // Wrapped in a custom y-scroll container (overflow-y: auto so the
 // sticky header sticks; `.scrollable` is x-only by framework convention).
 // ─────────────────────────────────────────────────────────────────────
 const pageSize = ref(8)
 const currentPage = ref(1)
-const godRef = useTemplateRef<HTMLTableElement>('godRef')
+const mainRef = useTemplateRef<HTMLTableElement>('mainRef')
 const offsetForPage = computed(() => (currentPage.value - 1) * pageSize.value + 1)
 const visibleIssues = computed(() => {
 	const start = (currentPage.value - 1) * pageSize.value
 	return issues.slice(start, start + pageSize.value)
 })
-const god = useTable(godRef, {
+const main = useTable(mainRef, {
 	caption: '24 framework issues — sortable, paginated, selectable, expandable',
 	headers: ['ID', 'Title', 'Status', 'Priority', 'Assignee', 'Updated'],
 	columns: [
@@ -384,6 +384,28 @@ const pg = useTable(pgRef, {
 	},
 })
 
+// Windowed page-list for the `<nav aria-label="Pagination">` chrome.
+// Renders at most 5 numbered tiles plus first / last + leading / trailing
+// ellipses. `null` slots paint as disabled `<a>` so the chrome's tile
+// stride stays even regardless of where the active page lands.
+function pageList(page: number, count: number): readonly (number | null)[] {
+	if (count <= 7) return Array.from({ length: count }, (_, i) => i + 1)
+	const window = new Set<number>([1, count, page - 1, page, page + 1])
+	const sorted = [...window].filter((n) => n >= 1 && n <= count).sort((a, b) => a - b)
+	const out: (number | null)[] = []
+	for (let i = 0; i < sorted.length; i++) {
+		const current = sorted[i]
+		const previous = sorted[i - 1]
+		if (i > 0 && current !== undefined && previous !== undefined && current - previous > 1) {
+			out.push(null)
+		}
+		if (current !== undefined) out.push(current)
+	}
+	return out
+}
+const mainPages = computed(() => pageList(main.pagination.page.value, main.pagination.count.value))
+const pgPages = computed(() => pageList(pg.pagination.page.value, pg.pagination.count.value))
+
 // ─────────────────────────────────────────────────────────────────────
 // Demo 4 — Selection isolation. Includes interactive descendants
 // (`<button>`, `<input>`, `<a>`, plus `[data-no-select]` opt-out)
@@ -400,7 +422,31 @@ const note = (line: string): void => {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 5 — Expansion isolation. 3 rows; one always-open; the SCSS rule
+// Demo 5 — Inline editing via flush form controls. The `input.flush` /
+// `select.flush` modifiers (modifiers/_local.scss) make a real `<input>`
+// / `<select>` read as plain table text until the user engages — no
+// `contenteditable` on random elements, so the validation contract +
+// type-specific UI + screen-reader affordances stay intact.
+// ─────────────────────────────────────────────────────────────────────
+type EditRow = {
+	id: string
+	sku: string
+	name: string
+	stock: number
+	bucket: 'in' | 'low' | 'out'
+}
+const editRows = ref<EditRow[]>([
+	{ id: 'e1', sku: 'SKU-001', name: 'Lacquer pen', stock: 18, bucket: 'in' },
+	{ id: 'e2', sku: 'SKU-002', name: 'Carbon ribbon', stock: 4, bucket: 'low' },
+	{ id: 'e3', sku: 'SKU-003', name: 'Press plate', stock: 0, bucket: 'out' },
+])
+const editRef = useTemplateRef<HTMLTableElement>('editRef')
+const edit = useTable(editRef, {
+	headers: ['SKU', 'Name', 'Stock', 'Bucket'],
+})
+
+// ─────────────────────────────────────────────────────────────────────
+// Demo 6 — Expansion isolation. 3 rows; one always-open; the SCSS rule
 // shown inline. Visual proof of the `interpolate-size` tween.
 // ─────────────────────────────────────────────────────────────────────
 const expRef = useTemplateRef<HTMLTableElement>('expRef')
@@ -410,7 +456,7 @@ const exp = useTable(expRef, {
 })
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 6 — Resize isolation. 3 columns with bounds + a label that
+// Demo 7 — Resize isolation. 3 columns with bounds + a label that
 // updates as the user drags.
 // ─────────────────────────────────────────────────────────────────────
 const rzRef = useTemplateRef<HTMLTableElement>('rzRef')
@@ -420,7 +466,7 @@ const rz = useTable(rzRef, {
 })
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 7 — Focus isolation. Small 3×3 grid + on-screen reference of
+// Demo 8 — Focus isolation. Small 3×3 grid + on-screen reference of
 // the active key. Roving-tabindex with wrap.
 // ─────────────────────────────────────────────────────────────────────
 const fcRef = useTemplateRef<HTMLTableElement>('fcRef')
@@ -430,7 +476,7 @@ const fc = useTable(fcRef, {
 })
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 8 — Sticky header isolation. The new `table.sticky` modifier
+// Demo 9 — Sticky header isolation. The new `table.sticky` modifier
 // alongside a y-scrolling wrapper so the column labels stay visible as
 // the user scrolls.
 // ─────────────────────────────────────────────────────────────────────
@@ -456,18 +502,18 @@ const dictionary = [
 // ─────────────────────────────────────────────────────────────────────
 // Page-wide state readout.
 // ─────────────────────────────────────────────────────────────────────
-const godStates = computed(() => ({
-	page: god.pagination.page.value,
-	count: god.pagination.count.value,
-	selected: god.selection.ids.size,
-	expanded: god.expansion.expanded.size,
-	sort: god.sort.columns.value.length,
+const mainStates = computed(() => ({
+	page: main.pagination.page.value,
+	count: main.pagination.count.value,
+	selected: main.selection.ids.size,
+	expanded: main.expansion.expanded.size,
+	sort: main.sort.columns.value.length,
 }))
 const reset = (): void => {
-	god.selection.clear()
-	god.expansion.collapse()
-	god.sort.clear()
-	god.pagination.to(1)
+	main.selection.clear()
+	main.expansion.collapse()
+	main.sort.clear()
+	main.pagination.to(1)
 }
 </script>
 
@@ -489,14 +535,14 @@ const reset = (): void => {
 		</p>
 		<aside role="status" class="information" data-alert-open>
 			<p>
-				<strong>God-tier state:</strong>
-				page <code>{{ godStates.page }}</code> / <code>{{ godStates.count }}</code> · selected
-				<code>{{ godStates.selected }}</code> · expanded <code>{{ godStates.expanded }}</code> ·
-				sort cols <code>{{ godStates.sort }}</code>
+				<strong>Integrated demo state:</strong>
+				page <code>{{ mainStates.page }}</code> / <code>{{ mainStates.count }}</code> · selected
+				<code>{{ mainStates.selected }}</code> · expanded <code>{{ mainStates.expanded }}</code> ·
+				sort cols <code>{{ mainStates.sort }}</code>
 			</p>
 		</aside>
 		<p>
-			<strong>Two framework fixes shipped alongside this page</strong> (callouts in §5.4.1
+			<strong>Framework changes shipped alongside this page</strong> (callouts in §5.4.1
 			native-platform redundancy walk + author dogfooding):
 		</p>
 		<ul>
@@ -511,11 +557,26 @@ const reset = (): void => {
 				scroll container's top via <code>position: sticky</code>. Earlier copy of this page claimed
 				sticky-header chrome was already element-layer; it wasn't. Now it is — §9 demonstrates.
 			</li>
+			<li>
+				<code>elements/_table.scss</code> paints a token-driven row-expansion chevron via
+				<code>::before</code> on expandable rows. <code>--set-table-expansion-icon</code> +
+				<code>--set-table-expansion-icon-size</code> +
+				<code>--set-table-expansion-icon-gap</code> keep the disclosure glyph consistent with
+				<code>&lt;details&gt;</code> + the accordion family. The glyph rotates 90° on
+				<code>[data-table-expanded]</code> — §6 demonstrates.
+			</li>
+			<li>
+				<code>modifiers/_local.scss</code> adds <code>input.flush</code> /
+				<code>select.flush</code> / <code>textarea.flush</code> for in-cell editing. Transparent at
+				rest, subtle backdrop on hover, full bordered focus chrome — §5 demonstrates. The flush
+				modifier preserves the validation contract + type-specific UI that
+				<code>contenteditable</code> on random elements throws away.
+			</li>
 		</ul>
 	</section>
 
-	<section id="use-table-god">
-		<h2>1. God-tier integrated table</h2>
+	<section id="use-table-comprehensive">
+		<h2>1. Comprehensive integrated table</h2>
 		<p>
 			Every feature, one surface, 24 rows. Vertical scroll via a custom
 			<code>overflow-y: auto</code> wrapper (the framework's <code>.scrollable</code> is x-axis only
@@ -527,27 +588,27 @@ const reset = (): void => {
 		</p>
 		<menu>
 			<li>
-				<button type="button" class="subtle small" @click="god.selection.select()">
+				<button type="button" class="subtle small" @click="main.selection.select()">
 					Select all on page
 				</button>
 			</li>
 			<li>
-				<button type="button" class="subtle small" @click="god.selection.clear()">
+				<button type="button" class="subtle small" @click="main.selection.clear()">
 					Clear selection
 				</button>
 			</li>
 			<li>
-				<button type="button" class="subtle small" @click="god.expansion.expand(issues[0].id)">
+				<button type="button" class="subtle small" @click="main.expansion.expand(issues[0].id)">
 					Expand first
 				</button>
 			</li>
 			<li>
-				<button type="button" class="subtle small" @click="god.expansion.collapse()">
+				<button type="button" class="subtle small" @click="main.expansion.collapse()">
 					Collapse all
 				</button>
 			</li>
 			<li>
-				<button type="button" class="subtle small" @click="god.sort.clear()">Clear sort</button>
+				<button type="button" class="subtle small" @click="main.sort.clear()">Clear sort</button>
 			</li>
 			<li><button type="button" class="subtle small" @click="reset">Reset</button></li>
 		</menu>
@@ -560,7 +621,7 @@ const reset = (): void => {
 				border-radius: var(--radius-md);
 			"
 		>
-			<table ref="godRef" class="striped sticky">
+			<table ref="mainRef" class="striped sticky">
 				<tbody>
 					<template v-for="issue in visibleIssues" :key="issue.id">
 						<tr :data-id="issue.id">
@@ -588,20 +649,41 @@ const reset = (): void => {
 				</tbody>
 			</table>
 		</div>
-		<menu>
-			<li>
-				<button type="button" class="subtle small" @click="god.pagination.prev()">← Prev</button>
-			</li>
-			<li>
-				<small>
-					Page <code>{{ god.pagination.page.value }}</code> of
-					<code>{{ god.pagination.count.value }}</code>
-				</small>
-			</li>
-			<li>
-				<button type="button" class="subtle small" @click="god.pagination.next()">Next →</button>
-			</li>
-		</menu>
+		<nav aria-label="Pagination">
+			<ol>
+				<li>
+					<a
+						href="#"
+						:aria-disabled="main.pagination.page.value <= 1 ? 'true' : undefined"
+						@click.prevent="main.pagination.prev()"
+					>
+						‹ Prev
+					</a>
+				</li>
+				<li v-for="(p, i) in mainPages" :key="i">
+					<a
+						v-if="p !== null"
+						href="#"
+						:aria-current="p === main.pagination.page.value ? 'page' : undefined"
+						@click.prevent="main.pagination.to(p)"
+					>
+						{{ p }}
+					</a>
+					<a v-else aria-disabled="true" aria-hidden="true">…</a>
+				</li>
+				<li>
+					<a
+						href="#"
+						:aria-disabled="
+							main.pagination.page.value >= main.pagination.count.value ? 'true' : undefined
+						"
+						@click.prevent="main.pagination.next()"
+					>
+						Next ›
+					</a>
+				</li>
+			</ol>
+		</nav>
 	</section>
 
 	<section id="use-table-sort">
@@ -671,33 +753,57 @@ const reset = (): void => {
 				</tr>
 			</tbody>
 		</table>
-		<menu>
-			<li>
-				<button type="button" class="subtle small" @click="pg.pagination.prev()">← Prev</button>
-			</li>
-			<li>
-				<small>
-					Page <code>{{ pg.pagination.page.value }}</code> of
-					<code>{{ pg.pagination.count.value }}</code> · rows <code>{{ pgOffset }}</code
-					>–<code>{{ Math.min(pgOffset + pgSize - 1, fruits.length) }}</code> of
-					<code>{{ fruits.length }}</code>
-				</small>
-			</li>
-			<li>
-				<button type="button" class="subtle small" @click="pg.pagination.next()">Next →</button>
-			</li>
-			<li>
-				<label>
-					Page size
-					<select v-model.number="pgSize">
-						<option :value="3">3</option>
-						<option :value="4">4</option>
-						<option :value="6">6</option>
-						<option :value="12">12</option>
-					</select>
-				</label>
-			</li>
-		</menu>
+		<nav aria-label="Pagination">
+			<ol>
+				<li>
+					<a
+						href="#"
+						:aria-disabled="pg.pagination.page.value <= 1 ? 'true' : undefined"
+						@click.prevent="pg.pagination.prev()"
+					>
+						‹ Prev
+					</a>
+				</li>
+				<li v-for="(p, i) in pgPages" :key="i">
+					<a
+						v-if="p !== null"
+						href="#"
+						:aria-current="p === pg.pagination.page.value ? 'page' : undefined"
+						@click.prevent="pg.pagination.to(p)"
+					>
+						{{ p }}
+					</a>
+					<a v-else aria-disabled="true" aria-hidden="true">…</a>
+				</li>
+				<li>
+					<a
+						href="#"
+						:aria-disabled="
+							pg.pagination.page.value >= pg.pagination.count.value ? 'true' : undefined
+						"
+						@click.prevent="pg.pagination.next()"
+					>
+						Next ›
+					</a>
+				</li>
+			</ol>
+		</nav>
+		<p>
+			<small>
+				Rows <code>{{ pgOffset }}</code
+				>–<code>{{ Math.min(pgOffset + pgSize - 1, fruits.length) }}</code> of
+				<code>{{ fruits.length }}</code> ·
+			</small>
+			<label>
+				<small>Page size&nbsp;</small>
+				<select v-model.number="pgSize" style="display: inline-block; inline-size: auto">
+					<option :value="3">3</option>
+					<option :value="4">4</option>
+					<option :value="6">6</option>
+					<option :value="12">12</option>
+				</select>
+			</label>
+		</p>
 	</section>
 
 	<section id="use-table-select">
@@ -775,8 +881,71 @@ const reset = (): void => {
 		</p>
 	</section>
 
+	<section id="use-table-edit">
+		<h2>5. Inline editing — <code>input.flush</code> / <code>select.flush</code></h2>
+		<p>
+			Inline editing in table cells uses real <code>&lt;input&gt;</code> /
+			<code>&lt;select&gt;</code> form controls modified by <code>.flush</code> — declared in
+			<code>modifiers/_local.scss</code>. The control reads as plain table text at rest (transparent
+			background + transparent border); hover reveals a subtle backdrop tint so the affordance
+			announces itself; focus promotes to the full bordered baseline with the variant focus ring;
+			<code>:user-invalid</code> still paints the danger border after the user touches the field.
+			Using the right element preserves the validation contract, <code>type</code>-specific UI, IME
+			composition, and screen-reader affordances — <code>contenteditable</code> on random elements
+			throws all of that away.
+		</p>
+		<table ref="editRef" class="striped" style="max-inline-size: 48rem">
+			<thead>
+				<tr>
+					<th>SKU</th>
+					<th>Name</th>
+					<th>Stock</th>
+					<th>Bucket</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr v-for="row in editRows" :key="row.id" :data-id="row.id">
+					<td>
+						<code>{{ row.sku }}</code>
+					</td>
+					<td>
+						<input
+							v-model="row.name"
+							class="flush"
+							type="text"
+							:aria-label="`Name for ${row.sku}`"
+						/>
+					</td>
+					<td>
+						<input
+							v-model.number="row.stock"
+							class="flush"
+							type="number"
+							min="0"
+							:aria-label="`Stock for ${row.sku}`"
+						/>
+					</td>
+					<td>
+						<select v-model="row.bucket" class="flush" :aria-label="`Bucket for ${row.sku}`">
+							<option value="in">In stock</option>
+							<option value="low">Low</option>
+							<option value="out">Out</option>
+						</select>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<p>
+			<small>
+				Live row state:
+				<code>{{ editRows.map((r) => `${r.sku}:${r.stock}:${r.bucket}`).join(' · ') }}</code> ·
+				factory ready: <code>{{ edit.ready.value }}</code>
+			</small>
+		</p>
+	</section>
+
 	<section id="use-table-expand">
-		<h2>5. Expansion — CSS-driven via <code>interpolate-size</code></h2>
+		<h2>6. Expansion — CSS-driven via <code>interpolate-size</code></h2>
 		<p>
 			Click a row's leading <code>id</code> cell to disclose the detail row.
 			<code>elements/_table.scss</code> drives the visual tween — the factory's only writes are
@@ -829,7 +998,7 @@ const reset = (): void => {
 	</section>
 
 	<section id="use-table-resize">
-		<h2>6. Column resize — pointer-capture handles</h2>
+		<h2>7. Column resize — pointer-capture handles</h2>
 		<p>
 			With <code>resize: { min, max }</code> set, the factory mounts a drag handle on each header's
 			trailing edge. Pointer-down on a handle starts a column-width drag (cursor
@@ -866,7 +1035,7 @@ const reset = (): void => {
 	</section>
 
 	<section id="use-table-focus">
-		<h2>7. Keyboard focus — roving-tabindex (APG)</h2>
+		<h2>8. Keyboard focus — roving-tabindex (APG)</h2>
 		<p>
 			Tab into the table — focus lands on the table itself, then the first cell. ArrowDown / ArrowUp
 			/ ArrowLeft / ArrowRight move the active cell; Home / End jump to row edges;
@@ -906,7 +1075,7 @@ const reset = (): void => {
 	</section>
 
 	<section id="use-table-sticky">
-		<h2>8. Sticky header — <code>table.sticky</code></h2>
+		<h2>9. Sticky header — <code>table.sticky</code></h2>
 		<p>
 			Opt in via <code>class="sticky"</code> on the <code>&lt;table&gt;</code>. Element-layer rule
 			in <code>elements/_table.scss</code>:
@@ -919,7 +1088,7 @@ const reset = (): void => {
 		<p>
 			Requires a scrolling ancestor — wrap in <code>&lt;div class="scrollable"&gt;</code> for
 			horizontal scroll, or an <code>overflow-y: auto</code> custom wrapper for vertical scroll (as
-			the god-tier demo does). Scroll the table below to see the column headers stay pinned.
+			the comprehensive demo does). Scroll the table below to see the column headers stay pinned.
 		</p>
 		<div
 			style="

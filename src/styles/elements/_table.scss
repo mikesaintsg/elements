@@ -69,6 +69,26 @@
 		--set-table-sort-indicator-opacity: 0.4;
 		--set-table-sort-indicator-active-opacity: 1;
 		--set-table-transition-duration: var(--set-transition-duration);
+		// ── Row-expansion indicator ──
+		// Token-driven chevron painted via `::before` on the first cell of
+		// any data row that has a sibling expansion-detail `<tr>`. The
+		// glyph rotates -90° → 0 when the row's `[data-table-expanded]`
+		// flips on (right-pointing closed, down-pointing open) — same idiom
+		// `_details.scss` uses for the disclosure marker, kept consistent
+		// across the framework's disclosure family.
+		//
+		// `--set-table-expansion-icon` is a `url(...)` (mask asset). Default
+		// is the shared `--set-icon-chevron-right` token so a host-page
+		// icon-set swap retunes every chevron consumer at once. Painted via
+		// `currentColor` mask so theme + variant cascades reach the glyph
+		// without per-mode SVG overrides.
+		//
+		// `--set-table-expansion-icon-size` is the chevron edge length;
+		// `--set-table-expansion-icon-gap` is the inline gap between the
+		// chevron and the cell content.
+		--set-table-expansion-icon: var(--set-icon-chevron-right);
+		--set-table-expansion-icon-size: 0.75rem;
+		--set-table-expansion-icon-gap: calc(var(--spacing) * 2);
 
 		inline-size: 100%;
 		border-collapse: collapse;
@@ -474,6 +494,52 @@
 		block-size: auto;
 		opacity: 1;
 		padding-block: calc(var(--spacing) * 3);
+	}
+
+	// ── Row-expansion indicator ───────────────────────────────────────────────
+	// Decorative chevron painted via `::before` on the FIRST `<td>` of any
+	// data row that has a sibling `<tr data-table-expansion>`. The pseudo
+	// is purely visual — consumers (or `useTable`'s factory) wire the
+	// click handler that toggles `[data-table-expanded]` on the data row;
+	// the SCSS then rotates the chevron from right-pointing (closed) to
+	// down-pointing (open) by toggling between `rotate(0)` and
+	// `rotate(90deg)`.
+	//
+	// `:has(+ tr[data-table-expansion])` keeps the chevron off rows that
+	// AREN'T expandable — a table with mixed expand / non-expand rows
+	// renders cleanly without per-row class soup. `>:first-child` scopes
+	// the indicator to the leading cell (the conventional disclosure
+	// column); consumers wanting a different column can wrap the
+	// expand-trigger in a button and gate the chevron on a marker
+	// attribute they author.
+	//
+	// `currentColor` mask + the shared `--set-icon-chevron-right` token
+	// means the glyph tracks both theme + variant tints, and a host-page
+	// icon-set swap retunes every chevron consumer at once.
+	table > tbody > tr:has(+ tr[data-table-expansion]) > td:first-child {
+		// Use flex so the chevron + content row aligns without disturbing
+		// the cell's vertical-align baseline. `align-items: center` lines
+		// the chevron up with single-line content; multi-line content
+		// keeps the chevron pinned to the first line.
+		display: flex;
+		align-items: center;
+		gap: var(--set-table-expansion-icon-gap);
+
+		&::before {
+			content: '';
+			flex-shrink: 0;
+			inline-size: var(--set-table-expansion-icon-size);
+			block-size: var(--set-table-expansion-icon-size);
+			background-color: currentColor;
+			mask: var(--set-table-expansion-icon) center / contain no-repeat;
+			-webkit-mask: var(--set-table-expansion-icon) center / contain no-repeat;
+			@include transition((transform var(--set-motion-duration) var(--set-motion-timing-function)));
+		}
+	}
+
+	// Open state — rotate the chevron 90° clockwise (right → down).
+	table > tbody > tr[data-table-expanded]:has(+ tr[data-table-expansion]) > td:first-child::before {
+		transform: rotate(90deg);
 	}
 
 	// ── Scrollable wrapper ────────────────────────────────────────────────────
