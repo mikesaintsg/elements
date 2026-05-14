@@ -524,10 +524,17 @@
 		// docs / mail / settings panel size; mobile-clamped via the
 		// rule below so the panel never overflows narrow viewports.
 		--set-aside-drawer-inline-size: 21.875rem;
-		// Block-axis drawer height (`.top` / `.bottom`) — Bootstrap's
-		// `--bs-offcanvas-height: 30vh` is a comfortable filter / picker
-		// height that leaves the page below visible.
-		--set-aside-drawer-block-size: 30dvh;
+		// Block-axis drawer height (`.top` / `.bottom`) — `50dvh` is the
+		// Apple `UISheetPresentationController.Detent.medium` ≈ half-screen
+		// + Material Design 3 modal-bottom-sheet "initially expanded"
+		// default; substantive enough for content panels (forms, command
+		// palettes, share menus) without obscuring the page below.
+		// Bootstrap's `--bs-offcanvas-height: 30vh` is a filter / picker
+		// height — too cramped for content drawers, and the pin-chrome
+		// contract below (header / footer pinned, middle scrolls) lets a
+		// taller default handle long bodies cleanly. Consumers retune per
+		// instance via `--set-aside-drawer-block-size`.
+		--set-aside-drawer-block-size: 50dvh;
 		// Drawer z-index — above body chrome (sticky header, body grid),
 		// below modals (which use the platform top layer via
 		// `dialog.showModal()`). Matches the showcase sidebar drawer
@@ -700,8 +707,15 @@
 	:is(aside, nav)[popover] > :is(header, footer) {
 		flex: 0 0 auto;
 	}
+	// `flex: 1 1 auto` (not `1 1 0`) so the body slot's preferred size
+	// equals its content's natural height. Same outcome inside a
+	// fixed-height drawer parent (body grows to fill remaining space
+	// when content is short, shrinks to fit when content overflows),
+	// AND a universally-correct shape for max-height-only parents
+	// (matches `dialog[open]:where(:has(> :is(header, footer)))` in
+	// `elements/_dialog.scss`).
 	:is(aside, nav)[popover] > :not(:where(header, footer)) {
-		flex: 1 1 0;
+		flex: 1 1 auto;
 		min-block-size: 0;
 		overflow-y: auto;
 		overscroll-behavior: contain;

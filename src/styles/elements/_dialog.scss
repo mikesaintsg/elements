@@ -292,6 +292,68 @@
 	// their intrinsic height and the section grows to fill the remaining
 	// block-size.
 	// --------------------------------------------------------------------------
+
+	// Pin chrome for bare `<dialog>` with header / footer slots — when the
+	// dialog hosts a `<header>` or `<footer>` (directly OR wrapped in
+	// `<form method="dialog">`), swap to flex-column so header and footer
+	// pin to the dialog's top / bottom edges and the body slot scrolls if
+	// content exceeds `--set-dialog-max-block-size`. The platform default
+	// (`display: block` + UA `overflow: auto` on the dialog itself) scrolled
+	// the WHOLE dialog when content overflowed — header and footer dragged
+	// with the body, action buttons could disappear off the bottom edge.
+	// Same anti-pattern the `<aside popover>` drawer was hitting.
+	//
+	// `:has()` gates the rule so dialogs without header/footer keep their
+	// `display: block` flow — no flex assumptions imposed on simple
+	// confirm prompts. The `.scrollable` / `.fullscreen` modifiers in
+	// `composables/_dialog.scss` cascade on top of this with their own
+	// flex-column rules (same `display: flex` value; no cascade fight).
+	dialog[open]:where(:has(> :is(header, footer)), :has(> form > :is(header, footer))) {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+	dialog[open] > :is(header, footer),
+	dialog[open] > form > :is(header, footer) {
+		flex: 0 0 auto;
+	}
+	// Body slot — anything that isn't header / footer. Flexes to fill the
+	// remaining block-size, scrolls if its intrinsic size exceeds the
+	// slot. `:has()`-gated to the same scope so consumers without
+	// header/footer aren't affected. `min-block-size: 0` lets the flex
+	// item shrink below its intrinsic content size (the platform default
+	// is `min-block-size: auto` for flex items, which would push the
+	// dialog past `max-block-size` instead of scrolling). The `> form`
+	// branch passes through forms wrapping the body so a
+	// `<form method="dialog">`-wrapped dialog gets the same scroll
+	// behavior.
+	//
+	// `flex: 1 1 auto` (not `1 1 0`): the dialog has `max-block-size`
+	// but no fixed `block-size`. With `1 1 0`, body's preferred size is
+	// 0, so the dialog sizes to `header + footer` (since the body has
+	// no preferred contribution) and the body collapses to 0px even
+	// when its content is large. With `1 1 auto`, body's preferred size
+	// is its content's natural height: the dialog grows to fit
+	// (`header + body-content + footer`), clamps at `max-block-size`,
+	// and the body's `shrink: 1` lets it absorb the overflow as
+	// internal scroll. Same outcome as `1 1 0` in fixed-height parents
+	// (drawers); strictly more correct for max-height-only parents.
+	dialog[open]:where(:has(> :is(header, footer))) > :not(:where(header, footer)),
+	dialog[open]:where(:has(> form > :is(header, footer))) > form > :not(:where(header, footer)) {
+		flex: 1 1 auto;
+		min-block-size: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	// When a `<form method="dialog">` is the direct child wrapping the
+	// dialog's contents, the form itself needs to be a flex-column
+	// passthrough so its inner header / footer / body can pin / scroll.
+	dialog[open]:where(:has(> form > :is(header, footer))) > form {
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 0;
+		min-block-size: 0;
+	}
 	dialog {
 		// Internal padding for the header band — matches the dialog's own
 		// `padding-block` so the header reads as a continuation of the

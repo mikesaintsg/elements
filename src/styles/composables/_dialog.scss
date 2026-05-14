@@ -30,7 +30,10 @@
 	// the footer to the bottom of the sheet (instead of letting it
 	// sit directly under the body text with a massive void below);
 	// `<header>` and `<footer>` keep their intrinsic sizes and the
-	// body slot between them grows to fill the remaining block-size.
+	// body slot between them grows to fill the remaining block-size
+	// AND scrolls if its intrinsic content exceeds the slot (the
+	// previous version omitted `overflow-y: auto`, so a long body in
+	// a `.fullscreen` dialog overflowed the viewport unscrollably).
 	// Same `[open]` gate reasoning as `.scrollable` — without it the
 	// `display: flex` rule shadows the UA `display: none` on a closed
 	// dialog.
@@ -45,13 +48,16 @@
 		flex-direction: column;
 
 		// Anything that isn't an auto-styled section is the "body" — it
-		// flexes to fill the remaining height between header and footer.
-		// `min-block-size: 0` lets it shrink below intrinsic content size
-		// on tiny viewports without overflowing the dialog.
+		// flexes to fill the remaining height between header and footer
+		// and scrolls when content overflows. `min-block-size: 0` lets
+		// it shrink below intrinsic content size on tiny viewports
+		// without overflowing the dialog.
 		> :where(:not(:where(header, footer))),
 		> form > :where(:not(:where(header, footer))) {
 			flex: 1 1 auto;
 			min-block-size: 0;
+			overflow-y: auto;
+			overscroll-behavior: contain;
 		}
 	}
 
@@ -76,6 +82,18 @@
 		display: flex;
 		flex-direction: column;
 
+		// `<form method="dialog">`-wrapped dialogs need the form to pass
+		// through as a flex-column so the inner `<section>` / `.body`
+		// can take the scroll. Without this, the form is the only
+		// flex-child of the dialog and the `section` rule below
+		// doesn't apply (it's not a direct child of the dialog).
+		> form {
+			display: flex;
+			flex-direction: column;
+			flex: 1 1 0;
+			min-block-size: 0;
+		}
+
 		// Scroll container — extends edge-to-edge of the dialog's
 		// border-box via negative inline margin, then re-pads its own
 		// content. The scrollbar gutter ends up flush with the dialog's
@@ -83,7 +101,10 @@
 		// as "where did this strip come from"). Content inside the
 		// scroll keeps the dialog's standard inline padding so the
 		// reading column stays aligned with header / footer chrome.
-		> :where(section, .body) {
+		// `> form > …` branch handles the `<form method="dialog">`-
+		// wrapped case (header / scroll-body / footer inside a form).
+		> :where(section, .body),
+		> form > :where(section, .body) {
 			overflow-y: auto;
 			min-block-size: 0;
 			margin-inline: calc(var(--set-dialog-padding-inline) * -1);
