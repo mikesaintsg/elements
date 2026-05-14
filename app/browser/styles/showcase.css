@@ -239,7 +239,7 @@
  * (`max-width: 28rem` on a single demo), or (3) a value that
  * genuinely demonstrates a token (e.g., a swatch's `background-
  * color`). The flush-composition-host pattern is owned by the
- * framework now (`<article class="flush-host">`). See
+ * framework now (`<article class="frame">`). See
  * `guides/contribute.md` § "No inline styles in showcase pages".
  * ============================================================================ */
 
@@ -301,7 +301,7 @@
  * container so the text vertically centers against the input height;
  * a vertical divider separates label from input. Three classes carry
  * the chrome; consumers compose by stacking rows inside an
- * `article.flush-host`. */
+ * `article.frame`. */
 .showcase-form-row {
 	display: grid;
 	grid-template-columns: 8rem 1fr;
@@ -341,7 +341,7 @@
 }
 
 /* Tile link — `<a class="flush showcase-tile-link">` fills the
- * inside of an `article.flush-host` (or any tile container) with a
+ * inside of an `article.frame` (or any tile container) with a
  * padded vertical stack. Used in card-as-link demos where the whole
  * tile is the click target: anchor or button.flush handles
  * interaction state, this class supplies the internal layout. */

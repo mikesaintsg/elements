@@ -352,7 +352,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		</p>
 		<p>Three neutral tiles, each entirely clickable end-to-end:</p>
 		<div class="cluster gap-4">
-			<article class="flush-host showcase-tile">
+			<article class="frame showcase-tile">
 				<a class="flush showcase-tile-link" href="#anchor-flush">
 					<header class="flex justify-between items-baseline">
 						<strong>Documentation</strong>
@@ -361,7 +361,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 					<small class="showcase-muted">Setup, cascade, taxonomy.</small>
 				</a>
 			</article>
-			<article class="flush-host showcase-tile">
+			<article class="frame showcase-tile">
 				<a class="flush showcase-tile-link" href="#anchor-flush">
 					<header class="flex justify-between items-baseline">
 						<strong>Showcase</strong>
@@ -370,7 +370,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 					<small class="showcase-muted">Every element, in context.</small>
 				</a>
 			</article>
-			<article class="flush-host showcase-tile">
+			<article class="frame showcase-tile">
 				<a class="flush showcase-tile-link" href="#anchor-flush">
 					<header class="flex justify-between items-baseline">
 						<strong>API reference</strong>
@@ -390,7 +390,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 			<article
 				v-for="v in ['primary', 'success', 'warning', 'danger']"
 				:key="v"
-				:class="`${v} filled flush-host showcase-tile`"
+				:class="`${v} filled frame showcase-tile`"
 			>
 				<a class="flush showcase-tile-link" href="#anchor-flush">
 					<header class="flex justify-between items-baseline">

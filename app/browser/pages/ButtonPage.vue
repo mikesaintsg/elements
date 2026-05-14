@@ -367,7 +367,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 		</p>
 		<p>Three article tiles, each with a flush button filling the bottom strip:</p>
 		<div class="cluster gap-4">
-			<article class="flush-host showcase-tile">
+			<article class="frame showcase-tile">
 				<div class="p-4">
 					<strong>Quick action</strong>
 					<p class="mt-1">
@@ -378,7 +378,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 					<button class="flush" type="button">Run</button>
 				</div>
 			</article>
-			<article class="primary subtle flush-host showcase-tile">
+			<article class="primary subtle frame showcase-tile">
 				<div class="p-4">
 					<strong>Primary tile</strong>
 					<p class="mt-1">
@@ -389,7 +389,7 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition
 					<button class="primary flush" type="button">Confirm</button>
 				</div>
 			</article>
-			<article class="danger subtle flush-host showcase-tile">
+			<article class="danger subtle frame showcase-tile">
 				<div class="p-4">
 					<strong>Destructive tile</strong>
 					<p class="mt-1">

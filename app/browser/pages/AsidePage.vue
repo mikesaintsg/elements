@@ -341,7 +341,7 @@ const restore = (): void => {
 			The alert lives inside an <code>&lt;article&gt;</code>; <code>.flush</code> drops the outer
 			perimeter so the alert sits between siblings as a separator with the variant's leading bar.
 		</p>
-		<article class="flush-host">
+		<article class="frame">
 			<header>
 				<h3>Deployment status</h3>
 			</header>
