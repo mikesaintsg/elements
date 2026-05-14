@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](contribute.md) to know **how to work**.
 
-Status: every layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is fully shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 37 of 43 pages built (all 4 Foundation pages complete; 6 of 12 composable-bound pages shipped: **UseMenuPage**, **UseDialogPage**, **UseAsidePage**, **UseTabsPage**, **UseDetailsPage**, **UseToastPage**); remaining composable-bound pages are queued below. Cross-cutting framework polish (floating-surface styling pass, `.disabled` token surface, etc.) is enumerated in §Future work.
+Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 36 of 43 pages built (4 Foundations + 8 composable-bound: **UseMenu**, **UseDialog**, **UseAside**, **UseTabs**, **UseDetails**, **UseToast**, **UseSelect**, **UseTable**); 4 composable-bound pages queued. The current cross-cutting push is the **`.flat` / `.flush` modifier family** rollout — see §Future work.
 
 ---
 
@@ -24,7 +24,7 @@ Status: every layer (tokens, theme, mixins, modifiers, elements, components, sur
 | 11        | Invariant verification (11 codified contracts)                             | ✅     |
 | **Audit** | **Element-hardcoding, motion contract, token-group uniformity sweeps**     | ✅     |
 
-**Tests:** `src:browser` 1211/1211 · `src:styles` 3852/3852 · total **5063/5063 pass**.
+**Tests:** `src:browser` + `src:styles` total **5108/5108 pass**.
 
 ---
 
@@ -44,195 +44,89 @@ Functions, mixins, and Sass-list registries. Documented in [mixins.md](mixins.md
 - `@mixin focus-ring($alpha)` — canonical focus-visible ring.
 - `@mixin palette-each` — iterate `$variants` to emit per-variant rules without hand-rolling.
 
-### Modifiers — 5 dimensions (`src/styles/modifiers/`)
+### Modifiers — 5 dimensions + element-local (`src/styles/modifiers/`)
 
-| Dimension     | Members                                                                               | Partial                                                        |
-| ------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `variant`     | `primary`, `secondary`, `tertiary`, `success`, `warning`, `danger`, `information`     | [`_variants.scss`](../src/styles/modifiers/_variants.scss)     |
-| `size`        | `small`, `large`                                                                      | [`_sizes.scss`](../src/styles/modifiers/_sizes.scss)           |
-| `style`       | `subtle`, `filled`                                                                    | [`_styles.scss`](../src/styles/modifiers/_styles.scss)         |
-| `state`       | `disabled`, `active`, `loading`                                                       | [`_states.scss`](../src/styles/modifiers/_states.scss)         |
-| `placement`   | `top`, `bottom`, `start`, `end`, `top-start`, `top-end`, `bottom-start`, `bottom-end` | [`_placements.scss`](../src/styles/modifiers/_placements.scss) |
-| element-local | `form.row`, `button.dropdown`, `table.striped`, … (single-element modifiers)          | [`_local.scss`](../src/styles/modifiers/_local.scss)           |
+| Dimension     | Members                                                                                                   | Partial                                                        |
+| ------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `variant`     | `primary`, `secondary`, `tertiary`, `success`, `warning`, `danger`, `information`                         | [`_variants.scss`](../src/styles/modifiers/_variants.scss)     |
+| `size`        | `small`, `large`                                                                                          | [`_sizes.scss`](../src/styles/modifiers/_sizes.scss)           |
+| `style`       | `subtle`, `filled`                                                                                        | [`_styles.scss`](../src/styles/modifiers/_styles.scss)         |
+| `state`       | `disabled`, `active`, `loading`                                                                           | [`_states.scss`](../src/styles/modifiers/_states.scss)         |
+| `placement`   | `top`, `bottom`, `start`, `end`, `top-start`, `top-end`, `bottom-start`, `bottom-end`                     | [`_placements.scss`](../src/styles/modifiers/_placements.scss) |
+| element-local | `form.row`, `button.dropdown`, `table.striped`, `{tag}.flat`, `{tag}.flush`, … (single-element modifiers) | [`_local.scss`](../src/styles/modifiers/_local.scss)           |
 
 Full reference in [modifiers.md](modifiers.md). Required tokens per dimension in [patterns.md](patterns.md) § 6.
 
-### Elements — 94 partials (`src/styles/elements/`)
+### Elements, components, surfaces, composables
 
-Per the taxonomy ([taxonomy.md](taxonomy.md)): 49 substantive (own `--set-{tag}-*` tokens), 8 reset (UA normalization only), 34 passthrough (comment-only stubs documenting why the framework has no opinion). Cross-referenced in [`src/browser/elements.ts`](../src/browser/elements.ts) (substantive baselines) + [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts) (every tag's treatment).
-
-### Components — 18 partials (`src/styles/components/`)
-
-| Partial                                                         | Role                                                                                                                                                                     |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`_article.scss`](../src/styles/components/_article.scss)       | Card chrome — `<article>` with optional `> header:first-child`, `> footer:last-child`, `> img:first-child` / `> picture:first-child`, `> ul.group` / `> ol.group` slots. |
-| [`_aside.scss`](../src/styles/components/_aside.scss)           | Three contexts on one element: body-shell rail · alert banner (`aside[role='alert']`) · drawer surface (`:is(aside, nav)[popover]`).                                     |
-| [`_badge.scss`](../src/styles/components/_badge.scss)           | Inline pill class-component (`.badge`).                                                                                                                                  |
-| [`_body.scss`](../src/styles/components/_body.scss)             | Layout shell — promotes `<body>` with a `<main>` child to a 3×3 template-area grid.                                                                                      |
-| [`_div.scss`](../src/styles/components/_div.scss)               | Layout primitives — `.stack`, `.cluster`, `.scrollable:not(dialog)`.                                                                                                     |
-| [`_dot.scss`](../src/styles/components/_dot.scss)               | Status dot class-component (`.dot`).                                                                                                                                     |
-| [`_footer.scss`](../src/styles/components/_footer.scss)         | Footer band in page-shell, article, dialog contexts.                                                                                                                     |
-| [`_form.scss`](../src/styles/components/_form.scss)             | Form-control stack + `form.row` modifier + `[data-form-validated]` chrome.                                                                                               |
-| [`_header.scss`](../src/styles/components/_header.scss)         | Header band in page-shell, article, dialog, rail-drawer contexts; sticky-pin on in-flow rails.                                                                           |
-| [`_main.scss`](../src/styles/components/_main.scss)             | `<main>` scroll container in the body grid.                                                                                                                              |
-| [`_menu.scss`](../src/styles/components/_menu.scss)             | Toolbar / action row / dropdown column / nav-rail menu / TOC menu / grouped-sidebar `<h6>+<menu>` rhythm.                                                                |
-| [`_nav.scss`](../src/styles/components/_nav.scss)               | Nav rail + `<nav><ol>` breadcrumb + `<nav aria-label='Pagination'>` + tablist chrome.                                                                                    |
-| [`_output.scss`](../src/styles/components/_output.scss)         | Toast surface — `<output popover>` (top-layer, corner-anchored) + in-flow `<output role='status'>`.                                                                      |
-| [`_role-group.scss`](../src/styles/components/_role-group.scss) | `[role='group']` / `[role='toolbar']` ARIA composition chrome.                                                                                                           |
-| [`_search.scss`](../src/styles/components/_search.scss)         | Search-bar row layout for `<search>` (input + optional submit + suggestion slot).                                                                                        |
-| [`_skeleton.scss`](../src/styles/components/_skeleton.scss)     | Loading placeholder block class-component (`.skeleton`).                                                                                                                 |
-| [`_spinner.scss`](../src/styles/components/_spinner.scss)       | Rotating ring loader class-component (`.spinner`).                                                                                                                       |
-| [`_tag.scss`](../src/styles/components/_tag.scss)               | Chip-shape tag class-component (`.tag`) + `.tag.ghost` element-local style.                                                                                              |
-
-Full per-component contract data in [`COMPONENT_CONTRACTS`](../src/browser/patterns.ts) and [components.md](components.md).
-
-### Surfaces — 9 partials (`src/styles/surfaces/`)
-
-Cross-cutting pseudo-element / attribute / state surfaces; cascade-layer `surfaces` sits after `components`.
-
-| Partial                                                                 | Selector(s)                                                                        |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) | `[popover]:not(:where(aside, dialog, nav, output))` — anchor-positioning baseline. |
-| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)               | `::backdrop` — scrim under dialog / popover.                                       |
-| [`_focus.scss`](../src/styles/surfaces/_focus.scss)                     | `:focus-visible` — canonical focus ring.                                           |
-| [`_marker.scss`](../src/styles/surfaces/_marker.scss)                   | `::marker` — list-marker color sync.                                               |
-| [`_placeholder.scss`](../src/styles/surfaces/_placeholder.scss)         | `::placeholder` — form-input placeholder color + opacity.                          |
-| [`_popover.scss`](../src/styles/surfaces/_popover.scss)                 | `[popover]:not(:where(aside, dialog, nav))` — generic popover surface chrome.      |
-| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss)             | `::-webkit-scrollbar*` + `scrollbar-width` / `scrollbar-gutter`.                   |
-| [`_selection.scss`](../src/styles/surfaces/_selection.scss)             | `::selection` — text-selection tint.                                               |
-| [`_view-transition.scss`](../src/styles/surfaces/_view-transition.scss) | `::view-transition*` — declarative route transitions.                              |
-
-Full per-surface contract data in [`SURFACE_CONTRACTS`](../src/browser/patterns.ts) and [surfaces.md](surfaces.md).
-
-### Composables — 20 use/create pairs (`src/browser/composables/` + `src/browser/factories/`)
-
-Every composable pairs `use{Name}` (Vue adapter) with `create{Name}` (framework-agnostic factory). 14 element-bound + 6 attribute-bound primitives. The 6 chrome partials in `src/styles/composables/` paint state-gated CSS on top of the JS.
-
-| Composable    | Bound to                              | Chrome partial?                                                            |
-| ------------- | ------------------------------------- | -------------------------------------------------------------------------- |
-| `useButton`   | `<button>`                            | (none — element baseline)                                                  |
-| `useDialog`   | `<dialog>`                            | [`_dialog.scss`](../src/styles/composables/_dialog.scss)                   |
-| `useAside`    | `<aside popover="manual">`            | [`_aside.scss`](../src/styles/composables/_aside.scss) (behavior-only)     |
-| `useDetails`  | `<details>`                           | (chrome lives on `<details>::details-content` in `_details.scss`)          |
-| `useToast`    | `<output popover>`                    | [`_toast.scss`](../src/styles/composables/_toast.scss)                     |
-| `useMenu`     | `<menu popover>` + `<button>`         | (chrome on `menu[popover]` in components/\_menu.scss)                      |
-| `useSelect`   | `<menu>` listbox + `<button>` / input | [`_select.scss`](../src/styles/composables/_select.scss)                   |
-| `useTable`    | `<table>`                             | (chrome on `[data-table-*]` in elements/\_table.scss)                      |
-| `useForm`     | `<form>`                              | (chrome on `[data-form-validated]` in components/\_form.scss)              |
-| `useNav`      | `<nav>`                               | (uses `aria-current="location"` already painted in components/\_menu.scss) |
-| `useAlert`    | `aside[role='alert']`                 | (chrome on `[data-alert-open]` in components/\_aside.scss)                 |
-| `useTabs`     | `[role='tablist']`                    | [`_tabs.scss`](../src/styles/composables/_tabs.scss)                       |
-| `useCarousel` | `<section class="carousel">`          | [`_carousel.scss`](../src/styles/composables/_carousel.scss)               |
-| `usePopover`  | `[popover]` panel + invoker           | (chrome from surfaces/\_popover.scss)                                      |
-| `useTooltip`  | Any + `[popover=hint]` target         | (chrome from surfaces/\_popover.scss)                                      |
-| `useFocus`    | Any container ref                     | (behavior only — no chrome)                                                |
-| `useDrag`     | `[data-index]` rows                   | (behavior only)                                                            |
-| `useDrop`     | Drop-target container                 | (behavior only)                                                            |
-| `usePointer`  | Any element                           | (behavior only)                                                            |
-| `useTheme`    | Document root                         | (behavior only — `data-theme` flips CSS)                                   |
-
-Full per-composable contract data in [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts) and [composables.md](composables.md).
+| Layer       | Count                                                                                                                                                                                                                                                                                                                         | Reference                                                                                                                      |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Elements    | 94 partials (49 substantive, 8 reset, 34 passthrough)                                                                                                                                                                                                                                                                         | [`elements.ts`](../src/browser/elements.ts) + [`taxonomy.ts`](../src/browser/taxonomy.ts), prose in [taxonomy.md](taxonomy.md) |
+| Components  | 18 partials — `_article`, `_aside`, `_badge`, `_body`, `_div`, `_dot`, `_footer`, `_form`, `_header`, `_main`, `_menu`, `_nav`, `_output`, `_role-group`, `_search`, `_skeleton`, `_spinner`, `_tag`                                                                                                                          | [`COMPONENT_CONTRACTS`](../src/browser/patterns.ts), prose in [components.md](components.md)                                   |
+| Surfaces    | 9 partials — `_anchor-position`, `_backdrop`, `_focus`, `_marker`, `_placeholder`, `_popover`, `_scrollbar`, `_selection`, `_view-transition`                                                                                                                                                                                 | [`SURFACE_CONTRACTS`](../src/browser/patterns.ts), prose in [surfaces.md](surfaces.md)                                         |
+| Composables | 20 use/create pairs (14 element-bound + 6 attribute-bound primitives) — `useButton`, `useDialog`, `useAside`, `useDetails`, `useToast`, `useMenu`, `useSelect`, `useTable`, `useForm`, `useNav`, `useAlert`, `useTabs`, `useCarousel`, `usePopover`, `useTooltip`, `useFocus`, `useDrag`, `useDrop`, `usePointer`, `useTheme` | [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts), prose in [composables.md](composables.md)                                |
 
 ---
 
 ## What's shipped — codified contracts (11)
 
-Every SCSS partial is held to these contracts before it can merge. The contract data lives in [`src/browser/patterns.ts`](../src/browser/patterns.ts) + [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts); prose explanation in [patterns.md](patterns.md).
+Every SCSS partial is held to these contracts before it can merge. Contract data in [`src/browser/patterns.ts`](../src/browser/patterns.ts) + [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts); prose in [patterns.md](patterns.md).
 
-| #   | Contract                   | Source                                                                     | Test                                                                                                                                                                                                |
-| --- | -------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Folder structural          | `FOLDER_CONTRACTS`, `FILE_EXCEPTIONS`                                      | [`_contracts.test.ts`](../tests/src/styles/_contracts.test.ts)                                                                                                                                      |
-| 2   | HTML taxonomy + uniformity | `taxonomy`, `TAXONOMY_BY_TAG`, `TOKEN_GROUPS` (12 groups), `GROUPS_BY_TAG` | [`_taxonomy.test.ts`](../tests/src/styles/_taxonomy.test.ts), [`_uniformity.test.ts`](../tests/src/styles/_uniformity.test.ts), [`browser/taxonomy.test.ts`](../tests/src/browser/taxonomy.test.ts) |
-| 3   | Interactive elements       | `INTERACTIVE_ELEMENTS`, `FORCED_COLORS_INCLUDE_REGEX`, `hasBareFocusRule`  | [`_interactive.test.ts`](../tests/src/styles/_interactive.test.ts)                                                                                                                                  |
-| 4   | Scope discipline           | `hasChainedTagNots`, `hasScopingFunction`                                  | [`_scope.test.ts`](../tests/src/styles/_scope.test.ts)                                                                                                                                              |
-| 5   | Modifier dimensions        | `MODIFIER_DIMENSION_TOKENS`                                                | [`_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts)                                                                                                                                    |
-| 6   | Surface contracts          | `SURFACE_CONTRACTS`                                                        | [`_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts)                                                                                                                                        |
-| 7   | Component contracts        | `COMPONENT_CONTRACTS`                                                      | [`_components.test.ts`](../tests/src/styles/_components.test.ts)                                                                                                                                    |
-| 8   | Composable contracts       | `COMPOSABLE_CONTRACTS`                                                     | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts)                                                                                                                                  |
-| 9   | Structural pairings        | `STRUCTURAL_PAIRINGS`, `extractTagPairs`, `isAllowedTagPair`               | [`_pairings.test.ts`](../tests/src/styles/_pairings.test.ts)                                                                                                                                        |
-| 10  | Motion contract            | `MOTION_CONTRACT_PARTIALS`                                                 | [`_motion.test.ts`](../tests/src/styles/_motion.test.ts)                                                                                                                                            |
-| 11  | TS shape parity            | (the registries themselves)                                                | [`browser/patterns.test.ts`](../tests/src/browser/patterns.test.ts)                                                                                                                                 |
+| #   | Contract                   | Test                                                                                |
+| --- | -------------------------- | ----------------------------------------------------------------------------------- |
+| 1   | Folder structural          | [`_contracts.test.ts`](../tests/src/styles/_contracts.test.ts)                      |
+| 2   | HTML taxonomy + uniformity | [`_taxonomy.test.ts`](../tests/src/styles/_taxonomy.test.ts), `_uniformity.test.ts` |
+| 3   | Interactive elements       | [`_interactive.test.ts`](../tests/src/styles/_interactive.test.ts)                  |
+| 4   | Scope discipline           | [`_scope.test.ts`](../tests/src/styles/_scope.test.ts)                              |
+| 5   | Modifier dimensions        | [`_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts)                    |
+| 6   | Surface contracts          | [`_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts)                        |
+| 7   | Component contracts        | [`_components.test.ts`](../tests/src/styles/_components.test.ts)                    |
+| 8   | Composable contracts       | [`_composables.test.ts`](../tests/src/styles/_composables.test.ts)                  |
+| 9   | Structural pairings        | [`_pairings.test.ts`](../tests/src/styles/_pairings.test.ts)                        |
+| 10  | Motion contract            | [`_motion.test.ts`](../tests/src/styles/_motion.test.ts)                            |
+| 11  | TS shape parity            | [`patterns.test.ts`](../tests/src/browser/patterns.test.ts)                         |
 
-**12 token-uniformity groups** (per `TOKEN_GROUPS`): `interactive`, `form-control`, `page-shell`, `card-region`, `floating-surface`, `inline-chip`, `disclosure`, `media-embed`, `progress-indicator`, `numeric-data`, `boxed-container`, `class-chip`. Each names members + required `--set-{member}-*` token suffixes; enforced by `_uniformity.test.ts`.
-
----
-
-## What's shipped — showcase pages (35 of 43)
-
-| Group                       | Pages                                                                                       |
-| --------------------------- | ------------------------------------------------------------------------------------------- |
-| Shell + chrome              | HomePage, sidebar, TOC, theme toggle, mobile drawer                                         |
-| Foundations                 | TokensPage, ThemePage, ModifiersPage, PlacementsPage                                        |
-| Elements — Interactive      | ButtonPage, AnchorPage, FormControlsPage, DetailsPage, DialogElementPage                    |
-| Elements — Content          | HeadingsPage, TypographyPage, ListsPage, TablesPage, MediaPage, FiguresPage, SectioningPage |
-| Components                  | ArticleCardPage, AsidePage, NavPage, MenuPage, InlineAtomsPage                              |
-| Surfaces                    | PopoverSurfacesPage, FormSurfacesPage, ScrollAndTransitionPage                              |
-| Composables — Primitives    | UseFocusPage, UsePointerPage, UseDragDropPage, UseThemeButtonPage                           |
-| Composables — Floating      | UsePopoverPage, UseTooltipPage                                                              |
-| Composables — Element-bound | UseMenuPage, UseDialogPage, UseAsidePage, UseTabsPage, UseDetailsPage, UseToastPage         |
-
-Element pages cover the static markup contract; the matching `Use*Page` (planned, §9.2) covers the JS interaction layer — `DetailsPage` proves the bare `<details>` element baseline, `UseDetailsPage` (planned) proves the `useDetails` programmatic open/close. Both pages exist for elements with composables.
+**12 token-uniformity groups** (per `TOKEN_GROUPS`): `interactive`, `form-control`, `page-shell`, `card-region`, `floating-surface`, `inline-chip`, `disclosure`, `media-embed`, `progress-indicator`, `numeric-data`, `boxed-container`, `class-chip`. Members + required `--set-{member}-*` suffixes enforced by `_uniformity.test.ts`.
 
 ---
 
-## Remaining work — Phase 9 (6 pages)
+## What's shipped — showcase pages (36 of 43)
 
-### 9.1 Foundation pages (4)
+| Group                       | Pages                                                                                                            |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Shell + chrome              | HomePage, sidebar, TOC, theme toggle, mobile drawer                                                              |
+| Foundations                 | TokensPage, ThemePage, ModifiersPage, PlacementsPage                                                             |
+| Elements — Interactive      | ButtonPage, AnchorPage, FormControlsPage, DetailsPage, DialogElementPage                                         |
+| Elements — Content          | HeadingsPage, TypographyPage, ListsPage, TablesPage, MediaPage, FiguresPage, SectioningPage                      |
+| Components                  | ArticleCardPage, AsidePage, NavPage, MenuPage, InlineAtomsPage                                                   |
+| Surfaces                    | PopoverSurfacesPage, FormSurfacesPage, ScrollAndTransitionPage                                                   |
+| Composables — Primitives    | UseFocusPage, UsePointerPage, UseDragDropPage, UseThemeButtonPage                                                |
+| Composables — Floating      | UsePopoverPage, UseTooltipPage                                                                                   |
+| Composables — Element-bound | UseMenuPage, UseDialogPage, UseAsidePage, UseTabsPage, UseDetailsPage, UseToastPage, UseSelectPage, UseTablePage |
 
-Highest leverage — every other page references them.
+Element pages cover the static markup contract; the matching `Use*Page` covers the JS interaction layer.
 
-- ✅ **TokensPage** — every `--set-*` leaf surfaced with its live computed value; retune playgrounds (radius factor, density factor, motion duration + curve, focus ring width + opacity); icon registry preview; elevation scale (`--set-box-shadow-small / -base / -large`); z-index scale; floater viewport budget; summary marker swap demo; "How + where to set tokens" with Tailwind v4 `@theme` integration.
-- ✅ **ThemePage** — `useTheme()` light / dark / system switcher; variant palette swatches (7 saturated bases); brand-retune playground (`<input type="color">` writes `--color-primary` and the four-tier cascade re-derives live); per-variant four-tier swatch grids (`bg-subtle` / `text-emphasis` / `border-subtle` / `on-canvas`); canvas / text / border / inverted tier demonstrations; light-vs-dark resolution explainer (data-theme + media query); customization paths (Tailwind `@theme` blocks, `:root` overrides, scoped overrides).
-- ✅ **ModifiersPage** — variant × size × style × state × placement cascade. Cascade walk-through with resolved tokens; 7-variant grids across FILLED / SUBTLE / ON-CANVAS tiers; size table with concrete values; action-vs-container style demos; state demos with paired ARIA attributes (`disabled`, `active`, `loading`); 8-placement reference grid; interactive combination picker (variant × size × style × state) with live button + class-list output; customization guidance for retuning context tokens.
-- ✅ **PlacementsPage** — 8-class vocabulary table (`.top` / `.bottom` / `.start` / `.end` + 4 corners), interactive live demo (select placement → re-anchored popover), 3×3 grid metaphor, `position-try-fallbacks` flip demo (two anchor buttons at opposite edges; left flips, right honored), scope-discipline explainer (the `:not(:where(aside, dialog, nav, output))` drawer exclusion list), logical-axis / RTL note, and customization for `--set-anchor-{gap, max-inline-size, max-block-size, position-try-fallbacks}` tokens.
+---
 
-### 9.2 Composable pages — element-bound (6 remaining of 12)
+## Remaining work — Phase 9 (4 composable-bound pages + cross-page polish)
 
-Each page proves the `use{Name}` factory's JS layer on top of the matching element page.
+### 9.1 Composable pages — element-bound (4 of 12 remaining)
 
-**Per-page procedure** (since the `createAside` and `createTabs` strips both surfaced real bugs while authoring the page): _before_ building the demo, walk the [Native-platform redundancy checklist](../guides/contribute.md#541-native-platform-redundancy-checklist) (`contribute.md` §5.4.1) against the matching factory. If it lists strip candidates, address them in the same PR as the page — the page IS the verification that the strip didn't regress anything visible. The parity test ([`_native-redundancy.test.ts`](../tests/src/styles/_native-redundancy.test.ts)) will catch dead-attribute writes at commit time.
+Each page proves the matching `use{Name}` factory's JS layer on top of the matching element page. **Per-page procedure**: _before_ authoring the demo, walk the [Native-platform redundancy checklist](contribute.md#541-native-platform-redundancy-checklist) (`contribute.md` §5.4.1) against the factory — strip dead writes, fix anti-patterns, ship the strip in the same PR as the page. Every prior page in this set surfaced at least one redundancy worth fixing.
 
-- ✅ **UseMenuPage** — `<menu popover>` panel + toggle, ArrowDown / ArrowUp roving, Home / End, item-click dismiss, three independent dismiss-policy flags (`outside` / `escape` / `inside`), `flip` threshold demo (`flip: 0` vs `flip: 8`), reactive `Ref<Placement>`, cancellable lifecycle + namespaced DOM events (`elements:menu:{show,open,hide,close}`).
-- ✅ **UseDialogPage** — modal vs non-modal toggle (`showModal()` vs `show()`), three backdrop modes (`true` / `false` / `'static'` with the `prevent` shake-hook), Escape suppression, `<form method="dialog">` return-value capture, opt-in body scroll-lock for non-modal, cancellable lifecycle + namespaced DOM events (`elements:dialog:{show,open,hide,close,prevent}`). Cross-references DialogElementPage for the bare-element chrome.
-- ✅ **UseAsidePage** — `<aside popover="manual">` programmatic drawer at all four edges (`.start` / `.end` / `.top` / `.bottom`), three backdrop modes + Escape policy + opt-out body scroll-lock, cancellable lifecycle + namespaced DOM events, and the `[data-aside-open]` ↔ `[data-aside-closing]` attribute pair that keeps drawer geometry alive across the popover surface's discrete-transition tail (with a live attribute readout). Cross-references AsidePage for the bare-element chrome + the other three `<aside>` contexts.
-- ✅ **UseTabsPage** — `[role="tablist"]` activation, `.pills` style modifier, cancellable lifecycle. Shipped after a strip pass on `createTabs`: dropped the dead `[data-tab-open]` writes (no SCSS reference), switched the hide mechanism from `[aria-hidden]` to the HTML `[hidden]` attribute (matching the `[role='tabpanel'][hidden] { display: none }` rule in `components/_nav.scss` — fixed a real visibility bug where panels never hid on switch), and dropped the `runTransition` machinery chasing a non-existent CSS transition. Factory shrunk 200 → 158 lines.
-- ✅ **UseDetailsPage** — programmatic open / close synced with native `toggle`, group accordion (one-open-at-a-time via `accordion: Ref<HTMLElement>`), cancellable lifecycle. Authoring pass surfaced + fixed a real bug in `createDetails`: the cancellable lifecycle the docstring promises only worked for programmatic `show()` / `hide()` — native `<summary>` clicks bypassed it because the factory only bridged the post-flip `toggle` event. Added a `<summary>` click bridge that dispatches the cancellable show / hide event; if a consumer's handler calls `event.preventDefault()`, we `preventDefault()` on the click, which the HTML activation-behavior spec says aborts the platform's `[open]` flip. (Used the click bridge instead of `beforetoggle` on `<details>` because chromium-1217 doesn't fire `beforetoggle` on details — the event was added to `<details>` later than the popover variant and isn't reliably available.)
-- ✅ **UseToastPage** — `<output popover>` toast surface. 7 demos inside compact `.toast-trigger` panels (the panel holds the buttons that emit the toast + the `<output>` element as DOM siblings — the factory reads `parentElement.children` for sibling-stack grouping, so the panel matters structurally even though the toast renders in the top layer at the viewport corner indicated by the panel's caption): single linear toast w/ auto-hide + pause-on-hover, linear stack (cumulative offset), Sonner-deck mode (`[data-toast-stack]` opt-in with depth-clamp + hidden-count indicator), 7-variant tinting cascade, all four placement corners (`.start` / `.end` / `.top` / `.bottom`) — each corner in its OWN trigger panel because the factory's sibling-walk would otherwise shift them against each other, banded header / footer chrome (negative-margin bleed mirroring `<dialog> > header / footer`), cancellable lifecycle. Authoring + chrome-fix passes surfaced + fixed:
-  - **State-attribute parity** — `[data-stack-hidden]` / `[data-stack-closing]` constants didn't match the documented `data-toast-stack-*` naming convention from `composables.md §2`; renamed both with paired SCSS rename.
-  - **Dead 200ms fallbacks** dropped (`var(--set-transition-duration, 200ms)` → `var(--set-transition-duration)`; the framework-wide token is always declared on `:root`).
-  - **`length()` parse bug** — `--set-toast-spacing` was `calc(var(--spacing) * 3)`, but the factory's `length()` helper parses via `parseFloat()` which returns `NaN` on calc expressions, silently zeroing the gap → stacked toasts touched borders. Replaced with the literal `0.75rem`.
-  - **Dark-mode contrast** — `--set-toast-color` flipped from `currentColor` to `var(--color-text)` and `--set-toast-background-color` from `var(--color-white, Canvas)` to `var(--color-surface)` so both modes flip correctly.
-  - **Banded header / footer bleed** — switched from "zero root padding + re-pad children" (defeated by the composables-layer unconditional padding re-paint) to the `<dialog>`-style negative-margin bleed pattern (`margin-inline: calc(var(--set-toast-padding-inline) * -1)` + matching block-axis bleed on header / footer; the toast root keeps its intrinsic padding for the body region; bands escape via negative margins to reach the toast's outer edges). Specificity gate `:popover-open` added to the band-mode selectors so the rule outranks the open-state `display: flex; align-items: center` rule (without it the bands sized to content width and the negative margin only shifted position).
-  - **Bulletproof deck hover bridges** — replaced single `::after` (sized exactly `--set-toast-spacing`) with PAIRED `::before` + `::after` on every expanded card, each sized to `--set-toast-spacing × 2` for sub-pixel + diagonal-traversal safety. Deck transform uses `index × (front-height + spacing)`, but each expanded card sizes to its OWN natural height via `block-size: auto`; any drift between front-height and actual card height makes a single-spacing bridge fall short of bridging the gap. 2× sizing absorbs the drift; paired pseudos give every gap two overlapping hit zones. Deck expand-rule also scoped from `[data-toast-stack]:hover` (any descendant triggers) to `[data-toast-stack]:has(> output[popover]:popover-open:hover)` (popover ITSELF must be hovered) so hovering the trigger panel from across the page doesn't expand a deck at the opposite corner.
-  - **Mobile retune** — `@media (max-width: 480px)` block in `_toast.scss` switches the toast from "corner notification" to nearly-edge-to-edge banner by anchoring BOTH inline insets (`inset-inline-start: var(--set-toast-edge-inset); inset-inline-end: var(--set-toast-edge-inset); inline-size: auto`); width derives from the dual-inset constraint so left and right gutters are symmetric by construction. Paired with a `surfaces/_scrollbar.scss` retune that drops `scrollbar-gutter: stable` on `html, body` at the same breakpoint — without it, Chromium reserves the scrollbar's width as an inline-end gutter on html (even with `overflow: hidden` on body), reducing `html.clientWidth` and offsetting fixed-position descendants asymmetrically; live probe confirms 375 px viewport → 359 px toast with 8 px gutters on both sides.
-  - **Sidebar gutter parity** — extended the surface-layer `scrollbar-gutter: auto` override to include sidebar `<nav>` and `<aside>` (`body:has(main) > :is(nav, aside)` and the one-level-deeper wrapper). Same fix the in-flow alert + non-modal dialog got, applied to the persistent rails so the right-edge gap doesn't appear when their header / footer divider lines reach the inline-end edge.
-  - **Dismiss button uniformity** — folded all dismiss chrome into one components-layer rule (`output[popover] > button:last-child` PLUS the band-context selectors); the trailing-button layout AND the `--set-variant-*` reset (transparent bg / currentColor / transparent border) apply to BOTH body-context and band-context dismiss buttons. Without the reset, a `<output class="warning">` propagated yellow variant tokens into the body dismiss and painted the close affordance filled-yellow; with the reset, the dismiss reads as a quiet icon regardless of slot. `STRUCTURAL_PAIRINGS` extended with `output > button` (`context` kind) for parity with `aside > button`.
-  - **Demo panels honest about geometry** — `.placement-stage` (a 16 rem dashed-bordered box that LOOKED like a render preview but did nothing of the sort — toasts elevate to the top layer at the viewport corner the moment they open) replaced with `.toast-trigger`: a compact bordered panel that contains the demo's buttons + `<output>` siblings plus a small `Renders at <corner>` caption so the reader knows where to look. Dropped `min-block-size: 16rem`; the panel sizes to its content.
-- ✅ **UseSelectPage** — `<menu>` listbox / combobox / multi-select widget. 7 demos: native `<select>` repaint (element-layer `--set-select-*` token surface, list-box `size=4`, multi-select chevron suppression, disabled), single-select listbox (custom widget with `<select hidden>` native mirror + programmatic show/hide/clear/select), multi-select (`multiple: true` — `aria-multiselectable`, menu stays open on commit, toggle label flattens array), combobox + autocomplete + sticky search row (`autocomplete: true` + `input` ref; `<li class="select-search">` sticky-pinned input), cancellable lifecycle (preventDefault on `on.show` vetoes; lifecycle log captures all seven events), placement + flip (reactive `Ref<Placement>` between `bottom-start` and `top-start`; documents `flip: 5` / `DEFAULT_SELECT_FLIP`), API reference. Phase 1 §5.4.1 native-platform redundancy walk: factory clean (every `data-*` write consumed by SCSS, every `aria-*` write standard / dynamic / option-conditional, popover lifecycle delegated to `createMenu` → `createPopover`, no `runTransition` anti-pattern, no re-implemented Escape, no body scroll-lock, no bad cancellable wrappers). Authoring + audit passes surfaced + fixed four combobox edge cases the user spotted in dogfooding:
-  - **Free-text entry** — `onInput` no longer auto-hides the dropdown when the filter rejects every option. In autocomplete mode the typed string IS the committed value (factory writes it to `value` / `values` on every keystroke); the previous auto-hide made the input look like it had refused the entry. Dropdown now stays open; an empty-state hint paints the appropriate feedback (next item).
-  - **Empty-state "No matches" hint** — paired with the auto-hide removal, a `:has()` rule in `composables/_select.scss` paints an `::after` with `var(--set-select-empty-text)` (default `"No matches"`, localizable) when the menu has at least one hidden option AND no unhidden options. The "at least one hidden" guard skips genuinely empty menus so developer-setup mistakes (forgot to render the option list) still surface visually instead of being masked by the empty-state label. Token mirrored in `src/browser/tokens.ts` under `tokens.select.emptyText`; re-declared on bare `select` so the token-parity test stays green.
-  - **Enter on no-match commits typed value** — the Enter handler previously only fired `select()` when an active descendant matched, leaving free-text queries stuck (forced outside-click to dismiss). Added a final branch: in autocomplete mode + no active descendant, Enter calls `dropdown.hide()` to close without losing the typed value (which is already in `.value`).
-  - **IME composition guard** — `compositionstart` / `compositionend` listeners + a `composing` boolean. The `input` event fires during multi-keystroke compositions (Chinese / Japanese / Korean input methods, dead-key sequences on Latin keyboards); filtering on each compositional intermediate makes the row set thrash and can hide a row the user is mid-way to selecting. `onInput` returns early while composing; `compositionend` re-fires `onInput()` so the filter applies to the just-committed string (Chromium / WebKit don't reliably fire `input` after `compositionend`).
-- ✅ **UseTablePage — strip + page shipped**. Phase 1 §5.4.1 native-platform redundancy walk surfaced four resolved redundancies in `createTable`:
-  - **`[data-collapsing]` writes** dropped (zero SCSS references; `_native-redundancy.test.ts` `JS_ONLY` exception removed alongside).
-  - **JS height tween** (`style.height = '0' → scrollHeight` with `runTransition` wait) dropped — `elements/_table.scss:420-446` already animates the panel via `tr[data-table-expanded] + tr > td > [data-table-expansion-panel]` using `interpolate-size: allow-keywords` + motion-contract tokens. The JS was pure overhead.
-  - **`expansion.animate` option** dropped — uniform with framework motion contract; `prefers-reduced-motion` honoured by the `@include transition()` mixin.
-  - **`[hidden]` toggle on the panel** replaced with `[inert]`: `[hidden]` forces `display: none` which freezes the CSS `block-size` tween (transitions don't run from `display: none`); `[inert]` suppresses focus / pointer / a11y on the visually clipped closed state while leaving rendering intact. Baseline-2022 in every engine the framework targets.
-    `runTransition` import dropped from `createTable.ts`; expansion paths now synchronous (public `expand()` / `collapse()` / `toggle()` no longer wrap `Promise.all`). Factory dropped ~80 lines. The factory test that depended on `[data-collapsing]` was rewritten to verify the new attribute-only flow (`[data-table-expanded]` + `[inert]`).
-    9 demo sections: comprehensive integrated surface (24-row dataset of framework-issue records, scrollable wrapper, every feature wired), sort (single + shift-multi-column with `aria-sort` mirror), pagination (`Ref<number>` size + reactive `page` / `count` / `offset` driving a Vue-computed `visibleIssues` slice + `aria-rowindex` parity to the full dataset position), selection (shift / ctrl / cmd / outside-click clear), inline editing 5a (`input.flat` / `select.flat` — transparent rest, hover reveal, focus promotes to bordered baseline; validation contract + type-specific UI + IME composition preserved) + 5b (`input.flush` / `button.flush` — host owns the boundary, element fills the cell on both axes via the legacy `<td block-size: 1px>` height trick), expansion (full SCSS rule shown + `[inert]` rationale; chevron `::before` rotates 90° on `[data-table-expanded]` via the new `--set-table-expansion-icon{,-size,-gap}` tokens; row-click toggle wired via the new `expansion.click: true | 'row' | 'caret' | false` option), resize (pointer-capture handles + `[data-table-resizing]` marker — `position: relative` now on every `<th>`, not just sortable ones, so handles anchor to the cell instead of the table coord system), focus (APG roving-tabindex; the bare `<table tabindex="0">` now seeds the first cell on focus so ArrowKeys have a starting cursor), sticky header (`table.sticky` modifier with opaque backdrop via paired `background-color: var(--color-canvas)` + `background-image` overlay so scrolling rows don't bleed through), API reference. Framework changes shipped alongside: `surfaces/_focus.scss` excludes `table[role='grid']` from the universal `:focus-visible` ring; `table.sticky` modifier + opaque sticky backdrop; row-expansion chevron tokens + `::before` rule; `expansion.click` row-toggle handler + `onTableFocus` cursor seed; `input.flat` / `select.flat` / `textarea.flat` AND `input.flush` / `select.flush` / `textarea.flush` / `button.flush` modifiers in `modifiers/_local.scss`; `--set-nav-pagination-font-size` token defaulting to `var(--text-sm)` so the bare `<nav aria-label="Pagination">` aligns with table density. Action toolbar in comprehensive demo restructured from `<menu>` to `<fieldset role="toolbar">` so it doesn't visually echo the old pagination row. Probe: full page walk 24 / 24 routes clean, targeted probes confirm sticky bg opaque, focus roving, resize drag, expansion row-click, flush element fills cell.
 - ⬜ **UseFormPage** — constraint-validation pipeline, `[data-form-validated]` after first submit, per-field `aria-invalid` mirror, summary error region, submit-disabled-on-invalid.
 - ⬜ **UseNavPage** — scroll-spy on a long article with anchored sections; `aria-current="location"` flips as scroll position passes section boundaries.
 - ⬜ **UseAlertPage** — `useAlert` open / dismiss lifecycle, transition collapse, polite vs assertive (`role="alert"` vs `role="status"`), persistence across re-mounts.
 - ⬜ **UseCarouselPage** — slide nav, autoplay + pause-on-hover, touch / swipe, indicator dots, variant-tinted slides, every-axis transition lifecycle.
 
-### 9.3 Sidebar nav adjustments (before page #15)
+### 9.2 Sidebar nav adjustments (before page #15)
 
-The current flat sidebar list works for 1–14 pages. By the time the roster hits ~15 entries:
+The current flat sidebar list works for 1–14 pages. By page #15:
 
 - ⬜ **Group-collapsible sidebar** — `<details><summary>{group}</summary><menu>…</menu></details>` per group so the rail isn't a 42-line scroll.
 - ⬜ **Keyboard nav inside the rail** — arrow keys move focus between visible items; `[` / `]` collapse / expand groups.
 
-### 9.4 Cross-page polish (after all pages exist)
+### 9.3 Cross-page polish (after all pages exist)
 
 - ⬜ **Theme retune end-to-end** — pin a brand color at `:root` and walk every page; verify the cascade reaches focus rings / toasts / alerts / selections / popovers / tabs / breadcrumbs.
 - ⬜ **Reduced-motion full-suite** — verify every animation + transition collapses across all 43 pages (paired-mixin coverage already enforced by the surface / component / composable / motion contracts).
@@ -241,29 +135,254 @@ The current flat sidebar list works for 1–14 pages. By the time the roster hit
 
 ---
 
-## Cross-cutting framework changes (recent)
+## Consequential learnings — patterns to keep applying
 
-Selected updates surfaced during page authoring + audit phases:
+These are not just "what's done" — they are conventions that govern how future work proceeds. Every entry surfaced during a real audit / page authoring and represents a recurring trap or contract.
 
-- **`--color-{variant}-on-canvas` tier** — added per-variant text-on-canvas tier with per-mode `color-mix` tuning so bare variant anchors / labels clear WCAG AA against the body canvas in both themes.
-- **Alert / toast / popover taxonomy** — clarified the IN-FLOW (alerts, callouts) vs TOP-LAYER (popovers, toasts) split; documented in [components.md](components.md).
-- **Alert is a BANNER, not a card or toast** — removed the `--set-alert-max-inline-size: 32rem` cap (was toast-shaped thinking); alert now spans its parent's content area like every other in-flow announcement, with optional card-like composition via direct-child `<header>` / `<footer>` bands.
-- **Body-shell motion contract** — shared `--set-motion-{duration, timing-function}` tokens consumed by every panel-style reveal: rail drawers + `<aside popover>` offcanvas + `<dialog>` modal/non-modal + `<details>::details-content` + table row expansion + alert open/close + summary trailing margin. The `::details-content` native animation is the reference smoothness the framework matches across the family; enforced by `MOTION_CONTRACT_PARTIALS` + `_motion.test.ts`.
-- **`button.dropdown` opt-in caret** — caret affordance moved from "every `button[popovertarget]`" to a deliberate `.dropdown` opt-in, with rotation gated on `[aria-expanded='true']`.
-- **List-group cascade ordering** — `.active` now follows the variant tint rules in `_li.scss` so `<li class="success active">` paints the saturated identity fill (active wins) rather than the subtle tint.
-- **Scrollbars Module L1 inheritance gap** — `scrollbar-width` and `scrollbar-gutter` don't inherit; moved to universal selector `*, *::before, *::after` so the non-inherited properties land on every scroll container.
-- **Popover-broadcast exclusion alignment** — added `<dialog>` to the `:not(:where(aside, dialog, nav, output))` lists in `modifiers/_placements.scss` + `surfaces/_anchor-position.scss` (drawer-shaped elements with their own viewport-fixed placement geometry); alphabetized for diff stability.
-- **No element-hardcoding inside containment** — removed an early absorption that singled out `<search>` as the structural marker for docs-sidebar pinned-filter chrome (`nav:has(> search)` + `nav > search` rules). Composed-rail patterns now live on consumer wrapper classes (`.showcase-sidebar*` in `app/browser/styles/showcase.css`); framework keeps the rail's bare-default single-scroller. The architectural rule is codified as `STRUCTURAL_PAIRINGS` (51-entry allowlist with `spec` / `slot` / `reset` / `context` kinds), enforced by `_pairings.test.ts` — see [patterns.md](patterns.md) §10.
-- **`<h6>` + `<menu>` rail rhythm** — paid for the grouped-sidebar pattern `_menu.scss` already documented: uppercase eyebrow chrome on `<h6>` inside body-shell `<nav>` / `<aside>` rails, asymmetric inter-group margins, zeroed `<menu>` block margins.
-- **Token-group expansion** — added 5 new uniformity groups (`media-embed`, `progress-indicator`, `numeric-data`, `boxed-container`, `class-chip`) bringing the total to 12. Surfaced a `<video>` drift (raw `max-inline-size: 100%` instead of the `--set-video-max-inline-size` token used by every other embed); fixed.
-- **Roving keyboard focus now skips non-focusable wrappers** — `focusableItems` (called by `createMenu`'s ArrowDown / ArrowUp / Home / End handler) used to return both spec-required `<li>` wrappers AND their inner `<a>` / `<button>` children for a `<menu><li><button>…` panel. Roving landed on the `<li>` first, `.focus()` was a silent no-op (default `tabIndex = -1`), and the user saw nothing happen. Now filters to `tabIndex >= 0` so the wrapper is skipped while keeping the case where `<li tabindex="0">` is the intentional tab-stop. Surfaced while authoring UseMenuPage; covered by the page-level Playwright probe (`scripts/check-use-menu.mjs`).
-- **Showcase composed-rail flex contract** — `.showcase-sidebar-region` (the pinned filter card in the docs sidebar) was writing `flex-shrink: 0` only, leaving `flex-grow: 1` from the framework's `:is(aside, nav)[popover] > :not(:where(header, footer))` rule intact. On mobile drawer mode the 35-px filter input ballooned into a ~390-px container, leaving a vacant stripe between the filter and the link list. Replaced with `flex: none` (= 0 0 auto) which writes all three sub-properties at once. Lesson for consumers: when overriding the framework's drawer-body `flex: 1 1 auto` for a composed-rail layout, override ALL three sub-properties (or use the shorthand) — partial overrides leave the framework's grow / basis intact.
+### Native-platform redundancy (per-composable strip discipline)
+
+After the `createAside` strip (close latency 400 ms → 73 ms by dropping dead `[data-aside-open]` / `[data-aside-closing]` writes + the `runTransition`-before-native-call wait), every factory is audited against this checklist:
+
+1. **Dead lifecycle attributes** — `setAttribute('data-X-{open,closing,opening,…}')` calls whose attribute is not referenced anywhere in `src/styles/`. Enforced by [`_native-redundancy.test.ts`](../tests/src/styles/_native-redundancy.test.ts) — adding a dead-attribute write to a factory fails CI. Legitimate JS-only attributes opt in via the `JS_ONLY` map.
+2. **`runTransition` BEFORE the native lifecycle call** — waiting on `transitionend` and then calling `hidePopover()` inside the callback. The transition can't have started because the native call hasn't been made. Always call the native method first, THEN await.
+3. **Re-implemented Escape / outside-click dismiss** when `popover="auto"` already provides it.
+4. **JS-driven ARIA chrome** (`aria-modal`, `role`, `inert`) the consumer markup could declare directly.
+5. **Hand-written `lockBodyScroll`** when the platform already pins the page (modal `<dialog>`, top-layer popovers).
+6. **Cancellable wrappers around natively non-cancellable events** (`beforetoggle` for popover is informational only).
+
+Strips shipped: ✅ `createTabs` (dropped `[data-tab-open]`, switched `[aria-hidden]` → `[hidden]`, dropped `runTransition` chasing a non-existent transition; factory 200 → 158 lines), ✅ `createTable` (dropped JS height tween + `[data-collapsing]` + `expansion.animate` option + `[hidden]` → `[inert]` panel toggle; ~80 lines removed; CSS `interpolate-size: allow-keywords` is now the only animation contract). Clean factories: `createButton`, `createDialog`, `createMenu`, `createPopover`, `createTooltip`, `createFocus`, `createDrag`, `createDrop`, `createPointer`, `createTheme`, `createNav`, `createDetails`, `createForm`, `createCarousel`, `createSelect`, `createToast` — verified directly. Frequently misread cases: `createDialog`'s `runTransition` IS after the native call; `createTooltip` + `createPopover` use `popover="manual"` deliberately and re-implement Escape because that's correct for those surfaces.
+
+### Motion contract
+
+Shared `--set-motion-{duration, timing-function}` tokens consumed by every panel-style reveal: rail drawers, `<aside popover>` offcanvas, `<dialog>` modal/non-modal, `<details>::details-content`, `[data-table-expansion-panel]`, alert open/close, summary trailing margin. The `::details-content` native animation is the reference smoothness the rest of the family matches. Enforced by `MOTION_CONTRACT_PARTIALS` + `_motion.test.ts`.
+
+### Scrollbars (non-inherited properties)
+
+`scrollbar-width` and `scrollbar-gutter` don't inherit. Declared on universal selector `*, *::before, *::after` so every scroll container picks them up. `scrollbar-gutter: stable` is dropped on `<html>` / `<body>` below the 480-px mobile breakpoint to keep fixed-position toasts symmetric. Sidebar `<nav>` / `<aside>` rails opt-out of stable gutter so right-edge divider lines reach the inline-end edge (extends the in-flow alert / non-modal dialog fix).
+
+### Alert vs toast disambiguation
+
+Alert (`<aside role="alert">`) is an in-flow banner; toast (`<output popover>`) is a top-layer transient. They share the variant palette (`bg-subtle` / `text-emphasis` / `border-subtle`) but NOT the geometry (banner fills parent; toast is corner-anchored). The `--set-alert-max-inline-size` cap was removed — alerts span their parent's content area like every other in-flow announcement.
+
+### `--color-{variant}-on-canvas` tier
+
+Per-variant text-on-canvas tier with per-mode `color-mix` tuning so bare variant anchors / labels clear WCAG AA against the body canvas in both themes.
+
+### Body-shell + popover-broadcast exclusion alignment
+
+`<dialog>` is included in the `:not(:where(aside, dialog, nav, output))` lists in `modifiers/_placements.scss` + `surfaces/_anchor-position.scss` (drawer-shaped elements with their own viewport-fixed placement geometry); alphabetized for diff stability.
+
+### Structural pairing discipline
+
+No element-hardcoding inside containment. A rule that combines two bare tag names with `>` (e.g. `nav > search`, `article > div`) requires an entry in `STRUCTURAL_PAIRINGS` (51-entry allowlist, `spec` / `slot` / `reset` / `context` kinds) — `_pairings.test.ts` fails any new pair without a reason. Consumer wrappers carry composed-rail patterns (`.showcase-sidebar*` in `app/browser/styles/showcase.css`); the framework provides containment, the consumer composes regions.
+
+### Toast lifecycle — recurring fix patterns
+
+- **State-attribute naming**: every `data-{name}-{state}` follows the documented convention; mismatch between TS constants and SCSS rules silently breaks chrome.
+- **No magic-number fallbacks**: `var(--set-transition-duration, 200ms)` is a smell — `:root` always declares the token, the fallback hides a missing import.
+- **`length()` parses via `parseFloat`** — `calc(...)` expressions return `NaN`. Use literal `rem` / `px` for any value the factory needs to read.
+- **`background-color` overlays**: where a sticky / overlay surface paints over a scrolling region, the bg-color may be alpha-tinted; pair it with a `var(--color-canvas)` floor (or `linear-gradient` of the same tint) so the result is opaque.
+- **Mobile retune via dual-inset**: anchoring `inset-inline-start` + `inset-inline-end` + `inline-size: auto` yields symmetric gutters regardless of the parent's scrollbar reservation.
+
+### Roving-focus discipline
+
+`focusableItems` filters to `tabIndex >= 0` so non-focusable wrappers (`<li>` carrying default `tabIndex = -1`) are skipped while still allowing intentional `<li tabindex="0">` tab-stops. Surfaced in UseMenuPage authoring; carries forward into every roving-keyboard handler.
+
+### Composed-rail flex contract
+
+`.showcase-sidebar-region` writes `flex: none` (= 0 0 auto) — overriding ALL three sub-properties. Partial overrides (`flex-shrink: 0` alone) leave the framework's `flex: 1 1 auto` grow / basis intact. Lesson for consumers: when overriding a drawer-body flex layout, use the shorthand or override all three.
+
+### `<h6>` + `<menu>` rail rhythm
+
+Uppercase eyebrow chrome on `<h6>` inside body-shell `<nav>` / `<aside>` rails; asymmetric inter-group margins; zeroed `<menu>` block margins. Pattern documented in `_menu.scss`.
+
+### `.flat` / `.flush` modifier family (in progress — see Future work §"The `.flat` / `.flush` rollout")
+
+The framework distinguishes two surface-dissolution idioms:
+
+- **`.flat`** — transparent at rest, hover / focus reveal subtle backdrop, focus promotes to the element's full bordered baseline. Keeps the element's own padding + intrinsic size. Use when the element should _signal_ it's interactive on engagement.
+- **`.flush`** — no margin / border / radius / ring at any state; `border-radius: inherit`; fills the host's content box on both axes (`inline-size: 100%` + `block-size: 100%` + `min-block-size: 100%` + `align-self: stretch`). Hover / focus reveals a subtle backdrop for discoverability. The HOST owns the boundary.
+
+Shipped variants: `input.flat`, `select.flat`, `textarea.flat`, `input.flush`, `select.flush`, `textarea.flush`, `button.flush`, `ul.group.flush`, `ol.group.flush`. The remainder is the active push — see Future work §"The `.flat` / `.flush` rollout" below for the per-element matrix and authoring plan.
 
 ---
 
-## Future work (post-Phase 9)
+## Cross-cutting changes — recently shipped
 
-Identified but not started. Open the matching contribute.md workflow when picking one up.
+Selected updates from the most recent push (UseTablePage v3-v5 + dl ratio fix):
+
+- **`createTable` row-click expansion** — new `expansion.click: true | 'row' | 'caret' | false` option. Default `true` toggles on any non-interactive click inside an expandable row (mirrors `selection.click` opt-out shape). `onTableFocus` seeds the first cell when the bare `<table tabindex="0">` receives focus so the APG roving model has a starting cursor.
+- **`table.sticky` modifier + opaque backdrop** — pins `<thead> > <th>` via `position: sticky` with paired `background-color: var(--color-canvas)` + `background-image` overlay so scrolling rows don't bleed through the header tint.
+- **`th { position: relative }` on every header** — not just sortable headers — so resize handles anchor to the cell instead of the table coord system.
+- **Row-expansion chevron** — `--set-table-expansion-icon{,-size,-gap}` tokens; chevron `::before` rotates 90° on `[data-table-expanded]`.
+- **`--set-nav-pagination-font-size`** — defaults to `var(--text-sm)` so the bare `<nav aria-label="Pagination">` aligns with table density.
+- **`<dl>` term:description ratio** — wide-viewport grid switched from `minmax(0, max-content) minmax(12rem, 1fr)` to `minmax(0, 1fr) minmax(0, 2fr)`. Long terms wrap inside their 1fr track instead of starving the description. Mobile (<640 px) single-column stack unchanged.
+- **`table[role='grid']` excluded from universal `:focus-visible` ring** in `surfaces/_focus.scss` — the table is the focus anchor, cells are the visible target.
+
+---
+
+## Future work — post-Phase 9
+
+### The `.flat` / `.flush` rollout
+
+The framework's surface-dissolution modifier family is the active cross-cutting push. The shared style contract and per-element matrix below are the authoring guide for every remaining variant.
+
+#### Shared style contract — `.flat`
+
+Every `{tag}.flat` rule consumes the same shape; the element baseline is what differs.
+
+```scss
+{tag}.flat {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+
+    // Hover reveal — subtle backdrop + framework neutral border.
+    // Excludes disabled / readonly / invalid / focus-visible so each owns its own state.
+    &:hover:not(:disabled):not([readonly]):not(:focus-visible):not(:user-invalid) {
+        background-color: color-mix(in oklab, currentColor 4%, transparent);
+        border-color: var(--color-border);
+    }
+
+    // Focus promotes to the element's variant focus chrome.
+    &:focus-visible {
+        outline: none;
+        // Each element re-states its own --set-{tag}-focus-border-color
+        // and --set-{tag}-focus-box-shadow + restores its background.
+    }
+
+    // Validation chain unchanged — element baseline's :user-invalid rule
+    // would lose to the modifier layer; restate the danger border here.
+    &:user-invalid { border-color: var(--color-danger); }
+
+    // Forced-colors fallback so HC mode still outlines the control.
+    @include forced-colors {
+        background-color: Field;
+        border-color: ButtonText;
+    }
+}
+```
+
+#### Shared style contract — `.flush`
+
+```scss
+{tag}.flush {
+    margin: 0;
+    border: 0;
+    border-radius: inherit;
+    box-shadow: none;
+    inline-size: 100%;
+    block-size: 100%;
+    min-block-size: 100%;
+    align-self: stretch;
+    background-color: transparent;
+
+    // Discoverability backdrop — visible on hover AND focus so the user
+    // can SEE the engaged element (without it, a focused flush input is
+    // indistinguishable from the surrounding cell content).
+    &:hover:not(:disabled):not([readonly]):not(:user-invalid),
+    &:focus-visible:not(:disabled):not([readonly]):not(:user-invalid) {
+        background-color: color-mix(in oklab, currentColor 4%, transparent);
+    }
+
+    &:focus-visible { outline: none; }
+
+    @include forced-colors {
+        background-color: Field;
+    }
+}
+```
+
+Notes that apply to every flush rule:
+
+- **`<td>` parents need `block-size: 1px` on the cell** — the legacy table-cell height trick. Without it, percentage-height children of `<td>` fall back to `auto` on every engine.
+- **`border-radius: inherit`** picks up the host's curvature (cards, list-group items, expansion panels all set their own corners).
+- **No own focus ring** — `outline: none` plus the discoverability backdrop is the entire focus indicator. The host surface is expected to declare a `:focus-within` ring if it wants one.
+- **Flush is content-agnostic** — same shape for inputs, buttons, links, articles, media. Per-element quirks (below) are the SHAPE of the host fill, not the contract.
+
+#### Per-element applicability matrix
+
+Tier ordering follows authoring priority — Tier 1 is shipped, Tier 2 is highest-value next, Tier 5 is stretch.
+
+| Element                                    | `.flat`                         | `.flush` | Notes / quirks                                                                                                                                                                                                                       |
+| ------------------------------------------ | ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Tier 1 — shipped**                       |                                 |          |                                                                                                                                                                                                                                      |
+| `input`                                    | ✅                              | ✅       | Element-baseline padding preserved on `.flush` (padding-inline only — block-axis zeroed for height-fill).                                                                                                                            |
+| `select`                                   | ✅                              | ✅       | Chevron mask (`--set-select-background-image`) — flush keeps the chevron via element's own background-image cascade.                                                                                                                 |
+| `textarea`                                 | ✅                              | ✅       | `resize: vertical` + `field-sizing: content` baseline preserved; flush only drops chrome.                                                                                                                                            |
+| `button`                                   | ⬜ (Tier 2)                     | ✅       | Flush button: all padding zeroed (text/icon centers against host's content box).                                                                                                                                                     |
+| `ul.group` / `ol.group`                    | —                               | ✅       | Predates the split; semantic aligned with the new flush family. Audit: confirm hover backdrop alignment with the new contract.                                                                                                       |
+| **Tier 2 — highest value**                 |                                 |          |                                                                                                                                                                                                                                      |
+| `a`                                        | ⬜                              | ⬜       | `.flat`: drop underline at rest, restore on hover. `.flush`: link fills the host (tile-as-link); drop underline + color shift, inherit foreground. Host's `:focus-within` paints focus ring.                                         |
+| `details`                                  | ⬜                              | ⬜       | `.flat`: drop outer border, hover reveal, summary chrome intact. `.flush`: accordion-item shape — parent group owns the boundary, `<details>` dissolves outer chrome and shares the parent's radius. `[open]` state still indicates. |
+| `aside[role='alert']`                      | ⬜                              | ⬜       | `.flat`: low-emphasis inline note that brightens on hover. `.flush`: divider band inset into a card or sidebar; drops outer border + radius.                                                                                         |
+| `dialog`                                   | —                               | ⬜       | Modal at rest IS its chrome; flat doesn't apply. `.flush` scoped to `dialog[open]:not(:modal)` (inline non-modal); drops outer border + radius, keeps header / footer pin chrome.                                                    |
+| `button`                                   | ⬜                              | ✅       | `.flat` for toolbar / inline action chips — overrides variant background fill at rest, restores on hover. Distinct from `.subtle` (which keeps full chrome but drops variant fill); flat dissolves the chrome entirely.              |
+| **Tier 3 — container surfaces**            |                                 |          |                                                                                                                                                                                                                                      |
+| `article`                                  | ⬜                              | ⬜       | `.flat`: card chrome dissolves at rest (use for nested cards). `.flush`: outer chrome entirely dropped (nested card inside another article or list-group row).                                                                       |
+| `fieldset`                                 | ⬜                              | ⬜       | `.flat`: drop border at rest. `.flush`: drop all outer chrome. CAVEAT: `<legend>` notch — flush may need to suppress the legend's notch via `legend { float: left }` or similar.                                                     |
+| `form`                                     | —                               | ⬜       | `.flush`: fill card body. Form's internal vertical gap stays; only outer chrome (rarely present) dropped. Most useful as documentation that the form fills its container.                                                            |
+| `section`                                  | —                               | ⬜       | `.flush`: drop section padding for nested-section use (e.g. tab panel section that should butt against the tablist).                                                                                                                 |
+| **Tier 4 — media / embed surfaces**        |                                 |          |                                                                                                                                                                                                                                      |
+| `img`                                      | —                               | ⬜       | `.flush`: fill host slot with `object-fit: cover`; consumer sets `aspect-ratio` on the host or uses a height-1px wrapper.                                                                                                            |
+| `video`                                    | —                               | ⬜       | Same as `img.flush`; framework's tinted backplate (`--set-video-background-color`) overridable per-instance.                                                                                                                         |
+| `iframe`, `embed`, `object`                | —                               | ⬜       | `.flush`: fill embed slot. Aspect ratio is the consumer's responsibility.                                                                                                                                                            |
+| `canvas`, `svg`                            | —                               | ⬜       | `.flush`: fill bitmap / vector slot. `svg.flush` retains `preserveAspectRatio`.                                                                                                                                                      |
+| **Tier 5 — class-components + rare cases** |                                 |          |                                                                                                                                                                                                                                      |
+| `.badge`, `.tag`                           | —                               | ⬜       | `.flush`: chip fills its slot (rare — usually badges sit inline). Audit need before authoring.                                                                                                                                       |
+| `.spinner`, `.skeleton`                    | —                               | ⬜       | `.flush`: fills loading region (skeleton fills card body during fetch). Common use case.                                                                                                                                             |
+| `.alert` (`<aside role='alert'>`)          | (same as `aside[role='alert']`) | (same)   | The `.alert` class-component IS `aside[role='alert']`; alignment audit when `aside` variant lands.                                                                                                                                   |
+| `menu`, `nav`                              | —                               | ⬜       | `.flush`: fill rail. Less common; consumer usually fills via `flex: 1 1 auto` on the rail body.                                                                                                                                      |
+| `label`, `legend`                          | —                               | ⬜       | `.flush`: fill card body label area. Rare but consistent.                                                                                                                                                                            |
+
+#### Elements where neither modifier applies
+
+For completeness — explicitly **not** in scope:
+
+- **Pure-text elements** (`p`, `blockquote`, `code`, `kbd`, `mark`, `samp`, `small`, `strong`, `em`, `i`, `u`, `time`, `data`, `var`, etc.) — inline-flow, chrome IS the content; dissolving makes them invisible.
+- **Reset elements** (`html`, `body`, `h1`–`h6`, `hr`, `ol`, `ul`, `li` outside `.group`) — no chrome to dissolve.
+- **Class-only primitives without chrome** (`.dot`) — already minimal.
+- **Top-layer toast** (`<output popover>`) — chrome IS the floating geometry; flush doesn't apply.
+- **`<table>` itself** — table's chrome is per-cell, not per-table.
+
+#### Button-group logic (parallel audit)
+
+The framework's current "group" pattern lives on `<ul class="group">` / `<ol class="group">` (declared in `_ul.scss` + `_li.scss`). There's no dedicated button-group pattern (Bootstrap's `.btn-group` shape — adjacent buttons sharing borders, end-cap radius on first / last; framework currently uses `[role="group"]` declared in `components/_role-group.scss`). Audit:
+
+- ⬜ Confirm `[role="group"]` is the canonical button-group host (it is — `components/_role-group.scss` handles overlap-border, first / last radius, vertical orientation).
+- ⬜ Adjacent-border collapse uses negative `margin-inline-start` on `button + button` — same idiom as `nav[aria-label='Pagination']`. Already shipped; verify the parity.
+- ⬜ Variant cascading: a single `<div role="group" class="success">` should tint every button inside. Today buttons don't inherit variant via parent context. Audit whether this is desirable (might conflict with mixed-variant button rows).
+
+#### Authoring phases
+
+Each phase ships:
+
+1. SCSS rules in `modifiers/_local.scss` (extending the existing flat/flush blocks).
+2. Demo on the matching element page (or a dedicated section on the appropriate Use\*Page).
+3. `_local.test.ts` charter assertions land automatically as rules are added.
+4. Doc updates in [modifiers.md](modifiers.md) and the affected element row in [taxonomy.md](taxonomy.md).
+
+| Phase | Scope                                                                                 | Demo home(s)                                                           |
+| ----- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| A     | `ul.group.flush` / `ol.group.flush` alignment audit + hover parity                    | ListsPage `<ul class="group flush">` demo update                       |
+| B     | `details.flat` / `details.flush`                                                      | DetailsPage + UseDetailsPage (accordion-item shape demo)               |
+| C     | `aside.flat` / `aside.flush` (for `role='alert'`)                                     | AsidePage callout / alert variations                                   |
+| D     | `dialog.flush`                                                                        | DialogElementPage + UseDialogPage (inline non-modal inset into a card) |
+| E     | `a.flat` / `a.flush`                                                                  | AnchorPage tile-as-link demo + ArticleCardPage clickable-card demo     |
+| F     | `button.flat`                                                                         | ButtonPage toolbar / inline-action-chip demo                           |
+| G     | `article.flush` / `fieldset.flat` / `fieldset.flush` / `form.flush`                   | ArticleCardPage nested cards + FormControlsPage + FormSurfacesPage     |
+| H     | Media `.flush` (`img`, `video`, `iframe`, `embed`, `object`, `canvas`, `svg`)         | MediaPage hero-image demo + FiguresPage embed-fill demo                |
+| I     | Class-component alignment (`.alert.flush`, `.spinner.flush`, `.skeleton.flush`, etc.) | InlineAtomsPage loading-state demos                                    |
+
+#### Audit deliverable
+
+By the end of the rollout:
+
+1. Every element in the matrix has its `.flat` / `.flush` rule declared in `modifiers/_local.scss` (or aligned to the existing precedent in its element partial, e.g. `ul.group.flush` in `_ul.scss`).
+2. [modifiers.md](modifiers.md) gains a new section naming `.flat` as the "transparent-rest, full-chrome-on-engagement" family and `.flush` as the "no-chrome-ever, fuse-into-parent" family — with the shared style contracts above as the reference.
+3. Each affected row in [taxonomy.md](taxonomy.md) gets a `flat` / `flush` annotation in its "Framework usage" column.
+4. The `_local.test.ts` charter test stays green (taxonomy entry + non-cross-cutting name + no Tailwind collision — automatic as rules land).
+5. A dedicated section on the appropriate Use\*Page or a new `FlatAndFlushPage` enumerates every variant side-by-side for visual + interaction parity.
 
 ### Token surface refinements
 
@@ -275,91 +394,14 @@ Identified but not started. Open the matching contribute.md workflow when pickin
 - ⬜ **Element-local modifier consolidation** — survey component partials for `{tag}.{modifier}` rules that should migrate to `modifiers/_local.scss` (e.g. `form.row` in `components/_form.scss`).
 - ⬜ **Page-shell uniformity** — `_main.scss` declares minimum tokens to satisfy the page-shell group; revisit whether `main` belongs in the group or warrants its own contract.
 
-### `.flat` and `.flush` — surface-dissolution modifier family (systematic per-element treatment)
-
-The framework now distinguishes two surface-dissolution idioms that consumers commonly want when an element nests inside another surface (table cell, card body, list-group row, accordion item, drawer body):
-
-- **`.flat`** — transparent at rest, hover reveal, focus promotes to the element's full bordered baseline (+ variant focus ring + `:user-invalid` danger border). Keeps the element's own padding + intrinsic size. The element STILL declares its chrome; the chrome just fades at rest. Use when the element should _signal_ it's interactive on engagement (text fields where the user needs to know where the caret will land).
-- **`.flush`** — no margin / border / radius / ring at any state; inherits the parent's `border-radius`; fills the host's content box on both axes (`inline-size: 100%` + `block-size: 100% / min-block-size: 100% / align-self: stretch`). The HOST owns the boundary; the element is fused into it. Use when the surrounding cell / tile / card body is the visual chrome and the element should occupy every pixel inside it. For `<td>` parents specifically, the legacy `<td style="block-size: 1px">` trick coerces the cell to its row's intrinsic height so the percentage-height child resolves cleanly — required because percentage block-size on a child of `<td>` falls back to `auto` without it.
-
-Currently shipped:
-
-- ✅ **`ul.group.flush` / `ol.group.flush`** — list-group inset variant (drops outer border + radius for sidebar-inset use). Declared in `elements/_ul.scss`. Predates the `.flat` / `.flush` split; its semantic is closest to the new `.flush` family (drop outer chrome, fuse into parent). Document the alignment when the audit reaches it.
-- ✅ **`input.flat` / `select.flat` / `textarea.flat`** — inline-edit form controls in `modifiers/_local.scss`. Consumed by `UseTablePage` §5a for table-cell editing without falling back to `contenteditable`.
-- ✅ **`input.flush` / `select.flush` / `textarea.flush` / `button.flush`** — fuses the element into the host on both axes. Consumed by `UseTablePage` §5b for cell-as-surface editing + full-area CTAs.
-
-Still to author — both `.flat` and `.flush` variants where applicable; pick the right shape per element:
-
-- ⬜ **`a.flat` / `a.flush`** — link inside a list-group row, card, or tile. `.flat` underlines on hover; `.flush` makes the entire host clickable (the link IS the surface — fills the host, inherits radius, no own chrome). Useful for "click anywhere on the card to navigate."
-- ⬜ **`details.flat` / `details.flush`** — `.flat` drops the disclosure's outer border for inline use; `.flush` is the accordion-item shape (the parent group owns the boundary, the `<details>` dissolves outer chrome and shares its radius with the parent). Note: `.flat` placeholder is already in the `modifiers/_local.scss` charter; needs an actual rule.
-- ⬜ **`dialog.flush`** — inline non-modal dialog without its own border / radius (drops into a card body or expansion panel). The header / footer pin chrome stays; only the outer surface dissolves.
-- ⬜ **`aside.flush` for `role='alert'`** — banner alerts inset into a card or sidebar drop their outer border + radius, becoming a horizontal divider band. May also benefit from `.flat` (low-emphasis inline note that brightens on hover).
-- ⬜ **`button.flat` for inline action chips** — toolbar buttons inside a list-group row / table cell that should read as text-with-affordance until hovered. Distinct from `.subtle` (which keeps its full chrome but drops the variant fill).
-- ⬜ **`textarea.flush` cell-content** — the same flush semantic for multi-line cell editing; `field-sizing: content` already lets the textarea grow, so the flush variant just drops the chrome.
-- ⬜ **`label.flush`** — fills a card body label area; rarer use case but consistent.
-
-Button-group logic:
-
-The framework's current "group" pattern lives on `<ul class="group">` / `<ol class="group">` (declared in `_ul.scss` + `_li.scss`). There's no dedicated button-group pattern (Bootstrap's `.btn-group` shape — adjacent buttons sharing borders, end-cap radius on first / last). Audit:
-
-- ⬜ Decide whether button-group joins are a `<menu>`-carrier pattern (`<menu class="group">` mirroring the list-group), a `<div role="group">` with descendant button styling, or a fieldset toolbar shape.
-- ⬜ Adjacent-border collapse via negative margin-inline-start on `button + button` (same idiom as `nav[aria-label='Pagination']`).
-- ⬜ Variant cascading: a single `<div class="group success">` should tint every button inside; today buttons don't inherit variant via parent context.
-
-Audit deliverable:
-
-1. List every element that currently nests inside another framework surface (card body, list-group item, accordion item content, table expansion panel, drawer body, dialog body, tile inside a grid).
-2. For each, decide whether the nested element should compose its full chrome (no modifier), dissolve chrome on engagement (`.flat`), or fuse into the parent (`.flush`).
-3. Add the missing `{tag}.flat` / `{tag}.flush` rule to `modifiers/_local.scss` (or to the element partial if a precedent is already there, e.g. `ul.group.flush` in `_ul.scss`).
-4. Document the pattern in [modifiers.md](modifiers.md) — name `.flat` as the "transparent-rest, full-chrome-on-engagement" family and `.flush` as the "no-chrome-ever-at-any-state, fuse-into-parent" family.
-5. Add `_local.test.ts` charter assertions for the new rules (taxonomy entry + non-cross-cutting name + no Tailwind collision — the existing test covers this automatically as the rules land).
-
-### Future enhancements
-
-- ✅ **Toast swipe-to-dismiss** — shipped. `createToast` composes the existing `createPointer` factory to wrap the `pointerdown → pointermove* → pointerup` lifecycle; the move handler writes `--set-toast-swipe-offset` per frame which `_toast.scss` consumes via the STANDALONE `translate` property (composes with the deck's `transform: translateY()` without clobbering — CSS Transforms 2 final transform = transform × translate × rotate × scale). Bidirectional horizontal — interaction model is "touch the bounds, dismiss" (parallel to UsePointerPage Demo 4's `clear()`-at-max-extent idiom): the visual translate is CAPPED at `--set-toast-swipe-threshold` (default 5rem ≈ 80 px, retunable via `swipe: { threshold: <px> }`), and the moment `|dx|` reaches the threshold the move handler auto-commits dismiss without waiting for `pointerup` (sets `--set-toast-swipe-offset: ±100vw` for the fly-off animation, calls `pointer.clear()` to end the drag programmatically, then `hide()`). Below threshold + release snaps back via the motion-contract transition (gated on `:not([data-toast-swiping])`). Opacity tapers across the swipe with a 0.4 floor at the bound (not 0 — keeps the toast readable mid-swipe so users can hesitate without it disappearing before they decide). A `committed` latch in the move handler suppresses trailing pointer events after auto-dismiss; the `end` handler short-circuits when committed so the inline styles stay in place for the close fly-off. Mobile contract: `touch-action: pan-y` declared on `output[popover]` AT REST (not only on `[data-toast-swiping]`) — mobile browsers consult `touch-action` ONCE at the touchstart edge, so attribute-gated declarations land too late and the browser claims horizontal swipes for its own default actions (page-pan / iOS swipe-back); same idiom `components/_menu.scss:211` uses for top-layer-popover nav items. Strengthened `accept` predicate rejects pointer-down on every interactive descendant (`a, button, input, textarea, select, [role="button"]`) so action buttons / links / form controls inside the toast still click — the previous version rejected only `<button>` and would have hijacked link / input clicks into swipe gestures. Deck-mode pin: a `:has(> output[popover][data-toast-swiping])` rule keeps the container expanded mid-swipe (same idiom as the existing `[data-toast-stack-closing]` pin during hide transitions). `show()` clears the swipe inline state defensively so a re-shown toast doesn't reappear off-screen after a previous commit-dismiss; the `close` lifecycle clears too as belt-and-suspenders. Demo: §7 of UseToastPage with a swipe-enabled toast + a `swipe: false` control. Probes: `scripts/probe-swipe.mjs` and `scripts/probe-touch-swipe.mjs` (CDP `Input.dispatchTouchEvent` with `hasTouch: true`, `isMobile: true`) exercise commit-at-bound, snap-back-below-bound, button-click-rejection, disabled-swipe-no-op, and the full mobile touch path.
-
-### Native-platform redundancy audit (per-composable strip candidates)
-
-After the `createAside` strip (close latency 400 ms → 73 ms by dropping dead `[data-aside-open]` / `[data-aside-closing]` writes + the `runTransition` wait that preceded the native lifecycle call), every other factory was audited against the same marker list:
-
-1. **Dead lifecycle attributes** — `setAttribute('data-X-{open,closing,opening,…}')` calls whose attribute is not referenced anywhere in `src/styles/`.
-2. **`runTransition` BEFORE the native lifecycle call** — e.g. waiting on `transitionend` and then calling `hidePopover()` inside the callback. The transition can't have started because the native call hasn't been made.
-3. **Re-implemented Escape / outside-click dismiss** when the platform already provides it via `popover="auto"`.
-4. **JS-driven ARIA chrome** (`aria-modal`, `role`, `inert`) the consumer markup could declare directly.
-5. **Hand-written `lockBodyScroll`** when the platform already pins the page (modal `<dialog>`, top-layer popovers).
-6. **Cancellable wrappers around natively non-cancellable events** (`beforetoggle` for popover is informational only — `preventDefault()` on a wrapper that's already called the native method doesn't undo anything).
-
-Results — every factory in `src/browser/factories/`:
-
-#### Clean (no action) — confirmed by direct read
-
-- `createButton`, `createDialog`, `createMenu`, `createPopover`, `createTooltip`, `createFocus`, `createDrag`, `createDrop`, `createPointer`, `createTheme`, `createNav`, `createDetails`, `createForm`, `createTable`, `createCarousel`, `createSelect`, `createToast` — either lean shims, or every JS-driven attribute is consumed by CSS, or the `runTransition` is correctly called AFTER the native lifecycle method (so it waits on a real platform-triggered transition).
-
-The frequently-misread cases worth recording:
-
-- **`createDialog`**: `runTransition` is called AFTER `element.showModal()` / `element.close()`, so it's waiting on the actual entry / exit transition. Not the same as the aside anti-pattern.
-- **`createTooltip`**: the document-level Escape keydown listener IS correct — WAI-ARIA APG explicitly recommends Escape dismissal for tooltips. (The factory uses `popover="manual"` because hover / focus trigger semantics are JS-driven; the auto-light-dismiss the platform gives to `popover="auto"` is also not what tooltips want.)
-- **`createPopover`**: same — uses `popover="manual"` deliberately and re-implements Escape + outside-click. Not redundant.
-- **`createToast`**: `runTransition` IS called after `popover.show()` / `popover.hide()`, and the `[data-toast-stack*]` attributes ARE consumed by `composables/_toast.scss` (verified: 29 grep hits in `src/styles/`).
-- **`createForm`**: `[data-form-validated]` and `aria-invalid` are both consumed by `components/_form.scss` + `elements/_form.scss`.
-
-#### Automated guard
-
-The "factory `setAttribute('data-*', …)` writes must have a `src/styles/` reference" contract is now enforced by [`tests/src/styles/_native-redundancy.test.ts`](../tests/src/styles/_native-redundancy.test.ts). Adding a dead-attribute write to a factory fails the parity suite at commit time. Legitimately JS-only attributes opt in via the `JS_ONLY` map in that test file, with a one-line rationale each. This catches the `createAside` / `createTabs` class of bug going forward.
-
-#### Strip candidates — act when the matching `Use*Page` is authored
-
-- ✅ **`createTabs` strip + visibility bug** — shipped alongside UseTabsPage in §9.2. The factory used to write `[data-tab-open]` that no SCSS file referenced, AND toggled `[aria-hidden]` while the pane-hide chrome on `components/_nav.scss` keyed off the HTML `[hidden]` attribute. Panels didn't visually hide on switch. Stripped: dropped the dead attribute, switched the hide mechanism to `[hidden]`, dropped the `runTransition` machinery (was waiting on a `transitionend` event the chrome doesn't declare). Factory shrunk 200 → 158 lines.
-- ✅ **`createTable` `[data-collapsing]` strip** — shipped alongside UseTablePage in §9.2. Dropped the inline-style height tween (`style.height = '0' → scrollHeight` with `runTransition` wait), the `data-collapsing` marker, the `expansion.animate` option, and the `[hidden]` panel toggle (replaced with `[inert]` so the CSS `block-size` tween isn't frozen by `display: none`). `JS_ONLY` exception removed; factory dropped ~80 lines; `runTransition` import dropped from `createTable.ts`. The CSS-driven animation via `interpolate-size: allow-keywords` on `tr[data-table-expanded] + tr > td > [data-table-expansion-panel]` is now the only animation contract — uniform with `<details>` and every other framework disclosure.
-
 ### Floating-surface styling pass (toast + popover + tooltip + menu-popover)
 
 The framework's floating-surface family (`<output popover>` toasts, generic `[popover]`, `[popover=hint]` tooltips, `<menu popover>` dropdowns, in-flow callouts on `<aside>`, modal chrome on `<dialog>`) already shares the same `--set-popover-*` surface tokens for fill / border / radius / shadow / transition. The per-surface chrome has accumulated without a single styling-philosophy pass to confirm:
 
-- ⬜ **Visual language uniformity** — each floating surface paints chrome (corner radius, elevation, padding, border) that reads as one family across the framework. Verify the bare-popover, toast, tooltip, dropdown all reach for the same surface tokens (vs. each declaring its own one-off literal). Decide which differences are meaningful (toast: deck offset; tooltip: smaller padding; dropdown: row chrome) and which are accidental drift.
-- ⬜ **Surface-vs-placement separation** — placement modifiers (`.top`, `.bottom-start`, etc.) live in `modifiers/_placements.scss` and apply to every `[popover]` host. Surface chrome lives in `surfaces/_popover.scss` + per-component partials. Confirm the boundary: placement modifiers should set position only (`position-area` + alignment); surfaces own background, border, shadow, radius, padding. No surface partial should hardcode a placement; no placement modifier should reach into surface tokens.
-- ⬜ **Toast-vs-alert disambiguation across the framework** — the alert (`<aside role="alert">`) is an in-flow banner; the toast (`<output popover>`) is a top-layer transient. They share the variant palette (bg-subtle / text-emphasis / border-subtle) but NOT the geometry (banner fills parent; toast is corner-anchored). Audit every page + guide for language conflating the two.
-- ⬜ **Tooltip + dropdown styling parity** — currently the popover surface paints `[popover]:not(:where(aside, dialog, nav))` with scale-in chrome (the generic popover entry transition). Verify tooltips (`[popover=hint]`) inherit cleanly without override drift, and that dropdown menus (`<menu popover>`) keep their row chrome from `_menu.scss` without fighting the surface defaults.
+- ⬜ **Visual language uniformity** — each floating surface paints chrome (corner radius, elevation, padding, border) that reads as one family. Verify the bare-popover, toast, tooltip, dropdown all reach for the same surface tokens (vs. each declaring its own one-off literal). Decide which differences are meaningful (toast: deck offset; tooltip: smaller padding; dropdown: row chrome) and which are accidental drift.
+- ⬜ **Surface-vs-placement separation** — placement modifiers (`.top`, `.bottom-start`, etc.) live in `modifiers/_placements.scss` and apply to every `[popover]` host. Surface chrome lives in `surfaces/_popover.scss` + per-component partials. Confirm the boundary: placement modifiers should set position only (`position-area` + alignment); surfaces own background, border, shadow, radius, padding.
+- ⬜ **Toast-vs-alert disambiguation across pages + guides** — audit every page + guide for language conflating the two.
+- ⬜ **Tooltip + dropdown styling parity** — currently `surfaces/_popover.scss` paints `[popover]:not(:where(aside, dialog, nav))` with scale-in chrome. Verify tooltips (`[popover=hint]`) inherit cleanly without override drift, and dropdown menus (`<menu popover>`) keep their row chrome without fighting surface defaults.
 
 Outcome: one styling philosophy across every floating surface, codified in [surfaces.md](surfaces.md) § "Floating surface family" and enforced by a parity test that asserts each surface declares the canonical token superset.
 
