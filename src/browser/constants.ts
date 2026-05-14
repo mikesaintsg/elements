@@ -28,6 +28,8 @@
 
 export const DEFAULT_HOVER_DELAY_MS = 600
 export const DEFAULT_TOAST_DELAY_MS = 5000
+/** Swipe-distance threshold (in CSS pixels) past which the toast commits to dismiss. */
+export const DEFAULT_TOAST_SWIPE_THRESHOLD_PX = 80
 export const DEFAULT_CAROUSEL_INTERVAL_MS = 5000
 export const DEFAULT_FLOATING_OFFSET = 8
 export const DEFAULT_MENU_OFFSET = 2

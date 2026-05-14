@@ -836,6 +836,17 @@ export interface UseToastEventMap {
 export interface CreateToastOptions {
 	/** `false` keeps the toast sticky. Object enables auto-hide with optional delay. */
 	readonly autohide?: false | { readonly delay?: number }
+	/**
+	 * Swipe-to-dismiss gesture. `false` disables; object enables with optional
+	 * threshold override (CSS pixels, default 80 — distance the pointer must
+	 * travel along the inline axis before release commits to dismiss). The
+	 * gesture is bidirectional horizontal (swipe left OR right), composes
+	 * with the deck `transform: translateY()` via the standalone `translate`
+	 * property, and dispatches the cancellable `elements:toast:hide` event
+	 * on commit so consumers can veto. Pointer-down on the trailing
+	 * `<button>` dismiss is ignored so button clicks survive.
+	 */
+	readonly swipe?: false | { readonly threshold?: number }
 	readonly on?: Partial<UseToastEventMap>
 }
 

@@ -33,11 +33,20 @@
  * the static element surface in `src/styles/elements/_output.scss`.
  * This page proves the JS / chrome interaction.
  *
- * Audit note: the framework's prior docs claimed "swipe-to-dismiss"
- * for toast. After auditing the factory directly (`createToast.ts`
- * has no `pointerdown` / `pointermove` / `touch*` handlers), the
- * claim was struck from the guides. The composable supports
- * pause / resume via pointer + focus only.
+ *   6. **Swipe-to-dismiss.** Bidirectional horizontal — flick the toast
+ *      left or right with mouse or touch; the factory composes
+ *      `createPointer` to capture the `pointerdown → pointermove* →
+ *      pointerup` lifecycle, writes `--set-toast-swipe-offset` per
+ *      frame (consumed by `_toast.scss` via the standalone `translate`
+ *      property so it composes with the deck's `transform: translateY`),
+ *      and on release: commits dismiss if `|dx| > --set-toast-swipe-
+ *      threshold` (default 5 rem ≈ 80 px) by firing the cancellable
+ *      `elements:toast:hide`, OR snaps back to origin via the motion-
+ *      contract transition. Pointer-down on the trailing `<button>`
+ *      dismiss is rejected via `accept` so button clicks survive.
+ *      Composes inside `[data-toast-stack]` (deck mode) — any visible
+ *      card can be swiped; the container pin keeps the deck expanded
+ *      mid-swipe.
  */
 import { ref, useTemplateRef } from 'vue'
 import { useToast } from '@elements/browser'
@@ -149,7 +158,34 @@ const bandHeader = useToast(bandHeaderRef, { autohide: false })
 const bandFooter = useToast(bandFooterRef, { autohide: false })
 
 // ─────────────────────────────────────────────────────────────────────
-// Demo 7 — cancellable lifecycle. preventDefault on on.show vetoes.
+// Demo 7 — swipe-to-dismiss. Bidirectional horizontal swipe commits
+// dismiss when displacement exceeds --set-toast-swipe-threshold; below
+// threshold snaps back via motion-contract transition. The lifecycle
+// log on the right shows show / open / hide / close events as they fire
+// so the user can confirm the swipe path runs the cancellable hide.
+// ─────────────────────────────────────────────────────────────────────
+const swipeRef = useTemplateRef<HTMLOutputElement>('swipeRef')
+const swipeLog = ref<string[]>([])
+const noteSwipe = (line: string): void => {
+	swipeLog.value = [...swipeLog.value.slice(-5), line]
+}
+const swipe = useToast(swipeRef, {
+	autohide: false,
+	on: {
+		show: () => noteSwipe('show'),
+		open: () => noteSwipe('open'),
+		hide: () => noteSwipe('hide (dismissed by swipe or button)'),
+		close: () => noteSwipe('close'),
+	},
+})
+
+// Disabled-swipe demo so the contrast is visible — `swipe: false`
+// keeps the dismiss button as the only path.
+const noSwipeRef = useTemplateRef<HTMLOutputElement>('noSwipeRef')
+const noSwipe = useToast(noSwipeRef, { autohide: false, swipe: false })
+
+// ─────────────────────────────────────────────────────────────────────
+// Demo 8 — cancellable lifecycle. preventDefault on on.show vetoes.
 // ─────────────────────────────────────────────────────────────────────
 const lifecycleRef = useTemplateRef<HTMLOutputElement>('lifecycleRef')
 const lifecycleLog = ref<string[]>([])
@@ -614,8 +650,69 @@ const toast = useToast(ref) // default autohide
 		</details>
 	</section>
 
+	<section id="use-toast-swipe">
+		<h2>7. Swipe-to-dismiss</h2>
+		<p>
+			Bidirectional horizontal swipe. Open the toast, then drag it left or right with a mouse or
+			touch — when displacement exceeds
+			<code>--set-toast-swipe-threshold</code> (default <code>5rem</code> ≈ 80 px), release commits
+			dismiss (firing the cancellable <code>elements:toast:hide</code>); below threshold, release
+			snaps back via the motion-contract transition. The factory composes
+			<a href="#/use-pointer"><code>createPointer</code></a> for the
+			<code>pointerdown → pointermove* → pointerup</code> lifecycle — pointer capture means the drag
+			persists even when the cursor leaves the toast bounds (a fast flick still commits).
+			<code>pointerdown</code> on the trailing <code>×</code> button is rejected via
+			<code>accept</code> so button clicks survive; vertical-first movement releases the toast to
+			the page so a parent scroll passes through.
+		</p>
+		<div class="toast-trigger">
+			<small class="renders-at">
+				Renders at <code>bottom-end</code>, swipe left or right to dismiss
+			</small>
+			<menu>
+				<li><button type="button" @click="swipe.show()">Show swipeable toast</button></li>
+				<li><button type="button" @click="swipe.hide()">Hide</button></li>
+				<li>
+					<button type="button" @click="noSwipe.show()">Show NON-swipeable (control)</button>
+				</li>
+			</menu>
+			<output ref="swipeRef" popover class="success">
+				<p>
+					<strong>Drag me.</strong> Swipe left or right past 80 px to dismiss, or use the
+					<code>×</code> button. Button clicks survive — the factory rejects pointer-down on
+					trailing controls.
+				</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="swipe.hide()">×</button>
+			</output>
+			<output ref="noSwipeRef" popover class="warning">
+				<p>
+					<strong>Swipe disabled.</strong> This toast was constructed with
+					<code>swipe: false</code>; dragging does nothing.
+				</p>
+				<button type="button" class="subtle" aria-label="Dismiss" @click="noSwipe.hide()">×</button>
+			</output>
+			<small class="lifecycle-log">
+				<strong>Lifecycle log:</strong>
+				<span v-if="swipeLog.length === 0">open the toast and swipe it to either side</span>
+				<span v-else>{{ swipeLog.join(' → ') }}</span>
+			</small>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre v-pre><code>const swipe = useToast(ref, {
+  autohide: false,
+  swipe: { threshold: 80 }, // default; pass `false` to opt out
+})
+
+&lt;output ref="ref" popover&gt;
+  &lt;p&gt;Drag me…&lt;/p&gt;
+  &lt;button aria-label="Dismiss"&gt;×&lt;/button&gt;
+&lt;/output&gt;</code></pre>
+		</details>
+	</section>
+
 	<section id="use-toast-lifecycle">
-		<h2>7. Cancellable lifecycle</h2>
+		<h2>8. Cancellable lifecycle</h2>
 		<p>
 			<code>on.show</code> fires BEFORE the popover entry with a cancellable
 			<code>CustomEvent</code>; <code>event.preventDefault()</code> aborts the open.

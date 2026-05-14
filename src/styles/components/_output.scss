@@ -128,6 +128,18 @@
 		// transparent)` — slight emphasis over the body bg).
 		--set-toast-band-background-color: color-mix(in srgb, currentColor 8%, transparent);
 		--set-toast-band-border-color: color-mix(in srgb, currentColor 12%, transparent);
+		// Swipe-to-dismiss — the factory writes the per-frame offset +
+		// opacity values via `element.style.setProperty()` during a
+		// `pointermove`. Defaults at rest are zero offset + full opacity.
+		// Threshold is the inline-axis distance the pointer must travel
+		// before `pointerup` commits to dismiss; consumers retune via
+		// the `useToast` option `swipe: { threshold: <px> }` (factory
+		// flag) and via this token (chrome reference). 5rem ≈ 80 px
+		// matches Material's mid-range; Sonner uses ~45 px (more
+		// permissive, leans into fast flicks).
+		--set-toast-swipe-offset: 0px;
+		--set-toast-swipe-opacity: 1;
+		--set-toast-swipe-threshold: 5rem;
 	}
 
 	// --------------------------------------------------------------------------

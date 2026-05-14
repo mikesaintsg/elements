@@ -1,6 +1,12 @@
-import type { CreatePopoverInstance, CreateToastInstance, CreateToastOptions } from '../types.js'
+import type {
+	CreatePointerInstance,
+	CreatePopoverInstance,
+	CreateToastInstance,
+	CreateToastOptions,
+} from '../types.js'
 import {
 	DEFAULT_TOAST_DELAY_MS,
+	DEFAULT_TOAST_SWIPE_THRESHOLD_PX,
 	TOAST_EVENTS,
 	TOAST_HIDDEN_COUNT_ATTR,
 	TOAST_STACK_ATTR,
@@ -15,6 +21,7 @@ import {
 	emit,
 	runTransition,
 } from '../helpers.js'
+import { createPointer } from './createPointer.js'
 import { createPopover } from './createPopover.js'
 
 /**
@@ -46,6 +53,9 @@ export function createToast(
 
 	const auto = options.autohide !== false
 	const delay = options.autohide === false ? 0 : (options.autohide?.delay ?? DEFAULT_TOAST_DELAY_MS)
+	const swipeEnabled = options.swipe !== false
+	const swipeThreshold =
+		options.swipe === false ? 0 : (options.swipe?.threshold ?? DEFAULT_TOAST_SWIPE_THRESHOLD_PX)
 
 	let timer: ReturnType<typeof setTimeout> | null = null
 	let transition: (() => void) | null = null
@@ -177,8 +187,20 @@ export function createToast(
 		},
 	)
 
+	const clearSwipeState = (): void => {
+		element.removeAttribute('data-toast-swiping')
+		element.style.removeProperty('--set-toast-swipe-offset')
+		element.style.removeProperty('--set-toast-swipe-opacity')
+	}
+
 	const show = (): void => {
 		const hidden = !popover.visible.value
+		// Always start from a clean swipe state — a previous commit-dismiss
+		// path leaves `--set-toast-swipe-offset: ±100vw` inline so the close
+		// animation can play out; without this reset the toast re-opens
+		// off-screen. Safe to call even on the re-show-while-open path
+		// (token defaults are zero offset + full opacity).
+		clearSwipeState()
 		popover.show()
 		if (!hidden || !popover.visible.value) return
 		schedule()
@@ -210,6 +232,13 @@ export function createToast(
 		transition = runTransition(element, () => {
 			transition = null
 			emit(element, TOAST_EVENTS.close)
+			// Reset the swipe overrides AFTER the close transition finishes
+			// so the commit-dismiss "fly off the inline-end edge" animation
+			// (driven by the inline `--set-toast-swipe-offset: ±100vw` the
+			// pointer-end handler wrote) plays out cleanly before we wipe
+			// the tokens. Belt-and-suspenders with the clear in `show()`
+			// — covers the case where a consumer doesn't reopen the toast.
+			clearSwipeState()
 			if (decking && container) {
 				requestAnimationFrame(() => container.removeAttribute(TOAST_STACK_CLOSING_ATTR))
 			}
@@ -229,20 +258,101 @@ export function createToast(
 		{ name: 'focusout', handler: resume },
 	])
 
+	// ── Swipe-to-dismiss ─────────────────────────────────────────────────
+	// Composes `createPointer` to capture the `pointerdown → pointermove* →
+	// pointerup` lifecycle. Setup is consciously thin: the factory writes
+	// `--set-toast-swipe-offset` (inline-axis displacement) and
+	// `--set-toast-swipe-opacity` (fade) per frame; `_toast.scss` composables-
+	// layer rules consume those tokens via `translate` (standalone property
+	// composes with the deck's `transform: translateY()`) and `opacity`,
+	// gating the snap-back transition on the absence of `[data-toast-
+	// swiping]`. Bidirectional horizontal — either direction commits when
+	// `|dx| > threshold`. The `accept` predicate rejects pointer-downs on
+	// the trailing dismiss `<button>` (so button clicks survive) and
+	// non-primary buttons.
+	let pointer: CreatePointerInstance | null = null
+	if (swipeEnabled) {
+		let startX = 0
+		let startY = 0
+		let axisLocked: 'inline' | 'block' | null = null
+		const LOCK_THRESHOLD = 6 // px before we commit to an axis
+		pointer = createPointer(element, {
+			accept: (event) => {
+				if (event.button !== 0) return false
+				if (!popover.visible.value) return false
+				const target = event.target
+				if (target instanceof Element && target.closest('button')) return false
+				return true
+			},
+			on: {
+				start: (event) => {
+					startX = event.clientX
+					startY = event.clientY
+					axisLocked = null
+					pause()
+					element.setAttribute('data-toast-swiping', '')
+				},
+				move: (event) => {
+					const dx = event.clientX - startX
+					const dy = event.clientY - startY
+					if (axisLocked === null) {
+						const absDx = Math.abs(dx)
+						const absDy = Math.abs(dy)
+						if (absDx < LOCK_THRESHOLD && absDy < LOCK_THRESHOLD) return
+						axisLocked = absDx >= absDy ? 'inline' : 'block'
+					}
+					if (axisLocked !== 'inline') {
+						// User started a vertical movement — release axis to the
+						// host (page scroll). We don't dismiss on vertical swipes.
+						return
+					}
+					element.style.setProperty('--set-toast-swipe-offset', `${dx}px`)
+					const opacity = Math.max(0, 1 - Math.abs(dx) / (swipeThreshold * 2))
+					element.style.setProperty('--set-toast-swipe-opacity', String(opacity))
+				},
+				end: (event) => {
+					element.removeAttribute('data-toast-swiping')
+					const dx = event.clientX - startX
+					if (axisLocked === 'inline' && Math.abs(dx) > swipeThreshold) {
+						// Commit dismiss — translate off the inline-end edge then
+						// fire `hide()`. The hide path runs the popover lifecycle,
+						// which dispatches the cancellable `elements:toast:hide`
+						// event; if a consumer vetoes, the snap-back applies on
+						// the next frame because the inline style is still set.
+						const sign = Math.sign(dx) || 1
+						element.style.setProperty('--set-toast-swipe-offset', `${sign * window.innerWidth}px`)
+						element.style.setProperty('--set-toast-swipe-opacity', '0')
+						hide()
+						return
+					}
+					// Snap back to origin — clear the inline overrides so the CSS
+					// transition (defined in `_toast.scss`) carries us home.
+					element.style.removeProperty('--set-toast-swipe-offset')
+					element.style.removeProperty('--set-toast-swipe-opacity')
+					resume()
+				},
+			},
+		})
+	}
+
 	let destroyed = false
 	const destroy = (): void => {
 		if (!destroyed) {
 			destroyed = true
 			offBound()
 			offEl()
+			pointer?.destroy()
 			popover.destroy()
 		}
 		clearTimer()
 		cancelFrame()
 		cancelTransition()
 		element.removeAttribute(TOAST_STACK_HIDDEN_ATTR)
+		element.removeAttribute('data-toast-swiping')
 		element.removeAttribute('aria-hidden')
 		element.style.removeProperty('--set-toast-stack-index')
+		element.style.removeProperty('--set-toast-swipe-offset')
+		element.style.removeProperty('--set-toast-swipe-opacity')
 		const container = element.parentElement
 		if (container?.hasAttribute(TOAST_STACK_ATTR)) {
 			container.removeAttribute(TOAST_HIDDEN_COUNT_ATTR)

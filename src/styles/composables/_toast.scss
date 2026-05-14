@@ -71,6 +71,84 @@
 @use '../mixins' as *;
 
 @layer composables {
+	// ── Swipe-to-dismiss surface ───────────────────────────────────────────────
+	// The factory (`createToast.ts` § swipe) writes two per-frame inline
+	// properties during a horizontal pointer drag:
+	//
+	//   --set-toast-swipe-offset    inline-axis displacement in px (signed)
+	//   --set-toast-swipe-opacity   visual fade (0–1)
+	//
+	// We consume them via the STANDALONE `translate` property — NOT the
+	// `transform` shorthand — so the swipe offset composes cleanly with the
+	// deck mode's `transform: translateY(...) scale(...)` (per CSS Transforms 2,
+	// final transform = transform × translate × rotate × scale). If we wrote
+	// `transform: translateX(...)` here it would clobber the deck's own
+	// transform on every move event.
+	//
+	// `[data-toast-swiping]` (set by the factory on pointerdown, removed on
+	// pointerup) gates the transition: while swiping, no transition — the
+	// translate follows the pointer 1:1; on release, the transition kicks in
+	// and either snaps the toast back to origin (consumer didn't pass
+	// threshold) or carries the off-screen translate the factory already
+	// wrote (consumer crossed threshold → commit dismiss). The motion-contract
+	// tokens (`--set-motion-duration` + `--set-motion-timing-function`) drive
+	// the snap so it feels like the rest of the framework's in-flow surfaces.
+	output[popover] {
+		translate: var(--set-toast-swipe-offset, 0px) 0;
+		opacity: var(--set-toast-swipe-opacity, 1);
+	}
+
+	output[popover]:not([data-toast-swiping]) {
+		@include transition(
+			(
+				translate var(--set-motion-duration) var(--set-motion-timing-function),
+				opacity var(--set-motion-duration) ease-out
+			)
+		);
+	}
+
+	output[popover][data-toast-swiping] {
+		// Active drag — no transition; translate follows pointer per-frame.
+		// `touch-action: pan-y` lets vertical page scroll pass through (the
+		// factory's axis-lock only commits horizontal drags). On commit,
+		// `cursor: grabbing` reinforces the affordance for mouse users.
+		transition: none;
+		cursor: grabbing;
+		// Defensive: while the pointer-capture lifecycle is active the deck
+		// container's `:has(:hover)` evaluation can flicker as the pointer
+		// crosses card edges; pin the closing-class equivalent via
+		// `[data-toast-swiping]` on the card so the deck doesn't snap shut
+		// mid-swipe.
+		touch-action: pan-y;
+	}
+
+	// While ANY visible deck card is being swiped, pin the deck expanded —
+	// same idiom as the `[data-toast-stack-closing]` pin used during a
+	// card's hide transition. Without this, swiping one card would let the
+	// container's `:has(:hover)` drop (the pointer leaves the swiped card's
+	// box) and the deck collapses mid-swipe.
+	[data-toast-stack]:has(> output[popover][data-toast-swiping]) > output[popover]:popover-open {
+		block-size: auto;
+		overflow: visible;
+		opacity: var(--set-toast-swipe-opacity, 1);
+		pointer-events: auto;
+		transform: translateY(
+			calc(
+				var(--set-toast-stack-index, 0) *
+					(var(--set-toast-front-height) + var(--set-toast-spacing)) * -1
+			)
+		);
+	}
+
+	[data-toast-stack][data-toast-position='top']:has(> output[popover][data-toast-swiping])
+		> output[popover]:popover-open {
+		transform: translateY(
+			calc(
+				var(--set-toast-stack-index, 0) * (var(--set-toast-front-height) + var(--set-toast-spacing))
+			)
+		);
+	}
+
 	// ── Linear stack — bottom-anchored (default) ──────────────────────────────
 	// Each toast lifts above the previous by its accumulated offset. The
 	// factory writes `--set-toast-stack-offset` as the sum of older toasts'
