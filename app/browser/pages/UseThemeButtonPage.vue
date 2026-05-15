@@ -49,11 +49,7 @@ import { useButton, useTheme } from '@elements/browser'
 // useTheme — singleton theme controller.
 // ─────────────────────────────────────────────────────────────────────
 const theme = useTheme()
-const themeOptions = [
-	{ value: 'light' as const, label: 'Light', icon: '☀️' },
-	{ value: 'dark' as const, label: 'Dark', icon: '🌙' },
-	{ value: 'system' as const, label: 'System', icon: '🖥️' },
-]
+import { THEME_BUTTON_OPTIONS as themeOptions } from '../constants.js'
 const isSystem = computed(() => theme.setting.value === 'system')
 
 // ─────────────────────────────────────────────────────────────────────

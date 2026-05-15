@@ -50,9 +50,7 @@ import { useTheme } from '@elements/browser'
 
 const themeCtl = useTheme()
 
-import { VARIANTS as variants } from '../constants.js'
-
-const tiers = ['bg-subtle', 'text-emphasis', 'border-subtle', 'on-canvas'] as const
+import { THEME_TIERS as tiers, VARIANTS as variants } from '../constants.js'
 
 // Live computed-value reads — sample on mount + on theme toggle so the
 // displayed values track the active cascade.

@@ -47,12 +47,12 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useSelect } from '@elements/browser'
+import { SELECT_CITIES as cities, SELECT_FRUITS as fruits, SELECT_SIZES as sizes } from '../constants.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 2 — Single-select listbox. Custom widget over `<menu popover>`,
 // native `<select>` mirror for form-data participation.
 // ─────────────────────────────────────────────────────────────────────
-const fruits = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape']
 const single = {
 	toggleRef: useTemplateRef<HTMLButtonElement>('singleToggle'),
 	menuRef: useTemplateRef<HTMLMenuElement>('singleMenu'),
@@ -67,7 +67,6 @@ const singleSelect = useSelect(single.toggleRef, {
 // ─────────────────────────────────────────────────────────────────────
 // Demo 3 — Multi-select. `multiple: true`; menu stays open on commit.
 // ─────────────────────────────────────────────────────────────────────
-const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 const multi = {
 	toggleRef: useTemplateRef<HTMLButtonElement>('multiToggle'),
 	menuRef: useTemplateRef<HTMLMenuElement>('multiMenu'),
@@ -85,28 +84,6 @@ const multiSelect = useSelect(multi.toggleRef, {
 // button; typeahead input lives INSIDE the menu as the first <li>
 // (`.select-search`) so it stays sticky while options scroll.
 // ─────────────────────────────────────────────────────────────────────
-const cities = [
-	'Amsterdam',
-	'Berlin',
-	'Copenhagen',
-	'Dublin',
-	'Edinburgh',
-	'Florence',
-	'Geneva',
-	'Helsinki',
-	'Istanbul',
-	'Jakarta',
-	'Kyoto',
-	'Lisbon',
-	'Madrid',
-	'Naples',
-	'Oslo',
-	'Paris',
-	'Quito',
-	'Reykjavík',
-	'Stockholm',
-	'Tokyo',
-]
 const combo = {
 	toggleRef: useTemplateRef<HTMLButtonElement>('comboToggle'),
 	menuRef: useTemplateRef<HTMLMenuElement>('comboMenu'),

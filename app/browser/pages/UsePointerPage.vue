@@ -117,8 +117,7 @@ const swatch = computed(() => `hsl(${hue.value}, ${saturation.value}%, ${lightne
 // ─────────────────────────────────────────────────────────────────────
 const resizeHandle = useTemplateRef<HTMLDivElement>('resizeHandle')
 const cardSize = ref({ w: 260, h: 160 })
-const cardMax = { w: 480, h: 320 }
-const cardMin = { w: 180, h: 120 }
+import { POINTER_CARD_MAX as cardMax, POINTER_CARD_MIN as cardMin } from '../constants.js'
 let cardStart = { w: 260, h: 160, x: 0, y: 0 }
 const cardLimited = ref(false)
 const resizer = usePointer(resizeHandle, {

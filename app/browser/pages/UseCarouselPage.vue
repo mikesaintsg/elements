@@ -114,23 +114,8 @@
 import { ref, useTemplateRef } from 'vue'
 import { useCarousel } from '@elements/browser'
 
-import { VARIANTS_FEEDBACK as variants } from '../constants.js'
+import { CAROUSEL_SLIDES as slides, VARIANTS_FEEDBACK as variants } from '../constants.js'
 
-const slides = [
-	{
-		variant: 'primary',
-		title: 'Aurora 1.2',
-		body: 'Modern composition layer for the design system.',
-	},
-	{ variant: 'success', title: 'Build green', body: 'Continuous delivery on every push.' },
-	{ variant: 'warning', title: 'Heads up', body: 'Deprecation notice for the legacy SDK.' },
-	{ variant: 'danger', title: 'Action required', body: 'Migration deadline in 30 days.' },
-	{
-		variant: 'information',
-		title: 'Read the docs',
-		body: 'Full reference under the framework guides.',
-	},
-] as const
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — Bare carousel. No autoplay; user drives prev / next /

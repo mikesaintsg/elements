@@ -46,23 +46,7 @@ import { ref } from 'vue'
 // View-transition demo state — alternate two snapshots so the user
 // can repeatedly trigger the cross-fade. Each click swaps the
 // payload; `document.startViewTransition` wraps the DOM mutation.
-const snapshots = [
-	{
-		title: 'Aurora Coast',
-		body: 'A long stretch of pale sand under a teal-and-mauve sky. The water reflects the colour shift; tide pools warm into the early evening.',
-		variant: 'information',
-	},
-	{
-		title: 'Boreal Forest',
-		body: 'Dense conifers, lichen-streaked rock, a thin layer of pine needles softening every footstep. The light filters through in vertical shafts.',
-		variant: 'success',
-	},
-	{
-		title: 'Volcanic Rift',
-		body: 'Black basalt fractured along a long seam, steaming where the rainwater seeps in. Far below, the ribbon of magma glows like a dying ember.',
-		variant: 'warning',
-	},
-] as const
+import { SCROLL_TRANSITION_SNAPSHOTS as snapshots } from '../constants.js'
 
 const snapshotIndex = ref(0)
 const current = () => snapshots[snapshotIndex.value]

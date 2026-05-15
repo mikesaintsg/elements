@@ -109,7 +109,7 @@
 import { computed, ref, useTemplateRef } from 'vue'
 import { useForm } from '@elements/browser'
 
-import { VARIANTS_FORM as variants } from '../constants.js'
+import { FORM_RESERVED_USERNAMES as taken, VARIANTS_FORM as variants } from '../constants.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — Bare submit-gated validation.
@@ -155,7 +155,6 @@ const errorList = computed(() =>
 // ─────────────────────────────────────────────────────────────────────
 const customRef = useTemplateRef<HTMLFormElement>('customRef')
 const custom = useForm(customRef, { validate: { input: true } })
-const taken = ['admin', 'root', 'ada']
 const checkUsername = (): void => {
 	const value = custom.data.value.find((e) => e.name === 'username')?.value
 	if (typeof value !== 'string' || value === '') {

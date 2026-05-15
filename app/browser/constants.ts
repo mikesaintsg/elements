@@ -127,3 +127,97 @@ export const MEDIA_SAMPLE_VIDEO_URL =
 
 /** Public sample audio (SoundHelix freely-distributed track). */
 export const MEDIA_SAMPLE_AUDIO_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+
+// ── Demo data ────────────────────────────────────────────────────────────
+//
+// Static seed data the demos iterate. Centralized verbatim so overlapping
+// sets (fruit lists, slide decks, …) can be reconciled in one place.
+
+/** InlineAtomsPage tag-chip labels. */
+export const INLINE_ATOMS_TAGS = ['frontend', 'design', 'accessibility', 'docs', 'devops']
+
+/** UseFormPage usernames the async-validation demo rejects as taken. */
+export const FORM_RESERVED_USERNAMES = ['admin', 'root', 'ada']
+
+/** UsePointerPage resize-demo max / min card box (CSS px). */
+export const POINTER_CARD_MAX = { w: 480, h: 320 }
+export const POINTER_CARD_MIN = { w: 180, h: 120 }
+
+/** UseThemeButtonPage theme-setting options (value ↔ label ↔ glyph). */
+export const THEME_BUTTON_OPTIONS = [
+	{ value: 'light' as const, label: 'Light', icon: '☀️' },
+	{ value: 'dark' as const, label: 'Dark', icon: '🌙' },
+	{ value: 'system' as const, label: 'System', icon: '🖥️' },
+]
+
+/** UseTooltipPage placement picker — the four primary sides. */
+export const TOOLTIP_PLACEMENT_SIDES: readonly Placement[] = ['top', 'end', 'bottom', 'start']
+
+/** ThemePage variant-tier rows (the four semantic token tiers). */
+export const THEME_TIERS = ['bg-subtle', 'text-emphasis', 'border-subtle', 'on-canvas'] as const
+
+/** ScrollAndTransitionPage view-transition payloads. */
+export const SCROLL_TRANSITION_SNAPSHOTS = [
+	{
+		title: 'Aurora Coast',
+		body: 'A long stretch of pale sand under a teal-and-mauve sky. The water reflects the colour shift; tide pools warm into the early evening.',
+		variant: 'information',
+	},
+	{
+		title: 'Boreal Forest',
+		body: 'Dense conifers, lichen-streaked rock, a thin layer of pine needles softening every footstep. The light filters through in vertical shafts.',
+		variant: 'success',
+	},
+	{
+		title: 'Volcanic Rift',
+		body: 'Black basalt fractured along a long seam, steaming where the rainwater seeps in. Far below, the ribbon of magma glows like a dying ember.',
+		variant: 'warning',
+	},
+] as const
+
+/** UseCarouselPage slide deck. */
+export const CAROUSEL_SLIDES = [
+	{
+		variant: 'primary',
+		title: 'Aurora 1.2',
+		body: 'Modern composition layer for the design system.',
+	},
+	{ variant: 'success', title: 'Build green', body: 'Continuous delivery on every push.' },
+	{ variant: 'warning', title: 'Heads up', body: 'Deprecation notice for the legacy SDK.' },
+	{ variant: 'danger', title: 'Action required', body: 'Migration deadline in 30 days.' },
+	{
+		variant: 'information',
+		title: 'Read the docs',
+		body: 'Full reference under the framework guides.',
+	},
+] as const
+
+/** UseSelectPage single-select fruit options. */
+export const SELECT_FRUITS = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape']
+
+/** UseSelectPage multi-select size options. */
+export const SELECT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+
+/** UseSelectPage combobox city options. */
+export const SELECT_CITIES = [
+	'Amsterdam',
+	'Berlin',
+	'Copenhagen',
+	'Dublin',
+	'Edinburgh',
+	'Florence',
+	'Geneva',
+	'Helsinki',
+	'Istanbul',
+	'Jakarta',
+	'Kyoto',
+	'Lisbon',
+	'Madrid',
+	'Naples',
+	'Oslo',
+	'Paris',
+	'Quito',
+	'Reykjavík',
+	'Stockholm',
+	'Tokyo',
+]

@@ -45,7 +45,7 @@
  */
 import { ref } from 'vue'
 
-import { VARIANTS as variants } from '../constants.js'
+import { INLINE_ATOMS_TAGS as tags, VARIANTS as variants } from '../constants.js'
 
 // Tag dismissal demo — keep track of which chips have been removed
 // so the user can see real interactive state.
@@ -56,7 +56,6 @@ const dismiss = (key: string): void => {
 const restore = (): void => {
 	removed.value = new Set()
 }
-const tags = ['frontend', 'design', 'accessibility', 'docs', 'devops']
 
 // Loading button demo — toggle the loading state on click.
 const loading = ref(false)

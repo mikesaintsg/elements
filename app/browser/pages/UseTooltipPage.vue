@@ -121,7 +121,7 @@ const dynamicTip = useTooltip({
 	panel: dynamicPanel,
 	placement: dynamicPlacement,
 })
-const placementOptions: readonly Placement[] = ['top', 'end', 'bottom', 'start']
+import { TOOLTIP_PLACEMENT_SIDES as placementOptions } from '../constants.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 4 — rich content panel.
