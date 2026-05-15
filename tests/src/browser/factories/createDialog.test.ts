@@ -79,9 +79,43 @@ describe('createDialog', () => {
 		expect(dialog.open).toBe(true)
 		// Non-modal `dialog.show()` doesn't lock natively, so we set the
 		// shared scroll-lock attribute on body when the option asks for it.
+		// The matching CSS rule in `components/_body.scss` reads the
+		// attribute and pins `overflow: hidden` — verify both the JS-side
+		// attribute write AND that the cascade resolves the pin.
 		expect(document.body.hasAttribute('data-elements-scroll-locked')).toBe(true)
+		expect(globalThis.getComputedStyle(document.body).overflow).toBe('hidden')
 		api.hide()
 		expect(document.body.hasAttribute('data-elements-scroll-locked')).toBe(false)
+		// Default body overflow is `visible` in a clean document.
+		expect(globalThis.getComputedStyle(document.body).overflow).not.toBe('hidden')
+	})
+
+	it('dismiss.escape: false preventDefaults the native cancel event', () => {
+		// On modal dialogs, Escape fires `cancel` and then the platform calls
+		// `dialog.close()` as the default action. The factory's job when
+		// `dismiss.escape === false` is to `preventDefault()` the cancel event
+		// so the platform skips the close — leaving the dialog open.
+		const dialog = buildElement('dialog')
+		const [api] = createFactoryFixture(() =>
+			createDialog(dialog, { modal: true, dismiss: { escape: false } }),
+		)
+		api.show()
+		const cancel = new Event('cancel', { cancelable: true })
+		dialog.dispatchEvent(cancel)
+		expect(cancel.defaultPrevented).toBe(true)
+		expect(api.visible.value).toBe(true)
+	})
+
+	it('the native close event flips visible back to false', () => {
+		// Simulates the post-Escape platform path: after `cancel` (which
+		// createDialog only blocks when `dismiss.escape: false`), the
+		// platform fires `close`; the factory's `onNativeClose` mirrors
+		// `visible` and emits the namespaced close event.
+		const dialog = buildElement('dialog')
+		const [api] = createFactoryFixture(() => createDialog(dialog, { modal: true }))
+		api.show()
+		dialog.dispatchEvent(new Event('close'))
+		expect(api.visible.value).toBe(false)
 	})
 
 	it('destroy is idempotent and reverses every listener', () => {

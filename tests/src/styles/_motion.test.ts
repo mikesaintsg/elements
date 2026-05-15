@@ -39,18 +39,12 @@
 
 import { describe, expect, it } from 'vitest'
 import { MOTION_CONTRACT_PARTIALS } from '@elements/browser'
+import { stripComments } from '../../setupStyles'
 
 const sources = import.meta.glob(
 	'../../../src/styles/{elements,modifiers,surfaces,components,composables}/_*.scss',
 	{ query: '?raw', import: 'default', eager: true },
 ) as Record<string, string>
-
-const BLOCK_COMMENT = new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g')
-const LINE_COMMENT = new RegExp('\\/\\/[^\\n]*', 'g')
-
-function stripComments(source: string): string {
-	return source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
-}
 
 function sourceFor(relativePath: string): string {
 	const match = Object.entries(sources).find(([key]) => key.endsWith(`/${relativePath}`))

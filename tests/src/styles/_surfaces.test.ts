@@ -21,13 +21,12 @@
 
 import { describe, expect, it } from 'vitest'
 import { SURFACE_CONTRACTS, surfaceContractFor } from '@elements/browser'
-
-const BLOCK_COMMENT = new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g')
-const LINE_COMMENT = new RegExp('\\/\\/[^\\n]*', 'g')
-
-function stripComments(source: string): string {
-	return source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
-}
+import {
+	declaresToken,
+	stripComments,
+	tagFromPath,
+	usesMotionMixin,
+} from '../../setupStyles'
 
 const surfaceSources = import.meta.glob('../../../src/styles/surfaces/_*.scss', {
 	query: '?raw',
@@ -35,28 +34,13 @@ const surfaceSources = import.meta.glob('../../../src/styles/surfaces/_*.scss', 
 	eager: true,
 }) as Record<string, string>
 
-function basenameOf(path: string): string {
-	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
-	return match?.[1] ?? ''
-}
-
-function declaresToken(source: string, prefix: string, suffix: string): boolean {
-	const escaped = suffix.replace(/-/g, '\\-')
-	const pattern = new RegExp(`--set-${prefix}-${escaped}\\s*:`)
-	return pattern.test(source)
-}
-
-function usesMotionMixin(source: string): boolean {
-	return /@include\s+transition\s*\(/.test(source) || /@include\s+reduced-motion\b/.test(source)
-}
-
 // ============================================================================
 //  1. Filename ↔ contract parity
 // ============================================================================
 
 describe('surfaces — every partial has a contract', () => {
 	for (const path of Object.keys(surfaceSources)) {
-		const name = basenameOf(path)
+		const name = tagFromPath(path)
 		if (name === '' || name === 'index') continue
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
 		// On failure: `${relative}` has no entry in SURFACE_CONTRACTS. Add one
@@ -71,7 +55,7 @@ describe('surfaces — every partial has a contract', () => {
 describe('surfaces — every contract has a partial', () => {
 	const basenames = new Set(
 		Object.keys(surfaceSources)
-			.map(basenameOf)
+			.map(tagFromPath)
 			.filter((n) => n !== '' && n !== 'index'),
 	)
 	for (const name of Object.keys(SURFACE_CONTRACTS)) {
@@ -88,7 +72,7 @@ describe('surfaces — every contract has a partial', () => {
 
 describe('surfaces — required tokens are declared in the partial', () => {
 	for (const [path, source] of Object.entries(surfaceSources)) {
-		const name = basenameOf(path)
+		const name = tagFromPath(path)
 		const contract = surfaceContractFor(name)
 		if (!contract) continue
 
@@ -112,7 +96,7 @@ describe('surfaces — required tokens are declared in the partial', () => {
 
 describe('surfaces — animated surfaces invoke a motion mixin', () => {
 	for (const [path, source] of Object.entries(surfaceSources)) {
-		const name = basenameOf(path)
+		const name = tagFromPath(path)
 		const contract = surfaceContractFor(name)
 		if (!contract || !contract.animated) continue
 
@@ -138,7 +122,7 @@ describe('surfaces — animated surfaces invoke a motion mixin', () => {
 
 describe('surfaces — partials that ship --set-{surface}-transition-duration honor the reduced-motion contract', () => {
 	for (const [path, source] of Object.entries(surfaceSources)) {
-		const name = basenameOf(path)
+		const name = tagFromPath(path)
 		const contract = surfaceContractFor(name)
 		if (!contract) continue
 

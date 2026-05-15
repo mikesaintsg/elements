@@ -13,7 +13,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { tokens } from '@elements/browser'
-import { render, rootToken, token } from '../../setupStyles.ts'
+import { leaves, render, rootToken, tagFromPath, token } from '../../setupStyles.ts'
 
 import tokensScss from '../../../src/styles/_tokens.scss?raw'
 import themeScss from '../../../src/styles/_theme.scss?raw'
@@ -52,12 +52,6 @@ const VARIANTS = [
 	'information',
 ] as const
 
-function leaves(node: unknown): readonly string[] {
-	if (typeof node === 'string') return [node]
-	if (typeof node !== 'object' || node === null) return []
-	return Object.values(node).flatMap(leaves)
-}
-
 const TS_LEAVES = leaves(tokens)
 const TS_SET = new Set(TS_LEAVES)
 
@@ -73,12 +67,6 @@ function declarationsIn(source: string): readonly string[] {
 		if (match[1]) out.push(match[1])
 	}
 	return out
-}
-
-function tagFromPath(path: string): string {
-	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
-	if (!match || !match[1]) throw new Error(`Cannot extract tag from ${path}`)
-	return match[1]
 }
 
 // {tag → source} for every element / component partial that declares its

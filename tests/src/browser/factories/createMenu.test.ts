@@ -62,6 +62,33 @@ describe('createMenu', () => {
 		expect(api.visible.value).toBe(false)
 	})
 
+	it('keyboard navigation: ArrowDown opens + roves; Home/End jump to ends', () => {
+		const { toggle, menu } = createMenuElements()
+		const [api] = createFactoryFixture(() => createMenu({ toggle, menu }))
+		const items = menu.querySelectorAll('a')
+
+		// First ArrowDown on the closed toggle: opens the menu AND focuses the
+		// first item (rove-from-nothing → index 0).
+		toggle.focus()
+		toggle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+		expect(api.visible.value).toBe(true)
+		expect(document.activeElement).toBe(items[0])
+
+		// Next ArrowDown moves to the second item.
+		items[0]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+		expect(document.activeElement).toBe(items[1])
+
+		// End jumps to the last item.
+		items[1]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }))
+		expect(document.activeElement).toBe(items[items.length - 1])
+
+		// Home jumps back to the first.
+		items[items.length - 1]?.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'Home', bubbles: true }),
+		)
+		expect(document.activeElement).toBe(items[0])
+	})
+
 	it('forwards flip threshold as --set-menu-flip; flip:0 drops the cap', () => {
 		const a = createMenuElements()
 		const [, ,] = createFactoryFixture(() => createMenu(a, { flip: 7 }))

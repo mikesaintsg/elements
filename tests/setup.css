@@ -1,14 +1,22 @@
-/* Test environment CSS setup.
+/* Test-environment CSS pipeline.
  *
- * Imported first by setupStyles.ts AND setupBrowser.ts so Tailwind's PostCSS
- * plugin processes both Tailwind's own theme AND our framework's semantic
- * variant registrations in a single pass. The plugin expands every @theme
- * block found here (and across @import-chained files) into :root custom
- * properties.
+ * Imported as the first stylesheet by `setupStyles.ts` AND `setupBrowser.ts`
+ * so every browser-environment test runs against the same cascade as the
+ * showcase + the consumer build:
  *
- * The default-variant palette ships in src/styles/_theme.scss — this file
- * doesn't need to register variants. To override a variant for a specific
- * test scope, add a `@theme {…}` block before importing the framework.
+ *   1. `@layer` order is declared BEFORE Tailwind so Tailwind's own layer
+ *      registrations slot into the framework's wider order. Layers later
+ *      in the list win on conflict regardless of specificity.
+ *   2. `@import 'tailwindcss'` pulls in Tailwind's preflight + utilities.
+ *   3. `@source` directives tell Tailwind which files to scan for utility
+ *      class references so the compiled bundle includes the utilities the
+ *      tests actually exercise (e.g. `<div class="p-4">` inside a test
+ *      fixture) AND any utility-class hooks the framework SCSS uses.
+ *
+ * The framework's semantic variant palette lives in `src/styles/_theme.scss`
+ * (imported by `src/styles/index.scss`, which `setupStyles.ts` /
+ * `setupBrowser.ts` import right after this file). No `@theme` block is
+ * declared here.
  */
 
 @layer theme, base, elements, components, surfaces, composables, modifiers, utilities;

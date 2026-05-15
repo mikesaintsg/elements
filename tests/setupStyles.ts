@@ -1,35 +1,34 @@
 // ============================================================================
-//  Style test setup — loads the compiled SCSS bundle into the browser test
-//  environment and exposes assertion helpers built around the platform's
-//  `getComputedStyle` API.
+//  Style-test setup — loads the compiled SCSS bundle into the browser-test
+//  environment and exposes the CSS assertion primitives every parity test
+//  under `tests/src/styles/**/*.test.ts` builds on.
 //
-//  The SCSS import is the side-effect that wires `src/styles/index.scss`
-//  through Vite's Sass pipeline and into the document's stylesheets. Every
-//  test in `tests/src/styles/**/*.test.ts` shares this single cascade.
+//  The two side-effect imports below are the contract:
+//    - `./setup.css`           — cascade-layer order + Tailwind import.
+//    - `../src/styles/index.scss` — the framework's compiled cascade.
+//  Together they wire the same stylesheet stack the showcase + consumer
+//  builds run against. Every test shares this one cascade.
 //
-//  Every helper in this file is exported. Test files import what they need
-//  by name; cross-file reuse is the default expectation.
+//  This file ships only helpers consumed by at least one test file. New
+//  affordances should land WITH the test that needs them, not ahead of it.
 // ============================================================================
 
 import { afterEach } from 'vitest'
-import { userEvent } from 'vitest/browser'
 import './setup.css'
 import '../src/styles/index.scss'
 
-// ── Re-exports ─────────────────────────────────────────────────────────────
+export * from './setup'
 
-// `userEvent` is the Playwright-bridge user-event API. Re-exported so test
-// files have a single import surface and never reach into vitest internals.
-export { userEvent }
+// ── Per-test teardown registry ─────────────────────────────────────────────
+// Module-private — every public helper that appends a teardown is in this
+// file, so the queue never leaks to test code.
 
-// ── Mounting ───────────────────────────────────────────────────────────────
-
-export const STYLE_TEARDOWNS: Array<() => void> = []
+const STYLE_TEARDOWNS: Array<() => void> = []
 
 afterEach(() => {
 	while (STYLE_TEARDOWNS.length > 0) {
 		const teardown = STYLE_TEARDOWNS.pop()
-		if (teardown) teardown()
+		teardown?.()
 	}
 	document.body.style.cssText = ''
 })
@@ -39,11 +38,11 @@ afterEach(() => {
 //
 // Why this exists:
 //   The framework lives in `@layer components` (and `elements`, `surfaces`).
-//   Tailwind sits in `@layer utilities`, which is the LAST layer in the
-//   merged order. Layered rules from a later layer always beat earlier
-//   ones, regardless of selector specificity. So if a Tailwind utility
-//   shares a name with a framework modifier (e.g. `.inline`), Tailwind
-//   wins — silently — and the framework rule never paints.
+//   Tailwind sits in `@layer utilities`, the LAST layer in the merged
+//   order. Layered rules from a later layer always beat earlier ones,
+//   regardless of selector specificity. So if a Tailwind utility shares a
+//   name with a framework modifier (e.g. `.inline`), Tailwind wins —
+//   silently — and the framework rule never paints.
 //
 // What's in this list:
 //   Every Tailwind v4 utility class whose ENTIRE class name is a single
@@ -128,6 +127,8 @@ export const TAILWIND_SINGLE_TOKEN_UTILITIES: readonly string[] = [
 	'stroke-current',
 ] as const
 
+// ── Mounting ───────────────────────────────────────────────────────────────
+
 /**
  * Append an element to `document.body` so the cascade applies, and register
  * automatic cleanup. Returns the same element for chaining.
@@ -142,7 +143,7 @@ export function mount<T extends Element>(element: T): T {
  * Build an element from a single tag + class list and mount it.
  *
  * @example
- *   const el = render('button', 'btn btn-primary')
+ *   const el = render('button', 'primary large')
  */
 export function render<K extends keyof HTMLElementTagNameMap>(
 	tag: K,
@@ -175,7 +176,7 @@ export function style(element: Element, property: string): string {
 	return globalThis.getComputedStyle(element).getPropertyValue(property).trim()
 }
 
-/** Read a custom property (`--bs-*`) resolved at the element. */
+/** Read a custom property resolved at the element. Accepts `name` with or without `--` prefix. */
 export function token(element: Element, name: string): string {
 	const prefixed = name.startsWith('--') ? name : `--${name}`
 	return style(element, prefixed)
@@ -184,28 +185,6 @@ export function token(element: Element, name: string): string {
 /** Read a custom property declared on `:root` (the document element). */
 export function rootToken(name: string): string {
 	return token(document.documentElement, name)
-}
-
-/**
- * Assert that every named token resolves to a non-empty string on `element`.
- * The bulk-token check that lives at the top of every "token surface" block.
- */
-export function assertTokens(element: Element, names: readonly string[]): void {
-	for (const name of names) {
-		const value = token(element, name)
-		if (value === '') {
-			throw new Error(`Token ${name} did not resolve on element <${describeElement(element)}>`)
-		}
-	}
-}
-
-/** Tag-name + class-list summary for assertion error messages. */
-export function describeElement(element: Element): string {
-	const className =
-		typeof element.className === 'string' && element.className.length > 0
-			? `.${element.className.split(/\s+/).join('.')}`
-			: ''
-	return `${element.tagName.toLowerCase()}${className}`
 }
 
 // ── Color helpers ──────────────────────────────────────────────────────────
@@ -252,164 +231,79 @@ export function pixels(element: Element, property: string): number {
 	return match ? Number(match[0]) : 0
 }
 
-/** Read the resolved width in CSS pixels (post-layout). */
-export function width(element: Element): number {
-	return element.getBoundingClientRect().width
-}
+// ── SCSS source introspection ──────────────────────────────────────────────
+//
+// Test files glob SCSS partials as raw strings via `import.meta.glob(...,
+// { query: '?raw' })` and assert against the raw source. These helpers are
+// the shared vocabulary every contract / parity test reaches for. String-
+// form RegExps for the comment matchers because the literal `\*/` trips
+// vite-oxc's tokenizer on the closing-comment escape sequence.
 
-/** Read the resolved height in CSS pixels (post-layout). */
-export function height(element: Element): number {
-	return element.getBoundingClientRect().height
-}
+const BLOCK_COMMENT = new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g')
+const LINE_COMMENT = new RegExp('\\/\\/[^\\n]*', 'g')
 
-// ── Interaction helpers ────────────────────────────────────────────────────
-
-/**
- * Real pointer hover via Vitest's browser bridge to Playwright. Triggers
- * the CSS `:hover` pseudo-class — synthetic `mouseover` events do not.
- *
- * Note: in headless Chromium this can be unreliable for chrome-changing
- * assertions. Prefer `findRule(...)` + token-wiring assertions when you
- * just need to verify the `:hover` rule contract.
- */
-export async function hover(element: Element): Promise<void> {
-	await userEvent.hover(element)
-}
-
-/** Move the pointer off any hovered element by hovering `<body>`. */
-export async function unhover(): Promise<void> {
-	await userEvent.hover(document.body)
+/** Strip SCSS line + block comments from a raw partial source. */
+export function stripComments(source: string): string {
+	return source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
 }
 
 /**
- * Keyboard focus through `Tab` — the only way to trigger `:focus-visible`
- * deterministically across browsers. `element.focus()` gives plain `:focus`
- * but not `:focus-visible` in Chromium when called from script.
+ * Extract the `{tag}` segment from an `_{tag}.scss` partial path. Throws
+ * when the path doesn't match — paths come from `import.meta.glob` patterns
+ * that already constrain the shape, so a miss is a programmer error.
  */
-export async function tabTo(element: HTMLElement): Promise<void> {
-	if (!element.hasAttribute('tabindex') && !isNativelyFocusable(element)) {
-		element.setAttribute('tabindex', '0')
-	}
-	document.body.focus()
-	for (let i = 0; i < 50; i += 1) {
-		if (document.activeElement === element) return
-		await userEvent.tab()
-	}
+export function tagFromPath(path: string): string {
+	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
+	if (!match || !match[1]) throw new Error(`Cannot extract tag from ${path}`)
+	return match[1]
 }
 
-/** True when the element type takes part in the sequential focus order natively. */
-export function isNativelyFocusable(element: HTMLElement): boolean {
-	const tag = element.tagName
-	return (
-		tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA'
-	)
+/** True when `source` declares `--set-{prefix}-{suffix}: ...`. */
+export function declaresToken(source: string, prefix: string, suffix: string): boolean {
+	const escaped = suffix.replace(/-/g, '\\-')
+	return new RegExp(`--set-${prefix}-${escaped}\\s*:`).test(source)
+}
+
+/** True when `source` declares any `--set-{tag}-*` custom property. */
+export function declaresElementToken(source: string, tag: string): boolean {
+	return new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`, 'i').test(source)
+}
+
+/**
+ * True when `source` invokes either of the framework's motion mixins —
+ * `@include transition(...)` (which emits the bare transition + a paired
+ * `prefers-reduced-motion: reduce` opt-out) or `@include reduced-motion`
+ * (the same opt-out for `animation:` declarations).
+ */
+export function usesMotionMixin(source: string): boolean {
+	return /@include\s+transition\s*\(/.test(source) || /@include\s+reduced-motion\b/.test(source)
 }
 
 // ── Stylesheet introspection ───────────────────────────────────────────────
 
 /**
  * Walk every loaded stylesheet looking for a rule whose selector text contains
- * the given fragment. Use to assert that a CSS rule is declared in the
- * cascade — complementary to `style()` which only reads the resolved value.
- *
- * Pass a fragment (e.g. `.btn:hover`) — match is substring-based to allow
- * for selector lists like `.btn-check:focus-visible + .btn, .btn:hover`.
+ * `selectorFragment`. Substring match — selector lists like
+ * `.btn-check:focus-visible + .btn, .btn:hover` are found by any of their
+ * branches. Complementary to `style()` (which reads resolved values); use
+ * `findRule(...)` to assert that a rule is DECLARED in the cascade.
  */
 export function findRule(selectorFragment: string): boolean {
+	function walk(rules: CSSRuleList): boolean {
+		for (const rule of Array.from(rules)) {
+			if (rule instanceof CSSStyleRule && rule.selectorText.includes(selectorFragment)) {
+				return true
+			}
+			if (rule instanceof CSSGroupingRule && walk(rule.cssRules)) return true
+		}
+		return false
+	}
 	for (const sheet of Array.from(document.styleSheets)) {
-		let rules: CSSRuleList
 		try {
-			rules = sheet.cssRules
+			if (walk(sheet.cssRules)) return true
 		} catch {
 			// Cross-origin stylesheet — skip.
-			continue
-		}
-		if (walkRules(rules, selectorFragment)) return true
-	}
-	return false
-}
-
-/** Recursive walker behind `findRule` — exported for cross-file reuse. */
-export function walkRules(rules: CSSRuleList, selectorFragment: string): boolean {
-	for (const rule of Array.from(rules)) {
-		if (rule instanceof CSSStyleRule && rule.selectorText.includes(selectorFragment)) {
-			return true
-		}
-		if (rule instanceof CSSGroupingRule && walkRules(rule.cssRules, selectorFragment)) {
-			return true
 		}
 	}
 	return false
 }
-
-/**
- * True when an `@keyframes name { … }` rule exists in the loaded stylesheets.
- * Use for animation assertions where reading `animation-name` would just
- * give back the keyframes-name token.
- */
-export function findKeyframes(name: string): boolean {
-	for (const sheet of Array.from(document.styleSheets)) {
-		let rules: CSSRuleList
-		try {
-			rules = sheet.cssRules
-		} catch {
-			continue
-		}
-		if (walkKeyframes(rules, name)) return true
-	}
-	return false
-}
-
-export function walkKeyframes(rules: CSSRuleList, name: string): boolean {
-	for (const rule of Array.from(rules)) {
-		if (rule instanceof CSSKeyframesRule && rule.name === name) return true
-		if (rule instanceof CSSGroupingRule && walkKeyframes(rule.cssRules, name)) return true
-	}
-	return false
-}
-
-// ── Theme helpers ──────────────────────────────────────────────────────────
-
-/**
- * Switch the document's `data-theme` attribute for the duration of the current
- * test. The original value is restored automatically. The attribute name
- * matches the selectors in `src/styles/_theme.scss` (`[data-theme='light']`
- * / `[data-theme='dark']`); the previous `data-bs-theme` form was a leftover
- * from the Bootstrap port and never matched the framework's cascade.
- */
-export function setTheme(value: 'light' | 'dark'): void {
-	const previous = document.documentElement.getAttribute('data-theme')
-	document.documentElement.setAttribute('data-theme', value)
-	STYLE_TEARDOWNS.push(() => {
-		if (previous === null) document.documentElement.removeAttribute('data-theme')
-		else document.documentElement.setAttribute('data-theme', previous)
-	})
-}
-
-// ── Framework variant + dimension re-exports ───────────────────────────────
-//
-// Style tests reach for the shipped modifier vocabulary in two patterns:
-//   1. `it.each(VARIANTS)(...)` — drive a parameterized assertion across the
-//      seven variants without rebuilding the array per test.
-//   2. `expect(token(el, '--set-variant-color')).not.toBe('')` after layering
-//      a known modifier class.
-//
-// Importing from `@elements/browser` keeps the test surface in lock-step
-// with what's shipped — if a variant is added / removed from `modifiers.ts`,
-// every test that touches `VARIANTS` updates with it. The bidirectional
-// parity test at `tests/src/browser/modifiers.test.ts` guarantees the import
-// is the source of truth.
-
-import { modifiers, type Variant, type Size, type Style, type State } from '@elements/browser'
-
-/** Seven semantic variants — `primary` through `information`. */
-export const VARIANTS: readonly Variant[] = Object.values(modifiers.variant)
-
-/** Two scale steps — `small`, `large`. (Default size is the bare element.) */
-export const SIZES: readonly Size[] = Object.values(modifiers.size)
-
-/** Two style treatments — `subtle`, `filled`. */
-export const STYLES: readonly Style[] = Object.values(modifiers.style)
-
-/** Three interaction states — `disabled`, `active`, `loading`. */
-export const STATES: readonly State[] = Object.values(modifiers.state)

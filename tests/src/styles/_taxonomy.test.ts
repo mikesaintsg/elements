@@ -26,6 +26,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { elements, taxonomy, TAXONOMY_BY_TAG, isSubstantive, isComposable } from '@elements/browser'
+import { declaresElementToken, tagFromPath } from '../../setupStyles'
 
 const elementSources = import.meta.glob('../../../src/styles/elements/_*.scss', {
 	query: '?raw',
@@ -45,22 +46,12 @@ const factorySources = import.meta.glob('../../../src/browser/factories/*.ts', {
 	eager: true,
 }) as Record<string, string>
 
-function tagOfPath(path: string): string {
-	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
-	if (!match || !match[1]) throw new Error(`Cannot extract tag from ${path}`)
-	return match[1]
-}
-
-function declaresElementToken(source: string, tag: string): boolean {
-	return new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`, 'i').test(source)
-}
-
 const elementsByTag: ReadonlyMap<string, string> = new Map(
-	Object.entries(elementSources).map(([path, source]) => [tagOfPath(path), source]),
+	Object.entries(elementSources).map(([path, source]) => [tagFromPath(path), source]),
 )
 
 const componentsByTag: ReadonlyMap<string, string> = new Map(
-	Object.entries(componentSources).map(([path, source]) => [tagOfPath(path), source]),
+	Object.entries(componentSources).map(([path, source]) => [tagFromPath(path), source]),
 )
 
 const factoryNames: ReadonlySet<string> = new Set(

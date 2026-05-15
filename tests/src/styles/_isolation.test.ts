@@ -17,7 +17,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { modifiers } from '@elements/browser'
-import { TAILWIND_SINGLE_TOKEN_UTILITIES } from '../../setupStyles.ts'
+import { leaves, TAILWIND_SINGLE_TOKEN_UTILITIES } from '../../setupStyles.ts'
 
 const sources = import.meta.glob(
 	'../../../src/styles/{elements,components,surfaces,composables}/_*.scss',
@@ -27,12 +27,6 @@ const sources = import.meta.glob(
 		eager: true,
 	},
 ) as Record<string, string>
-
-function leaves(node: unknown): readonly string[] {
-	if (typeof node === 'string') return [node]
-	if (typeof node !== 'object' || node === null) return []
-	return Object.values(node).flatMap(leaves)
-}
 
 const MODIFIER_NAMES = new Set(leaves(modifiers))
 const TAILWIND_NAMES = new Set(TAILWIND_SINGLE_TOKEN_UTILITIES)

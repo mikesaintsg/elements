@@ -7,7 +7,7 @@ describe('useDetails', () => {
 	it('rejects non-<details> hosts at watch flush', () => {
 		const wrong = buildElement('div')
 		expect(() =>
-			mountSetup(() => useDetails(ref(wrong as unknown as HTMLDetailsElement))),
+			mountSetup(() => useDetails(ref(wrong as unknown as HTMLDetailsElement)), { silent: true }),
 		).toThrowError(/details/i)
 	})
 

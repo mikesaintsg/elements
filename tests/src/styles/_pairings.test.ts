@@ -32,13 +32,7 @@ import {
 	pairingFor,
 	STRUCTURAL_PAIRINGS,
 } from '@elements/browser'
-
-const BLOCK_COMMENT = new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g')
-const LINE_COMMENT = new RegExp('\\/\\/[^\\n]*', 'g')
-
-function stripComments(source: string): string {
-	return source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
-}
+import { stripComments } from '../../setupStyles'
 
 const sources = import.meta.glob(
 	'../../../src/styles/{elements,modifiers,surfaces,components,composables}/_*.scss',

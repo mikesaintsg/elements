@@ -1,49 +1,46 @@
 // ============================================================================
-//  Browser test setup — composable + factory test infrastructure.
+//  Browser-test setup — composable + factory test infrastructure.
 //
-//  Imports the same SCSS pipeline the style tests use so any test that needs
-//  CSS-resolved tokens (e.g. surface-layer rules, modifier rules) works
-//  without duplicating the import sequence.
+//  Loads the same SCSS pipeline `setupStyles.ts` uses so any composable /
+//  factory test that needs CSS-resolved tokens or stylesheet introspection
+//  works from a single import surface. Re-exports the generic primitives
+//  from `./setup` so test files don't need a second import path.
 //
-//  Three groups of helpers live here:
-//    1. Vue mounting harness   — `mount`, `withElement`, `mountComponent`.
-//    2. Async / event helpers  — `waitForBootstrap`, `flushPromises`,
-//       `createPointerEvent`, `createDragEvent`, `fireTransitionEnd`.
-//    3. Dispose harness        — `installDisposeHarness`, `assertCleanDispose`
-//       — used to verify factories tear down every listener / observer they
-//       installed.
+//  The four groups of helpers exported here:
+//    1. Vue mounting     — `mountSetup`, `withElement`.
+//    2. Factory fixtures — `createFactoryFixture` + the `destroy()`-shape
+//       contract every factory test relies on.
+//    3. DOM primitives   — `buildElement`, `createPointerEvent`,
+//       `createDragEvent`.
+//    4. Lifecycle        — `waitForBootstrap`, `assertCleanDispose`.
 //
-//  Per-element fixture builders (createDialogElement, createMenuElement, …)
-//  live with their composable test files; this setup ships only generic
-//  primitives so it stays small.
+//  Per-element fixture builders (e.g. `createDialogElement`,
+//  `createMenuElement`) live with their composable test files; this setup
+//  ships only what tests consume in more than one place.
 // ============================================================================
 
-// Loads the same CSS pipeline the styles tests use, so tests under
-// tests/src/browser/ that need CSS-resolved tokens or stylesheet introspection
-// work without duplicating the import sequence.
 import './setup.css'
 import '../src/styles/index.scss'
 
-import type { App, Component, Ref } from 'vue'
-import type { DragEndDetail, DragStartDetail } from '../src/browser/types'
+import type { App, Ref } from 'vue'
 import { afterEach, expect, vi } from 'vitest'
-import { createApp, h, nextTick, ref } from 'vue'
-import { STORAGE_KEY_THEME } from '../src/browser/constants'
-import { resetTheme } from '../src/browser/factories/createTheme'
-import { extractProperty, waitForDelay } from './setup'
+import { createApp, nextTick, ref } from 'vue'
+import { STORAGE_KEY_THEME, resetTheme } from '@elements/browser'
+import { waitForDelay } from './setup'
 
 export * from './setup'
 
 // ── Factory fixtures ────────────────────────────────────────────────────────
 // Factory tests do NOT mount a Vue app — factories are framework-agnostic.
-// `createFactoryFixture` accepts a setup function that returns a `{ destroy }`
-// instance and an unmount callback that calls `destroy()` once at teardown.
+// `createFactoryFixture` accepts a setup function that returns an instance
+// with a `destroy()` method and an unmount callback that calls `destroy()`
+// once at teardown.
 
-export interface FactoryFixtureInstance {
+interface FactoryFixtureInstance {
 	readonly destroy: () => void
 }
 
-export const FACTORY_TEARDOWNS: Array<() => void> = []
+const FACTORY_TEARDOWNS: Array<() => void> = []
 
 export function createFactoryFixture<T extends FactoryFixtureInstance>(
 	build: () => T,
@@ -63,15 +60,9 @@ export function createFactoryFixture<T extends FactoryFixtureInstance>(
 
 // ── Vue mounting helpers ────────────────────────────────────────────────────
 
-export const BROWSER_UNMOUNTS: Array<() => void> = []
+const BROWSER_UNMOUNTS: Array<() => void> = []
 
-export interface TestDragEventOptions {
-	readonly x?: number
-	readonly y?: number
-	readonly data?: DataTransfer
-}
-
-export function registerUnmount(app: App<Element>, container: HTMLElement): () => void {
+function registerUnmount(app: App<Element>, container: HTMLElement): () => void {
 	let active = true
 	const unmount = (): void => {
 		if (!active) return
@@ -90,8 +81,19 @@ export function registerUnmount(app: App<Element>, container: HTMLElement): () =
  * component lifecycle. Returns the value `setup()` returns plus an `unmount`
  * callback. Use this when a composable needs to register `watchEffect`,
  * `onMounted`, etc.
+ *
+ * Pass `{ silent: true }` for tests that DELIBERATELY trigger a throw from
+ * inside `setup()` (or from a post-flush watcher fired during mount). Vue's
+ * default error path logs `[Vue warn]: Unhandled error...` and then re-throws
+ * — useful in app code, noise in a test whose assertion IS the throw. With
+ * `silent: true`, an `app.config.errorHandler` captures the error in place
+ * of the warning; `mountSetup` then unmounts and re-throws it so the
+ * surrounding `expect(() => …).toThrowError(...)` still fires.
  */
-export function mountSetup<T>(setup: () => T): readonly [T, () => void] {
+export function mountSetup<T>(
+	setup: () => T,
+	options: { readonly silent?: boolean } = {},
+): readonly [T, () => void] {
 	let result: T | undefined
 	const container = document.createElement('div')
 	document.body.appendChild(container)
@@ -102,7 +104,31 @@ export function mountSetup<T>(setup: () => T): readonly [T, () => void] {
 			return () => null
 		},
 	})
-	app.mount(container)
+
+	let captured: unknown = null
+	if (options.silent) {
+		app.config.errorHandler = (err) => {
+			captured = err
+		}
+	}
+
+	try {
+		app.mount(container)
+	} catch (err) {
+		// Default Vue path (no errorHandler): mount re-throws the error after
+		// logging. Tear down before propagating so the DOM stays clean.
+		app.unmount()
+		container.remove()
+		throw err
+	}
+
+	if (captured !== null) {
+		// Silent path: Vue swallowed the error via our handler. Tear down and
+		// re-raise so the test's `toThrowError(...)` still matches.
+		app.unmount()
+		container.remove()
+		throw captured
+	}
 
 	if (result === undefined) {
 		app.unmount()
@@ -125,87 +151,21 @@ export function withElement<T, E extends HTMLElement = HTMLElement>(
 	return mountSetup(() => use(ref<E | null>(element) as Ref<E | null>))
 }
 
-/**
- * Mount a real Vue component with optional props and provides. Returns the
- * mounted root element and an `unmount` callback.
- */
-export async function mountComponent(
-	component: Component,
-	props?: Record<string, unknown>,
-	provides?: Record<string | symbol, unknown>,
-): Promise<readonly [HTMLElement, () => void]> {
-	const container = document.createElement('div')
-	document.body.appendChild(container)
-
-	const app = createApp({
-		render() {
-			return h(component, props)
-		},
-	})
-
-	if (provides !== undefined) {
-		for (const [key, value] of Object.entries(provides)) {
-			app.provide(key, value)
-		}
-		for (const key of Object.getOwnPropertySymbols(provides)) {
-			app.provide(key, provides[key])
-		}
-	}
-
-	app.mount(container)
-	await nextTick()
-
-	return [container, registerUnmount(app, container)]
-}
-
 // ── Async helpers ───────────────────────────────────────────────────────────
-
-/** Resolve after the next two microtask ticks — flushes most pending promises. */
-export async function flushPromises(): Promise<void> {
-	await Promise.resolve()
-	await Promise.resolve()
-}
-
-export async function waitForFrame(): Promise<void> {
-	await new Promise<void>((resolve) => {
-		requestAnimationFrame(() => resolve())
-	})
-}
 
 /** Wait for `nextTick()` to flush any post-mount watchEffects. */
 export async function waitForBootstrap(delay = 0): Promise<void> {
 	await nextTick()
-	if (delay > 0) {
-		await waitForDelay(delay)
-	}
+	if (delay > 0) await waitForDelay(delay)
 	await nextTick()
-}
-
-/**
- * Poll `predicate()` up to ~20 microtask ticks. Throws `message` after
- * exhausting attempts.
- */
-export async function waitForCondition(
-	predicate: () => boolean,
-	message = 'Expected condition',
-): Promise<void> {
-	for (let i = 0; i < 20; i++) {
-		if (predicate()) return
-		await flushPromises()
-		await waitForFrame()
-	}
-	throw new Error(message)
 }
 
 // ── DOM event helpers ───────────────────────────────────────────────────────
 
-/**
- * Dispatch a `transitionend` event on `el`. Many factories use this event
- * to commit the post-show / post-hide phase; firing it manually skips the
- * 400ms `TRANSITION_FALLBACK_MS` timer.
- */
-export function fireTransitionEnd(el: Element): void {
-	el.dispatchEvent(new Event('transitionend', { bubbles: true }))
+interface TestDragEventOptions {
+	readonly x?: number
+	readonly y?: number
+	readonly data?: DataTransfer
 }
 
 export function createDragEvent(name: string, options: TestDragEventOptions = {}): DragEvent {
@@ -220,61 +180,6 @@ export function createDragEvent(name: string, options: TestDragEventOptions = {}
 
 export function createPointerEvent(name: string, init: PointerEventInit = {}): PointerEvent {
 	return new PointerEvent(name, { bubbles: true, cancelable: true, pointerId: 1, ...init })
-}
-
-export function typeInput(
-	input: HTMLInputElement,
-	handler: (event: Event) => void,
-	value: string,
-): void {
-	input.value = value
-	input.addEventListener('input', handler)
-	input.dispatchEvent(new Event('input', { bubbles: true }))
-	input.removeEventListener('input', handler)
-}
-
-export function computeElementCenter(element: HTMLElement): {
-	readonly x: number
-	readonly y: number
-} {
-	const rect = element.getBoundingClientRect()
-	return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
-}
-
-export function computeElementBottom(element: HTMLElement): {
-	readonly x: number
-	readonly y: number
-} {
-	const rect = element.getBoundingClientRect()
-	return { x: rect.left + rect.width / 2, y: rect.bottom - 1 }
-}
-
-export function layoutRows(rows: readonly HTMLElement[]): void {
-	for (const row of rows) {
-		row.style.display = 'block'
-		row.style.height = '24px'
-		row.style.padding = '0'
-	}
-}
-
-export function extractDragStartDetail(event: CustomEvent | undefined): DragStartDetail {
-	const detail = event?.detail
-	const indices = extractProperty(detail, 'indices')
-	const pointer = extractProperty(detail, 'pointer')
-	if (indices instanceof Set && pointer instanceof PointerEvent) {
-		return { indices, pointer }
-	}
-	throw new Error('Expected drag start detail')
-}
-
-export function extractDragEndDetail(event: CustomEvent | undefined): DragEndDetail {
-	const detail = event?.detail
-	const cancelled = extractProperty(detail, 'cancelled')
-	const pointer = extractProperty(detail, 'pointer')
-	if (typeof cancelled === 'boolean' && (pointer instanceof PointerEvent || pointer === null)) {
-		return { cancelled, pointer }
-	}
-	throw new Error('Expected drag end detail')
 }
 
 // ── Generic element builder ─────────────────────────────────────────────────
@@ -306,14 +211,19 @@ export function buildElement<K extends keyof HTMLElementTagNameMap>(
 // `addEventListener`, observer, and timer the factory installed. The
 // assertion is what guards routes that swap component instances per
 // navigation from accumulating listeners forever.
+//
+// `installDisposeHarness` is intentionally module-private — its prototype
+// patches MUST be reverted via `restore()` in a `finally` block, which
+// `assertCleanDispose` already does. Exposing the harness directly is a
+// footgun (forgetting `restore()` poisons every subsequent test).
 
-export interface DisposeHarness {
+interface DisposeHarness {
 	readonly listeners: () => number
 	readonly observers: () => number
 	readonly restore: () => void
 }
 
-export function installDisposeHarness(): DisposeHarness {
+function installDisposeHarness(): DisposeHarness {
 	const active = new Map<EventTarget, Map<string, Set<unknown>>>()
 	const origAdd = EventTarget.prototype.addEventListener
 	const origRemove = EventTarget.prototype.removeEventListener
@@ -417,6 +327,9 @@ export function assertCleanDispose<T extends FactoryFixtureInstance>(
 }
 
 // ── Global teardown ─────────────────────────────────────────────────────────
+//
+// `vi.restoreAllMocks()` is already registered by `./setup.ts` (re-exported
+// above), so it's not repeated here.
 
 afterEach(() => {
 	while (BROWSER_UNMOUNTS.length > 0) {
@@ -433,5 +346,4 @@ afterEach(() => {
 	document.documentElement.removeAttribute('data-theme')
 	window.localStorage.removeItem(STORAGE_KEY_THEME)
 	resetTheme()
-	vi.restoreAllMocks()
 })

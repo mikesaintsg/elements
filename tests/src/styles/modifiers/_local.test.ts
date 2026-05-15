@@ -15,15 +15,9 @@
 
 import { describe, expect, it } from 'vitest'
 import { modifiers, TAXONOMY_BY_TAG } from '@elements/browser'
-import { TAILWIND_SINGLE_TOKEN_UTILITIES } from '../../../setupStyles.ts'
+import { leaves, TAILWIND_SINGLE_TOKEN_UTILITIES } from '../../../setupStyles.ts'
 
 import localScss from '../../../../src/styles/modifiers/_local.scss?raw'
-
-function leaves(node: unknown): readonly string[] {
-	if (typeof node === 'string') return [node]
-	if (typeof node !== 'object' || node === null) return []
-	return Object.values(node).flatMap(leaves)
-}
 
 const CROSS_CUTTING = new Set(leaves(modifiers))
 const TAILWIND = new Set(TAILWIND_SINGLE_TOKEN_UTILITIES)

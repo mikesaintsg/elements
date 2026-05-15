@@ -17,13 +17,12 @@
 
 import { describe, expect, it } from 'vitest'
 import { COMPOSABLE_CONTRACTS, composableContractFor } from '@elements/browser'
-
-const BLOCK_COMMENT = new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g')
-const LINE_COMMENT = new RegExp('\\/\\/[^\\n]*', 'g')
-
-function stripComments(source: string): string {
-	return source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
-}
+import {
+	declaresToken,
+	stripComments,
+	tagFromPath,
+	usesMotionMixin,
+} from '../../setupStyles'
 
 const composableSources = import.meta.glob('../../../src/styles/composables/_*.scss', {
 	query: '?raw',
@@ -44,21 +43,6 @@ const factoryNames = new Set(
 	}),
 )
 
-function basenameOf(path: string): string {
-	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
-	return match?.[1] ?? ''
-}
-
-function declaresToken(source: string, prefix: string, suffix: string): boolean {
-	const escaped = suffix.replace(/-/g, '\\-')
-	const pattern = new RegExp(`--set-${prefix}-${escaped}\\s*:`)
-	return pattern.test(source)
-}
-
-function usesMotionMixin(source: string): boolean {
-	return /@include\s+transition\s*\(/.test(source) || /@include\s+reduced-motion\b/.test(source)
-}
-
 function hasBareMotion(source: string): boolean {
 	return /^\s*(?:transition|animation):/m.test(source)
 }
@@ -67,7 +51,7 @@ function hasBareMotion(source: string): boolean {
 
 describe('composables — every partial has a contract', () => {
 	for (const path of Object.keys(composableSources)) {
-		const name = basenameOf(path)
+		const name = tagFromPath(path)
 		if (name === '' || name === 'index') continue
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
 		it(`${relative} has a COMPOSABLE_CONTRACTS entry`, () => {
@@ -82,7 +66,7 @@ describe('composables — every partial has a contract', () => {
 describe('composables — every contract has a partial', () => {
 	const basenames = new Set(
 		Object.keys(composableSources)
-			.map(basenameOf)
+			.map(tagFromPath)
 			.filter((n) => n !== '' && n !== 'index'),
 	)
 	for (const name of Object.keys(COMPOSABLE_CONTRACTS)) {
@@ -96,7 +80,7 @@ describe('composables — every contract has a partial', () => {
 
 describe('composables — required tokens are declared in the partial', () => {
 	for (const [path, source] of Object.entries(composableSources)) {
-		const name = basenameOf(path)
+		const name = tagFromPath(path)
 		const contract = composableContractFor(name)
 		if (!contract || contract.tokens.required.length === 0) continue
 
@@ -130,7 +114,7 @@ describe('composables — every contract references a real factory', () => {
 
 describe('composables — bare transition: / animation: declarations require a motion mixin', () => {
 	for (const [path, source] of Object.entries(composableSources)) {
-		const name = basenameOf(path)
+		const name = tagFromPath(path)
 		const contract = composableContractFor(name)
 		if (!contract) continue
 

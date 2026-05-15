@@ -2,6 +2,7 @@ import type { UserConfig } from 'vite'
 import { defineConfig, mergeConfig } from 'vitest/config'
 import tsconfig from './tsconfig.json' with { type: 'json' }
 import { fileURLToPath, URL } from 'node:url'
+import { existsSync, readdirSync } from 'node:fs'
 import { playwright } from '@vitest/browser-playwright'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/postcss'
@@ -17,7 +18,14 @@ export function resolveWorkspacePath(relativePath: string): string {
 //      running browser instance (remote debugging, browser-tools MCP, etc.).
 //   3. PLAYWRIGHT_CHANNEL         — explicit channel (`chrome`, `msedge`,
 //      `chromium`, etc.) for local dev loops.
-//   4. Platform default — pre-installed system browser by OS:
+//   4. Claude Code sandbox        — auto-detect the bundled Playwright
+//      chromium under `/opt/pw-browsers/chromium-{rev}/chrome-linux64/chrome`.
+//      The Linux sandbox ships chromium under a revisioned directory; the
+//      revision number changes per Playwright version, so we glob the
+//      parent directory and pick the first chromium-* dir whose binary
+//      exists. Probes used to hard-code one revision; this auto-detect
+//      survives revision bumps.
+//   5. Platform default — pre-installed system browser by OS:
 //        Windows  → `msedge`   ships with the OS and never collides with a
 //                              foreground Chrome instance. System Chrome
 //                              invoked from Node with
@@ -32,6 +40,33 @@ export function resolveWorkspacePath(relativePath: string): string {
 //      Override via PLAYWRIGHT_CHANNEL when the platform default isn't
 //      installed (e.g., `PLAYWRIGHT_CHANNEL=chromium` after
 //      `npx playwright install chromium`).
+
+/**
+ * Find a Playwright-bundled chromium installed under the Claude Code Linux
+ * sandbox path. The sandbox installs revisions as
+ * `/opt/pw-browsers/chromium-{rev}/chrome-linux64/chrome`; the `{rev}`
+ * directory name changes with every Playwright upgrade, so we glob the
+ * parent directory rather than pin a specific revision. Returns the
+ * absolute binary path if found, `undefined` otherwise.
+ */
+function findClaudeCodeChromium(): string | undefined {
+	if (process.platform !== 'linux') return undefined
+	const root = '/opt/pw-browsers'
+	if (!existsSync(root)) return undefined
+	let entries: string[]
+	try {
+		entries = readdirSync(root)
+	} catch {
+		return undefined
+	}
+	for (const entry of entries.sort().reverse()) {
+		if (!entry.startsWith('chromium-')) continue
+		const candidate = `${root}/${entry}/chrome-linux64/chrome`
+		if (existsSync(candidate)) return candidate
+	}
+	return undefined
+}
+
 export function createBrowserProvider() {
 	const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH
 	if (executablePath) return playwright({ launchOptions: { executablePath } })
@@ -39,6 +74,8 @@ export function createBrowserProvider() {
 	if (wsEndpoint) return playwright({ connectOptions: { wsEndpoint } })
 	const channel = process.env.PLAYWRIGHT_CHANNEL
 	if (channel) return playwright({ launchOptions: { channel } })
+	const claudeCodeChromium = findClaudeCodeChromium()
+	if (claudeCodeChromium) return playwright({ launchOptions: { executablePath: claudeCodeChromium } })
 	const defaultChannel = process.platform === 'win32' ? 'msedge' : 'chrome'
 	return playwright({ launchOptions: { channel: defaultChannel } })
 }

@@ -28,16 +28,7 @@ import {
 	hasBareFocusRule,
 	isInteractive,
 } from '@elements/browser'
-
-// Strip comments before scanning so commented-out examples / explanatory
-// blocks don't trip the regex. String-form RegExp because the literal form
-// trips vite-oxc's tokenizer on the closing-comment escape sequence.
-const BLOCK_COMMENT = new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g')
-const LINE_COMMENT = new RegExp('\\/\\/[^\\n]*', 'g')
-
-function stripComments(source: string): string {
-	return source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
-}
+import { stripComments, tagFromPath } from '../../setupStyles'
 
 const elementSources = import.meta.glob('../../../src/styles/elements/_*.scss', {
 	query: '?raw',
@@ -51,11 +42,6 @@ const allStylesSources = import.meta.glob('../../../src/styles/**/_*.scss', {
 	eager: true,
 }) as Record<string, string>
 
-function tagOfPath(path: string): string {
-	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
-	return match?.[1] ?? ''
-}
-
 interface ElementPartial {
 	readonly tag: string
 	readonly path: string
@@ -65,8 +51,8 @@ interface ElementPartial {
 
 const elementPartials: readonly ElementPartial[] = Object.entries(elementSources)
 	.map(([path, source]) => {
-		const tag = tagOfPath(path)
-		if (tag === '' || tag === 'index') return null
+		const tag = tagFromPath(path)
+		if (tag === 'index') return null
 		return {
 			tag,
 			path,

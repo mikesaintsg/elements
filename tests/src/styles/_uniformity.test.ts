@@ -20,6 +20,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { TOKEN_GROUPS, type TokenGroup } from '@elements/browser'
+import { tagFromPath } from '../../setupStyles'
 
 const sources = import.meta.glob('../../../src/styles/{elements,components}/_*.scss', {
 	query: '?raw',
@@ -27,16 +28,10 @@ const sources = import.meta.glob('../../../src/styles/{elements,components}/_*.s
 	eager: true,
 }) as Record<string, string>
 
-function tagOfPath(path: string): string {
-	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
-	if (!match || !match[1]) throw new Error(`Cannot extract tag from ${path}`)
-	return match[1]
-}
-
 const byTag: ReadonlyMap<string, readonly string[]> = (() => {
 	const map = new Map<string, string[]>()
 	for (const [path, source] of Object.entries(sources)) {
-		const tag = tagOfPath(path)
+		const tag = tagFromPath(path)
 		const list = map.get(tag) ?? []
 		list.push(source)
 		map.set(tag, list)

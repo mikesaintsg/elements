@@ -32,13 +32,7 @@ import {
 	hasScopingFunction,
 	modifiers,
 } from '@elements/browser'
-
-const BLOCK_COMMENT = new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g')
-const LINE_COMMENT = new RegExp('\\/\\/[^\\n]*', 'g')
-
-function stripComments(source: string): string {
-	return source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
-}
+import { leaves, stripComments } from '../../setupStyles'
 
 const sources = import.meta.glob(
 	'../../../src/styles/{elements,modifiers,surfaces,components,composables}/_*.scss',
@@ -77,13 +71,6 @@ function extractRuleOpeners(source: string): readonly string[] {
 		}
 	}
 	return out
-}
-
-/** Build the set of class names that are framework cross-cutting modifiers. */
-function leaves(node: unknown): readonly string[] {
-	if (typeof node === 'string') return [node]
-	if (typeof node !== 'object' || node === null) return []
-	return Object.values(node).flatMap(leaves)
 }
 
 const MODIFIER_VOCABULARY: ReadonlySet<string> = new Set(leaves(modifiers))

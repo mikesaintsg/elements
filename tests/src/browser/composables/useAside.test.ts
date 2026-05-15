@@ -6,7 +6,7 @@ import { buildElement, mountSetup, waitForBootstrap } from '../../../setupBrowse
 describe('useAside', () => {
 	it('rejects non-<aside> hosts at watch flush', () => {
 		const wrong = buildElement('div')
-		expect(() => mountSetup(() => useAside(ref(wrong)))).toThrowError(/aside/i)
+		expect(() => mountSetup(() => useAside(ref(wrong)), { silent: true })).toThrowError(/aside/i)
 	})
 
 	it('show opens the popover and flips visible synchronously', async () => {

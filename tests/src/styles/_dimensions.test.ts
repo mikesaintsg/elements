@@ -20,6 +20,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { MODIFIER_DIMENSION_TOKENS } from '@elements/browser'
+import { declaresToken, stripComments } from '../../setupStyles'
 
 import variantsScss from '../../../src/styles/modifiers/_variants.scss?raw'
 import sizesScss from '../../../src/styles/modifiers/_sizes.scss?raw'
@@ -33,15 +34,6 @@ const dimensionSources: Readonly<Record<string, string>> = {
 	style: stylesScss,
 	state: statesScss,
 	placement: placementsScss,
-}
-
-// Strip SCSS comments. String-form RegExp because the literal trips
-// vite-oxc on the closing-comment escape sequence.
-const BLOCK_COMMENT = new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g')
-const LINE_COMMENT = new RegExp('\\/\\/[^\\n]*', 'g')
-
-function stripComments(source: string): string {
-	return source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
 }
 
 /**
@@ -59,14 +51,6 @@ function ruleBodyFor(className: string, source: string): string {
 	const pattern = new RegExp(`\\.${className}\\s*\\{([^}]*)\\}`, 'g')
 	const match = pattern.exec(stripped)
 	return match?.[1] ?? ''
-}
-
-/**
- * True when the rule body declares a `--set-{prefix}-{suffix}` token.
- */
-function declaresToken(body: string, prefix: string, suffix: string): boolean {
-	const pattern = new RegExp(`--set-${prefix}-${suffix.replace(/-/g, '\\-')}\\s*:`)
-	return pattern.test(body)
 }
 
 // ── Per-class token coverage ───────────────────────────────────────────────

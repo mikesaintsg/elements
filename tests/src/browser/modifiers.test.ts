@@ -12,18 +12,12 @@
 
 import { describe, expect, it } from 'vitest'
 import { modifiers, type Size, type State, type Style, type Variant } from '@elements/browser'
-import { findRule } from '../../setupStyles.ts'
+import { findRule, leaves } from '../../setupStyles.ts'
 
 import variantsScss from '../../../src/styles/modifiers/_variants.scss?raw'
 import sizesScss from '../../../src/styles/modifiers/_sizes.scss?raw'
 import stylesScss from '../../../src/styles/modifiers/_styles.scss?raw'
 import statesScss from '../../../src/styles/modifiers/_states.scss?raw'
-
-function leaves(node: unknown): readonly string[] {
-	if (typeof node === 'string') return [node]
-	if (typeof node !== 'object' || node === null) return []
-	return Object.values(node).flatMap(leaves)
-}
 
 const TS_LEAVES = leaves(modifiers)
 const TS_SET = new Set(TS_LEAVES)

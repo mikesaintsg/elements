@@ -15,23 +15,13 @@
 
 import { describe, expect, it } from 'vitest'
 import { elements, type Element } from '@elements/browser'
+import { declaresElementToken, tagFromPath } from '../../setupStyles.ts'
 
 const elementSources = import.meta.glob('../../../src/styles/elements/_*.scss', {
 	query: '?raw',
 	import: 'default',
 	eager: true,
 }) as Record<string, string>
-
-function tagFromPath(path: string): string {
-	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
-	if (!match || !match[1]) throw new Error(`Cannot extract tag from ${path}`)
-	return match[1]
-}
-
-function declaresElementToken(source: string, tag: string): boolean {
-	// True if the partial declares any `--set-{tag}-*` custom property.
-	return new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`, 'i').test(source)
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Shape

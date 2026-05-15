@@ -14,7 +14,7 @@ describe('useDialog', () => {
 	it('rejects non-<dialog> hosts at watch flush', async () => {
 		const wrong = buildElement('div')
 		expect(() =>
-			mountSetup(() => useDialog(ref(wrong as unknown as HTMLDialogElement))),
+			mountSetup(() => useDialog(ref(wrong as unknown as HTMLDialogElement)), { silent: true }),
 		).toThrowError(/dialog/i)
 	})
 
