@@ -47,26 +47,13 @@ import { onMounted } from 'vue'
  *     illustrations, not single-glyph icons.
  */
 
-// Small inline SVGs used in the image / picture / svg demos. Inlining
-// them as data URIs keeps the showcase offline-friendly and avoids any
-// CDN flake; for real-world use, consumers point `src` / `srcset` at
-// their own asset pipeline.
-const gradientThumbDataUri =
-	"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 320'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='480' height='320' fill='url(%23g)'/%3E%3Ccircle cx='120' cy='100' r='40' fill='white' fill-opacity='0.18'/%3E%3Ccircle cx='360' cy='200' r='80' fill='white' fill-opacity='0.12'/%3E%3Ccircle cx='240' cy='260' r='30' fill='white' fill-opacity='0.22'/%3E%3C/svg%3E"
-
-const wideHeroDataUri =
-	"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 400'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0%25' stop-color='%23059669'/%3E%3Cstop offset='100%25' stop-color='%230891b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1200' height='400' fill='url(%23h)'/%3E%3Cpath d='M0 320 L300 200 L600 280 L900 160 L1200 240 L1200 400 L0 400 Z' fill='white' fill-opacity='0.15'/%3E%3Cpath d='M0 360 L400 280 L800 340 L1200 300 L1200 400 L0 400 Z' fill='white' fill-opacity='0.25'/%3E%3C/svg%3E"
-
-const portraitDataUri =
-	"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 480'%3E%3Cdefs%3E%3ClinearGradient id='p' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23db2777'/%3E%3Cstop offset='100%25' stop-color='%23ea580c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='320' height='480' fill='url(%23p)'/%3E%3Ccircle cx='160' cy='180' r='80' fill='white' fill-opacity='0.22'/%3E%3Cpath d='M40 480 L160 280 L280 480 Z' fill='white' fill-opacity='0.18'/%3E%3C/svg%3E"
-
-// Sample video / audio sources — Google's public test-content CDN
-// (Big Buck Bunny) and SoundHelix's freely-distributed sample track.
-// Both are widely used demo URLs. Real consumers wire `src` to their
-// own asset pipeline.
-const sampleVideo =
-	'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
-const sampleAudio = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+import {
+	MEDIA_GRADIENT_THUMB_URI as gradientThumbDataUri,
+	MEDIA_PORTRAIT_URI as portraitDataUri,
+	MEDIA_SAMPLE_AUDIO_URL as sampleAudio,
+	MEDIA_SAMPLE_VIDEO_URL as sampleVideo,
+	MEDIA_WIDE_HERO_URI as wideHeroDataUri,
+} from '../constants.js'
 
 // `<canvas>` is fundamentally a JS-driven surface — the element's
 // content comes from drawing commands, not from declarative CSS / HTML.

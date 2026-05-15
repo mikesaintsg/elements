@@ -31,8 +31,7 @@
  *     `<img>` (not both — `<picture>` already wraps an `<img>`).
  */
 
-const gradientThumbDataUri =
-	"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 360'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23059669'/%3E%3Cstop offset='100%25' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='640' height='360' fill='url(%23g)'/%3E%3Ccircle cx='180' cy='120' r='60' fill='white' fill-opacity='0.22'/%3E%3Ccircle cx='460' cy='240' r='100' fill='white' fill-opacity='0.15'/%3E%3Cpath d='M0 280 L160 200 L320 240 L480 180 L640 220 L640 360 L0 360 Z' fill='white' fill-opacity='0.18'/%3E%3C/svg%3E"
+import { FIGURES_GRADIENT_THUMB_URI as gradientThumbDataUri } from '../constants.js'
 </script>
 
 <template>
