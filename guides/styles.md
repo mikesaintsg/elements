@@ -1,76 +1,34 @@
 # Styles — Top-Level Architecture
 
-> SCSS partials in `src/styles/` · TypeScript surface in `src/browser/` · Tailwind v4 base · Token-driven · Composable-paired.
+> SCSS partials in `src/styles/` · TypeScript surface in `src/browser/` · Tailwind v4 base · token-driven · composable-paired. This is the entry-point document for the framework — design philosophy, file layout, cascade layer order, and the contract every partial follows.
 
-This is the entry-point document for the framework. It explains the design philosophy, the file layout, the cascade order, the contract every partial follows, and how the framework ships to consumers. Deep-dives live alongside: [tokens.md](tokens.md), [mixins.md](mixins.md), [modifiers.md](modifiers.md), [elements.md](elements.md), [components.md](components.md), [composables.md](composables.md), [surfaces.md](surfaces.md). Implementation status is tracked in [ROADMAP.md](../ROADMAP.md).
+## Surface
 
----
+The framework ships in two halves that mirror each other: a SCSS bundle under [`src/styles/`](../src/styles/) and a TypeScript public API under [`src/browser/`](../src/browser/). Every CSS identifier consumers programmatically reach for has a typed mirror, parity-tested against its CSS source.
 
-## 1. Design philosophy
+### Cascade layer order
 
-Six principles govern every rule, every token, every TypeScript export.
+The framework declares one canonical layer order. It lives in the consumer's entry CSS, **before** `@import "tailwindcss"`, so Tailwind's own `@layer theme, base, components, utilities` declaration merges as a no-op against the wider order:
 
-### 1.1 Build on what the browser provides
-
-Every CSS property the framework names is a real CSS property. Token names mirror CSS keys (`--set-color`, `--set-background-color`, `--set-border-radius`, `--set-padding-inline`). The framework cedes utility class names to Tailwind, ranges its modifier names against the platform's vocabulary, and never invents words that CSS or HTML already supply. UA features — `:popover-open`, `::backdrop`, `[open]`, `dialog:modal`, `details > summary`, anchor positioning, view transitions — are surfaced directly. The framework brand is clarity through alignment with the platform.
-
-### 1.2 Tokens over literals
-
-Every value that varies across themes, breakpoints, or modifier contexts flows through a CSS custom property. Partials read tokens; they do not declare numeric literals for color, spacing, duration, or radius. Two namespaces:
-
-- **Tailwind tokens** — `--color-{ramp}-{shade}`, `--spacing`, `--radius-{step}`, `--text-{step}`, `--font-weight-{step}`, `--shadow-{step}`. Registered via `@theme` in the consumer's entry CSS; Tailwind generates utility classes from them.
-- **`--set-*`** — the framework-authored namespace. Covers element-scoped tokens (`--set-button-color`), modifier-context tokens (`--set-variant-color`, `--set-size-padding-inline`), and framework specifics (`--set-focus-box-shadow-width`). The `set` prefix reads as the imperative verb and namespaces the framework against consumer-authored properties.
-
-Full surface in [tokens.md](tokens.md).
-
-### 1.3 Modifiers set tokens, elements consume them
-
-A `.primary` class does not declare colors — it sets `--set-variant-*` tokens. An element partial consumes those tokens through a fallback chain:
-
-```scss
---set-button-background-color: var(
-	--set-style-background-color,
-	var(--set-variant-background-color, transparent)
-);
+```css
+@layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
+@import 'tailwindcss';
 ```
 
-Any modifier dimension works on any element that consumes the right context tokens. Adding a new element is purely additive: it joins the cascade and inherits every modifier for free. The dimensions and their token contracts are in [modifiers.md](modifiers.md).
+Later layers win. Unlayered rules win against any layered rule. Tokens stay unlayered so consumers re-declare them at any specificity.
 
-### 1.4 Tailwind v4 is the base
+| Layer         | Owner     | Responsibility                                                                                                          |
+| ------------- | --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `theme`       | Tailwind  | `@theme` blocks expand into `:root` CSS variables                                                                       |
+| `base`        | Tailwind  | preflight (UA reset, `font-family: inherit` on form controls, `box-sizing: border-box`, …)                              |
+| `elements`    | framework | bare-tag baselines under `elements/_{tag}.scss`                                                                         |
+| `components`  | framework | element compositions (card via `<article>`, sidebar via `body > aside`, …) — static chrome                              |
+| `surfaces`    | framework | pseudo-elements + attribute APIs (`[popover]`, `::backdrop`, scrollbar, anchor, `::placeholder`, `::marker`, …)         |
+| `composables` | framework | component chrome gated on a composable's state attribute (`dialog.scrollable[open]`, `aside[popover][data-aside-open]`) |
+| `modifiers`   | framework | `.primary`, `.large`, `.subtle`, `.disabled`, `.top` — token-setters only                                               |
+| `utilities`   | Tailwind  | `.bg-blue-500`, `.p-4`, `.rounded-md` — last-mile per-element overrides                                                 |
 
-Tailwind owns the color ramps, the scale tokens, every utility class, and preflight (the UA reset). The framework does not redeclare any of it. Modifier and utility classes compose freely on the same element: `<button class="primary large subtle rounded-full m-4 shadow-lg">`. Tailwind v4 ships through `@tailwindcss/postcss` so it runs after Sass and sees the compiled output — this is required for `@theme` blocks authored in SCSS to expand into `:root`.
-
-### 1.5 TypeScript mirrors anything with a CSS identity
-
-The framework is dual-distribution: CSS plus TypeScript. Anything a consumer programmatically reaches for has a TypeScript mirror, parity-tested against its CSS source.
-
-| Surface                | TypeScript file                             | Why                                                             |
-| ---------------------- | ------------------------------------------- | --------------------------------------------------------------- |
-| CSS variable names     | [tokens.ts](../src/browser/tokens.ts)       | `getComputedStyle().getPropertyValue()` / `style.setProperty()` |
-| Modifier class names   | [modifiers.ts](../src/browser/modifiers.ts) | `classList.add()`, typed component props, factories             |
-| Styled HTML tags       | [elements.ts](../src/browser/elements.ts)   | enumerate which tags carry framework styling                    |
-| Namespaced event names | [events.ts](../src/browser/events.ts)       | typed listeners for composable-emitted events                   |
-
-A TypeScript leaf without a matching CSS rule fails parity; a CSS rule without a TS entry fails parity. The relationship is bidirectional.
-
-### 1.6 The HTML element IS the component
-
-A card is `<article>`. A modal is `<dialog>`. A sidebar is `<aside>`. A disclosure is `<details>`. A toast is `<output>`. The tag carries the identity; modifier classes carry variation; descendant context disambiguates dual-role tags (`body > header` is the app bar, `article > header` is the card header). Class-root patterns (`.stack`, `.cluster`, `.frame`, `.skeleton`) appear only when there is no semantic HTML home. The Vue composable layer and framework-agnostic factory layer follow the same rule: one composable per tag, named after the tag (`useDialog`, `useAside`, `useDetails`, `useMenu`, `useTable`). Full discussion in [components.md](components.md) and [composables.md](composables.md).
-
-### 1.7 Baseline hydration — Bootstrap-parity defaults
-
-The framework ships **non-color baseline tokens** alongside the color palette so a bare HTML element drops into a page already feeling "wired up": consistent border-radius and border-width, consistent flex/grid `gap`, sibling vertical rhythm, focus rings, hover/active/disabled states, transitions paired with `prefers-reduced-motion`, and a canonical z-index layering scale for floating chrome. The intent mirrors Bootstrap's appeal — coherent visual grammar across every primitive — but the surface is the elements themselves, not utility classes. Concretely:
-
-- `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-sticky-offset` declared on `:root` so unsized elements have sensible defaults.
-- `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}` — single canonical layering scale (Bootstrap-aligned) for every floating surface.
-- `--set-box-shadow-small`, `--set-box-shadow` (un-suffixed base tier — Bootstrap-aligned `--bs-box-shadow` convention), `--set-box-shadow-large` — three-tier elevation scale consumed by every floating chrome partial.
-- `--set-focus-box-shadow-{width,opacity}` — focus-ring composition consumed by the `focus-ring()` mixin so every interactive element rings consistently.
-
-The baseline is **deliberately unopinionated**: a slate ramp for surfaces, a Tailwind `-600`-step palette for variant identities, a 0.375rem default radius, a 1px default border. Consumers who want a brand identity override at `:root` and the cascade re-tunes every consumer at once. The framework feels coherent the moment it loads; opinions stay optional.
-
----
-
-## 2. File layout
+### File layout
 
 ```
 src/styles/
@@ -89,7 +47,7 @@ src/styles/
 ├── surfaces/                pseudo-elements + attribute APIs the browser owns
 │   ├── _anchor-position.scss   anchor-name / position-anchor / position-area
 │   ├── _backdrop.scss          dialog::backdrop
-│   ├── _focus-ring.scss        :focus-visible box-shadow contract
+│   ├── _focus.scss             :focus-visible box-shadow contract
 │   ├── _marker.scss            ::marker on lists
 │   ├── _placeholder.scss       ::placeholder on inputs
 │   ├── _popover.scss           [popover] / :popover-open / [popovertarget]
@@ -118,15 +76,17 @@ src/browser/
 ├── composables/             Vue 3 adapters — useDialog, useAside, useDetails, useMenu, useToast, ...
 ├── factories/               framework-agnostic — createDialog, createAside, createDetails, ...
 ├── tokens.ts                CSS variable name registry
-├── modifiers.ts             modifier class registry
+├── modifiers.ts             modifier registry
 ├── elements.ts              styled-tag registry
+├── taxonomy.ts              taxonomy + TOKEN_GROUPS + INTERACTIVE_ELEMENTS
+├── patterns.ts              FOLDER_CONTRACTS + per-surface/component/composable contracts + scope helpers
 ├── events.ts                namespaced event-name registry (elements:{source}:{verb})
 ├── constants.ts             selector strings, default timing tokens, event-name maps
 ├── helpers.ts               assertElement, runTransition, lockBodyScroll, …
 └── types.ts                 Use*Options / Use*Return / Create*Options / Create*Instance
 ```
 
-Naming summary:
+### Naming summary
 
 | Kind               | Pattern                             | Example                                              |
 | ------------------ | ----------------------------------- | ---------------------------------------------------- |
@@ -137,48 +97,62 @@ Naming summary:
 | Modifier partial   | `_{dimension}.scss` (plural)        | `_variants.scss`, `_sizes.scss`                      |
 | Sass `@use`        | `'{name}'` (no underscore)          | `@use 'tokens'`, `@use 'mixins' as *`                |
 | CSS variable       | `--set-[scope-]property[-modifier]` | `--set-button-padding-inline`, `--set-variant-color` |
-| Modifier class     | spelled-out semantic adjective      | `.primary`, `.large`, `.subtle`                      |
+| Modifier           | spelled-out semantic adjective      | `.primary`, `.large`, `.subtle`                      |
 | Event name         | `elements:{source}:{verb}`          | `elements:dialog:show`, `elements:toast:close`       |
 
 ---
 
-## 3. Cascade layer order
+## Contract
 
-The framework declares one layer order. It lives in the consumer's entry CSS, **before** `@import "tailwindcss"`, so Tailwind's own `@layer theme, base, components, utilities` declaration merges as a no-op against the wider order:
+These invariants govern every rule, every token, every TypeScript export. The author's contract under [Patterns](#patterns) is the operational form; the principles below are the rationale.
 
-```css
-@layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
-@import 'tailwindcss';
-```
+1. **Build on what the browser provides.** Every CSS property the framework names is a real CSS property. Token names mirror CSS keys. The framework cedes utility class names to Tailwind, ranges its modifier names against the platform's vocabulary, and never invents words CSS or HTML already supply. UA features (`:popover-open`, `::backdrop`, `[open]`, `dialog:modal`, anchor positioning, view transitions) are surfaced directly.
 
-Later layers win. Unlayered rules win against any layered rule. Tokens stay unlayered so consumers re-declare them at any specificity.
+2. **Tokens over literals.** Every value that varies across themes, breakpoints, or modifier contexts flows through a CSS custom property. Partials read tokens; they don't declare numeric literals for color, spacing, duration, or radius. Two namespaces: Tailwind tokens (`--color-*`, `--spacing`, `--radius-*`, `--text-*`, `--font-weight-*`, `--shadow-*`) and the framework's `--set-*` namespace. Full surface in [tokens.md](tokens.md).
 
-| Layer         | Owner     | Responsibility                                                                                                          |
-| ------------- | --------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `theme`       | Tailwind  | `@theme` blocks expand into `:root` CSS variables                                                                       |
-| `base`        | Tailwind  | preflight (UA reset, `font-family: inherit` on form controls, `box-sizing: border-box`, …)                              |
-| `elements`    | framework | bare-tag baselines under `elements/_{tag}.scss`                                                                         |
-| `components`  | framework | element compositions (card via `<article>`, sidebar via `body > aside`, …) — static chrome                              |
-| `surfaces`    | framework | pseudo-elements + attribute APIs (`[popover]`, `::backdrop`, scrollbar, anchor, `::placeholder`, `::marker`, …)         |
-| `composables` | framework | component chrome gated on a composable's state attribute (`dialog.scrollable[open]`, `aside[popover][data-aside-open]`) |
-| `modifiers`   | framework | `.primary`, `.large`, `.subtle`, `.disabled`, `.top` — token-setters only                                               |
-| `utilities`   | Tailwind  | `.bg-blue-500`, `.p-4`, `.rounded-md` — last-mile per-element overrides                                                 |
+3. **Modifiers set tokens; elements consume them.** A `.primary` doesn't declare colors — it sets `--set-variant-*` tokens. An element partial consumes those tokens through a fallback chain `style → variant → size → element-default`. Any dimension works on any element that consumes the right context tokens. Adding a new element is purely additive: it joins the cascade and inherits every modifier for free. Token contracts per dimension in [modifiers.md](modifiers.md).
 
-**Why this order:**
+4. **Tailwind v4 is the base.** Tailwind owns the color ramps, the scale tokens, every utility class, and preflight (the UA reset). The framework doesn't redeclare any of it. Modifiers and utilities compose freely: `<button class="primary large subtle rounded-full m-4 shadow-lg">`. Tailwind v4 ships through `@tailwindcss/postcss` so it runs after Sass and sees the compiled output — required for `@theme` blocks authored in SCSS to expand into `:root`.
 
-- `composables` sits **after** `surfaces` so per-composable chrome (a drawer's transform, a listbox's max-block-size, the toast deck's stacking) beats popover-surface defaults declared in `surfaces/_popover.scss`. The composables layer knows what kind of popover this is; the surfaces layer doesn't.
-- `modifiers` sits **after** `composables` so `.primary` reliably tints a `<dialog>` or a `<aside>` even when the composables layer has set a position-specific background. Modifiers are the user's deliberate signal; chrome is the framework's default.
-- `utilities` sits **last** so `<button class="primary p-8">` ends up with `p-8` padding — the explicit utility wins. Tailwind is the consumer's escape hatch from every framework default.
+5. **TypeScript mirrors anything with a CSS identity.** The framework is dual-distribution: CSS plus TypeScript. Anything a consumer programmatically reaches for has a TypeScript mirror, parity-tested against its CSS source:
+
+   | Surface                | TypeScript file                             | Why                                                             |
+   | ---------------------- | ------------------------------------------- | --------------------------------------------------------------- |
+   | CSS variable names     | [tokens.ts](../src/browser/tokens.ts)       | `getComputedStyle().getPropertyValue()` / `style.setProperty()` |
+   | Modifier names         | [modifiers.ts](../src/browser/modifiers.ts) | `classList.add()`, typed component props, factories             |
+   | Styled HTML tags       | [elements.ts](../src/browser/elements.ts)   | enumerate which tags carry framework styling                    |
+   | Namespaced event names | [events.ts](../src/browser/events.ts)       | typed listeners for composable-emitted events                   |
+
+   A TypeScript leaf without a matching CSS rule fails parity; a CSS rule without a TS entry fails parity. The relationship is bidirectional.
+
+6. **The HTML element IS the component.** A card is `<article>`. A modal is `<dialog>`. A sidebar is `<aside>`. A disclosure is `<details>`. A toast is `<output>`. The tag carries identity; modifiers carry variation; descendant context disambiguates dual-role tags (`body > header` is the app bar; `article > header` is the card header). Class-root patterns (`.stack`, `.cluster`, `.frame`, `.skeleton`) appear only when no semantic HTML home exists. The Vue composable layer and framework-agnostic factory layer follow the same rule: one composable per tag, named after the tag (`useDialog`, `useAside`, `useDetails`, `useMenu`, `useTable`). Full discussion in [components.md](components.md) and [composables.md](composables.md).
+
+7. **Baseline hydration — Bootstrap-parity defaults.** The framework ships **non-color baseline tokens** alongside the color palette so a bare HTML element drops into a page already feeling "wired up": consistent border-radius and border-width, consistent flex/grid `gap`, sibling vertical rhythm, focus rings, hover/active/disabled states, transitions paired with `prefers-reduced-motion`, and a canonical z-index layering scale for floating chrome. Concretely:
+
+   - `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-sticky-offset` declared on `:root` so unsized elements have sensible defaults.
+   - `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}` — single canonical layering scale (Bootstrap-aligned).
+   - `--set-box-shadow-small`, `--set-box-shadow` (base tier), `--set-box-shadow-large` — three-tier elevation scale.
+   - `--set-focus-box-shadow-{width,opacity}` — focus-ring composition consumed by the `focus-ring()` mixin.
+
+   The baseline is **deliberately unopinionated**: a slate ramp for surfaces, a Tailwind `-600`-step palette for variant identities, a 0.375rem default radius, a 1px default border. Consumers who want a brand identity override at `:root` and the cascade re-tunes every consumer at once.
+
+### Layer-order rationale
+
+- **`composables` after `surfaces`** so per-composable chrome (a drawer's transform, a listbox's max-block-size, the toast deck's stacking) beats popover-surface defaults declared in `surfaces/_popover.scss`. The composables layer knows what kind of popover this is; the surfaces layer doesn't.
+- **`modifiers` after `composables`** so `.primary` reliably tints a `<dialog>` or an `<aside>` even when the composables layer has set a position-specific background. Modifiers are the user's deliberate signal; chrome is the framework's default.
+- **`utilities` last** so `<button class="primary p-8">` ends up with `p-8` padding — the explicit utility wins. Tailwind is the consumer's escape hatch from every framework default.
 
 The open/closed gating rules that depend on this order are documented in [composables.md §3](composables.md#3-openclosed-lifecycle).
 
 ---
 
-## 4. Author's contract
+## Patterns
+
+### Author's contract
 
 Every new partial — element, component, surface, composable, modifier — follows these rules.
 
-### 4.1 Decide where it goes
+#### Decide where it goes
 
 - **Bare HTML tag, no composition** → `elements/_{tag}.scss`. Substantive partials declare `--set-{tag}-*` tokens and register in [elements.ts](../src/browser/elements.ts).
 - **Composition of elements with a single root concept** → `components/_{name}.scss`. Static chrome, applies whether or not a composable is attached.
@@ -186,7 +160,7 @@ Every new partial — element, component, surface, composable, modifier — foll
 - **Chrome that depends on a composable's state attribute** → `composables/_{tag}.scss`. Gated on `[data-{name}-open]`, `[data-{name}-closing]`, `:popover-open`, `:modal`, or `[open]`. Convention in [composables.md](composables.md).
 - **New modifier dimension** (rare) → `modifiers/_{dimension}.scss`. Update [modifiers.ts](../src/browser/modifiers.ts), the Sass list constant in [`_mixins.scss`](../src/styles/_mixins.scss), and the parity test.
 
-### 4.2 Wrap in the matching layer
+#### Wrap in the matching layer
 
 Every rule sits inside `@layer {folder}`. The folder name and the layer name match:
 
@@ -198,50 +172,37 @@ Every rule sits inside `@layer {folder}`. The folder name and the layer name mat
 @layer modifiers  { .primary { … } }
 ```
 
-### 4.3 Tokens before declarations
+#### Tokens before declarations
 
 Element-scoped `--set-{name}-*` tokens declare on the element selector, not on `:root`. Reference tokens through their fallback chain — the canonical order is `style → variant → size → element-default`. Reuse before authoring: open [tokens.md](tokens.md) and check what already resolves. Most partials need zero new global tokens.
 
-### 4.4 Logical CSS properties
+#### Logical CSS properties
 
 `padding-inline`, not `padding-left/right`. `margin-block`, not `margin-top/bottom`. `inset-block-start`, not `top`. The framework is direction-agnostic by default.
 
-### 4.5 `@include transition()` for transitions
+#### `@include transition()` for transitions
 
 Every `transition` declaration pairs with `prefers-reduced-motion: reduce { transition: none }`. The canonical syntax is `@include transition($value)` from [`_mixins.scss`](../src/styles/_mixins.scss) — it emits both lines in one call. Animations use `@include reduced-motion { animation: none }`. Hand-rolled transition rules without the guard are an anti-pattern. Full mixin registry in [mixins.md](mixins.md).
 
-### 4.6 Gate open/closed lifecycle rules
+#### Gate open/closed lifecycle rules
 
-Any rule that asserts `display`, `position: fixed`, or a large `transform` on a popover-bearing element, a `<dialog>`, or a `<details>` MUST gate on the open-state selector (`:popover-open`, `[open]`, `:modal`, `[data-{name}-open]`). Without the gate the rule defeats the UA's `display: none` for the closed state and ships a ghost. The full discipline is in [composables.md §3](composables.md#3-openclosed-lifecycle).
+Any rule that asserts `display`, `position: fixed`, or a large `transform` on a popover-bearing element, a `<dialog>`, or a `<details>` MUST gate on the open-state selector (`:popover-open`, `[open]`, `:modal`, `[data-{name}-open]`). Without the gate the rule defeats the UA's `display: none` for the closed state and ships a ghost. Full discipline in [composables.md §3](composables.md#3-openclosed-lifecycle).
 
-### 4.7 TypeScript mirror
+#### TypeScript mirror
 
-If the partial introduces a public concept — a styled tag, a modifier class, an emitted event — update the matching TypeScript file in `src/browser/` and run the parity test (`npm run test:src:browser`).
+If the partial introduces a public concept — a styled tag, a modifier, an emitted event — update the matching TypeScript file in `src/browser/` and run the parity test (`npm run test:src:browser`).
 
-### 4.8 No abbreviations
+#### No abbreviations
 
-Class names, modifier values, token segments — all spelled out. `information`, not `info`. `large`, not `lg`. `background-color`, not `bg`. The single exception is Tailwind utility vocabulary, which follows Tailwind's contract.
+Names, modifier values, token segments — all spelled out. `information`, not `info`. `large`, not `lg`. `background-color`, not `bg`. The single exception is Tailwind utility vocabulary, which follows Tailwind's contract.
 
----
+### Build & distribution
 
-## 5. Build & distribution
-
-### 5.1 Local development
+#### Local development
 
 `npm run dev` boots the showcase app at `app/browser/` via `configs/app/vite.browser.config.ts`. The app entry `app/browser/styles/main.css` declares the layer order, imports Tailwind, sets `@source` paths, and imports the framework SCSS. Tailwind v4 ships through `@tailwindcss/postcss` so it runs after Sass and sees compiled output — using `@tailwindcss/vite` would skip Sass-compiled files entirely and leave `@theme` as a literal at-rule the browser ignores.
 
-### 5.2 Tests
-
-```bash
-npm test                     # all five projects
-npm run test:src:styles      # CSS-aware tests, real Chromium via Playwright
-npm run test:src:browser     # TypeScript shape + bidirectional parity
-npm run check                # oxlint --fix + vue-tsc --noEmit
-```
-
-CSS-aware tests load `tests/setup.css` (Tailwind + framework `@theme`) followed by `src/styles/index.scss`. Every behaviour test inherits the framework's full computed cascade. Browser tests cover the factory layer directly via `mountSetup` + `withElement` and the Vue adapter layer via Vue's test utilities.
-
-### 5.3 Build outputs
+#### Build outputs
 
 - `npm run build:src:styles` → `dist/src/styles/index.css` (the bundled framework CSS) + a copy of the SCSS sources at `dist/src/styles/scss/`.
 - `npm run build:src:browser` → `dist/src/browser/index.js` + `index.cjs` + `index.d.ts` (ESM + CJS bundle).
@@ -255,7 +216,7 @@ The showcase output is explicitly **no-cache**: `app/browser/index.html` carries
 
 Consumers building their own single-file or `file://`-distributed apps can copy the same three pieces: meta tags in `index.html`, an inline `transformIndexHtml` plugin that stamps `<meta name="build-id">`, and a `define: { __BUILD_ID__: JSON.stringify(new Date().toISOString()) }` block.
 
-### 5.4 Consumer setup
+#### Consumer setup
 
 A consumer brings their own Tailwind v4 setup. The full integration is two imports plus an optional `@theme` block:
 
@@ -286,14 +247,42 @@ The showcase at `app/browser/` is the dogfooding consumer and the canonical refe
 
 ---
 
-## Reference
+## Tests
+
+The architecture is enforced across three test projects:
+
+- **`src:browser`** ([`tests/src/browser/`](../tests/src/browser/)) — TS↔SCSS bidirectional parity in real Chromium. Every `--set-*` token resolves at runtime; every modifier in `modifiers.ts` has a matching CSS rule.
+- **`src:styles`** ([`tests/src/styles/`](../tests/src/styles/)) — per-partial behavioural tests against the rendered cascade + folder-level contract enforcers (`{folder}/_index.test.ts`).
+- **`guides`** ([`tests/guides/`](../tests/guides/)) — node-env guide-doc ↔ code parity drivers; one test driver per spec guide plus the meta `index.test.ts` for structural uniformity across guides.
+
+Cross-cutting drivers worth knowing:
+
+- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — folder structural contracts (every partial wraps in its matching layer, every rule head is one of the folder's allowed kinds), scope discipline, structural pairings, interactive minimum.
+- [`tests/guides/tokens.test.ts`](../tests/guides/tokens.test.ts) — token naming + abbreviation black-list + motion-contract partial coverage.
+- [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts) — taxonomy parity + `TOKEN_GROUPS` membership coverage.
+
+Local commands:
+
+```bash
+npm test                     # all five projects
+npm run test:src:styles      # CSS-aware tests, real Chromium via Playwright
+npm run test:src:browser     # TypeScript shape + bidirectional parity
+npm run check                # oxlint --fix + vue-tsc --noEmit
+```
+
+CSS-aware tests load `tests/setup.css` (Tailwind + framework `@theme`) followed by `src/styles/index.scss`. Every behaviour test inherits the framework's full computed cascade.
+
+---
+
+## See also
 
 - [tokens.md](tokens.md) — full token surface (CSS + TypeScript)
 - [mixins.md](mixins.md) — `_mixins.scss` registry (Sass list constants + helpers)
-- [modifiers.md](modifiers.md) — five-dimension modifier system
-- [elements.md](elements.md) — per-element catalog
+- [modifiers.md](modifiers.md) — modifier cascade (variant, size, style, state, placement)
+- [elements.md](elements.md) — per-element catalog + taxonomy + token-uniformity groups
 - [components.md](components.md) — element-composition convention
 - [composables.md](composables.md) — Vue adapters + framework-agnostic factories
 - [surfaces.md](surfaces.md) — pseudo-elements and attribute APIs
+- [patterns.md](patterns.md) — per-folder structural contracts + 11 codified registries
 - [ROADMAP.md](../ROADMAP.md) — implementation status
 - [AGENTS.md](../AGENTS.md) — repository-wide coding standards

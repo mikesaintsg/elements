@@ -2,51 +2,13 @@
 
 > Vue 3 composables that wrap native HTML element behaviour. Single-word public API. Every composable has a paired framework-agnostic factory under [`src/browser/factories/`](../src/browser/factories/) — drop the Vue adapter and call `createDialog(el, opts)` directly from any framework or vanilla JS.
 
+## Surface
+
 A **composable** owns state (open/closed, active/inactive, transitions). The matching component partial owns chrome (color, layout, sizing). The element baseline owns UA-quirk resets and token chains. Three layers, each with a single responsibility.
 
-This document covers:
+### Naming buckets
 
-1. [Factory + adapter split](#1-factory--adapter-split) — why every composable has two files.
-2. [Naming](#2-naming) — element → composable → factory rules; event-name vocabulary; state-attribute scheme.
-3. [Open/closed lifecycle](#3-openclosed-lifecycle) — the dual-attribute gating discipline every popover-bearing surface follows.
-4. [Anatomy of a composable](#4-anatomy-of-a-composable) — the canonical body layout.
-5. [Per-composable reference](#5-per-composable-reference) — host element, owns, key options, events.
-6. [Contributing](#6-contributing) — checklist for adding a new composable.
-7. [Cross-references](#7-cross-references).
-
----
-
-## 1. Factory + adapter split
-
-Every composable in [`src/browser/composables/`](../src/browser/composables/) is a thin Vue adapter over a framework-agnostic `create*` factory in [`src/browser/factories/`](../src/browser/factories/).
-
-```
-src/browser/
-├── composables/use{Name}.ts   Vue adapter — resolves refs, watchEffect, readonly() state.
-├── factories/create{Name}.ts  Framework-agnostic — imports only from @vue/reactivity.
-├── helpers.ts                 Shared utilities (assertElement, runTransition, lockBodyScroll, …).
-├── types.ts                   Use*Options / Use*Return / Create*Options / Create*Instance.
-├── constants.ts               Event-name maps, selector strings, data-attribute markers, default timing tokens.
-├── events.ts                  Event-name registry — parity-tested against constants.ts.
-├── tokens.ts                  --set-* token mirror, parity-tested against styles/tokens.
-├── modifiers.ts               Class-name mirror, parity-tested against styles/modifiers.
-├── elements.ts                Styled-tag mirror, parity-tested against styles/elements.
-└── index.ts                   Public barrel.
-```
-
-**Why the split:**
-
-- The factory is the logic. It owns DOM listeners, attribute lifecycle, ARIA wiring, event emission, and `destroy()`. It imports only from `@vue/reactivity`, so it works in any framework or in vanilla JS.
-- The composable is the Vue adapter. It resolves `Ref<HTMLElement | null>`, watches for ref changes via `watchEffect({ flush: 'post' })`, and wraps the factory's reactive state in `readonly()` before returning. Most composables are 20–40 lines.
-- Both layers carry their own tests. Factory tests use real DOM through `mountSetup` + `withElement`. Composable tests mount via Vue test utilities.
-
-**Authoring rule:** put logic in the factory. The composable is plumbing.
-
----
-
-## 2. Naming
-
-Three buckets, one rule per bucket:
+Three naming buckets, one rule per bucket:
 
 | Bucket                     | Rule                                                                                              | Examples                                                                                                                                                                                                                                          |
 | -------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -54,7 +16,35 @@ Three buckets, one rule per bucket:
 | **Attribute-bound**        | Composable name = attribute API.                                                                  | `usePopover` wraps `[popover]`. `useTooltip` wraps tooltip-host elements via `aria-describedby` + `[popover=hint]`.                                                                                                                               |
 | **Behavioural primitives** | No specific element — reusable building blocks.                                                   | `useFocus`, `useDrag`, `useDrop`, `usePointer`, `useTheme`, `useTabs` (role-based, not tag-bound).                                                                                                                                                |
 
-### Event names
+### Shipped catalog
+
+Twenty composables ship today. Each has a paired showcase page under [`app/browser/pages/Use*Page.vue`](../app/browser/pages/) and tests under `tests/src/browser/{composables,factories}/`. Full per-composable reference (host element, owns, key options, events) lives under [Patterns](#patterns).
+
+| Composable               | Bucket               | Factory          | Notes                                                       |
+| ------------------------ | -------------------- | ---------------- | ----------------------------------------------------------- |
+| `useDialog`              | element-bound        | `createDialog`   | Modal + non-modal dialog lifecycle.                         |
+| `useAside`               | element-bound        | `createAside`    | Programmatic shim over `<aside popover>` (drawer surface).  |
+| `useDetails`             | element-bound        | `createDetails`  | `[open]` toggle + accordion grouping.                       |
+| `useMenu`                | element-bound        | `createMenu`     | Dropdown lifecycle + roving focus + anchor positioning.     |
+| `useSelect`              | element-bound        | `createSelect`   | Listbox + combobox + multi-select + autocomplete.           |
+| `useToast`               | element-bound        | `createToast`    | `<output popover>` with auto-hide + deck stacking.          |
+| `useTabs`                | element-bound        | `createTabs`     | `[role=tablist]` keyboard roving + lazy panel mount.        |
+| `useNav`                 | element-bound        | `createNav`      | `IntersectionObserver` scroll-spy + `aria-current=location`.|
+| `useForm`                | element-bound        | `createForm`     | Constraint validation + `[data-form-validated]` + a11y.    |
+| `useTable`               | element-bound        | `createTable`    | Sort + paginate + select + expand + resize.                 |
+| `useButton`              | element-bound        | `createButton`   | `aria-pressed` toggle.                                      |
+| `useAlert`               | element-bound        | `createAlert`    | `[role=alert]` dismiss lifecycle.                           |
+| `useCarousel`            | element-bound        | `createCarousel` | Slide nav + autoplay + touch / swipe.                       |
+| `usePopover`             | attribute-bound      | `createPopover`  | Programmatic show / hide + anchor positioning.              |
+| `useTooltip`             | attribute-bound      | `createTooltip`  | Hover / focus triggers + `[popover=hint]` panel.            |
+| `useFocus`               | behavioural primitive| `createFocus`    | Tab-trap with `activate()` / `deactivate()`.                |
+| `useDrag` + `useDrop`    | behavioural primitive| `createDrag` + `createDrop` | HTML5 DnD with reorder events.                    |
+| `usePointer`             | behavioural primitive| `createPointer`  | `pointerdown` → `pointermove*` → `pointerup` multiplex.     |
+| `useTheme`               | behavioural primitive| `createTheme`    | `data-theme` explicit pin OR attribute-absent follow.       |
+
+**`useReducedMotion` is deliberately not shipped.** Tailwind v4 exposes the media query as a class variant, and the framework's `transition` mixin honours `@media (prefers-reduced-motion: reduce)` directly. A composable would be redundant.
+
+### Event-name vocabulary
 
 Every event follows `elements:{source}:{verb}`:
 
@@ -69,11 +59,11 @@ elements: select: select // single-emission verb
 elements: toast: close
 ```
 
-Verbs come from a fixed vocabulary: `show / open / hide / close`, `start / stop`, `pause / resume`, `abort`, `destroy`, `select / deselect`, `focus / blur`. Adding a new verb means extending the vocabulary, not bolting one onto a single composable.
+Verbs come from a fixed vocabulary: `show / open / hide / close`, `start / stop`, `pause / resume`, `abort`, `destroy`, `select / deselect`, `focus / blur`. Adding a new verb means extending the vocabulary (in both [`events.ts`](../src/browser/events.ts) and the parity test), not bolting one onto a single composable.
 
 The `{source}` segment uses the **element name** when the composable binds to one (`dialog`, `details`, `popover`, `select`, `aside`, `menu`, `nav`, `table`) and the **composable noun** otherwise (`drag`, `theme`, `pointer`, `combo`).
 
-### State attributes
+### State-attribute scheme
 
 Every state attribute follows `data-{name}-{state}`:
 
@@ -84,11 +74,61 @@ data-table-expanded      data-table-resizing
 data-form-validated      data-alert-open
 ```
 
-Open-state markers (`data-{name}-open`) flip on at the start of `show()`. Closing-state markers (`data-{name}-closing`) flip on at the start of `hide()` and persist through the close transition — see §3.
+Open-state markers (`data-{name}-open`) flip on at the start of `show()`. Closing-state markers (`data-{name}-closing`) flip on at the start of `hide()` and persist through the close transition — see [Open / closed lifecycle](#openclosed-lifecycle).
 
 ---
 
-## 3. Open/closed lifecycle
+## Contract
+
+These invariants hold across `src/browser/composables/` ↔ `src/browser/factories/` ↔ `src/styles/composables/` ↔ this guide:
+
+1. **Factory + adapter split.** Every composable in [`src/browser/composables/`](../src/browser/composables/) is a thin Vue adapter over a framework-agnostic `create*` factory in [`src/browser/factories/`](../src/browser/factories/). The factory imports only from `@vue/reactivity` (not `vue`); the composable owns the `watchEffect` / ref resolution.
+2. **Doc parity.** Every shipped factory (`src/browser/factories/create{Name}.ts`) is mentioned in this guide as either `create{Name}` or `use{Name}`.
+3. **Filename ↔ factory parity (styles side).** Every `src/styles/composables/_{name}.scss` partial has a matching `src/browser/factories/create{Name}.ts`. A partial without a factory or vice versa fails the contract.
+4. **Event-name registry.** Every namespaced event name follows `elements:{source}:{verb}`. Every `{verb}` appears in the documented lifecycle vocabulary (`show`, `open`, `hide`, `close`, `prevent`, `start`, `stop`, `pause`, `resume`, `abort`, `destroy`, `toggle`, `select`, `deselect`, `clear`, `focus`, `blur`, `activate`, `deactivate`, `change`, `input`, `create`, `formdata`, `invalid`, `reset`, `submit`, `validate`, `slide`, `place`, `tap`, `over`, `drop`, `end`, `reorder`, `expand`, `collapse`, `move`, `sort`, `paginate`). Adding a verb is a deliberate framework-wide decision.
+5. **JS ↔ CSS attribute parity.** Every `setAttribute('data-X-*', …)` written by a factory under `src/browser/factories/` is referenced at least once by a partial in `src/styles/`. If the CSS never reads the attribute, the JS is doing dead work — see [Native-platform redundancy](#native-platform-redundancy). Allow-list opt-outs live in `JS_ONLY` (in the test file) with a one-line rationale per entry.
+6. **Per-composable required tokens + state selectors + animation discipline.** Every partial registered in `COMPOSABLE_CONTRACTS` declares its required tokens, uses at least one state selector (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`), and (if `animated: true`) invokes `@include transition()` or `@include reduced-motion`.
+7. **`destroy()` idempotence + clean dispose.** Every factory exposes `destroy()`. Calling it twice is safe. Every listener, observer, and timer installed during construction reverses on destroy (verified by `assertCleanDispose` in the factory tests).
+
+Enforced by:
+
+- [`tests/guides/composables.test.ts`](../tests/guides/composables.test.ts) — event-name registry, JS↔CSS attribute parity, factory↔guide pairing (contracts 2, 4, 5).
+- [`tests/src/styles/composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts) — `COMPOSABLE_CONTRACTS` enforcement (contract 6).
+- [`tests/src/browser/factories/`](../tests/src/browser/factories/) — per-factory behaviour + `assertCleanDispose` (contract 7).
+- [`tests/src/browser/composables/`](../tests/src/browser/composables/) — Vue adapter behaviour (contract 1).
+- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — folder structural contract for `src/styles/composables/` (contract 3 + state-selector requirement).
+
+---
+
+## Patterns
+
+### Factory + adapter split
+
+Every composable in [`src/browser/composables/`](../src/browser/composables/) is a thin Vue adapter over a framework-agnostic `create*` factory in [`src/browser/factories/`](../src/browser/factories/).
+
+```
+src/browser/
+├── composables/use{Name}.ts   Vue adapter — resolves refs, watchEffect, readonly() state.
+├── factories/create{Name}.ts  Framework-agnostic — imports only from @vue/reactivity.
+├── helpers.ts                 Shared utilities (assertElement, runTransition, lockBodyScroll, …).
+├── types.ts                   Use*Options / Use*Return / Create*Options / Create*Instance.
+├── constants.ts               Event-name maps, selector strings, data-attribute markers, default timing tokens.
+├── events.ts                  Event-name registry — parity-tested against constants.ts.
+├── tokens.ts                  --set-* token mirror, parity-tested against styles/tokens.
+├── modifiers.ts               Modifier mirror, parity-tested against styles/modifiers.
+├── elements.ts                Styled-tag mirror, parity-tested against styles/elements.
+└── index.ts                   Public barrel.
+```
+
+**Why the split:**
+
+- The factory is the logic. It owns DOM listeners, attribute lifecycle, ARIA wiring, event emission, and `destroy()`. It imports only from `@vue/reactivity`, so it works in any framework or in vanilla JS.
+- The composable is the Vue adapter. It resolves `Ref<HTMLElement | null>`, watches for ref changes via `watchEffect({ flush: 'post' })`, and wraps the factory's reactive state in `readonly()` before returning. Most composables are 20–40 lines.
+- Both layers carry their own tests. Factory tests use real DOM through `mountSetup` + `withElement`. Composable tests mount via Vue test utilities.
+
+**Authoring rule:** put logic in the factory. The composable is plumbing.
+
+### Open / closed lifecycle
 
 The most subtle area of the framework. Every composable that opens and closes (popover, dialog, drawer, toast, dropdown menu) participates in a dance between three players:
 
@@ -98,7 +138,7 @@ The most subtle area of the framework. Every composable that opens and closes (p
 
 Get the interaction wrong and you ship a "ghost" — a closed element that stays rendered at the wrong position. The dual-attribute gating discipline below prevents the entire bug class.
 
-### 3.1 The CSS structure
+#### The CSS structure
 
 Every open/close composable's component partial follows this layout:
 
@@ -144,7 +184,7 @@ Every open/close composable's component partial follows this layout:
 }
 ```
 
-### 3.2 The factory structure
+#### The factory structure
 
 The factory's lifecycle mirrors the CSS:
 
@@ -174,14 +214,14 @@ const hide = (): void => {
 }
 ```
 
-### 3.3 The four invariants
+#### The four invariants
 
 1. **Bare element rule is minimal.** No `display: flex`, no `position: fixed`, no large `translate`. Only tokens, color, border, font-size, padding — anything that survives the close.
 2. **Open-state rule gates on the dual attribute.** `[data-{name}-open], [data-{name}-closing]` — or `:popover-open` / `:modal` / `[open]` for cases that use the native lifecycle directly. Owns geometry.
 3. **Closing-state attribute persists.** `hide()` sets it; the `runTransition` callback does NOT remove it after `hidePopover()`. The next `show()` removes it; `destroy()` removes it as part of teardown.
 4. **`@starting-style` targets a lower-specificity selector.** Typically the bare element-with-placement selector (`aside[popover].start`), NOT the open-state selector. Avoids the Chrome 148+ cascade-tier leakage. The element still matches the bare selector at the transition's first frame, so `@starting-style` resolves its from-state values.
 
-### 3.4 Composables that follow this pattern
+#### Composables that follow this pattern
 
 | Composable              | Open-state selectors                                        | Closing attribute           | Notes                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------------- | ----------------------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -192,15 +232,13 @@ const hide = (): void => {
 | `usePopover`            | `[popover]:popover-open` (surface-layer rule)               | (native popover lifecycle)  | The popover surface itself owns the open-state rule.                                                                                                                                                                                                                                                                                                                                                              |
 | `useDetails`            | `details[open]`                                             | (native `[open]` lifecycle) | The `::details-content` pseudo gates animation on `[open]`.                                                                                                                                                                                                                                                                                                                                                       |
 
-### 3.5 Gotchas
+#### Gotchas
 
-- **Tailwind layout utilities on `[popover]` elements.** Adding `.flex` / `.grid` / `.block` to a `<menu popover>` or `<output popover>` defeats the UA's `display: none` for closed popovers. Wrap the content in a child div instead, or use the framework's component-layer rules which gate `display` on `:popover-open`. See [surfaces.md §6.1](./surfaces.md#61-gotcha--tailwind-layout-utilities-on-popover-elements).
+- **Tailwind layout utilities on `[popover]` elements.** Adding `.flex` / `.grid` / `.block` to a `<menu popover>` or `<output popover>` defeats the UA's `display: none` for closed popovers. Wrap the content in a child div instead, or use the framework's component-layer rules which gate `display` on `:popover-open`. See [surfaces.md](surfaces.md) (popover panel surface).
 - **`hidePopover()` doesn't fire `transitionend`** if no transitioning property changes. `runTransition` falls back to a `TRANSITION_FALLBACK_MS` (400 ms) timeout. For composables that need deterministic close-completion timing, transition `opacity` (always changes) rather than `transform` alone.
 - **Use `inert`, not `aria-hidden`, for closed state.** Setting `aria-hidden="true"` while a descendant still has focus triggers a Chrome console warning. `inert` is the W3C-recommended alternative — it blurs descendants, removes them from the a11y tree, and blocks pointer events. `createAside` uses `inert`.
 
----
-
-## 4. Anatomy of a composable
+### Anatomy of a factory
 
 Every factory follows this section order; the composable mirrors it, omitting empty sections.
 
@@ -331,13 +369,22 @@ export function useDialog(
 - `destroy()` is idempotent — calling it twice is safe.
 - Reactive state is wrapped in `readonly()` before return, so consumers can't write the ref directly.
 
----
+### Native-platform redundancy
 
-## 5. Per-composable reference
+Two real regressions motivate the JS↔CSS attribute parity rule:
+
+- `createAside` (fixed in commit `2b6952a`) wrote `[data-aside-open]` / `[data-aside-closing]` on every open / close but neither `components/_aside.scss` nor `composables/_aside.scss` referenced either. The slide animation was driven entirely by `:popover-open` + `@starting-style`. Worse, the JS was also waiting on a `transitionend` that couldn't fire — ~400 ms of dead wait. Stripping the writes dropped close latency from ~400 ms to ~73 ms.
+- `createTabs` wrote `[data-tab-open]` on/off but no SCSS referenced it. Separately, pane-hide chrome keyed off `[hidden]` while the JS toggled `[aria-hidden]` — so panels never visually hid.
+
+The checklist for any new composable demo: walk every `setAttribute('data-X-*', …)` in the factory before writing the showcase page. For each attribute, grep `src/styles/` for the literal — if zero hits, either wire the attribute into the cascade or drop the write. Legitimate JS-only attributes (consumed by JS arrow-positioning, drag-selection-set tracking, etc.) opt in via the test's `JS_ONLY` allow-list with a one-line rationale.
+
+[`tests/guides/composables.test.ts`](../tests/guides/composables.test.ts) § JS↔CSS enforces this on every commit.
+
+### Per-composable reference
 
 Twenty composables ship today. Each has a paired showcase page under [`app/browser/pages/Use*Page.vue`](../app/browser/pages/) and tests under `tests/src/browser/{composables,factories}/`.
 
-### Element-bound
+#### Element-bound
 
 | Composable    | Host element                         | Owns                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Key options                                                                                                                                                                                                                                  | Events                                                                  |
 | ------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -355,14 +402,14 @@ Twenty composables ship today. Each has a paired showcase page under [`app/brows
 | `useAlert`    | `[role="alert"]` / `[role="status"]` | In-flow alert dismissible lifecycle. `[data-alert-open]` attribute mirror drives the height-collapse + opacity-fade chrome in `components/_aside.scss` (rides the framework-wide `--set-motion-{duration, timing-function}` tokens — same motion contract `<details>::details-content`, drawers, dialogs, and table-row expansions use). Any descendant carrying `[data-alert-dismiss]` becomes a click-to-close trigger (mirrors Bootstrap's `.btn-close`). Cancellable `elements:alert:{show, hide}` (consumer `preventDefault()` vetoes the transition) plus post-transition `open` / `close` notifications. `aria-hidden="true"` mirror lands after the close transition so the live region stops announcing the dismissed alert.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `initial` (default `true`; mount visible)                                                                                                                                                                                                    | `show`, `open`, `hide`, `close`                                         |
 | `useCarousel` | `<section class="carousel">`         | Slide-deck composition. Owns the active-slide index, the autoplay timer, the four-class slide-axis transition lifecycle (`.active` + `.carousel-item-{next,prev,start,end}`), and the keyboard / touch handlers. Indicator buttons get an `aria-selected="true"/"false"` mirror (the framework chrome in `composables/_carousel.scss` paints the active pill-stretch off this). `slide` is cancellable (consumer `preventDefault()` vetoes the transition); `change` fires post-transition with `{ direction, from, to }`. Autoplay options: `ride: 'mount' \| 'interaction' \| false`, `pause: 'hover' \| false`, `interval` (default 5000 ms). `wrap: false` clamps at deck boundaries instead of cycling. `keyboard: false` / `touch: false` opt the input surface out when embedded inside another keyboard-navigable widget.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `autoplay.{interval, ride, pause}`, `keyboard`, `wrap`, `touch`, `on.*`                                                                                                                                                                      | `slide`, `change`, `pause`, `resume`                                    |
 
-### Attribute-bound
+#### Attribute-bound
 
 | Composable   | Host                                  | Owns                                                                                                       | Key options                                       | Events                                   |
 | ------------ | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | ---------------------------------------- |
 | `usePopover` | `[popover]` panel + invoker           | Programmatic show / hide, anchor positioning, click-outside dismiss. Backbone for menu / tooltip / select. | `placement`, `offset`, `flip`, `dismiss.*`        | `show`, `open`, `hide`, `close`, `place` |
 | `useTooltip` | Any element + `[popover=hint]` target | Hover + focus triggers, `role="tooltip"` wiring, anchor positioning, delay control.                        | `placement`, `offset`, `delay.show`, `delay.hide` | `show`, `open`, `hide`, `close`, `place` |
 
-### Behavioural primitives
+#### Behavioural primitives
 
 | Composable   | Wraps                 | Owns                                                                                                                                                                      |
 | ------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -372,56 +419,63 @@ Twenty composables ship today. Each has a paired showcase page under [`app/brows
 | `usePointer` | Any element           | `pointerdown → pointermove* → pointerup` multiplex with body cursor lock. Foundation for splitter / slider.                                                               |
 | `useTheme`   | Document root         | Singleton theme controller — `data-theme` explicit pin OR attribute-absent (CSS-owned `prefers-color-scheme` follow). JS reactivity reserved for the resolved `mode` ref. |
 
-**`useReducedMotion` is deliberately not shipped.** Tailwind v4 exposes the media query as a class variant, and the framework's `transition` mixin honours `@media (prefers-reduced-motion: reduce)` directly. A composable would be redundant.
+### Adding a new composable
 
----
+#### A. Align before any code
 
-## 6. Contributing
-
-### A. Align before any code
-
-1. **Read [§3](#3-openclosed-lifecycle).** The dual-attribute gating discipline is non-negotiable for any open / closed composable.
+1. **Read [Open / closed lifecycle](#openclosed-lifecycle).** The dual-attribute gating discipline is non-negotiable for any open / closed composable.
 2. **Read the closest sibling.** New floating panel? Read `usePopover`. New form control? Read `useForm`. The closest sibling is the template you adapt — don't invent shape.
 
-### B. Types-first
+#### B. Types-first
 
 3. **Edit `src/browser/types.ts` first.** In this order: `{Entity}EventMap`, `Create{Entity}Elements` (if multi-element), `Create{Entity}Options`, `Create{Entity}Instance`, `Use{Entity}Options`, `Use{Entity}Return`. Every property `readonly`.
 4. **Add constants to `src/browser/constants.ts`** — event-name map (`{ENTITY}_EVENTS`), state-attribute strings, selector strings, default timing tokens.
 5. **Run `npx vue-tsc --noEmit`** to lock the contract before implementation.
 
-### C. Implement
+#### C. Implement
 
-6. **Factory at `src/browser/factories/create{Entity}.ts`.** Imports from `@vue/reactivity` (not `vue`). Section banners in the order shown in [§4](#4-anatomy-of-a-composable). Owns `destroy()`; idempotent. No DOM creation. No presentation decisions.
+6. **Factory at `src/browser/factories/create{Entity}.ts`.** Imports from `@vue/reactivity` (not `vue`). Section banners in the order shown in [Anatomy of a factory](#anatomy-of-a-factory). Owns `destroy()`; idempotent. No DOM creation. No presentation decisions.
 7. **Composable at `src/browser/composables/use{Entity}.ts`.** Vue adapter — `watchEffect({ flush: 'post' })` to bind the ref, wraps factory output in `readonly()`. Same section banners (omit when empty).
 8. **Add to barrels** — `src/browser/factories/index.ts` and `src/browser/index.ts`.
 
-### D. Style partial when chrome is needed
+#### D. Style partial when chrome is needed
 
-9. **Component partial at `src/styles/composables/_{entity}.scss`,** wrapped in `@layer composables`. Gate any `display` / `position: fixed` / large-`transform` rules on the open-state selector ([§3.3](#33-the-four-invariants)). Add `@use '{entity}'` in the right `index.scss` section.
+9. **Component partial at `src/styles/composables/_{entity}.scss`,** wrapped in `@layer composables`. Gate any `display` / `position: fixed` / large-`transform` rules on the open-state selector ([The four invariants](#the-four-invariants)). Add `@use '{entity}'` in the right `index.scss` section.
 
-### E. Test
+#### E. Test
 
 10. **Add fixtures to `tests/setupBrowser.ts`** — element factory + child appenders + any custom event helpers. Centralise.
 11. **Factory tests at `tests/src/browser/factories/create{Entity}.test.ts`.** Cover: construction + ARIA wiring; every action; every event; `preventDefault` cancellation; `destroy()` idempotence; `assertCleanDispose` (listeners + observers + timers all reverse).
 12. **Composable tests at `tests/src/browser/composables/use{Entity}.test.ts`.** Mirror the factory's coverage. Add reactive-option tests if the composable accepts `Ref` props.
 13. **Run targeted tests** — `npx vitest run tests/src/browser/factories/create{Entity}.test.ts tests/src/browser/composables/use{Entity}.test.ts`.
 
-### F. Showcase
+#### F. Showcase
 
 14. **Add `app/browser/pages/Use{Entity}Page.vue`** demonstrating each option, the event sequence, and visual states. Wire through the `Composables` group in `router.ts`.
 
-### G. Document
+#### G. Document
 
-15. **Update [§5 per-composable reference](#5-per-composable-reference)** with the new row.
+15. **Add the row to the [Shipped catalog](#shipped-catalog) above** and the deep-dive entry under [Per-composable reference](#per-composable-reference).
 
 ---
 
-## 7. Cross-references
+## Tests
 
-- [components.md](./components.md) — component partials. Static chrome lives in `components/`; composable-attached chrome lives in `composables/`.
-- [elements.md](./elements.md) — the element baselines composables wrap.
-- [surfaces.md](./surfaces.md) — `[popover]` + anchor positioning, the surfaces every floating composable depends on.
-- [styles.md](./styles.md) — top-level architecture, layer ordering, partial conventions.
-- [modifiers.md](./modifiers.md) — class-root mirror parity-tested against `src/browser/modifiers.ts`.
-- [tokens.md](./tokens.md) — `--set-*` token mirror parity-tested against `src/browser/tokens.ts`.
+- [`tests/guides/composables.test.ts`](../tests/guides/composables.test.ts) — event-name registry (`elements:{source}:{verb}` vocabulary), JS↔CSS attribute parity (every factory `setAttribute('data-X-*', …)` is referenced by SCSS), factory↔guide pairing (every `create{Name}.ts` documented).
+- [`tests/src/styles/composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts) — `COMPOSABLE_CONTRACTS` enforcement (required tokens + state selectors + animated discipline + factory file pairing).
+- [`tests/src/browser/factories/`](../tests/src/browser/factories/) — per-factory behaviour in real Chromium. Covers construction + ARIA wiring, every action + event, `preventDefault` cancellation, `destroy()` idempotence, `assertCleanDispose` (listeners + observers + timers all reverse).
+- [`tests/src/browser/composables/`](../tests/src/browser/composables/) — per-composable Vue adapter behaviour; mirrors the factory coverage + reactive-option tests where applicable.
+- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — folder structural contract: every `composables/_{name}.scss` wraps in `@layer composables`, uses at least one state selector, and pairs with a real `create{Name}.ts`.
+
+---
+
+## See also
+
+- [components.md](components.md) — component partials. Static chrome lives in `components/`; composable-attached chrome lives in `composables/`.
+- [elements.md](elements.md) — the element baselines composables wrap.
+- [surfaces.md](surfaces.md) — `[popover]` + anchor positioning, the surfaces every floating composable depends on.
+- [styles.md](styles.md) — top-level architecture, layer ordering, partial conventions.
+- [modifiers.md](modifiers.md) — modifier mirror parity-tested against `src/browser/modifiers.ts`.
+- [tokens.md](tokens.md) — `--set-*` token mirror parity-tested against `src/browser/tokens.ts`.
+- [patterns.md](patterns.md) — `COMPOSABLE_CONTRACTS` registry + folder structural contract.
 - [ROADMAP.md](../ROADMAP.md) — invariants and roadmap.

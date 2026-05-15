@@ -1,27 +1,63 @@
 # Style-folder structural contracts
 
-> One contract per folder under [`src/styles/`](../src/styles/). Every SCSS partial in a folder is held to the matching contract by the parity test at [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts).
+> One contract per folder under [`src/styles/`](../src/styles/). Every SCSS partial in a folder is held to the matching contract by the parity test at [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts). The contract data lives in [`src/browser/patterns.ts`](../src/browser/patterns.ts); this document is the prose explanation. When the two disagree, the TS is authoritative.
 
-The contract data lives in [`src/browser/patterns.ts`](../src/browser/patterns.ts) as `FOLDER_CONTRACTS` + `FILE_EXCEPTIONS`. This document is the prose explanation. When the two disagree, the TS is authoritative — the parity test will fail loudly until either the code or this document is updated.
+## Surface
+
+Eleven codified contract registries govern every SCSS partial the framework ships. Each is a typed structure in [`src/browser/patterns.ts`](../src/browser/patterns.ts), each is enforced by a test, and each has a per-folder or per-domain prose section in this guide.
+
+### Contract registries
+
+| Registry                       | Scope                                                                         | TS location (`src/browser/patterns.ts`) | Prose                                           |
+| ------------------------------ | ----------------------------------------------------------------------------- | --------------------------------------- | ----------------------------------------------- |
+| `FOLDER_CONTRACTS`             | Per-folder rules (layer, head-kind allow/forbid, state-selector, namespace).  | `FOLDER_CONTRACTS`                      | [§ Per-folder contracts](#per-folder-contracts) |
+| `FILE_EXCEPTIONS`              | Per-partial deltas relaxing the folder contract.                              | `FILE_EXCEPTIONS`                       | [§ File exceptions](#file-exceptions)           |
+| `STYLE_LAYERS`                 | The five `@layer` names the framework owns.                                   | `STYLE_LAYERS`                          | [§ Per-folder contracts](#per-folder-contracts) |
+| `MODIFIER_DIMENSION_TOKENS`    | Required context tokens per modifier dimension.                               | `MODIFIER_DIMENSION_TOKENS`             | [§ Per-dimension required tokens](#per-dimension-required-tokens) |
+| `SURFACE_CONTRACTS`            | Per-surface required tokens + animation discipline.                           | `SURFACE_CONTRACTS`                     | [§ Per-surface contracts](#per-surface-contracts) |
+| `COMPONENT_CONTRACTS`          | Per-component required tokens + animation discipline.                         | `COMPONENT_CONTRACTS`                   | [§ Per-component contracts](#per-component-contracts) |
+| `COMPOSABLE_CONTRACTS`         | Per-composable required tokens + state selectors + factory pairing.           | `COMPOSABLE_CONTRACTS`                  | [§ Per-composable contracts](#per-composable-contracts) |
+| `STRUCTURAL_PAIRINGS`          | Allowlist of bare-tag `parent > child` pairs in framework selectors.          | `STRUCTURAL_PAIRINGS`                   | [§ Structural pairings](#structural-pairings)   |
+| `INTERACTIVE_ELEMENTS`         | Closed set of interactive tags subject to focus/forced-colors discipline.     | `INTERACTIVE_ELEMENTS`                  | [§ Per-dimension required tokens](#per-dimension-required-tokens) (§ Interactive elements) |
+| `MOTION_CONTRACT_PARTIALS`     | Partials that must reference the shared motion tokens (no hardcoded durations). | `MOTION_CONTRACT_PARTIALS`            | [tokens.md](tokens.md) — also enforced here     |
+| `TOKEN_GROUPS`                 | Logical families of elements sharing a minimum token surface.                 | [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts) | [elements.md](elements.md) § Token-uniformity groups |
+
+### What every per-folder contract covers
+
+Each folder contract names:
+
+1. **Cascade layer** — `@layer {folder}`. Every rule body in the folder MUST wrap in this layer.
+2. **Allowed root selector kinds** — what kinds of selectors the rule's _head_ (first simple selector) may be.
+3. **Forbidden root selector kinds** — selectors that have a clearly-better home elsewhere; the failure message names the right folder.
+4. **State-selector requirement** — `composables/` is the only folder where every rule must gate on a composable-state selector.
+5. **Token namespace policy** — which `--set-*` prefixes the partial is allowed to declare. Three modes: `filename` (basename of the partial), `dimension` (one of `variant`, `size`, `style`, `state`, `placement`), or `free` (no namespace check).
+6. **Comment-only policy** — whether a partial may contain no rules (only header comments). `elements/` allows passthrough stubs; `composables/_aside.scss` is the documented behavior-only exception.
 
 ---
 
-## 1. What a contract covers
+## Contract
 
-Each folder's contract names:
+These invariants hold across `src/styles/**/*.scss` ↔ `src/browser/patterns.ts` ↔ this guide:
 
-1. **The cascade layer** — `@layer {folder}`. Every rule body in the folder MUST wrap in this layer. The parity test rejects unlayered rules and rejects rules wrapped in a foreign layer.
-2. **Allowed root selector kinds** — what kinds of selectors the rule's _head_ (first simple selector) may be (tag, class, pseudo-element, attribute, data-attribute, etc.). The test classifies every rule opener; mismatches surface with a recommended target folder for the misfiled rule.
-3. **Forbidden root selector kinds** — selectors that have a clearly-better home elsewhere. The failure message names the right folder.
-4. **State-selector requirement** — `composables/` is the only folder where every rule must gate on a composable-state selector (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`). Other folders' rules may or may not gate on state.
-5. **Token namespace policy** — which `--set-*` prefixes the partial is allowed to declare. Three modes: `filename` (basename of the partial; e.g. `_button.scss` → `--set-button-*`), `dimension` (one of `variant`, `size`, `style`, `state`, `placement`), or `free` (no namespace check — composables override any token by design).
-6. **Comment-only policy** — whether a partial in the folder may contain no rules at all (only header comments). `elements/` allows passthrough stubs; `composables/_aside.scss` is the documented behavior-only exception.
+1. **Folder structural.** Every partial wraps in its matching `@layer`, uses only the folder's allowed rule-head kinds, gates on a state selector if required, and declares tokens only under the namespace policy. The comment-only exemption holds where the folder contract allows it.
+2. **Per-dimension required-token coverage.** Every modifier in each dimension declares every token in `MODIFIER_DIMENSION_TOKENS.{dim}.required`.
+3. **Per-surface / per-component / per-composable required-token coverage.** Every partial registered in `SURFACE_CONTRACTS` / `COMPONENT_CONTRACTS` / `COMPOSABLE_CONTRACTS` declares the listed `--set-{name}-*` tokens.
+4. **Animated-partial mixin discipline.** Any partial flagged `animated: true` invokes `@include transition(…)` or `@include reduced-motion`. Bare `transition:` declarations without the paired reduced-motion opt-out are forbidden.
+5. **Factory pairing.** Every entry in `COMPOSABLE_CONTRACTS` references a real `src/browser/factories/create{Name}.ts`; every composable partial has a matching factory and vice versa.
+6. **Scope discipline.** No chained `:not(tag)` / `:not([attr])` qualifiers — collapse to `:not(:where(t1, t2, …))`. Every cross-cutting modifier rule (broad-head + modifier class) enumerates its scope via `:not(:where(…))` blocklist or `:is(…)` allowlist.
+7. **Interactive minimum.** Every member of `INTERACTIVE_ELEMENTS` declares `--set-{tag}-transition-duration`, invokes `@include forced-colors`, and ships a `:focus-visible` rule. No bare `:focus { … }` selectors anywhere in `src/styles/` (always `:focus-visible`).
+8. **Structural pairings.** Every `parent > child` bare-tag pair in compiled framework selectors appears in `STRUCTURAL_PAIRINGS` with a `spec` / `slot` / `reset` / `context` reason. New pairings either earn a justified entry or refactor onto a wrapper class.
+9. **TS-shape.** Every registry in `patterns.ts` is well-formed (kinds exist, recommendations carry text, allow/forbid sets don't overlap, exceptions reference real folders).
+
+Enforced by [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) (the single driver covers contracts 1, 4, 6, 7, 8, 9), [`tests/src/styles/modifiers/_index.test.ts`](../tests/src/styles/modifiers/_index.test.ts) (contract 2), [`tests/src/styles/surfaces/_index.test.ts`](../tests/src/styles/surfaces/_index.test.ts), [`tests/src/styles/components/_index.test.ts`](../tests/src/styles/components/_index.test.ts), [`tests/src/styles/composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts) (contracts 3 + 4 + 5).
 
 ---
 
-## 2. Per-folder contracts
+## Patterns
 
-### 2.1 `elements/`
+### Per-folder contracts
+
+#### `elements/`
 
 > One partial per HTML tag. Substantive partials declare `--set-{tag}-*` tokens via a fallback chain (style → variant → size → element default); reset partials normalize UA defaults only; passthrough partials are comment-only stubs.
 
@@ -68,11 +104,9 @@ Each folder's contract names:
 - Sass `&`-prefixed state pseudos: `&:hover`, `&:focus-visible`, `&:disabled`. These nest under the tag's selector and inherit its classification.
 - Bare `transition:` declarations inside vendor pseudo-elements (`::file-selector-button`, `::details-content`) where `@include transition()` can't reach. Document the reduced-motion handling at the partial level.
 
-**Known passthrough partials** (34): `_article.scss`, `_aside.scss`, `_bdi.scss`, `_bdo.scss`, `_caption.scss`, `_cite.scss`, `_col.scss`, `_colgroup.scss`, `_datalist.scss`, `_del.scss`, `_dfn.scss`, `_div.scss`, `_em.scss`, `_footer.scss`, `_form.scss`, `_header.scss`, `_ins.scss`, `_menu.scss`, `_nav.scss`, `_optgroup.scss`, `_option.scss`, `_q.scss`, `_rp.scss`, `_rt.scss`, `_ruby.scss`, `_s.scss`, `_search.scss`, `_span.scss`, `_tbody.scss`, `_td.scss`, `_tfoot.scss`, `_th.scss`, `_thead.scss`, `_tr.scss`. (Several of these are passthrough at the _elements_ layer because their substantive baseline lives in `components/_{tag}.scss` — see [`elements.md`](elements.md).)
+#### `modifiers/`
 
-### 2.2 `modifiers/`
-
-> Cross-cutting modifier classes (5 dimensions) + `_local.scss` for element-local modifiers. Modifiers set `--set-{dimension}-*` context tokens; elements consume them.
+> Cross-cutting modifiers (5 dimensions) + `_local.scss` for element-local modifiers. Modifiers set `--set-{dimension}-*` context tokens; elements consume them.
 
 | Clause                 | Value                                                                                                                                                                                                                                                                                    |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -112,18 +146,18 @@ Each folder's contract names:
 }
 ```
 
-The contract test enforces:
+The contract enforces:
 
-- Class names don't collide with the cross-cutting modifier vocabulary (from `modifiers.variant`, `.size`, `.style`, `.state`, `.placement`).
-- Class names don't collide with the Tailwind single-token utility set (`TAILWIND_SINGLE_TOKEN_UTILITIES` in `tests/setupStyles.ts`).
+- Names don't collide with the cross-cutting modifier vocabulary (from `modifiers.variant` / `.size` / `.style` / `.state` / `.placement`).
+- Names don't collide with the Tailwind single-token utility set (`TAILWIND_SINGLE_TOKEN_UTILITIES` in [`tests/setup.ts`](../tests/setup.ts)).
 - `_local.scss` rules never use a bare class selector — compound `{tag}.{name}` is required.
 
-### 2.3 `surfaces/`
+#### `surfaces/`
 
 > Pseudo-elements + attribute selectors. Each surface owns a `--set-{surface}-*` token namespace and may read tokens from sibling surfaces via `var()`.
 
 | Clause                 | Value                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Layer                  | `@layer surfaces`                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Allow comment-only     | no                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Require state selector | no                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -133,7 +167,7 @@ The contract test enforces:
 
 **Cross-surface composition is OK** — `surfaces/_popover.scss` reads `var(--set-anchor-*)` declared in `surfaces/_anchor-position.scss`. Inline-comment the dependency.
 
-### 2.4 `components/`
+#### `components/`
 
 > Element compositions (`article`, `form`, `nav`) + class-component primitives (`.badge`, `.dot`, `.tag`). Substantive baselines for tags whose chrome is too rich for `elements/`.
 
@@ -144,11 +178,11 @@ The contract test enforces:
 | Require state selector | no                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Allowed head kinds     | `tag` (`article`, `aside`, `body`, `footer`, `form`, `header`, `main`, `menu`, `nav`, `output`, `search`), `class` (`.badge`, `.dot`, `.skeleton`, `.spinner`, `.tag`, `.stack`, `.cluster`, `.frame`), `attribute` (`[popover]` for the menu / nav drawer), `role-attribute` (`[role='tablist']`, `[role='tab']`, `[role='tabpanel']`, `[role='group']`, `[role='toolbar']`), `pseudo-class` (`:is(aside, nav)` / `:where(…)` for selector grouping), `root` (consumer-overridable global tokens), `nested`, `at-rule` |
 | Forbidden head kinds   | `pseudo-element` (→ `surfaces/`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Token namespace        | `filename` — `_article.scss` → `--set-article-*`; adjacent namespaces opt in via `FILE_EXCEPTIONS` (see §3)                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Token namespace        | `filename` — `_article.scss` → `--set-article-*`; adjacent namespaces opt in via `FILE_EXCEPTIONS` (see [File exceptions](#file-exceptions))                                                                                                                                                                                                                                                                                                                                                                            |
 
-### 2.5 `composables/`
+#### `composables/`
 
-> Chrome partials gated on composable state (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`). Filename matches a `use{Name}` factory.
+> Chrome partials gated on composable state (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`). Filename matches a `create{Name}` factory.
 
 | Clause                 | Value                                                                                                                                                                                                                                                                                                         |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -159,15 +193,11 @@ The contract test enforces:
 | Forbidden head kinds   | `pseudo-element` (→ `surfaces/`)                                                                                                                                                                                                                                                                              |
 | Token namespace        | `free` — composables read and override any namespace by design (a `useDialog` chrome partial routinely overrides `--set-popover-*` and `--set-variant-*` to retune the modal cascade)                                                                                                                         |
 
-**Filename ↔ factory parity** — every `composables/_{name}.scss` must have a matching `create{Name}.ts` in `src/browser/factories/`. The contract test fails if you add a partial without the factory or vice versa.
+**Filename ↔ factory parity** — every `composables/_{name}.scss` must have a matching `create{Name}.ts` in `src/browser/factories/`. The contract fails if you add a partial without the factory or vice versa.
 
----
+### File exceptions
 
-## 3. File exceptions
-
-Six known-good outliers are recorded in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts) so the contract test exempts them cleanly. Each exception names what it relaxes and why.
-
-Each entry uses the nested-entity shape (`comments.allowed`, `state.required`, `tokens.extras`) so each override reads as a per-file delta.
+Known-good outliers are recorded in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts) so the contract test exempts them cleanly. Each exception names what it relaxes and why. Each entry uses the nested-entity shape (`comments.allowed`, `state.required`, `tokens.extras`) so each override reads as a per-file delta.
 
 | Path                                     | Relaxation                                                       | Reason                                                                                                                                 |
 | ---------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -185,9 +215,7 @@ Each entry uses the nested-entity shape (`comments.allowed`, `state.required`, `
 
 **Adding an exception** is a deliberate change. Every entry carries a `note` explaining the architectural reason; if the note can't be written in one sentence, the exception probably isn't justified.
 
----
-
-## 4. The selector classification helpers
+### Selector classification helpers
 
 [`classifyHeadSelector(selector)`](../src/browser/patterns.ts) returns the kind of the rule's _head_ — the first simple selector. Key behaviors:
 
@@ -202,13 +230,11 @@ Each entry uses the nested-entity shape (`comments.allowed`, `state.required`, `
 
 [`hasPseudoElement(selector)`](../src/browser/patterns.ts) is true when the selector contains any `::pseudo` segment. Used to catch top-level pseudo-element rules that should live in `surfaces/`.
 
----
+### Scope discipline
 
-## 5. Scope discipline (cascade-first selector design)
+Cross-cutting modifier rules — selectors that combine an attribute or pseudo head (e.g. `[popover]`) with a class qualifier from the modifier vocabulary (`.top`, `.subtle`, `.disabled`) — need explicit scoping. Two anti-patterns the parity test catches:
 
-Cross-cutting modifier rules — selectors that combine an attribute or pseudo head (e.g. `[popover]`) with a class qualifier from the modifier vocabulary (`.top`, `.subtle`, `.disabled`) — need explicit scoping. Two anti-patterns the parity test at [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) catches:
-
-### 5.1 Chained tag / attribute `:not()` qualifiers — collapse to `:not(:where(...))`
+#### Chained tag / attribute `:not()` qualifiers — collapse to `:not(:where(…))`
 
 ```scss
 /* ❌ Chained :not()s inflate specificity. */
@@ -222,7 +248,7 @@ Each `:not(tag)` adds 0,0,1 and each `:not([attr])` adds 0,1,0. Three of them in
 
 The parity test exempts pseudo-class chains (`:not(:first-child):not(:last-child)`, `:not(:placeholder-shown):not(:focus)`) because they're position / state checks where the idiom is well-known and the inflation rarely matters.
 
-### 5.2 Unscoped cross-cutting modifier rules — add a scope clause
+#### Unscoped cross-cutting modifier rules — add a scope clause
 
 ```scss
 /* ❌ Unscoped. Applies to every popover host, including those with
@@ -248,7 +274,7 @@ Tag-headed rules (`output[popover].drawer`, `nav[aria-label='Breadcrumb'] > ol >
 
 Bare attribute rules without a modifier class (`[popover] { … }` for popover surface defaults) are intentionally broad — that's how the surface paints the default chrome on every popover host.
 
-### 5.3 Cascade-design rationale
+#### Cascade-design rationale
 
 CSS is built around **broad defaults + narrow exceptions**, with the cascade resolving conflicts. The scope-discipline rules align selector form with that design:
 
@@ -256,23 +282,15 @@ CSS is built around **broad defaults + narrow exceptions**, with the cascade res
 - **Flattened specificity prevents accidental cascade fights.** A 0,2,0 rule loses cleanly to a 0,2,1 rule when the consumer adds one. An inflated 0,2,3 rule fights specificity in ways that surprise authors.
 - **Single edit point.** Adding or removing an opt-out is one token; chained `:not()`s require editing every branch of every rule.
 
-### 5.4 Where the rule is enforced
+### Per-dimension required tokens
 
-- [`src/browser/patterns.ts`](../src/browser/patterns.ts) — `hasChainedTagNots()`, `hasScopingFunction()`, `classQualifiers()` helpers.
-- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — drives every partial in `src/styles/` against both anti-patterns.
-- This document — prose rationale + canonical examples.
-
----
-
-## 6. Per-dimension required tokens
-
-Every modifier class in a dimension MUST declare the dimension's full required context-token set. This is the cascade contract that lets element partials consume `var(--set-{dimension}-X)` with confidence — if a variant class drops a token, every consumer's fallback chain silently degrades.
+Every modifier in a dimension MUST declare the dimension's full required context-token set. This is the cascade contract that lets element partials consume `var(--set-{dimension}-X)` with confidence — if a variant drops a token, every consumer's fallback chain silently degrades.
 
 The contract is codified in [`MODIFIER_DIMENSION_TOKENS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/modifiers/_index.test.ts`](../tests/src/styles/modifiers/_index.test.ts).
 
-### 6.1 Variant — 8 tokens per class (FILLED + SUBTLE + ON-CANVAS tiers)
+#### Variant — 8 tokens per modifier (FILLED + SUBTLE + ON-CANVAS tiers)
 
-Every `.{variant}` class declares all eight `--set-variant-*` tokens:
+Every `.{variant}` declares all eight `--set-variant-*` tokens:
 
 | Tier      | Token suffix                                                     | Consumer                                                                |
 | --------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -282,25 +300,25 @@ Every `.{variant}` class declares all eight `--set-variant-*` tokens:
 
 Dropping a tier token silently breaks the cascade — `.filled` falls back to `currentColor` / `transparent`, `.subtle` similarly. The test asserts all 7 variants × 8 tokens.
 
-### 6.2 Size — 4 tokens per class
+#### Size — 4 tokens per modifier
 
-Every `.{size}` class declares: `padding-inline`, `padding-block`, `font-size`, `border-radius`. These are the four geometry tokens elements consume to scale chrome coherently. Missing one leaves the element half-resized.
+Every `.{size}` declares: `padding-inline`, `padding-block`, `font-size`, `border-radius`. These are the four geometry tokens elements consume to scale chrome coherently. Missing one leaves the element half-resized.
 
-### 6.3 Style — 4 tokens per class
+#### Style — 4 tokens per modifier
 
-Every `.{style}` class declares: `color`, `background-color`, `border-color`, `border-width`. These rewrite the element surface from the variant tier (`.subtle` reads `--set-variant-subtle-*`; `.filled` reads `--set-variant-*`). Partial coverage leaves the surface inconsistent across consumers.
+Every `.{style}` declares: `color`, `background-color`, `border-color`, `border-width`. These rewrite the element surface from the variant tier (`.subtle` reads `--set-variant-subtle-*`; `.filled` reads `--set-variant-*`). Partial coverage leaves the surface inconsistent across consumers.
 
-### 6.4 State — direct CSS properties, no tokens (current state)
+#### State — direct CSS properties, no tokens (current state)
 
 `.disabled`, `.active`, `.loading` emit direct properties (`cursor`, `pointer-events`, `opacity`). No context tokens are required today.
 
 **Known customizability gap:** `.disabled { opacity: 0.5; }` hard-codes the opacity. A future refactor could expose `--set-state-disabled-opacity` so a single `:root` override retunes the disabled affordance framework-wide. Tracked in `MODIFIER_DIMENSION_TOKENS.state.rationale` for visibility; not enforced.
 
-### 6.5 Placement — direct CSS properties, no tokens by design
+#### Placement — direct CSS properties, no tokens by design
 
-Placement classes emit `position-area` + `align-self` + `justify-self` directly. The cascade composes these with anchor positioning; no tokens are tunable. This is intentional — placement is a layout primitive, not a chrome dial.
+Placement modifiers emit `position-area` + `align-self` + `justify-self` directly. The cascade composes these with anchor positioning; no tokens are tunable. This is intentional — placement is a layout primitive, not a chrome dial.
 
-### 6.6 Interactive elements — minimum `transition-duration`
+#### Interactive elements — minimum `transition-duration`
 
 The `interactive` entry in [`TOKEN_GROUPS`](../src/browser/taxonomy.ts) declares the universal interactive contract: every element in [`INTERACTIVE_ELEMENTS`](../src/browser/patterns.ts) (a, button, details, dialog, fieldset, input, label, select, summary, textarea) MUST declare `--set-{tag}-transition-duration`. State changes (hover, focus, disabled) animate; consumers need a single override point to retune motion centrally.
 
@@ -310,15 +328,13 @@ Element-specific contracts extend the universal minimum:
 - **disclosure** (details, summary) extends with `transition-duration` already covered.
 - **floating-surface** (dialog, output-as-toast) extends with `box-shadow` + popover geometry.
 
-See [`elements.md` § 1](elements.md) for the full token-group catalog.
+See [elements.md § Token-uniformity groups](elements.md) for the full token-group catalog.
 
----
-
-## 7. Per-surface contracts
+### Per-surface contracts
 
 Each file in [`src/styles/surfaces/`](../src/styles/surfaces/) paints a single browser-rendered pseudo-element / attribute surface and owns a dedicated `--set-{surface}-*` token namespace. The contract is codified in [`SURFACE_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/surfaces/_index.test.ts`](../tests/src/styles/surfaces/_index.test.ts).
 
-### 7.1 The shape
+#### Shape
 
 Each surface contract records:
 
@@ -331,7 +347,7 @@ Each surface contract records:
 | `animated`        | True when the partial paints motion. Triggers the reduced-motion mixin requirement.                                                                                                       |
 | `notes`           | One-sentence description shown in failure messages.                                                                                                                                       |
 
-### 7.2 The nine surfaces
+#### The nine surfaces
 
 | Surface           | Selector                                                     | Required tokens                                                                                                                                                                           | Animated |
 | ----------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -345,33 +361,31 @@ Each surface contract records:
 | `selection`       | `::selection`                                                | `background-color`, `color`                                                                                                                                                               | no       |
 | `view-transition` | `::view-transition-old(root)`, `::view-transition-new(root)` | `duration`, `timing-function`                                                                                                                                                             | yes      |
 
-### 7.3 Animated-surface contract
+#### Animated-surface contract
 
 Surfaces marked `animated: true` MUST invoke either `@include transition(...)` or `@include reduced-motion { ... }`. Bare `transition: ...` declarations break the `prefers-reduced-motion` opt-out.
 
 Additionally, **any surface that declares a `transition-duration` or `duration` token must invoke a motion mixin**, regardless of the `animated` flag. Exposing the customizability surface without the reduced-motion contract is a coverage gap — consumers can retune the duration but can't opt out of motion.
 
-### 7.4 Cross-surface composition
+#### Cross-surface composition
 
-Surfaces freely read each other's tokens via `var()` chains. `_popover.scss` reads `--set-anchor-*` declared in `_anchor-position.scss`; `_backdrop.scss` reads `--set-transition-duration` declared in `_tokens.scss`. These reads are documented in `FILE_EXCEPTIONS[*].tokens.extras` so the namespace check at `contracts.test.ts` allows them.
+Surfaces freely read each other's tokens via `var()` chains. `_popover.scss` reads `--set-anchor-*` declared in `_anchor-position.scss`; `_backdrop.scss` reads `--set-transition-duration` declared in `_tokens.scss`. These reads are documented in `FILE_EXCEPTIONS[*].tokens.extras` so the namespace check allows them.
 
-### 7.5 Adding a new surface
+#### Adding a new surface
 
 1. Add the partial under `src/styles/surfaces/_{name}.scss`.
 2. Add a `SURFACE_CONTRACTS` entry with the canonical token + animation discipline.
-3. The parity test catches drift in both directions (partial without contract, contract without partial).
+3. Add the row to [surfaces.md § Surface](surfaces.md) — bidirectional parity test catches drift in either direction.
 
----
-
-## 8. Per-component contracts
+### Per-component contracts
 
 Each file in [`src/styles/components/`](../src/styles/components/) paints either a tag-rooted shell composition (`<article>` card, `<form>` stack, `<nav>` rails) or a class-component primitive that has no semantic root (`.badge`, `.dot`, `.spinner`). The contract is codified in [`COMPONENT_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/components/_index.test.ts`](../tests/src/styles/components/_index.test.ts).
 
-### 8.1 The shape
+#### Shape
 
-Mirrors `SURFACE_CONTRACTS` (see §7.1). Each entry carries `name`, `tokens` (`{ prefix?, required }` — `prefix` defaults to `name`), `animated`, `notes`. The animation rule + customizability-gap rule apply identically: every component with a duration token MUST invoke `@include transition()` or `@include reduced-motion`.
+Mirrors `SURFACE_CONTRACTS` (see [§ Shape](#shape) above). Each entry carries `name`, `tokens` (`{ prefix?, required }` — `prefix` defaults to `name`), `animated`, `notes`. The animation rule + customizability-gap rule apply identically: every component with a duration token MUST invoke `@include transition()` or `@include reduced-motion`.
 
-### 8.2 The nineteen components
+#### The nineteen components
 
 Grouped by role:
 
@@ -405,7 +419,7 @@ Grouped by role:
 | `spinner`  | `<span class="spinner" role="status">`          | size, color, border-width, duration                                                                                      | yes      |
 | `tag`      | `<span class="tag">`                            | color, bg, border-{color,width,radius}, padding-{inline,block}, font-{size,weight,line-height}, gap, transition-duration | yes      |
 
-### 8.3 Cross-namespace components
+#### Cross-namespace components
 
 Four components ship tokens under namespaces that differ from their filename:
 
@@ -414,26 +428,20 @@ Four components ship tokens under namespaces that differ from their filename:
 - `_output.scss` — `toast` (filename names the element; tokens name the surface)
 - `_nav.scss` — `nav` + `tablist`, `tab`, `tabpanel` (multi-pattern element)
 
-The additional prefixes are declared in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts) so the namespace check at `contracts.test.ts` allows them; the per-component contract documents the canonical primary prefix.
+The additional prefixes are declared in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts) so the namespace check allows them; the per-component contract documents the canonical primary prefix.
 
-### 8.4 Animated-component contract
-
-Same as §7.3 (surfaces). Any component that declares a `transition-duration`, `*-duration`, or `pulse-duration` token MUST invoke `@include transition(...)` or `@include reduced-motion`. The test catches the customizability gap when duration tokens are exposed without the reduced-motion opt-out.
-
-### 8.5 Adding a new component
+#### Adding a new component
 
 1. Add the partial under `src/styles/components/_{name}.scss`.
 2. Add a `COMPONENT_CONTRACTS` entry with the canonical token + animation discipline.
 3. If the partial declares tokens under a namespace other than its filename, add the extras to `FILE_EXCEPTIONS[*].tokens.extras`.
 4. The parity test catches drift in both directions (partial without contract, contract without partial).
 
----
+### Per-composable contracts
 
-## 9. Per-composable contracts
+Each file in [`src/styles/composables/`](../src/styles/composables/) paints chrome gated on state set by a `use{Name}` / `create{Name}` factory pair. The contract is codified in [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts).
 
-Each file in [`src/styles/composables/`](../src/styles/composables/) paints chrome gated on state set by a `use{Name}` / `create{Name}` factory. The contract is codified in [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts).
-
-### 9.1 The shape
+#### Shape
 
 Each entry adds two clauses beyond the surface / component contract:
 
@@ -444,7 +452,7 @@ Each entry adds two clauses beyond the surface / component contract:
 
 Plus the standard `name`, `tokens` (`{ prefix?, required }`), `animated`, `notes`.
 
-### 9.2 The six composables
+#### The six composables
 
 | Composable | Token namespace                            | State selectors                                                      | Animated | Factory          |
 | ---------- | ------------------------------------------ | -------------------------------------------------------------------- | -------- | ---------------- |
@@ -457,15 +465,15 @@ Plus the standard `name`, `tokens` (`{ prefix?, required }`), `animated`, `notes
 
 ¹ `_dialog.scss` declares sizing extensions only; motion lives on `elements/_dialog.scss` + `surfaces/_popover.scss`.
 
-### 9.3 Animated-composable contract
+#### Animated-composable contract
 
-Composables that declare `transition:` or `animation:` properties — OR are marked `animated: true` — MUST invoke `@include transition()` or `@include reduced-motion`. Bare `transition:` declarations break the `prefers-reduced-motion` opt-out for users who need it.
+Composables that declare `transition:` or `animation:` properties — OR are marked `animated: true` — MUST invoke `@include transition()` or `@include reduced-motion`.
 
-### 9.4 Behavior-only composables
+#### Behavior-only composables
 
 Some composables are pure JavaScript behavior with no CSS chrome (`useAside` does scroll lock + focus trap + light dismiss; the visual chrome lives in `components/_aside.scss`). The partial exists as a placeholder so `src/styles/composables/` mirrors `src/browser/composables/`. `FILE_EXCEPTIONS['composables/_aside.scss']` records this with `state: { required: false }` and `comments: { allowed: true }`.
 
-### 9.5 Adding a new composable
+#### Adding a new composable
 
 1. Add `create{Name}.ts` to `src/browser/factories/`.
 2. Add `use{Name}.ts` to `src/browser/composables/`.
@@ -473,32 +481,30 @@ Some composables are pure JavaScript behavior with no CSS chrome (`useAside` doe
 4. Add a `COMPOSABLE_CONTRACTS` entry with the token + state-selector + animation discipline.
 5. The parity test catches drift in both directions (partial without contract, contract without partial / factory).
 
----
-
-## 10. Structural pairings (`parent > child` element-pair allowlist)
+### Structural pairings
 
 A framework rule of the form `tag1 > tag2` (both bare tag names, joined by a child combinator) blesses one HTML element as the structural marker for its role inside a container. Some pairings are unavoidable — HTML spec requires them; some are documented framework slots filled by the universally-natural element. But many candidate pairings would be **element-hardcoding inside containment**: arbitrary picks of one element type as a chrome trigger inside an otherwise-generic container.
 
 The audit caught and removed `body:has(main) > nav > search` on this basis. `<search>` was one of many elements that could be pinned in a docs-sidebar rail; the framework rule against it forced every consumer to use exactly `<search>`. The pattern was moved to the showcase's wrapper-class composition.
 
-### 10.1 The four reason categories
+#### The four reason categories
 
 Every entry in `STRUCTURAL_PAIRINGS` (in [`src/browser/patterns.ts`](../src/browser/patterns.ts)) names one reason:
 
 | Kind      | Meaning                                                                                                                                        | Examples                                                               |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `spec`    | HTML spec requires this nesting; no other child can fulfill the role.                                                                          | `tr > td`, `details > summary`, `picture > source`, `select > option`. |
-| `slot`    | Parent is a card/dialog/drawer-shaped container with a DOCUMENTED slot, filled by the universally-natural semantic element.                    | `article > header:first-child` (card band), `dialog > header` (modal). |
+| `slot`    | Parent is a card / dialog / drawer-shaped container with a DOCUMENTED slot, filled by the universally-natural semantic element.                | `article > header:first-child` (card band), `dialog > header` (modal). |
 | `reset`   | The rule strips a UA default that only exists for that child element type, or zeroes a baseline value carried by the child (nesting-collapse). | `nav > ul` (list-marker reset), `main > section` (nesting-collapse).   |
 | `context` | Child gets contextual chrome because of its position inside the parent's documented internal structure.                                        | `header > button:last-child` (dismiss trail in alert/drawer band).     |
 
-### 10.2 What the test enforces
+#### What the test enforces
 
 [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) scans every rule opener in every framework SCSS partial. For each selector, it extracts `(parent-tag, child-tag)` pairs (flattening `:is(...)` / `:where(...)` and respecting selector-list commas / descendant-vs-child combinators). Every pair must appear in `STRUCTURAL_PAIRINGS`.
 
 Universal heads (`*`), classes, attributes, and pseudos generate no pair — they don't single out an element type and aren't subject to this discipline.
 
-### 10.3 Adding a pairing
+#### Adding a pairing
 
 If a new framework rule needs `parent > child` between bare tags:
 
@@ -507,19 +513,44 @@ If a new framework rule needs `parent > child` between bare tags:
 
 If (1), add an entry to `STRUCTURAL_PAIRINGS` with a one-sentence justification. The justification surfaces in the test failure when the pairing is later violated, and serves as the in-tree spec for future authors.
 
-### 10.4 The `<search>` violation, and the precedent it set
+#### The `<search>` violation, and the precedent it set
 
 The framework can't decide on the consumer's behalf that "any `<search>` inside a `<nav>` rail gets pinned-filter chrome." `<search>` is a search landmark, not a positional/structural element. Many other elements (a `<form>` filter, a `<header>`-style toolbar, a status row, etc.) could equally well take the pinned slot. Hardcoding chrome against `<search>` locks the pattern to one specific markup choice.
 
 The right architectural shape: the rail provides containment (flex column, overflow management); the consumer composes regions inside; consumer styling targets WRAPPER CLASSES, not element types. Framework styling targets semantic elements with universal roles (`<header>` is THE intro band, `<footer>` is THE outro band, etc.). The boundary is enforced by this test.
 
-## 11. Reference
+---
 
-- [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the contract data and helpers (folder contracts, file exceptions, modifier-dimension tokens, surface/component/composable contracts, structural pairings).
-- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — the parity test that consumes the folder/file contracts.
-- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — the parity test for `parent > child` structural pairings (§10).
-- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — the TS-shape assertions for the contract surface itself.
-- [`elements.md`](elements.md) — every native HTML element + framework treatment (the per-tag complement to this per-folder doc).
-- [`styles.md`](styles.md) — top-level cascade architecture.
-- [`contribute.md`](contribute.md) — the workflow for authoring framework changes that conform to these contracts.
-- [`AGENTS.md`](../AGENTS.md) §21 — codified Sass / SCSS conventions cross-referencing patterns.
+## Tests
+
+The single driver for every contract above is [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts), organized in seven sections:
+
+1. **TS surface shape** — `FOLDER_CONTRACTS`, `FILE_EXCEPTIONS`, `STYLE_LAYERS`, `INTERACTIVE_ELEMENTS` are well-formed.
+2. **Classification helpers** — `classifyHeadSelector`, `hasStateSelector`, `hasPseudoElement`, `BARE_FOCUS_REGEX`, `hasBareFocusRule`, mixin-invocation regexes, `hasChainedTagNots`, `hasScopingFunction`, `classQualifiers`.
+3. **Path helpers + namespace policy** — `partialFolder`, `partialBasename`, `allowedTokenPrefixes`, `hasFreeTokenNamespace`, `exceptionFor`.
+4. **Folder structural contract** — every partial wraps in its layer, every rule head is allowed, composables gate on state, namespace policy holds, every composable pairs with a factory.
+5. **Structural pairings** — every `parent > child` tag pair is allowlisted; `extractTagPairs` unit checks.
+6. **Scope discipline** — no chained `:not(tag)`, cross-cutting modifier rules enumerate scope.
+7. **Interactive minimum** — every `INTERACTIVE_ELEMENTS` member invokes `@include forced-colors` and declares `:focus-visible`; no bare `:focus` rule anywhere in `src/styles/`.
+
+Plus the four per-folder catch-all drivers:
+
+- [`tests/src/styles/modifiers/_index.test.ts`](../tests/src/styles/modifiers/_index.test.ts) — `MODIFIER_DIMENSION_TOKENS` required-token coverage.
+- [`tests/src/styles/surfaces/_index.test.ts`](../tests/src/styles/surfaces/_index.test.ts) — `SURFACE_CONTRACTS` required tokens + animated discipline.
+- [`tests/src/styles/components/_index.test.ts`](../tests/src/styles/components/_index.test.ts) — `COMPONENT_CONTRACTS` required tokens + animated discipline.
+- [`tests/src/styles/composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts) — `COMPOSABLE_CONTRACTS` required tokens + state selectors + factory pairing.
+
+---
+
+## See also
+
+- [`src/browser/patterns.ts`](../src/browser/patterns.ts) — contract data + helpers (folder contracts, file exceptions, modifier-dimension tokens, surface / component / composable contracts, structural pairings).
+- [styles.md](styles.md) — top-level cascade architecture.
+- [tokens.md](tokens.md) — token surface + motion-contract enforcement.
+- [modifiers.md](modifiers.md) — modifier cascade + dimension vocabulary.
+- [elements.md](elements.md) — per-element catalog + taxonomy + token-uniformity groups.
+- [components.md](components.md) — element compositions + class-root primitives.
+- [surfaces.md](surfaces.md) — browser-rendered chrome.
+- [composables.md](composables.md) — Vue composable + factory layer; § 3 open / closed lifecycle.
+- [contribute.md](contribute.md) — the workflow for authoring framework changes that conform to these contracts.
+- [AGENTS.md](../AGENTS.md) §21 — codified Sass / SCSS conventions cross-referencing patterns.
