@@ -121,6 +121,48 @@ describe('createCarousel', () => {
 		expect(indicators[2]?.getAttribute('aria-selected')).toBe('false')
 	})
 
+	it('rapid imperative calls do NOT leave stale transitional classes', () => {
+		// Reproduces the "to(2) → to(4) → to(1) leaves slide[2] and slide[4]
+		// stuck visible" bug: each subsequent call must cancel the previous
+		// in-flight transition AND clean the four-class slide-axis lifecycle
+		// off every item, otherwise the cancelled targets remain at
+		// translateX(0), z-index:1, stacked on top of the final destination.
+		const { carousel, items } = createCarouselFixture(5)
+		const [api] = createFactoryFixture(() => createCarousel(carousel))
+
+		api.to(2) // start a transition we'll cancel
+		api.to(4) // cancel the to(2) before transitionend fires
+		api.to(1) // cancel the to(4) before transitionend fires
+
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+
+		expect(api.index.value).toBe(1)
+		// Only slide[1] should be active; every other slide should be clean
+		// (no `.active`, no `carousel-item-{next,prev,start,end}`).
+		for (let i = 0; i < items.length; i++) {
+			const slide = items[i]
+			if (!slide) continue
+			const classes = Array.from(slide.classList)
+			if (i === 1) {
+				expect(classes).toContain('active')
+			} else {
+				expect(classes, `slide[${i}] should not be active`).not.toContain('active')
+			}
+			expect(classes, `slide[${i}] should not carry stale carousel-item-next`).not.toContain(
+				'carousel-item-next',
+			)
+			expect(classes, `slide[${i}] should not carry stale carousel-item-prev`).not.toContain(
+				'carousel-item-prev',
+			)
+			expect(classes, `slide[${i}] should not carry stale carousel-item-start`).not.toContain(
+				'carousel-item-start',
+			)
+			expect(classes, `slide[${i}] should not carry stale carousel-item-end`).not.toContain(
+				'carousel-item-end',
+			)
+		}
+	})
+
 	it('destroy clears aria-selected on indicators', () => {
 		const { carousel, indicators } = createCarouselFixture(3, { indicators: true })
 		const api = createCarousel(carousel)

@@ -49,15 +49,31 @@ export function createCarousel(
 	let touchStartX: number | null = null
 	let animation: (() => void) | null = null
 
-	const cancelTransition = (): void => {
-		animation?.()
-		animation = null
-	}
-
 	const items = (): HTMLElement[] =>
 		Array.from(element.querySelectorAll<HTMLElement>(CAROUSEL_ITEM_SELECTOR))
 	const indicators = (): HTMLElement[] =>
 		Array.from(element.querySelectorAll<HTMLElement>(CAROUSEL_INDICATOR_SELECTOR))
+
+	// Cancelling a transition mid-flight must (a) stop the previous
+	// `transitionend` watcher AND (b) clean the four-class slide-axis
+	// lifecycle classes off every item. Without (b), a rapid sequence
+	// like `to(2) → to(4) → to(1)` leaves the cancelled targets
+	// (slide[2], slide[4]) stuck with `carousel-item-next + carousel-
+	// item-start` — visibility: visible, z-index: 1, stacked on top of
+	// the final destination. The user sees three slides painted at the
+	// same translateX(0) position.
+	const cancelTransition = (): void => {
+		animation?.()
+		animation = null
+		for (const item of items()) {
+			item.classList.remove(
+				'carousel-item-next',
+				'carousel-item-prev',
+				'carousel-item-start',
+				'carousel-item-end',
+			)
+		}
+	}
 
 	const syncIndicators = (): void => {
 		const list = indicators()
@@ -74,6 +90,12 @@ export function createCarousel(
 	}
 
 	const apply = (from: number, to: number, direction: CarouselDirection): void => {
+		// Cancel any in-flight transition BEFORE setting up the new one.
+		// cancelTransition() clears the four-class slide-axis lifecycle
+		// off every item — if we set up the new transition's classes
+		// first and cancelled after, we'd wipe what we just added.
+		cancelTransition()
+
 		const list = items()
 		const fromEl = list[from]
 		const toEl = list[to]
@@ -87,7 +109,6 @@ export function createCarousel(
 		fromEl?.classList.add(slide)
 		toEl.classList.add(slide)
 
-		cancelTransition()
 		animation = runTransition(toEl, () => {
 			animation = null
 			fromEl?.classList.remove('active', 'carousel-item-start', 'carousel-item-end')
