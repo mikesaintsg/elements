@@ -9,7 +9,7 @@ import {
 
 function createCarouselFixture(
 	count: number,
-	options: { readonly withIndicators?: boolean } = {},
+	options: { readonly indicators?: boolean } = {},
 ): {
 	readonly carousel: HTMLElement
 	readonly items: readonly HTMLLIElement[]
@@ -30,7 +30,7 @@ function createCarouselFixture(
 	carousel.appendChild(list)
 
 	const indicators: HTMLButtonElement[] = []
-	if (options.withIndicators) {
+	if (options.indicators) {
 		const tablist = document.createElement('menu')
 		tablist.setAttribute('role', 'tablist')
 		tablist.className = 'carousel-indicators'
@@ -109,7 +109,7 @@ describe('createCarousel', () => {
 	})
 
 	it('syncs aria-selected on `<menu role="tablist"> > li > button` indicators', () => {
-		const { carousel, indicators } = createCarouselFixture(3, { withIndicators: true })
+		const { carousel, indicators } = createCarouselFixture(3, { indicators: true })
 		const [api] = createFactoryFixture(() => createCarousel(carousel))
 		expect(indicators[0]?.getAttribute('aria-selected')).toBe('true')
 		expect(indicators[1]?.getAttribute('aria-selected')).toBe('false')
@@ -122,7 +122,7 @@ describe('createCarousel', () => {
 	})
 
 	it('destroy clears aria-selected on indicators', () => {
-		const { carousel, indicators } = createCarouselFixture(3, { withIndicators: true })
+		const { carousel, indicators } = createCarouselFixture(3, { indicators: true })
 		const api = createCarousel(carousel)
 		expect(indicators[0]?.getAttribute('aria-selected')).toBe('true')
 		api.destroy()
