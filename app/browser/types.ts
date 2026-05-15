@@ -75,3 +75,62 @@ export interface Section {
  * Mirrored by `timingFunctionFor` in `helpers.ts`.
  */
 export type MotionTiming = 'iOS' | 'ease' | 'linear' | 'snappy'
+
+// ── TablesPage demo-row shapes ───────────────────────────────────────────
+//
+// `Member` and `BasicRow` were structurally identical (same six fields) —
+// merged into one `TablesMember`. The basic-table demo uses the first
+// four rows; the expansion demo uses all five.
+
+export interface TablesMember {
+	readonly id: string
+	readonly name: string
+	readonly role: string
+	readonly team: string
+	readonly commits: number
+	readonly last: string
+}
+
+export interface TablesOrder {
+	readonly id: string
+	readonly customer: string
+	readonly status: string
+	readonly total: string
+	readonly variant: 'success' | 'information' | 'warning' | 'danger'
+	readonly address: string
+	readonly contact: string
+	readonly notes: string
+}
+
+export interface TablesThemeToken {
+	readonly id: string
+	readonly token: string
+	readonly light: string
+	readonly dark: string
+	readonly notes: string
+}
+
+export interface TablesLog {
+	readonly id: string
+	readonly time: string
+	readonly level: string
+	readonly source: string
+	readonly message: string
+	readonly context: string
+}
+
+export interface TablesAudit {
+	readonly id: string
+	readonly when: string
+	readonly who: string
+	readonly what: string
+	readonly diff: string
+}
+
+export interface TablesReleaseStep {
+	readonly id: string
+	readonly step: string
+	readonly status: string
+	readonly owner: string
+	readonly notes: string
+}

@@ -1,5 +1,13 @@
 import type { Placement, Variant } from '@elements/browser'
 import { modifiers } from '@elements/browser'
+import type {
+	TablesAudit,
+	TablesLog,
+	TablesMember,
+	TablesOrder,
+	TablesReleaseStep,
+	TablesThemeToken,
+} from './types.js'
 
 /**
  * Static, non-reactive showcase constants: shell configuration plus the
@@ -220,4 +228,252 @@ export const SELECT_CITIES = [
 	'Reykjavík',
 	'Stockholm',
 	'Tokyo',
+]
+
+// ── TablesPage demo rows ─────────────────────────────────────────────────
+//
+// NOTE (consolidation): TABLES_BASIC_ROWS is the first four of
+// TABLES_MEMBERS. Kept as separate exports for now; reconcile in the
+// consolidation pass.
+
+export const TABLES_MEMBERS: readonly TablesMember[] = [
+	{
+		id: 'AL-04',
+		name: 'Ada Lovelace',
+		role: 'Mathematician',
+		team: 'Analytical',
+		commits: 342,
+		last: '2 hours ago',
+	},
+	{
+		id: 'GH-12',
+		name: 'Grace Hopper',
+		role: 'Compiler theorist',
+		team: 'Mark I',
+		commits: 287,
+		last: 'Yesterday',
+	},
+	{
+		id: 'AT-21',
+		name: 'Alan Turing',
+		role: 'Cryptographer',
+		team: 'Hut 8',
+		commits: 256,
+		last: '3 days ago',
+	},
+	{
+		id: 'KR-08',
+		name: 'Katherine Johnson',
+		role: 'Mathematician',
+		team: 'Orbital',
+		commits: 198,
+		last: 'Last week',
+	},
+	{
+		id: 'MH-15',
+		name: 'Margaret Hamilton',
+		role: 'Software engineer',
+		team: 'Apollo',
+		commits: 412,
+		last: '5 minutes ago',
+	},
+]
+
+export const TABLES_BASIC_ROWS: readonly TablesMember[] = [
+	{
+		id: 'AL-04',
+		name: 'Ada Lovelace',
+		role: 'Mathematician',
+		team: 'Analytical',
+		commits: 342,
+		last: '2 hours ago',
+	},
+	{
+		id: 'GH-12',
+		name: 'Grace Hopper',
+		role: 'Compiler theorist',
+		team: 'Mark I',
+		commits: 287,
+		last: 'Yesterday',
+	},
+	{
+		id: 'AT-21',
+		name: 'Alan Turing',
+		role: 'Cryptographer',
+		team: 'Hut 8',
+		commits: 256,
+		last: '3 days ago',
+	},
+	{
+		id: 'KR-08',
+		name: 'Katherine Johnson',
+		role: 'Mathematician',
+		team: 'Orbital',
+		commits: 198,
+		last: 'Last week',
+	},
+]
+
+export const TABLES_VARIANT_ORDERS: readonly TablesOrder[] = [
+	{
+		id: '1042',
+		customer: 'Acme Corp.',
+		status: 'Shipped',
+		total: '$2,340.00',
+		variant: 'success',
+		address: '742 Evergreen Terrace · Springfield · OR 97477',
+		contact: 'logistics@acme.example · +1 555-0142',
+		notes: 'Tracking number FX-8821-991. Signature on delivery requested.',
+	},
+	{
+		id: '1043',
+		customer: 'Globex Inc.',
+		status: 'Processing',
+		total: '$890.50',
+		variant: 'information',
+		address: '120 Globex Plaza · Springfield · IL 62704',
+		contact: 'accounts@globex.example · +1 555-0188',
+		notes: 'Awaiting line-2 confirmation. Estimated dispatch in 2 business days.',
+	},
+	{
+		id: '1044',
+		customer: 'Initech LLC',
+		status: 'Returned',
+		total: '$4,120.75',
+		variant: 'warning',
+		address: '4120 Veronica Way · Austin · TX 78701',
+		contact: 'returns@initech.example · +1 555-0166',
+		notes: 'RMA-2024-0488 received. Refund pending QA inspection of returned units.',
+	},
+	{
+		id: '1045',
+		customer: 'Soylent Corp.',
+		status: 'Cancelled',
+		total: '$650.00',
+		variant: 'danger',
+		address: '1 Soylent Boulevard · New Brooklyn · NY 11234',
+		contact: 'support@soylent.example',
+		notes: 'Cancelled by customer prior to fulfillment. No funds captured.',
+	},
+]
+
+export const TABLES_THEME_TOKENS: readonly TablesThemeToken[] = [
+	{
+		id: 'canvas',
+		token: '--color-canvas',
+		light: '#fff',
+		dark: 'slate-950',
+		notes: 'The base surface color — every other tier mixes against it.',
+	},
+	{
+		id: 'text',
+		token: '--color-text',
+		light: 'slate-900',
+		dark: 'slate-100',
+		notes: 'Body text. Inverts polarity per theme; everything else derives from it via color-mix.',
+	},
+	{
+		id: 'border',
+		token: '--color-border',
+		light: 'slate-200',
+		dark: 'slate-800',
+		notes:
+			'Default divider color. Consumed by --set-table-border-color, --set-input-border-color, and the bare list-group chrome.',
+	},
+]
+
+export const TABLES_LOGS: readonly TablesLog[] = [
+	{
+		id: 'info-1',
+		time: '14:02:11.842',
+		level: 'info',
+		source: 'auth',
+		message: 'Session refreshed for user 42',
+		context: 'jti=e7a1, ttl=900s, scope=read:profile read:billing',
+	},
+	{
+		id: 'info-2',
+		time: '14:02:11.901',
+		level: 'info',
+		source: 'db',
+		message: 'Query took 4.3ms (cache hit)',
+		context: 'SELECT id, name, plan FROM accounts WHERE org_id = $1 LIMIT 50',
+	},
+	{
+		id: 'warn-1',
+		time: '14:02:12.118',
+		level: 'warn',
+		source: 'billing',
+		message: 'Retrying webhook delivery (attempt 3 of 5)',
+		context:
+			'POST https://hooks.example.com/billing — last response: 503 Service Unavailable. Next retry in 4s with jitter.',
+	},
+	{
+		id: 'error-1',
+		time: '14:02:12.404',
+		level: 'error',
+		source: 'payments',
+		message: 'Provider returned 503 — falling back to queue',
+		context:
+			'POST /v1/charges → upstream 503. Idempotency key idem_8821 preserved; charge will retry from the durable queue.',
+	},
+]
+
+export const TABLES_AUDITS: readonly TablesAudit[] = [
+	{
+		id: '2h',
+		when: '2 hours ago',
+		who: 'ada@example.com',
+		what: 'Updated billing address',
+		diff: 'Old: 50 Babbage Lane → New: 742 Evergreen Terrace · Springfield · OR 97477',
+	},
+	{
+		id: 'yesterday',
+		when: 'Yesterday',
+		who: 'grace@example.com',
+		what: 'Rotated API token',
+		diff: 'Token sk_live_…ce91 revoked; sk_live_…b4f7 issued. Scope unchanged.',
+	},
+	{
+		id: 'lastweek',
+		when: 'Last week',
+		who: 'katherine@example.com',
+		what: 'Added team member',
+		diff: 'margaret@example.com invited as Editor; invite pending acceptance.',
+	},
+]
+
+export const TABLES_RELEASE_STEPS: readonly TablesReleaseStep[] = [
+	{
+		id: 'step-1',
+		step: '1. Specification',
+		status: 'Done',
+		owner: 'Ada',
+		notes:
+			'Spec reviewed by the API council on 2026-04-30; signed off with two minor editorial revisions on §3.2 (status code table) and §7 (response examples).',
+	},
+	{
+		id: 'step-2',
+		step: '2. Implementation',
+		status: 'In review',
+		owner: 'Grace',
+		notes:
+			'PR #2918 open; 4 of 5 review threads resolved. Outstanding: telemetry sampling strategy in the new /v2/jobs handler.',
+	},
+	{
+		id: 'step-3',
+		step: '3. Visual QA',
+		status: 'Pending',
+		owner: 'Margaret',
+		notes:
+			'Visual QA blocked on the implementation PR landing. Test plan drafted in docs/test-plans/2026-Q2-release.md; ~20 minutes of screenshot regression once unblocked.',
+	},
+	{
+		id: 'step-4',
+		step: '4. Documentation',
+		status: 'Not started',
+		owner: 'Alan',
+		notes:
+			'Documentation depends on the spec-frozen body of §3.2 + §7 from step 1, plus the final handler signatures from step 2. Drafting will begin after Visual QA signs off.',
+	},
 ]
