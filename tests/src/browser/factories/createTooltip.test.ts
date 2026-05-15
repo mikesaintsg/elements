@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTooltip, TOOLTIP_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
-import {
-	assertCleanDispose,
-	buildElement,
-	createFactoryFixture,
-	createRecorder,
-} from '../../../setupBrowser'
+import { createRecorder } from '../../../setup'
+import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 function createTooltipElements(): {
 	readonly anchor: HTMLButtonElement

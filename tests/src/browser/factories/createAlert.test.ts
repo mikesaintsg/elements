@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ALERT_EVENTS, createAlert, TRANSITION_FALLBACK_MS } from '@elements/browser'
-import {
-	assertCleanDispose,
-	buildElement,
-	createFactoryFixture,
-	createRecorder,
-} from '../../../setupBrowser'
+import { createRecorder } from '../../../setup'
+import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 describe('createAlert', () => {
 	beforeEach(() => {

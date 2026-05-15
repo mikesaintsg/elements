@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createSelect, SELECT_EVENTS } from '@elements/browser'
-import {
-	assertCleanDispose,
-	buildElement,
-	createFactoryFixture,
-	createRecorder,
-} from '../../../setupBrowser'
+import { createRecorder } from '../../../setup'
+import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 function createSelectFixture(values: readonly string[]): {
 	readonly toggle: HTMLButtonElement

@@ -12,7 +12,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { modifiers, type Size, type State, type Style, type Variant } from '@elements/browser'
-import { findRule, leaves } from '../../setupStyles.ts'
+import { bareClassNamesIn, leaves } from '../../setup.ts'
+import { findRule } from '../../setupStyles.ts'
 
 import variantsScss from '../../../src/styles/modifiers/_variants.scss?raw'
 import sizesScss from '../../../src/styles/modifiers/_sizes.scss?raw'
@@ -21,19 +22,6 @@ import statesScss from '../../../src/styles/modifiers/_states.scss?raw'
 
 const TS_LEAVES = leaves(modifiers)
 const TS_SET = new Set(TS_LEAVES)
-
-// Match top-level class selectors at the start of a line: `.name {`.
-// Excludes pseudo-class chains (e.g. `.disabled:hover`) — only bare class names.
-const CLASS_RULE_REGEX = /^\s*\.([a-z][a-z-]*)\s*\{/gim
-
-function classNamesIn(source: string): readonly string[] {
-	const out: string[] = []
-	let match
-	while ((match = CLASS_RULE_REGEX.exec(source)) !== null) {
-		if (match[1]) out.push(match[1])
-	}
-	return out
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Shape
@@ -129,7 +117,7 @@ describe('SCSS → TS: every modifier class declared in SCSS is mirrored', () =>
 	]
 
 	it.each(cases)('every class in %s appears in modifiers.ts', (file, source) => {
-		for (const name of classNamesIn(source)) {
+		for (const name of bareClassNamesIn(source)) {
 			expect(TS_SET, `.${name} declared in ${file} but missing in modifiers.ts`).toContain(name)
 		}
 	})

@@ -15,7 +15,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { modifiers, TAXONOMY_BY_TAG } from '@elements/browser'
-import { leaves, TAILWIND_SINGLE_TOKEN_UTILITIES } from '../../../setupStyles.ts'
+import { bareClassNamesIn, leaves, TAILWIND_SINGLE_TOKEN_UTILITIES } from '../../../setup.ts'
 
 import localScss from '../../../../src/styles/modifiers/_local.scss?raw'
 
@@ -24,9 +24,6 @@ const TAILWIND = new Set(TAILWIND_SINGLE_TOKEN_UTILITIES)
 
 /** Match `{tag}.{name}` rule openers. Tag = letters + digits; name = same. */
 const COMPOUND_RULE = /(?:^|\s)([a-z][a-z0-9-]*)\.([a-z][a-z0-9-]*)\s*\{/gim
-
-/** Match bare `.{name}` rule openers (no preceding selector). */
-const BARE_RULE = /^\s*\.([a-z][a-z0-9-]*)\s*\{/gim
 
 interface CompoundSighting {
 	readonly tag: string
@@ -38,15 +35,6 @@ function compoundSelectorsIn(source: string): readonly CompoundSighting[] {
 	let match: RegExpExecArray | null
 	while ((match = COMPOUND_RULE.exec(source)) !== null) {
 		if (match[1] && match[2]) out.push({ tag: match[1], name: match[2] })
-	}
-	return out
-}
-
-function bareSelectorsIn(source: string): readonly string[] {
-	const out: string[] = []
-	let match: RegExpExecArray | null
-	while ((match = BARE_RULE.exec(source)) !== null) {
-		if (match[1]) out.push(match[1])
 	}
 	return out
 }
@@ -70,7 +58,7 @@ describe('local — file is wrapped in @layer modifiers', () => {
 describe('local — file declares no bare class selectors', () => {
 	it('every rule is element-scoped (compound selector)', () => {
 		// _local.scss must not declare bare class rules — those belong in dimension partials.
-		expect(bareSelectorsIn(localScss)).toEqual([])
+		expect(bareClassNamesIn(localScss)).toEqual([])
 	})
 })
 

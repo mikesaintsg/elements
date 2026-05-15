@@ -20,7 +20,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { MODIFIER_DIMENSION_TOKENS } from '@elements/browser'
-import { declaresToken, stripComments } from '../../../setupStyles'
+import { declaresToken, stripComments } from '../../../setup'
 
 import variantsScss from '../../../../src/styles/modifiers/_variants.scss?raw'
 import sizesScss from '../../../../src/styles/modifiers/_sizes.scss?raw'

@@ -17,7 +17,13 @@
 
 import { describe, expect, it } from 'vitest'
 import { COMPONENT_CONTRACTS, componentContractFor } from '@elements/browser'
-import { declaresToken, stripComments, tagFromPath, usesMotionMixin } from '../../../setupStyles'
+import {
+	declaresToken,
+	relativeStylesPath,
+	stripComments,
+	tagFromPath,
+	usesMotionMixin,
+} from '../../../setup'
 
 const componentSources = import.meta.glob('../../../../src/styles/components/_*.scss', {
 	query: '?raw',
@@ -31,7 +37,7 @@ describe('components — every partial has a contract', () => {
 	for (const path of Object.keys(componentSources)) {
 		const name = tagFromPath(path)
 		if (name === '' || name === 'index') continue
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 		// On failure: `${relative}` has no entry in COMPONENT_CONTRACTS. Add one to
 		// src/browser/patterns.ts § COMPONENT_CONTRACTS with the canonical token +
 		// animation discipline.
@@ -64,7 +70,7 @@ describe('components — required tokens are declared in the partial', () => {
 		if (!contract) continue
 
 		const stripped = stripComments(source)
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 		const prefix = contract.tokens.prefix ?? contract.name
 
 		for (const suffix of contract.tokens.required) {
@@ -86,7 +92,7 @@ describe('components — animated components invoke a motion mixin', () => {
 		if (!contract || !contract.animated) continue
 
 		const stripped = stripComments(source)
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 
 		// On failure: `${relative}` is marked animated but doesn't invoke
 		// @include transition() or @include reduced-motion. Bare transition:
@@ -112,7 +118,7 @@ describe('components — partials that ship a duration token honor the reduced-m
 		const hasPulseDuration = declaresToken(stripped, prefix, 'pulse-duration')
 		if (!hasTransitionToken && !hasDurationToken && !hasPulseDuration) continue
 
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 		// On failure: `${relative}` declares a duration token but doesn't
 		// invoke @include transition() or @include reduced-motion. Exposing
 		// the duration token without the mixin lets a consumer retune

@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createMenu, MENU_EVENTS } from '@elements/browser'
-import {
-	assertCleanDispose,
-	buildElement,
-	createFactoryFixture,
-	createRecorder,
-} from '../../../setupBrowser'
+import { createRecorder } from '../../../setup'
+import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 function createMenuElements(): {
 	readonly toggle: HTMLButtonElement

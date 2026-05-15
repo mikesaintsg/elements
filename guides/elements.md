@@ -64,7 +64,7 @@ Every `✅ cascade` element. The cascade column notes what is framework-specific
 | `<table>` / `<thead>` / `<tbody>` / `<tfoot>` / `<tr>` / `<th>` / `<td>` | One partial per tag, all sharing the same table-family token namespace. Sticky header, zebra rows, sortable headers, density modifier. Pairs `useTable`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `<textarea>`                                                             | Same cascade as `<input>`. `field-sizing: content` opted into via a modifier; resize handle styling token-driven.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
-All of the above are mirrored in [`src/browser/elements.ts`](../src/browser/elements.ts) and the bidirectional parity is enforced by [`tests/src/browser/elements.test.ts`](../tests/src/browser/elements.test.ts).
+All of the above are mirrored in [`src/browser/elements.ts`](../src/browser/elements.ts) and the bidirectional parity is enforced by [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts).
 
 ---
 
@@ -245,7 +245,7 @@ Most `🚫 n/a` entries stay that way indefinitely. Promote to `🟡 override` o
 
 - [`src/styles/elements/`](../src/styles/elements/) — SCSS sources, one partial per tag
 - [`src/browser/elements.ts`](../src/browser/elements.ts) — TS mirror of the substantive list
-- [`tests/src/browser/elements.test.ts`](../tests/src/browser/elements.test.ts) — bidirectional parity contract
+- [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts) — bidirectional parity contract
 - [`tests/src/styles/elements/`](../tests/src/styles/elements/) — per-element behaviour tests
 - [styles.md](styles.md) — top-level architecture and author's contract
 - [modifiers.md](modifiers.md) — five-dimension cascade elements consume

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createTheme, resetTheme, THEME_EVENTS } from '@elements/browser'
-import { assertCleanDispose, createRecorder } from '../../../setupBrowser'
+import { createRecorder } from '../../../setup'
+import { assertCleanDispose } from '../../../setupBrowser'
 
 afterEach(() => resetTheme())
 

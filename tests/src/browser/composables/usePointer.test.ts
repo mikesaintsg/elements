@@ -1,12 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { usePointer } from '@elements/browser'
-import {
-	buildElement,
-	createPointerEvent,
-	createRecorder,
-	withElement,
-	waitForBootstrap,
-} from '../../../setupBrowser'
+import { createRecorder } from '../../../setup'
+import { buildElement, createPointerEvent, withElement, waitForBootstrap } from '../../../setupBrowser'
 
 describe('usePointer', () => {
 	it('initial dragging is false', async () => {

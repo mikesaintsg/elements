@@ -17,7 +17,8 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { TAILWIND_SINGLE_TOKEN_UTILITIES, pixels, render, style } from '../../setupStyles.ts'
+import { TAILWIND_SINGLE_TOKEN_UTILITIES } from '../../setup.ts'
+import { pixels, render, style } from '../../setupStyles.ts'
 
 // ----------------------------------------------------------------------------
 // Glob every framework SCSS partial as a raw string at build time. Vite's

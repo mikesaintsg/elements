@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ASIDE_EVENTS, createAside } from '@elements/browser'
-import {
-	assertCleanDispose,
-	buildElement,
-	createFactoryFixture,
-	createRecorder,
-} from '../../../setupBrowser'
+import { createRecorder } from '../../../setup'
+import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 describe('createAside', () => {
 	it('rejects non-<aside> hosts', () => {

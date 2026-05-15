@@ -21,7 +21,13 @@
 
 import { describe, expect, it } from 'vitest'
 import { SURFACE_CONTRACTS, surfaceContractFor } from '@elements/browser'
-import { declaresToken, stripComments, tagFromPath, usesMotionMixin } from '../../../setupStyles'
+import {
+	declaresToken,
+	relativeStylesPath,
+	stripComments,
+	tagFromPath,
+	usesMotionMixin,
+} from '../../../setup'
 
 const surfaceSources = import.meta.glob('../../../../src/styles/surfaces/_*.scss', {
 	query: '?raw',
@@ -37,7 +43,7 @@ describe('surfaces — every partial has a contract', () => {
 	for (const path of Object.keys(surfaceSources)) {
 		const name = tagFromPath(path)
 		if (name === '' || name === 'index') continue
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 		// On failure: `${relative}` has no entry in SURFACE_CONTRACTS. Add one
 		// to src/browser/patterns.ts § SURFACE_CONTRACTS with the canonical
 		// token + animation discipline for the surface.
@@ -72,7 +78,7 @@ describe('surfaces — required tokens are declared in the partial', () => {
 		if (!contract) continue
 
 		const stripped = stripComments(source)
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 		const prefix = contract.tokens.prefix ?? contract.name
 
 		for (const suffix of contract.tokens.required) {
@@ -96,7 +102,7 @@ describe('surfaces — animated surfaces invoke a motion mixin', () => {
 		if (!contract || !contract.animated) continue
 
 		const stripped = stripComments(source)
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 
 		// On failure: `${relative}` is marked animated but doesn't invoke
 		// @include transition() or @include reduced-motion. Every motion
@@ -127,7 +133,7 @@ describe('surfaces — partials that ship --set-{surface}-transition-duration ho
 		const hasDurationToken = declaresToken(stripped, prefix, 'duration')
 		if (!hasTransitionToken && !hasDurationToken) continue
 
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 		// On failure: `${relative}` declares a duration token but doesn't
 		// invoke @include transition() or @include reduced-motion. Exposing
 		// the token without the mixin lets a consumer override duration but

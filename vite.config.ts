@@ -120,7 +120,9 @@ export const srcCore = (config?: UserConfig): UserConfig =>
 // top-level repo concern, not source mirrored under `src/`.
 //
 // Pure node — no DOM, no Vue, no chromium. Fast and deterministic. The
-// shared markdown helpers live in `tests/setup.ts` alongside `leaves`.
+// shared markdown helpers live in `tests/setup.ts`; the node:fs-backed SCSS
+// + factory loaders live in `tests/setupServer.ts` (the node-env equivalent
+// of `setupBrowser.ts` / `setupStyles.ts`).
 export const guides = (config?: UserConfig): UserConfig =>
 	mergeConfig(
 		{
@@ -128,7 +130,7 @@ export const guides = (config?: UserConfig): UserConfig =>
 			test: {
 				name: { label: 'guides', color: 'green' },
 				include: ['tests/guides/**/*.test.ts'],
-				setupFiles: ['./tests/setup.ts'],
+				setupFiles: ['./tests/setup.ts', './tests/setupServer.ts'],
 				environment: 'node',
 				browser: { enabled: false },
 			},
@@ -175,7 +177,7 @@ export const srcBrowser = (config?: UserConfig): UserConfig =>
 					name: { label: 'src:browser', color: 'yellow' },
 					include: ['tests/src/browser/**/*.test.ts'],
 					exclude: ['tests/src/core/**/*.test.ts'],
-					setupFiles: ['./tests/setupBrowser.ts'],
+					setupFiles: ['./tests/setup.ts', './tests/setupBrowser.ts'],
 					browser: {
 						enabled: true,
 						provider: createBrowserProvider(),
@@ -252,7 +254,7 @@ export const appBrowser = (config?: UserConfig): UserConfig =>
 					dir: resolveWorkspacePath('.'),
 					include: ['tests/app/browser/**/*.test.ts'],
 					exclude: ['tests/src/browser/**/*.test.ts', 'tests/src/core/**/*.test.ts'],
-					setupFiles: ['./tests/setupBrowser.ts'],
+					setupFiles: ['./tests/setup.ts', './tests/setupBrowser.ts'],
 				},
 			},
 			config ?? {},

@@ -3,7 +3,7 @@
 //
 // One contract per folder under `src/styles/`. Every SCSS partial in a folder
 // is held to the matching contract by the parity test at
-// `tests/src/styles/contracts.test.ts`.
+// `tests/guides/patterns/contracts.test.ts`.
 //
 // A contract names:
 //   - which cascade layer the partial's rules MUST wrap in
@@ -1307,7 +1307,7 @@ export function composableContractFor(name: string): ComposableContract | null {
 // The framework paints focus / hover / disabled chrome on a specific, closed
 // set of native HTML elements. Every member of this set is held to two
 // accessibility-critical requirements, enforced by
-// `tests/src/styles/interactive.test.ts`:
+// `tests/guides/patterns/interactive.test.ts`:
 //
 //   1. Forced-colors mode coverage — Windows High Contrast strips author
 //      colors and replaces them with system tokens. Interactive elements
@@ -1379,7 +1379,7 @@ export function isInteractive(tag: string): boolean {
 //  one family. Drift happens when a partial author hardcodes a
 //  numeric duration / curve directly — `0.25s ease` instead of
 //  `var(--set-motion-duration) var(--set-motion-timing-function)`.
-//  The parity test at `tests/src/styles/motion.test.ts` scans each
+//  The parity test at `tests/guides/tokens.test.ts` scans each
 //  registered partial and fails if the motion tokens are missing.
 // ============================================================================
 
@@ -1622,7 +1622,7 @@ export function hasBroadHead(selector: string): boolean {
 //                structure (`header > button:last-child` is the dismiss
 //                button trail inside an alert / drawer header band).
 //
-//  Tests at `tests/src/styles/pairings.test.ts` enforce the allowlist
+//  Tests at `tests/guides/patterns/pairings.test.ts` enforce the allowlist
 //  across every compiled framework rule. New `parent > child` pairings
 //  must be added here with a justification (or refactored to a wrapper
 //  class / element baseline that doesn't hardcode the child element).

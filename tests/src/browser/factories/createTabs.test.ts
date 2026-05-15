@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createTabs, TABS_EVENTS } from '@elements/browser'
-import {
-	assertCleanDispose,
-	buildElement,
-	createFactoryFixture,
-	createRecorder,
-} from '../../../setupBrowser'
+import { createRecorder } from '../../../setup'
+import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 function createTabsFixture(): {
 	readonly group: HTMLDivElement

@@ -1,10 +1,21 @@
 // ============================================================================
-//  Base test setup — generic helpers shared across every Vitest project
-//  (`srcCore`, `srcBrowser`, `srcStyles`, `appCore`, `appBrowser`).
+//  Base test setup — environment-agnostic helpers shared across every
+//  Vitest project (`srcCore`, `srcBrowser`, `srcStyles`, `guides`,
+//  `appCore`, `appBrowser`).
 //
-//  Loaded directly by node-environment projects and re-exported by
-//  `setupBrowser.ts` via `export * from './setup'` so browser-test files
-//  can pull the same primitives from a single import surface.
+//  Configured first in every project's `setupFiles` array so the
+//  afterEach hook below runs on every test no matter the environment:
+//
+//      setupFiles: ['./tests/setup.ts', …]
+//
+//  Test files import these helpers DIRECTLY from this module
+//  (`'./setup'` / `'../setup'`) — not through `setupBrowser.ts` or
+//  `setupStyles.ts`, which only ship the DOM-only helpers on top.
+//
+//  Everything here MUST stay environment-agnostic (no `node:fs`,
+//  no `document`). Node-only helpers (like `node:fs`-based SCSS
+//  loaders) live in project-local helpers files such as
+//  `tests/guides/_helpers.ts`.
 // ============================================================================
 
 import { afterEach, vi } from 'vitest'
@@ -109,6 +120,225 @@ export function extractBacktickedNames(
 	}
 	return out
 }
+
+// ── SCSS source introspection ──────────────────────────────────────────────
+//
+// Test files glob SCSS partials as raw strings via `import.meta.glob(...,
+// { query: '?raw' })` and assert against the raw source. These helpers are
+// the shared vocabulary every contract / parity test reaches for. String-
+// form RegExps for the comment matchers because the literal `\*/` trips
+// vite-oxc's tokenizer on the closing-comment escape sequence.
+//
+// Node-safe (no DOM). Live in `setup.ts` so they're available to the
+// `guides` Vitest project (node env) as well as `src:browser` / `src:styles`
+// (browser env via `setupBrowser` / `setupStyles` which re-export `setup`).
+
+const BLOCK_COMMENT = new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g')
+const LINE_COMMENT = new RegExp('\\/\\/[^\\n]*', 'g')
+
+/** Strip SCSS line + block comments from a raw partial source. */
+export function stripComments(source: string): string {
+	return source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
+}
+
+/**
+ * Extract the `{tag}` segment from an `_{tag}.scss` partial path. Throws
+ * when the path doesn't match — paths come from `import.meta.glob` patterns
+ * that already constrain the shape, so a miss is a programmer error.
+ */
+export function tagFromPath(path: string): string {
+	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
+	if (!match || !match[1]) throw new Error(`Cannot extract tag from ${path}`)
+	return match[1]
+}
+
+/** True when `source` declares `--set-{prefix}-{suffix}: ...`. */
+export function declaresToken(source: string, prefix: string, suffix: string): boolean {
+	const escaped = suffix.replace(/-/g, '\\-')
+	return new RegExp(`--set-${prefix}-${escaped}\\s*:`).test(source)
+}
+
+/** True when `source` declares any `--set-{tag}-*` custom property. */
+export function declaresElementToken(source: string, tag: string): boolean {
+	return new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`, 'i').test(source)
+}
+
+/**
+ * True when `source` invokes either of the framework's motion mixins —
+ * `@include transition(...)` (which emits the bare transition + a paired
+ * `prefers-reduced-motion: reduce` opt-out) or `@include reduced-motion`
+ * (the same opt-out for `animation:` declarations).
+ */
+export function usesMotionMixin(source: string): boolean {
+	return /@include\s+transition\s*\(/.test(source) || /@include\s+reduced-motion\b/.test(source)
+}
+
+/**
+ * Normalize an absolute or Vite-glob path into a friendly
+ * `src/styles/{folder}/_{name}.scss`-style relative form for use in test
+ * descriptions and failure messages. Handles backslashes (Windows) and
+ * paths with arbitrary leading prefix.
+ */
+export function relativeStylesPath(path: string): string {
+	return path.replace(/\\/g, '/').replace(/^.*\/src\/styles\//, 'src/styles/')
+}
+
+/**
+ * Pull every rule opener out of a SCSS source — a non-at-rule line ending
+ * with `{`. Selectors may span multiple lines; the helper joins until the
+ * brace appears. Excluded by design:
+ *
+ *   - `@layer / @media / @supports / @container / @include / @each / @if /
+ *     @else / @use / @mixin / @function / @keyframes / @starting-style` —
+ *     at-rules introduce non-selector bodies.
+ *   - Lines that start with `&` — those are nested Sass and qualify the
+ *     parent selector; the parent's classification already gates the
+ *     rule body, so testing only top-level rules covers every shape the
+ *     cascade ever sees.
+ *
+ * Comments are stripped first so commented-out examples don't surface
+ * as openers.
+ */
+export function extractRuleOpeners(source: string): readonly string[] {
+	const stripped = stripComments(source)
+	const out: string[] = []
+	const lines = stripped.split('\n')
+	let buffer: string[] = []
+	for (const line of lines) {
+		const trimmed = line.trim()
+		if (trimmed.length === 0) {
+			if (buffer.length === 0) continue
+			continue
+		}
+		buffer.push(trimmed)
+		if (trimmed.endsWith('{')) {
+			const text = buffer
+				.join(' ')
+				.replace(/\s*\{\s*$/, '')
+				.trim()
+			buffer = []
+			if (text.startsWith('@')) continue
+			if (text.length === 0) continue
+			if (text.startsWith('&')) continue
+			out.push(text)
+		} else if (trimmed.endsWith(';') || trimmed.endsWith('}')) {
+			buffer = []
+		}
+	}
+	return out
+}
+
+/**
+ * Pull every bare `.{name}` rule opener out of a SCSS source. Matches the
+ * shape `^\s*\.{kebab-name}\s*\{` so compound (`form.row`) or pseudo-chained
+ * (`.disabled:hover`) rules don't surface. Comments are NOT stripped — pass
+ * `stripComments(source)` when commented-out examples could surface.
+ */
+const BARE_CLASS_RULE_REGEX = /^\s*\.([a-z][a-z0-9-]*)\s*\{/gim
+
+export function bareClassNamesIn(source: string): readonly string[] {
+	const out: string[] = []
+	BARE_CLASS_RULE_REGEX.lastIndex = 0
+	let match: RegExpExecArray | null
+	while ((match = BARE_CLASS_RULE_REGEX.exec(source)) !== null) {
+		if (match[1]) out.push(match[1])
+	}
+	return out
+}
+
+// ============================================================================
+// Tailwind v4 utility class catalog — collision watch list.
+//
+// Why this exists:
+//   The framework lives in `@layer components` (and `elements`, `surfaces`).
+//   Tailwind sits in `@layer utilities`, the LAST layer in the merged
+//   order. Layered rules from a later layer always beat earlier ones,
+//   regardless of selector specificity. So if a Tailwind utility shares a
+//   name with a framework modifier (e.g. `.inline`), Tailwind wins —
+//   silently — and the framework rule never paints.
+//
+// What's in this list:
+//   Every Tailwind v4 utility class whose ENTIRE class name is a single
+//   token (no hyphen-separated value suffix). These are the only ones at
+//   risk of colliding with framework modifiers, because every framework
+//   modifier is a single semantic English word (`primary`, `small`,
+//   `ghost`, `disabled`, etc.).
+//
+//   Functional utilities (`.bg-blue-500`, `.p-4`, `.text-lg`, etc.) are
+//   excluded — the hyphenated value suffix makes a name collision
+//   impossible by construction.
+//
+// How to update:
+//   When Tailwind ships a new bare utility, add it here. The conflict
+//   detector in `tests/src/styles/integration.test.ts` will then refuse
+//   any framework modifier that matches.
+//
+// Source: https://tailwindcss.com/docs (v4 reference, last reviewed
+// 2026-05). Pseudo-class variants and arbitrary values aren't included
+// because they can't appear standalone as a class name.
+// ============================================================================
+
+export const TAILWIND_SINGLE_TOKEN_UTILITIES: readonly string[] = [
+	// ── Display ───────────────────────────────────────────────────────────────
+	'block',
+	'inline',
+	'flex',
+	'grid',
+	'contents',
+	'hidden',
+	'table',
+	'flow-root',
+	'list-item',
+
+	// ── Position ──────────────────────────────────────────────────────────────
+	'static',
+	'fixed',
+	'absolute',
+	'relative',
+	'sticky',
+
+	// ── Visibility ────────────────────────────────────────────────────────────
+	'visible',
+	'invisible',
+	'collapse',
+
+	// ── Layout helpers ────────────────────────────────────────────────────────
+	'isolate',
+	'container',
+	'truncate',
+
+	// ── Flex/Grid item shorthand ─────────────────────────────────────────────
+	'shrink',
+	'grow',
+
+	// ── Typography ────────────────────────────────────────────────────────────
+	'italic',
+	'underline',
+	'overline',
+	'uppercase',
+	'lowercase',
+	'capitalize',
+	'antialiased',
+	'ordinal',
+	'normal-nums',
+
+	// ── Borders / decoration ──────────────────────────────────────────────────
+	'border',
+	'rounded',
+	'shadow',
+	'ring',
+	'outline',
+
+	// ── Behavior ──────────────────────────────────────────────────────────────
+	'resize',
+
+	// ── Print / accessibility ─────────────────────────────────────────────────
+	'sr-only',
+
+	// ── SVG ───────────────────────────────────────────────────────────────────
+	'fill-current',
+	'stroke-current',
+] as const
 
 afterEach(() => {
 	vi.restoreAllMocks()

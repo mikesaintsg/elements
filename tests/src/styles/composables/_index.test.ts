@@ -17,7 +17,13 @@
 
 import { describe, expect, it } from 'vitest'
 import { COMPOSABLE_CONTRACTS, composableContractFor } from '@elements/browser'
-import { declaresToken, stripComments, tagFromPath, usesMotionMixin } from '../../../setupStyles'
+import {
+	declaresToken,
+	relativeStylesPath,
+	stripComments,
+	tagFromPath,
+	usesMotionMixin,
+} from '../../../setup'
 
 const composableSources = import.meta.glob('../../../../src/styles/composables/_*.scss', {
 	query: '?raw',
@@ -48,7 +54,7 @@ describe('composables — every partial has a contract', () => {
 	for (const path of Object.keys(composableSources)) {
 		const name = tagFromPath(path)
 		if (name === '' || name === 'index') continue
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 		it(`${relative} has a COMPOSABLE_CONTRACTS entry`, () => {
 			expect(
 				composableContractFor(name),
@@ -80,7 +86,7 @@ describe('composables — required tokens are declared in the partial', () => {
 		if (!contract || contract.tokens.required.length === 0) continue
 
 		const stripped = stripComments(source)
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 		const prefix = contract.tokens.prefix ?? contract.name
 
 		for (const suffix of contract.tokens.required) {
@@ -118,7 +124,7 @@ describe('composables — bare transition: / animation: declarations require a m
 
 		if (!hasMotion && !contract.animated) continue
 
-		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		const relative = relativeStylesPath(path)
 		// On failure: `${relative}` declares bare transition: / animation: (or is
 		// marked animated in COMPOSABLE_CONTRACTS) but does not invoke
 		// @include transition() or @include reduced-motion. Composables that

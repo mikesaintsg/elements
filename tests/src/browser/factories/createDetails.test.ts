@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createDetails, DETAILS_EVENTS } from '@elements/browser'
-import {
-	assertCleanDispose,
-	buildElement,
-	createFactoryFixture,
-	createRecorder,
-} from '../../../setupBrowser'
+import { createRecorder } from '../../../setup'
+import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 describe('createDetails', () => {
 	it('rejects non-<details> hosts', () => {

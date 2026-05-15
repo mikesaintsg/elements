@@ -1,6 +1,6 @@
 # Style-folder structural contracts
 
-> One contract per folder under [`src/styles/`](../src/styles/). Every SCSS partial in a folder is held to the matching contract by the parity test at [`tests/src/styles/contracts.test.ts`](../tests/src/styles/contracts.test.ts).
+> One contract per folder under [`src/styles/`](../src/styles/). Every SCSS partial in a folder is held to the matching contract by the parity test at [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts).
 
 The contract data lives in [`src/browser/patterns.ts`](../src/browser/patterns.ts) as `FOLDER_CONTRACTS` + `FILE_EXCEPTIONS`. This document is the prose explanation. When the two disagree, the TS is authoritative — the parity test will fail loudly until either the code or this document is updated.
 
@@ -206,7 +206,7 @@ Each entry uses the nested-entity shape (`comments.allowed`, `state.required`, `
 
 ## 5. Scope discipline (cascade-first selector design)
 
-Cross-cutting modifier rules — selectors that combine an attribute or pseudo head (e.g. `[popover]`) with a class qualifier from the modifier vocabulary (`.top`, `.subtle`, `.disabled`) — need explicit scoping. Two anti-patterns the parity test at [`tests/src/styles/scope.test.ts`](../tests/src/styles/scope.test.ts) catches:
+Cross-cutting modifier rules — selectors that combine an attribute or pseudo head (e.g. `[popover]`) with a class qualifier from the modifier vocabulary (`.top`, `.subtle`, `.disabled`) — need explicit scoping. Two anti-patterns the parity test at [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) catches:
 
 ### 5.1 Chained tag / attribute `:not()` qualifiers — collapse to `:not(:where(...))`
 
@@ -259,7 +259,7 @@ CSS is built around **broad defaults + narrow exceptions**, with the cascade res
 ### 5.4 Where the rule is enforced
 
 - [`src/browser/patterns.ts`](../src/browser/patterns.ts) — `hasChainedTagNots()`, `hasScopingFunction()`, `classQualifiers()` helpers.
-- [`tests/src/styles/scope.test.ts`](../tests/src/styles/scope.test.ts) — drives every partial in `src/styles/` against both anti-patterns.
+- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — drives every partial in `src/styles/` against both anti-patterns.
 - This document — prose rationale + canonical examples.
 
 ---
@@ -494,7 +494,7 @@ Every entry in `STRUCTURAL_PAIRINGS` (in [`src/browser/patterns.ts`](../src/brow
 
 ### 10.2 What the test enforces
 
-[`tests/src/styles/pairings.test.ts`](../tests/src/styles/pairings.test.ts) scans every rule opener in every framework SCSS partial. For each selector, it extracts `(parent-tag, child-tag)` pairs (flattening `:is(...)` / `:where(...)` and respecting selector-list commas / descendant-vs-child combinators). Every pair must appear in `STRUCTURAL_PAIRINGS`.
+[`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) scans every rule opener in every framework SCSS partial. For each selector, it extracts `(parent-tag, child-tag)` pairs (flattening `:is(...)` / `:where(...)` and respecting selector-list commas / descendant-vs-child combinators). Every pair must appear in `STRUCTURAL_PAIRINGS`.
 
 Universal heads (`*`), classes, attributes, and pseudos generate no pair — they don't single out an element type and aren't subject to this discipline.
 
@@ -516,9 +516,9 @@ The right architectural shape: the rail provides containment (flex column, overf
 ## 11. Reference
 
 - [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the contract data and helpers (folder contracts, file exceptions, modifier-dimension tokens, surface/component/composable contracts, structural pairings).
-- [`tests/src/styles/contracts.test.ts`](../tests/src/styles/contracts.test.ts) — the parity test that consumes the folder/file contracts.
-- [`tests/src/styles/pairings.test.ts`](../tests/src/styles/pairings.test.ts) — the parity test for `parent > child` structural pairings (§10).
-- [`tests/src/browser/patterns.test.ts`](../tests/src/browser/patterns.test.ts) — the TS-shape assertions for the contract surface itself.
+- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — the parity test that consumes the folder/file contracts.
+- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — the parity test for `parent > child` structural pairings (§10).
+- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — the TS-shape assertions for the contract surface itself.
 - [`taxonomy.md`](taxonomy.md) — every native HTML element + framework treatment (the per-tag complement to this per-folder doc).
 - [`styles.md`](styles.md) — top-level cascade architecture.
 - [`contribute.md`](contribute.md) — the workflow for authoring framework changes that conform to these contracts.

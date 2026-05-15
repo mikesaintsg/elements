@@ -3,21 +3,29 @@
 //  environment and exposes the CSS assertion primitives every parity test
 //  under `tests/src/styles/**/*.test.ts` builds on.
 //
-//  The two side-effect imports below are the contract:
-//    - `./setup.css`           — cascade-layer order + Tailwind import.
-//    - `../src/styles/index.scss` — the framework's compiled cascade.
-//  Together they wire the same stylesheet stack the showcase + consumer
-//  builds run against. Every test shares this one cascade.
+//  Setup-file stack (configured per project in `vite.config.ts`):
 //
-//  This file ships only helpers consumed by at least one test file. New
-//  affordances should land WITH the test that needs them, not ahead of it.
+//      setupFiles: ['./tests/setup.ts', './tests/setupStyles.ts']
+//
+//  `setup.ts` is loaded first and is environment-agnostic (Node + browser);
+//  it registers the `vi.restoreAllMocks` afterEach hook and ships the
+//  node-safe parsing helpers. This file ships second and adds the
+//  DOM-only CSS assertion primitives + the side-effect imports that
+//  wire the cascade:
+//
+//    - `./setup.css`              — cascade-layer order + Tailwind import.
+//    - `../src/styles/index.scss` — the framework's compiled cascade.
+//
+//  Test files import the generic primitives (`leaves`, `stripComments`,
+//  `tagFromPath`, `TAILWIND_SINGLE_TOKEN_UTILITIES`, …) from `'./setup'` /
+//  `'../setup'` directly; this file's exports cover the DOM-only helpers.
+//
+//  New affordances should land WITH the test that needs them, not ahead.
 // ============================================================================
 
 import { afterEach } from 'vitest'
 import './setup.css'
 import '../src/styles/index.scss'
-
-export * from './setup'
 
 // ── Per-test teardown registry ─────────────────────────────────────────────
 // Module-private — every public helper that appends a teardown is in this
@@ -32,100 +40,6 @@ afterEach(() => {
 	}
 	document.body.style.cssText = ''
 })
-
-// ============================================================================
-// Tailwind v4 utility class catalog — collision watch list.
-//
-// Why this exists:
-//   The framework lives in `@layer components` (and `elements`, `surfaces`).
-//   Tailwind sits in `@layer utilities`, the LAST layer in the merged
-//   order. Layered rules from a later layer always beat earlier ones,
-//   regardless of selector specificity. So if a Tailwind utility shares a
-//   name with a framework modifier (e.g. `.inline`), Tailwind wins —
-//   silently — and the framework rule never paints.
-//
-// What's in this list:
-//   Every Tailwind v4 utility class whose ENTIRE class name is a single
-//   token (no hyphen-separated value suffix). These are the only ones at
-//   risk of colliding with framework modifiers, because every framework
-//   modifier is a single semantic English word (`primary`, `small`,
-//   `ghost`, `disabled`, etc.).
-//
-//   Functional utilities (`.bg-blue-500`, `.p-4`, `.text-lg`, etc.) are
-//   excluded — the hyphenated value suffix makes a name collision
-//   impossible by construction.
-//
-// How to update:
-//   When Tailwind ships a new bare utility, add it here. The conflict
-//   detector in `tests/src/styles/integration.test.ts` will then refuse
-//   any framework modifier that matches.
-//
-// Source: https://tailwindcss.com/docs (v4 reference, last reviewed
-// 2026-05). Pseudo-class variants and arbitrary values aren't included
-// because they can't appear standalone as a class name.
-// ============================================================================
-
-export const TAILWIND_SINGLE_TOKEN_UTILITIES: readonly string[] = [
-	// ── Display ───────────────────────────────────────────────────────────────
-	'block',
-	'inline',
-	'flex',
-	'grid',
-	'contents',
-	'hidden',
-	'table',
-	'flow-root',
-	'list-item',
-
-	// ── Position ──────────────────────────────────────────────────────────────
-	'static',
-	'fixed',
-	'absolute',
-	'relative',
-	'sticky',
-
-	// ── Visibility ────────────────────────────────────────────────────────────
-	'visible',
-	'invisible',
-	'collapse',
-
-	// ── Layout helpers ────────────────────────────────────────────────────────
-	'isolate',
-	'container',
-	'truncate',
-
-	// ── Flex/Grid item shorthand ─────────────────────────────────────────────
-	'shrink',
-	'grow',
-
-	// ── Typography ────────────────────────────────────────────────────────────
-	'italic',
-	'underline',
-	'overline',
-	'uppercase',
-	'lowercase',
-	'capitalize',
-	'antialiased',
-	'ordinal',
-	'normal-nums',
-
-	// ── Borders / decoration ──────────────────────────────────────────────────
-	'border',
-	'rounded',
-	'shadow',
-	'ring',
-	'outline',
-
-	// ── Behavior ──────────────────────────────────────────────────────────────
-	'resize',
-
-	// ── Print / accessibility ─────────────────────────────────────────────────
-	'sr-only',
-
-	// ── SVG ───────────────────────────────────────────────────────────────────
-	'fill-current',
-	'stroke-current',
-] as const
 
 // ── Mounting ───────────────────────────────────────────────────────────────
 
@@ -229,54 +143,6 @@ export function pixels(element: Element, property: string): number {
 	const value = style(element, property)
 	const match = value.match(/-?\d+(?:\.\d+)?/)
 	return match ? Number(match[0]) : 0
-}
-
-// ── SCSS source introspection ──────────────────────────────────────────────
-//
-// Test files glob SCSS partials as raw strings via `import.meta.glob(...,
-// { query: '?raw' })` and assert against the raw source. These helpers are
-// the shared vocabulary every contract / parity test reaches for. String-
-// form RegExps for the comment matchers because the literal `\*/` trips
-// vite-oxc's tokenizer on the closing-comment escape sequence.
-
-const BLOCK_COMMENT = new RegExp('\\/\\*[\\s\\S]*?\\*\\/', 'g')
-const LINE_COMMENT = new RegExp('\\/\\/[^\\n]*', 'g')
-
-/** Strip SCSS line + block comments from a raw partial source. */
-export function stripComments(source: string): string {
-	return source.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '')
-}
-
-/**
- * Extract the `{tag}` segment from an `_{tag}.scss` partial path. Throws
- * when the path doesn't match — paths come from `import.meta.glob` patterns
- * that already constrain the shape, so a miss is a programmer error.
- */
-export function tagFromPath(path: string): string {
-	const match = path.match(/_([a-z][a-z0-9-]*)\.scss$/)
-	if (!match || !match[1]) throw new Error(`Cannot extract tag from ${path}`)
-	return match[1]
-}
-
-/** True when `source` declares `--set-{prefix}-{suffix}: ...`. */
-export function declaresToken(source: string, prefix: string, suffix: string): boolean {
-	const escaped = suffix.replace(/-/g, '\\-')
-	return new RegExp(`--set-${prefix}-${escaped}\\s*:`).test(source)
-}
-
-/** True when `source` declares any `--set-{tag}-*` custom property. */
-export function declaresElementToken(source: string, tag: string): boolean {
-	return new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`, 'i').test(source)
-}
-
-/**
- * True when `source` invokes either of the framework's motion mixins —
- * `@include transition(...)` (which emits the bare transition + a paired
- * `prefers-reduced-motion: reduce` opt-out) or `@include reduced-motion`
- * (the same opt-out for `animation:` declarations).
- */
-export function usesMotionMixin(source: string): boolean {
-	return /@include\s+transition\s*\(/.test(source) || /@include\s+reduced-motion\b/.test(source)
 }
 
 // ── Stylesheet introspection ───────────────────────────────────────────────

@@ -1,12 +1,23 @@
 // ============================================================================
 //  Browser-test setup — composable + factory test infrastructure.
 //
-//  Loads the same SCSS pipeline `setupStyles.ts` uses so any composable /
-//  factory test that needs CSS-resolved tokens or stylesheet introspection
-//  works from a single import surface. Re-exports the generic primitives
-//  from `./setup` so test files don't need a second import path.
+//  Loads the framework's SCSS cascade so any composable / factory test
+//  that needs CSS-resolved tokens or stylesheet introspection works
+//  end-to-end.
 //
-//  The four groups of helpers exported here:
+//  Setup-file stack (configured per project in `vite.config.ts`):
+//
+//      setupFiles: ['./tests/setup.ts', './tests/setupBrowser.ts']
+//
+//  `setup.ts` ships first and is environment-agnostic (Node + browser);
+//  it registers the `vi.restoreAllMocks` afterEach hook and exports the
+//  node-safe parsing helpers. `setupBrowser.ts` ships second and adds
+//  the DOM-only Vue + factory + dispose infrastructure on top.
+//
+//  Test files import the generic primitives (`leaves`, `stripComments`,
+//  `tagFromPath`, `createRecorder`, …) directly from `'./setup'` /
+//  `'../setup'`; this file's exports cover the DOM-only helpers:
+//
 //    1. Vue mounting     — `mountSetup`, `withElement`.
 //    2. Factory fixtures — `createFactoryFixture` + the `destroy()`-shape
 //       contract every factory test relies on.
@@ -27,8 +38,6 @@ import { afterEach, expect, vi } from 'vitest'
 import { createApp, nextTick, ref } from 'vue'
 import { STORAGE_KEY_THEME, resetTheme } from '@elements/browser'
 import { waitForDelay } from './setup'
-
-export * from './setup'
 
 // ── Factory fixtures ────────────────────────────────────────────────────────
 // Factory tests do NOT mount a Vue app — factories are framework-agnostic.

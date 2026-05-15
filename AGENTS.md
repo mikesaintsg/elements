@@ -652,8 +652,8 @@ Update the relevant guide `.md` file with new types, methods, and behavior.
 - Do not bring in logic from unrelated projects
 - Do not remove structural files just because they are currently empty
 - Prefer the smallest valid implementation that preserves the intended architecture
-- **Taxonomy first.** When adding a new styled element or class-component, update [`guides/taxonomy.md`](guides/taxonomy.md) §3 and [`src/browser/taxonomy.ts`](src/browser/taxonomy.ts) BEFORE writing the SCSS or TS token surface. The parity test at `tests/src/styles/taxonomy.test.ts` enforces this order — drift between taxonomy, `elements.ts`, the SCSS partial inventory, and the factory directory fails the gate.
-- **Token-group uniformity.** Elements that share a logical role expose the same minimum token surface. The groups + required suffixes are declared in [`taxonomy.ts § TOKEN_GROUPS`](src/browser/taxonomy.ts) and enforced by `tests/src/styles/uniformity.test.ts`. Membership is a public contract — adding a tag to a group commits to declaring every required token.
+- **Taxonomy first.** When adding a new styled element or class-component, update [`guides/taxonomy.md`](guides/taxonomy.md) §3 and [`src/browser/taxonomy.ts`](src/browser/taxonomy.ts) BEFORE writing the SCSS or TS token surface. The parity test at `tests/guides/taxonomy.test.ts` enforces this order — drift between taxonomy, `elements.ts`, the SCSS partial inventory, and the factory directory fails the gate.
+- **Token-group uniformity.** Elements that share a logical role expose the same minimum token surface. The groups + required suffixes are declared in [`taxonomy.ts § TOKEN_GROUPS`](src/browser/taxonomy.ts) and enforced by `tests/guides/taxonomy.test.ts`. Membership is a public contract — adding a tag to a group commits to declaring every required token.
 - **Single-word file naming inside `src/styles/`.** SCSS partial names are single words unless the file names a specific multi-word entity (CSS feature like `_view-transition.scss` / `_anchor-position.scss`, ARIA role like `_role-group.scss`, HTML tag range like `_h1-h6.scss`). Descriptive multi-word names like `_element-scoped.scss` are not allowed — pick a single descriptive word (`_local.scss`).
 - **Workflow first.** Before authoring a non-trivial change, read [`guides/contribute.md`](guides/contribute.md). The five most common shapes of work (new element, new modifier, new element-local modifier, new composable, new showcase page) are laid out step-by-step with the exact parity-test command to gate each.
 
@@ -667,14 +667,14 @@ This framework is layered on **Tailwind v4**. Tailwind owns the palette (`--colo
 
 **Per-folder structural contract is codified.** Every SCSS partial under `src/styles/{elements,modifiers,surfaces,components,composables}/` is held to a layered contract in [`src/browser/patterns.ts`](src/browser/patterns.ts):
 
-- **`FOLDER_CONTRACTS`** — per-folder cascade layer + allowed/forbidden root selector kinds + state-selector requirement + token namespace policy + comment-only policy. Enforced by [`tests/src/styles/contracts.test.ts`](tests/src/styles/contracts.test.ts).
+- **`FOLDER_CONTRACTS`** — per-folder cascade layer + allowed/forbidden root selector kinds + state-selector requirement + token namespace policy + comment-only policy. Enforced by [`tests/guides/patterns/contracts.test.ts`](tests/guides/patterns/contracts.test.ts).
 - **`FILE_EXCEPTIONS`** — named overrides for known-good outliers (`composables/_aside.scss` chrome-free, `components/_aside.scss` multi-namespace, `surfaces/_anchor-position.scss` tokenPrefix=anchor, etc.).
 - **`MODIFIER_DIMENSION_TOKENS`** — per-modifier-dimension required context tokens (variant: 8 tokens, size: 4, style: 4; state + placement emit direct CSS by design). Enforced by [`tests/src/styles/modifiers/_index.test.ts`](tests/src/styles/modifiers/_index.test.ts).
 - **`SURFACE_CONTRACTS`** — per-surface required token namespace + selector-head kinds + animated flag + reduced-motion mixin discipline. Enforced by [`tests/src/styles/surfaces/_index.test.ts`](tests/src/styles/surfaces/_index.test.ts).
 - **`COMPONENT_CONTRACTS`** — per-component required token namespace + animated flag + reduced-motion mixin discipline. Enforced by [`tests/src/styles/components/_index.test.ts`](tests/src/styles/components/_index.test.ts).
 - **`COMPOSABLE_CONTRACTS`** — per-composable required tokens + state-selector vocabulary + factory pairing + animated flag. Enforced by [`tests/src/styles/composables/_index.test.ts`](tests/src/styles/composables/_index.test.ts).
-- **`INTERACTIVE_ELEMENTS`** — closed set of native tags that paint interaction chrome. Each member is held to forced-colors + `:focus-visible` discipline. Enforced by [`tests/src/styles/interactive.test.ts`](tests/src/styles/interactive.test.ts).
-- **Scope-discipline helpers** (`hasChainedTagNots`, `hasScopingFunction`, `classQualifiers`) — flag the specificity-inflation anti-pattern (`:not(t1):not(t2):not(t3)` → `:not(:where(t1, t2, t3))`) and the unscoped-cross-cutting anti-pattern. Enforced by [`tests/src/styles/scope.test.ts`](tests/src/styles/scope.test.ts).
+- **`INTERACTIVE_ELEMENTS`** — closed set of native tags that paint interaction chrome. Each member is held to forced-colors + `:focus-visible` discipline. Enforced by [`tests/guides/patterns/interactive.test.ts`](tests/guides/patterns/interactive.test.ts).
+- **Scope-discipline helpers** (`hasChainedTagNots`, `hasScopingFunction`, `classQualifiers`) — flag the specificity-inflation anti-pattern (`:not(t1):not(t2):not(t3)` → `:not(:where(t1, t2, t3))`) and the unscoped-cross-cutting anti-pattern. Enforced by [`tests/guides/patterns/scope.test.ts`](tests/guides/patterns/scope.test.ts).
 
 The prose explanation across all eight contracts lives in [`guides/patterns.md`](guides/patterns.md) — read that BEFORE writing or refactoring a partial, and consult it when classifying an outlier as a real-drift signal vs. a legitimate exception.
 
@@ -752,7 +752,7 @@ The cross-cutting modifier system is closed: five orthogonal dimensions, each li
 
 **No `shapes` dimension.** Corner roundness flows through `--set-radius-factor` at `:root`. Per-call shape changes use Tailwind's `.rounded-*` utilities. The names `.rounded`, `.pill`, `.square` are off-limits.
 
-Naming rules: spelled out, never abbreviated (`information` not `info`, `large` not `lg`, `background-color` not `bg`); singular adjectives or nouns; values distinct across dimensions; no collision with Tailwind utilities. The `tests/src/styles/isolation.test.ts` parity test enforces all of these.
+Naming rules: spelled out, never abbreviated (`information` not `info`, `large` not `lg`, `background-color` not `bg`); singular adjectives or nouns; values distinct across dimensions; no collision with Tailwind utilities. The `tests/guides/modifiers.test.ts` parity test enforces all of these.
 
 ### 21.5 Cascade layer order (load-bearing)
 
@@ -777,7 +777,7 @@ The `tests/src/styles/_charters.test.ts` parity test enforces: every partial in 
 
 ### 21.6 The element-rule philosophy
 
-`src/styles/elements/` contains one partial per HTML tag (~93 files). The triage between substantive / reset / passthrough is declared in [`guides/taxonomy.md`](guides/taxonomy.md) §3 and mirrored programmatically in [`src/browser/taxonomy.ts`](src/browser/taxonomy.ts). The parity test at `tests/src/styles/taxonomy.test.ts` enforces both directions:
+`src/styles/elements/` contains one partial per HTML tag (~93 files). The triage between substantive / reset / passthrough is declared in [`guides/taxonomy.md`](guides/taxonomy.md) §3 and mirrored programmatically in [`src/browser/taxonomy.ts`](src/browser/taxonomy.ts). The parity test at `tests/guides/taxonomy.test.ts` enforces both directions:
 
 - A taxonomy entry marked `substantive` or `composable` must declare at least one `--set-{tag}-*` token somewhere in `src/styles/` (elements/ or components/).
 - A taxonomy entry marked `composable` must reference a real factory key (`use{Name}` ↔ `create{Name}.ts` in `src/browser/factories/`).
@@ -813,7 +813,7 @@ The substantive partial pattern (button is the reference):
 
 Modifier classes are **token-setters only** — they declare `--set-{dimension}-*` values. The element file consumes them through `var(…, fallback)` chains. This is what makes `<button class="primary large filled">` work with zero per-element variant/size/style code.
 
-The "substantive partial" marker is **declares at least one `--set-{tag}-*` token**. The TS↔SCSS parity test for elements (`tests/src/browser/elements.test.ts`) uses this marker to determine which partials must appear in `src/browser/elements.ts`.
+The "substantive partial" marker is **declares at least one `--set-{tag}-*` token**. The TS↔SCSS parity test for elements (`tests/guides/elements.test.ts`) uses this marker to determine which partials must appear in `src/browser/elements.ts`.
 
 ### 21.7 The `_mixins.scss` registry
 
@@ -837,7 +837,7 @@ The "substantive partial" marker is **declares at least one `--set-{tag}-*` toke
 
 Each list constant is `!default` so a downstream consumer can override it before `@use`. The list names match the modifier-dimension partial names exactly (`$variants` ↔ `_variants.scss` ↔ `modifiers.variant` in TS).
 
-**Always use `palette-each` for variant iteration.** Hand-rolled `.X.primary { … } .X.secondary { … } …` blocks are the canonical anti-pattern — they duplicate work the cascade already does and force every variant addition to touch every consumer. The `tests/src/styles/handrolled.test.ts` parity test fails when three or more `.X.{variant}` compound rules appear in one non-modifier file.
+**Always use `palette-each` for variant iteration.** Hand-rolled `.X.primary { … } .X.secondary { … } …` blocks are the canonical anti-pattern — they duplicate work the cascade already does and force every variant addition to touch every consumer. The `tests/guides/modifiers.test.ts` parity test fails when three or more `.X.{variant}` compound rules appear in one non-modifier file.
 
 ### 21.8 The transition + reduced-motion contract
 
@@ -855,20 +855,20 @@ Animations (`animation:`) use `@include reduced-motion { animation: none; }` dir
 | -------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `tokens.ts`    | `tests/src/browser/tokens.test.ts`    | Each leaf resolves at runtime via `getComputedStyle()` (`:root`, on a button, or on a modifier-classed element). Each `--set-*` declared in any SCSS partial appears as a TS leaf. Each `--color-{variant}` in `_theme.scss`'s `@theme` block appears in `tokens.color`. |
 | `modifiers.ts` | `tests/src/browser/modifiers.test.ts` | Each leaf has a `.{name}` rule in the loaded cascade. Each `.{name}` declared in `modifiers/_*.scss` appears as a TS leaf.                                                                                                                                               |
-| `elements.ts`  | `tests/src/browser/elements.test.ts`  | Each TS key has an `elements/_{tag}.scss` partial that declares at least one `--set-{tag}-*` token.                                                                                                                                                                      |
-| `taxonomy.ts`  | `tests/src/browser/taxonomy.test.ts`  | TS-side shape, predicate getters, group definitions. Cross-file SCSS ↔ TS parity lives in `tests/src/styles/taxonomy.test.ts`.                                                                                                                                           |
-| `events.ts`    | `tests/src/browser/events.test.ts`    | Each value matches `elements:{source}:{verb}` per §11.                                                                                                                                                                                                                   |
+| `elements.ts`  | `tests/guides/elements.test.ts`  | Each TS key has an `elements/_{tag}.scss` partial that declares at least one `--set-{tag}-*` token.                                                                                                                                                                      |
+| `taxonomy.ts`  | `tests/guides/taxonomy.test.ts`  | TS-side shape, predicate getters, group definitions. Cross-file SCSS ↔ TS parity lives in `tests/guides/taxonomy.test.ts`.                                                                                                                                           |
+| `events.ts`    | `tests/guides/composables.test.ts`    | Each value matches `elements:{source}:{verb}` per §11.                                                                                                                                                                                                                   |
 
 **Internal parity** (styles-folder discipline — surfaces drift the audit caught at the _interior_ of `src/styles/`):
 
 | Test file                                       | Asserts                                                                                                                                                                                                                                                          |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tests/src/styles/_charters.test.ts`            | Every partial in `<folder>/` wraps its rules in `@layer <folder>`. No partial declares rules in a foreign layer.                                                                                                                                                 |
-| `tests/src/styles/taxonomy.test.ts`             | `taxonomy.ts` ↔ `elements/_{tag}.scss` ↔ `components/_{tag}.scss` ↔ `elements.ts` ↔ `factories/create{Name}.ts` all mirror each other.                                                                                                                           |
-| `tests/src/styles/handrolled.test.ts`           | No partial outside `modifiers/` hand-rolls three or more compound `.X.{variant}` rules. Use `@include palette-each` instead.                                                                                                                                     |
-| `tests/src/styles/isolation.test.ts`            | Modifier-vocabulary class names from `$variants ∪ $sizes ∪ $styles ∪ $states` are only declared as bare rules in `modifiers/`. No collision between modifier names and the Tailwind single-token utility set.                                                    |
-| `tests/src/styles/naming.test.ts`               | Every `--set-*` token matches the kebab-case shape. No token segment matches the abbreviation black-list (`bg`, `fg`, `lg`, `sm`, `info`, `btn`, …) in `taxonomy.ts § FORBIDDEN_TOKEN_SEGMENTS`.                                                                 |
-| `tests/src/styles/uniformity.test.ts`           | Every member of every `TOKEN_GROUPS` entry (`form-control`, `page-shell`, `card-region`, `floating-surface`, `inline-chip`, `disclosure`) declares every required token suffix. Customizability uniformity contract.                                             |
+| `tests/guides/taxonomy.test.ts`             | `taxonomy.ts` ↔ `elements/_{tag}.scss` ↔ `components/_{tag}.scss` ↔ `elements.ts` ↔ `factories/create{Name}.ts` all mirror each other.                                                                                                                           |
+| `tests/guides/modifiers.test.ts`           | No partial outside `modifiers/` hand-rolls three or more compound `.X.{variant}` rules. Use `@include palette-each` instead.                                                                                                                                     |
+| `tests/guides/modifiers.test.ts`            | Modifier-vocabulary class names from `$variants ∪ $sizes ∪ $styles ∪ $states` are only declared as bare rules in `modifiers/`. No collision between modifier names and the Tailwind single-token utility set.                                                    |
+| `tests/guides/tokens.test.ts`               | Every `--set-*` token matches the kebab-case shape. No token segment matches the abbreviation black-list (`bg`, `fg`, `lg`, `sm`, `info`, `btn`, …) in `taxonomy.ts § FORBIDDEN_TOKEN_SEGMENTS`.                                                                 |
+| `tests/guides/taxonomy.test.ts`           | Every member of every `TOKEN_GROUPS` entry (`form-control`, `page-shell`, `card-region`, `floating-surface`, `inline-chip`, `disclosure`) declares every required token suffix. Customizability uniformity contract.                                             |
 | `tests/src/styles/_docs.test.ts`                | `guides/modifiers.md` §1 dimension table lists the same values as `modifiers.ts` — bidirectional.                                                                                                                                                                |
 | `tests/src/styles/modifiers/_local.test.ts`     | Every rule in `_local.scss` is compound (`{tag}.{name}`); `{tag}` is a known taxonomy entry; `{name}` does not collide with cross-cutting modifiers or Tailwind utilities.                                                                                       |
 | `tests/src/styles/composables/_charter.test.ts` | Every partial in `composables/` wraps in `@layer composables` and gates on a composable-state selector (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`). Every composables/\_{name}.scss has a matching `use{Name}` factory. |
@@ -891,14 +891,14 @@ When a CSS-side identifier changes, the TS mirror **must** be updated in the sam
 Mirrors §20 in spirit:
 
 - **Never redeclare a Tailwind-owned token.** No `--set-color-blue-500`, no `--set-spacing-4`. Reference Tailwind's tokens directly: `var(--color-blue-500)`, `var(--spacing-4)`.
-- **Never invent a modifier class name that clashes with a Tailwind utility.** Tailwind already ships `.rounded`, `.outline`, `.inline`, `.block`, `.hidden`, `.shadow`, `.ring`, `.border`, `.truncate`, etc. — those names are off-limits as modifiers. The collision watch list lives in `tests/setupStyles.ts § TAILWIND_SINGLE_TOKEN_UTILITIES` and is enforced by `tests/src/styles/isolation.test.ts`.
+- **Never invent a modifier class name that clashes with a Tailwind utility.** Tailwind already ships `.rounded`, `.outline`, `.inline`, `.block`, `.hidden`, `.shadow`, `.ring`, `.border`, `.truncate`, etc. — those names are off-limits as modifiers. The collision watch list lives in `tests/setupStyles.ts § TAILWIND_SINGLE_TOKEN_UTILITIES` and is enforced by `tests/guides/modifiers.test.ts`.
 - **Never invent a new `--set-*` token without checking `_tokens.scss` and the relevant element/modifier partial first.** New global tokens go in `_tokens.scss`; new element-scoped tokens go on the element selector inside `elements/_{tag}.scss` (or `components/_{tag}.scss` when the element's substantive baseline lives in components/).
 - **Never wrap `var(...)` references inside `_theme.scss`'s `@theme` block.** Tailwind processes `@theme` before tree-shaking its palette — `var(--color-blue-500)` references will resolve to nothing. Use inline `oklch(...)` literals tuned to match the palette.
 - **Never write an unlayered rule.** `@layer elements { … }` is required for element baselines so utilities win. Same for components, surfaces, composables, modifiers — each partial wraps in its own folder's layer. `tests/src/styles/_charters.test.ts` enforces this.
 - **Never write a literal hex/rgb color in a partial.** Colors flow through tokens — `var(--color-{variant})`, `var(--set-{scope}-color)`, or a `color-mix()` of those.
 - **Never duplicate logic across partials.** If a pattern appears in two partials, lift it to `_mixins.scss`. If three or more `.X.{variant}` compound rules appear in one file, use `@include palette-each`. The `handrolled.test.ts` parity test fails on this.
 - **Never `@extend` across partials.** Sass `@extend` collapses selectors at compile time; sharing flows through tokens and mixins, not Sass inheritance.
-- **Never abbreviate** dimension or modifier names (`info` → `information`, `lg` → `large`, `bg` → `background-color`). The `tests/src/styles/naming.test.ts` parity test fails on any token name segment that matches `taxonomy.ts § FORBIDDEN_TOKEN_SEGMENTS`.
+- **Never abbreviate** dimension or modifier names (`info` → `information`, `lg` → `large`, `bg` → `background-color`). The `tests/guides/tokens.test.ts` parity test fails on any token name segment that matches `taxonomy.ts § FORBIDDEN_TOKEN_SEGMENTS`.
 - **Never add a TS leaf without a CSS counterpart, or a CSS rule without a TS leaf.** The parity tests will fail; that's the contract.
 - **Never declare a bare `.{modifier-name}` rule outside `modifiers/`.** Cross-cutting modifier-vocabulary class rules belong in the dimension partials. Element-local modifiers (`form.row`, `button.dropdown`) live in `modifiers/_local.scss` and must be compound selectors. The `isolation.test.ts` parity test enforces this.
 - **Never put composable-state chrome in `components/`.** Rules gated on `[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open` belong in `composables/_{name}.scss`. The `composables/_charter.test.ts` parity test enforces that every composable partial uses at least one state selector.

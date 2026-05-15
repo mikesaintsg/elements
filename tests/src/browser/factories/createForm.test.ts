@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createForm, FORM_EVENTS } from '@elements/browser'
-import {
-	assertCleanDispose,
-	buildElement,
-	createFactoryFixture,
-	createRecorder,
-} from '../../../setupBrowser'
+import { createRecorder } from '../../../setup'
+import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
 
 function createFormFixture(): {
 	readonly form: HTMLFormElement

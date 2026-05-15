@@ -1,12 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { resetTheme, STORAGE_KEY_THEME, THEME_EVENTS, useTheme } from '@elements/browser'
-import {
-	createRecorder,
-	extractProperty,
-	mountSetup,
-	waitForBootstrap,
-} from '../../../setupBrowser'
+import { createRecorder, extractProperty } from '../../../setup'
+import { mountSetup, waitForBootstrap } from '../../../setupBrowser'
 
 beforeEach(() => {
 	resetTheme()

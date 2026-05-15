@@ -13,7 +13,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { tokens } from '@elements/browser'
-import { leaves, render, rootToken, tagFromPath, token } from '../../setupStyles.ts'
+import { leaves, tagFromPath } from '../../setup.ts'
+import { render, rootToken, token } from '../../setupStyles.ts'
 
 import tokensScss from '../../../src/styles/_tokens.scss?raw'
 import themeScss from '../../../src/styles/_theme.scss?raw'
