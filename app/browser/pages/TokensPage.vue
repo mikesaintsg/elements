@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import type { MotionTiming } from '../types.js'
+import type { MotionTiming, TokenZIndex } from '../types.js'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { timingFunctionFor } from '../helpers.js'
+import { TOKENS_ICONS as icons } from '../constants.js'
 
 /**
  * TokensPage — the canonical reference for the framework's `--set-*`
@@ -183,47 +184,9 @@ const replayMotion = async (): Promise<void> => {
 // Icon catalog — every icon registered in `_tokens.scss` § Icon
 // tokens. Each row pairs the token name with a human label so the
 // preview reads as a glyph swatch.
-interface IconEntry {
-	readonly token: string
-	readonly label: string
-}
-
-const icons: readonly IconEntry[] = [
-	{ token: '--set-icon-chevron-down', label: 'Chevron down' },
-	{ token: '--set-icon-chevron-up', label: 'Chevron up' },
-	{ token: '--set-icon-chevron-left', label: 'Chevron left' },
-	{ token: '--set-icon-chevron-right', label: 'Chevron right' },
-	{ token: '--set-icon-caret-down', label: 'Caret down' },
-	{ token: '--set-icon-caret-up', label: 'Caret up' },
-	{ token: '--set-icon-check', label: 'Check' },
-	{ token: '--set-icon-dash', label: 'Dash' },
-	{ token: '--set-icon-radio', label: 'Radio dot' },
-	{ token: '--set-icon-close', label: 'Close (×)' },
-	{ token: '--set-icon-menu', label: 'Menu (hamburger)' },
-	{ token: '--set-icon-more', label: 'More (⋮)' },
-	{ token: '--set-icon-search', label: 'Search' },
-	{ token: '--set-icon-filter', label: 'Filter' },
-	{ token: '--set-icon-sort', label: 'Sort' },
-	{ token: '--set-icon-external', label: 'External link' },
-	{ token: '--set-icon-sun', label: 'Sun (light theme)' },
-	{ token: '--set-icon-moon', label: 'Moon (dark theme)' },
-	{ token: '--set-icon-system', label: 'System (auto theme)' },
-	{ token: '--set-icon-information', label: 'Information' },
-	{ token: '--set-icon-success', label: 'Success' },
-	{ token: '--set-icon-warning', label: 'Warning' },
-	{ token: '--set-icon-danger', label: 'Danger' },
-	{ token: '--set-icon-plus', label: 'Plus' },
-	{ token: '--set-icon-minus', label: 'Minus' },
-]
-
 // Z-index layers in ascending order — drives the layering diagram.
-interface ZIndexEntry {
-	readonly token: string
-	readonly value: string
-	readonly role: string
-}
 
-const zIndexLayers = computed<readonly ZIndexEntry[]>(() => [
+const zIndexLayers = computed<readonly TokenZIndex[]>(() => [
 	{
 		token: '--set-z-index-sticky',
 		value: read('--set-z-index-sticky'),

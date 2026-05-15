@@ -50,238 +50,17 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useTable } from '@elements/browser'
+import type { TableEditRow } from '../types.js'
 import { pageList } from '../helpers.js'
+import {
+	TABLE_DICTIONARY as dictionary,
+	TABLE_FRUITS as fruits,
+	TABLE_ISSUES as issues,
+} from '../constants.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Shared dataset for the §1 comprehensive integrated demo.
 // ─────────────────────────────────────────────────────────────────────
-interface Issue {
-	id: string
-	title: string
-	status: 'open' | 'in-progress' | 'resolved'
-	priority: 'low' | 'medium' | 'high' | 'critical'
-	assignee: string
-	updated: string
-	detail: string
-}
-const issues: readonly Issue[] = [
-	{
-		id: 'i1',
-		title: 'Scroll-spy active threshold',
-		status: 'open',
-		priority: 'medium',
-		assignee: 'Aria',
-		updated: '2026-05-12',
-		detail: 'Spy lands the wrong section at the body grid edge.',
-	},
-	{
-		id: 'i2',
-		title: 'Popover anchor flip',
-		status: 'resolved',
-		priority: 'low',
-		assignee: 'Cass',
-		updated: '2026-05-10',
-		detail: 'Anchor-positioned popovers flipped on a 1-row threshold.',
-	},
-	{
-		id: 'i3',
-		title: 'Reduced-motion tab fade',
-		status: 'in-progress',
-		priority: 'high',
-		assignee: 'Dax',
-		updated: '2026-05-13',
-		detail: 'Tab panel still fades when reduced-motion is on.',
-	},
-	{
-		id: 'i4',
-		title: 'Drawer focus return',
-		status: 'open',
-		priority: 'high',
-		assignee: 'Aria',
-		updated: '2026-05-11',
-		detail: 'Closing a drawer leaves focus on <body>.',
-	},
-	{
-		id: 'i5',
-		title: 'Toast deck overflow clip',
-		status: 'resolved',
-		priority: 'medium',
-		assignee: 'Bee',
-		updated: '2026-05-09',
-		detail: 'Deck cards clipped their hit-area pseudos.',
-	},
-	{
-		id: 'i6',
-		title: 'Combobox no-match dismiss',
-		status: 'resolved',
-		priority: 'medium',
-		assignee: 'Cass',
-		updated: '2026-05-14',
-		detail: 'Auto-hide on filter no-match removed.',
-	},
-	{
-		id: 'i7',
-		title: 'Select keyboard rove wrap',
-		status: 'open',
-		priority: 'low',
-		assignee: 'Dax',
-		updated: '2026-05-08',
-		detail: 'End / Home wrap inverted.',
-	},
-	{
-		id: 'i8',
-		title: 'Aside drawer scrim opacity',
-		status: 'in-progress',
-		priority: 'medium',
-		assignee: 'Bee',
-		updated: '2026-05-13',
-		detail: 'Scrim reads too transparent in dark mode.',
-	},
-	{
-		id: 'i9',
-		title: 'Details accordion sync',
-		status: 'resolved',
-		priority: 'critical',
-		assignee: 'Aria',
-		updated: '2026-05-05',
-		detail: "Accordion didn't close siblings on programmatic open.",
-	},
-	{
-		id: 'i10',
-		title: 'Form scroll-into-view',
-		status: 'open',
-		priority: 'low',
-		assignee: 'Cass',
-		updated: '2026-05-07',
-		detail: "Validation error doesn't scroll to first invalid field.",
-	},
-	{
-		id: 'i11',
-		title: 'Nav rail filter focus',
-		status: 'open',
-		priority: 'medium',
-		assignee: 'Dax',
-		updated: '2026-05-12',
-		detail: 'Press "/" focuses the filter even with inputs focused elsewhere.',
-	},
-	{
-		id: 'i12',
-		title: 'Carousel touch slide',
-		status: 'in-progress',
-		priority: 'high',
-		assignee: 'Bee',
-		updated: '2026-05-13',
-		detail: 'Touch swipe locks the deck mid-slide.',
-	},
-	{
-		id: 'i13',
-		title: 'Tooltip placement reflow',
-		status: 'resolved',
-		priority: 'low',
-		assignee: 'Aria',
-		updated: '2026-05-06',
-		detail: 'Tooltips repositioned on every scroll frame.',
-	},
-	{
-		id: 'i14',
-		title: 'Dialog modal stack',
-		status: 'open',
-		priority: 'critical',
-		assignee: 'Cass',
-		updated: '2026-05-14',
-		detail: 'Stacked modals share one backdrop.',
-	},
-	{
-		id: 'i15',
-		title: 'Menu separator rule',
-		status: 'resolved',
-		priority: 'low',
-		assignee: 'Dax',
-		updated: '2026-05-04',
-		detail: 'Separators rendered ABOVE the section eyebrow.',
-	},
-	{
-		id: 'i16',
-		title: 'Toast swipe rubber-band',
-		status: 'resolved',
-		priority: 'medium',
-		assignee: 'Bee',
-		updated: '2026-05-14',
-		detail: 'Swipe cap at threshold; auto-dismiss at bound.',
-	},
-	{
-		id: 'i17',
-		title: 'Sidebar gutter flex',
-		status: 'resolved',
-		priority: 'medium',
-		assignee: 'Aria',
-		updated: '2026-05-14',
-		detail: 'Pinned region ballooned via flex-grow inheritance.',
-	},
-	{
-		id: 'i18',
-		title: 'Drag-drop file overlay',
-		status: 'open',
-		priority: 'high',
-		assignee: 'Cass',
-		updated: '2026-05-13',
-		detail: 'Drop overlay flickers on dragenter / dragleave race.',
-	},
-	{
-		id: 'i19',
-		title: 'Table expansion strip',
-		status: 'resolved',
-		priority: 'high',
-		assignee: 'Dax',
-		updated: '2026-05-14',
-		detail: 'JS height tween replaced by CSS interpolate-size.',
-	},
-	{
-		id: 'i20',
-		title: 'Pointer cursor lock',
-		status: 'in-progress',
-		priority: 'low',
-		assignee: 'Bee',
-		updated: '2026-05-12',
-		detail: 'Body cursor stays grabbing after pointercancel.',
-	},
-	{
-		id: 'i21',
-		title: 'Theme cycle reduced-motion',
-		status: 'open',
-		priority: 'low',
-		assignee: 'Aria',
-		updated: '2026-05-08',
-		detail: 'View-transition runs even with prefers-reduced-motion.',
-	},
-	{
-		id: 'i22',
-		title: 'Tabs lazy panel mount',
-		status: 'open',
-		priority: 'medium',
-		assignee: 'Cass',
-		updated: '2026-05-11',
-		detail: 'Inactive tab panel keeps its DOM tree alive.',
-	},
-	{
-		id: 'i23',
-		title: 'Alert auto-dismiss timer',
-		status: 'in-progress',
-		priority: 'medium',
-		assignee: 'Dax',
-		updated: '2026-05-13',
-		detail: 'Timer keeps running across remounts.',
-	},
-	{
-		id: 'i24',
-		title: 'Output status announcement',
-		status: 'resolved',
-		priority: 'low',
-		assignee: 'Bee',
-		updated: '2026-05-09',
-		detail: 'Live region announced on every value change.',
-	},
-]
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — comprehensive integrated table. Every feature, one surface.
@@ -351,20 +130,6 @@ const sortLine = computed(() =>
 // options plus a computed slice. This demo wires the contract end-to-
 // end so it's obvious what's automatic and what's consumer-driven.
 // ─────────────────────────────────────────────────────────────────────
-const fruits = [
-	'Apple',
-	'Banana',
-	'Cherry',
-	'Date',
-	'Elderberry',
-	'Fig',
-	'Grape',
-	'Honeydew',
-	'Imbe',
-	'Jackfruit',
-	'Kiwi',
-	'Lemon',
-]
 const pgSize = ref(4)
 const pgPage = ref(1)
 const pgRef = useTemplateRef<HTMLTableElement>('pgRef')
@@ -410,14 +175,7 @@ const note = (line: string): void => {
 // `contenteditable` on random elements, so the validation contract +
 // type-specific UI + screen-reader affordances stay intact.
 // ─────────────────────────────────────────────────────────────────────
-type EditRow = {
-	id: string
-	sku: string
-	name: string
-	stock: number
-	bucket: 'in' | 'low' | 'out'
-}
-const editRows = ref<EditRow[]>([
+const editRows = ref<TableEditRow[]>([
 	{ id: 'e1', sku: 'SKU-001', name: 'Lacquer pen', stock: 18, bucket: 'in' },
 	{ id: 'e2', sku: 'SKU-002', name: 'Carbon ribbon', stock: 4, bucket: 'low' },
 	{ id: 'e3', sku: 'SKU-003', name: 'Press plate', stock: 0, bucket: 'out' },
@@ -478,20 +236,6 @@ const stRef = useTemplateRef<HTMLTableElement>('stRef')
 const st = useTable(stRef, {
 	headers: ['#', 'Term', 'Definition'],
 })
-const dictionary = [
-	['1', 'caret', 'A horizontal-wedge symbol used to indicate insertion or selection.'],
-	['2', 'kerning', 'Per-pair letter spacing adjustment to improve typographical rhythm.'],
-	['3', 'leading', 'Vertical space between baselines of consecutive lines of text.'],
-	['4', 'tracking', 'Uniform letter spacing applied across a run of characters.'],
-	['5', 'baseline', 'Imaginary line on which most letters sit.'],
-	['6', 'x-height', 'Height of the lowercase letter "x" within a typeface.'],
-	['7', 'ascender', 'Stroke of a lowercase letter extending above the x-height.'],
-	['8', 'descender', 'Stroke of a lowercase letter extending below the baseline.'],
-	['9', 'cap height', 'Height of an uppercase letter.'],
-	['10', 'em', 'Relative unit equal to the type-size of the current font.'],
-	['11', 'em-dash', 'A long dash used to set off parenthetical text.'],
-	['12', 'em-space', 'A space the width of an em.'],
-]
 
 // ─────────────────────────────────────────────────────────────────────
 // Page-wide state readout.

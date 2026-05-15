@@ -134,3 +134,37 @@ export interface TablesReleaseStep {
 	readonly owner: string
 	readonly notes: string
 }
+
+// ── UseTablePage demo shapes ─────────────────────────────────────────────
+
+export interface TableIssue {
+	readonly id: string
+	readonly title: string
+	readonly status: 'open' | 'in-progress' | 'resolved'
+	readonly priority: 'low' | 'medium' | 'high' | 'critical'
+	readonly assignee: string
+	readonly updated: string
+	readonly detail: string
+}
+
+// Inline-editing demo mutates `stock` / `bucket`, so these stay writable.
+export interface TableEditRow {
+	id: string
+	sku: string
+	name: string
+	stock: number
+	bucket: 'in' | 'low' | 'out'
+}
+
+// ── TokensPage demo shapes ───────────────────────────────────────────────
+
+export interface TokenIcon {
+	readonly token: string
+	readonly label: string
+}
+
+export interface TokenZIndex {
+	readonly token: string
+	readonly value: string
+	readonly role: string
+}
