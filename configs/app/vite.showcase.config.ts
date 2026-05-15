@@ -14,27 +14,35 @@ const buildStampPlugin = () => ({
 	},
 })
 
-// Conservative HTML minifier for the single-file output. No new
-// dependencies — pure regex passes that protect inline `<script>` /
-// `<style>` / `<pre>` / `<code>` / `<textarea>` content. Vite already
-// minifies the inlined script + style via Rolldown's oxc-minify; this
-// plugin trims the surrounding HTML wrapper (comments, whitespace
-// between tags, leading / trailing whitespace per line).
+// Vite 8 has no built-in HTML minifier — `build.minify` covers JS (via
+// oxc-minify) and `build.cssMinify` covers CSS (via Lightning CSS), but
+// the HTML wrapper passes through untouched. `HTMLOptions` exposes only
+// `cspNonce`. This plugin is the zero-dependency closer.
 //
-// Order matters: this runs AFTER `vite-plugin-singlefile` inlines the
-// script + style — otherwise the link/script tag swaps would
-// re-introduce whitespace after we'd stripped it. `enforce: 'post'`
-// plus `order: 'post'` keeps us at the tail of the transform pipeline.
+// Ordering: this hook runs during Vite's `transformIndexHtml` pass —
+// BEFORE `vite-plugin-singlefile`'s `generateBundle` step swaps
+// `<script src=…>` / `<link href=…>` for inlined bodies. So we minify
+// the bare wrapper first, and singlefile then injects the already-
+// minified JS / CSS payloads into tight markup. `enforce: 'post'`
+// plus `order: 'post'` keeps us at the tail of the HTML transform
+// chain so any earlier hook (e.g. `buildStampPlugin`) lands first.
+//
+// `apply: 'build'` skips the pass during `npm run showcase` (dev
+// server) — mangling HTML on every request just hurts DevTools.
 const htmlMinifyPlugin = () => ({
 	name: 'html-minify',
 	enforce: 'post' as const,
+	apply: 'build' as const,
 	transformIndexHtml: {
 		order: 'post' as const,
 		handler(html: string) {
-			// Carve out segments the minifier MUST leave alone. The
-			// inlined script / style bodies are already minified by
-			// Vite; <pre> / <code> / <textarea> contents must survive
-			// verbatim for the showcase's source-sample blocks.
+			// Carve out content-sensitive nodes. `<script>` / `<style>` may
+			// hold inline bodies the source HTML authored (separate from
+			// singlefile's later injection); `<pre>` / `<code>` /
+			// `<textarea>` carry the showcase's source-sample blocks where
+			// every space / newline is the lesson. The `[^>]*` attr-tail
+			// is safe against Vite-built HTML — attribute values never
+			// contain literal `>` (data URLs URL-encode it as `%3E`).
 			const protectedBodies: string[] = []
 			const protectRegex = /<(script|style|pre|code|textarea)\b[^>]*>[\s\S]*?<\/\1>/gi
 			const carved = html.replace(protectRegex, (match) => {
@@ -43,25 +51,23 @@ const htmlMinifyPlugin = () => ({
 				return `__PROTECTED_${idx}__`
 			})
 
-			let minified = carved
-				// HTML comments — strip outside protected regions.
+			const minified = carved
+				// HTML comments — non-greedy so adjacent comments don't fuse.
 				.replace(/<!--[\s\S]*?-->/g, '')
-				// Collapse whitespace between adjacent tags.
+				// Whitespace strictly BETWEEN tags. Text-node interiors are
+				// untouched (they lack the `>...<` shape).
 				.replace(/>\s+</g, '><')
-				// Trim leading / trailing whitespace per line.
+				// Per-line trim — content-sensitive nodes are already carved.
 				.replace(/^\s+/gm, '')
 				.replace(/\s+$/gm, '')
-				// Collapse blank-line runs.
+				// Collapse blank-line runs left after the comment strip.
 				.replace(/\n{2,}/g, '\n')
 				.trim()
 
-			// Restore protected segments verbatim.
-			minified = minified.replace(
+			return minified.replace(
 				/__PROTECTED_(\d+)__/g,
 				(_, idx: string) => protectedBodies[Number(idx)] ?? '',
 			)
-
-			return minified
 		},
 	},
 })
@@ -69,37 +75,50 @@ const htmlMinifyPlugin = () => ({
 // Builds the app/browser showcase into a single self-contained HTML file.
 // Output: dist/showcase/index.html — open directly in any browser, no server needed.
 //
-// Minification stack (no additional dependencies — all built-in to the
-// installed vite + vite-plugin-singlefile versions):
+// Minification stack (no additional dependencies — every layer ships with
+// vite@8 or vite-plugin-singlefile):
 //
-//   - JS  → oxc-minify (Rolldown's default minifier, ships with Vite 8).
-//   - CSS → Vite's built-in CSS minifier via `cssMinify: true`. Removes
-//           whitespace, collapses adjacent selectors, normalizes
-//           colors, drops vendor prefixes the targets don't need.
-//   - HTML wrapper → custom regex pass (the htmlMinifyPlugin above)
-//           that strips comments + collapses whitespace around tags.
-//           `<script>` / `<style>` / `<pre>` / `<code>` /
-//           `<textarea>` content is protected from the regex.
+//   - JS   → `build.minify: 'oxc'` — Rolldown's bundled oxc-minify. Does
+//            compress + mangle + DCE in one pass. Preserves `@license` /
+//            `@preserve` legal comments by default. Vite 8's default;
+//            named explicitly so the contract is visible.
+//   - CSS  → `build.cssMinify: 'lightningcss'` — Vite 8's default. Lightning
+//            CSS is a direct `vite` dependency (no separate install).
+//            Strips whitespace + comments, normalizes colors / `calc()` /
+//            shorthand, and (re)applies vendor prefixes against the
+//            `cssTarget` browserslist. With `target: 'esnext'` no prefixes
+//            are added — single-file showcase opens in a modern browser.
+//   - HTML → `htmlMinifyPlugin` above. Comment + whitespace pass with
+//            `<script>` / `<style>` / `<pre>` / `<code>` / `<textarea>`
+//            content carved out so the showcase's source-sample blocks
+//            survive verbatim.
 //
-// `target: 'esnext'` skips legacy-syntax transpilation. The showcase
-// is opened in a modern browser; older-engine fallbacks aren't needed
-// and bump the bundle.
+// Single-file shape — the singlefile plugin's `useRecommendedBuildConfig`
+// hook (enforce: 'post') sets `assetsInlineLimit: () => true`,
+// `cssCodeSplit: false`, `chunkSizeWarningLimit: 100000000`,
+// `assetsDir: ''`, `base: './'`, AND `rolldownOptions.output.codeSplitting
+// = false` for Vite 8+ (the Rolldown replacement for the deprecated
+// Rollup-era `inlineDynamicImports: true`). Don't redeclare those here —
+// setting `inlineDynamicImports: true` alongside `codeSplitting: false`
+// trips a Rolldown deprecation warning at build time.
 //
-// `modulePreload: false` strips the `<link rel="modulepreload">`
-// hints — a single inlined file doesn't need preloading.
+// `target: 'esnext'` skips legacy-syntax transpilation. The showcase is
+// opened in a modern browser; older-engine fallbacks aren't needed and
+// bump the bundle.
 //
-// `reportCompressedSize: false` skips the gzip-size report at build
-// time (saves a few hundred ms per build; the size is still visible
-// via `wc -c` on the output).
+// `modulePreload: false` strips the `<link rel="modulepreload">` hints —
+// a single inlined file doesn't need preloading.
+//
+// `reportCompressedSize: false` skips the gzip-size report at build time
+// (saves a few hundred ms per build; the size is still visible via
+// `wc -c` on the output).
 export default defineConfig(
 	appBrowser({
 		plugins: [
 			viteSingleFile({
 				removeViteModuleLoader: true,
-				// Apply the recommended single-file build config
-				// (`assetsInlineLimit: Infinity`, `cssCodeSplit: false`,
-				// `inlineDynamicImports: true`). Default is true; declared
-				// explicitly so the contract is visible.
+				// Apply the recommended single-file build contract — see the
+				// header comment above for what this sets in Vite 8+.
 				useRecommendedBuildConfig: true,
 			}),
 			buildStampPlugin(),
@@ -113,21 +132,11 @@ export default defineConfig(
 			outDir: resolveWorkspacePath('dist/showcase'),
 			emptyOutDir: true,
 			sourcemap: false,
-			minify: true,
-			cssMinify: true,
+			minify: 'oxc',
+			cssMinify: 'lightningcss',
 			target: 'esnext',
 			modulePreload: false,
 			reportCompressedSize: false,
-			// Inline all binary assets (images, fonts) as data URIs.
-			assetsInlineLimit: Number.MAX_SAFE_INTEGER,
-			rolldownOptions: {
-				output: {
-					// Collapse all dynamic imports so everything lands in one JS chunk.
-					codeSplitting: false,
-					// Inline dynamic imports too — single file, no async chunks.
-					inlineDynamicImports: true,
-				},
-			},
 		},
 	}),
 )
