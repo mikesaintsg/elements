@@ -16,16 +16,13 @@
 //  Pure node — node:fs reads the SCSS + markdown sources.
 // ============================================================================
 
-import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve as resolvePath } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const TEST_FILE_DIR = fileURLToPath(new URL('.', import.meta.url))
-const WORKSPACE_ROOT = resolvePath(TEST_FILE_DIR, '../..')
+import { describe, expect, it } from 'vitest'
+import { readGuide, WORKSPACE_ROOT } from '../setupServer'
 
 const mixinsScss = readFileSync(resolvePath(WORKSPACE_ROOT, 'src/styles/_mixins.scss'), 'utf8')
-const mixinsDoc = readFileSync(resolvePath(WORKSPACE_ROOT, 'guides/mixins.md'), 'utf8')
+const mixinsDoc = readGuide('mixins')
 
 /** Pull every `@mixin name(...)` declaration name out of `_mixins.scss`. */
 function shippedMixins(source: string): readonly string[] {

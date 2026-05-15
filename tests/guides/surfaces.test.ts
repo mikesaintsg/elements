@@ -19,17 +19,11 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { resolve as resolvePath } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { tagFromPath } from '../setup'
-import { readScssPartials } from '../setupServer'
-
-const TEST_FILE_DIR = fileURLToPath(new URL('.', import.meta.url))
-const WORKSPACE_ROOT = resolvePath(TEST_FILE_DIR, '../..')
+import { readGuide, readScssPartials } from '../setupServer'
 
 const surfaceSources = readScssPartials('src/styles/surfaces')
-const surfacesDoc = readFileSync(resolvePath(WORKSPACE_ROOT, 'guides/surfaces.md'), 'utf8')
+const surfacesDoc = readGuide('surfaces')
 
 const SHIPPED_SURFACES: readonly string[] = Object.keys(surfaceSources)
 	.map(tagFromPath)

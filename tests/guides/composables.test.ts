@@ -20,15 +20,9 @@
 //  Pure node — TS data + readScssPartials/readFactorySources via node:fs.
 // ============================================================================
 
-import { readFileSync } from 'node:fs'
-import { resolve as resolvePath } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { events } from '@elements/browser'
-import { readAllStyleSources, readFactorySources } from '../setupServer'
-
-const TEST_FILE_DIR = fileURLToPath(new URL('.', import.meta.url))
-const WORKSPACE_ROOT = resolvePath(TEST_FILE_DIR, '../..')
+import { readAllStyleSources, readFactorySources, readGuide } from '../setupServer'
 
 // ── 1. Event-name registry ─────────────────────────────────────────────────
 //
@@ -220,7 +214,7 @@ describe('factories ↔ styles — every setAttribute("data-*") has a CSS refere
 // guide, consumers can't discover it. The check matches each factory file
 // to a `create{Name}` mention (in backticks) anywhere in composables.md.
 
-const composablesDoc = readFileSync(resolvePath(WORKSPACE_ROOT, 'guides/composables.md'), 'utf8')
+const composablesDoc = readGuide('composables')
 
 const shippedFactoryNames: readonly string[] = Object.keys(factorySources)
 	.map((p) => {

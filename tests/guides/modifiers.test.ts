@@ -40,8 +40,9 @@ import {
 	relativeStylesPath,
 	tableCellFor,
 } from '../setup'
-import { readScssPartials } from '../setupServer'
-import modifiersDoc from '../../guides/modifiers.md?raw'
+import { readGuide, readScssPartials } from '../setupServer'
+
+const modifiersDoc = readGuide('modifiers')
 
 // ── 1. Doc ↔ TS parity ─────────────────────────────────────────────────────
 

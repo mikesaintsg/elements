@@ -32,7 +32,12 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { STYLE_LAYERS } from '@elements/browser'
 
-const WORKSPACE_ROOT = fileURLToPath(new URL('../', import.meta.url))
+/**
+ * Absolute path to the repository root, resolved from this file's URL so the
+ * value survives any working-directory the runner is launched from. Every
+ * node-env helper below resolves paths against this anchor.
+ */
+export const WORKSPACE_ROOT = fileURLToPath(new URL('../', import.meta.url))
 
 /**
  * Synchronously read every `_*.scss` partial from one or more
@@ -79,6 +84,32 @@ export function readFactorySources(dir = 'src/browser/factories'): Record<string
 		if (!file.startsWith('create') || !file.endsWith('.ts')) continue
 		const absPath = resolve(absDir, file)
 		out[absPath] = readFileSync(absPath, 'utf8')
+	}
+	return out
+}
+
+/**
+ * Synchronously read a single guide's markdown source. `name` is the bare
+ * basename without the `.md` extension — `readGuide('tokens')` returns the
+ * contents of `guides/tokens.md`. Throws if the file is missing.
+ */
+export function readGuide(name: string): string {
+	return readFileSync(resolve(WORKSPACE_ROOT, `guides/${name}.md`), 'utf8')
+}
+
+/**
+ * Synchronously read every `*.md` guide in `guides/`. Returns
+ * `{ basename: rawSource }` (basename without the `.md` extension). Used by
+ * the meta driver in `tests/guides/index.test.ts` for structural-uniformity
+ * + cross-reference parity across all guides.
+ */
+export function readAllGuides(): Record<string, string> {
+	const out: Record<string, string> = {}
+	const absDir = resolve(WORKSPACE_ROOT, 'guides')
+	for (const file of readdirSync(absDir)) {
+		if (!file.endsWith('.md')) continue
+		const name = file.replace(/\.md$/, '')
+		out[name] = readFileSync(resolve(absDir, file), 'utf8')
 	}
 	return out
 }

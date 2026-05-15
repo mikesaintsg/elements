@@ -1,32 +1,33 @@
 // ============================================================================
 //  guides/README.md ↔ guides/*.md — structural uniformity + cross-reference parity.
 //
-//  Two contract surfaces in one driver:
+//  Three contract surfaces in one driver:
 //
-//    1. UNIFORMITY  — every `guides/*.md` opens with `# Title` on line 1 and
-//                     carries a `> blockquote` subtitle on line 3. The
-//                     pointer file (`guides/README.md`) must link to every
-//                     other guide so the map stays complete. Every
-//                     `tests/guides/{name}.test.ts` driver corresponds to
-//                     a real `guides/{name}.md`.
+//    1. UNIFORMITY (every guide). Every `guides/*.md` opens with `# Title`
+//       on line 1 and carries a `> blockquote` subtitle on line 3. The
+//       pointer file (`guides/README.md`) must link to every other guide
+//       so the map stays complete. Every `tests/guides/{name}.test.ts`
+//       driver corresponds to a real `guides/{name}.md`.
 //
-//    2. CROSS-REFS  — every `[label](relative/path)` link in every guide
-//                     resolves to a file that exists. URL fragments
-//                     (`#anchor`) are stripped before the existence check;
-//                     `http(s)`, `mailto`, and protocol-prefixed links are
-//                     skipped.
+//    2. SPEC-GUIDE SKELETON. Every spec guide (anything other than the
+//       process docs `README` and `contribute`) ships the unified
+//       Skeleton: `# Title` → `> blockquote` → `## Surface` → `## Contract`
+//       → `## Patterns` → `## Tests` → `## See also`. Agents and humans
+//       can land on any spec guide and find the same anchor names.
 //
-//  Pure node — `node:fs` reads the markdown sources directly (Vite's CSS
-//  pipeline isn't active in the guides project).
+//    3. CROSS-REFS. Every `[label](relative/path)` link in every guide
+//       resolves to a file that exists. URL fragments (`#anchor`) are
+//       stripped before the existence check; `http(s)`, `mailto`, and
+//       protocol-prefixed links are skipped.
+//
+//  Pure node — `node:fs` reads via `tests/setupServer.ts` helpers.
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { resolve as resolvePath, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { readAllGuides, WORKSPACE_ROOT } from '../setupServer'
 
-const TEST_FILE_DIR = fileURLToPath(new URL('.', import.meta.url))
-const WORKSPACE_ROOT = resolvePath(TEST_FILE_DIR, '../..')
 const GUIDES_DIR = resolvePath(WORKSPACE_ROOT, 'guides')
 const TESTS_GUIDES_DIR = resolvePath(WORKSPACE_ROOT, 'tests/guides')
 
@@ -36,16 +37,18 @@ interface GuideFile {
 	readonly source: string
 }
 
-const guides: readonly GuideFile[] = readdirSync(GUIDES_DIR)
-	.filter((f) => f.endsWith('.md'))
-	.map((f) => {
-		const path = resolvePath(GUIDES_DIR, f)
-		return {
-			name: f.replace(/\.md$/, ''),
-			path,
-			source: readFileSync(path, 'utf8'),
-		}
-	})
+const guides: readonly GuideFile[] = Object.entries(readAllGuides()).map(([name, source]) => ({
+	name,
+	path: resolvePath(GUIDES_DIR, `${name}.md`),
+	source,
+}))
+
+// Process docs intentionally deviate from the spec-guide skeleton — they're
+// task-oriented (workflow + navigation), not specs. Skeleton enforcement
+// skips them; cross-ref + uniformity checks still apply.
+const PROCESS_DOCS: ReadonlySet<string> = new Set(['README', 'contribute'])
+
+const SKELETON_HEADINGS = ['Surface', 'Contract', 'Patterns', 'Tests', 'See also'] as const
 
 // ── 1. Uniformity — every guide opens with the same shape ─────────────────
 
@@ -73,7 +76,29 @@ describe('guides — every guide carries a `>` blockquote subtitle', () => {
 	}
 })
 
-// ── 2. Pointer-file coverage — guides/README.md links every other guide ───
+// ── 2. Spec-guide skeleton — uniform `## {section}` anchors ──────────────
+
+describe('guides — every spec guide ships the unified skeleton', () => {
+	for (const guide of guides) {
+		if (PROCESS_DOCS.has(guide.name)) continue
+		for (const heading of SKELETON_HEADINGS) {
+			// On failure: `guides/${guide.name}.md` is a spec guide but is
+			// missing the `## ${heading}` section. The skeleton (`# Title` →
+			// `> blockquote` → `## Surface` → `## Contract` → `## Patterns`
+			// → `## Tests` → `## See also`) is the contract every spec guide
+			// holds to. Process docs (`README.md`, `contribute.md`) deviate
+			// by design — they're listed in PROCESS_DOCS at the top of this
+			// driver. Add a top-level `## ${heading}` section, or — if this
+			// guide is genuinely process-oriented — add it to PROCESS_DOCS.
+			it(`guides/${guide.name}.md — declares ## ${heading}`, () => {
+				const pattern = new RegExp(`^## ${heading.replace(/\s/g, '\\s+')}\\s*$`, 'm')
+				expect(pattern.test(guide.source)).toBe(true)
+			})
+		}
+	}
+})
+
+// ── 3. Pointer-file coverage — guides/README.md links every other guide ──
 
 describe('guides — pointer file links every other guide', () => {
 	const indexGuide = guides.find((g) => g.name === 'README')
@@ -95,7 +120,7 @@ describe('guides — pointer file links every other guide', () => {
 	}
 })
 
-// ── 3. Test ↔ guide parity — every test driver maps to a real guide ───────
+// ── 4. Test ↔ guide parity — every test driver maps to a real guide ──────
 
 describe('guides — every tests/guides/*.test.ts has a matching guide', () => {
 	const guideNames = new Set(guides.map((g) => g.name))
@@ -115,7 +140,7 @@ describe('guides — every tests/guides/*.test.ts has a matching guide', () => {
 	}
 })
 
-// ── 4. Cross-reference parity — every relative link resolves ──────────────
+// ── 5. Cross-reference parity — every relative link resolves ─────────────
 
 const LINK_REGEX = /\]\((\.\.?\/[^)]+)\)/g
 

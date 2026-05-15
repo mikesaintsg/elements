@@ -28,9 +28,6 @@
 //  Pure node — TS data + raw SCSS via `tests/setupServer.ts`.
 // ============================================================================
 
-import { readFileSync } from 'node:fs'
-import { resolve as resolvePath } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
 	COMPONENT_CONTRACTS,
@@ -55,11 +52,9 @@ import {
 	type TokenGroup,
 } from '@elements/browser'
 import { declaresElementToken, tagFromPath } from '../setup'
-import { readFactorySources, readScssPartials } from '../setupServer'
+import { readFactorySources, readGuide, readScssPartials } from '../setupServer'
 
-const TEST_FILE_DIR = fileURLToPath(new URL('.', import.meta.url))
-const WORKSPACE_ROOT = resolvePath(TEST_FILE_DIR, '../..')
-const elementsDoc = readFileSync(resolvePath(WORKSPACE_ROOT, 'guides/elements.md'), 'utf8')
+const elementsDoc = readGuide('elements')
 
 const elementSources = readScssPartials('src/styles/elements')
 const componentSources = readScssPartials('src/styles/components')
