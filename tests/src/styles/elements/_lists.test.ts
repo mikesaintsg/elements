@@ -1,7 +1,7 @@
 // ============================================================================
 //  _ol.scss / _ul.scss / _li.scss — list element baselines.
 //
-//  Regression coverage for fixes captured in plan.md §9.7:
+//  Regression coverage for fixes captured in ROADMAP.md §9.7:
 //
 //    - Bare `<ol>` lost UA decimal markers after Tailwind preflight
 //      zeroed `list-style`. `_ol.scss` now re-asserts `decimal` at the

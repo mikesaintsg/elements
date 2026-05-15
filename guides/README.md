@@ -1,6 +1,6 @@
 # Index
 
-> The pointer file. A map of every authored file in the repository — by concept (group related files across `src/` + `src/styles/` + `tests/` + `app/` + `guides/`) and by directory (quick lookup per folder). Read this once to build a mental model; follow links for depth. Companion docs: [AGENTS.md](../AGENTS.md) (rules), [contribute.md](contribute.md) (workflow), [plan.md](plan.md) (current roster).
+> The pointer file. A map of every authored file in the repository — by concept (group related files across `src/` + `src/styles/` + `tests/` + `app/` + `guides/`) and by directory (quick lookup per folder). Read this once to build a mental model; follow links for depth. Companion docs: [AGENTS.md](../AGENTS.md) (rules), [contribute.md](contribute.md) (workflow), [ROADMAP.md](../ROADMAP.md) (current roster).
 
 ---
 
@@ -29,7 +29,7 @@ The `--set-*` namespace is the framework's public theming contract. Renaming or 
 | Token-resolution test (runtime)         | [`tests/src/styles/tokens.test.ts`](../tests/src/styles/tokens.test.ts)                                        |
 | TS ↔ SCSS parity                        | [`tests/src/browser/tokens.test.ts`](../tests/src/browser/tokens.test.ts)                                      |
 | Token-naming + abbreviation black-list  | [`tests/guides/tokens.test.ts`](../tests/guides/tokens.test.ts)                                        |
-| Token-group uniformity (`TOKEN_GROUPS`) | [`tests/guides/taxonomy.test.ts`](../tests/guides/taxonomy.test.ts)                                |
+| Token-group uniformity (`TOKEN_GROUPS`) | [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts)                                |
 | Showcase                                | [`app/browser/pages/TokensPage.vue`](../app/browser/pages/TokensPage.vue)                                      |
 
 ### Modifiers — five orthogonal dimensions
@@ -113,10 +113,10 @@ Every native HTML tag with its framework treatment (`substantive` / `reset` / `c
 
 | Role                      | File                                                                                                                                                                                     |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Spec                      | [`guides/taxonomy.md`](taxonomy.md)                                                                                                                                                      |
+| Spec                      | [`guides/elements.md`](elements.md)                                                                                                                                                      |
 | TS source                 | [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts) — registry + `TAXONOMY_BY_TAG`, `SUBSTANTIVE_TAGS`, `COMPOSABLE_TAGS`, `MODIFIABLE_TAGS`, `TOKEN_GROUPS`, `INTERACTIVE_ELEMENTS` |
-| TS shape + indices        | [`tests/guides/taxonomy.test.ts`](../tests/guides/taxonomy.test.ts)                                                                                                            |
-| SCSS ↔ TS taxonomy parity | [`tests/guides/taxonomy.test.ts`](../tests/guides/taxonomy.test.ts)                                                                                                              |
+| TS shape + indices        | [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts)                                                                                                            |
+| SCSS ↔ TS taxonomy parity | [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts)                                                                                                              |
 
 ### Patterns — per-folder structural contracts
 
@@ -170,12 +170,12 @@ The framework layers on Tailwind v4. The interop test verifies modifier+utility 
 
 | File                               | Purpose                                                                                                  |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| [`index.md`](index.md)             | This file. The pointer to everything else.                                                               |
+| [`README.md`](README.md)             | This file. The pointer to everything else.                                                               |
 | [`contribute.md`](contribute.md)   | Workflow for humans + agents. Step-by-step procedures with the exact parity-test commands.               |
-| [`plan.md`](plan.md)               | Phase-by-phase blueprint and current work-in-progress roster.                                            |
+| [`ROADMAP.md`](../ROADMAP.md)               | Phase-by-phase blueprint and current work-in-progress roster.                                            |
 | [`styles.md`](styles.md)           | Top-level architecture: layer order, Tailwind interop, design philosophy.                                |
 | [`patterns.md`](patterns.md)       | Per-folder structural contracts. The operational reference when authoring or refactoring a SCSS partial. |
-| [`taxonomy.md`](taxonomy.md)       | Every native HTML tag with its framework treatment. The first stop before authoring a new element.       |
+| [`elements.md`](elements.md)       | Every native HTML tag with its framework treatment. The first stop before authoring a new element.       |
 | [`tokens.md`](tokens.md)           | Token surface — `--set-*` namespace, fallback chains, theming contract.                                  |
 | [`modifiers.md`](modifiers.md)     | Five-dimension cascade — variant / size / style / state / placement.                                     |
 | [`elements.md`](elements.md)       | Per-tag catalog — substantive / override / non-styled / non-visual.                                      |
@@ -213,7 +213,7 @@ Compile pipeline: Sass → PostCSS (`@tailwindcss/postcss`). The compilation bar
 | [`_tokens.scss`](../src/styles/_tokens.scss) | `:root { --set-* }` global tokens + cascade-layer order.                                                                                                      |
 | [`_theme.scss`](../src/styles/_theme.scss)   | `@theme { … }` block registering semantic variant colors with Tailwind.                                                                                       |
 | [`_mixins.scss`](../src/styles/_mixins.scss) | Mixin / function / Sass-list registry. `@use` directly, never via the barrel.                                                                                 |
-| [`elements/`](../src/styles/elements/)       | One partial per HTML tag (~93 files). Most are comment-only placeholders; substantive ones declare `--set-{tag}-*` tokens. See [taxonomy.md §3](taxonomy.md). |
+| [`elements/`](../src/styles/elements/)       | One partial per HTML tag (~93 files). Most are comment-only placeholders; substantive ones declare `--set-{tag}-*` tokens. See [elements.md §3](elements.md). |
 | [`modifiers/`](../src/styles/modifiers/)     | One partial per modifier dimension: `_variants`, `_sizes`, `_styles`, `_states`, `_placements`, plus `_local` for element-local modifiers.                    |
 | [`surfaces/`](../src/styles/surfaces/)       | Pseudo-element / attribute / at-rule surfaces.                                                                                                                |
 | [`components/`](../src/styles/components/)   | Element compositions + class-root fallbacks.                                                                                                                  |
@@ -248,7 +248,7 @@ Vitest projects defined in [`vite.config.ts`](../vite.config.ts). Each project o
 | [`events.test.ts`](../tests/guides/composables.test.ts)       | `events.ts` shape — `elements:{source}:{verb}`.                    |
 | [`modifiers.test.ts`](../tests/src/browser/modifiers.test.ts) | `modifiers.ts` ↔ modifier SCSS rules.                              |
 | [`patterns.test.ts`](../tests/guides/patterns.test.ts)   | `patterns.ts` shape + selector-classification helpers.             |
-| [`taxonomy.test.ts`](../tests/guides/taxonomy.test.ts)   | `taxonomy.ts` shape + indices + `TOKEN_GROUPS`.                    |
+| [`taxonomy.test.ts`](../tests/guides/elements.test.ts)   | `taxonomy.ts` shape + indices + `TOKEN_GROUPS`.                    |
 | [`tokens.test.ts`](../tests/src/browser/tokens.test.ts)       | `tokens.ts` ↔ `--set-*` declarations parity.                       |
 | [`composables/`](../tests/src/browser/composables/)           | Per-composable Vue-adapter tests.                                  |
 | [`factories/`](../tests/src/browser/factories/)               | Per-factory behavior tests (real DOM via Vitest browser provider). |
@@ -272,9 +272,9 @@ Folder-domain tests (about a SCSS folder) keep the `_*.scss`-style `_` prefix; c
 | [`pairings.test.ts`](../tests/guides/patterns.test.ts)              | Every `parent > child` bare-tag pair appears in `STRUCTURAL_PAIRINGS` with a justification.                       |
 | [`redundancy.test.ts`](../tests/guides/composables.test.ts)          | Every `setAttribute('data-X-*', …)` written by a factory is referenced by a SCSS partial (no dead JS chrome).     |
 | [`scope.test.ts`](../tests/guides/patterns.test.ts)                    | Selector specificity discipline — flatten `:not(t1):not(t2)` chains, scope cross-cutting modifiers.               |
-| [`taxonomy.test.ts`](../tests/guides/taxonomy.test.ts)              | `taxonomy.ts` ↔ `elements/_*.scss` ↔ `components/_*.scss` ↔ `factories/create*.ts` cross-mirror.                  |
+| [`taxonomy.test.ts`](../tests/guides/elements.test.ts)              | `taxonomy.ts` ↔ `elements/_*.scss` ↔ `components/_*.scss` ↔ `factories/create*.ts` cross-mirror.                  |
 | [`tokens.test.ts`](../tests/src/styles/tokens.test.ts)                  | Every token resolves to a non-empty value at runtime.                                                             |
-| [`uniformity.test.ts`](../tests/guides/taxonomy.test.ts)          | Every `TOKEN_GROUPS` member declares every required token suffix.                                                 |
+| [`uniformity.test.ts`](../tests/guides/elements.test.ts)          | Every `TOKEN_GROUPS` member declares every required token suffix.                                                 |
 | [`integration.test.ts`](../tests/src/styles/integration.test.ts)        | Tailwind utility composition + collision detector.                                                                |
 | [`components/`](../tests/src/styles/components/)                        | Per-component behavior tests.                                                                                     |
 | [`elements/`](../tests/src/styles/elements/)                            | Per-element behavior tests (only the substantive ones with meaningful CSS behavior).                              |

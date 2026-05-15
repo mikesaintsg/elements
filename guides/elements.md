@@ -1,8 +1,8 @@
 # Elements
 
-> The framework styles real HTML tags first. Every entry has a partial under [src/styles/elements/](../src/styles/elements/). Substantive entries (those declaring `--set-{tag}-*` tokens) are mirrored in [src/browser/elements.ts](../src/browser/elements.ts) and parity-tested.
+> Authoritative reference for every native HTML element the framework has an opinion on, plus the token-uniformity groups that bind families of elements to a shared minimum surface. Every entry has a partial under [src/styles/elements/](../src/styles/elements/); substantive entries (those declaring `--set-{tag}-*` tokens) are mirrored in [src/browser/elements.ts](../src/browser/elements.ts) and the full registry — treatment, composable pairing, group membership — lives in [src/browser/taxonomy.ts](../src/browser/taxonomy.ts).
 
-This document is the authoritative element catalog: what the framework ships for every HTML tag, the per-element semantics and UA quirks worth knowing, and the rules that govern when a partial earns a framework rule versus when Tailwind preflight and UA defaults do the job alone.
+This document is the authoritative element catalog: what the framework ships for every HTML tag, the per-element semantics and UA quirks worth knowing, the rules that govern when a partial earns a framework rule versus when Tailwind preflight and UA defaults do the job alone, and the logical groups whose members must declare the same minimum token surface so the family customizes uniformly.
 
 ---
 
@@ -227,7 +227,32 @@ Alphabetical, every styled tag with one row. The **Status** column matches the l
 
 ---
 
-## 10. Bringing up an element
+## 10. Token-uniformity groups
+
+Logical families of tags / class-components that share a minimum token surface. Members of each group MUST declare every required suffix (with the `--set-{member}-` prefix), so a consumer who wants to retune the family can do so with one override per member. The contract data lives in [`src/browser/taxonomy.ts § TOKEN_GROUPS`](../src/browser/taxonomy.ts); the parity test is [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts).
+
+| Group                | Members                                                                                           | Required suffixes (per member, after `--set-{member}-`)                                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `interactive`        | `a`, `button`, `details`, `dialog`, `fieldset`, `input`, `label`, `select`, `summary`, `textarea` | `transition-duration`                                                                                                                                         |
+| `form-control`       | `button`, `input`, `textarea`, `select`                                                           | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `font-size`, `transition-duration`, `cursor` |
+| `page-shell`         | `header`, `footer`, `nav`, `aside`, `main`                                                        | `color`, `background-color`, `padding-inline`, `padding-block`                                                                                                |
+| `card-region`        | `article`                                                                                         | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `gap`                                        |
+| `floating-surface`   | `dialog`, `output`                                                                                | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `transition-duration`                        |
+| `inline-chip`        | `code`, `kbd`, `samp`, `var`, `mark`                                                              | `color`, `background-color`, `padding-inline`, `padding-block`, `border-radius`                                                                               |
+| `disclosure`         | `details`, `summary`                                                                              | `transition-duration`                                                                                                                                         |
+| `media-embed`        | `video`, `iframe`, `embed`, `object`, `canvas`, `svg`                                             | `max-inline-size`                                                                                                                                             |
+| `progress-indicator` | `progress`, `meter`                                                                               | `block-size`, `border-radius`, `track-color`, `transition-duration`                                                                                           |
+| `numeric-data`       | `data`, `time`                                                                                    | `font-variant-numeric`                                                                                                                                        |
+| `boxed-container`    | `fieldset`, `details`                                                                             | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `transition-duration`                        |
+| `class-chip`         | `badge`, `tag` (class-components)                                                                 | `color`, `background-color`, `border-radius`, `padding-inline`, `padding-block`, `font-size`                                                                  |
+
+A tag can belong to multiple groups — `<details>` is `interactive` + `disclosure` + `boxed-container`. Required-suffix sets are unioned: each member declares the superset of every group's required tokens.
+
+When a new element / class-component is added, audit it against this table — if it shares the visual shape of an existing group, add it as a member; if it introduces a new shared shape across multiple elements, register a new group with both as members. The parity test surfaces any member that doesn't declare every required suffix.
+
+---
+
+## 11. Bringing up an element
 
 Promoting an element from `🚫 n/a` or `🟡 override` to `✅ cascade`:
 
@@ -241,11 +266,12 @@ Most `🚫 n/a` entries stay that way indefinitely. Promote to `🟡 override` o
 
 ---
 
-## 11. Reference
+## 12. Reference
 
 - [`src/styles/elements/`](../src/styles/elements/) — SCSS sources, one partial per tag
 - [`src/browser/elements.ts`](../src/browser/elements.ts) — TS mirror of the substantive list
-- [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts) — bidirectional parity contract
+- [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts) — taxonomy + token-uniformity groups data
+- [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts) — bidirectional parity contract + group-membership coverage
 - [`tests/src/styles/elements/`](../tests/src/styles/elements/) — per-element behaviour tests
 - [styles.md](styles.md) — top-level architecture and author's contract
 - [modifiers.md](modifiers.md) — five-dimension cascade elements consume

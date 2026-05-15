@@ -411,7 +411,7 @@ describe('nav — `<nav popover>` shares the offcanvas drawer chrome with `<asid
 	})
 
 	it('a `<nav popover>` body-shell rail keeps `transform` in its element-level transition list', () => {
-		// Regression captured in plan.md §9.7 "Transition shorthand vs
+		// Regression captured in ROADMAP.md §9.7 "Transition shorthand vs
 		// cascade order audit": `_nav.scss` and `_aside.scss` both
 		// declared `transition: color, bg, border` on `body:has(main) >
 		// {nav, aside}`, and an earlier `_body.scss` mobile-drawer

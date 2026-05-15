@@ -68,7 +68,7 @@ Each folder's contract names:
 - Sass `&`-prefixed state pseudos: `&:hover`, `&:focus-visible`, `&:disabled`. These nest under the tag's selector and inherit its classification.
 - Bare `transition:` declarations inside vendor pseudo-elements (`::file-selector-button`, `::details-content`) where `@include transition()` can't reach. Document the reduced-motion handling at the partial level.
 
-**Known passthrough partials** (34): `_article.scss`, `_aside.scss`, `_bdi.scss`, `_bdo.scss`, `_caption.scss`, `_cite.scss`, `_col.scss`, `_colgroup.scss`, `_datalist.scss`, `_del.scss`, `_dfn.scss`, `_div.scss`, `_em.scss`, `_footer.scss`, `_form.scss`, `_header.scss`, `_ins.scss`, `_menu.scss`, `_nav.scss`, `_optgroup.scss`, `_option.scss`, `_q.scss`, `_rp.scss`, `_rt.scss`, `_ruby.scss`, `_s.scss`, `_search.scss`, `_span.scss`, `_tbody.scss`, `_td.scss`, `_tfoot.scss`, `_th.scss`, `_thead.scss`, `_tr.scss`. (Several of these are passthrough at the _elements_ layer because their substantive baseline lives in `components/_{tag}.scss` — see [`taxonomy.md`](taxonomy.md).)
+**Known passthrough partials** (34): `_article.scss`, `_aside.scss`, `_bdi.scss`, `_bdo.scss`, `_caption.scss`, `_cite.scss`, `_col.scss`, `_colgroup.scss`, `_datalist.scss`, `_del.scss`, `_dfn.scss`, `_div.scss`, `_em.scss`, `_footer.scss`, `_form.scss`, `_header.scss`, `_ins.scss`, `_menu.scss`, `_nav.scss`, `_optgroup.scss`, `_option.scss`, `_q.scss`, `_rp.scss`, `_rt.scss`, `_ruby.scss`, `_s.scss`, `_search.scss`, `_span.scss`, `_tbody.scss`, `_td.scss`, `_tfoot.scss`, `_th.scss`, `_thead.scss`, `_tr.scss`. (Several of these are passthrough at the _elements_ layer because their substantive baseline lives in `components/_{tag}.scss` — see [`elements.md`](elements.md).)
 
 ### 2.2 `modifiers/`
 
@@ -310,7 +310,7 @@ Element-specific contracts extend the universal minimum:
 - **disclosure** (details, summary) extends with `transition-duration` already covered.
 - **floating-surface** (dialog, output-as-toast) extends with `box-shadow` + popover geometry.
 
-See [`taxonomy.md` § 1](taxonomy.md) for the full token-group catalog.
+See [`elements.md` § 1](elements.md) for the full token-group catalog.
 
 ---
 
@@ -519,7 +519,7 @@ The right architectural shape: the rail provides containment (flex column, overf
 - [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — the parity test that consumes the folder/file contracts.
 - [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — the parity test for `parent > child` structural pairings (§10).
 - [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — the TS-shape assertions for the contract surface itself.
-- [`taxonomy.md`](taxonomy.md) — every native HTML element + framework treatment (the per-tag complement to this per-folder doc).
+- [`elements.md`](elements.md) — every native HTML element + framework treatment (the per-tag complement to this per-folder doc).
 - [`styles.md`](styles.md) — top-level cascade architecture.
 - [`contribute.md`](contribute.md) — the workflow for authoring framework changes that conform to these contracts.
 - [`AGENTS.md`](../AGENTS.md) §21 — codified Sass / SCSS conventions cross-referencing patterns.

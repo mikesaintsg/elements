@@ -2,7 +2,7 @@
 
 > SCSS partials in `src/styles/` · TypeScript surface in `src/browser/` · Tailwind v4 base · Token-driven · Composable-paired.
 
-This is the entry-point document for the framework. It explains the design philosophy, the file layout, the cascade order, the contract every partial follows, and how the framework ships to consumers. Deep-dives live alongside: [tokens.md](tokens.md), [mixins.md](mixins.md), [modifiers.md](modifiers.md), [elements.md](elements.md), [components.md](components.md), [composables.md](composables.md), [surfaces.md](surfaces.md). Implementation status is tracked in [plan.md](plan.md).
+This is the entry-point document for the framework. It explains the design philosophy, the file layout, the cascade order, the contract every partial follows, and how the framework ships to consumers. Deep-dives live alongside: [tokens.md](tokens.md), [mixins.md](mixins.md), [modifiers.md](modifiers.md), [elements.md](elements.md), [components.md](components.md), [composables.md](composables.md), [surfaces.md](surfaces.md). Implementation status is tracked in [ROADMAP.md](../ROADMAP.md).
 
 ---
 
@@ -295,5 +295,5 @@ The showcase at `app/browser/` is the dogfooding consumer and the canonical refe
 - [components.md](components.md) — element-composition convention
 - [composables.md](composables.md) — Vue adapters + framework-agnostic factories
 - [surfaces.md](surfaces.md) — pseudo-elements and attribute APIs
-- [plan.md](plan.md) — implementation status
+- [ROADMAP.md](../ROADMAP.md) — implementation status
 - [AGENTS.md](../AGENTS.md) — repository-wide coding standards

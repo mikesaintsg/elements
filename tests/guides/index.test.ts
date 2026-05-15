@@ -1,11 +1,11 @@
 // ============================================================================
-//  guides/index.md ↔ guides/*.md — structural uniformity + cross-reference parity.
+//  guides/README.md ↔ guides/*.md — structural uniformity + cross-reference parity.
 //
 //  Two contract surfaces in one driver:
 //
 //    1. UNIFORMITY  — every `guides/*.md` opens with `# Title` on line 1 and
 //                     carries a `> blockquote` subtitle on line 3. The
-//                     pointer file (`guides/index.md`) must link to every
+//                     pointer file (`guides/README.md`) must link to every
 //                     other guide so the map stays complete. Every
 //                     `tests/guides/{name}.test.ts` driver corresponds to
 //                     a real `guides/{name}.md`.
@@ -73,22 +73,22 @@ describe('guides — every guide carries a `>` blockquote subtitle', () => {
 	}
 })
 
-// ── 2. Pointer-file coverage — guides/index.md links every other guide ────
+// ── 2. Pointer-file coverage — guides/README.md links every other guide ───
 
 describe('guides — pointer file links every other guide', () => {
-	const indexGuide = guides.find((g) => g.name === 'index')
+	const indexGuide = guides.find((g) => g.name === 'README')
 	const indexSource = indexGuide?.source ?? ''
 
-	it('guides/index.md exists', () => {
+	it('guides/README.md exists', () => {
 		expect(indexGuide).toBeDefined()
 	})
 
 	for (const guide of guides) {
-		if (guide.name === 'index') continue
-		// On failure: `guides/index.md` does not reference `${guide.name}.md`
+		if (guide.name === 'README') continue
+		// On failure: `guides/README.md` does not reference `${guide.name}.md`
 		// anywhere. The pointer file is the entry point — every spec guide
 		// must be reachable from it.
-		it(`guides/index.md references guides/${guide.name}.md`, () => {
+		it(`guides/README.md references guides/${guide.name}.md`, () => {
 			const pattern = new RegExp(`\\(${guide.name}\\.md(?:#[^)]*)?\\)`)
 			expect(pattern.test(indexSource)).toBe(true)
 		})
@@ -105,7 +105,7 @@ describe('guides — every tests/guides/*.test.ts has a matching guide', () => {
 		.map((f) => f.replace(/\.test\.ts$/, ''))
 
 	for (const name of testFiles) {
-		if (name === 'index') continue // this file itself
+		if (name === 'index') continue // this file itself (pairs with guides/README.md, not guides/index.md)
 		// On failure: `tests/guides/${name}.test.ts` exists but
 		// `guides/${name}.md` is missing. Either restore the guide or
 		// rename the test to match an existing guide.

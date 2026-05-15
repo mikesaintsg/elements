@@ -325,7 +325,7 @@ Most dimensions stay closed. The framework is opinionated about the vocabulary �
 
 ## 12. Reference
 
-- [taxonomy.md](taxonomy.md) — every native HTML element + the framework's treatment of it.
+- [elements.md](elements.md) — every native HTML element + the framework's treatment of it.
 - [styles.md](styles.md) — top-level architecture; the cascade layer order modifiers participate in.
 - [tokens.md](tokens.md) — the `--set-*` namespace modifiers write.
 - [mixins.md](mixins.md) — the `$variants` / `$sizes` / `$styles` / `$states` Sass lists modifier partials iterate.

@@ -424,4 +424,4 @@ Twenty composables ship today. Each has a paired showcase page under [`app/brows
 - [styles.md](./styles.md) — top-level architecture, layer ordering, partial conventions.
 - [modifiers.md](./modifiers.md) — class-root mirror parity-tested against `src/browser/modifiers.ts`.
 - [tokens.md](./tokens.md) — `--set-*` token mirror parity-tested against `src/browser/tokens.ts`.
-- [plan.md](./plan.md) — invariants and roadmap.
+- [ROADMAP.md](../ROADMAP.md) — invariants and roadmap.

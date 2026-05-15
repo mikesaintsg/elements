@@ -1,6 +1,6 @@
 # Contributing to Elements
 
-> The workflow document for humans and agents. The **what** lives in the spec guides; the **rules** live in [`AGENTS.md`](../AGENTS.md); the **current roster of work** lives in [`plan.md`](plan.md). This document is **how to actually do the work**.
+> The workflow document for humans and agents. The **what** lives in the spec guides; the **rules** live in [`AGENTS.md`](../AGENTS.md); the **current roster of work** lives in [`ROADMAP.md`](../ROADMAP.md). This document is **how to actually do the work**.
 
 ---
 
@@ -46,7 +46,7 @@ The quality bar applies even when the patch looks small. Adding one token withou
 
 ### 3.1 Spec before code
 
-Every change starts with the spec, not the existing source. Read the matching guide section first — [`styles.md`](styles.md), [`tokens.md`](tokens.md), [`modifiers.md`](modifiers.md), [`taxonomy.md`](taxonomy.md), [`patterns.md`](patterns.md), [`elements.md`](elements.md), [`components.md`](components.md), [`surfaces.md`](surfaces.md), [`composables.md`](composables.md), [`mixins.md`](mixins.md). Form the production-correct vision from the spec, then compare to what's there, then close the gap. **Existing code is not ground truth** — it's something to verify.
+Every change starts with the spec, not the existing source. Read the matching guide section first — [`styles.md`](styles.md), [`tokens.md`](tokens.md), [`modifiers.md`](modifiers.md), [`elements.md`](elements.md), [`patterns.md`](patterns.md), [`elements.md`](elements.md), [`components.md`](components.md), [`surfaces.md`](surfaces.md), [`composables.md`](composables.md), [`mixins.md`](mixins.md). Form the production-correct vision from the spec, then compare to what's there, then close the gap. **Existing code is not ground truth** — it's something to verify.
 
 When writing or refactoring a SCSS partial, [`patterns.md`](patterns.md) is the operational reference. Nine contracts apply to every change:
 
@@ -62,7 +62,7 @@ When writing or refactoring a SCSS partial, [`patterns.md`](patterns.md) is the 
 | §10 Structural pairings  | Every `parent > child` bare-tag pair must appear in `STRUCTURAL_PAIRINGS` with a `spec` / `slot` / `reset` / `context` reason                                                                   | [`pairings.test.ts`](../tests/guides/patterns.test.ts)              |
 | Motion contract          | Every `MOTION_CONTRACT_PARTIALS` member references both `var(--set-motion-duration)` AND `var(--set-motion-timing-function)`; panel-reveal transitions never hardcode numeric duration literals | [`motion.test.ts`](../tests/guides/tokens.test.ts)                  |
 
-[`taxonomy.md`](taxonomy.md) is the reference for **what element to reach for**: every native HTML tag with its framework treatment (substantive / reset / composable / passthrough / class-component). When a new design problem arises, walk the taxonomy first.
+[`elements.md`](elements.md) is the reference for **what element to reach for**: every native HTML tag with its framework treatment (substantive / reset / composable / passthrough / class-component). When a new design problem arises, walk the taxonomy first.
 
 ### 3.2 No backwards compatibility
 
@@ -130,7 +130,7 @@ Five common workflows, end-to-end.
 
 For example: promoting an element from passthrough to substantive.
 
-**Step 1 — Taxonomy first.** Open [`taxonomy.md`](taxonomy.md) §3. Locate the row for the tag. If it lists the tag as `passthrough` but you're about to add `--set-{tag}-*` tokens, change the row's Treatment column to `substantive` (or `composable` if a factory is paired). Update the matching row in [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts). The parity test at [`taxonomy.test.ts`](../tests/guides/taxonomy.test.ts) will check both directions.
+**Step 1 — Taxonomy first.** Open [`elements.md`](elements.md) §3. Locate the row for the tag. If it lists the tag as `passthrough` but you're about to add `--set-{tag}-*` tokens, change the row's Treatment column to `substantive` (or `composable` if a factory is paired). Update the matching row in [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts). The parity test at [`taxonomy.test.ts`](../tests/guides/elements.test.ts) will check both directions.
 
 **Step 2 — Token surface in TypeScript first.** Add the `{tag}: { … }` object to [`src/browser/tokens.ts`](../src/browser/tokens.ts) listing every `--set-{tag}-*` property the element will expose. Each leaf is `'--set-{tag}-{property}'`. Property names mirror CSS property names in kebab-case under dotted TS keys (`'--set-button-focus-box-shadow'` ↔ `button.focus.boxShadow`).
 
@@ -185,9 +185,9 @@ For example: promoting an element from passthrough to substantive.
 
 ```bash
 npx vitest run --config vite.config.ts \
-  tests/guides/taxonomy.test.ts \
+  tests/guides/elements.test.ts \
   tests/guides/tokens.test.ts \
-  tests/guides/taxonomy.test.ts \
+  tests/guides/elements.test.ts \
   tests/guides/patterns.test.ts \
   tests/guides/patterns.test.ts \
   tests/src/browser/tokens.test.ts \
@@ -240,7 +240,7 @@ Pair a `use{Name}` Vue adapter with a `create{Name}` framework-agnostic factory 
 5. **Event names.** Add namespaced names to [`src/browser/constants.ts`](../src/browser/constants.ts) and re-export from [`events.ts`](../src/browser/events.ts) (pattern: `elements:{source}:{verb}` per AGENTS.md §11).
 6. **Chrome partial** (if state-gated CSS is needed). `src/styles/composables/_{name}.scss` — wrap rules in `@layer composables`; gate every rule on a composable-state selector (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`). If the partial declares `transition:` or `animation:`, invoke `@include transition()` or `@include reduced-motion` — the composable charter enforces it.
 7. **Contract entry.** Add an entry to [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts) with the token namespace, required tokens, state-selector kinds, animated flag, and factory pairing.
-8. **Taxonomy entry.** Update the matching row in `taxonomy.md` and `taxonomy.ts` — if a tag is now composable, set its row's Treatment to `composable` and `composable` field to `'use{Name}'`.
+8. **Taxonomy entry.** Update the matching row in `elements.md` and `taxonomy.ts` — if a tag is now composable, set its row's Treatment to `composable` and `composable` field to `'use{Name}'`.
 9. **Tests.** Add `tests/src/browser/composables/use{Name}.test.ts` (Vue adapter) and `tests/src/browser/factories/create{Name}.test.ts` (factory logic). If chrome was added, ensure [`composables.test.ts`](../tests/src/styles/composables/_index.test.ts) passes. The factory ↔ style parity test ([`redundancy.test.ts`](../tests/guides/composables.test.ts)) will fail if you write a `setAttribute('data-{name}-*', …)` with no matching reference in `src/styles/` — see §5.4.1.
 
 #### 5.4.1 Native-platform redundancy checklist
@@ -293,7 +293,7 @@ Read everything the page must cover before writing markup.
 - `src/styles/elements/_{tag}.scss` — element baseline, every selector, every `--set-{tag}-*` token, forced-colors block.
 - `src/styles/modifiers/_{variants,sizes,styles,states,placements}.scss` — the modifier cascade hooks.
 - `src/browser/elements.ts`, `src/browser/taxonomy.ts` — the TS mirrors.
-- `guides/elements.md` and `guides/taxonomy.md` (relevant rows) — design rationale.
+- `guides/elements.md` and `guides/elements.md` (relevant rows) — design rationale.
 
 **Composable pages** (`UseDialogPage`, …):
 
@@ -353,7 +353,7 @@ import { ref } from 'vue'
 
 1. Import the page at the top: `import {Name}Page from './pages/{Name}Page.vue'`.
 2. Add a `Route` constant: `const {NAME}: Route = { id: '{name}', title: '{Display Title}', group: '{Group Name}', page: {Name}Page }`.
-3. Push into the `routes` array in group order (group order matches `plan.md`).
+3. Push into the `routes` array in group order (group order matches `ROADMAP.md`).
 
 After Phase 2: the page is empty but reachable at `#/{name}` and shows up in SiteNav.
 
@@ -444,7 +444,7 @@ Row 1 — Light mode contrast: [PASS|FAIL] {one-line evidence — measured contr
 
 **Any FAIL gets fixed before moving on.** Fix at the SCSS / TS source, not in the page markup. If the framework chrome is broken, the page is broken too — and the page just earned its keep by surfacing the bug.
 
-**Cross-cutting framework changes**: when a page audit surfaces a framework bug, fix it at the framework level, then log the change in [`plan.md`](plan.md) under "Cross-cutting framework changes" so the API surface diff stays visible across pages.
+**Cross-cutting framework changes**: when a page audit surfaces a framework bug, fix it at the framework level, then log the change in [`ROADMAP.md`](../ROADMAP.md) under "Cross-cutting framework changes" so the API surface diff stays visible across pages.
 
 ### 6.6 Phase 5 — Findings report
 
@@ -479,7 +479,7 @@ A short structured report:
 
 1. **Leave the preview server running** so the user iterates against the same live preview the audit ran against.
 2. **Run the standard cadence**: `npm run show` (rebuilds the single-file `demo/showcase.html`), `npm run format`, commit, push.
-3. **Mark the plan checkbox** `✅` in [`plan.md`](plan.md) §9.1 / §9.2 only after the user confirms the page is acceptable.
+3. **Mark the plan checkbox** `✅` in [`ROADMAP.md`](../ROADMAP.md) §9.1 / §9.2 only after the user confirms the page is acceptable.
 4. **Triage feedback**: real issues → fix → re-verify → re-commit. Style preferences → discuss; only land with user confirmation.
 5. **App-specific vs framework-specific**: when a pattern lives in `src/styles/`, ask "would every consumer of the framework's `<X>` element want this?" If yes, framework. If it's a deliberate composition choice (e.g. sticky sidebar search, drawer-header inside flex-column rail), it belongs in `app/browser/styles/showcase.css` instead.
 
@@ -549,8 +549,8 @@ npm test
 ```
 guides/
   contribute.md      ← this file — the workflow for humans + agents
-  plan.md            ← current state + remaining-work checklist
-  taxonomy.md        ← every native HTML element + framework treatment
+  ROADMAP.md            ← current state + remaining-work checklist
+  elements.md        ← every native HTML element + framework treatment
   patterns.md        ← per-folder SCSS structural contracts + 8 codified registries
   styles.md          ← top-level architecture
   tokens.md          ← token surface
@@ -632,4 +632,4 @@ app/browser/
 
 ### 9.3 Resume prompt (for a fresh agent session)
 
-> Read `AGENTS.md`, `guides/contribute.md`, and `guides/plan.md` first. Then `guides/patterns.md` for the structural contracts and `guides/taxonomy.md` for the per-element treatment. Pretend nothing is implemented and audit blind against the relevant guide before looking at existing source. Make production-polish edits where the audit finds gaps. Run `npx vitest run --config vite.config.ts tests/src/{styles,browser}/<scope> --reporter=dot` to verify changes; never run the full suite casually. Update `plan.md` checkpoints as work completes.
+> Read `AGENTS.md`, `guides/contribute.md`, and `ROADMAP.md` first. Then `guides/patterns.md` for the structural contracts and `guides/elements.md` for the per-element treatment. Pretend nothing is implemented and audit blind against the relevant guide before looking at existing source. Make production-polish edits where the audit finds gaps. Run `npx vitest run --config vite.config.ts tests/src/{styles,browser}/<scope> --reporter=dot` to verify changes; never run the full suite casually. Update `ROADMAP.md` checkpoints as work completes.

@@ -5,7 +5,7 @@
 // entry carries:
 //
 //   - tag           the HTML tag name (lowercase, no chevrons)
-//   - category      MDN content category — the same buckets guides/taxonomy.md
+//   - category      MDN content category — the same buckets guides/elements.md
 //                   uses for grouping. Useful for filtering ("every form
 //                   control", "every inline-text element").
 //   - treatment     how the framework styles it:
@@ -16,8 +16,8 @@
 //   - composable    when treatment === 'composable', the matching use{Name}
 //                     factory key (e.g. 'useDialog'). null otherwise.
 //
-// Source of truth: guides/taxonomy.md §3. The parity test at
-// tests/guides/taxonomy.test.ts fails when:
+// Source of truth: guides/elements.md §3. The parity test at
+// tests/guides/elements.test.ts fails when:
 //   - an entry's treatment is 'substantive' or 'composable' but no
 //     --set-{tag}-* token is declared anywhere in src/styles/ (elements/
 //     or components/) for that tag;
@@ -36,7 +36,7 @@
 // 'substantive' treatment covers both — it answers "does the framework
 // declare tokens for this tag?", independent of which folder owns them.
 //
-// Adding a new element: add the row to guides/taxonomy.md §3 first (so the
+// Adding a new element: add the row to guides/elements.md §3 first (so the
 // design intent is documented), then mirror it here, then create the SCSS
 // partial. The parity tests close the loop.
 // ============================================================================
@@ -79,7 +79,7 @@ function entry(
 // ── Registry ────────────────────────────────────────────────────────────────
 //
 // Alphabetical within each category — matches the catalog order in
-// guides/taxonomy.md §3 so the docs/code diff is a clean visual map.
+// guides/elements.md §3 so the docs/code diff is a clean visual map.
 
 export const taxonomy: readonly TaxonomyEntry[] = [
 	// §3.1 Main root + sectioning root
@@ -281,7 +281,7 @@ export function describeTag(tag: string): TaxonomyEntry | null {
 //      to retune all form controls has to special-case one. The
 //      TOKEN_GROUPS table below names the groups and the minimum token
 //      property suffix each member must declare. The test at
-//      tests/guides/taxonomy.test.ts loads the compiled cascade and
+//      tests/guides/elements.test.ts loads the compiled cascade and
 //      verifies every member resolves every required suffix.
 //
 // Both contracts are designed to be append-only — adding a new group or a

@@ -1,6 +1,6 @@
 # Plan — Current Status & Next Steps
 
-> Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](contribute.md) to know **how to work**.
+> Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](guides/contribute.md) to know **how to work**.
 
 Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. **40 of 43 showcase pages are built** — every `Use*Page` in the composable catalog now ships. Remaining work is sidebar nav adjustments + cross-page polish (§9.1 / §9.2), plus a handful of post-Phase 9 audits queued under "Future work."
 
@@ -25,7 +25,7 @@ Status: every framework layer (tokens, theme, mixins, modifiers, elements, compo
 | 10    | Distribution (build + pack)                                                | ✅     |
 | 11    | Invariant verification (11 codified contracts)                             | ✅     |
 
-For per-layer details see the matching spec guide: [tokens.md](tokens.md), [mixins.md](mixins.md), [modifiers.md](modifiers.md), [taxonomy.md](taxonomy.md) + [elements.md](elements.md), [components.md](components.md), [surfaces.md](surfaces.md), [composables.md](composables.md), [patterns.md](patterns.md) (codified contracts).
+For per-layer details see the matching spec guide: [tokens.md](guides/tokens.md), [mixins.md](guides/mixins.md), [modifiers.md](guides/modifiers.md), [elements.md](guides/elements.md), [components.md](guides/components.md), [surfaces.md](guides/surfaces.md), [composables.md](guides/composables.md), [patterns.md](guides/patterns.md) (codified contracts).
 
 ---
 
@@ -45,7 +45,7 @@ For per-layer details see the matching spec guide: [tokens.md](tokens.md), [mixi
 
 Every element page covers the static markup contract; the matching `Use*Page` covers the JS interaction layer.
 
-**Authoring procedure for any new composable demo** — walk the [Native-platform redundancy checklist](contribute.md#541-native-platform-redundancy-checklist) (`contribute.md` §5.4.1) against the factory _before_ writing the page: strip dead `[data-X-*]` writes, drop redundant ARIA, fix `runTransition`-before-native-call ordering. Ship the strip in the same PR as the page.
+**Authoring procedure for any new composable demo** — walk the [Native-platform redundancy checklist](guides/contribute.md#541-native-platform-redundancy-checklist) (`contribute.md` §5.4.1) against the factory _before_ writing the page: strip dead `[data-X-*]` writes, drop redundant ARIA, fix `runTransition`-before-native-call ordering. Ship the strip in the same PR as the page.
 
 ---
 
@@ -62,7 +62,7 @@ The flat sidebar list works for 14 pages; with 40+ it's a 42-line scroll.
 
 - ⬜ **Theme retune end-to-end** — pin a brand color at `:root` and walk every page; verify the cascade reaches focus rings / toasts / alerts / selections / popovers / tabs / breadcrumbs.
 - ⬜ **Reduced-motion full-suite** — verify every animation + transition collapses across all 43 pages (paired-mixin coverage already enforced by the surface / component / composable / motion contracts).
-- ⬜ **Forced-colors full-suite** — Windows High Contrast walkthrough (per-element coverage already enforced by [`interactive.test.ts`](../tests/guides/patterns.test.ts); this is the end-to-end visual pass).
+- ⬜ **Forced-colors full-suite** — Windows High Contrast walkthrough (per-element coverage already enforced by [`interactive.test.ts`](tests/guides/patterns.test.ts); this is the end-to-end visual pass).
 - ⬜ **Console-clean full-suite** — boot the dev server, walk every page, capture zero Vue warns / zero Tailwind missing-source warns.
 
 ---
@@ -71,8 +71,8 @@ The flat sidebar list works for 14 pages; with 40+ it's a 42-line scroll.
 
 ### Token surface refinements
 
-- ⬜ **`.disabled` modifier customizability gap** — `.disabled` hard-codes `opacity: 0.5`, `cursor: not-allowed`, `pointer-events: none`. Expose as `--set-state-disabled-{opacity, cursor}` so consumers can retune globally at `:root` (see [patterns.md](patterns.md) §6.4 and `MODIFIER_DIMENSION_TOKENS.state.rationale`).
-- ⬜ **Composable state-attribute audit** — review every `[data-{name}-*]` attribute name for consistency; document the canonical set in [composables.md](composables.md).
+- ⬜ **`.disabled` modifier customizability gap** — `.disabled` hard-codes `opacity: 0.5`, `cursor: not-allowed`, `pointer-events: none`. Expose as `--set-state-disabled-{opacity, cursor}` so consumers can retune globally at `:root` (see [patterns.md](guides/patterns.md) §6.4 and `MODIFIER_DIMENSION_TOKENS.state.rationale`).
+- ⬜ **Composable state-attribute audit** — review every `[data-{name}-*]` attribute name for consistency; document the canonical set in [composables.md](guides/composables.md).
 
 ### Refactor opportunities
 
@@ -89,7 +89,7 @@ The framework's floating-surface family (`<output popover>` toasts, generic `[po
 - ⬜ **Toast-vs-alert disambiguation across pages + guides** — audit every page + guide for language conflating the two.
 - ⬜ **Tooltip + dropdown styling parity** — verify tooltips (`[popover=hint]`) inherit cleanly without override drift; dropdown menus (`<menu popover>`) keep row chrome without fighting surface defaults.
 
-Outcome: one styling philosophy across every floating surface, codified in [surfaces.md](surfaces.md) § "Floating surface family" and enforced by a parity test asserting each surface declares the canonical token superset.
+Outcome: one styling philosophy across every floating surface, codified in [surfaces.md](guides/surfaces.md) § "Floating surface family" and enforced by a parity test asserting each surface declares the canonical token superset.
 
 ### Cross-cutting
 
@@ -102,21 +102,20 @@ Outcome: one styling philosophy across every floating surface, codified in [surf
 
 These patterns surfaced during real audits and govern how new work proceeds. Each is documented in the spec guide listed alongside — refresh memory there before doing parallel work in the same area.
 
-- **Native-platform redundancy** — every `create{Name}` factory walks the checklist in [contribute.md §5.4.1](contribute.md) before its showcase page ships. Dead `[data-X-*]` writes are caught by [`redundancy.test.ts`](../tests/guides/composables.test.ts).
-- **Motion contract** — shared `--set-motion-{duration, timing-function}` tokens for panel reveals; per-element custom durations (e.g. `--set-carousel-transition-duration` for slide-axis translateX) only when motion is substantial. Small UI tints route through the global 150 ms `--set-transition-duration`. Enforced by `MOTION_CONTRACT_PARTIALS` + [`motion.test.ts`](../tests/guides/tokens.test.ts). See [patterns.md](patterns.md) §10.
+- **Native-platform redundancy** — every `create{Name}` factory walks the checklist in [contribute.md §5.4.1](guides/contribute.md) before its showcase page ships. Dead `[data-X-*]` writes are caught by [`redundancy.test.ts`](tests/guides/composables.test.ts).
+- **Motion contract** — shared `--set-motion-{duration, timing-function}` tokens for panel reveals; per-element custom durations (e.g. `--set-carousel-transition-duration` for slide-axis translateX) only when motion is substantial. Small UI tints route through the global 150 ms `--set-transition-duration`. Enforced by `MOTION_CONTRACT_PARTIALS` + [`motion.test.ts`](tests/guides/tokens.test.ts). See [patterns.md](guides/patterns.md) §10.
 - **AGENTS.md §4.1 Single-Word Principle** — entity-scoped names (interface fields, option keys, event-detail keys) are single words; compound concepts split into nested entity keys (§4.2.1). Recent example: `withIndicators` → `indicators`; `additionalTokenPrefixes` → `tokens.extras`; `fromIndices` / `toIndex` → `from` / `to`.
-- **Structural pairing discipline** — every bare-tag `>` combinator pair in framework SCSS requires an entry in `STRUCTURAL_PAIRINGS` (`spec` / `slot` / `reset` / `context` kinds). Enforced by [`pairings.test.ts`](../tests/guides/patterns.test.ts). See [patterns.md](patterns.md) §12.
-- **Inline-style triage rule** — no `style="..."` for layout or chrome in `app/browser/pages/`. Reactive `:style` bindings, single-property dimensional one-offs, and intentional token demonstrations are the only legitimate inline cases. Codified in [contribute.md](contribute.md) §6.4.
-- **Spacing-shape family** — `div.stack` (gap > 0), `div.cluster` (wrap + gap > 0), `div.frame` (gap = 0, padding = 0, overflow clip). Element-local `article.frame` and `td.frame` retune `--set-{tag}-*` tokens so descendant chrome (header bleed margins, list-group edge math) collapses alongside the padding. Documented in [modifiers.md](modifiers.md) §9.
-- **Surface dissolution family** (`.flat` / `.flush`) — `.flat`: transparent at rest, hover reveal, focus promotes to the element's bordered baseline. `.flush`: no margin / border / radius / ring; fills host's content box. Pairs with `.frame` host (`article.frame > .flush`, `td.frame > .flush`). Per-element applicability matrix in [modifiers.md](modifiers.md) §9 + per-element rows in [taxonomy.md](taxonomy.md).
+- **Structural pairing discipline** — every bare-tag `>` combinator pair in framework SCSS requires an entry in `STRUCTURAL_PAIRINGS` (`spec` / `slot` / `reset` / `context` kinds). Enforced by [`pairings.test.ts`](tests/guides/patterns.test.ts). See [patterns.md](guides/patterns.md) §12.
+- **Inline-style triage rule** — no `style="..."` for layout or chrome in `app/browser/pages/`. Reactive `:style` bindings, single-property dimensional one-offs, and intentional token demonstrations are the only legitimate inline cases. Codified in [contribute.md](guides/contribute.md) §6.4.
+- **Spacing-shape family** — `div.stack` (gap > 0), `div.cluster` (wrap + gap > 0), `div.frame` (gap = 0, padding = 0, overflow clip). Element-local `article.frame` and `td.frame` retune `--set-{tag}-*` tokens so descendant chrome (header bleed margins, list-group edge math) collapses alongside the padding. Documented in [modifiers.md](guides/modifiers.md) §9.
+- **Surface dissolution family** (`.flat` / `.flush`) — `.flat`: transparent at rest, hover reveal, focus promotes to the element's bordered baseline. `.flush`: no margin / border / radius / ring; fills host's content box. Pairs with `.frame` host (`article.frame > .flush`, `td.frame > .flush`). Per-element applicability matrix in [modifiers.md](guides/modifiers.md) §9 + per-element rows in [elements.md](guides/elements.md).
 - **WAI-ARIA carousel pattern** — indicators live as `<menu role="tablist"> > <li> > <button role="tab" aria-selected="true|false">`. The framework chrome reads `[aria-selected='true']` to paint the active pill-stretch. Indicator transitions route through `--set-transition-duration` (150 ms UI-tint), NOT `--set-carousel-transition-duration` (600 ms slide-axis). Indicator mid-transition class cleanup in `cancelTransition()` keeps stale `carousel-item-{next,prev,start,end}` off cancelled targets after rapid `to()` skips.
 
 ---
 
 ## Reference
 
-- [contribute.md](contribute.md) — workflow for humans + agents (how to add an element, modifier, composable, showcase page).
-- [patterns.md](patterns.md) — per-folder structural contracts + scope discipline + the 11 codified contract registries.
-- [taxonomy.md](taxonomy.md) — every native HTML element + framework treatment + the 12 token-uniformity groups.
-- [AGENTS.md](../AGENTS.md) — codified conventions (naming, typing, Sass / SCSS rules).
-- Per-layer specs: [styles.md](styles.md), [tokens.md](tokens.md), [modifiers.md](modifiers.md), [mixins.md](mixins.md), [elements.md](elements.md), [components.md](components.md), [composables.md](composables.md), [surfaces.md](surfaces.md).
+- [contribute.md](guides/contribute.md) — workflow for humans + agents (how to add an element, modifier, composable, showcase page).
+- [patterns.md](guides/patterns.md) — per-folder structural contracts + scope discipline + the 11 codified contract registries.
+- [AGENTS.md](AGENTS.md) — codified conventions (naming, typing, Sass / SCSS rules).
+- Per-layer specs: [styles.md](guides/styles.md), [tokens.md](guides/tokens.md), [modifiers.md](guides/modifiers.md), [mixins.md](guides/mixins.md), [elements.md](guides/elements.md), [components.md](guides/components.md), [composables.md](guides/composables.md), [surfaces.md](guides/surfaces.md).
