@@ -1,14 +1,26 @@
 # Surfaces
 
-> Browser-rendered chrome that isn't a tag or a composition. Folder: [src/styles/surfaces/](../src/styles/surfaces/).
+> Browser-rendered chrome that isn't a tag or a composition — pseudo-elements, attribute APIs, and behaviour properties the browser owns. Folder: [src/styles/surfaces/](../src/styles/surfaces/).
+
+## Surface
 
 A **surface** is a CSS hook into UA-controlled machinery: pseudo-elements (`::backdrop`, `::placeholder`, `::marker`, `::selection`, `::view-transition-*`), attribute APIs (`[popover]`, `[popover]:popover-open`), and behaviour properties the browser owns rather than the author (anchor positioning, scrollbar appearance, forced-colors fallbacks, focus ring). Surfaces are distinct from elements (which name HTML tags) and components (which compose elements) — they name **a seam in the browser itself**.
 
----
+**Shipped surfaces** (every partial under [src/styles/surfaces/](../src/styles/surfaces/)):
 
-## 1. Overview
+| Partial                                                                 | Owns                                                                                                                                                                                                                                                                                                                                                                      | Key tokens                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`_popover.scss`](../src/styles/surfaces/_popover.scss)                 | `[popover]` panel chrome + entry/exit transition via `@starting-style` + `transition-behavior: allow-discrete`. Variant `[popover='hint'], [role='tooltip']` for tooltip-shaped popovers.                                                                                                                                                                                 | `--set-popover-{color, background-color, border-color, border-width, border-radius, padding-inline, padding-block, box-shadow, transition-duration, max-inline-size}`, `--set-popover-hint-*` for the tooltip variant |
+| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)               | Dim scrim for the framework's two blocking-overlay families: `dialog:modal::backdrop` (modal) and `aside[popover]:popover-open::backdrop` (offcanvas drawer). Toasts / dropdowns / tooltips / non-modal dialogs / bare popovers keep the UA-default transparent backdrop. Single-backdrop invariant: every overlay reads from native `::backdrop`, no duplicate elements. | `--set-backdrop-{background-color, backdrop-filter, transition-duration}`                                                                                                                                             |
+| [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) | `[popover]:not(output)` auto-anchored placement. Default `position-area: block-end`. `position-try-fallbacks` flips when there's no room.                                                                                                                                                                                                                                 | `--set-anchor-{gap, position-area, position-try-fallbacks, position-try-order, max-block-size, max-inline-size, viewport-inset}`                                                                                      |
+| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss)             | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`.                                                                                                                                                                                                                                                                                             | `--set-scrollbar-{thumb-color, track-color, width, gutter}`                                                                                                                                                           |
+| [`_focus.scss`](../src/styles/surfaces/_focus.scss)                     | `:focus-visible` ring rules using the framework's focus tokens.                                                                                                                                                                                                                                                                                                           | `--set-focus-box-shadow-{width, opacity}`                                                                                                                                                                             |
+| [`_placeholder.scss`](../src/styles/surfaces/_placeholder.scss)         | `::placeholder` opacity + color across `<input>` / `<textarea>`.                                                                                                                                                                                                                                                                                                          | `--set-placeholder-{color, opacity}`                                                                                                                                                                                  |
+| [`_marker.scss`](../src/styles/surfaces/_marker.scss)                   | `::marker` styling shared across `<details>` / `<summary>` / `<li>`.                                                                                                                                                                                                                                                                                                      | `--set-marker-{color, content}`                                                                                                                                                                                       |
+| [`_selection.scss`](../src/styles/surfaces/_selection.scss)             | Variant-tinted `::selection`.                                                                                                                                                                                                                                                                                                                                             | `--set-selection-{color, background-color}`                                                                                                                                                                           |
+| [`_view-transition.scss`](../src/styles/surfaces/_view-transition.scss) | `::view-transition-old/new/group(*)` cross-page transitions for `<a>` navigation.                                                                                                                                                                                                                                                                                         | `--set-view-transition-{duration, timing-function}`                                                                                                                                                                   |
 
-Surfaces ship in the `@layer surfaces` cascade layer. The full layer order is:
+**Cascade layer placement.** Surfaces ship in the `@layer surfaces` cascade layer. The full layer order is:
 
 ```
 theme, base, elements, components, surfaces, composables, modifiers, utilities
@@ -23,25 +35,26 @@ Layer order is declared in the consumer's entry CSS (see [tests/setup.css](../te
 
 ---
 
-## 2. Shipped surfaces
+## Contract
 
-Every partial under [src/styles/surfaces/](../src/styles/surfaces/):
+These invariants hold across `src/styles/surfaces/_*.scss` ↔ `surfaces.md` ↔ consumer chrome:
 
-| Partial                                                                 | Owns                                                                                                                                                                                                                                                                                                                                                                      | Key tokens                                                                                                                                                                                                            |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`_popover.scss`](../src/styles/surfaces/_popover.scss)                 | `[popover]` panel chrome + entry/exit transition via `@starting-style` + `transition-behavior: allow-discrete`. Variant `[popover='hint'], [role='tooltip']` for tooltip-shaped popovers.                                                                                                                                                                                 | `--set-popover-{color, background-color, border-color, border-width, border-radius, padding-inline, padding-block, box-shadow, transition-duration, max-inline-size}`, `--set-popover-hint-*` for the tooltip variant |
-| [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss)               | Dim scrim for the framework's two blocking-overlay families: `dialog:modal::backdrop` (modal) and `aside[popover]:popover-open::backdrop` (offcanvas drawer). Toasts / dropdowns / tooltips / non-modal dialogs / bare popovers keep the UA-default transparent backdrop. Single-backdrop invariant: every overlay reads from native `::backdrop`, no duplicate elements. | `--set-backdrop-{background-color, backdrop-filter, transition-duration}`                                                                                                                                             |
-| [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) | `[popover]:not(output)` auto-anchored placement. Default `position-area: block-end`. `position-try-fallbacks` flips when there's no room.                                                                                                                                                                                                                                 | `--set-anchor-{gap, position-area, position-try-fallbacks, position-try-order, max-block-size, max-inline-size, viewport-inset}`                                                                                      |
-| [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss)             | `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`.                                                                                                                                                                                                                                                                                             | `--set-scrollbar-{thumb-color, track-color, width, gutter}`                                                                                                                                                           |
-| [`_focus.scss`](../src/styles/surfaces/_focus.scss)                     | `:focus-visible` ring rules using the framework's focus tokens.                                                                                                                                                                                                                                                                                                           | `--set-focus-box-shadow-{width, opacity}`                                                                                                                                                                             |
-| [`_placeholder.scss`](../src/styles/surfaces/_placeholder.scss)         | `::placeholder` opacity + color across `<input>` / `<textarea>`.                                                                                                                                                                                                                                                                                                          | `--set-placeholder-{color, opacity}`                                                                                                                                                                                  |
-| [`_marker.scss`](../src/styles/surfaces/_marker.scss)                   | `::marker` styling shared across `<details>` / `<summary>` / `<li>`.                                                                                                                                                                                                                                                                                                      | `--set-marker-{color, content}`                                                                                                                                                                                       |
-| [`_selection.scss`](../src/styles/surfaces/_selection.scss)             | Variant-tinted `::selection`.                                                                                                                                                                                                                                                                                                                                             | `--set-selection-{color, background-color}`                                                                                                                                                                           |
-| [`_view-transition.scss`](../src/styles/surfaces/_view-transition.scss) | `::view-transition-old/new/group(*)` cross-page transitions for `<a>` navigation.                                                                                                                                                                                                                                                                                         | `--set-view-transition-{duration, timing-function}`                                                                                                                                                                   |
+1. **SCSS → DOC.** Every `surfaces/_{name}.scss` partial is named in the "Shipped surfaces" table above. New surfaces ship with a documented row in the same change.
+2. **DOC → SCSS.** Every `surfaces/_{name}.scss` reference in this guide resolves to a real partial. Stale references after a rename / delete are caught.
+3. **Cascade layer.** Every surface partial wraps its rules in `@layer surfaces` and writes only tokens on `:root` plus pseudo-element / attribute-API rules — no tag-headed authoring.
+4. **Per-surface token + animation discipline.** `SURFACE_CONTRACTS` in [`src/browser/patterns.ts`](../src/browser/patterns.ts) declares the required tokens and whether the surface animates; partials with `animated: true` invoke the `transition` / `reduced-motion` mixin pair.
+
+Enforced by:
+
+- [`tests/guides/surfaces.test.ts`](../tests/guides/surfaces.test.ts) — bidirectional SCSS↔doc parity.
+- [`tests/src/styles/surfaces/_index.test.ts`](../tests/src/styles/surfaces/_index.test.ts) — required-token coverage + animated-mixin discipline.
+- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — folder structural contract (layer wrapping, allowed selector kinds).
 
 ---
 
-## 3. `[popover]` panel surface
+## Patterns
+
+### `[popover]` panel surface
 
 The most important surface. [`_popover.scss`](../src/styles/surfaces/_popover.scss) styles every element with the `popover` attribute — the element acts as a popover (top-layer rendering, `::backdrop`, light-dismiss via `popover=auto` or manual via `popover=manual`).
 
@@ -97,9 +110,7 @@ The most important surface. [`_popover.scss`](../src/styles/surfaces/_popover.sc
 </div>
 ```
 
----
-
-## 4. Anchor positioning surface
+### Anchor positioning surface
 
 [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) handles placement for every `[popover]:not(output)`.
 
@@ -107,7 +118,7 @@ The most important surface. [`_popover.scss`](../src/styles/surfaces/_popover.sc
 
 **Modifier hookup.** Placement modifier classes (`.top`, `.bottom`, `.start`, `.end`, `.top-start`, `.top-end`, `.bottom-start`, `.bottom-end`) live in [modifiers/\_placements.scss](../src/styles/modifiers/_placements.scss) — see [modifiers.md](modifiers.md). Each writes the matching `position-area` keyword on the popover.
 
-**Overflow handling.** `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline` — the browser tries the requested side first, then flips block, then flips inline, then flips both. `position-try-order: normal` (the spec default) means the browser commits to the first fallback that fits in declaration order — `most-width` / `most-block-size` are rejected as too greedy (they flip the moment the opposite side has even one pixel more room, producing a "dropdown snaps up even when there's plenty of space below" symptom).
+**Overflow handling.** `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline` — the browser tries the requested side first, then flips block, then flips inline, then flips both. `position-try-order: normal` (the spec default) means the browser commits to the first fallback that fits in declaration order — `most-width` / `most-block-size` are rejected as too greedy.
 
 **Demanded space.** `max-block-size: var(--set-anchor-max-block-size)` (default `18rem`) and `max-inline-size: var(--set-anchor-max-inline-size)` (default `28rem`). The browser uses these caps as the popover's _demanded size_ when evaluating `position-try-fallbacks`. If `18rem` doesn't fit below the trigger, `flip-block` fires and the popover lands above. Consumers tighten per-host:
 
@@ -127,9 +138,7 @@ The most important surface. [`_popover.scss`](../src/styles/surfaces/_popover.sc
 
 **Known limitation: in-session sticky flip.** Chromium re-evaluates `position-try-fallbacks` only when the popover's own layout changes. Scrolling the anchor in a nested scroll container doesn't trigger re-evaluation — a popover that flips up at open time stays up until closed. Closing and re-opening always re-evaluates from scratch. Composable observers (`useMenu`, `usePopover`, `useTooltip`) can nudge `max-block-size` on scroll to force re-evaluation; the surface itself documents the limitation and stays declarative.
 
----
-
-## 5. Backdrop surface
+### Backdrop surface
 
 [`_backdrop.scss`](../src/styles/surfaces/_backdrop.scss) paints the dim scrim for the framework's two **blocking-overlay families**:
 
@@ -181,9 +190,7 @@ dialog#confirm::backdrop {
 }
 ```
 
----
-
-## 6. Scrollbar surface
+### Scrollbar surface
 
 [`_scrollbar.scss`](../src/styles/surfaces/_scrollbar.scss). Declares `scrollbar-color`, `scrollbar-width`, `scrollbar-gutter` defaults on `:root`:
 
@@ -204,9 +211,7 @@ Modern non-WebKit way to style scrollbars. The two-value `scrollbar-color: <thum
 
 **Vendor pseudos intentionally absent.** WebKit-only `::-webkit-scrollbar` family pseudo-elements are NOT styled here — those are deprecated in favour of the standard `scrollbar-*` properties. Safari < 18.2 ignores `scrollbar-color` / `scrollbar-width`; the native iOS overlay scrollbar is the fallback (acceptable).
 
----
-
-## 7. Focus surface
+### Focus surface
 
 [`_focus.scss`](../src/styles/surfaces/_focus.scss). `:focus-visible` ring shared across every interactive element — every button, link, summary toggle, custom `[tabindex]` widget, third-party combobox. Reads `--set-focus-color` (the variant tint, defaulting to `--color-primary`), `--set-focus-box-shadow-width`, and `--set-focus-box-shadow-opacity` from `:root`.
 
@@ -224,15 +229,13 @@ Modern non-WebKit way to style scrollbars. The two-value `scrollbar-color: <thum
 
 **Opt-out scoping.** Form controls (`<input>`, `<textarea>`, `<select>`) declare their own `&:focus-visible` block in the elements layer because focus also recolors their border. The surface uses `:focus-visible:not(:where(input, textarea, select))` — `:where()` keeps the opt-out at zero specificity so the surface rule stays the lowest possible `:focus-visible`. Form controls keep their per-element ring AND border-color paint; everything else gets the surface ring.
 
-**Why a shared surface rather than per-element rules:** every interactive element (button, link, summary, custom widget) gets identical focus signal. Ring color tracks the active variant via `--set-focus-color → --set-variant-background-color → --color-primary`, so a focused `.danger` button rings danger-red without per-element rules.
+**Why a shared surface rather than per-element rules.** Every interactive element (button, link, summary, custom widget) gets identical focus signal. Ring color tracks the active variant via `--set-focus-color → --set-variant-background-color → --color-primary`, so a focused `.danger` button rings danger-red without per-element rules.
 
 `:focus-visible` is the UA-determined "keyboard-style" focus — clicking a button doesn't paint the ring, tabbing to it does. The surface intentionally does not style plain `:focus` (which would catch mouse clicks too) — the user-agent's heuristic is the right one and overriding it produces sticky focus rings after every click.
 
 **Forced-colors fallback.** Custom `box-shadow` rings are stripped in Windows High Contrast mode, so the surface paints a paired `outline: 2px solid Highlight; outline-offset: 2px` rule under `@media (forced-colors: active)` so the focus signal survives.
 
----
-
-## 8. Placeholder surface
+### Placeholder surface
 
 [`_placeholder.scss`](../src/styles/surfaces/_placeholder.scss). `::placeholder` color + opacity, shared across `<input>` / `<textarea>` (and the future search-mode `<select>`). The previous per-element `--set-input-placeholder-opacity` / `--set-textarea-placeholder-opacity` tokens are REMOVED — the surface owns the value via `--set-placeholder-color: currentColor` + `--set-placeholder-opacity: 0.6`.
 
@@ -243,7 +246,7 @@ Modern non-WebKit way to style scrollbars. The two-value `scrollbar-color: <thum
 }
 ```
 
-**Why `currentColor`:** keeps the placeholder tracking the form control's own text color, so a `.danger` input still has a danger-tinted placeholder hint. Opacity is the muting mechanism — pure color change would lose the visual link to the field.
+**Why `currentColor`.** Keeps the placeholder tracking the form control's own text color, so a `.danger` input still has a danger-tinted placeholder hint. Opacity is the muting mechanism — pure color change would lose the visual link to the field.
 
 **Forced-colors fallback.** Windows High Contrast and similar forced-colors modes flatten author colors. The surface declares:
 
@@ -258,9 +261,7 @@ Modern non-WebKit way to style scrollbars. The two-value `scrollbar-color: <thum
 
 so the placeholder stays distinguishable from real text under user-mandated colour scheme overrides. `GrayText` is one of the CSS system colours preserved in forced-colors mode.
 
----
-
-## 9. Marker surface
+### Marker surface
 
 [`_marker.scss`](../src/styles/surfaces/_marker.scss). `::marker` shared across `<li>` and any element with `display: list-item`.
 
@@ -277,9 +278,7 @@ so the placeholder stays distinguishable from real text under user-mandated colo
 
 **Why `<summary>` is intentionally outside this surface's reach.** `<summary>` paints its own disclosure marker via a `::before` mask-image SVG (see [elements/\_summary.scss](../src/styles/elements/_summary.scss)) because the UA's disclosure-triangle glyph renders inconsistently across engines and ignores `color` in some browsers. The summary partial sets `list-style: none` AND hides `::-webkit-details-marker`, so the surface's `::marker` rule never reaches it — the two surfaces don't collide.
 
----
-
-## 10. Selection surface
+### Selection surface
 
 [`_selection.scss`](../src/styles/surfaces/_selection.scss). `::selection` paints the user's selected text with a variant-tinted background so highlights match the active theme. When a `.primary` / `.success` / `.danger` modifier scope is in effect, selection inside that scope picks up the matching tint:
 
@@ -292,11 +291,9 @@ so the placeholder stays distinguishable from real text under user-mandated colo
 
 Background defaults to `color-mix(in oklab, var(--set-variant-background-color, var(--color-primary)) 25%, transparent)` so highlighted text stays legible — selection painted at full opacity hides the underlying characters in some font rendering paths. `--set-selection-color` defaults to `--color-text-strong` (canvas-contrasting strong text) which reaches AA against the variant tints in both light and dark themes.
 
-Like `::backdrop`, `::selection` is generated outside the normal DOM tree, so the tint tokens live on `:root`. Variant-scoped overrides cascade through the active variant context tokens — a `.danger` modifier in a parent element retunes `--set-variant-background-color` for its subtree, which `::selection` reads through the `var()` chain, so a selection inside a danger-themed panel paints with the danger tint without per-host rules.
+Like `::backdrop`, `::selection` is generated outside the normal DOM tree, so the tint tokens live on `:root`. Modifier-scoped overrides cascade through the active variant context tokens — a `.danger` modifier in a parent element retunes `--set-variant-background-color` for its subtree, which `::selection` reads through the `var()` chain, so a selection inside a danger-themed panel paints with the danger tint without per-host rules.
 
----
-
-## 11. View-transition surface
+### View-transition surface
 
 [`_view-transition.scss`](../src/styles/surfaces/_view-transition.scss). `::view-transition-old(root)` and `::view-transition-new(root)` paint the cross-page transition when consumers navigate via `<a>` with `view-transition-name` set, or opt into cross-document navigation transitions via `@view-transition { navigation: auto; }`.
 
@@ -306,9 +303,7 @@ Tokens `--set-view-transition-duration` and `--set-view-transition-timing-functi
 
 Reduced-motion-paired: the framework's shared `transition()` mixin honors `prefers-reduced-motion`, so the surface's view-transition rules collapse to zero-duration when the user has reduced motion enabled. Cross-page navigation still feels instant rather than ignoring user preference for the sake of polish.
 
----
-
-## 12. Author's contract for surfaces
+### Authoring a new surface
 
 When to add a new surface partial:
 
@@ -316,12 +311,12 @@ When to add a new surface partial:
 2. The pattern is shared across more than one element / component. A pseudo-element consumed only by `<progress>` lives in `elements/_progress.scss`. Promote to a surface partial once a second element needs the same styling.
 3. The partial declares tokens on `:root` when the surface is generated outside the normal DOM tree (`::backdrop`, `::placeholder`, `::marker`, `::selection`, `::view-transition-*`). These pseudos cannot inherit element-scoped tokens.
 4. Wrap all rules in `@layer surfaces`.
+5. Add the row to the "Shipped surfaces" table in this guide's `## Surface` section.
+6. Register the surface in `SURFACE_CONTRACTS` (`src/browser/patterns.ts`) with its required-token list + animation flag so the per-surface test enforces the contract.
 
 Each substantive partial follows the template documented in the file's header — browser-support comment, surfaces-covered list, quirks list, then `@use '../mixins' as *;` and the `@layer surfaces { … }` body.
 
----
-
-## 13. Anti-rules
+### Anti-rules
 
 - **Don't style deprecated vendor pseudo-elements outside their specific element partial.** `::-webkit-scrollbar`, `::-moz-progress-bar`, `::-ms-*` live (when needed at all) in the relevant element partial — e.g. `<progress>` vendor pseudos live in `elements/_progress.scss`, not in a surfaces partial.
 - **Don't add a surface for a single-element pseudo.** `<select>::picker(select)` lives in `elements/_select.scss` while only `<select>` consumes it. Promote to a surface once a second element does.
@@ -330,7 +325,16 @@ Each substantive partial follows the template documented in the file's header �
 
 ---
 
-## 14. Cross-references
+## Tests
+
+- [`tests/guides/surfaces.test.ts`](../tests/guides/surfaces.test.ts) — SCSS ↔ doc parity: every surface partial is documented, every documented partial exists.
+- [`tests/src/styles/surfaces/_index.test.ts`](../tests/src/styles/surfaces/_index.test.ts) — per-surface required-token coverage + animated-mixin discipline (`SURFACE_CONTRACTS` enforcement).
+- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — folder structural contract: every surfaces partial wraps in `@layer surfaces` and uses only allowed rule-head kinds.
+- Per-surface behaviour tests under [`tests/src/styles/surfaces/`](../tests/src/styles/surfaces/) — `_anchor-position.test.ts`, `_backdrop.test.ts`, `_focus.test.ts`, `_popover.test.ts`, etc.
+
+---
+
+## See also
 
 - [styles.md](styles.md) — cascade layer order and authoring contract for the whole framework
 - [tokens.md](tokens.md) — the `--set-*` namespace and how surface tokens compose with variant context tokens
