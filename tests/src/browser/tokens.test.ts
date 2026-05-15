@@ -12,7 +12,7 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { tokens } from '@elements/browser'
+import { modifiers, tokens } from '@elements/browser'
 import { leaves, tagFromPath } from '../../setup.ts'
 import { render, rootToken, token } from '../../setupStyles.ts'
 
@@ -43,15 +43,7 @@ const surfaceSources = import.meta.glob('../../../src/styles/surfaces/_*.scss', 
 	eager: true,
 }) as Record<string, string>
 
-const VARIANTS = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+const VARIANTS = Object.values(modifiers.variant)
 
 const TS_LEAVES = leaves(tokens)
 const TS_SET = new Set(TS_LEAVES)

@@ -246,6 +246,40 @@ export function bareClassNamesIn(source: string): readonly string[] {
 	return out
 }
 
+/**
+ * Pull every `--set-*:` declaration name out of a SCSS source. Returns the
+ * unique set of declared token names in source order — multiple declarations
+ * of the same name (fallback chains) collapse to one.
+ */
+const SET_TOKEN_DECLARATION_REGEX = /(?:^|[\s;{])(--set-[a-z0-9-]+)\s*:/g
+
+export function extractSetTokenDeclarations(source: string): readonly string[] {
+	const out = new Set<string>()
+	SET_TOKEN_DECLARATION_REGEX.lastIndex = 0
+	let match: RegExpExecArray | null
+	while ((match = SET_TOKEN_DECLARATION_REGEX.exec(source)) !== null) {
+		if (match[1]) out.add(match[1])
+	}
+	return Array.from(out)
+}
+
+/**
+ * Pull every `@layer NAME` directive name out of a SCSS source. Returns layer
+ * names in source order; duplicates are preserved (a file declaring the same
+ * `@layer` twice surfaces twice).
+ */
+const LAYER_DIRECTIVE_REGEX = /@layer\s+([a-z][a-z0-9-]*)/gi
+
+export function findLayerDirectives(source: string): readonly string[] {
+	const out: string[] = []
+	LAYER_DIRECTIVE_REGEX.lastIndex = 0
+	let match: RegExpExecArray | null
+	while ((match = LAYER_DIRECTIVE_REGEX.exec(source)) !== null) {
+		if (match[1]) out.push(match[1])
+	}
+	return out
+}
+
 // ============================================================================
 // Tailwind v4 utility class catalog — collision watch list.
 //

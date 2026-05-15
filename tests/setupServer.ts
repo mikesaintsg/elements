@@ -30,6 +30,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { STYLE_LAYERS } from '@elements/browser'
 
 const WORKSPACE_ROOT = fileURLToPath(new URL('../', import.meta.url))
 
@@ -54,6 +55,16 @@ export function readScssPartials(...dirs: readonly string[]): Record<string, str
 		}
 	}
 	return out
+}
+
+/**
+ * Shorthand for `readScssPartials` across every folder under `src/styles/`.
+ * The folder set is derived from `STYLE_LAYERS` (the authoritative list
+ * exported from `@elements/browser`), so adding a new style layer there
+ * automatically flows through every test that scans the whole cascade.
+ */
+export function readAllStyleSources(): Record<string, string> {
+	return readScssPartials(...STYLE_LAYERS.map((layer) => `src/styles/${layer}`))
 }
 
 /**

@@ -22,7 +22,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { events } from '@elements/browser'
-import { readFactorySources, readScssPartials } from '../setupServer'
+import { readAllStyleSources, readFactorySources } from '../setupServer'
 
 // ── 1. Event-name registry ─────────────────────────────────────────────────
 //
@@ -143,13 +143,7 @@ describe('events.ts — shape', () => {
 //     toggled `[aria-hidden]` — so panels never visually hid.
 
 const factorySources = readFactorySources()
-const styleSources = readScssPartials(
-	'src/styles/elements',
-	'src/styles/components',
-	'src/styles/composables',
-	'src/styles/surfaces',
-	'src/styles/modifiers',
-)
+const styleSources = readAllStyleSources()
 const stylesCorpus = Object.values(styleSources).join('\n')
 
 const SET_ATTR_RE = /\.setAttribute\(\s*['"](data-[a-z][a-z0-9-]*)['"]/g

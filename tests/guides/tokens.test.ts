@@ -31,32 +31,15 @@
 
 import { describe, expect, it } from 'vitest'
 import { FORBIDDEN_TOKEN_SEGMENTS, MOTION_CONTRACT_PARTIALS } from '@elements/browser'
-import { relativeStylesPath, stripComments } from '../setup'
-import { readScssPartials } from '../setupServer'
+import { extractSetTokenDeclarations, relativeStylesPath, stripComments } from '../setup'
+import { readAllStyleSources } from '../setupServer'
 
-const sources = readScssPartials(
-	'src/styles/elements',
-	'src/styles/components',
-	'src/styles/composables',
-	'src/styles/surfaces',
-	'src/styles/modifiers',
-)
+const sources = readAllStyleSources()
 
 // ── A. Token naming ────────────────────────────────────────────────────────
 
-const TOKEN_DECLARATION = /(?:^|[\s;{])(--set-[a-z0-9-]+)\s*:/g
-
 /** Shape regex: `--set-` + one-or-more kebab-case segments, no trailing hyphens. */
 const TOKEN_SHAPE = /^--set-[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*)*$/
-
-function tokenNamesIn(source: string): readonly string[] {
-	const out = new Set<string>()
-	let match: RegExpExecArray | null
-	while ((match = TOKEN_DECLARATION.exec(source)) !== null) {
-		if (match[1]) out.add(match[1])
-	}
-	return Array.from(out)
-}
 
 interface TokenSighting {
 	readonly name: string
@@ -66,7 +49,7 @@ interface TokenSighting {
 const sightings: TokenSighting[] = []
 for (const [path, source] of Object.entries(sources)) {
 	const file = relativeStylesPath(path)
-	for (const name of tokenNamesIn(source)) sightings.push({ name, file })
+	for (const name of extractSetTokenDeclarations(source)) sightings.push({ name, file })
 }
 
 // Deduplicate — multiple files may declare the same token via fallback chains.

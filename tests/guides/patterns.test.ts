@@ -69,20 +69,16 @@ import {
 } from '@elements/browser'
 import {
 	extractRuleOpeners,
+	extractSetTokenDeclarations,
+	findLayerDirectives,
 	leaves,
 	relativeStylesPath,
 	stripComments,
 	tagFromPath,
 } from '../setup'
-import { readFactorySources, readScssPartials } from '../setupServer'
+import { readAllStyleSources, readFactorySources, readScssPartials } from '../setupServer'
 
-const sources = readScssPartials(
-	'src/styles/elements',
-	'src/styles/modifiers',
-	'src/styles/surfaces',
-	'src/styles/components',
-	'src/styles/composables',
-)
+const sources = readAllStyleSources()
 
 // ============================================================================
 //  1. TS surface shape
@@ -509,26 +505,6 @@ describe('patterns — exceptionFor', () => {
 //  4. Folder structural contract — every partial obeys its FOLDER_CONTRACTS entry
 // ============================================================================
 
-function findLayerDirectives(source: string): readonly string[] {
-	const out: string[] = []
-	const regex = /@layer\s+([a-z][a-z0-9-]*)/gi
-	let match: RegExpExecArray | null
-	while ((match = regex.exec(source)) !== null) {
-		if (match[1]) out.push(match[1])
-	}
-	return out
-}
-
-function tokenDeclarationsIn(source: string): readonly string[] {
-	const out = new Set<string>()
-	const regex = /(?:^|[\s;{])(--set-[a-z0-9-]+)\s*:/g
-	let match: RegExpExecArray | null
-	while ((match = regex.exec(source)) !== null) {
-		if (match[1]) out.add(match[1])
-	}
-	return Array.from(out)
-}
-
 function tokenPrefixOf(name: string): string {
 	const stripped = name.replace(/^--set-/, '')
 	const dash = stripped.indexOf('-')
@@ -673,7 +649,7 @@ describe('contracts — every --set-* declaration matches the folder token names
 	for (const partial of partials) {
 		if (hasFreeTokenNamespace(partial.path)) continue
 		const allowed = allowedTokenPrefixes(partial.path)
-		const tokens = tokenDeclarationsIn(partial.stripped)
+		const tokens = extractSetTokenDeclarations(partial.stripped)
 
 		// On failure: the `violations` array prints each out-of-namespace
 		// token. Allowed prefixes for this folder: `${allowed.join(', ')}`.

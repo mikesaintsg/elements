@@ -7,17 +7,10 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
+import { modifiers } from '@elements/browser'
 import { render, rootToken, token } from '../../setupStyles.ts'
 
-const VARIANTS = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+const VARIANTS = Object.values(modifiers.variant)
 
 describe(':root — semantic variant colors (registered via @theme)', () => {
 	it.each(VARIANTS)('declares --color-%s', (name) => {

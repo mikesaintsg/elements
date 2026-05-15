@@ -4,17 +4,10 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
+import { modifiers } from '@elements/browser'
 import { render, token } from '../../../setupStyles.ts'
 
-const VARIANTS = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+const VARIANTS = Object.values(modifiers.variant)
 
 describe('variant modifiers set --set-variant-* context tokens', () => {
 	it.each(VARIANTS)('.%s sets the FILLED-tier --set-variant-* tokens', (name) => {
@@ -50,15 +43,7 @@ describe('variants pick contrast text colors deliberately', () => {
 		// The framework deliberately shifts the lighter hues (green / amber
 		// / sky) up to their `-700` step so the all-variants-take-white
 		// contract holds symmetrically — see _theme.scss for rationale.
-		for (const name of [
-			'primary',
-			'secondary',
-			'tertiary',
-			'success',
-			'warning',
-			'danger',
-			'information',
-		] as const) {
+		for (const name of VARIANTS) {
 			const el = render('div', name)
 			expect(token(el, '--set-variant-color').trim()).toBe('white')
 		}
