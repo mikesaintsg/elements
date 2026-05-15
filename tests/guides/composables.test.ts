@@ -220,10 +220,7 @@ describe('factories ↔ styles — every setAttribute("data-*") has a CSS refere
 // guide, consumers can't discover it. The check matches each factory file
 // to a `create{Name}` mention (in backticks) anywhere in composables.md.
 
-const composablesDoc = readFileSync(
-	resolvePath(WORKSPACE_ROOT, 'guides/composables.md'),
-	'utf8',
-)
+const composablesDoc = readFileSync(resolvePath(WORKSPACE_ROOT, 'guides/composables.md'), 'utf8')
 
 const shippedFactoryNames: readonly string[] = Object.keys(factorySources)
 	.map((p) => {

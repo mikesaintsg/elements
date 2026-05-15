@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { createPointer } from '@elements/browser'
 import { createRecorder } from '../../../setup'
-import { assertCleanDispose, buildElement, createFactoryFixture, createPointerEvent } from '../../../setupBrowser'
+import {
+	assertCleanDispose,
+	buildElement,
+	createFactoryFixture,
+	createPointerEvent,
+} from '../../../setupBrowser'
 
 describe('createPointer', () => {
 	it('initial dragging is false', () => {
