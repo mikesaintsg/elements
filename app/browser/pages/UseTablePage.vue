@@ -50,6 +50,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useTable } from '@elements/browser'
+import { pageList } from '../helpers.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Shared dataset for the §1 comprehensive integrated demo.
@@ -384,25 +385,6 @@ const pg = useTable(pgRef, {
 	},
 })
 
-// Windowed page-list for the `<nav aria-label="Pagination">` chrome.
-// Renders at most 5 numbered tiles plus first / last + leading / trailing
-// ellipses. `null` slots paint as disabled `<a>` so the chrome's tile
-// stride stays even regardless of where the active page lands.
-function pageList(page: number, count: number): readonly (number | null)[] {
-	if (count <= 7) return Array.from({ length: count }, (_, i) => i + 1)
-	const window = new Set<number>([1, count, page - 1, page, page + 1])
-	const sorted = [...window].filter((n) => n >= 1 && n <= count).sort((a, b) => a - b)
-	const out: (number | null)[] = []
-	for (let i = 0; i < sorted.length; i++) {
-		const current = sorted[i]
-		const previous = sorted[i - 1]
-		if (i > 0 && current !== undefined && previous !== undefined && current - previous > 1) {
-			out.push(null)
-		}
-		if (current !== undefined) out.push(current)
-	}
-	return out
-}
 const mainPages = computed(() => pageList(main.pagination.page.value, main.pagination.count.value))
 const pgPages = computed(() => pageList(pg.pagination.page.value, pg.pagination.count.value))
 

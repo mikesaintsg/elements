@@ -59,6 +59,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useDrag, useDrop } from '@elements/browser'
+import { formatSize } from '../helpers.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Shared row shape.
@@ -187,11 +188,6 @@ const drop = useDrop(dropZone, {
 		},
 	},
 })
-const formatSize = (bytes: number): string => {
-	if (bytes < 1024) return `${bytes} B`
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-	return `${(bytes / 1024 / 1024).toFixed(2)} MB`
-}
 const removeFromOutbox = (id: string): void => {
 	outbox.value = outbox.value.filter((a) => a.id !== id)
 }

@@ -4,6 +4,8 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useTheme } from '@elements/browser'
 import { current, navigate, route, routes, section } from './router.js'
 import { ROUTE_GROUPS } from './types.js'
+import { hasModifierKey } from './helpers.js'
+import { FILTER_SELECTOR, MOBILE_QUERY, OBSERVER_ROOT_MARGIN, RAIL_IDS } from './constants.js'
 
 /**
  * Showcase shell. The framework's `body:has(> main)` rule turns <body>
@@ -29,7 +31,7 @@ const filterQuery = ref('')
 // attribute is absent so the rails are just `<nav>` / `<aside>` —
 // the body grid places them naturally, no popover machinery involved.
 const isMobile = ref(false)
-const mobileQuery = typeof window !== 'undefined' ? window.matchMedia('(max-width: 960px)') : null
+const mobileQuery = typeof window !== 'undefined' ? window.matchMedia(MOBILE_QUERY) : null
 const updateMobile = (): void => {
 	isMobile.value = mobileQuery?.matches ?? false
 }
@@ -84,7 +86,7 @@ const scrollToTarget = async (target: string | null): Promise<void> => {
 // not a popover). Used by the route watcher (close drawer when user
 // navigates to a new page) and the goHome click handler.
 const closeRailDrawers = (): void => {
-	for (const id of ['primary-rail', 'toc-rail']) {
+	for (const id of RAIL_IDS) {
 		const el = document.getElementById(id)
 		if (el?.matches(':popover-open')) el.hidePopover()
 	}
@@ -142,7 +144,7 @@ const onKeydown = (e: KeyboardEvent): void => {
 	// JS-side Escape handling needed here.
 	if (e.key === '/' && !document.querySelector('input:focus, textarea:focus')) {
 		e.preventDefault()
-		document.querySelector<HTMLInputElement>('#sidebar-filter')?.focus()
+		document.querySelector<HTMLInputElement>(FILTER_SELECTOR)?.focus()
 	}
 }
 
@@ -167,7 +169,7 @@ const themeIcon = computed(() => (themeCtl.mode.value === 'dark' ? 'moon' : 'sun
 // in new tab) identically to the TOC onClick below — both rails share
 // the same guard so the two nav surfaces feel like one family.
 const onLinkClick = (event: MouseEvent): void => {
-	if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+	if (hasModifierKey(event)) return
 	closeRailDrawers()
 }
 
@@ -216,7 +218,7 @@ const rebuild = async (): Promise<void> => {
 				.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
 			if (visible.length > 0) active.value = visible[0].target.id
 		},
-		{ root: scroller, rootMargin: '0px 0px -70% 0px', threshold: 0 },
+		{ root: scroller, rootMargin: OBSERVER_ROOT_MARGIN, threshold: 0 },
 	)
 
 	for (const { id } of list) {
@@ -235,7 +237,7 @@ watch(
 )
 
 const onClick = (event: MouseEvent, id: string): void => {
-	if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+	if (hasModifierKey(event)) return
 	event.preventDefault()
 	navigate(current.value.id, id)
 	closeRailDrawers()

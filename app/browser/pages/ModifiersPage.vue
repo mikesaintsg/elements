@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
+import { capitalize } from '../helpers.js'
 
 /**
  * ModifiersPage — the canonical reference for the framework's five
@@ -212,7 +213,7 @@ const sizeRows = [
 		</p>
 		<div class="cluster justify-start">
 			<button v-for="v in variants" :key="v" type="button" :class="v">
-				{{ v.charAt(0).toUpperCase() + v.slice(1) }}
+				{{ capitalize(v) }}
 			</button>
 		</div>
 		<p class="mt-3">
@@ -224,7 +225,7 @@ const sizeRows = [
 		<p class="mt-3">With <code>.subtle</code> — tinted bg + emphasis text + subtle border:</p>
 		<div class="cluster justify-start">
 			<button v-for="v in variants" :key="v" type="button" class="subtle" :class="v">
-				{{ v.charAt(0).toUpperCase() + v.slice(1) }}
+				{{ capitalize(v) }}
 			</button>
 		</div>
 		<p class="mt-3">
@@ -232,7 +233,7 @@ const sizeRows = [
 		</p>
 		<div class="cluster gap-4 justify-start">
 			<a v-for="v in variants" :key="v" href="#" :class="v" @click.prevent>
-				{{ v.charAt(0).toUpperCase() + v.slice(1) }} anchor
+				{{ capitalize(v) }} anchor
 			</a>
 		</div>
 	</section>

@@ -69,3 +69,9 @@ export interface Section {
 	readonly label: string
 	readonly level: number
 }
+
+/**
+ * Motion-timing presets surfaced by the Tokens page easing previewer.
+ * Mirrored by `timingFunctionFor` in `helpers.ts`.
+ */
+export type MotionTiming = 'iOS' | 'ease' | 'linear' | 'snappy'

@@ -1,5 +1,7 @@
 <script lang="ts" setup>
+import type { MotionTiming } from '../types.js'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { timingFunctionFor } from '../helpers.js'
 
 /**
  * TokensPage — the canonical reference for the framework's `--set-*`
@@ -101,7 +103,7 @@ const read = (token: string): string => {
 const radiusFactor = ref(1)
 const densityFactor = ref(1)
 const motionDuration = ref(250)
-const motionTimingFunction = ref<'iOS' | 'ease' | 'linear' | 'snappy'>('iOS')
+const motionTimingFunction = ref<MotionTiming>('iOS')
 const focusWidth = ref(0.25) // rem
 const focusOpacity = ref(0.35)
 
@@ -125,19 +127,6 @@ const applyFocusOpacity = (): void => {
 		String(focusOpacity.value),
 	)
 	refresh()
-}
-
-const timingFunctionFor = (key: typeof motionTimingFunction.value): string => {
-	switch (key) {
-		case 'iOS':
-			return 'cubic-bezier(0.32, 0.72, 0, 1)'
-		case 'ease':
-			return 'cubic-bezier(0.25, 0.1, 0.25, 1)'
-		case 'linear':
-			return 'linear'
-		case 'snappy':
-			return 'cubic-bezier(0.4, 0, 0.2, 1)'
-	}
 }
 
 const applyRadius = (): void => {
