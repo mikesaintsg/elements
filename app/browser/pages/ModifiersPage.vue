@@ -37,23 +37,21 @@ import { capitalize } from '../helpers.js'
  */
 
 import type { Variant } from '@elements/browser'
-import { VARIANTS as variants } from '../constants.js'
-
-const sizes = ['small', '', 'large'] as const
-type Size = (typeof sizes)[number]
-
-const styleNames = ['', 'subtle', 'filled'] as const
-type StyleName = (typeof styleNames)[number]
-
-const states = ['', 'disabled', 'active', 'loading'] as const
-type StateName = (typeof states)[number]
+import type { ModifierSizeOption, ModifierStateOption, ModifierStyleOption } from '../types.js'
+import {
+	MODIFIERS_SIZE_ROWS as sizeRows,
+	MODIFIERS_SIZES as sizes,
+	MODIFIERS_STATES as states,
+	MODIFIERS_STYLE_NAMES as styleNames,
+	VARIANTS as variants,
+} from '../constants.js'
 
 // ── Combination picker state ───────────────────────────────────────────────
 
 const pickedVariant = ref<Variant>('primary')
-const pickedSize = ref<Size>('')
-const pickedStyle = ref<StyleName>('')
-const pickedState = ref<StateName>('')
+const pickedSize = ref<ModifierSizeOption>('')
+const pickedStyle = ref<ModifierStyleOption>('')
+const pickedState = ref<ModifierStateOption>('')
 
 const classes = computed(() =>
 	[pickedVariant.value, pickedSize.value, pickedStyle.value, pickedState.value]
@@ -81,30 +79,6 @@ const placements = [
 	'bottom-end',
 ] as const
 
-// Sizes table — concrete values from `modifiers/_sizes.scss`.
-const sizeRows = [
-	{
-		label: '.small',
-		padInline: '0.5em',
-		padBlock: '0.25em',
-		fontSize: '0.875rem',
-		radius: 'sm (0.25rem)',
-	},
-	{
-		label: 'default',
-		padInline: '0.75rem',
-		padBlock: '0.375rem',
-		fontSize: '0.875rem',
-		radius: 'md (0.375rem)',
-	},
-	{
-		label: '.large',
-		padInline: '1rem',
-		padBlock: '0.5rem',
-		fontSize: '1rem',
-		radius: 'lg (0.5rem)',
-	},
-]
 </script>
 
 <template>

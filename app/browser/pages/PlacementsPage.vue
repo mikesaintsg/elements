@@ -41,21 +41,12 @@ import { ref } from 'vue'
  *     tooltips.
  */
 
-const placements = [
-	'top',
-	'top-start',
-	'top-end',
-	'bottom',
-	'bottom-start',
-	'bottom-end',
-	'start',
-	'end',
-] as const
-type Placement = (typeof placements)[number]
+import type { ModifierPlacement } from '../types.js'
+import { PLACEMENTS_MODIFIER as placements } from '../constants.js'
 
-const livePlacement = ref<Placement>('bottom-start')
+const livePlacement = ref<ModifierPlacement>('bottom-start')
 
-const setPlacement = (p: Placement): void => {
+const setPlacement = (p: ModifierPlacement): void => {
 	livePlacement.value = p
 	// Close and re-open so the new placement class takes effect
 	// without the user having to dismiss + click the trigger.
@@ -173,7 +164,7 @@ const setPlacement = (p: Placement): void => {
 				<span>Placement</span>
 				<select
 					:value="livePlacement"
-					@change="(e) => setPlacement((e.target as HTMLSelectElement).value as Placement)"
+					@change="(e) => setPlacement((e.target as HTMLSelectElement).value as ModifierPlacement)"
 				>
 					<option v-for="p in placements" :key="p" :value="p">.{{ p }}</option>
 				</select>

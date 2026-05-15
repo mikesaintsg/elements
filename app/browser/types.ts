@@ -168,3 +168,49 @@ export interface TokenZIndex {
 	readonly value: string
 	readonly role: string
 }
+
+// ── ModifiersPage matrix vocabularies ────────────────────────────────────
+//
+// The empty-string member is the "no modifier / default" cell of the
+// combination-picker matrix — kept verbatim from the page.
+
+export type ModifierSizeOption = '' | 'small' | 'large'
+export type ModifierStyleOption = '' | 'subtle' | 'filled'
+export type ModifierStateOption = '' | 'disabled' | 'active' | 'loading'
+
+export interface ModifierSizeRow {
+	readonly label: string
+	readonly padInline: string
+	readonly padBlock: string
+	readonly fontSize: string
+	readonly radius: string
+}
+
+// PlacementsPage placement picker — the eight modifier placement classes
+// (distinct from the framework's 12-value floating `Placement` union).
+export type ModifierPlacement =
+	| 'top'
+	| 'top-start'
+	| 'top-end'
+	| 'bottom'
+	| 'bottom-start'
+	| 'bottom-end'
+	| 'start'
+	| 'end'
+
+// ── UseDragDropPage row shapes ───────────────────────────────────────────
+
+export interface DragTrack {
+	readonly id: string
+	readonly title: string
+	readonly artist: string
+	readonly duration: string
+}
+
+export interface DragAttachment {
+	readonly id: string
+	readonly name: string
+	readonly size: number
+	readonly type: string
+	readonly icon: string
+}

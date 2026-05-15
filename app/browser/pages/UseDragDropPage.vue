@@ -59,23 +59,17 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useDrag, useDrop } from '@elements/browser'
+import type { DragAttachment, DragTrack } from '../types.js'
 import { formatSize } from '../helpers.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Shared row shape.
 // ─────────────────────────────────────────────────────────────────────
-interface Track {
-	readonly id: string
-	readonly title: string
-	readonly artist: string
-	readonly duration: string
-}
-
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — reorderable list, default contract.
 // `list` ref + auto `[data-index]` reads. Every row is fully draggable.
 // ─────────────────────────────────────────────────────────────────────
-const reorderList = ref<Track[]>([
+const reorderList = ref<DragTrack[]>([
 	{ id: 't1', title: 'Strobe', artist: 'deadmau5', duration: '10:34' },
 	{ id: 't2', title: 'Midnight City', artist: 'M83', duration: '4:03' },
 	{ id: 't3', title: 'Teardrop', artist: 'Massive Attack', duration: '5:30' },
@@ -84,7 +78,7 @@ const reorderList = ref<Track[]>([
 ])
 const reorderHost = useTemplateRef<HTMLElement>('reorderHost')
 const reorderLog = ref<string[]>([])
-const reorder = useDrag<Track>(reorderHost, {
+const reorder = useDrag<DragTrack>(reorderHost, {
 	list: reorderList,
 	on: {
 		reorder: (event) => {
@@ -104,7 +98,7 @@ const reorder = useDrag<Track>(reorderHost, {
 // interactive (buttons click, text selects, links navigate) — useful
 // when rows host their own affordances.
 // ─────────────────────────────────────────────────────────────────────
-const handleList = ref<Track[]>([
+const handleList = ref<DragTrack[]>([
 	{ id: 'h1', title: 'Strobe', artist: 'deadmau5', duration: '10:34' },
 	{ id: 'h2', title: 'Midnight City', artist: 'M83', duration: '4:03' },
 	{ id: 'h3', title: 'Teardrop', artist: 'Massive Attack', duration: '5:30' },
@@ -112,7 +106,7 @@ const handleList = ref<Track[]>([
 ])
 const handleHost = useTemplateRef<HTMLElement>('handleHost')
 const handlePlayed = ref<string | null>(null)
-useDrag<Track>(handleHost, { list: handleList })
+useDrag<DragTrack>(handleHost, { list: handleList })
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 3 — multi-select drag.
@@ -122,7 +116,7 @@ useDrag<Track>(handleHost, { list: handleList })
 // keyboard handlers or external buttons; here the factory's built-in
 // click handler does it for us.
 // ─────────────────────────────────────────────────────────────────────
-const selectionList = ref<Track[]>([
+const selectionList = ref<DragTrack[]>([
 	{ id: 's1', title: 'Strobe', artist: 'deadmau5', duration: '10:34' },
 	{ id: 's2', title: 'Midnight City', artist: 'M83', duration: '4:03' },
 	{ id: 's3', title: 'Teardrop', artist: 'Massive Attack', duration: '5:30' },
@@ -131,7 +125,7 @@ const selectionList = ref<Track[]>([
 	{ id: 's6', title: 'Svefn-g-englar', artist: 'Sigur Rós', duration: '10:04' },
 ])
 const selectionHost = useTemplateRef<HTMLElement>('selectionHost')
-const selection = useDrag<Track>(selectionHost, { list: selectionList })
+const selection = useDrag<DragTrack>(selectionHost, { list: selectionList })
 const selectionCount = computed(() => selection.selected.value.size)
 
 // ─────────────────────────────────────────────────────────────────────
@@ -144,14 +138,7 @@ const selectionCount = computed(() => selection.selected.value.size)
 // what landed — this is how a `useDrag` source and a `useDrop` target
 // coordinate without writing custom MIME data.
 // ─────────────────────────────────────────────────────────────────────
-interface Attachment {
-	readonly id: string
-	readonly name: string
-	readonly size: number
-	readonly type: string
-	readonly icon: string
-}
-const tray = ref<readonly Attachment[]>([
+const tray = ref<readonly DragAttachment[]>([
 	{ id: 'a1', name: 'kickoff-notes.md', size: 4_211, type: 'text/markdown', icon: '📝' },
 	{ id: 'a2', name: 'wireframe.png', size: 312_488, type: 'image/png', icon: '🖼️' },
 	{ id: 'a3', name: 'budget.csv', size: 18_046, type: 'text/csv', icon: '📊' },
@@ -160,7 +147,7 @@ const tray = ref<readonly Attachment[]>([
 	{ id: 'a6', name: 'demo-reel.mp4', size: 24_512_000, type: 'video/mp4', icon: '🎬' },
 ])
 const trayHost = useTemplateRef<HTMLElement>('trayHost')
-const traySource = useDrag<Attachment>(trayHost, {
+const traySource = useDrag<DragAttachment>(trayHost, {
 	items: tray,
 	// The tray is a source, never a drop target. We don't want a drop
 	// onto a tray row to be interpreted as a reorder — that's not what
@@ -171,14 +158,14 @@ const traySource = useDrag<Attachment>(trayHost, {
 	select: false,
 })
 const dropZone = useTemplateRef<HTMLElement>('dropZone')
-const outbox = ref<readonly Attachment[]>([])
+const outbox = ref<readonly DragAttachment[]>([])
 const outboxIds = computed(() => new Set(outbox.value.map((a) => a.id)))
 const drop = useDrop(dropZone, {
 	on: {
 		drop: () => {
 			const indices = [...traySource.indices.value]
 			if (indices.length === 0) return // drop came from outside the tray
-			const next: Attachment[] = []
+			const next: DragAttachment[] = []
 			for (const i of indices) {
 				const item = tray.value[i]
 				if (item && !outboxIds.value.has(item.id)) next.push(item)

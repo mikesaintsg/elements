@@ -1,6 +1,11 @@
 import type { Placement, Variant } from '@elements/browser'
 import { modifiers } from '@elements/browser'
 import type {
+	ModifierPlacement,
+	ModifierSizeOption,
+	ModifierSizeRow,
+	ModifierStateOption,
+	ModifierStyleOption,
 	TableIssue,
 	TablesAudit,
 	TablesLog,
@@ -762,4 +767,54 @@ export const TOKENS_ICONS: readonly TokenIcon[] = [
 	{ token: '--set-icon-danger', label: 'Danger' },
 	{ token: '--set-icon-plus', label: 'Plus' },
 	{ token: '--set-icon-minus', label: 'Minus' },
+]
+
+// ── ModifiersPage matrix data ────────────────────────────────────────────
+//
+// `''` is the "no modifier / default" matrix cell. Order is the demo's
+// display order (kept verbatim).
+
+export const MODIFIERS_SIZES: readonly ModifierSizeOption[] = ['small', '', 'large']
+export const MODIFIERS_STYLE_NAMES: readonly ModifierStyleOption[] = ['', 'subtle', 'filled']
+export const MODIFIERS_STATES: readonly ModifierStateOption[] = ['', 'disabled', 'active', 'loading']
+
+/** Sizes table — concrete values from `modifiers/_sizes.scss`. */
+export const MODIFIERS_SIZE_ROWS: readonly ModifierSizeRow[] = [
+	{
+		label: '.small',
+		padInline: '0.5em',
+		padBlock: '0.25em',
+		fontSize: '0.875rem',
+		radius: 'sm (0.25rem)',
+	},
+	{
+		label: 'default',
+		padInline: '0.75rem',
+		padBlock: '0.375rem',
+		fontSize: '0.875rem',
+		radius: 'md (0.375rem)',
+	},
+	{
+		label: '.large',
+		padInline: '1rem',
+		padBlock: '0.5rem',
+		fontSize: '1rem',
+		radius: 'lg (0.5rem)',
+	},
+]
+
+// ── PlacementsPage placement picker ──────────────────────────────────────
+//
+// Side-grouped display order. ModifiersPage keeps its own grid-ordered
+// 8-value list page-local by design (different presentation).
+
+export const PLACEMENTS_MODIFIER: readonly ModifierPlacement[] = [
+	'top',
+	'top-start',
+	'top-end',
+	'bottom',
+	'bottom-start',
+	'bottom-end',
+	'start',
+	'end',
 ]
