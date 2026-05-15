@@ -36,6 +36,7 @@ import UseAsidePage from './pages/UseAsidePage.vue'
 import UseTabsPage from './pages/UseTabsPage.vue'
 import UseDetailsPage from './pages/UseDetailsPage.vue'
 import UseAlertPage from './pages/UseAlertPage.vue'
+import UseCarouselPage from './pages/UseCarouselPage.vue'
 import UseFormPage from './pages/UseFormPage.vue'
 import UseNavPage from './pages/UseNavPage.vue'
 import UseSelectPage from './pages/UseSelectPage.vue'
@@ -295,6 +296,12 @@ const USE_ALERT: Route = {
 	group: 'Composables',
 	page: UseAlertPage,
 }
+const USE_CAROUSEL: Route = {
+	id: 'use-carousel',
+	title: 'useCarousel',
+	group: 'Composables',
+	page: UseCarouselPage,
+}
 const USE_POPOVER: Route = {
 	id: 'use-popover',
 	title: 'usePopover',
@@ -349,6 +356,7 @@ export const routes: readonly Route[] = [
 	USE_FORM,
 	USE_NAV,
 	USE_ALERT,
+	USE_CAROUSEL,
 	USE_POPOVER,
 	USE_TOOLTIP,
 ]

@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](contribute.md) to know **how to work**.
 
-Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — 39 of 43 pages built (4 Foundations + 11 composable-bound: **UseMenu**, **UseDialog**, **UseAside**, **UseTabs**, **UseDetails**, **UseToast**, **UseSelect**, **UseTable**, **UseForm**, **UseNav**, **UseAlert**); 1 composable-bound page queued (**UseCarouselPage**). The most-recent cross-cutting passes are complete: the **`.flat` / `.flush` modifier family rollout** (Tier 1–3 shipped) and the **inline-style audit + `.frame` spacing-shape primitive family** (`div.frame` / `article.frame` / `td.frame` + dialog & table-expansion margin-reset rules + page-side migration). Both summarized under §"Cross-cutting changes — recently shipped".
+Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. Phase 9 (showcase pages) is the bulk of remaining work — **40 of 43 pages built** (4 Foundations + 12 composable-bound — every Use\*Page in the catalog now ships: **UseMenu**, **UseDialog**, **UseAside**, **UseTabs**, **UseDetails**, **UseToast**, **UseSelect**, **UseTable**, **UseForm**, **UseNav**, **UseAlert**, **UseCarousel**). The remaining 3 pages are cross-page polish + sidebar adjustments (§9.2 / §9.3). The most-recent cross-cutting passes are complete: the **`.flat` / `.flush` modifier family rollout** (Tier 1–3 shipped) and the **inline-style audit + `.frame` spacing-shape primitive family** (`div.frame` / `article.frame` / `td.frame` + dialog & table-expansion margin-reset rules + page-side migration). Both summarized under §"Cross-cutting changes — recently shipped".
 
 ---
 
@@ -108,16 +108,16 @@ Element pages cover the static markup contract; the matching `Use*Page` covers t
 
 ---
 
-## Remaining work — Phase 9 (1 composable-bound page + cross-page polish)
+## Remaining work — Phase 9 (cross-page polish only)
 
-### 9.1 Composable pages — element-bound (1 of 12 remaining)
+### 9.1 Composable pages — element-bound (12 of 12 ✅ shipped)
 
-Each page proves the matching `use{Name}` factory's JS layer on top of the matching element page. **Per-page procedure**: _before_ authoring the demo, walk the [Native-platform redundancy checklist](contribute.md#541-native-platform-redundancy-checklist) (`contribute.md` §5.4.1) against the factory — strip dead writes, fix anti-patterns, ship the strip in the same PR as the page. Every prior page in this set surfaced at least one redundancy worth fixing.
+Every `Use*Page` in the catalog is now built. **Per-page procedure** (kept here for the next round of factory work — e.g. adding a new composable): _before_ authoring the demo, walk the [Native-platform redundancy checklist](contribute.md#541-native-platform-redundancy-checklist) (`contribute.md` §5.4.1) against the factory — strip dead writes, fix anti-patterns, ship the strip in the same PR as the page. Every page in this set surfaced at least one redundancy worth fixing; the four most-recent strips are recorded below.
 
 - ✅ **UseFormPage** — constraint-validation pipeline, `[data-form-validated]` after first submit, per-field `aria-invalid` mirror, summary error region with `fields.focus(name)` jump-back, `validity.mark()` custom-rule path, `validate.input` live mode, `reset()` vs `clear()` distinction. Factory was clean — no redundancy strip needed.
-- ✅ **UseNavPage** — IntersectionObserver-driven scroll-spy on a scrollable container + optional `<nav>` link list. `aria-current="location"` flips on the matching link as each `[id]` section scrolls into view. Demos cover the four `intersection` knobs (offset, margin, threshold), the `activate` event, and `refresh()` for dynamic section sets. Factory was clean — no redundancy strip needed.
+- ✅ **UseNavPage** — IntersectionObserver-driven scroll-spy on a scrollable container + optional `<nav>` link list. `aria-current="location"` flips on the matching link as each `[id]` section scrolls into view. Demos cover the four `intersection` knobs (offset, margin, threshold), the `activate` event, and `refresh()` for dynamic section sets. Factory was clean — no redundancy strip needed. Showcase added `.showcase-nav-demo` chrome to paint the active state on in-page demo navs (the framework's TOC chrome is body-shell-scoped).
 - ✅ **UseAlertPage** — show / hide / toggle lifecycle, `[data-alert-dismiss]` descendant click triggers, variant cascade, cancellable `show` / `hide` event guard pattern, polite (`role="status"`) vs assertive (`role="alert"`) live regions, `{ initial: false }` for deferred-open. Strip shipped in the same PR: removed the dead `initialFromAttr` branch in `createAlert.ts` — the `options.initial ?? (initialFromAttr || true)` expression short-circuited to `options.initial ?? true` because `|| true` consumed the attribute read regardless of its value. Replaced with the simpler form; default-open behaviour preserved.
-- ⬜ **UseCarouselPage** — slide nav, autoplay + pause-on-hover, touch / swipe, indicator dots, variant-tinted slides, every-axis transition lifecycle.
+- ✅ **UseCarouselPage** — bare carousel, autoplay (`ride: 'mount'` + `pause: 'hover'`), cancellable `slide` + post-transition `change` events, `wrap: false` boundary clamp, `keyboard: false` + `touch: false` input-surface tightening, programmatic `to(i)` / `pause()` / `resume()`. Strip shipped in the same PR: indicator buttons were getting `.active` class + `aria-current="true"` writes from the factory, but `composables/_carousel.scss` line 320 reads `[aria-selected='true']` (the WAI-ARIA carousel pattern's `role="tab"` mirror). Both factory writes were dead — the active-pill chrome never painted. Replaced with the ARIA-spec-correct `aria-selected` mirror on indicators (items keep `.active` as their CSS hook, no change there).
 
 ### 9.2 Sidebar nav adjustments (before page #15)
 
