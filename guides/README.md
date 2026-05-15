@@ -288,18 +288,17 @@ Node-environment tests. One driver per spec guide, plus the meta `index.test.ts`
 
 The living-documentation layer. Every spec'd surface has a page demonstrating it. Built into a single self-contained HTML file via [`configs/app/vite.showcase.config.ts`](../configs/app/vite.showcase.config.ts).
 
-| Path                                                              | Purpose                                                                                              |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| [`index.html`](../app/browser/index.html)                         | Showcase shell. Inlines a data-URL favicon; `<script src="./main.ts">` is the entry.                 |
-| [`main.ts`](../app/browser/main.ts)                               | Vue app bootstrap. Mounts `App.vue` and registers the hash router.                                   |
-| [`App.vue`](../app/browser/App.vue)                               | Showcase shell — `body > nav` rail + `body > main` content + `body > aside` TOC.                     |
-| [`router.ts`](../app/browser/router.ts)                           | Hash router (`#/{route}/{section}`). Route table is the source of truth for navigation.              |
-| [`env.d.ts`](../app/browser/env.d.ts)                             | Vite client type augmentation.                                                                       |
-| [`components/SiteNav.vue`](../app/browser/components/SiteNav.vue) | Left rail — grouped route list, mobile drawer behavior.                                              |
-| [`components/Toc.vue`](../app/browser/components/Toc.vue)         | Right rail — `IntersectionObserver`-driven section TOC for the current page.                         |
-| [`styles/main.css`](../app/browser/styles/main.css)               | Single CSS entry — `@layer` order + `@import 'tailwindcss'` + `@import '../../../src/styles/index'`. |
-| [`styles/showcase.css`](../app/browser/styles/showcase.css)       | Showcase-only chrome (NOT framework). `.showcase-*` classes for cross-page patterns.                 |
-| [`pages/`](../app/browser/pages/)                                 | One `.vue` page per concept. See "By concept" above for the spec-to-page map.                        |
+| Path                                                        | Purpose                                                                                                                                                                                                                            |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`index.html`](../app/browser/index.html)                   | Showcase shell. Inlines a data-URL favicon; `<script src="./main.ts">` is the entry.                                                                                                                                               |
+| [`main.ts`](../app/browser/main.ts)                         | Vue app bootstrap. Mounts `App.vue` and registers the hash router.                                                                                                                                                                 |
+| [`App.vue`](../app/browser/App.vue)                         | Showcase shell — header, left nav rail (grouped route filter + `h6`/`<menu>` link list, mobile popover drawer), `<main>` content area, right TOC rail (`IntersectionObserver`-driven section list, mobile popover drawer), footer. |
+| [`types.ts`](../app/browser/types.ts)                       | Shared type definitions — `Route`, `RouteLocation`, `Group`, `Section`.                                                                                                                                                            |
+| [`router.ts`](../app/browser/router.ts)                     | Hash router (`#/{route}/{section}`). Route table is the source of truth for navigation.                                                                                                                                            |
+| [`env.d.ts`](../app/browser/env.d.ts)                       | Vite client type augmentation.                                                                                                                                                                                                     |
+| [`styles/main.css`](../app/browser/styles/main.css)         | Single CSS entry — `@layer` order + `@import 'tailwindcss'` + `@import '../../../src/styles/index'`.                                                                                                                               |
+| [`styles/showcase.css`](../app/browser/styles/showcase.css) | Showcase-only chrome (NOT framework). `.showcase-*` classes for cross-page patterns.                                                                                                                                               |
+| [`pages/`](../app/browser/pages/)                           | One `.vue` page per concept. See "By concept" above for the spec-to-page map.                                                                                                                                                      |
 
 ---
 

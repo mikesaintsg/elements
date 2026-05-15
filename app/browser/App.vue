@@ -1,9 +1,8 @@
 <script lang="ts" setup>
+import type { Group, Route, Section } from './types.js'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useTheme } from '@elements/browser'
 import { current, navigate, route, routes, section } from './router.js'
-import SiteNav from './components/SiteNav.vue'
-import Toc from './components/Toc.vue'
 
 /**
  * Showcase shell. The framework's `body:has(> main)` rule turns <body>
@@ -43,6 +42,20 @@ const filteredRoutes = computed(() => {
 			r.id.toLowerCase().includes(q) ||
 			r.group.toLowerCase().includes(q),
 	)
+})
+
+// Sidebar groups — the framework's documented h6 + <menu> sibling-pair
+// pattern. No <section> wrapper: nesting a region landmark inside <nav>
+// fights the rail gap rhythm (see components/_menu.scss § Grouped-
+// sidebar rhythm).
+const grouped = computed<Group[]>(() => {
+	const map = new Map<string, Route[]>()
+	for (const r of filteredRoutes.value) {
+		const list = map.get(r.group) ?? []
+		list.push(r)
+		map.set(r.group, list)
+	}
+	return Array.from(map, ([group, entries]) => ({ group, entries }))
 })
 
 const page = computed(() => current.value.page)
@@ -91,18 +104,6 @@ const onKeydown = (e: KeyboardEvent): void => {
 	}
 }
 
-onMounted(() => {
-	updateMobile()
-	mobileQuery?.addEventListener('change', updateMobile)
-	document.addEventListener('keydown', onKeydown)
-	void scrollToTarget(section.value)
-})
-
-onUnmounted(() => {
-	mobileQuery?.removeEventListener('change', updateMobile)
-	document.removeEventListener('keydown', onKeydown)
-})
-
 const goHome = (event: MouseEvent): void => {
 	event.preventDefault()
 	navigate('home')
@@ -119,6 +120,99 @@ const cycleTheme = (): void => {
 // reactively when the OS preference flips (matchMedia listener inside
 // the factory), so the icon stays in sync automatically.
 const themeIcon = computed(() => (themeCtl.mode.value === 'dark' ? 'moon' : 'sun'))
+
+// Sidebar link click. Honours modifier-key shortcuts (Cmd+click opens
+// in new tab) identically to the TOC onClick below — both rails share
+// the same guard so the two nav surfaces feel like one family.
+const onLinkClick = (event: MouseEvent): void => {
+	if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+	closeRailDrawers()
+}
+
+// TOC — on-this-page section list with IntersectionObserver tracking.
+const sections = ref<Section[]>([])
+const active = ref<string | null>(null)
+let io: IntersectionObserver | null = null
+
+/* Walk the scroller's `section[id]` descendants on every route change,
+ * build the on-this-page list, and observe each with an
+ * IntersectionObserver. Whichever section is closest to the viewport
+ * top gets `active = id` → the matching anchor picks up
+ * `aria-current="location"`, which `showcase.css` paints. */
+const rebuild = async (): Promise<void> => {
+	await nextTick()
+	io?.disconnect()
+	io = null
+
+	const scroller = scrollerRef.value
+	if (!scroller) {
+		sections.value = []
+		active.value = null
+		return
+	}
+
+	const list: Section[] = []
+	for (const el of scroller.querySelectorAll<HTMLElement>('section[id], h2[id], h3[id]')) {
+		const id = el.id
+		if (!id || id === current.value.id) continue
+		const heading = el.querySelector<HTMLElement>('h1, h2, h3')
+		const label = (heading?.textContent ?? id).trim()
+		const level = el.tagName === 'H3' ? 3 : 2
+		list.push({ id, label, level })
+	}
+	sections.value = list
+
+	if (list.length === 0) {
+		active.value = null
+		return
+	}
+
+	io = new IntersectionObserver(
+		(entries) => {
+			const visible = entries
+				.filter((e) => e.isIntersecting)
+				.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+			if (visible.length > 0) active.value = visible[0].target.id
+		},
+		{ root: scroller, rootMargin: '0px 0px -70% 0px', threshold: 0 },
+	)
+
+	for (const { id } of list) {
+		const el = scroller.querySelector<HTMLElement>(`#${CSS.escape(id)}`)
+		if (el) io.observe(el)
+	}
+	active.value = list[0]?.id ?? null
+}
+
+watch(
+	() => [scrollerRef.value, current.value.id] as const,
+	() => {
+		void rebuild()
+	},
+	{ immediate: true },
+)
+
+const onClick = (event: MouseEvent, id: string): void => {
+	if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+	event.preventDefault()
+	navigate(current.value.id, id)
+	closeRailDrawers()
+}
+
+onMounted(() => {
+	updateMobile()
+	mobileQuery?.addEventListener('change', updateMobile)
+	document.addEventListener('keydown', onKeydown)
+	void scrollToTarget(section.value)
+	void rebuild()
+})
+
+onUnmounted(() => {
+	mobileQuery?.removeEventListener('change', updateMobile)
+	document.removeEventListener('keydown', onKeydown)
+	io?.disconnect()
+	io = null
+})
 
 // Build stamp surfaced in the footer so the user can verify a fresh
 // build loaded. `__BUILD_ID__` is injected at build time by the
@@ -237,10 +331,29 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		<!-- Scrolling links region. `.showcase-sidebar-scroll` claims
 		     remaining vertical space + owns `overflow-y: auto`, so the
 		     long link list scrolls without consuming the pinned filter
-		     above. Inside, SiteNav renders the framework's documented
-		     `<h6>` + `<menu>` sibling-pair pattern. -->
+		     above. Each group renders as an `<h6>` + `<menu>` sibling
+		     pair — the framework's documented grouped-sidebar pattern
+		     (see `components/_menu.scss` § Grouped-sidebar rhythm).
+		     `<menu>` (not `<ul>`) so the framework's nav-rail rules
+		     paint the row chrome. -->
 		<div class="showcase-sidebar-scroll">
-			<SiteNav :routes="filteredRoutes" :active="current.id" @navigate="closeRailDrawers" />
+			<template v-for="g in grouped" :key="g.group">
+				<h6>{{ g.group }}</h6>
+				<menu>
+					<li v-for="r in g.entries" :key="r.id">
+						<a
+							:href="`#/${r.id}`"
+							:aria-current="current.id === r.id ? 'page' : undefined"
+							@click="onLinkClick"
+						>
+							{{ r.title }}
+						</a>
+					</li>
+				</menu>
+			</template>
+			<p v-if="grouped.length === 0">
+				<small>No matches.</small>
+			</p>
 		</div>
 	</nav>
 
@@ -264,7 +377,34 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
 			</button>
 		</header>
-		<Toc :scroller="scrollerRef" :current-id="current.id" @navigate="closeRailDrawers" />
+		<!-- Desktop-only label. On mobile the rail is a popover drawer
+		     whose `<header>` band carries the same "On this page" title,
+		     so this h6 hides via `.showcase-toc-heading { display: none }`
+		     below 960 px and reappears at the @media (min-width: 961px)
+		     breakpoint — see `app/browser/styles/showcase.css`. The
+		     uppercase-eyebrow typography comes from the framework's
+		     `body:has(main) > :where(nav, aside) h6` rule in
+		     `components/_menu.scss` § Grouped-sidebar rhythm. -->
+		<h6 class="showcase-toc-heading">On this page</h6>
+		<!-- WAI-ARIA APG: the in-page TOC is a "Table of contents" navigation
+		     landmark. Framework's components/_nav.scss + the showcase rules
+		     in showcase.css paint the active-link affordance. -->
+		<nav v-if="sections.length > 0" aria-label="Table of contents">
+			<menu>
+				<li v-for="s in sections" :key="s.id" :data-level="s.level">
+					<a
+						:href="`#/${current.id}/${s.id}`"
+						:aria-current="active === s.id ? 'location' : undefined"
+						@click="(e) => onClick(e, s.id)"
+					>
+						{{ s.label }}
+					</a>
+				</li>
+			</menu>
+		</nav>
+		<p v-else>
+			<small>No sections on this page.</small>
+		</p>
 	</aside>
 
 	<footer>

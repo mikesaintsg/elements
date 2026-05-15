@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
-import type { Component, ComputedRef, Ref } from 'vue'
+import type { ComputedRef, Ref } from 'vue'
+import type { Route, RouteLocation } from './types.js'
 
 import HomePage from './pages/HomePage.vue'
 import TokensPage from './pages/TokensPage.vue'
@@ -54,12 +55,6 @@ import UseTooltipPage from './pages/UseTooltipPage.vue'
  *   `#/{id}`           — navigate to a page
  *   `#/{id}/{section}` — deep-link to an in-page anchor
  */
-export interface Route {
-	readonly id: string
-	readonly title: string
-	readonly group: string
-	readonly page: Component
-}
 
 const HOME: Route = { id: 'home', title: 'Home', group: 'Getting started', page: HomePage }
 const TOKENS: Route = {
@@ -360,11 +355,6 @@ export const routes: readonly Route[] = [
 	USE_POPOVER,
 	USE_TOOLTIP,
 ]
-
-interface RouteLocation {
-	readonly id: string
-	readonly section: string | null
-}
 
 const parse = (fallback: string): RouteLocation => {
 	const hash = window.location.hash
