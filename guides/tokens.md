@@ -1,16 +1,12 @@
 # Tokens
 
-> CSS source: [src/styles/\_tokens.scss](../src/styles/_tokens.scss) and [src/styles/\_theme.scss](../src/styles/_theme.scss). TS mirror: [src/browser/tokens.ts](../src/browser/tokens.ts). Bidirectional parity: [tests/src/browser/tokens.test.ts](../tests/src/browser/tokens.test.ts).
+> The framework's public theming contract. CSS source: [src/styles/\_tokens.scss](../src/styles/_tokens.scss) + [src/styles/\_theme.scss](../src/styles/_theme.scss). TypeScript mirror: [src/browser/tokens.ts](../src/browser/tokens.ts). Renaming or removing a token is a breaking change.
 
-The token surface is the framework's public theming contract. Renaming or removing a token is a breaking change for consumers.
+## Surface
 
----
+The token surface splits cleanly along ownership lines.
 
-## 1. Overview — two namespaces
-
-The framework's token surface splits cleanly along ownership lines.
-
-**Tailwind-owned** (consumed, never redeclared):
+**Tailwind-owned** (consumed via `var()`, never redeclared):
 
 | Namespace      | Examples                                             |
 | -------------- | ---------------------------------------------------- |
@@ -23,7 +19,7 @@ The framework's token surface splits cleanly along ownership lines.
 
 Tailwind's documentation is authoritative. The framework reads these via `var()`; it never wraps, mirrors, or re-emits them.
 
-**Framework-owned** (`--set-*`):
+**Framework-owned** (`--set-*` namespace):
 
 | Group              | Examples                                                                                                                                                                                                                                         |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -39,11 +35,39 @@ Tailwind's documentation is authoritative. The framework reads these via `var()`
 | Transition         | `--set-transition-duration` (150 ms, small UI tints); `--set-motion-duration` (250 ms, substantive show/hide) + `--set-motion-timing-function` (iOS stiff-decel curve) + `--set-motion-slide-distance` (0.5 rem, in-flow surface family Y-slide) |
 | Element-scoped     | `--set-button-*`, `--set-input-*`, `--set-dialog-*`, …                                                                                                                                                                                           |
 
-Plus `--color-{variant}` (seven semantic palette tokens registered via `@theme` so Tailwind generates `.bg-primary` / `.text-success` / etc.), the `--color-{variant}-{bg-subtle, text-emphasis, border-subtle}` triplets declared on `:root` for theme-aware tinted surfaces, and the single-token `--color-{variant}-on-canvas` tier for variant text painted directly on the body canvas.
+**Semantic palette** (registered via `@theme` in `_theme.scss`):
+
+`--color-{primary, secondary, tertiary, success, warning, danger, information}` — seven variants, each backed by a Tailwind palette step. Each variant exposes:
+
+- `--color-{variant}` — saturated FILL tier
+- `--color-{variant}-bg-subtle` / `--color-{variant}-text-emphasis` / `--color-{variant}-border-subtle` — SUBTLE tier triplet
+- `--color-{variant}-on-canvas` — text painted directly on the body canvas (no tinted container under the glyph)
+
+The variant tiers (`FILLED`, `SUBTLE`, `ON-CANVAS`) and the cascade that consumes them are documented in [modifiers.md](modifiers.md).
 
 ---
 
-## 2. The variation surface
+## Contract
+
+These invariants hold across `_tokens.scss` + `_theme.scss` ↔ `tokens.ts` ↔ this guide:
+
+1. **TS → CSS.** Every leaf in `tokens.ts` resolves at runtime — on `:root`, on the appropriate element, or on a modifier-classed element.
+2. **CSS → TS.** Every `--set-*` declaration in `_tokens.scss` + `_theme.scss` (and every `--color-{variant}` in the `@theme` block) appears as a leaf in `tokens.ts`.
+3. **Naming.** Every `--set-*` matches `--set-{kebab-case}` shape. No hyphen-segment is on the abbreviation black-list (`bg`, `fg`, `lg`, `sm`, `info`, `btn`, …). The trailing segment is the full CSS property keyword whenever one exists.
+4. **No Tailwind redeclaration.** No `--set-*` shadows a Tailwind token (`--set-color-blue-500` is forbidden — use `var(--color-blue-500)` directly).
+5. **Motion contract.** Every panel-reveal partial registered in `MOTION_CONTRACT_PARTIALS` references `--set-motion-duration` + `--set-motion-timing-function` (never a hardcoded duration literal).
+
+Enforced by:
+
+- [`tests/src/browser/tokens.test.ts`](../tests/src/browser/tokens.test.ts) — bidirectional TS↔SCSS parity, runtime resolution in real Chromium.
+- [`tests/src/styles/tokens.test.ts`](../tests/src/styles/tokens.test.ts) — runtime token resolution on `:root` + on rendered elements.
+- [`tests/guides/tokens.test.ts`](../tests/guides/tokens.test.ts) — token naming + motion-contract partial coverage.
+
+---
+
+## Patterns
+
+### The variation surface — four-tier cascade
 
 Tokens flow through a four-tier cascade. Each tier writes context tokens that the next consumes via `var()` fallback chains.
 
@@ -66,7 +90,7 @@ button {
 }
 ```
 
-**Modifier classes** write into the context layer:
+**Modifiers** write into the context layer:
 
 ```scss
 .primary {
@@ -84,15 +108,13 @@ button {
 
 Cascade priority on every element: `--set-style-* → --set-variant-* → --set-size-* → element default`. Style wins over variant because `.subtle` and `.filled` deliberately re-paint a variant surface; variant wins over size because density tweaks must never overwrite identity.
 
-See [modifiers.md](modifiers.md) for the full five-dimension cascade (variant, size, style, state, placement) and the exact values each class writes.
+See [modifiers.md](modifiers.md) for the full modifier cascade (variant, size, style, state, placement) and the exact values each modifier writes.
 
----
-
-## 3. Framework-level tokens
+### Framework-level tokens
 
 All declared on `:root` in [`_tokens.scss`](../src/styles/_tokens.scss).
 
-### Focus ring
+#### Focus ring
 
 ```scss
 --set-focus-box-shadow-width: 0.25rem;
@@ -101,7 +123,7 @@ All declared on `:root` in [`_tokens.scss`](../src/styles/_tokens.scss).
 
 Consumed by the `focus-ring()` mixin ([mixins.md](mixins.md)) to compose a `color-mix`-blended ring whose hue tracks the active variant.
 
-### Variant context fallback
+#### Variant context fallback
 
 ```scss
 --set-variant-color: currentColor;
@@ -110,7 +132,7 @@ Consumed by the `focus-ring()` mixin ([mixins.md](mixins.md)) to compose a `colo
 
 `--set-variant-background-color` and `--set-variant-border-color` are deliberately **not** declared globally. Elements use them with `var(…, fallback)` so the absence yields the element's own default (e.g. `currentColor` border) rather than an explicit `transparent` that would erase per-element baselines.
 
-### Density factor
+#### Density factor
 
 ```scss
 --set-density-factor: 1; /* 0.75 = compact, 1.25 = spacious */
@@ -118,7 +140,7 @@ Consumed by the `focus-ring()` mixin ([mixins.md](mixins.md)) to compose a `colo
 
 Global multiplier. Component partials that opt in wrap padding math: `calc(var(--set-size-padding-inline) * var(--set-density-factor))`. A single `:root` declaration retunes the entire framework's spacing rhythm.
 
-### Radius factor
+#### Radius factor
 
 ```scss
 --set-radius-factor: 1; /* 0 = sharp, 1.5 = very rounded */
@@ -126,7 +148,7 @@ Global multiplier. Component partials that opt in wrap padding math: `calc(var(-
 
 Same idea for corner roundness. `0` flattens every radius to a hard corner; `1.5` rounds aggressively.
 
-### Elevation scale
+#### Elevation scale
 
 ```scss
 --set-box-shadow-small: 0 0.125rem 0.25rem color-mix(in srgb, black 7.5%, transparent);
@@ -140,7 +162,7 @@ Same idea for corner roundness. `0` flattens every radius to a hard corner; `1.5
 
 Three-tier scale. `sm` for hover-raised list items and subtle action panels. Base for popover panels and dropdown menus. `lg` for modal dialogs, toasts, and drawer chrome. Each level layers a diffuse main drop with a tighter contact shadow so the surface reads as a discrete floating layer.
 
-### Icon tokens
+#### Icon tokens
 
 ```scss
 --set-icon-chevron-down: url('data:image/svg+xml,…');
@@ -185,7 +207,7 @@ Consumer partials reference these through per-element aliases (`--set-select-bac
 
 Override a single icon (`--set-icon-check`) to swap one glyph, or replace the whole set with a different icon library. The per-element alias (`--set-select-background-image`) remains overridable for one-off element-specific swaps.
 
-### Floater token chain
+#### Floater token chain
 
 ```scss
 --set-floater-gutter: 1rem;
@@ -205,7 +227,7 @@ Single source of truth for top-layer panel sizing. Insets resolve to the larger 
 
 Requires the host page to declare `<meta name="viewport" content="… viewport-fit=cover">` for `env(safe-area-inset-*)` to resolve non-zero on iOS.
 
-### Transition duration + motion contract
+#### Transition duration + motion contract
 
 ```scss
 // Small UI tints (hover, focus, color/border fades, theme flips)
@@ -237,7 +259,7 @@ Two perceptual registers, one consistent contract:
 
 Consumers retune motion globally at `:root` (`--set-motion-duration: 400ms` for a slower house style) or per-component (`dialog { --set-motion-duration: 200ms }` for snappier dialog open/close while leaving drawers at 250).
 
-### Baseline hydration tokens
+#### Baseline hydration tokens
 
 These exist so the framework feels **already wired up** the moment a consumer drops it onto a page — Bootstrap-parity, not opinionated theming. Every value is a real `:root` declaration (not just a `var(…, fallback)` inlined elsewhere) so consumers can read or override them at one global scope.
 
@@ -252,7 +274,7 @@ These exist so the framework feels **already wired up** the moment a consumer dr
 
 `--set-border-radius` and `--set-border-width` are the "default" answer when no `.small` / `.large` size modifier is active and no element-scoped chain provides a more specific value. `--set-gap` is the default `flex` / `grid` `gap` for layout primitives (`<form>` control list, `<menu>` toolbar). `--set-stack-spacing` and `--set-cluster-spacing` are the global tunables for `<div class="stack">` and `<div class="cluster">` — the local `--set-stack-gap` / `--set-cluster-gap` declared inside those rules resolves to the global token, so a single `:root { --set-stack-spacing: 0.5rem }` retunes every stack on the page without learning the local name. (`.frame` — the third spacing-shape primitive — declares no gap token because its whole point is `gap: 0`.) `--set-sticky-offset` is consumed by `<html>`'s `scroll-padding-block-start` so anchor jumps clear a sticky toolbar.
 
-### Z-index scale
+#### Z-index scale
 
 ```scss
 --set-z-index-sticky: 1020;
@@ -272,9 +294,7 @@ Single canonical layering order for every floating surface, mirroring Bootstrap'
 
 20-step gaps between tiers leave breathing room for consumer-layered chrome (e.g. an app-shell sticky header pinned at 1025 sits above generic sticky content but below a dropdown at 1040).
 
----
-
-## 4. Semantic variant colors
+### Semantic variant colors
 
 Seven variants registered via `@theme` in [`_theme.scss`](../src/styles/_theme.scss) — Tailwind's PostCSS plugin processes the block and auto-generates `.bg-{name}`, `.text-{name}`, `.border-{name}` utilities:
 
@@ -327,9 +347,7 @@ Naming follows Material Design's `on-X` convention — the suffix names the SURF
 
 The framework uses explicit `[data-theme]` attribute overrides rather than `light-dark()` because Chromium currently fails to re-resolve `light-dark()` values stored in custom properties against a child element's `color-scheme`.
 
----
-
-## 5. Element-scoped tokens
+### Element-scoped tokens
 
 Every substantively-styled element declares its own `--set-{tag}-*` token group on the element selector. Each token resolves via a fallback chain through `style → variant → size → element default`:
 
@@ -358,7 +376,7 @@ button {
 }
 ```
 
-The base style block then consumes the element-scoped tokens (`padding-inline: var(--set-button-padding-inline)`, etc.). Modifier classes never touch element-scoped tokens directly — they only write into the context layer, and the element's fallback chain pulls the new values automatically.
+The base style block then consumes the element-scoped tokens (`padding-inline: var(--set-button-padding-inline)`, etc.). Modifiers never touch element-scoped tokens directly — they only write into the context layer, and the element's fallback chain pulls the new values automatically.
 
 **Elements with full token chains:**
 
@@ -380,11 +398,9 @@ The base style block then consumes the element-scoped tokens (`padding-inline: v
 
 See [elements.md](elements.md) for the per-element catalog with each tag's full token list and defaults.
 
----
+### TypeScript mirror
 
-## 6. TypeScript mirror
-
-[`src/browser/tokens.ts`](../src/browser/tokens.ts) exports a frozen object tree whose leaves are CSS variable name strings. Use these constants when reading or writing tokens from JavaScript so renames propagate and typos surface at type-check time.
+[`src/browser/tokens.ts`](../src/browser/tokens.ts) exports a frozen object tree whose leaves are CSS custom-property name strings. Use these constants when reading or writing tokens from JavaScript so renames propagate and typos surface at type-check time.
 
 CSS kebab-case maps to TS camelCase. Element + state grouping is preserved as nested objects:
 
@@ -406,18 +422,9 @@ el.style.setProperty(tokens.color.primary, '#2563eb')
 
 **Tailwind's own tokens are not mirrored.** Tailwind ships its own types and IntelliSense; aliasing `--color-blue-500` or `--spacing` here would invert the dependency direction.
 
-**Bidirectional parity test.** [tokens.test.ts](../tests/src/browser/tokens.test.ts) enforces both directions in real Chromium:
+### Adding a new token
 
-- Every `--set-*` declaration in the SCSS source appears as a leaf in `tokens.ts`.
-- Every leaf in `tokens.ts` resolves at runtime on the appropriate element (`:root`, the element selector, or a modifier-classed element).
-
-A failing parity test names the missing token in the failure message — either the TS export needs updating, or the SCSS declaration is dead code.
-
----
-
-## 7. Adding a new token
-
-Three places, in order:
+Three steps, in order:
 
 1. **Declare it in SCSS.** Pick the partial:
    - Global (`:root`) → [`_tokens.scss`](../src/styles/_tokens.scss).
@@ -429,9 +436,7 @@ Three places, in order:
 
 That's it. The test catches every kind of drift.
 
----
-
-## 8. Anti-rules
+### Anti-rules
 
 **Don't redeclare what Tailwind already exports.**
 
@@ -459,10 +464,18 @@ Scope and context segments (`variant`, `size`, `style`, `shape`, `button`, …) 
 
 ---
 
-## Cross-references
+## Tests
 
-- [styles.md](styles.md) — top-level styles architecture and cascade layer order.
-- [modifiers.md](modifiers.md) — five-dimension cascade (variant, size, style, state, placement) and the context tokens each class writes.
+- [`tests/src/browser/tokens.test.ts`](../tests/src/browser/tokens.test.ts) — bidirectional TS↔SCSS parity + runtime resolution in real Chromium (every leaf in `tokens.ts` resolves on `:root` / on the element / on a modifier-classed element; every `--set-*` declaration is mirrored in TS).
+- [`tests/src/styles/tokens.test.ts`](../tests/src/styles/tokens.test.ts) — runtime token resolution for the semantic variant palette + every `--set-button-*` slot on a real `<button>`.
+- [`tests/guides/tokens.test.ts`](../tests/guides/tokens.test.ts) — token-naming shape + abbreviation black-list + motion-contract partial coverage.
+
+---
+
+## See also
+
+- [styles.md](styles.md) — top-level cascade architecture.
+- [modifiers.md](modifiers.md) — modifier cascade (variant, size, style, state, placement) and the context tokens each modifier writes.
 - [mixins.md](mixins.md) — `transition()`, `focus-ring()`, and `floater-*` mixins that consume tokens.
-- [elements.md](elements.md) — per-element catalog with every tag's token chain.
+- [elements.md](elements.md) — per-element catalog with every element's token chain.
 - [composables.md](composables.md) — composable-level tokens (toast deck stacking, floater bounds, tabs indicator coordinates).
