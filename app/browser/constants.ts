@@ -1019,3 +1019,388 @@ export const ANCHOR_SNIPPET_REDUCED_MOTION = `/* In src/styles/_mixins.scss — 
     transition: none;
   }
 }`
+
+// DetailsPage
+/** Custom summary marker — a plus that rotates to an X (45deg) on `[open]`. */
+export const DETAILS_PLUS_MARKER = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M8 3v10M3 8h10'/%3E%3C/svg%3E")`
+
+export const DETAILS_SNIPPET_BARE = `<details>
+  <summary>What is the framework's modifier cascade?</summary>
+  <p>
+    Variants, sizes, styles, and states compose orthogonally. Each modifier
+    class sets context tokens; the element baseline reads them through
+    fallback chains.
+  </p>
+</details>
+
+<!-- Open by default -->
+<details open>
+  <summary>Why <code>name=</code> for accordions?</summary>
+  <p>
+    The HTML5 spec adds <code>&lt;details name=&quot;…&quot;&gt;</code>
+    so a group of siblings opens exclusively (one at a time) without any
+    JS — opening any sibling closes the others.
+  </p>
+</details>`
+
+export const DETAILS_SNIPPET_GROUP = `<!-- Exclusive accordion — only one panel open at a time -->
+<details name="faq">
+  <summary>How do variants compose with sizes?</summary>
+  <p>Independently. <code>.primary.large</code> writes both context tokens.</p>
+</details>
+<details name="faq">
+  <summary>Where does the focus ring come from?</summary>
+  <p>The <code>focus-ring()</code> Sass mixin paints a variant-tinted ring.</p>
+</details>
+<details name="faq">
+  <summary>What about reduced motion?</summary>
+  <p>Every <code>transition()</code> call ships a <code>prefers-reduced-motion</code> guard.</p>
+</details>`
+
+export const DETAILS_SNIPPET_VARIANTS = `<details class="primary">
+  <summary>Primary disclosure</summary>
+  <p>Border picks up <code>--set-variant-background-color</code>.</p>
+</details>
+
+<details class="danger">
+  <summary>Danger disclosure</summary>
+  <p>Same chrome, danger-red border.</p>
+</details>`
+
+export const DETAILS_SNIPPET_SIZES = `<details class="small">
+  <summary>Small disclosure</summary>
+  <p>Tighter padding + smaller summary font.</p>
+</details>
+
+<details class="large">
+  <summary>Large disclosure</summary>
+  <p>Roomier padding + larger summary font.</p>
+</details>`
+
+export const DETAILS_SNIPPET_STYLES = `<details class="primary subtle">
+  <summary>Subtle</summary>
+  <p>Tinted bg + emphasis text + subtle border.</p>
+</details>
+
+<details class="primary filled">
+  <summary>Filled</summary>
+  <p>Saturated fill + white text.</p>
+</details>`
+
+export const DETAILS_SNIPPET_FLAT = `<!-- .flat: dissolve outer chrome at rest; hover reveals; [open] restores -->
+<details class="flat">
+  <summary>Quiet disclosure</summary>
+  <p>Reads as a plain summary line until you hover or open it.</p>
+</details>
+
+<details class="success flat">
+  <summary>Variant flat</summary>
+  <p>Variant tint reveals on open — the cascade flows through.</p>
+</details>`
+
+export const DETAILS_SNIPPET_FLUSH = `<!-- .flush: accordion-item shape — host owns the boundary -->
+<article>
+  <details class="flush"><summary>Item one</summary><p>…</p></details>
+  <details class="flush"><summary>Item two</summary><p>…</p></details>
+  <details class="flush"><summary>Item three</summary><p>…</p></details>
+</article>`
+
+export const DETAILS_SNIPPET_NESTED = `<details open>
+  <summary>Parent</summary>
+  <p>Outer body.</p>
+  <details>
+    <summary>Child</summary>
+    <p>Inner body — indented via the parent's padding.</p>
+  </details>
+</details>`
+
+export const DETAILS_SNIPPET_CUSTOM_MARKER = `<details style="--set-summary-marker-image: url('…plus.svg'); --set-summary-marker-open-rotate: 45deg;">
+  <summary>Custom marker</summary>
+  <p>Plus rotates to an X (45deg) when open. Swap the SVG to any glyph.</p>
+</details>`
+
+// FormControlsPage
+export const FORM_CONTROLS_TEXT_INPUT_TYPES = [
+	{ type: 'text', placeholder: 'A short string of plain text' },
+	{ type: 'email', placeholder: 'name@example.com' },
+	{ type: 'password', placeholder: '••••••••' },
+	{ type: 'search', placeholder: 'Search the docs…' },
+	{ type: 'tel', placeholder: '+1 (555) 123-4567' },
+	{ type: 'url', placeholder: 'https://example.com' },
+	{ type: 'number', placeholder: '42' },
+	{ type: 'date', placeholder: '' },
+	{ type: 'time', placeholder: '' },
+	{ type: 'datetime-local', placeholder: '' },
+	{ type: 'month', placeholder: '' },
+	{ type: 'week', placeholder: '' },
+] as const
+
+export const FORM_CONTROLS_SNIPPET_TEXT = `<label for="name">Full name</label>
+<input id="name" type="text" placeholder="Ada Lovelace" />
+
+<label for="email">Email</label>
+<input id="email" type="email" placeholder="ada@example.com" />
+
+<label for="age">Age</label>
+<input id="age" type="number" min="0" max="150" />`
+
+export const FORM_CONTROLS_SNIPPET_VARIANTS = `<label for="primary-input" class="primary">Primary</label>
+<input id="primary-input" type="text" class="primary" />
+
+<label for="danger-input" class="danger">Danger</label>
+<input id="danger-input" type="text" class="danger" />`
+
+export const FORM_CONTROLS_SNIPPET_SIZES = `<input type="text" class="small" placeholder="Small" />
+<input type="text" placeholder="Default" />
+<input type="text" class="large" placeholder="Large" />`
+
+export const FORM_CONTROLS_SNIPPET_CHECK_RADIO = `<!-- Checkbox row — \`<div class="cluster">\` keeps input + label inline.
+     Inside a \`<form>\`, the framework's \`form > label\` rule turns labels
+     into vertical stacks (label-on-top, control-below), so pair the
+     input with a sibling \`<label for=…>\` instead of nesting. -->
+<div class="cluster">
+  <input id="terms" type="checkbox" />
+  <label for="terms">I agree to the terms</label>
+</div>
+
+<!-- Radio group -->
+<div class="cluster">
+  <input id="plan-free" type="radio" name="plan" value="free" />
+  <label for="plan-free">Free</label>
+</div>
+<div class="cluster">
+  <input id="plan-pro" type="radio" name="plan" value="pro" />
+  <label for="plan-pro">Pro</label>
+</div>
+
+<!-- Switch — ARIA pattern for a binary toggle -->
+<div class="cluster">
+  <input id="notify" type="checkbox" role="switch" />
+  <label for="notify">Email notifications</label>
+</div>`
+
+export const FORM_CONTROLS_SNIPPET_RANGE = `<label for="volume">Volume</label>
+<input id="volume" type="range" min="0" max="100" v-model="sliderValue" />
+<output for="volume">{{ sliderValue }}</output>`
+
+export const FORM_CONTROLS_SNIPPET_COLOR_FILE = `<input type="color" value="#3b82f6" />
+
+<input type="file" accept="image/*" />`
+
+export const FORM_CONTROLS_SNIPPET_TEXTAREA = `<!-- Vertical resize + content-aware auto-grow (Chromium 123+, Firefox 142+) -->
+<textarea
+  placeholder="Type a few paragraphs — the textarea grows with the content."
+  rows="3"
+></textarea>`
+
+export const FORM_CONTROLS_SNIPPET_SELECT = `<!-- Single -->
+<select>
+  <option value="">Choose a region…</option>
+  <optgroup label="Americas">
+    <option>US East</option>
+    <option>US West</option>
+    <option>EU Central</option>
+  </optgroup>
+  <optgroup label="Asia Pacific">
+    <option>AP South</option>
+    <option>AP Northeast</option>
+  </optgroup>
+</select>
+
+<!-- Multiple / list-box -->
+<select multiple size="5">
+  <option>Apples</option>
+  <option>Bananas</option>
+  <option>Cherries</option>
+  <option>Dates</option>
+  <option>Elderberries</option>
+</select>
+
+<!-- input + datalist (suggestions, not strict) -->
+<input list="cities" placeholder="Search cities…" />
+<datalist id="cities">
+  <option value="Tokyo" />
+  <option value="Toronto" />
+  <option value="Toulouse" />
+</datalist>`
+
+export const FORM_CONTROLS_SNIPPET_FIELDSET = `<fieldset>
+  <legend>Shipping address</legend>
+  <label for="street">Street</label>
+  <input id="street" type="text" />
+  <label for="city">City</label>
+  <input id="city" type="text" />
+</fieldset>
+
+<!-- Disabled fieldset propagates to every descendant control -->
+<fieldset disabled>
+  <legend>Payment (locked while loading…)</legend>
+  <label for="card">Card number</label>
+  <input id="card" type="text" />
+</fieldset>`
+
+export const FORM_CONTROLS_SNIPPET_OUTPUT = `<!-- Bare inline output -->
+<form>
+  <input type="number" v-model="a" /> +
+  <input type="number" v-model="b" /> =
+  <output for="a b">{{ a + b }}</output>
+</form>
+
+<!-- .filled chip flavour -->
+<output class="filled">{{ formattedTotal }}</output>`
+
+export const FORM_CONTROLS_SNIPPET_PROGRESS = `<!-- Determinate -->
+<progress value="35" max="100">35%</progress>
+
+<!-- Indeterminate (no value attr) -->
+<progress max="100">Loading…</progress>
+
+<!-- Variant tint via the cascade -->
+<progress value="60" max="100" class="success">60%</progress>`
+
+export const FORM_CONTROLS_SNIPPET_METER = `<!-- Optimum (green) -->
+<meter value="0.85" min="0" max="1" low="0.3" high="0.7" optimum="0.9">85%</meter>
+
+<!-- Sub-optimum (amber) -->
+<meter value="0.55" min="0" max="1" low="0.3" high="0.7" optimum="0.9">55%</meter>
+
+<!-- Even less good (red) -->
+<meter value="0.15" min="0" max="1" low="0.3" high="0.7" optimum="0.9">15%</meter>`
+
+export const FORM_CONTROLS_SNIPPET_STATES = `<!-- :focus-visible — interact with any control above -->
+
+<!-- Disabled -->
+<input type="text" disabled value="Locked" />
+
+<!-- Read-only (still focusable / selectable) -->
+<input type="text" readonly value="Read-only value" />
+
+<!-- :user-invalid (after first interaction) -->
+<input type="email" required />`
+
+// ButtonPage
+export const BUTTON_SNIPPET_BARE = `<button>Save</button>`
+
+export const BUTTON_SNIPPET_VARIANTS = `<button>Default</button>
+<button class="primary">Primary</button>
+<button class="secondary">Secondary</button>
+<button class="tertiary">Tertiary</button>
+<button class="success">Success</button>
+<button class="warning">Warning</button>
+<button class="danger">Danger</button>
+<button class="information">Information</button>`
+
+export const BUTTON_SNIPPET_SIZES = `<button class="primary small">Small</button>
+<button class="primary">Default</button>
+<button class="primary large">Large</button>`
+
+export const BUTTON_SNIPPET_STYLES = `<button class="primary">Bare (outline-ish)</button>
+<button class="primary subtle">Ghost — text only</button>
+<button class="primary filled">Filled — solid surface</button>`
+
+export const BUTTON_SNIPPET_FLAT = `<!-- .flat: no fill, no border, no shadow at rest. Hover + focus
+     reveal a 4% backdrop + neutral border. Focus ring still paints. -->
+<div role="toolbar" aria-label="Editor actions">
+  <button class="flat" type="button">Bold</button>
+  <button class="flat" type="button">Italic</button>
+  <button class="flat" type="button">Strike</button>
+  <button class="primary flat" type="button">Save</button>
+  <button class="danger flat" type="button">Delete</button>
+</div>`
+
+export const BUTTON_SNIPPET_STATES = `<button class="primary">Default</button>
+<button class="primary active">.active (toggled)</button>
+<button class="primary" disabled>[disabled]</button>
+<button class="primary loading">
+  <span class="spinner" role="status" aria-label="Loading"></span>
+  Loading
+</button>`
+
+export const BUTTON_SNIPPET_CASCADE = `<!-- Variant × Size × Style — the orthogonal cascade. Each axis is
+     independent; an element wears at most one value from each. -->
+<button class="primary small filled">Primary · small · filled</button>
+<button class="success large subtle">Success · large · subtle</button>
+<button class="danger filled">Danger · default · filled</button>`
+
+export const BUTTON_SNIPPET_ICON = `<!-- Icon-leading: icon then label, framework gap fills automatically. -->
+<button class="primary">
+  <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+  Add item
+</button>
+
+<!-- Icon-trailing: label then icon, same rule. -->
+<button class="primary">
+  Continue
+  <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-right)"></i>
+</button>
+
+<!-- Icon-only: \`.icon-only\` collapses inline padding to match block padding,
+     so a single-glyph button reads as a square. -->
+<button class="icon-only subtle" aria-label="More actions">
+  <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
+</button>`
+
+export const BUTTON_SNIPPET_LINK = `<!-- <a> opts into button chrome via .filled and a variant class. The
+     framework's anchor-context contract (guides §6.1) defers to the
+     button cascade when these modifiers are present. -->
+<a href="#button-link" class="primary filled">Primary anchor-as-button</a>
+<a href="#button-link" class="success subtle">Success anchor, subtle style</a>`
+
+export const BUTTON_SNIPPET_DROPDOWN = `<!-- .dropdown paints a chevron-down caret after the label via
+     button::after + mask-image (--set-button-dropdown-caret-image).
+     Same caret + currentColor recipe <summary>::before uses, so the
+     affordance reads identically across the framework. -->
+<button class="dropdown" popovertarget="my-menu">Open menu</button>
+
+<!-- When the button also carries [aria-expanded] (popover trigger,
+     row-expansion toggle, accordion summary, anything), the caret
+     rotates 180° on aria-expanded="true" — same rotation contract
+     <summary>::before uses on details[open]. Token-driven, so a
+     consumer can flip to chevron-up + 0deg or to 45deg for plus/×
+     pairs via a single :root override. -->
+<button class="dropdown" aria-expanded="false" aria-controls="row-1">
+  Details
+</button>`
+
+export const BUTTON_SNIPPET_GROUPS = `<!-- Connected button group: a [role="group"] wrapping buttons
+     produces a single bonded control. -->
+<div role="group" aria-label="Text alignment">
+  <button class="subtle">Left</button>
+  <button class="subtle active" aria-pressed="true">Center</button>
+  <button class="subtle">Right</button>
+</div>
+
+<!-- Toolbar: a [role="toolbar"] groups loose buttons with a labelled rail. -->
+<div role="toolbar" aria-label="Document actions">
+  <button class="primary">Save</button>
+  <button class="secondary">Discard</button>
+  <button class="subtle">Preview</button>
+</div>`
+
+// Lives here (a plain .ts module) so the literal </script> + <template>
+// can be written directly — the LT/GT-concatenation hack the SFC needed
+// (an unsplit </script> would terminate the SFC's own script block) is
+// no longer necessary now that this string is out of the .vue file.
+export const BUTTON_SNIPPET_TOGGLE = `<script setup lang="ts">
+import { useTemplateRef } from 'vue'
+import { useButton } from '@elements/browser'
+
+const btn = useTemplateRef<HTMLButtonElement>('btn')
+const { active, toggle } = useButton(btn, {
+  on: { toggle: (e) => console.log('toggled to', e.detail.active) },
+})
+</script>
+
+<template>
+  <button ref="btn" class="primary">
+    {{ active ? 'On' : 'Off' }}
+  </button>
+</template>`
+
+export const BUTTON_SNIPPET_REDUCED_MOTION = `/* In src/styles/_mixins.scss — every transition the framework ships pairs with this guard. */
+@mixin transition($value) {
+  transition: $value;
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}`

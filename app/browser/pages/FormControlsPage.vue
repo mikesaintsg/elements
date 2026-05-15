@@ -38,22 +38,23 @@
  */
 import { computed, ref } from 'vue'
 
-import { VARIANTS as variants } from '../constants.js'
-
-const textInputTypes = [
-	{ type: 'text', placeholder: 'A short string of plain text' },
-	{ type: 'email', placeholder: 'name@example.com' },
-	{ type: 'password', placeholder: '••••••••' },
-	{ type: 'search', placeholder: 'Search the docs…' },
-	{ type: 'tel', placeholder: '+1 (555) 123-4567' },
-	{ type: 'url', placeholder: 'https://example.com' },
-	{ type: 'number', placeholder: '42' },
-	{ type: 'date', placeholder: '' },
-	{ type: 'time', placeholder: '' },
-	{ type: 'datetime-local', placeholder: '' },
-	{ type: 'month', placeholder: '' },
-	{ type: 'week', placeholder: '' },
-] as const
+import {
+	FORM_CONTROLS_SNIPPET_CHECK_RADIO as snippetCheckRadio,
+	FORM_CONTROLS_SNIPPET_COLOR_FILE as snippetColorFile,
+	FORM_CONTROLS_SNIPPET_FIELDSET as snippetFieldset,
+	FORM_CONTROLS_SNIPPET_METER as snippetMeter,
+	FORM_CONTROLS_SNIPPET_OUTPUT as snippetOutput,
+	FORM_CONTROLS_SNIPPET_PROGRESS as snippetProgress,
+	FORM_CONTROLS_SNIPPET_RANGE as snippetRange,
+	FORM_CONTROLS_SNIPPET_SELECT as snippetSelect,
+	FORM_CONTROLS_SNIPPET_SIZES as snippetSizes,
+	FORM_CONTROLS_SNIPPET_STATES as snippetStates,
+	FORM_CONTROLS_SNIPPET_TEXT as snippetText,
+	FORM_CONTROLS_SNIPPET_TEXTAREA as snippetTextarea,
+	FORM_CONTROLS_SNIPPET_VARIANTS as snippetVariants,
+	FORM_CONTROLS_TEXT_INPUT_TYPES as textInputTypes,
+	VARIANTS as variants,
+} from '../constants.js'
 
 // Reactive bindings for the live output / progress / meter demos.
 const sliderValue = ref(42)
@@ -63,148 +64,6 @@ const sumA = ref(12)
 const sumB = ref(30)
 const sum = computed(() => sumA.value + sumB.value)
 
-const snippetText = `<label for="name">Full name</label>
-<input id="name" type="text" placeholder="Ada Lovelace" />
-
-<label for="email">Email</label>
-<input id="email" type="email" placeholder="ada@example.com" />
-
-<label for="age">Age</label>
-<input id="age" type="number" min="0" max="150" />`
-
-const snippetVariants = `<label for="primary-input" class="primary">Primary</label>
-<input id="primary-input" type="text" class="primary" />
-
-<label for="danger-input" class="danger">Danger</label>
-<input id="danger-input" type="text" class="danger" />`
-
-const snippetSizes = `<input type="text" class="small" placeholder="Small" />
-<input type="text" placeholder="Default" />
-<input type="text" class="large" placeholder="Large" />`
-
-const snippetCheckRadio = `<!-- Checkbox row — \`<div class="cluster">\` keeps input + label inline.
-     Inside a \`<form>\`, the framework's \`form > label\` rule turns labels
-     into vertical stacks (label-on-top, control-below), so pair the
-     input with a sibling \`<label for=…>\` instead of nesting. -->
-<div class="cluster">
-  <input id="terms" type="checkbox" />
-  <label for="terms">I agree to the terms</label>
-</div>
-
-<!-- Radio group -->
-<div class="cluster">
-  <input id="plan-free" type="radio" name="plan" value="free" />
-  <label for="plan-free">Free</label>
-</div>
-<div class="cluster">
-  <input id="plan-pro" type="radio" name="plan" value="pro" />
-  <label for="plan-pro">Pro</label>
-</div>
-
-<!-- Switch — ARIA pattern for a binary toggle -->
-<div class="cluster">
-  <input id="notify" type="checkbox" role="switch" />
-  <label for="notify">Email notifications</label>
-</div>`
-
-const snippetRange = `<label for="volume">Volume</label>
-<input id="volume" type="range" min="0" max="100" v-model="sliderValue" />
-<output for="volume">{{ sliderValue }}</output>`
-
-const snippetColorFile = `<input type="color" value="#3b82f6" />
-
-<input type="file" accept="image/*" />`
-
-const snippetTextarea = `<!-- Vertical resize + content-aware auto-grow (Chromium 123+, Firefox 142+) -->
-<textarea
-  placeholder="Type a few paragraphs — the textarea grows with the content."
-  rows="3"
-></textarea>`
-
-const snippetSelect = `<!-- Single -->
-<select>
-  <option value="">Choose a region…</option>
-  <optgroup label="Americas">
-    <option>US East</option>
-    <option>US West</option>
-    <option>EU Central</option>
-  </optgroup>
-  <optgroup label="Asia Pacific">
-    <option>AP South</option>
-    <option>AP Northeast</option>
-  </optgroup>
-</select>
-
-<!-- Multiple / list-box -->
-<select multiple size="5">
-  <option>Apples</option>
-  <option>Bananas</option>
-  <option>Cherries</option>
-  <option>Dates</option>
-  <option>Elderberries</option>
-</select>
-
-<!-- input + datalist (suggestions, not strict) -->
-<input list="cities" placeholder="Search cities…" />
-<datalist id="cities">
-  <option value="Tokyo" />
-  <option value="Toronto" />
-  <option value="Toulouse" />
-</datalist>`
-
-const snippetFieldset = `<fieldset>
-  <legend>Shipping address</legend>
-  <label for="street">Street</label>
-  <input id="street" type="text" />
-  <label for="city">City</label>
-  <input id="city" type="text" />
-</fieldset>
-
-<!-- Disabled fieldset propagates to every descendant control -->
-<fieldset disabled>
-  <legend>Payment (locked while loading…)</legend>
-  <label for="card">Card number</label>
-  <input id="card" type="text" />
-</fieldset>`
-
-const snippetOutput = `<!-- Bare inline output -->
-<form>
-  <input type="number" v-model="a" /> +
-  <input type="number" v-model="b" /> =
-  <output for="a b">{{ a + b }}</output>
-</form>
-
-<!-- .filled chip flavour -->
-<output class="filled">{{ formattedTotal }}</output>`
-
-const snippetProgress = `<!-- Determinate -->
-<progress value="35" max="100">35%</progress>
-
-<!-- Indeterminate (no value attr) -->
-<progress max="100">Loading…</progress>
-
-<!-- Variant tint via the cascade -->
-<progress value="60" max="100" class="success">60%</progress>`
-
-const snippetMeter = `<!-- Optimum (green) -->
-<meter value="0.85" min="0" max="1" low="0.3" high="0.7" optimum="0.9">85%</meter>
-
-<!-- Sub-optimum (amber) -->
-<meter value="0.55" min="0" max="1" low="0.3" high="0.7" optimum="0.9">55%</meter>
-
-<!-- Even less good (red) -->
-<meter value="0.15" min="0" max="1" low="0.3" high="0.7" optimum="0.9">15%</meter>`
-
-const snippetStates = `<!-- :focus-visible — interact with any control above -->
-
-<!-- Disabled -->
-<input type="text" disabled value="Locked" />
-
-<!-- Read-only (still focusable / selectable) -->
-<input type="text" readonly value="Read-only value" />
-
-<!-- :user-invalid (after first interaction) -->
-<input type="email" required />`
 </script>
 
 <template>

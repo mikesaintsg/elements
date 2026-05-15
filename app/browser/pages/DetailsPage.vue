@@ -38,107 +38,19 @@
  *     pattern for browsers that need to support pre-`name=`-attribute
  *     accordion groups (Safari pre-17, Firefox pre-110).
  */
-import { VARIANTS as variants } from '../constants.js'
-
-// Custom marker — a plus sign that rotates to an X (45deg) on `[open]`.
-// Demonstrates the `--set-summary-marker-image` + `--set-summary-marker-
-// open-rotate` cascade without re-painting any per-element chrome.
-const plusMarker = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M8 3v10M3 8h10'/%3E%3C/svg%3E")`
-
-const snippetBare = `<details>
-  <summary>What is the framework's modifier cascade?</summary>
-  <p>
-    Variants, sizes, styles, and states compose orthogonally. Each modifier
-    class sets context tokens; the element baseline reads them through
-    fallback chains.
-  </p>
-</details>
-
-<!-- Open by default -->
-<details open>
-  <summary>Why <code>name=</code> for accordions?</summary>
-  <p>
-    The HTML5 spec adds <code>&lt;details name=&quot;…&quot;&gt;</code>
-    so a group of siblings opens exclusively (one at a time) without any
-    JS — opening any sibling closes the others.
-  </p>
-</details>`
-
-const snippetGroup = `<!-- Exclusive accordion — only one panel open at a time -->
-<details name="faq">
-  <summary>How do variants compose with sizes?</summary>
-  <p>Independently. <code>.primary.large</code> writes both context tokens.</p>
-</details>
-<details name="faq">
-  <summary>Where does the focus ring come from?</summary>
-  <p>The <code>focus-ring()</code> Sass mixin paints a variant-tinted ring.</p>
-</details>
-<details name="faq">
-  <summary>What about reduced motion?</summary>
-  <p>Every <code>transition()</code> call ships a <code>prefers-reduced-motion</code> guard.</p>
-</details>`
-
-const snippetVariants = `<details class="primary">
-  <summary>Primary disclosure</summary>
-  <p>Border picks up <code>--set-variant-background-color</code>.</p>
-</details>
-
-<details class="danger">
-  <summary>Danger disclosure</summary>
-  <p>Same chrome, danger-red border.</p>
-</details>`
-
-const snippetSizes = `<details class="small">
-  <summary>Small disclosure</summary>
-  <p>Tighter padding + smaller summary font.</p>
-</details>
-
-<details class="large">
-  <summary>Large disclosure</summary>
-  <p>Roomier padding + larger summary font.</p>
-</details>`
-
-const snippetStyles = `<details class="primary subtle">
-  <summary>Subtle</summary>
-  <p>Tinted bg + emphasis text + subtle border.</p>
-</details>
-
-<details class="primary filled">
-  <summary>Filled</summary>
-  <p>Saturated fill + white text.</p>
-</details>`
-
-const snippetFlat = `<!-- .flat: dissolve outer chrome at rest; hover reveals; [open] restores -->
-<details class="flat">
-  <summary>Quiet disclosure</summary>
-  <p>Reads as a plain summary line until you hover or open it.</p>
-</details>
-
-<details class="success flat">
-  <summary>Variant flat</summary>
-  <p>Variant tint reveals on open — the cascade flows through.</p>
-</details>`
-
-const snippetFlush = `<!-- .flush: accordion-item shape — host owns the boundary -->
-<article>
-  <details class="flush"><summary>Item one</summary><p>…</p></details>
-  <details class="flush"><summary>Item two</summary><p>…</p></details>
-  <details class="flush"><summary>Item three</summary><p>…</p></details>
-</article>`
-
-const snippetNested = `<details open>
-  <summary>Parent</summary>
-  <p>Outer body.</p>
-  <details>
-    <summary>Child</summary>
-    <p>Inner body — indented via the parent's padding.</p>
-  </details>
-</details>`
-
-const snippetCustomMarker = `<details style="--set-summary-marker-image: url('…plus.svg'); --set-summary-marker-open-rotate: 45deg;">
-  <summary>Custom marker</summary>
-  <p>Plus rotates to an X (45deg) when open. Swap the SVG to any glyph.</p>
-</details>`
+import {
+	DETAILS_PLUS_MARKER as plusMarker,
+	DETAILS_SNIPPET_BARE as snippetBare,
+	DETAILS_SNIPPET_CUSTOM_MARKER as snippetCustomMarker,
+	DETAILS_SNIPPET_FLAT as snippetFlat,
+	DETAILS_SNIPPET_FLUSH as snippetFlush,
+	DETAILS_SNIPPET_GROUP as snippetGroup,
+	DETAILS_SNIPPET_NESTED as snippetNested,
+	DETAILS_SNIPPET_SIZES as snippetSizes,
+	DETAILS_SNIPPET_STYLES as snippetStyles,
+	DETAILS_SNIPPET_VARIANTS as snippetVariants,
+	VARIANTS as variants,
+} from '../constants.js'
 </script>
 
 <template>

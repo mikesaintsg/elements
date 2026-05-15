@@ -42,165 +42,23 @@ const logToggle = (e: Event): void => {
 	if (events.value.length > 6) events.value.length = 6
 }
 
-import { VARIANTS as variants } from '../constants.js'
+import {
+	BUTTON_SNIPPET_BARE as snippetBare,
+	BUTTON_SNIPPET_CASCADE as snippetCascade,
+	BUTTON_SNIPPET_DROPDOWN as snippetDropdown,
+	BUTTON_SNIPPET_FLAT as snippetFlat,
+	BUTTON_SNIPPET_GROUPS as snippetGroups,
+	BUTTON_SNIPPET_ICON as snippetIcon,
+	BUTTON_SNIPPET_LINK as snippetLink,
+	BUTTON_SNIPPET_REDUCED_MOTION as snippetReducedMotion,
+	BUTTON_SNIPPET_SIZES as snippetSizes,
+	BUTTON_SNIPPET_STATES as snippetStates,
+	BUTTON_SNIPPET_STYLES as snippetStyles,
+	BUTTON_SNIPPET_TOGGLE as snippetToggle,
+	BUTTON_SNIPPET_VARIANTS as snippetVariants,
+	VARIANTS as variants,
+} from '../constants.js'
 
-const snippetBare = `<button>Save</button>`
-
-const snippetVariants = `<button>Default</button>
-<button class="primary">Primary</button>
-<button class="secondary">Secondary</button>
-<button class="tertiary">Tertiary</button>
-<button class="success">Success</button>
-<button class="warning">Warning</button>
-<button class="danger">Danger</button>
-<button class="information">Information</button>`
-
-const snippetSizes = `<button class="primary small">Small</button>
-<button class="primary">Default</button>
-<button class="primary large">Large</button>`
-
-const snippetStyles = `<button class="primary">Bare (outline-ish)</button>
-<button class="primary subtle">Ghost — text only</button>
-<button class="primary filled">Filled — solid surface</button>`
-
-const snippetFlat = `<!-- .flat: no fill, no border, no shadow at rest. Hover + focus
-     reveal a 4% backdrop + neutral border. Focus ring still paints. -->
-<div role="toolbar" aria-label="Editor actions">
-  <button class="flat" type="button">Bold</button>
-  <button class="flat" type="button">Italic</button>
-  <button class="flat" type="button">Strike</button>
-  <button class="primary flat" type="button">Save</button>
-  <button class="danger flat" type="button">Delete</button>
-</div>`
-
-const snippetStates = `<button class="primary">Default</button>
-<button class="primary active">.active (toggled)</button>
-<button class="primary" disabled>[disabled]</button>
-<button class="primary loading">
-  <span class="spinner" role="status" aria-label="Loading"></span>
-  Loading
-</button>`
-
-const snippetCascade = `<!-- Variant × Size × Style — the orthogonal cascade. Each axis is
-     independent; an element wears at most one value from each. -->
-<button class="primary small filled">Primary · small · filled</button>
-<button class="success large subtle">Success · large · subtle</button>
-<button class="danger filled">Danger · default · filled</button>`
-
-const snippetIcon = `<!-- Icon-leading: icon then label, framework gap fills automatically. -->
-<button class="primary">
-  <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
-  Add item
-</button>
-
-<!-- Icon-trailing: label then icon, same rule. -->
-<button class="primary">
-  Continue
-  <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-right)"></i>
-</button>
-
-<!-- Icon-only: \`.icon-only\` collapses inline padding to match block padding,
-     so a single-glyph button reads as a square. -->
-<button class="icon-only subtle" aria-label="More actions">
-  <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
-</button>`
-
-const snippetLink = `<!-- <a> opts into button chrome via .filled and a variant class. The
-     framework's anchor-context contract (guides §6.1) defers to the
-     button cascade when these modifiers are present. -->
-<a href="#button-link" class="primary filled">Primary anchor-as-button</a>
-<a href="#button-link" class="success subtle">Success anchor, subtle style</a>`
-
-const snippetDropdown = `<!-- .dropdown paints a chevron-down caret after the label via
-     button::after + mask-image (--set-button-dropdown-caret-image).
-     Same caret + currentColor recipe <summary>::before uses, so the
-     affordance reads identically across the framework. -->
-<button class="dropdown" popovertarget="my-menu">Open menu</button>
-
-<!-- When the button also carries [aria-expanded] (popover trigger,
-     row-expansion toggle, accordion summary, anything), the caret
-     rotates 180° on aria-expanded="true" — same rotation contract
-     <summary>::before uses on details[open]. Token-driven, so a
-     consumer can flip to chevron-up + 0deg or to 45deg for plus/×
-     pairs via a single :root override. -->
-<button class="dropdown" aria-expanded="false" aria-controls="row-1">
-  Details
-</button>`
-
-const snippetGroups = `<!-- Connected button group: a [role="group"] wrapping buttons
-     produces a single bonded control. -->
-<div role="group" aria-label="Text alignment">
-  <button class="subtle">Left</button>
-  <button class="subtle active" aria-pressed="true">Center</button>
-  <button class="subtle">Right</button>
-</div>
-
-<!-- Toolbar: a [role="toolbar"] groups loose buttons with a labelled rail. -->
-<div role="toolbar" aria-label="Document actions">
-  <button class="primary">Save</button>
-  <button class="secondary">Discard</button>
-  <button class="subtle">Preview</button>
-</div>`
-
-// Build the toggle snippet by concatenating angle-bracket sentinels in pieces.
-// A literal closing-script-tag substring anywhere inside this file's script
-// block — even inside a template literal or a JS comment — would close the
-// SFC's script block per the HTML parser's tokenization rules (the parser
-// doesn't respect JS comment syntax when it scans for the block terminator).
-// Splitting `<` and `>` away from the script / template / button tag names
-// in the snippet payload sidesteps the parser entirely.
-const LT = '<'
-const GT = '>'
-const snippetToggle =
-	LT +
-	`script setup lang="ts"` +
-	GT +
-	`
-import { useTemplateRef } from 'vue'
-import { useButton } from '@elements/browser'
-
-const btn = useTemplateRef` +
-	LT +
-	`HTMLButtonElement` +
-	GT +
-	`('btn')
-const { active, toggle } = useButton(btn, {
-  on: { toggle: (e) => console.log('toggled to', e.detail.active) },
-})
-` +
-	LT +
-	`/script` +
-	GT +
-	`
-
-` +
-	LT +
-	`template` +
-	GT +
-	`
-  ` +
-	LT +
-	`button ref="btn" class="primary"` +
-	GT +
-	`
-    {{ active ? 'On' : 'Off' }}
-  ` +
-	LT +
-	`/button` +
-	GT +
-	`
-` +
-	LT +
-	`/template` +
-	GT
-
-const snippetReducedMotion = `/* In src/styles/_mixins.scss — every transition the framework ships pairs with this guard. */
-@mixin transition($value) {
-  transition: $value;
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
-  }
-}`
 </script>
 
 <template>
