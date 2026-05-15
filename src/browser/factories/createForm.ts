@@ -306,7 +306,7 @@ export function createForm(
 	const onFormData = (event: FormDataEvent): void => {
 		const el = current()
 		if (!el) return
-		emit(el, FORM_EVENTS.formdata, { formData: event.formData })
+		emit(el, FORM_EVENTS.formdata, { data: event.formData })
 	}
 
 	const onSubmit = (event: Event): void => {

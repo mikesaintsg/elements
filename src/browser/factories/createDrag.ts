@@ -224,8 +224,8 @@ export function createDrag<T = unknown>(
 		selected.value = new Set()
 		selectionAnchor = null
 		emit(element, DRAG_EVENTS.reorder, {
-			fromIndices: sorted,
-			toIndex: insertAt,
+			from: sorted,
+			to: insertAt,
 			items: extracted,
 		})
 	}

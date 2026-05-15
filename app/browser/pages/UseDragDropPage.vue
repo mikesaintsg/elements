@@ -87,11 +87,11 @@ const reorder = useDrag<Track>(reorderHost, {
 	list: reorderList,
 	on: {
 		reorder: (event) => {
-			const detail = event.detail as { fromIndices: number[]; toIndex: number }
-			const moved = detail.fromIndices.length
+			const detail = event.detail as { from: number[]; to: number }
+			const moved = detail.from.length
 			reorderLog.value = [
 				...reorderLog.value.slice(-3),
-				`Moved ${moved} item${moved === 1 ? '' : 's'} → index ${detail.toIndex}`,
+				`Moved ${moved} item${moved === 1 ? '' : 's'} → index ${detail.to}`,
 			]
 		},
 	},
@@ -279,7 +279,7 @@ useDrag&lt;Track&gt;(host, {
   list,
   on: {
     reorder: (event) =&gt; {
-      const { fromIndices, toIndex } = event.detail
+      const { from, to } = event.detail
       // list is already spliced in place; this is observation-only.
     },
   },

@@ -76,9 +76,9 @@ for (const [dimension, contract] of Object.entries(MODIFIER_DIMENSION_TOKENS)) {
 	if (source === undefined) continue
 
 	describe(`dimensions — ${dimension} classes declare every required --set-${dimension}-* token`, () => {
-		if (contract.requiredTokens.length === 0) {
+		if (contract.tokens.required.length === 0) {
 			it(`${dimension} dimension has no token requirements (direct CSS properties only)`, () => {
-				expect(contract.requiredTokens).toEqual([])
+				expect(contract.tokens.required).toEqual([])
 			})
 			return
 		}
@@ -86,7 +86,7 @@ for (const [dimension, contract] of Object.entries(MODIFIER_DIMENSION_TOKENS)) {
 		for (const className of contract.classes) {
 			const body = ruleBodyFor(className, source)
 
-			for (const suffix of contract.requiredTokens) {
+			for (const suffix of contract.tokens.required) {
 				it(`.${className} declares --set-${dimension}-${suffix}`, () => {
 					expect(
 						declaresToken(body, dimension, suffix),
@@ -115,7 +115,7 @@ describe('dimensions — MODIFIER_DIMENSION_TOKENS shape', () => {
 	it('every contract carries classes and required-tokens arrays', () => {
 		for (const contract of Object.values(MODIFIER_DIMENSION_TOKENS)) {
 			expect(Array.isArray(contract.classes)).toBe(true)
-			expect(Array.isArray(contract.requiredTokens)).toBe(true)
+			expect(Array.isArray(contract.tokens.required)).toBe(true)
 			expect(contract.rationale.length).toBeGreaterThan(20)
 		}
 	})
@@ -130,7 +130,7 @@ describe('dimensions — MODIFIER_DIMENSION_TOKENS shape', () => {
 
 	it('every required-token suffix is kebab-case', () => {
 		for (const contract of Object.values(MODIFIER_DIMENSION_TOKENS)) {
-			for (const suffix of contract.requiredTokens) {
+			for (const suffix of contract.tokens.required) {
 				expect(suffix).toMatch(/^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$/)
 			}
 		}

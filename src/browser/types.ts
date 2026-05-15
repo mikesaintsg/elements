@@ -112,8 +112,8 @@ export interface DragEndDetail {
 
 /** Detail for `elements:drag:reorder` — successful in-list reorder. */
 export interface DragReorderDetail {
-	readonly fromIndices: readonly number[]
-	readonly toIndex: number
+	readonly from: readonly number[]
+	readonly to: number
 	readonly items: readonly unknown[]
 }
 
@@ -1231,7 +1231,7 @@ export interface UseCarouselReturn {
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface FormDataDetail {
-	readonly formData: FormData
+	readonly data: FormData
 }
 export interface FormInvalidDetail {
 	readonly field: string | null
