@@ -20,9 +20,15 @@
 //  Pure node — TS data + readScssPartials/readFactorySources via node:fs.
 // ============================================================================
 
+import { readFileSync } from 'node:fs'
+import { resolve as resolvePath } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { events } from '@elements/browser'
 import { readAllStyleSources, readFactorySources } from '../setupServer'
+
+const TEST_FILE_DIR = fileURLToPath(new URL('.', import.meta.url))
+const WORKSPACE_ROOT = resolvePath(TEST_FILE_DIR, '../..')
 
 // ── 1. Event-name registry ─────────────────────────────────────────────────
 //
@@ -203,6 +209,39 @@ describe('factories ↔ styles — every setAttribute("data-*") has a CSS refere
 	for (const { attr, factory } of writes.filter((w) => !JS_ONLY[w.attr])) {
 		it(`[${attr}] (written by ${factory}) is referenced by src/styles/`, () => {
 			expect(isReferencedInStyles(attr)).toBe(true)
+		})
+	}
+})
+
+// ── 3. Factories ↔ guide parity — every create{Name}.ts is documented ──────
+//
+// The composables guide is the public catalog of every composable + factory
+// the framework ships. If a factory exists on disk but isn't named in the
+// guide, consumers can't discover it. The check matches each factory file
+// to a `create{Name}` mention (in backticks) anywhere in composables.md.
+
+const composablesDoc = readFileSync(
+	resolvePath(WORKSPACE_ROOT, 'guides/composables.md'),
+	'utf8',
+)
+
+const shippedFactoryNames: readonly string[] = Object.keys(factorySources)
+	.map((p) => {
+		const match = p.match(/(create[A-Z][A-Za-z]+)\.ts$/)
+		return match?.[1] ?? ''
+	})
+	.filter((name) => name !== '')
+
+describe('composables — every shipped factory is documented in composables.md', () => {
+	for (const factory of shippedFactoryNames) {
+		const composable = `use${factory.slice('create'.length)}`
+		// On failure: `src/browser/factories/${factory}.ts` exists but neither
+		// `${factory}` nor `${composable}` is mentioned in
+		// `guides/composables.md`. Add the pair to the per-composable
+		// reference table.
+		it(`${factory} / ${composable} appears in guides/composables.md`, () => {
+			const pattern = new RegExp(`\`(${factory}|${composable})\``)
+			expect(pattern.test(composablesDoc)).toBe(true)
 		})
 	}
 })

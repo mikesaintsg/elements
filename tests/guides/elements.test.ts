@@ -28,6 +28,9 @@
 //  Pure node — TS data + raw SCSS via `tests/setupServer.ts`.
 // ============================================================================
 
+import { readFileSync } from 'node:fs'
+import { resolve as resolvePath } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
 	COMPONENT_CONTRACTS,
@@ -53,6 +56,10 @@ import {
 } from '@elements/browser'
 import { declaresElementToken, tagFromPath } from '../setup'
 import { readFactorySources, readScssPartials } from '../setupServer'
+
+const TEST_FILE_DIR = fileURLToPath(new URL('.', import.meta.url))
+const WORKSPACE_ROOT = resolvePath(TEST_FILE_DIR, '../..')
+const elementsDoc = readFileSync(resolvePath(WORKSPACE_ROOT, 'guides/elements.md'), 'utf8')
 
 const elementSources = readScssPartials('src/styles/elements')
 const componentSources = readScssPartials('src/styles/components')
@@ -365,6 +372,45 @@ describe('TOKEN_GROUPS — every group member declares the required tokens', () 
 					})
 				}
 			}
+		})
+	}
+})
+
+// ── 9. elements.md markdown table parity ────────────────────────────────────
+//
+// Every TS-enumerated element (`elements` object) must appear as a row in
+// `guides/elements.md`. The doc references tags either as `<tag>` (most rows)
+// or `<h1>`–`<h6>` (the heading family). A change to `elements.ts` that
+// ships a tag without a matching doc entry breaks the framework's
+// "guide is the spec" claim.
+
+function isMentionedInDoc(tag: string): boolean {
+	// Match `<tag>` (most common), `<tag` (start of e.g. `<table>`), or
+	// the heading-family shorthand `<h1>`–`<h6>` for h1..h6.
+	if (/^h[1-6]$/.test(tag)) return /<h1>\s*[–-]\s*<h6>|<h1>.+<h6>/.test(elementsDoc)
+	const escaped = tag.replace(/-/g, '\\-')
+	return new RegExp(`<${escaped}\\b`).test(elementsDoc)
+}
+
+describe('elements.md — every TS element key has a doc entry', () => {
+	for (const tag of Object.keys(elements)) {
+		// On failure: `elements.${tag}` ships but the tag is not referenced
+		// in `guides/elements.md`. Add a row to one of the §4–§9 tables
+		// (Substantive / Override / Reference catalog) describing the
+		// framework's treatment of `<${tag}>`.
+		it(`<${tag}> appears in guides/elements.md`, () => {
+			expect(isMentionedInDoc(tag)).toBe(true)
+		})
+	}
+})
+
+describe('elements.md — every taxonomy substantive/composable tag has a doc entry', () => {
+	for (const entry of taxonomy) {
+		if (entry.treatment !== 'substantive' && entry.treatment !== 'composable') continue
+		// On failure: `${entry.tag}` is in the taxonomy as ${entry.treatment}
+		// but `guides/elements.md` does not mention `<${entry.tag}>`.
+		it(`<${entry.tag}> (${entry.treatment}) appears in guides/elements.md`, () => {
+			expect(isMentionedInDoc(entry.tag)).toBe(true)
 		})
 	}
 })
