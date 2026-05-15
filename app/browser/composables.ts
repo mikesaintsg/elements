@@ -31,16 +31,21 @@ export function useLog<T = string>(max: number): {
 }
 
 /**
- * Live reader for `:root` custom properties. Samples computed styles on
- * mount and re-samples whenever the theme flips (a `MutationObserver` on
- * the documentElement's `data-theme` / inline `style`). `read()` is
- * reactive: call it inside a `computed` and it re-runs on `refresh()` or
- * a theme change. Returns `'…'` until mounted / when a token is unset.
+ * Live reader/writer for `:root` custom properties. Samples computed
+ * styles on mount and re-samples whenever the theme flips (a
+ * `MutationObserver` on the documentElement's `data-theme` / inline
+ * `style`). `read()` is reactive: call it inside a `computed` and it
+ * re-runs on `refresh()`, `write()`, `clear()`, or a theme change.
+ * Returns `'…'` until mounted / when a token is unset. `write()` pins an
+ * inline `:root` override (the consumer-retune playgrounds); `clear()`
+ * removes overrides so the framework defaults return.
  *
- * @returns `read(token)` resolver + a manual `refresh()`
+ * @returns `read` / `write` / `clear` + a manual `refresh()`
  */
 export function useRootCssVars(): {
 	readonly read: (token: string) => string
+	readonly write: (token: string, value: string) => void
+	readonly clear: (...tokens: readonly string[]) => void
 	readonly refresh: () => void
 } {
 	const rootStyle = ref<CSSStyleDeclaration | null>(null)
@@ -66,7 +71,15 @@ export function useRootCssVars(): {
 		void seed.value
 		return rootStyle.value?.getPropertyValue(token).trim() || '…'
 	}
-	return { read, refresh }
+	const write = (token: string, value: string): void => {
+		document.documentElement.style.setProperty(token, value)
+		refresh()
+	}
+	const clear = (...tokens: readonly string[]): void => {
+		for (const token of tokens) document.documentElement.style.removeProperty(token)
+		refresh()
+	}
+	return { read, write, clear, refresh }
 }
 
 /**

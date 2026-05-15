@@ -29,6 +29,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { usePointer } from '@elements/browser'
+import { clamp } from '../helpers.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — horizontal slider thumb.
@@ -42,7 +43,7 @@ const setSliderFromEvent = (event: PointerEvent): void => {
 	if (!track) return
 	const rect = track.getBoundingClientRect()
 	const ratio = (event.clientX - rect.left) / rect.width
-	sliderValue.value = Math.round(Math.max(0, Math.min(1, ratio)) * 100)
+	sliderValue.value = Math.round(clamp(ratio, 0, 1) * 100)
 }
 const slider = usePointer(sliderThumb, {
 	cursor: 'grabbing',
@@ -68,7 +69,7 @@ const splitter = usePointer(splitterHandle, {
 			const rect = container.getBoundingClientRect()
 			const ratio = (event.clientX - rect.left) / rect.width
 			// Clamp 10–90% so neither pane collapses entirely.
-			splitPercent.value = Math.round(Math.max(0.1, Math.min(0.9, ratio)) * 100)
+			splitPercent.value = Math.round(clamp(ratio, 0.1, 0.9) * 100)
 		},
 	},
 })
@@ -89,8 +90,8 @@ const setColorFromEvent = (event: PointerEvent): void => {
 	const pad = colorPad.value
 	if (!pad) return
 	const rect = pad.getBoundingClientRect()
-	const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
-	const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height))
+	const x = clamp((event.clientX - rect.left) / rect.width, 0, 1)
+	const y = clamp((event.clientY - rect.top) / rect.height, 0, 1)
 	saturation.value = Math.round(x * 100)
 	// Top of the pad = light (90), bottom = dark (10). Pointer capture
 	// means the user can drag below the pad and the value clamps at 10
@@ -130,8 +131,8 @@ const resizer = usePointer(resizeHandle, {
 		move: (event) => {
 			const w = cardStart.w + (event.clientX - cardStart.x)
 			const h = cardStart.h + (event.clientY - cardStart.y)
-			const clampedW = Math.max(cardMin.w, Math.min(cardMax.w, w))
-			const clampedH = Math.max(cardMin.h, Math.min(cardMax.h, h))
+			const clampedW = clamp(w, cardMin.w, cardMax.w)
+			const clampedH = clamp(h, cardMin.h, cardMax.h)
 			cardSize.value = { w: clampedW, h: clampedH }
 			// If either dimension hit the max, auto-end the drag and
 			// flash a "limit reached" indicator. Demonstrates clear()

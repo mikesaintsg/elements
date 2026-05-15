@@ -65,7 +65,7 @@ import { TOKENS_ICONS as icons } from '../constants.js'
 
 // Live :root reads — re-sampled on mount + on every theme flip. Reads
 // from `:root`, the consumer's override target.
-const { read, refresh } = useRootCssVars()
+const { read, write, clear } = useRootCssVars()
 
 // ── Live-bound playground refs ─────────────────────────────────────────────
 //
@@ -87,61 +87,44 @@ const focusRingFor = (variant: string): string => {
 }
 
 const applyFocusWidth = (): void => {
-	document.documentElement.style.setProperty(
-		'--set-focus-box-shadow-width',
-		`${focusWidth.value}rem`,
-	)
-	refresh()
+	write('--set-focus-box-shadow-width', `${focusWidth.value}rem`)
 }
 
 const applyFocusOpacity = (): void => {
-	document.documentElement.style.setProperty(
-		'--set-focus-box-shadow-opacity',
-		String(focusOpacity.value),
-	)
-	refresh()
+	write('--set-focus-box-shadow-opacity', String(focusOpacity.value))
 }
 
 const applyRadius = (): void => {
-	document.documentElement.style.setProperty('--set-radius-factor', String(radiusFactor.value))
+	write('--set-radius-factor', String(radiusFactor.value))
 }
 
 const applyDensity = (): void => {
-	document.documentElement.style.setProperty('--set-density-factor', String(densityFactor.value))
+	write('--set-density-factor', String(densityFactor.value))
 }
 
 const applyMotionDuration = (): void => {
-	document.documentElement.style.setProperty('--set-motion-duration', `${motionDuration.value}ms`)
-	refresh()
+	write('--set-motion-duration', `${motionDuration.value}ms`)
 }
 
 const applyMotionTiming = (): void => {
-	document.documentElement.style.setProperty(
-		'--set-motion-timing-function',
-		timingFunctionFor(motionTimingFunction.value),
-	)
-	refresh()
+	write('--set-motion-timing-function', timingFunctionFor(motionTimingFunction.value))
 }
 
 const resetTokens = (): void => {
-	const root = document.documentElement
-	for (const property of [
+	clear(
 		'--set-radius-factor',
 		'--set-density-factor',
 		'--set-motion-duration',
 		'--set-motion-timing-function',
 		'--set-focus-box-shadow-width',
 		'--set-focus-box-shadow-opacity',
-	]) {
-		root.style.removeProperty(property)
-	}
+	)
 	radiusFactor.value = 1
 	densityFactor.value = 1
 	motionDuration.value = 250
 	motionTimingFunction.value = 'iOS'
 	focusWidth.value = 0.25
 	focusOpacity.value = 0.35
-	refresh()
 }
 
 // Trigger a details/alert re-open so the motion playground demonstrates

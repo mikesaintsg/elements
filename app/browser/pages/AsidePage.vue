@@ -59,6 +59,7 @@
  *     `<input>` via `aria-describedby`).
  */
 import { VARIANTS as variants } from '../constants.js'
+import { capitalize } from '../helpers.js'
 import { useDismissed } from '../composables.js'
 
 // Dismissable alert demo — each alert's dismiss button adds its id to
@@ -148,7 +149,7 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 		<article>
 			<h4>Variant callouts</h4>
 			<aside v-for="v in variants" :key="v" :class="v">
-				<strong>{{ v.charAt(0).toUpperCase() + v.slice(1) }} callout.</strong> Leading bar picks up
+				<strong>{{ capitalize(v) }} callout.</strong> Leading bar picks up
 				the variant's identity color via <code>--set-variant-background-color</code>.
 			</aside>
 		</article>
@@ -188,7 +189,7 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 				:data-alert-open="dismissed.has(v) ? undefined : ''"
 			>
 				<div>
-					<strong>{{ v.charAt(0).toUpperCase() + v.slice(1) }} alert.</strong>
+					<strong>{{ capitalize(v) }} alert.</strong>
 					Variant-tinted background + saturated leading bar + subtle perimeter. Tap the × to
 					dismiss; the alert animates closed via
 					<code>interpolate-size: allow-keywords</code>.

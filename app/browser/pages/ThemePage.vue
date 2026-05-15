@@ -55,7 +55,7 @@ import type { ThemePaletteEntry } from '../types.js'
 import { THEME_TIERS as tiers, VARIANTS as variants } from '../constants.js'
 
 // Live :root reads — re-sampled on mount + on every theme flip.
-const { read, refresh } = useRootCssVars()
+const { read, write, clear } = useRootCssVars()
 
 // ── Brand retune playground ────────────────────────────────────────────────
 //
@@ -70,16 +70,14 @@ const brandColor = ref('#3b82f6') // default ≈ blue-600
 const brandColorActive = ref(false)
 
 const applyBrand = (): void => {
-	document.documentElement.style.setProperty('--color-primary', brandColor.value)
+	write('--color-primary', brandColor.value)
 	brandColorActive.value = true
-	refresh()
 }
 
 const resetBrand = (): void => {
-	document.documentElement.style.removeProperty('--color-primary')
+	clear('--color-primary')
 	brandColor.value = '#3b82f6'
 	brandColorActive.value = false
-	refresh()
 }
 
 // ── Swatch generator helpers ───────────────────────────────────────────────

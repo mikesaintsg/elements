@@ -90,3 +90,18 @@ export function pageList(page: number, count: number): readonly (number | null)[
 export function capitalize(value: string): string {
 	return value.charAt(0).toUpperCase() + value.slice(1)
 }
+
+/**
+ * Clamp a number into the inclusive `[min, max]` range. Replaces the
+ * `Math.max(min, Math.min(max, v))` idiom the pointer demos repeat.
+ *
+ * @param value - the number to constrain
+ * @param min - lower bound (inclusive)
+ * @param max - upper bound (inclusive)
+ * @returns `value` pinned to `[min, max]`
+ * @example
+ * clamp(1.4, 0, 1) // 1
+ */
+export function clamp(value: number, min: number, max: number): number {
+	return Math.max(min, Math.min(max, value))
+}
