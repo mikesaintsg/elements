@@ -6,7 +6,7 @@
 
 ## 1. What this project is
 
-`elements` is a **semantic-first CSS framework** layered on **Tailwind v4** via `@tailwindcss/postcss`. You write `<button class="primary large">`, not `.btn-primary-lg`. The tag carries identity; modifier classes carry variation.
+`elements` is a **semantic-first CSS framework** layered on **Tailwind v4** via `@tailwindcss/postcss`. You write `<button class="primary large">`, not `.btn-primary-lg`. The tag carries identity; modifiers carry variation.
 
 The framework ships in two halves that mirror each other:
 
@@ -52,15 +52,15 @@ When writing or refactoring a SCSS partial, [`patterns.md`](patterns.md) is the 
 
 | Section                  | Contract                                                                                                                                                                                        | Enforcer                                                                |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| §1–4 Folder structural   | Layer wrapping, allowed selector kinds, token namespace policy, comment-only policy                                                                                                             | [`contracts.test.ts`](../tests/guides/patterns.test.ts)                 |
-| §5 Scope discipline      | Flatten `:not(t1):not(t2)` → `:not(:where(...))`; explicit scope on cross-cutting modifier compounds                                                                                            | [`scope.test.ts`](../tests/guides/patterns.test.ts)                     |
-| §6 Modifier dimensions   | Variant 8 / size 4 / style 4 required context tokens per class                                                                                                                                  | [`dimensions.test.ts`](../tests/src/styles/modifiers/_index.test.ts)    |
-| §6.6 Interactive minimum | Every `INTERACTIVE_ELEMENTS` member declares `transition-duration` + `@include forced-colors` + `:focus-visible`                                                                                | [`interactive.test.ts`](../tests/guides/patterns.test.ts)               |
-| §7 Surfaces              | Per-surface required tokens + animated-mixin discipline                                                                                                                                         | [`surfaces.test.ts`](../tests/src/styles/surfaces/_index.test.ts)       |
-| §8 Components            | Per-component required tokens + animated-mixin discipline                                                                                                                                       | [`components.test.ts`](../tests/src/styles/components/_index.test.ts)   |
-| §9 Composables           | Per-composable tokens + state-selector vocabulary + factory pairing + animated discipline                                                                                                       | [`composables.test.ts`](../tests/src/styles/composables/_index.test.ts) |
-| §10 Structural pairings  | Every `parent > child` bare-tag pair must appear in `STRUCTURAL_PAIRINGS` with a `spec` / `slot` / `reset` / `context` reason                                                                   | [`pairings.test.ts`](../tests/guides/patterns.test.ts)                  |
-| Motion contract          | Every `MOTION_CONTRACT_PARTIALS` member references both `var(--set-motion-duration)` AND `var(--set-motion-timing-function)`; panel-reveal transitions never hardcode numeric duration literals | [`motion.test.ts`](../tests/guides/tokens.test.ts)                      |
+| §1–4 Folder structural   | Layer wrapping, allowed selector kinds, token namespace policy, comment-only policy                                                                                                             | [`patterns.test.ts`](../tests/guides/patterns.test.ts) § contracts          |
+| §5 Scope discipline      | Flatten `:not(t1):not(t2)` → `:not(:where(...))`; explicit scope on cross-cutting modifier rules                                                                                                | [`patterns.test.ts`](../tests/guides/patterns.test.ts) § scope              |
+| §6 Modifier dimensions   | Per-dimension required context tokens (variant / size / style / state / placement)                                                                                                              | [`modifiers/_index.test.ts`](../tests/src/styles/modifiers/_index.test.ts)  |
+| §6.6 Interactive minimum | Every `INTERACTIVE_ELEMENTS` member declares `transition-duration` + `@include forced-colors` + `:focus-visible`                                                                                | [`patterns.test.ts`](../tests/guides/patterns.test.ts) § interactive        |
+| §7 Surfaces              | Per-surface required tokens + animated-mixin discipline                                                                                                                                         | [`surfaces/_index.test.ts`](../tests/src/styles/surfaces/_index.test.ts)    |
+| §8 Components            | Per-component required tokens + animated-mixin discipline                                                                                                                                       | [`components/_index.test.ts`](../tests/src/styles/components/_index.test.ts) |
+| §9 Composables           | Per-composable tokens + state-selector vocabulary + factory pairing + animated discipline                                                                                                       | [`composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts) |
+| §10 Structural pairings  | Every `parent > child` bare-tag pair must appear in `STRUCTURAL_PAIRINGS` with a `spec` / `slot` / `reset` / `context` reason                                                                   | [`patterns.test.ts`](../tests/guides/patterns.test.ts) § pairings           |
+| Motion contract          | Every `MOTION_CONTRACT_PARTIALS` member references both `var(--set-motion-duration)` AND `var(--set-motion-timing-function)`; panel-reveal transitions never hardcode numeric duration literals | [`tokens.test.ts`](../tests/guides/tokens.test.ts) § motion                 |
 
 [`elements.md`](elements.md) is the reference for **what element to reach for**: every native HTML tag with its framework treatment (substantive / reset / composable / passthrough / class-component). When a new design problem arises, walk the taxonomy first.
 
@@ -110,7 +110,7 @@ The full rules live in [`AGENTS.md`](../AGENTS.md). The eight that come up most 
 
 3. **Modifiers set tokens; elements consume them.** No hand-rolled `&.primary { color: … }` blocks inside element / component files. The fallback chain `--set-style-* → --set-variant-* → --set-size-* → element default` resolves variation. Use `@include palette-each` (from [`_mixins.scss`](../src/styles/_mixins.scss)) for any per-variant emission.
 
-4. **TS ↔ SCSS bidirectional parity.** Every `--set-*` token has a leaf in `tokens.ts`. Every modifier class has a leaf in `modifiers.ts`. Every substantive element baseline appears in `elements.ts` AND `taxonomy.ts`. Every component / surface / composable partial has a corresponding contract entry in `patterns.ts`. Drift in either direction fails parity tests.
+4. **TS ↔ SCSS bidirectional parity.** Every `--set-*` token has a leaf in `tokens.ts`. Every modifier has a leaf in `modifiers.ts`. Every substantive element baseline appears in `elements.ts` AND `taxonomy.ts`. Every component / surface / composable partial has a corresponding contract entry in `patterns.ts`. Drift in either direction fails parity tests.
 
 5. **Centralized files per domain.** `*/types.ts` is the **SOURCE OF TRUTH** for the TS public API; implementation matches types, never the reverse. `*/helpers.ts`, `*/constants.ts`, `*/index.ts` (barrel) — implementation files contain only the class definition. Single-word naming per AGENTS.md §4.1.
 
@@ -130,7 +130,7 @@ Five common workflows, end-to-end.
 
 For example: promoting an element from passthrough to substantive.
 
-**Step 1 — Taxonomy first.** Open [`elements.md`](elements.md) §3. Locate the row for the tag. If it lists the tag as `passthrough` but you're about to add `--set-{tag}-*` tokens, change the row's Treatment column to `substantive` (or `composable` if a factory is paired). Update the matching row in [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts). The parity test at [`taxonomy.test.ts`](../tests/guides/elements.test.ts) will check both directions.
+**Step 1 — Taxonomy first.** Open [`elements.md`](elements.md). Locate the row for the tag in the Reference catalog. If it lists the tag as `🚫 n/a` but you're about to add `--set-{tag}-*` tokens, change the row's status to `✅ cascade`. Update the matching row in [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts) (treatment → `substantive`, or `composable` if a factory is paired). The parity test at [`elements.test.ts`](../tests/guides/elements.test.ts) will check both directions.
 
 **Step 2 — Token surface in TypeScript first.** Add the `{tag}: { … }` object to [`src/browser/tokens.ts`](../src/browser/tokens.ts) listing every `--set-{tag}-*` property the element will expose. Each leaf is `'--set-{tag}-{property}'`. Property names mirror CSS property names in kebab-case under dotted TS keys (`'--set-button-focus-box-shadow'` ↔ `button.focus.boxShadow`).
 
@@ -241,7 +241,7 @@ Pair a `use{Name}` Vue adapter with a `create{Name}` framework-agnostic factory 
 6. **Chrome partial** (if state-gated CSS is needed). `src/styles/composables/_{name}.scss` — wrap rules in `@layer composables`; gate every rule on a composable-state selector (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`). If the partial declares `transition:` or `animation:`, invoke `@include transition()` or `@include reduced-motion` — the composable charter enforces it.
 7. **Contract entry.** Add an entry to [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts) with the token namespace, required tokens, state-selector kinds, animated flag, and factory pairing.
 8. **Taxonomy entry.** Update the matching row in `elements.md` and `taxonomy.ts` — if a tag is now composable, set its row's Treatment to `composable` and `composable` field to `'use{Name}'`.
-9. **Tests.** Add `tests/src/browser/composables/use{Name}.test.ts` (Vue adapter) and `tests/src/browser/factories/create{Name}.test.ts` (factory logic). If chrome was added, ensure [`composables.test.ts`](../tests/src/styles/composables/_index.test.ts) passes. The factory ↔ style parity test ([`redundancy.test.ts`](../tests/guides/composables.test.ts)) will fail if you write a `setAttribute('data-{name}-*', …)` with no matching reference in `src/styles/` — see §5.4.1.
+9. **Tests.** Add `tests/src/browser/composables/use{Name}.test.ts` (Vue adapter) and `tests/src/browser/factories/create{Name}.test.ts` (factory logic). If chrome was added, ensure [`composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts) passes. The factory ↔ style parity test ([`composables.test.ts`](../tests/guides/composables.test.ts) § JS↔CSS) will fail if you write a `setAttribute('data-{name}-*', …)` with no matching reference in `src/styles/` — see §5.4.1.
 
 #### 5.4.1 Native-platform redundancy checklist
 
@@ -498,12 +498,12 @@ These are failures previous work fell into. Don't repeat them.
 - **Console warnings.** Vue warns / Tailwind missing-source warns / unhandled errors all fail Row 9.
 - **Dragging Bootstrap / mailbox class names in verbatim.** Generic single English word; past-participle for visual treatments; no element-name prefix; no library namespace. The framework's modifier-naming rules are codified in [`patterns.md`](patterns.md).
 - **Letting an apparent fix mask a deeper issue.** When a fix feels "too easy," it might be papering over a deeper inconsistency. Ask "is the original rule wrong, or just wrong here?" — if wrong everywhere, fix at the source.
-- **Hand-rolling `&.primary { ... } &.secondary { ... }` blocks.** Use `@include palette-each` from [`_mixins.scss`](../src/styles/_mixins.scss). [`handrolled.test.ts`](../tests/guides/modifiers.test.ts) fails on three or more compound variant rules in one non-modifier file.
-- **Token abbreviations.** No `bg`, `fg`, `lg`, `sm`, `info`, `btn` as token segments. Spell every name out. [`naming.test.ts`](../tests/guides/tokens.test.ts) enforces the black-list in `taxonomy.ts § FORBIDDEN_TOKEN_SEGMENTS`.
-- **Chained `:not(t1):not(t2)` qualifiers.** Each `:not(tag)` adds 0,0,1 to specificity. Collapse to `:not(:where(t1, t2, ...))`. [`scope.test.ts`](../tests/guides/patterns.test.ts) enforces this.
+- **Hand-rolling `&.primary { ... } &.secondary { ... }` blocks.** Use `@include palette-each` from [`_mixins.scss`](../src/styles/_mixins.scss). [`modifiers.test.ts`](../tests/guides/modifiers.test.ts) § handrolled fails on three or more compound variant rules in one non-modifier file.
+- **Token abbreviations.** No `bg`, `fg`, `lg`, `sm`, `info`, `btn` as token segments. Spell every name out. [`tokens.test.ts`](../tests/guides/tokens.test.ts) § naming enforces the black-list in `taxonomy.ts § FORBIDDEN_TOKEN_SEGMENTS`.
+- **Chained `:not(t1):not(t2)` qualifiers.** Each `:not(tag)` adds 0,0,1 to specificity. Collapse to `:not(:where(t1, t2, ...))`. [`patterns.test.ts`](../tests/guides/patterns.test.ts) § scope enforces this.
 - **Bare `transition:` declarations** outside `@include transition()`. Breaks the reduced-motion contract. The surface / component / composable contracts enforce mixin usage on every animated partial.
 - **Bare `:focus { … }` rules.** Use `:focus-visible`. The interactive contract enforces this across the whole `src/styles/` tree.
-- **Element-hardcoding inside containment.** Rules like `nav > search` (chrome painted on a specific child element type) lock a pattern to one markup choice and force consumers to use exactly that element. Move the chrome to a wrapper class the consumer adds (`<nav><div class="my-region"><search>…</search></div></nav>`); style the wrapper, not its content. [`pairings.test.ts`](../tests/guides/patterns.test.ts) fails any new `tag1 > tag2` pair that isn't on `STRUCTURAL_PAIRINGS`.
+- **Element-hardcoding inside containment.** Rules like `nav > search` (chrome painted on a specific child element type) lock a pattern to one markup choice and force consumers to use exactly that element. Move the chrome to a wrapper class the consumer adds (`<nav><div class="my-region"><search>…</search></div></nav>`); style the wrapper, not its content. [`patterns.test.ts`](../tests/guides/patterns.test.ts) § pairings fails any new `tag1 > tag2` pair that isn't on `STRUCTURAL_PAIRINGS`.
 
 ---
 
@@ -547,25 +547,28 @@ npm test
 ### 9.2 File map
 
 ```
+ROADMAP.md           ← current state + remaining-work checklist (workspace root)
+AGENTS.md            ← codified naming + typing + Sass / SCSS conventions
+README.md            ← consumer-facing intro (workspace root)
+
 guides/
+  README.md          ← pointer file — concept × directory map
   contribute.md      ← this file — the workflow for humans + agents
-  ROADMAP.md            ← current state + remaining-work checklist
-  elements.md        ← every native HTML element + framework treatment
-  patterns.md        ← per-folder SCSS structural contracts + 8 codified registries
-  styles.md          ← top-level architecture
-  tokens.md          ← token surface
-  mixins.md          ← Sass mixin registry
-  modifiers.md       ← five-dimension cascade
-  elements.md        ← per-tag catalog
-  components.md      ← element compositions
-  surfaces.md        ← browser-rendered chrome
-  composables.md     ← Vue + factory layer
+  styles.md          ← top-level cascade architecture
+  tokens.md          ← token surface (--set-* + @theme palette)
+  mixins.md          ← Sass helper registry + list constants
+  modifiers.md       ← modifier cascade (variant, size, style, state, placement)
+  elements.md        ← per-tag catalog + taxonomy + token-uniformity groups
+  components.md      ← element compositions + class-root primitives + shipped catalog
+  surfaces.md        ← browser-rendered chrome (pseudo-elements, attribute APIs)
+  composables.md     ← Vue composable + framework-agnostic factory layer
+  patterns.md        ← per-folder structural contracts + 11 codified registries
 
 src/
   browser/
     types.ts         ← SOURCE OF TRUTH for TS public API
     tokens.ts        ← TS mirror of every --set-* token
-    modifiers.ts     ← TS mirror of every modifier class
+    modifiers.ts     ← TS mirror of every modifier
     elements.ts      ← TS registry of element-layer substantive baselines
     taxonomy.ts      ← TS taxonomy + TOKEN_GROUPS + INTERACTIVE_ELEMENTS
     patterns.ts      ← FOLDER_CONTRACTS + FILE_EXCEPTIONS + SURFACE/COMPONENT/COMPOSABLE_CONTRACTS + MODIFIER_DIMENSION_TOKENS + STRUCTURAL_PAIRINGS + scope-discipline helpers
@@ -573,7 +576,7 @@ src/
     helpers.ts       ← assertElement, attachListeners, focus-ring helpers, …
     constants.ts     ← UPPER_SNAKE_CASE values, EVENT_MAPS, selectors
     composables/     ← 20 use* Vue adapters
-    factories/       ← 20 create* framework-agnostic logic
+    factories/       ← 20 create* framework-agnostic factories
   styles/
     _tokens.scss     ← :root { --set-* } declarations
     _theme.scss      ← @theme + light/dark color tokens
@@ -593,35 +596,26 @@ src/
 
 tests/
   setup.css          ← cascade layer order + Tailwind import
-  setup.ts           ← shared test bootstrap
-  setupBrowser.ts    ← browser-test helpers
-  setupStyles.ts     ← build, mount, render, token, style, pixels, findRule, theme, framework variant arrays, …
+  setup.ts           ← env-agnostic shared helpers (always loaded first)
+  setupBrowser.ts    ← browser-env DOM + Vue + factory fixtures
+  setupStyles.ts     ← browser-env CSS assertion primitives + cascade load
+  setupServer.ts     ← node-env node:fs SCSS / factory readers (guides project)
+  guides/            ← guide-doc ↔ code parity (node env) — one driver per spec guide:
+    composables.test.ts ← event registry + JS↔CSS attr parity + factory↔guide pairing
+    elements.test.ts    ← elements.ts + taxonomy.ts + TOKEN_GROUPS + markdown-table parity
+    index.test.ts       ← meta: heading skeleton + cross-ref + test↔guide pairing
+    mixins.test.ts      ← _mixins.scss ↔ mixins.md (bidirectional)
+    modifiers.test.ts   ← modifiers.md §1 ↔ modifiers.ts + isolation + no hand-rolled variants
+    patterns.test.ts    ← folder contracts + scope + pairings + interactive + classification helpers
+    surfaces.test.ts    ← surfaces/_*.scss ↔ surfaces.md (bidirectional)
+    tokens.test.ts      ← token naming + motion contract + abbreviation black-list
   src/
-    browser/         ← parity tests + composable/factory tests + taxonomy.test.ts + patterns.test.ts
-    styles/          ← per-partial behavior tests + contract enforcers:
-      Cross-folder (top level — no single folder owns them):
-        contracts.test.ts     ← per-folder structural
-        scope.test.ts         ← selector specificity discipline
-        interactive.test.ts   ← element a11y (forced-colors + :focus-visible)
-        pairings.test.ts      ← structural parent > child element-pair allowlist
-        motion.test.ts        ← panel-reveal partials must use motion tokens (--set-motion-{duration, timing-function})
-        naming.test.ts        ← --set-* shape + abbreviation black-list
-        handrolled.test.ts    ← no manual variant enumeration
-        isolation.test.ts     ← modifier classes only in modifiers/
-        redundancy.test.ts    ← JS↔CSS attribute parity
-        taxonomy.test.ts      ← SCSS ↔ TS taxonomy parity
-        tokens.test.ts        ← every framework token resolves at runtime
-        uniformity.test.ts    ← TOKEN_GROUPS member coverage (elements/ + components/)
-        integration.test.ts   ← Tailwind utility composition + collision detector
-      Folder catch-alls (one `_index.test.ts` per `src/styles/{folder}`):
-        components/_index.test.ts  ← per-component required tokens + animated discipline
-        composables/_index.test.ts ← per-composable tokens + state-selector vocab + factory pairing
-        modifiers/_index.test.ts   ← modifier-dimension required tokens
-        surfaces/_index.test.ts    ← per-surface required tokens + animated discipline
-      Per-partial tests live in `{folder}/_{name}.test.ts` mirroring `src/styles/{folder}/_{name}.scss`.
-  guides/          ← guides/*.md ↔ src/{browser,styles}/ parity (node env):
-    modifiers.test.ts          ← modifiers.md §1 ↔ modifiers.ts
-    references.test.ts   ← every relative link in every guide resolves
+    browser/         ← TS↔SCSS parity tests + per-factory behavioural tests
+    styles/          ← per-partial behavioural tests against rendered cascade:
+      integration.test.ts        ← Tailwind utility composition + collision detector
+      tokens.test.ts             ← every framework token resolves at runtime
+      {folder}/_index.test.ts    ← per-folder contract enforcer (one per components/, composables/, modifiers/, surfaces/)
+      {folder}/_{name}.test.ts   ← per-partial behaviour, mirrors src/styles/{folder}/_{name}.scss
 
 app/browser/
   pages/             ← showcase pages

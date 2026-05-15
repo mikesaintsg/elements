@@ -240,55 +240,49 @@ Vitest projects defined in [`vite.config.ts`](../vite.config.ts). Each project o
 | [`src/styles/`](../tests/src/styles/)         | Per-partial behavior tests + cross-cutting SCSS contract enforcers.                                                                                                                                                                                                                                                                                                       |
 | [`guides/`](../tests/guides/)                 | One test per guide (`{guide}.test.ts`) + cross-guide meta-tests.                                                                                                                                                                                                                                                                                                          |
 
-#### `tests/src/browser/` — TS public-API parity + factory + composable tests
+#### `tests/src/browser/` — TS public-API parity + factory + composable behaviour
 
-| File                                                          | Purpose                                                            |
-| ------------------------------------------------------------- | ------------------------------------------------------------------ |
-| [`elements.test.ts`](../tests/guides/elements.test.ts)        | `elements.ts` ↔ `elements/_*.scss` parity.                         |
-| [`events.test.ts`](../tests/guides/composables.test.ts)       | `events.ts` shape — `elements:{source}:{verb}`.                    |
-| [`modifiers.test.ts`](../tests/src/browser/modifiers.test.ts) | `modifiers.ts` ↔ modifier SCSS rules.                              |
-| [`patterns.test.ts`](../tests/guides/patterns.test.ts)        | `patterns.ts` shape + selector-classification helpers.             |
-| [`taxonomy.test.ts`](../tests/guides/elements.test.ts)        | `taxonomy.ts` shape + indices + `TOKEN_GROUPS`.                    |
-| [`tokens.test.ts`](../tests/src/browser/tokens.test.ts)       | `tokens.ts` ↔ `--set-*` declarations parity.                       |
-| [`composables/`](../tests/src/browser/composables/)           | Per-composable Vue-adapter tests.                                  |
-| [`factories/`](../tests/src/browser/factories/)               | Per-factory behavior tests (real DOM via Vitest browser provider). |
+Browser-environment tests. The bidirectional TS↔SCSS parity tests for `elements.ts`, `taxonomy.ts`, `events.ts`, `patterns.ts` all live under `tests/guides/` (node env) — see the doc-parity table below.
 
-#### `tests/src/styles/` — SCSS contracts + per-partial behavior
+| File                                                          | Purpose                                                                                                 |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [`modifiers.test.ts`](../tests/src/browser/modifiers.test.ts) | `modifiers.ts` ↔ modifier SCSS rules, runtime cascade resolution.                                       |
+| [`tokens.test.ts`](../tests/src/browser/tokens.test.ts)       | `tokens.ts` ↔ `--set-*` declarations parity; runtime token resolution on `:root` + per-element + per-modifier. |
+| [`composables/`](../tests/src/browser/composables/)           | Per-composable Vue-adapter tests.                                                                       |
+| [`factories/`](../tests/src/browser/factories/)               | Per-factory behaviour tests (real DOM via Vitest browser provider).                                     |
 
-Folder-domain tests (about a SCSS folder) keep the `_*.scss`-style `_` prefix; cross-cutting tests use the prefix as a convention.
+#### `tests/src/styles/` — SCSS contracts + per-partial behaviour
 
-| File                                                                    | Purpose                                                                                                           |
-| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [`components.test.ts`](../tests/src/styles/components/_index.test.ts)   | Every `components/_{name}.scss` honors its `COMPONENT_CONTRACTS` entry.                                           |
-| [`composables.test.ts`](../tests/src/styles/composables/_index.test.ts) | Every `composables/_{name}.scss` honors its `COMPOSABLE_CONTRACTS` entry.                                         |
-| [`surfaces.test.ts`](../tests/src/styles/surfaces/_index.test.ts)       | Every `surfaces/_{name}.scss` honors its `SURFACE_CONTRACTS` entry.                                               |
-| [`contracts.test.ts`](../tests/guides/patterns.test.ts)                 | Per-folder structural contracts: layer wrap, allowed selector kinds, token namespace, state-selector requirement. |
-| [`dimensions.test.ts`](../tests/src/styles/modifiers/_index.test.ts)    | Every modifier-dimension class declares every required context token.                                             |
-| [`handrolled.test.ts`](../tests/guides/modifiers.test.ts)               | No partial outside `modifiers/` hand-rolls 3+ `.X.{variant}` compound rules. Use `@include palette-each`.         |
-| [`interactive.test.ts`](../tests/guides/patterns.test.ts)               | Every `INTERACTIVE_ELEMENTS` member declares forced-colors + `:focus-visible`.                                    |
-| [`isolation.test.ts`](../tests/guides/modifiers.test.ts)                | Cross-cutting modifier names only declared as bare rules in `modifiers/`. No collision with Tailwind utilities.   |
-| [`motion.test.ts`](../tests/guides/tokens.test.ts)                      | `MOTION_CONTRACT_PARTIALS` reference `--set-motion-{duration, timing-function}`.                                  |
-| [`naming.test.ts`](../tests/guides/tokens.test.ts)                      | Every `--set-*` matches kebab-case shape; no abbreviation black-list hits.                                        |
-| [`pairings.test.ts`](../tests/guides/patterns.test.ts)                  | Every `parent > child` bare-tag pair appears in `STRUCTURAL_PAIRINGS` with a justification.                       |
-| [`redundancy.test.ts`](../tests/guides/composables.test.ts)             | Every `setAttribute('data-X-*', …)` written by a factory is referenced by a SCSS partial (no dead JS chrome).     |
-| [`scope.test.ts`](../tests/guides/patterns.test.ts)                     | Selector specificity discipline — flatten `:not(t1):not(t2)` chains, scope cross-cutting modifiers.               |
-| [`taxonomy.test.ts`](../tests/guides/elements.test.ts)                  | `taxonomy.ts` ↔ `elements/_*.scss` ↔ `components/_*.scss` ↔ `factories/create*.ts` cross-mirror.                  |
-| [`tokens.test.ts`](../tests/src/styles/tokens.test.ts)                  | Every token resolves to a non-empty value at runtime.                                                             |
-| [`uniformity.test.ts`](../tests/guides/elements.test.ts)                | Every `TOKEN_GROUPS` member declares every required token suffix.                                                 |
-| [`integration.test.ts`](../tests/src/styles/integration.test.ts)        | Tailwind utility composition + collision detector.                                                                |
-| [`components/`](../tests/src/styles/components/)                        | Per-component behavior tests.                                                                                     |
-| [`elements/`](../tests/src/styles/elements/)                            | Per-element behavior tests (only the substantive ones with meaningful CSS behavior).                              |
-| [`modifiers/`](../tests/src/styles/modifiers/)                          | Per-modifier-dimension behavior tests.                                                                            |
-| [`surfaces/`](../tests/src/styles/surfaces/)                            | Per-surface behavior tests.                                                                                       |
+Browser-environment tests (real Chromium) covering rendered cascade behaviour + folder-level contract enforcement.
+
+| File                                                                    | Purpose                                                                                                |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [`tokens.test.ts`](../tests/src/styles/tokens.test.ts)                  | Every framework token resolves to a non-empty value at runtime.                                        |
+| [`integration.test.ts`](../tests/src/styles/integration.test.ts)        | Tailwind utility composition + collision detector.                                                     |
+| [`components/_index.test.ts`](../tests/src/styles/components/_index.test.ts) | Every `components/_{name}.scss` honors its `COMPONENT_CONTRACTS` entry (required tokens + animated discipline). |
+| [`composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts) | Every `composables/_{name}.scss` honors its `COMPOSABLE_CONTRACTS` entry.                              |
+| [`surfaces/_index.test.ts`](../tests/src/styles/surfaces/_index.test.ts) | Every `surfaces/_{name}.scss` honors its `SURFACE_CONTRACTS` entry.                                    |
+| [`modifiers/_index.test.ts`](../tests/src/styles/modifiers/_index.test.ts) | Every modifier in each dimension declares the required context tokens (`MODIFIER_DIMENSION_TOKENS`). |
+| [`modifiers/_local.test.ts`](../tests/src/styles/modifiers/_local.test.ts) | Element-local modifier charter — no bare class rules, no Tailwind collisions, no cross-dimension reuse. |
+| [`components/`](../tests/src/styles/components/)                        | Per-component behaviour tests.                                                                         |
+| [`elements/`](../tests/src/styles/elements/)                            | Per-element behaviour tests (only substantive ones with meaningful CSS behaviour).                     |
+| [`modifiers/`](../tests/src/styles/modifiers/)                          | Per-dimension behaviour tests (`_variants`, `_sizes`, `_styles`, `_states`, `_placements`).            |
+| [`surfaces/`](../tests/src/styles/surfaces/)                            | Per-surface behaviour tests.                                                                           |
 
 #### `tests/guides/` — doc ↔ code parity
 
-One test file per guide. Cross-guide meta-tests at the same level.
+Node-environment tests. One driver per spec guide, plus the meta `index.test.ts` for cross-guide structural uniformity.
 
-| File                                                     | Purpose                                                                   |
-| -------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [`modifiers.test.ts`](../tests/guides/modifiers.test.ts) | `modifiers.md` §1 dimension table ↔ `modifiers.ts` shipped values.        |
-| [`references.test.ts`](../tests/guides/index.test.ts)    | Every `(./...)` / `(../...)` link in every guide resolves to a real file. |
+| File                                                       | Purpose                                                                                                                                                                                                                              |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`index.test.ts`](../tests/guides/index.test.ts)           | Meta: heading skeleton uniformity + cross-reference link parity + `tests/guides/*.test.ts` ↔ `guides/*.md` pairing.                                                                                                                  |
+| [`elements.test.ts`](../tests/guides/elements.test.ts)     | `elements.ts` + `taxonomy.ts` shape, pre-computed indices, predicate getters, partial parity, token coverage, factory pairing, `TOKEN_GROUPS` membership, markdown-table parity.                                                     |
+| [`modifiers.test.ts`](../tests/guides/modifiers.test.ts)   | `modifiers.md` dimension table ↔ `modifiers.ts` shipped values; isolation (cross-cutting modifiers only declared in `modifiers/`); no hand-rolled `.X.{variant}` enumeration outside `modifiers/`; no Tailwind single-token collisions. |
+| [`tokens.test.ts`](../tests/guides/tokens.test.ts)         | Token naming (kebab-case shape + abbreviation black-list); motion contract (`MOTION_CONTRACT_PARTIALS` reference `--set-motion-{duration, timing-function}`); no hardcoded duration literals on panel-reveal properties.             |
+| [`patterns.test.ts`](../tests/guides/patterns.test.ts)     | Folder structural contracts (layer wrap, allowed selector kinds, token namespace, state-selector requirement, comment-only policy); scope discipline; structural pairings; interactive minimum; selector-classification helpers.     |
+| [`surfaces.test.ts`](../tests/guides/surfaces.test.ts)     | Bidirectional parity — every `surfaces/_*.scss` partial appears in `surfaces.md`; every `surfaces/_*.scss` reference resolves to a real file.                                                                                        |
+| [`composables.test.ts`](../tests/guides/composables.test.ts) | Event-name registry (`elements:{source}:{verb}` lifecycle vocabulary); JS↔CSS attribute parity (every `setAttribute('data-X-*', …)` referenced in `src/styles/`); factory↔guide pairing (every `create{Name}.ts` documented).      |
+| [`mixins.test.ts`](../tests/guides/mixins.test.ts)         | Bidirectional parity — every `@mixin` declared in `_mixins.scss` is documented in `mixins.md`; every documented mixin name resolves to a real declaration.                                                                           |
 
 ### `app/browser/` — showcase Vue app
 
