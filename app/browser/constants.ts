@@ -1,4 +1,4 @@
-import type { Variant } from '@elements/browser'
+import type { Placement, Variant } from '@elements/browser'
 import { modifiers } from '@elements/browser'
 
 /**
@@ -63,3 +63,25 @@ export const VARIANTS_FORM: readonly Variant[] = VARIANTS.filter((v) => v !== 'i
 export const VARIANTS_FEEDBACK: readonly Variant[] = VARIANTS.filter(
 	(v) => v !== 'secondary' && v !== 'tertiary',
 )
+
+// ── Placement vocabulary ─────────────────────────────────────────────────
+
+/**
+ * Every floating-panel placement, in the order the popover / menu demos
+ * present them (each side, then its two alignment corners). Typed against
+ * the framework's `Placement` union so an invalid value fails to compile.
+ */
+export const PLACEMENTS: readonly Placement[] = [
+	'top',
+	'top-start',
+	'top-end',
+	'bottom',
+	'bottom-start',
+	'bottom-end',
+	'start',
+	'start-start',
+	'start-end',
+	'end',
+	'end-start',
+	'end-end',
+]

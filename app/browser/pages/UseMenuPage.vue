@@ -73,20 +73,7 @@ const onCommand = (label: string): void => {
 // outside, the menu re-anchors. Proves the live re-positioning path
 // distinct from per-button placement modifiers.
 // ─────────────────────────────────────────────────────────────────────
-const placementOptions: readonly Placement[] = [
-	'top',
-	'top-start',
-	'top-end',
-	'bottom',
-	'bottom-start',
-	'bottom-end',
-	'start',
-	'start-start',
-	'start-end',
-	'end',
-	'end-start',
-	'end-end',
-]
+import { PLACEMENTS as placementOptions } from '../constants.js'
 const livePlacement = ref<Placement>('bottom-start')
 const placedToggle = useTemplateRef<HTMLButtonElement>('placedToggle')
 const placedMenu = useTemplateRef<HTMLMenuElement>('placedMenu')

@@ -92,20 +92,7 @@ const startPopover = usePopover({
 // `Ref<Placement>` for consumers that want to drive it from external
 // state. Kept as a smaller secondary demo since the multi-anchor stage
 // above is the more direct way to see placement at a glance.
-const placementOptions: readonly Placement[] = [
-	'top',
-	'top-start',
-	'top-end',
-	'bottom',
-	'bottom-start',
-	'bottom-end',
-	'start',
-	'start-start',
-	'start-end',
-	'end',
-	'end-start',
-	'end-end',
-]
+import { PLACEMENTS as placementOptions } from '../constants.js'
 const dynamicPlacement = ref<Placement>('bottom')
 const dynamicAnchor = useTemplateRef<HTMLButtonElement>('dynamicAnchor')
 const dynamicPanel = useTemplateRef<HTMLDivElement>('dynamicPanel')
