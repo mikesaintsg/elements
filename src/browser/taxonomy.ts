@@ -200,23 +200,23 @@ export const taxonomy: readonly TaxonomyEntry[] = [
 // Pre-computed lookups so consumers don't `.find()` every call.
 
 export const TAXONOMY_BY_TAG: ReadonlyMap<string, TaxonomyEntry> = new Map(
-	taxonomy.map((entry) => [entry.tag, entry]),
+	taxonomy.map((row) => [row.tag, row]),
 )
 
 export const SUBSTANTIVE_TAGS: ReadonlySet<string> = new Set(
-	taxonomy.filter((entry) => entry.treatment === 'substantive').map((entry) => entry.tag),
+	taxonomy.filter((row) => row.treatment === 'substantive').map((row) => row.tag),
 )
 
 export const COMPOSABLE_TAGS: ReadonlySet<string> = new Set(
-	taxonomy.filter((entry) => entry.treatment === 'composable').map((entry) => entry.tag),
+	taxonomy.filter((row) => row.treatment === 'composable').map((row) => row.tag),
 )
 
 export const RESET_TAGS: ReadonlySet<string> = new Set(
-	taxonomy.filter((entry) => entry.treatment === 'reset').map((entry) => entry.tag),
+	taxonomy.filter((row) => row.treatment === 'reset').map((row) => row.tag),
 )
 
 export const PASSTHROUGH_TAGS: ReadonlySet<string> = new Set(
-	taxonomy.filter((entry) => entry.treatment === 'passthrough').map((entry) => entry.tag),
+	taxonomy.filter((row) => row.treatment === 'passthrough').map((row) => row.tag),
 )
 
 /** Tags that consume the modifier system (substantive + composable). */

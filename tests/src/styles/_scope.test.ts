@@ -168,16 +168,14 @@ describe('scope — chained :not(tag) / :not([attr]) qualifiers are forbidden (c
 		const openers = extractRuleOpeners(source)
 		const offenders = openers.filter(hasChainedTagNots)
 
+		// On failure: the `offenders` array prints each chained-:not selector.
+		// Each :not(tag) adds 0,0,1 and each :not([attr]) adds 0,1,0 to
+		// specificity. Collapse to :not(:where(t1, t2, ...)) so the
+		// exception list contributes 0 to specificity. (Pseudo-class :not()
+		// chains like :not(:first-child):not(:last-child) are exempt.) See
+		// guides/patterns.md § "Scope discipline".
 		it(`${relative} uses no chained :not(tag):not(tag) or :not([attr]):not([attr]) patterns`, () => {
-			expect(
-				offenders,
-				`${relative} has ${offenders.length} rule(s) with chained tag/attribute :not() ` +
-					`qualifiers — each :not(tag) adds 0,0,1 and each :not([attr]) adds 0,1,0 to specificity. ` +
-					`Collapse to :not(:where(t1, t2, ...)) so the exception list contributes 0 to ` +
-					`specificity. (Pseudo-class :not() chains like :not(:first-child):not(:last-child) ` +
-					`are exempt.) See guides/patterns.md § "Scope discipline":\n  - ` +
-					offenders.join('\n  - '),
-			).toEqual([])
+			expect(offenders).toEqual([])
 		})
 	}
 })
@@ -198,14 +196,13 @@ describe('scope — cross-cutting modifier rules must enumerate their scope', ()
 		const openers = extractRuleOpeners(source).filter(isCrossCuttingModifierRule)
 
 		for (const selector of openers) {
+			// On failure: cross-cutting modifier rule `${selector}` has no
+			// explicit scope. Add either:
+			//   - a :not(:where(t1, t2, ...)) blocklist (preferred for narrow exceptions), or
+			//   - an :is(t1, t2, ...) allowlist (for bounded element sets).
+			// Unscoped cross-cutting rules bleed into every host of the attribute.
 			it(`${relative} → '${selector}' has explicit scope (\`:not(:where(...))\` or \`:is(...)\`)`, () => {
-				expect(
-					hasScopingFunction(selector),
-					`Cross-cutting modifier rule '${selector}' has no explicit scope. Add either:\n` +
-						`  - a :not(:where(t1, t2, ...)) blocklist (preferred for narrow exceptions), or\n` +
-						`  - an :is(t1, t2, ...) allowlist (for bounded element sets).\n` +
-						`Unscoped cross-cutting rules bleed into every host of the attribute.`,
-				).toBe(true)
+				expect(hasScopingFunction(selector)).toBe(true)
 			})
 		}
 	}

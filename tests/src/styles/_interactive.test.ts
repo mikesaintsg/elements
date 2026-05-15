@@ -115,13 +115,12 @@ describe('interactive — registry shape', () => {
 describe('interactive — forced-colors coverage', () => {
 	for (const partial of elementPartials) {
 		if (!isInteractive(partial.tag)) continue
+		// On failure: the partial is an interactive element but does not invoke
+		// @include forced-colors. Windows High Contrast mode strips author
+		// colors — the partial must paint a system-token fallback via the
+		// mixin from _mixins.scss.
 		it(`${partial.relative} invokes @include forced-colors`, () => {
-			expect(
-				FORCED_COLORS_INCLUDE_REGEX.test(partial.stripped),
-				`${partial.relative} is an interactive element but does not invoke @include forced-colors. ` +
-					`Windows High Contrast mode strips author colors — the partial must paint a system-token ` +
-					`fallback via the mixin from _mixins.scss.`,
-			).toBe(true)
+			expect(FORCED_COLORS_INCLUDE_REGEX.test(partial.stripped)).toBe(true)
 		})
 	}
 })
@@ -137,13 +136,11 @@ describe('interactive — every interactive element declares a :focus-visible ru
 		// inherits :focus-within from its associated control. Both
 		// legitimately have no own :focus-visible rule.
 		if (partial.tag === 'summary' || partial.tag === 'label') continue
+		// On failure: the partial is an interactive element but does not declare
+		// a :focus-visible rule. The framework's focus contract requires every
+		// interactive element to paint a focus ring via :focus-visible.
 		it(`${partial.relative} declares :focus-visible chrome`, () => {
-			expect(
-				/:focus-visible/.test(partial.stripped),
-				`${partial.relative} is an interactive element but does not declare a :focus-visible rule. ` +
-					`The framework's focus contract requires every interactive element to paint a focus ring ` +
-					`via :focus-visible.`,
-			).toBe(true)
+			expect(/:focus-visible/.test(partial.stripped)).toBe(true)
 		})
 	}
 })
@@ -156,14 +153,12 @@ describe('interactive — no partial uses bare :focus rule (always :focus-visibl
 	for (const [path, source] of Object.entries(allStylesSources)) {
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
 		const stripped = stripComments(source)
+		// On failure: the partial declares a bare `:focus` rule. Bare :focus
+		// fires on mouse click and produces visual noise — use :focus-visible.
+		// (Bare :focus inside :not(:focus), :is(:focus, …), :where(:focus),
+		// :has(:focus) is exempt — those are legitimate negation / grouping.)
 		it(`${relative} uses :focus-visible, never bare :focus`, () => {
-			expect(
-				hasBareFocusRule(stripped),
-				`${relative} declares a bare \`:focus\` rule. Bare :focus fires on mouse click ` +
-					`and produces visual noise. Use :focus-visible instead — it distinguishes keyboard ` +
-					`focus from mouse focus. (Bare :focus inside :not(:focus), :is(:focus, …), ` +
-					`:where(:focus), :has(:focus) is exempt — those are legitimate negation / grouping.)`,
-			).toBe(false)
+			expect(hasBareFocusRule(stripped)).toBe(false)
 		})
 	}
 })
@@ -180,16 +175,13 @@ describe('interactive — registry coherence', () => {
 		// test asserts the chain holds explicitly.
 		for (const tag of INTERACTIVE_ELEMENTS) {
 			const partial = elementPartials.find((p) => p.tag === tag)
-			expect(partial, `INTERACTIVE_ELEMENTS '${tag}' has no partial`).toBeDefined()
+			expect(partial).toBeDefined()
 			// Substantive partials declare at least one --set-{tag}-* token;
 			// every interactive element must be substantive (interaction
-			// chrome implies token-driven retunability).
-			const hasToken = new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`).test(partial!.stripped)
-			expect(
-				hasToken,
-				`${partial!.relative} is interactive but declares no --set-${tag}-* tokens. ` +
-					`Interactive elements must expose tokens for consumer retuning.`,
-			).toBe(true)
+			// chrome implies token-driven retunability). On failure: the
+			// partial declares no --set-{tag}-* tokens.
+			const hasToken = new RegExp(`--set-${tag}-[a-z0-9-]+\\s*:`).test(partial?.stripped ?? '')
+			expect(hasToken).toBe(true)
 		}
 	})
 })

@@ -45,9 +45,9 @@ const byTag: ReadonlyMap<string, readonly string[]> = (() => {
 })()
 
 function declaresSuffix(tag: string, suffix: string): boolean {
-	const sources = byTag.get(tag) ?? []
+	const list = byTag.get(tag) ?? []
 	const regex = new RegExp(`--set-${tag}-${suffix.replace(/-/g, '\\-')}\\s*:`)
-	return sources.some((source) => regex.test(source))
+	return list.some((source) => regex.test(source))
 }
 
 describe('uniformity — every group member declares the required tokens', () => {
@@ -58,12 +58,11 @@ describe('uniformity — every group member declares the required tokens', () =>
 		describe(`${name} group`, () => {
 			for (const member of definition.members) {
 				for (const suffix of definition.required) {
+					// On failure: `${member}` is in the `${name}` group but does not declare
+					// --set-${member}-${suffix}. See src/browser/taxonomy.ts § TOKEN_GROUPS
+					// for the group contract.
 					it(`${member} declares --set-${member}-${suffix}`, () => {
-						expect(
-							declaresSuffix(member, suffix),
-							`${member} is in the ${name} group but does not declare --set-${member}-${suffix}. ` +
-								`The group contract is in src/browser/taxonomy.ts § TOKEN_GROUPS.`,
-						).toBe(true)
+						expect(declaresSuffix(member, suffix)).toBe(true)
 					})
 				}
 			}

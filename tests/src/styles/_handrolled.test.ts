@@ -52,14 +52,12 @@ describe('handrolled — no manual variant enumeration outside modifiers/', () =
 	for (const [path, source] of Object.entries(sources)) {
 		const filename = path.replace(/^.*\/src\/styles\//, 'src/styles/')
 
+		// On failure: the test prints the variant names hand-rolled in this file.
+		// Use @include palette-each from src/styles/_mixins.scss instead.
 		it(`${filename} does not hand-roll three or more variant rules`, () => {
-			const counts = countCompoundRules(source)
-			expect(
-				counts.size,
-				`${filename} declares compound rules for ${counts.size} variants ` +
-					`(${Array.from(counts.keys()).join(', ')}). ` +
-					`Use @include palette-each from src/styles/_mixins.scss instead.`,
-			).toBeLessThan(3)
+			const variants = Array.from(countCompoundRules(source).keys())
+			const offenders = variants.length >= 3 ? variants : []
+			expect(offenders).toEqual([])
 		})
 	}
 })

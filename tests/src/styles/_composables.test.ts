@@ -105,11 +105,10 @@ describe('composables — required tokens are declared in the partial', () => {
 		const prefix = contract.tokens.prefix ?? contract.name
 
 		for (const suffix of contract.tokens.required) {
+			// On failure: `${relative}` does not declare --set-${prefix}-${suffix}.
+			// See COMPOSABLE_CONTRACTS.notes for the rationale.
 			it(`${relative} declares --set-${prefix}-${suffix}`, () => {
-				expect(
-					declaresToken(stripped, prefix, suffix),
-					`${relative} does not declare --set-${prefix}-${suffix}. ${contract.notes}`,
-				).toBe(true)
+				expect(declaresToken(stripped, prefix, suffix)).toBe(true)
 			})
 		}
 	}
@@ -119,12 +118,10 @@ describe('composables — required tokens are declared in the partial', () => {
 
 describe('composables — every contract references a real factory', () => {
 	for (const [name, contract] of Object.entries(COMPOSABLE_CONTRACTS)) {
+		// On failure: COMPOSABLE_CONTRACTS.${name}.factory has no matching
+		// src/browser/factories/${contract.factory}.ts file.
 		it(`${name} → ${contract.factory}.ts exists`, () => {
-			expect(
-				factoryNames.has(contract.factory),
-				`COMPOSABLE_CONTRACTS.${name}.factory='${contract.factory}' has no matching ` +
-					`src/browser/factories/${contract.factory}.ts file.`,
-			).toBe(true)
+			expect(factoryNames.has(contract.factory)).toBe(true)
 		})
 	}
 })
@@ -143,13 +140,12 @@ describe('composables — bare transition: / animation: declarations require a m
 		if (!hasMotion && !contract.animated) continue
 
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		// On failure: `${relative}` declares bare transition: / animation: (or is
+		// marked animated in COMPOSABLE_CONTRACTS) but does not invoke
+		// @include transition() or @include reduced-motion. Composables that
+		// animate must honor the prefers-reduced-motion opt-out via the mixin.
 		it(`${relative} invokes @include transition() or @include reduced-motion`, () => {
-			expect(
-				usesMotionMixin(stripped),
-				`${relative} declares bare transition: or animation: properties (or is marked animated) ` +
-					`but does not invoke @include transition() or @include reduced-motion. ` +
-					`Composables that animate must honor the prefers-reduced-motion opt-out via the mixin.`,
-			).toBe(true)
+			expect(usesMotionMixin(stripped)).toBe(true)
 		})
 	}
 })

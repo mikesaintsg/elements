@@ -59,13 +59,11 @@ describe('surfaces — every partial has a contract', () => {
 		const name = basenameOf(path)
 		if (name === '' || name === 'index') continue
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		// On failure: `${relative}` has no entry in SURFACE_CONTRACTS. Add one
+		// to src/browser/patterns.ts § SURFACE_CONTRACTS with the canonical
+		// token + animation discipline for the surface.
 		it(`${relative} has a SURFACE_CONTRACTS entry`, () => {
-			expect(
-				surfaceContractFor(name),
-				`${relative} has no entry in SURFACE_CONTRACTS. Add one to ` +
-					`src/browser/patterns.ts § SURFACE_CONTRACTS with the canonical token + ` +
-					`animation discipline for the surface.`,
-			).not.toBeNull()
+			expect(surfaceContractFor(name)).not.toBeNull()
 		})
 	}
 })
@@ -77,11 +75,9 @@ describe('surfaces — every contract has a partial', () => {
 			.filter((n) => n !== '' && n !== 'index'),
 	)
 	for (const name of Object.keys(SURFACE_CONTRACTS)) {
+		// On failure: SURFACE_CONTRACTS lists `${name}` but src/styles/surfaces/_${name}.scss is missing.
 		it(`SURFACE_CONTRACTS.${name} has src/styles/surfaces/_${name}.scss`, () => {
-			expect(
-				basenames.has(name),
-				`SURFACE_CONTRACTS lists '${name}' but src/styles/surfaces/_${name}.scss is missing.`,
-			).toBe(true)
+			expect(basenames.has(name)).toBe(true)
 		})
 	}
 })
@@ -101,11 +97,10 @@ describe('surfaces — required tokens are declared in the partial', () => {
 		const prefix = contract.tokens.prefix ?? contract.name
 
 		for (const suffix of contract.tokens.required) {
+			// On failure: `${relative}` does not declare --set-${prefix}-${suffix}.
+			// See SURFACE_CONTRACTS.notes for the rationale.
 			it(`${relative} declares --set-${prefix}-${suffix}`, () => {
-				expect(
-					declaresToken(stripped, prefix, suffix),
-					`${relative} does not declare --set-${prefix}-${suffix}. ${contract.notes}`,
-				).toBe(true)
+				expect(declaresToken(stripped, prefix, suffix)).toBe(true)
 			})
 		}
 	}
@@ -124,14 +119,13 @@ describe('surfaces — animated surfaces invoke a motion mixin', () => {
 		const stripped = stripComments(source)
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
 
+		// On failure: `${relative}` is marked animated but doesn't invoke
+		// @include transition() or @include reduced-motion. Every motion
+		// declaration in the framework must pair with the reduced-motion
+		// contract — bare transition: declarations break the
+		// prefers-reduced-motion opt-out.
 		it(`${relative} invokes @include transition() or @include reduced-motion`, () => {
-			expect(
-				usesMotionMixin(stripped),
-				`${relative} is marked animated but doesn't invoke @include transition() or ` +
-					`@include reduced-motion. Every motion declaration in the framework must pair ` +
-					`with the reduced-motion contract — bare transition: declarations break the ` +
-					`prefers-reduced-motion opt-out.`,
-			).toBe(true)
+			expect(usesMotionMixin(stripped)).toBe(true)
 		})
 	}
 })
@@ -155,14 +149,13 @@ describe('surfaces — partials that ship --set-{surface}-transition-duration ho
 		if (!hasTransitionToken && !hasDurationToken) continue
 
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		// On failure: `${relative}` declares a duration token but doesn't
+		// invoke @include transition() or @include reduced-motion. Exposing
+		// the token without the mixin lets a consumer override duration but
+		// cannot opt out via prefers-reduced-motion — break the contract
+		// entirely or invoke the mixin.
 		it(`${relative} declares a duration token AND invokes a motion mixin`, () => {
-			expect(
-				usesMotionMixin(stripped),
-				`${relative} declares a duration token (--set-${prefix}-${hasTransitionToken ? 'transition-duration' : 'duration'}) ` +
-					`but doesn't invoke @include transition() or @include reduced-motion. Exposing the token ` +
-					`without the mixin lets a consumer override the duration but cannot opt out via ` +
-					`prefers-reduced-motion — break the contract entirely or invoke the mixin.`,
-			).toBe(true)
+			expect(usesMotionMixin(stripped)).toBe(true)
 		})
 	}
 })

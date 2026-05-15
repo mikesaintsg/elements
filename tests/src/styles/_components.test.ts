@@ -53,12 +53,11 @@ describe('components — every partial has a contract', () => {
 		const name = basenameOf(path)
 		if (name === '' || name === 'index') continue
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		// On failure: `${relative}` has no entry in COMPONENT_CONTRACTS. Add one to
+		// src/browser/patterns.ts § COMPONENT_CONTRACTS with the canonical token +
+		// animation discipline.
 		it(`${relative} has a COMPONENT_CONTRACTS entry`, () => {
-			expect(
-				componentContractFor(name),
-				`${relative} has no entry in COMPONENT_CONTRACTS. Add one to ` +
-					`src/browser/patterns.ts § COMPONENT_CONTRACTS with the canonical token + animation discipline.`,
-			).not.toBeNull()
+			expect(componentContractFor(name)).not.toBeNull()
 		})
 	}
 })
@@ -70,11 +69,9 @@ describe('components — every contract has a partial', () => {
 			.filter((n) => n !== '' && n !== 'index'),
 	)
 	for (const name of Object.keys(COMPONENT_CONTRACTS)) {
+		// On failure: COMPONENT_CONTRACTS lists `${name}` but src/styles/components/_${name}.scss is missing.
 		it(`COMPONENT_CONTRACTS.${name} has src/styles/components/_${name}.scss`, () => {
-			expect(
-				basenames.has(name),
-				`COMPONENT_CONTRACTS lists '${name}' but src/styles/components/_${name}.scss is missing.`,
-			).toBe(true)
+			expect(basenames.has(name)).toBe(true)
 		})
 	}
 })
@@ -92,11 +89,10 @@ describe('components — required tokens are declared in the partial', () => {
 		const prefix = contract.tokens.prefix ?? contract.name
 
 		for (const suffix of contract.tokens.required) {
+			// On failure: `${relative}` does not declare --set-${prefix}-${suffix}.
+			// See COMPONENT_CONTRACTS.notes for the rationale.
 			it(`${relative} declares --set-${prefix}-${suffix}`, () => {
-				expect(
-					declaresToken(stripped, prefix, suffix),
-					`${relative} does not declare --set-${prefix}-${suffix}. ${contract.notes}`,
-				).toBe(true)
+				expect(declaresToken(stripped, prefix, suffix)).toBe(true)
 			})
 		}
 	}
@@ -113,12 +109,11 @@ describe('components — animated components invoke a motion mixin', () => {
 		const stripped = stripComments(source)
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
 
+		// On failure: `${relative}` is marked animated but doesn't invoke
+		// @include transition() or @include reduced-motion. Bare transition:
+		// declarations break the prefers-reduced-motion opt-out.
 		it(`${relative} invokes @include transition() or @include reduced-motion`, () => {
-			expect(
-				usesMotionMixin(stripped),
-				`${relative} is marked animated but doesn't invoke @include transition() or ` +
-					`@include reduced-motion. Bare transition: declarations break the prefers-reduced-motion opt-out.`,
-			).toBe(true)
+			expect(usesMotionMixin(stripped)).toBe(true)
 		})
 	}
 })
@@ -139,13 +134,12 @@ describe('components — partials that ship a duration token honor the reduced-m
 		if (!hasTransitionToken && !hasDurationToken && !hasPulseDuration) continue
 
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
+		// On failure: `${relative}` declares a duration token but doesn't
+		// invoke @include transition() or @include reduced-motion. Exposing
+		// the duration token without the mixin lets a consumer retune
+		// duration but cannot opt out via prefers-reduced-motion.
 		it(`${relative} declares a duration token AND invokes a motion mixin`, () => {
-			expect(
-				usesMotionMixin(stripped),
-				`${relative} declares a duration token but doesn't invoke @include transition() or ` +
-					`@include reduced-motion. Exposing the duration token without the mixin lets a consumer ` +
-					`retune duration but cannot opt out via prefers-reduced-motion.`,
-			).toBe(true)
+			expect(usesMotionMixin(stripped)).toBe(true)
 		})
 	}
 })

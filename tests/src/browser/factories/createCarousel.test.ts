@@ -139,28 +139,25 @@ describe('createCarousel', () => {
 		expect(api.index.value).toBe(1)
 		// Only slide[1] should be active; every other slide should be clean
 		// (no `.active`, no `carousel-item-{next,prev,start,end}`).
+		const STALE_CLASSES = [
+			'carousel-item-next',
+			'carousel-item-prev',
+			'carousel-item-start',
+			'carousel-item-end',
+		] as const
+		const activeIndices: number[] = []
+		const stale: string[] = []
 		for (let i = 0; i < items.length; i++) {
 			const slide = items[i]
 			if (!slide) continue
 			const classes = Array.from(slide.classList)
-			if (i === 1) {
-				expect(classes).toContain('active')
-			} else {
-				expect(classes, `slide[${i}] should not be active`).not.toContain('active')
+			if (classes.includes('active')) activeIndices.push(i)
+			for (const cls of STALE_CLASSES) {
+				if (classes.includes(cls)) stale.push(`slide[${i}] carries stale ${cls}`)
 			}
-			expect(classes, `slide[${i}] should not carry stale carousel-item-next`).not.toContain(
-				'carousel-item-next',
-			)
-			expect(classes, `slide[${i}] should not carry stale carousel-item-prev`).not.toContain(
-				'carousel-item-prev',
-			)
-			expect(classes, `slide[${i}] should not carry stale carousel-item-start`).not.toContain(
-				'carousel-item-start',
-			)
-			expect(classes, `slide[${i}] should not carry stale carousel-item-end`).not.toContain(
-				'carousel-item-end',
-			)
 		}
+		expect(activeIndices).toEqual([1])
+		expect(stale).toEqual([])
 	})
 
 	it('destroy clears aria-selected on indicators', () => {

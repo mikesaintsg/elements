@@ -62,14 +62,13 @@ describe('isolation — modifier-vocabulary class rules only live in modifiers/'
 	for (const [path, source] of Object.entries(sources)) {
 		const filename = path.replace(/^.*\/src\/styles\//, 'src/styles/')
 
+		// On failure: the `offenders` array prints the modifier-name rules
+		// declared bare outside modifiers/. Either move the rule to
+		// src/styles/modifiers/, or scope it to an element (`{tag}.{name}`)
+		// and place it in modifiers/_local.scss.
 		it(`${filename} does not declare a bare .{modifier-name} rule`, () => {
 			const offenders = bareClassNamesIn(source).filter((name) => MODIFIER_NAMES.has(name))
-			expect(
-				offenders,
-				`${filename} declares bare rules for modifier names: ${offenders.join(', ')}. ` +
-					`Either move the rule to src/styles/modifiers/, or scope it to an element ` +
-					`(e.g. \`{tag}.{name}\`) and place it in modifiers/_local.scss.`,
-			).toEqual([])
+			expect(offenders).toEqual([])
 		})
 	}
 })

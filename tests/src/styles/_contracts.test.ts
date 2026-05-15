@@ -220,18 +220,17 @@ describe('contracts — every partial wraps rules in its folder layer', () => {
 		const layers = findLayerDirectives(partial.stripped)
 		const hasRules = /[^\s]\s*\{/.test(partial.stripped)
 
+		// On failure:
+		//   - comment-only stub: `${partial.relative}` is comment-only but the
+		//     `${partial.folder}/` folder forbids stubs.
+		//   - has rules: `${partial.relative}` has rules but no @layer
+		//     `${partial.folder}` wrapper.
 		it(`${partial.relative} → wraps in @layer ${partial.folder} (or is a documented comment-only stub)`, () => {
-			if (!hasRules) {
-				expect(
-					commentOnlyAllowed,
-					`${partial.relative} is comment-only but the ${partial.folder}/ folder forbids stubs`,
-				).toBe(true)
-				return
-			}
-			expect(
-				layers,
-				`${partial.relative} has rules but no @layer ${partial.folder} wrapper`,
-			).toContain(partial.folder)
+			// One unconditional assertion that captures both branches: when the
+			// partial has no rules the layer-wrapper requirement collapses to
+			// the comment-only allowance.
+			const ok = hasRules ? layers.includes(partial.folder) : commentOnlyAllowed
+			expect(ok).toBe(true)
 		})
 	}
 })
@@ -244,11 +243,9 @@ describe('contracts — no partial writes into a foreign layer', () => {
 		const foreign = layers.filter(
 			(name) => layerNames.has(name as StyleLayer) && name !== partial.folder,
 		)
+		// On failure: the `foreign` array prints the foreign @layer names.
 		it(`${partial.relative} → no foreign @layer directives`, () => {
-			expect(
-				foreign,
-				`${partial.relative} writes into foreign layer(s): ${foreign.join(', ')}`,
-			).toEqual([])
+			expect(foreign).toEqual([])
 		})
 	}
 })
@@ -264,6 +261,7 @@ describe('contracts — every rule head is one of the folder allowed selector ki
 		const forbidden = new Map(contract.head.forbidden.map((f) => [f.kind, f.recommendation]))
 		const openers = extractRuleOpeners(partial.source)
 
+		// On failure: the `violations` array prints each disallowed rule head.
 		it(`${partial.relative} → every rule head is allowed in ${partial.folder}/`, () => {
 			const violations: string[] = []
 			for (const opener of openers) {
@@ -278,10 +276,7 @@ describe('contracts — every rule head is one of the folder allowed selector ki
 					violations.push(`'${branch}' (kind: ${kind}) — not in the ${partial.folder}/ allow-list`)
 				}
 			}
-			expect(
-				violations,
-				`${partial.relative} has ${violations.length} disallowed rule head(s):\n  - ${violations.join('\n  - ')}`,
-			).toEqual([])
+			expect(violations).toEqual([])
 		})
 	}
 })
@@ -295,12 +290,11 @@ describe('contracts — composables/ partials gate on composable-state selectors
 		if (partial.folder !== 'composables') continue
 		const exception = exceptionFor(partial.path)
 		if (exception?.state?.required === false) continue
+		// On failure: `${partial.relative}` has no [data-*] / [aria-*=…] /
+		// [role=…] / [open] / :popover-open / :modal / :open selector — rules
+		// belong in components/ or elements/ unless gated on composable state.
 		it(`${partial.relative} → at least one rule references a composable-state selector`, () => {
-			expect(
-				hasStateSelector(partial.stripped),
-				`${partial.relative} has no [data-*] / [aria-*=…] / [role=…] / [open] / :popover-open / :modal / :open selector — ` +
-					`rules belong in components/ or elements/ unless gated on composable state`,
-			).toBe(true)
+			expect(hasStateSelector(partial.stripped)).toBe(true)
 		})
 	}
 })
@@ -315,17 +309,15 @@ describe('contracts — every --set-* declaration matches the folder token names
 		const allowed = allowedTokenPrefixes(partial.path)
 		const tokens = tokenDeclarationsIn(partial.stripped)
 
+		// On failure: the `violations` array prints each out-of-namespace token.
+		// Allowed prefixes for this folder: ${allowed.join(', ')}.
 		it(`${partial.relative} → declares only --set-{${allowed.join('|')}}-* tokens`, () => {
 			const violations: string[] = []
 			for (const token of tokens) {
 				if (tokenAllowed(token, allowed)) continue
 				violations.push(`${token} (prefix '${tokenPrefixOf(token)}' not allowed)`)
 			}
-			expect(
-				violations,
-				`${partial.relative} declares ${violations.length} out-of-namespace token(s):\n  - ${violations.join('\n  - ')}\n` +
-					`Allowed prefixes: ${allowed.join(', ')}`,
-			).toEqual([])
+			expect(violations).toEqual([])
 		})
 	}
 })

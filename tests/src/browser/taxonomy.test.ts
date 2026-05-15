@@ -29,7 +29,6 @@ import {
 	PASSTHROUGH_TAGS,
 	MODIFIABLE_TAGS,
 	TOKEN_GROUPS,
-	GROUPS_BY_TAG,
 	COMPONENT_CONTRACTS,
 	groupsForTag,
 	isKnownTag,
@@ -58,24 +57,22 @@ describe('taxonomy — shape', () => {
 	})
 
 	it('composable field is non-null iff treatment === composable', () => {
-		for (const entry of taxonomy) {
-			if (entry.treatment === 'composable') {
-				expect(entry.composable, `${entry.tag} is composable but has no factory key`).not.toBeNull()
-			} else {
-				expect(
-					entry.composable,
-					`${entry.tag} (${entry.treatment}) carries a stray factory key`,
-				).toBeNull()
-			}
-		}
+		// Stray factory keys on non-composable rows (or missing keys on composable rows)
+		// surface here as `${tag}:${treatment}:${composable === null}` strings.
+		const offenders = taxonomy
+			.filter((entry) => (entry.treatment === 'composable') !== (entry.composable !== null))
+			.map((entry) => `${entry.tag} (${entry.treatment}) → composable=${entry.composable}`)
+		expect(offenders).toEqual([])
 	})
 
 	it('every tag appears exactly once', () => {
 		const seen = new Set<string>()
+		const dupes: string[] = []
 		for (const entry of taxonomy) {
-			expect(seen.has(entry.tag), `duplicate taxonomy entry for ${entry.tag}`).toBe(false)
+			if (seen.has(entry.tag)) dupes.push(entry.tag)
 			seen.add(entry.tag)
 		}
+		expect(dupes).toEqual([])
 	})
 })
 
@@ -89,19 +86,15 @@ describe('taxonomy — pre-computed indices stay in sync', () => {
 		}
 	})
 
-	it('SUBSTANTIVE_TAGS contains every substantive entry', () => {
+	it('SUBSTANTIVE_TAGS mirrors treatment === substantive', () => {
 		for (const entry of taxonomy) {
-			if (entry.treatment === 'substantive') {
-				expect(SUBSTANTIVE_TAGS.has(entry.tag)).toBe(true)
-			}
+			expect(SUBSTANTIVE_TAGS.has(entry.tag)).toBe(entry.treatment === 'substantive')
 		}
 	})
 
-	it('COMPOSABLE_TAGS contains every composable entry', () => {
+	it('COMPOSABLE_TAGS mirrors treatment === composable', () => {
 		for (const entry of taxonomy) {
-			if (entry.treatment === 'composable') {
-				expect(COMPOSABLE_TAGS.has(entry.tag)).toBe(true)
-			}
+			expect(COMPOSABLE_TAGS.has(entry.tag)).toBe(entry.treatment === 'composable')
 		}
 	})
 
@@ -151,7 +144,7 @@ describe('taxonomy — elements.ts is a subset of substantive + composable', () 
 		// h1-h6 is enumerated under that exact key in both registries.
 		it(`${tag} appears in taxonomy as substantive or composable`, () => {
 			const entry = TAXONOMY_BY_TAG.get(tag)
-			expect(entry, `${tag} is in elements.ts but missing from taxonomy`).toBeDefined()
+			expect(entry).toBeDefined()
 			expect(entry?.treatment === 'substantive' || entry?.treatment === 'composable').toBe(true)
 		})
 	}
@@ -168,17 +161,18 @@ const CLASS_COMPONENT_NAMES: ReadonlySet<string> = new Set(Object.keys(COMPONENT
 
 describe('taxonomy — TOKEN_GROUPS', () => {
 	it('every group member is a known taxonomy tag or class-component', () => {
+		const offenders: string[] = []
 		for (const [name, definition] of Object.entries(TOKEN_GROUPS) as readonly [
 			TokenGroup,
 			(typeof TOKEN_GROUPS)[TokenGroup],
 		][]) {
 			for (const member of definition.members) {
-				expect(
-					isKnownTag(member) || CLASS_COMPONENT_NAMES.has(member),
-					`${name} group member '${member}' is not in taxonomy and is not a class-component`,
-				).toBe(true)
+				if (!(isKnownTag(member) || CLASS_COMPONENT_NAMES.has(member))) {
+					offenders.push(`${name}.${member}`)
+				}
 			}
 		}
+		expect(offenders).toEqual([])
 	})
 
 	it('every required suffix is a kebab-case CSS-property segment', () => {

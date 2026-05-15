@@ -596,11 +596,16 @@ export interface ModifierDimensionContract {
 	 * Property suffixes every class in the dimension MUST declare. The full
 	 * declaration name is `--set-{dimension}-{suffix}`.
 	 *
-	 * Empty when the dimension emits direct CSS properties instead of
-	 * context tokens (state classes hard-code `opacity` / `cursor`;
-	 * placement classes hard-code `position-area`).
+	 * `tokens.required` is empty when the dimension emits direct CSS
+	 * properties instead of context tokens (state classes hard-code
+	 * `opacity` / `cursor`; placement classes hard-code `position-area`).
+	 *
+	 * Nested under `tokens` for shape parity with `SurfaceContract`,
+	 * `ComponentContract`, and `ComposableContract`.
 	 */
-	readonly required: readonly string[]
+	readonly tokens: {
+		readonly required: readonly string[]
+	}
 	/** One-sentence rationale shown in failure messages. */
 	readonly rationale: string
 }

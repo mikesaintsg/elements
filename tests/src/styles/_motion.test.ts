@@ -65,34 +65,29 @@ function sourceFor(relativePath: string): string {
 // satisfy the check on its own) must reference both motion tokens.
 
 describe('motion — every panel-reveal partial uses the motion-contract tokens', () => {
-	for (const { path, reason } of MOTION_CONTRACT_PARTIALS) {
+	for (const { path } of MOTION_CONTRACT_PARTIALS) {
 		const source = stripComments(sourceFor(path))
 		const hasDuration = source.includes('var(--set-motion-duration)')
 		const hasTiming = source.includes('var(--set-motion-timing-function)')
 
+		// On failure: `${path}` is registered in MOTION_CONTRACT_PARTIALS (${reason})
+		// but its non-comment source never references `var(--set-motion-duration)`.
+		// Panel reveals MUST read from the shared motion-duration token so the
+		// whole panel family retunes from one `:root` override. See
+		// src/styles/_tokens.scss § "Framework-wide motion contract".
 		it(`${path} references --set-motion-duration`, () => {
-			expect(
-				hasDuration,
-				`${path} is registered in MOTION_CONTRACT_PARTIALS (${reason}) but ` +
-					`its non-comment source never references \`var(--set-motion-duration)\`. ` +
-					`Panel reveals MUST read from the shared motion-duration token so the ` +
-					`whole panel family retunes from one \`:root\` override. ` +
-					`See src/styles/_tokens.scss § "Framework-wide motion contract" + ` +
-					`tests/src/styles/_motion.test.ts.`,
-			).toBe(true)
+			expect(hasDuration).toBe(true)
 		})
 
+		// On failure: `${path}` is registered in MOTION_CONTRACT_PARTIALS (${reason})
+		// but its non-comment source never references `var(--set-motion-timing-function)`.
+		// Panel reveals MUST read from the shared motion-timing token so the
+		// iOS-stiff-decel curve is uniform across drawers, dialogs, disclosures,
+		// alerts, and table-row expansions. Opacity entries can keep `ease-out`;
+		// discrete entries can keep `allow-discrete` — but block-size / transform /
+		// padding-block / etc. must read `var(--set-motion-timing-function)`.
 		it(`${path} references --set-motion-timing-function`, () => {
-			expect(
-				hasTiming,
-				`${path} is registered in MOTION_CONTRACT_PARTIALS (${reason}) but ` +
-					`its non-comment source never references \`var(--set-motion-timing-function)\`. ` +
-					`Panel reveals MUST read from the shared motion-timing token so the ` +
-					`iOS-stiff-decel curve is uniform across drawers, dialogs, disclosures, ` +
-					`alerts, and table-row expansions. Opacity entries can keep \`ease-out\`; ` +
-					`discrete entries can keep \`allow-discrete\` — but block-size / transform / ` +
-					`padding-block / etc. must read \`var(--set-motion-timing-function)\`.`,
-			).toBe(true)
+			expect(hasTiming).toBe(true)
 		})
 	}
 })
@@ -165,7 +160,7 @@ function splitTransitionEntries(list: string): readonly string[] {
 }
 
 describe('motion — panel-reveal transitions never hardcode duration literals', () => {
-	for (const { path, reason } of MOTION_CONTRACT_PARTIALS) {
+	for (const { path } of MOTION_CONTRACT_PARTIALS) {
 		const source = sourceFor(path)
 		const transitions = extractTransitionLists(source)
 		const offenders: string[] = []
@@ -183,17 +178,14 @@ describe('motion — panel-reveal transitions never hardcode duration literals',
 			}
 		}
 
+		// On failure: the `offenders` array prints each panel-reveal transition
+		// entry with a hardcoded duration literal. Replace the literal with
+		// `var(--set-motion-duration)` (or a partial-scoped
+		// `--set-{partial}-transition-duration` token that resolves through
+		// the cascade) so consumers can retune the whole motion family from
+		// one `:root` override.
 		it(`${path} has no hardcoded duration on panel-reveal properties`, () => {
-			expect(
-				offenders,
-				`${path} (${reason}) has ${offenders.length} transition entry(ies) animating ` +
-					`a panel-reveal property with a hardcoded duration literal. Replace the literal ` +
-					`with \`var(--set-motion-duration)\` (or a partial-scoped \`--set-{partial}-` +
-					`transition-duration\` token that resolves through the cascade) so consumers ` +
-					`can retune the whole motion family from one \`:root\` override.\n` +
-					`Offending entries:\n  - ` +
-					offenders.join('\n  - '),
-			).toEqual([])
+			expect(offenders).toEqual([])
 		})
 	}
 })
@@ -209,15 +201,15 @@ describe('motion — panel-reveal transitions never hardcode duration literals',
 // otherwise be invisible until visual review.
 
 describe('motion — global `interpolate-size: allow-keywords` is declared', () => {
+	// On failure: elements/_html.scss must declare
+	// `interpolate-size: allow-keywords` on `<html>` so panel reveals can
+	// animate `block-size: 0 ↔ auto` cleanly across the framework
+	// (details::details-content, table row expansion, alert open / close).
+	// Without this declaration the keyword endpoint won't resolve to a
+	// length the engine can interpolate, and every height-animating panel
+	// will snap instead of tweening.
 	it('elements/_html.scss declares `interpolate-size: allow-keywords`', () => {
 		const source = sourceFor('elements/_html.scss')
-		expect(
-			source.includes('interpolate-size: allow-keywords'),
-			`elements/_html.scss must declare \`interpolate-size: allow-keywords\` on \`<html>\` ` +
-				`so panel reveals can animate \`block-size: 0 ↔ auto\` cleanly across the framework ` +
-				`(details::details-content, table row expansion, alert open / close). Without this ` +
-				`declaration the keyword endpoint won't resolve to a length the engine can ` +
-				`interpolate, and every height-animating panel will snap instead of tweening.`,
-		).toBe(true)
+		expect(source.includes('interpolate-size: allow-keywords')).toBe(true)
 	})
 })

@@ -68,8 +68,9 @@ const uniqueTokens: ReadonlyMap<string, string> = (() => {
 
 describe('naming — every --set-* token matches the documented shape', () => {
 	for (const [name, file] of uniqueTokens) {
+		// On failure: `${name}` does not match --set-{kebab-case} (in `${file}`).
 		it(`${name} (in ${file}) is kebab-case with a --set- prefix`, () => {
-			expect(TOKEN_SHAPE.test(name), `${name} does not match --set-{kebab-case}`).toBe(true)
+			expect(TOKEN_SHAPE.test(name)).toBe(true)
 		})
 	}
 })
@@ -78,14 +79,12 @@ describe('naming — every --set-* token matches the documented shape', () => {
 
 describe('naming — no token segment matches the abbreviation black-list', () => {
 	for (const [name, file] of uniqueTokens) {
+		// On failure: the `offenders` array prints the forbidden segments.
+		// Spell the name out — see src/browser/taxonomy.ts § FORBIDDEN_TOKEN_SEGMENTS.
 		it(`${name} (in ${file}) has no forbidden segment`, () => {
 			const segments = name.replace(/^--set-/, '').split('-')
 			const offenders = segments.filter((segment) => FORBIDDEN_TOKEN_SEGMENTS.has(segment))
-			expect(
-				offenders,
-				`${name} contains forbidden abbreviation(s): ${offenders.join(', ')}. ` +
-					`Spell the name out — see src/browser/taxonomy.ts § FORBIDDEN_TOKEN_SEGMENTS.`,
-			).toEqual([])
+			expect(offenders).toEqual([])
 		})
 	}
 })

@@ -75,42 +75,33 @@ describe('local — file is wrapped in @layer modifiers', () => {
 
 describe('local — file declares no bare class selectors', () => {
 	it('every rule is element-scoped (compound selector)', () => {
-		const bare = bareSelectorsIn(localScss)
-		expect(
-			bare,
-			`_local.scss declares bare class rule(s) — those belong in dimension partials: ${bare.join(', ')}`,
-		).toEqual([])
+		// _local.scss must not declare bare class rules — those belong in dimension partials.
+		expect(bareSelectorsIn(localScss)).toEqual([])
 	})
 })
 
 // ── Compound rules respect the charter ──────────────────────────────────────
+//
+// When `_local.scss` has no compound rules yet (scaffold state), the per-rule
+// assertions below are simply skipped — the shape tests above still run, and
+// the (empty) for-loop emits no tests.
 
 describe('local — every compound rule respects the charter', () => {
 	const compounds = compoundSelectorsIn(localScss)
 
-	if (compounds.length === 0) {
-		// File is currently a scaffold — no rules yet. Skip the per-rule
-		// assertions; the shape tests above still run.
-		it('no compound rules declared yet (scaffold state — see charter at top of file)', () => {
-			expect(compounds.length).toBe(0)
-		})
-		return
-	}
-
 	for (const { tag, name } of compounds) {
 		it(`${tag}.${name} — {tag} is a known taxonomy entry`, () => {
-			expect(TAXONOMY_BY_TAG.has(tag), `${tag} is not in taxonomy`).toBe(true)
+			expect(TAXONOMY_BY_TAG.has(tag)).toBe(true)
 		})
 
+		// `${name}` must NOT collide with a cross-cutting modifier (declare on its
+		// dimension partial, not here) or a Tailwind single-token utility.
 		it(`${tag}.${name} — {name} is not a cross-cutting modifier`, () => {
-			expect(
-				CROSS_CUTTING.has(name),
-				`${name} is a cross-cutting modifier — declare on its dimension partial, not here`,
-			).toBe(false)
+			expect(CROSS_CUTTING.has(name)).toBe(false)
 		})
 
 		it(`${tag}.${name} — {name} does not collide with a Tailwind utility`, () => {
-			expect(TAILWIND.has(name), `${name} is a Tailwind single-token utility`).toBe(false)
+			expect(TAILWIND.has(name)).toBe(false)
 		})
 	}
 })

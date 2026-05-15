@@ -99,36 +99,29 @@ const JS_ONLY: Readonly<Record<string, string>> = {
 
 // ── 4. The contract ────────────────────────────────────────────────────────
 
+// Failure rationale (for readers diagnosing a red test below):
+//   The factory writes `[attr]` via `setAttribute` but NO partial in
+//   `src/styles/` references it. Either:
+//     (a) Wire the attribute into the cascade so it actually styles something, OR
+//     (b) Drop the attribute and lean on the native platform state
+//         (`:popover-open`, `[open]`, `:checked`, `[hidden]`, …), OR
+//     (c) Add it to JS_ONLY in this file with a rationale describing why the
+//         attribute is JS-only and what CSS DOES style instead.
+//
+//   This contract was added after the createAside strip (commit `2b6952a`)
+//   exposed ~400 ms of dead-wait latency from a factory writing attributes
+//   the CSS never consumed.
+
 describe('factory ↔ style parity — every setAttribute("data-*") has a CSS reference', () => {
 	const writes = [...findAttrWrites()]
 
-	if (writes.length === 0) {
-		it('finds at least one data-* setAttribute call to verify', () => {
-			expect.fail('No `.setAttribute("data-…")` calls found in src/browser/factories/.')
-		})
-		return
-	}
+	it('discovers at least one data-* setAttribute call to verify', () => {
+		expect(writes.length).toBeGreaterThan(0)
+	})
 
-	for (const { attr, factory } of writes) {
+	for (const { attr, factory } of writes.filter((w) => !JS_ONLY[w.attr])) {
 		it(`[${attr}] (written by ${factory}) is referenced by src/styles/`, () => {
-			if (JS_ONLY[attr]) {
-				// Documented exception — pass with the rationale recorded in
-				// the test source.
-				return
-			}
-			expect(
-				isReferencedInStyles(attr),
-				`${factory} writes \`[${attr}]\` via \`setAttribute\` but NO partial in ` +
-					`src/styles/ references it. Either:\n` +
-					`  (a) Wire the attribute into the cascade so it actually styles something, OR\n` +
-					`  (b) Drop the attribute and lean on the native platform state (e.g. ` +
-					`\`:popover-open\`, \`[open]\`, \`:checked\`, \`[hidden]\`), OR\n` +
-					`  (c) Add it to JS_ONLY in this file with a rationale describing why the ` +
-					`attribute is JS-only and what CSS DOES style instead.\n\n` +
-					`This contract was added after the createAside strip (commit \`2b6952a\`) ` +
-					`exposed ~400 ms of dead-wait latency from a factory writing attributes ` +
-					`the CSS never consumed.`,
-			).toBe(true)
+			expect(isReferencedInStyles(attr)).toBe(true)
 		})
 	}
 })

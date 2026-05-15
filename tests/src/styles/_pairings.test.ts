@@ -102,24 +102,16 @@ describe('pairings — every `parent > child` tag pair must be on the allowlist'
 			}
 		}
 
+		// On failure: the `offenders` array prints each `parent > child` tag pair
+		// not in STRUCTURAL_PAIRINGS. Each entry is element-hardcoding inside
+		// containment — either:
+		//   (a) add the pairing to STRUCTURAL_PAIRINGS in src/browser/patterns.ts
+		//       with a justification (spec / slot / reset / context), OR
+		//   (b) refactor the rule onto a wrapper class so consumers can use any
+		//       child element under that wrapper.
+		// See guides/patterns.md § "Structural pairings" for the rationale.
 		it(`${relative} uses only allowlisted parent > child tag pairs`, () => {
-			expect(
-				offenders,
-				`${relative} has ${offenders.length} rule(s) with a parent > child tag pair ` +
-					`not in STRUCTURAL_PAIRINGS. Each entry is element-hardcoding inside ` +
-					`containment: the framework dictates that one specific element type fills ` +
-					`a role inside a container, when the role could equally well be filled by ` +
-					`a wrapper class or a different child element. Either:\n` +
-					`  (a) add the pairing to STRUCTURAL_PAIRINGS in src/browser/patterns.ts ` +
-					`with a justification (spec / slot / reset / context), OR\n` +
-					`  (b) refactor the rule onto a wrapper class so consumers can use any ` +
-					`child element under that wrapper.\n\n` +
-					`See guides/patterns.md § "Structural pairings" for the rationale.\n` +
-					`Offenders:\n  - ` +
-					offenders
-						.map(({ selector, parent, child }) => `${parent} > ${child}  in  '${selector}'`)
-						.join('\n  - '),
-			).toEqual([])
+			expect(offenders).toEqual([])
 		})
 	}
 })
@@ -127,14 +119,12 @@ describe('pairings — every `parent > child` tag pair must be on the allowlist'
 // ── Allowlist sanity: every entry has a non-empty reason ───────────────────
 
 describe('pairings — allowlist entries are well-formed', () => {
+	// On failure: the `bad` array prints each malformed STRUCTURAL_PAIRINGS entry.
 	it('every STRUCTURAL_PAIRINGS entry has parent + child + kind + reason', () => {
 		const bad = STRUCTURAL_PAIRINGS.filter(
 			(p) => !p.parent || !p.child || !p.kind || !p.reason || p.reason.length < 10,
 		)
-		expect(
-			bad,
-			`Malformed allowlist entries:\n  - ` + bad.map((p) => JSON.stringify(p)).join('\n  - '),
-		).toEqual([])
+		expect(bad).toEqual([])
 	})
 
 	it('`pairingFor` returns the entry for an allowlisted pair', () => {

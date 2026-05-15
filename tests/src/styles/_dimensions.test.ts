@@ -76,23 +76,21 @@ for (const [dimension, contract] of Object.entries(MODIFIER_DIMENSION_TOKENS)) {
 	if (source === undefined) continue
 
 	describe(`dimensions — ${dimension} classes declare every required --set-${dimension}-* token`, () => {
-		if (contract.tokens.required.length === 0) {
-			it(`${dimension} dimension has no token requirements (direct CSS properties only)`, () => {
-				expect(contract.tokens.required).toEqual([])
-			})
-			return
-		}
+		// Dimensions with zero required tokens (state, placement) emit direct CSS
+		// properties only — the per-class loop below is a no-op for them.
+		it(`${dimension} dimension shape is consistent with MODIFIER_DIMENSION_TOKENS`, () => {
+			expect(Array.isArray(contract.tokens.required)).toBe(true)
+		})
 
 		for (const className of contract.classes) {
 			const body = ruleBodyFor(className, source)
 
 			for (const suffix of contract.tokens.required) {
+				// Rationale on failure: `.${className}` in modifiers/_${dimension}s.scss
+				// is missing --set-${dimension}-${suffix}. See MODIFIER_DIMENSION_TOKENS
+				// in src/browser/patterns.ts for the contract.
 				it(`.${className} declares --set-${dimension}-${suffix}`, () => {
-					expect(
-						declaresToken(body, dimension, suffix),
-						`.${className} in modifiers/_${dimension}s.scss is missing ` +
-							`--set-${dimension}-${suffix}. Rationale: ${contract.rationale}`,
-					).toBe(true)
+					expect(declaresToken(body, dimension, suffix)).toBe(true)
 				})
 			}
 		}
