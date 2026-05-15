@@ -8,28 +8,28 @@
 
 **Sass list constants** (drive every `@each` loop):
 
-| Constant    | Values                                                                       | Role                                                                                                                                  |
-| ----------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `$variants` | `primary, secondary, tertiary, success, warning, danger, information`        | Seven semantic palette roles. Iterated by `_variants.scss` and every per-variant tint emitter.                                        |
-| `$sizes`    | `small, large`                                                               | Two non-default sizes. `medium` is the bare-element default and is intentionally absent.                                              |
-| `$styles`   | `subtle, filled`                                                             | Two fill treatments applied on top of a variant. (`.outline` removed — Tailwind owns it; `.ghost` removed — failed WCAG AA contrast.) |
-| `$states`   | `disabled, active, loading`                                                  | Three interaction / lifecycle states.                                                                                                 |
+| Constant    | Values                                                                | Role                                                                                                                                  |
+| ----------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `$variants` | `primary, secondary, tertiary, success, warning, danger, information` | Seven semantic palette roles. Iterated by `_variants.scss` and every per-variant tint emitter.                                        |
+| `$sizes`    | `small, large`                                                        | Two non-default sizes. `medium` is the bare-element default and is intentionally absent.                                              |
+| `$styles`   | `subtle, filled`                                                      | Two fill treatments applied on top of a variant. (`.outline` removed — Tailwind owns it; `.ghost` removed — failed WCAG AA contrast.) |
+| `$states`   | `disabled, active, loading`                                           | Three interaction / lifecycle states.                                                                                                 |
 
 **`@mixin` declarations** (cross-cutting helpers):
 
-| Mixin                         | Purpose                                                                          |
-| ----------------------------- | -------------------------------------------------------------------------------- |
-| `reduced-motion`              | Wrap content in `@media (prefers-reduced-motion: reduce)`.                       |
-| `transition($value)`          | Declare `transition: $value` with a paired `reduced-motion { transition: none }`. |
-| `focus-ring($alpha: 0.35)`    | Paint the framework's canonical focus signal.                                    |
-| `forced-colors`               | Wrap content in `@media (forced-colors: active)` for Windows High Contrast.      |
-| `truncate`                    | Single-line text ellipsis.                                                       |
-| `size-container($name, $type)` | Mark the element as a size-aware `@container` host.                              |
-| `floater-bounds($component, $width-prop)` | Pair design width against the viewport-clamp budget for floating surfaces. |
-| `floater-side-insets($component, $padding-var)` | Emit the four `--set-{component}-inset-*` tokens with `env()` safe-area max. |
-| `floater-edge($edge)`         | Anchor a fixed-position element to a single viewport edge.                        |
-| `floater-fullscreen`          | Fill the viewport on both axes with `inset: 0` + dynamic viewport units.         |
-| `palette-each($exclude: ())`  | `@each` over `$variants` yielding the variant name to a content block.           |
+| Mixin                                           | Purpose                                                                           |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| `reduced-motion`                                | Wrap content in `@media (prefers-reduced-motion: reduce)`.                        |
+| `transition($value)`                            | Declare `transition: $value` with a paired `reduced-motion { transition: none }`. |
+| `focus-ring($alpha: 0.35)`                      | Paint the framework's canonical focus signal.                                     |
+| `forced-colors`                                 | Wrap content in `@media (forced-colors: active)` for Windows High Contrast.       |
+| `truncate`                                      | Single-line text ellipsis.                                                        |
+| `size-container($name, $type)`                  | Mark the element as a size-aware `@container` host.                               |
+| `floater-bounds($component, $width-prop)`       | Pair design width against the viewport-clamp budget for floating surfaces.        |
+| `floater-side-insets($component, $padding-var)` | Emit the four `--set-{component}-inset-*` tokens with `env()` safe-area max.      |
+| `floater-edge($edge)`                           | Anchor a fixed-position element to a single viewport edge.                        |
+| `floater-fullscreen`                            | Fill the viewport on both axes with `inset: 0` + dynamic viewport units.          |
+| `palette-each($exclude: ())`                    | `@each` over `$variants` yielding the variant name to a content block.            |
 
 ---
 

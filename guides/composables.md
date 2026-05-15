@@ -20,27 +20,27 @@ Three naming buckets, one rule per bucket:
 
 Twenty composables ship today. Each has a paired showcase page under [`app/browser/pages/Use*Page.vue`](../app/browser/pages/) and tests under `tests/src/browser/{composables,factories}/`. Full per-composable reference (host element, owns, key options, events) lives under [Patterns](#patterns).
 
-| Composable               | Bucket               | Factory          | Notes                                                       |
-| ------------------------ | -------------------- | ---------------- | ----------------------------------------------------------- |
-| `useDialog`              | element-bound        | `createDialog`   | Modal + non-modal dialog lifecycle.                         |
-| `useAside`               | element-bound        | `createAside`    | Programmatic shim over `<aside popover>` (drawer surface).  |
-| `useDetails`             | element-bound        | `createDetails`  | `[open]` toggle + accordion grouping.                       |
-| `useMenu`                | element-bound        | `createMenu`     | Dropdown lifecycle + roving focus + anchor positioning.     |
-| `useSelect`              | element-bound        | `createSelect`   | Listbox + combobox + multi-select + autocomplete.           |
-| `useToast`               | element-bound        | `createToast`    | `<output popover>` with auto-hide + deck stacking.          |
-| `useTabs`                | element-bound        | `createTabs`     | `[role=tablist]` keyboard roving + lazy panel mount.        |
-| `useNav`                 | element-bound        | `createNav`      | `IntersectionObserver` scroll-spy + `aria-current=location`.|
-| `useForm`                | element-bound        | `createForm`     | Constraint validation + `[data-form-validated]` + a11y.    |
-| `useTable`               | element-bound        | `createTable`    | Sort + paginate + select + expand + resize.                 |
-| `useButton`              | element-bound        | `createButton`   | `aria-pressed` toggle.                                      |
-| `useAlert`               | element-bound        | `createAlert`    | `[role=alert]` dismiss lifecycle.                           |
-| `useCarousel`            | element-bound        | `createCarousel` | Slide nav + autoplay + touch / swipe.                       |
-| `usePopover`             | attribute-bound      | `createPopover`  | Programmatic show / hide + anchor positioning.              |
-| `useTooltip`             | attribute-bound      | `createTooltip`  | Hover / focus triggers + `[popover=hint]` panel.            |
-| `useFocus`               | behavioural primitive| `createFocus`    | Tab-trap with `activate()` / `deactivate()`.                |
-| `useDrag` + `useDrop`    | behavioural primitive| `createDrag` + `createDrop` | HTML5 DnD with reorder events.                    |
-| `usePointer`             | behavioural primitive| `createPointer`  | `pointerdown` → `pointermove*` → `pointerup` multiplex.     |
-| `useTheme`               | behavioural primitive| `createTheme`    | `data-theme` explicit pin OR attribute-absent follow.       |
+| Composable            | Bucket                | Factory                     | Notes                                                        |
+| --------------------- | --------------------- | --------------------------- | ------------------------------------------------------------ |
+| `useDialog`           | element-bound         | `createDialog`              | Modal + non-modal dialog lifecycle.                          |
+| `useAside`            | element-bound         | `createAside`               | Programmatic shim over `<aside popover>` (drawer surface).   |
+| `useDetails`          | element-bound         | `createDetails`             | `[open]` toggle + accordion grouping.                        |
+| `useMenu`             | element-bound         | `createMenu`                | Dropdown lifecycle + roving focus + anchor positioning.      |
+| `useSelect`           | element-bound         | `createSelect`              | Listbox + combobox + multi-select + autocomplete.            |
+| `useToast`            | element-bound         | `createToast`               | `<output popover>` with auto-hide + deck stacking.           |
+| `useTabs`             | element-bound         | `createTabs`                | `[role=tablist]` keyboard roving + lazy panel mount.         |
+| `useNav`              | element-bound         | `createNav`                 | `IntersectionObserver` scroll-spy + `aria-current=location`. |
+| `useForm`             | element-bound         | `createForm`                | Constraint validation + `[data-form-validated]` + a11y.      |
+| `useTable`            | element-bound         | `createTable`               | Sort + paginate + select + expand + resize.                  |
+| `useButton`           | element-bound         | `createButton`              | `aria-pressed` toggle.                                       |
+| `useAlert`            | element-bound         | `createAlert`               | `[role=alert]` dismiss lifecycle.                            |
+| `useCarousel`         | element-bound         | `createCarousel`            | Slide nav + autoplay + touch / swipe.                        |
+| `usePopover`          | attribute-bound       | `createPopover`             | Programmatic show / hide + anchor positioning.               |
+| `useTooltip`          | attribute-bound       | `createTooltip`             | Hover / focus triggers + `[popover=hint]` panel.             |
+| `useFocus`            | behavioural primitive | `createFocus`               | Tab-trap with `activate()` / `deactivate()`.                 |
+| `useDrag` + `useDrop` | behavioural primitive | `createDrag` + `createDrop` | HTML5 DnD with reorder events.                               |
+| `usePointer`          | behavioural primitive | `createPointer`             | `pointerdown` → `pointermove*` → `pointerup` multiplex.      |
+| `useTheme`            | behavioural primitive | `createTheme`               | `data-theme` explicit pin OR attribute-absent follow.        |
 
 **`useReducedMotion` is deliberately not shipped.** Tailwind v4 exposes the media query as a class variant, and the framework's `transition` mixin honours `@media (prefers-reduced-motion: reduce)` directly. A composable would be redundant.
 
