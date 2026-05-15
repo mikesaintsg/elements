@@ -90,9 +90,23 @@ const closeRailDrawers = (): void => {
 	}
 }
 
+// Auto-expand the active route's group. Each `<details>` in the sidebar
+// is uncontrolled (the user toggles via native summary click) — we only
+// nudge `open` true when the route changes to a page inside a collapsed
+// group. We never auto-close a user-collapsed group elsewhere, so user
+// collapses persist across navigations.
+const expandActiveGroup = (): void => {
+	const groupName = current.value.group
+	const el = document.querySelector<HTMLDetailsElement>(
+		`#primary-rail details[data-group="${CSS.escape(groupName)}"]`,
+	)
+	if (el && !el.open) el.open = true
+}
+
 watch([route, section], ([, target]) => {
 	void scrollToTarget(target)
 	closeRailDrawers()
+	expandActiveGroup()
 })
 
 const onKeydown = (e: KeyboardEvent): void => {
@@ -334,14 +348,25 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		<!-- Scrolling links region. `.showcase-sidebar-scroll` claims
 		     remaining vertical space + owns `overflow-y: auto`, so the
 		     long link list scrolls without consuming the pinned filter
-		     above. Each group renders as an `<h6>` + `<menu>` sibling
-		     pair — the framework's documented grouped-sidebar pattern
-		     (see `components/_menu.scss` § Grouped-sidebar rhythm).
-		     `<menu>` (not `<ul>`) so the framework's nav-rail rules
-		     paint the row chrome. -->
+		     above. Each group renders as a `<details class="flush">` —
+		     the framework's `<details>` baseline paints the disclosure
+		     marker + cursor + animation; `.flush` strips the outer
+		     card chrome so the disclosure sits inline with the rail's
+		     typography. The `<summary>` wraps the framework-canonical
+		     `<h6>` group title (kept for accessibility — screen readers
+		     announce the heading + nesting). `<menu>` (not `<ul>`) so
+		     the framework's nav-rail rules paint the row chrome. -->
 		<div class="showcase-sidebar-scroll">
-			<template v-for="g in grouped" :key="g.group">
-				<h6>{{ g.group }}</h6>
+			<details
+				v-for="g in grouped"
+				:key="g.group"
+				class="flush"
+				open
+				:data-group="g.group"
+			>
+				<summary>
+					<h6>{{ g.group }}</h6>
+				</summary>
 				<menu>
 					<li v-for="r in g.entries" :key="r.id">
 						<a
@@ -353,7 +378,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 						</a>
 					</li>
 				</menu>
-			</template>
+			</details>
 			<p v-if="grouped.length === 0">
 				<small>No matches.</small>
 			</p>

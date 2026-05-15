@@ -180,6 +180,99 @@
 	padding-block: var(--set-nav-padding-block);
 }
 
+/* ──────────────────────────────────────────────────────────────────
+ * Composed-sidebar group rhythm — `<details class="flush">` per
+ * `RouteGroup` with `<summary><h6>{group}</h6></summary><menu>...</menu>`
+ * inside.
+ *
+ * The framework's `_menu.scss` grouped-sidebar rhythm (`<h6>` + `<menu>`
+ * siblings) sets `margin-block-start: spacing*3` on every h6 to space
+ * groups apart. That rhythm assumed a 3–6-group product nav with
+ * non-collapsible groups. The showcase has 9 groups × 43 routes —
+ * dense enough that the inter-group gap needs to be a real DIVIDER
+ * (visual separator) rather than just blank space, AND the h6 needs to
+ * sit INSIDE the summary's click row (rather than above it), so the
+ * framework's h6-rhythm margins fight the new structure.
+ *
+ * What these rules do (showcase-only):
+ *
+ *   1. Group divider — a subtle border above each non-first
+ *      `<details class="flush">` so the visual cue "new group starts
+ *      here" survives the collapsed state (when the summary text is
+ *      visually small).
+ *
+ *   2. Summary click row — comfortable padding so the disclosure +
+ *      group label form a clear hit target. The framework's bare
+ *      `<summary>` ships padding via the `<details>` baseline, but
+ *      `.flush` strips it (correct for accordion-stacking); we
+ *      restore it for the rail.
+ *
+ *   3. H6 reset inside summary — zero the framework's nav-rail h6
+ *      margins so the heading sits inline with the disclosure
+ *      chevron, not pushed below.
+ *
+ * If a future framework feature lands ("collapsible nav-rail group"),
+ * this block likely retires.
+ * ────────────────────────────────────────────────────────────────── */
+
+/* Inter-group divider. Skip the first group (no preceding sibling to
+ * separate from) via `:not(:first-child)`. The line itself reads as
+ * structural punctuation between groups, not as a decorative border —
+ * one rail-color tone, no double-edge. */
+.showcase-sidebar-scroll > details.flush + details.flush {
+	border-block-start: 1px solid var(--set-nav-border-color);
+	margin-block-start: calc(var(--spacing) * 1);
+	padding-block-start: calc(var(--spacing) * 1);
+}
+
+/* Summary click row. The summary is the group's interactive toggle —
+ * generous padding + tight margin to the menu below so the "label →
+ * its list" relationship reads as one unit. The framework's open-state
+ * `--set-summary-margin-block-end` ships `spacing*2` for prose
+ * disclosures; the dense sidebar wants tighter (the menu already has
+ * its own item padding). */
+.showcase-sidebar-scroll > details.flush > summary {
+	padding-block: calc(var(--spacing) * 1.5);
+	padding-inline: calc(var(--spacing) * 2);
+	--set-summary-margin-block-end: calc(var(--spacing) * 0.5);
+}
+
+/* H6 inside summary — the framework's nav-rail h6 rhythm
+ * (margin-block-start * 3, margin-block-end * 1) was authored for h6
+ * as a DIRECT child of the rail. Inside `<summary>` the summary
+ * already owns the click row's vertical rhythm, so the h6 just needs
+ * to render the label's typography. Zero its own margins, leave the
+ * typography (uppercase, weight 600, muted color, letter-spacing) to
+ * the framework rule — matching the framework's eyebrow voice. */
+.showcase-sidebar-scroll > details.flush > summary > h6 {
+	margin: 0;
+	padding: 0;
+}
+
+/* Open-state h6 contrast. When the group is expanded, lean the h6
+ * forward a touch — bump from muted to body-text color — so the
+ * active group reads as "this is what you're inside." A small but
+ * consistent cue across all 9 groups makes the dense rail navigable
+ * at a glance. */
+.showcase-sidebar-scroll > details.flush[open] > summary > h6 {
+	color: var(--color-text);
+}
+
+/* Closed-group hiding — the UA's `details:not([open]) > *:not(summary)`
+ * collapse uses `display: none`, but the framework's nav-rail
+ * `body:has(main) > nav menu` rule paints `display: flex` on every
+ * `<menu>` inside the rail. The framework's descendant selector
+ * (specificity 0,1,1) beats the UA's combinator selector when both
+ * resolve in the cascade, so a `<menu>` inside a CLOSED `<details>`
+ * stays visible — defeating the whole point of the collapse.
+ *
+ * Explicitly gate the menu's display on the parent's open state. The
+ * selector specificity (0,2,1) beats the framework's nav-rail rule
+ * and only fires when the parent details has dropped `[open]`. */
+.showcase-sidebar-scroll > details.flush:not([open]) > menu {
+	display: none;
+}
+
 /* Drawer-mode overrides — when the rail opens in popover (mobile)
  * mode, it picks up the framework's popover surface chrome. Retune
  * the inner regions' padding + tones to match the drawer's gutter +

@@ -182,6 +182,8 @@ The framework layers on Tailwind v4. The interop test verifies modifier+utility 
 | [`components.md`](components.md)   | Element compositions — element-driven + class-root patterns.                                             |
 | [`surfaces.md`](surfaces.md)       | Browser-rendered chrome — pseudo-elements, `[popover]`, anchor-position, etc.                            |
 | [`composables.md`](composables.md) | Vue + factory layer — adapter / factory split, naming, lifecycle.                                        |
+| [`mixins.md`](mixins.md)           | Sass-side helper registry + list constants.                                                              |
+| [`showcase.md`](showcase.md)       | The showcase app (`app/browser/`) — strict authoring rules, sidebar / TOC patterns, custom-class triage. |
 | [`mixins.md`](mixins.md)           | Sass mixin + function registry — `transition()`, `focus-ring()`, `palette-each`, etc.                    |
 
 ### `src/browser/` — TypeScript public API

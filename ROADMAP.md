@@ -55,7 +55,7 @@ Every element page covers the static markup contract; the matching `Use*Page` co
 
 The flat sidebar list works for 14 pages; with 40+ it's a 42-line scroll.
 
-- ⬜ **Group-collapsible sidebar** — `<details><summary>{group}</summary><menu>…</menu></details>` per group so the rail isn't a 42-line scroll.
+- ✅ **Group-collapsible sidebar** — every `RouteGroup` wraps in `<details class="flush" open><summary><h6>{group}</h6></summary><menu>…</menu></details>`. `App.vue` auto-expands the active route's group on navigation but never auto-collapses user-collapsed groups elsewhere. Inter-group dividers + open-state h6 contrast painted via `app/browser/styles/showcase.css`. Codified in [`guides/showcase.md`](guides/showcase.md).
 - ⬜ **Keyboard nav inside the rail** — arrow keys move focus between visible items; `[` / `]` collapse / expand groups.
 
 ### 9.2 Cross-page polish (after all pages exist)
