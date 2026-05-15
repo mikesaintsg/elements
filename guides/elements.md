@@ -2,11 +2,7 @@
 
 > Authoritative reference for every native HTML element the framework has an opinion on, plus the token-uniformity groups that bind families of elements to a shared minimum surface. Every entry has a partial under [src/styles/elements/](../src/styles/elements/); substantive entries (those declaring `--set-{tag}-*` tokens) are mirrored in [src/browser/elements.ts](../src/browser/elements.ts) and the full registry — treatment, composable pairing, group membership — lives in [src/browser/taxonomy.ts](../src/browser/taxonomy.ts).
 
-This document is the authoritative element catalog: what the framework ships for every HTML tag, the per-element semantics and UA quirks worth knowing, the rules that govern when a partial earns a framework rule versus when Tailwind preflight and UA defaults do the job alone, and the logical groups whose members must declare the same minimum token surface so the family customizes uniformly.
-
----
-
-## 1. Overview
+## Surface
 
 Every HTML element receives exactly one of three treatments:
 
@@ -16,29 +12,9 @@ Every HTML element receives exactly one of three treatments:
 
 The composition layer ([components.md](components.md)) wraps these element baselines into class-root widgets (`.toast`, `.tooltip`, `.field`, `.card`, …). Element layer styles the tag; component layer styles the named pattern.
 
----
+### Substantive elements (cascade)
 
-## 2. Element-rule philosophy
-
-A framework rule only ships when neither Tailwind preflight nor the UA default supplies what we need. Three criteria, each with examples:
-
-- **UA quirk that breaks layout / accessibility / forced-colors.** `<fieldset>` zeroes `min-inline-size` (UA `min-content` blocks shrinking inside flex/grid). `<mark>` swaps UA hardcoded `yellow`/`black` for the system `mark` / `marktext` keywords plus a `prefers-color-scheme: dark` override using `highlight` / `highlighttext`. `<address>` resets `font-style: normal` because the UA italic is a widely-rejected quirk.
-- **Affordance preflight strips.** `<a>` keeps an underline (preflight drops it via `text-decoration: inherit`; the framework wants links visually distinct). `<abbr>` adds `cursor: help` (preflight covers the dotted underline; cursor is a separate signal). `<p>` adds `p + p { margin-block-start: 1em }` to restore inter-paragraph rhythm after preflight's universal `* { margin: 0 }` strip.
-- **Earns the full modifier cascade.** Interactive controls (`<button>`, `<a>`, `<input>`, `<select>`, `<textarea>`, `<label>`, `<fieldset>`, `<legend>`), disclosure / dialog roots (`<details>`, `<summary>`, `<dialog>`, `<aside>`), gauges (`<meter>`, `<progress>`, `<output>`), and structural primitives (`<form>`, `<menu>`, `<nav>`, `<search>`, `<h1>`–`<h6>`, the `<table>` family) all carry element-scoped tokens and the five-dimension cascade described in [modifiers.md](modifiers.md).
-
-If a future element needs framework rules, the test is: **does preflight already do it?** If yes, no partial rules. If no, but it is just an opinionated style choice, no rules — let consumers add utilities. If no, AND it is a real semantic gap (UA quirk needing reset, affordance preflight strips, or an element worth the full cascade) — then the rule earns its place.
-
----
-
-## 3. Open-state gating discipline
-
-For any element with an open/closed lifecycle — `<dialog>`, `<details>`, `<aside popover>`, `<output popover>`, `<menu popover>` — the element baseline ships only tokens and chrome that survives the close transition. Drawer-shaped CSS (`display: flex`, `position: fixed`, large `transform`) lives in `composables/_{tag}.scss` and gates on the open-state selector: `:popover-open`, `:modal`, `[open]`, or `[data-{name}-open]`. Without the gate, author rules with specificity ≥ 0,1,1 defeat the UA's `display: none` for closed popovers and the element stays rendered after `.close()` / `.hidePopover()`. Full discipline in [composables.md §3](composables.md#3-openclosed-lifecycle).
-
----
-
-## 4. Substantive elements (cascade)
-
-Every `✅ cascade` element. The cascade column notes what is framework-specific; the long-form semantics live in [§9 Reference catalog](#9-reference-catalog).
+Every `✅ cascade` element. Long-form semantics + per-element quirks live in [Reference catalog](#reference-catalog) below.
 
 | Tag                                                                      | Framework treatment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -64,11 +40,9 @@ Every `✅ cascade` element. The cascade column notes what is framework-specific
 | `<table>` / `<thead>` / `<tbody>` / `<tfoot>` / `<tr>` / `<th>` / `<td>` | One partial per tag, all sharing the same table-family token namespace. Sticky header, zebra rows, sortable headers, density modifier. Pairs `useTable`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `<textarea>`                                                             | Same cascade as `<input>`. `field-sizing: content` opted into via a modifier; resize handle styling token-driven.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
-All of the above are mirrored in [`src/browser/elements.ts`](../src/browser/elements.ts) and the bidirectional parity is enforced by [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts).
+All mirrored in [`src/browser/elements.ts`](../src/browser/elements.ts); bidirectional parity enforced by [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts).
 
----
-
-## 5. Override elements
+### Override elements
 
 Elements that ship a small framework-essential rule but no cascade, no tokens, no TS entry.
 
@@ -95,11 +69,9 @@ Elements that ship a small framework-essential rule but no cascade, no tokens, n
 | `<var>`                  | Inherits italic; sets `font-feature-settings` for variable typesetting where supported.                                                                                                                                |
 | `<video>`                | `display: block` + `inline-size: 100%; block-size: auto`.                                                                                                                                                              |
 
----
+### Non-styled elements (n/a)
 
-## 6. Non-styled elements (n/a)
-
-These ship as comment-only placeholders. Tailwind v4 preflight plus UA defaults already do the right thing.
+Ship as comment-only placeholders. Tailwind v4 preflight + UA defaults handle everything.
 
 - **Inline phrasing** — `<b>`, `<bdi>`, `<bdo>`, `<cite>`, `<data>`, `<del>`, `<dfn>`, `<em>`, `<i>`, `<ins>`, `<q>`, `<s>`, `<small>`, `<span>`, `<strong>`, `<sub>`, `<sup>`, `<time>`, `<u>`.
 - **List markup** — `<ul>`, `<ol>`, `<li>`. (Visual list chrome lives in the component layer when needed.)
@@ -109,11 +81,9 @@ These ship as comment-only placeholders. Tailwind v4 preflight plus UA defaults 
 - **Legacy form bits** — `<datalist>`, `<optgroup>`, `<option>`. (Custom select chrome is delivered through `<select>`'s cascade plus the `useSelect` composable, not by styling the options.)
 - **Table column hooks** — `<col>`, `<colgroup>`, `<caption>`. (Caption typography is governed by the `<table>`-family token namespace.)
 
----
+### Non-visual elements
 
-## 7. Non-visual elements
-
-Valid HTML but never rendered on screen. No partial, no rules — listed here for completeness.
+Valid HTML but never rendered on screen. No partial, no rules — listed for completeness.
 
 | Tag          | Role                                                                          |
 | ------------ | ----------------------------------------------------------------------------- |
@@ -134,17 +104,70 @@ Valid HTML but never rendered on screen. No partial, no rules — listed here fo
 | `<track>`    | Timed text track for `<video>` / `<audio>`. Void.                             |
 | `<wbr>`      | Word-break opportunity hint. No box model.                                    |
 
----
-
-## 8. Deprecated
+### Deprecated
 
 Removed from the spec; do not use. No partial, no entry: `<acronym>`, `<applet>`, `<basefont>`, `<big>`, `<center>`, `<dir>`, `<font>`, `<frame>`, `<frameset>`, `<noframes>`, `<strike>`, `<tt>`. Use modern equivalents.
 
 ---
 
-## 9. Reference catalog
+## Contract
 
-Alphabetical, every styled tag with one row. The **Status** column matches the legend from §1.
+These invariants hold across `_{tag}.scss` partials ↔ `elements.ts` ↔ `taxonomy.ts` ↔ this guide:
+
+1. **TS → SCSS.** Every key in `elements.ts` has an `_{tag}.scss` partial that declares at least one `--set-{tag}-*` token.
+2. **SCSS → TS.** Every `_{tag}.scss` that declares a `--set-{tag}-*` token appears as a key in `elements.ts` (the `h1-h6` multi-tag partial is the documented exception).
+3. **Taxonomy ↔ SCSS.** Every entry in `taxonomy.ts` has a matching `_{tag}.scss` partial (even passthroughs ship a comment-only stub) and vice versa.
+4. **Treatment fidelity.** Every `substantive` or `composable` entry declares at least one `--set-{tag}-*` token somewhere in `elements/` or `components/`.
+5. **Factory pairing.** Every `composable` treatment entry references a real `src/browser/factories/create{Name}.ts`.
+6. **Token uniformity per group.** Every member of every `TOKEN_GROUPS` group declares every required suffix with the `--set-{member}-` prefix — see [Token-uniformity groups](#token-uniformity-groups) below.
+7. **Doc parity.** Every key in `elements.ts` and every substantive / composable taxonomy entry has a `<tag>` mention in this guide.
+
+Enforced by [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts) (the single driver covers all eight contracts). Per-element behavioural tests under [`tests/src/styles/elements/`](../tests/src/styles/elements/) cover UA-reset + modifier-cascade correctness on real Chromium.
+
+---
+
+## Patterns
+
+### Element-rule philosophy
+
+A framework rule only ships when neither Tailwind preflight nor the UA default supplies what we need. Three criteria, each with examples:
+
+- **UA quirk that breaks layout / accessibility / forced-colors.** `<fieldset>` zeroes `min-inline-size` (UA `min-content` blocks shrinking inside flex/grid). `<mark>` swaps UA hardcoded `yellow`/`black` for the system `mark` / `marktext` keywords plus a `prefers-color-scheme: dark` override using `highlight` / `highlighttext`. `<address>` resets `font-style: normal` because the UA italic is a widely-rejected quirk.
+- **Affordance preflight strips.** `<a>` keeps an underline (preflight drops it via `text-decoration: inherit`; the framework wants links visually distinct). `<abbr>` adds `cursor: help` (preflight covers the dotted underline; cursor is a separate signal). `<p>` adds `p + p { margin-block-start: 1em }` to restore inter-paragraph rhythm after preflight's universal `* { margin: 0 }` strip.
+- **Earns the full modifier cascade.** Interactive controls (`<button>`, `<a>`, `<input>`, `<select>`, `<textarea>`, `<label>`, `<fieldset>`, `<legend>`), disclosure / dialog roots (`<details>`, `<summary>`, `<dialog>`, `<aside>`), gauges (`<meter>`, `<progress>`, `<output>`), and structural primitives (`<form>`, `<menu>`, `<nav>`, `<search>`, `<h1>`–`<h6>`, the `<table>` family) all carry element-scoped tokens and the modifier cascade described in [modifiers.md](modifiers.md).
+
+If a future element needs framework rules, the test is: **does preflight already do it?** If yes, no partial rules. If no, but it's just an opinionated style choice, no rules — let consumers add utilities. If no, AND it's a real semantic gap (UA quirk needing reset, affordance preflight strips, or an element worth the full cascade) — then the rule earns its place.
+
+### Open-state gating discipline
+
+For any element with an open/closed lifecycle — `<dialog>`, `<details>`, `<aside popover>`, `<output popover>`, `<menu popover>` — the element baseline ships only tokens and chrome that survives the close transition. Drawer-shaped CSS (`display: flex`, `position: fixed`, large `transform`) lives in `composables/_{tag}.scss` and gates on the open-state selector: `:popover-open`, `:modal`, `[open]`, or `[data-{name}-open]`. Without the gate, author rules with specificity ≥ 0,1,1 defeat the UA's `display: none` for closed popovers and the element stays rendered after `.close()` / `.hidePopover()`. Full discipline in [composables.md §3](composables.md#3-openclosed-lifecycle).
+
+### Token-uniformity groups
+
+Logical families of elements / class-components that share a minimum token surface. Members of each group MUST declare every required suffix (with the `--set-{member}-` prefix), so a consumer who wants to retune the family can do so with one override per member. The contract data lives in [`src/browser/taxonomy.ts § TOKEN_GROUPS`](../src/browser/taxonomy.ts); the parity test is [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts).
+
+| Group                | Members                                                                                           | Required suffixes (per member, after `--set-{member}-`)                                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `interactive`        | `a`, `button`, `details`, `dialog`, `fieldset`, `input`, `label`, `select`, `summary`, `textarea` | `transition-duration`                                                                                                                                         |
+| `form-control`       | `button`, `input`, `textarea`, `select`                                                           | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `font-size`, `transition-duration`, `cursor` |
+| `page-shell`         | `header`, `footer`, `nav`, `aside`, `main`                                                        | `color`, `background-color`, `padding-inline`, `padding-block`                                                                                                |
+| `card-region`        | `article`                                                                                         | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `gap`                                        |
+| `floating-surface`   | `dialog`, `output`                                                                                | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `transition-duration`                        |
+| `inline-chip`        | `code`, `kbd`, `samp`, `var`, `mark`                                                              | `color`, `background-color`, `padding-inline`, `padding-block`, `border-radius`                                                                               |
+| `disclosure`         | `details`, `summary`                                                                              | `transition-duration`                                                                                                                                         |
+| `media-embed`        | `video`, `iframe`, `embed`, `object`, `canvas`, `svg`                                             | `max-inline-size`                                                                                                                                             |
+| `progress-indicator` | `progress`, `meter`                                                                               | `block-size`, `border-radius`, `track-color`, `transition-duration`                                                                                           |
+| `numeric-data`       | `data`, `time`                                                                                    | `font-variant-numeric`                                                                                                                                        |
+| `boxed-container`    | `fieldset`, `details`                                                                             | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `transition-duration`                        |
+| `class-chip`         | `badge`, `tag` (class-components)                                                                 | `color`, `background-color`, `border-radius`, `padding-inline`, `padding-block`, `font-size`                                                                  |
+
+An element can belong to multiple groups — `<details>` is `interactive` + `disclosure` + `boxed-container`. Required-suffix sets are unioned: each member declares the superset of every group's required tokens.
+
+When a new element / class-component is added, audit it against this table — if it shares the visual shape of an existing group, add it as a member; if it introduces a new shared shape across multiple elements, register a new group with both as members. The parity test surfaces any member that doesn't declare every required suffix.
+
+### Reference catalog
+
+Alphabetical, every styled tag with one row. The **Status** column matches the legend from [Surface](#surface).
 
 | Tag                        | Status      | Semantics, key quirks, framework status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | -------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -225,56 +248,47 @@ Alphabetical, every styled tag with one row. The **Status** column matches the l
 | `<var>`                    | 🟡 override | Variable. UA italic. Framework sets `font-feature-settings` for variable typesetting where supported.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `<video>`                  | 🟡 override | Embedded video player. Framework: `display: block; inline-size: 100%; block-size: auto`. `autoplay` requires `muted` in most browsers; `playsinline` to prevent fullscreen on iOS.                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
----
-
-## 10. Token-uniformity groups
-
-Logical families of tags / class-components that share a minimum token surface. Members of each group MUST declare every required suffix (with the `--set-{member}-` prefix), so a consumer who wants to retune the family can do so with one override per member. The contract data lives in [`src/browser/taxonomy.ts § TOKEN_GROUPS`](../src/browser/taxonomy.ts); the parity test is [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts).
-
-| Group                | Members                                                                                           | Required suffixes (per member, after `--set-{member}-`)                                                                                                       |
-| -------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `interactive`        | `a`, `button`, `details`, `dialog`, `fieldset`, `input`, `label`, `select`, `summary`, `textarea` | `transition-duration`                                                                                                                                         |
-| `form-control`       | `button`, `input`, `textarea`, `select`                                                           | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `font-size`, `transition-duration`, `cursor` |
-| `page-shell`         | `header`, `footer`, `nav`, `aside`, `main`                                                        | `color`, `background-color`, `padding-inline`, `padding-block`                                                                                                |
-| `card-region`        | `article`                                                                                         | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `gap`                                        |
-| `floating-surface`   | `dialog`, `output`                                                                                | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `transition-duration`                        |
-| `inline-chip`        | `code`, `kbd`, `samp`, `var`, `mark`                                                              | `color`, `background-color`, `padding-inline`, `padding-block`, `border-radius`                                                                               |
-| `disclosure`         | `details`, `summary`                                                                              | `transition-duration`                                                                                                                                         |
-| `media-embed`        | `video`, `iframe`, `embed`, `object`, `canvas`, `svg`                                             | `max-inline-size`                                                                                                                                             |
-| `progress-indicator` | `progress`, `meter`                                                                               | `block-size`, `border-radius`, `track-color`, `transition-duration`                                                                                           |
-| `numeric-data`       | `data`, `time`                                                                                    | `font-variant-numeric`                                                                                                                                        |
-| `boxed-container`    | `fieldset`, `details`                                                                             | `color`, `background-color`, `border-color`, `border-width`, `border-radius`, `padding-inline`, `padding-block`, `transition-duration`                        |
-| `class-chip`         | `badge`, `tag` (class-components)                                                                 | `color`, `background-color`, `border-radius`, `padding-inline`, `padding-block`, `font-size`                                                                  |
-
-A tag can belong to multiple groups — `<details>` is `interactive` + `disclosure` + `boxed-container`. Required-suffix sets are unioned: each member declares the superset of every group's required tokens.
-
-When a new element / class-component is added, audit it against this table — if it shares the visual shape of an existing group, add it as a member; if it introduces a new shared shape across multiple elements, register a new group with both as members. The parity test surfaces any member that doesn't declare every required suffix.
-
----
-
-## 11. Bringing up an element
+### Bringing up an element
 
 Promoting an element from `🚫 n/a` or `🟡 override` to `✅ cascade`:
 
 1. Refactor `_{tag}.scss` to use the modifier cascade per [styles.md author's contract](styles.md). Element-scoped tokens follow the [tokens.md](tokens.md) §"Element-scoped tokens" pattern; the fallback chain is `style → variant → size → shape → element default` (or whatever subset applies).
 2. Add the tag to [`src/browser/elements.ts`](../src/browser/elements.ts).
-3. If the element has an open / closed lifecycle, move drawer-shaped CSS into `composables/_{tag}.scss` gated on the open-state selector — see [§3](#3-open-state-gating-discipline) and [composables.md §3](composables.md#3-openclosed-lifecycle).
-4. Write a behaviour test under `tests/src/styles/elements/_{tag}.test.ts` covering UA reset, modifier cascade, and any element-specific quirks.
-5. Update this document — change the status emoji, refresh the cascade column and the reference catalog row.
+3. Add the tag to [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts) with treatment `substantive` (or `composable` if a factory ships alongside).
+4. If the element has an open / closed lifecycle, move drawer-shaped CSS into `composables/_{tag}.scss` gated on the open-state selector — see [Open-state gating discipline](#open-state-gating-discipline) and [composables.md §3](composables.md#3-openclosed-lifecycle).
+5. Write a behaviour test under `tests/src/styles/elements/_{tag}.test.ts` covering UA reset, modifier cascade, and any element-specific quirks.
+6. Update this guide — change the status emoji, refresh the row in the Substantive elements table + Reference catalog.
 
 Most `🚫 n/a` entries stay that way indefinitely. Promote to `🟡 override` only when a specific UA quirk demands a framework-essential rule, and to `✅ cascade` only when the element earns the full token-driven cascade.
 
 ---
 
-## 12. Reference
+## Tests
+
+- [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts) — the single driver covering all 8 contracts:
+  - `elements.ts` shape (every key matches its value, `Element` type narrows)
+  - TS → SCSS parity (every key has a substantive partial)
+  - SCSS → TS parity (every substantive partial is enumerated)
+  - `taxonomy.ts` shape (every entry has tag / category / treatment; `composable` is non-null iff treatment === 'composable')
+  - Pre-computed indices stay in sync (`TAXONOMY_BY_TAG`, `SUBSTANTIVE_TAGS`, `COMPOSABLE_TAGS`, `RESET_TAGS`, `PASSTHROUGH_TAGS`, `MODIFIABLE_TAGS`)
+  - Predicate getters (`isSubstantive`, `isComposable`, `isReset`, `isPassthrough`, `isModifiable`, `describeTag`)
+  - Partial parity (every taxonomy entry has a matching `_{tag}.scss` and vice versa)
+  - Token coverage (substantive + composable entries declare `--set-{tag}-*` somewhere)
+  - Factory pairing (composable entries reference a real `create{Name}.ts`)
+  - `TOKEN_GROUPS` membership + required-suffix coverage
+  - Markdown table parity (every TS element key + every substantive/composable taxonomy entry has a `<tag>` mention in this guide)
+- [`tests/src/styles/elements/`](../tests/src/styles/elements/) — per-element behaviour tests against the runtime cascade in real Chromium (`_button.test.ts`, `_input.test.ts`, `_dialog.test.ts`, `_details.test.ts`, etc.).
+- [`tests/guides/patterns.test.ts`](../tests/guides/patterns.test.ts) — folder structural contract: every elements partial wraps in `@layer elements` and uses only allowed rule-head kinds.
+
+---
+
+## See also
 
 - [`src/styles/elements/`](../src/styles/elements/) — SCSS sources, one partial per tag
 - [`src/browser/elements.ts`](../src/browser/elements.ts) — TS mirror of the substantive list
 - [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts) — taxonomy + token-uniformity groups data
-- [`tests/guides/elements.test.ts`](../tests/guides/elements.test.ts) — bidirectional parity contract + group-membership coverage
-- [`tests/src/styles/elements/`](../tests/src/styles/elements/) — per-element behaviour tests
 - [styles.md](styles.md) — top-level architecture and author's contract
-- [modifiers.md](modifiers.md) — five-dimension cascade elements consume
+- [modifiers.md](modifiers.md) — modifier cascade elements consume
 - [tokens.md](tokens.md) — token surface elements declare against
 - [components.md](components.md) — element compositions + class-root widgets; §8 composable pairings
 - [composables.md](composables.md) — Vue + framework-agnostic behaviour layer; §3 open / closed lifecycle discipline
