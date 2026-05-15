@@ -38,12 +38,12 @@ import {
 	ANCHOR_SNIPPET_CONTEXTS as snippetContexts,
 	ANCHOR_SNIPPET_FLAT as snippetFlat,
 	ANCHOR_SNIPPET_FLUSH as snippetFlush,
-	ANCHOR_SNIPPET_REDUCED_MOTION as snippetReducedMotion,
 	ANCHOR_SNIPPET_SIZES as snippetSizes,
 	ANCHOR_SNIPPET_STATES as snippetStates,
 	ANCHOR_SNIPPET_STYLES as snippetStyles,
 	ANCHOR_SNIPPET_VARIANTS as snippetVariants,
 	ANCHOR_VISITED_COUNTER_KEY as VISITED_COUNTER_KEY,
+	SNIPPET_REDUCED_MOTION as snippetReducedMotion,
 	VARIANTS as variants,
 } from '../constants.js'
 

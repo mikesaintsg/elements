@@ -50,12 +50,12 @@ import {
 	BUTTON_SNIPPET_GROUPS as snippetGroups,
 	BUTTON_SNIPPET_ICON as snippetIcon,
 	BUTTON_SNIPPET_LINK as snippetLink,
-	BUTTON_SNIPPET_REDUCED_MOTION as snippetReducedMotion,
 	BUTTON_SNIPPET_SIZES as snippetSizes,
 	BUTTON_SNIPPET_STATES as snippetStates,
 	BUTTON_SNIPPET_STYLES as snippetStyles,
 	BUTTON_SNIPPET_TOGGLE as snippetToggle,
 	BUTTON_SNIPPET_VARIANTS as snippetVariants,
+	SNIPPET_REDUCED_MOTION as snippetReducedMotion,
 	VARIANTS as variants,
 } from '../constants.js'
 

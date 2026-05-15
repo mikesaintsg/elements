@@ -207,8 +207,8 @@ export const CAROUSEL_SLIDES = [
 	},
 ] as const
 
-/** UseSelectPage single-select fruit options. */
-export const SELECT_FRUITS = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape']
+// SELECT_FRUITS (UseSelectPage single-select options) is the first seven
+// of TABLE_FRUITS — derived next to its source, further down.
 
 /** UseSelectPage multi-select size options. */
 export const SELECT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
@@ -239,9 +239,7 @@ export const SELECT_CITIES = [
 
 // ── TablesPage demo rows ─────────────────────────────────────────────────
 //
-// NOTE (consolidation): TABLES_BASIC_ROWS is the first four of
-// TABLES_MEMBERS. Kept as separate exports for now; reconcile in the
-// consolidation pass.
+// TABLES_BASIC_ROWS is derived as the first four of TABLES_MEMBERS.
 
 export const TABLES_MEMBERS: readonly TablesMember[] = [
 	{
@@ -286,40 +284,8 @@ export const TABLES_MEMBERS: readonly TablesMember[] = [
 	},
 ]
 
-export const TABLES_BASIC_ROWS: readonly TablesMember[] = [
-	{
-		id: 'AL-04',
-		name: 'Ada Lovelace',
-		role: 'Mathematician',
-		team: 'Analytical',
-		commits: 342,
-		last: '2 hours ago',
-	},
-	{
-		id: 'GH-12',
-		name: 'Grace Hopper',
-		role: 'Compiler theorist',
-		team: 'Mark I',
-		commits: 287,
-		last: 'Yesterday',
-	},
-	{
-		id: 'AT-21',
-		name: 'Alan Turing',
-		role: 'Cryptographer',
-		team: 'Hut 8',
-		commits: 256,
-		last: '3 days ago',
-	},
-	{
-		id: 'KR-08',
-		name: 'Katherine Johnson',
-		role: 'Mathematician',
-		team: 'Orbital',
-		commits: 198,
-		last: 'Last week',
-	},
-]
+/** The basic-table demo uses the first four members verbatim. */
+export const TABLES_BASIC_ROWS: readonly TablesMember[] = TABLES_MEMBERS.slice(0, 4)
 
 export const TABLES_VARIANT_ORDERS: readonly TablesOrder[] = [
 	{
@@ -487,8 +453,7 @@ export const TABLES_RELEASE_STEPS: readonly TablesReleaseStep[] = [
 
 // ── UseTablePage demo data ───────────────────────────────────────────────
 //
-// NOTE (consolidation): SELECT_FRUITS is the first seven of TABLE_FRUITS.
-// Reconcile in the consolidation pass.
+// TABLE_FRUITS is the canonical fruit list; SELECT_FRUITS derives from it.
 
 export const TABLE_ISSUES: readonly TableIssue[] = [
 	{
@@ -724,6 +689,9 @@ export const TABLE_FRUITS = [
 	'Lemon',
 ]
 
+/** UseSelectPage single-select options — the first seven of TABLE_FRUITS. */
+export const SELECT_FRUITS = TABLE_FRUITS.slice(0, 7)
+
 export const TABLE_DICTIONARY: readonly (readonly [string, string, string])[] = [
 	['1', 'caret', 'A horizontal-wedge symbol used to indicate insertion or selection.'],
 	['2', 'kerning', 'Per-pair letter spacing adjustment to improve typographical rhythm.'],
@@ -822,8 +790,21 @@ export const PLACEMENTS_MODIFIER: readonly ModifierPlacement[] = [
 // ── Code snippets ────────────────────────────────────────────────────────
 //
 // Verbatim HTML / CSS source the demo pages render inside <pre><code>.
-// Centralized so near-identical variants (reduced-motion notes, variant /
-// size cascades, …) can be reconciled in the consolidation pass.
+// Shared across pages where the snippet is framework-wide (not element-
+// specific); page-prefixed where the snippet demonstrates that element.
+
+/**
+ * The framework's canonical reduced-motion guard. Shared by every page
+ * that documents the `transition()` mixin (Anchor, Button, …) — the
+ * guard is framework-wide, not element-specific, so one copy is correct.
+ */
+export const SNIPPET_REDUCED_MOTION = `/* In src/styles/_mixins.scss — every transition the framework ships pairs with this guard. */
+@mixin transition($value) {
+  transition: $value;
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}`
 
 // HeadingsPage
 export const HEADINGS_SNIPPET_CASCADE = `<h1>The framework's primary headline</h1>
@@ -1012,13 +993,6 @@ export const ANCHOR_SNIPPET_ATTRIBUTES = `<!-- Standard HTML attributes pass thr
 <a href="mailto:hello@example.com">hello@example.com</a>
 <a href="tel:+1234567890">+1 (234) 567-890</a>`
 
-export const ANCHOR_SNIPPET_REDUCED_MOTION = `/* In src/styles/_mixins.scss — every anchor transition is paired with this guard. */
-@mixin transition($value) {
-  transition: $value;
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
-  }
-}`
 
 // DetailsPage
 /** Custom summary marker — a plus that rotates to an X (45deg) on `[open]`. */
@@ -1396,11 +1370,3 @@ const { active, toggle } = useButton(btn, {
     {{ active ? 'On' : 'Off' }}
   </button>
 </template>`
-
-export const BUTTON_SNIPPET_REDUCED_MOTION = `/* In src/styles/_mixins.scss — every transition the framework ships pairs with this guard. */
-@mixin transition($value) {
-  transition: $value;
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
-  }
-}`
