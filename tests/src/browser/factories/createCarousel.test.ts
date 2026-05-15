@@ -7,9 +7,13 @@ import {
 	createRecorder,
 } from '../../../setupBrowser'
 
-function createCarouselFixture(count: number): {
+function createCarouselFixture(
+	count: number,
+	options: { readonly withIndicators?: boolean } = {},
+): {
 	readonly carousel: HTMLElement
 	readonly items: readonly HTMLLIElement[]
+	readonly indicators: readonly HTMLButtonElement[]
 } {
 	const carousel = buildElement('section', { attrs: { role: 'region' } })
 	const list = document.createElement('ol')
@@ -24,7 +28,25 @@ function createCarouselFixture(count: number): {
 		items.push(li)
 	}
 	carousel.appendChild(list)
-	return { carousel, items }
+
+	const indicators: HTMLButtonElement[] = []
+	if (options.withIndicators) {
+		const tablist = document.createElement('menu')
+		tablist.setAttribute('role', 'tablist')
+		tablist.className = 'carousel-indicators'
+		for (let i = 0; i < count; i++) {
+			const li = document.createElement('li')
+			const btn = document.createElement('button')
+			btn.type = 'button'
+			btn.setAttribute('role', 'tab')
+			li.appendChild(btn)
+			tablist.appendChild(li)
+			indicators.push(btn)
+		}
+		carousel.appendChild(tablist)
+	}
+
+	return { carousel, items, indicators }
 }
 
 describe('createCarousel', () => {
@@ -84,5 +106,28 @@ describe('createCarousel', () => {
 			const { carousel } = createCarouselFixture(3)
 			return createCarousel(carousel)
 		})
+	})
+
+	it('syncs aria-selected on `<menu role="tablist"> > li > button` indicators', () => {
+		const { carousel, indicators } = createCarouselFixture(3, { withIndicators: true })
+		const [api] = createFactoryFixture(() => createCarousel(carousel))
+		expect(indicators[0]?.getAttribute('aria-selected')).toBe('true')
+		expect(indicators[1]?.getAttribute('aria-selected')).toBe('false')
+		expect(indicators[2]?.getAttribute('aria-selected')).toBe('false')
+		api.to(1)
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		expect(indicators[0]?.getAttribute('aria-selected')).toBe('false')
+		expect(indicators[1]?.getAttribute('aria-selected')).toBe('true')
+		expect(indicators[2]?.getAttribute('aria-selected')).toBe('false')
+	})
+
+	it('destroy clears aria-selected on indicators', () => {
+		const { carousel, indicators } = createCarouselFixture(3, { withIndicators: true })
+		const api = createCarousel(carousel)
+		expect(indicators[0]?.getAttribute('aria-selected')).toBe('true')
+		api.destroy()
+		expect(indicators[0]?.getAttribute('aria-selected')).toBeNull()
+		expect(indicators[1]?.getAttribute('aria-selected')).toBeNull()
+		expect(indicators[2]?.getAttribute('aria-selected')).toBeNull()
 	})
 })

@@ -158,8 +158,11 @@ export const TAB_TRIGGER_SELECTOR = '[role="tab"]'
  *  region (or `<li>` for plain markup). */
 export const CAROUSEL_ITEM_SELECTOR =
 	':scope > :where([role="list"], ol, ul) > :where([role="listitem"], li)'
-/** Carousel indicator buttons inside the indicator group. */
-export const CAROUSEL_INDICATOR_SELECTOR = ':scope > [role="tablist"] > button'
+/** Carousel indicator buttons inside the indicator group. The buttons
+ *  are wrapped in `<li>` because `<menu role="tablist">` is a list element
+ *  (matches the documented markup contract + `composables/_carousel.scss`'s
+ *  `.carousel-indicators > li > button` chrome). */
+export const CAROUSEL_INDICATOR_SELECTOR = ':scope > [role="tablist"] > li > button'
 
 // ── Popover side vocabulary ────────────────────────────────────────────────
 
