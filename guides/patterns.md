@@ -167,19 +167,21 @@ The contract test enforces:
 
 Six known-good outliers are recorded in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts) so the contract test exempts them cleanly. Each exception names what it relaxes and why.
 
-| Path                                     | Relaxation                                                            | Reason                                                                                                                                 |
-| ---------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `composables/_aside.scss`                | `skipStateSelectorCheck`, `allowCommentOnly`                          | `useAside` is a behavior-only composable; drawer geometry lives in `components/_aside.scss`.                                           |
-| `components/_aside.scss`                 | `additionalTokenPrefixes: [callout, alert, variant, popover, anchor]` | `<aside>` plays three roles (sidebar / callout / alert); drawer variant overrides variant/popover/anchor cascade.                      |
-| `components/_output.scss`                | `additionalTokenPrefixes: [toast]`                                    | `<output popover>` becomes a toast — `useToast` shares the `--set-toast-*` namespace.                                                  |
-| `components/_div.scss`                   | `additionalTokenPrefixes: [stack, cluster]`                           | Class-component primitives carried by `<div>` (`.stack`, `.cluster`, `.frame` — `.frame` declares no tokens).                          |
-| `modifiers/_local.scss`                  | `additionalTokenPrefixes: [article, table-cell]`                      | Element-local modifiers may declare `--set-{tag}-*` tokens scoped to the element their selector targets (`article.frame`, `td.frame`). |
-| `components/_nav.scss`                   | `additionalTokenPrefixes: [tablist, tab, tabpanel]`                   | `<nav>` carries breadcrumb / pagination / tablist patterns.                                                                            |
-| `surfaces/_popover.scss`                 | `additionalTokenPrefixes: [popover-hint, anchor]`                     | Tooltip variant extends with the hint namespace; reads anchor tokens from `_anchor-position.scss`.                                     |
-| `surfaces/_anchor-position.scss`         | `additionalTokenPrefixes: [anchor]`                                   | File basename names the CSS feature; tokens live under `--set-anchor-*`.                                                               |
-| `elements/_h1-h6.scss`                   | `additionalTokenPrefixes: [heading]`                                  | Multi-tag partial covering `h1`–`h6`; tokens share the `--set-heading-*` namespace.                                                    |
-| `elements/_input.scss`                   | `additionalTokenPrefixes: [check, switch, range, color, file]`        | `<input>` subtypes (`checkbox` / `radio` / `switch` / `range` / `color` / `file`) ship dedicated namespaces.                           |
-| `elements/_li.scss`, `elements/_ul.scss` | `additionalTokenPrefixes: [group]`                                    | `<ul class="group">` list-group component carried by both elements.                                                                    |
+Each entry uses the nested-entity shape (`comments.allowed`, `state.required`, `tokens.extras`) so each override reads as a per-file delta.
+
+| Path                                     | Relaxation                                                       | Reason                                                                                                                                 |
+| ---------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `composables/_aside.scss`                | `state: { required: false }`, `comments: { allowed: true }`      | `useAside` is a behavior-only composable; drawer geometry lives in `components/_aside.scss`.                                           |
+| `components/_aside.scss`                 | `tokens: { extras: [callout, alert, variant, popover, anchor] }` | `<aside>` plays three roles (sidebar / callout / alert); drawer variant overrides variant/popover/anchor cascade.                      |
+| `components/_output.scss`                | `tokens: { extras: [toast, variant] }`                           | `<output popover>` becomes a toast; band-dismiss button overrides `--set-variant-*` (parallel to aside-alert).                         |
+| `components/_div.scss`                   | `tokens: { extras: [stack, cluster] }`                           | Class-component primitives carried by `<div>` (`.stack`, `.cluster`, `.frame` — `.frame` declares no tokens).                          |
+| `modifiers/_local.scss`                  | `tokens: { extras: [article, table-cell] }`                      | Element-local modifiers may declare `--set-{tag}-*` tokens scoped to the element their selector targets (`article.frame`, `td.frame`). |
+| `components/_nav.scss`                   | `tokens: { extras: [tablist, tab, tabpanel] }`                   | `<nav>` carries breadcrumb / pagination / tablist patterns.                                                                            |
+| `surfaces/_popover.scss`                 | `tokens: { extras: [popover-hint, anchor] }`                     | Tooltip variant extends with the hint namespace; reads anchor tokens from `_anchor-position.scss`.                                     |
+| `surfaces/_anchor-position.scss`         | `tokens: { extras: [anchor] }`                                   | File basename names the CSS feature; tokens live under `--set-anchor-*`.                                                               |
+| `elements/_h1-h6.scss`                   | `tokens: { extras: [heading] }`                                  | Multi-tag partial covering `h1`–`h6`; tokens share the `--set-heading-*` namespace.                                                    |
+| `elements/_input.scss`                   | `tokens: { extras: [check, switch, range, color, file] }`        | `<input>` subtypes (`checkbox` / `radio` / `switch` / `range` / `color` / `file`) ship dedicated namespaces.                           |
+| `elements/_li.scss`, `elements/_ul.scss` | `tokens: { extras: [group] }`                                    | `<ul class="group">` list-group component carried by both elements.                                                                    |
 
 **Adding an exception** is a deliberate change. Every entry carries a `note` explaining the architectural reason; if the note can't be written in one sentence, the exception probably isn't justified.
 
@@ -318,16 +320,16 @@ Each file in [`src/styles/surfaces/`](../src/styles/surfaces/) paints a single b
 
 ### 7.1 The shape
 
-Each surface contract records four things:
+Each surface contract records:
 
-| Field            | Meaning                                                                                                                                                                         |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`           | Filename basename (`anchor-position`, `backdrop`, `focus`, …).                                                                                                                  |
-| `tokenPrefix`    | Token namespace prefix. Defaults to `name`. Set explicitly when the filename names the CSS feature (`anchor-position`) while the tokens live under a shorter prefix (`anchor`). |
-| `selectorKinds`  | Selector head kinds the partial uses (`pseudo-element`, `pseudo-class`, `attribute`, `universal`, `tag`). Constrains where the surface paints.                                  |
-| `requiredTokens` | Property suffixes the partial MUST declare on `:root`. The full token name is `--set-{tokenPrefix}-{suffix}`.                                                                   |
-| `animated`       | True when the partial paints motion. Triggers the reduced-motion mixin requirement.                                                                                             |
-| `notes`          | One-sentence description shown in failure messages.                                                                                                                             |
+| Field             | Meaning                                                                                                                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`            | Filename basename (`anchor-position`, `backdrop`, `focus`, …).                                                                                                                            |
+| `tokens.prefix`   | Token namespace prefix. Optional; defaults to `name`. Set explicitly when the filename names the CSS feature (`anchor-position`) while the tokens live under a shorter prefix (`anchor`). |
+| `tokens.required` | Property suffixes the partial MUST declare on `:root`. The full token name is `--set-{tokens.prefix ?? name}-{suffix}`.                                                                   |
+| `selectors`       | Selector head kinds the partial uses (`pseudo-element`, `pseudo-class`, `attribute`, `universal`, `tag`). Constrains where the surface paints.                                            |
+| `animated`        | True when the partial paints motion. Triggers the reduced-motion mixin requirement.                                                                                                       |
+| `notes`           | One-sentence description shown in failure messages.                                                                                                                                       |
 
 ### 7.2 The nine surfaces
 
@@ -351,7 +353,7 @@ Additionally, **any surface that declares a `transition-duration` or `duration` 
 
 ### 7.4 Cross-surface composition
 
-Surfaces freely read each other's tokens via `var()` chains. `_popover.scss` reads `--set-anchor-*` declared in `_anchor-position.scss`; `_backdrop.scss` reads `--set-transition-duration` declared in `_tokens.scss`. These reads are documented in `FILE_EXCEPTIONS.additionalTokenPrefixes` so the namespace check at `_contracts.test.ts` allows them.
+Surfaces freely read each other's tokens via `var()` chains. `_popover.scss` reads `--set-anchor-*` declared in `_anchor-position.scss`; `_backdrop.scss` reads `--set-transition-duration` declared in `_tokens.scss`. These reads are documented in `FILE_EXCEPTIONS[*].tokens.extras` so the namespace check at `_contracts.test.ts` allows them.
 
 ### 7.5 Adding a new surface
 
@@ -367,7 +369,7 @@ Each file in [`src/styles/components/`](../src/styles/components/) paints either
 
 ### 8.1 The shape
 
-Mirrors `SURFACE_CONTRACTS` (see §7.1). Each entry carries `name`, `tokenPrefix` (optional, defaults to `name`), `requiredTokens`, `animated`, `notes`. The animation rule + customizability-gap rule apply identically: every component with a duration token MUST invoke `@include transition()` or `@include reduced-motion`.
+Mirrors `SURFACE_CONTRACTS` (see §7.1). Each entry carries `name`, `tokens` (`{ prefix?, required }` — `prefix` defaults to `name`), `animated`, `notes`. The animation rule + customizability-gap rule apply identically: every component with a duration token MUST invoke `@include transition()` or `@include reduced-motion`.
 
 ### 8.2 The nineteen components
 
@@ -422,7 +424,7 @@ Same as §7.3 (surfaces). Any component that declares a `transition-duration`, `
 
 1. Add the partial under `src/styles/components/_{name}.scss`.
 2. Add a `COMPONENT_CONTRACTS` entry with the canonical token + animation discipline.
-3. If the partial declares tokens under a namespace other than its filename, add the extras to `FILE_EXCEPTIONS.additionalTokenPrefixes`.
+3. If the partial declares tokens under a namespace other than its filename, add the extras to `FILE_EXCEPTIONS[*].tokens.extras`.
 4. The parity test catches drift in both directions (partial without contract, contract without partial).
 
 ---
@@ -435,12 +437,12 @@ Each file in [`src/styles/composables/`](../src/styles/composables/) paints chro
 
 Each entry adds two clauses beyond the surface / component contract:
 
-| Field            | Meaning                                                                                                                                                                    |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `stateSelectors` | Composable-state selector kinds the partial uses (`pseudo-class`, `attribute`, `data-attribute`, `aria-attribute`, `role-attribute`). Empty for behavior-only composables. |
-| `factoryName`    | The matching `create{Name}` factory in `src/browser/factories/`. The parity test asserts the file exists.                                                                  |
+| Field             | Meaning                                                                                                                                                                    |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `state.selectors` | Composable-state selector kinds the partial uses (`pseudo-class`, `attribute`, `data-attribute`, `aria-attribute`, `role-attribute`). Empty for behavior-only composables. |
+| `factory`         | The matching `create{Name}` factory in `src/browser/factories/`. The parity test asserts the file exists.                                                                  |
 
-Plus the standard `name`, `tokenPrefix`, `requiredTokens`, `animated`, `notes`.
+Plus the standard `name`, `tokens` (`{ prefix?, required }`), `animated`, `notes`.
 
 ### 9.2 The six composables
 
@@ -461,7 +463,7 @@ Composables that declare `transition:` or `animation:` properties — OR are mar
 
 ### 9.4 Behavior-only composables
 
-Some composables are pure JavaScript behavior with no CSS chrome (`useAside` does scroll lock + focus trap + light dismiss; the visual chrome lives in `components/_aside.scss`). The partial exists as a placeholder so `src/styles/composables/` mirrors `src/browser/composables/`. `FILE_EXCEPTIONS['composables/_aside.scss']` records this with `skipStateSelectorCheck: true` and `allowCommentOnly: true`.
+Some composables are pure JavaScript behavior with no CSS chrome (`useAside` does scroll lock + focus trap + light dismiss; the visual chrome lives in `components/_aside.scss`). The partial exists as a placeholder so `src/styles/composables/` mirrors `src/browser/composables/`. `FILE_EXCEPTIONS['composables/_aside.scss']` records this with `state: { required: false }` and `comments: { allowed: true }`.
 
 ### 9.5 Adding a new composable
 

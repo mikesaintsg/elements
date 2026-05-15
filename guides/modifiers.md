@@ -295,7 +295,7 @@ They live in [`src/styles/modifiers/_local.scss`](../src/styles/modifiers/_local
 - Class names that collide with Tailwind single-token utilities (`block`, `flex`, `grid`, `rounded`, `outline`, etc.).
 - Rules that aren't gated to a single element selector (`form.row`, `button.dropdown`, `details.flush`, `article.frame`, `td.frame` — never bare `.row` / `.dropdown` / `.frame`).
 
-Rules MAY declare `--set-{tag}-*` tokens scoped to the same element the selector targets (e.g., `article.frame` writes `--set-article-padding-{inline,block}: 0` so descendant chrome reading those tokens — auto-banded header bleed margins — collapses to zero alongside the padding). Per-element token namespaces are recorded as `additionalTokenPrefixes` in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts).
+Rules MAY declare `--set-{tag}-*` tokens scoped to the same element the selector targets (e.g., `article.frame` writes `--set-article-padding-{inline,block}: 0` so descendant chrome reading those tokens — auto-banded header bleed margins — collapses to zero alongside the padding). Per-element token namespaces are recorded as `tokens.extras` in the relevant [`FILE_EXCEPTIONS`](../src/browser/patterns.ts) entry.
 
 The element-local test at [`tests/src/styles/modifiers/_local.test.ts`](../tests/src/styles/modifiers/_local.test.ts) enforces the charter.
 
