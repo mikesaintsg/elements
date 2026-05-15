@@ -14,7 +14,7 @@
 //       COMPOSABLE_TAGS, etc.) stay in sync with the source array.
 //
 //  The cross-file SCSS↔TS parity for taxonomy lives in
-//  tests/src/styles/_taxonomy.test.ts. This file's job is the TS-side
+//  tests/src/styles/taxonomy.test.ts. This file's job is the TS-side
 //  invariants only.
 // ============================================================================
 

@@ -271,7 +271,7 @@ export function describeTag(tag: string): TaxonomyEntry | null {
 //
 //   1. NAMING — every `--set-*` custom property the framework declares MUST
 //      follow a specific shape. The regexes encode the contract; the test at
-//      tests/src/styles/_naming.test.ts scans every SCSS partial and fails
+//      tests/src/styles/naming.test.ts scans every SCSS partial and fails
 //      on any declaration that doesn't match one of the patterns.
 //
 //   2. UNIFORMITY — elements that play the same role (e.g. form controls,
@@ -281,7 +281,7 @@ export function describeTag(tag: string): TaxonomyEntry | null {
 //      to retune all form controls has to special-case one. The
 //      TOKEN_GROUPS table below names the groups and the minimum token
 //      property suffix each member must declare. The test at
-//      tests/src/styles/_uniformity.test.ts loads the compiled cascade and
+//      tests/src/styles/uniformity.test.ts loads the compiled cascade and
 //      verifies every member resolves every required suffix.
 //
 // Both contracts are designed to be append-only — adding a new group or a

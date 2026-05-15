@@ -4,7 +4,7 @@
 
 This means every modifier dimension works on every element that consumes the right context tokens. Adding a new element doesn't add new modifier code — it just consumes the same `--set-{context}-*` tokens.
 
-> **Source of truth:** the shipped surface is [`src/browser/modifiers.ts`](../src/browser/modifiers.ts) and the SCSS partials it mirrors in [`src/styles/modifiers/`](../src/styles/modifiers/). The bidirectional parity tests at [`tests/src/browser/modifiers.test.ts`](../tests/src/browser/modifiers.test.ts) and [`tests/src/styles/_docs-parity.test.ts`](../tests/src/styles/_docs-parity.test.ts) fail if this document drifts from either.
+> **Source of truth:** the shipped surface is [`src/browser/modifiers.ts`](../src/browser/modifiers.ts) and the SCSS partials it mirrors in [`src/styles/modifiers/`](../src/styles/modifiers/). The bidirectional parity tests at [`tests/src/browser/modifiers.test.ts`](../tests/src/browser/modifiers.test.ts) and [`tests/guides/modifiers.test.ts`](../tests/guides/modifiers.test.ts) fail if this document drifts from either.
 
 ---
 
@@ -308,7 +308,7 @@ Most dimensions stay closed. The framework is opinionated about the vocabulary �
 1. Add the rule to the matching `modifiers/_*.scss` partial. Use the existing rules as templates; new variants tune contrast text + identity color; new sizes step the four context tokens consistently.
 2. Add the value to the matching `modifiers.ts` object + derived type.
 3. Add the value to the matching Sass list in [`_mixins.scss`](../src/styles/_mixins.scss) (`$variants`, `$sizes`, etc.) so any `@each` loops in element / component partials pick up the new value automatically.
-4. The bidirectional parity test catches drift between SCSS and TS. The docs-parity test ([`tests/src/styles/_docs-parity.test.ts`](../tests/src/styles/_docs-parity.test.ts)) catches drift between this document's dimension table and the shipped TS.
+4. The bidirectional parity test catches drift between SCSS and TS. The docs-parity test ([`tests/guides/modifiers.test.ts`](../tests/guides/modifiers.test.ts)) catches drift between this document's dimension table and the shipped TS.
 
 ---
 
@@ -317,7 +317,7 @@ Most dimensions stay closed. The framework is opinionated about the vocabulary �
 - **Don't abbreviate.** `.info` is wrong; `.information` is right. `.lg` is wrong; `.large` is right. `.bg-primary` is Tailwind utility-class territory — framework modifiers don't compete with utilities.
 - **Don't overlap dimension vocabularies.** `.dark` is reserved for theming, not a variant value. `.tight` is line-height; not a size value. Each dimension's values are distinct adjectives within that dimension; no cross-dimension collisions.
 - **Don't introduce a modifier whose effect is "set a hard-coded color or value."** Modifiers set tokens; the cascade does the rest. A `.brand` modifier that hard-codes `color: red` is wrong — instead, the consumer overrides `--color-primary` at `:root` and uses `.primary`.
-- **Don't hand-roll `&.primary { color: … }` blocks inside element / component files.** The cascade already feeds `--set-{name}-*` through the fallback chain. Per-modifier rules in element files are only justified when a property genuinely cannot come from a token (e.g. `<form>.row` flips a flex-direction layout primitive that has no token equivalent) — and those rules belong in `_element-scoped.scss`. The [`_handrolled-variants.test.ts`](../tests/src/styles/_handrolled-variants.test.ts) parity test fails when three or more `.X.{variant}` rules appear in one non-modifier file.
+- **Don't hand-roll `&.primary { color: … }` blocks inside element / component files.** The cascade already feeds `--set-{name}-*` through the fallback chain. Per-modifier rules in element files are only justified when a property genuinely cannot come from a token (e.g. `<form>.row` flips a flex-direction layout primitive that has no token equivalent) — and those rules belong in `_element-scoped.scss`. The [`handrolled.test.ts`](../tests/src/styles/handrolled.test.ts) parity test fails when three or more `.X.{variant}` rules appear in one non-modifier file.
 - **Don't apply modifier classes to elements that don't consume the matching context tokens.** A `.primary` class on a `<section>` does nothing because `<section>` has no `--set-section-*` token chain. Use the substantive element instead (`<article class="primary">`).
 - **Don't reuse a Tailwind utility class name as a framework modifier.** `.rounded`, `.outline`, `.inline`, `.block`, `.hidden`, `.shadow`, `.ring`, `.border`, `.truncate`, etc. are all Tailwind territory. The collision watch list lives in [`tests/setupStyles.ts`](../tests/setupStyles.ts).
 

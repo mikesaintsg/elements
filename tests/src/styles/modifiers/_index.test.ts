@@ -20,13 +20,13 @@
 
 import { describe, expect, it } from 'vitest'
 import { MODIFIER_DIMENSION_TOKENS } from '@elements/browser'
-import { declaresToken, stripComments } from '../../setupStyles'
+import { declaresToken, stripComments } from '../../../setupStyles'
 
-import variantsScss from '../../../src/styles/modifiers/_variants.scss?raw'
-import sizesScss from '../../../src/styles/modifiers/_sizes.scss?raw'
-import stylesScss from '../../../src/styles/modifiers/_styles.scss?raw'
-import statesScss from '../../../src/styles/modifiers/_states.scss?raw'
-import placementsScss from '../../../src/styles/modifiers/_placements.scss?raw'
+import variantsScss from '../../../../src/styles/modifiers/_variants.scss?raw'
+import sizesScss from '../../../../src/styles/modifiers/_sizes.scss?raw'
+import stylesScss from '../../../../src/styles/modifiers/_styles.scss?raw'
+import statesScss from '../../../../src/styles/modifiers/_states.scss?raw'
+import placementsScss from '../../../../src/styles/modifiers/_placements.scss?raw'
 
 const dimensionSources: Readonly<Record<string, string>> = {
 	variant: variantsScss,

@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { afterEach, describe, expect, it } from 'vitest'
-import { build, mount, pixels, render, style, token } from '../../../setupStyles'
+import { build, mount, pixels, render, rootToken, style, token } from '../../../setupStyles'
 
 afterEach(() => {
 	// Tests in this file mount things on document.body to exercise body-rooted
@@ -179,5 +179,47 @@ describe('aside — `<aside popover>` overrides anchor-position cap', () => {
 		expect(cap).toContain('100dvw')
 
 		nav.hidePopover()
+	})
+})
+
+// ── aside-as-alert banner ──────────────────────────────────────────────────
+//
+// Aside's third context (alongside body-shell sidebar and article callout):
+// when `role="alert"` is present, `_aside.scss` flips the shape into a
+// flex-row banner with a leading variant bar and a trailing dismiss
+// affordance. `useAlert` toggles `[data-alert-open]` to drive the
+// open/closed chrome; static markup that wants the alert visible from the
+// start sets the attribute up front (its absence is the dismissed state).
+
+describe('aside-as-alert — `<aside role="alert">` banner', () => {
+	it('exposes --set-alert-* tokens on :root', () => {
+		expect(rootToken('--set-alert-color').trim()).not.toBe('')
+		expect(rootToken('--set-alert-border-color').trim()).not.toBe('')
+		expect(rootToken('--set-alert-bar-width').trim()).not.toBe('')
+	})
+
+	it('paints a flex row with a leading variant bar', () => {
+		const aside = render('aside', 'danger')
+		aside.setAttribute('role', 'alert')
+		aside.setAttribute('data-alert-open', '')
+		mount(aside)
+		expect(style(aside, 'display')).toBe('flex')
+		// Leading bar: thicker inline-start border (not the regular container border).
+		expect(pixels(aside, 'border-inline-start-width')).toBeGreaterThan(2)
+	})
+
+	it('a trailing dismiss `<button>` is pushed to the inline-end edge', () => {
+		const aside = render('aside', '')
+		aside.setAttribute('role', 'alert')
+		aside.setAttribute('data-alert-open', '')
+		const text = document.createElement('span')
+		text.textContent = 'Heads up.'
+		const close = document.createElement('button')
+		close.setAttribute('aria-label', 'Dismiss')
+		close.textContent = '×'
+		aside.append(text, close)
+		mount(aside)
+		// `margin-inline-start: auto` is the "push to end" convention.
+		expect(style(close, 'margin-inline-start')).not.toBe('0px')
 	})
 })

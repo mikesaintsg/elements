@@ -17,14 +17,9 @@
 
 import { describe, expect, it } from 'vitest'
 import { COMPONENT_CONTRACTS, componentContractFor } from '@elements/browser'
-import {
-	declaresToken,
-	stripComments,
-	tagFromPath,
-	usesMotionMixin,
-} from '../../setupStyles'
+import { declaresToken, stripComments, tagFromPath, usesMotionMixin } from '../../../setupStyles'
 
-const componentSources = import.meta.glob('../../../src/styles/components/_*.scss', {
+const componentSources = import.meta.glob('../../../../src/styles/components/_*.scss', {
 	query: '?raw',
 	import: 'default',
 	eager: true,

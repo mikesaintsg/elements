@@ -17,20 +17,15 @@
 
 import { describe, expect, it } from 'vitest'
 import { COMPOSABLE_CONTRACTS, composableContractFor } from '@elements/browser'
-import {
-	declaresToken,
-	stripComments,
-	tagFromPath,
-	usesMotionMixin,
-} from '../../setupStyles'
+import { declaresToken, stripComments, tagFromPath, usesMotionMixin } from '../../../setupStyles'
 
-const composableSources = import.meta.glob('../../../src/styles/composables/_*.scss', {
+const composableSources = import.meta.glob('../../../../src/styles/composables/_*.scss', {
 	query: '?raw',
 	import: 'default',
 	eager: true,
 }) as Record<string, string>
 
-const factorySources = import.meta.glob('../../../src/browser/factories/create*.ts', {
+const factorySources = import.meta.glob('../../../../src/browser/factories/create*.ts', {
 	query: '?raw',
 	import: 'default',
 	eager: true,

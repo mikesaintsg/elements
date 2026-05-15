@@ -16,9 +16,9 @@
 //       — the check is segment-equal, not substring-contains.
 //
 //  Tag-segment ↔ taxonomy parity is covered separately by
-//  tests/src/styles/_taxonomy.test.ts. This test's job is purely the naming
+//  tests/src/styles/taxonomy.test.ts. This test's job is purely the naming
 //  surface — shape and forbidden segments. Group uniformity is covered by
-//  tests/src/styles/_uniformity.test.ts.
+//  tests/src/styles/uniformity.test.ts.
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'

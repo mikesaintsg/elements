@@ -4,7 +4,7 @@
 //  Asserts that FOLDER_CONTRACTS, FILE_EXCEPTIONS, the SelectorKind type,
 //  and the classification helpers form a coherent, self-consistent surface.
 //  The cross-folder cascade assertions live in
-//  tests/src/styles/_contracts.test.ts (the test that consumes this data).
+//  tests/src/styles/contracts.test.ts (the test that consumes this data).
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'

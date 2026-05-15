@@ -75,7 +75,8 @@ export function createBrowserProvider() {
 	const channel = process.env.PLAYWRIGHT_CHANNEL
 	if (channel) return playwright({ launchOptions: { channel } })
 	const claudeCodeChromium = findClaudeCodeChromium()
-	if (claudeCodeChromium) return playwright({ launchOptions: { executablePath: claudeCodeChromium } })
+	if (claudeCodeChromium)
+		return playwright({ launchOptions: { executablePath: claudeCodeChromium } })
 	const defaultChannel = process.platform === 'win32' ? 'msedge' : 'chrome'
 	return playwright({ launchOptions: { channel: defaultChannel } })
 }
@@ -100,6 +101,33 @@ export const srcCore = (config?: UserConfig): UserConfig =>
 			test: {
 				name: { label: 'src:core', color: 'magenta' },
 				include: ['tests/src/core/**/*.test.ts'],
+				setupFiles: ['./tests/setup.ts'],
+				environment: 'node',
+				browser: { enabled: false },
+			},
+		},
+		config ?? {},
+	)
+
+// Standalone: guides ↔ code parity, node environment.
+//
+// Tests under `tests/guides/` assert that the documentation in
+// `guides/*.md` stays in lock-step with the framework's shipped TS surface
+// (`src/browser/`) and SCSS surface (`src/styles/`). One test file per
+// guide (`tests/guides/{guide}.test.ts`) plus cross-guide meta-tests
+// (`tests/guides/references.test.ts`). The folder sits at
+// `tests/guides/` rather than `tests/src/guides/` because guides are a
+// top-level repo concern, not source mirrored under `src/`.
+//
+// Pure node — no DOM, no Vue, no chromium. Fast and deterministic. The
+// shared markdown helpers live in `tests/setup.ts` alongside `leaves`.
+export const guides = (config?: UserConfig): UserConfig =>
+	mergeConfig(
+		{
+			resolve,
+			test: {
+				name: { label: 'guides', color: 'green' },
+				include: ['tests/guides/**/*.test.ts'],
 				setupFiles: ['./tests/setup.ts'],
 				environment: 'node',
 				browser: { enabled: false },
@@ -234,6 +262,6 @@ export const appBrowser = (config?: UserConfig): UserConfig =>
 export default defineConfig({
 	resolve,
 	test: {
-		projects: [srcCore, srcBrowser, srcStyles, appCore, appBrowser],
+		projects: [srcCore, srcBrowser, srcStyles, guides, appCore, appBrowser],
 	},
 })

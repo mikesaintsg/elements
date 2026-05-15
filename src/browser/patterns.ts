@@ -3,7 +3,7 @@
 //
 // One contract per folder under `src/styles/`. Every SCSS partial in a folder
 // is held to the matching contract by the parity test at
-// `tests/src/styles/_contracts.test.ts`.
+// `tests/src/styles/contracts.test.ts`.
 //
 // A contract names:
 //   - which cascade layer the partial's rules MUST wrap in
@@ -584,7 +584,7 @@ export function folderForLayer(layer: StyleLayer): string {
 // partials consume `var(--set-{dimension}-X)` with confidence — if a
 // variant class drops `--set-variant-border-color`, every consumer's
 // fallback chain silently degrades to a transparent border. The parity
-// test at `tests/src/styles/_dimensions.test.ts` enforces the coverage.
+// test at `tests/src/styles/modifiers/_index.test.ts` enforces the coverage.
 //
 // The token names are property suffixes (no `--set-{dimension}-` prefix);
 // the test builds the full token name per dimension when matching.
@@ -838,7 +838,7 @@ export function surfaceContractFor(name: string): SurfaceContract | null {
 //   - `tokens.prefix` — the primary `--set-{prefix}-*` namespace. Multi-
 //     namespace components (`_aside.scss`, `_div.scss`, `_output.scss`,
 //     `_nav.scss`) record additional prefixes through FILE_EXCEPTIONS so
-//     the namespace check at `_contracts.test.ts` honors them.
+//     the namespace check at `contracts.test.ts` honors them.
 //
 //   - `tokens.required` — the minimum token surface the component MUST
 //     declare. Locks in the shipped contract; future removal of a token
@@ -1184,7 +1184,7 @@ export function componentContractFor(name: string): ComponentContract | null {
 //     declare. Empty for behavior-only composables.
 //
 //   - `state.selectors` — the composable-state selector kinds the partial
-//     MUST gate on. The _contracts.test.ts check enforces "at least one"
+//     MUST gate on. The contracts.test.ts check enforces "at least one"
 //     state selector; this list enforces the specific vocabulary.
 //
 //   - `animated` — true when the partial paints `transition:` or
@@ -1192,7 +1192,7 @@ export function componentContractFor(name: string): ComponentContract | null {
 //     `@include reduced-motion`.
 //
 //   - `factory` — the matching `create{Name}` / `use{Name}` pairing.
-//     Already cross-checked by _contracts.test.ts; recorded here for the
+//     Already cross-checked by contracts.test.ts; recorded here for the
 //     guides + the per-composable failure messages.
 
 export interface ComposableContract {
@@ -1307,7 +1307,7 @@ export function composableContractFor(name: string): ComposableContract | null {
 // The framework paints focus / hover / disabled chrome on a specific, closed
 // set of native HTML elements. Every member of this set is held to two
 // accessibility-critical requirements, enforced by
-// `tests/src/styles/_interactive.test.ts`:
+// `tests/src/styles/interactive.test.ts`:
 //
 //   1. Forced-colors mode coverage — Windows High Contrast strips author
 //      colors and replaces them with system tokens. Interactive elements
@@ -1379,7 +1379,7 @@ export function isInteractive(tag: string): boolean {
 //  one family. Drift happens when a partial author hardcodes a
 //  numeric duration / curve directly — `0.25s ease` instead of
 //  `var(--set-motion-duration) var(--set-motion-timing-function)`.
-//  The parity test at `tests/src/styles/_motion.test.ts` scans each
+//  The parity test at `tests/src/styles/motion.test.ts` scans each
 //  registered partial and fails if the motion tokens are missing.
 // ============================================================================
 
@@ -1622,7 +1622,7 @@ export function hasBroadHead(selector: string): boolean {
 //                structure (`header > button:last-child` is the dismiss
 //                button trail inside an alert / drawer header band).
 //
-//  Tests at `tests/src/styles/_pairings.test.ts` enforce the allowlist
+//  Tests at `tests/src/styles/pairings.test.ts` enforce the allowlist
 //  across every compiled framework rule. New `parent > child` pairings
 //  must be added here with a justification (or refactored to a wrapper
 //  class / element baseline that doesn't hardcode the child element).

@@ -174,3 +174,34 @@ describe('popover — hint variant (tooltip)', () => {
 		expect(token(el, '--set-popover-hint-background-color').trim()).not.toBe('')
 	})
 })
+
+// ── Tooltip-only assertions (formerly tooltip.test.ts) ─────────────────────
+//
+// Padding-comparison and :root token coverage for the hint variant. The
+// element-level token resolution + role=tooltip parity + max-inline-size +
+// inverted-color rules above cover the rest of the tooltip surface.
+
+describe('popover — hint variant :root tokens', () => {
+	it('exposes --set-popover-hint-* defaults on :root', () => {
+		expect(rootToken('--set-popover-hint-color').trim()).not.toBe('')
+		expect(rootToken('--set-popover-hint-background-color').trim()).not.toBe('')
+		expect(rootToken('--set-popover-hint-padding-inline').trim()).not.toBe('')
+		expect(rootToken('--set-popover-hint-max-inline-size').trim()).not.toBe('')
+	})
+
+	it('`[popover=hint]` paints smaller padding than a regular `[popover]`', () => {
+		const regular = document.createElement('div')
+		regular.setAttribute('popover', '')
+		regular.id = 'reg-popover'
+		mount(regular)
+
+		const hint = document.createElement('div')
+		hint.setAttribute('popover', 'hint')
+		hint.id = 'hint-popover'
+		mount(hint)
+
+		expect(pixels(hint, 'padding-inline-start')).toBeLessThan(
+			pixels(regular, 'padding-inline-start'),
+		)
+	})
+})

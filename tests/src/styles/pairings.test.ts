@@ -41,7 +41,7 @@ const sources = import.meta.glob(
 
 // ── Rule opener extraction (selector text from each rule, in source-order) ──
 //
-// Mirrors `_scope.test.ts`'s opener extractor: collect every non-at-rule
+// Mirrors `scope.test.ts`'s opener extractor: collect every non-at-rule
 // line ending with `{`, joining multi-line selectors. Skip nested-Sass
 // rules starting with `&` — those qualify their parent and are unioned
 // with the parent's selector at compile time; testing only top-level

@@ -14,7 +14,7 @@
 //  The check reads the raw SCSS (not the computed cascade) so a token
 //  declared via a fallback chain (`--set-X-color: var(--set-style-color,
 //  …)`) counts — the declaration exists on the element. The runtime
-//  cascade test at tests/src/styles/_tokens.test.ts complements this by
+//  cascade test at tests/src/styles/tokens.test.ts complements this by
 //  asserting each token actually resolves.
 // ============================================================================
 

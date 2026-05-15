@@ -9,7 +9,7 @@ This document is the source of truth for:
 - Which tags are valid hosts for the modifier system.
 - What semantic root a new design problem should reach for before considering a class-only primitive.
 
-It is mirrored programmatically in [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts). The parity test at [`tests/src/styles/_taxonomy.test.ts`](../tests/src/styles/_taxonomy.test.ts) fails if a row here, a file in [`src/styles/elements/`](../src/styles/elements/), or an entry in `taxonomy.ts` drifts out of step.
+It is mirrored programmatically in [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts). The parity test at [`tests/src/styles/taxonomy.test.ts`](../tests/src/styles/taxonomy.test.ts) fails if a row here, a file in [`src/styles/elements/`](../src/styles/elements/), or an entry in `taxonomy.ts` drifts out of step.
 
 ---
 
@@ -35,7 +35,7 @@ When a new design need arises, walk the decision in this order:
 2. **Determine the treatment.** If the tag is `substantive` or `composable`, the design slot already exists; you're consuming or extending the framework's surface, not adding a new primitive.
 3. **Reach for a class-component only if no HTML root applies.** "Inline pill" → no element exists → `.badge` on a `<span>`. Document the new class-component in [`components.md`](components.md) and add a row to §3 below (Treatment column: `class-component`).
 4. **Never invent a parallel root.** A `.card` div is wrong; the framework's card lives on `<article>`. A `.modal` div is wrong; modals live on `<dialog>`. The framework's contract is "semantic HTML works"; new application primitives that fork that contract make every consumer's mental model worse.
-5. **Run the parity tests.** If §3 lists a tag as `substantive` but the partial declares no `--set-{tag}-*` token, `_taxonomy.test.ts` fails. If `elements.ts` lists a tag but §3 doesn't, the same test fails. Treat the test as the binding contract; treat this document as its prose explanation.
+5. **Run the parity tests.** If §3 lists a tag as `substantive` but the partial declares no `--set-{tag}-*` token, `taxonomy.test.ts` fails. If `elements.ts` lists a tag but §3 doesn't, the same test fails. Treat the test as the binding contract; treat this document as its prose explanation.
 
 ---
 
@@ -194,7 +194,7 @@ Documented here so authors don't reinvent them. Each lives in [`src/styles/compo
 
 ## 4. Token-uniformity groups
 
-Logical families of tags / class-components that share a minimum token surface. Members of each group MUST declare every required suffix (with the `--set-{member}-` prefix), so a consumer who wants to retune the family can do so with one override per member. The contract data lives in [`src/browser/taxonomy.ts § TOKEN_GROUPS`](../src/browser/taxonomy.ts); the parity test is [`tests/src/styles/_uniformity.test.ts`](../tests/src/styles/_uniformity.test.ts).
+Logical families of tags / class-components that share a minimum token surface. Members of each group MUST declare every required suffix (with the `--set-{member}-` prefix), so a consumer who wants to retune the family can do so with one override per member. The contract data lives in [`src/browser/taxonomy.ts § TOKEN_GROUPS`](../src/browser/taxonomy.ts); the parity test is [`tests/src/styles/uniformity.test.ts`](../tests/src/styles/uniformity.test.ts).
 
 | Group                | Members                                                                                           | Required suffixes (per member, after `--set-{member}-`)                                                                                                       |
 | -------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |

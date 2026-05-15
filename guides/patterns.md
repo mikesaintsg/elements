@@ -1,6 +1,6 @@
 # Style-folder structural contracts
 
-> One contract per folder under [`src/styles/`](../src/styles/). Every SCSS partial in a folder is held to the matching contract by the parity test at [`tests/src/styles/_contracts.test.ts`](../tests/src/styles/_contracts.test.ts).
+> One contract per folder under [`src/styles/`](../src/styles/). Every SCSS partial in a folder is held to the matching contract by the parity test at [`tests/src/styles/contracts.test.ts`](../tests/src/styles/contracts.test.ts).
 
 The contract data lives in [`src/browser/patterns.ts`](../src/browser/patterns.ts) as `FOLDER_CONTRACTS` + `FILE_EXCEPTIONS`. This document is the prose explanation. When the two disagree, the TS is authoritative — the parity test will fail loudly until either the code or this document is updated.
 
@@ -206,7 +206,7 @@ Each entry uses the nested-entity shape (`comments.allowed`, `state.required`, `
 
 ## 5. Scope discipline (cascade-first selector design)
 
-Cross-cutting modifier rules — selectors that combine an attribute or pseudo head (e.g. `[popover]`) with a class qualifier from the modifier vocabulary (`.top`, `.subtle`, `.disabled`) — need explicit scoping. Two anti-patterns the parity test at [`tests/src/styles/_scope.test.ts`](../tests/src/styles/_scope.test.ts) catches:
+Cross-cutting modifier rules — selectors that combine an attribute or pseudo head (e.g. `[popover]`) with a class qualifier from the modifier vocabulary (`.top`, `.subtle`, `.disabled`) — need explicit scoping. Two anti-patterns the parity test at [`tests/src/styles/scope.test.ts`](../tests/src/styles/scope.test.ts) catches:
 
 ### 5.1 Chained tag / attribute `:not()` qualifiers — collapse to `:not(:where(...))`
 
@@ -259,7 +259,7 @@ CSS is built around **broad defaults + narrow exceptions**, with the cascade res
 ### 5.4 Where the rule is enforced
 
 - [`src/browser/patterns.ts`](../src/browser/patterns.ts) — `hasChainedTagNots()`, `hasScopingFunction()`, `classQualifiers()` helpers.
-- [`tests/src/styles/_scope.test.ts`](../tests/src/styles/_scope.test.ts) — drives every partial in `src/styles/` against both anti-patterns.
+- [`tests/src/styles/scope.test.ts`](../tests/src/styles/scope.test.ts) — drives every partial in `src/styles/` against both anti-patterns.
 - This document — prose rationale + canonical examples.
 
 ---
@@ -268,7 +268,7 @@ CSS is built around **broad defaults + narrow exceptions**, with the cascade res
 
 Every modifier class in a dimension MUST declare the dimension's full required context-token set. This is the cascade contract that lets element partials consume `var(--set-{dimension}-X)` with confidence — if a variant class drops a token, every consumer's fallback chain silently degrades.
 
-The contract is codified in [`MODIFIER_DIMENSION_TOKENS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/_dimensions.test.ts`](../tests/src/styles/_dimensions.test.ts).
+The contract is codified in [`MODIFIER_DIMENSION_TOKENS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/modifiers/_index.test.ts`](../tests/src/styles/modifiers/_index.test.ts).
 
 ### 6.1 Variant — 8 tokens per class (FILLED + SUBTLE + ON-CANVAS tiers)
 
@@ -316,7 +316,7 @@ See [`taxonomy.md` § 1](taxonomy.md) for the full token-group catalog.
 
 ## 7. Per-surface contracts
 
-Each file in [`src/styles/surfaces/`](../src/styles/surfaces/) paints a single browser-rendered pseudo-element / attribute surface and owns a dedicated `--set-{surface}-*` token namespace. The contract is codified in [`SURFACE_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/_surfaces.test.ts`](../tests/src/styles/_surfaces.test.ts).
+Each file in [`src/styles/surfaces/`](../src/styles/surfaces/) paints a single browser-rendered pseudo-element / attribute surface and owns a dedicated `--set-{surface}-*` token namespace. The contract is codified in [`SURFACE_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/surfaces/_index.test.ts`](../tests/src/styles/surfaces/_index.test.ts).
 
 ### 7.1 The shape
 
@@ -353,7 +353,7 @@ Additionally, **any surface that declares a `transition-duration` or `duration` 
 
 ### 7.4 Cross-surface composition
 
-Surfaces freely read each other's tokens via `var()` chains. `_popover.scss` reads `--set-anchor-*` declared in `_anchor-position.scss`; `_backdrop.scss` reads `--set-transition-duration` declared in `_tokens.scss`. These reads are documented in `FILE_EXCEPTIONS[*].tokens.extras` so the namespace check at `_contracts.test.ts` allows them.
+Surfaces freely read each other's tokens via `var()` chains. `_popover.scss` reads `--set-anchor-*` declared in `_anchor-position.scss`; `_backdrop.scss` reads `--set-transition-duration` declared in `_tokens.scss`. These reads are documented in `FILE_EXCEPTIONS[*].tokens.extras` so the namespace check at `contracts.test.ts` allows them.
 
 ### 7.5 Adding a new surface
 
@@ -365,7 +365,7 @@ Surfaces freely read each other's tokens via `var()` chains. `_popover.scss` rea
 
 ## 8. Per-component contracts
 
-Each file in [`src/styles/components/`](../src/styles/components/) paints either a tag-rooted shell composition (`<article>` card, `<form>` stack, `<nav>` rails) or a class-component primitive that has no semantic root (`.badge`, `.dot`, `.spinner`). The contract is codified in [`COMPONENT_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/_components.test.ts`](../tests/src/styles/_components.test.ts).
+Each file in [`src/styles/components/`](../src/styles/components/) paints either a tag-rooted shell composition (`<article>` card, `<form>` stack, `<nav>` rails) or a class-component primitive that has no semantic root (`.badge`, `.dot`, `.spinner`). The contract is codified in [`COMPONENT_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/components/_index.test.ts`](../tests/src/styles/components/_index.test.ts).
 
 ### 8.1 The shape
 
@@ -414,7 +414,7 @@ Four components ship tokens under namespaces that differ from their filename:
 - `_output.scss` — `toast` (filename names the element; tokens name the surface)
 - `_nav.scss` — `nav` + `tablist`, `tab`, `tabpanel` (multi-pattern element)
 
-The additional prefixes are declared in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts) so the namespace check at `_contracts.test.ts` allows them; the per-component contract documents the canonical primary prefix.
+The additional prefixes are declared in [`FILE_EXCEPTIONS`](../src/browser/patterns.ts) so the namespace check at `contracts.test.ts` allows them; the per-component contract documents the canonical primary prefix.
 
 ### 8.4 Animated-component contract
 
@@ -431,7 +431,7 @@ Same as §7.3 (surfaces). Any component that declares a `transition-duration`, `
 
 ## 9. Per-composable contracts
 
-Each file in [`src/styles/composables/`](../src/styles/composables/) paints chrome gated on state set by a `use{Name}` / `create{Name}` factory. The contract is codified in [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/_composables.test.ts`](../tests/src/styles/_composables.test.ts).
+Each file in [`src/styles/composables/`](../src/styles/composables/) paints chrome gated on state set by a `use{Name}` / `create{Name}` factory. The contract is codified in [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts) and enforced by [`tests/src/styles/composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts).
 
 ### 9.1 The shape
 
@@ -494,7 +494,7 @@ Every entry in `STRUCTURAL_PAIRINGS` (in [`src/browser/patterns.ts`](../src/brow
 
 ### 10.2 What the test enforces
 
-[`tests/src/styles/_pairings.test.ts`](../tests/src/styles/_pairings.test.ts) scans every rule opener in every framework SCSS partial. For each selector, it extracts `(parent-tag, child-tag)` pairs (flattening `:is(...)` / `:where(...)` and respecting selector-list commas / descendant-vs-child combinators). Every pair must appear in `STRUCTURAL_PAIRINGS`.
+[`tests/src/styles/pairings.test.ts`](../tests/src/styles/pairings.test.ts) scans every rule opener in every framework SCSS partial. For each selector, it extracts `(parent-tag, child-tag)` pairs (flattening `:is(...)` / `:where(...)` and respecting selector-list commas / descendant-vs-child combinators). Every pair must appear in `STRUCTURAL_PAIRINGS`.
 
 Universal heads (`*`), classes, attributes, and pseudos generate no pair — they don't single out an element type and aren't subject to this discipline.
 
@@ -516,8 +516,8 @@ The right architectural shape: the rail provides containment (flex column, overf
 ## 11. Reference
 
 - [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the contract data and helpers (folder contracts, file exceptions, modifier-dimension tokens, surface/component/composable contracts, structural pairings).
-- [`tests/src/styles/_contracts.test.ts`](../tests/src/styles/_contracts.test.ts) — the parity test that consumes the folder/file contracts.
-- [`tests/src/styles/_pairings.test.ts`](../tests/src/styles/_pairings.test.ts) — the parity test for `parent > child` structural pairings (§10).
+- [`tests/src/styles/contracts.test.ts`](../tests/src/styles/contracts.test.ts) — the parity test that consumes the folder/file contracts.
+- [`tests/src/styles/pairings.test.ts`](../tests/src/styles/pairings.test.ts) — the parity test for `parent > child` structural pairings (§10).
 - [`tests/src/browser/patterns.test.ts`](../tests/src/browser/patterns.test.ts) — the TS-shape assertions for the contract surface itself.
 - [`taxonomy.md`](taxonomy.md) — every native HTML element + framework treatment (the per-tag complement to this per-folder doc).
 - [`styles.md`](styles.md) — top-level cascade architecture.

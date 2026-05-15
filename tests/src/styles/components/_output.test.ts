@@ -1,10 +1,10 @@
 // ============================================================================
-//  Toast chrome — `<output popover>` (or `<output role="status">` standalone).
+//  components/_output.scss — `<output>` calc-result chip + toast banner.
 //
-//  Output's element baseline styles it as a calc-result chip; the
-//  component layer extends two specific shapes on top: a top-layer
-//  `popover`-promoted toast, and an in-flow status banner. These tests
-//  assert the chrome paints under both shapes.
+//  Output's element baseline (in `elements/_output.scss`) styles it as a
+//  calc-result chip; the component layer here extends two shapes on top:
+//  a top-layer `popover`-promoted toast, and an in-flow status banner
+//  (`output[role="status"]`).
 // ============================================================================
 
 import { afterEach, describe, expect, it } from 'vitest'
@@ -16,7 +16,7 @@ afterEach(() => {
 	}
 })
 
-describe('toast — token surface', () => {
+describe('output — toast token surface', () => {
 	it('exposes --set-toast-* on :root', () => {
 		expect(rootToken('--set-toast-color').trim()).not.toBe('')
 		expect(rootToken('--set-toast-border-color').trim()).not.toBe('')
@@ -24,7 +24,7 @@ describe('toast — token surface', () => {
 	})
 })
 
-describe('toast — `<output popover>` is a fixed-position banner', () => {
+describe('output — `<output popover>` is a fixed-position banner', () => {
 	it('paints flex layout with non-zero padding', () => {
 		const out = build('output')
 		out.setAttribute('popover', 'manual')
@@ -52,7 +52,7 @@ describe('toast — `<output popover>` is a fixed-position banner', () => {
 	})
 })
 
-describe('toast — `<output role="status">` (in-flow) gets banner shape', () => {
+describe('output — `<output role="status">` (in-flow) gets banner shape', () => {
 	it('without `.filled` (the calc-chip opt-in), an output[role=status] is a flex banner', () => {
 		const out = build('output')
 		out.setAttribute('role', 'status')

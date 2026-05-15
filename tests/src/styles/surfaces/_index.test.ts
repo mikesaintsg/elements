@@ -21,14 +21,9 @@
 
 import { describe, expect, it } from 'vitest'
 import { SURFACE_CONTRACTS, surfaceContractFor } from '@elements/browser'
-import {
-	declaresToken,
-	stripComments,
-	tagFromPath,
-	usesMotionMixin,
-} from '../../setupStyles'
+import { declaresToken, stripComments, tagFromPath, usesMotionMixin } from '../../../setupStyles'
 
-const surfaceSources = import.meta.glob('../../../src/styles/surfaces/_*.scss', {
+const surfaceSources = import.meta.glob('../../../../src/styles/surfaces/_*.scss', {
 	query: '?raw',
 	import: 'default',
 	eager: true,
