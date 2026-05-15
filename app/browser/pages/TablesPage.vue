@@ -89,15 +89,7 @@ import { ref } from 'vue'
  *     tints, so a `<tr class="danger">` and a `<div class="aside
  *     danger">` paint the same palette.
  */
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 
 interface Member {
 	id: string

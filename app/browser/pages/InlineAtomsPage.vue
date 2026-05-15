@@ -45,15 +45,7 @@
  */
 import { ref } from 'vue'
 
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 
 // Tag dismissal demo — keep track of which chips have been removed
 // so the user can see real interactive state.

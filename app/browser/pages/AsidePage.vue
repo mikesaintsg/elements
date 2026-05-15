@@ -60,15 +60,7 @@
  */
 import { ref } from 'vue'
 
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 
 // Dismissable alert demo state — each alert renders a dismiss button
 // that toggles `data-alert-open` on its own root. In production this

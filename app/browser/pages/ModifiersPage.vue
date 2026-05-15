@@ -36,16 +36,8 @@ import { capitalize } from '../helpers.js'
  *     live anchor positioning + position-try-fallbacks demos.
  */
 
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
-type Variant = (typeof variants)[number]
+import type { Variant } from '@elements/browser'
+import { VARIANTS as variants } from '../constants.js'
 
 const sizes = ['small', '', 'large'] as const
 type Size = (typeof sizes)[number]

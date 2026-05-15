@@ -93,7 +93,7 @@
 import { computed, ref, useTemplateRef } from 'vue'
 import { useAlert } from '@elements/browser'
 
-const variants = ['primary', 'secondary', 'success', 'warning', 'danger', 'information'] as const
+import { VARIANTS_ALERT as variants } from '../constants.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — Show / hide / toggle lifecycle.

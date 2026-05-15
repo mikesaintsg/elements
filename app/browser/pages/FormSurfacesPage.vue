@@ -40,7 +40,7 @@
  */
 import { ref } from 'vue'
 
-const variants = ['primary', 'success', 'warning', 'danger', 'information'] as const
+import { VARIANTS_FEEDBACK as variants } from '../constants.js'
 
 // Selection demo — let the user pick which variant context wraps
 // the selectable paragraph, so the `::selection` cascade is visible.

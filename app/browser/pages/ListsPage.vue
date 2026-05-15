@@ -39,15 +39,7 @@
  *     collapse list (see plan.md §9.7) — definition lists inside a
  *     scrollable dialog don't double-pad.
  */
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 </script>
 
 <template>

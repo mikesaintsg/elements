@@ -38,15 +38,7 @@
  *     pattern for browsers that need to support pre-`name=`-attribute
  *     accordion groups (Safari pre-17, Firefox pre-110).
  */
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 
 // Custom marker — a plus sign that rotates to an X (45deg) on `[open]`.
 // Demonstrates the `--set-summary-marker-image` + `--set-summary-marker-

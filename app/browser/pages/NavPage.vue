@@ -57,15 +57,7 @@
  */
 import { ref } from 'vue'
 
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 
 // Tablist demo state — one of three tab ids active at a time. APG-
 // recommended pattern: `aria-selected` mirrors the active id; inactive

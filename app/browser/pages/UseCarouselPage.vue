@@ -114,7 +114,7 @@
 import { ref, useTemplateRef } from 'vue'
 import { useCarousel } from '@elements/browser'
 
-const variants = ['primary', 'success', 'warning', 'danger', 'information'] as const
+import { VARIANTS_FEEDBACK as variants } from '../constants.js'
 
 const slides = [
 	{

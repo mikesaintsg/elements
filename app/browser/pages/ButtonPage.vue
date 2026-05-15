@@ -42,15 +42,7 @@ const logToggle = (e: Event): void => {
 	if (events.value.length > 6) events.value.length = 6
 }
 
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 
 const snippetBare = `<button>Save</button>`
 

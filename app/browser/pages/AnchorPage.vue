@@ -32,15 +32,7 @@
  */
 import { ref, watch } from 'vue'
 
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 
 // Live :visited demo wires a counter so the reader can see the visited-color
 // reset stays the variant color (no UA purple). Anchors with this href become

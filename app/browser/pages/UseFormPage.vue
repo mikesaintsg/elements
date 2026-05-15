@@ -109,7 +109,7 @@
 import { computed, ref, useTemplateRef } from 'vue'
 import { useForm } from '@elements/browser'
 
-const variants = ['primary', 'secondary', 'tertiary', 'success', 'warning', 'danger'] as const
+import { VARIANTS_FORM as variants } from '../constants.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — Bare submit-gated validation.

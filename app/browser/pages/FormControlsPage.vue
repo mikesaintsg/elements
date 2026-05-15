@@ -38,15 +38,7 @@
  */
 import { computed, ref } from 'vue'
 
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 
 const textInputTypes = [
 	{ type: 'text', placeholder: 'A short string of plain text' },

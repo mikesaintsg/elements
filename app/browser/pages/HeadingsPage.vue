@@ -34,15 +34,7 @@
  *   - `<dialog> > <header>` zeroes heading margins (the band's own
  *     padding owns the rhythm) — see `_dialog.scss`'s section chrome.
  */
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 
 const snippetCascade = `<h1>The framework's primary headline</h1>
 <h2>A second-level section heading</h2>

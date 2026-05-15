@@ -50,15 +50,7 @@ import { useTheme } from '@elements/browser'
 
 const themeCtl = useTheme()
 
-const variants = [
-	'primary',
-	'secondary',
-	'tertiary',
-	'success',
-	'warning',
-	'danger',
-	'information',
-] as const
+import { VARIANTS as variants } from '../constants.js'
 
 const tiers = ['bg-subtle', 'text-emphasis', 'border-subtle', 'on-canvas'] as const
 
