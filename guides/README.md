@@ -273,11 +273,11 @@ Browser-environment tests (real Chromium) covering rendered cascade behaviour + 
 
 #### `tests/guides/` — doc ↔ code parity
 
-Node-environment tests. One driver per spec guide, plus the meta `index.test.ts` for cross-guide structural uniformity.
+Node-environment tests. One driver per spec guide, plus the meta `README.test.ts` for cross-guide structural uniformity.
 
 | File                                                         | Purpose                                                                                                                                                                                                                                 |
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`index.test.ts`](../tests/guides/index.test.ts)             | Meta: heading skeleton uniformity + cross-reference link parity + `tests/guides/*.test.ts` ↔ `guides/*.md` pairing.                                                                                                                     |
+| [`README.test.ts`](../tests/guides/README.test.ts)           | Meta: heading skeleton uniformity + cross-reference link parity + `tests/guides/*.test.ts` ↔ `guides/*.md` pairing.                                                                                                                     |
 | [`elements.test.ts`](../tests/guides/elements.test.ts)       | `elements.ts` + `taxonomy.ts` shape, pre-computed indices, predicate getters, partial parity, token coverage, factory pairing, `TOKEN_GROUPS` membership, markdown-table parity.                                                        |
 | [`modifiers.test.ts`](../tests/guides/modifiers.test.ts)     | `modifiers.md` dimension table ↔ `modifiers.ts` shipped values; isolation (cross-cutting modifiers only declared in `modifiers/`); no hand-rolled `.X.{variant}` enumeration outside `modifiers/`; no Tailwind single-token collisions. |
 | [`tokens.test.ts`](../tests/guides/tokens.test.ts)           | Token naming (kebab-case shape + abbreviation black-list); motion contract (`MOTION_CONTRACT_PARTIALS` reference `--set-motion-{duration, timing-function}`); no hardcoded duration literals on panel-reveal properties.                |

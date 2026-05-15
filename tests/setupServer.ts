@@ -100,7 +100,7 @@ export function readGuide(name: string): string {
 /**
  * Synchronously read every `*.md` guide in `guides/`. Returns
  * `{ basename: rawSource }` (basename without the `.md` extension). Used by
- * the meta driver in `tests/guides/index.test.ts` for structural-uniformity
+ * the meta driver in `tests/guides/README.test.ts` for structural-uniformity
  * + cross-reference parity across all guides.
  */
 export function readAllGuides(): Record<string, string> {

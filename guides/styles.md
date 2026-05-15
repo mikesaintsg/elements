@@ -252,7 +252,7 @@ The architecture is enforced across three test projects:
 
 - **`src:browser`** ([`tests/src/browser/`](../tests/src/browser/)) — TS↔SCSS bidirectional parity in real Chromium. Every `--set-*` token resolves at runtime; every modifier in `modifiers.ts` has a matching CSS rule.
 - **`src:styles`** ([`tests/src/styles/`](../tests/src/styles/)) — per-partial behavioural tests against the rendered cascade + folder-level contract enforcers (`{folder}/_index.test.ts`).
-- **`guides`** ([`tests/guides/`](../tests/guides/)) — node-env guide-doc ↔ code parity drivers; one test driver per spec guide plus the meta `index.test.ts` for structural uniformity across guides.
+- **`guides`** ([`tests/guides/`](../tests/guides/)) — node-env guide-doc ↔ code parity drivers; one test driver per spec guide plus the meta `README.test.ts` for structural uniformity across guides.
 
 Cross-cutting drivers worth knowing:
 

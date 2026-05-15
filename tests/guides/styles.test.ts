@@ -32,10 +32,7 @@ const CANONICAL_LAYER_LINE =
 
 const stylesDoc = readGuide('styles')
 const setupCss = readFileSync(resolvePath(WORKSPACE_ROOT, 'tests/setup.css'), 'utf8')
-const mainCss = readFileSync(
-	resolvePath(WORKSPACE_ROOT, 'app/browser/styles/main.css'),
-	'utf8',
-)
+const mainCss = readFileSync(resolvePath(WORKSPACE_ROOT, 'app/browser/styles/main.css'), 'utf8')
 
 /** Pull every `@layer a, b, c;` declaration line out of a CSS / md source. */
 function layerDeclarations(source: string): readonly string[] {

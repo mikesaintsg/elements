@@ -6,33 +6,33 @@
 
 The showcase is the framework's mirror — a consumer-side app that uses _only_ the framework's public API to build a 43-page documentation experience. It lives under [`app/browser/`](../app/browser/) as a self-contained SPA:
 
-| Path                                                        | Role                                                                                                       |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [`app/browser/index.html`](../app/browser/index.html)       | Shell with the cache-defeat meta tags + inline-SVG favicon.                                                |
-| [`app/browser/main.ts`](../app/browser/main.ts)             | Entry. Imports `styles/main.css` (cascade-layer order + Tailwind + framework SCSS) and mounts `App.vue`.   |
-| [`app/browser/App.vue`](../app/browser/App.vue)             | The shell: `<header>`, `<nav>` rail, `<main>` scroller, `<aside>` TOC, `<footer>`.                         |
-| [`app/browser/router.ts`](../app/browser/router.ts)         | Hash-based router + route catalog (one entry per page, grouped per `ROUTE_GROUPS`).                        |
-| [`app/browser/types.ts`](../app/browser/types.ts)           | `Route` / `RouteGroup` / `Group` / `Section` types + `ROUTE_GROUPS` canonical order.                       |
-| [`app/browser/env.d.ts`](../app/browser/env.d.ts)           | `__BUILD_ID__` declaration + `*.vue` module shim for IDEs.                                                 |
-| [`app/browser/pages/`](../app/browser/pages/)               | 43 `*.vue` page files. One per surface area; bundled where the surface naturally groups.                   |
-| [`app/browser/styles/main.css`](../app/browser/styles/main.css) | Single CSS entry — declares `@layer`, imports Tailwind, imports the framework SCSS, sets `@source`.    |
-| [`app/browser/styles/showcase.css`](../app/browser/styles/showcase.css) | Showcase-specific chrome. The only file in the showcase that authors CSS classes.                  |
+| Path                                                                    | Role                                                                                                     |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| [`app/browser/index.html`](../app/browser/index.html)                   | Shell with the cache-defeat meta tags + inline-SVG favicon.                                              |
+| [`app/browser/main.ts`](../app/browser/main.ts)                         | Entry. Imports `styles/main.css` (cascade-layer order + Tailwind + framework SCSS) and mounts `App.vue`. |
+| [`app/browser/App.vue`](../app/browser/App.vue)                         | The shell: `<header>`, `<nav>` rail, `<main>` scroller, `<aside>` TOC, `<footer>`.                       |
+| [`app/browser/router.ts`](../app/browser/router.ts)                     | Hash-based router + route catalog (one entry per page, grouped per `ROUTE_GROUPS`).                      |
+| [`app/browser/types.ts`](../app/browser/types.ts)                       | `Route` / `RouteGroup` / `Group` / `Section` types + `ROUTE_GROUPS` canonical order.                     |
+| [`app/browser/env.d.ts`](../app/browser/env.d.ts)                       | `__BUILD_ID__` declaration + `*.vue` module shim for IDEs.                                               |
+| [`app/browser/pages/`](../app/browser/pages/)                           | 43 `*.vue` page files. One per surface area; bundled where the surface naturally groups.                 |
+| [`app/browser/styles/main.css`](../app/browser/styles/main.css)         | Single CSS entry — declares `@layer`, imports Tailwind, imports the framework SCSS, sets `@source`.      |
+| [`app/browser/styles/showcase.css`](../app/browser/styles/showcase.css) | Showcase-specific chrome. The only file in the showcase that authors CSS classes.                        |
 
 ### Route groups
 
 [`ROUTE_GROUPS`](../app/browser/types.ts) declares the canonical sidebar order. Mirrors the framework topology:
 
-| Group                            | Mirrors                                                                                               |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `Getting started`                | Home (showcase entry point).                                                                          |
-| `Foundations`                    | [tokens.md](tokens.md) + [modifiers.md](modifiers.md). Token palette, theme, modifier cascade.        |
-| `Elements — Interactive`         | [elements.md](elements.md) interactive ✅ cascade rows.                                               |
-| `Elements — Content`             | [elements.md](elements.md) content ✅ cascade rows.                                                   |
-| `Components`                     | [components.md](components.md) shipped catalog.                                                       |
-| `Surfaces`                       | [surfaces.md](surfaces.md) shipped surfaces.                                                          |
-| `Composables — Element-bound`    | [composables.md § Naming bucket 1](composables.md).                                                   |
-| `Composables — Attribute-bound`  | [composables.md § Naming bucket 2](composables.md).                                                   |
-| `Composables — Primitives`       | [composables.md § Naming bucket 3](composables.md).                                                   |
+| Group                           | Mirrors                                                                                        |
+| ------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `Getting started`               | Home (showcase entry point).                                                                   |
+| `Foundations`                   | [tokens.md](tokens.md) + [modifiers.md](modifiers.md). Token palette, theme, modifier cascade. |
+| `Elements — Interactive`        | [elements.md](elements.md) interactive ✅ cascade rows.                                        |
+| `Elements — Content`            | [elements.md](elements.md) content ✅ cascade rows.                                            |
+| `Components`                    | [components.md](components.md) shipped catalog.                                                |
+| `Surfaces`                      | [surfaces.md](surfaces.md) shipped surfaces.                                                   |
+| `Composables — Element-bound`   | [composables.md § Naming bucket 1](composables.md).                                            |
+| `Composables — Attribute-bound` | [composables.md § Naming bucket 2](composables.md).                                            |
+| `Composables — Primitives`      | [composables.md § Naming bucket 3](composables.md).                                            |
 
 ---
 
@@ -62,7 +62,7 @@ These invariants hold across `app/browser/` ↔ `src/styles/` ↔ `src/browser/`
 
 7. **One showcase page per shipped surface area.** Every entry in `elements.ts` is represented (sometimes bundled into a family page — `HeadingsPage` covers `<h1>`–`<h6>`); every component in `COMPONENT_CONTRACTS` has a demonstration; every surface in `SURFACE_CONTRACTS` is exercised; every factory in `src/browser/factories/` has a `Use{Name}Page` (or is bundled into a shared page like `UseThemeButtonPage`).
 
-These are codified for tests/app/browser/* parity work — a future driver can iterate `ROUTE_GROUPS`, `COMPONENT_CONTRACTS`, `SURFACE_CONTRACTS`, and `readFactorySources()` to verify symmetry between what the framework ships and what the showcase demonstrates.
+These are codified for tests/app/browser/\* parity work — a future driver can iterate `ROUTE_GROUPS`, `COMPONENT_CONTRACTS`, `SURFACE_CONTRACTS`, and `readFactorySources()` to verify symmetry between what the framework ships and what the showcase demonstrates.
 
 ---
 

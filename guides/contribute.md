@@ -603,7 +603,7 @@ tests/
   guides/            ← guide-doc ↔ code parity (node env) — one driver per spec guide:
     composables.test.ts ← event registry + JS↔CSS attr parity + factory↔guide pairing
     elements.test.ts    ← elements.ts + taxonomy.ts + TOKEN_GROUPS + markdown-table parity
-    index.test.ts       ← meta: heading skeleton + cross-ref + test↔guide pairing
+    README.test.ts       ← meta: heading skeleton + cross-ref + test↔guide pairing
     mixins.test.ts      ← _mixins.scss ↔ mixins.md (bidirectional)
     modifiers.test.ts   ← modifiers.md §1 ↔ modifiers.ts + isolation + no hand-rolled variants
     patterns.test.ts    ← folder contracts + scope + pairings + interactive + classification helpers

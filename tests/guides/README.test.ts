@@ -1,13 +1,18 @@
 // ============================================================================
 //  guides/README.md ↔ guides/*.md — structural uniformity + cross-reference parity.
 //
+//  This file is named `README.test.ts` so it pairs 1:1 with the pointer
+//  guide `guides/README.md` — the guide↔test parity below is a clean
+//  bijection with NO special-case exceptions: every `guides/{name}.md`
+//  has exactly `tests/guides/{name}.test.ts` and vice versa.
+//
 //  Three contract surfaces in one driver:
 //
 //    1. UNIFORMITY (every guide). Every `guides/*.md` opens with `# Title`
 //       on line 1 and carries a `> blockquote` subtitle on line 3. The
 //       pointer file (`guides/README.md`) must link to every other guide
-//       so the map stays complete. Every `tests/guides/{name}.test.ts`
-//       driver corresponds to a real `guides/{name}.md`.
+//       so the map stays complete. Every `guides/{name}.md` ↔
+//       `tests/guides/{name}.test.ts` (bijection).
 //
 //    2. SPEC-GUIDE SKELETON. Every spec guide (anything other than the
 //       process docs `README` and `contribute`) ships the unified
@@ -101,11 +106,11 @@ describe('guides — every spec guide ships the unified skeleton', () => {
 // ── 3. Pointer-file coverage — guides/README.md links every other guide ──
 
 describe('guides — pointer file links every other guide', () => {
-	const indexGuide = guides.find((g) => g.name === 'README')
-	const indexSource = indexGuide?.source ?? ''
+	const pointerGuide = guides.find((g) => g.name === 'README')
+	const pointerSource = pointerGuide?.source ?? ''
 
 	it('guides/README.md exists', () => {
-		expect(indexGuide).toBeDefined()
+		expect(pointerGuide).toBeDefined()
 	})
 
 	for (const guide of guides) {
@@ -115,18 +120,16 @@ describe('guides — pointer file links every other guide', () => {
 		// must be reachable from it.
 		it(`guides/README.md references guides/${guide.name}.md`, () => {
 			const pattern = new RegExp(`\\(${guide.name}\\.md(?:#[^)]*)?\\)`)
-			expect(pattern.test(indexSource)).toBe(true)
+			expect(pattern.test(pointerSource)).toBe(true)
 		})
 	}
 })
 
-// ── 4. Test ↔ guide parity — bidirectional ───────────────────────────────
+// ── 4. Test ↔ guide parity — clean bijection ─────────────────────────────
 //
-// Every guide gets a dedicated parity-test driver, and every driver
-// maps back to a real guide. The ONE mapping exception: `README.md`
-// (the pointer file) is driven by THIS file (`index.test.ts`) — the
-// meta-driver IS its test (skeleton + cross-ref + pointer-coverage
-// checks above). So `README` maps to `index`, not `readme`.
+// Every `guides/{name}.md` has exactly `tests/guides/{name}.test.ts`,
+// and every driver maps back to a real guide. No exceptions: this file
+// is `README.test.ts`, so even the pointer guide pairs 1:1.
 //
 // `readAllGuides()` only reads top-level `guides/*.md`, so nested
 // reference directories (e.g. `guides/w3c/`) never enter the `guides`
@@ -139,23 +142,16 @@ const testFiles = new Set(
 		.map((f) => f.replace(/\.test\.ts$/, '')),
 )
 
-/** The guide → expected-test-driver mapping. README is the documented
- *  exception: its driver is this very file (`index.test.ts`). */
-const driverFor = (guideName: string): string =>
-	guideName === 'README' ? 'index' : guideName
-
 describe('guides — every guide has a dedicated test driver', () => {
 	for (const guide of guides) {
-		const driver = driverFor(guide.name)
 		// On failure: `guides/${guide.name}.md` has no
-		// `tests/guides/${driver}.test.ts`. Every guide is parity-tested
-		// against its implementation — author the missing driver. (If the
-		// guide is genuinely process-only with no testable surface, the
-		// driver can be a thin cross-reference / structural check; see
-		// `tests/guides/contribute.test.ts` for the pattern.) README maps
-		// to `index.test.ts` by design — see the block comment above.
-		it(`guides/${guide.name}.md → tests/guides/${driver}.test.ts exists`, () => {
-			expect(testFiles.has(driver)).toBe(true)
+		// `tests/guides/${guide.name}.test.ts`. Every guide is
+		// parity-tested against its implementation — author the missing
+		// driver. (If the guide is process-only with no parity surface,
+		// the driver can be a thin cross-reference / structural check;
+		// see `tests/guides/contribute.test.ts` for the pattern.)
+		it(`guides/${guide.name}.md → tests/guides/${guide.name}.test.ts exists`, () => {
+			expect(testFiles.has(guide.name)).toBe(true)
 		})
 	}
 })
@@ -164,10 +160,10 @@ describe('guides — every tests/guides/*.test.ts maps to a real guide', () => {
 	const guideNames = new Set(guides.map((g) => g.name))
 
 	for (const name of testFiles) {
-		if (name === 'index') continue // the meta-driver (pairs with README.md)
 		// On failure: `tests/guides/${name}.test.ts` exists but
 		// `guides/${name}.md` is missing. Either restore the guide or
-		// rename the test to match an existing guide.
+		// rename the test to match an existing guide. No skips — the
+		// bijection is total now that the meta-driver is `README.test.ts`.
 		it(`tests/guides/${name}.test.ts → guides/${name}.md exists`, () => {
 			expect(guideNames.has(name)).toBe(true)
 		})

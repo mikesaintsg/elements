@@ -26,14 +26,8 @@ import { resolve as resolvePath } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { readGuide, WORKSPACE_ROOT } from '../setupServer'
 
-const typesSource = readFileSync(
-	resolvePath(WORKSPACE_ROOT, 'app/browser/types.ts'),
-	'utf8',
-)
-const routerSource = readFileSync(
-	resolvePath(WORKSPACE_ROOT, 'app/browser/router.ts'),
-	'utf8',
-)
+const typesSource = readFileSync(resolvePath(WORKSPACE_ROOT, 'app/browser/types.ts'), 'utf8')
+const routerSource = readFileSync(resolvePath(WORKSPACE_ROOT, 'app/browser/router.ts'), 'utf8')
 const showcaseDoc = readGuide('showcase')
 
 // ── Extract ROUTE_GROUPS from app/browser/types.ts ──────────────────────────

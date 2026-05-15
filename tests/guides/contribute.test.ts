@@ -3,7 +3,7 @@
 //
 //  contribute.md is the workflow document. It carries dozens of
 //  concrete repo paths — in markdown links, in backtick-quoted prose,
-//  and in the §9.2 file-map ASCII tree. `index.test.ts` already checks
+//  and in the §9.2 file-map ASCII tree. `README.test.ts` already checks
 //  every `](relative/path)` MARKDOWN LINK resolves; this driver checks
 //  the OTHER reference shape: backtick-quoted `code` paths
 //  (`` `src/browser/patterns.ts` ``, `` `tests/guides/patterns.test.ts` ``)
