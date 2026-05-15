@@ -1,9 +1,56 @@
 import type { Component } from 'vue'
 
+/**
+ * Canonical sidebar-group order. Mirrors the framework topology:
+ *
+ *   1. `Getting started`              — Home (showcase entry point).
+ *   2. `Foundations`                  — `tokens.md` + `modifiers.md`. Token
+ *                                       palette, theme flip, modifier
+ *                                       cascade, placement vocabulary.
+ *   3. `Elements — Interactive`       — `elements.md` ✅ cascade interactive
+ *                                       members (focus / hover / state
+ *                                       chrome). Action surfaces.
+ *   4. `Elements — Content`           — `elements.md` ✅ cascade content
+ *                                       members (typography, sectioning,
+ *                                       embedded media).
+ *   5. `Components`                   — `components.md` shipped catalog
+ *                                       (element compositions + class-root
+ *                                       primitives).
+ *   6. `Surfaces`                     — `surfaces.md` shipped surfaces
+ *                                       (popover panels, form surfaces,
+ *                                       scroll + view-transition).
+ *   7. `Composables — Element-bound`  — `composables.md` bucket 1: one
+ *                                       composable per tag.
+ *   8. `Composables — Attribute-bound`— bucket 2: composables that wrap
+ *                                       attribute APIs (`usePopover`,
+ *                                       `useTooltip`).
+ *   9. `Composables — Primitives`     — bucket 3: reusable behaviour
+ *                                       building blocks (`useFocus`,
+ *                                       `useDrag` + `useDrop`,
+ *                                       `usePointer`, `useTheme`).
+ *
+ * The array IS the declared display order. `App.vue`'s `grouped` computed
+ * iterates `ROUTE_GROUPS` so routes can be declared in any order inside
+ * `router.ts` and the sidebar still renders in canonical order.
+ */
+export const ROUTE_GROUPS = [
+	'Getting started',
+	'Foundations',
+	'Elements — Interactive',
+	'Elements — Content',
+	'Components',
+	'Surfaces',
+	'Composables — Element-bound',
+	'Composables — Attribute-bound',
+	'Composables — Primitives',
+] as const
+
+export type RouteGroup = (typeof ROUTE_GROUPS)[number]
+
 export interface Route {
 	readonly id: string
 	readonly title: string
-	readonly group: string
+	readonly group: RouteGroup
 	readonly page: Component
 }
 
@@ -13,7 +60,7 @@ export interface RouteLocation {
 }
 
 export interface Group {
-	readonly group: string
+	readonly group: RouteGroup
 	readonly entries: readonly Route[]
 }
 

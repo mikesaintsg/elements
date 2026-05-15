@@ -3,6 +3,7 @@ import type { Group, Route, Section } from './types.js'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useTheme } from '@elements/browser'
 import { current, navigate, route, routes, section } from './router.js'
+import { ROUTE_GROUPS } from './types.js'
 
 /**
  * Showcase shell. The framework's `body:has(> main)` rule turns <body>
@@ -48,15 +49,17 @@ const filteredRoutes = computed(() => {
 // pattern. No <section> wrapper: nesting a region landmark inside <nav>
 // fights the rail gap rhythm (see components/_menu.scss § Grouped-
 // sidebar rhythm).
-const grouped = computed<Group[]>(() => {
-	const map = new Map<string, Route[]>()
-	for (const r of filteredRoutes.value) {
-		const list = map.get(r.group) ?? []
-		list.push(r)
-		map.set(r.group, list)
-	}
-	return Array.from(map, ([group, entries]) => ({ group, entries }))
-})
+//
+// Group display order is canonical via `ROUTE_GROUPS` in `types.ts` — we
+// iterate the declared order and filter routes per group, so the order
+// inside `router.ts` doesn't influence what the sidebar shows. Groups
+// with no matching routes (after the filter) drop out automatically.
+const grouped = computed<Group[]>(() =>
+	ROUTE_GROUPS.map((group) => ({
+		group,
+		entries: filteredRoutes.value.filter((r: Route) => r.group === group),
+	})).filter((g) => g.entries.length > 0),
+)
 
 const page = computed(() => current.value.page)
 const scrollerRef = ref<HTMLElement | null>(null)

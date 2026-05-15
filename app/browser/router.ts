@@ -3,10 +3,15 @@ import type { ComputedRef, Ref } from 'vue'
 import type { Route, RouteLocation } from './types.js'
 
 import HomePage from './pages/HomePage.vue'
+
+// Foundations — tokens.md + modifiers.md territory.
 import TokensPage from './pages/TokensPage.vue'
 import ThemePage from './pages/ThemePage.vue'
 import ModifiersPage from './pages/ModifiersPage.vue'
 import PlacementsPage from './pages/PlacementsPage.vue'
+
+// Elements — bare HTML tags. Split into Interactive + Content for sidebar
+// scannability; the framework's elements/_*.scss folder is flat.
 import ButtonPage from './pages/ButtonPage.vue'
 import AnchorPage from './pages/AnchorPage.vue'
 import FormControlsPage from './pages/FormControlsPage.vue'
@@ -19,56 +24,67 @@ import TablesPage from './pages/TablesPage.vue'
 import MediaPage from './pages/MediaPage.vue'
 import FiguresPage from './pages/FiguresPage.vue'
 import SectioningPage from './pages/SectioningPage.vue'
+
+// Components — element compositions + class-root primitives (components.md).
 import ArticleCardPage from './pages/ArticleCardPage.vue'
 import AsidePage from './pages/AsidePage.vue'
 import NavPage from './pages/NavPage.vue'
 import MenuPage from './pages/MenuPage.vue'
 import InlineAtomsPage from './pages/InlineAtomsPage.vue'
+
+// Surfaces — pseudo-elements + attribute APIs (surfaces.md). The three
+// pages bundle the nine shipped surface partials by editorial theme.
 import PopoverSurfacesPage from './pages/PopoverSurfacesPage.vue'
 import FormSurfacesPage from './pages/FormSurfacesPage.vue'
 import ScrollAndTransitionPage from './pages/ScrollAndTransitionPage.vue'
+
+// Composables — Element-bound (composables.md § Naming bucket 1).
+import UseDialogPage from './pages/UseDialogPage.vue'
+import UseAsidePage from './pages/UseAsidePage.vue'
+import UseDetailsPage from './pages/UseDetailsPage.vue'
+import UseMenuPage from './pages/UseMenuPage.vue'
+import UseToastPage from './pages/UseToastPage.vue'
+import UseTabsPage from './pages/UseTabsPage.vue'
+import UseFormPage from './pages/UseFormPage.vue'
+import UseSelectPage from './pages/UseSelectPage.vue'
+import UseNavPage from './pages/UseNavPage.vue'
+import UseAlertPage from './pages/UseAlertPage.vue'
+import UseCarouselPage from './pages/UseCarouselPage.vue'
+import UseTablePage from './pages/UseTablePage.vue'
+
+// Composables — Attribute-bound (composables.md § Naming bucket 2).
+import UsePopoverPage from './pages/UsePopoverPage.vue'
+import UseTooltipPage from './pages/UseTooltipPage.vue'
+
+// Composables — Primitives (composables.md § Naming bucket 3). Reusable
+// behaviour building blocks; not tag- or attribute-bound.
 import UseFocusPage from './pages/UseFocusPage.vue'
 import UsePointerPage from './pages/UsePointerPage.vue'
 import UseDragDropPage from './pages/UseDragDropPage.vue'
 import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
-import UseMenuPage from './pages/UseMenuPage.vue'
-import UseDialogPage from './pages/UseDialogPage.vue'
-import UseAsidePage from './pages/UseAsidePage.vue'
-import UseTabsPage from './pages/UseTabsPage.vue'
-import UseDetailsPage from './pages/UseDetailsPage.vue'
-import UseAlertPage from './pages/UseAlertPage.vue'
-import UseCarouselPage from './pages/UseCarouselPage.vue'
-import UseFormPage from './pages/UseFormPage.vue'
-import UseNavPage from './pages/UseNavPage.vue'
-import UseSelectPage from './pages/UseSelectPage.vue'
-import UseTablePage from './pages/UseTablePage.vue'
-import UseToastPage from './pages/UseToastPage.vue'
-import UsePopoverPage from './pages/UsePopoverPage.vue'
-import UseTooltipPage from './pages/UseTooltipPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
- * URL fragment `#/{id}`) with a `title`, `group`, and the `Component` to
- * render. Add a new page by importing it here and pushing a new entry.
+ * URL fragment `#/{id}`) with a `title`, a `group` from `ROUTE_GROUPS`,
+ * and the `Component` to render.
+ *
+ * Group order is canonical via `ROUTE_GROUPS` in `types.ts` — declare
+ * routes in any order here; the sidebar renders groups in the order
+ * `ROUTE_GROUPS` declares them.
  *
  * Hash format:
  *   `#/{id}`           — navigate to a page
  *   `#/{id}/{section}` — deep-link to an in-page anchor
  */
 
+// ── Getting started ────────────────────────────────────────────────────────
+
 const HOME: Route = { id: 'home', title: 'Home', group: 'Getting started', page: HomePage }
-const TOKENS: Route = {
-	id: 'tokens',
-	title: 'Tokens',
-	group: 'Foundations',
-	page: TokensPage,
-}
-const THEME: Route = {
-	id: 'theme',
-	title: 'Theme',
-	group: 'Foundations',
-	page: ThemePage,
-}
+
+// ── Foundations ────────────────────────────────────────────────────────────
+
+const TOKENS: Route = { id: 'tokens', title: 'Tokens', group: 'Foundations', page: TokensPage }
+const THEME: Route = { id: 'theme', title: 'Theme', group: 'Foundations', page: ThemePage }
 const MODIFIERS: Route = {
 	id: 'modifiers',
 	title: 'Modifiers',
@@ -81,6 +97,9 @@ const PLACEMENTS: Route = {
 	group: 'Foundations',
 	page: PlacementsPage,
 }
+
+// ── Elements — Interactive ─────────────────────────────────────────────────
+
 const BUTTON: Route = {
 	id: 'button',
 	title: 'Button',
@@ -111,6 +130,9 @@ const DIALOG_ELEMENT: Route = {
 	group: 'Elements — Interactive',
 	page: DialogElementPage,
 }
+
+// ── Elements — Content ─────────────────────────────────────────────────────
+
 const HEADINGS: Route = {
 	id: 'headings',
 	title: 'Headings',
@@ -153,36 +175,27 @@ const SECTIONING: Route = {
 	group: 'Elements — Content',
 	page: SectioningPage,
 }
+
+// ── Components ─────────────────────────────────────────────────────────────
+
 const ARTICLE_CARD: Route = {
 	id: 'article-card',
 	title: 'Article card',
 	group: 'Components',
 	page: ArticleCardPage,
 }
-const ASIDE: Route = {
-	id: 'aside',
-	title: 'Aside',
-	group: 'Components',
-	page: AsidePage,
-}
-const NAV: Route = {
-	id: 'nav',
-	title: 'Nav',
-	group: 'Components',
-	page: NavPage,
-}
-const MENU: Route = {
-	id: 'menu',
-	title: 'Menu',
-	group: 'Components',
-	page: MenuPage,
-}
+const ASIDE: Route = { id: 'aside', title: 'Aside', group: 'Components', page: AsidePage }
+const NAV: Route = { id: 'nav', title: 'Nav', group: 'Components', page: NavPage }
+const MENU: Route = { id: 'menu', title: 'Menu', group: 'Components', page: MenuPage }
 const INLINE_ATOMS: Route = {
 	id: 'inline-atoms',
 	title: 'Inline atoms',
 	group: 'Components',
 	page: InlineAtomsPage,
 }
+
+// ── Surfaces ───────────────────────────────────────────────────────────────
+
 const POPOVER_SURFACES: Route = {
 	id: 'popover-surfaces',
 	title: 'Popover surfaces',
@@ -201,113 +214,122 @@ const SCROLL_AND_TRANSITION: Route = {
 	group: 'Surfaces',
 	page: ScrollAndTransitionPage,
 }
-const USE_FOCUS: Route = {
-	id: 'use-focus',
-	title: 'useFocus',
-	group: 'Composables',
-	page: UseFocusPage,
-}
-const USE_POINTER: Route = {
-	id: 'use-pointer',
-	title: 'usePointer',
-	group: 'Composables',
-	page: UsePointerPage,
-}
-const USE_DRAG_DROP: Route = {
-	id: 'use-drag-drop',
-	title: 'useDrag / useDrop',
-	group: 'Composables',
-	page: UseDragDropPage,
-}
-const USE_THEME_BUTTON: Route = {
-	id: 'use-theme-button',
-	title: 'useTheme / useButton',
-	group: 'Composables',
-	page: UseThemeButtonPage,
-}
-const USE_MENU: Route = {
-	id: 'use-menu',
-	title: 'useMenu',
-	group: 'Composables',
-	page: UseMenuPage,
-}
+
+// ── Composables — Element-bound ────────────────────────────────────────────
+
 const USE_DIALOG: Route = {
 	id: 'use-dialog',
 	title: 'useDialog',
-	group: 'Composables',
+	group: 'Composables — Element-bound',
 	page: UseDialogPage,
 }
 const USE_ASIDE: Route = {
 	id: 'use-aside',
 	title: 'useAside',
-	group: 'Composables',
+	group: 'Composables — Element-bound',
 	page: UseAsidePage,
-}
-const USE_TABS: Route = {
-	id: 'use-tabs',
-	title: 'useTabs',
-	group: 'Composables',
-	page: UseTabsPage,
 }
 const USE_DETAILS: Route = {
 	id: 'use-details',
 	title: 'useDetails',
-	group: 'Composables',
+	group: 'Composables — Element-bound',
 	page: UseDetailsPage,
+}
+const USE_MENU: Route = {
+	id: 'use-menu',
+	title: 'useMenu',
+	group: 'Composables — Element-bound',
+	page: UseMenuPage,
 }
 const USE_TOAST: Route = {
 	id: 'use-toast',
 	title: 'useToast',
-	group: 'Composables',
+	group: 'Composables — Element-bound',
 	page: UseToastPage,
 }
-const USE_SELECT: Route = {
-	id: 'use-select',
-	title: 'useSelect',
-	group: 'Composables',
-	page: UseSelectPage,
-}
-const USE_TABLE: Route = {
-	id: 'use-table',
-	title: 'useTable',
-	group: 'Composables',
-	page: UseTablePage,
+const USE_TABS: Route = {
+	id: 'use-tabs',
+	title: 'useTabs',
+	group: 'Composables — Element-bound',
+	page: UseTabsPage,
 }
 const USE_FORM: Route = {
 	id: 'use-form',
 	title: 'useForm',
-	group: 'Composables',
+	group: 'Composables — Element-bound',
 	page: UseFormPage,
+}
+const USE_SELECT: Route = {
+	id: 'use-select',
+	title: 'useSelect',
+	group: 'Composables — Element-bound',
+	page: UseSelectPage,
 }
 const USE_NAV: Route = {
 	id: 'use-nav',
 	title: 'useNav',
-	group: 'Composables',
+	group: 'Composables — Element-bound',
 	page: UseNavPage,
 }
 const USE_ALERT: Route = {
 	id: 'use-alert',
 	title: 'useAlert',
-	group: 'Composables',
+	group: 'Composables — Element-bound',
 	page: UseAlertPage,
 }
 const USE_CAROUSEL: Route = {
 	id: 'use-carousel',
 	title: 'useCarousel',
-	group: 'Composables',
+	group: 'Composables — Element-bound',
 	page: UseCarouselPage,
 }
+const USE_TABLE: Route = {
+	id: 'use-table',
+	title: 'useTable',
+	group: 'Composables — Element-bound',
+	page: UseTablePage,
+}
+
+// ── Composables — Attribute-bound ──────────────────────────────────────────
+
 const USE_POPOVER: Route = {
 	id: 'use-popover',
 	title: 'usePopover',
-	group: 'Composables',
+	group: 'Composables — Attribute-bound',
 	page: UsePopoverPage,
 }
 const USE_TOOLTIP: Route = {
 	id: 'use-tooltip',
 	title: 'useTooltip',
-	group: 'Composables',
+	group: 'Composables — Attribute-bound',
 	page: UseTooltipPage,
+}
+
+// ── Composables — Primitives ───────────────────────────────────────────────
+
+const USE_FOCUS: Route = {
+	id: 'use-focus',
+	title: 'useFocus',
+	group: 'Composables — Primitives',
+	page: UseFocusPage,
+}
+const USE_POINTER: Route = {
+	id: 'use-pointer',
+	title: 'usePointer',
+	group: 'Composables — Primitives',
+	page: UsePointerPage,
+}
+const USE_DRAG_DROP: Route = {
+	id: 'use-drag-drop',
+	title: 'useDrag / useDrop',
+	group: 'Composables — Primitives',
+	page: UseDragDropPage,
+}
+const USE_THEME_BUTTON: Route = {
+	id: 'use-theme-button',
+	title: 'useTheme / useButton',
+	group: 'Composables — Primitives',
+	page: UseThemeButtonPage,
 }
 
 export const routes: readonly Route[] = [
@@ -336,24 +358,24 @@ export const routes: readonly Route[] = [
 	POPOVER_SURFACES,
 	FORM_SURFACES,
 	SCROLL_AND_TRANSITION,
+	USE_DIALOG,
+	USE_ASIDE,
+	USE_DETAILS,
+	USE_MENU,
+	USE_TOAST,
+	USE_TABS,
+	USE_FORM,
+	USE_SELECT,
+	USE_NAV,
+	USE_ALERT,
+	USE_CAROUSEL,
+	USE_TABLE,
+	USE_POPOVER,
+	USE_TOOLTIP,
 	USE_FOCUS,
 	USE_POINTER,
 	USE_DRAG_DROP,
 	USE_THEME_BUTTON,
-	USE_MENU,
-	USE_DIALOG,
-	USE_ASIDE,
-	USE_TABS,
-	USE_DETAILS,
-	USE_TOAST,
-	USE_SELECT,
-	USE_TABLE,
-	USE_FORM,
-	USE_NAV,
-	USE_ALERT,
-	USE_CAROUSEL,
-	USE_POPOVER,
-	USE_TOOLTIP,
 ]
 
 const parse = (fallback: string): RouteLocation => {
