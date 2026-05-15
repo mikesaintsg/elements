@@ -44,6 +44,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useButton, useTheme } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // useTheme — singleton theme controller.
@@ -62,15 +63,12 @@ const notifyButton = useTemplateRef<HTMLButtonElement>('notifyButton')
 const notify = useButton(notifyButton)
 
 const muteButton = useTemplateRef<HTMLButtonElement>('muteButton')
-const muteLog = ref<string[]>([])
+const { entries: muteLog, push: pushMute } = useLog(4)
 const mute = useButton(muteButton, {
 	on: {
 		toggle: (event) => {
 			const active = event.detail.active
-			muteLog.value = [
-				...muteLog.value.slice(-3),
-				`${new Date().toLocaleTimeString()} — ${active ? 'muted' : 'unmuted'}`,
-			]
+			pushMute(`${new Date().toLocaleTimeString()} — ${active ? 'muted' : 'unmuted'}`)
 		},
 	},
 })

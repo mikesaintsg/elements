@@ -50,6 +50,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useTable } from '@elements/browser'
+import { useLog } from '../composables.js'
 import type { TableEditRow } from '../types.js'
 import { pageList } from '../helpers.js'
 import {
@@ -163,10 +164,7 @@ const sel = useTable(selRef, {
 	headers: ['ID', 'Name', 'Note', 'Action'],
 	selection: { strategy: 'page', click: true },
 })
-const actionLog = ref<string[]>([])
-const note = (line: string): void => {
-	actionLog.value = [...actionLog.value.slice(-3), line]
-}
+const { entries: actionLog, push: note } = useLog(4)
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 5 — Inline editing via .flat / .flush form controls. The

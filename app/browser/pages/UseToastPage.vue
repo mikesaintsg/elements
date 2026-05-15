@@ -50,6 +50,7 @@
  */
 import { ref, useTemplateRef } from 'vue'
 import { useToast } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — single linear toast. Default auto-hide, pause-on-hover.
@@ -165,10 +166,7 @@ const bandFooter = useToast(bandFooterRef, { autohide: false })
 // so the user can confirm the swipe path runs the cancellable hide.
 // ─────────────────────────────────────────────────────────────────────
 const swipeRef = useTemplateRef<HTMLOutputElement>('swipeRef')
-const swipeLog = ref<string[]>([])
-const noteSwipe = (line: string): void => {
-	swipeLog.value = [...swipeLog.value.slice(-5), line]
-}
+const { entries: swipeLog, push: noteSwipe } = useLog(6)
 const swipe = useToast(swipeRef, {
 	autohide: false,
 	on: {
@@ -188,11 +186,8 @@ const noSwipe = useToast(noSwipeRef, { autohide: false, swipe: false })
 // Demo 8 — cancellable lifecycle. preventDefault on on.show vetoes.
 // ─────────────────────────────────────────────────────────────────────
 const lifecycleRef = useTemplateRef<HTMLOutputElement>('lifecycleRef')
-const lifecycleLog = ref<string[]>([])
+const { entries: lifecycleLog, push: note } = useLog(6)
 const allowShow = ref(true)
-const note = (line: string): void => {
-	lifecycleLog.value = [...lifecycleLog.value.slice(-5), line]
-}
 const lifecycle = useToast(lifecycleRef, {
 	autohide: false,
 	on: {

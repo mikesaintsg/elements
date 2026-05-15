@@ -46,16 +46,11 @@
 import { ref } from 'vue'
 
 import { INLINE_ATOMS_TAGS as tags, VARIANTS as variants } from '../constants.js'
+import { useDismissed } from '../composables.js'
 
-// Tag dismissal demo — keep track of which chips have been removed
-// so the user can see real interactive state.
-const removed = ref<Set<string>>(new Set())
-const dismiss = (key: string): void => {
-	removed.value = new Set([...removed.value, key])
-}
-const restore = (): void => {
-	removed.value = new Set()
-}
+// Tag dismissal demo — track which chips have been removed so the user
+// sees real interactive state.
+const { ids: removed, dismiss, restore } = useDismissed()
 
 // Loading button demo — toggle the loading state on click.
 const loading = ref(false)

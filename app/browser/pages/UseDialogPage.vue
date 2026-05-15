@@ -59,6 +59,7 @@
  */
 import { ref, useTemplateRef } from 'vue'
 import { useDialog } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — modal vs non-modal.
@@ -124,12 +125,9 @@ const lockedDialog = useDialog(lockedRef, {
 // Demo 5 — cancellable lifecycle via on.show / on.hide.
 // ─────────────────────────────────────────────────────────────────────
 const lifecycleRef = useTemplateRef<HTMLDialogElement>('lifecycleRef')
-const lifecycleLog = ref<string[]>([])
+const { entries: lifecycleLog, push: note } = useLog(6)
 const allowOpen = ref(true)
 const allowClose = ref(true)
-const note = (line: string): void => {
-	lifecycleLog.value = [...lifecycleLog.value.slice(-5), line]
-}
 const lifecycleDialog = useDialog(lifecycleRef, {
 	modal: true,
 	on: {

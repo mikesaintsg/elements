@@ -47,14 +47,12 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useFocus } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 // Demo 1 — basic trap.
 const basicHost = useTemplateRef<HTMLElement>('basicHost')
 const basic = useFocus(basicHost)
-const basicLog = ref<string[]>([])
-const basicNote = (line: string): void => {
-	basicLog.value = [...basicLog.value.slice(-4), line]
-}
+const { entries: basicLog, push: basicNote } = useLog(5)
 const basicActivate = (): void => {
 	basic.activate()
 	basicNote('activated')

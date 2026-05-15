@@ -47,6 +47,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useSelect } from '@elements/browser'
+import { useLog } from '../composables.js'
 import { SELECT_CITIES as cities, SELECT_FRUITS as fruits, SELECT_SIZES as sizes } from '../constants.js'
 
 // ─────────────────────────────────────────────────────────────────────
@@ -102,10 +103,7 @@ const comboSelect = useSelect(combo.toggleRef, {
 // open; the `select / clear / input` events are post-state info hooks.
 // ─────────────────────────────────────────────────────────────────────
 const allowOpen = ref(true)
-const lifecycleLog = ref<string[]>([])
-const note = (line: string): void => {
-	lifecycleLog.value = [...lifecycleLog.value.slice(-5), line]
-}
+const { entries: lifecycleLog, push: note } = useLog(6)
 const lifecycle = {
 	toggleRef: useTemplateRef<HTMLButtonElement>('lifecycleToggle'),
 	menuRef: useTemplateRef<HTMLMenuElement>('lifecycleMenu'),

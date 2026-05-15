@@ -113,6 +113,7 @@
  */
 import { ref, useTemplateRef } from 'vue'
 import { useCarousel } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 import { CAROUSEL_SLIDES as slides, VARIANTS_FEEDBACK as variants } from '../constants.js'
 
@@ -138,11 +139,7 @@ const autoplay = useCarousel(autoplayRef, {
 // checkbox to veto every `slide` dispatch and freeze navigation.
 // ─────────────────────────────────────────────────────────────────────
 const allowSlide = ref(true)
-const slideLog = ref<readonly string[]>([])
-const noteSlide = (message: string): void => {
-	const next = [...slideLog.value, message]
-	slideLog.value = next.slice(-5)
-}
+const { entries: slideLog, push: noteSlide } = useLog(5)
 const guardRef = useTemplateRef<HTMLElement>('guardRef')
 const guard = useCarousel(guardRef, {
 	on: {

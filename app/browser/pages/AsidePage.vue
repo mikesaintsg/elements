@@ -58,21 +58,12 @@
  *     same live-region politeness, different layout (tied to an
  *     `<input>` via `aria-describedby`).
  */
-import { ref } from 'vue'
-
 import { VARIANTS as variants } from '../constants.js'
+import { useDismissed } from '../composables.js'
 
-// Dismissable alert demo state — each alert renders a dismiss button
-// that toggles `data-alert-open` on its own root. In production this
-// pairs with `useAlert`; here we wire it inline so the page is pure
-// CSS / minimal-Vue without a composable instance.
-const dismissed = ref<Set<string>>(new Set())
-const dismiss = (id: string): void => {
-	dismissed.value = new Set([...dismissed.value, id])
-}
-const restore = (): void => {
-	dismissed.value = new Set()
-}
+// Dismissable alert demo — each alert's dismiss button adds its id to
+// the set; "restore" clears it. In production this pairs with `useAlert`.
+const { ids: dismissed, dismiss, restore } = useDismissed()
 </script>
 
 <template>

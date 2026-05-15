@@ -51,6 +51,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useMenu } from '@elements/browser'
+import { useLog } from '../composables.js'
 import type { Placement } from '@elements/browser'
 
 // ─────────────────────────────────────────────────────────────────────
@@ -136,11 +137,8 @@ const filterSummary = computed(() => {
 // preventDefault() vetoes the open / close. `on.open` / `on.close`
 // fire after the transition for informational use.
 // ─────────────────────────────────────────────────────────────────────
-const lifecycleLog = ref<string[]>([])
+const { entries: lifecycleLog, push: note } = useLog(5)
 const allowOpen = ref(true)
-const note = (line: string): void => {
-	lifecycleLog.value = [...lifecycleLog.value.slice(-4), line]
-}
 const lifecycleToggle = useTemplateRef<HTMLButtonElement>('lifecycleToggle')
 const lifecycleMenu = useTemplateRef<HTMLMenuElement>('lifecycleMenu')
 const lifecycleDropdown = useMenu(lifecycleToggle, lifecycleMenu, {

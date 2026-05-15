@@ -50,6 +50,7 @@
  */
 import { ref, useTemplateRef } from 'vue'
 import { useTabs } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — default horizontal tablist.
@@ -97,11 +98,8 @@ const pill3 = useTabs(pillsTrigger3, { pane: pillsPane3, group: pillsGroup })
 // Demo 3 — cancellable lifecycle. preventDefault on show vetoes.
 // ─────────────────────────────────────────────────────────────────────
 const lifecycleGroup = useTemplateRef<HTMLElement>('lifecycleGroup')
-const lifecycleLog = ref<string[]>([])
+const { entries: lifecycleLog, push: note } = useLog(6)
 const allowActivate = ref(true)
-const note = (line: string): void => {
-	lifecycleLog.value = [...lifecycleLog.value.slice(-5), line]
-}
 
 const lifeTrigger1 = useTemplateRef<HTMLButtonElement>('lifeTrigger1')
 const lifePane1 = useTemplateRef<HTMLElement>('lifePane1')

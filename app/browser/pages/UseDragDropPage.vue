@@ -59,6 +59,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useDrag, useDrop } from '@elements/browser'
+import { useLog } from '../composables.js'
 import type { DragAttachment, DragTrack } from '../types.js'
 import { formatSize } from '../helpers.js'
 
@@ -77,17 +78,14 @@ const reorderList = ref<DragTrack[]>([
 	{ id: 't5', title: 'Weightless', artist: 'Marconi Union', duration: '8:10' },
 ])
 const reorderHost = useTemplateRef<HTMLElement>('reorderHost')
-const reorderLog = ref<string[]>([])
+const { entries: reorderLog, push: pushReorder } = useLog(4)
 const reorder = useDrag<DragTrack>(reorderHost, {
 	list: reorderList,
 	on: {
 		reorder: (event) => {
 			const detail = event.detail as { from: number[]; to: number }
 			const moved = detail.from.length
-			reorderLog.value = [
-				...reorderLog.value.slice(-3),
-				`Moved ${moved} item${moved === 1 ? '' : 's'} → index ${detail.to}`,
-			]
+			pushReorder(`Moved ${moved} item${moved === 1 ? '' : 's'} → index ${detail.to}`)
 		},
 	},
 })

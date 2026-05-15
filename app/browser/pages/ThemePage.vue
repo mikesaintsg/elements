@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useTheme } from '@elements/browser'
+import { useRootCssVars } from '../composables.js'
 
 /**
  * ThemePage — the canonical reference for the framework's theme +
@@ -53,35 +54,8 @@ const themeCtl = useTheme()
 import type { ThemePaletteEntry } from '../types.js'
 import { THEME_TIERS as tiers, VARIANTS as variants } from '../constants.js'
 
-// Live computed-value reads — sample on mount + on theme toggle so the
-// displayed values track the active cascade.
-const rootStyle = ref<CSSStyleDeclaration | null>(null)
-const refreshSeed = ref(0)
-const refresh = (): void => {
-	refreshSeed.value += 1
-}
-
-let themeObserver: MutationObserver | null = null
-
-onMounted(() => {
-	if (typeof window === 'undefined') return
-	rootStyle.value = getComputedStyle(document.documentElement)
-	themeObserver = new MutationObserver(refresh)
-	themeObserver.observe(document.documentElement, {
-		attributes: true,
-		attributeFilter: ['data-theme', 'style'],
-	})
-})
-
-onUnmounted(() => {
-	themeObserver?.disconnect()
-	themeObserver = null
-})
-
-const read = (token: string): string => {
-	void refreshSeed.value
-	return rootStyle.value?.getPropertyValue(token).trim() || '…'
-}
+// Live :root reads — re-sampled on mount + on every theme flip.
+const { read, refresh } = useRootCssVars()
 
 // ── Brand retune playground ────────────────────────────────────────────────
 //

@@ -92,6 +92,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useAlert } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 import { VARIANTS_ALERT as variants } from '../constants.js'
 
@@ -135,11 +136,7 @@ const variantOpenCount = computed(() => Object.values(variantBag.value).filter(B
 // dismiss" toggle is off — useful for "are you sure?" affordances.
 // ─────────────────────────────────────────────────────────────────────
 const allowDismiss = ref(true)
-const guardLog = ref<readonly string[]>([])
-const noteGuard = (message: string): void => {
-	const next = [...guardLog.value, message]
-	guardLog.value = next.slice(-4)
-}
+const { entries: guardLog, push: noteGuard } = useLog(4)
 const guardRef = useTemplateRef<HTMLElement>('guardRef')
 const guard = useAlert(guardRef, {
 	on: {

@@ -46,6 +46,7 @@
  */
 import { ref, useTemplateRef } from 'vue'
 import { useDetails } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — programmatic open / close + reactive visible.
@@ -68,12 +69,9 @@ const c = useDetails(accordionC, { accordion: accordionRef })
 // Demo 3 — cancellable lifecycle. preventDefault on show vetoes.
 // ─────────────────────────────────────────────────────────────────────
 const lifecycleRef = useTemplateRef<HTMLDetailsElement>('lifecycleRef')
-const lifecycleLog = ref<string[]>([])
+const { entries: lifecycleLog, push: note } = useLog(6)
 const allowOpen = ref(true)
 const allowClose = ref(true)
-const note = (line: string): void => {
-	lifecycleLog.value = [...lifecycleLog.value.slice(-5), line]
-}
 const lifecycle = useDetails(lifecycleRef, {
 	on: {
 		show: (event: CustomEvent) => {

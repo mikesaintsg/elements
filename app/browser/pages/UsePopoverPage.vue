@@ -42,6 +42,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { usePopover } from '@elements/browser'
+import { useLog } from '../composables.js'
 import type { Placement } from '@elements/browser'
 
 // ─────────────────────────────────────────────────────────────────────
@@ -158,10 +159,7 @@ const escapePopover = usePopover({
 const cancelAnchor = useTemplateRef<HTMLButtonElement>('cancelAnchor')
 const cancelPanel = useTemplateRef<HTMLDivElement>('cancelPanel')
 const acceptShow = ref(true)
-const lifecycleLog = ref<string[]>([])
-const note = (line: string): void => {
-	lifecycleLog.value = [...lifecycleLog.value.slice(-4), line]
-}
+const { entries: lifecycleLog, push: note } = useLog(5)
 const cancelPopover = usePopover({
 	anchor: cancelAnchor,
 	panel: cancelPanel,

@@ -55,6 +55,7 @@
  */
 import { ref, useTemplateRef } from 'vue'
 import { useAside } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — four-edge programmatic drawer (popover="auto", default).
@@ -82,10 +83,7 @@ const stickyDrawer = useAside(stickyRef, { popover: 'manual' })
 // the platform spec).
 // ─────────────────────────────────────────────────────────────────────
 const eventsRef = useTemplateRef<HTMLElement>('eventsRef')
-const eventsLog = ref<string[]>([])
-const note = (line: string): void => {
-	eventsLog.value = [...eventsLog.value.slice(-5), line]
-}
+const { entries: eventsLog, push: note } = useLog(6)
 const eventsDrawer = useAside(eventsRef, {
 	on: {
 		show: () => note('show (beforetoggle → open)'),

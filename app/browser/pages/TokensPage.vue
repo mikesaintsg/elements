@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import type { MotionTiming, TokenZIndex } from '../types.js'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { timingFunctionFor } from '../helpers.js'
+import { useRootCssVars } from '../composables.js'
 import { TOKENS_ICONS as icons } from '../constants.js'
 
 /**
@@ -62,38 +63,9 @@ import { TOKENS_ICONS as icons } from '../constants.js'
  *     page catalogs the GLOBAL :root surface.
  */
 
-// Live computed-value reads — sample on mount + on theme toggle so the
-// displayed values track the active cascade. Reads from `:root` so
-// every token here is the consumer's override target.
-const rootStyle = ref<CSSStyleDeclaration | null>(null)
-const refreshSeed = ref(0)
-
-const refresh = (): void => {
-	refreshSeed.value += 1
-}
-
-let themeObserver: MutationObserver | null = null
-
-onMounted(() => {
-	if (typeof window === 'undefined') return
-	rootStyle.value = getComputedStyle(document.documentElement)
-	themeObserver = new MutationObserver(refresh)
-	themeObserver.observe(document.documentElement, {
-		attributes: true,
-		attributeFilter: ['data-theme', 'style'],
-	})
-})
-
-onUnmounted(() => {
-	themeObserver?.disconnect()
-	themeObserver = null
-})
-
-const read = (token: string): string => {
-	// `refreshSeed.value` participates so the computed re-runs on refresh.
-	void refreshSeed.value
-	return rootStyle.value?.getPropertyValue(token).trim() || '…'
-}
+// Live :root reads — re-sampled on mount + on every theme flip. Reads
+// from `:root`, the consumer's override target.
+const { read, refresh } = useRootCssVars()
 
 // ── Live-bound playground refs ─────────────────────────────────────────────
 //

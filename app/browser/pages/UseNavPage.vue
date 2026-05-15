@@ -81,6 +81,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useNav } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — Basic scroll-spy.
@@ -114,14 +115,13 @@ const offset = useNav(offsetContainer, {
 // breadcrumb).
 // ─────────────────────────────────────────────────────────────────────
 const eventContainer = useTemplateRef<HTMLElement>('eventContainer')
-const eventLog = ref<readonly { id: string; time: string }[]>([])
+const { entries: eventLog, push: pushEvent } = useLog<{ id: string; time: string }>(6)
 const event = useNav(eventContainer, {
 	on: {
 		activate: (e: CustomEvent) => {
 			const detail = e.detail as { id: string }
 			const time = new Date().toLocaleTimeString(undefined, { hour12: false })
-			const next = [...eventLog.value, { id: detail.id, time }]
-			eventLog.value = next.slice(-6)
+			pushEvent({ id: detail.id, time })
 		},
 	},
 })

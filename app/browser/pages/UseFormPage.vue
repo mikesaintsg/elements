@@ -108,6 +108,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { useForm } from '@elements/browser'
+import { useLog } from '../composables.js'
 
 import { FORM_RESERVED_USERNAMES as taken, VARIANTS_FORM as variants } from '../constants.js'
 
@@ -200,10 +201,9 @@ const live = useForm(liveRef, { validate: { input: true } })
 // input, change, invalid, formdata}` CustomEvents. The composable's
 // `on` option wires any subset.
 // ─────────────────────────────────────────────────────────────────────
-const eventLog = ref<readonly { kind: string; payload: string }[]>([])
+const { entries: eventLog, push: pushEvent } = useLog<{ kind: string; payload: string }>(6)
 const noteEvent = (kind: string, payload: unknown): void => {
-	const next = [...eventLog.value, { kind, payload: JSON.stringify(payload) }]
-	eventLog.value = next.slice(-6)
+	pushEvent({ kind, payload: JSON.stringify(payload) })
 }
 const eventsRef = useTemplateRef<HTMLFormElement>('eventsRef')
 const events = useForm(eventsRef, {
