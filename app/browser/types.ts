@@ -169,6 +169,14 @@ export interface TokenZIndex {
 	readonly role: string
 }
 
+// ── ThemePage demo shapes ────────────────────────────────────────────────
+
+export interface ThemePaletteEntry {
+	readonly token: string
+	readonly label: string
+	readonly resolved: string
+}
+
 // ── ModifiersPage matrix vocabularies ────────────────────────────────────
 //
 // The empty-string member is the "no modifier / default" cell of the

@@ -50,6 +50,7 @@ import { useTheme } from '@elements/browser'
 
 const themeCtl = useTheme()
 
+import type { ThemePaletteEntry } from '../types.js'
 import { THEME_TIERS as tiers, VARIANTS as variants } from '../constants.js'
 
 // Live computed-value reads — sample on mount + on theme toggle so the
@@ -109,13 +110,7 @@ const resetBrand = (): void => {
 
 // ── Swatch generator helpers ───────────────────────────────────────────────
 
-interface PaletteEntry {
-	readonly token: string
-	readonly label: string
-	readonly resolved: string
-}
-
-const variantBases = computed<readonly PaletteEntry[]>(() =>
+const variantBases = computed<readonly ThemePaletteEntry[]>(() =>
 	variants.map((v) => ({
 		token: `--color-${v}`,
 		label: v,
@@ -123,7 +118,7 @@ const variantBases = computed<readonly PaletteEntry[]>(() =>
 	})),
 )
 
-const variantTiers = computed<readonly { variant: string; entries: readonly PaletteEntry[] }[]>(
+const variantTiers = computed<readonly { variant: string; entries: readonly ThemePaletteEntry[] }[]>(
 	() =>
 		variants.map((v) => ({
 			variant: v,
@@ -135,7 +130,7 @@ const variantTiers = computed<readonly { variant: string; entries: readonly Pale
 		})),
 )
 
-const canvasTier = computed<readonly PaletteEntry[]>(() => [
+const canvasTier = computed<readonly ThemePaletteEntry[]>(() => [
 	{ token: '--color-canvas', label: 'canvas', resolved: read('--color-canvas') },
 	{ token: '--color-surface', label: 'surface', resolved: read('--color-surface') },
 	{
@@ -145,14 +140,14 @@ const canvasTier = computed<readonly PaletteEntry[]>(() => [
 	},
 ])
 
-const textTier = computed<readonly PaletteEntry[]>(() => [
+const textTier = computed<readonly ThemePaletteEntry[]>(() => [
 	{ token: '--color-text', label: 'text', resolved: read('--color-text') },
 	{ token: '--color-text-strong', label: 'text-strong', resolved: read('--color-text-strong') },
 	{ token: '--color-text-muted', label: 'text-muted', resolved: read('--color-text-muted') },
 	{ token: '--color-text-subtle', label: 'text-subtle', resolved: read('--color-text-subtle') },
 ])
 
-const borderTier = computed<readonly PaletteEntry[]>(() => [
+const borderTier = computed<readonly ThemePaletteEntry[]>(() => [
 	{ token: '--color-border', label: 'border', resolved: read('--color-border') },
 	{
 		token: '--color-border-strong',
