@@ -90,17 +90,42 @@ const closeRailDrawers = (): void => {
 	}
 }
 
-// Auto-expand the active route's group. Each `<details>` in the sidebar
-// is uncontrolled (the user toggles via native summary click) — we only
-// nudge `open` true when the route changes to a page inside a collapsed
-// group. We never auto-close a user-collapsed group elsewhere, so user
-// collapses persist across navigations.
+// Sidebar group open/closed state — tracked in memory (no persistence;
+// the showcase is a single-load SPA, a page reload resets to defaults
+// which is the intended behavior). The framework's <details> baseline
+// owns the visual collapse via `::details-content`; this set owns the
+// APP decision of which groups start expanded.
+//
+// Default: every group CLOSED (empty set). The framework default for
+// <details> is closed (per HTML spec); the showcase honors that — a
+// fresh load shows a tight rail of just the group labels. The active
+// route's group is auto-expanded on mount + on every navigation
+// (orientation: "you are here, here are the siblings"). Manual user
+// opens/closes are synced via the native `toggle` event and persist
+// across navigation + filtering for the session.
+const openGroups = ref<Set<string>>(new Set())
+
+const isGroupOpen = (group: string): boolean => openGroups.value.has(group)
+
+// Sync the in-memory set from a native <details> toggle. Reassign a
+// fresh Set so the `:open` binding re-resolves deterministically (Vue
+// tracks Set mutations, but a new reference removes any ambiguity in
+// the controlled-details ↔ native-toggle round trip).
+const onGroupToggle = (group: string, event: Event): void => {
+	const el = event.target as HTMLDetailsElement
+	const next = new Set(openGroups.value)
+	if (el.open) next.add(group)
+	else next.delete(group)
+	openGroups.value = next
+}
+
+// Ensure the active route's group is expanded. Only ever ADDS — never
+// collapses a group the user opened elsewhere.
 const expandActiveGroup = (): void => {
-	const groupName = current.value.group
-	const el = document.querySelector<HTMLDetailsElement>(
-		`#primary-rail details[data-group="${CSS.escape(groupName)}"]`,
-	)
-	if (el && !el.open) el.open = true
+	const group = current.value.group
+	if (!openGroups.value.has(group)) {
+		openGroups.value = new Set(openGroups.value).add(group)
+	}
 }
 
 watch([route, section], ([, target]) => {
@@ -220,6 +245,10 @@ onMounted(() => {
 	updateMobile()
 	mobileQuery?.addEventListener('change', updateMobile)
 	document.addEventListener('keydown', onKeydown)
+	// Orientation on first paint — every group starts collapsed; expand
+	// the one containing the landed route so the user sees where they
+	// are + the sibling pages without hunting.
+	expandActiveGroup()
 	void scrollToTarget(section.value)
 	void rebuild()
 })
@@ -361,8 +390,9 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 				v-for="g in grouped"
 				:key="g.group"
 				class="flush"
-				open
+				:open="isGroupOpen(g.group)"
 				:data-group="g.group"
+				@toggle="onGroupToggle(g.group, $event)"
 			>
 				<summary>
 					<h6>{{ g.group }}</h6>

@@ -120,17 +120,51 @@ describe('guides — pointer file links every other guide', () => {
 	}
 })
 
-// ── 4. Test ↔ guide parity — every test driver maps to a real guide ──────
+// ── 4. Test ↔ guide parity — bidirectional ───────────────────────────────
+//
+// Every guide gets a dedicated parity-test driver, and every driver
+// maps back to a real guide. The ONE mapping exception: `README.md`
+// (the pointer file) is driven by THIS file (`index.test.ts`) — the
+// meta-driver IS its test (skeleton + cross-ref + pointer-coverage
+// checks above). So `README` maps to `index`, not `readme`.
+//
+// `readAllGuides()` only reads top-level `guides/*.md`, so nested
+// reference directories (e.g. `guides/w3c/`) never enter the `guides`
+// list and are skipped by construction — they are reference material,
+// not spec guides, and need no parity driver.
 
-describe('guides — every tests/guides/*.test.ts has a matching guide', () => {
+const testFiles = new Set(
+	readdirSync(TESTS_GUIDES_DIR)
+		.filter((f) => f.endsWith('.test.ts'))
+		.map((f) => f.replace(/\.test\.ts$/, '')),
+)
+
+/** The guide → expected-test-driver mapping. README is the documented
+ *  exception: its driver is this very file (`index.test.ts`). */
+const driverFor = (guideName: string): string =>
+	guideName === 'README' ? 'index' : guideName
+
+describe('guides — every guide has a dedicated test driver', () => {
+	for (const guide of guides) {
+		const driver = driverFor(guide.name)
+		// On failure: `guides/${guide.name}.md` has no
+		// `tests/guides/${driver}.test.ts`. Every guide is parity-tested
+		// against its implementation — author the missing driver. (If the
+		// guide is genuinely process-only with no testable surface, the
+		// driver can be a thin cross-reference / structural check; see
+		// `tests/guides/contribute.test.ts` for the pattern.) README maps
+		// to `index.test.ts` by design — see the block comment above.
+		it(`guides/${guide.name}.md → tests/guides/${driver}.test.ts exists`, () => {
+			expect(testFiles.has(driver)).toBe(true)
+		})
+	}
+})
+
+describe('guides — every tests/guides/*.test.ts maps to a real guide', () => {
 	const guideNames = new Set(guides.map((g) => g.name))
 
-	const testFiles = readdirSync(TESTS_GUIDES_DIR)
-		.filter((f) => f.endsWith('.test.ts'))
-		.map((f) => f.replace(/\.test\.ts$/, ''))
-
 	for (const name of testFiles) {
-		if (name === 'index') continue // this file itself (pairs with guides/README.md, not guides/index.md)
+		if (name === 'index') continue // the meta-driver (pairs with README.md)
 		// On failure: `tests/guides/${name}.test.ts` exists but
 		// `guides/${name}.md` is missing. Either restore the guide or
 		// rename the test to match an existing guide.

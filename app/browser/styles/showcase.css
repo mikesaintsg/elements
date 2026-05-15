@@ -171,13 +171,20 @@
  * intrinsic content size so `overflow-y: auto` engages cleanly.
  * Safari is the strict reader here — Chromium / Firefox tolerate
  * `flex: 1 1 auto` for this shape, but Safari can leave the scroll
- * region at its full content height and push the rail past 100dvh. */
+ * region at its full content height and push the rail past 100dvh.
+ *
+ * FLUSH on purpose — no padding here. Each `<details class="flush">`
+ * group fills the scroll region edge-to-edge so its inter-group
+ * divider (below) paints the full rail width. The inline gutter is
+ * owned by the framework: nav-rail `<menu> > li > a` items ship
+ * `padding-inline: spacing*2.5` and the `<summary>`'s h6 ships
+ * `padding-inline: spacing*2` (framework `_menu.scss` rule + the
+ * showcase summary rule below). Padding HERE would double-pad and
+ * work against the `.flush` modifier on the group disclosures. */
 .showcase-sidebar-scroll {
 	flex: 1 1 0;
 	min-block-size: 0;
 	overflow-y: auto;
-	padding-inline: var(--set-nav-padding-inline);
-	padding-block: var(--set-nav-padding-block);
 }
 
 /* ──────────────────────────────────────────────────────────────────
@@ -258,20 +265,22 @@
 	color: var(--color-text);
 }
 
-/* Closed-group hiding — the UA's `details:not([open]) > *:not(summary)`
- * collapse uses `display: none`, but the framework's nav-rail
- * `body:has(main) > nav menu` rule paints `display: flex` on every
- * `<menu>` inside the rail. The framework's descendant selector
- * (specificity 0,1,1) beats the UA's combinator selector when both
- * resolve in the cascade, so a `<menu>` inside a CLOSED `<details>`
- * stays visible — defeating the whole point of the collapse.
- *
- * Explicitly gate the menu's display on the parent's open state. The
- * selector specificity (0,2,1) beats the framework's nav-rail rule
- * and only fires when the parent details has dropped `[open]`. */
-.showcase-sidebar-scroll > details.flush:not([open]) > menu {
-	display: none;
-}
+/* NOTE — no rule here hides the closed group's `<menu>`. An earlier
+ * draft added `details.flush:not([open]) > menu { display: none }`
+ * after a flawed `menu.offsetHeight > 0` check reported the menu
+ * "visible" when collapsed. `offsetHeight` measures the element's own
+ * layout box and IGNORES ancestor clipping — it's a false-positive
+ * metric here. The framework's `<details>` baseline already collapses
+ * closed content via the modern `::details-content` pseudo
+ * (`block-size: 0; overflow: clip` + the UA's
+ * `content-visibility: hidden`). A `<menu>` inside a closed
+ * `<details>` keeps its `display: flex` (framework `menu` rule) but
+ * lives inside that collapsed/clipped wrapper, so it's invisible,
+ * non-interactive, and out of the tab order. Verified: closed
+ * `<details>` box collapses 189px → ~summary height, and the first
+ * link is not hit-testable via `elementFromPoint`. No showcase rule
+ * is needed — the framework handles closed-disclosure hiding
+ * per-spec. */
 
 /* Drawer-mode overrides — when the rail opens in popover (mobile)
  * mode, it picks up the framework's popover surface chrome. Retune
