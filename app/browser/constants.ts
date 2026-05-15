@@ -818,3 +818,204 @@ export const PLACEMENTS_MODIFIER: readonly ModifierPlacement[] = [
 	'start',
 	'end',
 ]
+
+// ── Code snippets ────────────────────────────────────────────────────────
+//
+// Verbatim HTML / CSS source the demo pages render inside <pre><code>.
+// Centralized so near-identical variants (reduced-motion notes, variant /
+// size cascades, …) can be reconciled in the consolidation pass.
+
+// HeadingsPage
+export const HEADINGS_SNIPPET_CASCADE = `<h1>The framework's primary headline</h1>
+<h2>A second-level section heading</h2>
+<h3>Third-level subsection</h3>
+<h4>Fourth-level grouping</h4>
+<h5>Fifth-level title</h5>
+<h6>Sixth-level smallest heading</h6>`
+
+export const HEADINGS_SNIPPET_HGROUP = `<hgroup>
+  <h1>Page title goes here</h1>
+  <p>A short tagline that reads as metadata under the heading.</p>
+</hgroup>`
+
+export const HEADINGS_SNIPPET_VARIANTS = `<h2 class="primary">Primary heading</h2>
+<h2 class="danger">Danger heading</h2>
+<h2 class="success">Success heading</h2>`
+
+export const HEADINGS_SNIPPET_SIZES = `<h3 class="small">Small h3</h3>
+<h3>Default h3</h3>
+<h3 class="large">Large h3</h3>`
+
+export const HEADINGS_SNIPPET_OUTLINE = `<!-- Good — sequential ranks, one h1 per page, sections nest in document order -->
+<h1>Page title</h1>
+<section>
+  <h2>Section heading</h2>
+  <p>Body…</p>
+  <section>
+    <h3>Subsection heading</h3>
+    <p>Body…</p>
+  </section>
+</section>
+
+<!-- Bad — skipping ranks, multiple h1, section resetting rank -->
+<h1>Title</h1>
+<h3>Subsection</h3> <!-- skipped h2 -->
+<h1>Another title</h1> <!-- second h1 on the page -->`
+
+// DialogElementPage
+export const DIALOG_ELEMENT_SNIPPET_OPEN_MODES = `<!-- 1. Bare \`[open]\` attribute — non-modal, inline flow -->
+<dialog open>
+  <p>Always-open, inline-flow dialog.</p>
+</dialog>
+
+<!-- 2. Programmatic non-modal -->
+<button @click="dialog.show()">Open inline</button>
+<dialog ref="dialog">Inline (non-modal) dialog</dialog>
+
+<!-- 3. Programmatic modal — top-layer + ::backdrop -->
+<button @click="dialog.showModal()">Open modal</button>
+<dialog ref="dialog">Modal dialog (centered, dims the page)</dialog>`
+
+export const DIALOG_ELEMENT_SNIPPET_SIZES = `<dialog class="small">Compact prompt</dialog>
+<dialog>Default reading width (32rem)</dialog>
+<dialog class="large">Form / two-pane width (48rem)</dialog>
+<dialog class="fullscreen">Edge-to-edge sheet</dialog>`
+
+export const DIALOG_ELEMENT_SNIPPET_VARIANTS = `<dialog class="primary">Primary border tint</dialog>
+<dialog class="danger">Danger border tint</dialog>
+<dialog class="primary filled">Saturated primary fill + white text</dialog>`
+
+export const DIALOG_ELEMENT_SNIPPET_SCROLLABLE = `<dialog class="scrollable">
+  <header>
+    <h2>Pinned header</h2>
+  </header>
+  <section>
+    <!-- This <section> becomes the scroll container — overflow-y: auto.
+         Header and footer remain pinned outside the scroll. -->
+    <p>Lots of content…</p>
+  </section>
+  <footer>
+    <button>Close</button>
+  </footer>
+</dialog>`
+
+export const DIALOG_ELEMENT_SNIPPET_FORM = `<dialog>
+  <form method="dialog">
+    <p>Delete this draft? This can't be undone.</p>
+    <footer>
+      <button value="cancel">Cancel</button>
+      <button value="delete" class="danger filled">Delete</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- After close: dialog.returnValue === "cancel" | "delete"
+     (depending on which submit button fired). -->`
+
+// AnchorPage
+export const ANCHOR_VISITED_COUNTER_KEY = 'elements:anchor-page:visited-counter'
+
+export const ANCHOR_SNIPPET_BARE = `<p>The <a href="#/anchor">framework documentation</a> reads like a real link.</p>`
+
+export const ANCHOR_SNIPPET_VARIANTS = `<a href="#a-variants">Default (primary)</a>
+<a href="#a-variants" class="primary">Primary</a>
+<a href="#a-variants" class="secondary">Secondary</a>
+<a href="#a-variants" class="tertiary">Tertiary</a>
+<a href="#a-variants" class="success">Success</a>
+<a href="#a-variants" class="warning">Warning</a>
+<a href="#a-variants" class="danger">Danger</a>
+<a href="#a-variants" class="information">Information</a>`
+
+export const ANCHOR_SNIPPET_SIZES = `<a href="#a-sizes" class="primary small">Small inline link</a>
+<a href="#a-sizes" class="primary">Default inline link</a>
+<a href="#a-sizes" class="primary large">Large inline link</a>
+
+<!-- Sizes also apply when the anchor opts into chrome via .subtle/.filled. -->
+<a href="#a-sizes" class="primary subtle small">Subtle · small</a>
+<a href="#a-sizes" class="primary subtle">Subtle · default</a>
+<a href="#a-sizes" class="primary subtle large">Subtle · large</a>`
+
+export const ANCHOR_SNIPPET_STYLES = `<!-- Bare anchor: inline link, primary color + underline, zero padding. -->
+<a href="#a-styles" class="primary">Bare inline link</a>
+
+<!-- .subtle: anchor opts into button-shaped padding + border-radius. Keeps
+     the underline because the tint alone doesn't always read as "link" in
+     mixed contexts. -->
+<a href="#a-styles" class="primary subtle">Subtle button-shaped link</a>
+
+<!-- .filled: same padding/radius as .subtle, but drops the underline — the
+     saturated fill is sufficient affordance on its own. -->
+<a href="#a-styles" class="primary filled">Filled button-shaped link</a>`
+
+export const ANCHOR_SNIPPET_FLAT = `<!-- .flat: no underline at rest; hover restores underline + 4% backdrop. -->
+<p>
+  Read the <a class="flat" href="#a-flat">framework documentation</a>
+  to learn more about hydrated semantics.
+</p>
+
+<!-- Variant cascades through — the link colour still reads as the variant. -->
+<a class="success flat" href="#a-flat">Success flat link</a>`
+
+export const ANCHOR_SNIPPET_FLUSH = `<!-- .flush: link IS the surface — fills host, inherits radius,
+     drops underline, inherits color. -->
+<article class="p-0">
+  <a class="flush" href="#a-flush">
+    <header>
+      <h3>Tile-as-link</h3>
+    </header>
+    <p>Clicking anywhere on this card navigates. The link covers the entire host.</p>
+  </a>
+</article>`
+
+export const ANCHOR_SNIPPET_STATES = `<a href="#a-states" class="primary">Hover me (color darkens 20%)</a>
+<a href="#a-states" class="primary active">.active (color darkens 35%)</a>
+<a href="#a-states" class="primary disabled">.disabled (opacity 0.5, no pointer events)</a>
+<a href="#a-states" class="primary" aria-disabled="true">aria-disabled (same as .disabled)</a>
+
+<!-- :visited stays the variant color (UA purple is overridden). The
+     reader can verify by reloading the page after clicking the link. -->
+<a href="#a-states-visited" class="success">After clicking, this stays success-green</a>`
+
+export const ANCHOR_SNIPPET_CONTEXTS = `<!-- Bare <a> in body copy: primary-blue underlined link. -->
+<p>Read the <a href="#">getting started guide</a> for setup details.</p>
+
+<!-- §6.1 reset: <a> inside body's <header> / <footer> drops the primary
+     tint and underline, picks up currentColor so the bar reads as one
+     unified band. Hover tints toward primary so affordance survives. -->
+<header><a href="#">Brand</a> · <a href="#">Docs</a> · <a href="#">API</a></header>
+<footer><a href="#">Privacy</a> · <a href="#">Terms</a></footer>
+
+<!-- Nav-rail menu: <a> in <body > nav menu > li> renders as a row item
+     (full-width, currentColor, hover bg-tint, aria-current=page paints
+     a subtle-primary band). -->
+<nav><menu>
+  <li><a href="#" aria-current="page">Home</a></li>
+  <li><a href="#">About</a></li>
+</menu></nav>
+
+<!-- Aside TOC menu: <a> in <body > aside menu> renders as a muted row
+     with a leading-bar accent on aria-current=location. -->
+<aside><menu>
+  <li><a href="#" aria-current="location">Section 1</a></li>
+  <li><a href="#">Section 2</a></li>
+</menu></aside>`
+
+export const ANCHOR_SNIPPET_ATTRIBUTES = `<!-- Standard HTML attributes pass through. The framework adds no
+     special chrome — consumers handle external-link affordances per
+     consumer (e.g. via Tailwind utilities + <i class="icon">). -->
+<a href="https://example.com" target="_blank" rel="noopener noreferrer">
+  External link <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+</a>
+
+<a href="/document.pdf" download="report.pdf">Download report (PDF)</a>
+
+<a href="mailto:hello@example.com">hello@example.com</a>
+<a href="tel:+1234567890">+1 (234) 567-890</a>`
+
+export const ANCHOR_SNIPPET_REDUCED_MOTION = `/* In src/styles/_mixins.scss — every anchor transition is paired with this guard. */
+@mixin transition($value) {
+  transition: $value;
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}`

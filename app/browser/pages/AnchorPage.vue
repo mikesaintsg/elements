@@ -32,7 +32,20 @@
  */
 import { ref, watch } from 'vue'
 
-import { VARIANTS as variants } from '../constants.js'
+import {
+	ANCHOR_SNIPPET_ATTRIBUTES as snippetAttributes,
+	ANCHOR_SNIPPET_BARE as snippetBare,
+	ANCHOR_SNIPPET_CONTEXTS as snippetContexts,
+	ANCHOR_SNIPPET_FLAT as snippetFlat,
+	ANCHOR_SNIPPET_FLUSH as snippetFlush,
+	ANCHOR_SNIPPET_REDUCED_MOTION as snippetReducedMotion,
+	ANCHOR_SNIPPET_SIZES as snippetSizes,
+	ANCHOR_SNIPPET_STATES as snippetStates,
+	ANCHOR_SNIPPET_STYLES as snippetStyles,
+	ANCHOR_SNIPPET_VARIANTS as snippetVariants,
+	ANCHOR_VISITED_COUNTER_KEY as VISITED_COUNTER_KEY,
+	VARIANTS as variants,
+} from '../constants.js'
 
 // Live :visited demo wires a counter so the reader can see the visited-color
 // reset stays the variant color (no UA purple). Anchors with this href become
@@ -40,7 +53,6 @@ import { VARIANTS as variants } from '../constants.js'
 // persists across reloads via localStorage so the visited reload-test is
 // observable (without persistence the count would reset to 0 every reload,
 // defeating the "reload to see :visited" instruction).
-const VISITED_COUNTER_KEY = 'elements:anchor-page:visited-counter'
 const visitedCounter = ref(
 	typeof window === 'undefined' ? 0 : Number(window.localStorage.getItem(VISITED_COUNTER_KEY) ?? 0),
 )
@@ -48,110 +60,6 @@ watch(visitedCounter, (n) => {
 	if (typeof window !== 'undefined') window.localStorage.setItem(VISITED_COUNTER_KEY, String(n))
 })
 
-const snippetBare = `<p>The <a href="#/anchor">framework documentation</a> reads like a real link.</p>`
-
-const snippetVariants = `<a href="#a-variants">Default (primary)</a>
-<a href="#a-variants" class="primary">Primary</a>
-<a href="#a-variants" class="secondary">Secondary</a>
-<a href="#a-variants" class="tertiary">Tertiary</a>
-<a href="#a-variants" class="success">Success</a>
-<a href="#a-variants" class="warning">Warning</a>
-<a href="#a-variants" class="danger">Danger</a>
-<a href="#a-variants" class="information">Information</a>`
-
-const snippetSizes = `<a href="#a-sizes" class="primary small">Small inline link</a>
-<a href="#a-sizes" class="primary">Default inline link</a>
-<a href="#a-sizes" class="primary large">Large inline link</a>
-
-<!-- Sizes also apply when the anchor opts into chrome via .subtle/.filled. -->
-<a href="#a-sizes" class="primary subtle small">Subtle · small</a>
-<a href="#a-sizes" class="primary subtle">Subtle · default</a>
-<a href="#a-sizes" class="primary subtle large">Subtle · large</a>`
-
-const snippetStyles = `<!-- Bare anchor: inline link, primary color + underline, zero padding. -->
-<a href="#a-styles" class="primary">Bare inline link</a>
-
-<!-- .subtle: anchor opts into button-shaped padding + border-radius. Keeps
-     the underline because the tint alone doesn't always read as "link" in
-     mixed contexts. -->
-<a href="#a-styles" class="primary subtle">Subtle button-shaped link</a>
-
-<!-- .filled: same padding/radius as .subtle, but drops the underline — the
-     saturated fill is sufficient affordance on its own. -->
-<a href="#a-styles" class="primary filled">Filled button-shaped link</a>`
-
-const snippetFlat = `<!-- .flat: no underline at rest; hover restores underline + 4% backdrop. -->
-<p>
-  Read the <a class="flat" href="#a-flat">framework documentation</a>
-  to learn more about hydrated semantics.
-</p>
-
-<!-- Variant cascades through — the link colour still reads as the variant. -->
-<a class="success flat" href="#a-flat">Success flat link</a>`
-
-const snippetFlush = `<!-- .flush: link IS the surface — fills host, inherits radius,
-     drops underline, inherits color. -->
-<article class="p-0">
-  <a class="flush" href="#a-flush">
-    <header>
-      <h3>Tile-as-link</h3>
-    </header>
-    <p>Clicking anywhere on this card navigates. The link covers the entire host.</p>
-  </a>
-</article>`
-
-const snippetStates = `<a href="#a-states" class="primary">Hover me (color darkens 20%)</a>
-<a href="#a-states" class="primary active">.active (color darkens 35%)</a>
-<a href="#a-states" class="primary disabled">.disabled (opacity 0.5, no pointer events)</a>
-<a href="#a-states" class="primary" aria-disabled="true">aria-disabled (same as .disabled)</a>
-
-<!-- :visited stays the variant color (UA purple is overridden). The
-     reader can verify by reloading the page after clicking the link. -->
-<a href="#a-states-visited" class="success">After clicking, this stays success-green</a>`
-
-const snippetContexts = `<!-- Bare <a> in body copy: primary-blue underlined link. -->
-<p>Read the <a href="#">getting started guide</a> for setup details.</p>
-
-<!-- §6.1 reset: <a> inside body's <header> / <footer> drops the primary
-     tint and underline, picks up currentColor so the bar reads as one
-     unified band. Hover tints toward primary so affordance survives. -->
-<header><a href="#">Brand</a> · <a href="#">Docs</a> · <a href="#">API</a></header>
-<footer><a href="#">Privacy</a> · <a href="#">Terms</a></footer>
-
-<!-- Nav-rail menu: <a> in <body > nav menu > li> renders as a row item
-     (full-width, currentColor, hover bg-tint, aria-current=page paints
-     a subtle-primary band). -->
-<nav><menu>
-  <li><a href="#" aria-current="page">Home</a></li>
-  <li><a href="#">About</a></li>
-</menu></nav>
-
-<!-- Aside TOC menu: <a> in <body > aside menu> renders as a muted row
-     with a leading-bar accent on aria-current=location. -->
-<aside><menu>
-  <li><a href="#" aria-current="location">Section 1</a></li>
-  <li><a href="#">Section 2</a></li>
-</menu></aside>`
-
-const snippetAttributes = `<!-- Standard HTML attributes pass through. The framework adds no
-     special chrome — consumers handle external-link affordances per
-     consumer (e.g. via Tailwind utilities + <i class="icon">). -->
-<a href="https://example.com" target="_blank" rel="noopener noreferrer">
-  External link <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
-</a>
-
-<a href="/document.pdf" download="report.pdf">Download report (PDF)</a>
-
-<a href="mailto:hello@example.com">hello@example.com</a>
-<a href="tel:+1234567890">+1 (234) 567-890</a>`
-
-const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor transition is paired with this guard. */
-@mixin transition($value) {
-  transition: $value;
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
-  }
-}`
 </script>
 
 <template>

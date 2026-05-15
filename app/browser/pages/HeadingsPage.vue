@@ -34,43 +34,14 @@
  *   - `<dialog> > <header>` zeroes heading margins (the band's own
  *     padding owns the rhythm) — see `_dialog.scss`'s section chrome.
  */
-import { VARIANTS as variants } from '../constants.js'
-
-const snippetCascade = `<h1>The framework's primary headline</h1>
-<h2>A second-level section heading</h2>
-<h3>Third-level subsection</h3>
-<h4>Fourth-level grouping</h4>
-<h5>Fifth-level title</h5>
-<h6>Sixth-level smallest heading</h6>`
-
-const snippetHgroup = `<hgroup>
-  <h1>Page title goes here</h1>
-  <p>A short tagline that reads as metadata under the heading.</p>
-</hgroup>`
-
-const snippetVariants = `<h2 class="primary">Primary heading</h2>
-<h2 class="danger">Danger heading</h2>
-<h2 class="success">Success heading</h2>`
-
-const snippetSizes = `<h3 class="small">Small h3</h3>
-<h3>Default h3</h3>
-<h3 class="large">Large h3</h3>`
-
-const snippetOutline = `<!-- Good — sequential ranks, one h1 per page, sections nest in document order -->
-<h1>Page title</h1>
-<section>
-  <h2>Section heading</h2>
-  <p>Body…</p>
-  <section>
-    <h3>Subsection heading</h3>
-    <p>Body…</p>
-  </section>
-</section>
-
-<!-- Bad — skipping ranks, multiple h1, section resetting rank -->
-<h1>Title</h1>
-<h3>Subsection</h3> <!-- skipped h2 -->
-<h1>Another title</h1> <!-- second h1 on the page -->`
+import {
+	HEADINGS_SNIPPET_CASCADE as snippetCascade,
+	HEADINGS_SNIPPET_HGROUP as snippetHgroup,
+	HEADINGS_SNIPPET_OUTLINE as snippetOutline,
+	HEADINGS_SNIPPET_SIZES as snippetSizes,
+	HEADINGS_SNIPPET_VARIANTS as snippetVariants,
+	VARIANTS as variants,
+} from '../constants.js'
 </script>
 
 <template>

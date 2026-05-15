@@ -62,54 +62,13 @@ const dialogForm = useTemplateRef<HTMLDialogElement>('dialogForm')
 // which action the user chose (Cancel / Save / Delete).
 const lastReturn = ref('')
 
-const snippetOpenModes = `<!-- 1. Bare \`[open]\` attribute — non-modal, inline flow -->
-<dialog open>
-  <p>Always-open, inline-flow dialog.</p>
-</dialog>
-
-<!-- 2. Programmatic non-modal -->
-<button @click="dialog.show()">Open inline</button>
-<dialog ref="dialog">Inline (non-modal) dialog</dialog>
-
-<!-- 3. Programmatic modal — top-layer + ::backdrop -->
-<button @click="dialog.showModal()">Open modal</button>
-<dialog ref="dialog">Modal dialog (centered, dims the page)</dialog>`
-
-const snippetSizes = `<dialog class="small">Compact prompt</dialog>
-<dialog>Default reading width (32rem)</dialog>
-<dialog class="large">Form / two-pane width (48rem)</dialog>
-<dialog class="fullscreen">Edge-to-edge sheet</dialog>`
-
-const snippetVariants = `<dialog class="primary">Primary border tint</dialog>
-<dialog class="danger">Danger border tint</dialog>
-<dialog class="primary filled">Saturated primary fill + white text</dialog>`
-
-const snippetScrollable = `<dialog class="scrollable">
-  <header>
-    <h2>Pinned header</h2>
-  </header>
-  <section>
-    <!-- This <section> becomes the scroll container — overflow-y: auto.
-         Header and footer remain pinned outside the scroll. -->
-    <p>Lots of content…</p>
-  </section>
-  <footer>
-    <button>Close</button>
-  </footer>
-</dialog>`
-
-const snippetForm = `<dialog>
-  <form method="dialog">
-    <p>Delete this draft? This can't be undone.</p>
-    <footer>
-      <button value="cancel">Cancel</button>
-      <button value="delete" class="danger filled">Delete</button>
-    </footer>
-  </form>
-</dialog>
-
-<!-- After close: dialog.returnValue === "cancel" | "delete"
-     (depending on which submit button fired). -->`
+import {
+	DIALOG_ELEMENT_SNIPPET_FORM as snippetForm,
+	DIALOG_ELEMENT_SNIPPET_OPEN_MODES as snippetOpenModes,
+	DIALOG_ELEMENT_SNIPPET_SCROLLABLE as snippetScrollable,
+	DIALOG_ELEMENT_SNIPPET_SIZES as snippetSizes,
+	DIALOG_ELEMENT_SNIPPET_VARIANTS as snippetVariants,
+} from '../constants.js'
 </script>
 
 <template>
