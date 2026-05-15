@@ -362,17 +362,23 @@ describe('nav — `<nav popover>` shares the offcanvas drawer chrome with `<asid
 		nav.hidePopover()
 	})
 
-	it('a `<nav popover>` picks up the drawer container chrome (padding tokens + scroll)', () => {
+	it('a `<nav popover>` pins outer chrome (overflow: hidden) and routes scroll to the middle slot', () => {
 		const nav = build('nav')
 		nav.setAttribute('popover', '')
+		const middle = build('div') // single body region — the middle slot
+		nav.appendChild(middle)
 		mount(nav)
 		nav.showPopover()
 
 		// `:is(aside, nav)[popover]` declares the popover-padding tokens
 		// (consumed by the popover surface as `padding-inline` /
-		// `padding-block`). The drawer is `overflow-y: auto`.
+		// `padding-block`). The drawer itself is `overflow: hidden` — the
+		// outer chrome (header / footer bands + border + shadow) stays
+		// anchored to the viewport edge; the middle body region between
+		// header and footer is the scroll container.
 		expect(token(nav, '--set-popover-padding-inline').trim()).not.toBe('')
-		expect(style(nav, 'overflow-y')).toBe('auto')
+		expect(style(nav, 'overflow-y')).toBe('hidden')
+		expect(style(middle, 'overflow-y')).toBe('auto')
 
 		nav.hidePopover()
 	})
@@ -421,10 +427,18 @@ describe('nav — `<nav popover>` shares the offcanvas drawer chrome with `<asid
 		// Regression: an earlier `[popover] menu` selector in `_menu.scss`
 		// over-matched. A `<menu>` inside a `<nav popover>` body (the
 		// grouped-sidebar pattern) inherited the dropdown chrome
-		// including `overflow-block: auto` and `min-inline-size: 12rem`,
-		// which made the menu a competing scroll container and broke
-		// iOS Safari touch-scroll on links. Scoped to
+		// including a 12 rem `min-inline-size` floor that made the menu
+		// look like a dropdown panel rather than a nav rail. Scoped to
 		// `menu[popover], [popover]:not(aside):not(nav) menu`.
+		//
+		// Note on scroll: the drawer's middle-slot rule
+		// (`:is(aside, nav)[popover] > :not(:where(header, footer))`)
+		// intentionally makes the `<menu>` the scrolling middle region
+		// when it's the body of a nav drawer — that's the correct shape
+		// for the iOS Safari touch-scroll case (one scroll container,
+		// at the body level). What this test guards against is the
+		// dropdown-menu chrome specifically, identified by the 12 rem
+		// `min-inline-size` floor that doesn't belong on a nav rail.
 		const nav = build('nav')
 		nav.setAttribute('popover', '')
 		const menu = build('menu')
@@ -436,12 +450,6 @@ describe('nav — `<nav popover>` shares the offcanvas drawer chrome with `<asid
 		mount(nav)
 		nav.showPopover()
 
-		// The bare-menu shape uses `flex-wrap: wrap` (toolbar default);
-		// the dropdown shape uses `flex-wrap: nowrap` + `overflow-block:
-		// auto` + a 12 rem `min-inline-size` floor. We assert the
-		// dropdown overflow + min-inline-size DO NOT appear.
-		expect(style(menu, 'overflow-block')).not.toBe('auto')
-		expect(style(menu, 'overflow-block')).not.toBe('scroll')
 		expect(style(menu, 'min-inline-size')).not.toBe('192px') // 12rem at 16px root
 
 		nav.hidePopover()

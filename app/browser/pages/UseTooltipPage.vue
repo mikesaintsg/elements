@@ -357,7 +357,7 @@ useTooltip({ anchor, panel, placement })</code></pre>
 			<button ref="richAnchor" type="button">Hover for rich tooltip</button>
 		</div>
 		<div ref="richPanel" popover class="rich-tooltip">
-			<header style="display: flex; gap: 0.5rem; align-items: center">
+			<header class="flex items-center gap-2">
 				<span aria-hidden="true">🎹</span>
 				<strong>Keyboard shortcut</strong>
 			</header>

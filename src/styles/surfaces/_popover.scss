@@ -112,6 +112,81 @@
 		// instead of interpolating. (We hit this bug: opacity on aside
 		// drawers snapping to 1 instead of fading in over 250ms.) Keep
 		// the behavior on per-property tails only.
+
+		// Suppress the universal `scrollbar-gutter: stable` from
+		// `surfaces/_scrollbar.scss` on popover hosts. The stable gutter
+		// reserves a vertical strip on the inline-end side for a
+		// scrollbar — useful on page-shell scroll containers (`<main>`,
+		// `<body>`) so layout doesn't shift when a scrollbar appears, but
+		// pure overhead on top-layer popovers. Two visible bugs without
+		// this override:
+		//
+		//   1. `<aside popover>` drawer reserves a gutter on the panel
+		//      itself (the drawer has `overflow: hidden`, so a scrollbar
+		//      NEVER appears — `stable` is pure waste). Visible as a
+		//      ~14 px gap on the inline-end edge: header / footer borders
+		//      stop short of the drawer's right edge, the `.top` /
+		//      `.bottom` drawers don't span `100dvw` despite their
+		//      `inline-size: 100dvw` declaration.
+		//   2. Same bug applies inside the drawer at the middle
+		//      `overflow-y: auto` slot — gutter reserved even when the
+		//      content fits — and on every other top-layer popover
+		//      surface (dropdown menus, toasts, dialog content) when
+		//      content fits.
+		//
+		// `[popover] *` (and `dialog *`) covers descendants because
+		// `scrollbar-gutter` doesn't inherit; the universal rule wrote
+		// `stable` on every element individually, so the override has
+		// to do the same. Top-layer surfaces have no page-flow
+		// layout-shift to prevent — a scrollbar inside a popover only
+		// shifts content within the popover, which is local visual
+		// feedback the user expects.
+		//
+		// `<dialog>` joins `[popover]` here because both are top-layer
+		// surfaces with the same constraint: `<dialog>` now declares
+		// `overflow: hidden` when it hosts header / footer slots (the
+		// pin-chrome rule in `elements/_dialog.scss`), which qualifies
+		// it as a scroll container — the universal `scrollbar-gutter:
+		// stable` then reserves a ~14 px strip on the inline-end side,
+		// visible as a gap where header / footer divider borders stop
+		// short of the dialog's right edge. The override has to live
+		// in `@layer surfaces` to beat the universal rule (the cascade
+		// layer order `elements, components, surfaces, …` means an
+		// `elements`-scoped override loses to a `surfaces`-scoped
+		// universal rule regardless of specificity).
+		//
+		// `aside[role='alert']` joins the same family for the same
+		// reason: the in-flow banner has `overflow: hidden` (from its
+		// height-collapse animation rule in `components/_aside.scss`)
+		// so it qualifies as a scroll container too. With `stable` the
+		// banner reserves an inline-end strip and header / footer
+		// divider lines stop short of the right edge. Banner alerts
+		// have the same "top-layer-equivalent" property as popovers
+		// for this purpose: their layout-shift concern is local to the
+		// banner's own content area, not the surrounding document
+		// flow. So `auto` is correct.
+		//
+		// Sidebar rails — `body:has(main) > nav` and
+		// `body:has(main) > aside` (and one-level-deeper wrappers,
+		// `body:has(main) > * > nav` / `> * > aside`) — qualify too.
+		// `components/_nav.scss` and `components/_aside.scss` declare
+		// `overflow-y: auto` on these rails so long contents scroll
+		// independently of `<main>`. With `stable` the universal rule
+		// reserves a ~14 px inline-end strip even when contents fit,
+		// visible as a gap between the rail's inline-end border and any
+		// header / footer divider lines pinned inside it. The rails
+		// have the same "internal-scroll, no page-flow shift" property
+		// the banner has — the scrollbar (when it appears) only shifts
+		// rail contents within the rail. `auto` lets the gutter appear
+		// on demand without reserving the strip permanently.
+	}
+	:is([popover], dialog, aside[role='alert']),
+	:is([popover], dialog, aside[role='alert']) *,
+	body:has(main) > :is(nav, aside),
+	body:has(main) > :is(nav, aside) *,
+	body:has(main) > * > :is(nav, aside),
+	body:has(main) > * > :is(nav, aside) * {
+		scrollbar-gutter: auto;
 	}
 
 	// Closed-state values + scale-in transition — scoped to non-aside

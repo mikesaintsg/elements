@@ -193,10 +193,16 @@
 			align-items: center;
 			justify-content: center;
 			opacity: 0;
+			// Control-chip fade-in is a small UI tint, not slide motion —
+			// route through the global short-duration token (150 ms) so
+			// the chevron appears on hover at the same rhythm every other
+			// hover-revealed affordance uses. The carousel's own duration
+			// (0.6 s) is reserved for the slide-axis translateX, which IS
+			// substantial motion.
 			@include transition(
 				(
-					opacity var(--set-carousel-transition-duration) ease-out,
-					background-color var(--set-carousel-transition-duration) ease-out
+					opacity var(--set-transition-duration) ease-out,
+					background-color var(--set-transition-duration) ease-out
 				)
 			);
 
@@ -306,10 +312,17 @@
 				border-radius: 999px;
 				background-color: var(--set-carousel-indicator-background-color);
 				cursor: pointer;
+				// Indicator-pill stretch + fill is a small UI tint, NOT slide
+				// motion. The 0.6 s `--set-carousel-transition-duration` is
+				// designed for the slide-axis translateX (a viewport-width
+				// traversal); piping a 1-rem pill stretch through that
+				// duration reads as a sluggish lag every time the active
+				// slide changes. The global 150 ms UI-tint duration matches
+				// every other hover-state pill / chip transition.
 				@include transition(
 					(
-						background-color var(--set-carousel-transition-duration) ease-out,
-						inline-size var(--set-carousel-transition-duration) ease-out
+						background-color var(--set-transition-duration) ease-out,
+						inline-size var(--set-transition-duration) ease-out
 					)
 				);
 

@@ -264,6 +264,53 @@
 		}
 	}
 
+	// Non-modal dialog (`.show()` / `[open]` without `:modal`) is an
+	// in-flow surface — it sits in document flow alongside other
+	// content, shifting siblings rather than overlaying the page. The
+	// modal's centered fade-zoom (`transform: scale(0.96)`) reads as
+	// "popping in over the page" — wrong feel for an in-flow surface.
+	// Override the ENTRY @starting-style to a subtle Y-slide so non-
+	// modal dialogs match the in-flow surface family's "drawer feel"
+	// (matches `aside[role='alert']` in `components/_aside.scss`):
+	//
+	//   - Modal dialog: centered top-layer, fade + scale-zoom entry.
+	//   - Non-modal dialog: in-flow, fade + Y-slide entry.
+	//   - Banner alert: in-flow, height-collapse + Y-slide entry.
+	//
+	// Why only ENTRY is customized (and the close keeps the base
+	// scale tween):
+	//
+	// `[open]` is removed at close-time. `:modal` only matches WHILE
+	// the dialog is actively modal — once `.close()` runs, the
+	// pseudo-class stops matching. CSS can't distinguish "closing
+	// FROM modal state" vs "closing FROM non-modal state" at the
+	// instant the close transition begins, because both end up
+	// `:not([open]):not(:modal)`. If we DID set a non-modal-specific
+	// close-state (e.g. `dialog:not(:modal):not([open]) { transform:
+	// translateY(-0.5rem) }`), it would ALSO match closing-from-
+	// modal dialogs and break the modal's intended scale-zoom close.
+	//
+	// Asymmetry is fine: open feels in-flow (Y-slide), close fades
+	// out with the same scale-zoom both modes share. The opacity
+	// fade masks the transform-function snap (none → scale(0.96))
+	// so the close still reads as smooth.
+	//
+	// Specificity note (Chrome 148+ @starting-style cascade): targets
+	// `dialog:not(:modal)` (specificity 0,1,1) so the starting-state
+	// body stays one step below `dialog[open]:not(:modal)` (would be
+	// 0,2,1) — same cascade-leak workaround the surface popover and
+	// the existing `dialog[open] { ... }` rule above use.
+	@starting-style {
+		dialog:not(:modal) {
+			opacity: 0;
+			// Slide distance tokenized via `--set-motion-slide-distance`
+			// (declared in `_tokens.scss`, also used by the in-flow
+			// `aside[role='alert']` Y-slide in `components/_aside.scss`).
+			// Single token retunes the entire in-flow surface family.
+			transform: translateY(calc(var(--set-motion-slide-distance) * -1));
+		}
+	}
+
 	// --------------------------------------------------------------------------
 	// Dialog section chrome — header / body / footer.
 	//
@@ -292,6 +339,117 @@
 	// their intrinsic height and the section grows to fill the remaining
 	// block-size.
 	// --------------------------------------------------------------------------
+
+	// Pin chrome for `<dialog>` with header / footer slots — when the
+	// dialog hosts a `<header>` or `<footer>` (directly OR wrapped in
+	// `<form method="dialog">`), the dialog becomes a flex-column so
+	// header and footer pin to the dialog's top / bottom edges and the
+	// body slot scrolls if content exceeds `--set-dialog-max-block-size`.
+	// The platform default (`display: block` + UA `overflow: auto` on
+	// the dialog itself) scrolled the WHOLE dialog when content
+	// overflowed — header and footer dragged with the body, action
+	// buttons could disappear off the bottom edge. Same anti-pattern
+	// the `<aside popover>` drawer was hitting.
+	//
+	// `:has()` gates the rule so dialogs without header/footer keep
+	// their `display: block` flow — no flex assumptions imposed on
+	// simple confirm prompts. The `.scrollable` / `.fullscreen`
+	// modifiers in `composables/_dialog.scss` cascade on top of this
+	// with their own flex-column rules (same `display: flex` value;
+	// no cascade fight).
+	//
+	// CASCADE SPLIT — `display: flex` is the ONLY declaration gated
+	// on `[open]`. Everything else (`flex-direction: column`,
+	// `overflow: hidden`, children `flex` shorthands) is structural
+	// and applies whenever `:has()` matches, regardless of `[open]`.
+	//
+	// Why split: `dialog.close()` removes `[open]` synchronously, but
+	// `display` is in the transition list with `allow-discrete` —
+	// `display` stays at the FROM-value (flex) for ~50% of the close
+	// transition before snapping to the new value (none). During that
+	// hold, the dialog is laid out as flex.
+	//
+	//   - If `flex-direction: column` were also gated on `[open]`, it
+	//     would snap back to the default `row` the moment `[open]`
+	//     was removed — the dialog's three pinned children would
+	//     re-arrange into a horizontal row WHILE display is still
+	//     flex (held by allow-discrete), and the user would see the
+	//     dialog "collapse onto itself" before the fade completes.
+	//
+	//   - With `flex-direction: column` ungated, the column layout
+	//     persists through the entire close transition; only `display`
+	//     snaps from flex to none at the 50% mark. The dialog fades
+	//     out with its layout intact.
+	//
+	//   - `display: flex` MUST stay gated on `[open]` because closed
+	//     dialogs need to be hidden. Without the gate, this author
+	//     `display: flex` would beat the UA `dialog:not([open]) {
+	//     display: none }` (author origin > UA origin), and a
+	//     fully-closed dialog would stay visible.
+	dialog[open]:where(:has(> :is(header, footer)), :has(> form > :is(header, footer))) {
+		display: flex;
+	}
+	dialog:where(:has(> :is(header, footer)), :has(> form > :is(header, footer))) {
+		flex-direction: column;
+		overflow: hidden;
+	}
+	dialog:where(:has(> :is(header, footer))) > :is(header, footer),
+	dialog:where(:has(> form > :is(header, footer))) > form > :is(header, footer) {
+		flex: 0 0 auto;
+	}
+	// Body slot — anything that isn't header / footer. Flexes to fill the
+	// remaining block-size, scrolls if its intrinsic size exceeds the
+	// slot. `:has()`-gated to the same scope so consumers without
+	// header/footer aren't affected. `min-block-size: 0` lets the flex
+	// item shrink below its intrinsic content size (the platform default
+	// is `min-block-size: auto` for flex items, which would push the
+	// dialog past `max-block-size` instead of scrolling). The `> form`
+	// branch passes through forms wrapping the body so a
+	// `<form method="dialog">`-wrapped dialog gets the same scroll
+	// behavior.
+	//
+	// `flex: 1 1 auto` (not `1 1 0`): the dialog has `max-block-size`
+	// but no fixed `block-size`. With `1 1 0`, body's preferred size is
+	// 0, so the dialog sizes to `header + footer` (since the body has
+	// no preferred contribution) and the body collapses to 0px even
+	// when its content is large. With `1 1 auto`, body's preferred size
+	// is its content's natural height: the dialog grows to fit
+	// (`header + body-content + footer`), clamps at `max-block-size`,
+	// and the body's `shrink: 1` lets it absorb the overflow as
+	// internal scroll. Same outcome as `1 1 0` in fixed-height parents
+	// (drawers); strictly more correct for max-height-only parents.
+	dialog:where(:has(> :is(header, footer))) > :not(:where(header, footer)),
+	dialog:where(:has(> form > :is(header, footer))) > form > :not(:where(header, footer)) {
+		flex: 1 1 auto;
+		min-block-size: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	// When a `<form method="dialog">` is the direct child wrapping the
+	// dialog's contents, the form itself needs to be a flex-column
+	// passthrough so its inner header / footer / body can pin / scroll.
+	// Same `display: flex` vs structural-rest cascade split as the
+	// dialog itself — `display: flex` gated on `dialog[open]` so the
+	// form snaps to its UA `display: block` when fully closed, but the
+	// flex-direction + flex shorthand persist through the close
+	// transition's `allow-discrete` tail. `flex: 1 1 auto` (not `1 1
+	// 0`) — the dialog has no fixed block-size; preferred size 0
+	// would collapse the form to a thin rectangle.
+	dialog[open]:where(:has(> form > :is(header, footer))) > form {
+		display: flex;
+	}
+	dialog:where(:has(> form > :is(header, footer))) > form {
+		flex-direction: column;
+		flex: 1 1 auto;
+		min-block-size: 0;
+	}
+
+	// Suppress the universal `scrollbar-gutter: stable` from
+	// `surfaces/_scrollbar.scss` lives next to its `[popover]` sibling
+	// in `surfaces/_popover.scss` — that file's `@layer surfaces` scope
+	// is the only place an override can beat the universal rule (the
+	// elements layer is cascaded BEFORE surfaces, so an `elements`-
+	// scoped override loses). See `[popover], dialog` selector there.
 	dialog {
 		// Internal padding for the header band — matches the dialog's own
 		// `padding-block` so the header reads as a continuation of the
@@ -330,14 +488,36 @@
 		padding-block: var(--set-dialog-section-padding-block);
 		border-block-end: 1px solid var(--set-dialog-section-border-color);
 
-		// Reset framework heading margins inside the header band — the
-		// band's own padding owns the rhythm. Without this, an `<h2>` /
-		// `<h3>` inside `<dialog> > <header>` keeps its default
-		// `margin-block-start` and pushes the band taller than the
-		// designer's spec.
-		> :is(h1, h2, h3, h4, h5, h6) {
+		// Reset framework heading / paragraph margins inside the header band —
+		// the band's own padding owns the rhythm. Without this, an `<h2>` /
+		// `<h3>` / subtitle `<p>` inside `<dialog> > <header>` keeps its
+		// default `margin-block-start` and pushes the band taller than the
+		// designer's spec. `<p>` is included so subtitle copy stacks cleanly.
+		> :where(h1, h2, h3, h4, h5, h6, p) {
 			margin-block: 0;
 		}
+	}
+
+	// Mirror of the header > h*/p reset for the footer band. Bare dialog
+	// footers (action rows) typically only carry buttons; the rule is
+	// here for parity in case a consumer writes `<footer><h4>…</h4></
+	// footer>` or `<footer><p>…</p></footer>`.
+	dialog > footer > :where(h1, h2, h3, h4, h5, h6, p),
+	dialog > form > footer > :where(h1, h2, h3, h4, h5, h6, p) {
+		margin-block: 0;
+	}
+
+	// Dialog body slot — when the dialog is a flex column with header /
+	// footer pinned, direct heading / paragraph children of the dialog
+	// (not the bands) are the body content. Their browser-default block
+	// margin stacks on top of the band's `margin-block-{start,end}` and
+	// the dialog's section-gap, producing the same "feels too tall" trap
+	// that every demo fixes with inline `margin: 0`. Owning that here
+	// keeps the markup clean. `:where()` keeps specificity at 0 so a
+	// consumer can override per-instance without `!important`.
+	dialog:where(:has(> :is(header, footer))) > :where(h1, h2, h3, h4, h5, h6, p),
+	dialog:where(:has(> form > :is(header, footer))) > form > :where(h1, h2, h3, h4, h5, h6, p) {
+		margin-block: 0;
 	}
 
 	dialog > footer,

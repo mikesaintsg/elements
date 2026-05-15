@@ -145,7 +145,18 @@
  * `--set-nav-*` so desktop-mode tracks the rail's chrome, and the
  * popover-mode override below retunes for drawer-mode. */
 .showcase-sidebar-region {
-	flex-shrink: 0;
+	/* `flex: none` (= 0 0 auto) overrides the framework's drawer-body
+	 * rule `:is(aside, nav)[popover] > :not(:where(header, footer)) {
+	 * flex: 1 1 auto }` for the PINNED region of a composed rail. That
+	 * framework rule is correct for the common drawer shape (header +
+	 * body + footer; the body grows). In composed mode we have a pinned
+	 * region + a separately-scrolling region, and only the SCROLLING
+	 * region should grow — the pinned region must size to its content
+	 * (filter input ≈ 35 px + padding) and stay there. Writing only
+	 * `flex-shrink: 0` (as the previous version did) left `flex-grow: 1`
+	 * intact and the region ballooned to ~390 px on mobile, leaving a
+	 * huge empty stripe between the filter and the link list. */
+	flex: none;
 	padding-inline: var(--set-nav-padding-inline);
 	padding-block: var(--set-nav-padding-block);
 	background-color: var(--set-nav-background-color);
@@ -208,4 +219,412 @@
 	position: static;
 	margin: 0;
 	inset-block-start: auto;
+}
+
+/* ============================================================================
+ * Demo-page chrome — the parts of the showcase that are NOT framework
+ * concerns but recur often enough across pages that inlining them on
+ * every site would (a) drift apart visually and (b) hide the fact that
+ * a pattern is shared. The framework owns semantic-element chrome;
+ * these classes own SHOWCASE-PAGE LAYOUT — tile grids, fixed-width
+ * tile cells, subtitle typography, swatch chrome, etc. Every new
+ * repeated inline-style pattern in a page should either:
+ *   (a) become a framework feature (if the pattern is universal), or
+ *   (b) land here as a `.showcase-*` class (if it's a showcase-only
+ *       layout choice).
+ *
+ * Audit rule: `app/browser/pages/*.vue` MUST NOT carry inline
+ * `style="..."` attributes for anything except (1) a value bound to
+ * reactive state via `:style`, (2) a per-instance dimensional value
+ * (single-property, off Tailwind's scale, not recurring — most
+ * dimensional values should land on `w-32` / `max-w-md` / `min-w-56`
+ * Tailwind utilities), or (3) a value that genuinely demonstrates a
+ * token (icon `style="--icon: var(--set-icon-plus)"`, swatch
+ * `style="background-color: var(--color-primary)"`, shadow demo
+ * `style="box-shadow: var(--set-box-shadow-small)"`).
+ *
+ * Spacing-shape primitives are FRAMEWORK-OWNED — never inline them:
+ *   • `<div class="stack">`    flex column with gap > 0
+ *   • `<div class="cluster">`  flex wrap with gap > 0
+ *   • `<div class="frame">`    flex column, gap = 0, padding = 0,
+ *                              overflow clip (children fill edges)
+ *   • `<article class="frame">` / `<td class="frame">` — element-local
+ *     versions of `.frame` that also retune `--set-{tag}-*` tokens.
+ *
+ * See `guides/contribute.md` § "Hard rules during demo authoring"
+ * for the full five-step triage.
+ * ============================================================================ */
+
+/* Muted-text utility — generic "fine print" color (`<small>`
+ * captions, footer attributions, byline credits). Reaches for
+ * `--color-text-muted` so light / dark / forced-colors themes
+ * resolve at the consumer level. Centralized so every page reads
+ * "muted" through one class rather than 14 different inline
+ * `color: var(--color-text-muted)` strings. */
+.showcase-muted {
+	color: var(--color-text-muted);
+}
+
+/* Subtitle pattern — `<p class="showcase-card-subtitle">` below a
+ * heading inside an article band. Muted color + slightly smaller than
+ * body text. Framework already zeros margin inside `<article> >
+ * <header>`, so this class only carries the typography choice. */
+.showcase-card-subtitle {
+	color: var(--color-text-muted);
+	font-size: 0.875em;
+}
+
+/* Tile grids — the "row of equal-ish width cards / articles / links"
+ * layout used on AnchorPage, ArticleCardPage, ButtonPage, etc.
+ * `auto-fill` lets the grid wrap responsively; the minmax floor sets
+ * the smallest comfortable tile width. The three knobs are exposed
+ * as custom properties so the same class covers tight 12rem stat
+ * grids, default 16rem card grids, and wide 20rem image grids — a
+ * per-instance `style="--showcase-tile-grid-min: 20rem"` is the
+ * intended escape hatch (knob-tuning a centralized class, not
+ * inlining a whole grid declaration). */
+.showcase-tile-grid {
+	display: grid;
+	grid-template-columns: repeat(
+		var(--showcase-tile-grid-flow, auto-fill),
+		minmax(var(--showcase-tile-grid-min, 16rem), 1fr)
+	);
+	gap: var(--showcase-tile-grid-gap, 1rem);
+}
+
+/* Single fixed-width tile — `<article class="showcase-tile">` inside
+ * a non-grid demo where the tile sets its own width. 16rem matches
+ * the tile-grid floor so a lone tile reads at the same width as a
+ * row of tiles. */
+.showcase-tile {
+	inline-size: 16rem;
+}
+
+/* Constrained readable width — useful for prose / form demos that
+ * shouldn't stretch the full column. */
+.showcase-readable {
+	max-inline-size: 32rem;
+}
+
+/* ── Flush form-row pattern (FormControlsPage) ─────────────────────
+ * The "label cell + input cell" row inside a card-as-form. Each row
+ * is a 2-track grid (fixed 8rem label, remaining 1fr input) with a
+ * dividing border between rows. The label cell is itself a flex
+ * container so the text vertically centers against the input height;
+ * a vertical divider separates label from input. Three classes carry
+ * the chrome; consumers compose by stacking rows inside an
+ * `article.frame`. */
+.showcase-form-row {
+	display: grid;
+	grid-template-columns: 8rem 1fr;
+	align-items: center;
+	border-block-end: 1px solid var(--color-border);
+}
+
+/* For multiline inputs (textarea) — top-align so the label sits
+ * against the top edge of the textarea content area. */
+.showcase-form-row-tall {
+	display: grid;
+	grid-template-columns: 8rem 1fr;
+	align-items: stretch;
+}
+
+.showcase-form-row-label {
+	padding-inline: 1rem;
+	margin: 0;
+	align-self: stretch;
+	display: flex;
+	align-items: center;
+	border-inline-end: 1px solid var(--color-border);
+}
+
+.showcase-form-row-label-top {
+	padding-inline: 1rem;
+	padding-block: 0.75rem;
+	margin: 0;
+	display: flex;
+	align-items: flex-start;
+	border-inline-end: 1px solid var(--color-border);
+}
+
+.showcase-form-row-input {
+	padding-inline: 1rem;
+	padding-block: 0.75rem;
+}
+
+/* Tile link — `<a class="flush showcase-tile-link">` fills the
+ * inside of an `article.frame` (or any tile container) with a
+ * padded vertical stack. Used in card-as-link demos where the whole
+ * tile is the click target: anchor or button.flush handles
+ * interaction state, this class supplies the internal layout. */
+.showcase-tile-link {
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+/* Footer-actions row — the trailing button cluster inside an
+ * `<article> > <footer>`. The framework's footer chrome is opinion-
+ * free on internal layout; consumers reach for this when they want
+ * "icon + spacer + button row." It's just `.cluster` with end-
+ * justified main-axis alignment. */
+.showcase-footer-actions {
+	justify-content: flex-end;
+}
+
+/* Split-aligned footer — caption on the start, action on the end.
+ * Used by settings-card footers ("Changes save automatically …
+ * Reset to defaults"). Mid-axis alignment so the small caption
+ * sits centered against the larger button. */
+.showcase-footer-split {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+/* ── Stat card demo helpers (article-as-stat-tile pattern) ──────────────
+ * The "Active users · 12,402 · ↑ 4.2%" tile uses three typographic
+ * roles inside one small article: eyebrow label (uppercase), big
+ * value (display number), and delta caption (success / danger /
+ * muted color). Each is a thin typography class — the article's
+ * own flex-column + gap already supplies layout. */
+.showcase-stat-label {
+	color: var(--color-text-muted);
+	font-size: 0.75em;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.showcase-stat-value {
+	font-size: 1.875rem;
+	font-weight: 600;
+	line-height: 1;
+}
+
+/* Delta caption — pair with one of the three tone modifiers below
+ * to set the directional color. */
+.showcase-stat-delta {
+	font-size: 0.875em;
+}
+
+.showcase-stat-delta-up {
+	color: var(--color-success-on-canvas);
+}
+
+.showcase-stat-delta-down {
+	color: var(--color-danger-on-canvas);
+}
+
+.showcase-stat-delta-flat {
+	color: var(--color-text-muted);
+}
+
+/* ── Pricing card demo helpers ──────────────────────────────────────────
+ * Big price number + small "/ month" unit. Same shape as the stat
+ * value but slightly larger for the visual emphasis a pricing card
+ * deserves. */
+.showcase-price {
+	font-size: 2rem;
+	font-weight: 600;
+	line-height: 1;
+}
+
+.showcase-price-unit {
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+	font-weight: 400;
+}
+
+/* ── Scrollbar demo stage (ScrollAndTransitionPage) ────────────────
+ * A fixed-height bordered box that overflows so the scrollbar is
+ * always visible. Used in the scrollbar-width / scrollbar-color /
+ * scrollbar-gutter demos. The token-demonstration (e.g. `--set-
+ * scrollbar-width: auto`) goes inline on the consumer — only the
+ * layout shell lives here. Block-size is parameterized so the same
+ * class covers the 8rem / 10rem / 12rem variants the page uses. */
+.showcase-scroll-stage {
+	block-size: var(--showcase-scroll-stage-height, 10rem);
+	overflow-y: scroll;
+	border: 1px solid var(--color-border);
+	border-radius: 0.5rem;
+	padding: 0.75rem;
+}
+
+/* `overflow-y: auto` instead of `scroll` — for demos where the
+ * scrollbar appears only when content overflows (gutter `stable` vs
+ * `auto`). Same shell otherwise. */
+.showcase-scroll-stage-conditional {
+	block-size: var(--showcase-scroll-stage-height, 10rem);
+	overflow-y: auto;
+	border: 1px solid var(--color-border);
+	border-radius: 0.5rem;
+	padding: 0.75rem;
+}
+
+/* ── Placement grid (PlacementsPage) ────────────────────────────────
+ * The 3×3 grid that visualizes `position-area` placement values.
+ * Container: 3 columns × 3 rows of fixed-size cells with a 4-pixel
+ * gap, centered on the page. Cells: small <article> tiles painted
+ * with a variant `bg-subtle` to show the placement keyword spelled
+ * out. The center cell uses the saturated `--color-primary` with
+ * canvas text to mark the anchor's bounding area. */
+.showcase-placement-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 7rem);
+	grid-template-rows: repeat(3, 4rem);
+	gap: 4px;
+	justify-content: center;
+	padding-block: calc(var(--spacing) * 3);
+}
+
+.showcase-placement-cell {
+	display: grid;
+	place-items: center;
+	font-size: 0.875em;
+}
+
+/* The anchor stage — a wide centered surface that the demo button
+ * sits inside, so the popover has room to land in any of the eight
+ * placement positions without clipping. Used in PlacementsPage's
+ * live "pick a placement" demo. */
+.showcase-anchor-stage {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding-block: calc(var(--spacing) * 8);
+	background-color: var(--color-surface);
+	border-radius: var(--radius-md);
+}
+
+/* Dashed bottom border — used by SectioningPage's nested-section
+ * demo to visualize where one nested section ends and the next
+ * begins. Centralized so the dashed-divider chrome is consistent if
+ * other pages adopt the same demo idiom. */
+.showcase-bordered-dashed-bottom {
+	border-block-end: 1px dashed var(--color-border);
+}
+
+/* Bordered demo container — used by flip-fallback demos where each
+ * anchor needs its own boxed environment to make the viewport-edge
+ * proximity visible. Pair with Tailwind `justify-start` /
+ * `justify-end` to position the inner anchor. */
+.showcase-bordered-stage {
+	display: flex;
+	padding: calc(var(--spacing) * 4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+}
+
+/* The center "anchor" cell of the placement grid. Filled with the
+ * saturated primary so it reads as "this is the anchor element"
+ * against the eight surrounding subtle-tinted placement cells. */
+.showcase-placement-anchor {
+	background: var(--color-primary);
+	color: var(--color-canvas);
+	display: grid;
+	place-items: center;
+	font-size: 0.875em;
+	font-weight: 600;
+}
+
+/* ── Color-swatch demo (ThemePage) ───────────────────────────────────
+ * A swatch is an <article> with two stacked regions: the COLOR cap
+ * (a colored bar/square at the top) and the META region (label +
+ * token name + resolved value). The article zeroes its own padding
+ * and clips overflow so the colored cap can paint edge-to-edge. The
+ * meta region re-pads internally. Each swatch demonstrates one
+ * `--color-*` token so the inline `:style="{ backgroundColor: var
+ * (entry.token) }"` on the cap is the demo payload — the rest of
+ * the chrome is shared layout. */
+.showcase-swatch {
+	padding: 0;
+	overflow: hidden;
+	background-color: var(--color-surface);
+}
+
+.showcase-swatch-meta {
+	padding: calc(var(--spacing) * 2);
+}
+
+.showcase-swatch-meta-tight {
+	padding: calc(var(--spacing) * 1.5);
+}
+
+/* Inverted-token demo's key/value list — a tight two-column grid
+ * (label | value) used inside the theme-inverted swatch article to
+ * show the pair of `--color-inverted` / `--color-inverted-text`
+ * tokens with their resolved values. Auto-track the label width so
+ * a `<code>` term stays as narrow as its text needs. */
+.showcase-inverted-key-value {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.25rem calc(var(--spacing) * 2);
+}
+
+/* Swatch caption — small monospaced token label below the variant
+ * name. `display: block` puts each line on its own row; reduced
+ * opacity backs it off visually so the variant name stays the
+ * dominant cue. */
+.showcase-swatch-label {
+	display: block;
+	font-size: 0.75em;
+	opacity: 0.7;
+	margin-block-start: 0.25rem;
+}
+
+.showcase-swatch-label-quiet {
+	display: block;
+	font-size: 0.75em;
+	opacity: 0.6;
+	margin-block-start: 0.25rem;
+}
+
+/* ── Profile-card header (avatar + identity block) ──────────────────────
+ * The framework's auto-banded `<article> > <header>` paints the
+ * subtle tinted band by default. A profile card opts out: drop the
+ * band paint + divider so the avatar sits against the card body
+ * directly. This is a SHOWCASE-ONLY override — not a framework
+ * pattern — because most real cards want the band. */
+.showcase-profile-header {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+	background-color: transparent;
+	border-block-end: 0;
+}
+
+.showcase-profile-avatar {
+	inline-size: 4rem;
+	block-size: 4rem;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+/* ── Scroll-spy demo nav (UseNavPage) ───────────────────────────────
+ * The framework's TOC chrome paints `aria-current="location"` only
+ * inside body-shell `<aside>` rails (see `components/_menu.scss`'s
+ * `body:has(main) > aside menu > li > a[aria-current='location']`
+ * rule). UseNavPage's in-page demo `<aside>` rails are nested several
+ * levels deep inside `<main>`, so the framework rule doesn't apply.
+ * This class re-creates the same visual contract (saturated text +
+ * weight + leading bar) scoped to the demo wrapper so the active
+ * link reads obviously without re-scoping the framework rule. */
+.showcase-nav-demo a {
+	display: block;
+	padding-block: 0.25rem;
+	border-inline-start: 2px solid transparent;
+	padding-inline-start: 0.5rem;
+	color: var(--color-text-muted);
+	text-decoration: none;
+}
+
+.showcase-nav-demo a:hover {
+	color: var(--color-text);
+}
+
+.showcase-nav-demo a[aria-current='location'] {
+	color: var(--color-primary-on-canvas);
+	border-inline-start-color: var(--color-primary);
+	font-weight: 500;
 }

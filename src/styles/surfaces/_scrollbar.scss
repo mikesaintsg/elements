@@ -56,4 +56,34 @@
 		scrollbar-width: var(--set-scrollbar-width);
 		scrollbar-gutter: var(--set-scrollbar-gutter);
 	}
+
+	// Mobile retune — drop the stable gutter at html + body level only.
+	// The `stable` default prevents layout shift when content grows past
+	// the viewport (the gutter is reserved up front, the scrollbar slots
+	// into it). On phones two facts make `stable` pure overhead at the
+	// VIEWPORT level: (1) mobile browsers render scrollbars as TRANSIENT
+	// OVERLAYS that float above content without reserving layout space,
+	// so the prevented "shift" never happens; (2) the framework's body
+	// shell uses `overflow: hidden` so the html rarely scrolls anyway.
+	// The reserved gutter still has a real cost — Chromium reduces the
+	// html's clientWidth by the gutter width (~10–15 px), and FIXED-
+	// POSITION descendants (toasts, drawers, modals) anchor against
+	// html's content area rather than the viewport. The result is
+	// asymmetric inline insets: a toast declared with equal
+	// `inset-inline-start` / `inset-inline-end` lands with the gutter's
+	// width as an extra gap on the inline-end side.
+	//
+	// Scoped to `html, body` (NOT the universal token retune) so that
+	// IN-PAGE scroll containers (e.g. a scrollable list inside a panel,
+	// the `dialog.scrollable` body region) still inherit the `stable`
+	// gutter default — those rely on the reservation to prevent
+	// jitter when content grows and a scrollbar appears. Only the
+	// top-level html / body needs the override for fixed-position
+	// symmetry. Specificity 0,0,1 beats the universal `*` rule (0,0,0).
+	@media (max-width: 480px) {
+		html,
+		body {
+			scrollbar-gutter: auto;
+		}
+	}
 }

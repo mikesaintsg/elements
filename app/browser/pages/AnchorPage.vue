@@ -88,6 +88,26 @@ const snippetStyles = `<!-- Bare anchor: inline link, primary color + underline,
      saturated fill is sufficient affordance on its own. -->
 <a href="#a-styles" class="primary filled">Filled button-shaped link</a>`
 
+const snippetFlat = `<!-- .flat: no underline at rest; hover restores underline + 4% backdrop. -->
+<p>
+  Read the <a class="flat" href="#a-flat">framework documentation</a>
+  to learn more about hydrated semantics.
+</p>
+
+<!-- Variant cascades through — the link colour still reads as the variant. -->
+<a class="success flat" href="#a-flat">Success flat link</a>`
+
+const snippetFlush = `<!-- .flush: link IS the surface — fills host, inherits radius,
+     drops underline, inherits color. -->
+<article class="p-0">
+  <a class="flush" href="#a-flush">
+    <header>
+      <h3>Tile-as-link</h3>
+    </header>
+    <p>Clicking anywhere on this card navigates. The link covers the entire host.</p>
+  </a>
+</article>`
+
 const snippetStates = `<a href="#a-states" class="primary">Hover me (color darkens 20%)</a>
 <a href="#a-states" class="primary active">.active (color darkens 35%)</a>
 <a href="#a-states" class="primary disabled">.disabled (opacity 0.5, no pointer events)</a>
@@ -284,6 +304,106 @@ const snippetReducedMotion = `/* In src/styles/_mixins.scss — every anchor tra
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre><code>{{ snippetStyles }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-flat">
+		<h2>Flat — quiet inline link</h2>
+		<p>
+			<code>.flat</code> drops the underline at rest and restores it on hover (paired with a 4%
+			backdrop). Use for inline references in editorial copy where the underline introduces visual
+			noise but the affordance should still be obvious on engagement. Variant colour cascades
+			through unchanged.
+		</p>
+		<div class="stack">
+			<p>
+				Visit the
+				<a class="flat" href="#anchor-flat">framework documentation</a> for setup instructions and
+				see the <a class="success flat" href="#anchor-flat">latest release notes</a> for migration
+				details. Cross-reference the
+				<a class="information flat" href="#anchor-flat">community channels</a> if you hit a snag,
+				and report any <a class="danger flat" href="#anchor-flat">production incidents</a> through
+				the on-call rotation.
+			</p>
+			<p>
+				Every variant ({{ variants.length }} of them) renders flat in the cluster below so the
+				per-variant text colour is legible side-by-side.
+			</p>
+			<div class="cluster">
+				<a v-for="v in variants" :key="v" class="flat" :class="v" href="#anchor-flat">
+					{{ v }} flat
+				</a>
+			</div>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetFlat }}</code></pre>
+		</details>
+	</section>
+
+	<section id="anchor-flush">
+		<h2>Flush — tile-as-link</h2>
+		<p>
+			<code>.flush</code> fuses the anchor INTO its host: <code>display: block</code>, fills both
+			axes, inherits the host's <code>border-radius</code>, drops the underline + the link-blue
+			identity (color inherits from the host). The whole tile becomes clickable; the host owns the
+			visual chrome. Hover any tile to see the 4% backdrop affordance reveal — the trailing arrow
+			signals the navigation target.
+		</p>
+		<p>Three neutral tiles, each entirely clickable end-to-end:</p>
+		<div class="cluster gap-4">
+			<article class="frame showcase-tile">
+				<a class="flush showcase-tile-link" href="#anchor-flush">
+					<header class="flex justify-between items-baseline">
+						<strong>Documentation</strong>
+						<small aria-hidden="true">→</small>
+					</header>
+					<small class="showcase-muted">Setup, cascade, taxonomy.</small>
+				</a>
+			</article>
+			<article class="frame showcase-tile">
+				<a class="flush showcase-tile-link" href="#anchor-flush">
+					<header class="flex justify-between items-baseline">
+						<strong>Showcase</strong>
+						<small aria-hidden="true">→</small>
+					</header>
+					<small class="showcase-muted">Every element, in context.</small>
+				</a>
+			</article>
+			<article class="frame showcase-tile">
+				<a class="flush showcase-tile-link" href="#anchor-flush">
+					<header class="flex justify-between items-baseline">
+						<strong>API reference</strong>
+						<small aria-hidden="true">→</small>
+					</header>
+					<small class="showcase-muted">Composables, factories, types.</small>
+				</a>
+			</article>
+		</div>
+		<p>
+			Variant cascade still flows through — an
+			<code>&lt;article class="primary filled"&gt;</code> fills the tile in primary blue and the
+			anchor's <code>color: inherit</code> reads white against it. Hover any tile to confirm the
+			click area covers the entire surface:
+		</p>
+		<div class="cluster gap-4">
+			<article
+				v-for="v in ['primary', 'success', 'warning', 'danger']"
+				:key="v"
+				:class="`${v} filled frame showcase-tile`"
+			>
+				<a class="flush showcase-tile-link" href="#anchor-flush">
+					<header class="flex justify-between items-baseline">
+						<strong class="capitalize">{{ v }} tile</strong>
+						<small aria-hidden="true">→</small>
+					</header>
+					<small>Whole card is the link.</small>
+				</a>
+			</article>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetFlush }}</code></pre>
 		</details>
 	</section>
 

@@ -325,6 +325,82 @@ const snippetForm = `<dialog>
 		</details>
 	</section>
 
+	<section id="dialog-element-flush">
+		<h2><code>.flush</code> — non-modal dialog inset into a host</h2>
+		<p>
+			<code>dialog.flush</code> is scoped to non-modal (<code>:not(:modal)</code>) — the modifier
+			drops the outer border, radius, shadow, and margin so the dialog fuses into its host's
+			boundary. Modal dialogs are explicitly excluded because the modal at rest IS the chrome
+			(centered top-layer, scrim) and dissolving the panel would defeat the modal shape. The header
+			/ footer pin chrome survives because it's painted from inside the dialog's grid; only the
+			outer perimeter dissolves.
+		</p>
+		<p>
+			Use when a workflow needs an inline dialog (revealable confirmation, status panel, inline edit
+			affordance) that should read as part of its host surface — a card body, an expandable region —
+			instead of paint its own outer card.
+		</p>
+		<article
+			style="
+				--set-article-padding-inline: 0;
+				--set-article-padding-block: 0;
+				--set-article-gap: 0;
+				overflow: clip;
+			"
+		>
+			<header>
+				<h3>Account changes</h3>
+			</header>
+			<dialog open class="flush">
+				<header><h4>Email updated</h4></header>
+				<p>
+					New email confirmed: <code>ada@example.com</code>. The change applies to every signed-in
+					session immediately.
+				</p>
+				<footer>
+					<button type="button">Got it</button>
+				</footer>
+			</dialog>
+			<dialog open class="success flush">
+				<header><h4>Backup complete</h4></header>
+				<p>
+					Snapshot stored. Variant cascade reaches the border + header band; outer perimeter still
+					dissolves.
+				</p>
+			</dialog>
+			<dialog open class="warning flush">
+				<header><h4>Session expiring</h4></header>
+				<p>You'll be signed out in 5 minutes unless you re-authenticate.</p>
+				<footer>
+					<button type="button" class="warning">Re-authenticate</button>
+				</footer>
+			</dialog>
+			<dialog open class="danger flush">
+				<header><h4>Delete account?</h4></header>
+				<p>This action cannot be undone.</p>
+				<footer>
+					<button type="button">Cancel</button>
+					<button type="button" class="danger filled">Delete</button>
+				</footer>
+			</dialog>
+			<footer>
+				<small
+					>Three inline dialogs, no outer chrome — host (this article) owns the perimeter.</small
+				>
+			</footer>
+		</article>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;article&gt;
+  &lt;header&gt;…&lt;/header&gt;
+  &lt;dialog open class="flush"&gt;…&lt;/dialog&gt;
+  &lt;dialog open class="success flush"&gt;…&lt;/dialog&gt;
+  &lt;dialog open class="danger flush"&gt;…&lt;/dialog&gt;
+  &lt;footer&gt;…&lt;/footer&gt;
+&lt;/article&gt;</code></pre>
+		</details>
+	</section>
+
 	<section id="dialog-element-form">
 		<h2><code>&lt;form method="dialog"&gt;</code></h2>
 		<p>

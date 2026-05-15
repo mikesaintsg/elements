@@ -112,6 +112,17 @@
 	// --------------------------------------------------------------------------
 	--set-motion-duration: 250ms;
 	--set-motion-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+	// In-flow surface slide distance — the small inward translate that
+	// `<aside role="alert">` (banner) and `dialog[open]:not(:modal)`
+	// (non-modal dialog) use on entry / exit so each surface reads as
+	// "settling into place" rather than "unfolding from 0." Top-layer
+	// drawer (`<aside popover>`) uses a 100% translate from its edge,
+	// modal dialog uses a scale transform — different distance for
+	// different families. This token covers the in-flow family only.
+	// Consumers retune at `:root` (every in-flow surface adjusts) or
+	// per-element (`aside[role='alert'] { --set-motion-slide-distance:
+	// 1rem }`) to make one surface punchier.
+	--set-motion-slide-distance: 0.5rem;
 
 	// --------------------------------------------------------------------------
 	// Baseline hydration — non-color defaults that make the framework feel
@@ -136,6 +147,7 @@
 	// hasn't been pinned to a specific rhythm.
 	--set-gap: calc(var(--spacing) * 3); // 0.75rem / 12px
 	--set-stack-spacing: 1em; // sibling vertical rhythm — relative to local font-size
+	--set-cluster-spacing: calc(var(--spacing) * 3); // chip / button-row gap
 
 	// Anchor-jump / scroll-snap offset so a sticky toolbar (consumer sets
 	// per app: `:root { --set-sticky-offset: 4rem; }`) never covers the

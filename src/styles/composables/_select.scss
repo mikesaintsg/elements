@@ -127,6 +127,41 @@
 			display: none;
 		}
 
+		// Empty-state hint when the typeahead filter rejects every option.
+		// Previous behaviour (`createSelect.onInput`) auto-hid the dropdown
+		// on no-match, which made free-text entry in autocomplete mode
+		// confusing — the user types a value that isn't in the list, the
+		// menu disappears, and even though the typed value WAS accepted
+		// (committed to the factory's `value` / `values` state) it looked
+		// like the widget rejected it. The factory now keeps the dropdown
+		// open and this rule paints the empty-state hint so the surface
+		// reads as "filter found nothing" rather than "the widget broke."
+		//
+		// `:has()` matches the menu when AT LEAST one option is hidden
+		// AND NO option is unhidden — i.e. the filter is actively
+		// rejecting every row. The "at least one hidden" guard skips
+		// genuinely empty menus (zero options at all), so a developer-
+		// setup mistake (forgot to render the option list) still surfaces
+		// visually instead of being masked by the empty-state label.
+		//
+		// Text token-driven so consumers can localise without overriding
+		// the rule (`:root { --set-select-empty-text: '"Aucun résultat"' }`
+		// — note the nested-quote shape: `content` requires a quoted
+		// string at the var() resolution site).
+		--set-select-empty-text: 'No matches';
+
+		> .select-menu:has(> li > [data-value][data-hidden]):not(
+				:has(> li > [data-value]:not([data-hidden]))
+			)::after {
+			content: var(--set-select-empty-text);
+			display: block;
+			padding-inline: calc(var(--spacing) * 3);
+			padding-block: calc(var(--spacing) * 2);
+			color: var(--color-text-muted, currentColor);
+			font-size: var(--text-xs, 0.75rem);
+			font-style: italic;
+		}
+
 		// Menu sized to the wrapper's width via `anchor-size()` so the
 		// dropdown matches the trigger's full width regardless of menu
 		// content (Bootstrap's `.dropdown-menu.w-100` equivalent).

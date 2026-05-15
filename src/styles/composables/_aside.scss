@@ -1,32 +1,35 @@
 // ============================================================================
-// useAside — `<aside popover="manual">` drawer composable layer.
+// useAside — `<aside popover>` drawer composable layer.
 //
 // The drawer chrome (per-edge geometry, slide transforms, transitions,
 // variant tinting) lives in `components/_aside.scss` and applies to every
 // `<aside popover>` via the native Popover API — no composable required
-// for the basic offcanvas behavior. See that partial's `aside[popover]
-// — offcanvas drawer` block for the chrome contract.
+// for the basic offcanvas behavior. The slide animation is driven entirely
+// by `:popover-open` + `@starting-style` + `transition-behavior: allow-
+// discrete`; no JS-side lifecycle attributes participate.
 //
-// This composables-layer file exists for additional behaviors that
-// `useAside` layers on top of the bare drawer (when consumers attach
-// the composable):
+// `useAside` is a thin programmatic shim that:
+//   - Sets `popover="auto"` (or `"manual"`) on attach,
+//   - Maps `show()` / `hide()` / `toggle()` to the native
+//     `showPopover()` / `hidePopover()` / `togglePopover()`,
+//   - Bridges the native `beforetoggle` / `toggle` events into the
+//     `elements:aside:{show,open,hide,close}` namespaced map,
+//   - Exposes a reactive `visible` ref synced from `:popover-open`.
 //
-//   - Light-dismiss outside-click handling (closes on backdrop tap)
-//   - Scroll lock on `<body>` while open
-//   - Focus trap inside the drawer
-//   - Escape-key dismiss
-//   - Backdrop scrim (`useAside` mounts and toggles its own element)
+// Light-dismiss (Escape + outside-click), the `::backdrop` scrim,
+// scroll-lock (handled natively by `popover="auto"`-style elements
+// participating in the top layer), and the slide animation are all
+// platform-owned. Consumers who want sticky-modal behavior pass
+// `popover: 'manual'`; consumers who want to lock the body scroll
+// alongside compose `lockBodyScroll()` from helpers themselves.
 //
-// None of those require additional chrome rules in CSS — the composable
-// reads / writes attributes and event listeners directly. The placeholder
-// rule below documents the contract: `<aside popover>` is a drawer
-// regardless of whether `useAside` is attached, and the composable
-// layers behavior, not geometry.
+// This partial is intentionally empty — `useAside` doesn't add any
+// composable-layer chrome on top of the bare `<aside popover>` styling.
+// It exists so the `composables/` inventory mirrors the
+// `browser/composables/` inventory (one partial per `use{Name}` factory).
 // ============================================================================
 
 @layer composables {
 	// Intentionally empty — `useAside`'s behavior is JS-side; the
-	// drawer's visual chrome (geometry, slide transforms, variant
-	// tinting, forced-colors fallback) lives in
-	// `components/_aside.scss` and applies to every `<aside popover>`.
+	// drawer's visual chrome lives in `components/_aside.scss`.
 }

@@ -2,6 +2,10 @@ import { computed, ref } from 'vue'
 import type { Component, ComputedRef, Ref } from 'vue'
 
 import HomePage from './pages/HomePage.vue'
+import TokensPage from './pages/TokensPage.vue'
+import ThemePage from './pages/ThemePage.vue'
+import ModifiersPage from './pages/ModifiersPage.vue'
+import PlacementsPage from './pages/PlacementsPage.vue'
 import ButtonPage from './pages/ButtonPage.vue'
 import AnchorPage from './pages/AnchorPage.vue'
 import FormControlsPage from './pages/FormControlsPage.vue'
@@ -26,6 +30,18 @@ import UseFocusPage from './pages/UseFocusPage.vue'
 import UsePointerPage from './pages/UsePointerPage.vue'
 import UseDragDropPage from './pages/UseDragDropPage.vue'
 import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
+import UseMenuPage from './pages/UseMenuPage.vue'
+import UseDialogPage from './pages/UseDialogPage.vue'
+import UseAsidePage from './pages/UseAsidePage.vue'
+import UseTabsPage from './pages/UseTabsPage.vue'
+import UseDetailsPage from './pages/UseDetailsPage.vue'
+import UseAlertPage from './pages/UseAlertPage.vue'
+import UseCarouselPage from './pages/UseCarouselPage.vue'
+import UseFormPage from './pages/UseFormPage.vue'
+import UseNavPage from './pages/UseNavPage.vue'
+import UseSelectPage from './pages/UseSelectPage.vue'
+import UseTablePage from './pages/UseTablePage.vue'
+import UseToastPage from './pages/UseToastPage.vue'
 import UsePopoverPage from './pages/UsePopoverPage.vue'
 import UseTooltipPage from './pages/UseTooltipPage.vue'
 
@@ -46,6 +62,30 @@ export interface Route {
 }
 
 const HOME: Route = { id: 'home', title: 'Home', group: 'Getting started', page: HomePage }
+const TOKENS: Route = {
+	id: 'tokens',
+	title: 'Tokens',
+	group: 'Foundations',
+	page: TokensPage,
+}
+const THEME: Route = {
+	id: 'theme',
+	title: 'Theme',
+	group: 'Foundations',
+	page: ThemePage,
+}
+const MODIFIERS: Route = {
+	id: 'modifiers',
+	title: 'Modifiers',
+	group: 'Foundations',
+	page: ModifiersPage,
+}
+const PLACEMENTS: Route = {
+	id: 'placements',
+	title: 'Placements',
+	group: 'Foundations',
+	page: PlacementsPage,
+}
 const BUTTON: Route = {
 	id: 'button',
 	title: 'Button',
@@ -190,6 +230,78 @@ const USE_THEME_BUTTON: Route = {
 	group: 'Composables',
 	page: UseThemeButtonPage,
 }
+const USE_MENU: Route = {
+	id: 'use-menu',
+	title: 'useMenu',
+	group: 'Composables',
+	page: UseMenuPage,
+}
+const USE_DIALOG: Route = {
+	id: 'use-dialog',
+	title: 'useDialog',
+	group: 'Composables',
+	page: UseDialogPage,
+}
+const USE_ASIDE: Route = {
+	id: 'use-aside',
+	title: 'useAside',
+	group: 'Composables',
+	page: UseAsidePage,
+}
+const USE_TABS: Route = {
+	id: 'use-tabs',
+	title: 'useTabs',
+	group: 'Composables',
+	page: UseTabsPage,
+}
+const USE_DETAILS: Route = {
+	id: 'use-details',
+	title: 'useDetails',
+	group: 'Composables',
+	page: UseDetailsPage,
+}
+const USE_TOAST: Route = {
+	id: 'use-toast',
+	title: 'useToast',
+	group: 'Composables',
+	page: UseToastPage,
+}
+const USE_SELECT: Route = {
+	id: 'use-select',
+	title: 'useSelect',
+	group: 'Composables',
+	page: UseSelectPage,
+}
+const USE_TABLE: Route = {
+	id: 'use-table',
+	title: 'useTable',
+	group: 'Composables',
+	page: UseTablePage,
+}
+const USE_FORM: Route = {
+	id: 'use-form',
+	title: 'useForm',
+	group: 'Composables',
+	page: UseFormPage,
+}
+const USE_NAV: Route = {
+	id: 'use-nav',
+	title: 'useNav',
+	group: 'Composables',
+	page: UseNavPage,
+}
+const USE_ALERT: Route = {
+	id: 'use-alert',
+	title: 'useAlert',
+	group: 'Composables',
+	page: UseAlertPage,
+}
+const USE_CAROUSEL: Route = {
+	id: 'use-carousel',
+	title: 'useCarousel',
+	group: 'Composables',
+	page: UseCarouselPage,
+}
 const USE_POPOVER: Route = {
 	id: 'use-popover',
 	title: 'usePopover',
@@ -205,6 +317,10 @@ const USE_TOOLTIP: Route = {
 
 export const routes: readonly Route[] = [
 	HOME,
+	TOKENS,
+	THEME,
+	MODIFIERS,
+	PLACEMENTS,
 	BUTTON,
 	ANCHOR,
 	FORM_CONTROLS,
@@ -229,6 +345,18 @@ export const routes: readonly Route[] = [
 	USE_POINTER,
 	USE_DRAG_DROP,
 	USE_THEME_BUTTON,
+	USE_MENU,
+	USE_DIALOG,
+	USE_ASIDE,
+	USE_TABS,
+	USE_DETAILS,
+	USE_TOAST,
+	USE_SELECT,
+	USE_TABLE,
+	USE_FORM,
+	USE_NAV,
+	USE_ALERT,
+	USE_CAROUSEL,
 	USE_POPOVER,
 	USE_TOOLTIP,
 ]

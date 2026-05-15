@@ -289,16 +289,30 @@
 		// `@include transition()` participates in the reduced-motion
 		// contract; the wrapper isn't needed for the discrete
 		// `visibility` line because it never animates a length.
+		//
+		// `transform: translateY(calc(--set-motion-slide-distance * -1))`
+		// on the closed state adds a subtle drawer-family slide to the
+		// open / close transition. The height tween still does the
+		// layout work (no jump as the banner appears between siblings);
+		// the small inward translate reads as "settling into place"
+		// rather than "unfolding from 0." Matches the in-flow surface
+		// family's "drawer feel" without conflicting with the height-
+		// collapse layout shift. Slide distance is tokenized so
+		// consumers retune the in-flow family centrally — the same
+		// token also drives the non-modal `<dialog>` Y-slide entry in
+		// `elements/_dialog.scss`.
 		opacity: 0;
 		block-size: 0;
 		padding-block: 0;
 		border-inline-start-width: 0;
 		visibility: hidden;
+		transform: translateY(calc(var(--set-motion-slide-distance) * -1));
 		@include transition(
 			(
 				block-size var(--set-motion-duration) var(--set-motion-timing-function),
 				padding-block var(--set-motion-duration) var(--set-motion-timing-function),
 				border-inline-start-width var(--set-motion-duration) var(--set-motion-timing-function),
+				transform var(--set-motion-duration) var(--set-motion-timing-function),
 				opacity var(--set-motion-duration) ease-out,
 				visibility var(--set-motion-duration) allow-discrete
 			)
@@ -310,6 +324,7 @@
 			padding-block: var(--set-alert-padding-block);
 			border-inline-start-width: var(--set-alert-bar-width);
 			visibility: visible;
+			transform: translateY(0);
 		}
 
 		// Trailing dismiss: any direct-child button with `aria-label`
@@ -524,10 +539,17 @@
 		// docs / mail / settings panel size; mobile-clamped via the
 		// rule below so the panel never overflows narrow viewports.
 		--set-aside-drawer-inline-size: 21.875rem;
-		// Block-axis drawer height (`.top` / `.bottom`) — Bootstrap's
-		// `--bs-offcanvas-height: 30vh` is a comfortable filter / picker
-		// height that leaves the page below visible.
-		--set-aside-drawer-block-size: 30dvh;
+		// Block-axis drawer height (`.top` / `.bottom`) — `50dvh` is the
+		// Apple `UISheetPresentationController.Detent.medium` ≈ half-screen
+		// + Material Design 3 modal-bottom-sheet "initially expanded"
+		// default; substantive enough for content panels (forms, command
+		// palettes, share menus) without obscuring the page below.
+		// Bootstrap's `--bs-offcanvas-height: 30vh` is a filter / picker
+		// height — too cramped for content drawers, and the pin-chrome
+		// contract below (header / footer pinned, middle scrolls) lets a
+		// taller default handle long bodies cleanly. Consumers retune per
+		// instance via `--set-aside-drawer-block-size`.
+		--set-aside-drawer-block-size: 50dvh;
 		// Drawer z-index — above body chrome (sticky header, body grid),
 		// below modals (which use the platform top layer via
 		// `dialog.showModal()`). Matches the showcase sidebar drawer
@@ -598,16 +620,18 @@
 		flex-direction: column;
 		gap: var(--set-aside-drawer-band-gap);
 
-		// Drawer is its own scroll container when body content overflows
-		// `100dvh`. `overscroll-behavior: contain` keeps long body lists
-		// from rubber-banding the page beneath the drawer on touch.
-		// Consumers composing a drawer with an internal scroll region
-		// (pinned filter + scrolling list) override with `overflow:
-		// hidden` on the rail so their inner region becomes the scroll
-		// surface — see `app/browser/styles/showcase.css` for the
-		// docs-sidebar pattern composed this way.
-		overflow-y: auto;
-		overscroll-behavior: contain;
+		// Drawer is NOT its own scroll container — `overflow: hidden`
+		// here keeps the outer chrome (header + footer bands, drawer
+		// border + shadow) pinned to the viewport edges while the body
+		// region between them takes the scroll. The pin pattern is
+		// declared further down on `> header` / `> footer` (flex: 0 0
+		// auto) and on the implicit middle (`> :not(header):not(footer)`
+		// gets `flex: 1 1 0; min-block-size: 0; overflow-y: auto`).
+		// Consumers composing a drawer with their own internal regions
+		// (pinned filter + scrolling list) get the same shape "for free"
+		// because their content slot inherits the middle's flex
+		// behavior.
+		overflow: hidden;
 
 		// Drawer shadow — subtle elevation so the panel reads as a layer
 		// above the page rather than a flush surface that slid in from
@@ -673,6 +697,43 @@
 			transform: translateX(100%);
 			opacity: 0;
 		}
+	}
+
+	// ── Header / footer / middle pin contract ────────────────────────
+	//
+	// The drawer's outer chrome — title strip, action footer, border,
+	// shadow — stays anchored to the viewport edges; only the body
+	// region between header and footer takes the scroll. This matters
+	// most for `.top` / `.bottom` drawers whose total content can
+	// exceed `--set-aside-drawer-block-size` (30 dvh by default) — the
+	// previous version with `overflow-y: auto` on the drawer itself
+	// scrolled the WHOLE drawer (header + content + footer all moved),
+	// so footers full of action buttons could scroll off-screen on
+	// small viewports.
+	//
+	// Selector targets BOTH `:is(aside, nav)[popover] > header` and
+	// `:is(aside, nav)[popover] > footer` — the framework's banded
+	// chrome convention. Anything else inside is a "middle" sibling
+	// and takes `flex: 1 1 0; min-block-size: 0; overflow-y: auto`, so
+	// it absorbs the remaining space and scrolls if its intrinsic size
+	// exceeds the slot. Multiple middle siblings share remaining space
+	// (each `flex: 1 1 0`); consumers who want a single scroll region
+	// wrap their middle content in one container.
+	:is(aside, nav)[popover] > :is(header, footer) {
+		flex: 0 0 auto;
+	}
+	// `flex: 1 1 auto` (not `1 1 0`) so the body slot's preferred size
+	// equals its content's natural height. Same outcome inside a
+	// fixed-height drawer parent (body grows to fill remaining space
+	// when content is short, shrinks to fit when content overflows),
+	// AND a universally-correct shape for max-height-only parents
+	// (matches `dialog[open]:where(:has(> :is(header, footer)))` in
+	// `elements/_dialog.scss`).
+	:is(aside, nav)[popover] > :not(:where(header, footer)) {
+		flex: 1 1 auto;
+		min-block-size: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
 	}
 
 	// ── .start — slide from the inline-start (leading) edge ──────────

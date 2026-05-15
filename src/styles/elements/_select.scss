@@ -186,5 +186,12 @@
 		--set-select-toggle-padding-inline-end: calc(var(--spacing) * 9);
 		--set-select-caret-min-inline-size: 2.75rem;
 		--set-select-menu-min-inline-size: 12rem;
+		// `--set-select-empty-text` is the composable-layer empty-state
+		// hint string consumed by `composables/_select.scss` when a
+		// typeahead filter rejects every option. Re-declared here so the
+		// token-parity test (which renders a bare `<select>` and expects
+		// every `--set-select-*` leaf to resolve) stays green even though
+		// the bare element itself never paints the empty-state.
+		--set-select-empty-text: 'No matches';
 	}
 }

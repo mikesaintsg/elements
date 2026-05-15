@@ -20,10 +20,19 @@ describe('focus — surface tokens', () => {
 })
 
 describe('focus — surface rule', () => {
-	it('declares a :focus-visible rule that opts out of native form controls', () => {
-		// The surface rule scopes via :where(input, textarea, select) so
-		// per-element form-control focus chrome continues to win.
-		expect(findRule(':focus-visible:not(:where(input, textarea, select))')).toBe(true)
+	it('declares a :focus-visible rule that opts out of form controls + the grid-pattern table', () => {
+		// The surface rule scopes via `:where(input, textarea, select,
+		// table[role='grid'])` so per-element form-control focus chrome
+		// continues to win, AND the WAI-ARIA grid-pattern table doesn't
+		// flash a ring when it receives focus as a programmatic anchor
+		// (the focused CELL owns the visible focus signal — see
+		// `surfaces/_focus.scss` comment for the rationale).
+		//
+		// `findRule` is substring-based, but browsers normalise CSSOM
+		// `selectorText` quotes inconsistently (Chromium emits double
+		// quotes, others single). Match the un-quoted substring so the
+		// check is engine-agnostic.
+		expect(findRule(`:focus-visible:not(:where(input, textarea, select, table[role=`)).toBe(true)
 	})
 
 	it('paints a non-empty box-shadow on a focusable surface element', () => {

@@ -87,11 +87,11 @@ const reorder = useDrag<Track>(reorderHost, {
 	list: reorderList,
 	on: {
 		reorder: (event) => {
-			const detail = event.detail as { fromIndices: number[]; toIndex: number }
-			const moved = detail.fromIndices.length
+			const detail = event.detail as { from: number[]; to: number }
+			const moved = detail.from.length
 			reorderLog.value = [
 				...reorderLog.value.slice(-3),
-				`Moved ${moved} item${moved === 1 ? '' : 's'} → index ${detail.toIndex}`,
+				`Moved ${moved} item${moved === 1 ? '' : 's'} → index ${detail.to}`,
 			]
 		},
 	},
@@ -268,7 +268,7 @@ const clearOutbox = (): void => {
 				</span>
 			</li>
 		</ol>
-		<small v-if="reorderLog.length > 0" style="margin-block-start: 0.5rem; display: block">
+		<small v-if="reorderLog.length > 0" class="block mt-2">
 			Log: {{ reorderLog.join(' · ') }}
 		</small>
 		<details>
@@ -279,7 +279,7 @@ useDrag&lt;Track&gt;(host, {
   list,
   on: {
     reorder: (event) =&gt; {
-      const { fromIndices, toIndex } = event.detail
+      const { from, to } = event.detail
       // list is already spliced in place; this is observation-only.
     },
   },
@@ -328,7 +328,7 @@ useDrag&lt;Track&gt;(host, {
 				</button>
 			</li>
 		</menu>
-		<small v-if="handlePlayed" style="margin-block-start: 0.5rem; display: block">
+		<small v-if="handlePlayed" class="block mt-2">
 			Playing:
 			<strong>{{ handleList.find((t) => t.id === handlePlayed)?.title }}</strong>
 			— click never started a drag.
@@ -374,7 +374,7 @@ useDrag&lt;Track&gt;(host, {
 				</span>
 			</li>
 		</ol>
-		<small style="margin-block-start: 0.5rem; display: block">
+		<small class="block mt-2">
 			<strong>{{ selectionCount }}</strong> selected
 			<span v-if="selectionCount > 0">
 				— indices [{{ [...selection.selected.value].sort((a, b) => a - b).join(', ') }}]
@@ -463,7 +463,7 @@ useDrag&lt;Track&gt;(host, {
 				</p>
 			</section>
 		</div>
-		<menu v-if="outbox.length > 0" style="margin-block-start: 0.75rem">
+		<menu v-if="outbox.length > 0" class="mt-3">
 			<li>
 				<button type="button" class="subtle" @click="clearOutbox">Clear outbox</button>
 			</li>

@@ -112,8 +112,8 @@ export interface DragEndDetail {
 
 /** Detail for `elements:drag:reorder` — successful in-list reorder. */
 export interface DragReorderDetail {
-	readonly fromIndices: readonly number[]
-	readonly toIndex: number
+	readonly from: readonly number[]
+	readonly to: number
 	readonly items: readonly unknown[]
 }
 
@@ -548,17 +548,18 @@ export interface UseAsideEventMap {
 	readonly open: (event: CustomEvent) => void
 	readonly hide: (event: CustomEvent) => void
 	readonly close: (event: CustomEvent) => void
-	readonly prevent: (event: CustomEvent) => void
 }
 
 export interface CreateAsideOptions {
-	readonly dismiss?: {
-		readonly backdrop?: boolean | 'static'
-		readonly escape?: boolean
-	}
-	readonly scroll?: {
-		readonly lock?: boolean
-	}
+	/**
+	 * Initial popover mode. `'auto'` (default) opts into native
+	 * light-dismiss (Escape + outside-click). `'manual'` opts out — the
+	 * panel only closes via a programmatic `hide()` or an inner
+	 * `popovertargetaction="hide"` button. `false` leaves whatever the
+	 * author put on the element (use when the markup already declares
+	 * `popover="manual"` and you don't want the composable to overwrite).
+	 */
+	readonly popover?: 'auto' | 'manual' | false
 	readonly on?: Partial<UseAsideEventMap>
 }
 
@@ -835,6 +836,17 @@ export interface UseToastEventMap {
 export interface CreateToastOptions {
 	/** `false` keeps the toast sticky. Object enables auto-hide with optional delay. */
 	readonly autohide?: false | { readonly delay?: number }
+	/**
+	 * Swipe-to-dismiss gesture. `false` disables; object enables with optional
+	 * threshold override (CSS pixels, default 80 — distance the pointer must
+	 * travel along the inline axis before release commits to dismiss). The
+	 * gesture is bidirectional horizontal (swipe left OR right), composes
+	 * with the deck `transform: translateY()` via the standalone `translate`
+	 * property, and dispatches the cancellable `elements:toast:hide` event
+	 * on commit so consumers can veto. Pointer-down on the trailing
+	 * `<button>` dismiss is ignored so button clicks survive.
+	 */
+	readonly swipe?: false | { readonly threshold?: number }
 	readonly on?: Partial<UseToastEventMap>
 }
 
@@ -1086,9 +1098,9 @@ export interface CreateTabsOptions {
 	readonly on?: Partial<UseTabsEventMap>
 	/**
 	 * Force this tab to be the initially active one. When `true` the trigger
-	 * is seeded with `aria-selected="true"` and its pane with
-	 * `data-tab-open` before the first paint, so consumers don't have to
-	 * pre-author the markup. Defaults to reading
+	 * is seeded with `aria-selected="true"` and its pane's `[hidden]`
+	 * attribute is removed before the first paint, so consumers don't have
+	 * to pre-author the markup. Defaults to reading
 	 * `aria-selected="true"` from the trigger.
 	 */
 	readonly initial?: boolean
@@ -1219,7 +1231,7 @@ export interface UseCarouselReturn {
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface FormDataDetail {
-	readonly formData: FormData
+	readonly data: FormData
 }
 export interface FormInvalidDetail {
 	readonly field: string | null
@@ -1407,12 +1419,20 @@ export interface CreateTableOptions {
 		readonly multiple?: boolean
 		/** Row ids to expand at construction (stale ids silently ignored). */
 		readonly initial?: readonly string[]
-		/** Animate the inner panel between `0` and `scrollHeight`. Default
-		 *  `false`. When true, the factory drives a height-transition on the
-		 *  `[data-table-expansion-panel]` element via the `[data-collapsing]`
-		 *  attribute (mirrors `createDetails` semantics). When false, the
-		 *  panel toggles `hidden` synchronously. */
-		readonly animate?: boolean
+		/**
+		 * Wire row-click → expansion toggle.
+		 *  - `true` / `'row'` (default): clicking anywhere on an expandable
+		 *    row (one with a sibling `<tr data-table-expansion>`) toggles.
+		 *    Interactive descendants (`a, button, input, textarea, select,
+		 *    label, [data-no-select]`) are skipped so row-internal action
+		 *    chrome survives.
+		 *  - `'caret'`: only descendants of `[data-table-expansion-trigger]`
+		 *    toggle. Use when the rest of the row should read as plain
+		 *    content (e.g. a leading-cell caret button).
+		 *  - `false`: no built-in handler; consumers drive
+		 *    `expansion.toggle(id)` themselves.
+		 */
+		readonly click?: boolean | 'row' | 'caret'
 	}
 	readonly selection?: {
 		/** Scope for select-all operations. Default `'page'`. */

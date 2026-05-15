@@ -25,19 +25,19 @@ Tailwind's documentation is authoritative. The framework reads these via `var()`
 
 **Framework-owned** (`--set-*`):
 
-| Group              | Examples                                                                                                                                                               |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Focus ring         | `--set-focus-box-shadow-width`, `--set-focus-box-shadow-opacity`                                                                                                       |
-| Variant context    | `--set-variant-color`, `--set-variant-background-color`                                                                                                                |
-| Modifier context   | `--set-style-*`, `--set-size-*`                                                                                                                                        |
-| Density / radius   | `--set-density-factor`, `--set-radius-factor`                                                                                                                          |
-| Baseline hydration | `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-sticky-offset`                                                                 |
-| Z-index scale      | `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}`                                                                                                    |
-| Elevation          | `--set-box-shadow-small`, `--set-box-shadow`, `--set-box-shadow-large`                                                                                                 |
-| Icon               | `--set-icon-chevron-*`, `--set-icon-check`, `--set-icon-close`, …                                                                                                      |
-| Floater            | `--set-floater-gutter`, `--set-floater-inset-*`, `--set-floater-max-*`                                                                                                 |
-| Transition         | `--set-transition-duration` (150 ms, small UI tints); `--set-motion-duration` (250 ms, substantive show/hide) + `--set-motion-timing-function` (iOS stiff-decel curve) |
-| Element-scoped     | `--set-button-*`, `--set-input-*`, `--set-dialog-*`, …                                                                                                                 |
+| Group              | Examples                                                                                                                                                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Focus ring         | `--set-focus-box-shadow-width`, `--set-focus-box-shadow-opacity`                                                                                                                                                                                 |
+| Variant context    | `--set-variant-color`, `--set-variant-background-color`                                                                                                                                                                                          |
+| Modifier context   | `--set-style-*`, `--set-size-*`                                                                                                                                                                                                                  |
+| Density / radius   | `--set-density-factor`, `--set-radius-factor`                                                                                                                                                                                                    |
+| Baseline hydration | `--set-border-radius`, `--set-border-width`, `--set-gap`, `--set-stack-spacing`, `--set-cluster-spacing`, `--set-sticky-offset`                                                                                                                  |
+| Z-index scale      | `--set-z-index-{sticky,fixed,dropdown,modal,popover,tooltip,toast}`                                                                                                                                                                              |
+| Elevation          | `--set-box-shadow-small`, `--set-box-shadow`, `--set-box-shadow-large`                                                                                                                                                                           |
+| Icon               | `--set-icon-chevron-*`, `--set-icon-check`, `--set-icon-close`, …                                                                                                                                                                                |
+| Floater            | `--set-floater-gutter`, `--set-floater-inset-*`, `--set-floater-max-*`                                                                                                                                                                           |
+| Transition         | `--set-transition-duration` (150 ms, small UI tints); `--set-motion-duration` (250 ms, substantive show/hide) + `--set-motion-timing-function` (iOS stiff-decel curve) + `--set-motion-slide-distance` (0.5 rem, in-flow surface family Y-slide) |
+| Element-scoped     | `--set-button-*`, `--set-input-*`, `--set-dialog-*`, …                                                                                                                                                                                           |
 
 Plus `--color-{variant}` (seven semantic palette tokens registered via `@theme` so Tailwind generates `.bg-primary` / `.text-success` / etc.), the `--color-{variant}-{bg-subtle, text-emphasis, border-subtle}` triplets declared on `:root` for theme-aware tinted surfaces, and the single-token `--color-{variant}-on-canvas` tier for variant text painted directly on the body canvas.
 
@@ -216,6 +216,15 @@ Requires the host page to declare `<meta name="viewport" content="… viewport-f
 // uniform across every "panel-style reveal" in the framework.
 --set-motion-duration: 250ms;
 --set-motion-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+
+// In-flow surface family Y-slide distance — the small inward translate
+// `<aside role="alert">` (banner) and `dialog[open]:not(:modal)`
+// (non-modal dialog) use on entry / exit so each surface reads as
+// "settling into place" rather than "unfolding from 0." Top-layer
+// drawer (`<aside popover>`) uses a 100% slide from its edge; modal
+// dialog uses scale-zoom — different families, different distances.
+// This token covers the in-flow family only.
+--set-motion-slide-distance: 0.5rem;
 ```
 
 Two perceptual registers, one consistent contract:
@@ -223,6 +232,8 @@ Two perceptual registers, one consistent contract:
 - **`--set-transition-duration` (150 ms).** Consumed by the `transition()` mixin and by every element-scoped `--set-{tag}-transition-duration`. Used for hover tints, focus rings, theme-flip color animations — anywhere a property smoothly transitions inside an otherwise-stable layout. Tailwind v4 ships per-step `--duration-*` tokens but no single canonical default; this token fills that gap.
 
 - **`--set-motion-{duration, timing-function}` (250 ms + iOS stiff-decel curve).** Consumed by every framework surface that physically moves a panel in or out of view: body-shell rail drawers (`<nav>` / `<aside>` on mobile, lifted into popover mode via the conditional `:popover="isMobile ? 'auto' : undefined"` binding so they share the same `:is(aside, nav)[popover]` drawer chrome as the standalone `<aside popover>` offcanvas surface), `<dialog>` modals + non-modals, `<details>::details-content` disclosure expansions, and the `tr.expansion .expansion-panel` table row reveal. The curve is the iOS-native "stiff decelerate" — fast start, gentle settle — matching Bootstrap's offcanvas + modal timing and the iOS native sheet feel. Opacity fades inside the motion family use plain `ease-out` (the cubic-bezier's tail looks identical for opacity but `ease-out` is the universally-readable name for fades). Backdrop scrims (`dialog:modal::backdrop` and `:is(aside, nav)[popover]:popover-open::backdrop`) fade out over the same window so backdrop + panel dismiss in lockstep — no parallel app-side scrim element is needed since both body-shell drawers ride the native `::backdrop` pseudo.
+
+- **`--set-motion-slide-distance` (0.5 rem).** Shared by the **in-flow surface family** — `<aside role="alert">` (banner) and `dialog[open]:not(:modal)` (non-modal dialog). Both surfaces sit in document flow, shift surrounding siblings on entry / exit, and use a small inward translate so the open animation reads as "settling into place" rather than the unfold-from-zero collapse. The top-layer drawer family (`<aside popover>` / `<nav popover>`) deliberately uses a different distance (100% — full slide from its edge); the modal dialog uses a scale-zoom (different transform family). Consumer retune at `:root` (`--set-motion-slide-distance: 1rem` to make every in-flow surface punchier) or per-element (`aside[role='alert'] { --set-motion-slide-distance: 1.5rem }`).
 
 Consumers retune motion globally at `:root` (`--set-motion-duration: 400ms` for a slower house style) or per-component (`dialog { --set-motion-duration: 200ms }` for snappier dialog open/close while leaving drawers at 250).
 
@@ -234,11 +245,12 @@ These exist so the framework feels **already wired up** the moment a consumer dr
 --set-border-radius: var(--radius-md); /* Tailwind --radius-md = 0.375rem */
 --set-border-width: 1px;
 --set-gap: calc(var(--spacing) * 3); /* 0.75rem default flex/grid gap */
---set-stack-spacing: 1em; /* sibling vertical rhythm relative to local font-size */
+--set-stack-spacing: 1em; /* `.stack` gap default — sibling vertical rhythm */
+--set-cluster-spacing: calc(var(--spacing) * 3); /* `.cluster` gap default */
 --set-sticky-offset: 0px; /* consumer sets per app: `:root { --set-sticky-offset: 4rem; }` */
 ```
 
-`--set-border-radius` and `--set-border-width` are the "default" answer when no `.small` / `.large` size modifier is active and no element-scoped chain provides a more specific value. `--set-gap` is the default `flex` / `grid` `gap` for layout primitives (`.stack`, `.cluster`, `<form>` control list, `<menu>` toolbar). `--set-stack-spacing` drives sibling vertical rhythm (e.g. `p + p { margin-block-start: var(--set-stack-spacing) }`). `--set-sticky-offset` is consumed by `<html>`'s `scroll-padding-block-start` so anchor jumps clear a sticky toolbar.
+`--set-border-radius` and `--set-border-width` are the "default" answer when no `.small` / `.large` size modifier is active and no element-scoped chain provides a more specific value. `--set-gap` is the default `flex` / `grid` `gap` for layout primitives (`<form>` control list, `<menu>` toolbar). `--set-stack-spacing` and `--set-cluster-spacing` are the global tunables for `<div class="stack">` and `<div class="cluster">` — the local `--set-stack-gap` / `--set-cluster-gap` declared inside those rules resolves to the global token, so a single `:root { --set-stack-spacing: 0.5rem }` retunes every stack on the page without learning the local name. (`.frame` — the third spacing-shape primitive — declares no gap token because its whole point is `gap: 0`.) `--set-sticky-offset` is consumed by `<html>`'s `scroll-padding-block-start` so anchor jumps clear a sticky toolbar.
 
 ### Z-index scale
 

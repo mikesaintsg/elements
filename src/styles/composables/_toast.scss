@@ -18,14 +18,14 @@
 //      container. Mirrors Sonner's card-stack visuals: the most recent
 //      toast sits in front, older ones peek out as smaller, dimmer
 //      edges. Toasts beyond `--set-toast-stack-depth` are hidden
-//      (`data-stack-hidden` + `aria-hidden`) and counted by
+//      (`data-toast-stack-hidden` + `aria-hidden`) and counted by
 //      `[data-toast-indicator]`.
 //
 //   3. Hover / focus expand — the deck spreads out as a vertical list
 //      while the pointer hovers (or focus is inside). `:hover` walks
 //      the DOM ancestry, not the layout box, so it reaches the
 //      container even though the toast lives in the top layer.
-//      `[data-stack-closing]` pins the expanded layout while a card's
+//      `[data-toast-stack-closing]` pins the expanded layout while a card's
 //      close transition plays out so the deck doesn't collapse and
 //      re-expand mid-animation.
 //
@@ -61,8 +61,8 @@
 //   [data-toast-stack]            container opt-in for deck mode
 //   [data-toast-stack][data-toast-position="top"]
 //                                 top-anchored deck (default is bottom)
-//   [data-stack-hidden]           per-toast hidden marker (depth overflow)
-//   [data-stack-closing]          container pin during a card's close
+//   [data-toast-stack-hidden]           per-toast hidden marker (depth overflow)
+//   [data-toast-stack-closing]          container pin during a card's close
 //   [data-toast-hidden-count]     container — count of overflow toasts
 //   [data-toast-indicator]        consumer-authored child surfacing the
 //                                 hidden count (`+N hidden`)
@@ -71,6 +71,92 @@
 @use '../mixins' as *;
 
 @layer composables {
+	// ── Swipe-to-dismiss surface ───────────────────────────────────────────────
+	// The factory (`createToast.ts` § swipe) writes two per-frame inline
+	// properties during a horizontal pointer drag:
+	//
+	//   --set-toast-swipe-offset    inline-axis displacement in px (signed)
+	//   --set-toast-swipe-opacity   visual fade (0–1)
+	//
+	// We consume them via the STANDALONE `translate` property — NOT the
+	// `transform` shorthand — so the swipe offset composes cleanly with the
+	// deck mode's `transform: translateY(...) scale(...)` (per CSS Transforms 2,
+	// final transform = transform × translate × rotate × scale). If we wrote
+	// `transform: translateX(...)` here it would clobber the deck's own
+	// transform on every move event.
+	//
+	// `[data-toast-swiping]` (set by the factory on pointerdown, removed on
+	// pointerup) gates the transition: while swiping, no transition — the
+	// translate follows the pointer 1:1; on release, the transition kicks in
+	// and either snaps the toast back to origin (consumer didn't pass
+	// threshold) or carries the off-screen translate the factory already
+	// wrote (consumer crossed threshold → commit dismiss). The motion-contract
+	// tokens (`--set-motion-duration` + `--set-motion-timing-function`) drive
+	// the snap so it feels like the rest of the framework's in-flow surfaces.
+	output[popover] {
+		translate: var(--set-toast-swipe-offset, 0px) 0;
+		opacity: var(--set-toast-swipe-opacity, 1);
+		// `touch-action: pan-y` declares the touch contract directly: the
+		// element accepts vertical pan gestures (page scroll passes
+		// through) AND tap (button clicks survive), but EVERYTHING ELSE —
+		// horizontal pan, pinch-zoom, double-tap-zoom, OS-level swipe-
+		// back — is reserved for our `createPointer` handler. CRITICAL on
+		// mobile: the default `touch-action: auto` asks the browser to
+		// "figure it out" based on the gesture's initial direction, and
+		// for horizontal swipes on a top-layer popover the heuristic
+		// fails — the browser routes the gesture to its own default
+		// action (page-pan or swipe-back nav) BEFORE our `pointermove`
+		// listener fires, and the toast never translates. Same framework
+		// idiom `components/_menu.scss` line 211 uses for nav-rail items
+		// inside fixed-position drawers (the canonical "top-layer popover
+		// + interactive element + touch" combination).
+		touch-action: pan-y;
+	}
+
+	output[popover]:not([data-toast-swiping]) {
+		@include transition(
+			(
+				translate var(--set-motion-duration) var(--set-motion-timing-function),
+				opacity var(--set-motion-duration) ease-out
+			)
+		);
+	}
+
+	output[popover][data-toast-swiping] {
+		// Active drag — no transition; translate follows pointer per-frame.
+		// `cursor: grabbing` reinforces the affordance for mouse users
+		// (touch users get the visual feedback from the translate itself).
+		transition: none;
+		cursor: grabbing;
+	}
+
+	// While ANY visible deck card is being swiped, pin the deck expanded —
+	// same idiom as the `[data-toast-stack-closing]` pin used during a
+	// card's hide transition. Without this, swiping one card would let the
+	// container's `:has(:hover)` drop (the pointer leaves the swiped card's
+	// box) and the deck collapses mid-swipe.
+	[data-toast-stack]:has(> output[popover][data-toast-swiping]) > output[popover]:popover-open {
+		block-size: auto;
+		overflow: visible;
+		opacity: var(--set-toast-swipe-opacity, 1);
+		pointer-events: auto;
+		transform: translateY(
+			calc(
+				var(--set-toast-stack-index, 0) *
+					(var(--set-toast-front-height) + var(--set-toast-spacing)) * -1
+			)
+		);
+	}
+
+	[data-toast-stack][data-toast-position='top']:has(> output[popover][data-toast-swiping])
+		> output[popover]:popover-open {
+		transform: translateY(
+			calc(
+				var(--set-toast-stack-index, 0) * (var(--set-toast-front-height) + var(--set-toast-spacing))
+			)
+		);
+	}
+
 	// ── Linear stack — bottom-anchored (default) ──────────────────────────────
 	// Each toast lifts above the previous by its accumulated offset. The
 	// factory writes `--set-toast-stack-offset` as the sum of older toasts'
@@ -105,29 +191,66 @@
 		padding-block: var(--set-toast-padding-block);
 		box-shadow: var(--set-toast-box-shadow);
 
+		// Re-state the inline-size triplet here too. `surfaces/_popover.scss`
+		// (which beats components in cascade order) writes
+		// `max-inline-size: min(--set-popover-max-inline-size /* 17.25rem */,
+		// --set-anchor-max-inline-size, calc(100vw - viewport-inset * 2))`
+		// on every `[popover]` — that 17.25rem cap is tuned for dropdown
+		// menus + anchored hints (Bootstrap-style narrow surfaces) and
+		// clamps toasts to 276px regardless of their own 22rem design
+		// width or 28rem max. Without this re-paint, the mobile `@media`
+		// retune in `_output.scss` (which expands `--set-toast-inline-size`
+		// to `100dvw - 16px` for full-width toasts) is silently ignored
+		// and the toast stays stranded at 276px on a 375px phone.
+		// Composables sits after surfaces, so this rule wins.
+		@include floater-bounds('toast', 'inline-size');
+		min-inline-size: var(--set-toast-min-inline-size);
+		max-inline-size: var(--set-toast-max-inline-size);
+
 		&.top {
 			inset-block-start: calc(var(--set-toast-edge-inset) + var(--set-toast-stack-offset));
 			inset-block-end: auto;
 		}
 
-		// Trailing-edge close button — the last direct-child `<button>` of
-		// a toast is treated as the dismiss control and pushed to the
-		// trailing inline edge. Mirrors mailbox's `.toast > .btn-close`
-		// rule. The selector keys off `:last-child` rather than a class
-		// or aria-label so the framework remains markup-agnostic: any
-		// trailing button works (`.subtle.small`, a bare `<button>`, an
-		// inline-svg icon button) without consumers reaching for a
-		// project-specific `.toast-close` modifier. `flex-shrink: 0`
-		// stops the button from collapsing if the toast text is long
-		// enough to consume the row's free space; `align-self: center`
-		// keeps the close vertically centered when the toast wraps to
-		// multiple lines (`align-items: center` on the parent only
-		// centers single-line content; per-item alignment beats it on
-		// wrapped flex rows).
-		> button:last-child {
-			margin-inline-start: auto;
-			flex-shrink: 0;
-			align-self: center;
+		// Trailing-edge close button chrome (margin-inline-start: auto +
+		// flex-shrink: 0 + align-self: center + variant-context reset)
+		// lives in `components/_output.scss` so the same affordance
+		// applies to both body-context and band-context dismiss buttons
+		// regardless of which composable opens the toast.
+	}
+
+	// ── Mobile retune — symmetric gutters via dual insets, not width math ─────
+	// On desktop the toast lands at its design width (22rem ≈ 352px) anchored
+	// at one corner, so width and position derive from independent tokens.
+	// On mobile we want the toast to span nearly the full viewport with
+	// EQUAL gutters on each side. The naive approach — keep the corner
+	// anchor and compute `inline-size: 100dvw - 2 × edge-inset` — fails
+	// because `dvw` is the FULL viewport including the OS scrollbar gutter,
+	// while `inset-inline-end` anchors to the layout viewport (scrollbar
+	// excluded). The two reference frames differ by the scrollbar width,
+	// so the toast overflows past one edge.
+	//
+	// Cleaner strategy: drop the explicit `inline-size` on mobile and
+	// drive width from BOTH `inset-inline-start` AND `inset-inline-end`
+	// set to the same edge-inset. With `inline-size: auto`, the browser
+	// computes width = layout-viewport - 2 × edge-inset for us, using a
+	// single reference frame so the result is symmetric by construction.
+	// `.start` / `.top` / `.bottom` placement modifiers still flip the
+	// vertical anchor but the horizontal placement is identical on mobile
+	// for every toast — matching the platform convention (iOS / Android
+	// system toasts always span the screen width regardless of which
+	// vertical edge they're anchored to).
+	//
+	// `max-inline-size: none` undoes the desktop 28rem cap so the toast
+	// can grow to fill mobile-wide viewports (e.g. 480-px breakpoint
+	// edge) without leaving a gap on one side.
+	@media (max-width: 480px) {
+		output[popover],
+		output[role='status']:not(.filled) {
+			inset-inline-start: var(--set-toast-edge-inset);
+			inset-inline-end: var(--set-toast-edge-inset);
+			inline-size: auto;
+			max-inline-size: none;
 		}
 	}
 
@@ -173,9 +296,9 @@
 		z-index: calc(var(--set-toast-z-index) - var(--set-toast-stack-index, 0));
 		@include transition(
 			(
-				transform var(--set-transition-duration, 200ms) ease,
-				opacity var(--set-transition-duration, 200ms) ease,
-				block-size var(--set-transition-duration, 200ms) ease
+				transform var(--set-transition-duration) ease,
+				opacity var(--set-transition-duration) ease,
+				block-size var(--set-transition-duration) ease
 			)
 		);
 	}
@@ -209,7 +332,7 @@
 	// so the autohide timer keeps running and the front-card slot rotates
 	// as older toasts expire. `aria-hidden="true"` is written by the
 	// factory for the assistive-tech contract.
-	[data-toast-stack] > output[popover][data-stack-hidden] {
+	[data-toast-stack] > output[popover][data-toast-stack-hidden] {
 		opacity: 0;
 		pointer-events: none;
 	}
@@ -222,15 +345,32 @@
 	// each card by `index × (front-height + spacing)` instead of
 	// reflowing them.
 	//
-	// `[data-stack-closing]` is the pin the factory writes during a deck-
-	// card close so the deck doesn't collapse and re-expand when the
-	// pointer briefly loses the close button. The closing card itself is
-	// excluded with `:not(:popover-open)`-style scoping (`:popover-open`
-	// here) so its own fade-out plays through cleanly.
-	[data-toast-stack]:hover > output[popover],
-	[data-toast-stack]:focus-within > output[popover],
-	[data-toast-stack][data-stack-closing] > output[popover]:popover-open {
+	// `:has(> output[popover]:popover-open:hover)` gates the expansion on
+	// the popover ITSELF being hovered, not the container. The previous
+	// `[data-toast-stack]:hover` selector matched whenever ANY descendant
+	// was hovered — fine when the container sits at the anchored corner
+	// and only the popover cards live inside it, but wrong when the
+	// container also holds the consumer's trigger buttons (the UseToastPage
+	// demos co-locate the `<output>` siblings with the buttons that emit
+	// them so the factory's `parentElement.children` walk can sibling-stack).
+	// Without the `:has` gate, hovering the trigger panel from across the
+	// page expanded a deck whose cards were sitting in the opposite
+	// viewport corner. The gate also covers focus-within (tabbing into the
+	// deck's controls expands), and the `[data-toast-stack-closing]` pin
+	// (kept ungated since it's set by the factory only while a card's
+	// close transition plays out — strictly bracketed lifetime).
+	[data-toast-stack]:has(> output[popover]:popover-open:hover) > output[popover],
+	[data-toast-stack]:has(> output[popover]:popover-open:focus-within) > output[popover],
+	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open {
 		block-size: auto;
+		// `overflow: visible` is required so the `::after` hit-area
+		// extension below (which bridges the gap between expanded cards
+		// for pointer capture) actually paints. Without it, the
+		// collapsed-deck rule's `overflow: hidden` clips the pseudo to
+		// the card's box and the pointer can fall into the gap, which
+		// kills the container's `:hover` and collapses the deck —
+		// visible as a twitch when the cursor crosses card edges.
+		overflow: visible;
 		opacity: 1;
 		pointer-events: auto;
 		transform: translateY(
@@ -241,14 +381,122 @@
 		);
 	}
 
-	[data-toast-stack][data-toast-position='top']:hover > output[popover],
-	[data-toast-stack][data-toast-position='top']:focus-within > output[popover],
-	[data-toast-stack][data-toast-position='top'][data-stack-closing] > output[popover]:popover-open {
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:hover)
+		> output[popover],
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:focus-within)
+		> output[popover],
+	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
+		> output[popover]:popover-open {
 		transform: translateY(
 			calc(
 				var(--set-toast-stack-index, 0) * (var(--set-toast-front-height) + var(--set-toast-spacing))
 			)
 		);
+	}
+
+	// Hit-area extension into the gap between expanded deck cards. When the
+	// deck spreads on hover, `--set-toast-spacing` produces a transparent
+	// strip between each card. Without a hit target inside that strip the
+	// pointer can fall into a layout hole, the container's `:hover` flips
+	// off, the deck collapses, and the pointer immediately re-enters a
+	// card and re-expands — visible as a twitch / momentary collapse as
+	// the cursor traverses card edges.
+	//
+	// Bulletproof bridging strategy: every expanded card carries BOTH a
+	// `::before` (bridging UP to the card above) and an `::after` (bridging
+	// DOWN to the card below), and each pseudo is sized to `--set-toast-
+	// spacing × 2` — twice the geometric gap. The 2× sizing serves two
+	// independent failure modes:
+	//
+	//   1. Sub-pixel rounding. The expanded translate uses
+	//      `--set-toast-front-height + --set-toast-spacing` as the per-
+	//      step displacement, but each expanded card sizes to its OWN
+	//      natural height (`block-size: auto`). When the natural height
+	//      drifts from the measured front-height by even half a pixel,
+	//      the actual gap between adjacent cards drifts the same amount.
+	//      A pseudo sized to the nominal `spacing` may end up a hair
+	//      short and the pointer can fall through. Doubling the size
+	//      gives `spacing` worth of overlap into the next card's body
+	//      on each side, absorbing any drift up to `spacing` in either
+	//      direction.
+	//
+	//   2. Diagonal pointer travel. When the cursor moves diagonally
+	//      across the deck (e.g. user lifts their finger off the
+	//      trackpad), it can skip across a tiny gap in a single frame.
+	//      Paired ::before + ::after extensions mean the pointer's
+	//      trajectory crosses TWO overlapping hit zones for every gap,
+	//      catching the hover before the container's `:has` re-evaluates.
+	//
+	// Both pseudos are transparent and only paint while the deck is
+	// expanded (the `:has(... :hover)` / `:has(... :focus-within)` /
+	// `[data-toast-stack-closing]` triple gate), so the linear / non-deck
+	// modes are unaffected. The `pointer-events: auto` declaration is
+	// defensive — composables-layer rule paints `pointer-events: auto`
+	// on the host card, but a future refactor could land a global
+	// `pointer-events: none` on `::before` / `::after` and silently
+	// break the bridge; re-stating here is cheap insurance.
+	[data-toast-stack]:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::before,
+	[data-toast-stack]:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::after,
+	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::before,
+	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::before,
+	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		block-size: calc(var(--set-toast-spacing) * 2);
+		pointer-events: auto;
+	}
+
+	// `::after` extends DOWN from each card's bottom edge into the gap
+	// below — bridging to the card visually beneath (lower stack index)
+	// for bottom-anchored decks.
+	[data-toast-stack]:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::after,
+	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::after {
+		inset-block-start: 100%;
+	}
+
+	// `::before` extends UP from each card's top edge into the gap above
+	// — bridging to the card visually above (higher stack index). The
+	// `inset-block-end: 100%` puts the pseudo's bottom flush against the
+	// card's top edge, extending upward.
+	[data-toast-stack]:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::before,
+	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::before,
+	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::before {
+		inset-block-end: 100%;
+	}
+
+	// Top-anchored decks — flip the inset direction. `::after` now
+	// extends UP (cards stack downward, so a card's "below-the-fold"
+	// neighbour is above its top edge), `::before` extends DOWN. Same
+	// 2× spacing buffer.
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
+		> output[popover]:popover-open::after {
+		inset-block-start: auto;
+		inset-block-end: 100%;
+	}
+
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:hover)
+		> output[popover]:popover-open::before,
+	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:focus-within)
+		> output[popover]:popover-open::before,
+	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
+		> output[popover]:popover-open::before {
+		inset-block-end: auto;
+		inset-block-start: 100%;
 	}
 
 	// ── Stack indicator ───────────────────────────────────────────────────────
@@ -279,7 +527,7 @@
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-full, 9999px);
 		pointer-events: none;
-		@include transition((opacity var(--set-transition-duration, 200ms) ease));
+		@include transition((opacity var(--set-transition-duration) ease));
 	}
 
 	[data-toast-stack][data-toast-hidden-count]:not([data-toast-hidden-count='0'])

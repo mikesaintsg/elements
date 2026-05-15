@@ -6,11 +6,21 @@
 // when one exists (`<output>` over `.badge`, `<mark>` over `.highlight`,
 // `<article>` over `<div>`, …) — these classes apply ONLY when none does.
 //
-// First-round primitives:
+// Spacing-shape primitives (the layout-with-or-without-gap family):
 //   - `.stack`   — vertical flow with consistent gap between children. The
 //                  most common composition pattern; what you reach for in
 //                  CSS the moment a column needs even spacing.
 //   - `.cluster` — horizontal wrap with gap. Tags, button rows, chip lists.
+//   - `.frame`   — flex column with NO internal spacing (gap = 0, padding =
+//                  0) and `overflow: clip`. The "contents fill me edge-to-
+//                  edge" container. Used wherever children should paint
+//                  against the host's perimeter — list-group wrappers,
+//                  drawer bodies, accordion shells, image strips. Pairs
+//                  with `article.frame` (in modifiers/_local.scss) which
+//                  applies the same shape to an article AND retunes the
+//                  article's own --set-article-* tokens so descendant
+//                  chrome that reads them (auto-banded header bleed
+//                  margins, etc.) resolves to zero alongside the padding.
 //
 // Skipped intentionally:
 //   - `.container` — clashes with Tailwind v4's `.container` utility.
@@ -39,7 +49,10 @@
 	// Override `--set-stack-gap` per-instance for tighter or looser spacing.
 	// --------------------------------------------------------------------------
 	div.stack {
-		--set-stack-gap: calc(var(--spacing) * 4);
+		// Local gap consumes the global `--set-stack-spacing` token so a
+		// host-page-level override (or a per-instance inline override) retunes
+		// every `.stack` without having to know about a different local name.
+		--set-stack-gap: var(--set-stack-spacing, calc(var(--spacing) * 4));
 
 		display: flex;
 		flex-direction: column;
@@ -53,13 +66,47 @@
 	// `--set-cluster-align` for top-aligned button rows etc.
 	// --------------------------------------------------------------------------
 	div.cluster {
-		--set-cluster-gap: calc(var(--spacing) * 3);
+		// Same pattern as `.stack` — local `--set-cluster-gap` resolves to the
+		// global `--set-cluster-spacing` token so consumers can retune cluster
+		// rhythm at any scope without learning the local name.
+		--set-cluster-gap: var(--set-cluster-spacing, calc(var(--spacing) * 3));
 		--set-cluster-align: center;
 
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--set-cluster-gap);
 		align-items: var(--set-cluster-align);
+	}
+
+	// --------------------------------------------------------------------------
+	// .frame — flex column with NO internal spacing (gap = 0, padding = 0)
+	// and `overflow: clip`. The "contents fill me edge-to-edge" container.
+	//
+	// Third member of the spacing-shape family (`.stack` / `.cluster` /
+	// `.frame`). Where stack and cluster SET spacing between children, frame
+	// REMOVES it — the host delegates internal rhythm to its children. Use
+	// when:
+	//
+	//   • The children carry their own visual seams (variant backgrounds,
+	//     full-bleed borders, list-group rows) and a host-supplied gap would
+	//     introduce a visible strip of host surface between them.
+	//   • Children should bleed to the host's outer edge (drawer bodies
+	//     hosting flush items, image strips, the article-as-frame pattern).
+	//   • The host has consumer-applied rounded chrome (border-radius) and
+	//     children that may sit at sharp 0-radius — `overflow: clip` rounds
+	//     them visually against the host's curvature.
+	//
+	// Token knobs are deliberately omitted. Tuning a frame's gap or padding
+	// past zero turns it into a `.stack` — reach for that instead. (Article-
+	// scoped frame retunes article tokens; see `article.frame` in
+	// modifiers/_local.scss.)
+	// --------------------------------------------------------------------------
+	div.frame {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		padding: 0;
+		overflow: clip;
 	}
 
 	// --------------------------------------------------------------------------

@@ -188,7 +188,7 @@ const restore = (): void => {
 			filled-amber against the tinted bg.
 		</p>
 
-		<div style="display: flex; flex-direction: column; gap: 0.75rem">
+		<div class="stack" style="--set-stack-gap: 0.75rem">
 			<aside role="alert" data-alert-open>
 				<div>
 					<strong>Default alert.</strong> Neutral leading bar, no tinted bg. Use for generic notices
@@ -229,18 +229,18 @@ const restore = (): void => {
 			success alerts get a slightly more saturated green band, neutral alerts get a subtle slate
 			band, etc.
 		</p>
-		<div style="display: flex; flex-direction: column; gap: 1rem">
+		<div class="stack" style="--set-stack-gap: 1rem">
 			<aside role="alert" class="information" data-alert-open>
 				<header>
 					<strong>Scheduled maintenance</strong>
 					<button type="button" aria-label="Dismiss">×</button>
 				</header>
-				<p style="margin-block: 0">
+				<p>
 					Database maintenance tonight 02:00–04:00 UTC. The app will be read-only during that
 					window. Reports and exports will queue and run after the window closes.
 				</p>
 				<footer>
-					<a href="#aside-alert" style="margin-inline-end: auto">View status page →</a>
+					<a href="#aside-alert" class="me-auto">View status page →</a>
 					<button type="button" class="subtle small">Snooze 1h</button>
 					<button type="button" class="primary small">Acknowledge</button>
 				</footer>
@@ -251,14 +251,12 @@ const restore = (): void => {
 					<strong>Payment failed</strong>
 					<button type="button" aria-label="Dismiss">×</button>
 				</header>
-				<p style="margin-block: 0">
+				<p>
 					Your subscription couldn't be renewed because the card on file was declined. Update the
 					billing method to restore access. You have 7 days before the account is suspended.
 				</p>
 				<footer>
-					<button type="button" class="subtle small" style="margin-inline-end: auto">
-						Contact support
-					</button>
+					<button type="button" class="subtle small me-auto">Contact support</button>
 					<button type="button" class="danger small">Update card</button>
 				</footer>
 			</aside>
@@ -268,7 +266,7 @@ const restore = (): void => {
 					<strong>Build passed</strong>
 					<button type="button" aria-label="Dismiss">×</button>
 				</header>
-				<p style="margin-block: 0">
+				<p>
 					All 1,420 tests passing on <code>main</code>. The deploy will start in 60 seconds unless
 					cancelled.
 				</p>
@@ -302,6 +300,75 @@ const restore = (): void => {
 		</p>
 	</section>
 
+	<section id="aside-alert-flat-flush">
+		<h2>3a. Alert · <code>.flat</code> and <code>.flush</code></h2>
+		<p>
+			Two surface-dissolution modifiers for alerts inset into another framework surface (card body,
+			sidebar rail, list-group row). <code>.flat</code> dissolves the alert's chrome at rest and
+			restores it on hover — useful for low-emphasis inline notes that brighten only when the user
+			engages. <code>.flush</code> drops the outer border + radius + top/bottom borders entirely
+			(leading 4-px bar preserved because it's the variant identity signal), letting the alert sit
+			flush against the host's edges as a divider band.
+		</p>
+		<h3>Flat — chrome on hover</h3>
+		<p>
+			Variant cascade still flows through: a <code>.success.flat</code> alert reveals success-tinted
+			bar + bg-subtle backdrop on hover; rest state reads as plain inline copy.
+		</p>
+		<div class="stack" style="--set-stack-spacing: 0.5rem">
+			<aside role="alert" class="flat" data-alert-open>
+				<div>Neutral flat alert — hover to reveal the bar + backdrop.</div>
+			</aside>
+			<aside role="alert" class="information flat" data-alert-open>
+				<div><strong>Heads up.</strong> Information-flat reveals on hover.</div>
+			</aside>
+			<aside role="alert" class="success flat" data-alert-open>
+				<div>
+					<strong>Looking good.</strong> Success-flat — quiet at rest, success-tinted on hover.
+				</div>
+			</aside>
+			<aside role="alert" class="warning flat" data-alert-open>
+				<div><strong>Caution.</strong> Warning-flat — amber bar reveals on hover.</div>
+			</aside>
+			<aside role="alert" class="danger flat" data-alert-open>
+				<div><strong>Trouble.</strong> Danger-flat — red bar reveals on hover.</div>
+			</aside>
+		</div>
+		<h3>Flush — divider band inset into a card</h3>
+		<p>
+			The alert lives inside an <code>&lt;article&gt;</code>; <code>.flush</code> drops the outer
+			perimeter so the alert sits between siblings as a separator with the variant's leading bar.
+		</p>
+		<article class="frame">
+			<header>
+				<h3>Deployment status</h3>
+			</header>
+			<aside role="alert" class="success flush" data-alert-open>
+				<div><strong>All tests passed.</strong> 1,420 / 1,420 on <code>main</code>.</div>
+			</aside>
+			<aside role="alert" class="warning flush" data-alert-open>
+				<div><strong>1 deprecation warning.</strong> See build log for details.</div>
+			</aside>
+			<aside role="alert" class="information flush" data-alert-open>
+				<div>Deploy starts in 60 seconds unless cancelled.</div>
+			</aside>
+			<footer>
+				<small>Last updated 12 seconds ago.</small>
+			</footer>
+		</article>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;aside role="alert" class="success flat"&gt;…&lt;/aside&gt;
+
+&lt;article&gt;
+  &lt;header&gt;…&lt;/header&gt;
+  &lt;aside role="alert" class="success flush"&gt;…&lt;/aside&gt;
+  &lt;aside role="alert" class="warning flush"&gt;…&lt;/aside&gt;
+  &lt;footer&gt;…&lt;/footer&gt;
+&lt;/article&gt;</code></pre>
+		</details>
+	</section>
+
 	<section id="aside-status">
 		<h2>4. Status banner — <code>&lt;aside role="status"&gt;</code></h2>
 		<p>
@@ -312,7 +379,7 @@ const restore = (): void => {
 		<aside role="status" class="success" data-alert-open>
 			<div><strong>Saved.</strong> All changes synced 12 seconds ago.</div>
 		</aside>
-		<aside role="status" class="information" data-alert-open style="margin-block-start: 0.75rem">
+		<aside role="status" class="information mt-3" data-alert-open>
 			<div><strong>Sync in progress.</strong> Uploading 4 of 12 files…</div>
 		</aside>
 	</section>
@@ -359,7 +426,7 @@ const restore = (): void => {
 
 		<h3>Placement modifiers</h3>
 		<p>Click each button to open the drawer from the matching edge.</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+		<div class="cluster gap-2">
 			<button type="button" popovertarget="aside-drawer-start">Slide from start</button>
 			<button type="button" popovertarget="aside-drawer-end">Slide from end (default)</button>
 			<button type="button" popovertarget="aside-drawer-top">Slide from top</button>
@@ -448,7 +515,7 @@ const restore = (): void => {
 			through the popover surface tokens. Trigger buttons below open primary / success / warning /
 			danger drawers, each on the end edge.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+		<div class="cluster gap-2">
 			<button type="button" popovertarget="aside-drawer-primary" class="primary">Primary</button>
 			<button type="button" popovertarget="aside-drawer-success" class="success">Success</button>
 			<button type="button" popovertarget="aside-drawer-warning" class="warning">Warning</button>

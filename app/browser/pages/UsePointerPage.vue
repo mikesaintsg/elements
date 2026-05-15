@@ -200,7 +200,7 @@ const draggingNow = computed(
 			your pointer leaves the element's bounds. Try dragging way off to the right; the value caps at
 			100 but the drag stays active until you release.
 		</p>
-		<div style="display: flex; align-items: center; gap: 1rem">
+		<div class="flex items-center gap-4">
 			<div
 				ref="sliderTrack"
 				:style="{
@@ -277,8 +277,8 @@ const draggingNow = computed(
 				overflow: 'hidden',
 			}"
 		>
-			<div style="padding: 1rem; overflow: auto">
-				<h6 style="margin-block: 0 0.5rem">Left pane</h6>
+			<div class="p-4 overflow-auto">
+				<h6 class="mt-0 mb-2">Left pane</h6>
 				<p>
 					<small>
 						Width: <strong>{{ splitPercent }}%</strong>
@@ -303,8 +303,8 @@ const draggingNow = computed(
 					transition: 'background-color 150ms ease',
 				}"
 			></div>
-			<div style="padding: 1rem; overflow: auto">
-				<h6 style="margin-block: 0 0.5rem">Right pane</h6>
+			<div class="p-4 overflow-auto">
+				<h6 class="mt-0 mb-2">Right pane</h6>
 				<p>
 					<small>
 						Width: <strong>{{ 100 - splitPercent }}%</strong>
@@ -352,7 +352,7 @@ usePointer(handle, {
 			secondary-button events. This is the canonical "let the OS keep its affordances" pattern for
 			canvas-style surfaces.
 		</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: stretch">
+		<div class="cluster gap-4 items-stretch">
 			<div
 				ref="colorPad"
 				:style="{
@@ -386,17 +386,10 @@ usePointer(handle, {
 					}"
 				></div>
 			</div>
-			<div style="display: flex; flex-direction: column; gap: 0.5rem; min-inline-size: 12rem">
-				<label style="display: flex; flex-direction: column; gap: 0.25rem">
+			<div class="stack min-w-48" style="--set-stack-gap: 0.5rem">
+				<label class="stack" style="--set-stack-gap: 0.25rem">
 					<small>Hue (slide to change pad gradient)</small>
-					<input
-						type="range"
-						min="0"
-						max="360"
-						step="1"
-						v-model.number="hue"
-						style="inline-size: 100%"
-					/>
+					<input type="range" min="0" max="360" step="1" v-model.number="hue" class="w-full" />
 				</label>
 				<div
 					:style="{
@@ -464,7 +457,7 @@ usePointer(pad, {
 				}"
 			>
 				<header>
-					<h3 style="margin-block: 0">Resizable card</h3>
+					<h3>Resizable card</h3>
 				</header>
 				<p>
 					<small>

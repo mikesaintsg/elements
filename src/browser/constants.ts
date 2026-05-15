@@ -28,6 +28,8 @@
 
 export const DEFAULT_HOVER_DELAY_MS = 600
 export const DEFAULT_TOAST_DELAY_MS = 5000
+/** Swipe-distance threshold (in CSS pixels) past which the toast commits to dismiss. */
+export const DEFAULT_TOAST_SWIPE_THRESHOLD_PX = 80
 export const DEFAULT_CAROUSEL_INTERVAL_MS = 5000
 export const DEFAULT_FLOATING_OFFSET = 8
 export const DEFAULT_MENU_OFFSET = 2
@@ -85,9 +87,9 @@ export const TABLE_RESIZABLE_ATTR = 'data-table-resizable'
 /** Toast deck container opt-in attribute (replaces `.toast-stack`). */
 export const TOAST_STACK_ATTR = 'data-toast-stack'
 /** On toasts beyond `--set-toast-stack-depth` — paired with `aria-hidden`. */
-export const TOAST_STACK_HIDDEN_ATTR = 'data-stack-hidden'
+export const TOAST_STACK_HIDDEN_ATTR = 'data-toast-stack-hidden'
 /** On the deck container while a child toast is running its close transition. */
-export const TOAST_STACK_CLOSING_ATTR = 'data-stack-closing'
+export const TOAST_STACK_CLOSING_ATTR = 'data-toast-stack-closing'
 /** On the container — count of toasts beyond `--set-toast-stack-depth`. */
 export const TOAST_HIDDEN_COUNT_ATTR = 'data-toast-hidden-count'
 
@@ -156,8 +158,11 @@ export const TAB_TRIGGER_SELECTOR = '[role="tab"]'
  *  region (or `<li>` for plain markup). */
 export const CAROUSEL_ITEM_SELECTOR =
 	':scope > :where([role="list"], ol, ul) > :where([role="listitem"], li)'
-/** Carousel indicator buttons inside the indicator group. */
-export const CAROUSEL_INDICATOR_SELECTOR = ':scope > [role="tablist"] > button'
+/** Carousel indicator buttons inside the indicator group. The buttons
+ *  are wrapped in `<li>` because `<menu role="tablist">` is a list element
+ *  (matches the documented markup contract + `composables/_carousel.scss`'s
+ *  `.carousel-indicators > li > button` chrome). */
+export const CAROUSEL_INDICATOR_SELECTOR = ':scope > [role="tablist"] > li > button'
 
 // ── Popover side vocabulary ────────────────────────────────────────────────
 
@@ -246,7 +251,6 @@ export const ASIDE_EVENTS = {
 	open: 'elements:aside:open',
 	hide: 'elements:aside:hide',
 	close: 'elements:aside:close',
-	prevent: 'elements:aside:prevent',
 } as const
 
 export const POPOVER_EVENTS = {

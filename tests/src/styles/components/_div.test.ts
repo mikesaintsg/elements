@@ -53,3 +53,33 @@ describe('div.cluster — horizontal wrap with gap', () => {
 		expect(style(el, 'align-items')).toBe('flex-start')
 	})
 })
+
+describe('div.frame — flex column with zero internal spacing', () => {
+	it('lays out as a flex column', () => {
+		const el = render('div', 'frame')
+		expect(style(el, 'display')).toBe('flex')
+		expect(style(el, 'flex-direction')).toBe('column')
+	})
+
+	it('has zero gap and zero padding (children fill edge-to-edge)', () => {
+		const el = render('div', 'frame')
+		expect(pixels(el, 'gap')).toBe(0)
+		expect(pixels(el, 'padding-inline-start')).toBe(0)
+		expect(pixels(el, 'padding-inline-end')).toBe(0)
+		expect(pixels(el, 'padding-block-start')).toBe(0)
+		expect(pixels(el, 'padding-block-end')).toBe(0)
+	})
+
+	it('clips overflow so rounded outer chrome masks sharp child corners', () => {
+		const el = render('div', 'frame')
+		expect(style(el, 'overflow-x')).toBe('clip')
+		expect(style(el, 'overflow-y')).toBe('clip')
+	})
+
+	it('the rule is scoped to <div>; .frame on a more semantic element does not apply', () => {
+		// Sanity: SCSS targets `div.frame`, not bare `.frame`. The
+		// `article.frame` element-local modifier lives in modifiers/_local.scss
+		// and retunes article tokens; this generic primitive is div-only.
+		expect(findRule('div.frame')).toBe(true)
+	})
+})

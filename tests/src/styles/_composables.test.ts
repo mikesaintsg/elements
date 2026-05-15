@@ -98,13 +98,13 @@ describe('composables — required tokens are declared in the partial', () => {
 	for (const [path, source] of Object.entries(composableSources)) {
 		const name = basenameOf(path)
 		const contract = composableContractFor(name)
-		if (!contract || contract.requiredTokens.length === 0) continue
+		if (!contract || contract.tokens.required.length === 0) continue
 
 		const stripped = stripComments(source)
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
-		const prefix = contract.tokenPrefix ?? contract.name
+		const prefix = contract.tokens.prefix ?? contract.name
 
-		for (const suffix of contract.requiredTokens) {
+		for (const suffix of contract.tokens.required) {
 			it(`${relative} declares --set-${prefix}-${suffix}`, () => {
 				expect(
 					declaresToken(stripped, prefix, suffix),
@@ -119,11 +119,11 @@ describe('composables — required tokens are declared in the partial', () => {
 
 describe('composables — every contract references a real factory', () => {
 	for (const [name, contract] of Object.entries(COMPOSABLE_CONTRACTS)) {
-		it(`${name} → ${contract.factoryName}.ts exists`, () => {
+		it(`${name} → ${contract.factory}.ts exists`, () => {
 			expect(
-				factoryNames.has(contract.factoryName),
-				`COMPOSABLE_CONTRACTS.${name}.factoryName='${contract.factoryName}' has no matching ` +
-					`src/browser/factories/${contract.factoryName}.ts file.`,
+				factoryNames.has(contract.factory),
+				`COMPOSABLE_CONTRACTS.${name}.factory='${contract.factory}' has no matching ` +
+					`src/browser/factories/${contract.factory}.ts file.`,
 			).toBe(true)
 		})
 	}
@@ -167,15 +167,15 @@ describe('composables — COMPOSABLE_CONTRACTS shape', () => {
 		}
 	})
 
-	it('every factoryName matches the create{Name} convention', () => {
+	it('every contract.factory matches the create{Name} convention', () => {
 		for (const contract of Object.values(COMPOSABLE_CONTRACTS)) {
-			expect(contract.factoryName).toMatch(/^create[A-Z][A-Za-z]+$/)
+			expect(contract.factory).toMatch(/^create[A-Z][A-Za-z]+$/)
 		}
 	})
 
 	it('every required-token suffix is kebab-case', () => {
 		for (const contract of Object.values(COMPOSABLE_CONTRACTS)) {
-			for (const suffix of contract.requiredTokens) {
+			for (const suffix of contract.tokens.required) {
 				expect(suffix).toMatch(/^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$/)
 			}
 		}

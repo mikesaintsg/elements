@@ -89,9 +89,9 @@ describe('components — required tokens are declared in the partial', () => {
 
 		const stripped = stripComments(source)
 		const relative = path.replace(/^.*\/src\/styles\//, 'src/styles/')
-		const prefix = contract.tokenPrefix ?? contract.name
+		const prefix = contract.tokens.prefix ?? contract.name
 
-		for (const suffix of contract.requiredTokens) {
+		for (const suffix of contract.tokens.required) {
 			it(`${relative} declares --set-${prefix}-${suffix}`, () => {
 				expect(
 					declaresToken(stripped, prefix, suffix),
@@ -132,7 +132,7 @@ describe('components — partials that ship a duration token honor the reduced-m
 		if (!contract) continue
 
 		const stripped = stripComments(source)
-		const prefix = contract.tokenPrefix ?? contract.name
+		const prefix = contract.tokens.prefix ?? contract.name
 		const hasTransitionToken = declaresToken(stripped, prefix, 'transition-duration')
 		const hasDurationToken = declaresToken(stripped, prefix, 'duration')
 		const hasPulseDuration = declaresToken(stripped, prefix, 'pulse-duration')
@@ -165,7 +165,7 @@ describe('components — COMPONENT_CONTRACTS shape', () => {
 
 	it('every required-token suffix is kebab-case', () => {
 		for (const contract of Object.values(COMPONENT_CONTRACTS)) {
-			for (const suffix of contract.requiredTokens) {
+			for (const suffix of contract.tokens.required) {
 				expect(suffix).toMatch(/^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$/)
 			}
 		}

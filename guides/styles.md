@@ -55,7 +55,7 @@ A TypeScript leaf without a matching CSS rule fails parity; a CSS rule without a
 
 ### 1.6 The HTML element IS the component
 
-A card is `<article>`. A modal is `<dialog>`. A sidebar is `<aside>`. A disclosure is `<details>`. A toast is `<output>`. The tag carries the identity; modifier classes carry variation; descendant context disambiguates dual-role tags (`body > header` is the app bar, `article > header` is the card header). Class-root patterns (`.stack`, `.cluster`, `.skeleton`) appear only when there is no semantic HTML home. The Vue composable layer and framework-agnostic factory layer follow the same rule: one composable per tag, named after the tag (`useDialog`, `useAside`, `useDetails`, `useMenu`, `useTable`). Full discussion in [components.md](components.md) and [composables.md](composables.md).
+A card is `<article>`. A modal is `<dialog>`. A sidebar is `<aside>`. A disclosure is `<details>`. A toast is `<output>`. The tag carries the identity; modifier classes carry variation; descendant context disambiguates dual-role tags (`body > header` is the app bar, `article > header` is the card header). Class-root patterns (`.stack`, `.cluster`, `.frame`, `.skeleton`) appear only when there is no semantic HTML home. The Vue composable layer and framework-agnostic factory layer follow the same rule: one composable per tag, named after the tag (`useDialog`, `useAside`, `useDetails`, `useMenu`, `useTable`). Full discussion in [components.md](components.md) and [composables.md](composables.md).
 
 ### 1.7 Baseline hydration — Bootstrap-parity defaults
 

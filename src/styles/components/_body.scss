@@ -99,6 +99,40 @@
 	}
 
 	// --------------------------------------------------------------------------
+	// Body scroll-lock — set by `lockBodyScroll()` (helpers.ts), called by
+	// composables like `useDialog` when a non-modal dialog opens with
+	// `scroll: { lock: true }`. Two layers because the framework supports
+	// two layout shapes:
+	//
+	//   1. Plain document-flow pages (no <main>) — body itself is the
+	//      scroll container. `overflow: hidden` on body pins the page.
+	//   2. App-shell pages (`body:has(main)`) — body is `display: grid;
+	//      block-size: 100dvh; overflow: hidden` already, so the rule
+	//      above is a no-op. The ACTUAL scroll container is <main>. The
+	//      second rule below locks <main>'s scroll too so iOS / Android
+	//      touch-scroll doesn't rubber-band the page behind a non-modal
+	//      dialog or other top-layer-but-non-blocking surface.
+	//
+	// `overscroll-behavior: contain` on both stops touch rubber-banding
+	// from leaking into the locked surface; `touch-action: pinch-zoom`
+	// on the body / main element specifically suppresses single-finger
+	// pan (the iOS Safari touch-scroll path that `overflow: hidden`
+	// alone doesn't always block) while still allowing pinch-to-zoom
+	// for accessibility.
+	// --------------------------------------------------------------------------
+	body[data-elements-scroll-locked] {
+		overflow: hidden;
+		overscroll-behavior: contain;
+		touch-action: pinch-zoom;
+	}
+	body[data-elements-scroll-locked] > main,
+	body[data-elements-scroll-locked] > * > main {
+		overflow: hidden;
+		overscroll-behavior: contain;
+		touch-action: pinch-zoom;
+	}
+
+	// --------------------------------------------------------------------------
 	// Responsive rail drawer — `<nav>` + `<aside>` body-shell rails opt
 	// into the framework's native-popover offcanvas drawer surface for
 	// mobile rendering by toggling the `popover` attribute below the

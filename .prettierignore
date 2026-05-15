@@ -1,0 +1,6 @@
+# Generated single-file showcase — minified at build time by
+# `configs/app/vite.showcase.config.ts`. oxfmt would re-expand the
+# minified HTML, undoing the build-time minify pass. Keep it as the
+# build emits it.
+demo/showcase.html
+dist/

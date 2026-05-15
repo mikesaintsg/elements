@@ -1,17 +1,29 @@
 import type { CreateTabsElements, CreateTabsInstance, CreateTabsOptions } from '../types.js'
 import { effectScope, readonly, ref } from '@vue/reactivity'
 import { TAB_TRIGGER_SELECTOR, TABS_EVENTS } from '../constants.js'
-import { bindEventMap, dispatch, emit, generateId, listen, runTransition } from '../helpers.js'
+import { bindEventMap, dispatch, emit, generateId, listen } from '../helpers.js'
 
 /**
- * Framework-agnostic tabs factory (renamed from `createTab`). Wires ONE
- * trigger to ONE pane within a `[role="tablist"]` group; sibling triggers
- * are coordinated via per-element DOM events (no shared registry).
+ * Framework-agnostic tabs factory. Wires ONE trigger to ONE pane within a
+ * `[role="tablist"]` group; sibling triggers coordinate via per-element
+ * DOM events (no shared registry).
  *
  * Source of truth for "which sibling is active" is the `[aria-selected]`
- * attribute. Each trigger carries `aria-controls="<paneId>"` so the
- * factory can locate the sibling pane it must close before activating its
- * own.
+ * attribute on the trigger. Each trigger carries `aria-controls="<paneId>"`
+ * so the factory can locate the sibling pane it must hide before
+ * activating its own.
+ *
+ * Visibility contract: the inactive pane is hidden via the HTML
+ * **`[hidden]`** attribute (NOT `[aria-hidden]`). The `[hidden]` attribute
+ * removes the pane from the layout (`display: none`) AND the
+ * accessibility tree — one declaration, both effects, matching the
+ * `[role='tabpanel'][hidden] { display: none }` rule in
+ * `components/_nav.scss`. Consumers who want an animated pane transition
+ * layer their own `[role='tabpanel']` keyframes on top; the factory
+ * doesn't await any JS-driven transition (the previous version waited
+ * for a CSS `transitionend` that the framework's tab chrome doesn't
+ * declare — a 400 ms `TRANSITION_FALLBACK_MS` of dead wait on every
+ * switch).
  *
  * Element gating: the trigger should be a `<button>` (or any
  * `[role="tab"]` element); the pane should be `[role="tabpanel"]`. The
@@ -37,21 +49,6 @@ export function createTabs(
 	const active = scope.run(() => ref(initialActive))
 	if (!active) throw new Error('createTabs: failed to initialize reactive scope')
 
-	const transitions = new Set<() => void>()
-
-	const transition = (el: HTMLElement, done: () => void): void => {
-		const cancel = runTransition(el, () => {
-			transitions.delete(cancel)
-			done()
-		})
-		transitions.add(cancel)
-	}
-
-	const cancelTransitions = (): void => {
-		for (const cancel of [...transitions]) cancel()
-		transitions.clear()
-	}
-
 	// Paint sliding-indicator CSS variables on the group. Authors hook
 	// `--set-tabs-indicator-{x,y,width,height}` from their tablist CSS to
 	// position an active-tab marker.
@@ -64,37 +61,6 @@ export function createTabs(
 		group.style.setProperty('--set-tabs-indicator-y', `${y}px`)
 		group.style.setProperty('--set-tabs-indicator-width', `${triggerRect.width}px`)
 		group.style.setProperty('--set-tabs-indicator-height', `${triggerRect.height}px`)
-	}
-
-	const hasTransition = (el: HTMLElement): boolean => {
-		if (typeof getComputedStyle === 'undefined') return false
-		const raw = getComputedStyle(el).transitionDuration
-		return !!raw && raw.split(',').some((v) => parseFloat(v.trim()) > 0)
-	}
-
-	const activatePane = (el: HTMLElement, onDone: () => void): void => {
-		el.setAttribute('data-tab-open', '')
-		el.removeAttribute('aria-hidden')
-		if (hasTransition(el)) {
-			void el.offsetWidth
-			transition(el, onDone)
-		} else {
-			onDone()
-		}
-	}
-
-	const deactivatePane = (el: HTMLElement, onDone: () => void): void => {
-		if (hasTransition(el)) {
-			el.removeAttribute('data-tab-open')
-			transition(el, () => {
-				el.setAttribute('aria-hidden', 'true')
-				onDone()
-			})
-		} else {
-			el.removeAttribute('data-tab-open')
-			el.setAttribute('aria-hidden', 'true')
-			onDone()
-		}
 	}
 
 	const findActiveSibling = (): { trigger: HTMLElement | null; pane: HTMLElement | null } => {
@@ -117,7 +83,7 @@ export function createTabs(
 
 		const { trigger: prevTrigger, pane: prevPane } = findActiveSibling()
 
-		// Swap trigger states synchronously — before any pane animation.
+		// Swap trigger states synchronously.
 		if (prevTrigger && prevTrigger !== triggerEl) {
 			prevTrigger.setAttribute('aria-selected', 'false')
 			prevTrigger.setAttribute('tabindex', '-1')
@@ -128,14 +94,15 @@ export function createTabs(
 		triggerEl.removeAttribute('tabindex')
 		active.value = true
 
+		// Hide the previous pane via [hidden] (display: none + removed from a11y tree).
 		if (prevPane && prevPane !== pane) {
-			deactivatePane(prevPane, () => {
-				if (prevTrigger) emit(prevTrigger, TABS_EVENTS.close)
-				activatePane(pane, () => emit(triggerEl, TABS_EVENTS.open))
-			})
-		} else {
-			activatePane(pane, () => emit(triggerEl, TABS_EVENTS.open))
+			prevPane.setAttribute('hidden', '')
+			if (prevTrigger) emit(prevTrigger, TABS_EVENTS.close)
 		}
+
+		// Reveal this pane.
+		pane.removeAttribute('hidden')
+		emit(triggerEl, TABS_EVENTS.open)
 	}
 
 	const hide = (): void => {
@@ -146,7 +113,8 @@ export function createTabs(
 		triggerEl.setAttribute('tabindex', '-1')
 		active.value = false
 
-		deactivatePane(pane, () => emit(triggerEl, TABS_EVENTS.close))
+		pane.setAttribute('hidden', '')
+		emit(triggerEl, TABS_EVENTS.close)
 	}
 
 	const toggle = (): void => (active.value ? hide() : show())
@@ -156,16 +124,18 @@ export function createTabs(
 		show()
 	}
 
+	// Initial state hydration: paint ARIA + `[hidden]` based on
+	// `initialActive` so the factory's contract is consistent regardless
+	// of what the markup pre-declares.
 	if (active.value) {
 		triggerEl.setAttribute('aria-selected', 'true')
 		triggerEl.removeAttribute('tabindex')
 		paintIndicator()
-		pane.setAttribute('data-tab-open', '')
-		pane.removeAttribute('aria-hidden')
+		pane.removeAttribute('hidden')
 	} else {
 		triggerEl.setAttribute('aria-selected', 'false')
 		triggerEl.setAttribute('tabindex', '-1')
-		pane.setAttribute('aria-hidden', 'true')
+		pane.setAttribute('hidden', '')
 	}
 	if (!triggerEl.hasAttribute('aria-controls')) {
 		if (!pane.id) pane.id = generateId('tab-pane')
@@ -182,7 +152,6 @@ export function createTabs(
 	const destroy = (): void => {
 		if (!destroyed) {
 			destroyed = true
-			cancelTransitions()
 			offBound()
 			offDeactivate()
 			triggerEl.removeEventListener('click', onClick)

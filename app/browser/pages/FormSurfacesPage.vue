@@ -78,7 +78,7 @@ const selectionVariant = ref<(typeof variants)[number]>('primary')
 			at 35 % opacity) so the focus signal reads against every variant + theme combo.
 		</p>
 		<p>Tab through the buttons below. Each rings in its own variant identity.</p>
-		<div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+		<div class="cluster gap-2">
 			<button type="button">Bare focus ring</button>
 			<button v-for="v in variants" :key="v" type="button" :class="['filled', v]">{{ v }}</button>
 		</div>
@@ -98,7 +98,7 @@ const selectionVariant = ref<(typeof variants)[number]>('primary')
 			<code>:user-invalid</code> + focus combination can paint a danger-tinted ring without the
 			generic surface ring stomping it.
 		</p>
-		<form style="display: grid; gap: 0.75rem; max-inline-size: 24rem">
+		<form class="max-w-sm" style="--set-form-gap: 0.75rem">
 			<label>
 				<small>Email</small>
 				<input type="email" placeholder="you@example.com" />
@@ -141,7 +141,7 @@ const selectionVariant = ref<(typeof variants)[number]>('primary')
 			<code>currentColor</code> chain (a <code>&lt;input class="danger"&gt;</code> shows a
 			danger-tinted placeholder).
 		</p>
-		<form style="display: grid; gap: 0.75rem; max-inline-size: 24rem">
+		<form class="max-w-sm" style="--set-form-gap: 0.75rem">
 			<label>
 				<small>Bare input</small>
 				<input type="text" placeholder="Type a name…" />
@@ -224,7 +224,7 @@ const selectionVariant = ref<(typeof variants)[number]>('primary')
 			subtree, and <code>::selection</code> reads through that token via <code>color-mix()</code>.
 			Switch the variant below and select text inside the paragraph that follows to see the cascade.
 		</p>
-		<menu style="margin-block: 0">
+		<menu>
 			<li v-for="v in variants" :key="v">
 				<button
 					type="button"
@@ -244,7 +244,7 @@ const selectionVariant = ref<(typeof variants)[number]>('primary')
 				--set-style-background-color: transparent;
 			"
 		>
-			<p style="margin-block: 0">
+			<p>
 				Select this paragraph to see the <strong>{{ selectionVariant }}</strong> tint. The surface
 				paints <code>color-mix(--set-variant-background-color 25%, transparent)</code> +
 				<code>--color-text-strong</code> — both contrast tiers are theme-aware, so the highlighted

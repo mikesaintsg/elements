@@ -216,7 +216,7 @@ describe('contracts — every partial wraps rules in its folder layer', () => {
 	for (const partial of partials) {
 		const contract = FOLDER_CONTRACTS[partial.folder]
 		const exception = exceptionFor(partial.path)
-		const commentOnlyAllowed = exception?.allowCommentOnly ?? contract.allowCommentOnly
+		const commentOnlyAllowed = exception?.comments?.allowed ?? contract.comments.allowed
 		const layers = findLayerDirectives(partial.stripped)
 		const hasRules = /[^\s]\s*\{/.test(partial.stripped)
 
@@ -260,8 +260,8 @@ describe('contracts — no partial writes into a foreign layer', () => {
 describe('contracts — every rule head is one of the folder allowed selector kinds', () => {
 	for (const partial of partials) {
 		const contract = FOLDER_CONTRACTS[partial.folder]
-		const allowed = new Set(contract.allowedHeadKinds)
-		const forbidden = new Map(contract.forbiddenHeadKinds.map((f) => [f.kind, f.recommendation]))
+		const allowed = new Set(contract.head.allowed)
+		const forbidden = new Map(contract.head.forbidden.map((f) => [f.kind, f.recommendation]))
 		const openers = extractRuleOpeners(partial.source)
 
 		it(`${partial.relative} → every rule head is allowed in ${partial.folder}/`, () => {
@@ -294,7 +294,7 @@ describe('contracts — composables/ partials gate on composable-state selectors
 	for (const partial of partials) {
 		if (partial.folder !== 'composables') continue
 		const exception = exceptionFor(partial.path)
-		if (exception?.skipStateSelectorCheck) continue
+		if (exception?.state?.required === false) continue
 		it(`${partial.relative} → at least one rule references a composable-state selector`, () => {
 			expect(
 				hasStateSelector(partial.stripped),

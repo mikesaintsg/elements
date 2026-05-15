@@ -50,13 +50,13 @@ describe('patterns — FOLDER_CONTRACTS shape', () => {
 
 	it('every contract has at least one allowed head kind', () => {
 		for (const contract of Object.values(FOLDER_CONTRACTS)) {
-			expect(contract.allowedHeadKinds.length).toBeGreaterThan(0)
+			expect(contract.head.allowed.length).toBeGreaterThan(0)
 		}
 	})
 
 	it('every forbidden head kind carries a non-empty recommendation', () => {
 		for (const contract of Object.values(FOLDER_CONTRACTS)) {
-			for (const forbidden of contract.forbiddenHeadKinds) {
+			for (const forbidden of contract.head.forbidden) {
 				expect(forbidden.recommendation.length).toBeGreaterThan(10)
 			}
 		}
@@ -64,8 +64,8 @@ describe('patterns — FOLDER_CONTRACTS shape', () => {
 
 	it('allowed and forbidden head kinds do not overlap', () => {
 		for (const [folder, contract] of Object.entries(FOLDER_CONTRACTS)) {
-			const allowed = new Set(contract.allowedHeadKinds)
-			const overlap = contract.forbiddenHeadKinds.filter((f) => allowed.has(f.kind))
+			const allowed = new Set(contract.head.allowed)
+			const overlap = contract.head.forbidden.filter((f) => allowed.has(f.kind))
 			expect(
 				overlap,
 				`${folder}/: kinds appear in both allow + forbid lists: ${overlap.map((f) => f.kind).join(', ')}`,
@@ -79,7 +79,7 @@ describe('patterns — FOLDER_CONTRACTS shape', () => {
 
 	it('exactly one folder requires a state selector (composables)', () => {
 		const required = Object.entries(FOLDER_CONTRACTS).filter(
-			([, contract]) => contract.requireStateSelector,
+			([, contract]) => contract.state.required,
 		)
 		expect(required.map(([f]) => f)).toEqual(['composables'])
 	})
@@ -439,8 +439,8 @@ describe('patterns — exceptionFor', () => {
 	it('composables/_aside.scss exception exists and skips state-selector check', () => {
 		const exception = exceptionFor('src/styles/composables/_aside.scss')
 		expect(exception).not.toBeNull()
-		expect(exception?.skipStateSelectorCheck).toBe(true)
-		expect(exception?.allowCommentOnly).toBe(true)
+		expect(exception?.state?.required).toBe(false)
+		expect(exception?.comments?.allowed).toBe(true)
 	})
 
 	it('elements/_button.scss has no exception', () => {
@@ -449,7 +449,7 @@ describe('patterns — exceptionFor', () => {
 
 	it('components/_aside.scss exception extends namespace with callout + alert', () => {
 		const exception = exceptionFor('src/styles/components/_aside.scss')
-		expect(exception?.additionalTokenPrefixes).toContain('callout')
-		expect(exception?.additionalTokenPrefixes).toContain('alert')
+		expect(exception?.tokens?.extras).toContain('callout')
+		expect(exception?.tokens?.extras).toContain('alert')
 	})
 })

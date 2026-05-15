@@ -27,28 +27,47 @@ function createTabsFixture(): {
 
 	const pane = buildElement('div')
 	const siblingPane = buildElement('div', { attrs: { id: 'pane-sibling' } })
-	siblingPane.setAttribute('data-tab-open', '')
+	// Sibling pane starts visible (no `[hidden]`) because its trigger has
+	// `aria-selected="true"` above; the factory's job on `show()` of THE
+	// OTHER trigger is to hide this one.
 	return { group, trigger, pane, siblingTrigger, siblingPane }
 }
 
 describe('createTabs', () => {
-	it('seeds ARIA + aria-controls when missing', () => {
+	it('seeds ARIA + aria-controls + [hidden] on the inactive pane', () => {
 		const { trigger, pane, group } = createTabsFixture()
 		createFactoryFixture(() => createTabs({ trigger, pane, group }))
 		expect(trigger.getAttribute('aria-selected')).toBe('false')
 		expect(trigger.getAttribute('tabindex')).toBe('-1')
 		expect(trigger.hasAttribute('aria-controls')).toBe(true)
-		expect(pane.getAttribute('aria-hidden')).toBe('true')
+		// Inactive pane uses the HTML `[hidden]` attribute — matches the
+		// `[role='tabpanel'][hidden] { display: none }` rule in
+		// `components/_nav.scss`. The previous contract toggled
+		// `[aria-hidden]`, which doesn't drive `display: none` and left
+		// the pane visible.
+		expect(pane.hasAttribute('hidden')).toBe(true)
 	})
 
-	it('show flips aria-selected and deactivates the active sibling', () => {
+	it('show flips aria-selected, hides the sibling pane, reveals own pane', () => {
 		const { trigger, pane, group, siblingTrigger, siblingPane } = createTabsFixture()
 		const [api] = createFactoryFixture(() => createTabs({ trigger, pane, group }))
 		api.show()
 		expect(api.active.value).toBe(true)
 		expect(trigger.getAttribute('aria-selected')).toBe('true')
 		expect(siblingTrigger.getAttribute('aria-selected')).toBe('false')
-		void siblingPane
+		expect(pane.hasAttribute('hidden')).toBe(false)
+		expect(siblingPane.hasAttribute('hidden')).toBe(true)
+	})
+
+	it('hide re-applies [hidden] to its own pane', () => {
+		const { trigger, pane, group } = createTabsFixture()
+		const [api] = createFactoryFixture(() =>
+			createTabs({ trigger, pane, group }, { initial: true }),
+		)
+		expect(pane.hasAttribute('hidden')).toBe(false)
+		api.hide()
+		expect(api.active.value).toBe(false)
+		expect(pane.hasAttribute('hidden')).toBe(true)
 	})
 
 	it('paints --set-tabs-indicator-* on show', () => {

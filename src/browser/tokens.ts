@@ -116,6 +116,7 @@ export const tokens = {
 	// rationale.
 	motionDuration: '--set-motion-duration',
 	motionTimingFunction: '--set-motion-timing-function',
+	motionSlideDistance: '--set-motion-slide-distance',
 
 	// Baseline hydration — non-color defaults so a bare element renders
 	// with consistent border-radius, gap, sticky offset, and z-index
@@ -125,6 +126,7 @@ export const tokens = {
 	borderWidth: '--set-border-width',
 	gap: '--set-gap',
 	stackSpacing: '--set-stack-spacing',
+	clusterSpacing: '--set-cluster-spacing',
 	stickyOffset: '--set-sticky-offset',
 
 	// Z-index scale for floating chrome. Native popovers + `<dialog>:modal`
@@ -379,6 +381,13 @@ export const tokens = {
 		togglePaddingInlineEnd: '--set-select-toggle-padding-inline-end',
 		caretMinInlineSize: '--set-select-caret-min-inline-size',
 		menuMinInlineSize: '--set-select-menu-min-inline-size',
+		// `content`-value token consumed by the empty-state hint that
+		// paints when a typeahead filter rejects every option (see
+		// `composables/_select.scss` § "Empty-state hint"). Quote-wrapped
+		// at the declaration site so `content: var(...)` resolves to a
+		// valid string. Consumers localise via `:root { --set-select-empty-
+		// text: '"Aucun résultat"' }` — note the nested-quote shape.
+		emptyText: '--set-select-empty-text',
 	},
 
 	// Element-scoped tokens declared on `label` itself.
@@ -742,6 +751,7 @@ export const tokens = {
 
 		// Pagination chrome — bordered button row inside
 		// `<nav aria-label="Pagination">`. See `components/_nav.scss`.
+		paginationFontSize: '--set-nav-pagination-font-size',
 		paginationColor: '--set-nav-pagination-color',
 		paginationBackgroundColor: '--set-nav-pagination-background-color',
 		paginationBorderColor: '--set-nav-pagination-border-color',
@@ -857,6 +867,10 @@ export const tokens = {
 		paddingInline: '--set-article-padding-inline',
 		paddingBlock: '--set-article-padding-block',
 		gap: '--set-article-gap',
+		band: {
+			paddingInline: '--set-article-band-padding-inline',
+			paddingBlock: '--set-article-band-padding-block',
+		},
 		fontSize: '--set-article-font-size',
 		lineHeight: '--set-article-line-height',
 		boxShadow: '--set-article-box-shadow',
@@ -940,6 +954,11 @@ export const tokens = {
 			},
 		},
 		divider: { width: '--set-table-divider-width' },
+		expansion: {
+			icon: '--set-table-expansion-icon',
+			iconSize: '--set-table-expansion-icon-size',
+			iconGap: '--set-table-expansion-icon-gap',
+		},
 	},
 
 	// ── Phase 3 typographic overrides ──────────────────────────────────────

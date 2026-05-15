@@ -105,7 +105,7 @@
 				article's own padding-block owns the outer rhythm; each section's
 				<code>padding-block: 0</code> kicks in via the nesting-collapse rule.
 			</p>
-			<section style="border-block-end: 1px dashed var(--color-border)">
+			<section class="showcase-bordered-dashed-bottom">
 				<h4>First nested section</h4>
 				<p>Children here flow with the section's <code>gap</code> rhythm.</p>
 			</section>
@@ -118,6 +118,54 @@
 			Also: <code>scroll-margin-block-start</code> consumes <code>--set-sticky-offset</code> so
 			anchor navigation (<code>#section-id</code>) lands the heading clear of any sticky app bar.
 		</p>
+		<h3><code>section.flush</code> — explicit gutter strip</h3>
+		<p>
+			The nesting-collapse rule covers the most common case automatically:
+			<code>&lt;section&gt;</code> inside <code>&lt;main&gt;</code> / <code>&lt;section&gt;</code> /
+			<code>&lt;article&gt;</code> / <code>&lt;dialog&gt;</code> drops its own
+			<code>padding-block</code> so siblings don't double-pad. But when a
+			<code>&lt;section&gt;</code> lives inside a non-section parent (a tab panel, a card body, a
+			custom layout), the collapse doesn't fire and the section keeps its block gutter.
+			<code>.flush</code> is the explicit opt-out: zeroes both <code>margin</code> and
+			<code>padding</code> so the section butts against the host's edges.
+		</p>
+		<article class="frame max-w-lg">
+			<header>
+				<h3>Tabbed status panel</h3>
+			</header>
+			<section class="flush p-4">
+				<h4 class="mt-0 mb-1">Active session</h4>
+				<p class="m-0">
+					<small>
+						Section butts against the host's header and the next sibling — no gutter, no margin. The
+						host (<code>&lt;article&gt;</code>) owns vertical rhythm.
+					</small>
+				</p>
+			</section>
+			<hr class="m-0" />
+			<section class="flush p-4">
+				<h4 class="mt-0 mb-1">Recent activity</h4>
+				<p class="m-0">
+					<small>
+						Two flush sections separated by a <code>&lt;hr&gt;</code>; both share the host's
+						perimeter without any extra block space.
+					</small>
+				</p>
+			</section>
+			<footer>
+				<small>Refreshes every 30 seconds.</small>
+			</footer>
+		</article>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;article&gt;
+  &lt;header&gt;…&lt;/header&gt;
+  &lt;section class="flush"&gt;…&lt;/section&gt;
+  &lt;hr /&gt;
+  &lt;section class="flush"&gt;…&lt;/section&gt;
+  &lt;footer&gt;…&lt;/footer&gt;
+&lt;/article&gt;</code></pre>
+		</details>
 	</section>
 
 	<section id="sectioning-article">
@@ -132,9 +180,7 @@
 		<article>
 			<header>
 				<h3>Article title</h3>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-					Published 2026-04-30 · 3 min read
-				</p>
+				<p class="showcase-card-subtitle">Published 2026-04-30 · 3 min read</p>
 			</header>
 			<p>
 				Article body. The card's chrome (border, radius, padding) comes from the framework's article
@@ -142,7 +188,7 @@
 				matching dividers without any extra classes.
 			</p>
 			<footer>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
+				<p class="showcase-card-subtitle">
 					Filed under <a href="#sectioning-article">architecture</a>,
 					<a href="#sectioning-article">tokens</a>.
 				</p>
@@ -164,7 +210,7 @@
 			</li>
 		</ul>
 		<aside>
-			<p style="margin-block: 0">
+			<p class="m-0">
 				<strong>Callout:</strong> this <code>&lt;aside&gt;</code> sits inside a
 				<code>&lt;section&gt;</code> which sits inside <code>&lt;main&gt;</code>, so it paints as a
 				tinted inline callout — not a rail. Variant classes (<code>.primary</code>,
@@ -173,13 +219,13 @@
 			</p>
 		</aside>
 		<aside class="success">
-			<p style="margin-block: 0">
+			<p class="m-0">
 				<strong>Success callout</strong> — same element, <code>.success</code> variant class. The
 				whole framework's variant cascade applies.
 			</p>
 		</aside>
 		<aside class="warning">
-			<p style="margin-block: 0">
+			<p class="m-0">
 				<strong>Warning callout</strong> — pair the color with a text cue so the meaning survives
 				color-blind and forced-colors readers.
 			</p>
@@ -216,7 +262,7 @@
 				too. Both bands extend edge-to-edge of the card via the framework's article-header /
 				article-footer chrome rules.
 			</p>
-			<footer style="display: flex; gap: 0.5rem">
+			<footer class="flex gap-2">
 				<button type="button" class="primary">Save</button>
 				<button type="button" class="subtle">Cancel</button>
 			</footer>

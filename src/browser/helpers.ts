@@ -772,10 +772,27 @@ export function resolvePopoverSide(anchor: HTMLElement, panel: HTMLElement): Sid
 
 // ── 8. Roving keyboard navigation ───────────────────────────────────────────
 
-/** Return all `selector`-matching descendants of `root` as a flat array. */
+/**
+ * Return all `selector`-matching descendants of `root` that can actually
+ * receive focus, as a flat array.
+ *
+ * Why the focusability filter exists: `MENU_ITEM_SELECTOR` matches
+ * `<li>`, `<a>`, and `<button>` so authors can rove either over the
+ * spec-required `<menu><li>` wrappers OR over the inner interactive
+ * element. But when BOTH are present (`<menu><li><button>…</button></li>`
+ * — the most common shape) a raw `querySelectorAll` returns
+ * `[LI, BUTTON, LI, BUTTON, …]` and roving lands on the `<li>` first.
+ * `<li>` has `tabIndex = -1` by default, so `.focus()` is a silent no-op
+ * and the user sees nothing happen.
+ *
+ * Filtering on `tabIndex >= 0` drops the non-focusable wrapper while
+ * preserving the case where the `<li>` itself is the tab-stop (the
+ * author opts in with `tabindex="0"` and presumably hasn't also nested
+ * an `<a>` / `<button>` inside).
+ */
 export function focusableItems(root: HTMLElement | null, selector: string): HTMLElement[] {
 	if (!root) return []
-	return Array.from(root.querySelectorAll<HTMLElement>(selector))
+	return Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((el) => el.tabIndex >= 0)
 }
 
 /**

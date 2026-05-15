@@ -116,6 +116,24 @@ const snippetStyles = `<details class="primary subtle">
   <p>Saturated fill + white text.</p>
 </details>`
 
+const snippetFlat = `<!-- .flat: dissolve outer chrome at rest; hover reveals; [open] restores -->
+<details class="flat">
+  <summary>Quiet disclosure</summary>
+  <p>Reads as a plain summary line until you hover or open it.</p>
+</details>
+
+<details class="success flat">
+  <summary>Variant flat</summary>
+  <p>Variant tint reveals on open — the cascade flows through.</p>
+</details>`
+
+const snippetFlush = `<!-- .flush: accordion-item shape — host owns the boundary -->
+<article>
+  <details class="flush"><summary>Item one</summary><p>…</p></details>
+  <details class="flush"><summary>Item two</summary><p>…</p></details>
+  <details class="flush"><summary>Item three</summary><p>…</p></details>
+</article>`
+
 const snippetNested = `<details open>
   <summary>Parent</summary>
   <p>Outer body.</p>
@@ -363,6 +381,115 @@ const snippetCustomMarker = `<details style="--set-summary-marker-image: url('�
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre><code>{{ snippetStyles }}</code></pre>
+		</details>
+	</section>
+
+	<section id="details-flat">
+		<h2>Flat — dissolve outer chrome at rest</h2>
+		<p>
+			<code>.flat</code> drops the disclosure's outer border + background at rest so the closed
+			summary reads as a plain text line; hover reveals a neutral 4% backdrop + framework border;
+			<code>[open]</code> restores the element's full <code>--set-details-*</code> chrome so an open
+			disclosure reads as a contained region. The <code>&lt;summary&gt;</code> marker + click
+			affordance is unchanged.
+		</p>
+		<div class="stack">
+			<details class="flat">
+				<summary>Neutral flat disclosure</summary>
+				<p><small>Hover: neutral 4% backdrop. Open: framework's bare-details chrome.</small></p>
+			</details>
+			<details class="primary flat">
+				<summary>Primary flat</summary>
+				<p>
+					<small>
+						Variant cascade flows through to the open state — the primary-tinted bg / border / text
+						reveals when opened, dissolves when closed.
+					</small>
+				</p>
+			</details>
+			<details class="success flat">
+				<summary>Success flat</summary>
+				<p><small>Same shape, success-tuned palette on open.</small></p>
+			</details>
+			<details class="danger flat">
+				<summary>Danger flat</summary>
+				<p><small>Danger-tinted on open; neutral on hover; dissolved at rest.</small></p>
+			</details>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetFlat }}</code></pre>
+		</details>
+	</section>
+
+	<section id="details-flush">
+		<h2>Flush — accordion-item shape</h2>
+		<p>
+			<code>.flush</code> drops all outer chrome (margin, border, radius, shadow) and inherits the
+			host's <code>border-radius</code> so a stack of
+			<code>&lt;details class="flush"&gt;</code> inside an <code>&lt;article&gt;</code> or any
+			framed surface reads as one continuous region. The host owns the boundary; the framework
+			doesn't paint internal dividers here so the consumer keeps full control over how items
+			separate.
+		</p>
+		<article
+			style="
+				--set-article-padding-inline: 0;
+				--set-article-padding-block: 0;
+				--set-article-gap: 0;
+				overflow: clip;
+			"
+		>
+			<details class="flush">
+				<summary>Item one</summary>
+				<p>
+					<small>
+						No outer border, no radius, no margin. The host (this <code>&lt;article&gt;</code>)
+						provides the perimeter; the details fuses in.
+					</small>
+				</p>
+			</details>
+			<details class="flush">
+				<summary>Item two</summary>
+				<p>
+					<small>Inherits the article's border-radius for top / bottom corners via inherit.</small>
+				</p>
+			</details>
+			<details class="flush">
+				<summary>Item three</summary>
+				<p>
+					<small>Stack reads as one accordion surface, not three independent disclosures.</small>
+				</p>
+			</details>
+		</article>
+		<p>
+			With variant text-emphasis on each item — variant cascade still reaches the summary text even
+			when the outer chrome is dissolved:
+		</p>
+		<article
+			style="
+				--set-article-padding-inline: 0;
+				--set-article-padding-block: 0;
+				--set-article-gap: 0;
+				overflow: clip;
+			"
+		>
+			<details class="success flush">
+				<summary>Success flush</summary>
+				<p><small>Summary text picks up the success variant's text-emphasis color.</small></p>
+			</details>
+			<details class="warning flush">
+				<summary>Warning flush</summary>
+				<p><small>Same for warning — outer chrome dissolved, identity carries via text.</small></p>
+			</details>
+			<details class="danger flush">
+				<summary>Danger flush</summary>
+				<p><small>Danger emphasis on the summary line; no surrounding chrome.</small></p>
+			</details>
+		</article>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetFlush }}</code></pre>
 		</details>
 	</section>
 

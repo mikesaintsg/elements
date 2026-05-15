@@ -71,17 +71,670 @@
 //
 // ============================================================================
 
+@use '../mixins' as *;
+
 @layer modifiers {
 	// (Initial scaffold — element-local rules currently living in
 	// components/_form.scss and components/_badge.scss will migrate here
 	// in a follow-up refactor. The charter above defines the migration
 	// destination so the move is mechanical.)
+
+	// ── input.flat / select.flat / textarea.flat ─────────────────────────
+	// `.flat` form controls dissolve into their surrounding surface (table
+	// cell, accordion header, list-group row) by going transparent at rest
+	// while preserving their own padding + intrinsic size. Interaction
+	// promotes the control to its full bordered baseline:
 	//
+	//   • Rest        — transparent bg + transparent border (control reads
+	//                   as plain text in the parent surface).
+	//   • Hover       — subtle bg + border reveal (only when not focused /
+	//                   disabled / readonly / invalid; signals affordance).
+	//   • Focus       — promote to the element's full focus chrome (border
+	//                   color + focus ring) — re-authored here because the
+	//                   `modifiers` layer beats the `elements` layer, so
+	//                   `:focus-visible` rules in `_input.scss` lose if we
+	//                   don't restate them at modifier specificity.
+	//   • Disabled    — stays transparent (reads as plain text label).
+	//   • Readonly    — stays transparent (no editable affordance, so no
+	//                   hover reveal either).
+	//   • Validation  — `:user-invalid` paints the danger border the same
+	//                   way the bare control does, so a flat control in a
+	//                   table cell still flags red after the user touches
+	//                   the field.
+	//
+	// Design intent matches Bootstrap's `.form-control-flush` precedent:
+	// flat inputs are for inline-editing patterns (table cells, accordion
+	// headers, list-group rows) where the form control should *look* like
+	// text content until the user engages with it. Using a real `<input>`
+	// here is the semantic answer — `contenteditable` on random elements
+	// strips the validation contract, the `:user-invalid` pseudo-class,
+	// type-specific UI (date pickers, number spinners), and screen-reader
+	// affordances that come free with form controls.
+	//
+	// Distinct from `.flush` (below): `.flat` keeps the element's own
+	// padding + intrinsic size and only drops the chrome at rest; `.flush`
+	// drops every margin / border / radius / ring AND inflates the control
+	// to fill its container (`100% × 100%`, `border-radius: inherit`).
+
+	input.flat,
+	select.flat,
+	textarea.flat {
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+
+		// Hover reveal — subtle backdrop + visible border so the control
+		// announces affordance without shouting. The literal values are
+		// theme-aware: `currentColor 4%` rides whichever foreground the
+		// parent surface sets, `--color-border` is the framework's
+		// canonical neutral border.
+		//
+		// `:not(:focus-visible)` ensures focus chrome wins; `:not(:user-
+		// invalid)` lets the danger border below paint through; `:not(:
+		// disabled):not([readonly])` keeps non-interactive states quiet.
+		&:hover:not(:disabled):not([readonly]):not(:focus-visible):not(:user-invalid) {
+			background-color: color-mix(in oklab, currentColor 4%, transparent);
+			border-color: var(--color-border);
+		}
+
+		// Focus — promote to the element's baseline focus chrome. The
+		// variant fallback chain stays intact because we read the same
+		// `--set-{tag}-focus-*` tokens the element rule reads.
+		&:focus-visible {
+			outline: none;
+		}
+
+		// Validation — same danger border the bare control paints, so a
+		// flat control in a table cell still flags red after touch.
+		&:user-invalid {
+			border-color: var(--color-danger);
+		}
+
+		// Forced-colors — fall back to the system Field / ButtonText
+		// scheme. Without this, a transparent border renders as the
+		// Window background and the control loses its outline in HC mode.
+		@include forced-colors {
+			background-color: Field;
+			border-color: ButtonText;
+		}
+	}
+
+	// Per-element focus-promote — read the element's own focus tokens so
+	// the variant fallback chain (`--set-variant-background-color`) stays
+	// intact. Authored as three separate rules because each control's
+	// focus tokens live under a different namespace.
+	input.flat:focus-visible {
+		border-color: var(--set-input-focus-border-color);
+		box-shadow: var(--set-input-focus-box-shadow);
+		background-color: var(--set-input-background-color);
+	}
+
+	select.flat:focus-visible {
+		border-color: var(--set-select-focus-border-color);
+		box-shadow: var(--set-select-focus-box-shadow);
+		background-color: var(--set-select-background-color);
+	}
+
+	textarea.flat:focus-visible {
+		border-color: var(--set-textarea-focus-border-color);
+		box-shadow: var(--set-textarea-focus-box-shadow);
+		background-color: var(--set-textarea-background-color);
+	}
+
+	// ── input.flush / select.flush / textarea.flush / button.flush ─────────
+	// `.flush` means the element is FUSED INTO its parent surface — no
+	// margin, no border, no radius of its own, no focus ring; the element
+	// inherits the parent's border-radius and inflates to fill the
+	// parent's content box on both axes. The natural home is a host that
+	// IS the surface (a table cell, a card body, a list-group item) where
+	// the host owns the boundary and the control should occupy every
+	// available pixel inside it.
+	//
+	// Distinct from `.flat` (above): `.flat` is "transparent at rest, full
+	// chrome on focus"; `.flush` is "no chrome at any state, fills the
+	// host." A flush <input> inside a card body becomes the card's text
+	// field; a flush <button> inside a tile becomes the tile's CTA.
+	//
+	// `border-radius: inherit` reads the host's radius (cards, list-group
+	// items, badge surfaces all set their own corner radii) so the flush
+	// element tracks the surface curvature. `inline-size: 100%` /
+	// `block-size: 100%` inflate the element to the host's content box;
+	// `padding-block: 0` defeats the element baselines' vertical padding
+	// (which would otherwise leave a strip of the host's bg visible).
+	//
+	// Focus chrome is intentionally minimal — a flush element shouldn't
+	// paint its OWN focus ring inside a host that may have its own. The
+	// parent surface is expected to declare a `:focus-within` chrome if
+	// the focus state needs to be visible. `outline: none` only — no box-
+	// shadow ring — so the host's `:focus-within` rule (if any) is the
+	// single source of focus truth.
+
+	input.flush,
+	select.flush,
+	textarea.flush,
+	button.flush {
+		margin: 0;
+		border: 0;
+		border-radius: inherit;
+		box-shadow: none;
+		inline-size: 100%;
+		// `block-size: 100%` + `min-block-size: 100%` is the percentage-height
+		// idiom that resolves cleanly when the parent has a determinant
+		// block-size (flex / grid item, an absolutely positioned ancestor, or
+		// a `<td>` whose row has determinant height — for tables, the legacy
+		// `<td style="height: 1px">` trick coerces the cell to expand to its
+		// row's intrinsic height so the percent-height child fills it).
+		// `align-self: stretch` is the flex/grid path. The trio covers every
+		// common parent shape; consumers wanting fill in an arbitrary block
+		// parent should ensure the parent has an explicit block-size.
+		block-size: 100%;
+		min-block-size: 100%;
+		align-self: stretch;
+		// Background tracks the host's surface — a flush control inside a
+		// `<table>` cell, a card body, or a list-group item should paint
+		// the parent's fill, not its own. `transparent` lets the host's
+		// bg show through; consumers wanting a tinted flush surface set
+		// `background-color` on the host (or on the element directly via
+		// a variant modifier).
+		background-color: transparent;
+
+		&:focus-visible {
+			outline: none;
+		}
+
+		// Disabled / readonly behave as the bare element does — the
+		// modifier doesn't paint its own affordance, so the element
+		// baseline's `cursor: not-allowed` + `opacity` declarations win.
+
+		@include forced-colors {
+			background-color: Field;
+		}
+	}
+
+	// Discoverability backdrop for FORM-CONTROL flush only —
+	// `<button>` gets its own bare-button-matching cascade below (12% /
+	// 22% text-strong) which would be defeated by this 4% currentColor
+	// backdrop if `button.flush` stayed in the selector list (the form-
+	// control rule's specificity, padded by `:not([readonly]):not
+	// (:user-invalid)`, would beat button's narrower state rules).
+	// `<input>` / `<select>` / `<textarea>` are the data-entry controls
+	// where the subtle tint reads as "engaged for editing"; `<button>`
+	// is a command surface and gets a stronger press tint to match bare
+	// button feedback.
+	input.flush:hover:not(:disabled):not([readonly]):not(:user-invalid),
+	select.flush:hover:not(:disabled):not([readonly]):not(:user-invalid),
+	textarea.flush:hover:not(:disabled):not([readonly]):not(:user-invalid),
+	input.flush:focus-visible:not(:disabled):not([readonly]):not(:user-invalid),
+	select.flush:focus-visible:not(:disabled):not([readonly]):not(:user-invalid),
+	textarea.flush:focus-visible:not(:disabled):not([readonly]):not(:user-invalid) {
+		background-color: color-mix(in oklab, currentColor 4%, transparent);
+	}
+
+	// `<input>` text-like controls keep their text padding so the caret
+	// has breathing room against the host's border-edge; the modifier
+	// resets BLOCK padding only (height-fills the host) and leaves
+	// padding-inline at the element's baseline value. `<select>` is
+	// excluded because the chevron padding-inline-end is asymmetric on
+	// the bare element and a uniform reset would clip the glyph.
+	input.flush,
+	textarea.flush {
+		padding-block: 0;
+	}
+
+	// `<button>` is a pure visual surface — drop ALL padding so the
+	// button's text/icon centers against the host's content box without
+	// the element baseline's button padding pushing it off-center.
+	// Text colour pulls from the variant's on-canvas tier so a
+	// `.primary.flush` button reads in primary-on-canvas instead of
+	// white-on-fill (which would be invisible against the transparent
+	// flush background). Same reasoning as `button.flat` above.
+	button.flush {
+		padding: 0;
+		color: var(--set-variant-on-canvas-color, var(--set-button-color, currentColor));
+
+		// State cascade matches `button.flat` exactly — same bare-button
+		// mix-with-text-strong stride (12% hover, 22% active), same EQUAL-
+		// SPECIFICITY shape so `:active` can override `:hover` via source
+		// order rather than being shadowed by it. See the comment on
+		// `button.flat` above for the full reasoning. `button.flush` is
+		// excluded from the shared form-control 4% backdrop selector list
+		// above so that rule's higher specificity doesn't outrank these
+		// state rules.
+		&:hover:not(:disabled),
+		&:focus-visible:not(:disabled) {
+			background-color: color-mix(in srgb, transparent 88%, var(--color-text-strong));
+		}
+
+		&:active:not(:disabled) {
+			background-color: color-mix(in srgb, transparent 78%, var(--color-text-strong));
+		}
+	}
+
+	// ── a.flat / a.flush ────────────────────────────────────────────────────
+	// `<a>` is dual-shaped: the bare anchor's chrome is just `color` +
+	// `text-decoration: underline`. `.flat` quiets the underline at rest
+	// and brings it back on engagement; `.flush` fuses the anchor into a
+	// host (tile-as-link) by dropping decoration AND letting the link
+	// inherit the host's foreground so the whole tile reads as one
+	// chrome-coloured surface that's clickable.
+	a.flat {
+		text-decoration: none;
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+
+		// Hover reveal is JUST the underline — no backdrop. The underline
+		// is itself the affordance; pairing it with a backdrop reads as
+		// overdesigned for an inline link. Variant color still flows so
+		// `.success.flat` keeps the success tint.
+		&:hover:not(:focus-visible) {
+			text-decoration: underline;
+		}
+
+		&:focus-visible {
+			outline: none;
+			text-decoration: underline;
+			@include focus-ring();
+		}
+	}
+
+	a.flush {
+		display: block;
+		inline-size: 100%;
+		block-size: 100%;
+		min-block-size: 100%;
+		align-self: stretch;
+		margin: 0;
+		border: 0;
+		border-radius: inherit;
+		box-shadow: none;
+		// `color: inherit` is the fuse signal — the whole tile reads in the
+		// host's foreground (`<article class="primary filled">` paints white
+		// text everywhere including the flush anchor) instead of fighting it
+		// with the link-blue identity. `text-decoration: none` drops the
+		// underline so the host chrome is uninterrupted.
+		color: inherit;
+		text-decoration: none;
+		background-color: transparent;
+
+		&:hover:not(:focus-visible),
+		&:focus-visible {
+			background-color: color-mix(in oklab, currentColor 4%, transparent);
+		}
+
+		&:focus-visible {
+			outline: none;
+		}
+
+		@include forced-colors {
+			background-color: Field;
+		}
+	}
+
+	// ── button.flat ─────────────────────────────────────────────────────────
+	// Toolbar / inline-action-chip buttons that should read as text-with-
+	// affordance until interacted with. Distinct from `.subtle` (which
+	// keeps the full button chrome but drops the variant fill) — `.flat`
+	// dissolves border + fill + shadow entirely at rest. On focus the
+	// element's focus-ring still paints (the focus ring is the affordance,
+	// NOT a restored fill — restoring the variant fill on focus would
+	// defeat the dissolve semantic).
+	button.flat {
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+		// Text color reads in the variant's on-canvas tier — the framework's
+		// WCAG-AA-against-body-canvas variant color. Without this override
+		// the button baseline's `--set-button-color` resolves to white (the
+		// variant's on-FILL color) and a flat button against the body canvas
+		// reads white-on-white. The on-canvas tier is the right tier for
+		// any chromeless / dissolved-bg variant text.
+		color: var(--set-variant-on-canvas-color, var(--set-button-color, currentColor));
+
+		// State chrome mirrors the bare-button cascade exactly:
+		//   hover → 12% text-strong on transparent  (bare button's 88% mix)
+		//   focus → 12% + focus ring                (same backdrop + ring)
+		//   active → 22% text-strong on transparent (bare button's 78% mix)
+		//
+		// CRITICAL: every state rule has EQUAL SPECIFICITY (0,3,1). Earlier
+		// shapes paired `:hover:not(:disabled):not(:focus-visible)` (0,4,1)
+		// with `:active:not(:disabled)` (0,3,1) — and `:hover` won at every
+		// press because specificity beats source order. Both rules now use
+		// only `:not(:disabled)`, so source order (later wins) lets
+		// `:active` override `:hover` when both match on press. The
+		// `:focus-visible` rule shares the same specificity and adds the
+		// focus ring; its bg matches hover so a focused-but-not-pressed
+		// button reads the same as a hovered one. Pressing while focused
+		// still flips to the 22% active tint because `:active` is later
+		// in source order.
+		&:hover:not(:disabled),
+		&:focus-visible:not(:disabled) {
+			background-color: color-mix(in srgb, transparent 88%, var(--color-text-strong));
+			border-color: var(--color-border);
+		}
+
+		&:focus-visible:not(:disabled) {
+			outline: none;
+			box-shadow: var(--set-button-focus-box-shadow);
+		}
+
+		&:active:not(:disabled) {
+			background-color: color-mix(in srgb, transparent 78%, var(--color-text-strong));
+			border-color: var(--color-border);
+		}
+
+		@include forced-colors {
+			background-color: ButtonFace;
+			border-color: ButtonText;
+		}
+	}
+
+	// ── details.flat / details.flush ────────────────────────────────────────
+	// `.flat`: dissolve the disclosure's outer chrome at rest, reveal on
+	// hover OR when open. The `[open]` state restores chrome because an
+	// open disclosure is meant to read as a contained region — the dissolve
+	// only applies while the content is hidden. `<summary>` chrome is
+	// unchanged (the marker + click affordance survive intact).
+	//
+	// `.flush`: accordion-item shape. The parent group owns the boundary;
+	// `<details>` dissolves outer chrome and inherits the parent's radius
+	// so a stack of `details.flush` inside an `<article>` or `<ul class=
+	// "group">` reads as one continuous surface with internal dividers.
+	details.flat {
+		background-color: transparent;
+		border-color: transparent;
+		box-shadow: none;
+
+		&:hover:not([open]) {
+			background-color: color-mix(in oklab, currentColor 4%, transparent);
+			border-color: var(--color-border);
+		}
+
+		&[open] {
+			background-color: var(--set-details-background-color);
+			border-color: var(--set-details-border-color);
+		}
+	}
+
+	details.flush {
+		margin: 0;
+		border: 0;
+		// Flat corners by default: stacked flush items shouldn't paint
+		// their own rounded corners at the seams (would peek through
+		// adjacent siblings' backgrounds). The host's `overflow: clip`
+		// owns the outer rounding. Single-instance flush opt back into
+		// the host's radius via `:only-of-type` below.
+		border-radius: 0;
+		box-shadow: none;
+		background-color: transparent;
+		// Variant text-emphasis flows even when outer chrome is dissolved.
+		// The bare `<details>` only paints variant on its border (which
+		// flush strips), so without this fallback `.success.flush` looks
+		// identical to `.danger.flush`. Reading the on-canvas tier means a
+		// flush details on the body canvas keeps the variant's WCAG-AA
+		// readable text colour; uncolored details inherit from the host.
+		color: var(--set-variant-on-canvas-color, currentColor);
+	}
+
+	// ── aside[role='alert'].flat / aside[role='alert'].flush ────────────────
+	// Scoped to the alert role specifically — bare `<aside>` (sidebar rail
+	// in body grid, popover drawer, inline callout) has different chrome
+	// per context, and applying the flat/flush idiom universally would
+	// break the drawer geometry. Scoping to `[role='alert']` keeps the
+	// modifier targeted at the banner-shaped variant.
+	//
+	// The compound `aside[role='alert'].flat` doesn't match the
+	// `_local.test.ts` charter regex (which expects bare `{tag}.{name}`),
+	// so the rule is authored here but isn't charter-checked. That's a
+	// deliberate exception — the role-scoping is essential for correctness.
+	//
+	// `.flat`: low-emphasis inline note. Dissolve at rest; restore the
+	// alert's tinted bar + bg-subtle backdrop on hover. The hover state
+	// uses the alert's OWN tokens so a variant alert (`.danger` etc.)
+	// reveals the variant-tinted chrome it would normally paint at rest.
+	aside[role='alert'].flat {
+		background-color: transparent;
+		border-color: transparent;
+		border-inline-start-color: transparent;
+
+		&:hover {
+			background-color: var(--set-alert-background-color);
+			border-inline-start-color: var(--set-alert-border-color);
+		}
+	}
+
+	// `.flush`: divider band inset into a card / sidebar. Drops the outer
+	// border + radius so the alert sits flush against the host's edges.
+	// The leading accent bar (`border-inline-start`) is preserved because
+	// it's the alert's identity signal; the host owns the perimeter.
+	aside[role='alert'].flush {
+		border-radius: 0;
+		border-block-start: 0;
+		border-block-end: 0;
+		border-inline-end: 0;
+		margin: 0;
+	}
+
+	// ── dialog.flush:not(:modal) ────────────────────────────────────────────
+	// Inline non-modal dialog drops into a card body or expansion panel.
+	// Scoped to `:not(:modal)` because modal `<dialog>` at rest IS its
+	// chrome (centered, top-layer, scrim) — flush would defeat the modal
+	// shape. The header / footer pin chrome on `<dialog>` survives because
+	// it's painted from inside the dialog's grid; only the outer border /
+	// radius / shadow / margin dissolve here.
+	dialog.flush:not(:modal) {
+		margin: 0;
+		border: 0;
+		// Flat corners by default — host's `overflow: clip` owns the
+		// outer rounding (same reasoning as `details.flush` above).
+		// `:only-of-type` below opts single instances back into inherit.
+		border-radius: 0;
+		box-shadow: none;
+		// `inline-size: 100%` lets the dialog fill its host instead of
+		// taking the platform's auto-content-width centering shape.
+		inline-size: 100%;
+		max-inline-size: none;
+		// Variant text-emphasis flows (same reasoning as `details.flush`).
+		color: var(--set-variant-on-canvas-color, currentColor);
+	}
+
+	// ── article.frame ───────────────────────────────────────────────────────
+	// Element-local sibling of `div.frame` (in components/_div.scss). Both
+	// belong to the framework's spacing-shape family:
+	//
+	//   div.stack     → flex column, gap > 0       (vertical rhythm)
+	//   div.cluster   → flex wrap,   gap > 0       (horizontal rhythm)
+	//   div.frame     → flex column, gap = 0       (no internal rhythm)
+	//   article.frame → same shape on `<article>`  (preserves card chrome,
+	//                   retunes article-scoped tokens so descendant chrome
+	//                   reading them collapses correctly)
+	//
+	// The article-local form exists alongside the generic div primitive
+	// because `<article>` has token state — auto-banded `<header>` /
+	// `<footer>` bleed margins read `--set-article-padding-inline`; nested
+	// `<ul class="group">` reads `--set-article-padding-*` for its own
+	// edge-bleed math. Setting raw `padding: 0` on the article would leave
+	// those calc()s pointing at the framework default and the descendants
+	// would bleed past the article's outer edge. Retuning the TOKENS
+	// instead keeps the cascade self-consistent: when the article reports
+	// "I have no inset" through its tokens, every dependent rule reports
+	// the same.
+	//
+	// Three responsibilities:
+	//
+	//   1. Zero the article's outer inset (`--set-article-padding-{inline,
+	//      block}: 0`) so children paint edge-to-edge against the
+	//      article's own border. The framework's `--set-article-band-
+	//      padding-*` tokens are DECOUPLED from the outer padding (see
+	//      `components/_article.scss` lines 62-75) so internal `<header>` /
+	//      `<footer>` band content keeps its rhythm even when the article
+	//      itself is inset-zero.
+	//
+	//   2. Zero the article's flex `gap` (`--set-article-gap: 0`) so
+	//      children meet at seams owned by their own padding rules, not
+	//      by the host's gap.
+	//
+	//   3. `overflow: clip` so children's outer corners (often flat at
+	//      `border-radius: 0` for nested flush items) are visually
+	//      clipped to the article's rounded outer corners.
+	//
+	// Composes with the `.flush` family: a `.frame` article most often
+	// hosts `article.flush`, `aside[role='alert'].flush`, `section.flush`,
+	// `form.flush`, `details.flush`, `dialog.flush:not(:modal)`, `a.flush`,
+	// or `button.flush` children. But the modifier itself is NOT bound to
+	// flush composition — any consumer who wants an article whose
+	// internal spacing is delegated to children writes `<article class=
+	// "frame">`.
+	//
+	// Token-override path stays open: partial frames (e.g., keep inline
+	// padding but zero block padding) write the `--set-article-padding-
+	// {inline,block}` / `--set-article-gap` tokens inline. The modifier
+	// just bundles the common "zero everything" case.
+	article.frame {
+		--set-article-padding-inline: 0;
+		--set-article-padding-block: 0;
+		--set-article-gap: 0;
+
+		overflow: clip;
+	}
+
+	// ── td.frame ────────────────────────────────────────────────────────────
+	// Table-cell sibling of `article.frame` / `div.frame`. A `<td class=
+	// "frame">` zeroes its own padding and collapses to its row's height
+	// so a child flush control (`button.flush`, `a.flush`, `input.flush`)
+	// fills the cell edge-to-edge.
+	//
+	// Mechanism: the `block-size: 1px` declaration triggers the legacy
+	// percentage-height-in-table-cell idiom documented under `button.flush`
+	// in this file (see lines ~221-229). A `<td>` with `block-size: 1px`
+	// reports a determinant height to its child; that child can then size
+	// to `block-size: 100%` of the row's intrinsic height. Without the
+	// `1px` declaration, the cell auto-sizes to its content and the
+	// child's percentage height resolves against `auto` — yielding nothing.
+	//
+	// Use cases: action cells (Run / Edit / Delete buttons in admin tables),
+	// inline-editing cells (flush `<input>` filling a cell), composed
+	// pagination rows. The "flush button in a table" pattern shipped as the
+	// `<td style="padding: 0; block-size: 1px">` inline incantation in
+	// ButtonPage's `.flush` demo; the modifier moves that incantation into
+	// the framework.
+	td.frame {
+		--set-table-cell-padding-inline: 0;
+		--set-table-cell-padding-block: 0;
+
+		padding-inline: 0;
+		padding-block: 0;
+		block-size: 1px;
+	}
+
+	// ── article.flush / form.flush / section.flush ──────────────────────────
+	// Container variants for nested composition. Each drops its own outer
+	// chrome so the host (a parent article, list-group row, card body,
+	// drawer body) owns the boundary.
+	//
+	// `article.flush`: nested card. Internal `<header>` / `<footer>` pin
+	// chrome stays (painted from inside the article's grid); only outer
+	// border / radius / shadow dissolve. Useful for article-in-article
+	// composition where the inner card shouldn't paint its own outline.
+	article.flush {
+		margin: 0;
+		border: 0;
+		// Flat corners by default — same reasoning as `details.flush` /
+		// `dialog.flush` (host's overflow:clip owns outer rounding;
+		// stacked items shouldn't paint their own corners at seams).
+		// `:only-of-type` below opts single instances back into inherit.
+		border-radius: 0;
+		box-shadow: none;
+		// Variant text-emphasis flows (same reasoning as `details.flush`).
+		color: var(--set-variant-on-canvas-color, currentColor);
+	}
+
+	// ── Adjacent-sibling padding for stacked flush containers ──────────────
+	// When flush containers stack inside a host, their own block-axis
+	// padding doubles at the seam (`bottom-of-A + top-of-B`) and reads
+	// as a "doubled gap" against the host's single-padding outer edges.
+	// Halving the block padding on EDGES TOUCHING ANOTHER FLUSH SIBLING
+	// makes every gap — outer and inner — equal one `--set-{tag}-padding-
+	// block`:
+	//
+	//   • Items with a flush successor halve their `padding-block-end`
+	//     (via `:has(+ {tag}.flush)` — Baseline 2024).
+	//   • Items with a flush predecessor halve their `padding-block-start`
+	//     (via the `+` combinator).
+	//
+	// First-of-stack keeps its full top padding, last keeps its full
+	// bottom padding, only-of-type keeps both. Every interior seam totals
+	// `half + half = 1× padding-block` — the exact rhythm the host's
+	// outer paddings already use, so the whole stack reads with uniform
+	// spacing. NO divider border between siblings — variants paint their
+	// own subtle background tint and the consistent gap is the seam.
+
+	details.flush:has(+ details.flush) {
+		padding-block-end: calc(var(--set-details-padding-block) / 2);
+	}
+	details.flush + details.flush {
+		padding-block-start: calc(var(--set-details-padding-block) / 2);
+	}
+
+	article.flush:has(+ article.flush) {
+		padding-block-end: calc(var(--set-article-padding-block) / 2);
+	}
+	article.flush + article.flush {
+		padding-block-start: calc(var(--set-article-padding-block) / 2);
+	}
+
+	aside[role='alert'].flush:has(+ aside[role='alert'].flush) {
+		padding-block-end: calc(var(--set-alert-padding-block) / 2);
+	}
+	aside[role='alert'].flush + aside[role='alert'].flush {
+		padding-block-start: calc(var(--set-alert-padding-block) / 2);
+	}
+
+	dialog.flush:not(:modal):has(+ dialog.flush:not(:modal)) {
+		padding-block-end: calc(var(--set-dialog-padding-block) / 2);
+	}
+	dialog.flush:not(:modal) + dialog.flush:not(:modal) {
+		padding-block-start: calc(var(--set-dialog-padding-block) / 2);
+	}
+
+	// ── Single-instance flush — inherit host's radius ──────────────────────
+	// When a flush container is the only one of its kind inside a host
+	// (no sibling stack to worry about), opt back into the host's
+	// border-radius so the element paints rounded outer corners that
+	// match the host's perimeter. Useful for a single nested card / inset
+	// alert / inline non-modal dialog inside a card body where the host
+	// might NOT have `overflow: clip` and the consumer wants the inner
+	// element's own corners to track the host's curvature.
+	details.flush:only-of-type,
+	article.flush:only-of-type,
+	dialog.flush:not(:modal):only-of-type {
+		border-radius: inherit;
+	}
+
+	// `form.flush`: fill card body. Form has no outer chrome by default,
+	// so this is mostly a documentation rule — sets `margin: 0; padding:
+	// 0; inline-size: 100%` to make the intent ("form fills its host")
+	// explicit. The internal flex-column stack is unchanged.
+	form.flush {
+		margin: 0;
+		padding: 0;
+		inline-size: 100%;
+	}
+
+	// `section.flush`: drop section padding for nested-section use (tab
+	// panel section that butts against the tablist, accordion-item
+	// content, scrollable region that owns its own padding). The
+	// `scroll-margin` from the section baseline survives because it's a
+	// layout property the parent scroll container reads.
+	section.flush {
+		padding: 0;
+		margin: 0;
+	}
+
 	// Reserved future rules — placeholders are intentional. Adding a real
 	// rule means deleting the matching comment and writing the selector
 	// + declaration block.
-
+	//
 	// form.row { flex-direction: row; flex-wrap: wrap; align-items: end; }
 	// button.dropdown { &::after { content: var(--set-button-dropdown-caret-image); } }
-	// details.flush { padding-inline: 0; }
 }

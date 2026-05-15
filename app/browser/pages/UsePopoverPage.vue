@@ -384,12 +384,12 @@ usePopover({ anchor, panel, placement, trigger: { click: true } })</code></pre>
 			or a filter sheet that closes only via an explicit <code>.hide()</code> call (lock the user in
 			until they confirm).
 		</p>
-		<div class="placement-stage" style="gap: 1rem; flex-wrap: wrap">
+		<div class="placement-stage flex flex-wrap gap-4">
 			<button ref="stickyAnchor" type="button">Sticky — both off (button only)</button>
 			<button ref="escapeAnchor" type="button">Escape only</button>
 		</div>
 		<div ref="stickyPanel" popover class="demo-popover">
-			<h6 style="margin-block: 0 0.5rem">Sticky panel</h6>
+			<h6 class="mt-0 mb-2">Sticky panel</h6>
 			<p>
 				<small>
 					<strong>outside: ignored</strong> · <strong>Escape: ignored</strong>. Only the button
@@ -403,7 +403,7 @@ usePopover({ anchor, panel, placement, trigger: { click: true } })</code></pre>
 			</menu>
 		</div>
 		<div ref="escapePanel" popover class="demo-popover">
-			<h6 style="margin-block: 0 0.5rem">Escape-only panel</h6>
+			<h6 class="mt-0 mb-2">Escape-only panel</h6>
 			<p>
 				<small>
 					<strong>outside: ignored</strong> · <strong>Escape: closes</strong>. Click anywhere on the
@@ -438,7 +438,7 @@ usePopover({
 			<code>on.open</code> and <code>on.close</code> fire AFTER the transition — they're
 			informational and non-cancellable.
 		</p>
-		<menu style="margin-block: 0 1rem">
+		<menu class="mt-0 mb-4">
 			<li>
 				<label>
 					<input v-model="acceptShow" type="checkbox" />
@@ -462,7 +462,7 @@ usePopover({
 				</li>
 			</menu>
 		</div>
-		<small style="margin-block-start: 0.5rem; display: block">
+		<small class="block mt-2">
 			<strong>Lifecycle log:</strong>
 			<span v-if="lifecycleLog.length === 0">click the button to trigger events</span>
 			<span v-else>{{ lifecycleLog.join(' → ') }}</span>

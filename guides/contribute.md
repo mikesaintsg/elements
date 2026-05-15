@@ -234,13 +234,39 @@ Single-element modifiers — values that only make sense on one tag and can't be
 Pair a `use{Name}` Vue adapter with a `create{Name}` framework-agnostic factory and (when chrome is needed) a `composables/_{name}.scss` partial.
 
 1. **Types first.** Add `Use{Name}Options`, `Use{Name}Return`, `Create{Name}Options`, `Create{Name}Instance`, `{Name}EventMap` to [`src/browser/types.ts`](../src/browser/types.ts).
-2. **Factory.** `src/browser/factories/create{Name}.ts` — owns the DOM mutation logic + `@vue/reactivity` state. Use `assertElement(el, '{tag}')` to gate on the right semantic root.
-3. **Composable.** `src/browser/composables/use{Name}.ts` — thin Vue adapter that registers a cleanup callback with the component's scope and delegates to the factory.
-4. **Event names.** Add namespaced names to [`src/browser/constants.ts`](../src/browser/constants.ts) and re-export from [`events.ts`](../src/browser/events.ts) (pattern: `elements:{source}:{verb}` per AGENTS.md §11).
-5. **Chrome partial** (if state-gated CSS is needed). `src/styles/composables/_{name}.scss` — wrap rules in `@layer composables`; gate every rule on a composable-state selector (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`). If the partial declares `transition:` or `animation:`, invoke `@include transition()` or `@include reduced-motion` — the composable charter enforces it.
-6. **Contract entry.** Add an entry to [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts) with the token namespace, required tokens, state-selector kinds, animated flag, and factory pairing.
-7. **Taxonomy entry.** Update the matching row in `taxonomy.md` and `taxonomy.ts` — if a tag is now composable, set its row's Treatment to `composable` and `composable` field to `'use{Name}'`.
-8. **Tests.** Add `tests/src/browser/composables/use{Name}.test.ts` (Vue adapter) and `tests/src/browser/factories/create{Name}.test.ts` (factory logic). If chrome was added, ensure [`_composables.test.ts`](../tests/src/styles/_composables.test.ts) passes.
+2. **Native-first triage** — _before_ writing factory logic, ask: **what does the platform already give me?** Walk the marker list in §5.4.1 below. Anything the platform already does for free (top-layer rendering via `[popover]`, light-dismiss via `popover="auto"`, `[hidden]` for visibility, `[open]` for `<details>` / `<dialog>`, `interpolate-size: allow-keywords` for height tweens, `transition-behavior: allow-discrete` for enter / exit animations, native form constraint validation, ARIA roles the consumer markup can declare) MUST NOT be re-implemented in the factory. The composable's only job is the gap between what the platform ships and what the consumer needs — usually programmatic open / close, lifecycle bridging, and ARIA mirroring.
+3. **Factory.** `src/browser/factories/create{Name}.ts` — owns the DOM mutation logic + `@vue/reactivity` state. Use `assertElement(el, '{tag}')` to gate on the right semantic root.
+4. **Composable.** `src/browser/composables/use{Name}.ts` — thin Vue adapter that registers a cleanup callback with the component's scope and delegates to the factory.
+5. **Event names.** Add namespaced names to [`src/browser/constants.ts`](../src/browser/constants.ts) and re-export from [`events.ts`](../src/browser/events.ts) (pattern: `elements:{source}:{verb}` per AGENTS.md §11).
+6. **Chrome partial** (if state-gated CSS is needed). `src/styles/composables/_{name}.scss` — wrap rules in `@layer composables`; gate every rule on a composable-state selector (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`). If the partial declares `transition:` or `animation:`, invoke `@include transition()` or `@include reduced-motion` — the composable charter enforces it.
+7. **Contract entry.** Add an entry to [`COMPOSABLE_CONTRACTS`](../src/browser/patterns.ts) with the token namespace, required tokens, state-selector kinds, animated flag, and factory pairing.
+8. **Taxonomy entry.** Update the matching row in `taxonomy.md` and `taxonomy.ts` — if a tag is now composable, set its row's Treatment to `composable` and `composable` field to `'use{Name}'`.
+9. **Tests.** Add `tests/src/browser/composables/use{Name}.test.ts` (Vue adapter) and `tests/src/browser/factories/create{Name}.test.ts` (factory logic). If chrome was added, ensure [`_composables.test.ts`](../tests/src/styles/_composables.test.ts) passes. The factory ↔ style parity test ([`_native-redundancy.test.ts`](../tests/src/styles/_native-redundancy.test.ts)) will fail if you write a `setAttribute('data-{name}-*', …)` with no matching reference in `src/styles/` — see §5.4.1.
+
+#### 5.4.1 Native-platform redundancy checklist
+
+Before AND after every factory PR, walk this checklist. It catches the class of bug that hit `createAside` (400 ms dead wait on close — the JS was waiting for a transition that hadn't started yet) and `createTabs` (the JS toggled `[aria-hidden]` while the CSS hid panes via `[hidden]`, so panes never visually hid).
+
+1. **Dead lifecycle attributes.** For every `setAttribute('data-{x}-{state}', …)` in the factory: grep `src/styles/` for `data-{x}-{state}`. If 0 hits → either wire the attribute into the cascade or drop the write. The parity test at [`tests/src/styles/_native-redundancy.test.ts`](../tests/src/styles/_native-redundancy.test.ts) fails CI when this rule is violated; legitimately JS-only attributes opt in via the test's `JS_ONLY` map with a one-line rationale.
+2. **`runTransition` BEFORE the native lifecycle call.** Wrong shape:
+   ```ts
+   // ✗ Waits for a transitionend that can't fire — the platform call hasn't been made.
+   transition = runTransition(element, () => {
+   	element.hidePopover() // <-- This is what TRIGGERS the transition.
+   	emit(element, EVENTS.close)
+   })
+   ```
+   Right shape: call the native method first, THEN await the platform-triggered transition:
+   ```ts
+   element.hidePopover() // <-- Triggers the platform's exit transition.
+   transition = runTransition(element, () => emit(element, EVENTS.close))
+   ```
+3. **Re-implemented Escape / outside-click dismiss when `popover="auto"` would suffice.** The factory should opt for `popover="auto"` whenever the consumer wants light-dismiss, and `popover="manual"` only when the consumer wants sticky behavior (custom dismiss UI). Don't wire `document.addEventListener('keydown', …)` checking `event.key === 'Escape'` on an `popover="auto"` host — the platform already does it.
+4. **JS-driven ARIA chrome (`aria-modal`, `role`, `inert`) the consumer markup could declare directly.** Prefer letting the static markup or the chrome partial own these. The factory mirrors `aria-selected` / `aria-expanded` / `aria-pressed` on interactive controls (which DO change with composable state), but `role="dialog"` / `aria-modal="true"` are usually static.
+5. **Hand-written body scroll-lock.** Modal `<dialog>` (`showModal()`) and top-layer popovers already pin the page natively. Only opt into `lockBodyScroll()` for genuinely non-modal-feeling surfaces that need to hold the viewport (inspector panels, persistent drawers).
+6. **Cancellable wrappers around natively non-cancellable events.** Popover `beforetoggle` is informational only per the platform spec — `preventDefault()` on the wrapper doesn't undo the native `showPopover()` call you already made. Either emit only post-state events or, when you genuinely need vetoability, hook BEFORE the platform call (the way `useTabs.on.show` does — `dispatch(triggerEl, …) || return` before the activation flip).
+
+If a stripped factory has fewer lines and the showcase page still passes its probe, the strip is right. Reference strip diffs to study: `createAside` ([`2b6952a`](https://github.com/…/commit/2b6952a) — close latency 400 ms → 73 ms by dropping dead `[data-aside-*]` writes + the `runTransition`-before-native-call anti-pattern), `createTabs` (this PR — fixed the `[aria-hidden]` vs `[hidden]` mismatch that left tab panes visually unhidden).
 
 ---
 
@@ -369,6 +395,25 @@ One section per API dimension. Each section follows the same shape:
 **Hard rules during demo authoring:**
 
 - **No utility classes inside framework demos.** If `<button class="primary">` doesn't render right without a `bg-blue-500` rescue, the framework is broken. Fix the framework, not the demo.
+- **No inline `style="…"` for layout or chrome.** Pages that lean on inline styles are hiding framework gaps or duplicating chrome the framework already paints. Every inline-style instance you'd consider writing first goes through this triage:
+  1. **Does the framework already do this when the markup is correct?** Most "spacing fixes" are signals that `<article>` / `<dialog>` / `<header>` / `<footer>` chrome is being asked to do its job and the consumer is paying for the framework to NOT do it. Strip the inline; the framework owns vertical rhythm inside its surfaces.
+  2. **Is this a repeating spacing-shape primitive?** The framework ships three layout-shape primitives carried by `<div>` (with element-local variants for elements that need them):
+     - `<div class="stack">` — flex column with gap > 0 (vertical rhythm).
+     - `<div class="cluster">` — flex wrap with gap > 0 (horizontal rhythm, chip rows, button rows).
+     - `<div class="frame">` — flex column with gap = 0, padding = 0, `overflow: clip` (children fill edge-to-edge).
+     - `<article class="frame">` / `<td class="frame">` — element-local versions of `.frame` that retune the element's own `--set-{tag}-*` tokens so descendant chrome reading them collapses correctly.
+       Single-property gap retunes use `style="--set-{stack,cluster}-gap: …"` — a knob-tune, not a re-implementation.
+  3. **Is this single-property dimensional?** Reach for a Tailwind utility first (`w-32` = 8rem, `max-w-md` = 28rem, `min-w-56` = 14rem, `mt-3`, `me-auto`, `w-10`). Inline only when the value isn't on Tailwind's scale and doesn't recur enough to centralize.
+  4. **Is it page chrome shared with other pages?** Extract to `app/browser/styles/showcase.css` as a `.showcase-{name}` class so the pattern is centralized and the diff is auditable. The file is the showcase's CSS — it is NOT the framework. Anything that lives in the framework cannot live here; anything that lives here is intentionally page-only.
+  5. **Is the inline style the demo's payload?** Showing `<button style="border-radius: 0">` to demonstrate the per-instance retune is exactly that — the inline style is the lesson. Same for `<i class="icon" style="--icon: var(--set-icon-plus)">` (the icon framework's documented API), swatch backgrounds (`style="background-color: var(--color-primary)"`), and shadow demos (`style="box-shadow: var(--set-box-shadow-small)"`). Keep.
+
+  Three categories survive the triage as legitimate inline styles in pages:
+  - **Reactive `:style` bindings.** `:style="{ borderRadius: \`calc(0.375rem \* ${factor})\` }"` reads a Vue ref. Inline is the only path.
+  - **Single-property dimensional values that don't recur** — `style="max-width: 28rem"` on one demo article. Don't extract a class for a one-off (but DO reach for a Tailwind utility if one fits).
+  - **Demonstrating a token.** A swatch with `style="background-color: var(--color-primary)"` or an `<article style="box-shadow: var(--set-box-shadow-small)">` IS the proof of the token; the inline declaration is intentional.
+
+  Everything else moves to the framework or to `showcase.css`. The audit phase reviews every `<page>.vue` for inline `style="..."` and asks "which of the five triage answers justifies this one?" If the answer is "none," fix the page; if the answer is "the framework should but doesn't," fix the framework; if the answer is "it recurs across pages," lift to `showcase.css`.
+
 - **Every variant demonstrated**, not "a sample of variants." If there are 7 variants, render 7. The page IS the proof that the cascade hits every one.
 - **Reduced-motion verification block is mandatory.** Every page includes a section the reader can toggle their OS reduced-motion preference against and verify the framework respects it.
 - **Forced-colors verification block is mandatory.** A note + a representative element the reader can verify in Windows HC mode.

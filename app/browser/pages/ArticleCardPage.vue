@@ -91,7 +91,7 @@ const cosmicImageDataUri =
 				<em>whatever we know how to order it</em> to perform. It can follow analysis; but it has no
 				power of <em>anticipating</em> any analytical relations or truths.
 			</p>
-			<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
+			<p class="showcase-card-subtitle">
 				— Ada Lovelace, <cite>Notes on the Analytical Engine</cite>, 1843
 			</p>
 		</article>
@@ -108,12 +108,12 @@ const cosmicImageDataUri =
 		</p>
 		<article>
 			<header>
-				<h3 style="margin-block: 0">Account settings</h3>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
+				<h3>Account settings</h3>
+				<p class="showcase-card-subtitle">
 					Manage your profile, email, and notification preferences.
 				</p>
 			</header>
-			<p style="margin-block: 0">
+			<p>
 				Changes are saved automatically. Sign-out from all devices is available in the security
 				section.
 			</p>
@@ -125,7 +125,7 @@ const cosmicImageDataUri =
 				<dt>Member since</dt>
 				<dd>March 2024</dd>
 			</dl>
-			<footer style="display: flex; gap: 0.5rem; justify-content: flex-end">
+			<footer class="cluster showcase-footer-actions">
 				<button type="button" class="subtle">Cancel</button>
 				<button type="button" class="primary">Save changes</button>
 			</footer>
@@ -140,44 +140,30 @@ const cosmicImageDataUri =
 			(<code>.success</code>, <code>.warning</code>, etc.) and the border picks up the variant's
 			identity color through <code>--set-variant-background-color</code>.
 		</p>
-		<div
-			style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr))"
-		>
+		<div class="showcase-tile-grid">
 			<article class="primary">
-				<h4 style="margin-block: 0">Primary</h4>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-					Identity-bordered card.
-				</p>
+				<h4>Primary</h4>
+				<p class="showcase-card-subtitle">Identity-bordered card.</p>
 			</article>
 			<article class="success">
-				<h4 style="margin-block: 0">Success</h4>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-					Confirmation context.
-				</p>
+				<h4>Success</h4>
+				<p class="showcase-card-subtitle">Confirmation context.</p>
 			</article>
 			<article class="warning">
-				<h4 style="margin-block: 0">Warning</h4>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-					Caution context.
-				</p>
+				<h4>Warning</h4>
+				<p class="showcase-card-subtitle">Caution context.</p>
 			</article>
 			<article class="danger">
-				<h4 style="margin-block: 0">Danger</h4>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-					Destructive context.
-				</p>
+				<h4>Danger</h4>
+				<p class="showcase-card-subtitle">Destructive context.</p>
 			</article>
 			<article class="information">
-				<h4 style="margin-block: 0">Information</h4>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-					Neutral notice context.
-				</p>
+				<h4>Information</h4>
+				<p class="showcase-card-subtitle">Neutral notice context.</p>
 			</article>
 			<article class="tertiary">
-				<h4 style="margin-block: 0">Tertiary</h4>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-					Alternative action context.
-				</p>
+				<h4>Tertiary</h4>
+				<p class="showcase-card-subtitle">Alternative action context.</p>
 			</article>
 		</div>
 	</section>
@@ -190,30 +176,22 @@ const cosmicImageDataUri =
 			color. Use for callout cards where the variant signal matters more than the surface staying
 			neutral.
 		</p>
-		<div
-			style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr))"
-		>
+		<div class="showcase-tile-grid">
 			<article class="success subtle">
-				<h4 style="margin-block: 0">Build passed</h4>
-				<p style="margin-block: 0">
-					All 1,420 tests passing on <code>main</code>. Ready to deploy.
-				</p>
+				<h4>Build passed</h4>
+				<p>All 1,420 tests passing on <code>main</code>. Ready to deploy.</p>
 			</article>
 			<article class="warning subtle">
-				<h4 style="margin-block: 0">Quota warning</h4>
-				<p style="margin-block: 0">You're at 87% of your monthly API quota. Consider upgrading.</p>
+				<h4>Quota warning</h4>
+				<p>You're at 87% of your monthly API quota. Consider upgrading.</p>
 			</article>
 			<article class="danger subtle">
-				<h4 style="margin-block: 0">Payment failed</h4>
-				<p style="margin-block: 0">
-					Your subscription couldn't be renewed. Update your billing method.
-				</p>
+				<h4>Payment failed</h4>
+				<p>Your subscription couldn't be renewed. Update your billing method.</p>
 			</article>
 			<article class="information subtle">
-				<h4 style="margin-block: 0">Scheduled maintenance</h4>
-				<p style="margin-block: 0">
-					Database maintenance tonight 02:00–04:00 UTC. Expect brief downtime.
-				</p>
+				<h4>Scheduled maintenance</h4>
+				<p>Database maintenance tonight 02:00–04:00 UTC. Expect brief downtime.</p>
 			</article>
 		</div>
 	</section>
@@ -227,25 +205,26 @@ const cosmicImageDataUri =
 			as a tonal shift within the same surface, not a separate tier.
 		</p>
 		<div
-			style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr))"
+			class="showcase-tile-grid"
+			style="--showcase-tile-grid-min: 18rem; --showcase-tile-grid-flow: auto-fit"
 		>
 			<article class="primary filled">
 				<header>
-					<h3 style="margin-block: 0; color: inherit">Welcome to Pro</h3>
+					<h3>Welcome to Pro</h3>
 				</header>
-				<p style="margin-block: 0">
+				<p>
 					You've unlocked unlimited projects, priority support, and advanced analytics. Your trial
 					runs through April 30 — cancel anytime.
 				</p>
-				<footer style="display: flex; gap: 0.5rem">
+				<footer class="cluster">
 					<button type="button">Start a tour</button>
 				</footer>
 			</article>
 			<article class="success filled">
 				<header>
-					<h3 style="margin-block: 0; color: inherit">Order shipped</h3>
+					<h3>Order shipped</h3>
 				</header>
-				<p style="margin-block: 0">
+				<p>
 					Tracking <code style="background-color: rgb(255 255 255 / 0.2)">FX-8821-991</code>.
 					Delivery expected Friday between 10 AM and 2 PM.
 				</p>
@@ -261,22 +240,20 @@ const cosmicImageDataUri =
 			a card's "small"). <code>.small</code> halves padding and gap; <code>.large</code> roughly
 			doubles them and bumps the font-size.
 		</p>
-		<div style="display: grid; gap: 1rem">
+		<div class="stack">
 			<article class="small">
-				<h4 style="margin-block: 0">Small card</h4>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-					Compact density for tight grids and inline tiles.
-				</p>
+				<h4>Small card</h4>
+				<p class="showcase-card-subtitle">Compact density for tight grids and inline tiles.</p>
 			</article>
 			<article>
-				<h3 style="margin-block: 0">Default card</h3>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
+				<h3>Default card</h3>
+				<p class="showcase-card-subtitle">
 					The framework's neutral baseline. Used everywhere else on this page.
 				</p>
 			</article>
 			<article class="large">
-				<h2 style="margin-block: 0">Large card</h2>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
+				<h2>Large card</h2>
+				<p class="showcase-card-subtitle">
 					Hero-tier surface — generous padding + radius for top-of-page splashes.
 				</p>
 			</article>
@@ -293,10 +270,11 @@ const cosmicImageDataUri =
 			last-child) gets pinned to the outer radius minus border-width.
 		</p>
 		<div
+			class="showcase-tile-grid"
 			style="
-				display: grid;
-				gap: 1.5rem;
-				grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+				--showcase-tile-grid-min: 20rem;
+				--showcase-tile-grid-flow: auto-fit;
+				--showcase-tile-grid-gap: 1.5rem;
 			"
 		>
 			<article>
@@ -306,23 +284,21 @@ const cosmicImageDataUri =
 					width="800"
 					height="400"
 				/>
-				<h3 style="margin-block: 0">Coastal mornings</h3>
-				<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
+				<h3>Coastal mornings</h3>
+				<p class="showcase-card-subtitle">
 					Image bleeds to the top edge; copy follows in the card's normal flow.
 				</p>
-				<footer style="display: flex; gap: 0.5rem; justify-content: flex-end">
+				<footer class="cluster showcase-footer-actions">
 					<button type="button" class="subtle">Save</button>
 					<button type="button" class="primary">Read more</button>
 				</footer>
 			</article>
 			<article>
 				<header>
-					<h3 style="margin-block: 0">Aurora notes</h3>
-					<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-						Mountain expedition log
-					</p>
+					<h3>Aurora notes</h3>
+					<p class="showcase-card-subtitle">Mountain expedition log</p>
 				</header>
-				<p style="margin-block: 0">
+				<p>
 					Six days, three peaks, one unforgettable midnight sky. Field journal excerpts and trail
 					GPX downloads below.
 				</p>
@@ -344,9 +320,9 @@ const cosmicImageDataUri =
 			Useful for settings sheets, menu cards, and any pattern where a header / footer band frames a
 			list of rows.
 		</p>
-		<article style="max-width: 28rem">
+		<article class="max-w-md">
 			<header>
-				<h3 style="margin-block: 0">Notifications</h3>
+				<h3>Notifications</h3>
 			</header>
 			<ul class="group">
 				<li><a href="#article-list-group">Email digests</a></li>
@@ -354,11 +330,62 @@ const cosmicImageDataUri =
 				<li><a href="#article-list-group">Sound alerts</a></li>
 				<li><a href="#article-list-group">Do not disturb schedule</a></li>
 			</ul>
-			<footer style="display: flex; justify-content: space-between; align-items: center">
-				<small style="color: var(--color-text-muted)"> Changes save automatically </small>
+			<footer class="showcase-footer-split">
+				<small class="showcase-muted"> Changes save automatically </small>
 				<button type="button" class="subtle small">Reset to defaults</button>
 			</footer>
 		</article>
+	</section>
+
+	<section id="article-flush">
+		<h2>Nested cards — <code>article.flush</code></h2>
+		<p>
+			<code>.flush</code> drops the article's outer border, radius, shadow, and margin so a nested
+			<code>&lt;article&gt;</code> inside a parent card / region surface reads as one continuous
+			boundary owned by the host. Internal <code>&lt;header&gt;</code> / <code>&lt;footer&gt;</code>
+			pin chrome survives because it's painted from inside the article's grid. Variant cascade still
+			flows through to the article's internal chrome — variant headers / footers / borders show up
+			on nested cards even when the outer perimeter is dissolved.
+		</p>
+		<p>Three nested articles inside one outer card — each is itself a fully-composed card:</p>
+		<article class="frame max-w-lg">
+			<header>
+				<h3>Deployment summary</h3>
+			</header>
+			<article class="success flush">
+				<header><h4>Build passed</h4></header>
+				<p>All 1,420 tests passing on <code>main</code>.</p>
+			</article>
+			<article class="warning flush">
+				<header><h4>1 deprecation warning</h4></header>
+				<p>See build log for the call site.</p>
+			</article>
+			<article class="information flush">
+				<header><h4>Awaiting review</h4></header>
+				<p>Deploy starts in 60 seconds unless cancelled.</p>
+			</article>
+			<footer>
+				<small>Last updated 12 seconds ago.</small>
+			</footer>
+		</article>
+		<p>
+			Useful for status panels, settings group cards with internal section dividers, and any pattern
+			where a parent card frames multiple structured sub-regions without each sub-region painting
+			its own outline.
+		</p>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;article&gt;
+  &lt;header&gt;…&lt;/header&gt;
+  &lt;article class="success flush"&gt;
+    &lt;header&gt;&lt;h4&gt;Build passed&lt;/h4&gt;&lt;/header&gt;
+    &lt;p&gt;…&lt;/p&gt;
+  &lt;/article&gt;
+  &lt;article class="warning flush"&gt;…&lt;/article&gt;
+  &lt;article class="information flush"&gt;…&lt;/article&gt;
+  &lt;footer&gt;…&lt;/footer&gt;
+&lt;/article&gt;</code></pre>
+		</details>
 	</section>
 
 	<section id="article-compositions">
@@ -369,34 +396,22 @@ const cosmicImageDataUri =
 		</p>
 
 		<h3>Profile card</h3>
-		<article style="max-width: 24rem">
-			<header
-				style="
-					display: flex;
-					gap: 1rem;
-					align-items: center;
-					background-color: transparent;
-					border-block-end: 0;
-				"
-			>
+		<article class="max-w-sm">
+			<header class="showcase-profile-header">
 				<img
 					:src="portraitImageDataUri"
 					alt="Ada Lovelace's portrait — abstract gradient placeholder"
 					width="64"
 					height="64"
-					style="width: 4rem; height: 4rem; border-radius: 50%; flex-shrink: 0; margin: 0"
+					class="showcase-profile-avatar"
 				/>
 				<div>
-					<h3 style="margin-block: 0">Ada Lovelace</h3>
-					<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-						Mathematician · Analytical team
-					</p>
+					<h3>Ada Lovelace</h3>
+					<p class="showcase-card-subtitle">Mathematician · Analytical team</p>
 				</div>
 			</header>
-			<p style="margin-block: 0">
-				342 commits over the project's lifetime. Latest activity 2 hours ago.
-			</p>
-			<footer style="display: flex; gap: 0.5rem">
+			<p>342 commits over the project's lifetime. Latest activity 2 hours ago.</p>
+			<footer class="cluster">
 				<button type="button" class="primary">Message</button>
 				<button type="button" class="subtle">View profile</button>
 			</footer>
@@ -404,96 +419,41 @@ const cosmicImageDataUri =
 
 		<h3>Stat card grid</h3>
 		<div
-			style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr))"
+			class="showcase-tile-grid"
+			style="--showcase-tile-grid-min: 12rem; --showcase-tile-grid-flow: auto-fit"
 		>
 			<article class="small">
-				<p
-					style="
-						margin-block: 0;
-						color: var(--color-text-muted);
-						font-size: 0.75em;
-						text-transform: uppercase;
-						letter-spacing: 0.05em;
-					"
-				>
-					Active users
-				</p>
-				<p style="margin-block: 0; font-size: 1.875rem; font-weight: 600; line-height: 1">12,402</p>
-				<p style="margin-block: 0; font-size: 0.875em; color: var(--color-success-on-canvas)">
-					↑ 4.2% vs last week
-				</p>
+				<p class="showcase-stat-label">Active users</p>
+				<p class="showcase-stat-value">12,402</p>
+				<p class="showcase-stat-delta showcase-stat-delta-up">↑ 4.2% vs last week</p>
 			</article>
 			<article class="small">
-				<p
-					style="
-						margin-block: 0;
-						color: var(--color-text-muted);
-						font-size: 0.75em;
-						text-transform: uppercase;
-						letter-spacing: 0.05em;
-					"
-				>
-					Revenue
-				</p>
-				<p style="margin-block: 0; font-size: 1.875rem; font-weight: 600; line-height: 1">$48.7k</p>
-				<p style="margin-block: 0; font-size: 0.875em; color: var(--color-success-on-canvas)">
-					↑ 8.7% vs last week
-				</p>
+				<p class="showcase-stat-label">Revenue</p>
+				<p class="showcase-stat-value">$48.7k</p>
+				<p class="showcase-stat-delta showcase-stat-delta-up">↑ 8.7% vs last week</p>
 			</article>
 			<article class="small">
-				<p
-					style="
-						margin-block: 0;
-						color: var(--color-text-muted);
-						font-size: 0.75em;
-						text-transform: uppercase;
-						letter-spacing: 0.05em;
-					"
-				>
-					Churn rate
-				</p>
-				<p style="margin-block: 0; font-size: 1.875rem; font-weight: 600; line-height: 1">2.4%</p>
-				<p style="margin-block: 0; font-size: 0.875em; color: var(--color-danger-on-canvas)">
-					↑ 0.3pp vs last week
-				</p>
+				<p class="showcase-stat-label">Churn rate</p>
+				<p class="showcase-stat-value">2.4%</p>
+				<p class="showcase-stat-delta showcase-stat-delta-down">↑ 0.3pp vs last week</p>
 			</article>
 			<article class="small">
-				<p
-					style="
-						margin-block: 0;
-						color: var(--color-text-muted);
-						font-size: 0.75em;
-						text-transform: uppercase;
-						letter-spacing: 0.05em;
-					"
-				>
-					Avg session
-				</p>
-				<p style="margin-block: 0; font-size: 1.875rem; font-weight: 600; line-height: 1">
-					14m 32s
-				</p>
-				<p style="margin-block: 0; font-size: 0.875em; color: var(--color-text-muted)">
-					— flat vs last week
-				</p>
+				<p class="showcase-stat-label">Avg session</p>
+				<p class="showcase-stat-value">14m 32s</p>
+				<p class="showcase-stat-delta showcase-stat-delta-flat">— flat vs last week</p>
 			</article>
 		</div>
 
 		<h3>Pricing card</h3>
-		<div
-			style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr))"
-		>
+		<div class="showcase-tile-grid" style="--showcase-tile-grid-flow: auto-fit">
 			<article>
 				<header>
-					<h4 style="margin-block: 0">Free</h4>
-					<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-						For solo builders
-					</p>
+					<h4>Free</h4>
+					<p class="showcase-card-subtitle">For solo builders</p>
 				</header>
-				<p style="margin-block: 0; font-size: 2rem; font-weight: 600; line-height: 1">
+				<p class="showcase-price">
 					$0
-					<small style="font-size: 0.875rem; color: var(--color-text-muted); font-weight: 400"
-						>/ month</small
-					>
+					<small class="showcase-price-unit">/ month</small>
 				</p>
 				<ul>
 					<li>3 projects</li>
@@ -501,21 +461,17 @@ const cosmicImageDataUri =
 					<li>1 GB storage</li>
 				</ul>
 				<footer>
-					<button type="button" class="subtle" style="width: 100%">Start free</button>
+					<button type="button" class="subtle w-full">Start free</button>
 				</footer>
 			</article>
 			<article class="primary">
 				<header>
-					<h4 style="margin-block: 0">Pro</h4>
-					<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-						For growing teams
-					</p>
+					<h4>Pro</h4>
+					<p class="showcase-card-subtitle">For growing teams</p>
 				</header>
-				<p style="margin-block: 0; font-size: 2rem; font-weight: 600; line-height: 1">
+				<p class="showcase-price">
 					$24
-					<small style="font-size: 0.875rem; color: var(--color-text-muted); font-weight: 400"
-						>/ month</small
-					>
+					<small class="showcase-price-unit">/ month</small>
 				</p>
 				<ul>
 					<li>Unlimited projects</li>
@@ -524,17 +480,15 @@ const cosmicImageDataUri =
 					<li>Advanced analytics</li>
 				</ul>
 				<footer>
-					<button type="button" class="primary" style="width: 100%">Upgrade to Pro</button>
+					<button type="button" class="primary w-full">Upgrade to Pro</button>
 				</footer>
 			</article>
 			<article>
 				<header>
-					<h4 style="margin-block: 0">Enterprise</h4>
-					<p style="margin-block: 0; color: var(--color-text-muted); font-size: 0.875em">
-						For organizations
-					</p>
+					<h4>Enterprise</h4>
+					<p class="showcase-card-subtitle">For organizations</p>
 				</header>
-				<p style="margin-block: 0; font-size: 2rem; font-weight: 600; line-height: 1">Custom</p>
+				<p class="showcase-price">Custom</p>
 				<ul>
 					<li>Everything in Pro</li>
 					<li>SSO + SAML</li>
@@ -542,7 +496,7 @@ const cosmicImageDataUri =
 					<li>On-premise option</li>
 				</ul>
 				<footer>
-					<button type="button" class="subtle" style="width: 100%">Contact sales</button>
+					<button type="button" class="subtle w-full">Contact sales</button>
 				</footer>
 			</article>
 		</div>
@@ -550,21 +504,21 @@ const cosmicImageDataUri =
 		<h3>Card with aside callout</h3>
 		<article>
 			<header>
-				<h3 style="margin-block: 0">Project: Aurora 1.2 release</h3>
+				<h3>Project: Aurora 1.2 release</h3>
 			</header>
-			<p style="margin-block: 0">
+			<p>
 				The 1.2 release lands April 30. Migration guide is in the docs; the breaking changes summary
 				is below. If you're on 1.1.x and using the legacy webhook signature, review the API council
 				notes before upgrading.
 			</p>
 			<aside class="warning">
-				<p style="margin-block: 0">
+				<p>
 					<strong>Heads up:</strong> the <code>v1/webhooks</code> endpoint is deprecated in 1.2 and
 					will be removed in 1.3. Migrate to <code>v2/events</code>.
 				</p>
 			</aside>
-			<footer style="display: flex; justify-content: space-between; align-items: center">
-				<small style="color: var(--color-text-muted)"> Filed by Margaret Hamilton </small>
+			<footer class="showcase-footer-split">
+				<small class="showcase-muted"> Filed by Margaret Hamilton </small>
 				<a href="#article-compositions">Migration guide →</a>
 			</footer>
 		</article>
@@ -572,13 +526,13 @@ const cosmicImageDataUri =
 		<h3>Disabled card</h3>
 		<article class="disabled" aria-disabled="true">
 			<header>
-				<h4 style="margin-block: 0">Locked feature</h4>
+				<h4>Locked feature</h4>
 			</header>
-			<p style="margin-block: 0">
+			<p>
 				Available on Pro plans. The card is dimmed and pointer-events are disabled so the footer
 				button can't be clicked.
 			</p>
-			<footer style="display: flex; gap: 0.5rem">
+			<footer class="cluster">
 				<button type="button" class="primary" disabled>Open</button>
 			</footer>
 		</article>

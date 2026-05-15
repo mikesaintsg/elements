@@ -843,7 +843,7 @@ const releaseSteps: readonly ReleaseStep[] = [
 					<th>Member ID</th>
 					<th>Name</th>
 					<th>Role</th>
-					<th style="width: 8rem"></th>
+					<th class="w-32"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -922,7 +922,7 @@ const releaseSteps: readonly ReleaseStep[] = [
 					<th>Member ID</th>
 					<th>Name</th>
 					<th>Team</th>
-					<th style="width: 8rem"></th>
+					<th class="w-32"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -948,7 +948,7 @@ const releaseSteps: readonly ReleaseStep[] = [
 					<tr :id="`multi-${m.id}-details`">
 						<td colspan="4">
 							<div data-table-expansion-panel>
-								<p style="margin-block: 0">
+								<p>
 									{{ m.name }} works on the <strong>{{ m.team }}</strong> team as a
 									{{ m.role.toLowerCase() }}. <strong>{{ m.commits }}</strong> commits logged;
 									latest activity <em>{{ m.last }}</em
@@ -978,7 +978,7 @@ const releaseSteps: readonly ReleaseStep[] = [
 					<th>Step</th>
 					<th>Status</th>
 					<th>Owner</th>
-					<th style="width: 8rem"></th>
+					<th class="w-32"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -1002,7 +1002,7 @@ const releaseSteps: readonly ReleaseStep[] = [
 					<tr :id="`step-${step.id}-details`">
 						<td colspan="4">
 							<div data-table-expansion-panel>
-								<p style="margin-block: 0">{{ step.notes }}</p>
+								<p>{{ step.notes }}</p>
 							</div>
 						</td>
 					</tr>
@@ -1047,7 +1047,7 @@ const toggle = (id: string): void =&gt; {
 					<th>Customer</th>
 					<th>Status</th>
 					<th>Total</th>
-					<th style="width: 8rem"></th>
+					<th class="w-32"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -1109,7 +1109,7 @@ const toggle = (id: string): void =&gt; {
 					<th>Token</th>
 					<th>Light</th>
 					<th>Dark</th>
-					<th style="width: 8rem"></th>
+					<th class="w-32"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -1139,7 +1139,7 @@ const toggle = (id: string): void =&gt; {
 					<tr :id="`bordered-${t.id}-details`">
 						<td colspan="4">
 							<div data-table-expansion-panel>
-								<p style="margin-block: 0">{{ t.notes }}</p>
+								<p>{{ t.notes }}</p>
 							</div>
 						</td>
 					</tr>
@@ -1162,7 +1162,7 @@ const toggle = (id: string): void =&gt; {
 					<th>Level</th>
 					<th>Source</th>
 					<th>Message</th>
-					<th style="width: 8rem"></th>
+					<th class="w-32"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -1189,9 +1189,7 @@ const toggle = (id: string): void =&gt; {
 					<tr :id="`striped-${r.id}-details`">
 						<td colspan="5">
 							<div data-table-expansion-panel>
-								<pre
-									style="margin: 0; white-space: pre-wrap; word-break: break-word"
-								><code>{{ r.context }}</code></pre>
+								<pre class="whitespace-pre-wrap break-words"><code>{{ r.context }}</code></pre>
 							</div>
 						</td>
 					</tr>
@@ -1214,7 +1212,7 @@ const toggle = (id: string): void =&gt; {
 					<th>When</th>
 					<th>Who</th>
 					<th>What</th>
-					<th style="width: 6rem"></th>
+					<th class="w-24"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -1240,7 +1238,7 @@ const toggle = (id: string): void =&gt; {
 					<tr :id="`compact-${a.id}-details`">
 						<td colspan="4">
 							<div data-table-expansion-panel>
-								<p style="margin-block: 0">{{ a.diff }}</p>
+								<p>{{ a.diff }}</p>
 							</div>
 						</td>
 					</tr>
