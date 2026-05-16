@@ -139,16 +139,13 @@ The shell consists of:
 
 ## Tests
 
-The `tests/app/browser/` test project is queued; once it ships, the contract above is parity-tested. Planned coverage:
+The `tests/app/browser/` test project is **shipped** — the contract above is parity-tested in the `app:browser` (Chromium) project, the same server-less Vite-graph idiom `tests/src/browser` uses (barrel imports + `import.meta.glob('…',{query:'?raw'})`, no node fs). Coverage:
 
-- **Route catalog parity** — every route's `group` is in `ROUTE_GROUPS`; every route id + title is unique; routes-per-group is non-empty.
-- **Factory ↔ page pairing** — every `src/browser/factories/create{Name}.ts` resolves to a `Use{Name}Page.vue` OR appears in a documented bundled-pages allow-list.
-- **Element ↔ page pairing** — every `elements.ts` key has a representation in some Element page (Element-Interactive or Element-Content group).
-- **Component ↔ page pairing** — every `COMPONENT_CONTRACTS` entry appears in a Component or Surface page.
-- **No inline-style violations** — `app/browser/pages/*.vue` MUST NOT carry `style="…"` for layout/chrome. Reactive `:style` bindings + dimensional one-offs + token demonstrations exempt per [Contract](#contract) §2.
-- **Showcase class namespace** — every class authored in `showcase.css` starts with `.showcase-`.
+- **`pages.test.ts`** (the `README.test.ts` analogue) — structural UNIFORMITY + SKELETON + a **clean total bijection** (page ↔ route ↔ barrel export ↔ per-page test, counts equal, no exception list) + inline-style + `.showcase-` namespace + single-word-modifier enforcement.
+- **`parity.test.ts`** (the fused `{elements,composables,showcase}.test.ts` analogue, three describe regions) — every `elements.ts` key / `COMPONENT_`/`SURFACE_`/`COMPOSABLE_CONTRACTS` entry / `create*` factory is demonstrated by the page that owns it (resolved through `PAGE_SURFACE_BUNDLES`), bidirectionally; chrome partials map to a demoing page; the page↔guide edges `router.test.ts` can't see.
+- **43 per-page `pages/{X}Page.test.ts`** (the per-`{guide}.test.ts` analogue) — each carries BESPOKE parity asserted against the **mounted Chromium DOM**: every bundled tag / modifier-cascade value / surface actually renders. The 18 `Use*Page` files run the **§9 composable API-name guard** (`_composable-api.ts`): every option / `on.*` event / return member the page's real `<script setup>` call-site references must still exist in the composable's src surface — a renamed src API fails a specific, named test, so the showcase can never silently rot against `src/` again.
 
-These tests share the same setup-file stack as the guides project (`tests/setup.ts` + `tests/setupServer.ts`) — they're pure node-env introspection over the page source + framework registries.
+These run in Chromium (the Vue SFC compiler + real `mount()` are active), NOT node-env introspection — a page's chrome is verified by rendering it, not by parsing its source.
 
 ---
 

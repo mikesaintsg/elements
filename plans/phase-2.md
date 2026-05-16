@@ -4,6 +4,12 @@
 
 ---
 
+> ## Status — ✅ COMPLETE
+>
+> **2A** consolidated `parity.test.ts` (3 regions) — landed; caught + fixed a real `<math>` coverage gap. **2B** all 43 per-page bespoke files filled in 7 verified, individually-committed batches (Foundation / Elements-Interactive / Elements-Content / Components / Surfaces / Composables×18 / Exemptions×3). The **§9 composable API-name guard** shipped as the strategic centerpiece (`_composable-api.ts` shared parser + 18 thin runners) — a standing anti-rot invariant. Verify-before-assert surfaced + correctly handled several bundle/markup splits (Media embed/object, Sectioning `<main>`, Typography's approximate bundle, ArticleCard's curated 6/7 variants). **2C**: `pages.test.ts` was already a clean total bijection with no exception list / skips / soft-asserts — no tightening needed; confirmed README-grade. **Close:** full suite **145 files / 7023 tests** green (Phase-1 baseline 144/6283 — Phase 2 only *added*: +1 file `parity.test.ts`, +740 tests, zero regression); `npm run check` 0/0; `guides/showcase.md` §Tests updated "queued" → "shipped".
+
+---
+
 ## Surface
 
 **One** consolidated parity driver + 43 filled per-page files, all in the **`app:browser`** project (the Phase-1 architecture pivot — NOT `app:core` node text-parity). Each imports the route table + page components from the `app/browser` barrel and reads raw `src/` / `.vue` source via `import.meta.glob('…', { query: '?raw', eager: true })` — the server-less idiom `tests/src/browser` uses (no `setupServer` / `readAllPages()` / `node:fs`). Per-page files additionally **mount the component in real Chromium** (the Phase-1 scaffolds already do this), so bespoke parity can assert against the *rendered DOM*, not just parse `.vue` text — a stronger capability than this plan originally assumed.
