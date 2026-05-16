@@ -384,6 +384,134 @@ In this example, a book author has marked up some sections as chapters and some 
 
 The `nav` element represents a section of a page that links to other pages or to parts within the page: a section with navigation links. Not all groups of links on a page need to be in a `nav` element — the element is primarily intended for sections that consist of major navigation blocks. In particular, it is common for footers to have a short list of links to common pages of a site, such as the terms of service, the home page, and a copyright page; the `footer` element alone is sufficient for such cases. User agents (such as screen readers) that are targeted at users who can benefit from navigation information being omitted in the initial rendering, or who can benefit from navigation information being immediately available, can use this element as a way to determine what content on the page to initially skip or provide on request.
 
+In the following example, the page has several places where links are present, but only one of those places is considered a navigation section.
+
+```html
+<body>
+ <h1>The Wiki Center Of Exampland</h1>
+ <nav>
+  <ul>
+   <li><a href="/">Home</a></li>
+   <li><a href="/events">Current Events</a></li>
+   ...more...
+  </ul>
+ </nav>
+ <article>
+  <header>
+   <h2>Demos in Exampland</h2>
+   <p>Written by A. N. Other.</p>
+  </header>
+  <nav>
+   <ul>
+    <li><a href="#public">Public demonstrations</a></li>
+    <li><a href="#destroy">Demolitions</a></li>
+    ...more...
+   </ul>
+  </nav>
+  <div>
+   <section id="public">
+    <h2>Public demonstrations</h2>
+    <p>...more...</p>
+   </section>
+   <section id="destroy">
+    <h2>Demolitions</h2>
+    <p>...more...</p>
+   </section>
+   ...more...
+  </div>
+  <footer>
+   <p><a href="?edit">Edit</a> | <a href="?delete">Delete</a> | <a href="?Rename">Rename</a></p>
+  </footer>
+ </article>
+ <footer>
+  <p><small>© copyright 1998 Exampland Emperor</small></p>
+ </footer>
+</body>
+```
+
+In the following example, there are two `nav` elements, one for primary navigation around the site, and one for secondary navigation around the page itself.
+
+```html
+<body itemscope itemtype="http://schema.org/Blog">
+ <header>
+  <h1>Wake up sheeple!</h1>
+  <p><a href="news.html">News</a> -
+     <a href="blog.html">Blog</a> -
+     <a href="forums.html">Forums</a></p>
+  <p>Last Modified: <span itemprop="dateModified">2009-04-01</span></p>
+  <nav>
+   <h2>Navigation</h2>
+   <ul>
+    <li><a href="articles.html">Index of all articles</a></li>
+    <li><a href="today.html">Things sheeple need to wake up for today</a></li>
+    <li><a href="successes.html">Sheeple we have managed to wake</a></li>
+   </ul>
+  </nav>
+ </header>
+ <main>
+  <article itemprop="blogPosts" itemscope itemtype="http://schema.org/BlogPosting">
+   <header>
+    <h2 itemprop="headline">My Day at the Beach</h2>
+   </header>
+   <div itemprop="articleBody">
+    <p>Today I went to the beach and had a lot of fun.</p>
+    ...more content...
+   </div>
+   <footer>
+    <p>Posted <time itemprop="datePublished" datetime="2009-10-10">Thursday</time>.</p>
+   </footer>
+  </article>
+  ...more blog posts...
+ </main>
+ <footer>
+  <p>Copyright ©
+   <span itemprop="copyrightYear">2010</span>
+   <span itemprop="copyrightHolder">The Example Company</span>
+  </p>
+  <p><a href="about.html">About</a> -
+     <a href="policy.html">Privacy Policy</a> -
+     <a href="contact.html">Contact Us</a></p>
+ </footer>
+</body>
+```
+
+The `nav` element need not contain a list; it can contain other kinds of content as well, and the navigation might itself be prose:
+
+```html
+<nav>
+ <h1>Navigation</h1>
+ <p>You are on my home page. To the north lies <a href="/blog">my
+ blog</a>, from whence the sounds of battle can be heard. To the east
+ you can see a large mountain, upon which many <a
+ href="/school">school papers</a> are littered. Far up thus mountain
+ you can spy a little figure who appears to be me, desperately
+ scribbling a <a href="/school/thesis">thesis</a>.</p>
+ <p>To the west are several exits. One fun-looking exit is labeled <a
+ href="https://games.example.com/">"games"</a>. Another more
+ boring-looking exit is labeled <a
+ href="https://isp.example.net/">ISP™</a>.</p>
+ <p>To the south lies a dark and dank <a href="/about">contacts
+ page</a>. Cobwebs cover its disused entrance, and at one point you
+ see a rat run quickly out of the page.</p>
+</nav>
+```
+
+In the following example, the `nav` is used in an email application, to let the user switch folders:
+
+```html
+<p><input type=button value="Compose" onclick="compose()"></p>
+<nav>
+ <h1>Folders</h1>
+ <ul>
+  <li> <a href="/inbox" onclick="return openFolder(this.href)">Inbox</a> <span class=count></span>
+  <li> <a href="/sent" onclick="return openFolder(this.href)">Sent</a>
+  <li> <a href="/drafts" onclick="return openFolder(this.href)">Drafts</a>
+  <li> <a href="/trash" onclick="return openFolder(this.href)">Trash</a>
+  <li> <a href="/customers" onclick="return openFolder(this.href)">Customers</a>
+ </ul>
+</nav>
+```
+
 ### 4.3.5 The `aside` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/aside)
@@ -407,6 +535,106 @@ The `nav` element represents a section of a page that links to other pages or to
 **DOM interface:** Uses `HTMLElement`.
 
 The `aside` element represents a section of a page that consists of content that is tangentially related to the content around the `aside` element, and which could be considered separate from that content. Such sections are often represented as sidebars in printed typography. The element can be used for typographical effects like pull quotes or sidebars, for advertising, for groups of `nav` elements, and for other content that is considered separate from the main content of the page. It is not appropriate to use the `aside` element just for parenthesized text, as that kind of text is considered part of the main flow.
+
+The following example shows how an aside is used to mark up background material on Switzerland in a much longer news story on Europe.
+
+```html
+<aside>
+ <h2>Switzerland</h2>
+ <p>Switzerland, a land-locked country in the middle of geographic
+ Europe, has not joined the geopolitical European Union, though it is
+ a signatory to a number of European treaties.</p>
+</aside>
+```
+
+The following example shows how an aside is used to mark up a pull quote in a longer article.
+
+```html
+<p>He later joined a large company, continuing on the same work.
+<q>I love my job. People ask me what I do for fun when I'm not at
+work. But I'm paid to do my hobby, so I never know what to
+answer. Some people wonder what they would do if they didn't have to
+work... but I know what I would do, because I was unemployed for a
+year, and I filled that time doing exactly what I do now.</q></p>
+
+<aside>
+ <q>People ask me what I do for fun when I'm not at work. But I'm
+ paid to do my hobby, so I never know what to answer.</q>
+</aside>
+
+<p>Of course his work — or should that be hobby? —
+isn't his only passion. He also enjoys other pleasures.</p>
+```
+
+The following extract shows how `aside` can be used for blogrolls and other side content on a blog:
+
+```html
+<body>
+ <header>
+  <h1>My wonderful blog</h1>
+  <p>My tagline</p>
+ </header>
+ <aside>
+  <!-- this aside contains two sections that are tangentially related
+  to the page, namely, links to other blogs, and links to blog posts
+  from this blog -->
+  <nav>
+   <h2>My blogroll</h2>
+   <ul>
+    <li><a href="https://blog.example.com/">Example Blog</a>
+   </ul>
+  </nav>
+  <nav>
+   <h2>Archives</h2>
+   <ol reversed>
+    <li><a href="/last-post">My last post</a>
+    <li><a href="/first-post">My first post</a>
+   </ol>
+  </nav>
+ </aside>
+ <aside>
+  <!-- this aside is tangentially related to the page also, it
+  contains twitter messages from the blog author -->
+  <h1>Twitter Feed</h1>
+  <blockquote cite="https://twitter.example.net/t31351234">
+   I'm on vacation, writing my blog.
+  </blockquote>
+  <blockquote cite="https://twitter.example.net/t31219752">
+   I'm going to go on vacation soon.
+  </blockquote>
+ </aside>
+ <article>
+  <!-- this is a blog post -->
+  <h2>My last post</h2>
+  <p>This is my last post.</p>
+  <footer>
+   <p><a href="/last-post" rel=bookmark>Permalink</a>
+  </footer>
+ </article>
+ <article>
+  <!-- this is also a blog post -->
+  <h2>My first post</h2>
+  <p>This is my first post.</p>
+  <aside>
+   <!-- this aside is about the blog post, since it's inside the
+   <article> element; it would be wrong, for instance, to put the
+   blogroll here, since the blogroll isn't really related to this post
+   specifically, only to the page as a whole -->
+   <h2>Posting</h2>
+   <p>While I'm thinking about it, I wanted to say something about
+   posting. Posting is fun!</p>
+  </aside>
+  <footer>
+   <p><a href="/first-post" rel=bookmark>Permalink</a>
+  </footer>
+ </article>
+ <footer>
+  <p><a href="/archives">Archives</a> -
+   <a href="/about">About me</a> -
+   <a href="/copyright">Copyright</a></p>
+ </footer>
+</body>
+```
 
 ### 4.3.6 The `h1`, `h2`, `h3`, `h4`, `h5`, and `h6` elements
 
@@ -465,6 +693,24 @@ These elements represent headings for their sections. The semantics and meaning 
 
 The `hgroup` element represents a heading and related content. The element may be used to group an `h1`–`h6` element with one or more `p` elements containing content representing a subheading, alternative title, or tagline. The heading is the (only) `h1`–`h6` element child of the `hgroup`; the remaining `p` children carry the supplementary content.
 
+Here the `hgroup` element is used to group a heading and a tagline:
+
+```html
+<hgroup>
+ <h1>The reality dysfunction</h1>
+ <p>Space is not the only void</p>
+</hgroup>
+```
+
+Here the `hgroup` element is used to group a heading and an alternative title:
+
+```html
+<hgroup>
+ <h1>Dr. Strangelove</h1>
+ <p>Or: How I Learned to Stop Worrying and Love the Bomb</p>
+</hgroup>
+```
+
 ### 4.3.8 The `header` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/header)
@@ -488,6 +734,53 @@ The `hgroup` element represents a heading and related content. The element may b
 **DOM interface:** Uses `HTMLElement`.
 
 The `header` element represents a group of introductory or navigational aids. A `header` element is intended to usually contain the section's heading (an `h1`–`h6` element or an `hgroup` element), but this is not required. The `header` element can also be used to wrap a section's table of contents, a search form, or any relevant logos. The `header` element is not sectioning content and does not introduce a new section.
+
+Here is a simple page, with a header containing a logo-style introduction and the main heading:
+
+```html
+<header>
+ <p>Welcome to...</p>
+ <h1>Voidwars!</h1>
+</header>
+```
+
+The `header` element is not limited to the page header; it can be the header of any section. Here it groups the heading metadata of a specification:
+
+```html
+<header>
+ <hgroup>
+  <h1>Fullscreen API</h1>
+  <p>Living Standard — Last Updated 19 October 2015<p>
+ </hgroup>
+ <dl>
+  <dt>Participate:</dt>
+  <dd><a href="https://github.com/whatwg/fullscreen">GitHub whatwg/fullscreen</a></dd>
+  <dt>Commits:</dt>
+  <dd><a href="https://github.com/whatwg/fullscreen/commits">GitHub whatwg/fullscreen/commits</a></dd>
+ </dl>
+</header>
+```
+
+In this example the page header carries the site heading, navigation, and some introductory news before the main content:
+
+```html
+<body>
+ <header>
+  <h1>Little Green Guys With Guns</h1>
+  <nav>
+   <ul>
+    <li><a href="/games">Games</a>
+    <li><a href="/forum">Forum</a>
+    <li><a href="/download">Download</a>
+   </ul>
+  </nav>
+  <h2>Important News</h2>
+  <p>To play today's games you will need to update your client.</p>
+  <h2>Games</h2>
+ </header>
+ <p>You have three active games:</p>
+</body>
+```
 
 ### 4.3.9 The `footer` element
 
@@ -513,6 +806,92 @@ The `header` element represents a group of introductory or navigational aids. A 
 
 The `footer` element represents a footer for its nearest ancestor sectioning content element, or for the `body` element if there is no such ancestor. A footer typically contains information about its section such as who wrote it, links to related documents, copyright data, and the like. When the `footer` element contains entire sections, they represent appendices, indexes, long colophons, verbose license agreements, and other such content. A `footer` element is not sectioning content and does not introduce a new section; it need not appear at the end of a section, though it usually does.
 
+Here is a page with two footers, one at the top and one at the bottom, with the same content:
+
+```html
+<footer><a href="../">Back to index...</a></footer>
+<hgroup>
+ <h1>Lorem ipsum</h1>
+ <p>The ipsum of all lorems</p>
+</hgroup>
+<p>A dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex
+ea commodo consequat. Duis aute irure dolor in reprehenderit in
+voluptate velit esse cillum dolore eu fugiat nulla
+pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+culpa qui officia deserunt mollit anim id est laborum.</p>
+<footer><a href="../">Back to index...</a></footer>
+```
+
+Here is an example with a `footer` at the end of an article, with several nested sections, and a site-wide footer:
+
+```html
+<!DOCTYPE HTML>
+<HTML LANG="en"><HEAD>
+<TITLE>The Ramblings of a Scientist</TITLE>
+<BODY>
+<H1>The Ramblings of a Scientist</H1>
+<ARTICLE>
+ <H1>Episode 15</H1>
+ <VIDEO SRC="/fm/015.ogv" CONTROLS PRELOAD>
+  <P><A HREF="/fm/015.ogv">Download video</A>.</P>
+ </VIDEO>
+ <FOOTER>
+  <P>Published <TIME DATETIME="2009-10-21T18:26-07:00">on 2009/10/21 at 6:26pm</TIME></P>
+ </FOOTER>
+</ARTICLE>
+<ARTICLE>
+ <H1>My Favorite Trains</H1>
+ <P>I love my trains. My favorite train of all time is a Köf.</P>
+ <P>It is fun to see them pull some coal cars because they look so
+ dwarfed in comparison.</P>
+ <FOOTER>
+  <P>Published <TIME DATETIME="2009-09-15T14:54-07:00">on 2009/09/15 at 2:54pm</TIME></P>
+ </FOOTER>
+</ARTICLE>
+<FOOTER>
+ <NAV>
+  <P><A HREF="/credits.html">Credits</A> —
+     <A HREF="/tos.html">Terms of Service</A> —
+     <A HREF="/index.html">Blog Index</A></P>
+ </NAV>
+ <P>Copyright © 2009 Gordon Freeman</P>
+</FOOTER>
+</BODY>
+</HTML>
+```
+
+Some site designs have what is sometimes referred to as a "fat footer" — a footer that contains a lot of material, including images, links to other articles, links to pages for sending feedback, special offers, and so forth. This fragment shows the bottom of a page on a site with such a "fat footer":
+
+```html
+<footer>
+ <nav>
+  <section>
+   <h1>Articles</h1>
+   <p><img src="images/somersaults.jpeg" alt=""> Go to the gym with
+   our somersaults class! Our teacher Jim takes you through the paces
+   in this two-part article. <a href="articles/somersaults/1">Part
+   1</a> · <a href="articles/somersaults/2">Part 2</a></p>
+   <p><img src="images/kindplus.jpeg"> Tired of walking on the edge of
+   a clif<!-- sic -->? Our guest writer Lara shows you how to bumble
+   your way through the bars. <a href="articles/kindplus/1">Read
+   more...</a></p>
+   <p><img src="images/crisps.jpeg"> The chips are down, now all
+   that's left is a potato. What can you do with it? <a
+   href="articles/crisps/1">Read more...</a></p>
+  </section>
+  <ul>
+   <li> <a href="/about">About us...</a>
+   <li> <a href="/feedback">Send feedback!</a>
+   <li> <a href="/sitemap">Sitemap</a>
+  </ul>
+ </nav>
+ <p><small>Copyright © 2015 The Snacker —
+ <a href="/tos">Terms of Service</a></small></p>
+</footer>
+```
+
 ### 4.3.10 The `address` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/address)
@@ -536,6 +915,26 @@ The `footer` element represents a footer for its nearest ancestor sectioning con
 **DOM interface:** Uses `HTMLElement`.
 
 The `address` element represents the contact information for its nearest `article` or `body` element ancestor. If that is the `body` element, then the contact information applies to the document as a whole. The `address` element must not be used to represent arbitrary addresses (e.g. postal addresses) unless that contact information is in fact the relevant contact information; for arbitrary addresses, a generic element such as `p` is appropriate. The `address` element must not contain information other than contact information — for example, publication dates belong in a `time` element within a `p`, not in an `address`.
+
+The contact information for a document's author does not need to be limited to email addresses; it could also include other contact information, such as a postal address or telephone number. The following shows two typical uses:
+
+```html
+<ADDRESS>
+ <A href="../People/Raggett/">Dave Raggett</A>,
+ <A href="../People/Arnaud/">Arnaud Le Hors</A>,
+ contact persons for the <A href="Activity">W3C HTML Activity</A>
+</ADDRESS>
+```
+
+```html
+<footer>
+ <address>
+  For more details, contact
+  <a href="mailto:js@example.com">John Smith</a>.
+ </address>
+ <p><small>© copyright 2038 Example Corp.</small></p>
+</footer>
+```
 
 ### 4.3.11 Headings and outlines
 
