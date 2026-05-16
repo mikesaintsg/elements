@@ -363,3 +363,201 @@ In this example, a book author has marked up some sections as chapters and some 
 ### 4.3.4 The `nav` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/nav)
+
+**Categories:** Flow content, Sectioning content, Palpable content.
+
+**Contexts:** Where sectioning content is expected.
+
+**Content model:** Flow content.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-nav).
+
+[For implementers](https://w3c.github.io/html-aam/#el-nav).
+
+**DOM interface:** Uses `HTMLElement`.
+
+The `nav` element represents a section of a page that links to other pages or to parts within the page: a section with navigation links. Not all groups of links on a page need to be in a `nav` element — the element is primarily intended for sections that consist of major navigation blocks. In particular, it is common for footers to have a short list of links to common pages of a site, such as the terms of service, the home page, and a copyright page; the `footer` element alone is sufficient for such cases. User agents (such as screen readers) that are targeted at users who can benefit from navigation information being omitted in the initial rendering, or who can benefit from navigation information being immediately available, can use this element as a way to determine what content on the page to initially skip or provide on request.
+
+### 4.3.5 The `aside` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/aside)
+
+**Categories:** Flow content, Sectioning content, Palpable content.
+
+**Contexts:** Where sectioning content is expected.
+
+**Content model:** Flow content.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-aside).
+
+[For implementers](https://w3c.github.io/html-aam/#el-aside).
+
+**DOM interface:** Uses `HTMLElement`.
+
+The `aside` element represents a section of a page that consists of content that is tangentially related to the content around the `aside` element, and which could be considered separate from that content. Such sections are often represented as sidebars in printed typography. The element can be used for typographical effects like pull quotes or sidebars, for advertising, for groups of `nav` elements, and for other content that is considered separate from the main content of the page. It is not appropriate to use the `aside` element just for parenthesized text, as that kind of text is considered part of the main flow.
+
+### 4.3.6 The `h1`, `h2`, `h3`, `h4`, `h5`, and `h6` elements
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements) · [HTMLHeadingElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLHeadingElement)
+
+**Categories:** Flow content, Heading content, Palpable content.
+
+**Contexts:** As a child of an `hgroup` element; Where heading content is expected.
+
+**Content model:** Phrasing content.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-h1-h6).
+
+[For implementers](https://w3c.github.io/html-aam/#el-h1-h6).
+
+**DOM interface:**
+
+```
+[Exposed=Window]
+interface HTMLHeadingElement : HTMLElement {
+  [HTMLConstructor] constructor();
+
+  // also has obsolete members
+};
+```
+
+These elements represent headings for their sections. The semantics and meaning of these elements are defined in the section on headings and outlines. These elements have a heading level given by the number in their name: `h1` is level 1, `h2` is level 2, and so on to `h6` for level 6. A heading element's heading level corresponds to the nesting depth of the section it heads. A higher-ranked heading (lower number, e.g. `h1`) starts a new, more important section; a lower-ranked heading (higher number) starts a subsection of the section started by the most recent higher-ranked heading. Authors are encouraged to use headings of the appropriate rank for the section's nesting level, rather than choosing a rank for its presentational effect.
+
+### 4.3.7 The `hgroup` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/hgroup)
+
+**Categories:** Flow content, Heading content, Palpable content.
+
+**Contexts:** Where heading content is expected.
+
+**Content model:** Zero or more `p` elements, followed by one `h1`, `h2`, `h3`, `h4`, `h5`, or `h6` element, followed by zero or more `p` elements, optionally intermixed with script-supporting elements.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-hgroup).
+
+[For implementers](https://w3c.github.io/html-aam/#el-hgroup).
+
+**DOM interface:** Uses `HTMLElement`.
+
+The `hgroup` element represents a heading and related content. The element may be used to group an `h1`–`h6` element with one or more `p` elements containing content representing a subheading, alternative title, or tagline. The heading is the (only) `h1`–`h6` element child of the `hgroup`; the remaining `p` children carry the supplementary content.
+
+### 4.3.8 The `header` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/header)
+
+**Categories:** Flow content, Palpable content.
+
+**Contexts:** Where flow content is expected.
+
+**Content model:** Flow content, but with no `header` or `footer` element descendants.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-header).
+
+[For implementers](https://w3c.github.io/html-aam/#el-header).
+
+**DOM interface:** Uses `HTMLElement`.
+
+The `header` element represents a group of introductory or navigational aids. A `header` element is intended to usually contain the section's heading (an `h1`–`h6` element or an `hgroup` element), but this is not required. The `header` element can also be used to wrap a section's table of contents, a search form, or any relevant logos. The `header` element is not sectioning content and does not introduce a new section.
+
+### 4.3.9 The `footer` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/footer)
+
+**Categories:** Flow content, Palpable content.
+
+**Contexts:** Where flow content is expected.
+
+**Content model:** Flow content, but with no `header` or `footer` element descendants.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-footer).
+
+[For implementers](https://w3c.github.io/html-aam/#el-footer).
+
+**DOM interface:** Uses `HTMLElement`.
+
+The `footer` element represents a footer for its nearest ancestor sectioning content element, or for the `body` element if there is no such ancestor. A footer typically contains information about its section such as who wrote it, links to related documents, copyright data, and the like. When the `footer` element contains entire sections, they represent appendices, indexes, long colophons, verbose license agreements, and other such content. A `footer` element is not sectioning content and does not introduce a new section; it need not appear at the end of a section, though it usually does.
+
+### 4.3.10 The `address` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/address)
+
+**Categories:** Flow content, Palpable content.
+
+**Contexts:** Where flow content is expected.
+
+**Content model:** Flow content, but with no heading content descendants, no sectioning content descendants, and no `header`, `footer`, or `address` element descendants.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-address).
+
+[For implementers](https://w3c.github.io/html-aam/#el-address).
+
+**DOM interface:** Uses `HTMLElement`.
+
+The `address` element represents the contact information for its nearest `article` or `body` element ancestor. If that is the `body` element, then the contact information applies to the document as a whole. The `address` element must not be used to represent arbitrary addresses (e.g. postal addresses) unless that contact information is in fact the relevant contact information; for arbitrary addresses, a generic element such as `p` is appropriate. The `address` element must not contain information other than contact information — for example, publication dates belong in a `time` element within a `p`, not in an `address`.
+
+### 4.3.11 Headings and outlines
+
+Each `h1`–`h6` element has a heading level (1–6) given by the digit in its name. A heading element with a lower level number outranks one with a higher number. Headings establish the document's implied structure: a heading begins a new section at its level; a heading with a higher (worse) rank than the preceding one begins a subsection; a heading with an equal or lower (better) rank begins a new sibling or ancestor-level section. The first `h1`–`h6` element child of an `hgroup` is the heading for that group; the surrounding `p` elements are subheadings/taglines and do not begin sections of their own.
+
+Authors should use heading rank to convey document structure, not presentation, and should not skip ranks when descending into subsections (e.g. an `h1` followed directly by an `h3` without an intervening `h2`). Sectioning content elements (`article`, `aside`, `nav`, `section`) scope their own headings; the first heading in a sectioning element is that section's heading. Assistive technologies expose this structure (e.g. a heading list / document outline) so users can navigate by section.
+
+### 4.3.12 Usage summary
+
+| Element   | Purpose |
+| --------- | ------- |
+| `body`    | The document's contents. |
+| `article` | A complete, self-contained, independently distributable composition. |
+| `section` | A generic thematic grouping of content, typically with a heading. |
+| `nav`     | A major block of navigation links. |
+| `aside`   | Content tangentially related to the surrounding content. |
+| `h1`–`h6` | A section heading, with rank given by the digit. |
+| `hgroup`  | A heading grouped with related subheading/tagline `p` content. |
+| `header`  | Introductory or navigational aids for its section. |
+| `footer`  | A footer (authorship, copyright, related links) for its section. |
+| `address` | Contact information for the nearest `article`/`body` ancestor. |
+
+#### 4.3.12.1 Article or section?
+
+`article` and `section` are not interchangeable. Use `article` when the content is a complete, self-contained composition that could be independently distributed or syndicated (a blog post, a news story, a forum comment, a widget). Use `section` only when the content is a distinct thematic grouping that would naturally appear in the document's outline and has (or could have) its own heading — not as a generic styling/scripting container (use `div` for that). When in doubt, ask whether the content would make sense syndicated on its own (`article`) or is merely a chapter-like part of a larger whole (`section`).
