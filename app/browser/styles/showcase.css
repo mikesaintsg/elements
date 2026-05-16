@@ -814,3 +814,26 @@
 	margin-block-start: 1rem;
 	--set-style-background-color: transparent;
 }
+
+/* Demo arena — a padded, dashed-bordered, scrollable box that frames an
+ * interactive demo region (drag canvas, pointer playground). The dashed
+ * edge signals "this is the demo surface, not page chrome." Showcase-only
+ * (UsePointerPage). */
+.showcase-demo-arena {
+	padding: 1.5rem;
+	border: 1px dashed var(--color-border);
+	border-radius: 0.5rem;
+	overflow: auto;
+}
+
+/* Scroll frame — a bordered, rounded, vertically-scrolling viewport
+ * wrapper around a tall table. The framework's `.scrollable` is x-axis
+ * only; this is the y-axis companion the showcase composes. Height is
+ * tuned per instance via the `--showcase-scroll-frame-max` custom
+ * property (default 28rem). Showcase-only (UseTablePage). */
+.showcase-scroll-frame {
+	overflow-y: auto;
+	max-block-size: var(--showcase-scroll-frame-max, 28rem);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+}

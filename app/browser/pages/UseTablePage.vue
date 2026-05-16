@@ -361,15 +361,7 @@ const reset = (): void => {
 			<button type="button" class="subtle small" @click="main.sort.clear()">Clear sort</button>
 			<button type="button" class="subtle small" @click="reset">Reset</button>
 		</div>
-		<div
-			class="scrollable"
-			style="
-				overflow-y: auto;
-				max-block-size: 28rem;
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius-md);
-			"
-		>
+		<div class="scrollable showcase-scroll-frame">
 			<table ref="mainRef" class="striped sticky">
 				<tbody>
 					<template v-for="issue in visibleIssues" :key="issue.id">
@@ -952,14 +944,7 @@ const reset = (): void => {
 			horizontal scroll, or an <code>overflow-y: auto</code> custom wrapper for vertical scroll (as
 			the comprehensive demo does). Scroll the table below to see the column headers stay pinned.
 		</p>
-		<div
-			style="
-				overflow-y: auto;
-				max-block-size: 16rem;
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius-md);
-			"
-		>
+		<div class="showcase-scroll-frame" style="--showcase-scroll-frame-max: 16rem">
 			<table ref="stRef" class="striped sticky">
 				<tbody>
 					<tr v-for="row in dictionary" :key="row[0]" :data-id="row[0]">

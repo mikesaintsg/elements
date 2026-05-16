@@ -231,15 +231,7 @@ const longContent = ref(false)
 			<code>.top-start</code> / <code>.bottom-end</code> / etc. for the four corners. Each composes
 			with any popover mode + content.
 		</p>
-		<div
-			style="
-				display: flex;
-				flex-wrap: wrap;
-				gap: 0.5rem;
-				padding-block: 6rem;
-				justify-content: center;
-			"
-		>
+		<div class="flex flex-wrap justify-center gap-2 py-24">
 			<button type="button" popovertarget="demo-pop-area-top" class="dropdown">.top</button>
 			<button type="button" popovertarget="demo-pop-area-bottom" class="dropdown">.bottom</button>
 			<button type="button" popovertarget="demo-pop-area-start" class="dropdown">.start</button>
@@ -284,7 +276,7 @@ const longContent = ref(false)
 			the anchor scrolls offscreen, so a dropdown left open in a scrolling list doesn't float
 			untethered.
 		</p>
-		<div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center">
+		<div class="flex flex-wrap items-center gap-2">
 			<button
 				type="button"
 				popovertarget="demo-pop-long"

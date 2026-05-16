@@ -244,7 +244,7 @@ const draggingNow = computed(
 					}"
 				></div>
 			</div>
-			<output style="min-inline-size: 3rem; text-align: end; font-variant-numeric: tabular-nums">
+			<output class="min-w-12 text-end tabular-nums">
 				{{ sliderValue }}
 			</output>
 		</div>
@@ -400,7 +400,7 @@ usePointer(handle, {
 						border: '1px solid var(--color-border)',
 					}"
 				></div>
-				<small style="font-variant-numeric: tabular-nums">
+				<small class="tabular-nums">
 					hsl({{ hue }}, <strong>{{ saturation }}%</strong>, <strong>{{ lightness }}%</strong>)
 				</small>
 			</div>
@@ -436,14 +436,7 @@ usePointer(pad, {
 			change, network error, idle timeout. <code>clear()</code> always works during an active drag,
 			including from inside <code>on.move</code> on the same instance.
 		</p>
-		<div
-			style="
-				padding: 1.5rem;
-				border: 1px dashed var(--color-border);
-				border-radius: 0.5rem;
-				overflow: auto;
-			"
-		>
+		<div class="showcase-demo-arena">
 			<article
 				:class="['filled', cardLimited ? 'warning' : 'primary']"
 				:style="{
