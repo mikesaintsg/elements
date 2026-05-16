@@ -16,7 +16,9 @@ import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
  * const { entries: log, push: note } = useLog(6)
  * note('opened')
  */
-export function useLog<T = string>(max: number): {
+export function useLog<T = string>(
+	max: number,
+): {
 	readonly entries: Ref<readonly T[]>
 	readonly push: (entry: T) => void
 } {

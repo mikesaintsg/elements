@@ -48,7 +48,11 @@
 import { computed, ref, useTemplateRef } from 'vue'
 import { useSelect } from '@elements/browser'
 import { useLog } from '../composables.js'
-import { SELECT_CITIES as cities, SELECT_FRUITS as fruits, SELECT_SIZES as sizes } from '../constants.js'
+import {
+	SELECT_CITIES as cities,
+	SELECT_FRUITS as fruits,
+	SELECT_SIZES as sizes,
+} from '../constants.js'
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 2 — Single-select listbox. Custom widget over `<menu popover>`,

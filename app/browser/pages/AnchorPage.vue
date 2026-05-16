@@ -59,7 +59,6 @@ const visitedCounter = ref(
 watch(visitedCounter, (n) => {
 	if (typeof window !== 'undefined') window.localStorage.setItem(VISITED_COUNTER_KEY, String(n))
 })
-
 </script>
 
 <template>

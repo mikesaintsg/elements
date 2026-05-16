@@ -58,7 +58,6 @@ import {
 	SNIPPET_REDUCED_MOTION as snippetReducedMotion,
 	VARIANTS as variants,
 } from '../constants.js'
-
 </script>
 
 <template>

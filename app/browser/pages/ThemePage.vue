@@ -90,16 +90,17 @@ const variantBases = computed<readonly ThemePaletteEntry[]>(() =>
 	})),
 )
 
-const variantTiers = computed<readonly { variant: string; entries: readonly ThemePaletteEntry[] }[]>(
-	() =>
-		variants.map((v) => ({
-			variant: v,
-			entries: tiers.map((tier) => ({
-				token: `--color-${v}-${tier}`,
-				label: tier,
-				resolved: read(`--color-${v}-${tier}`),
-			})),
+const variantTiers = computed<
+	readonly { variant: string; entries: readonly ThemePaletteEntry[] }[]
+>(() =>
+	variants.map((v) => ({
+		variant: v,
+		entries: tiers.map((tier) => ({
+			token: `--color-${v}-${tier}`,
+			label: tier,
+			resolved: read(`--color-${v}-${tier}`),
 		})),
+	})),
 )
 
 const canvasTier = computed<readonly ThemePaletteEntry[]>(() => [

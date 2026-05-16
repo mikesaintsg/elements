@@ -78,7 +78,6 @@ const placements = [
 	'bottom',
 	'bottom-end',
 ] as const
-
 </script>
 
 <template>

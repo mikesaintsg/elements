@@ -141,7 +141,8 @@ export const MEDIA_SAMPLE_VIDEO_URL =
 	'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
 
 /** Public sample audio (SoundHelix freely-distributed track). */
-export const MEDIA_SAMPLE_AUDIO_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+export const MEDIA_SAMPLE_AUDIO_URL =
+	'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
 
 // ── Demo data ────────────────────────────────────────────────────────────
 //
@@ -744,7 +745,12 @@ export const TOKENS_ICONS: readonly TokenIcon[] = [
 
 export const MODIFIERS_SIZES: readonly ModifierSizeOption[] = ['small', '', 'large']
 export const MODIFIERS_STYLE_NAMES: readonly ModifierStyleOption[] = ['', 'subtle', 'filled']
-export const MODIFIERS_STATES: readonly ModifierStateOption[] = ['', 'disabled', 'active', 'loading']
+export const MODIFIERS_STATES: readonly ModifierStateOption[] = [
+	'',
+	'disabled',
+	'active',
+	'loading',
+]
 
 /** Sizes table — concrete values from `modifiers/_sizes.scss`. */
 export const MODIFIERS_SIZE_ROWS: readonly ModifierSizeRow[] = [
@@ -992,7 +998,6 @@ export const ANCHOR_SNIPPET_ATTRIBUTES = `<!-- Standard HTML attributes pass thr
 
 <a href="mailto:hello@example.com">hello@example.com</a>
 <a href="tel:+1234567890">+1 (234) 567-890</a>`
-
 
 // DetailsPage
 /** Custom summary marker — a plus that rotates to an X (45deg) on `[open]`. */

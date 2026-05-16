@@ -149,8 +149,8 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 		<article>
 			<h4>Variant callouts</h4>
 			<aside v-for="v in variants" :key="v" :class="v">
-				<strong>{{ capitalize(v) }} callout.</strong> Leading bar picks up
-				the variant's identity color via <code>--set-variant-background-color</code>.
+				<strong>{{ capitalize(v) }} callout.</strong> Leading bar picks up the variant's identity
+				color via <code>--set-variant-background-color</code>.
 			</aside>
 		</article>
 	</section>

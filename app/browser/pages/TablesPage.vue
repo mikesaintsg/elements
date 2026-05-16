@@ -149,7 +149,6 @@ const expandedExclusive = ref<string | null>('step-1')
 const toggleExclusive = (id: string): void => {
 	expandedExclusive.value = expandedExclusive.value === id ? null : id
 }
-
 </script>
 
 <template>

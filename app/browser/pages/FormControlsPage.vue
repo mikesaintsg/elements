@@ -63,7 +63,6 @@ const meterValue = ref(72)
 const sumA = ref(12)
 const sumB = ref(30)
 const sum = computed(() => sumA.value + sumB.value)
-
 </script>
 
 <template>

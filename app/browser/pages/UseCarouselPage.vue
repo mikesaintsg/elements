@@ -117,7 +117,6 @@ import { useLog } from '../composables.js'
 
 import { CAROUSEL_SLIDES as slides, VARIANTS_FEEDBACK as variants } from '../constants.js'
 
-
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — Bare carousel. No autoplay; user drives prev / next /
 // indicators / keyboard / touch. Five variant-tinted slides exercise

@@ -45,9 +45,7 @@ describe('variant vocabularies derive from @elements/browser', () => {
 	})
 
 	it('VARIANTS_FEEDBACK is VARIANTS without `secondary`/`tertiary`', () => {
-		expect(VARIANTS_FEEDBACK).toEqual(
-			VARIANTS.filter((v) => v !== 'secondary' && v !== 'tertiary'),
-		)
+		expect(VARIANTS_FEEDBACK).toEqual(VARIANTS.filter((v) => v !== 'secondary' && v !== 'tertiary'))
 	})
 
 	it('every subset is a strict, in-order subsequence of VARIANTS', () => {

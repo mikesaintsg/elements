@@ -140,7 +140,14 @@ describe('router — composable coverage parity with src/browser', () => {
 
 describe('router — guide topology parity', () => {
 	// The ROUTE_GROUPS doc-comment maps the nine groups onto these guides.
-	for (const guide of ['tokens', 'modifiers', 'elements', 'components', 'surfaces', 'composables']) {
+	for (const guide of [
+		'tokens',
+		'modifiers',
+		'elements',
+		'components',
+		'surfaces',
+		'composables',
+	]) {
 		it(`guides/${guide}.md (a ROUTE_GROUPS-topology guide) exists`, () => {
 			expect(existsSync(resolve(ROOT, `guides/${guide}.md`))).toBe(true)
 		})
