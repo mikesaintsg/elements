@@ -15,6 +15,8 @@
 - [4.8.10 The `track` element](#4810-the-track-element)
 - [4.8.13 The `map` element](#4813-the-map-element)
 - [4.8.14 The `area` element](#4814-the-area-element)
+- [4.8.16 MathML — the `math` element](#4816-mathml--the-math-element)
+- [4.8.17 SVG — the `svg` element](#4817-svg--the-svg-element)
 - [4.8.18 The `canvas` element](#4818-the-canvas-element)
 
 ---
@@ -1172,4 +1174,62 @@ Illustrative — the transparent fallback content (rendered when scripting/canva
  <p>Your browser does not support the canvas element.
  Here is a <a href="chart.png">static chart</a> instead.</p>
 </canvas>
+```
+
+### 4.8.16 MathML — the `math` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/MathML/Element/math) · Source: <https://html.spec.whatwg.org/multipage/embedded-content-other.html#mathml>
+
+**Categories:** Embedded content, Phrasing content, Flow content, Palpable content.
+
+**Contexts:** Where embedded content is expected.
+
+**Content model:** Defined by the MathML specification. HTML does **not** validate the internal structure of a `math` subtree — HTML content-model checking stops at the foreign-content boundary.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes; MathML attributes per the MathML specification.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-math).
+
+[For implementers](https://w3c.github.io/html-aam/#el-math).
+
+**DOM interface:** `MathMLElement` (per MathML).
+
+HTML allows the MathML `math` element to be embedded directly in documents wherever embedded content is permitted. "The semantics of MathML elements are defined by MathML and other applicable specifications." A DOM-walking inspector treats `math` as embedded content and does **not** descend into the foreign subtree for HTML content-model checks.
+
+```html
+<p>The energy is <math><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></math>.</p>
+```
+
+### 4.8.17 SVG — the `svg` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/SVG/Element/svg) · Source: <https://html.spec.whatwg.org/multipage/embedded-content-other.html#svg-0>
+
+**Categories:** Embedded content, Phrasing content, Flow content, Palpable content.
+
+**Contexts:** Where embedded content is expected.
+
+**Content model:** Defined by the SVG 2 specification. HTML does **not** validate the internal structure of an `svg` subtree — HTML content-model checking stops at the foreign-content boundary.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes; SVG attributes per the SVG specification.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-svg).
+
+[For implementers](https://w3c.github.io/html-aam/#el-svg).
+
+**DOM interface:** `SVGSVGElement` (per SVG).
+
+HTML permits direct embedding of the SVG `svg` element wherever embedded content is permitted. "The semantics of SVG elements are defined by SVG 2 and other applicable specifications." A DOM-walking inspector treats `svg` as embedded content and does **not** descend into the foreign subtree for HTML content-model checks.
+
+```html
+<svg width="100" height="100" viewBox="0 0 100 100">
+ <circle cx="50" cy="50" r="40" fill="currentColor"></circle>
+</svg>
 ```
