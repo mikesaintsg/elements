@@ -29,6 +29,16 @@ import {
 	usesMotionMixin,
 } from '../../../setup'
 
+// Surface-vs-placement separation (guides/surfaces.md § Floating surface
+// family): the placement LAYERS — `modifiers/_placements.scss` (the
+// `.top`/`.bottom`/… → `position-area` classes) and
+// `surfaces/_anchor-position.scss` (auto-anchor gap / try-fallbacks /
+// size caps / scroll-containment) — declare POSITION / SIZING / SCROLL
+// only, never a paint property. Chrome lives in `_popover.scss` + the
+// per-component partial. This import is the modifiers-side half (the
+// anchor-position half comes from `surfaceSources`).
+import placementsScss from '../../../../src/styles/modifiers/_placements.scss?raw'
+
 const surfaceSources = import.meta.glob('../../../../src/styles/surfaces/_*.scss', {
 	query: '?raw',
 	import: 'default',
@@ -192,4 +202,44 @@ describe('surfaces — SURFACE_CONTRACTS shape', () => {
 			).toBe(true)
 		}
 	})
+})
+
+// ============================================================================
+//  Surface ≠ placement — placement layers carry POSITION only.
+//
+//  guides/surfaces.md § "Floating surface family": chrome (background /
+//  border / shadow / radius / padding / color / font) lives in
+//  `_popover.scss` + the per-component partial; the placement layers
+//  (`modifiers/_placements.scss`, `surfaces/_anchor-position.scss`)
+//  declare position / sizing / scroll ONLY. A floating element composes
+//  one chrome source × one placement source; they never bleed. This
+//  converts that long-standing convention into a standing invariant.
+// ============================================================================
+
+const PAINT_DECL =
+	/^[\t ]*(background|background-[a-z-]+|border|border-[a-z-]+|box-shadow|padding|padding-[a-z-]+|color|font|font-[a-z-]+|text-decoration)[\t ]*:/gm
+
+describe('floating surface — placement layers carry position only', () => {
+	const anchorPath = Object.keys(surfaceSources).find((p) => p.includes('_anchor-position'))
+	const layers: Readonly<Record<string, string>> = {
+		'modifiers/_placements.scss': placementsScss,
+		'surfaces/_anchor-position.scss': anchorPath ? (surfaceSources[anchorPath] ?? '') : '',
+	}
+
+	it('discovers both placement-layer sources (vacuous-pass guard)', () => {
+		expect(layers['modifiers/_placements.scss'].length).toBeGreaterThan(100)
+		expect(layers['surfaces/_anchor-position.scss'].length).toBeGreaterThan(100)
+	})
+
+	for (const [name, source] of Object.entries(layers)) {
+		// On failure: `${name}` declares a chrome/paint property. Placement
+		// layers are POSITION-ONLY by charter — move the paint declaration
+		// to `surfaces/_popover.scss` or the per-component partial. See
+		// guides/surfaces.md § "Floating surface family".
+		it(`${name} declares no surface-chrome (paint) property`, () => {
+			const code = stripComments(source)
+			const offenders = [...code.matchAll(PAINT_DECL)].map((m) => m[1])
+			expect(offenders).toEqual([])
+		})
+	}
 })

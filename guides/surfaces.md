@@ -110,6 +110,20 @@ The most important surface. [`_popover.scss`](../src/styles/surfaces/_popover.sc
 </div>
 ```
 
+### Floating surface family
+
+One styling philosophy governs every floating surface. **`--set-popover-*` is the canonical panel chrome** (color / background-color / border-color / border-width / border-radius / padding-inline / padding-block / box-shadow / transition-duration / max-inline-size / viewport-inset). The bare `[popover]` panel and everything that reuses it as-is — non-modal `<dialog>`, the `<menu popover>` dropdown, the drawer-mode `<aside popover>` / `<nav popover>` — paint from that one set, so a single `:root` retune (or `data-theme` flip) moves them in lockstep.
+
+There are exactly **three deliberate, documented deviations** — every other floating surface MUST reuse the canonical set:
+
+| Surface                                           | Deviation                                                                                                               | Why it's meaningful (not drift)                                                                                                                                                                |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[popover='hint']` / `[role='tooltip']` (tooltip) | own `--set-popover-hint-*` (inverted color, tighter padding, narrower max-width, lighter shadow)                        | a transient label must read as a different register from a panel; inverted bg keeps it always-distinct in both themes                                                                          |
+| `output[popover]` (toast)                         | own full `--set-toast-*` family (color / bg / border / radius / padding / box-shadow / size / gap / deck-stack offsets) | a corner-anchored, banner-row, deck-stacked notification is a distinct surface shape, not the panel with overrides — only top-layer rendering + the display flip come from the popover surface |
+| `<menu popover>` (dropdown)                       | inherits the canonical panel surface; adds row/column **layout** only                                                   | it is the panel — it never re-declares panel chrome, it only arranges its rows inside it                                                                                                       |
+
+**Surface ≠ placement.** Chrome (the table above) lives in `surfaces/_popover.scss` + the per-component partial. **Position** lives in the placement layers — `modifiers/_placements.scss` (the `.top` / `.bottom` / `.start` / `.end` / corner classes → `position-area` + `align-self` / `justify-self`) and `surfaces/_anchor-position.scss` (auto-anchor gap / `position-try-*` / size caps / scroll-containment). Those two partials declare **position / sizing / scroll only — never a paint property** (no background / border / box-shadow / border-radius / padding / color / font). A floating element composes one chrome source × one placement source; the two never bleed. This separation is enforced by `tests/src/styles/surfaces/_index.test.ts § floating surface — placement layers carry position only`.
+
 ### Anchor positioning surface
 
 [`_anchor-position.scss`](../src/styles/surfaces/_anchor-position.scss) handles placement for every `[popover]:not(:where(aside, dialog, nav, output))`.

@@ -33,13 +33,17 @@
 //
 // Quirks:
 //   - When `<output>` is `popover`-promoted, browsers replace its
-//     in-flow display with the top-layer rendering. We only paint the
-//     banner shape; positioning + display are governed by the popover
-//     surface (`surfaces/_popover.scss`).
-//   - `padding`, `border-radius`, `box-shadow` come from the popover
-//     surface defaults; we override only what's notification-specific
-//     (max-inline-size, banner flex layout, fixed positioning when
-//     placement modifiers are present).
+//     in-flow display with the top-layer rendering. Only top-layer
+//     rendering + the open/close display flip come from the popover
+//     surface (`surfaces/_popover.scss`); the toast paints its OWN
+//     surface.
+//   - Toast is a DELIBERATE, documented deviation from the bare
+//     `--set-popover-*` panel: it declares a full `--set-toast-*` token
+//     family (color / bg / border / border-radius / padding / box-
+//     shadow / size / gap) for the corner-anchored, banner-row, deck-
+//     stacked notification shape — a distinct floating surface, not the
+//     panel with overrides. See guides/surfaces.md § "Floating surface
+//     family" for the canonical-vs-deviation map.
 // ============================================================================
 
 @use '../mixins' as *;
