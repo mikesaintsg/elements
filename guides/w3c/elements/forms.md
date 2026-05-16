@@ -540,6 +540,39 @@ interface HTMLLabelElement : HTMLElement {
 
 The `input` element represents a typed data field, usually with a form control to allow the user to edit the data. Its rendering and behavior depend on the state of its `type` attribute. The `type` keyword values (states) are: `hidden`, `text`, `search`, `tel`, `url`, `email`, `password`, `date`, `month`, `week`, `time`, `datetime-local`, `number`, `range`, `color`, `checkbox`, `radio`, `file`, `submit`, `image`, `reset`, `button`. When the `type` attribute changes state, the user agent updates the rendering, runs the relevant value-sanitization algorithm, and changes which IDL members and attributes apply. An `input` element is a void element: it must have no children.
 
+A `type=url` field wired to a `datalist` for autocomplete suggestions:
+
+```html
+<input type="url" name="location" list="urls">
+<datalist id="urls">
+ <option label="MIME: Format of Internet Message Bodies" value="https://www.rfc-editor.org/rfc/rfc2045">
+ <option label="HTML" value="https://html.spec.whatwg.org/">
+ <option label="DOM" value="https://dom.spec.whatwg.org/">
+ <option label="Fullscreen" value="https://fullscreen.spec.whatwg.org/">
+ <option label="Media Session" value="https://mediasession.spec.whatwg.org/">
+ <option label="The Single UNIX Specification, Version 3" value="http://www.unix.org/version3/">
+</datalist>
+```
+
+Illustrative (the spec page above carries the full per-type example set):
+
+```html
+<form method="post" action="/subscribe">
+ <p><label>Name: <input type="text" name="name" required></label></p>
+ <p><label>Email: <input type="email" name="email" required></label></p>
+ <p><label>Password: <input type="password" name="pw" minlength="8"></label></p>
+ <p><label><input type="checkbox" name="tos" required> I accept the terms</label></p>
+ <fieldset>
+  <legend>Plan</legend>
+  <label><input type="radio" name="plan" value="free" checked> Free</label>
+  <label><input type="radio" name="plan" value="pro"> Pro</label>
+ </fieldset>
+ <p><label>Avatar: <input type="file" name="avatar" accept="image/*"></label></p>
+ <p><label>Quantity: <input type="number" name="qty" min="1" max="10" step="1" value="1"></label></p>
+ <p><input type="submit" value="Subscribe"></p>
+</form>
+```
+
 ## 4.10.6 The `button` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element>
@@ -552,6 +585,59 @@ The `input` element represents a typed data field, usually with a form control t
 - **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-button) · [For implementers](https://w3c.github.io/html-aam/#el-button).
 
 The `button` element represents a button labeled by its contents. Its behavior is determined by its `type` attribute: `submit` (the default — submits the owning form), `reset` (resets the form), or `button` (no default behavior; scripted). The no-interactive-content / no-`tabindex`-descendant restriction mirrors `a`'s — a button must not nest another focusable control.
+
+The following button is used to fire a script when activated:
+
+```html
+<button type=button
+        onclick="alert('This 15-20 minute piece was composed by George Gershwin.')">
+ Show hint
+</button>
+```
+
+A button can declaratively invoke a command on another element via `commandfor`/`command` (here, showing and hiding a popover):
+
+```html
+<button type=button
+        commandfor="the-popover"
+        command="show-popover">
+ Show menu
+</button>
+<div popover
+     id="the-popover">
+ <button commandfor="the-popover"
+         command="hide-popover">
+  Hide menu
+ </button>
+</div>
+```
+
+Custom (`--`-prefixed) commands dispatch a `CommandEvent` to the target:
+
+```html
+<button type=button
+        commandfor="the-image"
+        command="--rotate-landscape">
+ Rotate Left
+</button>
+<button type=button
+        commandfor="the-image"
+        command="--rotate-portrait">
+ Rotate Right
+</button>
+<img id="the-image"
+     src="photo.jpg">
+<script>
+  const image = document.getElementById("the-image");
+  image.addEventListener("command", (event) => {
+   if ( event.command == "--rotate-landscape" ) {
+    event.target.style.rotate = "-90deg"
+   } else if ( event.command == "--rotate-portrait" ) {
+    event.target.style.rotate = "0deg"
+   }
+  });
+</script>
+```
 
 ## 4.10.7 The `select` element
 
@@ -566,6 +652,100 @@ The `button` element represents a button labeled by its contents. Its behavior i
 
 The `select` element represents a control for selecting amongst a set of options. When `multiple` is present (or `size` > 1) it is a list box; otherwise it is a drop-down. Its options come from descendant `option` elements, optionally grouped by `optgroup`.
 
+A basic drop-down with a pre-selected option:
+
+```html
+<p>
+ <label for="unittype">Select unit type:</label>
+ <select id="unittype" name="unittype">
+  <option value="1"> Miner </option>
+  <option value="2"> Puffer </option>
+  <option value="3" selected> Snipey </option>
+  <option value="4"> Max </option>
+  <option value="5"> Firebot </option>
+ </select>
+</p>
+```
+
+A `required` drop-down uses a placeholder empty-value option so the user must make a choice:
+
+```html
+<select name="unittype" required>
+ <option value=""> Select unit type </option>
+ <option value="1"> Miner </option>
+ <option value="2"> Puffer </option>
+ <option value="3"> Snipey </option>
+ <option value="4"> Max </option>
+ <option value="5"> Firebot </option>
+</select>
+```
+
+A multi-select list box (with `multiple`):
+
+```html
+<p>
+ <label for="allowedunits">Select unit types to enable on this map:</label>
+ <select id="allowedunits" name="allowedunits" multiple>
+  <option value="1" selected> Miner </option>
+  <option value="2" selected> Puffer </option>
+  <option value="3" selected> Snipey </option>
+  <option value="4" selected> Max </option>
+  <option value="5" selected> Firebot </option>
+ </select>
+</p>
+```
+
+An `hr` may be used to visually separate groups of options in a drop-down:
+
+```html
+<label>
+ Select the song to play next:
+ <select required name="next">
+  <option value="sr">Random
+  <hr>
+  <option value="s1">It Sucks to Be Me (Reprise)
+  <option value="s2">There is Life Outside Your Apartment
+  ...
+ </select>
+</label>
+```
+
+The customizable-select form: a `button` first child with a `selectedcontent` placeholder, then richer `option`/`optgroup` content:
+
+```html
+<select>
+  <button>
+    <selectedcontent></selectedcontent>
+  </button>
+  <div class="border">
+    <optgroup>
+      <legend>WHATWG Specifications</legend>
+      <option>
+        <img src="html.jpg" alt="">
+        HTML
+      </option>
+      <option>
+        <img src="dom.jpg" alt="">
+        DOM
+      </option>
+    </optgroup>
+  </div>
+  <div class="border">
+    <optgroup>
+      <legend>W3C Specifications</legend>
+      <option>
+        <img src="forms.jpg" alt="">
+        CSS Form Control Styling
+      </option>
+      <option>
+        <img src="pseudo.jpg" alt="">
+        CSS Pseudo-Elements
+      </option>
+    </optgroup>
+  </div>
+</select>
+```
+
 ## 4.10.8 The `datalist` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/datalist) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-datalist-element>
@@ -578,6 +758,38 @@ The `select` element represents a control for selecting amongst a set of options
 - **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-datalist) · [For implementers](https://w3c.github.io/html-aam/#el-datalist).
 
 The `datalist` element represents a set of `option` elements that represent predefined options for other controls (referenced via an `input`'s `list` attribute). It is not rendered itself. The two-mode content model means a `datalist` either holds fallback phrasing content **or** the `option` list — not arbitrary flow content.
+
+An `input` offering autocomplete suggestions via a hidden `datalist`:
+
+```html
+<label>
+ Animal:
+ <input name=animal list=animals>
+ <datalist id=animals>
+  <option value="Cat">
+  <option value="Dog">
+ </datalist>
+</label>
+```
+
+A `datalist` providing a graceful-degradation `select` fallback (the phrasing-content mode):
+
+```html
+<label>
+ Animal:
+ <input name=animal list=animals>
+</label>
+<datalist id=animals>
+ <label>
+  or select from the list:
+  <select name=animal>
+   <option value="">
+   <option>Cat
+   <option>Dog
+  </select>
+ </label>
+</datalist>
+```
 
 ## 4.10.9 The `optgroup` element
 
@@ -592,6 +804,29 @@ The `datalist` element represents a set of `option` elements that represent pred
 
 The `optgroup` element represents a group of `option` elements with a common label, given by its `label` attribute. It is valid only as a descendant of a `select`.
 
+```html
+<form action="courseselector.dll" method="get">
+ <p>Which course would you like to watch today?
+ <p><label>Course:
+  <select name="c">
+   <optgroup label="8.01 Physics I: Classical Mechanics">
+    <option value="8.01.1">Lecture 01: Powers of Ten
+    <option value="8.01.2">Lecture 02: 1D Kinematics
+    <option value="8.01.3">Lecture 03: Vectors
+   <optgroup label="8.02 Electricity and Magnetism">
+    <option value="8.02.1">Lecture 01: What holds our world together?
+    <option value="8.02.2">Lecture 02: Electric Field
+    <option value="8.02.3">Lecture 03: Electric Flux
+   <optgroup label="8.03 Physics III: Vibrations and Waves">
+    <option value="8.03.1">Lecture 01: Periodic Phenomenon
+    <option value="8.03.2">Lecture 02: Beats
+    <option value="8.03.3">Lecture 03: Forced Oscillations with Damping
+  </select>
+ </label>
+ <p><input type=submit value="▶ Play">
+</form>
+```
+
 ## 4.10.10 The `option` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element>
@@ -604,6 +839,17 @@ The `optgroup` element represents a group of `option` elements with a common lab
 - **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-option) · [For implementers](https://w3c.github.io/html-aam/#el-option).
 
 The `option` element represents an option in a `select` element, or part of a list of suggestions in a `datalist`, or a command in a (legacy) command menu. Its selectedness is controlled by the `selected` attribute.
+
+Illustrative (the canonical `option` examples appear within the `select` / `datalist` / `optgroup` examples above and at the spec link):
+
+```html
+<select name="size">
+ <option>Small</option>
+ <option selected>Medium</option>
+ <option value="lg">Large</option>
+ <option disabled>Out of stock</option>
+</select>
+```
 
 ## 4.10.11 The `textarea` element
 
@@ -618,6 +864,14 @@ The `option` element represents an option in a `select` element, or part of a li
 
 The `textarea` element represents a multiline plain-text editing control for the element's raw value. Its content model is **Text** only — element children are not permitted; the initial text content is the default value.
 
+Illustrative (canonical example at the spec link above):
+
+```html
+<label for="bio">Short bio</label>
+<textarea id="bio" name="bio" rows="4" cols="50" maxlength="280"
+          placeholder="Tell us about yourself">Hello!</textarea>
+```
+
 ## 4.10.12 The `output` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/output) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-output-element>
@@ -630,6 +884,16 @@ The `textarea` element represents a multiline plain-text editing control for the
 - **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-output) · [For implementers](https://w3c.github.io/html-aam/#el-output).
 
 The `output` element represents the result of a calculation performed by the application, or the result of a user action. Its `for` attribute lists the IDs of the elements that contributed to the calculation.
+
+Illustrative (canonical calculator example at the spec link above):
+
+```html
+<form oninput="result.value = (+a.value) + (+b.value)">
+ <input type="range" id="a" value="50"> +
+ <input type="number" id="b" value="25"> =
+ <output name="result" for="a b">75</output>
+</form>
+```
 
 ## 4.10.13 The `progress` element
 
@@ -644,6 +908,13 @@ The `output` element represents the result of a calculation performed by the app
 
 The `progress` element represents the completion progress of a task. The progress is either indeterminate (no `value`) or a number from zero up to `max` (default 1). Its phrasing-content children are a fallback for legacy user agents and must not nest another `progress`.
 
+Illustrative (canonical example at the spec link above):
+
+```html
+<p>Downloading: <progress value="0.6" max="1">60%</progress></p>
+<p>Working: <progress></progress></p>
+```
+
 ## 4.10.14 The `meter` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element>
@@ -656,6 +927,14 @@ The `progress` element represents the completion progress of a task. The progres
 - **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-meter) · [For implementers](https://w3c.github.io/html-aam/#el-meter).
 
 The `meter` element represents a scalar measurement within a known range, or a fractional value — for example disk usage, the relevance of a query result, or a fraction of a voting population. It must not be used to indicate task progress (use `progress`) and must not nest another `meter`.
+
+Illustrative (canonical disk-usage example at the spec link above):
+
+```html
+<p>Disk usage: <meter min="0" max="100" low="20" high="80" optimum="10"
+                       value="75">75% full</meter></p>
+<p>Rating: <meter value="3" min="0" max="5">3 out of 5</meter></p>
+```
 
 ## 4.10.15 The `fieldset` element
 
@@ -670,6 +949,24 @@ The `meter` element represents a scalar measurement within a known range, or a f
 
 The `fieldset` element represents a set of form controls (or other content) optionally grouped under a common name, given by a `legend` first child. The `disabled` attribute, when set, disables all descendant form controls (except those inside the first `legend`).
 
+Illustrative (canonical grouped-form example at the spec link above):
+
+```html
+<fieldset>
+ <legend>Display settings</legend>
+ <p><label>Theme:
+  <select name="theme">
+   <option>Light</option>
+   <option>Dark</option>
+  </select></label></p>
+ <p><label><input type="checkbox" name="reduce-motion"> Reduce motion</label></p>
+</fieldset>
+<fieldset disabled>
+ <legend>Account details (sign in to edit)</legend>
+ <p><label>Email: <input type="email" name="email"></label></p>
+</fieldset>
+```
+
 ## 4.10.16 The `legend` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/legend) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-legend-element>
@@ -682,6 +979,16 @@ The `fieldset` element represents a set of form controls (or other content) opti
 - **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-legend) · [For implementers](https://w3c.github.io/html-aam/#el-legend).
 
 The `legend` element represents a caption for the rest of the contents of the `legend` element's parent `fieldset` element. It is valid **only** as the first child of a `fieldset`.
+
+Illustrative (the canonical `legend` examples appear within the `fieldset` / customizable-`select` examples above and at the spec link):
+
+```html
+<fieldset>
+ <legend>Shipping address</legend>
+ <p><label>Street: <input name="street"></label></p>
+ <p><label>City: <input name="city"></label></p>
+</fieldset>
+```
 
 ---
 
