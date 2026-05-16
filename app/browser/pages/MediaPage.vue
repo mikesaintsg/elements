@@ -276,6 +276,33 @@ onMounted(() => {
 		</div>
 	</section>
 
+	<section id="media-math">
+		<h2><code>&lt;math&gt;</code></h2>
+		<p>
+			Native MathML — an embedded-content sibling of <code>&lt;svg&gt;</code>. The framework ships
+			a font-family token surface on <code>&lt;math&gt;</code> so a bare expression renders in the
+			document's math font without per-instance styling; it inherits <code>color</code> like any
+			text, so a variant ancestor retints it for free.
+		</p>
+		<p>
+			The quadratic formula, inline in prose:
+			<math>
+				<mrow>
+					<mi>x</mi>
+					<mo>=</mo>
+					<mfrac>
+						<mrow>
+							<mo>−</mo><mi>b</mi><mo>±</mo>
+							<msqrt><mrow><msup><mi>b</mi><mn>2</mn></msup><mo>−</mo><mn>4</mn><mi>a</mi><mi>c</mi></mrow></msqrt>
+						</mrow>
+						<mrow><mn>2</mn><mi>a</mi></mrow>
+					</mfrac>
+				</mrow>
+			</math>
+			— rendered by the browser's MathML engine, no framework chrome beyond the font token.
+		</p>
+	</section>
+
 	<section id="media-iframe">
 		<h2><code>&lt;iframe&gt;</code></h2>
 		<p>

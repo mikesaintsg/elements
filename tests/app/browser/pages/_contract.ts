@@ -48,7 +48,18 @@ export const PAGE_EXEMPTIONS: ReadonlySet<PageName> = new Set([
 export const PAGE_SURFACE_BUNDLES: Readonly<Record<PageName, readonly string[]>> = {
 	HeadingsPage: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hgroup'],
 	InlineAtomsPage: ['badge', 'dot', 'tag', 'spinner', 'skeleton'],
-	MediaPage: ['img', 'picture', 'video', 'audio', 'canvas', 'svg', 'iframe', 'embed', 'object'],
+	MediaPage: [
+		'img',
+		'picture',
+		'video',
+		'audio',
+		'canvas',
+		'svg',
+		'math',
+		'iframe',
+		'embed',
+		'object',
+	],
 	// ~two dozen inline/block text tags — Phase 2 reconciles the exact set
 	// against the page markup; this is the documented coverage intent.
 	TypographyPage: [
