@@ -720,6 +720,8 @@ export const TOKENS_ICONS: readonly TokenIcon[] = [
 	{ token: '--set-icon-check', label: 'Check' },
 	{ token: '--set-icon-dash', label: 'Dash' },
 	{ token: '--set-icon-radio', label: 'Radio dot' },
+	{ token: '--set-icon-switch-off', label: 'Switch (off)' },
+	{ token: '--set-icon-switch-on', label: 'Switch (on)' },
 	{ token: '--set-icon-close', label: 'Close (×)' },
 	{ token: '--set-icon-menu', label: 'Menu (hamburger)' },
 	{ token: '--set-icon-more', label: 'More (⋮)' },
