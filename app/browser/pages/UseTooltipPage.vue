@@ -199,7 +199,7 @@ const anyVisible = computed(() => dynamicTip.visible.value || pulseTip.visible.v
 			<code>aria-label</code> on the button covers the AT case; the tooltip covers the
 			sighted-keyboard case where the user wants to confirm before pressing.
 		</p>
-		<menu class="icon-row">
+		<menu class="showcase-icon-row">
 			<li>
 				<button ref="saveAnchor" type="button" class="icon-only subtle" aria-label="Save">
 					💾
@@ -248,7 +248,7 @@ useTooltip({ anchor, panel, placement: 'bottom' })
 			ms); rich helper text on a sparse layout wants a slower one (300–500 ms) so it doesn't pop on
 			every mouse twitch.
 		</p>
-		<div class="trigger-row">
+		<div class="showcase-trigger-row">
 			<div>
 				<button ref="fastAnchor" type="button">Hover me (fast)</button>
 				<div ref="fastPanel" popover><strong>50 ms</strong> show, <strong>0 ms</strong> hide</div>
@@ -293,7 +293,7 @@ useTooltip({
 			its own tooltip anchored to itself, so you can see every side at once. Hover or focus any of
 			them; the tooltip lands where the modifier says.
 		</p>
-		<div class="placement-stage">
+		<div class="showcase-placement-stage">
 			<button ref="topAnchor" type="button" class="subtle">.top</button>
 			<button ref="endAnchor" type="button" class="subtle">.end</button>
 			<button ref="bottomAnchor" type="button" class="subtle">.bottom</button>
@@ -311,7 +311,7 @@ useTooltip({
 			flips on overflow — try placing the tooltip on <code>start</code> while the anchor sits near
 			the viewport's left edge.
 		</p>
-		<menu class="placement-picker">
+		<menu class="showcase-placement-picker">
 			<li v-for="option in placementOptions" :key="option">
 				<button
 					type="button"
@@ -323,7 +323,7 @@ useTooltip({
 				</button>
 			</li>
 		</menu>
-		<div class="placement-stage">
+		<div class="showcase-placement-stage">
 			<button ref="dynamicAnchor" type="button">Hover or focus me</button>
 		</div>
 		<div ref="dynamicPanel" popover>
@@ -353,10 +353,10 @@ useTooltip({ anchor, panel, placement })</code></pre>
 			a short structured callout (kbd shortcut, an icon, a colored status pill, a one-line code
 			sample).
 		</p>
-		<div class="trigger-stage">
+		<div class="showcase-trigger-stage">
 			<button ref="richAnchor" type="button">Hover for rich tooltip</button>
 		</div>
-		<div ref="richPanel" popover class="rich-tooltip">
+		<div ref="richPanel" popover class="showcase-rich-tooltip">
 			<header class="flex items-center gap-2">
 				<span aria-hidden="true">🎹</span>
 				<strong>Keyboard shortcut</strong>
@@ -453,7 +453,7 @@ useTooltip({ anchor, panel, placement })</code></pre>
 </template>
 
 <style scoped>
-.icon-row {
+.showcase-icon-row {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.5rem;
@@ -466,11 +466,11 @@ useTooltip({ anchor, panel, placement })</code></pre>
 	inline-size: fit-content;
 }
 
-.icon-row > li {
+.showcase-icon-row > li {
 	display: contents;
 }
 
-.icon-only {
+.showcase-icon-row .icon-only {
 	font-size: 1.125rem;
 	inline-size: 2.5rem;
 	block-size: 2.5rem;
@@ -480,20 +480,20 @@ useTooltip({ anchor, panel, placement })</code></pre>
 	justify-content: center;
 }
 
-.trigger-row {
+.showcase-trigger-row {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
 	gap: 1.25rem;
 }
 
-.trigger-row > div {
+.showcase-trigger-row > div {
 	display: flex;
 	flex-direction: column;
 	gap: 0.375rem;
 	align-items: flex-start;
 }
 
-.placement-picker {
+.showcase-placement-picker {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.375rem;
@@ -502,19 +502,19 @@ useTooltip({ anchor, panel, placement })</code></pre>
 	list-style: none;
 }
 
-.placement-picker button {
+.showcase-placement-picker button {
 	min-inline-size: 5rem;
 	font-family: var(--font-mono, monospace);
 	font-size: 0.75rem;
 }
 
-.placement-picker button.active {
+.showcase-placement-picker button.active {
 	background: color-mix(in oklch, var(--color-primary) 18%, var(--color-canvas));
 	color: var(--color-primary-text-emphasis);
 	border-color: color-mix(in oklch, var(--color-primary) 40%, var(--color-border));
 }
 
-.trigger-stage {
+.showcase-trigger-stage {
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -528,7 +528,7 @@ useTooltip({ anchor, panel, placement })</code></pre>
 /* Placement showcase — generous padding-block so every side has room
  * to land without `position-try-fallbacks` flipping the tooltip away
  * from the requested side. Mirrors PopoverSurfacesPage §4's stage. */
-.placement-stage {
+.showcase-placement-stage {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
@@ -542,23 +542,23 @@ useTooltip({ anchor, panel, placement })</code></pre>
 	margin-block-end: 1rem;
 }
 
-.rich-tooltip {
+.showcase-rich-tooltip {
 	min-inline-size: 14rem;
 }
 
-.rich-tooltip dl {
+.showcase-rich-tooltip dl {
 	display: grid;
 	grid-template-columns: auto auto;
 	gap: 0.25rem 0.5rem;
 	margin: 0.5rem 0 0;
 }
 
-.rich-tooltip dt {
+.showcase-rich-tooltip dt {
 	font-size: 0.75rem;
 	opacity: 0.85;
 }
 
-.rich-tooltip dd {
+.showcase-rich-tooltip dd {
 	margin: 0;
 	font-size: 0.75rem;
 	display: flex;
@@ -566,7 +566,7 @@ useTooltip({ anchor, panel, placement })</code></pre>
 	gap: 0.125rem;
 }
 
-.rich-tooltip kbd {
+.showcase-rich-tooltip kbd {
 	font-family: var(--font-mono, monospace);
 	font-size: 0.7rem;
 	padding-inline: 0.3rem;
