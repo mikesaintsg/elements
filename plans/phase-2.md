@@ -6,7 +6,7 @@
 
 ## Surface
 
-Three new driver files + 43 filled per-page files, all `app:core` node text-parity:
+Three new driver files + 43 filled per-page files, all in the **`app:browser`** project (the Phase-1 architecture pivot — NOT `app:core` node text-parity). Each imports the route table + page components from the `app/browser` barrel and reads raw `src/` / `.vue` source via `import.meta.glob('…', { query: '?raw', eager: true })` — the server-less idiom `tests/src/browser` uses (no `setupServer` / `readAllPages()` / `node:fs`). Per-page files additionally **mount the component in real Chromium** (the Phase-1 scaffolds already do this), so bespoke parity can assert against the *rendered DOM*, not just parse `.vue` text — a stronger capability than this plan originally assumed.
 
 | File                                          | Role                                                                                                  | Guide-suite analogue                                    |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
@@ -16,7 +16,18 @@ Three new driver files + 43 filled per-page files, all `app:core` node text-pari
 | `tests/app/browser/guidesParity.test.ts`      | pages ↔ guide topology + the guide-drift guard the existing guide tests miss                          | `tests/guides/showcase.test.ts`                         |
 | `tests/app/browser/pages/{X}Page.test.ts` ×43 | each page's bespoke parity (filled from Phase-1 scaffolds)                                            | `tests/guides/{guide}.test.ts` ×12                      |
 
-Complements `tests/app/core/router.test.ts` (route **table** parity) — Phase 2 tests the page **files** + the element/component/surface coverage that file never touches. **No assertion is duplicated across the two**; where they’d overlap (composable↔route), Phase 2 keys off the page file, router.test off the route literal.
+Complements `tests/app/core/router.test.ts` (route **table** parity, still node `app:core`, unchanged in Phase 1) — Phase 2 tests the page **files** + the element/component/surface coverage that file never touches. **No assertion is duplicated across the two**; where they’d overlap (composable↔route), Phase 2 keys off the page file, router.test off the route literal.
+
+---
+
+> ## Phase-1 carry-over — direction inputs for Phase 2
+>
+> Phase 1 changed three things this plan was written before; honour them:
+>
+> 1. **Browser-env, barrel-keyed (not node text-parity).** The pivot moved the whole suite to `app:browser`. Every Phase-2 driver + per-page file imports `routes` / page components from `../../../app/browser` and globs raw source with `?raw`; per-page files mount the component (`createApp(Page).mount(...)`) and query the live DOM. Do **not** reach for `setupServer`/`readAllPages()`/`readFactorySources()` — use `import.meta.glob`.
+> 2. **Single-word-modifier convention shipped + already enforced.** `guides/modifiers.md §Anti-rules` + `classNameIsSanctioned` / `componentNamespacesFromPaths` (`tests/setup.ts`) police it in **guides + src:styles + the showcase** (`pages.test.ts` already runs `REMOVED_FRAMEWORK_MODIFIERS` + a framework-class-sanction check). ⇒ **2C must NOT re-implement** the single-word/guide-drift check for modifiers; and **§7's modifier-coverage must treat sanctioned multi-word names (placement corners `top-start…`, component-namespaced `select-*`/`carousel-*`) as valid** — reuse `classNameIsSanctioned`, don't flag them as "not a modifier".
+> 3. **Reuse the hardened Phase-1 parsers — re-deriving them will re-hit fixed bugs.** `splitDeclarations()` (top-level `;` only, parens/quote-aware), **real-start-tag-scoped** attribute extraction (never match `style=`/`class=` inside escaped `<pre><code>` documentation snippets), and **static `class="…"`-only** token rewrites (never `:class` / `v-for` / mustache — the `tray` v-for corruption lesson). The §9 `use{Name}({…})` / `.on.{…}` / return-destructure parser must follow the same start-tag/real-token discipline (call-sites are in `<script setup>`, but code-in-`<pre>` snippets and `:bind` expressions must not be mis-scanned).
+> 4. **Phase 1 is fully complete** (1A–1E + 1D-a/b/c/d/e + the single-word convention); `npm run check` 0/0, full suite **144 files / 6283 tests** green. Every Phase-2 hard dependency is satisfied — the roadmap can start immediately.
 
 ---
 
@@ -40,7 +51,7 @@ Complements `tests/app/core/router.test.ts` (route **table** parity) — Phase 2
 **Per-page bespoke (the 43 filled files — each its own reason to exist, like each `{guide}.test.ts`):**
 
 7. Element pages: the page markup demonstrates its tag(s) **and** every applicable `modifiers.ts` variant/size/style/state appears.
-8. Foundation pages: `TokensPage` surfaces every `tokens.ts` group (and the icon **count** === `tokens.ts` icon-registry length — the audit's "~25" lesson); `ModifiersPage` every modifier dimension; `ThemePage` every `--color-*`; `PlacementsPage` all 8 placements.
+8. Foundation pages: `TokensPage` surfaces every `tokens.ts` group; assert the **rendered icon-demo count === `tokens.ts` icon-registry length** against `tokens.ts` itself (Phase-1 1D-a *deleted* the brittle "~20/~25" prose, so there is no number in the page to check — derive it from src + the mounted DOM). `ModifiersPage` every modifier dimension; `ThemePage` every `--color-*`; `PlacementsPage` all 8 placements.
 9. `Use*Page`: the page's live demo uses only option keys / return fields / event names that exist on the current `use{Name}` + `create{Name}` + `*EventMap` — **this is where the audit's API-name checks become a permanent guard** (parses the page's `use{Name}({...})` call sites + `.on.{…}` + return destructures, asserts each against `src/browser/types.ts`).
 10. Component/Surface pages: every owned `COMPONENT_/SURFACE_CONTRACTS` member is exercised.
 11. `PAGE_EXEMPTIONS` pages (`HomePage`/`TypographyPage`/`SectioningPage`): the per-page file exists (bijection is total) and asserts **structure-only** + a one-line "no framework artifact — see PAGE_EXEMPTIONS" note.
@@ -51,7 +62,7 @@ Complements `tests/app/core/router.test.ts` (route **table** parity) — Phase 2
 
 ### 2A — `srcBrowserParity.test.ts`
 
-Iterate `elements.ts`, `readFactorySources()`, `COMPONENT_/SURFACE_/COMPOSABLE_CONTRACTS`; resolve each through `PAGE_SURFACE_BUNDLES`; assert bidirectional coverage vs `readAllPages()`. Failure prints the unmapped registry key + the page expected to own it.
+Iterate `elements`, `COMPONENT_/SURFACE_/COMPOSABLE_CONTRACTS` (barrel imports), the `create*` factory list + `.vue` page sources (both via `import.meta.glob('…', {query:'?raw'})`); resolve each through `PAGE_SURFACE_BUNDLES`; assert bidirectional coverage vs the barrel page exports (the Phase-1 idiom — no `readAllPages()` / node fs). Failure prints the unmapped registry key + the page expected to own it.
 
 ### 2B — `srcStylesParity.test.ts`
 
@@ -93,12 +104,12 @@ Phase 1 complete (structure + bijection + ALL 1D drift resolved + maps locked)
                  └─ 2E meta-driver totality tighten  → suite complete
 ```
 
-Dependencies: 2D-batch-6 (composable API guard) **must** post-date Phase-1 1D-a (UseToast/Pointer page fixes) or it asserts against known-bad — note 1D-e's `UseCarouselReturn` flag is already resolved (start/stop confirmed present; no longer a blocker). 2A/2B depend on `PAGE_SURFACE_BUNDLES` (locked in Phase-1 1E). **2C's 1D-b dependency is satisfied** — the guides are fully aligned to `src/` as of the audit (commits `7b7cfc5`/`ca154b3`/`d8e1339`/`532a163`), so the guide-drift guard now _locks in_ that alignment rather than racing Phase 1 to remove it.
+Dependencies: **all satisfied — Phase 1 is fully complete** (1A–1E + 1D-a/b/c/d/e + the single-word convention; full suite 6283 green). 2D-batch-6 (composable API guard) no longer races anything — 1D-a (UseToast/Pointer) and 1D-e (`UseCarouselReturn` start/stop, plus `createTooltip` `dataset.tooltipSide`/`place`, `VARIANTS_ALERT`=6, `div.stack`, `_anchor-position` defaults — all confirmed-correct) are resolved, so it asserts against a clean baseline. 2A/2B consume `PAGE_SURFACE_BUNDLES` (Phase-1 1E). 2C only *locks in* the already-aligned guides; the single-word/guide-drift modifier check is **already shipped** in `pages.test.ts` + `tests/{guides,src/styles}`, so 2C scopes to the remaining `composables.md` option/return/event cross-checks only.
 
 ## Tests / exit criteria
 
 - Every driver + all 43 per-page files green; `pages.test.ts` a total no-exception bijection.
-- `npm run test:app`, `npm run check`, guides 3475, `tests/src/*` all green.
+- `npm run check` 0/0; full suite green (Phase-1 close baseline: **144 files / 6283 tests**; Phase 2 only adds — never makes the baseline regress). Don't hard-code counts in assertions; derive from src.
 - A deliberately-introduced drift (rename a `use*` option in a page; remove a registry-covered surface demo; drop a section `id`) fails a _specific, well-named_ test — the suite's value proven, the way the guides suite proves itself.
 - `guides/showcase.md` §Tests checklist fully satisfied; update its "test project is queued" line to "shipped" as the closing commit.
 
