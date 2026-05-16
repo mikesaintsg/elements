@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](guides/contribute.md) to know **how to work**.
 
-Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. **All 43 showcase pages are built AND parity-tested** — the `tests/app/browser/` showcase suite shipped (a clean total page↔route↔barrel↔test bijection, the consolidated up/down-stream `parity.test.ts` driver, 43 per-page bespoke parity files asserting against the mounted Chromium DOM, and the §9 composable API-name guard that prevents the showcase silently rotting against `src/`). Remaining Phase-9 work is the group-collapsible sidebar's keyboard nav (§9.1) + the manual cross-page visual passes (§9.2), plus the post-Phase-9 audits queued under "Future work."
+Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. **All 43 showcase pages are built AND parity-tested** — the `tests/app/browser/` showcase suite shipped (a clean total page↔route↔barrel↔test bijection, the consolidated up/down-stream `parity.test.ts` driver, 43 per-page bespoke parity files asserting against the mounted Chromium DOM, and the §9 composable API-name guard that prevents the showcase silently rotting against `src/`). §9.1 (sidebar nav adjustments — collapsible groups, in-rail keyboard nav, per-page glyphs) is **complete**; the only remaining Phase-9 work is the manual cross-page visual passes (§9.2 — theme-retune / reduced-motion / forced-colors / console-clean walkthroughs), plus the post-Phase-9 audits queued under "Future work."
 
 **Tests:** full suite **145 files / 7023 tests pass** across every project (`src:core` / `src:browser` / `src:styles` / `app:core` / `app:browser` / `guides`); `npm run check` 0/0. The showcase parity contract is codified in [`guides/showcase.md`](guides/showcase.md) §Contract / §Tests.
 
@@ -10,20 +10,20 @@ Status: every framework layer (tokens, theme, mixins, modifiers, elements, compo
 
 ## At a glance
 
-| Phase | Description                                                                              | Status |
-| ----- | ---------------------------------------------------------------------------------------- | ------ |
-| 0     | Repo bootstrap (deps, scripts, vite + vitest projects)                                   | ✅     |
-| 1     | Cascade layer order + style entry                                                        | ✅     |
-| 2     | Tokens (variant palette, `--set-*` namespace, theme)                                     | ✅     |
-| 3     | Mixins + Sass-list constants                                                             | ✅     |
-| 4     | Modifiers (5 dimensions × full required-token coverage + element-local)                  | ✅     |
-| 5     | Element baselines (94 partials; 49 substantive, 8 reset, rest passthrough)               | ✅     |
-| 6     | Components (18 partials; tag-rooted + class-component primitives)                        | ✅     |
-| 7     | Surfaces (9 partials; pseudo-element + attribute)                                        | ✅     |
-| 8     | Composables (20 use/create pairs + 6 chrome partials)                                    | ✅     |
-| 9     | Showcase pages — 43 of 43 built + parity-tested (keyboard-nav + manual polish remaining) | 🟡     |
-| 10    | Distribution (build + pack)                                                              | ✅     |
-| 11    | Invariant verification (11 codified contracts)                                           | ✅     |
+| Phase | Description                                                                                                     | Status |
+| ----- | --------------------------------------------------------------------------------------------------------------- | ------ |
+| 0     | Repo bootstrap (deps, scripts, vite + vitest projects)                                                          | ✅     |
+| 1     | Cascade layer order + style entry                                                                               | ✅     |
+| 2     | Tokens (variant palette, `--set-*` namespace, theme)                                                            | ✅     |
+| 3     | Mixins + Sass-list constants                                                                                    | ✅     |
+| 4     | Modifiers (5 dimensions × full required-token coverage + element-local)                                         | ✅     |
+| 5     | Element baselines (94 partials; 49 substantive, 8 reset, rest passthrough)                                      | ✅     |
+| 6     | Components (18 partials; tag-rooted + class-component primitives)                                               | ✅     |
+| 7     | Surfaces (9 partials; pseudo-element + attribute)                                                               | ✅     |
+| 8     | Composables (20 use/create pairs + 6 chrome partials)                                                           | ✅     |
+| 9     | Showcase pages — 43 of 43 built + parity-tested; §9.1 sidebar complete (manual cross-page visual passes remain) | 🟡     |
+| 10    | Distribution (build + pack)                                                                                     | ✅     |
+| 11    | Invariant verification (11 codified contracts)                                                                  | ✅     |
 
 For per-layer details see the matching spec guide: [tokens.md](guides/tokens.md), [mixins.md](guides/mixins.md), [modifiers.md](guides/modifiers.md), [elements.md](guides/elements.md), [components.md](guides/components.md), [surfaces.md](guides/surfaces.md), [composables.md](guides/composables.md), [patterns.md](guides/patterns.md) (codified contracts).
 
@@ -56,7 +56,8 @@ Every element page covers the static markup contract; the matching `Use*Page` co
 The flat sidebar list worked for 14 pages; with all 43 it was a 42-line scroll — the group-collapsible rail (below) solved it.
 
 - ✅ **Group-collapsible sidebar** — every `RouteGroup` wraps in `<details class="flush" open><summary><h6>{group}</h6></summary><menu>…</menu></details>`. `App.vue` auto-expands the active route's group on navigation but never auto-collapses user-collapsed groups elsewhere. Inter-group dividers + open-state h6 contrast painted via `app/browser/styles/showcase.css`. Codified in [`guides/showcase.md`](guides/showcase.md).
-- ⬜ **Keyboard nav inside the rail** — arrow keys move focus between visible items; `[` / `]` collapse / expand groups.
+- ✅ **Keyboard nav inside the rail** — `App.vue`'s `onRailKeydown` (a rail-scoped `@keydown`, never a document handler, so it never fights the filter input) builds an ordered focus model — each group's `<summary>`, then that group's links when open. Arrow Up/Down walk the rows (clamped, no wrap); `[` collapses / `]` expands the group owning the focused row, pulling focus back to the summary on collapse so the rail stays walkable. Setting `details.open` rides the existing native-`toggle` → `onGroupToggle` sync so the controlled state stays coherent.
+- ✅ **Per-page sidebar glyphs** — every rail link carries a custom, visually-descriptive icon (`<i class="icon showcase-nav-icon">`). Authored exactly the way the framework authors its `--set-icon-*` tokens (16×16 outline SVG, `currentColor`, data-URI) but namespaced `.showcase-*` and `[href]`-keyed in `app/browser/styles/showcase.css` — page files carry only classes (no inline `style`), and a per-page icon set is documentation chrome the framework deliberately doesn't ship. The active page's glyph reads at full opacity alongside the `aria-current="page"` row treatment.
 
 ### 9.2 Cross-page polish (after all pages exist)
 

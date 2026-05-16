@@ -250,6 +250,12 @@ interface ComposableTarget {
  * owns); the parser + cross-check mechanism is shared so it is authored
  * ONCE, never copy-pasted ×18 (the guide-suite discipline).
  */
+// Single import statement from the framework barrel. A regex
+// LITERAL so `oxfmt` cannot corrupt it (it only strips redundant
+// escapes from literals — semantics preserved — whereas it mangles
+// escaped template-literal RegExp sources).
+const BARREL_IMPORT_RE = /import\s*\{[^}]*\}\s*from\s*['"]@elements\/browser['"]/g
+
 export function runComposableApiParity(
 	pageName: string,
 	PageComponent: Component,
@@ -281,12 +287,14 @@ export function runComposableApiParity(
 	describe(`${pageName} — §9 composable API-name guard`, () => {
 		for (const { use, factory } of targets) {
 			it(`imports + calls ${use} from the barrel (real wiring, not prose)`, () => {
-				// Import check on RAW script (the '@elements/browser' path
-				// string is blanked by scriptSetupCode's literal-strip).
-				const importRe = new RegExp(
-					`import[^]*?\{[^}]*\b${use}\b[^}]*}[^]*?from\s*['"]@elements/browser['"]`,
-				)
-				expect(importRe.test(raw)).toBe(true)
+				// Import wiring on the RAW script. A regex LITERAL (not a
+				// `new RegExp(`…`)` template) on purpose: oxfmt rewrites
+				// escaped-template-literal regex sources (double-backslash to
+				// single) which silently breaks them, while it leaves regex
+				// literals semantically intact. The dynamic `use` name is matched
+				// with a plain .includes (no regex) so format can never corrupt it.
+				const barrelImports = raw.match(BARREL_IMPORT_RE) ?? []
+				expect(barrelImports.some((stmt) => stmt.includes(use))).toBe(true)
 				// Call check on STRIPPED code (so a `use…(` mention inside
 				// a JSDoc / <pre> snippet can't satisfy it).
 				expect(new RegExp(`\\b${use}\\s*(?:<[^>]*>)?\\s*\\(`).test(code)).toBe(true)

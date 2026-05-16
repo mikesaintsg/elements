@@ -38,10 +38,7 @@ import { capitalize } from '../helpers.js'
 
 import type { Variant } from '@elements/browser'
 import type { ModifierSizeOption, ModifierStateOption, ModifierStyleOption } from '../types.js'
-import {
-	MODIFIERS_SIZE_ROWS as sizeRows,
-	VARIANTS as variants,
-} from '../constants.js'
+import { MODIFIERS_SIZE_ROWS as sizeRows, VARIANTS as variants } from '../constants.js'
 
 // ── Combination picker state ───────────────────────────────────────────────
 

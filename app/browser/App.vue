@@ -148,6 +148,59 @@ const onKeydown = (e: KeyboardEvent): void => {
 	}
 }
 
+// Sidebar rail keyboard nav (ROADMAP §9.1). The framework's <details>
+// + nav-menu chrome owns the VISUALS; this owns only the keyboard
+// MODEL: an ordered list of focusable rows = each group's <summary>,
+// then that group's links when it's open. Arrow Up/Down walk the rows
+// (clamped, no wrap — predictable against a long rail); `[` / `]`
+// collapse / expand the group owning the focused row. Setting
+// `details.open` fires the native `toggle`, which `onGroupToggle`
+// already syncs into `openGroups`, so the controlled state stays
+// coherent. Scoped to the rail via the element listener — never a
+// document handler (it must not fight typing in the filter input).
+const railRows = (): HTMLElement[] => {
+	const scroll = document.getElementById('primary-rail')?.querySelector('.showcase-sidebar-scroll')
+	if (!scroll) return []
+	const rows: HTMLElement[] = []
+	for (const d of scroll.querySelectorAll<HTMLDetailsElement>(':scope > details')) {
+		const summary = d.querySelector<HTMLElement>(':scope > summary')
+		if (summary) rows.push(summary)
+		if (d.open) for (const a of d.querySelectorAll<HTMLElement>(':scope > menu a')) rows.push(a)
+	}
+	return rows
+}
+
+const onRailKeydown = (e: KeyboardEvent): void => {
+	const { key } = e
+	if (key !== 'ArrowDown' && key !== 'ArrowUp' && key !== '[' && key !== ']') return
+	const activeEl = document.activeElement as HTMLElement | null
+	const rows = railRows()
+	if (rows.length === 0) return
+	const idx = activeEl ? rows.indexOf(activeEl) : -1
+
+	if (key === 'ArrowDown' || key === 'ArrowUp') {
+		e.preventDefault()
+		const next =
+			idx === -1
+				? key === 'ArrowDown'
+					? 0
+					: rows.length - 1
+				: Math.min(rows.length - 1, Math.max(0, idx + (key === 'ArrowDown' ? 1 : -1)))
+		rows[next]?.focus()
+		return
+	}
+
+	// `[` collapse / `]` expand the group owning the focused row.
+	const owner = activeEl?.closest<HTMLDetailsElement>('.showcase-sidebar-scroll > details')
+	if (!owner) return
+	e.preventDefault()
+	const open = key === ']'
+	if (owner.open !== open) owner.open = open
+	// Collapsing would orphan focus inside the now-hidden menu — pull it
+	// back to the group's own summary so the rail stays keyboard-walkable.
+	if (!open) owner.querySelector<HTMLElement>(':scope > summary')?.focus()
+}
+
 const goHome = (event: MouseEvent): void => {
 	event.preventDefault()
 	navigate('home')
@@ -326,6 +379,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		aria-label="Primary"
 		class="showcase-sidebar"
 		:popover="isMobile ? 'auto' : undefined"
+		@keydown="onRailKeydown"
 	>
 		<!-- Drawer header band — mobile only. Title + close button mirror
 		     the canonical `<aside popover>` offcanvas pattern on
@@ -402,6 +456,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 							:aria-current="current.id === r.id ? 'page' : undefined"
 							@click="onLinkClick"
 						>
+							<i class="icon showcase-nav-icon" aria-hidden="true"></i>
 							{{ r.title }}
 						</a>
 					</li>
