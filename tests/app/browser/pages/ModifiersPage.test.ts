@@ -1,35 +1,60 @@
 // ============================================================================
-//  ModifiersPage — per-page parity scaffold (browser env).
+//  ModifiersPage — per-page BESPOKE parity (Phase-2 §7/§8, Foundation).
 //
-//  Thin, real, page-SPECIFIC render smoke test (not a placeholder): the
-//  component imported from the `app/browser` barrel mounts and renders
-//  its intro section bound to the `modifiers` route. Universal skeleton +
-//  bijection + inline-style/namespace rules are enforced once for all 43
-//  pages by tests/app/browser/pages.test.ts — NOT duplicated here.
-//
-//  Phase 2 (plans/phase-2.md §2D) fills the bespoke parity body: this
-//  page's framework artifact(s) demonstrated + every applicable
-//  modifier / option / event present.
+//  Universal rules live in pages.test.ts; cross-registry in parity.test.ts.
+//  ModifiersPage's reason to exist: it must demonstrate EVERY value of
+//  EVERY cross-cutting modifier dimension in `modifiers.ts`
+//  (variant / size / style / state) as a real class in rendered markup.
+//  (placement is PlacementsPage's job.)
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
 import { createApp } from 'vue'
+import { modifiers } from '@elements/browser'
 import { ModifiersPage } from '../../../../app/browser/index.js'
 
-describe('ModifiersPage — parity scaffold', () => {
+function mount(): { host: HTMLElement; teardown: () => void } {
+	const host = document.createElement('div')
+	document.body.appendChild(host)
+	const app = createApp(ModifiersPage)
+	app.mount(host)
+	return { host, teardown: () => { app.unmount(); host.remove() } }
+}
+
+describe('ModifiersPage — render smoke', () => {
 	it('mounts + renders the "modifiers" intro section', () => {
-		const host = document.createElement('div')
-		document.body.appendChild(host)
-		const app = createApp(ModifiersPage)
+		const { host, teardown } = mount()
 		try {
-			app.mount(host)
 			const intro = host.querySelector('section#modifiers-intro')
-			expect(intro, 'intro <section id="modifiers-intro">').not.toBeNull()
-			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe('Modifiers')
+			expect(intro).not.toBeNull()
+			expect(intro?.querySelector('h1')?.textContent?.trim()).toBe('Modifiers')
 		} finally {
-			app.unmount()
-			host.remove()
+			teardown()
 		}
 	})
+})
+
+describe('ModifiersPage — every modifier dimension value is demonstrated (§7/§8)', () => {
+	const dims = ['variant', 'size', 'style', 'state'] as const
+
+	it('discovers the modifier registry (vacuous-pass guard)', () => {
+		for (const d of dims) expect(Object.values(modifiers[d]).length).toBeGreaterThan(0)
+	})
+
+	for (const dim of dims) {
+		for (const value of Object.values(modifiers[dim]) as string[]) {
+			if (value === '') continue // '' = the bare default (no class)
+			// On failure: `modifiers.${dim}.…` ships `.${value}` but
+			// ModifiersPage renders no element carrying that class — the
+			// modifier vocabulary page must demo every dimension value.
+			it(`renders a .${value} element (${dim})`, () => {
+				const { host, teardown } = mount()
+				try {
+					expect(host.querySelector(`.${value}`), `.${value}`).not.toBeNull()
+				} finally {
+					teardown()
+				}
+			})
+		}
+	}
 })
