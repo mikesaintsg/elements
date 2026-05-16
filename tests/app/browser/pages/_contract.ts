@@ -4,7 +4,7 @@
 //  per-page parity files key off. The `src/browser/patterns.ts`-registry
 //  analogue, scoped to the showcase.
 //
-//  Four declared maps (locked in Phase-1 plans/phase-1.md §Contract):
+//  Four declared maps (the showcase parity contract — guides/showcase.md §Contract):
 //
 //    PAGE_EXEMPTIONS      pages that demo no single framework artifact —
 //                         exempt from Phase-2 *parity* only (they still

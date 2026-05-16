@@ -18,7 +18,7 @@
 //                            (the browser-safe `readdirSync` equivalent)
 //                            for the total bijection.
 //
-//  Contract §1–§8 (plans/phase-1.md): UNIFORMITY, SKELETON, total
+//  Contract (guides/showcase.md §Contract): UNIFORMITY, SKELETON, total
 //  BIJECTION (page ↔ route ↔ barrel export ↔ test), INLINE-STYLE,
 //  NAMESPACE. A clean bijection with NO special-case exceptions — the
 //  exact bar README.test.ts holds.

@@ -1,7 +1,8 @@
 // ============================================================================
 //  §9 composable API-name guard — shared parser + per-page runner.
 //
-//  THE strategic anti-rot invariant (plans/phase-2.md §2B-6): a
+//  THE strategic anti-rot invariant (guides/showcase.md §Tests — the
+//  §9 composable API-name guard): a
 //  Use*Page must wire its composable through its REAL `<script setup>`
 //  call-site, and every option key / `on.*` event key / return member
 //  that call-site references must still exist in the composable's src
@@ -11,8 +12,8 @@
 //  of staleness ("a lot of the content is out of date") can never
 //  silently recur.
 //
-//  Discipline (plans/phase-2.md §Phase-1 carry-over, point 3): scan
-//  ONLY the real `<script setup>` code — comments + string / template
+//  Discipline (the hardened start-tag / real-token parser convention):
+//  scan ONLY the real `<script setup>` code — comments + string / template
 //  literals stripped, `<template>` (the API-reference <dl> prose + the
 //  <pre> markup snippets + `:bind` expressions) excluded. Call-sites
 //  are in `<script setup>`; code-in-`<pre>` must never be mis-scanned.
