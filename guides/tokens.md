@@ -194,7 +194,7 @@ Three-tier scale. `sm` for hover-raised list items and subtle action panels. Bas
 --set-icon-minus: url(…);
 ```
 
-Single overridable inline-SVG library for every chrome glyph the framework paints. Defaults are URL-encoded 16×16 viewBox data URLs at `stroke-width='2'` with `stroke='currentColor'` (or `fill='currentColor'` for filled glyphs — `caret-*`, `radio`, `more`, `sort`, `switch-*`), so the same value works as either `background-image` (paints the stroke) or `mask-image` (drives the SHAPE; tint comes from the consumer's `background-color: currentColor` on the masked pseudo).
+Single overridable inline-SVG library for every chrome glyph the framework paints. Defaults are URL-encoded data URLs: most are 16×16 `viewBox` with `stroke='currentColor'` + `stroke-width='2'`; `caret-*`, `more`, and `sort` use `fill='currentColor'` instead. The form-control indicator glyphs (`check`, `dash`, `radio`, `switch-off`, `switch-on`) ship fixed fills (white / grey) by design — not `currentColor` — and `switch-*` carry their own non-16×16 `viewBox`. The same value works as either `background-image` (paints the stroke) or `mask-image` (drives the SHAPE; tint comes from the consumer's `background-color: currentColor` on the masked pseudo).
 
 Consumer partials reference these through per-element aliases (`--set-select-background-image`, `--set-summary-marker-image`, `--set-nav-breadcrumb-separator-image`, `--set-check-checkbox-svg`, the carousel `mask-image`, the table sort indicator, …) so a host-page override at `:root` scope retunes every consumer at once:
 
@@ -343,7 +343,7 @@ Naming follows Material Design's `on-X` convention — the suffix names the SURF
 
 `text-emphasis` and `on-canvas` are decoupled by name even though their formulas match today: `text-emphasis` is "text emphasized on `bg-subtle`" (variant-tinted bg), `on-canvas` is "text safe on `--color-canvas`" (no bg tint). Canvas-context can retune independently of bg-subtle-context if a future theme needs divergent shades. Bare variant anchors (`elements/_a.scss`), bare variant labels (`elements/_label.scss`), header/footer/menu-current foreground hover states, and any inline variant text consume the `on-canvas` tier through `--set-variant-on-canvas-color`.
 
-**Dark-mode tunes** live under `[data-theme="dark"]` in `_theme.scss`. Surface, text, and border tokens flip from the slate `50`/`100` light scale to the slate `900`/`950` dark scale; variant identities stay constant (Tailwind's `-600` step contrasts well against both extremes); subtle triplets re-derive against `--color-surface` with bumped mix percentages so the tint reads cleanly against the deep canvas.
+**Dark-mode tunes** live under `[data-theme="dark"]` in `_theme.scss`. Surface, text, and border tokens flip from the slate `50`/`100` light scale to the slate `900`/`950` dark scale; variant identities stay constant (Tailwind's `-600` step contrasts well against both extremes); subtle triplets re-derive in dark mode (bg-subtle against `--color-canvas`, border-subtle against `--color-surface`) with bumped mix percentages so the tint reads cleanly against the deep canvas.
 
 The framework uses explicit `[data-theme]` attribute overrides rather than `light-dark()` because Chromium currently fails to re-resolve `light-dark()` values stored in custom properties against a child element's `color-scheme`.
 

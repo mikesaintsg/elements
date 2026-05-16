@@ -160,7 +160,7 @@ The framework layers on Tailwind v4. The interop test verifies modifier+utility 
 | ------------------------------------- | ------------------------------------------------------------------------------------- |
 | Spec                                  | [`guides/styles.md`](styles.md) § "Tailwind v4 is the base"                           |
 | Composition test + collision detector | [`tests/src/styles/integration.test.ts`](../tests/src/styles/integration.test.ts)     |
-| Collision watch list                  | [`tests/setupStyles.ts`](../tests/setupStyles.ts) § `TAILWIND_SINGLE_TOKEN_UTILITIES` |
+| Collision watch list                  | [`tests/setup.ts`](../tests/setup.ts) § `TAILWIND_SINGLE_TOKEN_UTILITIES` |
 
 ---
 
@@ -215,7 +215,7 @@ Compile pipeline: Sass → PostCSS (`@tailwindcss/postcss`). The compilation bar
 | [`_tokens.scss`](../src/styles/_tokens.scss) | `:root { --set-* }` global tokens + cascade-layer order.                                                                                                      |
 | [`_theme.scss`](../src/styles/_theme.scss)   | `@theme { … }` block registering semantic variant colors with Tailwind.                                                                                       |
 | [`_mixins.scss`](../src/styles/_mixins.scss) | Mixin / function / Sass-list registry. `@use` directly, never via the barrel.                                                                                 |
-| [`elements/`](../src/styles/elements/)       | One partial per HTML tag (~93 files). Most are comment-only placeholders; substantive ones declare `--set-{tag}-*` tokens. See [elements.md §3](elements.md). |
+| [`elements/`](../src/styles/elements/)       | One partial per HTML tag (~94 files). Most are comment-only placeholders; substantive ones declare `--set-{tag}-*` tokens. See [elements.md §3](elements.md). |
 | [`modifiers/`](../src/styles/modifiers/)     | One partial per modifier dimension: `_variants`, `_sizes`, `_styles`, `_states`, `_placements`, plus `_local` for element-local modifiers.                    |
 | [`surfaces/`](../src/styles/surfaces/)       | Pseudo-element / attribute / at-rule surfaces.                                                                                                                |
 | [`components/`](../src/styles/components/)   | Element compositions + class-root fallbacks.                                                                                                                  |

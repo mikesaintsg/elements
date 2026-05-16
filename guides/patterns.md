@@ -4,7 +4,7 @@
 
 ## Surface
 
-Eleven codified contract registries govern every SCSS partial the framework ships. Each is a typed structure in [`src/browser/patterns.ts`](../src/browser/patterns.ts), each is enforced by a test, and each has a per-folder or per-domain prose section in this guide.
+Eleven codified contract registries govern every SCSS partial the framework ships. All but one are typed structures in [`src/browser/patterns.ts`](../src/browser/patterns.ts) — the exception is `TOKEN_GROUPS`, which lives in [`src/browser/taxonomy.ts`](../src/browser/taxonomy.ts) (see the TS-location column below). Each is enforced by a test, and each has a per-folder or per-domain prose section in this guide.
 
 ### Contract registries
 
@@ -12,7 +12,7 @@ Eleven codified contract registries govern every SCSS partial the framework ship
 | --------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `FOLDER_CONTRACTS`          | Per-folder rules (layer, head-kind allow/forbid, state-selector, namespace).    | `FOLDER_CONTRACTS`                                      | [§ Per-folder contracts](#per-folder-contracts)                                            |
 | `FILE_EXCEPTIONS`           | Per-partial deltas relaxing the folder contract.                                | `FILE_EXCEPTIONS`                                       | [§ File exceptions](#file-exceptions)                                                      |
-| `STYLE_LAYERS`              | The five `@layer` names the framework owns.                                     | `STYLE_LAYERS`                                          | [§ Per-folder contracts](#per-folder-contracts)                                            |
+| `STYLE_LAYERS`              | The five framework-owned cascade layers (= the folders under `src/styles/`); the full `@layer` order also carries Tailwind's `theme` / `base` / `utilities`. | `STYLE_LAYERS`                                          | [§ Per-folder contracts](#per-folder-contracts)                                            |
 | `MODIFIER_DIMENSION_TOKENS` | Required context tokens per modifier dimension.                                 | `MODIFIER_DIMENSION_TOKENS`                             | [§ Per-dimension required tokens](#per-dimension-required-tokens)                          |
 | `SURFACE_CONTRACTS`         | Per-surface required tokens + animation discipline.                             | `SURFACE_CONTRACTS`                                     | [§ Per-surface contracts](#per-surface-contracts)                                          |
 | `COMPONENT_CONTRACTS`       | Per-component required tokens + animation discipline.                           | `COMPONENT_CONTRACTS`                                   | [§ Per-component contracts](#per-component-contracts)                                      |
