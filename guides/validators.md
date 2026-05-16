@@ -114,7 +114,8 @@ Guards pair naturally with the parsers: `parseJsonAs` and `parseArray` (in [pars
 | `isZeroArgAsync()`          | `ZeroArgAsyncFunction`             | `isFunction` + `isZeroArg` + `isAsyncFunction`.                                       |
 | `isZeroArgGenerator()`      | zero-arg generator function         | `isFunction` + `isZeroArg` + `isGeneratorFunction`.                                   |
 | `isZeroArgAsyncGenerator()` | zero-arg async generator function   | `isFunction` + `isZeroArg` + `isAsyncGeneratorFunction`.                              |
-| `enumerableSymbolCount()`   | `number`                            | Helper: counts a value's enumerable own-symbol keys (used by the object-emptiness guards). |
+
+> `enumerableSymbolCount(value)` is a real export but is a helper, not a guard — it returns a `number` (the count of enumerable own-symbol keys on a value) and is used internally by the object-emptiness guards (`isEmptyObject`, `isNonEmptyObject`). Prefer those guards at call sites.
 
 ### Compositors
 
@@ -155,13 +156,13 @@ These invariants hold across `src/core/validators.ts` ↔ `validators.md`:
 
 1. **DOC → SOURCE.** Every backticked call-form API named in this guide is a real `export function` / `export const` in [src/core/validators.ts](../src/core/validators.ts). A renamed or removed export breaks the parity gate until the doc is reconciled.
 2. **SOURCE → DOC.** Every guard and compositor exported from `src/core/validators.ts` is documented in a `## Surface` table above — the surface is exhaustive, not a sample.
-3. **`Guard<T>` SEMANTICS.** Every guard is pure and total: it takes one `unknown`, returns a `boolean` that TypeScript reads as a `value is T` type predicate, and **never throws**. A value that doesn't fit yields `false`. Compositors are equally pure — they return a fresh guard closure and evaluate lazily on call.
+3. **`Guard<T>` SEMANTICS.** Every guard is pure and total: it takes one `unknown`, returns a `boolean` that TypeScript reads as a `value is T` type predicate, and **never throws**. A value that doesn't fit yields `false`. Compositors are equally pure — each compositor builds its guard closure once at construction time; the returned closure is pure and evaluates on each invocation. `lazyOf` is the sole exception: it defers construction so the thunk runs on every call (see the `lazyOf` row above).
 4. **TYPES ARE THE SOURCE OF TRUTH.** `Guard<T>`, `GuardType`, `GuardsShape`, `FromGuards`, `OptionalFromGuards`, `TupleFromGuards`, `IntersectionFromGuards`, and the `AnyFunction` / `AnyConstructor` / `ZeroArgFunction` family are declared first in [src/core/types.ts](../src/core/types.ts); the guards conform to those types, never the reverse.
 
 Enforced by:
 
 - [`tests/guides/validators.test.ts`](../tests/guides/validators.test.ts) — every documented call-form API resolves to a real `src/core/validators.ts` export.
-- [`tests/src/core/validators.test.ts`](../tests/src/core/validators.test.ts) — per-guard behavior: primitive narrowing, `isRecord` plain-object rules, JSON value / schema recursion, typed-array detection, emptiness (including enumerable-symbol counting), function/constructor detection, and the compositor semantics (`recordOf` exactness + optional/`true`, `tupleOf` length, `complementOf`, `lazyOf` per-call thunk, `transformOf`).
+- [`tests/src/core/validators.test.ts`](../tests/src/core/validators.test.ts) — per-guard behavior: primitive narrowing, `isRecord` plain-object rules, JSON value / schema recursion, typed-array detection, emptiness (including enumerable-symbol counting), function/constructor detection, and compositor semantics (`recordOf` exactness + optional/`true`, `tupleOf` length, `complementOf`, `lazyOf` per-call thunk, `transformOf`).
 
 ---
 
@@ -301,8 +302,8 @@ isNumberTree(['x']) // false
 
 ## Tests
 
+- [`tests/guides/validators.test.ts`](../tests/guides/validators.test.ts) — every documented call-form API resolves to a real `src/core/validators.ts` export.
 - [`tests/src/core/validators.test.ts`](../tests/src/core/validators.test.ts) — per-guard behavior: primitive / null-ish narrowing, `isRecord` plain-object rules, JSON value & schema recursion, typed-array detection, emptiness with enumerable-symbol counting, function / constructor detection, and compositor semantics (`recordOf` exactness + optional / `true`, `tupleOf` arity, `complementOf`, `lazyOf` per-call thunk, `transformOf`, `nullableOf`).
-- [`tests/guides/validators.test.ts`](../tests/guides/validators.test.ts) — doc ↔ source parity: every backticked call-form API in this guide resolves to a real `export` in `src/core/validators.ts`.
 
 ---
 
