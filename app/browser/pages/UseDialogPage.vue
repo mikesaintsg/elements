@@ -267,7 +267,11 @@ const inline = useDialog(inlineRef, { modal: false }) // dialog.show()
 				</button>
 			</li>
 		</menu>
-		<dialog ref="staticRef" class="showcase-shake-dialog" :class="{ filled: preventFlash, warning: true }">
+		<dialog
+			ref="staticRef"
+			class="showcase-shake-dialog"
+			:class="{ filled: preventFlash, warning: true }"
+		>
 			<header>
 				<h3>Confirm delete</h3>
 			</header>

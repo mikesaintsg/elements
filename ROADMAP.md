@@ -10,20 +10,20 @@ Status: every framework layer (tokens, theme, mixins, modifiers, elements, compo
 
 ## At a glance
 
-| Phase | Description                                                                | Status |
-| ----- | -------------------------------------------------------------------------- | ------ |
-| 0     | Repo bootstrap (deps, scripts, vite + vitest projects)                     | ✅     |
-| 1     | Cascade layer order + style entry                                          | ✅     |
-| 2     | Tokens (variant palette, `--set-*` namespace, theme)                       | ✅     |
-| 3     | Mixins + Sass-list constants                                               | ✅     |
-| 4     | Modifiers (5 dimensions × full required-token coverage + element-local)    | ✅     |
-| 5     | Element baselines (94 partials; 49 substantive, 8 reset, rest passthrough) | ✅     |
-| 6     | Components (18 partials; tag-rooted + class-component primitives)          | ✅     |
-| 7     | Surfaces (9 partials; pseudo-element + attribute)                          | ✅     |
-| 8     | Composables (20 use/create pairs + 6 chrome partials)                      | ✅     |
+| Phase | Description                                                                              | Status |
+| ----- | ---------------------------------------------------------------------------------------- | ------ |
+| 0     | Repo bootstrap (deps, scripts, vite + vitest projects)                                   | ✅     |
+| 1     | Cascade layer order + style entry                                                        | ✅     |
+| 2     | Tokens (variant palette, `--set-*` namespace, theme)                                     | ✅     |
+| 3     | Mixins + Sass-list constants                                                             | ✅     |
+| 4     | Modifiers (5 dimensions × full required-token coverage + element-local)                  | ✅     |
+| 5     | Element baselines (94 partials; 49 substantive, 8 reset, rest passthrough)               | ✅     |
+| 6     | Components (18 partials; tag-rooted + class-component primitives)                        | ✅     |
+| 7     | Surfaces (9 partials; pseudo-element + attribute)                                        | ✅     |
+| 8     | Composables (20 use/create pairs + 6 chrome partials)                                    | ✅     |
 | 9     | Showcase pages — 43 of 43 built + parity-tested (keyboard-nav + manual polish remaining) | 🟡     |
-| 10    | Distribution (build + pack)                                                | ✅     |
-| 11    | Invariant verification (11 codified contracts)                             | ✅     |
+| 10    | Distribution (build + pack)                                                              | ✅     |
+| 11    | Invariant verification (11 codified contracts)                                           | ✅     |
 
 For per-layer details see the matching spec guide: [tokens.md](guides/tokens.md), [mixins.md](guides/mixins.md), [modifiers.md](guides/modifiers.md), [elements.md](guides/elements.md), [components.md](guides/components.md), [surfaces.md](guides/surfaces.md), [composables.md](guides/composables.md), [patterns.md](guides/patterns.md) (codified contracts).
 

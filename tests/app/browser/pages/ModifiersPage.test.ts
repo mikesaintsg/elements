@@ -18,7 +18,13 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 	document.body.appendChild(host)
 	const app = createApp(ModifiersPage)
 	app.mount(host)
-	return { host, teardown: () => { app.unmount(); host.remove() } }
+	return {
+		host,
+		teardown: () => {
+			app.unmount()
+			host.remove()
+		},
+	}
 }
 
 describe('ModifiersPage — render smoke', () => {

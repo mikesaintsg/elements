@@ -24,7 +24,13 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 	document.body.appendChild(host)
 	const app = createApp(NavPage)
 	app.mount(host)
-	return { host, teardown: () => { app.unmount(); host.remove() } }
+	return {
+		host,
+		teardown: () => {
+			app.unmount()
+			host.remove()
+		},
+	}
 }
 
 describe('NavPage — render smoke', () => {
@@ -62,7 +68,9 @@ describe('NavPage — pagination shape (§7)', () => {
 			expect(pg).not.toBeNull()
 			expect(pg?.querySelector('ol')).not.toBeNull()
 			// page=2 is seeded — the active tile carries aria-current="page".
-			expect(host.querySelector('nav[aria-label="Pagination"] [aria-current="page"]')).not.toBeNull()
+			expect(
+				host.querySelector('nav[aria-label="Pagination"] [aria-current="page"]'),
+			).not.toBeNull()
 		} finally {
 			teardown()
 		}

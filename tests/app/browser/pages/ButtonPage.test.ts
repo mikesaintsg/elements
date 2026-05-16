@@ -20,7 +20,13 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 	document.body.appendChild(host)
 	const app = createApp(ButtonPage)
 	app.mount(host)
-	return { host, teardown: () => { app.unmount(); host.remove() } }
+	return {
+		host,
+		teardown: () => {
+			app.unmount()
+			host.remove()
+		},
+	}
 }
 
 describe('ButtonPage — render smoke', () => {

@@ -40,9 +40,6 @@ import type { Variant } from '@elements/browser'
 import type { ModifierSizeOption, ModifierStateOption, ModifierStyleOption } from '../types.js'
 import {
 	MODIFIERS_SIZE_ROWS as sizeRows,
-	MODIFIERS_SIZES as sizes,
-	MODIFIERS_STATES as states,
-	MODIFIERS_STYLE_NAMES as styleNames,
 	VARIANTS as variants,
 } from '../constants.js'
 
@@ -469,11 +466,11 @@ const placements = [
 		<p>
 			Some authors want per-element-local modifiers (<code>form.row</code>,
 			<code>button.dropdown</code>, <code>table.striped</code>) — class names that only make sense
-			on a single tag, so they pair with the tag selector to keep scope tight. These currently
-			live in their element / component partials (<code>components/_form.scss</code>,
+			on a single tag, so they pair with the tag selector to keep scope tight. These currently live
+			in their element / component partials (<code>components/_form.scss</code>,
 			<code>elements/_button.scss</code>, <code>elements/_table.scss</code>);
-			<code>modifiers/_local.scss</code> is the modifier-layer target home + charter for the
-			family, with the migration still pending (reserved stubs there).
+			<code>modifiers/_local.scss</code> is the modifier-layer target home + charter for the family,
+			with the migration still pending (reserved stubs there).
 		</p>
 		<h3>Don't reach for the variant palette directly</h3>
 		<p>

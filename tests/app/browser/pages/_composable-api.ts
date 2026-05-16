@@ -200,8 +200,7 @@ export function callSiteApiNames(code: string, useName: string): string[] {
 				if (onM) {
 					const onOpen = body.indexOf('{', (onM.index ?? 0) + onM[0].length - 1)
 					const onEnd = matchBrace(body, onOpen)
-					if (onEnd !== -1)
-						for (const k of objectKeys(body.slice(onOpen + 1, onEnd))) names.add(k)
+					if (onEnd !== -1) for (const k of objectKeys(body.slice(onOpen + 1, onEnd))) names.add(k)
 				}
 				i = end
 			}
@@ -209,10 +208,14 @@ export function callSiteApiNames(code: string, useName: string): string[] {
 
 		// Return binding: `const { a, b } = use…(` or `const X = use…(`.
 		const before = code.slice(Math.max(0, m.index - 200), m.index)
-		const destructure = before.match(/(?:const|let|var)\s*\{([^}]*)\}\s*=\s*$/)
+		const destructure = before.match(/(?:const|let|var)\s*\{([^}]*)}\s*=\s*$/)
 		if (destructure) {
 			for (const raw of (destructure[1] as string).split(',')) {
-				const id = raw.split(':').pop()?.trim().match(/^[A-Za-z_]\w*/)?.[0]
+				const id = raw
+					.split(':')
+					.pop()
+					?.trim()
+					.match(/^[A-Za-z_]\w*/)?.[0]
 				if (id) names.add(id)
 			}
 		} else {
@@ -232,11 +235,7 @@ export function callSiteApiNames(code: string, useName: string): string[] {
 /** Authoritative src surface for a composable: factory + composable + types. */
 export function srcApiCorpus(factoryName: string): string {
 	const stem = factoryName.replace(/^create/, '')
-	return [
-		factorySrc[factoryName] ?? '',
-		composableSrc[`use${stem}`] ?? '',
-		typesSrc,
-	].join('\n')
+	return [factorySrc[factoryName] ?? '', composableSrc[`use${stem}`] ?? '', typesSrc].join('\n')
 }
 
 interface ComposableTarget {
@@ -285,7 +284,7 @@ export function runComposableApiParity(
 				// Import check on RAW script (the '@elements/browser' path
 				// string is blanked by scriptSetupCode's literal-strip).
 				const importRe = new RegExp(
-					`import[^]*?\\{[^}]*\\b${use}\\b[^}]*\\}[^]*?from\\s*['"]@elements/browser['"]`,
+					`import[^]*?\{[^}]*\b${use}\b[^}]*}[^]*?from\s*['"]@elements/browser['"]`,
 				)
 				expect(importRe.test(raw)).toBe(true)
 				// Call check on STRIPPED code (so a `use…(` mention inside

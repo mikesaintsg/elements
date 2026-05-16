@@ -19,7 +19,13 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 	document.body.appendChild(host)
 	const app = createApp(AnchorPage)
 	app.mount(host)
-	return { host, teardown: () => { app.unmount(); host.remove() } }
+	return {
+		host,
+		teardown: () => {
+			app.unmount()
+			host.remove()
+		},
+	}
 }
 
 describe('AnchorPage — render smoke', () => {

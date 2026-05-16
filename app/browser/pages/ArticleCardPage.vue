@@ -222,8 +222,8 @@ import {
 					<h3>Order shipped</h3>
 				</header>
 				<p>
-					Tracking <code class="showcase-inset-chip">FX-8821-991</code>.
-					Delivery expected Friday between 10 AM and 2 PM.
+					Tracking <code class="showcase-inset-chip">FX-8821-991</code>. Delivery expected Friday
+					between 10 AM and 2 PM.
 				</p>
 			</article>
 		</div>

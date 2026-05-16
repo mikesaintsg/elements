@@ -19,7 +19,13 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 	document.body.appendChild(host)
 	const app = createApp(FormControlsPage)
 	app.mount(host)
-	return { host, teardown: () => { app.unmount(); host.remove() } }
+	return {
+		host,
+		teardown: () => {
+			app.unmount()
+			host.remove()
+		},
+	}
 }
 
 describe('FormControlsPage — render smoke', () => {

@@ -291,7 +291,9 @@ useDrag&lt;Track&gt;(host, {
 				:data-index="index"
 				class="showcase-track-row"
 			>
-				<span class="showcase-drag-handle" aria-label="Reorder track" title="Drag to reorder">⋮⋮</span>
+				<span class="showcase-drag-handle" aria-label="Reorder track" title="Drag to reorder"
+					>⋮⋮</span
+				>
 				<span class="showcase-track-meta">
 					<strong>{{ track.title }}</strong>
 					<small>{{ track.artist }}</small>

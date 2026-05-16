@@ -37,7 +37,7 @@ import {
 	elements,
 } from '@elements/browser'
 import * as barrel from '../../../app/browser/index.js'
-import { routes } from '../../../app/browser/index.js'
+import { routes } from '../../../app/browser'
 import { PAGE_EXEMPTIONS, PAGE_SURFACE_BUNDLES } from './pages/_contract'
 
 // ── Raw source globs (browser ?raw — no node fs) ────────────────────────────
@@ -55,24 +55,23 @@ for (const [path, src] of Object.entries(
 	pageSources[baseName(path)] = src
 const pageNames = Object.keys(pageSources).sort()
 
-const factoryNames = Object.keys(
-	import.meta.glob('../../../src/browser/factories/create*.ts'),
-).map((p) => baseName(p).replace(/^create/, ''))
+const factoryNames = Object.keys(import.meta.glob('../../../src/browser/factories/create*.ts')).map(
+	(p) => baseName(p).replace(/^create/, ''),
+)
 
 const stylePartials = (folder: string): readonly string[] =>
-	Object.keys(
-		import.meta.glob('../../../src/styles/*/_*.scss'),
-	)
+	Object.keys(import.meta.glob('../../../src/styles/*/_*.scss'))
 		.filter((p) => p.includes(`/styles/${folder}/`))
 		.map((p) => baseName(p).replace(/^_/, ''))
 
-const composablesGuide = Object.values(
-	import.meta.glob('../../../guides/composables.md', {
-		query: '?raw',
-		import: 'default',
-		eager: true,
-	}) as Record<string, string>,
-)[0] ?? ''
+const composablesGuide =
+	Object.values(
+		import.meta.glob('../../../guides/composables.md', {
+			query: '?raw',
+			import: 'default',
+			eager: true,
+		}) as Record<string, string>,
+	)[0] ?? ''
 
 // ── Barrel: routes + page-component identity ────────────────────────────────
 
@@ -89,11 +88,8 @@ for (const [key, value] of Object.entries(barrel)) {
 	if (key.endsWith('Page')) nameByComponent.set(value, key)
 }
 const barrelPageNames: ReadonlySet<string> = new Set(nameByComponent.values())
-const routePageName = (r: RouteLike): string =>
-	nameByComponent.get(r.page) ?? '(unexported)'
-const groupByPage = new Map<string, string>(
-	routeTable.map((r) => [routePageName(r), r.group]),
-)
+const routePageName = (r: RouteLike): string => nameByComponent.get(r.page) ?? '(unexported)'
+const groupByPage = new Map<string, string>(routeTable.map((r) => [routePageName(r), r.group]))
 
 // ── Resolve-through-bundles ─────────────────────────────────────────────────
 //
@@ -191,13 +187,11 @@ describe('parity — pages ↔ src/browser', () => {
 		it(`COMPONENT_CONTRACTS.${key} is exercised`, () => {
 			const tagged = tagDemonstrated(key)
 			const classed = nonExemptPages.some((n) =>
-				new RegExp(`class="[^"]*\\b${key.replace(/-/g, '\\-')}\\b`).test(
-					pageSources[n] ?? '',
-				),
+				new RegExp(`class="[^"]*\\b${key.replace(/-/g, '\\-')}\\b`).test(pageSources[n] ?? ''),
 			)
-			expect(
-				tagged || classed || bundledArtifacts.has(key) || attrRootedDemonstrated(key),
-			).toBe(true)
+			expect(tagged || classed || bundledArtifacts.has(key) || attrRootedDemonstrated(key)).toBe(
+				true,
+			)
 		})
 	}
 	for (const key of Object.keys(SURFACE_CONTRACTS)) {
@@ -213,8 +207,7 @@ describe('parity — pages ↔ src/browser', () => {
 		// `Use${cap}Page` demonstrating its composable.
 		it(`COMPOSABLE_CONTRACTS.${key} → Use${cap(key)}Page`, () => {
 			expect(
-				barrelPageNames.has(`Use${cap(key)}Page`) ||
-					composableDemonstrated(`use${cap(key)}`),
+				barrelPageNames.has(`Use${cap(key)}Page`) || composableDemonstrated(`use${cap(key)}`),
 			).toBe(true)
 		})
 	}
@@ -304,9 +297,7 @@ describe('parity — pages ↔ guides', () => {
 	// non-composables like `useReducedMotion` ("deliberately not shipped")
 	// or `useCapture` (the DOM addEventListener option).
 	const documentedUses = [
-		...new Set(
-			[...composablesGuide.matchAll(/^\|\s*`use([A-Z]\w+)`/gm)].map((m) => m[1]),
-		),
+		...new Set([...composablesGuide.matchAll(/^\|\s*`use([A-Z]\w+)`/gm)].map((m) => m[1])),
 	]
 	const realComposables = new Set(factoryNames.map(cap))
 	for (const name of documentedUses) {

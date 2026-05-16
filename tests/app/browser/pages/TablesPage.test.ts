@@ -24,7 +24,13 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 	document.body.appendChild(host)
 	const app = createApp(TablesPage)
 	app.mount(host)
-	return { host, teardown: () => { app.unmount(); host.remove() } }
+	return {
+		host,
+		teardown: () => {
+			app.unmount()
+			host.remove()
+		},
+	}
 }
 
 describe('TablesPage — render smoke', () => {
@@ -120,9 +126,7 @@ describe('TablesPage — row state, divided tbody, scrollable, expansion (§7)',
 			// toggle is a real <button aria-expanded aria-controls>.
 			expect(host.querySelector('tr[data-table-expanded]')).not.toBeNull()
 			expect(host.querySelector('[data-table-expansion-panel]')).not.toBeNull()
-			expect(
-				host.querySelector('button[aria-expanded][aria-controls]'),
-			).not.toBeNull()
+			expect(host.querySelector('button[aria-expanded][aria-controls]')).not.toBeNull()
 		} finally {
 			teardown()
 		}

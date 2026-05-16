@@ -353,8 +353,8 @@ const logToggle = (e: Event): void => {
 			Icons consume the framework's <code>--set-icon-*</code> registry through
 			<code>&lt;i class="icon"&gt;</code> — a CSS-mask painted from <code>currentColor</code> so a
 			single icon source tints to whichever variant context the button sits in.
-			<code>.compact</code> collapses inline padding to match block padding so single-glyph
-			buttons read square; <code>aria-label</code> covers the missing text label.
+			<code>.compact</code> collapses inline padding to match block padding so single-glyph buttons
+			read square; <code>aria-label</code> covers the missing text label.
 		</p>
 		<div class="cluster">
 			<button type="button" class="primary">

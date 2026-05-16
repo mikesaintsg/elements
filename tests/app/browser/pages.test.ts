@@ -27,12 +27,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Component } from 'vue'
 import * as barrel from '../../../app/browser/index.js'
-import { routes } from '../../../app/browser/index.js'
-import {
-	INTRO_ID_EXCEPTIONS,
-	PAGE_H1_DEMO,
-	REMOVED_FRAMEWORK_MODIFIERS,
-} from './pages/_contract'
+import { routes } from '../../../app/browser'
+import { INTRO_ID_EXCEPTIONS, PAGE_H1_DEMO, REMOVED_FRAMEWORK_MODIFIERS } from './pages/_contract'
 import { classNameIsSanctioned, componentNamespacesFromPaths } from '../../setup'
 
 // ── Raw page sources (browser ?raw glob — no node:fs) ───────────────────────

@@ -759,23 +759,22 @@ dialog {
 		<ul>
 			<li>
 				<strong>Outline glyphs</strong> (chevrons, close, menu, search, sort, status…) — a 16×16
-				viewBox with <code>stroke='currentColor'</code> (or <code>fill='currentColor'</code> for
-				the solid carets). The shape follows the consumer's colour, so the one value works as
-				either <code>background-image</code> (paints directly) or <code>mask-image</code> (drives
-				the SHAPE; tint comes from <code>background-color: currentColor</code> on the masked
-				pseudo).
+				viewBox with <code>stroke='currentColor'</code> (or <code>fill='currentColor'</code> for the
+				solid carets). The shape follows the consumer's colour, so the one value works as either
+				<code>background-image</code> (paints directly) or <code>mask-image</code> (drives the
+				SHAPE; tint comes from <code>background-color: currentColor</code> on the masked pseudo).
 			</li>
 			<li>
-				<strong>Form-indicator &amp; switch-thumb glyphs</strong> —
-				<code>--set-icon-check</code> / <code>-dash</code> / <code>-radio</code> /
-				<code>-switch-off</code> / <code>-switch-on</code> paint OVER a saturated
-				<code>:checked</code> control surface, where <code>currentColor</code> inside a
-				<code>data:</code> URL is unreliable across engines, so their colour is hardcoded (white;
-				the switch <em>off</em> thumb a muted grey). <code>--set-icon-switch-off</code> /
-				<code>-switch-on</code> are the <code>role="switch"</code> toggle thumb's two states (the
-				same disc — only the fill differs), so they read <strong>identically</strong> in the
-				currentColor mask grid below (a mask discards fill); see the live toggle on
-				<a href="#/form-controls">Form controls</a> for the real artifact.
+				<strong>Form-indicator &amp; switch-thumb glyphs</strong> — <code>--set-icon-check</code> /
+				<code>-dash</code> / <code>-radio</code> / <code>-switch-off</code> /
+				<code>-switch-on</code> paint OVER a saturated <code>:checked</code> control surface, where
+				<code>currentColor</code> inside a <code>data:</code> URL is unreliable across engines, so
+				their colour is hardcoded (white; the switch <em>off</em> thumb a muted grey).
+				<code>--set-icon-switch-off</code> / <code>-switch-on</code> are the
+				<code>role="switch"</code> toggle thumb's two states (the same disc — only the fill
+				differs), so they read <strong>identically</strong> in the currentColor mask grid below (a
+				mask discards fill); see the live toggle on <a href="#/form-controls">Form controls</a> for
+				the real artifact.
 			</li>
 		</ul>
 		<p>
@@ -815,8 +814,7 @@ dialog {
 				></i>
 				<div class="flex flex-col gap-0.5 min-w-0 overflow-hidden">
 					<strong class="leading-[1.2]">{{ icon.label }}</strong>
-					<code class="text-xs opacity-70 truncate">{{ icon.token }}</code
-					>
+					<code class="text-xs opacity-70 truncate">{{ icon.token }}</code>
 				</div>
 			</article>
 		</div>

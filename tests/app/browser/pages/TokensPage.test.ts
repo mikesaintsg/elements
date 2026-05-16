@@ -64,9 +64,7 @@ describe('TokensPage — icon-registry parity (Phase-2 §8)', () => {
 	it('renders exactly one icon tile per registry entry', () => {
 		const { host, teardown } = mount()
 		try {
-			const tiles = host.querySelectorAll(
-				'section#tokens-icons .showcase-tile-grid > article',
-			)
+			const tiles = host.querySelectorAll('section#tokens-icons .showcase-tile-grid > article')
 			expect(tiles.length).toBe(ICON_KEYS.length)
 		} finally {
 			teardown()

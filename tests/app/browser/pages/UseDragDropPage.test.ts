@@ -8,13 +8,7 @@
 import { UseDragDropPage } from '../../../../app/browser/index.js'
 import { runComposableApiParity } from './_composable-api'
 
-runComposableApiParity(
-	'UseDragDropPage',
-	UseDragDropPage,
-	'use-drag-drop',
-	'useDrag / useDrop',
-	[
-		{ use: 'useDrag', factory: 'createDrag' },
-		{ use: 'useDrop', factory: 'createDrop' },
-	],
-)
+runComposableApiParity('UseDragDropPage', UseDragDropPage, 'use-drag-drop', 'useDrag / useDrop', [
+	{ use: 'useDrag', factory: 'createDrag' },
+	{ use: 'useDrop', factory: 'createDrop' },
+])

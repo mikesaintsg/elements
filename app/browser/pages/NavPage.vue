@@ -298,13 +298,12 @@ const goto = (n: number): void => {
 		</p>
 		<p>
 			The framework paints chrome only: a horizontal flex row of quiet button-like tabs. The
-			<code>aria-selected="true"</code> tab lifts to a <code>bg-subtle</code> fill + emphasised
-			text — the same active-row idiom as a body-shell nav rail, with no border-line (an earlier
-			draft painted a 2&nbsp;px <code>border-block-end</code>; the button baseline's radius
-			rounded its ends and it read as opinionated chrome). For the Bootstrap / Mailbox framed-tab
-			look, opt in with <code>&lt;nav role="tablist" class="bordered"&gt;</code> as shown in the
-			second demo below.
-			Keyboard wiring (Left / Right / Home / End / Esc, roving tabindex) lives in
+			<code>aria-selected="true"</code> tab lifts to a <code>bg-subtle</code> fill + emphasised text
+			— the same active-row idiom as a body-shell nav rail, with no border-line (an earlier draft
+			painted a 2&nbsp;px <code>border-block-end</code>; the button baseline's radius rounded its
+			ends and it read as opinionated chrome). For the Bootstrap / Mailbox framed-tab look, opt in
+			with <code>&lt;nav role="tablist" class="bordered"&gt;</code> as shown in the second demo
+			below. Keyboard wiring (Left / Right / Home / End / Esc, roving tabindex) lives in
 			<code>useTabs</code> (Phase 6 composable, not yet shipped); until then consumers wire the
 			click handlers themselves as below.
 		</p>

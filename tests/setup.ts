@@ -283,7 +283,9 @@ export function extractSetTokenDeclarations(source: string): readonly string[] {
 export function componentNamespacesFromPaths(paths: Iterable<string>): Set<string> {
 	const out = new Set<string>()
 	for (const p of paths) {
-		const match = p.replace(/\\/g, '/').match(/\/(?:components|composables)\/_([a-z][a-z0-9-]*)\.scss$/)
+		const match = p
+			.replace(/\\/g, '/')
+			.match(/\/(?:components|composables)\/_([a-z][a-z0-9-]*)\.scss$/)
 		if (match?.[1]) out.add(match[1])
 	}
 	return out

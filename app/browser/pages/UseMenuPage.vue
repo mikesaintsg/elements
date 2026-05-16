@@ -350,7 +350,9 @@ useMenu(toggleRef, menuRef, { placement: 'bottom-start', flip: 8 })
 		<menu ref="filterMenu" popover>
 			<h6>Issue types</h6>
 			<li>
-				<label class="showcase-filter-row"> <input v-model="filters.bugs" type="checkbox" /> Bugs </label>
+				<label class="showcase-filter-row">
+					<input v-model="filters.bugs" type="checkbox" /> Bugs
+				</label>
 			</li>
 			<li>
 				<label class="showcase-filter-row">
@@ -358,7 +360,9 @@ useMenu(toggleRef, menuRef, { placement: 'bottom-start', flip: 8 })
 				</label>
 			</li>
 			<li>
-				<label class="showcase-filter-row"> <input v-model="filters.docs" type="checkbox" /> Docs </label>
+				<label class="showcase-filter-row">
+					<input v-model="filters.docs" type="checkbox" /> Docs
+				</label>
 			</li>
 			<li>
 				<label class="showcase-filter-row">

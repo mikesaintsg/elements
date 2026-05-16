@@ -262,10 +262,10 @@ onMounted(() => {
 		</svg>
 		<p>
 			The same SVG asset reading <code>fill="currentColor"</code> retints when its parent's text
-			color changes — here it follows <code>--color-primary</code>. There is no SVG-specific
-				variant rule (<code>_svg.scss</code> ships none): the SVG inherits whatever
-				<code>color</code> the cascade resolves, so any ancestor that sets it — a variant's
-				on-canvas text colour, a theme flip, an explicit override — retints the asset for free.
+			color changes — here it follows <code>--color-primary</code>. There is no SVG-specific variant
+			rule (<code>_svg.scss</code> ships none): the SVG inherits whatever <code>color</code> the
+			cascade resolves, so any ancestor that sets it — a variant's on-canvas text colour, a theme
+			flip, an explicit override — retints the asset for free.
 		</p>
 		<div class="inline-block" style="color: var(--color-success)">
 			<svg viewBox="0 0 240 120" style="max-inline-size: 240px" aria-hidden="true">
@@ -279,8 +279,8 @@ onMounted(() => {
 	<section id="media-math">
 		<h2><code>&lt;math&gt;</code></h2>
 		<p>
-			Native MathML — an embedded-content sibling of <code>&lt;svg&gt;</code>. The framework ships
-			a font-family token surface on <code>&lt;math&gt;</code> so a bare expression renders in the
+			Native MathML — an embedded-content sibling of <code>&lt;svg&gt;</code>. The framework ships a
+			font-family token surface on <code>&lt;math&gt;</code> so a bare expression renders in the
 			document's math font without per-instance styling; it inherits <code>color</code> like any
 			text, so a variant ancestor retints it for free.
 		</p>
@@ -293,7 +293,12 @@ onMounted(() => {
 					<mfrac>
 						<mrow>
 							<mo>−</mo><mi>b</mi><mo>±</mo>
-							<msqrt><mrow><msup><mi>b</mi><mn>2</mn></msup><mo>−</mo><mn>4</mn><mi>a</mi><mi>c</mi></mrow></msqrt>
+							<msqrt
+								><mrow
+									><msup><mi>b</mi><mn>2</mn></msup
+									><mo>−</mo><mn>4</mn><mi>a</mi><mi>c</mi></mrow
+								></msqrt
+							>
 						</mrow>
 						<mrow><mn>2</mn><mi>a</mi></mrow>
 					</mfrac>

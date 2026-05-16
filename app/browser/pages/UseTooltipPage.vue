@@ -201,9 +201,7 @@ const anyVisible = computed(() => dynamicTip.visible.value || pulseTip.visible.v
 		</p>
 		<menu class="showcase-icon-row">
 			<li>
-				<button ref="saveAnchor" type="button" class="compact subtle" aria-label="Save">
-					💾
-				</button>
+				<button ref="saveAnchor" type="button" class="compact subtle" aria-label="Save">💾</button>
 				<div ref="savePanel" popover>Save (⌘S)</div>
 			</li>
 			<li>

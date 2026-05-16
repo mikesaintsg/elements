@@ -1000,8 +1000,8 @@ const toggle = (id: string): void =&gt; {
 		<h2>Caption position — <code>.bottom</code></h2>
 		<p>
 			<code>&lt;caption&gt;</code> sits above the grid by default (UA convention). Add
-			<code>.bottom</code> on the <code>&lt;table&gt;</code> to flip it below — the source
-			order stays the same so screen-readers still announce the caption first.
+			<code>.bottom</code> on the <code>&lt;table&gt;</code> to flip it below — the source order
+			stays the same so screen-readers still announce the caption first.
 		</p>
 		<table class="bottom striped">
 			<caption>
