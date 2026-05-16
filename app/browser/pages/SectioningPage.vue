@@ -1,5 +1,5 @@
 <script lang="ts" setup>
- /**
+/**
  * SectioningPage — the canonical reference for the sectioning content
  * family: `<main>`, `<section>`, `<article>`, `<aside>`, `<header>`,
  * `<footer>`, `<nav>`, `<search>`, `<hgroup>`.
@@ -47,7 +47,7 @@
 <template>
 	<section id="sectioning-intro">
 		<hgroup>
-			<h1>Sectioning content</h1>
+			<h1>Sectioning</h1>
 			<p>
 				The HTML5 sectioning family. Each element creates a landmark for assistive tech and gives
 				the page a structural backbone — heading rank, document outline, sticky-offset anchor

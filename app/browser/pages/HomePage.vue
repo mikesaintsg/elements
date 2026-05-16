@@ -1,15 +1,15 @@
 <script lang="ts" setup>
- /**
- * Showcase home page. Demonstrates the chrome (left/right drawers,
- * theme toggle, sidebar filter, scroll-to-target TOC) AND showcases
- * the sectioning-content baseline: bare `<main>` and `<section>`
- * already ship with proper padding gutters + vertical rhythm so the
- * page reads cleanly with zero per-element layout classes.
+/**
+ * HomePage — showcase landing page. Demonstrates the chrome (left/right
+ * drawers, theme toggle, sidebar filter, scroll-to-target TOC) AND the
+ * sectioning-content baseline: bare `<main>` and `<section>` already
+ * ship padding gutters + vertical rhythm so the page reads cleanly with
+ * zero per-element layout classes.
  */
 </script>
 
 <template>
-	<section id="home">
+	<section id="home-intro">
 		<hgroup>
 			<h1>Elements</h1>
 			<p>A semantic-first CSS + TS framework over Tailwind v4.</p>

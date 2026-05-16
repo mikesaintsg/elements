@@ -1,5 +1,5 @@
 <script lang="ts" setup>
- /**
+/**
  * TypographyPage — the canonical reference for the framework's inline
  * + block typography elements. Twenty-three semantic elements in
  * body-copy context, each demonstrating the framework's chrome

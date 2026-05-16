@@ -72,7 +72,7 @@ const next = (): void => {
 </script>
 
 <template>
-	<section id="scroll-transition-intro">
+	<section id="scroll-and-transition-intro">
 		<hgroup>
 			<h1>Scroll &amp; transition</h1>
 			<p>

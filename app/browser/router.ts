@@ -79,7 +79,7 @@ import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
 
 // ── Getting started ────────────────────────────────────────────────────────
 
-const HOME: Route = { id: 'home', title: 'Home', group: 'Getting started', page: HomePage }
+const HOME: Route = { id: 'home', title: 'Elements', group: 'Getting started', page: HomePage }
 
 // ── Foundations ────────────────────────────────────────────────────────────
 

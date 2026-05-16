@@ -113,3 +113,21 @@ export function readAllGuides(): Record<string, string> {
 	}
 	return out
 }
+
+/**
+ * Synchronously read every `*Page.vue` showcase page in
+ * `app/browser/pages/`. Returns `{ basename: rawSource }` (basename without
+ * the `.vue` extension, e.g. `TokensPage`). The pages-suite analogue of
+ * `readAllGuides()` — the meta driver in `tests/app/core/pages.test.ts`
+ * keys off it for structural-uniformity + page↔route↔test parity.
+ */
+export function readAllPages(): Record<string, string> {
+	const out: Record<string, string> = {}
+	const absDir = resolve(WORKSPACE_ROOT, 'app/browser/pages')
+	for (const file of readdirSync(absDir)) {
+		if (!file.endsWith('.vue')) continue
+		const name = file.replace(/\.vue$/, '')
+		out[name] = readFileSync(resolve(absDir, file), 'utf8')
+	}
+	return out
+}

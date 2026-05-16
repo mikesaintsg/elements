@@ -51,7 +51,7 @@ import {
 </script>
 
 <template>
-	<section id="article-intro">
+	<section id="article-card-intro">
 		<hgroup>
 			<h1>Article card</h1>
 			<p>

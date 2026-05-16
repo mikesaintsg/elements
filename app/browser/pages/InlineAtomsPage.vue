@@ -62,7 +62,7 @@ const submit = async (): Promise<void> => {
 </script>
 
 <template>
-	<section id="atoms-intro">
+	<section id="inline-atoms-intro">
 		<hgroup>
 			<h1>Inline atoms</h1>
 			<p>

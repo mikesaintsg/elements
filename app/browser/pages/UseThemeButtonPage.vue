@@ -77,7 +77,7 @@ const mute = useButton(muteButton, {
 <template>
 	<section id="use-theme-button-intro">
 		<hgroup>
-			<h1>useTheme &amp; useButton</h1>
+			<h1>useTheme / useButton</h1>
 			<p>
 				Two tiny composables on one page. <code>useTheme()</code> reflects a single user choice
 				(<code>light</code> / <code>dark</code> / <code>system</code>) onto

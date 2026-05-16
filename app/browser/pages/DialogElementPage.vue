@@ -45,6 +45,13 @@
  *     vocabulary.
  */
 import { ref, useTemplateRef } from 'vue'
+import {
+	DIALOG_ELEMENT_SNIPPET_FORM as snippetForm,
+	DIALOG_ELEMENT_SNIPPET_OPEN_MODES as snippetOpenModes,
+	DIALOG_ELEMENT_SNIPPET_SCROLLABLE as snippetScrollable,
+	DIALOG_ELEMENT_SNIPPET_SIZES as snippetSizes,
+	DIALOG_ELEMENT_SNIPPET_VARIANTS as snippetVariants,
+} from '../constants.js'
 
 const dialogBare = useTemplateRef<HTMLDialogElement>('dialogBare')
 const dialogModal = useTemplateRef<HTMLDialogElement>('dialogModal')
@@ -61,14 +68,6 @@ const dialogForm = useTemplateRef<HTMLDialogElement>('dialogForm')
 // `dialog.returnValue` on close — captured here so the demo can echo
 // which action the user chose (Cancel / Save / Delete).
 const lastReturn = ref('')
-
-import {
-	DIALOG_ELEMENT_SNIPPET_FORM as snippetForm,
-	DIALOG_ELEMENT_SNIPPET_OPEN_MODES as snippetOpenModes,
-	DIALOG_ELEMENT_SNIPPET_SCROLLABLE as snippetScrollable,
-	DIALOG_ELEMENT_SNIPPET_SIZES as snippetSizes,
-	DIALOG_ELEMENT_SNIPPET_VARIANTS as snippetVariants,
-} from '../constants.js'
 </script>
 
 <template>

@@ -24,6 +24,22 @@
  */
 import { ref, useTemplateRef } from 'vue'
 import { useButton } from '@elements/browser'
+import {
+	BUTTON_SNIPPET_BARE as snippetBare,
+	BUTTON_SNIPPET_CASCADE as snippetCascade,
+	BUTTON_SNIPPET_DROPDOWN as snippetDropdown,
+	BUTTON_SNIPPET_FLAT as snippetFlat,
+	BUTTON_SNIPPET_GROUPS as snippetGroups,
+	BUTTON_SNIPPET_ICON as snippetIcon,
+	BUTTON_SNIPPET_LINK as snippetLink,
+	BUTTON_SNIPPET_SIZES as snippetSizes,
+	BUTTON_SNIPPET_STATES as snippetStates,
+	BUTTON_SNIPPET_STYLES as snippetStyles,
+	BUTTON_SNIPPET_TOGGLE as snippetToggle,
+	BUTTON_SNIPPET_VARIANTS as snippetVariants,
+	SNIPPET_REDUCED_MOTION as snippetReducedMotion,
+	VARIANTS as variants,
+} from '../constants.js'
 
 // `useButton` mirrors the `.active` class + `aria-pressed` attribute. The
 // composable returns an `active` reactive and a `toggle()` method; the
@@ -41,23 +57,6 @@ const logToggle = (e: Event): void => {
 	})
 	if (events.value.length > 6) events.value.length = 6
 }
-
-import {
-	BUTTON_SNIPPET_BARE as snippetBare,
-	BUTTON_SNIPPET_CASCADE as snippetCascade,
-	BUTTON_SNIPPET_DROPDOWN as snippetDropdown,
-	BUTTON_SNIPPET_FLAT as snippetFlat,
-	BUTTON_SNIPPET_GROUPS as snippetGroups,
-	BUTTON_SNIPPET_ICON as snippetIcon,
-	BUTTON_SNIPPET_LINK as snippetLink,
-	BUTTON_SNIPPET_SIZES as snippetSizes,
-	BUTTON_SNIPPET_STATES as snippetStates,
-	BUTTON_SNIPPET_STYLES as snippetStyles,
-	BUTTON_SNIPPET_TOGGLE as snippetToggle,
-	BUTTON_SNIPPET_VARIANTS as snippetVariants,
-	SNIPPET_REDUCED_MOTION as snippetReducedMotion,
-	VARIANTS as variants,
-} from '../constants.js'
 </script>
 
 <template>
