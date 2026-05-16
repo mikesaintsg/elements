@@ -422,7 +422,7 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 				<strong>Start drawer</strong>
 				<button
 					type="button"
-					class="subtle icon-only"
+					class="subtle compact"
 					popovertarget="aside-drawer-start"
 					popovertargetaction="hide"
 					aria-label="Close"
@@ -441,7 +441,7 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 				<strong>End drawer</strong>
 				<button
 					type="button"
-					class="subtle icon-only"
+					class="subtle compact"
 					popovertarget="aside-drawer-end"
 					popovertargetaction="hide"
 					aria-label="Close"
@@ -460,7 +460,7 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 				<strong>Top drawer</strong>
 				<button
 					type="button"
-					class="subtle icon-only"
+					class="subtle compact"
 					popovertarget="aside-drawer-top"
 					popovertargetaction="hide"
 					aria-label="Close"
@@ -479,7 +479,7 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 				<strong>Bottom drawer</strong>
 				<button
 					type="button"
-					class="subtle icon-only"
+					class="subtle compact"
 					popovertarget="aside-drawer-bottom"
 					popovertargetaction="hide"
 					aria-label="Close"
@@ -511,7 +511,7 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 				<strong>Primary drawer</strong>
 				<button
 					type="button"
-					class="subtle icon-only"
+					class="subtle compact"
 					popovertarget="aside-drawer-primary"
 					popovertargetaction="hide"
 					aria-label="Close"
@@ -533,7 +533,7 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 				<strong>Success drawer</strong>
 				<button
 					type="button"
-					class="subtle icon-only"
+					class="subtle compact"
 					popovertarget="aside-drawer-success"
 					popovertargetaction="hide"
 					aria-label="Close"
@@ -552,7 +552,7 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 				<strong>Warning drawer</strong>
 				<button
 					type="button"
-					class="subtle icon-only"
+					class="subtle compact"
 					popovertarget="aside-drawer-warning"
 					popovertargetaction="hide"
 					aria-label="Close"
@@ -571,7 +571,7 @@ const { ids: dismissed, dismiss, restore } = useDismissed()
 				<strong>Danger drawer</strong>
 				<button
 					type="button"
-					class="subtle icon-only"
+					class="subtle compact"
 					popovertarget="aside-drawer-danger"
 					popovertargetaction="hide"
 					aria-label="Close"

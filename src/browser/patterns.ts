@@ -1787,18 +1787,9 @@ export const STRUCTURAL_PAIRINGS: readonly StructuralPairing[] = [
 		kind: 'spec',
 		reason: 'HTML spec: description-detail inside description-list.',
 	},
-	{
-		parent: 'caption-top',
-		child: 'caption',
-		kind: 'spec',
-		reason: 'HTML caption-side keywords (`.caption-top` modifier on <table>).',
-	},
-	{
-		parent: 'caption-bottom',
-		child: 'caption',
-		kind: 'spec',
-		reason: 'HTML caption-side keywords (`.caption-bottom` modifier on <table>).',
-	},
+	// (`table.top > caption` / `table.bottom > caption` are covered by the
+	// `table > caption` pairing above — `extractTagPairs` keys off the
+	// `table` tag head, so no caption-side-specific entry is needed.)
 
 	// ── 'slot' — documented framework slot, universal natural child ─────────
 	{

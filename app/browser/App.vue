@@ -339,7 +339,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			<strong>Navigation</strong>
 			<button
 				type="button"
-				class="subtle icon-only"
+				class="subtle compact"
 				aria-label="Close navigation"
 				popovertarget="primary-rail"
 				popovertargetaction="hide"
@@ -425,7 +425,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			<strong>On this page</strong>
 			<button
 				type="button"
-				class="subtle icon-only"
+				class="subtle compact"
 				aria-label="Close table of contents"
 				popovertarget="toc-rail"
 				popovertargetaction="hide"

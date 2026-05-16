@@ -114,12 +114,12 @@
 		);
 
 		// ----------------------------------------------------------------------
-		// Icon-only — equal block + inline padding so a single-glyph button
+		// Compact — equal block + inline padding so a single-glyph button
 		// reads as a square (not a stretched rectangle). Mailbox parallel:
 		// `aria-label`-only `<button>` paired with `d-inline-flex`. Markup
-		// contract: <button class="icon-only" aria-label="…">…</button>
+		// contract: <button class="compact" aria-label="…">…</button>
 		// ----------------------------------------------------------------------
-		&.icon-only {
+		&.compact {
 			--set-button-padding-inline: var(--set-button-padding-block);
 		}
 

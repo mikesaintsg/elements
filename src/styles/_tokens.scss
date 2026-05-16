@@ -312,7 +312,7 @@
 	// reads as visually balanced inside a square button. The previous
 	// path (`M5 1 2 5h6zM5 15l3-4H2z`) drew both triangles around x=5,
 	// pushing the visual mass 3 units left of center — read as
-	// off-center in icon-only button chrome.
+	// off-center in compact (icon-only) button chrome.
 	--set-icon-sort: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='currentColor'%3E%3Cpath d='M8 1L5 5h6zM8 15l3-4H5z'/%3E%3C/svg%3E");
 	--set-icon-external: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3H3v10h10V10M9 3h4v4M8 8l5-5'/%3E%3C/svg%3E");
 

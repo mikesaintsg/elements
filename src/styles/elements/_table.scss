@@ -344,21 +344,22 @@
 	}
 
 	// ── Caption position ──────────────────────────────────────────────────────
-	// Mailbox `.caption-top` flips the visual side without changing source
-	// order. `caption` already sets `caption-side: top` (the UA default), so
-	// this modifier exists for parity / explicit declaration.
-	table.caption-top > caption {
+	// `.top` flips the visual side without changing source order. `caption`
+	// already sets `caption-side: top` (the UA default), so this modifier
+	// exists for parity / explicit declaration. Single-word modifier scoped
+	// to `table > caption`, where it unambiguously means caption-side.
+	table.top > caption {
 		caption-side: top;
 	}
 
-	// `.caption-bottom` flips visually + paints a `border-block-start` on
+	// `.bottom` flips visually + paints a `border-block-start` on
 	// the caption so it reads as separated from the last body row. The
 	// framework intentionally zeroes the last-row border-block-end (so
 	// bare tables don't double-line at the bottom edge), which leaves
 	// nothing between the body and a bottom-positioned caption without
 	// this divider. Border color tracks `--set-table-border-color` so a
 	// variant-tinted table's divider matches the rest of its chrome.
-	table.caption-bottom > caption {
+	table.bottom > caption {
 		caption-side: bottom;
 		border-block-start: var(--set-table-border-width) solid var(--set-table-border-color);
 	}

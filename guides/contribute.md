@@ -383,7 +383,7 @@ One section per API dimension. Each section follows the same shape:
 4. **Styles** — `.subtle` / `.filled`.
 5. **States** — `:hover` / `:active` / `:focus-visible` / `[disabled]` / `.active` / `.loading`.
 6. **Combinations** — the orthogonal cascade (variant × size × style).
-7. **Element-specific patterns** — icon-only, link-as-button, groups, etc.
+7. **Element-specific patterns** — `.compact` (icon-only buttons), link-as-button, groups, etc.
 8. **Composable wiring** — `useButton`, `useDialog`, etc. (when applicable).
 9. **A11y verification blocks** — reduced-motion, forced-colors, keyboard.
 10. **Tokens reference** — the `--set-*` surface the consumer overrides.

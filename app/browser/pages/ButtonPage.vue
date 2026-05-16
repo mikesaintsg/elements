@@ -8,7 +8,7 @@
  *   - 3 sizes — .small, default, .large
  *   - 3 styles — bare (transparent), .subtle (Bootstrap tinted-bg pattern), .filled
  *   - 5 interactive states — :hover, :active/.active, :focus-visible, [disabled]/.disabled, .loading
- *   - .icon-only modifier (equal block + inline padding)
+ *   - .compact modifier (equal block + inline padding)
  *   - Icon registry consumption (--set-icon-* via <i class="icon">)
  *   - Link-as-button via <a class="primary"> per §6.1 anchor-context contract
  *   - [role="group"] and [role="toolbar"] composition (components/_role-group.scss)
@@ -353,7 +353,7 @@ const logToggle = (e: Event): void => {
 			Icons consume the framework's <code>--set-icon-*</code> registry through
 			<code>&lt;i class="icon"&gt;</code> — a CSS-mask painted from <code>currentColor</code> so a
 			single icon source tints to whichever variant context the button sits in.
-			<code>.icon-only</code> collapses inline padding to match block padding so single-glyph
+			<code>.compact</code> collapses inline padding to match block padding so single-glyph
 			buttons read square; <code>aria-label</code> covers the missing text label.
 		</p>
 		<div class="cluster">
@@ -369,13 +369,13 @@ const logToggle = (e: Event): void => {
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
 				Delete
 			</button>
-			<button type="button" class="icon-only subtle" aria-label="More actions">
+			<button type="button" class="compact subtle" aria-label="More actions">
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
 			</button>
-			<button type="button" class="icon-only" aria-label="Refresh">
+			<button type="button" class="compact" aria-label="Refresh">
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
 			</button>
-			<button type="button" class="icon-only primary filled" aria-label="Confirm">
+			<button type="button" class="compact primary filled" aria-label="Confirm">
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-check)"></i>
 			</button>
 		</div>
@@ -483,7 +483,7 @@ const logToggle = (e: Event): void => {
 				<button type="button" class="primary">Save</button>
 				<button type="button" class="secondary">Discard</button>
 				<button type="button" class="subtle">Preview</button>
-				<button type="button" class="subtle icon-only" aria-label="More">
+				<button type="button" class="subtle compact" aria-label="More">
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
 				</button>
 			</div>

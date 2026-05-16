@@ -1313,9 +1313,9 @@ export const BUTTON_SNIPPET_ICON = `<!-- Icon-leading: icon then label, framewor
   <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-right)"></i>
 </button>
 
-<!-- Icon-only: \`.icon-only\` collapses inline padding to match block padding,
+<!-- Icon-only: \`.compact\` collapses inline padding to match block padding,
      so a single-glyph button reads as a square. -->
-<button class="icon-only subtle" aria-label="More actions">
+<button class="compact subtle" aria-label="More actions">
   <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
 </button>`
 

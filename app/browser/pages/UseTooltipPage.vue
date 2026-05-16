@@ -201,25 +201,25 @@ const anyVisible = computed(() => dynamicTip.visible.value || pulseTip.visible.v
 		</p>
 		<menu class="showcase-icon-row">
 			<li>
-				<button ref="saveAnchor" type="button" class="icon-only subtle" aria-label="Save">
+				<button ref="saveAnchor" type="button" class="compact subtle" aria-label="Save">
 					💾
 				</button>
 				<div ref="savePanel" popover>Save (⌘S)</div>
 			</li>
 			<li>
-				<button ref="trashAnchor" type="button" class="icon-only danger subtle" aria-label="Delete">
+				<button ref="trashAnchor" type="button" class="compact danger subtle" aria-label="Delete">
 					🗑
 				</button>
 				<div ref="trashPanel" popover>Move to trash</div>
 			</li>
 			<li>
-				<button ref="shareAnchor" type="button" class="icon-only subtle" aria-label="Share">
+				<button ref="shareAnchor" type="button" class="compact subtle" aria-label="Share">
 					🔗
 				</button>
 				<div ref="sharePanel" popover>Copy share link</div>
 			</li>
 			<li>
-				<button ref="settingsAnchor" type="button" class="icon-only subtle" aria-label="Settings">
+				<button ref="settingsAnchor" type="button" class="compact subtle" aria-label="Settings">
 					⚙️
 				</button>
 				<div ref="settingsPanel" popover>Open settings</div>
@@ -470,7 +470,7 @@ useTooltip({ anchor, panel, placement })</code></pre>
 	display: contents;
 }
 
-.showcase-icon-row .icon-only {
+.showcase-icon-row .compact {
 	font-size: 1.125rem;
 	inline-size: 2.5rem;
 	block-size: 2.5rem;

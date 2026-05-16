@@ -28,7 +28,7 @@ import { ref } from 'vue'
  *   `.nowrap` — prevent cell text from wrapping; pair with
  *     `<div class="scrollable">` so the row stays on one line and
  *     the wrapper scrolls instead.
- *   `.caption-top` / `.caption-bottom` — flip the caption visually
+ *   `.top` / `.bottom` — flip the caption visually
  *     without changing source order.
  *   `<tr class="{variant}">` — washes a single row with the
  *     variant's `bg-subtle` token. Same theme-aware triplet alerts /
@@ -997,13 +997,13 @@ const toggle = (id: string): void =&gt; {
 	</section>
 
 	<section id="tables-caption-position">
-		<h2>Caption position — <code>.caption-bottom</code></h2>
+		<h2>Caption position — <code>.bottom</code></h2>
 		<p>
 			<code>&lt;caption&gt;</code> sits above the grid by default (UA convention). Add
-			<code>.caption-bottom</code> on the <code>&lt;table&gt;</code> to flip it below — the source
+			<code>.bottom</code> on the <code>&lt;table&gt;</code> to flip it below — the source
 			order stays the same so screen-readers still announce the caption first.
 		</p>
-		<table class="caption-bottom striped">
+		<table class="bottom striped">
 			<caption>
 				Table 1 — quarterly metrics, rounded to nearest unit
 			</caption>
