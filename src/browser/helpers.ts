@@ -47,11 +47,6 @@ import {
 
 // ── 1. Identity / narrowing ─────────────────────────────────────────────────
 
-/**
- * Generate a stable-looking random id with the given prefix.
- * Use `useId()` from Vue when calling inside a component setup — this
- * fallback is for non-component callers (tests, factory internals).
- */
 function randomBytes(count: number): Uint8Array {
 	const buffer = new Uint8Array(count)
 	globalThis.crypto.getRandomValues(buffer)
@@ -63,6 +58,16 @@ function formatUuid(bytes: Uint8Array): string {
 	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`
 }
 
+/**
+ * Generate a UUID v4 id, optionally namespaced with `prefix`.
+ *
+ * Use `useId()` from Vue when calling inside a component setup — this
+ * fallback is for non-component callers (tests, factory internals).
+ *
+ * @param prefix - When omitted, a bare UUID v4 is returned; otherwise the
+ * result is `` `${prefix}-${uuid}` `` (an empty string yields a leading hyphen).
+ * @returns A unique identifier string
+ */
 export function generateId(prefix?: string): string {
 	const bytes = randomBytes(16)
 	bytes[6] = (bytes[6] & 0x0f) | 0x40 // version 4
