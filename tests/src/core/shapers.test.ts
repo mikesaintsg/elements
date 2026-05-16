@@ -172,23 +172,6 @@ describe('literalShape', () => {
 	})
 })
 
-// === literalShape
-
-describe('literalShape', () => {
-	it('is identical to literalShape', () => {
-		const a = literalShape('red', 'green', 'blue')
-		const b = literalShape('red', 'green', 'blue')
-		expect(a.type).toBe(b.type)
-		expect(a.values).toEqual(b.values)
-	})
-
-	it('produces a literal type shape', () => {
-		const shape = literalShape('active', 'inactive')
-		expect(shape.type).toBe('literal')
-		expect(shape.values).toEqual(['active', 'inactive'])
-	})
-})
-
 // === arrayShape
 
 describe('arrayShape', () => {

@@ -311,12 +311,8 @@ describe('compileParser', () => {
 		expect(parse(null)).toBeNull()
 		expect(parse('hello')).toBe('hello')
 	})
-})
 
-// === compileParser
-
-describe('compileParser', () => {
-	it('returns the same runtime behavior as compileParser for typed callers', () => {
+	it('parses typed values through the compiled parser', () => {
 		const parse = compileParser(integerShape())
 
 		expect(parse('30')).toBe(30)
@@ -425,11 +421,7 @@ describe('compileGenerator', () => {
 		const b = compileGenerator(shape, createRandom(42))
 		expect(a).toEqual(b)
 	})
-})
 
-// === compileGenerator
-
-describe('compileGenerator', () => {
 	it('returns values accepted by the compiled guard', () => {
 		const shape = integerShape({ min: 1, max: 10 })
 		const guard = compileGuard(shape)
