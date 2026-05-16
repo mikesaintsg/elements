@@ -17,6 +17,11 @@
 			"import": "./dist/src/browser/index.js",
 			"default": "./dist/src/browser/index.js"
 		},
+		"./core": {
+			"types": "./dist/src/core/index.d.ts",
+			"import": "./dist/src/core/index.js",
+			"default": "./dist/src/core/index.js"
+		},
 		"./styles": "./dist/src/styles/index.css",
 		"./styles/scss": "./dist/src/styles/scss/index.scss"
 	},
@@ -39,9 +44,10 @@
 		"test:src:browser": "vitest run --config vite.config.ts --no-cache --reporter=dot --project src:browser",
 		"test:src:styles": "vitest run --config vite.config.ts --no-cache --reporter=dot --project src:styles",
 		"build": "npm run clean && npm run build:src && npm run build:app",
-		"build:src": "npm run build:src:styles && npm run build:src:browser",
+		"build:src": "npm run build:src:styles && npm run build:src:browser && npm run build:src:core",
 		"build:src:styles": "vite build --config configs/src/vite.styles.config.ts",
 		"build:src:browser": "vite build --config configs/src/vite.browser.config.ts && tsc -p configs/src/tsconfig.browser.json",
+		"build:src:core": "vite build --config configs/src/vite.core.config.ts && tsc -p configs/src/tsconfig.core.json",
 		"build:app": "npm run build:app:browser",
 		"build:app:browser": "vite build --config configs/app/vite.browser.config.ts",
 		"showcase": "vite --config configs/app/vite.showcase.config.ts",
