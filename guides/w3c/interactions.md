@@ -487,6 +487,15 @@ An element is a **focusable area** if it is rendered, not inert, not disabled, a
 - A `dialog` element must **not** have a `tabindex` attribute (hard rule — see the structure-lens `dialog`/`tabindex` rule).
 - An element inside an `[inert]` subtree (or outside a modal `dialog`) is not a focusable area even with `tabindex` — a Tab-reachable `tabindex>=0` inside `[inert]` is unreachable / mis-marked.
 
+Illustrative:
+
+```html
+<!-- programmatically focusable, not Tab-reachable -->
+<div tabindex="-1" id="liveregion">…</div>
+<!-- made Tab-reachable in DOM order -->
+<span role="button" tabindex="0">Custom button</span>
+```
+
 #### 6.6.4 Processing model
 
 Focus updates run the focusing steps / focus fixup; blurring runs the unfocusing steps. The `:focus`, `:focus-within`, and `:focus-visible` pseudo-classes reflect the focus chain (the presentation lens checks `:focus-visible` outline replacement).
@@ -538,6 +547,14 @@ The user agent resolves the element's assigned access key from the `accesskey` c
 - `contenteditable` is an **enumerated attribute** with keywords `true` (or the empty string), `false`, and `plaintext-only`; its *missing value default* and *invalid value default* are the **inherit** state.
 - An element whose `contenteditable` is in the true / plaintext-only state is an **editing host**; it is a focusable area.
 - An element inside an `[inert]` subtree is **not** editable even when `contenteditable` is true (inert overrides editability) — relevant to the interaction lens.
+
+Illustrative:
+
+```html
+<div contenteditable="true">Rich text region (editing host).</div>
+<pre contenteditable="plaintext-only">Plain-text-only editing host.</pre>
+<p contenteditable="false">Explicitly non-editable inside an editing host.</p>
+```
 
 #### 6.8.2 Making entire documents editable: the `designMode` getter and setter
 
@@ -608,3 +625,12 @@ Each close watcher has a close behavior; only one "free" close watcher may be cr
 #### 6.10.3 The `CloseWatcher` interface
 
 `new CloseWatcher()` (gated on user activation beyond the free slot) exposes `requestClose()`, `close()`, `destroy()`, and `cancel`/`close` events. Behavioral; relevant to `useDialog`/`usePopover` composable parity, not a content-model rule.
+
+Illustrative:
+
+```javascript
+const watcher = new CloseWatcher();
+watcher.onclose = () => sidebar.hidden = true;   // run the close behavior
+// Esc / Android Back / a programmatic requestClose() all trigger onclose:
+closeButton.onclick = () => watcher.requestClose();
+```
