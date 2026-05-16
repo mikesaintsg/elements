@@ -10,7 +10,7 @@
 import type { ComputedRef } from 'vue'
 import { computed, nextTick } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { useDismissed, useLog, useRootCssVars } from '../../../app/browser/composables.js'
+import { useDismissed, useLog, useRootCssVars } from '../../../app/browser'
 import { mountSetup, waitForBootstrap } from '../../setupBrowser'
 
 describe('useLog', () => {

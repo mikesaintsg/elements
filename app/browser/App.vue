@@ -154,10 +154,6 @@ const goHome = (event: MouseEvent): void => {
 	closeRailDrawers()
 }
 
-const cycleTheme = (): void => {
-	themeCtl.toggle()
-}
-
 // The header's sun/moon icon reads off the RESOLVED mode (`mode`), not
 // the raw `setting` — so a `'system'` user on a dark OS sees the moon,
 // matching what's actually rendered. `useTheme()` updates `mode`
@@ -290,7 +286,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 			type="button"
 			class="subtle"
 			:aria-label="`Switch theme (currently ${themeCtl.mode.value})`"
-			@click="cycleTheme"
+			@click="themeCtl.toggle()"
 		>
 			<i class="icon" aria-hidden="true" :style="{ '--icon': `var(--set-icon-${themeIcon})` }"></i>
 		</button>

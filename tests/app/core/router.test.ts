@@ -25,7 +25,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { ROUTE_GROUPS } from '../../../app/browser/types.js'
+import { ROUTE_GROUPS } from '../../../app/browser'
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url))
 const routerSource = readFileSync(resolve(ROOT, 'app/browser/router.ts'), 'utf8')

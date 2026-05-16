@@ -27,7 +27,7 @@ import {
 	VARIANTS_ALERT,
 	VARIANTS_FEEDBACK,
 	VARIANTS_FORM,
-} from '../../../app/browser/constants.js'
+} from '../../../app/browser'
 
 describe('variant vocabularies derive from @elements/browser', () => {
 	it('VARIANTS is exactly modifiers.variant, in declared order', () => {

@@ -14,7 +14,7 @@ import {
 	hasModifierKey,
 	pageList,
 	timingFunctionFor,
-} from '../../../app/browser/helpers.js'
+} from '../../../app/browser'
 
 describe('hasModifierKey', () => {
 	it('is false when no modifier is held', () => {
