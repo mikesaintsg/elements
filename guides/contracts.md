@@ -19,7 +19,7 @@ The shape is the **single source of truth**. The same shape feeds the schema, th
 
 Each builder produces a `ContractShape` value. Builders preserve const-generic types so `Infer<S>` recovers the exact static type from the shape.
 
-| Builder           | JSON Schema output                     | Inferred type           |
+| Builder           | JSON Schema (compiled)                 | Inferred type           |
 | ----------------- | -------------------------------------- | ----------------------- |
 | `stringShape()`   | `{ type: 'string' }` + length/pattern  | `string`                |
 | `numberShape()`   | `{ type: 'number' }` + bounds          | `number`                |
@@ -54,7 +54,7 @@ The compilers in [src/core/compilers.ts](../src/core/compilers.ts) are the low-l
 The factories in [src/core/factories.ts](../src/core/factories.ts) are the ergonomic entry points:
 
 - `createContract(shape)` — the full `ContractInterface<Infer<S>>`: `schema`, `is`, `parse`, `generate`. Delegates to `compileContract()`.
-- `createSchema(shape)` — JSON Schema only, skipping the guard / parser / generator. An `ObjectShape` argument narrows the return to `JsonSchemaObject`. Equivalent to `createContract(shape).schema`.
+- `createSchema(shape)` — JSON Schema only, via `compileSchema()` directly — produces the same JSON Schema value as `createContract(shape).schema` but without constructing the guard, parser, or generator. An `ObjectShape` argument narrows the return to `JsonSchemaObject`.
 
 ### Seeded generation
 
@@ -116,12 +116,12 @@ userContract.schema
 
 // 4. Runtime type guard with full narrowing.
 if (userContract.is(input)) {
-	// input is { name: string; age: number; role: 'admin' | 'member' | 'guest'; bio?: string }
+	// input is { readonly name: string; readonly age: number; readonly role: 'admin' | 'member' | 'guest'; readonly bio?: string }
 }
 
 // 5. Parse and normalize unknown input.
 const parsed = userContract.parse(rawBody)
-// parsed: { name: string; age: number; role: ...; bio?: string } | undefined
+// parsed: { readonly name: string; readonly age: number; readonly role: ...; readonly bio?: string } | undefined
 
 // 6. Deterministic seed data — same seed, same output every time.
 const seed = userContract.generate(createRandom(42))
@@ -183,7 +183,7 @@ const bindings = recordShape(numberShape(), { description: 'Variable bindings' }
 ```ts
 import { rawShape } from '@elements/core'
 
-const anyValue = rawShape({ description: 'Default value', type: 'string' })
+const anyValue = rawShape({ description: 'Default value' })
 ```
 
 Embeds an arbitrary JSON Schema fragment for properties that accept any value or need keywords beyond the shape DSL. The compiled guard always returns `true`, the parser passes the value through unchanged, and `Infer` resolves it to `unknown` (the runtime type can't be recovered from the DSL). Use sparingly.
