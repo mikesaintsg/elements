@@ -17,7 +17,7 @@ Foundation milestone shipped in commit `92936f5` (58 files: driver + `_contract`
 | 1D-d | Convention nits (skeleton-blocking) | ✅ `92936f5` | JSDoc leading-space + `{Page} — ` first line (Home/Sectioning/Typography); import regroup (Button/DialogElement); intro-id fixes (article-card / inline-atoms / scroll-and-transition); h1↔title alignment (route `Home`→`Elements`; `Sectioning content`→`Sectioning`; `useTheme &amp;`→`useTheme /`). |
 | 1B | `pages.test.ts` meta-driver | ✅ `92936f5` | §1–§6 green + faithful §7/§8 (per-decl exemption, top-level sections, comment-stripped selectors). Drives the 24-item 1D-c worklist below. |
 | 1C | 43 per-page scaffolds | ✅ `92936f5` | Thin/real/page-specific; Phase 2 fills bespoke. |
-| 1D-c | showcase §2/§4 violations | 🔄 in progress | **Worklist (24, driver-enumerated):** §7 inline-style (14): ArticleCard, Button, Details, DialogElement, FormSurfaces, InlineAtoms, Media, Nav, PopoverSurfaces, Tokens, UseNav, UsePointer, UseTable, UseTooltip. §8 scoped-namespace (10): FormControls, UseDetails, UseDialog, UseDragDrop, UseMenu, UsePopover, UseTabs, UseThemeButton, UseToast, UseTooltip. |
+| 1D-c | showcase §2/§4 violations | 🔄 21 left | **§8 batch 1 ✅** (commit after `92936f5`): UseTabs / UseDetails / UseToast namespaced (clean, no showcase.css collision, UseToast browser-verified). **Remaining §8 (7):** FormControls (HIGH — see decision below), UseDialog, UseDragDrop, UseMenu, UsePopover, UseThemeButton, UseTooltip — all reference framework modifier classes (`active` / `filled`) in scoped tweaks, so each needs the *authored* hook namespaced while the framework class stays (scoped under a `.showcase-` ancestor). **Remaining §7 inline-style (14):** ArticleCard, Button, Details, DialogElement, FormSurfaces, InlineAtoms, Media, Nav, PopoverSurfaces, Tokens, UseNav, UsePointer, UseTable, UseTooltip. |
 | 1D-a | page↔src factual drift (10) | ☐ todo | The 10-row table in §1D-a below. |
 | 1D-e | re-verify low-confidence flags | ☐ todo | |
 | — | Phase close (check + guides 3475 + test:app) | ☐ todo | Gated on 1D-c/a/e all resolved. |
@@ -126,6 +126,13 @@ The audit (43 pages × guides × `src/`) found the suspected staleness is real b
 | MED | `UseFocusPage.vue` 138/193/250 | static `border`/`border-radius`/`padding` baked into reactive `:style` objects | split: reactive props stay inline, static chrome → `.showcase-*`. |
 | LOW | `MediaPage.vue` ~268 | `display:inline-block` + color inline | utility / `.showcase-*`. |
 | LOW | Details/Dialog/Figures/Anchor | borderline 2-prop token+dimensional inline | tighten to single-property or `.showcase-*`. |
+
+**1D-c decisions (locked during execution):**
+
+- **§8 namespacing — namespace in place, do NOT bulk-move to `showcase.css`.** `showcase.md` §Surface calls `showcase.css` "the only file that authors CSS classes", but §4 (the testable contract, and what the meta-driver enforces) only requires the `.showcase-` prefix. Renaming page `<style scoped>` classes in place is a 1:1, zero-specificity-change, low-regression transform; a bulk migration into `showcase.css` is a larger architectural change not required by §4. Stricter §Surface consolidation, if wanted, is a separate follow-up.
+- **Framework-class collisions.** Pages whose `<style scoped>` *references* framework modifier classes (`.active`, `.filled`) in demo tweaks must NOT rename those — only the page's *authored* hook is namespaced; the framework-class rule is re-scoped under the `.showcase-` ancestor. (Blindly prefixing `active`→`showcase-active` would break the real framework state class the page also uses.)
+- **`FormControlsPage` (HIGH) — migrate, don't rename.** Its `.form-row*` would collide with the canonical `.showcase-form-row*` already in `showcase.css`. Fix = remap the markup to the shared `showcase.css` system (and add any genuinely-missing sub-pattern there), NOT a scoped redefinition. Deferred out of §8 batch 1 as its own task.
+- **§8 batch 1 shipped:** `UseTabsPage` / `UseDetailsPage` / `UseToastPage` (collision-free) — committed, `app:core` 24→21, UseToast browser-verified.
 
 **Batch 1D-d — convention nits the strict skeleton (1B) will flag:**
 
