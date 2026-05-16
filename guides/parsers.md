@@ -8,8 +8,6 @@ The parsers module is a flat library of pure, single-purpose functions that take
 
 **Parsers vs. the contract DSL.** [contracts.md](contracts.md) documents the *shape-driven* pipeline — declare a `ContractShape` once and get a JSON Schema, a guard, a parser, and a generator compiled from it. This module is the *flat* counterpart: hand-reachable primitives for the everyday "I have an `unknown` field, give me a `string` or `undefined`" job, with no shape declaration. The contract compilers reuse these primitives internally for coercion, but they are an independent, directly-importable surface. Reach for a contract when one shape feeds schema + guard + parser + generator; reach for these when you just need to pull a typed value out of request bodies, query strings, JSON blobs, or `.env` content.
 
-Package: `@elements/core`. Source: [src/core/parsers.ts](../src/core/parsers.ts). Types: [src/core/types.ts](../src/core/types.ts).
-
 ### Primitive parsers
 
 `unknown` in, narrowed primitive (or `undefined`) out.
@@ -73,8 +71,8 @@ Looser than the strict primitive parsers — they accept cross-type input where 
 
 | Parser               | Input → Output                                              | Behavior                                                                                                                   |
 | -------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `parseStringFields()`| `unknown`, `readonly string[]` → `Record<string,string>?`   | Non-record body → `undefined`. Otherwise builds a record of only the listed fields that `parseString()`-parse successfully. |
-| `parsePositiveInt()` | `string?`, `fallback: number` → `number`                    | Missing / non-integer / negative → `fallback`; otherwise the parsed non-negative integer (`0` is allowed). Always returns a number. |
+| `parseStringFields()`| `unknown`, `readonly string[]` → `Record<string,string>?`   | Non-record body → `undefined`. Otherwise builds a record of only the listed fields that `parseString()`-parse successfully; a valid record with no matching fields → `{}` (not `undefined`). |
+| `parsePositiveInt()` | `string?`, `fallback: number` → `number`                    | **`0` is accepted** (despite the name); negative / non-integer / missing → `fallback`. Always returns a number. |
 | `parseEnv()`         | `string` → `Record<string, string>`                         | Parses `.env` content: skips blank / `#`-comment lines and lines without `=`; trims key/value; strips one matching `"`/`'` pair; strips an unquoted ` #` inline comment. |
 
 ---
@@ -143,10 +141,10 @@ import { parseArray, parseArrayField } from '@elements/core'
 
 const isString = (v: unknown): v is string => typeof v === 'string'
 
-parseArray(['a', 'b', 'c'], isString) // ['a', 'b', 'c']
+parseArray(['a', 'b', 'c'], isString) // ['a', 'b', 'c'] — the same input reference (all pass)
 parseArray(['a', 42, 'c'], isString) // undefined  (one element fails the guard)
 parseArray('not an array') // undefined
-parseArray([1, 2, 3]) // [1, 2, 3]  (no guard → shallow copy)
+parseArray([1, 2, 3]) // [1, 2, 3] — a new array (shallow copy, no guard)
 
 parseArrayField({ tags: ['x', 'y'] }, 'tags', isString) // ['x', 'y']
 ```
@@ -228,7 +226,7 @@ parseShape({ name: 'Ada', age: '-1' }, personShape) // undefined  (fails shape v
 
 - **Prefer the strict primitive (`parseNumber()`) over the coercion sibling (`coerceNumber()`) unless you specifically want the looseness** — `parseNumber()` rejects `±Infinity` and junk; `coerceNumber()` keeps `Infinity` and accepts leading-numeric strings.
 - **Use the `*Field` variants for record access** — `parseStringField(record, 'k')` over `parseString(record['k'])`; identical behavior, clearer intent.
-- **`coerceRecord()` and `parsePositiveInt()` never return `undefined`** — they fall back (`{}` / the supplied default), so they're safe to use without a guard.
+- **`coerceRecord()` and `parsePositiveInt()` never return `undefined`** — they fall back (`{}` / the supplied default), so they're safe to use without a guard. `parsePositiveInt()` also accepts `0` (the fallback fires only for negative values, non-integers, and missing input).
 - **`parseJson()` / `parseJsonAs()` never throw** — no `try/catch` needed at the call site; check for `undefined`.
 - **Reach for the contract DSL when one shape feeds schema + guard + parser + generator** — these flat parsers are for the one-off `unknown` → typed value extraction. See the `createContract` pipeline in [contracts.md](contracts.md).
 
