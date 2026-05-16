@@ -35,7 +35,7 @@ These invariants hold across `src/styles/modifiers/_*.scss` ↔ `modifiers.ts` �
 4. **SCSS → TS.** Every bare class declared in `modifiers/_*.scss` (variants, sizes, styles, states) appears as a leaf in `modifiers.ts`.
 5. **No Tailwind collisions.** No modifier name shadows a Tailwind single-token utility (the framework lives in `@layer components`; Tailwind utilities sit above modifiers in the merged order, so a collision silently shadows the framework rule).
 6. **Required-token coverage.** Every modifier in a dimension declares every token in `MODIFIER_DIMENSION_TOKENS.{dim}.required`. A `.small` rule that ships `--set-size-padding-inline` but forgets `--set-size-font-size` breaks the cascade for elements that read the second token.
-7. **Element-local discipline.** Element-local modifiers (`<form>.row`, `<button>.dropdown`, `<article>.frame`) live in `modifiers/_local.scss` only; never as bare class rules elsewhere.
+7. **Element-local discipline.** Element-local modifiers (`<form>.row`, `<button>.dropdown`, `<article>.frame`) are always element-qualified compound selectors — never a bare `.row` / `.dropdown` / `.frame` rule anywhere. The modifier layer is their conceptual home: pure-layout ones (`details.flush`, `article.frame`, `td.frame`) live in `modifiers/_local.scss`; `form.row` and `button.dropdown` currently live in their element/component partials (`components/_form.scss`, `elements/_button.scss`) with reserved stubs in `_local.scss` pending migration.
 8. **Doc ↔ TS.** Every modifier value listed in this guide's dimension table appears in `modifiers.ts` and vice versa.
 
 Enforced by:
@@ -217,15 +217,15 @@ Use the state modifier when the native attribute isn't available. `<a class="dis
 
 ### Placements
 
-Eight values map to CSS `position-area` keywords plus paired `align-self` / `justify-self` so the panel hugs the anchor's edge instead of drifting to the middle of the available area. Scoped to `[popover]:not(aside):not(nav):not(output)` so per-element placement semantics on `<aside>` (drawer edge), `<nav>` (rail side), and `<output>` (toast corner) aren't disrupted by the global vocabulary.
+Eight values map to CSS `position-area` keywords plus paired `align-self` / `justify-self` so the panel hugs the anchor's edge instead of drifting to the middle of the available area. Scoped to `[popover]:not(:where(aside, dialog, nav, output))` so per-element placement semantics on `<aside>` (drawer edge), `<nav>` (rail side), `<output>` (toast corner), and `<dialog>` (modal, viewport-centered) aren't disrupted by the global vocabulary. The exception list is wrapped in `:where()` so it stays at zero specificity (the framework's scope-discipline pattern — see [patterns.md](patterns.md)); a new popover-able element you didn't anticipate inherits the default placement automatically.
 
 ```scss
-[popover]:not(aside):not(nav):not(output).top {
+[popover]:not(:where(aside, dialog, nav, output)).top {
 	position-area: block-start;
 	align-self: end;
 	justify-self: anchor-center;
 }
-[popover]:not(aside):not(nav):not(output).bottom-start {
+[popover]:not(:where(aside, dialog, nav, output)).bottom-start {
 	position-area: block-end span-inline-end;
 	align-self: start;
 	justify-self: start;
@@ -293,7 +293,7 @@ The bidirectional parity test at [`tests/src/browser/modifiers.test.ts`](../test
 
 A small set of modifiers only make sense on one specific element — for example `<form>.row` (flip the form's flex direction from column to row), `<button>.dropdown` (rotate a chevron when paired with `[aria-expanded]`), or `<article>.frame` (zero the article's outer inset + gap so children fill edge-to-edge). These do not belong in any of the five cross-cutting dimensions, but they DO belong in the modifier layer so the cascade order matches the conceptual role.
 
-They live in [`src/styles/modifiers/_local.scss`](../src/styles/modifiers/_local.scss), grouped alphabetically by element. The file's charter rejects:
+[`src/styles/modifiers/_local.scss`](../src/styles/modifiers/_local.scss) is the modifier-layer home for the pure-layout members (`details.flush`, `article.frame`, `td.frame`), grouped alphabetically by element. Two — `form.row` (in [`components/_form.scss`](../src/styles/components/_form.scss)) and `button.dropdown` (in [`elements/_button.scss`](../src/styles/elements/_button.scss)) — currently still live in their element/component partial, with reserved commented stubs in `_local.scss` marking the planned migration. The `_local.scss` charter rejects:
 
 - Names that match the cross-cutting modifier vocabulary (a `.row` rule that only applied to forms but used the unscoped `.row` selector would collide with other elements' rules).
 - Names that collide with Tailwind single-token utilities (`block`, `flex`, `grid`, `rounded`, `outline`, etc.).
