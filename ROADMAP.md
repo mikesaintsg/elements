@@ -2,7 +2,7 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](guides/contribute.md) to know **how to work**.
 
-Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. **All 43 showcase pages are built AND parity-tested** — the `tests/app/browser/` showcase suite shipped (a clean total page↔route↔barrel↔test bijection, the consolidated up/down-stream `parity.test.ts` driver, 43 per-page bespoke parity files asserting against the mounted Chromium DOM, and the §9 composable API-name guard that prevents the showcase silently rotting against `src/`). §9.1 (sidebar nav adjustments — collapsible groups, in-rail keyboard nav, per-page glyphs) is **complete**; the only remaining Phase-9 work is the manual cross-page visual passes (§9.2 — theme-retune / reduced-motion / forced-colors / console-clean walkthroughs), plus the post-Phase-9 audits queued under "Future work."
+Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. **All 43 showcase pages are built AND parity-tested** — the `tests/app/browser/` showcase suite shipped (a clean total page↔route↔barrel↔test bijection, the consolidated up/down-stream `parity.test.ts` driver, 43 per-page bespoke parity files asserting against the mounted Chromium DOM, and the §9 composable API-name guard that prevents the showcase silently rotting against `src/`). §9.1 (sidebar nav adjustments — collapsible groups, in-rail keyboard nav, per-page glyphs) is **complete**, and §9.2's **console-clean full-suite** passed (all 43 routes walked live — zero Vue/runtime/Vite/Tailwind warnings). The only remaining Phase-9 work is the **three human visual passes** (§9.2 — theme-retune / reduced-motion / forced-colors; mechanisms already enforced by contracts, these are the end-to-end eyeball confirmations), plus the post-Phase-9 audits queued under "Future work."
 
 **Tests:** full suite **145 files / 7023 tests pass** across every project (`src:core` / `src:browser` / `src:styles` / `app:core` / `app:browser` / `guides`); `npm run check` 0/0. The showcase parity contract is codified in [`guides/showcase.md`](guides/showcase.md) §Contract / §Tests.
 
@@ -21,7 +21,7 @@ Status: every framework layer (tokens, theme, mixins, modifiers, elements, compo
 | 6     | Components (18 partials; tag-rooted + class-component primitives)                                               | ✅     |
 | 7     | Surfaces (9 partials; pseudo-element + attribute)                                                               | ✅     |
 | 8     | Composables (20 use/create pairs + 6 chrome partials)                                                           | ✅     |
-| 9     | Showcase pages — 43 of 43 built + parity-tested; §9.1 sidebar complete (manual cross-page visual passes remain) | 🟡     |
+| 9     | Showcase pages — 43/43 built + parity-tested; §9.1 sidebar + §9.2 console-clean done (3 human visual passes remain) | 🟡     |
 | 10    | Distribution (build + pack)                                                                                     | ✅     |
 | 11    | Invariant verification (11 codified contracts)                                                                  | ✅     |
 
@@ -61,10 +61,10 @@ The flat sidebar list worked for 14 pages; with all 43 it was a 42-line scroll �
 
 ### 9.2 Cross-page polish (after all pages exist)
 
-- ⬜ **Theme retune end-to-end** — pin a brand color at `:root` and walk every page; verify the cascade reaches focus rings / toasts / alerts / selections / popovers / tabs / breadcrumbs.
-- ⬜ **Reduced-motion full-suite** — verify every animation + transition collapses across all 43 pages (paired-mixin coverage already enforced by the surface / component / composable / motion contracts).
-- ⬜ **Forced-colors full-suite** — Windows High Contrast walkthrough (per-element coverage already enforced by [`patterns.test.ts`](tests/guides/patterns.test.ts) § interactive; this is the end-to-end visual pass).
-- ⬜ **Console-clean full-suite** — boot the dev server, walk every page, capture zero Vue warns / zero Tailwind missing-source warns.
+- ✅ **Console-clean full-suite** — walked all 43 routes live on the dev server (hash-driving every page mount): **zero** `console.error`/`warn`, zero uncaught errors, empty browser console buffer, zero dev-server (Vite/Tailwind) warnings. Automated, repeatable via the preview harness.
+- ⬜ **Theme retune end-to-end** — *human visual pass.* Pin a brand color at `:root` and walk every page; verify the cascade reaches focus rings / toasts / alerts / selections / popovers / tabs / breadcrumbs. (Mechanism auto-verified: a `:root` `--color-primary` override resolves and the `--set-*` → variant cascade is enforced by `tokens.test.ts` + the variant-cascade contracts — this item is the *visual* end-to-end confirmation.)
+- ⬜ **Reduced-motion full-suite** — *human visual pass.* Verify every animation + transition collapses across all 43 pages (paired-mixin coverage already enforced by the surface / component / composable / motion contracts — this is the visual confirmation).
+- ⬜ **Forced-colors full-suite** — *human visual pass.* Windows High Contrast walkthrough (per-element coverage already enforced by [`patterns.test.ts`](tests/guides/patterns.test.ts) § interactive; this is the end-to-end visual pass).
 
 ---
 
