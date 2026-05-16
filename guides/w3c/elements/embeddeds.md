@@ -835,6 +835,65 @@ Here are some more examples showing the same picture used in different contexts,
 
 The `iframe` element represents a nested browsing context (child navigable), embedding another HTML document into the current one. Content loads via `src` or inline via `srcdoc`; `sandbox` applies isolation restrictions. The element is a void content model — any contents are ignored (it has no fallback mechanism).
 
+Here a forum uses sandboxed `srcdoc` iframes to safely render untrusted user comments:
+
+```html
+<article>
+ <h1>I got my own magazine!</h1>
+ <p>After much effort, I've finally found a publisher, and so now I
+ have my own magazine! Isn't that awesome?! The first issue will come
+ out in September, and we have articles about getting food, and about
+ getting in boxes, it's going to be great!</p>
+ <footer>
+  <p>Written by <a href="/users/cap">cap</a>, 1 hour ago.
+ </footer>
+ <article>
+  <footer> Thirteen minutes ago, <a href="/users/ch">ch</a> wrote: </footer>
+  <iframe sandbox srcdoc="<p>did you get a cover picture yet?"></iframe>
+ </article>
+ <article>
+  <footer> Nine minutes ago, <a href="/users/cap">cap</a> wrote: </footer>
+  <iframe sandbox srcdoc="<p>Yeah, you can see it <a href=&quot;/gallery?mode=cover&amp;amp;page=1&quot;>in my gallery</a>."></iframe>
+ </article>
+ <article>
+  <footer> Five minutes ago, <a href="/users/ch">ch</a> wrote: </footer>
+  <iframe sandbox srcdoc="<p>hey that's earl's table.
+<p>you should get earl&amp;amp;me on the next cover."></iframe>
+ </article>
+```
+
+A simple third-party embed, a permission-scoped embed, a video embed, and a sandboxed user-content embed:
+
+```html
+<iframe src="https://ads.example.com/?customerid=923513721&amp;format=banner"
+        width="468" height="60"></iframe>
+```
+
+```html
+<iframe src="https://maps.example.com/" allow="geolocation"></iframe>
+```
+
+```html
+<article>
+ <header>
+  <p><img src="/usericons/1627591962735"> <b>Fred Flintstone</b></p>
+  <p><a href="/posts/3095182851" rel=bookmark>12:44</a> — <a href="#acl-3095182851">Private Post</a></p>
+ </header>
+ <p>Check out my new ride!</p>
+ <iframe src="https://video.example.com/embed?id=92469812" allowfullscreen></iframe>
+</article>
+```
+
+```html
+<p>We're not scared of you! Here is your content, unedited:</p>
+<iframe sandbox src="https://usercontent.example.net/getusercontent.cgi?id=12193"></iframe>
+```
+
+```html
+<iframe sandbox="allow-same-origin allow-forms allow-scripts"
+        src="https://maps.example.com/embedded.html"></iframe>
+```
+
 ### 4.8.6 The `embed` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/embed) · Source: <https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-embed-element>
@@ -858,6 +917,12 @@ The `iframe` element represents a nested browsing context (child navigable), emb
 **DOM interface:** `HTMLEmbedElement`.
 
 The `embed` element provides an integration point for an external application or interactive content (typically a plugin). It must have a `src` or `type` attribute. It represents the resource directly and has no fallback-content mechanism; it must have no children.
+
+Illustrative (canonical example at the spec link above):
+
+```html
+<embed src="catgame.swf" quality="high">
+```
 
 ### 4.8.7 The `object` element
 
@@ -883,6 +948,13 @@ The `embed` element provides an integration point for an external application or
 
 The `object` element represents an external resource that, depending on its type, is treated as an image, a child navigable, or an external resource to be processed by a plugin. Its content model is **transparent** — the children act as fallback content used when the resource cannot be displayed, and are validated against the `object`'s own parent's content model.
 
+```html
+<figure>
+ <object data="clock.html"></object>
+ <figcaption>My HTML Clock</figcaption>
+</figure>
+```
+
 ### 4.8.8 The `video` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video) · Source: <https://html.spec.whatwg.org/multipage/media.html#the-video-element>
@@ -906,6 +978,21 @@ The `object` element represents an external resource that, depending on its type
 **DOM interface:** `HTMLVideoElement`.
 
 The `video` element is used for playing videos or movies, and audio files with captions. Its transparent tail is fallback content for legacy user agents; the leading `source`/`track` elements are not fallback. No media element (`audio`/`video`) may be a descendant.
+
+```html
+<video src="1.mp4" poster="1.jpg" type="video/mp4">
+<video src="2.mp4" type="video/mp4" loading="eager">
+<video src="3.mp4" type="video/mp4" loading="lazy">
+```
+
+```html
+<video src="brave.webm">
+ <track kind=subtitles src=brave.en.vtt srclang=en label="English">
+ <track kind=captions src=brave.en.hoh.vtt srclang=en label="English for the Hard of Hearing">
+ <track kind=subtitles src=brave.fr.vtt srclang=fr lang=fr label="Français">
+ <track kind=subtitles src=brave.de.vtt srclang=de lang=de label="Deutsch">
+</video>
+```
 
 ### 4.8.9 The `audio` element
 
@@ -931,6 +1018,12 @@ The `video` element is used for playing videos or movies, and audio files with c
 
 The `audio` element represents a sound or audio stream. It is a media element whose media data is ostensibly audio. The same `source`/`track`-then-transparent content model and no-media-element-descendant restriction as `video` applies.
 
+```html
+<audio src="1.mp3" type="audio/mpeg" controls>
+<audio src="2.mp3" type="audio/mpeg" controls loading="eager">
+<audio src="3.mp3" type="audio/mpeg" controls loading="lazy">
+```
+
 ### 4.8.10 The `track` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/track) · Source: <https://html.spec.whatwg.org/multipage/media.html#the-track-element>
@@ -954,6 +1047,12 @@ The `audio` element represents a sound or audio stream. It is a media element wh
 **DOM interface:** `HTMLTrackElement`.
 
 The `track` element allows authors to specify explicit external timed text tracks for media elements (subtitles, captions, descriptions, chapters, metadata). It represents nothing on its own and must have no children; it must precede any flow content within its media-element parent.
+
+```html
+<track kind=subtitles src=brave.en.vtt srclang=en label="English">
+<track kind=captions src=brave.en.hoh.vtt srclang=en label="English for the Hard of Hearing">
+<track kind=subtitles src=brave.fr.vtt srclang=fr lang=fr label="Français">
+```
 
 ### 4.8.13 The `map` element
 
@@ -979,6 +1078,17 @@ The `track` element allows authors to specify explicit external timed text track
 
 The `map` element, in conjunction with an `img` element and any `area` elements (which are its descendants, transparently), defines an image map. It must have a `name` attribute whose value is non-empty and contains no ASCII whitespace.
 
+```html
+<map name="shapes">
+ <area shape=rect coords="50,50,100,100"> <!-- the hole in the red box -->
+ <area shape=rect coords="25,25,125,125" href="red.html" alt="Red box.">
+ <area shape=circle coords="200,75,50" href="green.html" alt="Green circle.">
+ <area shape=poly coords="325,25,262,125,388,125" href="blue.html" alt="Blue triangle.">
+ <area shape=poly coords="450,25,435,60,400,75,435,90,450,125,465,90,500,75,465,60"
+       href="yellow.html" alt="Yellow star.">
+</map>
+```
+
 ### 4.8.14 The `area` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area) · Source: <https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element>
@@ -1003,6 +1113,16 @@ The `map` element, in conjunction with an `img` element and any `area` elements 
 
 The `area` element represents either a hyperlink with some text and a corresponding area on an image map, or a dead area on an image map. It is only valid where there is a `map` element ancestor. If `href` is present, `alt` must also be present. It is a void element (no children).
 
+The canonical `area` examples appear inside the `map` example above; a complete image map wires the `map` to an image via `usemap`:
+
+```html
+<img src="shapes.png" usemap="#shapes" alt="Pick a shape">
+<map name="shapes">
+ <area shape=circle coords="200,75,50" href="green.html" alt="Green circle.">
+ <area shape=rect coords="25,25,125,125" href="red.html" alt="Red box.">
+</map>
+```
+
 ### 4.8.18 The `canvas` element
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas) · Source: <https://html.spec.whatwg.org/multipage/canvas.html#the-canvas-element>
@@ -1026,3 +1146,30 @@ The `area` element represents either a hyperlink with some text and a correspond
 **DOM interface:** `HTMLCanvasElement`.
 
 The `canvas` element provides a resolution-dependent bitmap canvas, which can be used for rendering graphs, game graphics, art, or other visual images on the fly via its drawing APIs. Its children are fallback content (transparent model) with a restricted interactive-content allowlist so the fallback stays keyboard-accessible.
+
+A bitmap with an intrinsic size scaled down via CSS:
+
+```html
+<canvas width=200 height=200 style=width:100px;height:100px>
+```
+
+Resetting the canvas bitmap by assigning its `width` (each reset clears the surface):
+
+```javascript
+// canvas is a reference to a <canvas> element
+var context = canvas.getContext('2d');
+context.fillRect(0,0,50,50);
+canvas.setAttribute('width', '300'); // clears the canvas
+context.fillRect(0,100,50,50);
+canvas.width = canvas.width; // clears the canvas
+context.fillRect(100,0,50,50); // only this square remains
+```
+
+Illustrative — the transparent fallback content (rendered when scripting/canvas is unsupported):
+
+```html
+<canvas width="150" height="150">
+ <p>Your browser does not support the canvas element.
+ Here is a <a href="chart.png">static chart</a> instead.</p>
+</canvas>
+```
