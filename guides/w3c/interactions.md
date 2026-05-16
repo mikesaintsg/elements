@@ -449,3 +449,162 @@ The `userActivation` getter steps are to return[this](https://webidl.spec.whatwg
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/API/UserActivation/hasBeenActive)
 
 The `hasBeenActive` getter steps are to return true if [this](https://webidl.spec.whatwg.org/#this)'s relevant global object has sticky activation, and false otherwise.
+
+### 6.5 Activation behavior of elements
+
+> Source: <https://html.spec.whatwg.org/multipage/interaction.html#activation>
+
+Certain elements have an **activation behavior** — the action taken when the element is activated (e.g. clicking a `button`, following an `a[href]`, toggling a `details`, showing/hiding a popover via `popovertarget`). Calling `click()` on an element, or a synthetic activation, runs this behavior. The `command`/`commandfor` attributes on a `button` declare a declarative activation that dispatches a `CommandEvent` to the controlled element. **DOM-checkable:** an element with `commandfor` should also have a `command` attribute; `popovertarget` must reference an element that is a popover; an element's activation behavior must not be relied upon for non-interactive elements.
+
+#### 6.5.1 The `ToggleEvent` interface
+
+The `ToggleEvent` is fired (e.g. `toggle`, `beforetoggle`) when an element that can be open/closed changes state — `details`, `dialog`, and popovers. It carries `oldState` and `newState` strings (`"open"` / `"closed"`). Not a content-model rule; relevant to composable behavior.
+
+#### 6.5.2 The `CommandEvent` interface
+
+The `CommandEvent` is dispatched to the element referenced by a `button`'s `commandfor` when the button is activated, with a `command` string and a `source` element. Declarative button-driven commands (e.g. `command="show-modal"`, `command="toggle-popover"`).
+
+### 6.6 Focus
+
+> Source: <https://html.spec.whatwg.org/multipage/interaction.html#focus>
+
+#### 6.6.1 Introduction
+
+Focus determines which element receives keyboard input. Each document has at most one focused area; the chain of focused elements is the focus chain.
+
+#### 6.6.2 Data model
+
+An element is a **focusable area** if it is rendered, not inert, not disabled, and either inherently focusable (e.g. `a[href]`, `button`, `input` not `disabled`/`hidden`, `select`, `textarea`, `summary` that is its `details`' first summary, `iframe`, editing hosts) or made focusable via `tabindex`.
+
+#### 6.6.3 The `tabindex` attribute
+
+**DOM-checkable rules:**
+
+- `tabindex`, if specified, must have a value that is a **valid integer**.
+- Negative `tabindex` (e.g. `-1`): the element is a focusable area (scriptable/clickable focus) but is **omitted from sequential focus navigation** (not Tab-reachable).
+- `tabindex="0"`: focusable area, included in sequential focus navigation in DOM order.
+- Positive `tabindex`: focusable area, included in sequential focus navigation, ordered by ascending value (then DOM order). Positive values are an authoring smell — flag as **advice**.
+- A `dialog` element must **not** have a `tabindex` attribute (hard rule — see the structure-lens `dialog`/`tabindex` rule).
+- An element inside an `[inert]` subtree (or outside a modal `dialog`) is not a focusable area even with `tabindex` — a Tab-reachable `tabindex>=0` inside `[inert]` is unreachable / mis-marked.
+
+#### 6.6.4 Processing model
+
+Focus updates run the focusing steps / focus fixup; blurring runs the unfocusing steps. The `:focus`, `:focus-within`, and `:focus-visible` pseudo-classes reflect the focus chain (the presentation lens checks `:focus-visible` outline replacement).
+
+#### 6.6.5 Sequential focus navigation
+
+The sequential focus navigation order is: positive-`tabindex` elements (ascending, then DOM order), then `tabindex="0"` and inherently-focusable elements in DOM order. `tabindex="-1"` elements are excluded.
+
+#### 6.6.6 Focus management APIs
+
+`focus()`, `blur()`, `HTMLElement.focus(options)`, `document.activeElement`, `document.hasFocus()`. Behavioral; not content-model rules.
+
+#### 6.6.7 The `autofocus` attribute
+
+**DOM-checkable rules:**
+
+- `autofocus` is a **boolean attribute**.
+- At most **one** element per document (more precisely, per top document's autofocus candidates) should have `autofocus` specified — multiple `autofocus` elements is a conformance smell; flag the 2nd+ as a finding.
+- `autofocus` on an element inside an `[inert]` subtree (or that is not a focusable area) cannot take effect — flag as a finding.
+
+### 6.7 Assigning keyboard shortcuts
+
+> Source: <https://html.spec.whatwg.org/multipage/interaction.html#editing-1>
+
+#### 6.7.1 Introduction
+
+`accesskey` lets authors assign keyboard shortcuts to elements. The user agent picks one assigned key from the candidates.
+
+#### 6.7.2 The `accesskey` attribute
+
+**DOM-checkable rules:**
+
+- `accesskey`, if specified, must be an **ordered set of unique space-separated tokens**, each of which is **exactly one code point** in length.
+- Duplicate tokens, or multi-character tokens, are conformance errors.
+- Two elements in the same document should not assign the same accesskey (advice-level: ambiguous shortcut).
+
+#### 6.7.3 Processing model
+
+The user agent resolves the element's assigned access key from the `accesskey` candidates and exposes it (e.g. in tooltips). Behavioral.
+
+### 6.8 Editing
+
+> Source: <https://html.spec.whatwg.org/multipage/interaction.html#editing>
+
+#### 6.8.1 Making document regions editable: the `contenteditable` content attribute
+
+**DOM-checkable rules:**
+
+- `contenteditable` is an **enumerated attribute** with keywords `true` (or the empty string), `false`, and `plaintext-only`; its *missing value default* and *invalid value default* are the **inherit** state.
+- An element whose `contenteditable` is in the true / plaintext-only state is an **editing host**; it is a focusable area.
+- An element inside an `[inert]` subtree is **not** editable even when `contenteditable` is true (inert overrides editability) — relevant to the interaction lens.
+
+#### 6.8.2 Making entire documents editable: the `designMode` getter and setter
+
+`document.designMode` ("on"/"off") makes the whole document editable. Document-level; not a per-element content-model rule.
+
+#### 6.8.3 Best practices for in-page editors
+
+Non-normative authoring guidance (selection, undo, sanitization). No checkable rule.
+
+#### 6.8.4 Editing APIs
+
+`document.execCommand()` and friends are legacy editing APIs. Behavioral.
+
+#### 6.8.5 Spelling and grammar checking
+
+`spellcheck` is an **enumerated attribute** (`true`/empty, `false`; default *inherit*). Checkable: value must be one of the keywords if present.
+
+#### 6.8.6 Writing suggestions
+
+`writingsuggestions` is an enumerated attribute (`true`/empty, `false`; default *inherit*) controlling UA-offered inline writing suggestions.
+
+#### 6.8.7 Autocapitalization
+
+`autocapitalize` is an enumerated attribute (`off`/`none`, `on`/`sentences`, `words`, `characters`) inherited by form-associated elements. Checkable: value must be a known keyword.
+
+#### 6.8.8 Autocorrection
+
+`autocorrect` is an enumerated attribute (`on`/empty, `off`) hinting UA autocorrection.
+
+#### 6.8.9 Input modalities: the `inputmode` attribute
+
+`inputmode` is an enumerated attribute (`none`, `text`, `tel`, `url`, `email`, `numeric`, `decimal`, `search`) hinting the virtual-keyboard type for editable regions / form controls. Checkable: value must be a known keyword.
+
+#### 6.8.10 Input modalities: the `enterkeyhint` attribute
+
+`enterkeyhint` is an enumerated attribute (`enter`, `done`, `go`, `next`, `previous`, `search`, `send`) hinting the Enter-key action label. Checkable: value must be a known keyword.
+
+> The `draggable` global attribute (drag-and-drop model) is an **enumerated attribute** with states `true` and `false` (no default keyword — defaults are computed: `img`/`a[href]`/selections default to draggable). Checkable: if present, value must be `true` or `false`.
+
+### 6.9 Find-in-page
+
+> Source: <https://html.spec.whatwg.org/multipage/interaction.html#find-in-page>
+
+#### 6.9.1 Introduction
+
+Find-in-page lets users search rendered text. The user agent reveals matches that are inside closed `details` or `hidden=until-found` subtrees.
+
+#### 6.9.2 Interaction with `details` and `hidden=until-found`
+
+A find-in-page match inside a closed `details` automatically opens it; a match inside a `hidden=until-found` subtree fires `beforematch` and removes the `hidden` attribute. **Presentation-lens relevance:** closed-`details` content must not be `display:none` at the `::details-content` level (it must remain content-visibility-hidden so it stays findable); `hidden=until-found` must compute to `content-visibility:hidden`, not `display:none`.
+
+#### 6.9.3 Interaction with selection
+
+A successful match updates the selection and scrolls the match into view. Behavioral.
+
+### 6.10 Close requests and close watchers
+
+> Source: <https://html.spec.whatwg.org/multipage/interaction.html#close-watchers>
+
+#### 6.10.1 Close requests
+
+A **close request** is a platform-specific "go back / dismiss" signal (Esc on desktop, Back on Android). It closes the topmost of: an open popover, a modal `dialog`, or a registered `CloseWatcher`.
+
+#### 6.10.2 Close watcher infrastructure
+
+Each close watcher has a close behavior; only one "free" close watcher may be created without transient activation. Modal `dialog`s and `popover` elements register close watchers implicitly.
+
+#### 6.10.3 The `CloseWatcher` interface
+
+`new CloseWatcher()` (gated on user activation beyond the free slot) exposes `requestClose()`, `close()`, `destroy()`, and `cancel`/`close` events. Behavioral; relevant to `useDialog`/`usePopover` composable parity, not a content-model rule.
