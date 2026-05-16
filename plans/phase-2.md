@@ -35,7 +35,7 @@ Complements `tests/app/core/router.test.ts` (route **table** parity) — Phase 2
 
 **Up-stream (guides ↔ pages topology only — avoid triple-counting):**
 
-6. The `ROUTE_GROUPS` → guide mapping holds (already in `router.test.ts`); Phase 2 adds the **guide-drift guard**: the audit proved `tests/guides/*` miss prose drift (`composables.md` stale option lists, `modifiers.md` placement scope, the `_local.scss` aspirational claim). Add targeted assertions so guide↔`src/` drift the existing guide parity can't see is caught here (e.g. every `use{Name}` documented in `composables.md` exists in `src/browser/composables/`; documented option keys exist on the `*Options` type).
+6. The `ROUTE_GROUPS` → guide mapping holds (already in `router.test.ts`); Phase 2 adds the **guide-drift guard**: the audit proved `tests/guides/*` miss prose drift (`composables.md` stale option lists, `modifiers.md` placement scope, the `_local.scss` aspirational claim). **Those specific instances are already FIXED** — the 12-guide audit (Phase-1 1D-b + Batches A/B/C) realigned every guide to `src/`, so the guard's job is **regression prevention**, not removing existing drift: add targeted assertions so future guide↔`src/` divergence the existing guide parity can't see is caught here (e.g. every `use{Name}` documented in `composables.md` exists in `src/browser/composables/`; documented option keys exist on the `*Options` type).
 
 **Per-page bespoke (the 43 filled files — each its own reason to exist, like each `{guide}.test.ts`):**
 
@@ -88,7 +88,7 @@ Phase 1 complete (structure + bijection + ALL 1D drift resolved + maps locked)
                  └─ 2E meta-driver totality tighten  → suite complete
 ```
 
-Dependencies: 2D-batch-6 (composable API guard) **must** post-date Phase-1 1D-a (UseToast/Pointer fixes) and 1D-e (`UseCarouselReturn` resolution) or it asserts against known-bad. 2A/2B depend on `PAGE_SURFACE_BUNDLES` (locked in Phase-1 1E). 2C depends on 1D-b (guide fixes) — otherwise the guide-drift guard fails on the very drift Phase 1 is removing.
+Dependencies: 2D-batch-6 (composable API guard) **must** post-date Phase-1 1D-a (UseToast/Pointer page fixes) or it asserts against known-bad — note 1D-e's `UseCarouselReturn` flag is already resolved (start/stop confirmed present; no longer a blocker). 2A/2B depend on `PAGE_SURFACE_BUNDLES` (locked in Phase-1 1E). **2C's 1D-b dependency is satisfied** — the guides are fully aligned to `src/` as of the audit (commits `7b7cfc5`/`ca154b3`/`d8e1339`/`532a163`), so the guide-drift guard now *locks in* that alignment rather than racing Phase 1 to remove it.
 
 ## Tests / exit criteria
 

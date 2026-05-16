@@ -64,6 +64,8 @@ Create `tests/app/browser/pages/{X}Page.test.ts` ×43, each asserting only the p
 
 The audit (43 pages × guides × `src/`) found the suspected staleness is real but **localized**: no broad API-name rot, but concrete factual drift where pages/guides describe behavior `src/` no longer has. A parity test authored against drift would either fail or codify the lie — so these are fixed **before** Phase 2. Fix in verified batches (`npm run test:app` + `npm run check` + browser-preview the touched page each batch, like the guide-batch cadence), each batch its own commit.
 
+> **Status — guide leg COMPLETE.** The guide↔`src/` half of the three-way alignment is fully closed: a deep 12-guide audit + remediation shipped in commits `7b7cfc5` (1D-b core), `ca154b3` (Batch A: tokens/surfaces/components/patterns/composables/modifiers/README), `d8e1339` (Batch B: `elements.md` realigned to `taxonomy.ts`), `532a163` (Batch C: verification-pass residuals in styles/contribute/patterns/components/showcase/README). `npm run check` 0/0 and guides 3475/3475 throughout. **The guides are now a trustworthy Phase-2 parity reference.** Remaining 1D work below is **page-side only** (1D-a, 1D-c, 1D-d) plus the 1D-e re-verifications — 1D-b is done.
+
 **Batch 1D-a — page ↔ `src/` factual drift (HIGH/MED):**
 
 | # | Page / loc | Claim | `src/` reality | Fix |
@@ -79,14 +81,14 @@ The audit (43 pages × guides × `src/`) found the suspected staleness is real b
 | 9 | `UseToastPage.vue` ~406 | code-sample comment references `[data-toast-stack-hidden]` | factory uses `aria-hidden="true"` (`createToast.ts:135`) | Correct the sample comment. |
 | 10 | `TokensPage.vue` 44 + ~967 | "~20" / "~25" inline-SVG icon mask URLs | `tokens.ts` icon registry = **26 keys** | Replace prose count with the live count OR drop the approximation; Phase-2 asserts count against `tokens.ts`. |
 
-**Batch 1D-b — guide ↔ `src/` drift (the guides are out of date too; the user asked for three-way alignment):**
+**Batch 1D-b — guide ↔ `src/` drift — ✅ RESOLVED (commits `7b7cfc5` + Batch A `ca154b3`).** The four items below all shipped; the subsequent full-guide audit (Batches A/B/C) closed every remaining guide↔`src/` drift across all 12 guides, so this batch is a closed historical record, not pending work:
 
-| # | Guide / loc | Claim | `src/` reality | Fix |
-| --- | --- | --- | --- | --- |
-| 1 | `modifiers.md` ~220–233 | placement scope `:not(aside):not(nav):not(output)` | `_placements.scss:87` flattened `:not(:where(aside, dialog, nav, output))` (adds `dialog`, `:where()` form) | Update guide to the src form (PlacementsPage already correct). |
-| 2 | `modifiers.md` (~L38/§element-local) | element-local rules live in `modifiers/_local.scss` ("only" home) | live in `components/_form.scss` etc.; `_local.scss` migration is a future follow-up (its own header admits this) | Soften to "target home; migration pending" (couples with page fix 1D-a#3). |
-| 3 | `composables.md:397` | `useTabs` options `orientation / activation / loop` | `UseTabsOptions` = `{ pane, group, initial, on }` — those don't exist | Strike the stale option list. |
-| 4 | `composables.md:401` | `useButton` options `pressed / disabled` (refs) | `UseButtonOptions` = `{ on? }` only | Strike the stale option list. |
+| # | Guide / loc | Claim | `src/` reality | Fix | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `modifiers.md` ~220–233 | placement scope `:not(aside):not(nav):not(output)` | `_placements.scss:87` flattened `:not(:where(aside, dialog, nav, output))` (adds `dialog`, `:where()` form) | Updated guide to the src form (PlacementsPage already correct). | ✅ done |
+| 2 | `modifiers.md` (~L38/§element-local) | element-local rules live in `modifiers/_local.scss` ("only" home) | live in `components/_form.scss` etc.; `_local.scss` migration is a future follow-up | Softened to "target home; migration pending" (couples with page fix 1D-a#3, still open). | ✅ done |
+| 3 | `composables.md:397` | `useTabs` options `orientation / activation / loop` | `UseTabsOptions` = `{ pane, group, initial, on }` | Struck the stale option list. | ✅ done |
+| 4 | `composables.md:401` | `useButton` options `pressed / disabled` (refs) | `UseButtonOptions` = `{ on? }` only | Struck the stale option list. | ✅ done |
 
 **Batch 1D-c — `showcase.md` §Contract §2/§4 violations (non-namespaced classes + non-exempt inline styles):**
 
@@ -110,7 +112,9 @@ The audit (43 pages × guides × `src/`) found the suspected staleness is real b
 - `HeadingsPage.vue` legitimately renders 3 `<h1>` (it demos `<h1>`). Add it to the `PAGE_H1_DEMO` allow-list (the only entry) — the rule becomes "exactly one page-H1; demo-H1s allowed only for allow-listed pages."
 - `ButtonPage.vue` / `DialogElementPage.vue` split `import → logic → import` ordering — **decision: regroup imports** to the single-block convention (oxlint has no `import/first`, so this is a convention fix, low risk).
 
-**Batch 1D-e — re-verify the agents' low-confidence flags before they enter Phase-2 assertions:** `surfaces/_anchor-position.scss` token defaults (PlacementsPage L365/373), `components/_div.scss` `.stack` primitive (Headings/Lists), `createTooltip.ts` `on.place` / `[data-tooltip-side]`, `UseCarouselReturn` missing `start/stop` vs JSDoc (fix the type or the JSDoc), `VARIANTS_ALERT.length` vs UseAlertPage "Six". Each either confirmed-correct (no change) or added to 1D-a.
+**Batch 1D-e — re-verify the agents' low-confidence flags before they enter Phase-2 assertions:** `surfaces/_anchor-position.scss` token defaults (PlacementsPage L365/373), `components/_div.scss` `.stack` primitive (Headings/Lists), `createTooltip.ts` `on.place` / `[data-tooltip-side]`, `VARIANTS_ALERT.length` vs UseAlertPage "Six". Each either confirmed-correct (no change) or added to 1D-a.
+
+- ✅ **`UseCarouselReturn` `start/stop` — RESOLVED, no action.** The verification audit confirmed `start` / `stop` are present on `UseCarouselReturn` in `src/browser/types.ts` and the `composables.md` carousel row is accurate. No src change and no JSDoc change is needed; drop this from the Phase-2 dependency (was a suspected src-side gap, now closed).
 
 ### 1E — Lock the maps
 
@@ -128,7 +132,7 @@ Finalize `PAGE_EXEMPTIONS`, `PAGE_SURFACE_BUNDLES`, `PAGE_H1_DEMO`, `INTRO_ID_EX
 
 - Mirror the guide drivers' ergonomics: `it('… On failure: …')` messages that name the file + the exact contract clause + the remedy.
 - Batch + verify + commit like the guide-skeleton rewrites — never a 43-file mega-commit.
-- Alignment edits are **showcase/guide-side only** — Phase 1 never touches `src/` (the showcase consumes the framework; drift is fixed by correcting the doc/markup to match `src/`, not by changing `src/`). The two exceptions that *are* `src/`-adjacent (1D-e `UseCarouselReturn` type, possibly a stale `_nav.scss` comment) are flagged for a separate, explicitly-authorized framework change — **not** folded into the showcase alignment commits.
+- Alignment edits are **showcase/guide-side only** — Phase 1 never touches `src/` (the showcase consumes the framework; drift is fixed by correcting the doc/markup to match `src/`, not by changing `src/`). The earlier suspected `src/`-adjacent exception (1D-e `UseCarouselReturn` type) was re-verified and is **not** a gap — no framework change needed. Any genuinely stale `src/` comment found incidentally (e.g. a `_nav.scss` note, or `patterns.ts` header comments referencing test paths that don't exist) is flagged for a separate, explicitly-authorized framework change — **not** folded into the showcase alignment commits.
 
 ## See also
 
