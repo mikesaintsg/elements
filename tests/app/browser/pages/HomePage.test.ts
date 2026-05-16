@@ -1,35 +1,64 @@
 // ============================================================================
-//  HomePage — per-page parity scaffold (browser env).
+//  HomePage — per-page STRUCTURE-ONLY parity (Phase-2 §2B-7).
 //
-//  Thin, real, page-SPECIFIC render smoke test (not a placeholder): the
-//  component imported from the `app/browser` barrel mounts and renders
-//  its intro section bound to the `home` route. Universal skeleton +
-//  bijection + inline-style/namespace rules are enforced once for all 43
-//  pages by tests/app/browser/pages.test.ts — NOT duplicated here.
-//
-//  Phase 2 (plans/phase-2.md §2D) fills the bespoke parity body: this
-//  page's framework artifact(s) demonstrated + every applicable
-//  modifier / option / event present.
+//  HomePage is a PAGE_EXEMPTION: a narrative landing page that
+//  demonstrates no single framework artifact (chrome demo, no bundle).
+//  Exemption is parity-only — the page still owes the structural
+//  skeleton, so the bespoke is exactly that: it mounts, the intro
+//  section + page-H1 render, and the narrative section spine is intact.
+//  Asserted against the MOUNTED DOM.
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
 import { createApp } from 'vue'
 import { HomePage } from '../../../../app/browser/index.js'
 
-describe('HomePage — parity scaffold', () => {
+const SECTIONS = ['home-intro', 'philosophy', 'layers', 'modifiers', 'getting-started', 'next']
+
+function mount(): { host: HTMLElement; teardown: () => void } {
+	const host = document.createElement('div')
+	document.body.appendChild(host)
+	const app = createApp(HomePage)
+	app.mount(host)
+	return { host, teardown: () => { app.unmount(); host.remove() } }
+}
+
+describe('HomePage — render smoke', () => {
 	it('mounts + renders the "home" intro section', () => {
-		const host = document.createElement('div')
-		document.body.appendChild(host)
-		const app = createApp(HomePage)
+		const { host, teardown } = mount()
 		try {
-			app.mount(host)
 			const intro = host.querySelector('section#home-intro')
-			expect(intro, 'intro <section id="home-intro">').not.toBeNull()
-			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe('Elements')
+			expect(intro).not.toBeNull()
+			expect(intro?.querySelector('h1')?.textContent?.trim()).toBe('Elements')
 		} finally {
-			app.unmount()
-			host.remove()
+			teardown()
+		}
+	})
+})
+
+describe('HomePage — narrative section spine (structure-only)', () => {
+	for (const id of SECTIONS) {
+		// On failure: the landing page's `<section id="${id}">` is gone —
+		// the narrative spine the exemption rationale rests on is broken.
+		it(`renders section#${id}`, () => {
+			const { host, teardown } = mount()
+			try {
+				expect(host.querySelector(`section#${id}`)).not.toBeNull()
+			} finally {
+				teardown()
+			}
+		})
+	}
+
+	it('every non-intro section carries an <h2> (outline integrity)', () => {
+		const { host, teardown } = mount()
+		try {
+			for (const id of SECTIONS) {
+				if (id === 'home-intro') continue
+				expect(host.querySelector(`section#${id} h2`)).not.toBeNull()
+			}
+		} finally {
+			teardown()
 		}
 	})
 })
