@@ -180,7 +180,7 @@ useTabs(lifeTrigger2, {
 			<code>components/_nav.scss</code>) is what actually hides them. One attribute, one source of
 			truth for visibility AND the accessibility tree.
 		</p>
-		<ul ref="defaultGroup" role="tablist" class="reset-list">
+		<ul ref="defaultGroup" role="tablist" class="showcase-reset-list">
 			<li>
 				<button ref="defaultTrigger1" type="button">Overview</button>
 			</li>
@@ -239,7 +239,7 @@ const tab3 = useTabs(trigger3, { pane: pane3, group })
 			active trigger, no underline indicator, compact gap between buttons. The composable is
 			unchanged; only the CSS in <code>composables/_tabs.scss</code> differs.
 		</p>
-		<ul ref="pillsGroup" role="tablist" class="pills reset-list">
+		<ul ref="pillsGroup" role="tablist" class="pills showcase-reset-list">
 			<li><button ref="pillsTrigger1" type="button">Day</button></li>
 			<li><button ref="pillsTrigger2" type="button">Week</button></li>
 			<li><button ref="pillsTrigger3" type="button">Month</button></li>
@@ -280,7 +280,7 @@ const tab3 = useTabs(trigger3, { pane: pane3, group })
 				</label>
 			</li>
 		</menu>
-		<ul ref="lifecycleGroup" role="tablist" class="reset-list">
+		<ul ref="lifecycleGroup" role="tablist" class="showcase-reset-list">
 			<li>
 				<button ref="lifeTrigger1" type="button">Always available</button>
 			</li>
@@ -344,7 +344,7 @@ const tab3 = useTabs(trigger3, { pane: pane3, group })
 </template>
 
 <style scoped>
-.reset-list {
+.showcase-reset-list {
 	list-style: none;
 	margin: 0;
 	padding: 0;

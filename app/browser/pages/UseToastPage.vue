@@ -259,8 +259,8 @@ const lifecycle = useToast(lifecycleRef, {
 			toast (or focus a control inside) to pause the timer; the resume on <code>mouseleave</code> /
 			<code>focusout</code>.
 		</p>
-		<div class="toast-trigger">
-			<small class="renders-at">Renders at <code>bottom-end</code> of viewport</small>
+		<div class="showcase-toast-trigger">
+			<small class="showcase-renders-at">Renders at <code>bottom-end</code> of viewport</small>
 			<menu>
 				<li><button type="button" @click="linear.show()">Show toast</button></li>
 				<li><button type="button" @click="linear.hide()">Hide toast</button></li>
@@ -303,8 +303,8 @@ const toast = useToast(ref) // default autohide
 			the container to reverse). Sticky here (<code>autohide: false</code>) so you can compare
 			layout shifts.
 		</p>
-		<div class="toast-trigger">
-			<small class="renders-at">
+		<div class="showcase-toast-trigger">
+			<small class="showcase-renders-at">
 				Renders at <code>bottom-end</code>, stacked vertically with
 				<code>--set-toast-spacing</code> between cards
 			</small>
@@ -361,8 +361,8 @@ const toast = useToast(ref) // default autohide
 			expanded cards include an invisible pointer-capture strip so the deck doesn't twitch when the
 			pointer passes between cards.
 		</p>
-		<div data-toast-stack class="toast-trigger">
-			<small class="renders-at">
+		<div data-toast-stack class="showcase-toast-trigger">
+			<small class="showcase-renders-at">
 				Renders at <code>bottom-end</code>, stacked as a Sonner-style deck (peek behind) — depth
 				clamp 3, overflow gets <code>aria-hidden</code>
 			</small>
@@ -420,8 +420,8 @@ const toast = useToast(ref) // default autohide
 			by default to keep the toast readable as a transient note (versus the saturated fill that
 			<code>.alert .filled</code> uses for explicit "I'm a status banner" framing).
 		</p>
-		<div class="toast-trigger">
-			<small class="renders-at">
+		<div class="showcase-toast-trigger">
+			<small class="showcase-renders-at">
 				Renders at <code>top-end</code> (every toast carries <code>.top</code> on its element)
 			</small>
 			<menu>
@@ -482,9 +482,9 @@ const toast = useToast(ref) // default autohide
 				shift each other.
 			</small>
 		</p>
-		<div class="toast-trigger-grid">
-			<div class="toast-trigger">
-				<small class="renders-at">Renders at <code>bottom-end</code></small>
+		<div class="showcase-toast-trigger-grid">
+			<div class="showcase-toast-trigger">
+				<small class="showcase-renders-at">Renders at <code>bottom-end</code></small>
 				<menu>
 					<li><button type="button" @click="corners.bottomEnd.show()">Show</button></li>
 					<li><button type="button" @click="corners.bottomEnd.hide()">Hide</button></li>
@@ -501,8 +501,8 @@ const toast = useToast(ref) // default autohide
 					</button>
 				</output>
 			</div>
-			<div class="toast-trigger">
-				<small class="renders-at">Renders at <code>bottom-start</code></small>
+			<div class="showcase-toast-trigger">
+				<small class="showcase-renders-at">Renders at <code>bottom-start</code></small>
 				<menu>
 					<li><button type="button" @click="corners.bottomStart.show()">Show</button></li>
 					<li><button type="button" @click="corners.bottomStart.hide()">Hide</button></li>
@@ -519,8 +519,8 @@ const toast = useToast(ref) // default autohide
 					</button>
 				</output>
 			</div>
-			<div class="toast-trigger">
-				<small class="renders-at">Renders at <code>top-end</code></small>
+			<div class="showcase-toast-trigger">
+				<small class="showcase-renders-at">Renders at <code>top-end</code></small>
 				<menu>
 					<li><button type="button" @click="corners.topEnd.show()">Show</button></li>
 					<li><button type="button" @click="corners.topEnd.hide()">Hide</button></li>
@@ -532,8 +532,8 @@ const toast = useToast(ref) // default autohide
 					</button>
 				</output>
 			</div>
-			<div class="toast-trigger">
-				<small class="renders-at">Renders at <code>top-start</code></small>
+			<div class="showcase-toast-trigger">
+				<small class="showcase-renders-at">Renders at <code>top-start</code></small>
 				<menu>
 					<li><button type="button" @click="corners.topStart.show()">Show</button></li>
 					<li><button type="button" @click="corners.topStart.hide()">Hide</button></li>
@@ -577,8 +577,8 @@ const toast = useToast(ref) // default autohide
 			the variant-context reset (transparent background, currentColor text) so it reads as a quiet
 			icon regardless of the host variant.
 		</p>
-		<div class="toast-trigger">
-			<small class="renders-at"
+		<div class="showcase-toast-trigger">
+			<small class="showcase-renders-at"
 				>Renders at <code>bottom-end</code>; bands bleed to toast edges</small
 			>
 			<menu>
@@ -660,8 +660,8 @@ const toast = useToast(ref) // default autohide
 			<code>accept</code> so button clicks survive; vertical-first movement releases the toast to
 			the page so a parent scroll passes through.
 		</p>
-		<div class="toast-trigger">
-			<small class="renders-at">
+		<div class="showcase-toast-trigger">
+			<small class="showcase-renders-at">
 				Renders at <code>bottom-end</code>, swipe left or right to dismiss
 			</small>
 			<menu>
@@ -686,7 +686,7 @@ const toast = useToast(ref) // default autohide
 				</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="noSwipe.hide()">×</button>
 			</output>
-			<small class="lifecycle-log">
+			<small class="showcase-lifecycle-log">
 				<strong>Lifecycle log:</strong>
 				<span v-if="swipeLog.length === 0">open the toast and swipe it to either side</span>
 				<span v-else>{{ swipeLog.join(' → ') }}</span>
@@ -715,8 +715,8 @@ const toast = useToast(ref) // default autohide
 			fire AFTER (informational). All four also dispatch as DOM events
 			(<code>elements:toast:{show,open,hide,close}</code>).
 		</p>
-		<div class="toast-trigger">
-			<small class="renders-at">Renders at <code>bottom-end</code></small>
+		<div class="showcase-toast-trigger">
+			<small class="showcase-renders-at">Renders at <code>bottom-end</code></small>
 			<menu>
 				<li>
 					<label>
@@ -737,7 +737,7 @@ const toast = useToast(ref) // default autohide
 					×
 				</button>
 			</output>
-			<small class="lifecycle-log">
+			<small class="showcase-lifecycle-log">
 				<strong>Lifecycle log:</strong>
 				<span v-if="lifecycleLog.length === 0">flip the checkbox and click Try to show</span>
 				<span v-else>{{ lifecycleLog.join(' → ') }}</span>
@@ -794,9 +794,9 @@ const toast = useToast(ref) // default autohide
  * buttons + the `<output popover>` elements as DOM siblings (the factory
  * reads `parentElement.children` for stack grouping). The toast itself
  * elevates to the top layer and renders at the viewport corner indicated
- * by its placement modifier — NOT inside this box. The `.renders-at`
+ * by its placement modifier — NOT inside this box. The `.showcase-renders-at`
  * caption tells the reader where to look. */
-.toast-trigger {
+.showcase-toast-trigger {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
@@ -806,20 +806,20 @@ const toast = useToast(ref) // default autohide
 	border-radius: 0.5rem;
 	background: color-mix(in oklch, var(--color-canvas-strong) 25%, var(--color-canvas));
 }
-.toast-trigger > menu {
+.showcase-toast-trigger > menu {
 	margin-block: 0;
 }
-.toast-trigger > .renders-at {
+.showcase-toast-trigger > .showcase-renders-at {
 	color: var(--color-text-muted, var(--color-text));
 	font-size: var(--text-xs, 0.75rem);
 }
-.toast-trigger > .lifecycle-log {
+.showcase-toast-trigger > .showcase-lifecycle-log {
 	display: block;
 	font-size: var(--text-xs, 0.75rem);
 }
 /* Grid wrapper for the placement-corners demo — 2-column on wide
  * viewports so the four trigger panels read as a 2x2 corner map. */
-.toast-trigger-grid {
+.showcase-toast-trigger-grid {
 	display: grid;
 	gap: 0.75rem;
 	grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));

@@ -180,7 +180,7 @@ const panel = useDetails(ref, { initial: true })
 			own composable's listener. No shared registry — pure DOM-event delegation; instances don't
 			know about each other.
 		</p>
-		<div ref="accordionRef" class="accordion-group">
+		<div ref="accordionRef" class="showcase-accordion-group">
 			<details ref="accordionA">
 				<summary>Section A</summary>
 				<p>
@@ -307,7 +307,7 @@ useDetails(cRef, { accordion: groupRef })
 </template>
 
 <style scoped>
-.accordion-group {
+.showcase-accordion-group {
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
