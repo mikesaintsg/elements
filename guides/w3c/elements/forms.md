@@ -16,6 +16,18 @@
 - [4.10.2 Categories](#4102-categories)
 - [4.10.3 The `form` element](#4103-the-form-element)
 - [4.10.4 The `label` element](#4104-the-label-element)
+- [4.10.5 The `input` element](#4105-the-input-element)
+- [4.10.6 The `button` element](#4106-the-button-element)
+- [4.10.7 The `select` element](#4107-the-select-element)
+- [4.10.8 The `datalist` element](#4108-the-datalist-element)
+- [4.10.9 The `optgroup` element](#4109-the-optgroup-element)
+- [4.10.10 The `option` element](#41010-the-option-element)
+- [4.10.11 The `textarea` element](#41011-the-textarea-element)
+- [4.10.12 The `output` element](#41012-the-output-element)
+- [4.10.13 The `progress` element](#41013-the-progress-element)
+- [4.10.14 The `meter` element](#41014-the-meter-element)
+- [4.10.15 The `fieldset` element](#41015-the-fieldset-element)
+- [4.10.16 The `legend` element](#41016-the-legend-element)
 
 ---
 
@@ -514,6 +526,162 @@ interface HTMLLabelElement : HTMLElement {
 	console.assert(input.labels === labels) // same NodeList object
 </script>
 ```
+
+## 4.10.5 The `input` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input) · Source: <https://html.spec.whatwg.org/multipage/input.html#the-input-element>
+
+- **Categories:** Flow content; Phrasing content; if the `type` attribute is **not** in the Hidden state: Interactive content; Listed, labelable, submittable, resettable, and autocapitalize-and-autocorrect inheriting form-associated element; Palpable content. If the `type` attribute **is** in the Hidden state: Listed, submittable, resettable, and autocapitalize-and-autocorrect inheriting form-associated element.
+- **Contexts:** Where phrasing content is expected.
+- **Content model:** Nothing.
+- **Tag omission:** No end tag (void element).
+- **Content attributes:** Global attributes plus `type`, `name`, `value`, `form`, `disabled`, `readonly`, `required`, and the per-state attributes (`min`, `max`, `step`, `pattern`, `placeholder`, `multiple`, `accept`, `checked`, `list`, `minlength`, `maxlength`, `size`, `src`, `alt`, `width`, `height`, `autocomplete`, `dirname`, `formaction`/`formenctype`/`formmethod`/`formnovalidate`/`formtarget`, …).
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-input) · [For implementers](https://w3c.github.io/html-aam/#el-input).
+
+The `input` element represents a typed data field, usually with a form control to allow the user to edit the data. Its rendering and behavior depend on the state of its `type` attribute. The `type` keyword values (states) are: `hidden`, `text`, `search`, `tel`, `url`, `email`, `password`, `date`, `month`, `week`, `time`, `datetime-local`, `number`, `range`, `color`, `checkbox`, `radio`, `file`, `submit`, `image`, `reset`, `button`. When the `type` attribute changes state, the user agent updates the rendering, runs the relevant value-sanitization algorithm, and changes which IDL members and attributes apply. An `input` element is a void element: it must have no children.
+
+## 4.10.6 The `button` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element>
+
+- **Categories:** Flow content; Phrasing content; Interactive content; Listed, labelable, submittable, and autocapitalize-and-autocorrect inheriting form-associated element; Palpable content.
+- **Contexts:** Where phrasing content is expected; as the first child of a `select` element.
+- **Content model:** Phrasing content, but there must be no interactive content descendant and no descendant with the `tabindex` attribute specified. If the element is the first child of a `select` element, then it may also have zero or one descendant `selectedcontent` element.
+- **Tag omission:** Neither tag is omissible.
+- **Content attributes:** Global attributes plus `command`, `commandfor`, `disabled`, `form`, `formaction`, `formenctype`, `formmethod`, `formnovalidate`, `formtarget`, `name`, `popovertarget`, `popovertargetaction`, `type`, `value`.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-button) · [For implementers](https://w3c.github.io/html-aam/#el-button).
+
+The `button` element represents a button labeled by its contents. Its behavior is determined by its `type` attribute: `submit` (the default — submits the owning form), `reset` (resets the form), or `button` (no default behavior; scripted). The no-interactive-content / no-`tabindex`-descendant restriction mirrors `a`'s — a button must not nest another focusable control.
+
+## 4.10.7 The `select` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element>
+
+- **Categories:** Flow content; Phrasing content; Interactive content; Listed, labelable, submittable, resettable, and autocapitalize-and-autocorrect inheriting form-associated element; Palpable content.
+- **Contexts:** Where phrasing content is expected.
+- **Content model:** Zero or one `button` elements if the `select` is a drop-down box, followed by zero or more *select element inner content elements* (`option`, `optgroup`, `hr`, and script-supporting elements; plus `div`/`noscript` per the inner-content category).
+- **Tag omission:** Neither tag is omissible.
+- **Content attributes:** Global attributes plus `autocomplete`, `disabled`, `form`, `multiple`, `name`, `required`, `size`.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-select) · [For implementers](https://w3c.github.io/html-aam/#el-select).
+
+The `select` element represents a control for selecting amongst a set of options. When `multiple` is present (or `size` > 1) it is a list box; otherwise it is a drop-down. Its options come from descendant `option` elements, optionally grouped by `optgroup`.
+
+## 4.10.8 The `datalist` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/datalist) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-datalist-element>
+
+- **Categories:** Flow content; Phrasing content.
+- **Contexts:** Where phrasing content is expected.
+- **Content model:** Either: phrasing content; or: zero or more `option` and script-supporting elements.
+- **Tag omission:** Neither tag is omissible.
+- **Content attributes:** Global attributes.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-datalist) · [For implementers](https://w3c.github.io/html-aam/#el-datalist).
+
+The `datalist` element represents a set of `option` elements that represent predefined options for other controls (referenced via an `input`'s `list` attribute). It is not rendered itself. The two-mode content model means a `datalist` either holds fallback phrasing content **or** the `option` list — not arbitrary flow content.
+
+## 4.10.9 The `optgroup` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/optgroup) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-optgroup-element>
+
+- **Categories:** *select element inner content elements*.
+- **Contexts:** As a descendant of a `select` element.
+- **Content model:** Zero or one `legend` element, followed by zero or more *optgroup element inner content elements* (`option` and script-supporting elements; plus `div`/`noscript`).
+- **Tag omission:** An `optgroup` element's end tag can be omitted if it is immediately followed by another `optgroup` element, if it is immediately followed by an `hr` element, or if there is no more content in the parent element.
+- **Content attributes:** Global attributes plus `disabled`, `label`.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-optgroup) · [For implementers](https://w3c.github.io/html-aam/#el-optgroup).
+
+The `optgroup` element represents a group of `option` elements with a common label, given by its `label` attribute. It is valid only as a descendant of a `select`.
+
+## 4.10.10 The `option` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element>
+
+- **Categories:** *select element inner content elements*; *optgroup element inner content elements*.
+- **Contexts:** As a descendant of a `select` element; as a descendant of a `datalist` element; as a descendant of an `optgroup` element.
+- **Content model:** If the element has a `label` attribute and a `value` attribute: Nothing. If the element has a `label` attribute but no `value` attribute: Text. If the element has no `label` attribute and is not a descendant of a `datalist` element: zero or more *option element inner content elements*. If the element has no `label` attribute and is a descendant of a `datalist` element: Text.
+- **Tag omission:** An `option` element's end tag can be omitted if it is immediately followed by another `option` element, if it is immediately followed by an `optgroup` element, if it is immediately followed by an `hr` element, or if there is no more content in the parent element.
+- **Content attributes:** Global attributes plus `disabled`, `label`, `selected`, `value`.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-option) · [For implementers](https://w3c.github.io/html-aam/#el-option).
+
+The `option` element represents an option in a `select` element, or part of a list of suggestions in a `datalist`, or a command in a (legacy) command menu. Its selectedness is controlled by the `selected` attribute.
+
+## 4.10.11 The `textarea` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/textarea) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element>
+
+- **Categories:** Flow content; Phrasing content; Interactive content; Listed, labelable, submittable, resettable, and autocapitalize-and-autocorrect inheriting form-associated element; Palpable content.
+- **Contexts:** Where phrasing content is expected.
+- **Content model:** Text.
+- **Tag omission:** Neither tag is omissible.
+- **Content attributes:** Global attributes plus `autocomplete`, `cols`, `dirname`, `disabled`, `form`, `maxlength`, `minlength`, `name`, `placeholder`, `readonly`, `required`, `rows`, `wrap`.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-textarea) · [For implementers](https://w3c.github.io/html-aam/#el-textarea).
+
+The `textarea` element represents a multiline plain-text editing control for the element's raw value. Its content model is **Text** only — element children are not permitted; the initial text content is the default value.
+
+## 4.10.12 The `output` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/output) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-output-element>
+
+- **Categories:** Flow content; Phrasing content; Listed, labelable, resettable, and autocapitalize-and-autocorrect inheriting form-associated element; Palpable content.
+- **Contexts:** Where phrasing content is expected.
+- **Content model:** Phrasing content.
+- **Tag omission:** Neither tag is omissible.
+- **Content attributes:** Global attributes plus `for`, `form`, `name`.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-output) · [For implementers](https://w3c.github.io/html-aam/#el-output).
+
+The `output` element represents the result of a calculation performed by the application, or the result of a user action. Its `for` attribute lists the IDs of the elements that contributed to the calculation.
+
+## 4.10.13 The `progress` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-progress-element>
+
+- **Categories:** Flow content; Phrasing content; labelable element; Palpable content.
+- **Contexts:** Where phrasing content is expected.
+- **Content model:** Phrasing content, but there must be no `progress` element descendants.
+- **Tag omission:** Neither tag is omissible.
+- **Content attributes:** Global attributes plus `value`, `max`.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-progress) · [For implementers](https://w3c.github.io/html-aam/#el-progress).
+
+The `progress` element represents the completion progress of a task. The progress is either indeterminate (no `value`) or a number from zero up to `max` (default 1). Its phrasing-content children are a fallback for legacy user agents and must not nest another `progress`.
+
+## 4.10.14 The `meter` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element>
+
+- **Categories:** Flow content; Phrasing content; labelable element; Palpable content.
+- **Contexts:** Where phrasing content is expected.
+- **Content model:** Phrasing content, but there must be no `meter` element descendants.
+- **Tag omission:** Neither tag is omissible.
+- **Content attributes:** Global attributes plus `value`, `min`, `max`, `low`, `high`, `optimum`.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-meter) · [For implementers](https://w3c.github.io/html-aam/#el-meter).
+
+The `meter` element represents a scalar measurement within a known range, or a fractional value — for example disk usage, the relevance of a query result, or a fraction of a voting population. It must not be used to indicate task progress (use `progress`) and must not nest another `meter`.
+
+## 4.10.15 The `fieldset` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/fieldset) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-fieldset-element>
+
+- **Categories:** Flow content; Listed and autocapitalize-and-autocorrect inheriting form-associated element; Palpable content.
+- **Contexts:** Where flow content is expected.
+- **Content model:** Optionally a `legend` element, followed by flow content.
+- **Tag omission:** Neither tag is omissible.
+- **Content attributes:** Global attributes plus `disabled`, `form`, `name`.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-fieldset) · [For implementers](https://w3c.github.io/html-aam/#el-fieldset).
+
+The `fieldset` element represents a set of form controls (or other content) optionally grouped under a common name, given by a `legend` first child. The `disabled` attribute, when set, disables all descendant form controls (except those inside the first `legend`).
+
+## 4.10.16 The `legend` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/legend) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-legend-element>
+
+- **Categories:** None.
+- **Contexts:** As the first child of a `fieldset` element.
+- **Content model:** Phrasing content, optionally intermixed with heading content; or one heading element (`h1`–`h6`).
+- **Tag omission:** Neither tag is omissible.
+- **Content attributes:** Global attributes.
+- **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-legend) · [For implementers](https://w3c.github.io/html-aam/#el-legend).
+
+The `legend` element represents a caption for the rest of the contents of the `legend` element's parent `fieldset` element. It is valid **only** as the first child of a `fieldset`.
 
 ---
 
