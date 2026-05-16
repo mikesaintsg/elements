@@ -128,3 +128,16 @@ export const PAGE_H1_DEMO: ReadonlySet<PageName> = new Set([
  * silent skip in the driver.
  */
 export const INTRO_ID_EXCEPTIONS: ReadonlySet<PageName> = new Set([])
+
+/**
+ * Framework modifier class names that were RENAMED for the single-word
+ * convention (guides/modifiers.md §Anti-rules). No showcase page may
+ * apply the old name — it no longer exists in `src/styles`, so a stale
+ * usage would silently render unstyled. Append future renames here with
+ * the new name in the comment.
+ */
+export const REMOVED_FRAMEWORK_MODIFIERS: ReadonlyMap<string, string> = new Map([
+	['icon-only', 'compact'],
+	['caption-top', 'top'],
+	['caption-bottom', 'bottom'],
+])

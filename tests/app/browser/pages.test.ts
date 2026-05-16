@@ -28,7 +28,12 @@ import { describe, expect, it } from 'vitest'
 import type { Component } from 'vue'
 import * as barrel from '../../../app/browser/index.js'
 import { routes } from '../../../app/browser/index.js'
-import { INTRO_ID_EXCEPTIONS, PAGE_H1_DEMO } from './pages/_contract'
+import {
+	INTRO_ID_EXCEPTIONS,
+	PAGE_H1_DEMO,
+	REMOVED_FRAMEWORK_MODIFIERS,
+} from './pages/_contract'
+import { classNameIsSanctioned, componentNamespacesFromPaths } from '../../setup'
 
 // ── Raw page sources (browser ?raw glob — no node:fs) ───────────────────────
 
@@ -347,6 +352,78 @@ describe('pages — page `<style>` blocks author only `.showcase-` classes', () 
 				.map((m) => m[1] ?? '')
 				.join('\n')
 			expect(nonNamespacedSelectors(styles)).toEqual([])
+		})
+	}
+})
+
+// ── 6. SINGLE-WORD MODIFIERS — showcase enforcement ─────────────────────────
+//
+// guides/modifiers.md §Anti-rules: framework modifier classes are a single
+// word. The framework side is policed by tests/{guides,src/styles}; here we
+// stop the SHOWCASE from (a) applying a renamed/removed modifier name, or
+// (b) applying a current framework class that isn't single-word/sanctioned.
+// Tailwind utilities + `.showcase-` classes are NOT framework classes, so
+// they never enter the framework-class set — no Tailwind parser needed.
+
+const frameworkScss = import.meta.glob('../../../src/styles/**/*.scss', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+}) as Record<string, string>
+
+const FW_CLASS_RE = /(?:^|[\s,&:>~+(])\.([a-z][a-zA-Z0-9_-]*)\b/gm
+const frameworkClasses = new Set<string>()
+for (const source of Object.values(frameworkScss)) {
+	const stripped = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+	for (const m of stripped.matchAll(FW_CLASS_RE)) if (m[1]) frameworkClasses.add(m[1])
+}
+const fwComponentNames = componentNamespacesFromPaths(Object.keys(frameworkScss))
+
+/** Tokens from every `class="…"` / `:class="…"` attribute on a page. */
+function classAttrTokens(template: string): readonly string[] {
+	const out: string[] = []
+	for (const m of template.matchAll(/:?class="([^"]*)"/g)) {
+		for (const tok of (m[1] ?? '').split(/[\s'"`{}:?]+/)) {
+			if (/^[a-z][a-zA-Z0-9_-]*$/.test(tok)) out.push(tok)
+		}
+	}
+	return out
+}
+
+describe('pages — no page applies a removed framework modifier name', () => {
+	for (const name of pageNames) {
+		// On failure: `${name}.vue` still applies a framework modifier class
+		// that was renamed for the single-word convention — switch to the
+		// replacement (see REMOVED_FRAMEWORK_MODIFIERS in
+		// tests/app/browser/pages/_contract.ts; guides/modifiers.md
+		// §Anti-rules).
+		it(`${name}.vue — no renamed/removed modifier classes`, () => {
+			const used = new Set(classAttrTokens(templateBlock(pages[name] ?? '')))
+			const offenders = [...REMOVED_FRAMEWORK_MODIFIERS]
+				.filter(([old]) => used.has(old))
+				.map(([old, now]) => `${old} → use .${now}`)
+			expect(offenders).toEqual([])
+		})
+	}
+})
+
+describe('pages — framework classes the showcase applies are single-word/sanctioned', () => {
+	it('discovers the framework class surface', () => {
+		expect(frameworkClasses.size).toBeGreaterThan(0)
+		expect(fwComponentNames.size).toBeGreaterThan(0)
+	})
+
+	for (const name of pageNames) {
+		// On failure: `${name}.vue` applies a multi-word class that IS a
+		// framework class but is not single-word/sanctioned (placement
+		// corner / component-namespaced / showcase-). Tailwind + showcase-
+		// tokens are ignored (not framework classes). guides/modifiers.md
+		// §Anti-rules.
+		it(`${name}.vue — applied framework modifiers comply`, () => {
+			const offenders = classAttrTokens(templateBlock(pages[name] ?? ''))
+				.filter((t) => t.includes('-') && frameworkClasses.has(t))
+				.filter((t) => !classNameIsSanctioned(t, fwComponentNames))
+			expect([...new Set(offenders)]).toEqual([])
 		})
 	}
 })
