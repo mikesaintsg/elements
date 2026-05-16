@@ -403,7 +403,7 @@ const toast = useToast(ref) // default autohide
 // `useToast` writes per-toast:
 //   --set-toast-stack-index    (0 = front card; 1, 2, 3 = behind)
 //   --set-toast-stack-offset   (used in linear mode only)
-//   [data-toast-stack-hidden]  (set on cards beyond depth)
+//   aria-hidden="true"        (set on cards beyond depth)
 //
 // …and on the container:
 //   --set-toast-front-height   (front card height — cards align to it)
@@ -780,12 +780,6 @@ const toast = useToast(ref) // default autohide
 				should pause the toast).
 			</dd>
 		</dl>
-		<p>
-			<strong>Audit note (this PR):</strong> the prior guides claimed "swipe-to-dismiss" — the
-			factory does NOT implement it (no <code>pointerdown</code> / <code>touch*</code> handlers).
-			Claim struck from <code>guides/composables.md</code> + <code>guides/plan.md</code>. Track as a
-			future enhancement if the project needs touch dismissal.
-		</p>
 	</section>
 </template>
 

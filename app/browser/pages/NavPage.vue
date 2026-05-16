@@ -35,9 +35,10 @@
  *      row with collapsed adjacent borders, hover / focus z-index lift,
  *      `aria-current="page"` active fill, `aria-disabled` /
  *      `:disabled` muting.
- *   6. Tablist (`<nav role="tablist">`) — horizontal flex with
- *      continuous bottom-border track, per-`[role="tab"]` overlap
- *      indicator on `aria-selected="true"`, `[hidden]`-gated
+ *   6. Tablist (`<nav role="tablist">`) — horizontal flex of
+ *      button-like rows; the `aria-selected="true"` tab lifts to a
+ *      `bg-subtle` fill + emphasised text (no border-line — matches
+ *      the nav-row active idiom), `[hidden]`-gated
  *      `[role="tabpanel"]` body. Keyboard wiring (Left / Right / Home /
  *      End) lives in `useTabs` (Phase 6 composable, not yet shipped) —
  *      the framework paints the chrome only.
@@ -296,12 +297,13 @@ const goto = (n: number): void => {
 			groups inside cards or widgets where a landmark would be unwanted noise.
 		</p>
 		<p>
-			The framework paints chrome only: horizontal flex row, per-tab bottom-border indicator
-			(transparent by default; variant-coloured under <code>aria-selected="true"</code>). The bare
-			tablist has <em>no</em> continuous baseline track — that read as opinionated chrome the
-			framework hadn't earned; the active tab's own indicator carries the entire visual signal. For
-			the Bootstrap / Mailbox stretched-row look (continuous track + overlap), opt in with
-			<code>&lt;nav role="tablist" class="bordered"&gt;</code> as shown in the second demo below.
+			The framework paints chrome only: a horizontal flex row of quiet button-like tabs. The
+			<code>aria-selected="true"</code> tab lifts to a <code>bg-subtle</code> fill + emphasised
+			text — the same active-row idiom as a body-shell nav rail, with no border-line (an earlier
+			draft painted a 2&nbsp;px <code>border-block-end</code>; the button baseline's radius
+			rounded its ends and it read as opinionated chrome). For the Bootstrap / Mailbox framed-tab
+			look, opt in with <code>&lt;nav role="tablist" class="bordered"&gt;</code> as shown in the
+			second demo below.
 			Keyboard wiring (Left / Right / Home / End / Esc, roving tabindex) lives in
 			<code>useTabs</code> (Phase 6 composable, not yet shipped); until then consumers wire the
 			click handlers themselves as below.
@@ -502,7 +504,11 @@ const goto = (n: number): void => {
 			<dt><code>--set-nav-background-color</code></dt>
 			<dd>Surface color of the rail. Defaults to <code>--color-surface</code>.</dd>
 			<dt><code>--set-nav-border-color</code></dt>
-			<dd>Edge border of the rail. Defaults to <code>--color-border</code>.</dd>
+			<dd>
+				Edge border of the rail. Variant-aware cascade:
+				<code>--set-style-border-color</code> → <code>--set-variant-background-color</code> →
+				<code>--color-border</code>.
+			</dd>
 			<dt><code>--set-nav-border-width</code></dt>
 			<dd>Width of the edge border. Defaults to <code>1px</code>.</dd>
 			<dt><code>--set-nav-padding-inline</code> / <code>--set-nav-padding-block</code></dt>

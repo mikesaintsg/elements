@@ -281,10 +281,12 @@ const submit = async (): Promise<void> => {
 		<h2>4. Spinner — rotating ring loader</h2>
 		<p>
 			Three-quarter ring with one side transparent, rotating at <code>0.75 s</code>. Color cascades
-			through <code>--set-style-color</code> → <code>--set-variant-color</code> →
-			<code>currentColor</code> so a spinner inside <code>&lt;button class="primary"&gt;</code>
-			paints WHITE (matching the button's label color), not the variant's identity blue — that was
-			the visibility bug an earlier draft hit (blue spinner on blue button surface).
+			through <code>--set-style-color</code> → <code>--set-variant-background-color</code> →
+			<code>currentColor</code>. A standalone <code>.spinner.primary</code> paints the variant's
+			identity colour (no <code>--set-style-color</code> in scope). Inside
+			<code>&lt;button class="primary"&gt;</code> the button sets <code>--set-style-color</code> to
+			its contrast (white) label colour, so the spinner there matches the label — not the variant
+			blue (the visibility fix for the earlier blue-spinner-on-blue-button draft bug).
 		</p>
 		<p>
 			Reduced motion <em>slows</em> the rotation (0.75 s → 1.5 s) rather than stops it. A frozen

@@ -171,7 +171,8 @@ import { VARIANTS as variants } from '../constants.js'
 		<p>
 			<code>.active</code> (or <code>aria-current="true"</code>) marks the current row — the
 			framework paints it with the variant's <code>--set-variant-background-color</code> chain
-			(defaults to <code>--color-primary</code>) and switches text to the matching on-fill color.
+			(defaults to <code>--color-primary</code>) and switches text to white (the framework
+			hardcodes <code>--set-group-active-color: white</code>).
 			<code>.disabled</code> (or <code>aria-disabled="true"</code>) drops the row to
 			<code>--color-text-subtle</code> and blocks pointer events. Pair the class with the matching
 			ARIA attribute so assistive tech announces the state too.

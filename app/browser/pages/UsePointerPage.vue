@@ -177,7 +177,7 @@ const draggingNow = computed(
 		<p>
 			Reach for <code>usePointer</code> for: splitters, sliders, 2D pads, resize handles, swipe
 			gestures, draw canvases, color pickers, scrub bars, custom range inputs. Reach for
-			<code>useDragDrop</code> (the framework's wrap around HTML5 DnD) for: file drops from the OS,
+			<code>useDrag</code> + <code>useDrop</code> (the framework's HTML5-DnD wrappers) for: file drops from the OS,
 			app-to-app drops, reorderable lists where data crosses between drop zones.
 		</p>
 		<aside role="status" class="information" data-alert-open>

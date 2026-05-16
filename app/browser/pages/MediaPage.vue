@@ -262,9 +262,10 @@ onMounted(() => {
 		</svg>
 		<p>
 			The same SVG asset reading <code>fill="currentColor"</code> retints when its parent's text
-			color changes — here it follows <code>--color-primary</code>. Variant cascade support is
-			implicit: any ancestor with <code>color: var(--set-variant-on-canvas-color)</code>
-			retints the SVG to match.
+			color changes — here it follows <code>--color-primary</code>. There is no SVG-specific
+				variant rule (<code>_svg.scss</code> ships none): the SVG inherits whatever
+				<code>color</code> the cascade resolves, so any ancestor that sets it — a variant's
+				on-canvas text colour, a theme flip, an explicit override — retints the asset for free.
 		</p>
 		<div class="inline-block" style="color: var(--color-success)">
 			<svg viewBox="0 0 240 120" style="max-inline-size: 240px" aria-hidden="true">

@@ -39,7 +39,7 @@ import { TOKENS_ICONS as icons } from '../constants.js'
  *     max-inline-size, max-block-size}`. How floating panels respect
  *     viewport edges on every form factor.
  *
- *   Icon registry — ~20 inline-SVG mask URLs (chevrons, form
+ *   Icon registry — inline-SVG mask URLs (chevrons, form
  *     indicators, common UI, theme, status, disclosure). Consumer
  *     swaps one or the whole set without forking partials.
  *
@@ -921,7 +921,7 @@ dialog {
 			<dd>Cascade hooks; modifier classes set the matching background-color / border-color.</dd>
 
 			<dt><code>--set-icon-*</code></dt>
-			<dd>~25 inline-SVG mask URLs. Override one or the whole set.</dd>
+			<dd>The full inline-SVG mask-URL set. Override one or the whole set.</dd>
 
 			<dt>
 				<code>--set-summary-marker-image</code> / <code>--set-summary-marker-open-rotate</code>

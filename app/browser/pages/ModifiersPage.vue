@@ -468,9 +468,12 @@ const placements = [
 		<h3>Use a class-on-class for one-off pairings</h3>
 		<p>
 			Some authors want per-element-local modifiers (<code>form.row</code>,
-			<code>button.dropdown</code>, <code>table.striped</code>). The framework allows them via
-			<code>modifiers/_local.scss</code> — class names that only make sense on a single tag, so they
-			pair with the tag selector to keep scope tight.
+			<code>button.dropdown</code>, <code>table.striped</code>) — class names that only make sense
+			on a single tag, so they pair with the tag selector to keep scope tight. These currently
+			live in their element / component partials (<code>components/_form.scss</code>,
+			<code>elements/_button.scss</code>, <code>elements/_table.scss</code>);
+			<code>modifiers/_local.scss</code> is the modifier-layer target home + charter for the
+			family, with the migration still pending (reserved stubs there).
 		</p>
 		<h3>Don't reach for the variant palette directly</h3>
 		<p>
