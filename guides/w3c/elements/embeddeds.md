@@ -7,6 +7,15 @@
 - [4.8.1 The `picture` element](#481-the-picture-element)
 - [4.8.2 The `source` element](#482-the-source-element)
 - [4.8.3 The `img` element](#483-the-img-element)
+- [4.8.5 The `iframe` element](#485-the-iframe-element)
+- [4.8.6 The `embed` element](#486-the-embed-element)
+- [4.8.7 The `object` element](#487-the-object-element)
+- [4.8.8 The `video` element](#488-the-video-element)
+- [4.8.9 The `audio` element](#489-the-audio-element)
+- [4.8.10 The `track` element](#4810-the-track-element)
+- [4.8.13 The `map` element](#4813-the-map-element)
+- [4.8.14 The `area` element](#4814-the-area-element)
+- [4.8.18 The `canvas` element](#4818-the-canvas-element)
 
 ---
 
@@ -801,3 +810,219 @@ Here are some more examples showing the same picture used in different contexts,
  <p>She would play in the morning, she would play in the evening.</p>
 </article>
 ```
+
+### 4.8.5 The `iframe` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe) · Source: <https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element>
+
+**Categories:** Flow content, Phrasing content, Embedded content, Interactive content, Palpable content.
+
+**Contexts:** Where embedded content is expected.
+
+**Content model:** Nothing.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes; `src`, `srcdoc`, `name`, `sandbox`, `allow`, `allowfullscreen`, `width`, `height`, `referrerpolicy`, `loading`.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-iframe).
+
+[For implementers](https://w3c.github.io/html-aam/#el-iframe).
+
+**DOM interface:** `HTMLIFrameElement`.
+
+The `iframe` element represents a nested browsing context (child navigable), embedding another HTML document into the current one. Content loads via `src` or inline via `srcdoc`; `sandbox` applies isolation restrictions. The element is a void content model — any contents are ignored (it has no fallback mechanism).
+
+### 4.8.6 The `embed` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/embed) · Source: <https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-embed-element>
+
+**Categories:** Flow content, Phrasing content, Embedded content, Interactive content, Palpable content.
+
+**Contexts:** Where embedded content is expected.
+
+**Content model:** Nothing.
+
+**Tag omission:** No end tag (void element).
+
+**Attributes:** Global attributes; `src`, `type`, `width`, `height`, plus any other attributes (passed to the plugin).
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-embed).
+
+[For implementers](https://w3c.github.io/html-aam/#el-embed).
+
+**DOM interface:** `HTMLEmbedElement`.
+
+The `embed` element provides an integration point for an external application or interactive content (typically a plugin). It must have a `src` or `type` attribute. It represents the resource directly and has no fallback-content mechanism; it must have no children.
+
+### 4.8.7 The `object` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/object) · Source: <https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-object-element>
+
+**Categories:** Flow content, Phrasing content, Embedded content, Listed and form-associated element, Palpable content.
+
+**Contexts:** Where embedded content is expected.
+
+**Content model:** Transparent.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes; `data`, `type`, `name`, `form`, `width`, `height`.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-object).
+
+[For implementers](https://w3c.github.io/html-aam/#el-object).
+
+**DOM interface:** `HTMLObjectElement`.
+
+The `object` element represents an external resource that, depending on its type, is treated as an image, a child navigable, or an external resource to be processed by a plugin. Its content model is **transparent** — the children act as fallback content used when the resource cannot be displayed, and are validated against the `object`'s own parent's content model.
+
+### 4.8.8 The `video` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video) · Source: <https://html.spec.whatwg.org/multipage/media.html#the-video-element>
+
+**Categories:** Flow content, Phrasing content, Embedded content; if it has a `controls` attribute: Interactive content, Palpable content.
+
+**Contexts:** Where embedded content is expected.
+
+**Content model:** If the element has a `src` attribute: zero or more `track` elements, then transparent, but with no media element descendants. If the element does not have a `src` attribute: zero or more `source` elements, then zero or more `track` elements, then transparent, but with no media element descendants.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes; `src`, `crossorigin`, `poster`, `preload`, `autoplay`, `playsinline`, `loop`, `muted`, `controls`, `width`, `height`.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-video).
+
+[For implementers](https://w3c.github.io/html-aam/#el-video).
+
+**DOM interface:** `HTMLVideoElement`.
+
+The `video` element is used for playing videos or movies, and audio files with captions. Its transparent tail is fallback content for legacy user agents; the leading `source`/`track` elements are not fallback. No media element (`audio`/`video`) may be a descendant.
+
+### 4.8.9 The `audio` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio) · Source: <https://html.spec.whatwg.org/multipage/media.html#the-audio-element>
+
+**Categories:** Flow content, Phrasing content, Embedded content; if it has a `controls` attribute: Interactive content, Palpable content.
+
+**Contexts:** Where embedded content is expected.
+
+**Content model:** If the element has a `src` attribute: zero or more `track` elements, then transparent, but with no media element descendants. If the element does not have a `src` attribute: zero or more `source` elements, then zero or more `track` elements, then transparent, but with no media element descendants.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes; `src`, `crossorigin`, `preload`, `autoplay`, `loop`, `muted`, `controls`.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-audio).
+
+[For implementers](https://w3c.github.io/html-aam/#el-audio).
+
+**DOM interface:** `HTMLAudioElement`.
+
+The `audio` element represents a sound or audio stream. It is a media element whose media data is ostensibly audio. The same `source`/`track`-then-transparent content model and no-media-element-descendant restriction as `video` applies.
+
+### 4.8.10 The `track` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/track) · Source: <https://html.spec.whatwg.org/multipage/media.html#the-track-element>
+
+**Categories:** None.
+
+**Contexts:** As a child of a media element (`audio`/`video`), before any flow content.
+
+**Content model:** Nothing.
+
+**Tag omission:** No end tag (void element).
+
+**Attributes:** Global attributes; `kind`, `src`, `srclang`, `label`, `default`.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-track).
+
+[For implementers](https://w3c.github.io/html-aam/#el-track).
+
+**DOM interface:** `HTMLTrackElement`.
+
+The `track` element allows authors to specify explicit external timed text tracks for media elements (subtitles, captions, descriptions, chapters, metadata). It represents nothing on its own and must have no children; it must precede any flow content within its media-element parent.
+
+### 4.8.13 The `map` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map) · Source: <https://html.spec.whatwg.org/multipage/image-maps.html#the-map-element>
+
+**Categories:** Flow content, Phrasing content, Palpable content.
+
+**Contexts:** Where phrasing content is expected.
+
+**Content model:** Transparent.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes; `name`.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-map).
+
+[For implementers](https://w3c.github.io/html-aam/#el-map).
+
+**DOM interface:** `HTMLMapElement`.
+
+The `map` element, in conjunction with an `img` element and any `area` elements (which are its descendants, transparently), defines an image map. It must have a `name` attribute whose value is non-empty and contains no ASCII whitespace.
+
+### 4.8.14 The `area` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area) · Source: <https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element>
+
+**Categories:** Flow content, Phrasing content.
+
+**Contexts:** Where phrasing content is expected, but only if there is a `map` element ancestor.
+
+**Content model:** Nothing.
+
+**Tag omission:** No end tag (void element).
+
+**Attributes:** Global attributes; `alt`, `coords`, `shape`, `href`, `target`, `download`, `ping`, `rel`, `referrerpolicy`.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-area).
+
+[For implementers](https://w3c.github.io/html-aam/#el-area).
+
+**DOM interface:** `HTMLAreaElement`.
+
+The `area` element represents either a hyperlink with some text and a corresponding area on an image map, or a dead area on an image map. It is only valid where there is a `map` element ancestor. If `href` is present, `alt` must also be present. It is a void element (no children).
+
+### 4.8.18 The `canvas` element
+
+> [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas) · Source: <https://html.spec.whatwg.org/multipage/canvas.html#the-canvas-element>
+
+**Categories:** Flow content, Phrasing content, Embedded content, Palpable content.
+
+**Contexts:** Where embedded content is expected.
+
+**Content model:** Transparent, but with no interactive content descendants except for `a` elements, `img` elements with `usemap` attributes, `button` elements, `input` elements whose `type` attribute are in the Checkbox or Radio Button states, `input` elements that are buttons, and `select` elements with a `multiple` attribute or a display size greater than 1.
+
+**Tag omission:** Neither tag is omissible.
+
+**Attributes:** Global attributes; `width`, `height`.
+
+**Accessibility:**
+
+[For authors](https://w3c.github.io/html-aria/#el-canvas).
+
+[For implementers](https://w3c.github.io/html-aam/#el-canvas).
+
+**DOM interface:** `HTMLCanvasElement`.
+
+The `canvas` element provides a resolution-dependent bitmap canvas, which can be used for rendering graphs, game graphics, art, or other visual images on the fly via its drawing APIs. Its children are fallback content (transparent model) with a restricted interactive-content allowlist so the fallback stays keyboard-accessible.
