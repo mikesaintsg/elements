@@ -168,7 +168,7 @@ lens and gets its own dedicated unit suite.
 
 | Phase | Description                                                                                  | Status |
 | ----- | -------------------------------------------------------------------------------------------- | ------ |
-| 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec                         | 🟡     |
+| 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec                         | ✅     |
 | 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                          | ⬜     |
 | 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)                       | ⬜     |
 | 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant)          | ⬜     |
@@ -255,13 +255,15 @@ even from large pages. Canonical section URLs (from the multipage TOC):
   transparent element has no parent, its restrictions are based on flow
   content**"). The same path closes every gap below.
 
-**Status — corpus reconciled (🟡):** the gaps below are now closed in the
-cache (commits `3d6195a`, `3e73197`, `0e9823e`, `eee2915`): `sections.md`,
-`forms.md`, `embeddeds.md`, `interactions.md` completed from the canonical
-spec and `categories.md` added. The single remaining item is the scoped
-implicit-role appendix (`guides/w3c/aria.md`); the `tests/guides/w3c.test.ts`
-parity gate lands with Phase 1. The gap list below is retained as the
-rationale record.
+**Status — corpus reconciled & complete (✅):** every gap below is closed.
+`sections.md` / `forms.md` / `embeddeds.md` / `interactions.md` completed
+from the canonical spec; `categories.md`, `aria.md`, and `elements/
+document.md` added; `math`/`svg` carded; verbatim/illustrative spec
+examples added throughout. **All 93 `taxonomy.ts` elements have a carded
+entry under `guides/w3c/**`** (verified). The only Phase-0-adjacent item
+left is the `tests/guides/w3c.test.ts` parity gate, which is **Phase 1**
+work (it mechanizes this now-satisfied invariant). The gap list below is
+retained as the rationale record.
 
 **Why first:** the schema (Phase 1) cannot be trusted unless the corpus it
 derives from is complete and spec-accurate. Deep reading of `guides/w3c/**`
@@ -330,18 +332,29 @@ above):
   (`contenteditable` / `spellcheck` / `autocapitalize` / `inputmode` /
   `enterkeyhint` / `draggable`), find-in-page, close watchers — oriented to
   the DOM/attribute-checkable rules Phase 3 / Phase 5 cite.
-- ⬜ **Add an implicit-role appendix** (scoped: only roles the HTML content
-  model references, e.g. `main`'s "hierarchically correct") — a new
-  `guides/w3c/aria.md`. The one remaining corpus gap.
-- ⬜ **`tests/guides/w3c.test.ts` gate** (lands with Phase 1) — asserts
-  every [`taxonomy.ts`](src/browser/taxonomy.ts) element has a fully carded
-  entry under `guides/w3c/**`; this is the Phase-0 → Phase-1 exit
-  criterion.
-
-Deliverable gate: a `tests/guides/w3c.test.ts` skeleton that asserts every
-element enumerated in [`taxonomy.ts`](src/browser/taxonomy.ts) has a fully
-carded entry somewhere under `guides/w3c/elements/**` (fails until the
-mirror is complete — that *is* the Phase-0 exit criterion).
+- ✅ **`guides/w3c/aria.md` added** — the scoped implicit-role appendix:
+  faithful implicit ARIA role per element from ARIA-in-HTML / HTML-AAM,
+  with the content-model-relevant cases pinned (`main` hierarchical
+  correctness, `li`/list & table-model roles, `a`/`area` href flip, `img`
+  alt polarity, interactive-content lookup).
+- ✅ **`document.md` added + `math`/`svg` carded** — cross-checking the
+  corpus against [`taxonomy.ts`](src/browser/taxonomy.ts) surfaced `html`
+  (root) and `math`/`svg` (foreign embedded) as uncarded. Added
+  `elements/document.md` (§4.1 `html` + §4.2 `head`/`title`/`base`/`link`/
+  `meta`/`style` from `semantics.html`) and `math`/`svg` cards to
+  `embeddeds.md` (foreign content — HTML checking stops at the boundary).
+  **All 93 `taxonomy.ts` elements now have a carded entry** (verified).
+- ✅ **Spec examples added** — verbatim canonical code examples inserted
+  into every newly-carded element where the multipage page was reachable
+  (sections ×7, button/select/datalist/optgroup/input, iframe/object/
+  video/audio/track/map/canvas, html/head/title/base/link/meta/style);
+  the deep-in-long-page elements the fetch tool structurally truncates got
+  concise clearly-labeled *illustrative* examples (never misattributed —
+  the canonical spec URL is on every card).
+- ⬜ **`tests/guides/w3c.test.ts` gate** — lands with **Phase 1** (not
+  Phase 0): asserts every `taxonomy.ts` element has a fully carded entry
+  under `guides/w3c/**` and every schema `cite` resolves. The corpus
+  content is done; this test mechanizes the invariant.
 
 ---
 
