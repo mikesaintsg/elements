@@ -236,3 +236,69 @@ describe('composables — every shipped factory is documented in composables.md'
 		})
 	}
 })
+
+// ── 4. State-attribute naming (Contract 8) ─────────────────────────────────
+//
+// Every `data-*` attribute the framework WRITES (factory `setAttribute`)
+// or STYLES (a `[data-…]` selector in `src/styles/`) must be
+// composable-scoped: `data-{factory-stem}-…`. The only un-prefixed
+// attributes are the documented exceptions below — framework-global
+// state owned by no single composable, and native/content generics that
+// mirror the platform or carry consumer content. This converts the
+// one-time state-attribute audit into a standing invariant: a new
+// unscoped, un-allow-listed `data-*` fails here. See
+// guides/composables.md § State-attribute scheme.
+
+// Factory stems: createToast → "toast", createTable → "table", … The
+// `data-{stem}-…` prefix equals the lowercased stem for every composable.
+const FACTORY_STEMS: ReadonlySet<string> = new Set(
+	shippedFactoryNames.map((n) => n.slice('create'.length).toLowerCase()),
+)
+
+// Deliberate non-composable-scoped attributes. Each needs a one-line
+// rationale; adding here is a framework-wide decision, not a workaround.
+const ATTR_NAMING_ALLOW: Readonly<Record<string, string>> = {
+	// Framework-global — owned by no single composable, so it uses the
+	// `data-elements-*` framework namespace on purpose.
+	'data-elements-scroll-locked':
+		'Cross-composable body scroll-lock (dialog/aside/drawer share it); framework-global, not composable state.',
+	// Native / content generics — mirror the platform or carry consumer
+	// content/identity, intentionally NOT composable-scoped.
+	'data-open': 'Native-state mirror for hosts lacking a native open attribute.',
+	'data-hidden': 'Native-state mirror for hosts lacking a native hidden attribute.',
+	'data-key': 'Consumer content key (e.g. table sort column), not composable state.',
+	'data-level': 'Consumer structural depth (e.g. TOC heading level), not composable state.',
+	'data-value': 'Consumer content value, not composable state.',
+}
+
+function dataAttrSurface(): ReadonlySet<string> {
+	const surface = new Set<string>()
+	for (const { attr } of findAttrWrites()) surface.add(attr)
+	for (const m of stylesCorpus.matchAll(/\[data-([a-z][a-z0-9-]*)/g)) {
+		if (m[1]) surface.add(`data-${m[1]}`)
+	}
+	return surface
+}
+
+describe('composables — every framework data-* attribute is composable-scoped', () => {
+	const surface = [...dataAttrSurface()].sort()
+
+	it('discovers the data-* surface (vacuous-pass guard)', () => {
+		expect(surface.length).toBeGreaterThan(10)
+		expect(FACTORY_STEMS.size).toBeGreaterThan(15)
+	})
+
+	for (const attr of surface) {
+		const firstSegment = attr.slice('data-'.length).split('-')[0] ?? ''
+		// On failure: `${attr}` is neither `data-{factory-stem}-…` nor a
+		// documented exception. Either rename it to its owning composable's
+		// stem, OR (if it is genuinely framework-global / a native-content
+		// generic) add it to ATTR_NAMING_ALLOW with a one-line rationale and
+		// document it in guides/composables.md § State-attribute scheme.
+		it(`${attr} is composable-scoped or an allow-listed exception`, () => {
+			const scoped = FACTORY_STEMS.has(firstSegment)
+			const allowed = attr in ATTR_NAMING_ALLOW
+			expect(scoped || allowed).toBe(true)
+		})
+	}
+})

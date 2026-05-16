@@ -65,15 +65,28 @@ The `{source}` segment uses the **element name** when the composable binds to on
 
 ### State-attribute scheme
 
-Every state attribute follows `data-{name}-{state}`:
+Every framework `data-*` attribute is **composable-scoped** — `data-{name}-{…}`, where `{name}` is the factory stem (`alert`, `aside`, `dialog`, `form`, `table`, `toast`, `popover`, `tooltip`, `theme`, …) and every segment is kebab-case. The audit (`MODIFIER`-style standing invariant, enforced by `composables.test.ts § state-attribute naming`) found the surface already consistent; the canonical set is:
 
-```
-data-toast-stack-closing data-toast-hidden-count
-data-table-expanded      data-table-resizing
-data-form-validated      data-alert-open
-```
+**1. State markers — `data-{name}-{state}`.** Settled boolean states use an adjective / past-participle; in-flight transitions use the **gerund**:
+
+| settled (adjective / participle)                                                                              | in-flight (gerund)                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `data-alert-open`, `data-aside-open`, `data-table-expanded`, `data-form-validated`, `data-toast-stack-hidden` | `data-aside-closing`, `data-dialog-closing`, `data-toast-stack-closing`, `data-toast-swiping`, `data-table-resizing` |
 
 Open-state markers (`data-{name}-open`) flip on at the start of `show()`. Closing-state markers (`data-{name}-closing`) flip on at the start of `hide()` and persist through the close transition — see [Open / closed lifecycle](#openclosed-lifecycle).
+
+**2. Structural role hooks — `data-{name}-{role}` (noun).** Mark an element's role in the composable's DOM so CSS / JS can target it: `data-table-expansion`, `data-table-expansion-panel`, `data-table-resize-handle`, `data-toast-stack`, `data-toast-indicator`, `data-toast-hidden-count`, `data-toast-position`.
+
+**3. Consumer-authored opt-in markers the factory READS — `data-{name}-{role}`.** Authored in showcase / consumer markup, read (never written) by the factory: `data-table-expansion-trigger` (explicit caret-only toggle target) and the generic interaction opt-out `data-no-select` (skip drag / row-toggle on this subtree).
+
+**4. JS-resolved config (`dataset.{name}{Key}` → `data-{name}-{key}`).** Written by floating-surface factories for their own positioning logic: `data-popover-side` / `data-popover-offset` / `data-popover-strategy`, `data-tooltip-side` / `data-tooltip-offset` / `data-tooltip-strategy`.
+
+**Deliberate non-composable-scoped exceptions** (the _only_ attributes that don't take a factory-stem prefix — each is a documented allow-list entry in the parity test):
+
+- **Framework-global:** `data-theme` (the theme system's explicit pin), `data-elements-scroll-locked` (cross-composable body scroll-lock — uses the `data-elements-*` framework namespace precisely because it is owned by no single composable).
+- **Native / content generics:** `data-open`, `data-hidden` (mirror platform state on hosts lacking a native attribute), `data-key`, `data-level`, `data-value`, `data-id` (carry consumer content / identity, not composable state).
+
+A new `data-*` attribute that is neither factory-stem-scoped nor on the documented allow-list fails the parity test — drift cannot land silently.
 
 ---
 
@@ -88,10 +101,11 @@ These invariants hold across `src/browser/composables/` ↔ `src/browser/factori
 5. **JS ↔ CSS attribute parity.** Every `setAttribute('data-X-*', …)` written by a factory under `src/browser/factories/` is referenced at least once by a partial in `src/styles/`. If the CSS never reads the attribute, the JS is doing dead work — see [Native-platform redundancy](#native-platform-redundancy). Allow-list opt-outs live in `JS_ONLY` (in the test file) with a one-line rationale per entry.
 6. **Per-composable required tokens + state selectors + animation discipline.** Every partial registered in `COMPOSABLE_CONTRACTS` declares its required tokens, uses at least one state selector (`[data-*]`, `[aria-*=…]`, `[role=…]`, `[open]`, `:popover-open`, `:modal`, `:open`), and (if `animated: true`) invokes `@include transition()` or `@include reduced-motion`.
 7. **`destroy()` idempotence + clean dispose.** Every factory exposes `destroy()`. Calling it twice is safe. Every listener, observer, and timer installed during construction reverses on destroy (verified by `assertCleanDispose` in the factory tests).
+8. **State-attribute naming.** Every `data-*` attribute the framework writes or reads is `data-{factory-stem}-{…}` (kebab-case), per [State-attribute scheme](#state-attribute-scheme). The only attributes without a factory-stem prefix are the documented framework-global (`data-theme`, `data-elements-scroll-locked`) and native / content-generic (`data-open`, `data-hidden`, `data-key`, `data-level`, `data-value`, `data-id`, `data-no-select`) allow-list entries — each carrying a one-line rationale in the parity test. A new unscoped, un-allow-listed `data-*` fails the contract.
 
 Enforced by:
 
-- [`tests/guides/composables.test.ts`](../tests/guides/composables.test.ts) — event-name registry, JS↔CSS attribute parity, factory↔guide pairing (contracts 2, 4, 5).
+- [`tests/guides/composables.test.ts`](../tests/guides/composables.test.ts) — event-name registry, JS↔CSS attribute parity, state-attribute naming, factory↔guide pairing (contracts 2, 4, 5, 8).
 - [`tests/src/styles/composables/_index.test.ts`](../tests/src/styles/composables/_index.test.ts) — `COMPOSABLE_CONTRACTS` enforcement (contract 6).
 - [`tests/src/browser/factories/`](../tests/src/browser/factories/) — per-factory behaviour + `assertCleanDispose` (contract 7).
 - [`tests/src/browser/composables/`](../tests/src/browser/composables/) — Vue adapter behaviour (contract 1).
