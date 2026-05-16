@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-/**
+ /**
  * SectioningPage — the canonical reference for the sectioning content
  * family: `<main>`, `<section>`, `<article>`, `<aside>`, `<header>`,
  * `<footer>`, `<nav>`, `<search>`, `<hgroup>`.

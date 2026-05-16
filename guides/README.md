@@ -146,21 +146,21 @@ The mixin / function registry — `transition()`, `focus-ring()`, `reduced-motio
 
 Pattern: `elements:{source}:{verb}`. Every composable / factory emits through this registry.
 
-| Role         | File                                                                      |
-| ------------ | ------------------------------------------------------------------------- |
+| Role         | File                                                                              |
+| ------------ | --------------------------------------------------------------------------------- |
 | Spec         | Covered inline in [`guides/composables.md`](composables.md#event-name-vocabulary) |
-| TS source    | [`src/browser/events.ts`](../src/browser/events.ts)                       |
-| Shape parity | [`tests/guides/composables.test.ts`](../tests/guides/composables.test.ts) |
+| TS source    | [`src/browser/events.ts`](../src/browser/events.ts)                               |
+| Shape parity | [`tests/guides/composables.test.ts`](../tests/guides/composables.test.ts)         |
 
 ### Tailwind interop
 
 The framework layers on Tailwind v4. The interop test verifies modifier+utility composition and the collision watch list.
 
-| Role                                  | File                                                                                  |
-| ------------------------------------- | ------------------------------------------------------------------------------------- |
-| Spec                                  | [`guides/styles.md`](styles.md) § "Tailwind v4 is the base"                           |
-| Composition test + collision detector | [`tests/src/styles/integration.test.ts`](../tests/src/styles/integration.test.ts)     |
-| Collision watch list                  | [`tests/setup.ts`](../tests/setup.ts) § `TAILWIND_SINGLE_TOKEN_UTILITIES` |
+| Role                                  | File                                                                              |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| Spec                                  | [`guides/styles.md`](styles.md) § "Tailwind v4 is the base"                       |
+| Composition test + collision detector | [`tests/src/styles/integration.test.ts`](../tests/src/styles/integration.test.ts) |
+| Collision watch list                  | [`tests/setup.ts`](../tests/setup.ts) § `TAILWIND_SINGLE_TOKEN_UTILITIES`         |
 
 ---
 
@@ -295,7 +295,7 @@ The living-documentation layer. Every spec'd surface has a page demonstrating it
 | [`index.html`](../app/browser/index.html)                   | Showcase shell. Inlines a data-URL favicon; `<script src="./main.ts">` is the entry.                                                                                                                                               |
 | [`main.ts`](../app/browser/main.ts)                         | Vue app bootstrap. Mounts `App.vue` and registers the hash router.                                                                                                                                                                 |
 | [`App.vue`](../app/browser/App.vue)                         | Showcase shell — header, left nav rail (grouped route filter + `h6`/`<menu>` link list, mobile popover drawer), `<main>` content area, right TOC rail (`IntersectionObserver`-driven section list, mobile popover drawer), footer. |
-| [`types.ts`](../app/browser/types.ts)                       | Shared type definitions — `Route`, `RouteLocation`, `RouteGroup`, `Group`, `Section` + `ROUTE_GROUPS` canonical order.                                                                                                                                                            |
+| [`types.ts`](../app/browser/types.ts)                       | Shared type definitions — `Route`, `RouteLocation`, `RouteGroup`, `Group`, `Section` + `ROUTE_GROUPS` canonical order.                                                                                                             |
 | [`router.ts`](../app/browser/router.ts)                     | Hash router (`#/{route}/{section}`). Route table is the source of truth for navigation.                                                                                                                                            |
 | [`env.d.ts`](../app/browser/env.d.ts)                       | Vite client type augmentation.                                                                                                                                                                                                     |
 | [`styles/main.css`](../app/browser/styles/main.css)         | Single CSS entry — `@layer` order + `@import 'tailwindcss'` + `@import '../../../src/styles/index'`.                                                                                                                               |

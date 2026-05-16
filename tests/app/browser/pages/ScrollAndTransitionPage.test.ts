@@ -26,7 +26,7 @@ describe('ScrollAndTransitionPage — parity scaffold', () => {
 			const intro = host.querySelector('section#scroll-and-transition-intro')
 			expect(intro, 'intro <section id="scroll-and-transition-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Scroll & transition")
+			expect(h1, 'intro <h1> === route title').toBe('Scroll & transition')
 		} finally {
 			app.unmount()
 			host.remove()

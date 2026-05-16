@@ -26,7 +26,7 @@ describe('AnchorPage — parity scaffold', () => {
 			const intro = host.querySelector('section#anchor-intro')
 			expect(intro, 'intro <section id="anchor-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Anchor")
+			expect(h1, 'intro <h1> === route title').toBe('Anchor')
 		} finally {
 			app.unmount()
 			host.remove()

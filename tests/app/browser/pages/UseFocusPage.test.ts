@@ -26,7 +26,7 @@ describe('UseFocusPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-focus-intro')
 			expect(intro, 'intro <section id="use-focus-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useFocus")
+			expect(h1, 'intro <h1> === route title').toBe('useFocus')
 		} finally {
 			app.unmount()
 			host.remove()

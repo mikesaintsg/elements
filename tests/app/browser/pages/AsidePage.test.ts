@@ -26,7 +26,7 @@ describe('AsidePage — parity scaffold', () => {
 			const intro = host.querySelector('section#aside-intro')
 			expect(intro, 'intro <section id="aside-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Aside")
+			expect(h1, 'intro <h1> === route title').toBe('Aside')
 		} finally {
 			app.unmount()
 			host.remove()

@@ -26,7 +26,7 @@ describe('TokensPage — parity scaffold', () => {
 			const intro = host.querySelector('section#tokens-intro')
 			expect(intro, 'intro <section id="tokens-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Tokens")
+			expect(h1, 'intro <h1> === route title').toBe('Tokens')
 		} finally {
 			app.unmount()
 			host.remove()

@@ -73,9 +73,7 @@ const barrelPageNames: ReadonlySet<string> = new Set(nameByComponent.values())
 function routePageName(route: RouteLike): string {
 	return nameByComponent.get(route.page) ?? '(unexported component)'
 }
-const routeByPage = new Map<string, RouteLike>(
-	routeTable.map((r) => [routePageName(r), r]),
-)
+const routeByPage = new Map<string, RouteLike>(routeTable.map((r) => [routePageName(r), r]))
 
 // ── Tiny .vue text helpers (pure string ops) ────────────────────────────────
 
@@ -90,13 +88,16 @@ function decodeEntities(s: string): string {
 }
 const scriptBlock = (s: string): string =>
 	s.match(/<script\b[^>]*\bsetup\b[^>]*>([\s\S]*?)<\/script>/)?.[1] ?? ''
-const templateBlock = (s: string): string =>
-	s.match(/<template>([\s\S]*)<\/template>/)?.[1] ?? ''
+const templateBlock = (s: string): string => s.match(/<template>([\s\S]*)<\/template>/)?.[1] ?? ''
 const jsdocFirstLine = (script: string): string =>
 	(script.match(/\/\*\*\s*\r?\n\s*\*\s*([^\r\n]*)/)?.[1] ?? '').trim()
 function firstH1Text(markup: string): string | null {
 	const m = markup.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)
-	return m ? decodeEntities((m[1] ?? '').replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim() : null
+	return m
+		? decodeEntities((m[1] ?? '').replace(/<[^>]+>/g, ''))
+				.replace(/\s+/g, ' ')
+				.trim()
+		: null
 }
 const topLevelSectionTags = (template: string): readonly string[] =>
 	[...template.matchAll(/\n\t<section\b[^>]*>/g)].map((m) => m[0])
@@ -119,7 +120,8 @@ function nonNamespacedSelectors(css: string): readonly string[] {
 const LITERAL_STYLE = /(^|[^:\w])style="([^"]*)"/g
 const SIZE_OFFSET_PROP =
 	/^(?:inline-size|block-size|width|height|(?:min|max)-(?:inline-size|block-size|width|height)|flex-basis|aspect-ratio|(?:margin|padding|inset)(?:-(?:inline|block))?(?:-(?:start|end))?|top|right|bottom|left|gap|row-gap|column-gap|translate)$/
-const OFF_SCALE_VALUE = /\d(?:ch|r?em|px|%|vw|vh|dvh|svh|vmin|vmax|fr|deg)|(?:calc|clamp|min|max|var)\(/
+const OFF_SCALE_VALUE =
+	/\d(?:ch|r?em|px|%|vw|vh|dvh|svh|vmin|vmax|fr|deg)|(?:calc|clamp|min|max|var)\(/
 
 function declExempt(decl: string): boolean {
 	if (/var\(\s*--(?:set|color)-/.test(decl)) return true
@@ -165,9 +167,7 @@ describe('pages — every script opens with a `{Page} — …` JSDoc', () => {
 		// Open `/**` flush to column 0; start the first `* ` line with
 		// `${name} — `.
 		it(`${name}.vue — JSDoc first line is "${name} — …"`, () => {
-			expect(jsdocFirstLine(scriptBlock(pages[name] ?? ''))).toMatch(
-				new RegExp(`^${name} — \\S`),
-			)
+			expect(jsdocFirstLine(scriptBlock(pages[name] ?? ''))).toMatch(new RegExp(`^${name} — \\S`))
 		})
 	}
 })
@@ -183,13 +183,9 @@ describe('pages — template opens with the intro `<section>` skeleton', () => {
 			// `<hgroup>` with one `<h1>` and ≥1 `<p>`.
 			expect(route, `${name}.vue has no router.ts route`).toBeDefined()
 			const tpl = templateBlock(pages[name] ?? '').replace(/<!--[\s\S]*?-->/g, '')
-			expect(tpl.match(/<([a-zA-Z][\w-]*)\b[^>]*>/)?.[1], `${name}.vue opens with`).toBe(
-				'section',
-			)
+			expect(tpl.match(/<([a-zA-Z][\w-]*)\b[^>]*>/)?.[1], `${name}.vue opens with`).toBe('section')
 			const introId = tpl.match(/^\s*<section\s+id="([^"]+)"/)?.[1] ?? ''
-			const expectedIntroId = INTRO_ID_EXCEPTIONS.has(name)
-				? introId
-				: `${route?.id}-intro`
+			const expectedIntroId = INTRO_ID_EXCEPTIONS.has(name) ? introId : `${route?.id}-intro`
 			expect(introId, `${name}.vue intro id`).toBe(expectedIntroId)
 			const introInner = tpl.slice(0, tpl.indexOf('</section>'))
 			expect((introInner.match(/<hgroup\b/g) ?? []).length, 'one <hgroup>').toBe(1)
@@ -235,7 +231,10 @@ describe('pages — every `<section>` carries a unique id (the TOC contract)', (
 			const ids = topLevelSectionTags(templateBlock(pages[name] ?? '')).map(
 				(t) => t.match(/\bid="([^"]+)"/)?.[1] ?? '',
 			)
-			expect(ids.filter((x) => x === ''), `${name}.vue has an id-less <section>`).toEqual([])
+			expect(
+				ids.filter((x) => x === ''),
+				`${name}.vue has an id-less <section>`,
+			).toEqual([])
 			expect(new Set(ids).size, `${name}.vue duplicate section ids`).toBe(ids.length)
 		})
 	}

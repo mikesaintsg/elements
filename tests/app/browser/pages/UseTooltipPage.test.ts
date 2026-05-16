@@ -26,7 +26,7 @@ describe('UseTooltipPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-tooltip-intro')
 			expect(intro, 'intro <section id="use-tooltip-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useTooltip")
+			expect(h1, 'intro <h1> === route title').toBe('useTooltip')
 		} finally {
 			app.unmount()
 			host.remove()

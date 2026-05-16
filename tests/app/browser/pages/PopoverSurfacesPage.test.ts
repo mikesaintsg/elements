@@ -26,7 +26,7 @@ describe('PopoverSurfacesPage — parity scaffold', () => {
 			const intro = host.querySelector('section#popover-surfaces-intro')
 			expect(intro, 'intro <section id="popover-surfaces-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Popover surfaces")
+			expect(h1, 'intro <h1> === route title').toBe('Popover surfaces')
 		} finally {
 			app.unmount()
 			host.remove()

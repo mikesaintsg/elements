@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-/**
+ /**
  * HomePage — showcase landing page. Demonstrates the chrome (left/right
  * drawers, theme toggle, sidebar filter, scroll-to-target TOC) AND the
  * sectioning-content baseline: bare `<main>` and `<section>` already

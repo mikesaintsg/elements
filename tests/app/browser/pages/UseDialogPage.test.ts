@@ -26,7 +26,7 @@ describe('UseDialogPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-dialog-intro')
 			expect(intro, 'intro <section id="use-dialog-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useDialog")
+			expect(h1, 'intro <h1> === route title').toBe('useDialog')
 		} finally {
 			app.unmount()
 			host.remove()

@@ -26,7 +26,7 @@ describe('UseSelectPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-select-intro')
 			expect(intro, 'intro <section id="use-select-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useSelect")
+			expect(h1, 'intro <h1> === route title').toBe('useSelect')
 		} finally {
 			app.unmount()
 			host.remove()

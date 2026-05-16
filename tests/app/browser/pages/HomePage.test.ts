@@ -26,7 +26,7 @@ describe('HomePage — parity scaffold', () => {
 			const intro = host.querySelector('section#home-intro')
 			expect(intro, 'intro <section id="home-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Elements")
+			expect(h1, 'intro <h1> === route title').toBe('Elements')
 		} finally {
 			app.unmount()
 			host.remove()

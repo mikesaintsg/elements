@@ -26,7 +26,7 @@ describe('ThemePage — parity scaffold', () => {
 			const intro = host.querySelector('section#theme-intro')
 			expect(intro, 'intro <section id="theme-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Theme")
+			expect(h1, 'intro <h1> === route title').toBe('Theme')
 		} finally {
 			app.unmount()
 			host.remove()

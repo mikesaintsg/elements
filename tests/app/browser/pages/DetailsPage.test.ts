@@ -26,7 +26,7 @@ describe('DetailsPage — parity scaffold', () => {
 			const intro = host.querySelector('section#details-intro')
 			expect(intro, 'intro <section id="details-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Details")
+			expect(h1, 'intro <h1> === route title').toBe('Details')
 		} finally {
 			app.unmount()
 			host.remove()

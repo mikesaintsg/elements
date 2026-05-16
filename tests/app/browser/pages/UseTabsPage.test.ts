@@ -26,7 +26,7 @@ describe('UseTabsPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-tabs-intro')
 			expect(intro, 'intro <section id="use-tabs-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useTabs")
+			expect(h1, 'intro <h1> === route title').toBe('useTabs')
 		} finally {
 			app.unmount()
 			host.remove()

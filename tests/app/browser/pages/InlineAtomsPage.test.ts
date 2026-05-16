@@ -26,7 +26,7 @@ describe('InlineAtomsPage — parity scaffold', () => {
 			const intro = host.querySelector('section#inline-atoms-intro')
 			expect(intro, 'intro <section id="inline-atoms-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Inline atoms")
+			expect(h1, 'intro <h1> === route title').toBe('Inline atoms')
 		} finally {
 			app.unmount()
 			host.remove()

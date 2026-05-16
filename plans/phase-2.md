@@ -8,13 +8,13 @@
 
 Three new driver files + 43 filled per-page files, all `app:core` node text-parity:
 
-| File | Role | Guide-suite analogue |
-| --- | --- | --- |
-| `tests/app/browser/pages/_contract.ts` | exported maps from Phase 1 (`PAGE_EXEMPTIONS`, `PAGE_SURFACE_BUNDLES`, …) | `src/browser/patterns.ts` registries |
-| `tests/app/browser/srcBrowserParity.test.ts` | pages ↔ `src/browser` (elements / factories / component+surface+composable contracts) — bidirectional | `tests/guides/elements.test.ts` + `composables.test.ts` |
-| `tests/app/browser/srcStylesParity.test.ts` | pages ↔ `src/styles` chrome-bearing partials, keyed off the contract registries | `tests/src/styles/*/_index.test.ts` |
-| `tests/app/browser/guidesParity.test.ts` | pages ↔ guide topology + the guide-drift guard the existing guide tests miss | `tests/guides/showcase.test.ts` |
-| `tests/app/browser/pages/{X}Page.test.ts` ×43 | each page's bespoke parity (filled from Phase-1 scaffolds) | `tests/guides/{guide}.test.ts` ×12 |
+| File                                          | Role                                                                                                  | Guide-suite analogue                                    |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `tests/app/browser/pages/_contract.ts`        | exported maps from Phase 1 (`PAGE_EXEMPTIONS`, `PAGE_SURFACE_BUNDLES`, …)                             | `src/browser/patterns.ts` registries                    |
+| `tests/app/browser/srcBrowserParity.test.ts`  | pages ↔ `src/browser` (elements / factories / component+surface+composable contracts) — bidirectional | `tests/guides/elements.test.ts` + `composables.test.ts` |
+| `tests/app/browser/srcStylesParity.test.ts`   | pages ↔ `src/styles` chrome-bearing partials, keyed off the contract registries                       | `tests/src/styles/*/_index.test.ts`                     |
+| `tests/app/browser/guidesParity.test.ts`      | pages ↔ guide topology + the guide-drift guard the existing guide tests miss                          | `tests/guides/showcase.test.ts`                         |
+| `tests/app/browser/pages/{X}Page.test.ts` ×43 | each page's bespoke parity (filled from Phase-1 scaffolds)                                            | `tests/guides/{guide}.test.ts` ×12                      |
 
 Complements `tests/app/core/router.test.ts` (route **table** parity) — Phase 2 tests the page **files** + the element/component/surface coverage that file never touches. **No assertion is duplicated across the two**; where they’d overlap (composable↔route), Phase 2 keys off the page file, router.test off the route literal.
 
@@ -25,7 +25,7 @@ Complements `tests/app/core/router.test.ts` (route **table** parity) — Phase 2
 **Down-stream (`src/` ships → showcase must demo), bidirectional, bundle-aware:**
 
 1. Every substantive key in `src/browser/elements.ts` is demonstrated on an Elements-group page (directly or via `PAGE_SURFACE_BUNDLES`); every Elements page maps to ≥1 real element key.
-2. Every `src/browser/factories/create{Name}.ts` ↔ a `Use{Name}Page.vue` (or a bundle entry: `UseThemeButtonPage`→theme+button, `UseDragDropPage`→drag+drop); every `Use*Page` maps to ≥1 real factory. *(router.test.ts already does route↔composable; this does **page-file**↔factory — the missing edge.)*
+2. Every `src/browser/factories/create{Name}.ts` ↔ a `Use{Name}Page.vue` (or a bundle entry: `UseThemeButtonPage`→theme+button, `UseDragDropPage`→drag+drop); every `Use*Page` maps to ≥1 real factory. _(router.test.ts already does route↔composable; this does **page-file**↔factory — the missing edge.)_
 3. Every `COMPONENT_CONTRACTS` key is exercised on a Components/Surfaces page; every `SURFACE_CONTRACTS` key on a Surfaces page; every `COMPOSABLE_CONTRACTS` key on its `Use*Page`.
 4. No orphan page: every non-exempt `*Page.vue` resolves to ≥1 registry entry.
 
@@ -50,15 +50,19 @@ Complements `tests/app/core/router.test.ts` (route **table** parity) — Phase 2
 ## Workstreams
 
 ### 2A — `srcBrowserParity.test.ts`
+
 Iterate `elements.ts`, `readFactorySources()`, `COMPONENT_/SURFACE_/COMPOSABLE_CONTRACTS`; resolve each through `PAGE_SURFACE_BUNDLES`; assert bidirectional coverage vs `readAllPages()`. Failure prints the unmapped registry key + the page expected to own it.
 
 ### 2B — `srcStylesParity.test.ts`
+
 For each `components/`+`surfaces/`+`composables/` partial, resolve its contract-registry entry → the owning page; assert that page demonstrates it. Reuse `router.test.ts`'s composables result; add components/surfaces. Document (in-file) why `composables/` is a 6-partial subset (behavior-only composables ship no chrome).
 
 ### 2C — `guidesParity.test.ts`
+
 `ROUTE_GROUPS`→guide topology (lift from router.test.ts if cleaner here) + the guide-drift guard (Contract §6). Scope tight — guides↔src is `tests/guides/*`'s job; this only adds the cross-checks the audit proved are missing.
 
 ### 2D — Fill the 43 `pages/{X}Page.test.ts`
+
 Per-category templates (Contract §7–§11). Sequence in verified batches by group, matching the guide-batch cadence:
 
 1. Foundation: Tokens, Modifiers, Theme, Placements (richest parity; the count/coverage asserts).
@@ -70,6 +74,7 @@ Per-category templates (Contract §7–§11). Sequence in verified batches by gr
 7. `PAGE_EXEMPTIONS` ×3 — structure-only.
 
 ### 2E — Tighten the meta-driver to README-grade totality
+
 Once 2A–2D are green, remove any temporary skips/soft-asserts in `pages.test.ts`; the bijection + skeleton must be a **clean total bijection with no exception list** — the exact bar `tests/guides/README.test.ts` holds (its comment: "a clean bijection with NO special-case exceptions"). `PAGE_EXEMPTIONS`/`PAGE_SURFACE_BUNDLES` remain (they're parity scoping, not bijection holes — every page still has its file + route).
 
 ---
@@ -88,13 +93,13 @@ Phase 1 complete (structure + bijection + ALL 1D drift resolved + maps locked)
                  └─ 2E meta-driver totality tighten  → suite complete
 ```
 
-Dependencies: 2D-batch-6 (composable API guard) **must** post-date Phase-1 1D-a (UseToast/Pointer page fixes) or it asserts against known-bad — note 1D-e's `UseCarouselReturn` flag is already resolved (start/stop confirmed present; no longer a blocker). 2A/2B depend on `PAGE_SURFACE_BUNDLES` (locked in Phase-1 1E). **2C's 1D-b dependency is satisfied** — the guides are fully aligned to `src/` as of the audit (commits `7b7cfc5`/`ca154b3`/`d8e1339`/`532a163`), so the guide-drift guard now *locks in* that alignment rather than racing Phase 1 to remove it.
+Dependencies: 2D-batch-6 (composable API guard) **must** post-date Phase-1 1D-a (UseToast/Pointer page fixes) or it asserts against known-bad — note 1D-e's `UseCarouselReturn` flag is already resolved (start/stop confirmed present; no longer a blocker). 2A/2B depend on `PAGE_SURFACE_BUNDLES` (locked in Phase-1 1E). **2C's 1D-b dependency is satisfied** — the guides are fully aligned to `src/` as of the audit (commits `7b7cfc5`/`ca154b3`/`d8e1339`/`532a163`), so the guide-drift guard now _locks in_ that alignment rather than racing Phase 1 to remove it.
 
 ## Tests / exit criteria
 
 - Every driver + all 43 per-page files green; `pages.test.ts` a total no-exception bijection.
 - `npm run test:app`, `npm run check`, guides 3475, `tests/src/*` all green.
-- A deliberately-introduced drift (rename a `use*` option in a page; remove a registry-covered surface demo; drop a section `id`) fails a *specific, well-named* test — the suite's value proven, the way the guides suite proves itself.
+- A deliberately-introduced drift (rename a `use*` option in a page; remove a registry-covered surface demo; drop a section `id`) fails a _specific, well-named_ test — the suite's value proven, the way the guides suite proves itself.
 - `guides/showcase.md` §Tests checklist fully satisfied; update its "test project is queued" line to "shipped" as the closing commit.
 
 ## Patterns

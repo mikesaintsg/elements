@@ -26,7 +26,7 @@ describe('UseDragDropPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-drag-drop-intro')
 			expect(intro, 'intro <section id="use-drag-drop-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useDrag / useDrop")
+			expect(h1, 'intro <h1> === route title').toBe('useDrag / useDrop')
 		} finally {
 			app.unmount()
 			host.remove()

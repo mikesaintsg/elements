@@ -26,7 +26,7 @@ describe('UseThemeButtonPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-theme-button-intro')
 			expect(intro, 'intro <section id="use-theme-button-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useTheme / useButton")
+			expect(h1, 'intro <h1> === route title').toBe('useTheme / useButton')
 		} finally {
 			app.unmount()
 			host.remove()

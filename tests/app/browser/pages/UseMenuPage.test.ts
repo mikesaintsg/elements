@@ -26,7 +26,7 @@ describe('UseMenuPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-menu-intro')
 			expect(intro, 'intro <section id="use-menu-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useMenu")
+			expect(h1, 'intro <h1> === route title').toBe('useMenu')
 		} finally {
 			app.unmount()
 			host.remove()

@@ -26,7 +26,7 @@ describe('TypographyPage — parity scaffold', () => {
 			const intro = host.querySelector('section#typography-intro')
 			expect(intro, 'intro <section id="typography-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Typography")
+			expect(h1, 'intro <h1> === route title').toBe('Typography')
 		} finally {
 			app.unmount()
 			host.remove()

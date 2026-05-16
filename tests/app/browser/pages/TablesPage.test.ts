@@ -26,7 +26,7 @@ describe('TablesPage — parity scaffold', () => {
 			const intro = host.querySelector('section#tables-intro')
 			expect(intro, 'intro <section id="tables-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Tables")
+			expect(h1, 'intro <h1> === route title').toBe('Tables')
 		} finally {
 			app.unmount()
 			host.remove()

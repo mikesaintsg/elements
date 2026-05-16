@@ -26,7 +26,7 @@ describe('MediaPage — parity scaffold', () => {
 			const intro = host.querySelector('section#media-intro')
 			expect(intro, 'intro <section id="media-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Media")
+			expect(h1, 'intro <h1> === route title').toBe('Media')
 		} finally {
 			app.unmount()
 			host.remove()

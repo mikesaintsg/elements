@@ -26,7 +26,7 @@ describe('SectioningPage — parity scaffold', () => {
 			const intro = host.querySelector('section#sectioning-intro')
 			expect(intro, 'intro <section id="sectioning-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Sectioning")
+			expect(h1, 'intro <h1> === route title').toBe('Sectioning')
 		} finally {
 			app.unmount()
 			host.remove()

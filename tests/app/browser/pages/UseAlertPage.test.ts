@@ -26,7 +26,7 @@ describe('UseAlertPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-alert-intro')
 			expect(intro, 'intro <section id="use-alert-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useAlert")
+			expect(h1, 'intro <h1> === route title').toBe('useAlert')
 		} finally {
 			app.unmount()
 			host.remove()

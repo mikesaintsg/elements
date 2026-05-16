@@ -26,7 +26,7 @@ describe('DialogElementPage — parity scaffold', () => {
 			const intro = host.querySelector('section#dialog-element-intro')
 			expect(intro, 'intro <section id="dialog-element-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Dialog element")
+			expect(h1, 'intro <h1> === route title').toBe('Dialog element')
 		} finally {
 			app.unmount()
 			host.remove()

@@ -26,7 +26,7 @@ describe('FormControlsPage — parity scaffold', () => {
 			const intro = host.querySelector('section#form-controls-intro')
 			expect(intro, 'intro <section id="form-controls-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Form controls")
+			expect(h1, 'intro <h1> === route title').toBe('Form controls')
 		} finally {
 			app.unmount()
 			host.remove()

@@ -26,7 +26,7 @@ describe('FormSurfacesPage — parity scaffold', () => {
 			const intro = host.querySelector('section#form-surfaces-intro')
 			expect(intro, 'intro <section id="form-surfaces-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Form surfaces")
+			expect(h1, 'intro <h1> === route title').toBe('Form surfaces')
 		} finally {
 			app.unmount()
 			host.remove()

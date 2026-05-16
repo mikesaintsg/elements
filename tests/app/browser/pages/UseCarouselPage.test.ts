@@ -26,7 +26,7 @@ describe('UseCarouselPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-carousel-intro')
 			expect(intro, 'intro <section id="use-carousel-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useCarousel")
+			expect(h1, 'intro <h1> === route title').toBe('useCarousel')
 		} finally {
 			app.unmount()
 			host.remove()

@@ -26,7 +26,7 @@ describe('UseFormPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-form-intro')
 			expect(intro, 'intro <section id="use-form-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useForm")
+			expect(h1, 'intro <h1> === route title').toBe('useForm')
 		} finally {
 			app.unmount()
 			host.remove()

@@ -26,7 +26,7 @@ describe('UseNavPage — parity scaffold', () => {
 			const intro = host.querySelector('section#use-nav-intro')
 			expect(intro, 'intro <section id="use-nav-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("useNav")
+			expect(h1, 'intro <h1> === route title').toBe('useNav')
 		} finally {
 			app.unmount()
 			host.remove()

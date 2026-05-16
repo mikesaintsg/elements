@@ -26,7 +26,7 @@ describe('ArticleCardPage — parity scaffold', () => {
 			const intro = host.querySelector('section#article-card-intro')
 			expect(intro, 'intro <section id="article-card-intro">').not.toBeNull()
 			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe("Article card")
+			expect(h1, 'intro <h1> === route title').toBe('Article card')
 		} finally {
 			app.unmount()
 			host.remove()
