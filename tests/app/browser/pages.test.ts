@@ -136,14 +136,37 @@ function declExempt(decl: string): boolean {
 	return SIZE_OFFSET_PROP.test(prop) && OFF_SCALE_VALUE.test(rest.join(':'))
 }
 
+/**
+ * Split a `style="…"` value into declarations on top-level `;` only —
+ * a `;` inside `url(...)` / `calc(...)` or a quoted string (e.g. a
+ * `data:image/svg+xml;utf8,…` URI) is NOT a declaration separator.
+ */
+function splitDeclarations(value: string): string[] {
+	const out: string[] = []
+	let depth = 0
+	let quote = ''
+	let start = 0
+	for (let i = 0; i < value.length; i += 1) {
+		const ch = value[i]
+		if (quote) {
+			if (ch === quote) quote = ''
+		} else if (ch === '"' || ch === "'") quote = ch
+		else if (ch === '(') depth += 1
+		else if (ch === ')') depth = Math.max(0, depth - 1)
+		else if (ch === ';' && depth === 0) {
+			out.push(value.slice(start, i).trim())
+			start = i + 1
+		}
+	}
+	out.push(value.slice(start).trim())
+	return out.filter(Boolean)
+}
+
 function inlineStyleViolations(name: string): readonly string[] {
 	const out: string[] = []
 	for (const m of templateBlock(pages[name] ?? '').matchAll(LITERAL_STYLE)) {
 		const value = (m[2] ?? '').trim()
-		const decls = value
-			.split(';')
-			.map((d) => d.trim())
-			.filter(Boolean)
+		const decls = splitDeclarations(value)
 		if (decls.length > 0 && decls.every(declExempt)) continue
 		out.push(`style="${value}"`)
 	}
