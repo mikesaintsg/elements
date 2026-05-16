@@ -40,16 +40,11 @@
 
 		@include transition((gap var(--set-form-transition-duration)));
 
-		// .row modifier — label + control + submit on one wrapping row. Each
-		// label keeps its column layout (text on top, control below); only the
-		// outer flex direction flips so multiple label+control pairs flow
-		// horizontally and wrap on overflow.
-		&.row {
-			flex-direction: row;
-			flex-wrap: wrap;
-			align-items: end;
-			gap: var(--set-form-row-gap);
-		}
+		// `.row` is an element-LOCAL modifier (deliberate consumer signal,
+		// must beat component chrome) → it lives in
+		// `modifiers/_local.scss § form.row`, not here. `--set-form-row-gap`
+		// above stays declared on the bare `<form>` as the element's token
+		// surface; `form.row` in the modifier layer consumes it.
 	}
 
 	// --------------------------------------------------------------------------
@@ -88,21 +83,10 @@
 		inline-size: 100%;
 	}
 
-	// .row form: keep labels as flex-column (text-on-top), but the
-	// label+input pair flows inline with siblings. Don't force inputs to 100%
-	// — they should sit at their intrinsic width so multiple fields can fit
-	// on one row, and don't let `align-items: stretch` (the column-flex
-	// default inside the label) blow them up to the label's width either.
-	form.row > label {
-		align-items: start;
-	}
-	form.row
-		> label
-		> :is(input:not(:where([type='checkbox'], [type='radio'], [type='color'])), textarea, select),
-	form.row
-		> :is(input:not(:where([type='checkbox'], [type='radio'], [type='color'])), textarea, select) {
-		inline-size: auto;
-	}
+	// `.row` form layout (label alignment + intrinsic input width) is an
+	// element-local modifier → migrated to `modifiers/_local.scss § form.row`
+	// alongside the base direction flip, so the whole `.row` behaviour lives
+	// in one charter-correct place in the modifiers layer.
 
 	// --------------------------------------------------------------------------
 	// `useForm` validation pipeline.

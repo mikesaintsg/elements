@@ -243,47 +243,13 @@
 			--set-button-dropdown-caret-open-rotate: 180deg;
 		}
 
-		// Sized + glyph-sourced to match the framework's other chevron /
-		// caret indicators (`<summary>::before`, `<select>` chevron,
-		// breadcrumb `::before` separator). All four surfaces converge
-		// on the same `0.75em` + `currentColor` mask-image recipe so the
-		// indicator size + colour track the button's own font + colour
-		// cascade.
-		//
-		// Spacing between the label and the caret uses the button
-		// baseline's own flex `gap` (declared above) — the `::after`
-		// pseudo participates as a real flex item and the parent gap
-		// (`calc(var(--spacing) * 2)`) handles the separation. Same
-		// idiom `<summary>` uses, not per-glyph `margin-inline-start`,
-		// so the spacing stays consistent across every chevron / caret
-		// surface.
-		//
-		// `[aria-expanded]` rotation: when the button owns a disclosure
-		// relationship — popover trigger with `aria-expanded`, accordion
-		// row toggle, expandable table-row button — the chevron rotates
-		// to mirror the open state. The framework's `<summary>::before`
-		// applies the same rotation contract for native `<details>`, so
-		// a row-expansion `<button class="subtle dropdown">` and a
-		// `<summary>` toggle in the same UI feel identical at the
-		// affordance level. Transitions through the framework-shared
-		// `--set-transition-duration` so the rotation animates in sync
-		// with every other "open this thing" affordance on the page.
-		button.dropdown::after {
-			content: '';
-			flex: none;
-			inline-size: var(--set-button-dropdown-caret-size);
-			block-size: var(--set-button-dropdown-caret-size);
-			background-color: currentColor;
-			mask-image: var(--set-button-dropdown-caret-image);
-			mask-repeat: no-repeat;
-			mask-position: center;
-			mask-size: contain;
-			opacity: var(--set-button-dropdown-caret-opacity);
-			@include transition(rotate var(--set-transition-duration));
-		}
-
-		button.dropdown[aria-expanded='true']::after {
-			rotate: var(--set-button-dropdown-caret-open-rotate);
-		}
+		// The `button.dropdown::after` caret PAINT rules are an
+		// element-local modifier (a deliberate `.dropdown` consumer
+		// opt-in that must beat the bare-button baseline) → they live in
+		// `modifiers/_local.scss § button.dropdown`. The
+		// `--set-button-dropdown-caret-*` token defaults stay declared
+		// here as the `<button>` element's token surface (consistent
+		// with every other `--set-button-*` default); the modifier rule
+		// in the modifiers layer consumes them.
 	}
 }

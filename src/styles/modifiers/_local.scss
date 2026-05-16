@@ -74,10 +74,11 @@
 @use '../mixins' as *;
 
 @layer modifiers {
-	// (Initial scaffold — element-local rules currently living in
-	// components/_form.scss and components/_badge.scss will migrate here
-	// in a follow-up refactor. The charter above defines the migration
-	// destination so the move is mechanical.)
+	// Every element-local modifier the framework ships lives here: the
+	// `.flat` / `.flush` / `.frame` families, plus `form.row` and
+	// `button.dropdown` (migrated out of `components/_form.scss` /
+	// `elements/_button.scss`, which keep only the bare element + its
+	// `--set-{tag}-*` token surface that these rules consume).
 
 	// ── input.flat / select.flat / textarea.flat ─────────────────────────
 	// `.flat` form controls dissolve into their surrounding surface (table
@@ -731,10 +732,71 @@
 		margin: 0;
 	}
 
-	// Reserved future rules — placeholders are intentional. Adding a real
-	// rule means deleting the matching comment and writing the selector
-	// + declaration block.
+	// ── form.row ────────────────────────────────────────────────────────────
+	// Element-local layout flip for `<form>`: the bare form is a flex
+	// COLUMN (label-stack); `.row` makes the outer flex flow horizontally
+	// and wrap, so multiple label+control pairs sit on one wrapping line.
+	// Migrated here from `components/_form.scss` — `.row` is a deliberate
+	// consumer signal that must beat the form component chrome, so it
+	// belongs in the modifiers layer (charter lines 17-20). The
+	// `--set-form-row-gap` token it consumes stays declared on the bare
+	// `<form>` element (its token surface) in `components/_form.scss`.
 	//
-	// form.row { flex-direction: row; flex-wrap: wrap; align-items: end; }
-	// button.dropdown { &::after { content: var(--set-button-dropdown-caret-image); } }
+	//   • base flip      — direction → row, wrap, end-aligned, row gap.
+	//   • label start    — labels stay column (text-on-top) but top-align
+	//                       so a tall + short field pair shares a baseline.
+	//   • intrinsic width — inputs/textarea/select drop the bare form's
+	//                       `inline-size: 100%` so several fit per row
+	//                       (checkbox / radio / color keep their intrinsic
+	//                       sizing — excluded, same as the baseline rule).
+	form.row {
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: end;
+		gap: var(--set-form-row-gap);
+	}
+	form.row > label {
+		align-items: start;
+	}
+	form.row
+		> label
+		> :is(input:not(:where([type='checkbox'], [type='radio'], [type='color'])), textarea, select),
+	form.row
+		> :is(input:not(:where([type='checkbox'], [type='radio'], [type='color'])), textarea, select) {
+		inline-size: auto;
+	}
+
+	// ── button.dropdown ─────────────────────────────────────────────────────
+	// Opt-in caret affordance for a `<button class="dropdown">` dropdown
+	// trigger (Mailbox / Bootstrap `.dropdown-toggle` parity, single-word
+	// name). Painted via `::after` with a `currentColor` mask so it tints
+	// through every variant / theme / forced-colors combo — the same
+	// recipe `<summary>::before`, the `<select>` chevron, and the
+	// breadcrumb separator use. Migrated here from `elements/_button.scss`
+	// — `.dropdown` is a deliberate consumer opt-in that must beat the
+	// bare-button baseline, so it belongs in the modifiers layer. The
+	// `--set-button-dropdown-caret-*` token defaults stay on `:root` in
+	// `elements/_button.scss` (the `<button>` token surface); these rules
+	// consume them. `[aria-expanded='true']` rotates the caret so a
+	// trigger owning a disclosure relationship flips in sync with the
+	// `<summary>` chevron. (Pseudo-element selectors — not bare
+	// `{tag}.{name}` openers — so outside the charter regex by design,
+	// same as the `aside[role='alert'].flat` exception above.)
+	button.dropdown::after {
+		content: '';
+		flex: none;
+		inline-size: var(--set-button-dropdown-caret-size);
+		block-size: var(--set-button-dropdown-caret-size);
+		background-color: currentColor;
+		mask-image: var(--set-button-dropdown-caret-image);
+		mask-repeat: no-repeat;
+		mask-position: center;
+		mask-size: contain;
+		opacity: var(--set-button-dropdown-caret-opacity);
+		@include transition(rotate var(--set-transition-duration));
+	}
+
+	button.dropdown[aria-expanded='true']::after {
+		rotate: var(--set-button-dropdown-caret-open-rotate);
+	}
 }

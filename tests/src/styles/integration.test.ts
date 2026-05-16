@@ -140,8 +140,15 @@ describe('Tailwind v4 utility ↔ framework modifier conflicts', () => {
 	it('the framework SCSS scan finds at least the canonical modifier set', () => {
 		// Sanity check: if the scanner regressed and returns an empty set,
 		// the conflict assertion above would pass vacuously. Verify the scan
-		// picks up known framework modifiers.
-		const mustFind = ['primary', 'small', 'large', 'subtle', 'filled', 'disabled', 'row']
+		// picks up known framework modifiers. These are all BARE-name
+		// dimension modifiers (`.primary` / `.small` / …) — the only kind
+		// the Tailwind-conflict scan targets. Element-LOCAL modifiers
+		// (`form.row`, `button.dropdown`, `details.flush`) are element-
+		// scoped compounds by charter, deliberately NOT bare names, so they
+		// don't appear here and can't collide with a Tailwind bare utility
+		// (this is why `.row` is absent: it is now the element-scoped
+		// `form.row` in modifiers/_local.scss, not a bare `.row`).
+		const mustFind = ['primary', 'small', 'large', 'subtle', 'filled', 'disabled']
 		for (const name of mustFind) {
 			expect(frameworkModifiers.has(name)).toBe(true)
 		}
