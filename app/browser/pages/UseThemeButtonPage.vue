@@ -116,7 +116,7 @@ const mute = useButton(muteButton, {
 			page reload, and the framework's matchMedia listener updates the resolved
 			<code>mode</code> ref so the sun/moon icon in the next section stays accurate too.
 		</p>
-		<menu class="theme-picker" role="radiogroup" aria-label="Theme">
+		<menu class="showcase-theme-picker" role="radiogroup" aria-label="Theme">
 			<li v-for="option in themeOptions" :key="option.value">
 				<button
 					type="button"
@@ -149,12 +149,12 @@ const mute = useButton(muteButton, {
 			matchMedia listener wired inside the composable. Bind <code>mode</code> to anything binary — a
 			sun/moon icon, a <code>:class</code> hook, a status pill.
 		</p>
-		<div class="mode-display">
+		<div class="showcase-mode-display">
 			<div
-				class="mode-card"
+				class="showcase-mode-card"
 				:class="theme.mode.value === 'dark' ? 'tertiary filled' : 'warning subtle'"
 			>
-				<span aria-hidden="true" class="mode-icon">
+				<span aria-hidden="true" class="showcase-mode-icon">
 					{{ theme.mode.value === 'dark' ? '🌙' : '☀️' }}
 				</span>
 				<div>
@@ -391,7 +391,7 @@ const bookmark = useButton(button)
 </template>
 
 <style scoped>
-.theme-picker {
+.showcase-theme-picker {
 	display: flex;
 	gap: 0.25rem;
 	padding: 0.25rem;
@@ -403,11 +403,11 @@ const bookmark = useButton(button)
 	inline-size: fit-content;
 }
 
-.theme-picker > li {
+.showcase-theme-picker > li {
 	display: contents;
 }
 
-.theme-picker button {
+.showcase-theme-picker button {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.375rem;
@@ -424,23 +424,23 @@ const bookmark = useButton(button)
 		color 150ms ease;
 }
 
-.theme-picker button:hover {
+.showcase-theme-picker button:hover {
 	color: var(--color-text);
 	background: color-mix(in oklch, var(--color-canvas) 60%, transparent);
 }
 
-.theme-picker button.active {
+.showcase-theme-picker button.active {
 	background: var(--color-canvas);
 	color: var(--color-text-strong);
 	box-shadow: var(--set-box-shadow-small);
 }
 
-.mode-display {
+.showcase-mode-display {
 	display: flex;
 	justify-content: stretch;
 }
 
-.mode-card {
+.showcase-mode-card {
 	display: flex;
 	gap: 1rem;
 	align-items: center;
@@ -450,11 +450,11 @@ const bookmark = useButton(button)
 	max-inline-size: 28rem;
 }
 
-.mode-card p {
+.showcase-mode-card p {
 	margin-block: 0.125rem 0;
 }
 
-.mode-icon {
+.showcase-mode-icon {
 	font-size: 2rem;
 	line-height: 1;
 }

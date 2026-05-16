@@ -208,7 +208,7 @@ const lifecycleDropdown = useMenu(lifecycleToggle, lifecycleMenu, {
 			item (the framework's <code>&lt;button&gt;</code> baseline does this; the composable just gets
 			focus to the right item).
 		</p>
-		<div class="dropdown-stage">
+		<div class="showcase-dropdown-stage">
 			<button ref="defaultToggle" type="button" class="dropdown">Open menu</button>
 		</div>
 		<menu ref="defaultMenu" popover>
@@ -247,7 +247,7 @@ const dropdown = useMenu(toggle, menu, { placement: 'bottom-start' })
 			12 placement values are available; the resolved side may differ from the requested side once
 			<code>position-try-fallbacks</code> has flipped a clipping placement.
 		</p>
-		<menu class="placement-grid" aria-label="Placement">
+		<menu class="showcase-placement-grid" aria-label="Placement">
 			<li v-for="option in placementOptions" :key="option">
 				<button
 					type="button"
@@ -259,7 +259,7 @@ const dropdown = useMenu(toggle, menu, { placement: 'bottom-start' })
 				</button>
 			</li>
 		</menu>
-		<div class="dropdown-stage">
+		<div class="showcase-dropdown-stage">
 			<button ref="placedToggle" type="button" class="dropdown">placed: {{ livePlacement }}</button>
 		</div>
 		<menu ref="placedMenu" popover>
@@ -288,7 +288,7 @@ placement.value = 'top-end' // panel re-anchors immediately</code></pre>
 			viewport) and one with <code>flip: 8</code> (asks for room for 8 rows before flipping). Both
 			render the same 4-item menu — the difference shows up near a viewport edge.
 		</p>
-		<div class="dropdown-stage" style="gap: 1rem">
+		<div class="showcase-dropdown-stage" style="gap: 1rem">
 			<button ref="flipFloorToggle" type="button" class="dropdown">flip: 0 (never flip)</button>
 			<button ref="flipCeilingToggle" type="button" class="dropdown">flip: 8 (needs 8 rows)</button>
 		</div>
@@ -332,7 +332,7 @@ useMenu(toggleRef, menuRef, { placement: 'bottom-start', flip: 8 })
 			<strong>persistent filter menu</strong> (<code>inside: false</code>) where the user toggles
 			multiple checkboxes before pressing Escape or clicking outside.
 		</p>
-		<div class="dropdown-stage flex flex-wrap gap-4">
+		<div class="showcase-dropdown-stage flex flex-wrap gap-4">
 			<button ref="stickyToggle" type="button" class="dropdown">Sticky — all dismiss off</button>
 			<button ref="filterToggle" type="button" class="dropdown">
 				Filters ({{ filterSummary }})
@@ -350,18 +350,18 @@ useMenu(toggleRef, menuRef, { placement: 'bottom-start', flip: 8 })
 		<menu ref="filterMenu" popover>
 			<h6>Issue types</h6>
 			<li>
-				<label class="filter-row"> <input v-model="filters.bugs" type="checkbox" /> Bugs </label>
+				<label class="showcase-filter-row"> <input v-model="filters.bugs" type="checkbox" /> Bugs </label>
 			</li>
 			<li>
-				<label class="filter-row">
+				<label class="showcase-filter-row">
 					<input v-model="filters.features" type="checkbox" /> Features
 				</label>
 			</li>
 			<li>
-				<label class="filter-row"> <input v-model="filters.docs" type="checkbox" /> Docs </label>
+				<label class="showcase-filter-row"> <input v-model="filters.docs" type="checkbox" /> Docs </label>
 			</li>
 			<li>
-				<label class="filter-row">
+				<label class="showcase-filter-row">
 					<input v-model="filters.chores" type="checkbox" /> Chores
 				</label>
 			</li>
@@ -405,7 +405,7 @@ useMenu(toggleRef, menuRef, {
 				</label>
 			</li>
 		</menu>
-		<div class="dropdown-stage">
+		<div class="showcase-dropdown-stage">
 			<button ref="lifecycleToggle" type="button" class="dropdown">Try to open</button>
 		</div>
 		<menu ref="lifecycleMenu" popover>
@@ -511,7 +511,7 @@ toggle.addEventListener('elements:menu:open', () =&gt; { /* ... */ })</code></pr
 </template>
 
 <style scoped>
-.placement-grid {
+.showcase-placement-grid {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 0.375rem;
@@ -521,19 +521,19 @@ toggle.addEventListener('elements:menu:open', () =&gt; { /* ... */ })</code></pr
 	max-inline-size: 24rem;
 }
 
-.placement-grid button {
+.showcase-placement-grid button {
 	inline-size: 100%;
 	font-family: var(--font-mono, monospace);
 	font-size: 0.75rem;
 }
 
-.placement-grid button.active {
+.showcase-placement-grid button.active {
 	background: color-mix(in oklch, var(--color-primary) 18%, var(--color-canvas));
 	color: var(--color-primary-text-emphasis);
 	border-color: color-mix(in oklch, var(--color-primary) 40%, var(--color-border));
 }
 
-.dropdown-stage {
+.showcase-dropdown-stage {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
@@ -547,7 +547,7 @@ toggle.addEventListener('elements:menu:open', () =&gt; { /* ... */ })</code></pr
 	margin-block-end: 1rem;
 }
 
-.filter-row {
+.showcase-filter-row {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;

@@ -223,31 +223,31 @@ const cancelPopover = usePopover({
 			<code>position-try-fallbacks</code> still flips a popover to the opposite side when the
 			requested side doesn't fit the viewport.
 		</p>
-		<div class="placement-stage">
+		<div class="showcase-placement-stage">
 			<button ref="topAnchor" type="button" class="dropdown">.top</button>
 			<button ref="endAnchor" type="button" class="dropdown">.end</button>
 			<button ref="bottomAnchor" type="button" class="dropdown">.bottom</button>
 			<button ref="startAnchor" type="button" class="dropdown">.start</button>
 		</div>
-		<div ref="topPanel" popover class="demo-popover">
+		<div ref="topPanel" popover class="showcase-demo-popover">
 			<small>Placement: <strong>top</strong></small>
 			<menu>
 				<li><button type="button" class="subtle" @click="topPopover.hide()">Close</button></li>
 			</menu>
 		</div>
-		<div ref="endPanel" popover class="demo-popover">
+		<div ref="endPanel" popover class="showcase-demo-popover">
 			<small>Placement: <strong>end</strong></small>
 			<menu>
 				<li><button type="button" class="subtle" @click="endPopover.hide()">Close</button></li>
 			</menu>
 		</div>
-		<div ref="bottomPanel" popover class="demo-popover">
+		<div ref="bottomPanel" popover class="showcase-demo-popover">
 			<small>Placement: <strong>bottom</strong></small>
 			<menu>
 				<li><button type="button" class="subtle" @click="bottomPopover.hide()">Close</button></li>
 			</menu>
 		</div>
-		<div ref="startPanel" popover class="demo-popover">
+		<div ref="startPanel" popover class="showcase-demo-popover">
 			<small>Placement: <strong>start</strong></small>
 			<menu>
 				<li><button type="button" class="subtle" @click="startPopover.hide()">Close</button></li>
@@ -262,7 +262,7 @@ const cancelPopover = usePopover({
 			are exercised below — the resolved side appears inside the panel after
 			<code>position-try-fallbacks</code> has had its say.
 		</p>
-		<menu class="placement-grid" aria-label="Placement">
+		<menu class="showcase-placement-grid" aria-label="Placement">
 			<li v-for="option in placementOptions" :key="option">
 				<button
 					type="button"
@@ -274,12 +274,12 @@ const cancelPopover = usePopover({
 				</button>
 			</li>
 		</menu>
-		<div class="placement-stage">
+		<div class="showcase-placement-stage">
 			<button ref="dynamicAnchor" type="button">
 				Open popover ({{ dynamicPopover.visible.value ? 'open' : 'closed' }})
 			</button>
 		</div>
-		<div ref="dynamicPanel" popover class="demo-popover">
+		<div ref="dynamicPanel" popover class="showcase-demo-popover">
 			<small>
 				Requested <code>{{ dynamicPlacement }}</code> · resolved
 				<strong>{{ dynamicPopover.placement.value }}</strong>
@@ -311,10 +311,10 @@ usePopover({ anchor, panel, placement, trigger: { click: true } })</code></pre>
 			it auto-closes. The native popover attribute can't do hover or focus triggers — those are
 			JS-only because the platform doesn't expose them declaratively.
 		</p>
-		<div class="placement-stage">
+		<div class="showcase-placement-stage">
 			<button ref="hoverAnchor" type="button">Hover or Tab to me</button>
 		</div>
-		<div ref="hoverPanel" popover class="demo-popover">
+		<div ref="hoverPanel" popover class="showcase-demo-popover">
 			<p>
 				<small>
 					Triggered by <strong>hover</strong> or <strong>focus</strong>; delayed by
@@ -342,10 +342,10 @@ usePopover({ anchor, panel, placement, trigger: { click: true } })</code></pre>
 			click). Each path honors the same delay + dismiss policy, so the panel doesn't flicker if the
 			cursor sweeps past and Tab key navigation stays smooth.
 		</p>
-		<div class="placement-stage">
+		<div class="showcase-placement-stage">
 			<button ref="multiAnchor" type="button">Hover, focus (Tab), or click me</button>
 		</div>
-		<div ref="multiPanel" popover class="demo-popover">
+		<div ref="multiPanel" popover class="showcase-demo-popover">
 			<p>
 				<small>
 					Opened by <strong>any</strong> of: hover · focus · click. Same panel, same dismiss path.
@@ -369,11 +369,11 @@ usePopover({ anchor, panel, placement, trigger: { click: true } })</code></pre>
 			or a filter sheet that closes only via an explicit <code>.hide()</code> call (lock the user in
 			until they confirm).
 		</p>
-		<div class="placement-stage flex flex-wrap gap-4">
+		<div class="showcase-placement-stage flex flex-wrap gap-4">
 			<button ref="stickyAnchor" type="button">Sticky — both off (button only)</button>
 			<button ref="escapeAnchor" type="button">Escape only</button>
 		</div>
-		<div ref="stickyPanel" popover class="demo-popover">
+		<div ref="stickyPanel" popover class="showcase-demo-popover">
 			<h6 class="mt-0 mb-2">Sticky panel</h6>
 			<p>
 				<small>
@@ -387,7 +387,7 @@ usePopover({ anchor, panel, placement, trigger: { click: true } })</code></pre>
 				</li>
 			</menu>
 		</div>
-		<div ref="escapePanel" popover class="demo-popover">
+		<div ref="escapePanel" popover class="showcase-demo-popover">
 			<h6 class="mt-0 mb-2">Escape-only panel</h6>
 			<p>
 				<small>
@@ -431,10 +431,10 @@ usePopover({
 				</label>
 			</li>
 		</menu>
-		<div class="placement-stage">
+		<div class="showcase-placement-stage">
 			<button ref="cancelAnchor" type="button">Try to open</button>
 		</div>
-		<div ref="cancelPanel" popover class="demo-popover">
+		<div ref="cancelPanel" popover class="showcase-demo-popover">
 			<p>
 				<small>
 					I only open when the checkbox above is enabled. Otherwise <code>show</code> is
@@ -552,7 +552,7 @@ usePopover({
 </template>
 
 <style scoped>
-.placement-grid {
+.showcase-placement-grid {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 0.375rem;
@@ -562,13 +562,13 @@ usePopover({
 	max-inline-size: 24rem;
 }
 
-.placement-grid button {
+.showcase-placement-grid button {
 	inline-size: 100%;
 	font-family: var(--font-mono, monospace);
 	font-size: 0.75rem;
 }
 
-.placement-grid button.active {
+.showcase-placement-grid button.active {
 	background: color-mix(in oklch, var(--color-primary) 18%, var(--color-canvas));
 	color: var(--color-primary-text-emphasis);
 	border-color: color-mix(in oklch, var(--color-primary) 40%, var(--color-border));
@@ -577,7 +577,7 @@ usePopover({
 /* Placement showcase — generous padding-block so every side has room
  * to land without `position-try-fallbacks` flipping the popover away
  * from the requested side. Mirrors PopoverSurfacesPage §4's stage. */
-.placement-stage {
+.showcase-placement-stage {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
@@ -591,7 +591,7 @@ usePopover({
 	margin-block-end: 1rem;
 }
 
-.demo-popover {
+.showcase-demo-popover {
 	min-inline-size: 14rem;
 	max-inline-size: 20rem;
 }
