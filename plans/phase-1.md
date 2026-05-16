@@ -4,6 +4,28 @@
 
 ---
 
+## Progress
+
+> Live execution tracker. Status: ☐ todo · 🔄 in progress · ✅ done.
+
+Foundation milestone shipped in commit `92936f5` (58 files: driver + `_contract` + 43 scaffolds + 1D-d skeleton + barrel-import fix). `npm run check` 0/0, guides 3475/3475, `app:core` 633 pass — §1–§6 (uniformity / skeleton / total bijection) fully green. The 24 remaining `app:core` failures are the precise 1D-c worklist enumerated below.
+
+| WS | Item | Status | Notes |
+| --- | --- | --- | --- |
+| 1A | Test infra | ✅ `92936f5` | **Decision:** suite lives under `tests/app/core/pages/` (not `…/browser/`). The `app:core` glob already covers `tests/app/core/**`; `router.test.ts` is the sibling text-parity precedent; `app:browser` has no `node:fs`. Zero `vite.config.ts` change. `readAllPages()` added to `setupServer.ts`. **Also fixed:** `router.test.ts` / `constants.test.ts` imported the `app/browser` barrel, which `export *`s `./router.js` → pulls 43 `.vue` into the no-vue-plugin `app:core` (pre-existing collection break) — repointed to the submodules. |
+| 1E | Lock the maps (`_contract.ts`) | ✅ `92936f5` | `PAGE_EXEMPTIONS` / `PAGE_SURFACE_BUNDLES` / `PAGE_H1_DEMO` / `INTRO_ID_EXCEPTIONS` (empty — convention total). |
+| 1D-d | Convention nits (skeleton-blocking) | ✅ `92936f5` | JSDoc leading-space + `{Page} — ` first line (Home/Sectioning/Typography); import regroup (Button/DialogElement); intro-id fixes (article-card / inline-atoms / scroll-and-transition); h1↔title alignment (route `Home`→`Elements`; `Sectioning content`→`Sectioning`; `useTheme &amp;`→`useTheme /`). |
+| 1B | `pages.test.ts` meta-driver | ✅ `92936f5` | §1–§6 green + faithful §7/§8 (per-decl exemption, top-level sections, comment-stripped selectors). Drives the 24-item 1D-c worklist below. |
+| 1C | 43 per-page scaffolds | ✅ `92936f5` | Thin/real/page-specific; Phase 2 fills bespoke. |
+| 1D-c | showcase §2/§4 violations | 🔄 in progress | **Worklist (24, driver-enumerated):** §7 inline-style (14): ArticleCard, Button, Details, DialogElement, FormSurfaces, InlineAtoms, Media, Nav, PopoverSurfaces, Tokens, UseNav, UsePointer, UseTable, UseTooltip. §8 scoped-namespace (10): FormControls, UseDetails, UseDialog, UseDragDrop, UseMenu, UsePopover, UseTabs, UseThemeButton, UseToast, UseTooltip. |
+| 1D-a | page↔src factual drift (10) | ☐ todo | The 10-row table in §1D-a below. |
+| 1D-e | re-verify low-confidence flags | ☐ todo | |
+| — | Phase close (check + guides 3475 + test:app) | ☐ todo | Gated on 1D-c/a/e all resolved. |
+
+**Execution order (as run):** 1A → 1E → 1D-d → 1B → 1C → [foundation commit `92936f5`] → 1D-c → 1D-a → 1D-e → close. 1D-d/1E preceded 1B because the strict meta-driver can only go green against an already-uniform skeleton + the declared allow-list maps.
+
+---
+
 ## Surface
 
 The guides suite is the template. It has three layers; the pages suite mirrors each:
