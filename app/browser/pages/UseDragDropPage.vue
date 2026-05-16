@@ -232,19 +232,19 @@ const clearOutbox = (): void => {
 			it (the framework's default for list rows that double as selectable items). Try dragging a
 			single row, then Ctrl/Cmd-click to multi-select and drag the set.
 		</p>
-		<ol ref="reorderHost" class="track-list">
+		<ol ref="reorderHost" class="showcase-track-list">
 			<li
 				v-for="(track, index) in reorderList"
 				:key="track.id"
 				:data-index="index"
-				class="track-row"
+				class="showcase-track-row"
 			>
-				<span class="track-index">{{ index + 1 }}</span>
-				<span class="track-meta">
+				<span class="showcase-track-index">{{ index + 1 }}</span>
+				<span class="showcase-track-meta">
 					<strong>{{ track.title }}</strong>
 					<small>{{ track.artist }}</small>
 				</span>
-				<span class="track-duration">
+				<span class="showcase-track-duration">
 					<small>{{ track.duration }}</small>
 				</span>
 			</li>
@@ -284,19 +284,19 @@ useDrag&lt;Track&gt;(host, {
 			Try it: the grip column on the left starts a drag; the play button on the right (wrapped in
 			<code>.no-drag</code> for belt-and-suspenders) still clicks without ever beginning a drag.
 		</p>
-		<menu ref="handleHost" class="track-list">
+		<menu ref="handleHost" class="showcase-track-list">
 			<li
 				v-for="(track, index) in handleList"
 				:key="track.id"
 				:data-index="index"
-				class="track-row"
+				class="showcase-track-row"
 			>
-				<span class="drag-handle" aria-label="Reorder track" title="Drag to reorder">⋮⋮</span>
-				<span class="track-meta">
+				<span class="showcase-drag-handle" aria-label="Reorder track" title="Drag to reorder">⋮⋮</span>
+				<span class="showcase-track-meta">
 					<strong>{{ track.title }}</strong>
 					<small>{{ track.artist }}</small>
 				</span>
-				<span class="track-duration">
+				<span class="showcase-track-duration">
 					<small>{{ track.duration }}</small>
 				</span>
 				<button
@@ -318,7 +318,7 @@ useDrag&lt;Track&gt;(host, {
 			<summary><small>Markup</small></summary>
 			<pre><code>// useDrag(host, { list })
 // &lt;li :data-index="i"&gt;
-//   &lt;span class="drag-handle"&gt;⋮⋮&lt;/span&gt;
+//   &lt;span class="showcase-drag-handle"&gt;⋮⋮&lt;/span&gt;
 //   &lt;span&gt;...content...&lt;/span&gt;
 //   &lt;button class="no-drag" @click="..."&gt;Play&lt;/button&gt;
 // &lt;/li&gt;</code></pre>
@@ -337,20 +337,20 @@ useDrag&lt;Track&gt;(host, {
 			Rows get <code>.selected</code> while selected (independent of <code>.dragging</code>), so the
 			visual states are stylable separately.
 		</p>
-		<ol ref="selectionHost" class="track-list">
+		<ol ref="selectionHost" class="showcase-track-list">
 			<li
 				v-for="(track, index) in selectionList"
 				:key="track.id"
 				:data-index="index"
-				class="track-row"
+				class="showcase-track-row"
 				:aria-selected="selection.selected.value.has(index) ? 'true' : 'false'"
 			>
-				<span class="track-index">{{ index + 1 }}</span>
-				<span class="track-meta">
+				<span class="showcase-track-index">{{ index + 1 }}</span>
+				<span class="showcase-track-meta">
 					<strong>{{ track.title }}</strong>
 					<small>{{ track.artist }}</small>
 				</span>
-				<span class="track-duration">
+				<span class="showcase-track-duration">
 					<small>{{ track.duration }}</small>
 				</span>
 			</li>
@@ -392,40 +392,40 @@ useDrag&lt;Track&gt;(host, {
 			drop zone still flips for any compatible hover, which the <code>relatedTarget</code>-aware
 			factory tracks correctly across nested children.
 		</p>
-		<div class="cross-zone">
-			<section ref="trayHost" class="tray" aria-label="Attachment library">
+		<div class="showcase-cross-zone">
+			<section ref="trayHost" class="showcase-tray" aria-label="Attachment library">
 				<h6>Attachment library</h6>
 				<article
 					v-for="(item, index) in tray"
 					:key="item.id"
 					:data-index="index"
-					class="tray-item"
+					class="showcase-tray-item"
 					:aria-disabled="outboxIds.has(item.id) ? 'true' : 'false'"
 				>
-					<span class="tray-icon" aria-hidden="true">{{ item.icon }}</span>
-					<span class="tray-meta">
+					<span class="showcase-tray-icon" aria-hidden="true">{{ item.icon }}</span>
+					<span class="showcase-tray-meta">
 						<strong>{{ item.name }}</strong>
 						<small>{{ item.type }} · {{ formatSize(item.size) }}</small>
 					</span>
-					<small v-if="outboxIds.has(item.id)" class="tray-status">in outbox</small>
+					<small v-if="outboxIds.has(item.id)" class="showcase-tray-status">in outbox</small>
 				</article>
 			</section>
 			<section
 				ref="dropZone"
-				class="drop-zone"
+				class="showcase-drop-zone"
 				:class="{ active: drop.over.value, busy: traySource.dragging.value }"
 				aria-label="Outbox"
 			>
-				<header class="drop-zone-prompt">
+				<header class="showcase-drop-zone-prompt">
 					<strong v-if="drop.over.value">Release to attach</strong>
 					<strong v-else-if="traySource.dragging.value">Drop here to attach</strong>
 					<strong v-else>Outbox</strong>
 					<small> drag from the library — already-attached items are ignored on re-drop </small>
 				</header>
-				<ul v-if="outbox.length > 0" class="drop-zone-files">
+				<ul v-if="outbox.length > 0" class="showcase-drop-zone-files">
 					<li v-for="item in outbox" :key="item.id">
 						<span aria-hidden="true">{{ item.icon }}</span>
-						<span class="tray-meta">
+						<span class="showcase-tray-meta">
 							<strong>{{ item.name }}</strong>
 							<small>{{ item.type }} · {{ formatSize(item.size) }}</small>
 						</span>
@@ -439,7 +439,7 @@ useDrag&lt;Track&gt;(host, {
 						</button>
 					</li>
 				</ul>
-				<p v-else class="drop-zone-empty">
+				<p v-else class="showcase-drop-zone-empty">
 					<small>No attachments yet.</small>
 				</p>
 			</section>
@@ -588,7 +588,7 @@ useDrop(zoneRef, {
 </template>
 
 <style scoped>
-.track-list {
+.showcase-track-list {
 	list-style: none;
 	margin: 0;
 	padding: 0;
@@ -600,7 +600,7 @@ useDrop(zoneRef, {
 	background: var(--color-canvas);
 }
 
-.track-row {
+.showcase-track-row {
 	display: grid;
 	grid-template-columns: 2rem 1fr auto auto;
 	align-items: center;
@@ -616,21 +616,21 @@ useDrop(zoneRef, {
 	position: relative;
 }
 
-.track-row:hover {
+.showcase-track-row:hover {
 	background: color-mix(in oklch, var(--color-canvas-strong) 60%, transparent);
 }
 
-.track-row.selected {
+.showcase-track-row.selected {
 	background: color-mix(in oklch, var(--color-primary) 12%, transparent);
 	box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--color-primary) 35%, transparent);
 }
 
-.track-row.dragging {
+.showcase-track-row.dragging {
 	opacity: 0.4;
 }
 
-.track-row.drop-target.drop-indicator-before::before,
-.track-row.drop-target.drop-indicator-after::after {
+.showcase-track-row.drop-target.drop-indicator-before::before,
+.showcase-track-row.drop-target.drop-indicator-after::after {
 	content: '';
 	position: absolute;
 	inset-inline: 0.5rem;
@@ -640,15 +640,15 @@ useDrop(zoneRef, {
 	pointer-events: none;
 }
 
-.track-row.drop-indicator-before::before {
+.showcase-track-row.drop-indicator-before::before {
 	inset-block-start: -2px;
 }
 
-.track-row.drop-indicator-after::after {
+.showcase-track-row.drop-indicator-after::after {
 	inset-block-end: -2px;
 }
 
-.track-row .drag-handle {
+.showcase-track-row .showcase-drag-handle {
 	cursor: grab;
 	font-family: monospace;
 	letter-spacing: -0.1em;
@@ -657,35 +657,35 @@ useDrop(zoneRef, {
 	padding-inline: 0.25rem;
 }
 
-.track-row .drag-handle:hover {
+.showcase-track-row .showcase-drag-handle:hover {
 	color: var(--color-text);
 }
 
-.track-row .track-index {
+.showcase-track-row .showcase-track-index {
 	font-variant-numeric: tabular-nums;
 	color: var(--color-text-subtle);
 	font-size: 0.875rem;
 	text-align: center;
 }
 
-.track-row .track-meta {
+.showcase-track-row .showcase-track-meta {
 	display: flex;
 	flex-direction: column;
 	min-inline-size: 0;
 }
 
-.track-row .track-meta strong {
+.showcase-track-row .showcase-track-meta strong {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.track-row .track-duration {
+.showcase-track-row .showcase-track-duration {
 	font-variant-numeric: tabular-nums;
 	color: var(--color-text-subtle);
 }
 
-.cross-zone {
+.showcase-cross-zone {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 	gap: 1rem;
@@ -693,12 +693,12 @@ useDrop(zoneRef, {
 }
 
 @media (max-width: 36rem) {
-	.cross-zone {
+	.showcase-cross-zone {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
 
-.tray {
+.showcase-tray {
 	display: grid;
 	gap: 0.25rem;
 	align-content: start;
@@ -708,7 +708,7 @@ useDrop(zoneRef, {
 	background: var(--color-canvas);
 }
 
-.tray h6 {
+.showcase-tray h6 {
 	margin: 0 0 0.25rem;
 	color: var(--color-text-subtle);
 	font-size: 0.75rem;
@@ -716,7 +716,7 @@ useDrop(zoneRef, {
 	letter-spacing: 0.05em;
 }
 
-.tray-item {
+.showcase-tray-item {
 	display: grid;
 	grid-template-columns: 1.75rem minmax(0, 1fr) auto;
 	gap: 0.5rem;
@@ -731,49 +731,49 @@ useDrop(zoneRef, {
 		opacity 150ms ease;
 }
 
-.tray-item:hover {
+.showcase-tray-item:hover {
 	background: color-mix(in oklch, var(--color-primary) 8%, var(--color-canvas-strong));
 }
 
-.tray-item.dragging {
+.showcase-tray-item.dragging {
 	opacity: 0.45;
 	cursor: grabbing;
 }
 
-.tray-item[aria-disabled='true'] {
+.showcase-tray-item[aria-disabled='true'] {
 	opacity: 0.6;
 }
 
-.tray-icon {
+.showcase-tray-icon {
 	font-size: 1.25rem;
 	line-height: 1;
 	text-align: center;
 }
 
-.tray-meta {
+.showcase-tray-meta {
 	display: flex;
 	flex-direction: column;
 	min-inline-size: 0;
 }
 
-.tray-meta strong {
+.showcase-tray-meta strong {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.tray-meta small {
+.showcase-tray-meta small {
 	color: var(--color-text-subtle);
 	font-variant-numeric: tabular-nums;
 }
 
-.tray-status {
+.showcase-tray-status {
 	color: var(--color-text-subtle);
 	font-style: italic;
 	white-space: nowrap;
 }
 
-.drop-zone {
+.showcase-drop-zone {
 	display: flex;
 	flex-direction: column;
 	gap: 0.75rem;
@@ -787,17 +787,17 @@ useDrop(zoneRef, {
 		background-color 150ms ease;
 }
 
-.drop-zone.busy {
+.showcase-drop-zone.busy {
 	border-color: color-mix(in oklch, var(--color-primary) 60%, var(--color-border));
 }
 
-.drop-zone.active {
+.showcase-drop-zone.active {
 	border-color: var(--color-primary);
 	border-style: solid;
 	background: color-mix(in oklch, var(--color-primary) 8%, var(--color-canvas));
 }
 
-.drop-zone-prompt {
+.showcase-drop-zone-prompt {
 	display: grid;
 	gap: 0.125rem;
 	text-align: start;
@@ -805,16 +805,16 @@ useDrop(zoneRef, {
 	border-block-end: 1px dashed var(--color-border);
 }
 
-.drop-zone-prompt small {
+.showcase-drop-zone-prompt small {
 	color: var(--color-text-subtle);
 }
 
-.drop-zone-empty {
+.showcase-drop-zone-empty {
 	margin: 0;
 	color: var(--color-text-subtle);
 }
 
-.drop-zone-files {
+.showcase-drop-zone-files {
 	list-style: none;
 	margin: 0;
 	padding: 0;
@@ -822,7 +822,7 @@ useDrop(zoneRef, {
 	gap: 0.25rem;
 }
 
-.drop-zone-files li {
+.showcase-drop-zone-files li {
 	display: grid;
 	grid-template-columns: 1.75rem minmax(0, 1fr) auto;
 	gap: 0.5rem;
@@ -832,13 +832,13 @@ useDrop(zoneRef, {
 	border-radius: 0.375rem;
 }
 
-.drop-zone-files li > span[aria-hidden='true'] {
+.showcase-drop-zone-files li > span[aria-hidden='true'] {
 	font-size: 1.25rem;
 	line-height: 1;
 	text-align: center;
 }
 
-.drop-zone-files li button {
+.showcase-drop-zone-files li button {
 	padding-inline: 0.5rem;
 	font-size: 1rem;
 	line-height: 1;
