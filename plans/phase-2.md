@@ -6,14 +6,12 @@
 
 ## Surface
 
-Three new driver files + 43 filled per-page files, all in the **`app:browser`** project (the Phase-1 architecture pivot — NOT `app:core` node text-parity). Each imports the route table + page components from the `app/browser` barrel and reads raw `src/` / `.vue` source via `import.meta.glob('…', { query: '?raw', eager: true })` — the server-less idiom `tests/src/browser` uses (no `setupServer` / `readAllPages()` / `node:fs`). Per-page files additionally **mount the component in real Chromium** (the Phase-1 scaffolds already do this), so bespoke parity can assert against the *rendered DOM*, not just parse `.vue` text — a stronger capability than this plan originally assumed.
+**One** consolidated parity driver + 43 filled per-page files, all in the **`app:browser`** project (the Phase-1 architecture pivot — NOT `app:core` node text-parity). Each imports the route table + page components from the `app/browser` barrel and reads raw `src/` / `.vue` source via `import.meta.glob('…', { query: '?raw', eager: true })` — the server-less idiom `tests/src/browser` uses (no `setupServer` / `readAllPages()` / `node:fs`). Per-page files additionally **mount the component in real Chromium** (the Phase-1 scaffolds already do this), so bespoke parity can assert against the *rendered DOM*, not just parse `.vue` text — a stronger capability than this plan originally assumed.
 
 | File                                          | Role                                                                                                  | Guide-suite analogue                                    |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `tests/app/browser/pages/_contract.ts`        | exported maps from Phase 1 (`PAGE_EXEMPTIONS`, `PAGE_SURFACE_BUNDLES`, …)                             | `src/browser/patterns.ts` registries                    |
-| `tests/app/browser/srcBrowserParity.test.ts`  | pages ↔ `src/browser` (elements / factories / component+surface+composable contracts) — bidirectional | `tests/guides/elements.test.ts` + `composables.test.ts` |
-| `tests/app/browser/srcStylesParity.test.ts`   | pages ↔ `src/styles` chrome-bearing partials, keyed off the contract registries                       | `tests/src/styles/*/_index.test.ts`                     |
-| `tests/app/browser/guidesParity.test.ts`      | pages ↔ guide topology + the guide-drift guard the existing guide tests miss                          | `tests/guides/showcase.test.ts`                         |
+| `tests/app/browser/parity.test.ts`            | **single** driver — pages ↔ `src/browser` (elements / factories / contracts, bidirectional) + pages ↔ `src/styles` chrome-bearing partials + pages ↔ guide topology / guide-drift guard. Three `describe` regions (SRC-BROWSER / SRC-STYLES / GUIDES), one file. | `tests/guides/elements.test.ts` + `composables.test.ts` + `showcase.test.ts`, fused |
 | `tests/app/browser/pages/{X}Page.test.ts` ×43 | each page's bespoke parity (filled from Phase-1 scaffolds)                                            | `tests/guides/{guide}.test.ts` ×12                      |
 
 Complements `tests/app/core/router.test.ts` (route **table** parity, still node `app:core`, unchanged in Phase 1) — Phase 2 tests the page **files** + the element/component/surface coverage that file never touches. **No assertion is duplicated across the two**; where they’d overlap (composable↔route), Phase 2 keys off the page file, router.test off the route literal.
@@ -60,19 +58,17 @@ Complements `tests/app/core/router.test.ts` (route **table** parity, still node 
 
 ## Workstreams
 
-### 2A — `srcBrowserParity.test.ts`
+### 2A — `tests/app/browser/parity.test.ts` (single consolidated driver)
 
-Iterate `elements`, `COMPONENT_/SURFACE_/COMPOSABLE_CONTRACTS` (barrel imports), the `create*` factory list + `.vue` page sources (both via `import.meta.glob('…', {query:'?raw'})`); resolve each through `PAGE_SURFACE_BUNDLES`; assert bidirectional coverage vs the barrel page exports (the Phase-1 idiom — no `readAllPages()` / node fs). Failure prints the unmapped registry key + the page expected to own it.
+One file, three top-level `describe` regions (commit once it's green; it is independent of 2B):
 
-### 2B — `srcStylesParity.test.ts`
+- **`parity — pages ↔ src/browser`** — iterate `elements`, `COMPONENT_/SURFACE_/COMPOSABLE_CONTRACTS` (barrel imports) + the `create*` factory list + `.vue` page sources (both via `import.meta.glob('…',{query:'?raw'})`); resolve each through `PAGE_SURFACE_BUNDLES`; assert bidirectional coverage vs the barrel page exports (no `readAllPages()` / node fs). Failure prints the unmapped registry key + the page expected to own it. (Contract §1–§4.)
+- **`parity — pages ↔ src/styles`** — for each chrome-bearing `components/`+`surfaces/`+`composables/` partial (globbed `?raw`), resolve its contract-registry entry → the owning page; assert that page demonstrates it. In-file comment: why `composables/` is the 6-partial subset (behaviour-only composables ship no chrome). (Contract §5.)
+- **`parity — pages ↔ guides`** — `ROUTE_GROUPS`→guide topology + the **scoped** guide-drift guard: ONLY the `composables.md` option/return/event cross-checks the existing `tests/guides/*` miss. The single-word / modifier-drift guard is **already shipped** in Phase 1 (`pages.test.ts` + `tests/{guides,src/styles}`) — do not duplicate. (Contract §6.)
 
-For each `components/`+`surfaces/`+`composables/` partial, resolve its contract-registry entry → the owning page; assert that page demonstrates it. Reuse `router.test.ts`'s composables result; add components/surfaces. Document (in-file) why `composables/` is a 6-partial subset (behavior-only composables ship no chrome).
+Rationale for one file (per the user's call): the three regions share the same imports (barrel `routes`/registries, the `?raw` globs, `PAGE_SURFACE_BUNDLES`, `classNameIsSanctioned`) and the same resolve-through-bundles helper — three files would triplicate that scaffolding. `pages.test.ts` (the Phase-1 meta-driver) stays separate (it's the `README.test.ts` analogue); `parity.test.ts` is the fused `{elements,composables,showcase}.test.ts` analogue; the 43 `pages/{X}Page.test.ts` are the per-`{guide}.test.ts` analogue.
 
-### 2C — `guidesParity.test.ts`
-
-`ROUTE_GROUPS`→guide topology (lift from router.test.ts if cleaner here) + the guide-drift guard (Contract §6). Scope tight — guides↔src is `tests/guides/*`'s job; this only adds the cross-checks the audit proved are missing.
-
-### 2D — Fill the 43 `pages/{X}Page.test.ts`
+### 2B — Fill the 43 `pages/{X}Page.test.ts`
 
 Per-category templates (Contract §7–§11). Sequence in verified batches by group, matching the guide-batch cadence:
 
@@ -84,9 +80,9 @@ Per-category templates (Contract §7–§11). Sequence in verified batches by gr
 6. Composables ×18 — the API-name guard (§9) is the high-value batch; it permanently prevents the staleness Phase-1 1D-a just fixed from recurring.
 7. `PAGE_EXEMPTIONS` ×3 — structure-only.
 
-### 2E — Tighten the meta-driver to README-grade totality
+### 2C — Tighten the meta-driver to README-grade totality
 
-Once 2A–2D are green, remove any temporary skips/soft-asserts in `pages.test.ts`; the bijection + skeleton must be a **clean total bijection with no exception list** — the exact bar `tests/guides/README.test.ts` holds (its comment: "a clean bijection with NO special-case exceptions"). `PAGE_EXEMPTIONS`/`PAGE_SURFACE_BUNDLES` remain (they're parity scoping, not bijection holes — every page still has its file + route).
+Once 2A–2B are green, remove any temporary skips/soft-asserts in `pages.test.ts`; the bijection + skeleton must be a **clean total bijection with no exception list** — the exact bar `tests/guides/README.test.ts` holds (its comment: "a clean bijection with NO special-case exceptions"). `PAGE_EXEMPTIONS`/`PAGE_SURFACE_BUNDLES` remain (they're parity scoping, not bijection holes — every page still has its file + route).
 
 ---
 
@@ -95,16 +91,14 @@ Once 2A–2D are green, remove any temporary skips/soft-asserts in `pages.test.t
 ```
 Phase 1 complete (structure + bijection + ALL 1D drift resolved + maps locked)
         │
-        ├─ 2A srcBrowserParity ─┐
-        ├─ 2B srcStylesParity ──┼─ (independent; land + commit each)
-        ├─ 2C guidesParity ─────┘
+        ├─ 2A  parity.test.ts  (one file, 3 describe regions) — land + commit
         │
-        └─ 2D per-page fill (7 batches, group order above)
+        └─ 2B  per-page fill (7 batches, group order above)
                  │
-                 └─ 2E meta-driver totality tighten  → suite complete
+                 └─ 2C  meta-driver totality tighten  → suite complete
 ```
 
-Dependencies: **all satisfied — Phase 1 is fully complete** (1A–1E + 1D-a/b/c/d/e + the single-word convention; full suite 6283 green). 2D-batch-6 (composable API guard) no longer races anything — 1D-a (UseToast/Pointer) and 1D-e (`UseCarouselReturn` start/stop, plus `createTooltip` `dataset.tooltipSide`/`place`, `VARIANTS_ALERT`=6, `div.stack`, `_anchor-position` defaults — all confirmed-correct) are resolved, so it asserts against a clean baseline. 2A/2B consume `PAGE_SURFACE_BUNDLES` (Phase-1 1E). 2C only *locks in* the already-aligned guides; the single-word/guide-drift modifier check is **already shipped** in `pages.test.ts` + `tests/{guides,src/styles}`, so 2C scopes to the remaining `composables.md` option/return/event cross-checks only.
+Dependencies: **all satisfied — Phase 1 is fully complete** (1A–1E + 1D-a/b/c/d/e + the single-word convention; full suite 6283 green). 2A consumes `PAGE_SURFACE_BUNDLES` (Phase-1 1E) and lands as one commit. 2B-batch-6 (composable API guard) no longer races anything — 1D-a (UseToast/Pointer) and 1D-e (`UseCarouselReturn` start/stop, `createTooltip` `dataset.tooltipSide`/`place`, `VARIANTS_ALERT`=6, `div.stack`, `_anchor-position` defaults — all confirmed-correct) are resolved, so it asserts against a clean baseline. The parity.test.ts GUIDES region only *locks in* the already-aligned guides; the single-word/guide-drift modifier check is **already shipped** in `pages.test.ts` + `tests/{guides,src/styles}`, so it scopes to the remaining `composables.md` option/return/event cross-checks only.
 
 ## Tests / exit criteria
 
