@@ -196,9 +196,11 @@ State modifiers mirror existing element pseudo-classes for hosts that don't expo
 
 ```scss
 .disabled {
-	cursor: not-allowed;
+	/* opacity + cursor are token-driven (consumer-retunable at :root);
+	   pointer-events: none is the hard interaction lock. */
+	cursor: var(--set-state-disabled-cursor); /* default not-allowed */
 	pointer-events: none;
-	opacity: 0.5;
+	opacity: var(--set-state-disabled-opacity); /* default 0.5 */
 }
 .active {
 	/* marker class — element files paint per-element active chrome */
@@ -210,6 +212,8 @@ State modifiers mirror existing element pseudo-classes for hosts that don't expo
 ```
 
 Use the state modifier when the native attribute isn't available. `<a class="disabled">` is the right pattern because `<a>` has no `disabled` attribute. `<button disabled>` is the right pattern because `<button>` does — the `.disabled` modifier is redundant and shouldn't be applied. Pair `.disabled` with `aria-disabled="true"` for accessibility on non-form elements.
+
+Retune the disabled affordance globally without forking the partial: override `--set-state-disabled-opacity` (default `0.5`) and/or `--set-state-disabled-cursor` (default `not-allowed`) at `:root`. `pointer-events: none` is intentionally not a token — it's the interaction lock, not a design value.
 
 `.active` is a marker modifier — element partials (button, anchor, tab) provide visual treatment via `&.active` rules. The modifier itself emits no declarations.
 

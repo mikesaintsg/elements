@@ -645,9 +645,9 @@ export const MODIFIER_DIMENSION_TOKENS: Readonly<Record<string, ModifierDimensio
 	},
 	state: {
 		classes: ['disabled', 'active', 'loading'],
-		tokens: { required: [] }, // direct CSS properties (opacity, cursor, pointer-events)
+		tokens: { required: [] }, // heterogeneous classes — no shared required set
 		rationale:
-			'State classes emit direct CSS properties (cursor, pointer-events, opacity). No context tokens are required today; future refactor may expose `--set-state-disabled-opacity` for global retuning.',
+			'State classes are heterogeneous (disabled dims/blocks, active marks, loading hints) so — unlike variant/size/style — there is no shared required-token set to enforce per-class; coverage is 0 by design. `.disabled` reads `--set-state-disabled-opacity` / `--set-state-disabled-cursor` for global `:root` retuning (the formerly-"future" refactor, now shipped); `pointer-events: none` stays the hard interaction lock.',
 	},
 	placement: {
 		classes: [

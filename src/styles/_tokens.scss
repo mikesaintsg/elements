@@ -52,6 +52,17 @@
 	--set-variant-border-width: 0;
 
 	// --------------------------------------------------------------------------
+	// State modifier tokens — the `.disabled` modifier's dimmed/blocked
+	// affordance. Every other framework value is consumer-retunable via a
+	// `--set-*` token; these close the last hard-coded gap so a consumer can
+	// dim disabled chrome differently (or swap the cursor) globally at
+	// `:root` without forking `modifiers/_states.scss`. `pointer-events:
+	// none` stays hard-coded — it's the interaction LOCK, not a design knob.
+	// --------------------------------------------------------------------------
+	--set-state-disabled-opacity: 0.5;
+	--set-state-disabled-cursor: not-allowed;
+
+	// --------------------------------------------------------------------------
 	// Default transition duration (Tailwind v4 doesn't ship a single duration).
 	// --------------------------------------------------------------------------
 	--set-transition-duration: 150ms;

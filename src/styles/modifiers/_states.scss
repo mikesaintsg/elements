@@ -13,9 +13,12 @@
 		// Mirrors the [disabled] / :disabled UA semantics for elements that
 		// don't carry a native disabled attribute (e.g. an <a> intended to
 		// look disabled). Use aria-disabled="true" for accessibility.
-		cursor: not-allowed;
+		// `opacity` + `cursor` are token-driven so consumers retune the
+		// dimmed/blocked affordance globally at `:root`; `pointer-events:
+		// none` is the interaction lock and stays hard-coded.
+		cursor: var(--set-state-disabled-cursor);
 		pointer-events: none;
-		opacity: 0.5;
+		opacity: var(--set-state-disabled-opacity);
 	}
 
 	.active {

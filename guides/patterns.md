@@ -308,11 +308,11 @@ Every `.{size}` declares: `padding-inline`, `padding-block`, `font-size`, `borde
 
 Every `.{style}` declares: `color`, `background-color`, `border-color`, `border-width`. These rewrite the element surface from the variant tier (`.subtle` reads `--set-variant-subtle-*`; `.filled` reads `--set-variant-*`). Partial coverage leaves the surface inconsistent across consumers.
 
-#### State — direct CSS properties, no tokens (current state)
+#### State — heterogeneous classes, no shared required set
 
-`.disabled`, `.active`, `.loading` emit direct properties (`cursor`, `pointer-events`, `opacity`). No context tokens are required today.
+`.disabled`, `.active`, `.loading` do different things (dim/block, mark, hint), so — unlike variant/size/style — there is no shared required-token set to enforce per-class; the dimension's coverage is 0 by design (`MODIFIER_DIMENSION_TOKENS.state.tokens.required` is `[]`).
 
-**Known customizability gap:** `.disabled { opacity: 0.5; }` hard-codes the opacity. A future refactor could expose `--set-state-disabled-opacity` so a single `:root` override retunes the disabled affordance framework-wide. Tracked in `MODIFIER_DIMENSION_TOKENS.state.rationale` for visibility; not enforced.
+`.disabled` is nonetheless fully consumer-retunable: it reads `--set-state-disabled-opacity` (default `0.5`) and `--set-state-disabled-cursor` (default `not-allowed`), so a single `:root` override retunes the disabled affordance framework-wide — closing the formerly-tracked customizability gap. `pointer-events: none` stays hard-coded — it is the interaction lock, not a design knob. `.active` / `.loading` remain marker classes (element files / composables own their visual treatment).
 
 #### Placement — direct CSS properties, no tokens by design
 

@@ -4,26 +4,26 @@
 
 Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. **All 43 showcase pages are built AND parity-tested** — the `tests/app/browser/` showcase suite shipped (a clean total page↔route↔barrel↔test bijection, the consolidated up/down-stream `parity.test.ts` driver, 43 per-page bespoke parity files asserting against the mounted Chromium DOM, and the §9 composable API-name guard that prevents the showcase silently rotting against `src/`). §9.1 (sidebar nav adjustments — collapsible groups, in-rail keyboard nav, per-page glyphs) is **complete**, and §9.2's **console-clean full-suite** passed (all 43 routes walked live — zero Vue/runtime/Vite/Tailwind warnings). The only remaining Phase-9 work is the **three human visual passes** (§9.2 — theme-retune / reduced-motion / forced-colors; mechanisms already enforced by contracts, these are the end-to-end eyeball confirmations), plus the post-Phase-9 audits queued under "Future work."
 
-**Tests:** full suite **145 files / 7023 tests pass** across every project (`src:core` / `src:browser` / `src:styles` / `app:core` / `app:browser` / `guides`); `npm run check` 0/0. The showcase parity contract is codified in [`guides/showcase.md`](guides/showcase.md) §Contract / §Tests.
+**Tests:** full suite **145 files / 7025 tests pass** across every project (`src:core` / `src:browser` / `src:styles` / `app:core` / `app:browser` / `guides`); `npm run check` 0/0. The showcase parity contract is codified in [`guides/showcase.md`](guides/showcase.md) §Contract / §Tests.
 
 ---
 
 ## At a glance
 
-| Phase | Description                                                                                                     | Status |
-| ----- | --------------------------------------------------------------------------------------------------------------- | ------ |
-| 0     | Repo bootstrap (deps, scripts, vite + vitest projects)                                                          | ✅     |
-| 1     | Cascade layer order + style entry                                                                               | ✅     |
-| 2     | Tokens (variant palette, `--set-*` namespace, theme)                                                            | ✅     |
-| 3     | Mixins + Sass-list constants                                                                                    | ✅     |
-| 4     | Modifiers (5 dimensions × full required-token coverage + element-local)                                         | ✅     |
-| 5     | Element baselines (94 partials; 49 substantive, 8 reset, rest passthrough)                                      | ✅     |
-| 6     | Components (18 partials; tag-rooted + class-component primitives)                                               | ✅     |
-| 7     | Surfaces (9 partials; pseudo-element + attribute)                                                               | ✅     |
-| 8     | Composables (20 use/create pairs + 6 chrome partials)                                                           | ✅     |
+| Phase | Description                                                                                                         | Status |
+| ----- | ------------------------------------------------------------------------------------------------------------------- | ------ |
+| 0     | Repo bootstrap (deps, scripts, vite + vitest projects)                                                              | ✅     |
+| 1     | Cascade layer order + style entry                                                                                   | ✅     |
+| 2     | Tokens (variant palette, `--set-*` namespace, theme)                                                                | ✅     |
+| 3     | Mixins + Sass-list constants                                                                                        | ✅     |
+| 4     | Modifiers (5 dimensions × full required-token coverage + element-local)                                             | ✅     |
+| 5     | Element baselines (94 partials; 49 substantive, 8 reset, rest passthrough)                                          | ✅     |
+| 6     | Components (18 partials; tag-rooted + class-component primitives)                                                   | ✅     |
+| 7     | Surfaces (9 partials; pseudo-element + attribute)                                                                   | ✅     |
+| 8     | Composables (20 use/create pairs + 6 chrome partials)                                                               | ✅     |
 | 9     | Showcase pages — 43/43 built + parity-tested; §9.1 sidebar + §9.2 console-clean done (3 human visual passes remain) | 🟡     |
-| 10    | Distribution (build + pack)                                                                                     | ✅     |
-| 11    | Invariant verification (11 codified contracts)                                                                  | ✅     |
+| 10    | Distribution (build + pack)                                                                                         | ✅     |
+| 11    | Invariant verification (11 codified contracts)                                                                      | ✅     |
 
 For per-layer details see the matching spec guide: [tokens.md](guides/tokens.md), [mixins.md](guides/mixins.md), [modifiers.md](guides/modifiers.md), [elements.md](guides/elements.md), [components.md](guides/components.md), [surfaces.md](guides/surfaces.md), [composables.md](guides/composables.md), [patterns.md](guides/patterns.md) (codified contracts).
 
@@ -62,9 +62,9 @@ The flat sidebar list worked for 14 pages; with all 43 it was a 42-line scroll �
 ### 9.2 Cross-page polish (after all pages exist)
 
 - ✅ **Console-clean full-suite** — walked all 43 routes live on the dev server (hash-driving every page mount): **zero** `console.error`/`warn`, zero uncaught errors, empty browser console buffer, zero dev-server (Vite/Tailwind) warnings. Automated, repeatable via the preview harness.
-- ⬜ **Theme retune end-to-end** — *human visual pass.* Pin a brand color at `:root` and walk every page; verify the cascade reaches focus rings / toasts / alerts / selections / popovers / tabs / breadcrumbs. (Mechanism auto-verified: a `:root` `--color-primary` override resolves and the `--set-*` → variant cascade is enforced by `tokens.test.ts` + the variant-cascade contracts — this item is the *visual* end-to-end confirmation.)
-- ⬜ **Reduced-motion full-suite** — *human visual pass.* Verify every animation + transition collapses across all 43 pages (paired-mixin coverage already enforced by the surface / component / composable / motion contracts — this is the visual confirmation).
-- ⬜ **Forced-colors full-suite** — *human visual pass.* Windows High Contrast walkthrough (per-element coverage already enforced by [`patterns.test.ts`](tests/guides/patterns.test.ts) § interactive; this is the end-to-end visual pass).
+- ⬜ **Theme retune end-to-end** — _human visual pass._ Pin a brand color at `:root` and walk every page; verify the cascade reaches focus rings / toasts / alerts / selections / popovers / tabs / breadcrumbs. (Mechanism auto-verified: a `:root` `--color-primary` override resolves and the `--set-*` → variant cascade is enforced by `tokens.test.ts` + the variant-cascade contracts — this item is the _visual_ end-to-end confirmation.)
+- ⬜ **Reduced-motion full-suite** — _human visual pass._ Verify every animation + transition collapses across all 43 pages (paired-mixin coverage already enforced by the surface / component / composable / motion contracts — this is the visual confirmation).
+- ⬜ **Forced-colors full-suite** — _human visual pass._ Windows High Contrast walkthrough (per-element coverage already enforced by [`patterns.test.ts`](tests/guides/patterns.test.ts) § interactive; this is the end-to-end visual pass).
 
 ---
 
@@ -72,7 +72,7 @@ The flat sidebar list worked for 14 pages; with all 43 it was a 42-line scroll �
 
 ### Token surface refinements
 
-- ⬜ **`.disabled` modifier customizability gap** — `.disabled` hard-codes `opacity: 0.5`, `cursor: not-allowed`, `pointer-events: none`. Expose as `--set-state-disabled-{opacity, cursor}` so consumers can retune globally at `:root` (see [patterns.md](guides/patterns.md) §6.4 and `MODIFIER_DIMENSION_TOKENS.state.rationale`).
+- ✅ **`.disabled` modifier customizability gap** — closed. `.disabled` now reads `--set-state-disabled-opacity` (default `0.5`) + `--set-state-disabled-cursor` (default `not-allowed`), declared at `:root` in `_tokens.scss`, mirrored in the TS `tokens.state.disabled` registry, with `MODIFIER_DIMENSION_TOKENS.state.rationale` + [patterns.md](guides/patterns.md) §6.4 + [modifiers.md](guides/modifiers.md) updated. `pointer-events: none` stays hard-coded (interaction lock, not a design knob). Browser-verified: a single `:root` override retunes the disabled affordance framework-wide; runtime-resolution + registry parity tests pass (full suite 7025).
 - ⬜ **Composable state-attribute audit** — review every `[data-{name}-*]` attribute name for consistency; document the canonical set in [composables.md](guides/composables.md).
 
 ### Refactor opportunities

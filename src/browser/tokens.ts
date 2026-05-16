@@ -263,6 +263,15 @@ export const tokens = {
 		borderWidth: '--set-style-border-width',
 	},
 
+	// State context — the `.disabled` modifier's retunable affordance
+	// (`pointer-events: none` is the interaction lock, not a token).
+	state: {
+		disabled: {
+			opacity: '--set-state-disabled-opacity',
+			cursor: '--set-state-disabled-cursor',
+		},
+	},
+
 	// Element-scoped tokens declared on `button` itself.
 	button: {
 		color: '--set-button-color',
