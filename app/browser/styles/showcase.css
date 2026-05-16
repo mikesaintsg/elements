@@ -730,3 +730,66 @@
 	border-inline-start-color: var(--color-primary);
 	font-weight: 500;
 }
+
+/* ── Field-row layout (FormControlsPage) ──────────────────────────────────
+ * The standard labeled-control row: a label stacked above its control on
+ * narrow widths, beside it on wide. DISTINCT from `.showcase-form-row`
+ * (the bordered cell-grid used by the flush-form demo) — this one is the
+ * borderless responsive 3-track grid every other FormControls row uses.
+ * No framework primitive fits: `form > label` only stacks label/control
+ * (two parts); this needs the trailing chip/hint track + a capped label
+ * column. Repeated 30+ times on the page — earns a class over inline
+ * Tailwind per the showcase triage. */
+.showcase-field-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: calc(var(--spacing) * 1);
+}
+
+@media (min-width: 640px) {
+	.showcase-field-row {
+		/* Three tracks: label column (capped width), control column (fills
+		 * remainder), trailing chip / hint column (sized to content). The
+		 * third track is `max-content` capped at 12rem so a wide trailing
+		 * element (e.g. the range row's `<output>` chip) doesn't squeeze
+		 * the input track to 0 — it'll wrap to a new row instead. */
+		grid-template-columns:
+			minmax(8rem, 12rem)
+			minmax(0, 1fr)
+			minmax(0, max-content);
+		align-items: center;
+		gap: calc(var(--spacing) * 3);
+	}
+}
+
+/* Trailing hint paragraph under a field row — tucked under the input
+ * column on wide viewports so it reads as the row's footnote rather
+ * than a separate block. On mobile it sits below the row naturally. */
+.showcase-field-row-hint {
+	margin: 0;
+	margin-block-start: calc(var(--spacing) * -2);
+}
+@media (min-width: 640px) {
+	.showcase-field-row-hint {
+		margin-inline-start: calc(12rem + var(--spacing) * 3);
+	}
+}
+
+/* Range slider + output chip pairing — keep them on the same row at
+ * every breakpoint. Inside the single-column mobile layout a bare
+ * `<input type="range">` + `<output>` would stack vertically; wrapping
+ * them in `.showcase-field-row-range` re-establishes the inline pair so
+ * the slider fills the remaining track while the output sits inline-end
+ * at content width. */
+.showcase-field-row-range {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--spacing) * 3);
+}
+.showcase-field-row-range > input[type='range'] {
+	flex: 1 1 auto;
+	min-inline-size: 0;
+}
+.showcase-field-row-range > output {
+	flex: 0 0 auto;
+}

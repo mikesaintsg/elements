@@ -99,7 +99,7 @@ const sum = computed(() => sumA.value + sumB.value)
 			cannot be styled cross-browser.
 		</p>
 		<div class="stack">
-			<div v-for="t in textInputTypes" :key="t.type" class="form-row">
+			<div v-for="t in textInputTypes" :key="t.type" class="showcase-field-row">
 				<label :for="`type-${t.type}`">
 					<code>type="{{ t.type }}"</code>
 				</label>
@@ -187,13 +187,13 @@ const sum = computed(() => sumA.value + sumB.value)
 			every other control's focus affordance.
 		</p>
 		<div class="stack">
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="volume">Volume</label>
-				<!-- Range + readout stay paired across viewports — the form-row's
+				<!-- Range + readout stay paired across viewports — the showcase-field-row's
 				     mobile single-column stack would otherwise drop the output
 				     onto its own row at full width. A local flex wrapper keeps
 				     the chip beside the slider on every breakpoint. -->
-				<div class="form-row-range">
+				<div class="showcase-field-row-range">
 					<input id="volume" v-model.number="sliderValue" type="range" min="0" max="100" />
 					<output for="volume" class="filled">{{ sliderValue }}</output>
 				</div>
@@ -218,11 +218,11 @@ const sum = computed(() => sumA.value + sumB.value)
 			engine exposes.
 		</p>
 		<div class="stack">
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="theme-color">Brand color</label>
 				<input id="theme-color" type="color" value="#3b82f6" />
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="avatar">Avatar</label>
 				<input id="avatar" type="file" accept="image/*" />
 			</div>
@@ -244,7 +244,7 @@ const sum = computed(() => sumA.value + sumB.value)
 			back to the static <code>min-block-size</code>.
 		</p>
 		<div class="stack">
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="bio">Short bio</label>
 				<textarea
 					id="bio"
@@ -252,7 +252,7 @@ const sum = computed(() => sumA.value + sumB.value)
 					rows="3"
 				></textarea>
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="readonly-notes">Read-only notes</label>
 				<textarea id="readonly-notes" readonly>
 This textarea is read-only. It stays focusable and selectable but rejects edits and disables the resize handle.</textarea
@@ -279,7 +279,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			<code>useSelect</code> (combobox mode) instead.
 		</p>
 		<div class="stack">
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="region">Region</label>
 				<select id="region">
 					<option value="">Choose a region…</option>
@@ -298,7 +298,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 					</optgroup>
 				</select>
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="fruits">Pick any fruits</label>
 				<select id="fruits" multiple size="5">
 					<option>Apples</option>
@@ -309,7 +309,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 					<option>Figs</option>
 				</select>
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="city">City (with suggestions)</label>
 				<input id="city" list="cities" placeholder="Search cities…" />
 				<datalist id="cities">
@@ -341,29 +341,29 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 		<div class="stack">
 			<fieldset>
 				<legend>Shipping address</legend>
-				<div class="form-row">
+				<div class="showcase-field-row">
 					<label for="ship-street">Street</label>
 					<input id="ship-street" type="text" placeholder="221B Baker Street" />
 				</div>
-				<div class="form-row">
+				<div class="showcase-field-row">
 					<label for="ship-city">City</label>
 					<input id="ship-city" type="text" placeholder="London" />
 				</div>
 			</fieldset>
 			<fieldset class="primary">
 				<legend>Account (variant border)</legend>
-				<div class="form-row">
+				<div class="showcase-field-row">
 					<label for="acct-email">Email</label>
 					<input id="acct-email" type="email" placeholder="ada@example.com" />
 				</div>
 			</fieldset>
 			<fieldset disabled>
 				<legend>Payment (disabled propagates)</legend>
-				<div class="form-row">
+				<div class="showcase-field-row">
 					<label for="card-num">Card number</label>
 					<input id="card-num" type="text" placeholder="•••• •••• •••• ••••" />
 				</div>
-				<div class="form-row">
+				<div class="showcase-field-row">
 					<label for="card-cvc">CVC</label>
 					<input id="card-cvc" type="text" inputmode="numeric" placeholder="•••" />
 				</div>
@@ -386,11 +386,11 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			extra markup.
 		</p>
 		<form class="stack">
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="sum-a">Left</label>
 				<input id="sum-a" v-model.number="sumA" type="number" />
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="sum-b">Right</label>
 				<input id="sum-b" v-model.number="sumB" type="number" />
 			</div>
@@ -421,21 +421,21 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			<code>--set-variant-background-color</code>.
 		</p>
 		<div class="stack">
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="prog-determinate">Determinate ({{ progressValue }}%)</label>
 				<progress id="prog-determinate" :value="progressValue" max="100">
 					{{ progressValue }}%
 				</progress>
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="prog-control">Adjust value</label>
 				<input id="prog-control" v-model.number="progressValue" type="range" min="0" max="100" />
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="prog-indeterminate">Indeterminate (no value)</label>
 				<progress id="prog-indeterminate" max="100">Loading…</progress>
 			</div>
-			<div v-for="v in variants" :key="v" class="form-row">
+			<div v-for="v in variants" :key="v" class="showcase-field-row">
 				<label :for="`prog-${v}`"
 					><code>.{{ v }}</code></label
 				>
@@ -461,29 +461,29 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			<code>--color-warning</code>, <code>--color-danger</code> by default.
 		</p>
 		<div class="stack">
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="meter-good">Disk space — 85% free (optimum)</label>
 				<meter id="meter-good" value="0.85" min="0" max="1" low="0.3" high="0.7" optimum="0.9">
 					85%
 				</meter>
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="meter-warn">Disk space — 55% free (sub-optimum)</label>
 				<meter id="meter-warn" value="0.55" min="0" max="1" low="0.3" high="0.7" optimum="0.9">
 					55%
 				</meter>
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="meter-bad">Disk space — 15% free (even less good)</label>
 				<meter id="meter-bad" value="0.15" min="0" max="1" low="0.3" high="0.7" optimum="0.9">
 					15%
 				</meter>
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="meter-control">Adjust value</label>
 				<input id="meter-control" v-model.number="meterValue" type="range" min="0" max="100" />
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="meter-live">Live meter ({{ meterValue }}%)</label>
 				<meter
 					id="meter-live"
@@ -514,7 +514,7 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			plus on-canvas text together.
 		</p>
 		<div class="stack">
-			<div v-for="v in variants" :key="v" class="form-row">
+			<div v-for="v in variants" :key="v" class="showcase-field-row">
 				<label :for="`variant-${v}`" :class="v"
 					><code>.{{ v }}</code></label
 				>
@@ -535,26 +535,26 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			coherently. Bare = default. Pair with a same-size label to keep vertical alignment honest.
 		</p>
 		<div class="stack">
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="size-small" class="small">Small</label>
 				<input id="size-small" type="text" class="small" placeholder="Small" />
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="size-default">Default</label>
 				<input id="size-default" type="text" placeholder="Default" />
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="size-large" class="large">Large</label>
 				<input id="size-large" type="text" class="large" placeholder="Large" />
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="size-select-small" class="small">Small select</label>
 				<select id="size-select-small" class="small">
 					<option>One</option>
 					<option>Two</option>
 				</select>
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="size-select-large" class="large">Large select</label>
 				<select id="size-select-large" class="large">
 					<option>One</option>
@@ -584,23 +584,23 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 			15- / Firefox &lt;88.
 		</p>
 		<form class="stack">
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="state-default">Default (focus me)</label>
 				<input id="state-default" type="text" placeholder="Focus this" />
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="state-disabled">Disabled</label>
 				<input id="state-disabled" type="text" disabled value="Locked" />
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="state-readonly">Read-only</label>
 				<input id="state-readonly" type="text" readonly value="Read-only value" />
 			</div>
-			<div class="form-row">
+			<div class="showcase-field-row">
 				<label for="state-required">Required (try focusing then blurring empty)</label>
 				<input id="state-required" type="email" required placeholder="ada@example.com" />
 			</div>
-			<p class="form-row-hint">
+			<p class="showcase-field-row-hint">
 				<small>
 					<code>:user-invalid</code> kicks in after the field has been interacted with — empty +
 					required + blurred = red border. Re-enter a valid email to clear.
@@ -796,76 +796,3 @@ This textarea is read-only. It stays focusable and selectable but rejects edits 
 		</p>
 	</section>
 </template>
-
-<style scoped>
-/* Local layout helpers — labels stack above their control on narrow widths,
- * sit beside it on wide. `gap` provides the tight vertical rhythm form rows
- * expect; pulling this into the framework would conflict with other form-row
- * conventions (each project's form-grid is its own).
- *
- * The page demonstrates the framework's *chrome*, not its layout system —
- * showcase pages are allowed last-mile layout assists. */
-.form-row {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr);
-	gap: calc(var(--spacing) * 1);
-}
-
-@media (min-width: 640px) {
-	.form-row {
-		/* Three tracks: label column (capped width), control column (fills
-		 * remainder), trailing chip / hint column (sized to content). The
-		 * third track is `max-content` capped at 12rem so a wide trailing
-		 * element (e.g. the range row's `<output>` chip) doesn't squeeze
-		 * the input track to 0 — it'll wrap to a new row instead. */
-		grid-template-columns:
-			minmax(8rem, 12rem)
-			minmax(0, 1fr)
-			minmax(0, max-content);
-		align-items: center;
-		gap: calc(var(--spacing) * 3);
-	}
-}
-
-/* Trailing hint paragraph under a form-row — tucked under the input
- * column on wide viewports so it reads as the row's footnote rather
- * than a separate block. On mobile it sits below the row naturally. */
-.form-row-hint {
-	margin: 0;
-	margin-block-start: calc(var(--spacing) * -2);
-}
-@media (min-width: 640px) {
-	.form-row-hint {
-		margin-inline-start: calc(12rem + var(--spacing) * 3);
-	}
-}
-
-/* Range slider + output chip pairing — keep them on the same row at
- * every breakpoint. Inside a `.form-row`'s single-column mobile
- * layout, a bare `<input type="range">` + `<output>` would stack
- * vertically (output going full-width on its own line). Wrapping them
- * in `<div class="form-row-range">` re-establishes the inline pair so
- * the slider grows to fill the remaining track while the output sits
- * inline-end at content width. */
-.form-row-range {
-	display: flex;
-	align-items: center;
-	gap: calc(var(--spacing) * 3);
-}
-.form-row-range > input[type='range'] {
-	flex: 1 1 auto;
-	min-inline-size: 0;
-}
-.form-row-range > output {
-	flex: 0 0 auto;
-}
-
-/* The framework ships `<div class="stack">` (column flex) and
- * `<div class="cluster">` (wrapping row) in `components/_div.scss`. Both
- * rules scope to `div.{class}` so this page uses `<div>` wrappers
- * rather than putting the class on `<label>` or `<form>`. Inside a
- * `<form>`, the `form > label` rule already turns labels into vertical
- * stacks (label-on-top, control-below) — perfect for text-input rows.
- * For inline-control rows (checkbox / radio / switch) we pair the input
- * with a sibling `<label for=…>` inside a `<div class="cluster">`. */
-</style>
