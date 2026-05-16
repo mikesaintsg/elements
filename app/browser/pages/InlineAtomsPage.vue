@@ -139,7 +139,7 @@ const submit = async (): Promise<void> => {
 				Mentions <span class="badge information">7</span>
 			</button>
 			<button type="button" class="primary">
-				Tasks <span class="badge filled" style="background-color: rgba(255, 255, 255, 0.2)">3</span>
+				Tasks <span class="badge filled showcase-inset-chip">3</span>
 			</button>
 		</div>
 		<details>

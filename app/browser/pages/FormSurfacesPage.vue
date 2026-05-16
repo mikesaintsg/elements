@@ -235,15 +235,7 @@ const selectionVariant = ref<(typeof variants)[number]>('primary')
 				</button>
 			</li>
 		</menu>
-		<div
-			:class="selectionVariant"
-			style="
-				padding: 1rem;
-				border-radius: 0.5rem;
-				margin-block-start: 1rem;
-				--set-style-background-color: transparent;
-			"
-		>
+		<div class="showcase-selection-demo" :class="selectionVariant">
 			<p>
 				Select this paragraph to see the <strong>{{ selectionVariant }}</strong> tint. The surface
 				paints <code>color-mix(--set-variant-background-color 25%, transparent)</code> +

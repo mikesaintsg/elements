@@ -793,3 +793,24 @@
 .showcase-field-row-range > output {
 	flex: 0 0 auto;
 }
+
+/* Inset chip on a filled / saturated surface — a translucent-white pill
+ * that reads as a subtly recessed badge against a `.filled` variant
+ * background (count badges, tracking-number chips). Showcase-only: the
+ * framework's variant chrome owns the surface; this demo accent isn't a
+ * framework primitive. Repeated on InlineAtomsPage + ArticleCardPage. */
+.showcase-inset-chip {
+	background-color: rgb(255 255 255 / 0.2);
+}
+
+/* Selection-surface demo box (FormSurfacesPage) — a padded, rounded
+ * container hosting the ::selection / ::marker live demos. Takes a
+ * reactive variant class for the tint; this supplies the static frame
+ * and opts the style-layer background to transparent so the variant's
+ * own surface shows through. Showcase-only demo chrome. */
+.showcase-selection-demo {
+	padding: 1rem;
+	border-radius: 0.5rem;
+	margin-block-start: 1rem;
+	--set-style-background-color: transparent;
+}

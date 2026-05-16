@@ -270,7 +270,7 @@ const goto = (n: number): void => {
 			active tile through the seven variants. The token-driven cascade means the consumer never
 			edits the partial.
 		</p>
-		<div style="display: flex; flex-direction: column; gap: 0.75rem">
+		<div class="flex flex-col gap-3">
 			<nav
 				v-for="v in variants"
 				:key="v"

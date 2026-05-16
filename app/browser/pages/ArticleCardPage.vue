@@ -222,7 +222,7 @@ import {
 					<h3>Order shipped</h3>
 				</header>
 				<p>
-					Tracking <code style="background-color: rgb(255 255 255 / 0.2)">FX-8821-991</code>.
+					Tracking <code class="showcase-inset-chip">FX-8821-991</code>.
 					Delivery expected Friday between 10 AM and 2 PM.
 				</p>
 			</article>
