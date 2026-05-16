@@ -12,6 +12,30 @@
 //
 // A role="toolbar" host wraps multiple groups and lays them out as a wrapping
 // flex row.
+//
+// Variant cascade (intentional, emergent — NOT a rule in this file):
+//   A variant on the GROUP / TOOLBAR host tints every descendant control that
+//   doesn't set its own:
+//
+//     <div role="group" class="success">
+//       <button>Save</button>      <!-- inherits the success fill   -->
+//       <button>Save draft</button><!-- inherits the success fill   -->
+//       <button class="danger">Delete</button> <!-- explicit wins   -->
+//     </div>
+//
+//   This needs no `[role='group'] > button { … }` colour rule. The
+//   `.{variant}` classes (modifiers/_variants.scss) set the eight
+//   `--set-variant-*` context tokens, and custom properties INHERIT by
+//   default — so the host's `--set-variant-*` reach every descendant. The
+//   bare `<button>` surface chain already terminates in
+//   `var(--set-variant-background-color, transparent)` (elements/_button.scss),
+//   so a bare child resolves the inherited variant; a child carrying its own
+//   `.{variant}` re-declares those tokens on itself and wins. This IS the
+//   "cascading stylesheet" contract — colour is inherited unless a more
+//   specific modification is applied — scoped to the group by the DOM subtree,
+//   not by a selector. The `_role-group.test.ts` parity suite pins it so a
+//   future refactor of the button surface chain or the variant tokens can't
+//   silently sever the inheritance.
 // ============================================================================
 
 @use '../mixins' as *;
@@ -46,8 +70,13 @@
 
 		// Negative inline-start margin overlaps borders for every button after
 		// the first. The bare-button border-width is 0, so this collapses to
-		// 0 — the rule only "does" something when consumers pair group buttons
-		// with a variant or .outline modifier (border-width = 1px).
+		// 0 — the rule only "does" something once group buttons carry a
+		// border-width of 1px, which the variant cascade supplies for free: a
+		// `.{variant}` on the host inherits `--set-variant-border-width: 1px`
+		// to every child (see the header's "Variant cascade" note), so
+		// `<div role="group" class="primary">` gets the overlapped shared edge
+		// with no per-button modifier. A bare (variant-less) group stays at
+		// border-width 0 and the overlap correctly collapses to nothing.
 		> button + button {
 			margin-inline-start: calc(-1 * var(--set-role-group-border-width));
 		}
