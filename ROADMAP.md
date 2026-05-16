@@ -168,7 +168,7 @@ lens and gets its own dedicated unit suite.
 
 | Phase | Description                                                                                  | Status |
 | ----- | -------------------------------------------------------------------------------------------- | ------ |
-| 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec                         | ⬜     |
+| 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec                         | 🟡     |
 | 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                          | ⬜     |
 | 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)                       | ⬜     |
 | 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant)          | ⬜     |
@@ -255,9 +255,17 @@ even from large pages. Canonical section URLs (from the multipage TOC):
   transparent element has no parent, its restrictions are based on flow
   content**"). The same path closes every gap below.
 
+**Status — corpus reconciled (🟡):** the gaps below are now closed in the
+cache (commits `3d6195a`, `3e73197`, `0e9823e`, `eee2915`): `sections.md`,
+`forms.md`, `embeddeds.md`, `interactions.md` completed from the canonical
+spec and `categories.md` added. The single remaining item is the scoped
+implicit-role appendix (`guides/w3c/aria.md`); the `tests/guides/w3c.test.ts`
+parity gate lands with Phase 1. The gap list below is retained as the
+rationale record.
+
 **Why first:** the schema (Phase 1) cannot be trusted unless the corpus it
 derives from is complete and spec-accurate. Deep reading of `guides/w3c/**`
-surfaced concrete, load-bearing gaps (all closable via the fetch strategy
+surfaced concrete, load-bearing gaps (now closed via the fetch strategy
 above):
 
 - [`elements/sections.md`](guides/w3c/elements/sections.md) — **truncated**
@@ -302,26 +310,33 @@ above):
 
 **Work:**
 
-- ⬜ **Extend the element mirror to 100% coverage** from the canonical
-  multipage spec — finish `sections.md` (data already fetched above); add
-  the missing form-control (`forms.html`), embedded (`embedded-content.html`,
-  `media.html`), and `a`/`area`/`map` (`text-level-semantics.html`,
-  `image-maps.html`) cards, following the existing card shape (Categories ·
-  Contexts · Content model · constraints · tag-omission · ARIA refs) so the
-  Phase-1 parity test can read them mechanically. Each card records its
-  canonical spec URL + the local cache anchor.
-- ⬜ **Add `guides/w3c/categories.md`** — the WHATWG category definitions +
-  element-membership matrix, taken verbatim from
-  `multipage/dom.html#kinds-of-content` (the linchpin vocabulary every
-  content-model rule resolves against; entirely absent from the cache today).
+- ✅ **Element mirror reconciled from the canonical multipage spec** —
+  `sections.md` completed (`nav`/`aside`/`h1`–`h6`/`hgroup`/`header`/
+  `footer`/`address` + §4.3.11–4.3.12); `forms.md` completed (all 12
+  form-control cards §4.10.5–4.10.16 from `input.html` /
+  `form-elements.html`); `embeddeds.md` extended (`iframe`/`embed`/
+  `object`/`video`/`audio`/`track`/`map`/`area`/`canvas` from
+  `iframe-embed-object.html` / `media.html` / `image-maps.html` /
+  `canvas.html`). `a` was already carded in `texts.md`; `links.md` is the
+  faithful §4.6 link-mechanics chapter (no element cards by spec design).
+  Every card carries its canonical spec URL; ToCs regenerated; transparent
+  models captured precisely.
+- ✅ **`guides/w3c/categories.md` added** — the §3.2.5 content-model
+  vocabulary (transparent model, the eight content categories with full
+  element membership, palpable rule, paragraphs, inter-element whitespace),
+  the linchpin every content-model rule resolves against.
+- ✅ **`interactions.md` §6.5–§6.10 completed** — activation behavior,
+  focus / `tabindex` / `autofocus`, `accesskey`, editing
+  (`contenteditable` / `spellcheck` / `autocapitalize` / `inputmode` /
+  `enterkeyhint` / `draggable`), find-in-page, close watchers — oriented to
+  the DOM/attribute-checkable rules Phase 3 / Phase 5 cite.
 - ⬜ **Add an implicit-role appendix** (scoped: only roles the HTML content
-  model references) to `guides/w3c/interactions.md` or a new
-  `guides/w3c/aria.md`.
-- ⬜ **Complete `interactions.md` §6.5–§6.10** — the focus / `tabindex` /
-  `inert` / popover / dialog rules the interaction-relevant structural rules
-  (Phase 3) and the presentation lens (Phase 5) cite.
-- ⬜ Update [`guides/README.md`](guides/README.md) file-map for any new
-  guide files.
+  model references, e.g. `main`'s "hierarchically correct") — a new
+  `guides/w3c/aria.md`. The one remaining corpus gap.
+- ⬜ **`tests/guides/w3c.test.ts` gate** (lands with Phase 1) — asserts
+  every [`taxonomy.ts`](src/browser/taxonomy.ts) element has a fully carded
+  entry under `guides/w3c/**`; this is the Phase-0 → Phase-1 exit
+  criterion.
 
 Deliverable gate: a `tests/guides/w3c.test.ts` skeleton that asserts every
 element enumerated in [`taxonomy.ts`](src/browser/taxonomy.ts) has a fully
