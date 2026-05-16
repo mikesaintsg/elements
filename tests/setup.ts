@@ -263,6 +263,51 @@ export function extractSetTokenDeclarations(source: string): readonly string[] {
 	return Array.from(out)
 }
 
+// ── Single-word-modifier convention ─────────────────────────────────────────
+//
+// Framework modifier class names are SINGLE words. A kebab/multi-word class
+// name is only sanctioned when it is one of:
+//   1. a placement corner — `top-start` / `top-end` / `bottom-start` /
+//      `bottom-end` (a corner is inherently {block}-{inline}; mirrors the
+//      CSS `position-area` keyword pair and the modifiers.ts parity);
+//   2. component/composable-namespaced — the name is, or is prefixed by,
+//      a real `src/styles/{components,composables}/_{name}.scss` partial
+//      basename (the prefix is a namespace, like Tailwind / `.showcase-`);
+//   3. `showcase-`-namespaced (showcase-only chrome);
+//   4. an explicit, documented allow-list entry.
+// Anything else multi-word is a violation — see guides/modifiers.md
+// §Anti-rules and the parity tests in tests/guides/modifiers.test.ts +
+// tests/src/styles/integration.test.ts.
+
+/** Component/composable partial basenames from a list of SCSS paths. */
+export function componentNamespacesFromPaths(paths: Iterable<string>): Set<string> {
+	const out = new Set<string>()
+	for (const p of paths) {
+		const match = p.replace(/\\/g, '/').match(/\/(?:components|composables)\/_([a-z][a-z0-9-]*)\.scss$/)
+		if (match?.[1]) out.add(match[1])
+	}
+	return out
+}
+
+/**
+ * True when `cls` complies with the single-word-modifier convention:
+ * single word, or a sanctioned multi-word exception (placement corner,
+ * component-namespaced, `showcase-`, or an explicit allow-list entry).
+ */
+export function classNameIsSanctioned(
+	cls: string,
+	componentNames: ReadonlySet<string>,
+	allow: ReadonlySet<string> = new Set<string>(),
+): boolean {
+	if (!cls.includes('-')) return true
+	if (cls.startsWith('showcase-')) return true
+	if (/^(top|bottom)-(start|end)$/.test(cls)) return true
+	for (const ns of componentNames) {
+		if (cls === ns || cls.startsWith(`${ns}-`)) return true
+	}
+	return allow.has(cls)
+}
+
 /**
  * Pull every `@layer NAME` directive name out of a SCSS source. Returns layer
  * names in source order; duplicates are preserved (a file declaring the same

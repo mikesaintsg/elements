@@ -35,6 +35,8 @@ import { modifiers } from '@elements/browser'
 import {
 	TAILWIND_SINGLE_TOKEN_UTILITIES,
 	bareClassNamesIn,
+	classNameIsSanctioned,
+	componentNamespacesFromPaths,
 	extractBacktickedNames,
 	leaves,
 	relativeStylesPath,
@@ -159,6 +161,53 @@ describe('handrolled — no manual variant enumeration outside modifiers/', () =
 			const variants = Array.from(countCompoundRules(source).keys())
 			const offenders = variants.length >= 3 ? variants : []
 			expect(offenders).toEqual([])
+		})
+	}
+})
+
+// ── Single-word-modifier convention (guides/modifiers.md §Anti-rules) ───────
+//
+// Every framework class selector across the style layers is single-word
+// unless it is a sanctioned exception (placement corner /
+// component-namespaced / showcase- / allow-list). Mirrors the styles-layer
+// enforcement in tests/src/styles/integration.test.ts so the guide's
+// documented rule is parity-checked from the node side too.
+
+const allStyleSources = readScssPartials(
+	'src/styles/elements',
+	'src/styles/components',
+	'src/styles/surfaces',
+	'src/styles/composables',
+	'src/styles/modifiers',
+)
+
+const CLASS_SELECTOR_RE = /(?:^|[\s,&:>~+(])\.([a-z][a-zA-Z0-9_-]*)\b/gm
+
+describe('guides/modifiers.md §Anti-rules — framework modifiers are single-word', () => {
+	const componentNames = componentNamespacesFromPaths(Object.keys(allStyleSources))
+	const classes = new Map<string, string[]>()
+	for (const [path, source] of Object.entries(allStyleSources)) {
+		const stripped = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+		for (const m of stripped.matchAll(CLASS_SELECTOR_RE)) {
+			const cls = m[1]
+			if (!cls || !cls.includes('-')) continue
+			const list = classes.get(cls) ?? []
+			list.push(relativeStylesPath(path))
+			classes.set(cls, list)
+		}
+	}
+
+	it('discovers the component/composable namespaces', () => {
+		expect(componentNames.size).toBeGreaterThan(0)
+	})
+
+	for (const cls of [...classes.keys()].sort()) {
+		// On failure: `.${cls}` is a multi-word framework class with no
+		// sanctioned exception — rename it to a single word or confirm the
+		// component-namespace. guides/modifiers.md §Anti-rules. Declared in:
+		// ${(classes.get(cls) ?? []).join(', ')}
+		it(`.${cls} is single-word or a sanctioned exception`, () => {
+			expect(classNameIsSanctioned(cls, componentNames)).toBe(true)
 		})
 	}
 })

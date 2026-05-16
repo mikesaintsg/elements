@@ -17,7 +17,11 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { TAILWIND_SINGLE_TOKEN_UTILITIES } from '../../setup.ts'
+import {
+	TAILWIND_SINGLE_TOKEN_UTILITIES,
+	classNameIsSanctioned,
+	componentNamespacesFromPaths,
+} from '../../setup.ts'
 import { pixels, render, style } from '../../setupStyles.ts'
 
 // ----------------------------------------------------------------------------
@@ -142,4 +146,34 @@ describe('Tailwind v4 utility ↔ framework modifier conflicts', () => {
 			expect(frameworkModifiers.has(name)).toBe(true)
 		}
 	})
+})
+
+// ============================================================================
+//  Single-word-modifier convention (guides/modifiers.md §Anti-rules)
+// ============================================================================
+
+describe('single-word modifiers — framework class names are one word', () => {
+	const componentNames = componentNamespacesFromPaths(Object.keys(scssSources))
+
+	it('discovers the component/composable namespaces', () => {
+		// Vacuous-pass guard: the exemption set must be non-empty.
+		expect(componentNames.size).toBeGreaterThan(0)
+		expect(componentNames.has('select')).toBe(true)
+		expect(componentNames.has('carousel')).toBe(true)
+	})
+
+	const multiWord = [...frameworkModifiers.keys()].filter((c) => c.includes('-')).sort()
+
+	for (const cls of multiWord) {
+		// On failure: `.${cls}` is a multi-word framework class with no
+		// sanctioned exception (placement corner / component-namespaced /
+		// showcase- / allow-list). Rename it to a single word, or — if it
+		// is a composable's structural part — confirm it is prefixed by a
+		// real components|composables partial basename. See
+		// guides/modifiers.md §Anti-rules. Declared in:
+		// ${(frameworkModifiers.get(cls) ?? []).join(', ')}
+		it(`.${cls} is single-word or a sanctioned exception`, () => {
+			expect(classNameIsSanctioned(cls, componentNames)).toBe(true)
+		})
+	}
 })
