@@ -396,36 +396,15 @@ dialog {
 				--showcase-tile-grid-flow: auto-fit;
 			"
 		>
-			<article
-				style="
-					background-color: var(--color-surface);
-					padding: calc(var(--spacing) * 4);
-					border-radius: var(--radius-md);
-					box-shadow: var(--set-box-shadow-small);
-				"
-			>
+			<article class="showcase-elevation-tile" style="box-shadow: var(--set-box-shadow-small)">
 				<h3><code>--set-box-shadow-small</code></h3>
 				<p class="mt-2 mb-0">List-group hover, dropdown items, subtle action panels.</p>
 			</article>
-			<article
-				style="
-					background-color: var(--color-surface);
-					padding: calc(var(--spacing) * 4);
-					border-radius: var(--radius-md);
-					box-shadow: var(--set-box-shadow);
-				"
-			>
+			<article class="showcase-elevation-tile" style="box-shadow: var(--set-box-shadow)">
 				<h3><code>--set-box-shadow</code> <small>(base)</small></h3>
 				<p class="mt-2 mb-0">Popover panels, dropdown menus.</p>
 			</article>
-			<article
-				style="
-					background-color: var(--color-surface);
-					padding: calc(var(--spacing) * 4);
-					border-radius: var(--radius-md);
-					box-shadow: var(--set-box-shadow-large);
-				"
-			>
+			<article class="showcase-elevation-tile" style="box-shadow: var(--set-box-shadow-large)">
 				<h3><code>--set-box-shadow-large</code></h3>
 				<p class="mt-2 mb-0">Modal dialogs, toasts, drawer chrome.</p>
 			</article>
@@ -688,12 +667,11 @@ dialog {
 			<code>color-mix(in oklab, var(--color-{variant}), transparent)</code>.
 		</p>
 		<div
+			class="showcase-tile-grid p-2"
 			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(min(8rem, 100%), 1fr));
-				gap: calc(var(--spacing) * 4);
-				padding-block: calc(var(--spacing) * 2);
-				padding-inline: calc(var(--spacing) * 2);
+				--showcase-tile-grid-min: min(8rem, 100%);
+				--showcase-tile-grid-flow: auto-fit;
+				--showcase-tile-grid-gap: calc(var(--spacing) * 4);
 			"
 		>
 			<button type="button" class="primary" :style="{ boxShadow: focusRingFor('primary') }">
@@ -722,7 +700,7 @@ dialog {
 			<code>:focus-visible</code> rule fire. The width + opacity tokens are now whatever the sliders
 			pinned them to, so the keyboard-driven ring matches the static preview above.
 		</p>
-		<div class="cluster" style="justify-content: flex-start; row-gap: calc(var(--spacing) * 2)">
+		<div class="cluster justify-start gap-y-2">
 			<button type="button" class="primary">Primary</button>
 			<button type="button" class="secondary">Secondary</button>
 			<button type="button" class="success">Success</button>
@@ -790,23 +768,18 @@ dialog {
   --set-icon-chevron-down: url("/icons/heroicons/chevron-down.svg");
 }</code></pre>
 		<div
+			class="showcase-tile-grid"
 			style="
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
-				gap: calc(var(--spacing) * 2);
+				--showcase-tile-grid-min: min(15rem, 100%);
+				--showcase-tile-grid-flow: auto-fit;
+				--showcase-tile-grid-gap: calc(var(--spacing) * 2);
 			"
 		>
 			<article
 				v-for="icon in icons"
 				:key="icon.token"
-				style="
-					display: flex;
-					align-items: center;
-					gap: var(--spacing);
-					padding-block: calc(var(--spacing) * 2);
-					padding-inline: calc(var(--spacing) * 2);
-					background-color: var(--color-surface);
-				"
+				class="flex items-center gap-1 p-2"
+				style="background-color: var(--color-surface)"
 			>
 				<i
 					aria-hidden="true"
@@ -822,25 +795,9 @@ dialog {
 						maskSize: 'contain',
 					}"
 				></i>
-				<div
-					style="
-						display: flex;
-						flex-direction: column;
-						gap: 0.125rem;
-						min-inline-size: 0;
-						overflow: hidden;
-					"
-				>
-					<strong style="line-height: 1.2">{{ icon.label }}</strong>
-					<code
-						style="
-							font-size: 0.75em;
-							opacity: 0.7;
-							overflow: hidden;
-							text-overflow: ellipsis;
-							white-space: nowrap;
-						"
-						>{{ icon.token }}</code
+				<div class="flex flex-col gap-0.5 min-w-0 overflow-hidden">
+					<strong class="leading-[1.2]">{{ icon.label }}</strong>
+					<code class="text-xs opacity-70 truncate">{{ icon.token }}</code
 					>
 				</div>
 			</article>
