@@ -75,6 +75,7 @@ The flat sidebar list worked for 14 pages; with all 43 it was a 42-line scroll �
 - ✅ **`.disabled` token customizability** — `.disabled` reads `--set-state-disabled-opacity` / `--set-state-disabled-cursor` (`:root`-retunable; `pointer-events: none` stays the hard interaction lock). Wired through `_tokens.scss` → `_states.scss` → TS `tokens.state` → `MODIFIER_DIMENSION_TOKENS.state` → [patterns.md](guides/patterns.md) §6.4 + [modifiers.md](guides/modifiers.md). Browser-verified; runtime + registry parity tests added.
 - ✅ **Composable state-attribute audit** — surface confirmed already consistent (no drift; `createTabs` uses native `role`/`aria`, the old `data-tab-open`/`data-aside-closing` regressions stay fixed). Canonical set (state / structural / config / framework-global / native-generic) documented in [composables.md](guides/composables.md) § State-attribute scheme + **Contract 8**, and codified as a standing `composables.test.ts` parity test: every framework `data-*` is `data-{factory-stem}-…` or a rationale'd allow-list exception (`data-theme` scopes via `createTheme`; `data-elements-scroll-locked` + native/content generics allow-listed).
 - ✅ **Element-local modifier consolidation** — surveyed every `{tag}.{modifier}` rule in `components/` + `elements/`; the `.flat`/`.flush`/`.frame`/`group`/striped-table/etc. surfaces are correctly-placed component/element chrome (stay). The two thin charter-canonical element-local modifiers — `form.row` and `button.dropdown` — migrated into `modifiers/_local.scss` (declarations unchanged; cascade layer components/elements → modifiers, the charter's explicit intent). `--set-form-row-gap` / `--set-button-dropdown-caret-*` token surfaces stay on the bare element; `_local.scss` consumes them. `integration.test.ts` `mustFind` corrected (`.row` is now the element-scoped `form.row`, intentionally not a bare-name token); doc rot fixed in modifiers.md ×2 / components.md / `_local.scss` header. Browser-verified (form.row flips + intrinsic-width inputs; caret paints + rotates to 180° on `[aria-expanded]`).
+- ✅ **README consumer-setup snippet** — root `README.md` finalised: fixed two doc bugs (`.ghost` is not a framework style — only `subtle`/`filled`; `useDialog`'s option is `modal: boolean`, not `mode: 'modal'`) and added the signature **`--set-*` token-override** section (global `:root` retune + scoped/per-instance override, using real shipped tokens incl. the new `--set-state-disabled-opacity` + relocated `--set-form-row-gap`). Install / cascade-layer-order / PostCSS sections were already accurate. (Root README is not parity-tested; `tests/guides/README.test.ts` targets `guides/README.md`.)
 
 ### Refactor opportunities
 
@@ -94,7 +95,6 @@ Outcome: one styling philosophy across every floating surface, codified in [surf
 
 ### Cross-cutting
 
-- ⬜ **README consumer-setup snippet** — finalise the public-facing README with install / cascade-layer-order / token-override examples.
 - ⬜ **Changelog discipline** — adopt conventional commits or similar so the next release pulls a clean delta.
 
 ---

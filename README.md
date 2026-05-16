@@ -95,7 +95,7 @@ export default {
 
 ```html
 <button class="primary large filled">Sign in</button>
-<button class="danger small ghost">Delete</button>
+<button class="danger small subtle">Delete</button>
 <aside role="alert" class="warning">Heads up — your session expires soon.</aside>
 ```
 
@@ -105,7 +105,7 @@ export default {
 import { useDialog } from 'elements/browser'
 
 const dialog = useDialog(document.querySelector('dialog#confirm'), {
-	mode: 'modal',
+	modal: true, // default; `false` → non-modal `dialog.show()`
 	on: {
 		open: () => console.log('opened'),
 		close: () => console.log('closed'),
@@ -134,6 +134,34 @@ Switch light ↔ dark by toggling `[data-theme]`:
 ```html
 <html data-theme="dark"></html>
 ```
+
+### Retune any value — the `--set-*` surface
+
+`--color-*` is the palette; `--set-*` is the **variation surface**. Every visible value the framework paints reads through a `--set-*` custom property with a sensible default, so you retune chrome without forking a partial or writing a single rule. Override globally at `:root`:
+
+```css
+:root {
+	--set-transition-duration: 120ms; /* snappier UI motion everywhere */
+	--set-focus-box-shadow-width: 0.2rem; /* thicker keyboard-focus ring */
+	--set-state-disabled-opacity: 0.4; /* dimmer disabled affordance */
+}
+```
+
+…or scope an override to a subtree / single instance (custom properties cascade by element, so the deepest declaration wins):
+
+```html
+<!-- this card's inset + gap only -->
+<article style="--set-article-padding-block: 0; --set-article-gap: 0">…</article>
+
+<!-- every form inside .compact gets a tighter row gap -->
+<style>
+	.compact form {
+		--set-form-row-gap: 0.5rem;
+	}
+</style>
+```
+
+The full `--set-*` catalog (per element / component / surface / composable) is documented in [guides/tokens.md](guides/tokens.md); the TS mirror is `import { tokens } from 'elements/browser'`.
 
 ---
 
