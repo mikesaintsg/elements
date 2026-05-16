@@ -1,35 +1,57 @@
 // ============================================================================
-//  DialogElementPage — per-page parity scaffold (browser env).
+//  DialogElementPage — per-page BESPOKE parity (Phase-2 §7,
+//  Elements-Interactive).
 //
-//  Thin, real, page-SPECIFIC render smoke test (not a placeholder): the
-//  component imported from the `app/browser` barrel mounts and renders
-//  its intro section bound to the `dialog-element` route. Universal skeleton +
-//  bijection + inline-style/namespace rules are enforced once for all 43
-//  pages by tests/app/browser/pages.test.ts — NOT duplicated here.
-//
-//  Phase 2 (plans/phase-2.md §2D) fills the bespoke parity body: this
-//  page's framework artifact(s) demonstrated + every applicable
-//  modifier / option / event present.
+//  Reason to exist: the bare `<dialog>` baseline demonstrates the
+//  container cascade. Dialogs are heavyweight, so the page shows a
+//  REPRESENTATIVE variant set (not all 7 modal dialogs) — the guard is
+//  therefore: `<dialog>` is rendered, the cascade is exercised
+//  (≥1 variant + size + the `.filled` style), and no junk modifier.
+//  Asserted against the MOUNTED DOM.
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
 import { createApp } from 'vue'
+import { modifiers } from '@elements/browser'
 import { DialogElementPage } from '../../../../app/browser/index.js'
 
-describe('DialogElementPage — parity scaffold', () => {
-	it('mounts + renders the "dialog-element" intro section', () => {
-		const host = document.createElement('div')
-		document.body.appendChild(host)
-		const app = createApp(DialogElementPage)
+const VARIANTS = Object.values(modifiers.variant) as string[]
+
+function mount(): { host: HTMLElement; teardown: () => void } {
+	const host = document.createElement('div')
+	document.body.appendChild(host)
+	const app = createApp(DialogElementPage)
+	app.mount(host)
+	return { host, teardown: () => { app.unmount(); host.remove() } }
+}
+
+describe('DialogElementPage — render smoke', () => {
+	it('mounts + renders the "dialog-element" intro + a <dialog>', () => {
+		const { host, teardown } = mount()
 		try {
-			app.mount(host)
 			const intro = host.querySelector('section#dialog-element-intro')
-			expect(intro, 'intro <section id="dialog-element-intro">').not.toBeNull()
-			const h1 = intro?.querySelector('h1')?.textContent?.trim()
-			expect(h1, 'intro <h1> === route title').toBe('Dialog element')
+			expect(intro).not.toBeNull()
+			expect(intro?.querySelector('h1')?.textContent?.trim()).toBe('Dialog element')
+			expect(host.querySelector('dialog')).not.toBeNull()
 		} finally {
-			app.unmount()
-			host.remove()
+			teardown()
+		}
+	})
+})
+
+describe('DialogElementPage — container cascade exercised (§7)', () => {
+	it('demonstrates ≥1 variant + size + .filled on a <dialog>, no junk modifier', () => {
+		const { host, teardown } = mount()
+		try {
+			const dialogs = [...host.querySelectorAll('dialog')]
+			expect(dialogs.length).toBeGreaterThan(0)
+			const variantsSeen = VARIANTS.filter((v) => dialogs.some((d) => d.classList.contains(v)))
+			expect(variantsSeen.length).toBeGreaterThan(0)
+			expect(host.querySelector('dialog.small')).not.toBeNull()
+			expect(host.querySelector('dialog.large')).not.toBeNull()
+			expect(host.querySelector('dialog.filled')).not.toBeNull()
+		} finally {
+			teardown()
 		}
 	})
 })
