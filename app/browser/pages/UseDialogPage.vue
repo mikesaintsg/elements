@@ -267,7 +267,7 @@ const inline = useDialog(inlineRef, { modal: false }) // dialog.show()
 				</button>
 			</li>
 		</menu>
-		<dialog ref="staticRef" :class="{ filled: preventFlash, warning: true }">
+		<dialog ref="staticRef" class="showcase-shake-dialog" :class="{ filled: preventFlash, warning: true }">
 			<header>
 				<h3>Confirm delete</h3>
 			</header>
@@ -527,7 +527,7 @@ dialog footer {
 	margin-block-start: 1rem;
 }
 
-dialog.warning.filled {
+.showcase-shake-dialog.warning.filled {
 	animation: shake 360ms ease;
 }
 
@@ -551,7 +551,7 @@ dialog.warning.filled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	dialog.warning.filled {
+	.showcase-shake-dialog.warning.filled {
 		animation: none;
 	}
 }
