@@ -47,13 +47,19 @@
 
 @layer elements {
 	main {
-		// Page-shell group requires `color` + `background-color` on every
-		// member so consumers can retune the whole shell uniformly (see
-		// taxonomy.ts § TOKEN_GROUPS.page-shell). Both fall through to
-		// `currentColor` / `transparent` by default — the bare `<main>`
-		// reads the body's canvas, but a consumer setting
+		// `<main>` is the CONTENT slot of the `page-shell` group — the
+		// uniform shell-theming vocabulary where every body-grid slot
+		// (`header` / `footer` / `nav` / `aside` / `main`) exposes the
+		// same `--set-{tag}-{color, background-color, padding-inline,
+		// padding-block}` surface, so a consumer themes the whole shell
+		// with one API (see taxonomy.ts § TOKEN_GROUPS.page-shell). These
+		// `color` / `background-color` tokens are a DELIBERATE override
+		// hook, NOT a no-op to satisfy the contract: the bands / rails
+		// paint a backplate from their component layer, but the content
+		// well defaults SEE-THROUGH (`currentColor` / `transparent`) so a
+		// bare `<main>` reads the body canvas — and a consumer setting
 		// `<main style="--set-main-background-color: var(--color-surface)">`
-		// can paint a tinted content well without overriding the body.
+		// gets a tinted content well without overriding the body.
 		// `currentColor` (not `inherit`) so the custom property resolves
 		// to a real value under getComputedStyle.
 		--set-main-color: currentColor;

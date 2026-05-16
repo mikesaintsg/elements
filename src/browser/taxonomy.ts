@@ -420,9 +420,25 @@ export const TOKEN_GROUPS: Readonly<Record<TokenGroup, TokenGroupDefinition>> = 
 		],
 	},
 
-	// Page-shell sectioning — the elements promoted to the body grid. Same
-	// chrome contract: backplate color, edge stroke, padding rhythm,
-	// transition.
+	// Page-shell sectioning — the elements promoted to the body grid.
+	// The group is a UNIFORM shell-theming vocabulary: every body-grid
+	// slot exposes the same `--set-{tag}-{color, background-color,
+	// padding-inline, padding-block}` surface so a consumer themes the
+	// entire shell with one consistent API (`--set-header-*`,
+	// `--set-nav-*`, … `--set-main-*`) rather than a different knob per
+	// slot.
+	//
+	// `main` belongs here as the CONTENT slot — deliberately, not as a
+	// "minimum to satisfy the contract" shim. Its required tokens are
+	// fully meaningful: `padding-inline`/`padding-block` are the fluid
+	// content gutter + page rhythm; `color`/`background-color` are the
+	// optional tinted-content-well override hook. The DEFAULTS differ
+	// per slot (the bands/rails paint a backplate from their component
+	// layer; `<main>` defaults to see-through — `currentColor` /
+	// `transparent` — because the content well should read the body
+	// canvas unless a consumer opts into a tint). Splitting `main` into
+	// its own contract was considered and rejected: it would fragment
+	// the one-vocabulary-for-the-whole-shell consumer API for no gain.
 	'page-shell': {
 		members: ['header', 'footer', 'nav', 'aside', 'main'],
 		required: ['color', 'background-color', 'padding-inline', 'padding-block'],
