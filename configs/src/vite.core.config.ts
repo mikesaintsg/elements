@@ -1,16 +1,15 @@
-import { resolve } from 'node:path'
-import { defineConfig, mergeConfig } from 'vite'
-import { srcCore } from '../../vite.config'
+import { defineConfig } from 'vite'
+import { srcCore, resolveWorkspacePath } from '../../vite.config'
 
 export default defineConfig(
-	mergeConfig(srcCore(), {
+	srcCore({
 		build: {
 			lib: {
-				entry: resolve(import.meta.dirname, '../../src/core/index.ts'),
+				entry: resolveWorkspacePath('src/core/index.ts'),
 				formats: ['es'],
 				fileName: () => 'index.js',
 			},
-			outDir: 'dist/src/core',
+			outDir: resolveWorkspacePath('dist/src/core'),
 		},
 	}),
 )
