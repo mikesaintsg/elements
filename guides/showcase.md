@@ -12,7 +12,7 @@ The showcase is the framework's mirror — a consumer-side app that uses _only_ 
 | [`app/browser/main.ts`](../app/browser/main.ts)                         | Entry. Imports `styles/main.css` (cascade-layer order + Tailwind + framework SCSS) and mounts `App.vue`. |
 | [`app/browser/App.vue`](../app/browser/App.vue)                         | The shell: `<header>`, `<nav>` rail, `<main>` scroller, `<aside>` TOC, `<footer>`.                       |
 | [`app/browser/router.ts`](../app/browser/router.ts)                     | Hash-based router + route catalog (one entry per page, grouped per `ROUTE_GROUPS`).                      |
-| [`app/browser/types.ts`](../app/browser/types.ts)                       | `Route` / `RouteGroup` / `Group` / `Section` types + `ROUTE_GROUPS` canonical order.                     |
+| [`app/browser/types.ts`](../app/browser/types.ts)                       | `Route` / `RouteLocation` / `RouteGroup` / `Group` / `Section` types + `ROUTE_GROUPS` canonical order.                     |
 | [`app/browser/env.d.ts`](../app/browser/env.d.ts)                       | `__BUILD_ID__` declaration + `*.vue` module shim for IDEs.                                               |
 | [`app/browser/pages/`](../app/browser/pages/)                           | 43 `*.vue` page files. One per surface area; bundled where the surface naturally groups.                 |
 | [`app/browser/styles/main.css`](../app/browser/styles/main.css)         | Single CSS entry — declares `@layer`, imports Tailwind, imports the framework SCSS, sets `@source`.      |

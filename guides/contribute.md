@@ -187,11 +187,8 @@ For example: promoting an element from passthrough to substantive.
 npx vitest run --config vite.config.ts \
   tests/guides/elements.test.ts \
   tests/guides/tokens.test.ts \
-  tests/guides/elements.test.ts \
-  tests/guides/patterns.test.ts \
   tests/guides/patterns.test.ts \
   tests/src/browser/tokens.test.ts \
-  tests/guides/elements.test.ts \
   tests/src/styles/elements/_{tag}.test.ts \
   --reporter=dot
 ```
@@ -211,7 +208,6 @@ Rare — the framework is opinionated about the vocabulary — but documented in
    ```bash
    npx vitest run --config vite.config.ts \
      tests/src/browser/modifiers.test.ts \
-     tests/guides/modifiers.test.ts \
      tests/guides/modifiers.test.ts \
      tests/src/styles/modifiers/_index.test.ts \
      --reporter=dot
@@ -618,8 +614,8 @@ tests/
       {folder}/_{name}.test.ts   ← per-partial behaviour, mirrors src/styles/{folder}/_{name}.scss
 
 app/browser/
-  pages/             ← showcase pages
-  components/        ← SiteNav, Toc
+  pages/             ← showcase pages (one *.vue per surface area)
+  App.vue            ← monolithic shell (header / nav rail / main / TOC / footer)
   styles/main.css    ← single CSS entry
   router.ts          ← hash router (#/{id}/{section} deep-links)
 ```

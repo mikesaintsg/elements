@@ -57,10 +57,11 @@ src/styles/
 │
 ├── composables/             component chrome gated on a composable's state attribute
 │   ├── _aside.scss             aside[popover][data-aside-open] drawer geometry
+│   ├── _carousel.scss          carousel track / slide / autoplay layout
 │   ├── _dialog.scss            dialog.scrollable[open] body layout
 │   ├── _select.scss            select listbox / combobox layout
-│   ├── _toast.scss             output[popover]:popover-open toast-deck stacking
-│   ├── _menu.scss · _details.scss · _tabs.scss · _tooltip.scss · ...
+│   ├── _tabs.scss              tablist / tabpanel show-hide layout
+│   └── _toast.scss             output[popover]:popover-open toast-deck stacking
 │
 └── modifiers/               token-setters, never property-setters
     ├── _variants.scss          .primary .secondary .tertiary .success .warning .danger .information

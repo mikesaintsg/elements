@@ -385,7 +385,7 @@ Each file in [`src/styles/components/`](../src/styles/components/) paints either
 
 Mirrors `SURFACE_CONTRACTS` (see [§ Shape](#shape) above). Each entry carries `name`, `tokens` (`{ prefix?, required }` — `prefix` defaults to `name`), `animated`, `notes`. The animation rule + customizability-gap rule apply identically: every component with a duration token MUST invoke `@include transition()` or `@include reduced-motion`.
 
-#### The nineteen components
+#### The eighteen components
 
 Grouped by role:
 
