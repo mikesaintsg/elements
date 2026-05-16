@@ -2,9 +2,9 @@
 
 > Living checklist of where the framework stands and what remains. Read this to know **where to pick up**; read [contribute.md](guides/contribute.md) to know **how to work**.
 
-Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. **40 of 43 showcase pages are built** — every `Use*Page` in the composable catalog now ships. Remaining work is sidebar nav adjustments + cross-page polish (§9.1 / §9.2), plus a handful of post-Phase 9 audits queued under "Future work."
+Status: every framework layer (tokens, theme, mixins, modifiers, elements, components, surfaces, composables) is shipped + parity-tested. **All 43 showcase pages are built AND parity-tested** — the `tests/app/browser/` showcase suite shipped (a clean total page↔route↔barrel↔test bijection, the consolidated up/down-stream `parity.test.ts` driver, 43 per-page bespoke parity files asserting against the mounted Chromium DOM, and the §9 composable API-name guard that prevents the showcase silently rotting against `src/`). Remaining Phase-9 work is the group-collapsible sidebar's keyboard nav (§9.1) + the manual cross-page visual passes (§9.2), plus the post-Phase-9 audits queued under "Future work."
 
-**Tests:** `src:browser` + `src:styles` = **5157 / 5157 pass**.
+**Tests:** full suite **145 files / 7023 tests pass** across every project (`src:core` / `src:browser` / `src:styles` / `app:core` / `app:browser` / `guides`); `npm run check` 0/0. The showcase parity contract is codified in [`guides/showcase.md`](guides/showcase.md) §Contract / §Tests.
 
 ---
 
@@ -21,7 +21,7 @@ Status: every framework layer (tokens, theme, mixins, modifiers, elements, compo
 | 6     | Components (18 partials; tag-rooted + class-component primitives)          | ✅     |
 | 7     | Surfaces (9 partials; pseudo-element + attribute)                          | ✅     |
 | 8     | Composables (20 use/create pairs + 6 chrome partials)                      | ✅     |
-| 9     | Showcase pages — 40 of 43 (sidebar + polish remaining)                     | 🟡     |
+| 9     | Showcase pages — 43 of 43 built + parity-tested (keyboard-nav + manual polish remaining) | 🟡     |
 | 10    | Distribution (build + pack)                                                | ✅     |
 | 11    | Invariant verification (11 codified contracts)                             | ✅     |
 
@@ -29,7 +29,7 @@ For per-layer details see the matching spec guide: [tokens.md](guides/tokens.md)
 
 ---
 
-## Showcase pages — 40 of 43 shipped
+## Showcase pages — 43 of 43 shipped + parity-tested
 
 | Group                       | Pages                                                                                                                                                                    |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -43,7 +43,7 @@ For per-layer details see the matching spec guide: [tokens.md](guides/tokens.md)
 | Composables — Floating      | UsePopoverPage, UseTooltipPage                                                                                                                                           |
 | Composables — Element-bound | UseMenuPage, UseDialogPage, UseAsidePage, UseTabsPage, UseDetailsPage, UseToastPage, UseSelectPage, UseTablePage, UseFormPage, UseNavPage, UseAlertPage, UseCarouselPage |
 
-Every element page covers the static markup contract; the matching `Use*Page` covers the JS interaction layer.
+Every element page covers the static markup contract; the matching `Use*Page` covers the JS interaction layer. Every page is mounted in real Chromium by its `tests/app/browser/pages/{X}Page.test.ts` and asserted against the rendered DOM; `pages.test.ts` holds the total bijection; `parity.test.ts` proves the showcase stays in lock-step with `src/browser` / `src/styles` / the guides.
 
 **Authoring procedure for any new composable demo** — walk the [Native-platform redundancy checklist](guides/contribute.md#541-native-platform-redundancy-checklist) (`contribute.md` §5.4.1) against the factory _before_ writing the page: strip dead `[data-X-*]` writes, drop redundant ARIA, fix `runTransition`-before-native-call ordering. Ship the strip in the same PR as the page.
 
@@ -51,9 +51,9 @@ Every element page covers the static markup contract; the matching `Use*Page` co
 
 ## Remaining work — Phase 9
 
-### 9.1 Sidebar nav adjustments (before page #43)
+### 9.1 Sidebar nav adjustments
 
-The flat sidebar list works for 14 pages; with 40+ it's a 42-line scroll.
+The flat sidebar list worked for 14 pages; with all 43 it was a 42-line scroll — the group-collapsible rail (below) solved it.
 
 - ✅ **Group-collapsible sidebar** — every `RouteGroup` wraps in `<details class="flush" open><summary><h6>{group}</h6></summary><menu>…</menu></details>`. `App.vue` auto-expands the active route's group on navigation but never auto-collapses user-collapsed groups elsewhere. Inter-group dividers + open-state h6 contrast painted via `app/browser/styles/showcase.css`. Codified in [`guides/showcase.md`](guides/showcase.md).
 - ⬜ **Keyboard nav inside the rail** — arrow keys move focus between visible items; `[` / `]` collapse / expand groups.
