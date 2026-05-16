@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Icon inspection — sidebar page glyphs</title>
+		<!--
+		  DEV-ONLY icon inspection harness. NOT a Vue route, NOT part of
+		  the production showcase build, NOT scanned by any test
+		  (pages.test.ts / parity glob `pages/*.vue`). It exists purely so
+		  the 43 custom `.showcase-nav-icon` glyphs in
+		  `styles/showcase.css` can be eyeballed large and refined. It
+		  PROBES each route's resolved `--icon` from the exact shipped
+		  selector context (see icons.ts) so showcase.css stays the single
+		  source of truth. Open at /icons.html on the dev server.
+		-->
+		<style>
+			body {
+				margin: 0;
+				background: #ffffff;
+				color: #0f172a;
+				font-family: ui-sans-serif, system-ui, sans-serif;
+			}
+			.inspect-head {
+				padding: 14px 18px;
+				border-bottom: 1px solid #e2e8f0;
+				font-size: 13px;
+				color: #475569;
+			}
+			.inspect-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+				gap: 14px;
+				padding: 16px;
+			}
+			.inspect-cell {
+				border: 1px solid #e2e8f0;
+				border-radius: 10px;
+				padding: 12px 8px;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 8px;
+				background: #ffffff;
+			}
+			/* The framework `.icon` mask box is `1em`; font-size is the
+			   only knob, so a big font renders every sub-pixel of the
+			   glyph. The faint outline == the exact 1em mask box, so any
+			   stroke bleeding past the 0–16 viewBox edge is obvious. */
+			.inspect-cell .inspect-big {
+				font-size: 132px !important;
+				opacity: 1 !important;
+				margin: 0 !important;
+				outline: 1px solid #e2e8f0;
+				color: #0f172a;
+			}
+			.inspect-cell .inspect-small {
+				font-size: 18px !important;
+				opacity: 1 !important;
+				margin: 0 !important;
+				color: #0f172a;
+			}
+			.inspect-label {
+				font-size: 12px;
+				color: #334155;
+				text-align: center;
+				line-height: 1.3;
+			}
+			.inspect-label code {
+				color: #64748b;
+				font:
+					11px ui-monospace,
+					monospace;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="inspect-head">
+			Sidebar page-glyph inspection — shipped <code>.showcase-nav-icon</code> mask at 132&nbsp;px (+
+			18&nbsp;px sanity). Refine data-URIs in <code>app/browser/styles/showcase.css</code>; reload
+			to update.
+		</div>
+		<div id="grid" class="inspect-grid"></div>
+		<script type="module" src="./icons.ts"></script>
+	</body>
+</html>
