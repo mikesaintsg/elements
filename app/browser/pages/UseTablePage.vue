@@ -545,7 +545,7 @@ const reset = (): void => {
 			</small>
 			<label>
 				<small>Page size&nbsp;</small>
-				<select v-model.number="pgSize" style="display: inline-block; inline-size: auto">
+				<select v-model.number="pgSize" class="inline-block w-auto">
 					<option :value="3">3</option>
 					<option :value="4">4</option>
 					<option :value="6">6</option>

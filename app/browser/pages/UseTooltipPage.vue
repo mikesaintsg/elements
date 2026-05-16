@@ -390,7 +390,7 @@ useTooltip({ anchor, panel, placement })</code></pre>
 		</menu>
 		<div ref="pulsePanel" popover>
 			<strong>Try me!</strong>
-			<small style="display: block">programmatically shown for 1.8s</small>
+			<small class="block">programmatically shown for 1.8s</small>
 		</div>
 	</section>
 

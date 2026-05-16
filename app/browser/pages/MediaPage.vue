@@ -140,7 +140,8 @@ onMounted(() => {
 				alt=""
 				width="20"
 				height="20"
-				style="display: inline; margin-inline: 0.25em"
+				class="inline"
+				style="margin-inline: 0.25em"
 			/>
 			image sits in prose, the framework's <code>vertical-align: middle</code> keeps it aligned with
 			the surrounding text midline rather than the baseline.
@@ -265,7 +266,7 @@ onMounted(() => {
 			implicit: any ancestor with <code>color: var(--set-variant-on-canvas-color)</code>
 			retints the SVG to match.
 		</p>
-		<div style="color: var(--color-success); display: inline-block">
+		<div class="inline-block" style="color: var(--color-success)">
 			<svg viewBox="0 0 240 120" style="max-inline-size: 240px" aria-hidden="true">
 				<circle cx="120" cy="60" r="50" fill="currentColor" opacity="0.8" />
 				<circle cx="80" cy="60" r="30" fill="currentColor" opacity="0.5" />
