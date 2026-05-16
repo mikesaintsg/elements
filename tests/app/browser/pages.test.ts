@@ -122,7 +122,6 @@ function nonNamespacedSelectors(css: string): readonly string[] {
 	return out
 }
 
-const LITERAL_STYLE = /(^|[^:\w])style="([^"]*)"/g
 const SIZE_OFFSET_PROP =
 	/^(?:inline-size|block-size|width|height|(?:min|max)-(?:inline-size|block-size|width|height)|flex-basis|aspect-ratio|(?:margin|padding|inset)(?:-(?:inline|block))?(?:-(?:start|end))?|top|right|bottom|left|gap|row-gap|column-gap|translate)$/
 const OFF_SCALE_VALUE =
@@ -162,10 +161,19 @@ function splitDeclarations(value: string): string[] {
 	return out.filter(Boolean)
 }
 
+// Real element start-tags only. A `style="…"` is an applied inline
+// style ONLY when it is an attribute on an actual `<tag …>` start tag —
+// NOT `style="…"` text inside an escaped `<pre><code>` snippet
+// (`&lt;td style="…"&gt;`) or a prose placeholder (`<code>style="…"</code>`).
+// Escaped snippet text uses `&lt;`/`&gt;`, so it never matches `<tag>`.
+const START_TAG = /<[a-zA-Z][a-zA-Z0-9-]*\b[^>]*>/g
+const TAG_STYLE_ATTR = /(?:^|[^:\w-])style="([^"]*)"/
+
 function inlineStyleViolations(name: string): readonly string[] {
 	const out: string[] = []
-	for (const m of templateBlock(pages[name] ?? '').matchAll(LITERAL_STYLE)) {
-		const value = (m[2] ?? '').trim()
+	for (const tag of templateBlock(pages[name] ?? '').match(START_TAG) ?? []) {
+		const value = tag.match(TAG_STYLE_ATTR)?.[1]?.trim()
+		if (value === undefined) continue
 		const decls = splitDeclarations(value)
 		if (decls.length > 0 && decls.every(declExempt)) continue
 		out.push(`style="${value}"`)
