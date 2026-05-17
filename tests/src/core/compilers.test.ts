@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import type { ContractShape, JsonSchemaObject } from '@elements/core'
 import {
 	arrayShape,
 	booleanShape,
+	compileContract,
 	compileGenerator,
 	compileGuard,
 	compileParser,
@@ -2067,3 +2068,293 @@ describe('§13 — cyclic ContractShape fails fast at compile (precise Error, no
 	})
 })
 
+// === createRandom (F1) — Mulberry32 PRNG
+//
+// Implementation (helpers.ts): `let state = seed >>> 0` — the seed is coerced
+// to an unsigned 32-bit integer via `>>> 0` before use. Returns a closure that
+// advances the Mulberry32 state on every call and yields a float in [0, 1).
+
+describe('createRandom — Mulberry32 PRNG', () => {
+	it('same seed produces an identical sequence (determinism)', () => {
+		const n = 20
+		const a = createRandom(42)
+		const b = createRandom(42)
+		const seqA = Array.from({ length: n }, () => a())
+		const seqB = Array.from({ length: n }, () => b())
+		expect(seqA).toEqual(seqB)
+	})
+
+	it('different seeds produce different sequences', () => {
+		const n = 10
+		const a = createRandom(1)
+		const b = createRandom(2)
+		const seqA = Array.from({ length: n }, () => a())
+		const seqB = Array.from({ length: n }, () => b())
+		expect(seqA).not.toEqual(seqB)
+	})
+
+	it('every draw is in [0, 1)', () => {
+		const rng = createRandom(7)
+		for (let i = 0; i < 10000; i += 1) {
+			const v = rng()
+			expect(v).toBeGreaterThanOrEqual(0)
+			expect(v).toBeLessThan(1)
+		}
+	})
+
+	it('seed 0 — deterministic and in [0, 1)', () => {
+		const rng = createRandom(0)
+		const v = rng()
+		expect(v).toBeGreaterThanOrEqual(0)
+		expect(v).toBeLessThan(1)
+		// Second seeded instance yields the same first draw.
+		expect(createRandom(0)()).toBe(v)
+	})
+
+	it('negative seed — coerced via >>>0 (e.g. -1 → 4294967295), still deterministic', () => {
+		// -1 >>> 0 === 4294967295: a valid unsigned 32-bit seed.
+		const rng1 = createRandom(-1)
+		const rng2 = createRandom(-1)
+		const v = rng1()
+		expect(v).toBeGreaterThanOrEqual(0)
+		expect(v).toBeLessThan(1)
+		expect(rng2()).toBe(v)
+		// Different from seed 4294967295 explicitly — same bit pattern.
+		expect(createRandom(4294967295)()).toBe(v)
+	})
+
+	it('float seed — coerced via >>>0 (e.g. 1.5 → 1), matches integer seed 1', () => {
+		// 1.5 >>> 0 === 1: the fractional part is discarded.
+		const floatDraw = createRandom(1.5)()
+		const intDraw = createRandom(1)()
+		expect(floatDraw).toBe(intDraw)
+	})
+
+	it('seed 2**32 — wraps to 0 via >>>0 (same as seed 0)', () => {
+		// 2**32 >>> 0 === 0 (overflows the 32-bit range).
+		expect(createRandom(2 ** 32)()).toBe(createRandom(0)())
+	})
+
+	it('seed 2**32 + 1 — wraps to 1 via >>>0 (same as seed 1)', () => {
+		// (2**32 + 1) >>> 0 === 1.
+		expect(createRandom(2 ** 32 + 1)()).toBe(createRandom(1)())
+	})
+
+	it('two independent instances from the same seed advance independently', () => {
+		// Advancing instance A must not affect instance B's sequence.
+		const a = createRandom(7)
+		const b = createRandom(7)
+		const a0 = a()
+		const b0 = b()
+		expect(a0).toBe(b0) // same first draw
+		// Advance A two more steps.
+		a()
+		a()
+		// B's next draw should equal fresh-seeded step 2 (not A's step 4).
+		const b1 = b()
+		const ref = createRandom(7)
+		ref() // skip step 1
+		expect(b1).toBe(ref()) // B at step 2 == fresh step 2
+	})
+
+	it('no global state leakage between instances with different seeds', () => {
+		// Drawing from one instance must not alter another instance's sequence.
+		const a = createRandom(100)
+		const b = createRandom(200)
+		// Exhaust A.
+		for (let i = 0; i < 50; i += 1) {
+			a()
+		}
+		// B should still produce its normal seed-200 sequence.
+		const bDraw = b()
+		const bFresh = createRandom(200)()
+		expect(bDraw).toBe(bFresh)
+	})
+
+	it('sequence length stability — 1000 draws stay in [0, 1)', () => {
+		const rng = createRandom(42)
+		const draws = Array.from({ length: 1000 }, () => rng())
+		for (const v of draws) {
+			expect(v).toBeGreaterThanOrEqual(0)
+			expect(v).toBeLessThan(1)
+		}
+	})
+})
+
+// === compileContract (F1) — the four-operation bundle
+//
+// Implementation (compilers.ts): `compileContract(shape)` eagerly computes
+// `schema` (via `compileSchema`), a guard (via `compileGuard`), and a parser
+// (via `compileParser`) once at call time and stores them on the returned
+// object. `generate` calls `compileGenerator(shape, random)` on each
+// invocation. `.schema` is a plain property — the same reference on every
+// access.
+
+describe('compileContract — four-operation bundle', () => {
+	// Representative composite shape used across most sub-tests.
+	const makeShape = () =>
+		objectShape({
+			name: stringShape({ min: 1 }),
+			age: integerShape({ min: 0 }),
+			role: literalShape('a', 'b'),
+			bio: optionalShape(stringShape()),
+		})
+
+	it('.schema deep-equals compileSchema(shape)', () => {
+		const shape = makeShape()
+		const contract = compileContract(shape)
+		expect(contract.schema).toEqual(compileSchema(shape))
+	})
+
+	it('.schema is a stable reference — same object on every access', () => {
+		const contract = compileContract(makeShape())
+		// schema is stored as a plain property — accesses return the same ref.
+		expect(contract.schema).toBe(contract.schema)
+	})
+
+	it('.is(x) agrees with compileGuard(shape) on a valid input', () => {
+		const shape = makeShape()
+		const contract = compileContract(shape)
+		const guard = compileGuard(shape)
+		const valid = { name: 'Ada', age: 30, role: 'a' }
+		expect(contract.is(valid)).toBe(true)
+		expect(contract.is(valid)).toBe(guard(valid))
+	})
+
+	it('.is(x) agrees with compileGuard(shape) on invalid inputs', () => {
+		const shape = makeShape()
+		const contract = compileContract(shape)
+		const guard = compileGuard(shape)
+		for (const invalid of [
+			{ name: '', age: 30, role: 'a' },
+			{ name: 'Ada', age: -1, role: 'a' },
+			{ name: 'Ada', age: 30, role: 'c' },
+			{ name: 'Ada', age: 30 },
+			null,
+			42,
+			'string',
+		]) {
+			expect(contract.is(invalid)).toBe(guard(invalid))
+		}
+	})
+
+	it('.parse(x) agrees with compileParser(shape) on coercible input', () => {
+		const shape = makeShape()
+		const contract = compileContract(shape)
+		const parser = compileParser(shape)
+		const raw = { name: '  Ada  ', age: '30', role: 'b' }
+		expect(contract.parse(raw)).toEqual(parser(raw))
+		expect(contract.parse(raw)).toEqual({ name: 'Ada', age: 30, role: 'b' })
+	})
+
+	it('.parse(x) returns undefined when parsing fails', () => {
+		const contract = compileContract(makeShape())
+		expect(contract.parse({ name: '', age: 30, role: 'a' })).toBeUndefined()
+		expect(contract.parse(null)).toBeUndefined()
+	})
+
+	it('.parse↔.is soundness — every non-undefined parse result satisfies .is', () => {
+		// Use assertParseGuardSymmetry (A)(B)(C): clause (C) is exactly that whenever
+		// parse(x) is defined the guard accepts it. Avoids a conditional expect.
+		assertParseGuardSymmetry(makeShape(), [
+			{ name: 'Ada', age: 30, role: 'a' },
+			{ name: '  Bob  ', age: '25', role: 'b', bio: '  hi  ' },
+			{ name: '', age: 30, role: 'a' },
+			{ name: 'Ada', age: -1, role: 'a' },
+			null,
+		])
+	})
+
+	it('.generate(createRandom(n)) is deterministic for the same seed', () => {
+		const contract = compileContract(makeShape())
+		const a = contract.generate(createRandom(42))
+		const b = contract.generate(createRandom(42))
+		expect(a).toEqual(b)
+	})
+
+	it('.generate output satisfies .is (generator∘guard)', () => {
+		const contract = compileContract(makeShape())
+		for (const seed of [1, 2, 3, 7, 42, 99]) {
+			const value = contract.generate(createRandom(seed))
+			expect(contract.is(value)).toBe(true)
+		}
+	})
+
+	it('.generate with two different seeds produces different values (variability)', () => {
+		const contract = compileContract(makeShape())
+		const a = contract.generate(createRandom(1))
+		const b = contract.generate(createRandom(999))
+		expect(a).not.toEqual(b)
+	})
+
+	it('four-operation coherence — schema/is/parse/generate all agree on the same shape', () => {
+		const shape = makeShape()
+		const contract = compileContract(shape)
+		const standaloneGuard = compileGuard(shape)
+
+		const generated = contract.generate(createRandom(7))
+		expect(contract.is(generated)).toBe(true)
+		expect(standaloneGuard(generated)).toBe(true)
+		expect(contract.schema).toEqual(compileSchema(shape))
+
+		const parsed = contract.parse({ name: 'Ada', age: '5', role: 'a' })
+		expect(parsed).toEqual({ name: 'Ada', age: 5, role: 'a' })
+		expect(contract.is({ name: 'Ada', age: 5, role: 'a' })).toBe(true)
+	})
+
+	it('primitive-root shape — compileContract(stringShape())', () => {
+		const contract = compileContract(stringShape())
+		expect(contract.schema).toEqual({ type: 'string' })
+		expect(contract.is('hello')).toBe(true)
+		expect(contract.is(42)).toBe(false)
+		const parsed = contract.parse('  hi  ')
+		expect(parsed).toBe('hi')
+		expect(contract.is('hi')).toBe(true)
+		const gen = contract.generate(createRandom(1))
+		expect(contract.is(gen)).toBe(true)
+	})
+
+	it('recursive lazyShape-based shape — compiles, four operations work, generate is finite', () => {
+		// A recursive tree shape via lazyShape (the documented recursion mechanism).
+		const treeShape: ContractShape = objectShape({
+			value: integerShape({ min: 0 }),
+			children: arrayShape(lazyShape(() => treeShape), { max: 3 }),
+		})
+		const contract = compileContract(treeShape)
+
+		// Schema is valid JSON Schema.
+		expect(isJsonSchema(contract.schema)).toBe(true)
+
+		// Guard accepts a finite tree, rejects invalid.
+		const leaf = { value: 1, children: [] }
+		expect(contract.is(leaf)).toBe(true)
+		expect(contract.is({ value: 0, children: [leaf] })).toBe(true)
+		expect(contract.is({ value: -1, children: [] })).toBe(false)
+
+		// Parse round-trips a valid tree.
+		expect(contract.parse({ value: '3', children: [] })).toEqual({ value: 3, children: [] })
+
+		// Generate terminates, output satisfies the guard, and is deterministic.
+		const gen = contract.generate(createRandom(5))
+		expect(contract.is(gen)).toBe(true)
+		expect(contract.generate(createRandom(5))).toEqual(gen)
+	})
+
+	it('assertParseGuardSymmetry holds via compileGuard/compileParser for representative shape', () => {
+		// The canonical (A)(B)(C) soundness helper exercises the same
+		// contracts that .is and .parse must satisfy internally.
+		assertParseGuardSymmetry(makeShape(), [
+			{ name: 'Ada', age: 30, role: 'a' },
+			{ name: '  Ada  ', age: '30', role: 'b' },
+			{ name: '', age: 30, role: 'a' },
+			{ name: 'Ada', age: -1, role: 'a' },
+			{ name: 'Ada', age: 30, role: 'c' },
+			null,
+			42,
+		])
+	})
+
+	it('assertGeneratorSatisfiesGuard holds for the representative shape', () => {
+		assertGeneratorSatisfiesGuard(makeShape(), [1, 2, 3, 7, 42])
+	})
+})
