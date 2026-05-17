@@ -10,9 +10,9 @@ import { bootstrapTheme, themeState } from '../theme.js'
  * with no plumbing.
  *
  * **CSS owns OS follow.** When `setting === 'system'` (the default), the
- * factory removes `data-theme` from `<html>` and lets the stylesheet's
+ * theme service removes `data-theme` from `<html>` and lets the stylesheet's
  * `@media (prefers-color-scheme: dark)` rule do its job. When the user
- * picks an explicit `'light'` or `'dark'`, the factory pins it via
+ * picks an explicit `'light'` or `'dark'`, the theme service pins it via
  * `data-theme=<setting>`. There is exactly one matchMedia listener for the
  * entire page; it feeds `systemDark` so the `mode` ref can report what's
  * being rendered (for sun/moon icon swaps), but it does NOT rewrite the

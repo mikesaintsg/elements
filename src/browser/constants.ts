@@ -321,6 +321,16 @@ export const TREE_EVENTS = {
 
 // ── Relocated impl-file constants ───────────────────────────────────────────
 
+/** Shared frozen-empty reactive sentinels. Composables fall back to these
+ *  when their backing factory is absent so a "no data yet" computed keeps a
+ *  STABLE referential identity across re-evaluations — reactive consumers
+ *  treat an unchanged reference as "nothing changed" and skip re-render.
+ *  `readonly never[]` / `ReadonlySet<never>` are assignable to any
+ *  `readonly T[]` / `ReadonlySet<T>` (`never` is the bottom type), so a
+ *  single instance can back every typed empty without a cast. Never mutated. */
+export const EMPTY_ARRAY: readonly never[] = []
+export const EMPTY_SET: ReadonlySet<never> = new Set<never>()
+
 /** Selector for the dismiss control inside an alert. Authors mark a
  *  child element with this attribute (typically a `<button>`); a click on
  *  any descendant triggers `hide()`. Replaces Bootstrap's `.btn-close`. */

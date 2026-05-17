@@ -44,6 +44,18 @@ export interface ThemeChangeDetail {
 	readonly setting: ThemeSetting
 }
 
+/**
+ * Live shared refs handed by `themeState()` to every `createTheme` wrapper.
+ * `setting` is the WRITABLE singleton ref — the wrapper assigns
+ * `setting.value` in `set()` — so it is intentionally NOT wrapped in
+ * `Readonly<>`. `mode` is the derived `ComputedRef` (read-only by nature).
+ * Identity is stable across calls (one singleton per page).
+ */
+export interface ThemeStateRefs {
+	readonly setting: Ref<ThemeSetting>
+	readonly mode: ComputedRef<ThemeMode>
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Taxonomy primitives
 // ─────────────────────────────────────────────────────────────────────────

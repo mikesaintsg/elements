@@ -2,7 +2,6 @@ import type { Ref } from 'vue'
 import type {
 	CreateFormInstance,
 	FormEntry,
-	FormError,
 	FormFieldElement,
 	FormFieldsInterface,
 	FormValidityInterface,
@@ -10,13 +9,8 @@ import type {
 	UseFormReturn,
 } from '../types.js'
 import { computed, ref, shallowRef, watch } from 'vue'
+import { EMPTY_ARRAY, EMPTY_SET } from '../constants.js'
 import { createForm } from '../factories/createForm.js'
-
-const EMPTY_ENTRIES: readonly FormEntry[] = []
-const EMPTY_FIELDS: readonly FormFieldElement[] = []
-const EMPTY_NAMES: readonly string[] = []
-const EMPTY_ERRORS: readonly FormError[] = []
-const EMPTY_TOUCHED: ReadonlySet<string> = new Set()
 
 /**
  * Native form controller. Vue adapter over `createForm` — resolves the
@@ -35,22 +29,22 @@ export function useForm(
 ): UseFormReturn {
 	const factory = shallowRef<CreateFormInstance | null>(null)
 
-	const data = computed<readonly FormEntry[]>(() => factory.value?.data.value ?? EMPTY_ENTRIES)
+	const data = computed<readonly FormEntry[]>(() => factory.value?.data.value ?? EMPTY_ARRAY)
 	const dirty = computed<boolean>(() => factory.value?.dirty.value ?? false)
-	const touched = computed<ReadonlySet<string>>(() => factory.value?.touched.value ?? EMPTY_TOUCHED)
+	const touched = computed<ReadonlySet<string>>(() => factory.value?.touched.value ?? EMPTY_SET)
 	const valid = computed<boolean>(() => factory.value?.valid.value ?? true)
 	const validated = computed<boolean>(() => factory.value?.validated.value ?? false)
 
-	const itemsFallback = ref<readonly FormFieldElement[]>(EMPTY_FIELDS)
+	const itemsFallback = ref<readonly FormFieldElement[]>(EMPTY_ARRAY)
 
 	// fields/validity sub-domain shapes are constructed ONCE at composable
 	// level and forward to the active factory. They keep stable identity
 	// for callers that destructure once.
 	const fields: FormFieldsInterface = {
 		items: computed(() => factory.value?.fields.items.value ?? itemsFallback.value),
-		names: computed(() => factory.value?.fields.names.value ?? EMPTY_NAMES),
+		names: computed(() => factory.value?.fields.names.value ?? EMPTY_ARRAY),
 		field: (name) => factory.value?.fields.field(name) ?? null,
-		fields: (name) => factory.value?.fields.fields(name) ?? EMPTY_FIELDS,
+		fields: (name) => factory.value?.fields.fields(name) ?? EMPTY_ARRAY,
 		has: (name) => factory.value?.fields.has(name) ?? false,
 		focus: (name) => factory.value?.fields.focus(name) ?? false,
 		enable: (name) => factory.value?.fields.enable(name),
@@ -58,7 +52,7 @@ export function useForm(
 	}
 
 	const validity: FormValidityInterface = {
-		errors: computed(() => factory.value?.validity.errors.value ?? EMPTY_ERRORS),
+		errors: computed(() => factory.value?.validity.errors.value ?? EMPTY_ARRAY),
 		field: (name) => factory.value?.validity.field(name) ?? null,
 		message: (name) => factory.value?.validity.message(name) ?? null,
 		mark: (name, message) => factory.value?.validity.mark(name, message) ?? false,

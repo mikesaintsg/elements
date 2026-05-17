@@ -1,5 +1,13 @@
+// ============================================================================
+//  Page-global theme singleton service. One theme per page: `bootstrapTheme`
+//  wires the `prefers-color-scheme` listener + DOM-apply watcher exactly once
+//  and owns the `<html data-theme>` write; `themeState` hands the shared live
+//  refs to each per-caller `createTheme` wrapper; `resetTheme` tears the
+//  singleton down and is intended for tests only.
+// ============================================================================
+
 import type { ComputedRef, WatchHandle } from '@vue/reactivity'
-import type { CreateThemeOptions, ThemeMode, ThemeSetting } from './types.js'
+import type { CreateThemeOptions, ThemeMode, ThemeSetting, ThemeStateRefs } from './types.js'
 import { computed, ref, watch } from '@vue/reactivity'
 import { STORAGE_KEY_THEME, THEME_EVENTS } from './constants.js'
 import { emit, isSetting } from './helpers.js'
@@ -110,10 +118,7 @@ export function bootstrapTheme(options: CreateThemeOptions): void {
 }
 
 /** Shared reactive theme state for `createTheme` wrappers. */
-export function themeState(): {
-	readonly setting: typeof setting
-	readonly mode: typeof mode
-} {
+export function themeState(): ThemeStateRefs {
 	return { setting, mode }
 }
 

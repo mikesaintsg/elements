@@ -14,22 +14,14 @@ import type {
 	TableRow,
 	TableRowsInterface,
 	TableSelectionManagerInterface,
-	TableSortEntry,
 	TableSortManagerInterface,
 	TableStrategy,
 	UseTableOptions,
 	UseTableReturn,
 } from '../types.js'
 import { computed, shallowReactive, shallowRef, watch } from 'vue'
-import { TABLE_EVENTS } from '../constants.js'
+import { EMPTY_ARRAY, TABLE_EVENTS } from '../constants.js'
 import { createTable } from '../factories/createTable.js'
-
-const EMPTY_DATA: readonly TableRow[] = []
-const EMPTY_STRINGS: readonly string[] = []
-const EMPTY_HEADER_CELLS: readonly HTMLTableCellElement[] = []
-const EMPTY_BODY_ROWS: readonly HTMLTableRowElement[] = []
-const EMPTY_SORT_ENTRIES: readonly TableSortEntry[] = []
-const EMPTY_COLUMNS: readonly TableColumn[] = []
 
 /**
  * Native table controller. Vue adapter over `createTable` — resolves the
@@ -49,9 +41,9 @@ export function useTable(
 	const factory = shallowRef<CreateTableInstance | null>(null)
 
 	const ready = computed<boolean>(() => factory.value?.ready.value ?? false)
-	const data = computed<readonly TableRow[]>(() => factory.value?.data.value ?? EMPTY_DATA)
+	const data = computed<readonly TableRow[]>(() => factory.value?.data.value ?? EMPTY_ARRAY)
 	const total = computed<number>(() => factory.value?.total.value ?? 0)
-	const columnSchema: readonly TableColumn[] = options.columns ?? EMPTY_COLUMNS
+	const columnSchema: readonly TableColumn[] = options.columns ?? EMPTY_ARRAY
 	// Stable shallowReactive Set forwarded so templates re-render on mutation.
 	const expansionView = shallowReactive(new Set<string>())
 	const selectionView = shallowReactive(new Set<string>())
@@ -65,8 +57,8 @@ export function useTable(
 
 	const headers: TableHeadersInterface = {
 		count: computed(() => factory.value?.headers.count.value ?? 0),
-		values: computed(() => factory.value?.headers.values.value ?? EMPTY_STRINGS),
-		headers: () => factory.value?.headers.headers() ?? EMPTY_HEADER_CELLS,
+		values: computed(() => factory.value?.headers.values.value ?? EMPTY_ARRAY),
+		headers: () => factory.value?.headers.headers() ?? EMPTY_ARRAY,
 		header: (index) => factory.value?.headers.header(index) ?? null,
 		set: (values) => factory.value?.headers.set(values),
 		append: (value) => factory.value?.headers.append(value),
@@ -78,8 +70,8 @@ export function useTable(
 
 	const rows: TableRowsInterface = {
 		count: computed(() => factory.value?.rows.count.value ?? 0),
-		ids: computed(() => factory.value?.rows.ids.value ?? EMPTY_STRINGS),
-		rows: () => factory.value?.rows.rows() ?? EMPTY_BODY_ROWS,
+		ids: computed(() => factory.value?.rows.ids.value ?? EMPTY_ARRAY),
+		rows: () => factory.value?.rows.rows() ?? EMPTY_ARRAY,
 		row: (index) => factory.value?.rows.row(index) ?? null,
 		id: (index) => factory.value?.rows.id(index) ?? null,
 		has: (index) => factory.value?.rows.has(index) ?? false,
@@ -102,8 +94,8 @@ export function useTable(
 
 	const footer: TableFooterInterface = {
 		count: computed(() => factory.value?.footer.count.value ?? 0),
-		values: computed(() => factory.value?.footer.values.value ?? EMPTY_STRINGS),
-		footers: () => factory.value?.footer.footers() ?? EMPTY_HEADER_CELLS,
+		values: computed(() => factory.value?.footer.values.value ?? EMPTY_ARRAY),
+		footers: () => factory.value?.footer.footers() ?? EMPTY_ARRAY,
 		footer: (index) => factory.value?.footer.footer(index) ?? null,
 		set: (values) => factory.value?.footer.set(values),
 		append: (value) => factory.value?.footer.append(value),
@@ -114,7 +106,7 @@ export function useTable(
 	}
 
 	const sort: TableSortManagerInterface = {
-		columns: computed(() => factory.value?.sort.columns.value ?? EMPTY_SORT_ENTRIES),
+		columns: computed(() => factory.value?.sort.columns.value ?? EMPTY_ARRAY),
 		toggle: (key) => factory.value?.sort.toggle(key),
 		direction: (key) => factory.value?.sort.direction(key) ?? 'none',
 		priority: (key) => factory.value?.sort.priority(key) ?? -1,

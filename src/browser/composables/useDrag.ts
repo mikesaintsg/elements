@@ -1,9 +1,8 @@
 import type { Ref } from 'vue'
 import { computed, shallowRef, watch } from 'vue'
 import type { CreateDragInstance, CreateDragList, UseDragOptions, UseDragReturn } from '../types.js'
+import { EMPTY_SET } from '../constants.js'
 import { createDrag } from '../factories/createDrag.js'
-
-const EMPTY_SET: ReadonlySet<number> = new Set()
 
 /**
  * Native drag-source / drop-target composable. Vue adapter over

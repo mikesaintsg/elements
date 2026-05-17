@@ -2,20 +2,30 @@
 //  Browser-side helpers shared across composables / factories.
 //
 //  Everything here is framework-agnostic: no Vue imports, no SCSS class
-//  manipulation. Helpers fall into seven groups:
+//  manipulation, and no import from `traversals.ts` (the dependency edge is
+//  strictly one-way: `traversals.ts` imports `isTagType` from here). Helpers
+//  are grouped, in file order, as:
 //
-//    1. Identity / narrowing — `generateId`, type guards.
-//    2. Semantic-element gating — `assertElement` rejects hosts that
-//       don't match the composable's expected tag (e.g. `useDialog`
-//       only accepts `<dialog>`).
-//    3. Custom-event plumbing — `dispatch`, `emit`, `listen`,
-//       `bindEventMap`, `attachListeners`.
-//    4. Transition coordination — `runTransition`, `waitForFrame`.
-//    5. Shared body-scroll lock — `lockBodyScroll` / `unlockBodyScroll`
-//       used by `useDialog` and `useAside`.
-//    6. Form / table primitives.
-//    7. Popover placement primitives — `sideOf`, `alignmentOf`,
-//       `areaForPopoverPlacement`, etc.
+//    • Identity / narrowing — `generateId`, value guards.
+//    • DOM node-type guards — `isElement`, `isTagType`, `createMatcher`, …
+//    • Taxonomy primitives — `entry` (taxonomy registry row builder).
+//    • Table sort / escape — `cssEscape`, `compareCellValues`.
+//    • SCSS selector parsing — `splitTopLevel`, `tagsInHead`, …
+//    • String-list coercion — `toStringList`.
+//    • Semantic-element gating — `assertElement` / `isTagged` reject hosts
+//      that don't match the composable's expected tag (e.g. `useDialog`
+//      only accepts `<dialog>`).
+//    • Custom-event plumbing — `dispatch`, `emit`, `listen`,
+//      `bindEventMap`, `attachListeners`.
+//    • Transition coordination — `runTransition`, `waitForFrame`.
+//    • Shared body-scroll lock — `lockBodyScroll` / `unlockBodyScroll`
+//      used by `useDialog` and `useAside`.
+//    • Drag/drop, form, and table primitives.
+//    • Popover placement primitives — `sideOf`, `alignmentOf`,
+//      `areaForPopoverPlacement`, etc.
+//    • Focusability — `isFocusable` and the container scans built on it
+//      (`findFocusableElements`, `findFirstFocusable`, `findLastFocusable`).
+//    • Roving keyboard navigation — `focusableItems`, `rove`.
 // ============================================================================
 
 import type {
@@ -53,7 +63,7 @@ import {
 	TRANSITION_FALLBACK_MS,
 } from './constants.js'
 
-// ── 1. Identity / narrowing ─────────────────────────────────────────────────
+// ── Identity / narrowing ────────────────────────────────────────────────────
 
 function randomBytes(count: number): Uint8Array {
 	const buffer = new Uint8Array(count)
@@ -200,6 +210,7 @@ export function createMatcher(criteria: MatcherOptions): ElementPredicate {
 // ── Taxonomy primitives ─────────────────────────────────────────────────────
 // Factor out the boilerplate so adding rows stays a one-liner.
 
+/** Build a {@link TaxonomyEntry} row for the taxonomy registry. */
 export function entry(
 	tag: string,
 	category: ElementCategory,
@@ -322,14 +333,20 @@ export function tagsInHead(compound: string): readonly string[] {
 
 // ── String-list coercion ────────────────────────────────────────────────────
 
-/** Coerce the `value` option into the internal `readonly string[]` form. */
+/**
+ * Coerce the `value` option into the internal `readonly string[]` form.
+ *
+ * @remarks Typed → typed reshaping of an already-typed union (sibling of
+ * traversals' `toArray`), NOT the `src/core` `coerce*` family which converts
+ * `unknown` → typed. The distinct concept is why this keeps the `to*` prefix.
+ */
 export function toStringList(input: string | readonly string[] | undefined): readonly string[] {
 	if (input === undefined) return []
 	if (typeof input === 'string') return input === '' ? [] : [input]
 	return [...input]
 }
 
-// ── 2. Semantic-element gating ──────────────────────────────────────────────
+// ── Semantic-element gating ─────────────────────────────────────────────────
 
 /**
  * Tag-name guard for composables that bind to a single semantic element.
@@ -385,7 +402,7 @@ export function isTagged<T extends HTMLElement>(
 	return list.includes(tag)
 }
 
-// ── 3. Custom-event plumbing ────────────────────────────────────────────────
+// ── Custom-event plumbing ───────────────────────────────────────────────────
 // Composables dispatch typed CustomEvents on bound elements so external
 // consumers can observe or cancel transitions via addEventListener — the
 // same pattern Bootstrap uses for `show.bs.modal`, etc.
@@ -464,7 +481,7 @@ export function attachListeners(
 	}
 }
 
-// ── 4. Transition coordination ──────────────────────────────────────────────
+// ── Transition coordination ─────────────────────────────────────────────────
 
 /**
  * Run `callback` once after the next CSS transition on `el`, with a
@@ -508,7 +525,7 @@ export function waitForFrame(): Promise<void> {
 	})
 }
 
-// ── 5. Shared body-scroll lock ──────────────────────────────────────────────
+// ── Shared body-scroll lock ─────────────────────────────────────────────────
 // Both `useDialog` and `useAside` call these helpers so concurrent open
 // instances don't stomp each other's paddingRight.
 
@@ -546,7 +563,7 @@ export function unlockBodyScroll(): void {
 	document.body.removeAttribute(BODY_LOCKED_ATTR)
 }
 
-// ── 6a. Drag/drop detail guards ─────────────────────────────────────────────
+// ── Drag/drop detail guards ─────────────────────────────────────────────────
 
 /** Narrow an unknown value to a drag/drop insertion position. */
 export function isDropPosition(value: unknown): value is DropPosition {
@@ -622,7 +639,7 @@ export function extractRows(root: HTMLElement | null): readonly HTMLElement[] {
 	)
 }
 
-// ── 6b. Form helpers ────────────────────────────────────────────────────────
+// ── Form helpers ────────────────────────────────────────────────────────────
 
 /** Narrow an element to a native form-associated field element. */
 export function isFormFieldElement(element: Element): element is FormFieldElement {
@@ -695,7 +712,7 @@ export function fieldName(element: Element): string | null {
 	return isFormFieldElement(element) && element.name ? element.name : null
 }
 
-// ── 6c. Table helpers ───────────────────────────────────────────────────────
+// ── Table helpers ───────────────────────────────────────────────────────────
 
 /** Write a primitive or Node value into a native table cell. */
 export function writeTableCell(cell: HTMLTableCellElement, value: TableInput): void {
@@ -912,7 +929,7 @@ export function readTableColumns(element: HTMLTableElement): readonly TableRow[]
 	return columns
 }
 
-// ── 7. Popover placement primitives ─────────────────────────────────────────
+// ── Popover placement primitives ────────────────────────────────────────────
 // Pure transformers over the `Placement = Side | ${Side}-${Alignment}` shape.
 // Used by usePopover (and any composable that wraps it) to decompose a
 // placement string and feed it into the surface-layer `position-area` token.
@@ -966,7 +983,104 @@ export function resolvePopoverSide(anchor: HTMLElement, panel: HTMLElement): Sid
 	return 'bottom'
 }
 
-// ── 8. Roving keyboard navigation ───────────────────────────────────────────
+// ── Focusability ────────────────────────────────────────────────────────────
+// The real focusability predicate plus container scans built on it. These
+// live here (not in `traversals.ts`) so `traversals.ts` stays free of focus
+// logic and `helpers.ts` keeps a one-way `traversals → helpers` edge with no
+// import cycle. `findFocusableElements` / `findFirstFocusable` use a
+// self-contained depth-first stack walk (same pre-order as the traversals
+// `walkDescendants`: children pushed last-first so the stack pops in document
+// order) so this module imports NOTHING from `traversals.ts`.
+
+/** Check if an element can actually receive focus. */
+export function isFocusable(element: HTMLElement): boolean {
+	if (
+		(element instanceof HTMLButtonElement ||
+			element instanceof HTMLFieldSetElement ||
+			element instanceof HTMLInputElement ||
+			element instanceof HTMLOptGroupElement ||
+			element instanceof HTMLOptionElement ||
+			element instanceof HTMLSelectElement ||
+			element instanceof HTMLTextAreaElement) &&
+		element.disabled
+	) {
+		return false
+	}
+
+	if (element.tabIndex < 0) {
+		return false
+	}
+
+	const tag = element.tagName
+	if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') {
+		return true
+	}
+
+	if (tag === 'A' && element.hasAttribute('href')) {
+		return true
+	}
+
+	if (element.hasAttribute('tabindex')) {
+		return true
+	}
+
+	return element.isContentEditable
+}
+
+/** Find all focusable elements within a container, in document order. */
+export function findFocusableElements(element: Element): readonly HTMLElement[] {
+	const focusable: HTMLElement[] = []
+	const stack: Element[] = []
+	let child = element.lastElementChild
+	while (child !== null) {
+		stack.push(child)
+		child = child.previousElementSibling
+	}
+	while (stack.length > 0) {
+		const current = stack.pop()
+		if (current === undefined) break
+		if (current instanceof HTMLElement && isFocusable(current)) {
+			focusable.push(current)
+		}
+		child = current.lastElementChild
+		while (child !== null) {
+			stack.push(child)
+			child = child.previousElementSibling
+		}
+	}
+	return focusable
+}
+
+/** Find the first focusable element (depth-first, document order). */
+export function findFirstFocusable(element: Element): HTMLElement | null {
+	const stack: Element[] = []
+	let child = element.lastElementChild
+	while (child !== null) {
+		stack.push(child)
+		child = child.previousElementSibling
+	}
+	while (stack.length > 0) {
+		const current = stack.pop()
+		if (current === undefined) break
+		if (current instanceof HTMLElement && isFocusable(current)) {
+			return current
+		}
+		child = current.lastElementChild
+		while (child !== null) {
+			stack.push(child)
+			child = child.previousElementSibling
+		}
+	}
+	return null
+}
+
+/** Find the last focusable element. */
+export function findLastFocusable(element: Element): HTMLElement | null {
+	const focusable = findFocusableElements(element)
+	return focusable.length > 0 ? focusable[focusable.length - 1] ?? null : null
+}
+
+// ── Roving keyboard navigation ──────────────────────────────────────────────
 
 /**
  * Return all `selector`-matching descendants of `root` that can actually
@@ -981,14 +1095,16 @@ export function resolvePopoverSide(anchor: HTMLElement, panel: HTMLElement): Sid
  * `<li>` has `tabIndex = -1` by default, so `.focus()` is a silent no-op
  * and the user sees nothing happen.
  *
- * Filtering on `tabIndex >= 0` drops the non-focusable wrapper while
- * preserving the case where the `<li>` itself is the tab-stop (the
+ * Filtering through {@link isFocusable} drops the non-focusable wrapper
+ * while preserving the case where the `<li>` itself is the tab-stop (the
  * author opts in with `tabindex="0"` and presumably hasn't also nested
- * an `<a>` / `<button>` inside).
+ * an `<a>` / `<button>` inside). Reusing the shared focusability predicate
+ * (rather than a bare `tabIndex >= 0` check) also excludes disabled native
+ * controls that happen to keep a non-negative `tabIndex`.
  */
 export function focusableItems(root: HTMLElement | null, selector: string): HTMLElement[] {
 	if (!root) return []
-	return Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((el) => el.tabIndex >= 0)
+	return Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((el) => isFocusable(el))
 }
 
 /**
