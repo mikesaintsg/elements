@@ -396,4 +396,5 @@ Optional properties wrapped in `optionalShape()` surface as true optional fields
 
 - [README.md](README.md) — the pointer file; the full repository map by concept and by directory.
 - [parsers.md](parsers.md) — the flat value / field / env parsers the contract compilers reuse for primitive coercion.
+- [schema.md](schema.md) — the inverse subsystem; the round-trip back from a JSON Schema into this forward pipeline.
 - [elements.md](elements.md) — sibling spec for the TS public API surface and its bidirectional parity contract.
