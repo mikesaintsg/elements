@@ -53,6 +53,7 @@ import {
 	compileGuard,
 	compileParser,
 	compileSchema,
+	compileSchemaShape,
 	constShape,
 	createRandom,
 	defaultShape,
@@ -381,4 +382,72 @@ export const lazyConsumerSchemaExact: true = exactCheck<
 	ReturnType<typeof lazyConsumer>['schema'],
 	JsonSchema
 >()
+
+// === 6. E3 compileSchemaShape — round-trip bridge static-type pin
+//
+// `compileSchemaShape(schema)` returns the WIDE `ContractShape` union (a JSON
+// Schema's static TS type is NOT statically known here — the runtime narrow
+// is honest, the static type is not; documented in the schema.ts TSDoc).
+// Pinned here as a GENUINE guard:
+//
+//  (a) `schemaShapeReturnExact` — the return type is EXACTLY `ContractShape`
+//      (the bare union, NOT a const-generic builder literal). This is the
+//      load-bearing D2.5 guard: were the return widened to a const-generic
+//      `{…literal…} & WideInterface` intersection, every forward compiler
+//      below would re-materialize the polluted `Infer` and could reintroduce
+//      the TS2589 explosion. `IsExact<…, ContractShape>` resolving to `true`
+//      certifies the return is the plain union — a regression flips it to
+//      `false` (hard TS2322 on the `: true`).
+//
+//  (b) `schemaShapeForward` — the realistic round-trip consumer
+//      (`compileSchemaShape(s)` -> the forward `compileGuard`/`compileParser`/
+//      `compileSchema`) must COMPILE and stay precisely typed. These three
+//      forward compilers are NON-generic (`(shape: ContractShape) => …`) and
+//      do NOT materialize `Infer`, so they are the sound, explosion-free way
+//      an externally-sourced schema (no static type) flows back into the
+//      pipeline — exactly the documented bridge. (Note: `compileContract`'s
+//      GENERIC overload `<S extends ContractShape>` is deliberately NOT
+//      exercised over a bare-`ContractShape` value here — that overload
+//      eagerly evaluates `Infer<ContractShape>` for ANY bare-union argument,
+//      a PRE-EXISTING `compileContract` characteristic unrelated to E3; the
+//      honest bridge for a typeless schema is the `Infer`-free forward
+//      compilers, and pinning their exact function types is the genuine
+//      regression guard.)
+//
+// A regression that made `compileSchemaShape` const-generic would flip (a) to
+// `false` (TS2322) OR trip TS2589 in the (b) forward calls — both fail
+// `npm run check`.
+
+export const schemaShapeReturnExact: true = exactCheck<
+	ReturnType<typeof compileSchemaShape>,
+	ContractShape
+>()
+
+declare const e3Schema: JsonSchema
+export function schemaShapeForward(x: unknown): {
+	guarded: boolean
+	parsed: unknown
+	schema: JsonSchema
+} {
+	const shape: ContractShape = compileSchemaShape(e3Schema)
+	// The Infer-free forward compilers (non-generic — no `Infer<S>`
+	// materialization) are the sound round-trip path for a typeless schema.
+	const guard = compileGuard(shape)
+	const parse = compileParser(shape)
+	const schema = compileSchema(shape)
+	return { guarded: guard(x), parsed: parse(x), schema }
+}
+export const schemaShapeGuardFnExact: true = exactCheck<
+	ReturnType<typeof schemaShapeForward>['guarded'],
+	boolean
+>()
+export const schemaShapeParseValExact: true = exactCheck<
+	ReturnType<typeof schemaShapeForward>['parsed'],
+	unknown
+>()
+export const schemaShapeSchemaExact: true = exactCheck<
+	ReturnType<typeof schemaShapeForward>['schema'],
+	JsonSchema
+>()
+
 void recursiveThunk

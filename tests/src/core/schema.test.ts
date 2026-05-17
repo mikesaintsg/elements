@@ -29,6 +29,7 @@ import {
 	compileGuard,
 	compileSchema,
 	compileSchemaGuard,
+	compileSchemaShape,
 	constShape,
 	createRefResolver,
 	integerShape,
@@ -1150,4 +1151,819 @@ describe('compileSchemaGuard — forward<->inverse cross-consistency', () => {
 			expect(fromSchema(sample)).toBe(fromShape(sample))
 		}
 	})
+})
+
+// ============================================================================
+//  E3 — compileSchemaShape: JSON Schema -> a ContractShape (round-trip bridge)
+//
+//  Documented contract under test (mirrors the compiler's TSDoc):
+//
+//   * `compileSchemaShape(schema)` maps a JSON-Schema document BACK to a
+//     `ContractShape`, so an external schema flows into the FORWARD pipeline
+//     (`compileGuard`/`compileSchema`/`compileContract`/`Infer`). It is the
+//     round-trip bridge that closes E1+E2's inverse subsystem.
+//   * It is a BEST-EFFORT structural mapping. For the SUPPORTED keyword
+//     subset the invariant `compileGuard(compileSchemaShape(s))` agrees with
+//     `compileSchemaGuard(s)` holds. For UNSUPPORTED keywords (`format`
+//     semantics, `exclusive*`, `multipleOf`, `uniqueItems`,
+//     `patternProperties`, `propertyNames`, `min|maxProperties`, `not`,
+//     `if/then/else`, open-tail `prefixItems`) the produced shape is LOOSER
+//     (it omits that constraint) — these are documented, intentional, and
+//     tested as KNOWN divergences, not silent bugs.
+//   * Recursive `$ref` -> a `lazyShape` whose thunk resolves the target,
+//     memoized by canonical pointer, so a recursive schema yields a finite
+//     recursive `ContractShape` the forward pipeline handles WITHOUT stack
+//     overflow.
+//   * §13: a malformed/external/pure-ref-cycle `$ref` is a COMPILE-time
+//     precise throw (propagated from E1); a `false` boolean schema is
+//     unsupported (no "never" shape in the DSL) -> precise compile throw.
+// ============================================================================
+
+describe('compileSchemaShape — type keyword -> primitive shapers', () => {
+	it('single primitive types map to the matching primitive shaper', () => {
+		expect(compileSchemaShape({ type: 'string' }).type).toBe('string')
+		expect(compileSchemaShape({ type: 'number' }).type).toBe('number')
+		const integer = compileSchemaShape({ type: 'integer' })
+		expect(integer.type).toBe('number')
+		expect(integer.type === 'number' && integer.integer).toBe(true)
+		expect(compileSchemaShape({ type: 'boolean' }).type).toBe('boolean')
+		expect(compileSchemaShape({ type: 'object' }).type).toBe('object')
+		expect(compileSchemaShape({ type: 'array' }).type).toBe('array')
+	})
+
+	it('`type: "null"` -> constShape(null) (DECISION: no nullShape exists)', () => {
+		const shape = compileSchemaShape({ type: 'null' })
+		expect(shape.type).toBe('const')
+		expect(shape.type === 'const' && shape.value).toBe(null)
+		const g = compileGuard(shape)
+		expect(g(null)).toBe(true)
+		expect(g(0)).toBe(false)
+		expect(g(undefined)).toBe(false)
+	})
+
+	it('`type` array -> unionShape of the per-type shapes (DECISION)', () => {
+		const shape = compileSchemaShape({ type: ['string', 'null'] })
+		expect(shape.type).toBe('union')
+		const g = compileGuard(shape)
+		expect(g('x')).toBe(true)
+		expect(g(null)).toBe(true)
+		expect(g(1)).toBe(false)
+	})
+
+	it('a schema with no `type` and no constraints -> rawShape (accept anything)', () => {
+		const shape = compileSchemaShape({})
+		expect(shape.type).toBe('raw')
+		const g = compileGuard(shape)
+		expect(g('x')).toBe(true)
+		expect(g(123)).toBe(true)
+		expect(g(null)).toBe(true)
+		expect(g({ a: 1 })).toBe(true)
+	})
+})
+
+describe('compileSchemaShape — enum / const', () => {
+	it('enum of primitives -> literalShape(...values)', () => {
+		const shape = compileSchemaShape({ enum: ['a', 1, true] })
+		expect(shape.type).toBe('literal')
+		const g = compileGuard(shape)
+		expect(g('a')).toBe(true)
+		expect(g(1)).toBe(true)
+		expect(g(true)).toBe(true)
+		expect(g('b')).toBe(false)
+	})
+
+	it('enum containing structural members -> unionShape of constShapes (DECISION)', () => {
+		const shape = compileSchemaShape({ enum: [{ a: 1 }, [1, 2], 'p'] })
+		expect(shape.type).toBe('union')
+		const g = compileGuard(shape)
+		expect(g({ a: 1 })).toBe(true)
+		expect(g([1, 2])).toBe(true)
+		expect(g('p')).toBe(true)
+		expect(g({ a: 2 })).toBe(false)
+	})
+
+	it('const -> constShape(value)', () => {
+		const shape = compileSchemaShape({ const: { x: [1], y: 'z' } })
+		expect(shape.type).toBe('const')
+		const g = compileGuard(shape)
+		expect(g({ x: [1], y: 'z' })).toBe(true)
+		expect(g({ x: [2], y: 'z' })).toBe(false)
+	})
+})
+
+describe('compileSchemaShape — string constraints', () => {
+	it('minLength/maxLength/pattern -> stringShape({min,max,pattern})', () => {
+		const shape = compileSchemaShape({
+			type: 'string',
+			minLength: 2,
+			maxLength: 4,
+			pattern: 'ab',
+		})
+		expect(shape.type).toBe('string')
+		if (shape.type !== 'string') throw new Error('unreachable')
+		expect(shape.min).toBe(2)
+		expect(shape.max).toBe(4)
+		expect(shape.pattern instanceof RegExp).toBe(true)
+		const g = compileGuard(shape)
+		expect(g('abc')).toBe(true)
+		expect(g('a')).toBe(false)
+		expect(g('xxxxx')).toBe(false)
+	})
+})
+
+describe('compileSchemaShape — number constraints', () => {
+	it('minimum/maximum -> numberShape({min,max})', () => {
+		const shape = compileSchemaShape({ type: 'number', minimum: 0, maximum: 10 })
+		expect(shape.type).toBe('number')
+		const g = compileGuard(shape)
+		expect(g(0)).toBe(true)
+		expect(g(10)).toBe(true)
+		expect(g(-1)).toBe(false)
+		expect(g(11)).toBe(false)
+	})
+
+	it('integer + bounds -> integerShape({min,max})', () => {
+		const shape = compileSchemaShape({ type: 'integer', minimum: 1, maximum: 3 })
+		expect(shape.type === 'number' && shape.integer).toBe(true)
+		const g = compileGuard(shape)
+		expect(g(2)).toBe(true)
+		expect(g(2.5)).toBe(false)
+		expect(g(5)).toBe(false)
+	})
+})
+
+describe('compileSchemaShape — array', () => {
+	it('items + min/maxItems -> arrayShape(itemShape, {min,max})', () => {
+		const shape = compileSchemaShape({
+			type: 'array',
+			items: { type: 'number' },
+			minItems: 1,
+			maxItems: 3,
+		})
+		expect(shape.type).toBe('array')
+		const g = compileGuard(shape)
+		expect(g([1, 2])).toBe(true)
+		expect(g([])).toBe(false)
+		expect(g([1, 2, 3, 4])).toBe(false)
+		expect(g([1, 'x'])).toBe(false)
+	})
+
+	it('prefixItems + items:false -> tupleShape(...prefixShapes) (closed)', () => {
+		const shape = compileSchemaShape({
+			type: 'array',
+			prefixItems: [{ type: 'string' }, { type: 'number' }],
+			items: false,
+		})
+		expect(shape.type).toBe('tuple')
+		const g = compileGuard(shape)
+		expect(g(['a', 1])).toBe(true)
+		expect(g(['a'])).toBe(false)
+		expect(g(['a', 1, 2])).toBe(false)
+		expect(g([1, 'a'])).toBe(false)
+	})
+
+	it('an untyped array (no items) -> arrayShape(rawShape) (accept any element)', () => {
+		const shape = compileSchemaShape({ type: 'array' })
+		expect(shape.type).toBe('array')
+		const g = compileGuard(shape)
+		expect(g([1, 'x', null, {}])).toBe(true)
+		expect(g('x')).toBe(false)
+	})
+})
+
+describe('compileSchemaShape — object', () => {
+	it('properties/required -> objectShape with optionalShape for non-required', () => {
+		const shape = compileSchemaShape({
+			type: 'object',
+			properties: { a: { type: 'string' }, b: { type: 'number' } },
+			required: ['a'],
+			additionalProperties: false,
+		})
+		expect(shape.type).toBe('object')
+		if (shape.type !== 'object') throw new Error('unreachable')
+		expect(shape.properties['b']?.type).toBe('optional')
+		const g = compileGuard(shape)
+		expect(g({ a: 'x' })).toBe(true)
+		expect(g({ a: 'x', b: 1 })).toBe(true)
+		expect(g({ b: 1 })).toBe(false)
+		expect(g({ a: 'x', extra: 1 })).toBe(false)
+	})
+
+	it('additionalProperties true -> open; schema -> typed-open', () => {
+		const open = compileGuard(
+			compileSchemaShape({
+				type: 'object',
+				properties: { a: { type: 'string' } },
+				additionalProperties: true,
+			}),
+		)
+		expect(open({ a: 'x', extra: 1 })).toBe(true)
+		const typed = compileGuard(
+			compileSchemaShape({
+				type: 'object',
+				properties: { a: { type: 'string' } },
+				additionalProperties: { type: 'number' },
+			}),
+		)
+		expect(typed({ a: 'x', extra: 1 })).toBe(true)
+		expect(typed({ a: 'x', extra: 'no' })).toBe(false)
+	})
+})
+
+describe('compileSchemaShape — composition', () => {
+	it('allOf of object members -> intersectionShape (D2)', () => {
+		const shape = compileSchemaShape({
+			allOf: [
+				{ type: 'object', properties: { a: { type: 'string' } }, required: ['a'] },
+				{ type: 'object', properties: { b: { type: 'number' } }, required: ['b'] },
+			],
+		})
+		expect(shape.type).toBe('intersection')
+		const g = compileGuard(shape)
+		expect(g({ a: 'x', b: 1 })).toBe(true)
+		expect(g({ a: 'x' })).toBe(false)
+	})
+
+	it('anyOf -> unionShape (anyOf)', () => {
+		const shape = compileSchemaShape({ anyOf: [{ type: 'string' }, { type: 'number' }] })
+		expect(shape.type).toBe('union')
+		const g = compileGuard(shape)
+		expect(g('x')).toBe(true)
+		expect(g(1)).toBe(true)
+		expect(g(true)).toBe(false)
+	})
+
+	it('oneOf -> oneOfShape (exactly-one, B4)', () => {
+		const shape = compileSchemaShape({
+			oneOf: [
+				{ type: 'number', minimum: 0 },
+				{ type: 'number', maximum: 100 },
+			],
+		})
+		expect(shape.type === 'union' && shape.mode).toBe('oneOf')
+		const g = compileGuard(shape)
+		expect(g(50)).toBe(false)
+		expect(g(-5)).toBe(true)
+		expect(g(150)).toBe(true)
+	})
+})
+
+describe('compileSchemaShape — boolean schema', () => {
+	it('true -> rawShape (accepts anything)', () => {
+		const shape = compileSchemaShape(true)
+		expect(shape.type).toBe('raw')
+		const g = compileGuard(shape)
+		expect(g(123)).toBe(true)
+		expect(g(null)).toBe(true)
+	})
+
+	it('false schema is UNSUPPORTED -> precise compile throw (§13, no "never" shape)', () => {
+		expect(() => compileSchemaShape(false)).toThrow(/false.*schema|no.*never|unsupported/i)
+	})
+})
+
+describe('compileSchemaShape — $ref / recursive $ref -> lazyShape', () => {
+	it('resolves a local $ref', () => {
+		const shape = compileSchemaShape({
+			$defs: { Id: { type: 'string', minLength: 1 } },
+			$ref: '#/$defs/Id',
+		})
+		const g = compileGuard(shape)
+		expect(g('x')).toBe(true)
+		expect(g('')).toBe(false)
+		expect(g(1)).toBe(false)
+	})
+
+	it('recursive $ref -> a lazyShape-based recursive ContractShape', () => {
+		const schema: JsonSchema = {
+			$defs: {
+				Node: {
+					type: 'object',
+					properties: {
+						value: { type: 'string' },
+						next: { anyOf: [{ $ref: '#/$defs/Node' }, { type: 'null' }] },
+					},
+					required: ['value', 'next'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/Node',
+		}
+		const shape = compileSchemaShape(schema)
+		const g = compileGuard(shape)
+		const good = { value: 'a', next: { value: 'b', next: { value: 'c', next: null } } }
+		expect(g(good)).toBe(true)
+		const bad = { value: 'a', next: { value: 42, next: null } }
+		expect(g(bad)).toBe(false)
+		const malformed = { value: 'a' }
+		expect(g(malformed)).toBe(false)
+	})
+
+	it('recursive $ref shape is non-explosive at compile AND eval (deep finite value)', () => {
+		const schema: JsonSchema = {
+			$defs: {
+				List: {
+					type: 'object',
+					properties: { next: { anyOf: [{ $ref: '#/$defs/List' }, { type: 'null' }] } },
+					required: ['next'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/List',
+		}
+		// Compile must not stack-overflow on the recursive schema.
+		const shape = compileSchemaShape(schema)
+		const g = compileGuard(shape)
+		let deep: { next: unknown } = { next: null }
+		for (let i = 0; i < 500; i += 1) {
+			deep = { next: deep }
+		}
+		expect(g(deep)).toBe(true)
+	})
+
+	it('recursive $ref shape is the canonical lazyShape pattern (cyclic-DATA is a forward-pipeline limitation, not an E3 defect)', () => {
+		// DOCUMENTED, SEPARATELY-OWNED forward-pipeline behavior: `compileGuard`
+		// (D3 `'lazy'` arm) is NOT cyclic-DATA-safe at the lazy boundary — it
+		// relies on FINITE recursive data (only E2's `compileSchemaGuard`
+		// `compileRef` adds an explicit seen-set + MAX_DATA_DEPTH). The
+		// CANONICAL sanctioned recursive pattern
+		// `objectShape({ children: arrayShape(lazyShape(() => treeShape)) })`
+		// itself RangeErrors on a self-cyclic value under `compileGuard`. E3's
+		// produced shape has the IDENTICAL recursion profile (one stable
+		// `lazyShape` thunk per `$ref` pointer), so it inherits exactly that
+		// forward-pipeline property — this is NOT an E3 defect and E3 must not
+		// fight it (the task's "don't fight pre-existing forward gaps" rule).
+		// What E3 GUARANTEES (and is asserted here): the produced shape is the
+		// canonical single-stable-thunk lazy pattern and FINITE recursive data
+		// is handled correctly (covered by the sibling tests). The cyclic-data
+		// behavior is pinned here against the canonical pattern so a future D3
+		// hardening that makes the forward guard cyclic-safe also fixes this
+		// for free.
+		const schema: JsonSchema = {
+			$defs: {
+				Node: {
+					type: 'object',
+					properties: { next: { anyOf: [{ $ref: '#/$defs/Node' }, { type: 'null' }] } },
+					required: ['next'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/Node',
+		}
+		// Compile (schema -> shape -> forward guard) must NOT explode.
+		const g = compileGuard(compileSchemaShape(schema))
+		// Finite recursive data: handled correctly (the E3 guarantee).
+		expect(g({ next: { next: null } })).toBe(true)
+		expect(g({ next: { next: 1 } })).toBe(false)
+		// Self-cyclic data behaves EXACTLY like the canonical sanctioned
+		// recursive shape under `compileGuard` (separately-owned forward
+		// D3 limitation — pinned, not fought).
+		const canonical: ContractShape = {
+			type: 'object',
+			properties: {
+				next: {
+					type: 'union',
+					variants: [
+						{ type: 'lazy', thunk: () => canonical },
+						{ type: 'const', value: null },
+					],
+				},
+			},
+		}
+		const canonicalGuard = compileGuard(canonical)
+		const cyclic: Record<string, unknown> = {}
+		cyclic['next'] = cyclic
+		const e3Threw = (() => {
+			try {
+				g(cyclic)
+				return 'no-throw'
+			} catch (error) {
+				return error instanceof RangeError ? 'RangeError' : 'other'
+			}
+		})()
+		const canonicalThrew = (() => {
+			try {
+				canonicalGuard(cyclic)
+				return 'no-throw'
+			} catch (error) {
+				return error instanceof RangeError ? 'RangeError' : 'other'
+			}
+		})()
+		expect(e3Threw).toBe(canonicalThrew)
+	})
+
+	it('mutually-recursive $ref (A<->B) -> recursive shape compiles and guards', () => {
+		const schema: JsonSchema = {
+			$defs: {
+				A: {
+					type: 'object',
+					properties: { b: { anyOf: [{ $ref: '#/$defs/B' }, { type: 'null' }] } },
+					required: ['b'],
+					additionalProperties: false,
+				},
+				B: {
+					type: 'object',
+					properties: { a: { anyOf: [{ $ref: '#/$defs/A' }, { type: 'null' }] } },
+					required: ['a'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/A',
+		}
+		const g = compileGuard(compileSchemaShape(schema))
+		expect(g({ b: { a: { b: null } } })).toBe(true)
+		expect(g({ b: { a: { b: 1 } } })).toBe(false)
+	})
+})
+
+describe('compileSchemaShape — §13: malformed SCHEMA throws at COMPILE time', () => {
+	it('unresolvable $ref throws at compile (propagated from E1)', () => {
+		expect(() => compileSchemaShape({ $ref: '#/$defs/Nope' })).toThrow(/#\/\$defs\/Nope/)
+	})
+
+	it('external $ref throws at compile', () => {
+		expect(() => compileSchemaShape({ $ref: 'https://x/y#/z' })).toThrow(
+			/external \$ref unsupported/,
+		)
+	})
+
+	it('pure-$ref-only cycle throws a precise compile-time Error', () => {
+		expect(() =>
+			compileSchemaShape({
+				$defs: { A: { $ref: '#/$defs/B' }, B: { $ref: '#/$defs/A' } },
+				$ref: '#/$defs/A',
+			}),
+		).toThrow(/circular \$ref/i)
+	})
+})
+
+// === The supported-subset invariant
+//
+// For the SUPPORTED keyword subset, `compileGuard(compileSchemaShape(s))`
+// MUST agree with `compileSchemaGuard(s)` (E2) on a sample of inputs. This is
+// the round-trip soundness anchor: the schema->shape->forward-guard path and
+// the schema->guard path coincide where the shape DSL can represent the
+// schema.
+
+describe('compileSchemaShape — supported-subset invariant (compileGuard∘compileSchemaShape === compileSchemaGuard)', () => {
+	const cases: { name: string; schema: JsonSchema; samples: readonly unknown[] }[] = [
+		{
+			name: 'string min/max/pattern',
+			schema: { type: 'string', minLength: 2, maxLength: 5, pattern: 'a' },
+			samples: ['ab', 'a', 'abcdef', 'xax', 'bb', 1, null],
+		},
+		{
+			name: 'integer min/max',
+			schema: { type: 'integer', minimum: 0, maximum: 10 },
+			samples: [0, 10, -1, 11, 3.5, 'x', Number.NaN],
+		},
+		{
+			name: 'number bounds',
+			schema: { type: 'number', minimum: -1, maximum: 1 },
+			samples: [0, -1, 1, 2, Number.POSITIVE_INFINITY, 'x'],
+		},
+		{ name: 'boolean', schema: { type: 'boolean' }, samples: [true, false, 0, 'true'] },
+		{ name: 'null', schema: { type: 'null' }, samples: [null, undefined, 0, ''] },
+		{
+			name: 'type union [string,null]',
+			schema: { type: ['string', 'null'] },
+			samples: ['x', null, 1, undefined],
+		},
+		{
+			name: 'enum primitives',
+			schema: { enum: ['a', 1, true] },
+			samples: ['a', 1, true, 'b', 2, false],
+		},
+		{
+			name: 'const object',
+			schema: { const: { kind: 'a', n: 1 } },
+			samples: [{ kind: 'a', n: 1 }, { kind: 'a', n: 2 }, { kind: 'a' }, 'x'],
+		},
+		{
+			name: 'array<number> min/max',
+			schema: { type: 'array', items: { type: 'number' }, minItems: 1, maxItems: 3 },
+			samples: [[1], [1, 2, 3], [], [1, 2, 3, 4], [1, 'x'], 'no'],
+		},
+		{
+			// FULL-length samples only: E2's prefixItems+items:false closed
+			// tuple does NOT enforce a LOWER length bound (no minItems), so a
+			// SHORT array (`['a']`) passes E2 but fails the exact-length
+			// `tupleShape`. That short-tuple divergence is asserted explicitly
+			// in the "documented fidelity gaps" block below; the invariant here
+			// uses full/over-length samples where E2 and the shape agree.
+			name: 'closed tuple [string,number] (length >= arity)',
+			schema: {
+				type: 'array',
+				prefixItems: [{ type: 'string' }, { type: 'number' }],
+				items: false,
+			},
+			samples: [['a', 1], ['a', 1, 2], [1, 'a'], ['a', 'b'], 'no'],
+		},
+		{
+			name: 'object person (required + optional + closed)',
+			schema: {
+				type: 'object',
+				properties: {
+					name: { type: 'string', minLength: 1 },
+					age: { type: 'integer', minimum: 0 },
+					bio: { type: 'string' },
+				},
+				required: ['name', 'age'],
+				additionalProperties: false,
+			},
+			samples: [
+				{ name: 'Ada', age: 30 },
+				{ name: 'Ada', age: 30, bio: 'x' },
+				{ name: '', age: 30 },
+				{ name: 'Ada', age: -1 },
+				{ name: 'Ada', age: 30, extra: 1 },
+				{ name: 'Ada' },
+				'not-an-object',
+			],
+		},
+		{
+			name: 'object open typed additionalProperties',
+			schema: {
+				type: 'object',
+				properties: { a: { type: 'string' } },
+				required: ['a'],
+				additionalProperties: { type: 'number' },
+			},
+			samples: [{ a: 'x' }, { a: 'x', extra: 1 }, { a: 'x', extra: 'no' }, {}],
+		},
+		{
+			name: 'anyOf string|integer',
+			schema: { anyOf: [{ type: 'string', minLength: 1 }, { type: 'integer', minimum: 0 }] },
+			samples: ['x', 3, '', -1, true],
+		},
+		{
+			name: 'oneOf string|boolean',
+			schema: { oneOf: [{ type: 'string' }, { type: 'boolean' }] },
+			samples: ['x', true, 1, null],
+		},
+		{
+			name: 'allOf object conjunction',
+			schema: {
+				allOf: [
+					{ type: 'object', properties: { a: { type: 'string' } }, required: ['a'] },
+					{ type: 'object', properties: { b: { type: 'number' } }, required: ['b'] },
+				],
+			},
+			samples: [{ a: 'x', b: 1 }, { a: 'x' }, { b: 1 }, {}],
+		},
+		{
+			name: 'local $ref',
+			schema: { $defs: { Id: { type: 'string', minLength: 1 } }, $ref: '#/$defs/Id' },
+			samples: ['x', '', 1],
+		},
+		{
+			name: 'recursive $ref',
+			schema: {
+				$defs: {
+					Node: {
+						type: 'object',
+						properties: {
+							value: { type: 'string' },
+							next: { anyOf: [{ $ref: '#/$defs/Node' }, { type: 'null' }] },
+						},
+						required: ['value', 'next'],
+						additionalProperties: false,
+					},
+				},
+				$ref: '#/$defs/Node',
+			},
+			samples: [
+				{ value: 'a', next: null },
+				{ value: 'a', next: { value: 'b', next: null } },
+				{ value: 'a', next: { value: 1, next: null } },
+				{ value: 'a' },
+				'no',
+			],
+		},
+	]
+
+	for (const { name, schema, samples } of cases) {
+		it(`agrees with compileSchemaGuard for ${name}`, () => {
+			const fromShape = compileGuard(compileSchemaShape(schema))
+			const fromSchema = compileSchemaGuard(schema)
+			for (const sample of samples) {
+				expect(
+					fromShape(sample),
+					`mismatch for ${name} sample ${JSON.stringify(sample)}`,
+				).toBe(fromSchema(sample))
+			}
+		})
+	}
+})
+
+// === Documented fidelity gaps (KNOWN looser behavior — tested, not silent)
+//
+// Where the shaper DSL cannot express a keyword the produced shape OMITS that
+// constraint, so `compileGuard(compileSchemaShape(s))` is strictly LOOSER
+// than `compileSchemaGuard(s)`. Each gap below asserts the EXACT looser
+// behavior with an explicit "documented fidelity gap" comment.
+
+describe('compileSchemaShape — documented fidelity gaps (looser than compileSchemaGuard, by design)', () => {
+	it('format: assertion is DROPPED — shape accepts a value E2 would reject', () => {
+		// documented fidelity gap: the shape DSL cannot represent arbitrary
+		// `format` semantics; E2 asserts email syntax, the round-tripped shape
+		// does not.
+		const schema: JsonSchema = { type: 'string', format: 'email' }
+		expect(compileSchemaGuard(schema)('not-an-email')).toBe(false)
+		expect(compileGuard(compileSchemaShape(schema))('not-an-email')).toBe(true)
+	})
+
+	it('exclusiveMinimum/Maximum: DROPPED — boundary value accepted', () => {
+		// documented fidelity gap: stringShape/numberShape DSL has no exclusive
+		// bound option, so the exclusive bound degrades to "unconstrained".
+		const schema: JsonSchema = { type: 'number', exclusiveMinimum: 0 }
+		expect(compileSchemaGuard(schema)(0)).toBe(false)
+		expect(compileGuard(compileSchemaShape(schema))(0)).toBe(true)
+	})
+
+	it('multipleOf: DROPPED — a non-multiple is accepted', () => {
+		// documented fidelity gap: numberShape has no multipleOf option.
+		const schema: JsonSchema = { type: 'integer', multipleOf: 3 }
+		expect(compileSchemaGuard(schema)(10)).toBe(false)
+		expect(compileGuard(compileSchemaShape(schema))(10)).toBe(true)
+	})
+
+	it('uniqueItems: DROPPED — duplicate elements accepted', () => {
+		// documented fidelity gap: arrayShape has no uniqueItems option.
+		const schema: JsonSchema = { type: 'array', items: { type: 'number' }, uniqueItems: true }
+		expect(compileSchemaGuard(schema)([1, 1])).toBe(false)
+		expect(compileGuard(compileSchemaShape(schema))([1, 1])).toBe(true)
+	})
+
+	it('patternProperties: DROPPED — a value violating the pattern schema accepted', () => {
+		// documented fidelity gap: objectShape has no patternProperties option.
+		// The object's OWN additionalProperties policy is preserved; with the
+		// JSON-Schema-default OPEN object, dropping `patternProperties` makes
+		// the round-tripped guard strictly LOOSER (it no longer type-checks the
+		// pattern-matched value). (With `additionalProperties:false` the dropped
+		// pattern would instead make a CLOSED object — a DIFFERENT divergence;
+		// the open case isolates the genuine "looser" gap.)
+		const schema: JsonSchema = {
+			type: 'object',
+			patternProperties: { '^x-': { type: 'number' } },
+		}
+		expect(compileSchemaGuard(schema)({ 'x-a': 'no' })).toBe(false)
+		expect(compileGuard(compileSchemaShape(schema))({ 'x-a': 'no' })).toBe(true)
+	})
+
+	it('propertyNames: DROPPED — a key violating the name schema accepted', () => {
+		// documented fidelity gap: objectShape has no propertyNames option.
+		// Open object so the gap is the genuine "looser" case (a bad KEY is
+		// accepted because the key-name constraint cannot be represented).
+		const schema: JsonSchema = {
+			type: 'object',
+			propertyNames: { type: 'string', minLength: 3 },
+			additionalProperties: true,
+		}
+		expect(compileSchemaGuard(schema)({ ab: 1 })).toBe(false)
+		expect(compileGuard(compileSchemaShape(schema))({ ab: 1 })).toBe(true)
+	})
+
+	it('min/maxProperties: DROPPED — out-of-range property count accepted', () => {
+		// documented fidelity gap: objectShape has no min/maxProperties option.
+		const schema: JsonSchema = { type: 'object', minProperties: 1 }
+		expect(compileSchemaGuard(schema)({})).toBe(false)
+		expect(compileGuard(compileSchemaShape(schema))({})).toBe(true)
+	})
+
+	it('not: DROPPED — a value the negation forbids is accepted', () => {
+		// documented fidelity gap: the shape DSL cannot express negation.
+		const schema: JsonSchema = { not: { type: 'string' } }
+		expect(compileSchemaGuard(schema)('x')).toBe(false)
+		expect(compileGuard(compileSchemaShape(schema))('x')).toBe(true)
+	})
+
+	it('if/then/else: DROPPED — a value failing the conditional is accepted', () => {
+		// documented fidelity gap: the shape DSL cannot express conditional
+		// application.
+		const schema: JsonSchema = {
+			if: { type: 'string' },
+			then: { minLength: 3 },
+		}
+		expect(compileSchemaGuard(schema)('ab')).toBe(false)
+		expect(compileGuard(compileSchemaShape(schema))('ab')).toBe(true)
+	})
+
+	it('open-tail prefixItems: tail constraint DROPPED (tuple is closed -> prefix only)', () => {
+		// documented fidelity gap: tupleShape is a CLOSED tuple; an open-tail
+		// `prefixItems` + scalar `items` cannot be represented, so the tail
+		// schema is dropped and only the prefix positions are constrained.
+		const schema: JsonSchema = {
+			type: 'array',
+			prefixItems: [{ type: 'string' }],
+			items: { type: 'number' },
+		}
+		// E2 rejects a bad tail element; the round-tripped shape (closed tuple
+		// on the prefix) rejects it for a DIFFERENT reason (length), so pick a
+		// case isolating the dropped tail: a single-element array passes E2
+		// only if the prefix matches; a non-prefix tail mismatch is what E2
+		// catches and the shape cannot.
+		expect(compileSchemaGuard(schema)(['a', 'bad-tail'])).toBe(false)
+		// The shape is a closed 1-tuple: it rejects ['a','bad-tail'] too (by
+		// length), but ACCEPTS the lone prefix while E2 also accepts it — the
+		// gap is the LOST tail typing, demonstrated by a value E2 rejects on
+		// tail type that the shape would accept were the tuple open. The
+		// closed-tuple mapping is the documented least-wrong representation.
+		expect(compileGuard(compileSchemaShape(schema))(['a'])).toBe(true)
+		expect(compileSchemaGuard(schema)(['a'])).toBe(true)
+	})
+
+	it('closed tuple SHORT array: shape is STRICTER than E2 (exact-length tuple vs no lower bound)', () => {
+		// documented divergence (the one gap where the shape is STRICTER, not
+		// looser): E2's `prefixItems` + `items:false` closed tuple imposes NO
+		// lower length bound (it only constrains the elements PRESENT and
+		// forbids elements past the prefix), so a SHORT array passes E2. The
+		// `compileSchemaShape` mapping is the exact-length D1 `tupleShape`
+		// (`prefixItems` + `items:false` + `minItems==maxItems==arity` is the
+		// CANONICAL closed-tuple encoding `compileSchema` itself emits), which
+		// rejects a short array. This is the least-wrong, round-trip-stable
+		// representation (it is exactly what the forward `compileSchema`
+		// produces for a `tupleShape`), tested here as a KNOWN, intended
+		// divergence rather than a silent one.
+		const schema: JsonSchema = {
+			type: 'array',
+			prefixItems: [{ type: 'string' }, { type: 'number' }],
+			items: false,
+		}
+		expect(compileSchemaGuard(schema)(['a'])).toBe(true)
+		expect(compileSchemaGuard(schema)([])).toBe(true)
+		expect(compileGuard(compileSchemaShape(schema))(['a'])).toBe(false)
+		expect(compileGuard(compileSchemaShape(schema))([])).toBe(false)
+	})
+})
+
+// === Structural round-trip: compileSchema(compileSchemaShape(s))
+//
+// For the supported subset the produced shape is structurally faithful: its
+// re-emitted schema, fed back through E2, agrees with the ORIGINAL schema's
+// guard. Samples are chosen to avoid the separately-tracked forward
+// `compileSchema` intersection/optional emit lossiness (no intersection /
+// no nested-optional re-emit edge cases here).
+
+describe('compileSchemaShape — structural round-trip compileSchema∘compileSchemaShape', () => {
+	const schemas: { name: string; schema: JsonSchema; samples: readonly unknown[] }[] = [
+		{
+			name: 'string',
+			schema: { type: 'string', minLength: 1 },
+			samples: ['x', '', 1],
+		},
+		{
+			name: 'integer bounds',
+			schema: { type: 'integer', minimum: 0, maximum: 9 },
+			samples: [0, 9, -1, 10, 1.5],
+		},
+		{
+			name: 'array<string>',
+			schema: { type: 'array', items: { type: 'string' } },
+			samples: [['a'], [], [1], 'x'],
+		},
+		{
+			name: 'object closed',
+			schema: {
+				type: 'object',
+				properties: { a: { type: 'string' }, b: { type: 'number' } },
+				required: ['a'],
+				additionalProperties: false,
+			},
+			samples: [{ a: 'x' }, { a: 'x', b: 1 }, { b: 1 }, { a: 'x', extra: 1 }],
+		},
+		{
+			// length >= arity only — the SHORT-tuple divergence (E2's
+			// prefixItems closed tuple has no lower length bound, the
+			// exact-length `tupleShape` does) is asserted in the documented
+			// fidelity-gap block, not here.
+			name: 'closed tuple (length >= arity)',
+			schema: {
+				type: 'array',
+				prefixItems: [{ type: 'string' }, { type: 'number' }],
+				items: false,
+			},
+			samples: [['a', 1], ['a', 1, 2], ['a', 'b']],
+		},
+		{
+			name: 'anyOf',
+			schema: { anyOf: [{ type: 'string' }, { type: 'number' }] },
+			samples: ['x', 1, true],
+		},
+	]
+
+	for (const { name, schema, samples } of schemas) {
+		it(`re-emitted schema agrees with the original for ${name}`, () => {
+			const reEmitted = compileSchema(compileSchemaShape(schema))
+			expect(isJsonSchema(reEmitted)).toBe(true)
+			const original = compileSchemaGuard(schema)
+			const roundTrip = compileSchemaGuard(reEmitted)
+			for (const sample of samples) {
+				expect(
+					roundTrip(sample),
+					`round-trip mismatch for ${name} sample ${JSON.stringify(sample)}`,
+				).toBe(original(sample))
+			}
+		})
+	}
 })

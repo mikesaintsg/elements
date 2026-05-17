@@ -1,11 +1,30 @@
 import type {
+	ContractShape,
 	Guard,
 	JsonSchema,
 	JsonSchemaDefinition,
 	JsonSchemaType,
+	JsonValue,
 	LazyRef,
 	RefResolver,
 } from './types.js'
+import {
+	arrayShape,
+	booleanShape,
+	constShape,
+	integerShape,
+	intersectionShape,
+	lazyShape,
+	literalShape,
+	numberShape,
+	objectShape,
+	oneOfShape,
+	optionalShape,
+	rawShape,
+	stringShape,
+	tupleShape,
+	unionShape,
+} from './shapers.js'
 import { isJsonSchema, isRecord } from './validators.js'
 
 // ============================================================================
@@ -1254,4 +1273,717 @@ function compileCompositionKeywords(
 			return elseMatcher === undefined || elseMatcher(value, seen, depth)
 		})
 	}
+}
+
+// ============================================================================
+//  E3 — compileSchemaShape: JSON Schema -> a ContractShape (round-trip bridge)
+//
+//  E2 (`compileSchemaGuard`) produces a runtime `Guard`. E3 produces a
+//  `ContractShape` instead — the round-trip bridge: an EXTERNAL JSON-Schema
+//  document flows BACK into the FORWARD pipeline
+//  (`compileGuard`/`compileParser`/`compileGenerator`/`compileSchema`/`Infer`
+//  via `compileContract`). Built on E1's resolver (one
+//  `createRefResolver(root)` per compile call; `$ref` recursion broken via the
+//  D3 `lazyShape` lazy/memo-by-pointer contract, exactly mirroring E2's
+//  `compileRef`).
+//
+//  ── Design notes (decisions, with the WHY) ────────────────────────────
+//
+//  1. BEST-EFFORT STRUCTURAL MAPPING — not a 1:1 isomorphism. The shape DSL
+//     (`ContractShape`) is INTENTIONALLY smaller than JSON-Schema 2020-12: it
+//     models the keyword subset the forward pipeline can soundly
+//     guard/parse/generate/`Infer`. Where a schema uses a keyword the DSL
+//     CANNOT express, `compileSchemaShape` maps the structural CORE and OMITS
+//     the inexpressible constraint, so the produced shape is strictly LOOSER
+//     than the schema (it accepts a superset). This is deliberate, documented,
+//     and tested as a KNOWN divergence — never a silent bug. See the
+//     "Round-trip fidelity" section below for the exhaustive gap list.
+//
+//  2. SUPPORTED-SUBSET INVARIANT. For the supported keyword subset,
+//     `compileGuard(compileSchemaShape(s))` agrees with `compileSchemaGuard(s)`
+//     (E2) on every input, and `compileSchema(compileSchemaShape(s))` is
+//     structurally faithful (re-emits an equivalent schema). The supported
+//     subset is: `type` (single + array union; `integer`; `null`), `enum`,
+//     `const`, `minLength`/`maxLength`/`pattern`, `minimum`/`maximum`,
+//     `items`/`prefixItems`(+`items:false`)/`minItems`/`maxItems`,
+//     `properties`/`required`/`additionalProperties`, `allOf` (object-only),
+//     `anyOf`, `oneOf`, boolean `true`, `$ref`/`$defs` (recursive-safe).
+//
+//  3. KEYWORD -> SHAPER MAPPING (the full table).
+//
+//     * `$ref` (any, incl. recursive) -> `lazyShape(() => <target shape>)`,
+//       memoized by E1 canonical pointer. A recursive `$ref` yields a FINITE
+//       recursive `ContractShape` the forward pipeline's D3 lazy-aware
+//       `assertAcyclicShape` + memoized compile handle WITHOUT stack overflow
+//       — the EXACT E2 `compileRef` wiring, producing a `lazyShape` instead of
+//       a deferred matcher. (DECISION: recursive `$ref` -> `lazyShape` memo.)
+//     * boolean `true` -> `rawShape(true)` (accepts anything).
+//     * boolean `false` -> §13 COMPILE-time throw. There is no "never"
+//       `ContractShape`; `constShape` of an impossible sentinel cannot model
+//       "no value", and silently mapping `false` to anything reachable would
+//       make the round-trip UNSOUND (accept what the schema forbids). The
+//       least-wrong, honest choice is a precise §13 error naming the defect.
+//       (DECISION: `false` schema unsupported -> throw.)
+//     * `const` -> `constShape(value)` (D4 — structural).
+//     * `enum`: ALL members primitive (`string`/`number`/`boolean`) ->
+//       `literalShape(...values)`; otherwise (any structural member) ->
+//       `unionShape(constShape(m0), constShape(m1), …)` — D4 `const` handles
+//       structural members, `literalShape` cannot. A `null` enum member is
+//       structural for this purpose (`literalShape` is `string|number|
+//       boolean` only), so an enum containing `null` takes the const-union
+//       path. (DECISION: enum primitive-vs-structural split.)
+//     * `type` SINGLE: `'string'`->`stringShape`, `'number'`->`numberShape`,
+//       `'integer'`->`integerShape`, `'boolean'`->`booleanShape`,
+//       `'object'`->`objectShape`, `'array'`->`arrayShape`, `'null'`->
+//       `constShape(null)` (there is no `nullShape`; `const: null` is the
+//       cleanest generic, exactly-`null` mapping and round-trips through
+//       `compileSchema` as `{ const: null }`). (DECISION: `type:'null'` ->
+//       `constShape(null)`.)
+//     * `type` ARRAY (`['string','null']`) -> `unionShape(...per-type
+//       shapes)` (`['string','null']` -> `unionShape(stringShape(),
+//       constShape(null))`). A single-element type array degrades to the lone
+//       per-type shape (a `unionShape` of one is pointless). (DECISION:
+//       `type` array -> union.)
+//     * string: `minLength`->`min`, `maxLength`->`max`, `pattern`->
+//       `new RegExp(pattern)` on `stringShape`. A malformed `pattern` is a
+//       §13 COMPILE throw (a defect in the author-controlled schema), exactly
+//       as E2's `pattern` arm.
+//     * number/integer: `minimum`->`min`, `maximum`->`max` on
+//       `numberShape`/`integerShape`. Contradictory bounds (`min>max`) are
+//       PASSED THROUGH to the builder, which §13-throws at build (DECISION:
+//       defer to `numberShape`'s existing §13 bounds validation — do not
+//       duplicate the policy here; the throw is the same precise error a
+//       hand-built shape would get).
+//     * array: `items` (schema) -> `arrayShape(itemsShape, {min,max})`;
+//       `prefixItems` (+ `items:false`, or no `items`) -> `tupleShape(...)`
+//       (D1 closed tuple); a bare `type:'array'` with no `items` ->
+//       `arrayShape(rawShape(true))` (any element).
+//     * object -> `objectShape(propShapes, { additionalProperties })`. A
+//       property NOT in `required` -> its shape wrapped in `optionalShape`
+//       (this is how object-optionality round-trips through the forward
+//       pipeline). `additionalProperties:false` -> CLOSED object; `true`
+//       OR ABSENT -> OPEN (`{additionalProperties:true}`) — JSON-Schema
+//       semantics: an absent `additionalProperties` imposes no extra-key
+//       constraint, and mapping absent->closed would be STRICTER than the
+//       schema and disagree with E2; schema -> the sub-shape (typed-open).
+//     * composition: `allOf` -> `intersectionShape(...subshapes)` (D2).
+//       D2 requires every member be an OBJECT shape (or nested intersection)
+//       — see note 4. `anyOf` -> `unionShape(...)`. `oneOf` -> `oneOfShape`
+//       (B4 exactly-one).
+//
+//  4. `allOf` -> `intersectionShape` AND D2's object-only §13 constraint.
+//     `intersectionShape` (shapers.ts) throws at build if any member is not
+//     an object shape (a non-object intersection has no sound generic
+//     parser/generator merge). `compileSchemaShape` does NOT pre-filter or
+//     silently fall back: it maps `allOf` straight to `intersectionShape(...)`
+//     and lets D2's existing §13 boundary throw if a member maps to a
+//     non-object shape. This is deliberate and consistent with note 3's
+//     "defer to the builder's §13" policy: the inverse subsystem mirrors E2's
+//     keyword decisions AND the forward builders' boundary contracts rather
+//     than re-implementing or weakening them. A schema whose `allOf` mixes a
+//     primitive member is genuinely unrepresentable as a sound contract — the
+//     precise §13 throw names it. (DECISION: `allOf` non-object member -> D2
+//     §13 throw, not a silent fallback.)
+//
+//  5. CONJUNCTION COLLAPSE. JSON-Schema is a keyword CONJUNCTION (E2 design
+//     note 1); the shape DSL has only ONE general conjunction
+//     (`intersectionShape`, object-only). So when a node mixes a structural
+//     keyword with an inexpressible sibling (e.g. `{ type:'string',
+//     format:'email' }`, `{ type:'array', items:…, uniqueItems:true }`),
+//     `compileSchemaShape` maps the EXPRESSIBLE structural core and DROPS the
+//     inexpressible sibling (note 1). The dropped keywords are exactly the
+//     "Round-trip fidelity" gap list. (`type` + the matching family's own
+//     constraints — `string`+`minLength`, `array`+`items`/`minItems`,
+//     `object`+`properties` — are NOT dropped; only cross-family /
+//     DSL-inexpressible siblings are.)
+//
+//  ── Round-trip fidelity (the single authoritative gap list) ────────────
+//
+//  `compileSchemaShape` is BEST-EFFORT. For the supported subset (note 2)
+//  `compileGuard∘compileSchemaShape === compileSchemaGuard` and
+//  `compileSchema∘compileSchemaShape` is structurally faithful. The following
+//  keywords are NOT representable in the shape DSL; the produced shape OMITS
+//  them, so it is strictly LOOSER than the schema (and looser than E2's
+//  guard). Each is acceptable, intended, and tested as a KNOWN divergence:
+//
+//   * `format` — the DSL cannot represent arbitrary `format` semantics.
+//     E2 asserts a documented set (`email`/`uuid`/`date-time`/`uri`);
+//     `compileSchemaShape` drops ALL `format` assertion. The round-tripped
+//     guard accepts a string E2 would reject for a bad `format`.
+//   * `exclusiveMinimum`/`exclusiveMaximum` — `numberShape` has only
+//     inclusive `min`/`max`; the exclusive bound degrades to UNCONSTRAINED
+//     (not to the inclusive bound — that would be a DIFFERENT wrong
+//     constraint; omission is the honest "looser" choice). Boundary value
+//     accepted.
+//   * `multipleOf` — `numberShape` has no divisor option. Dropped; a
+//     non-multiple is accepted.
+//   * `uniqueItems` — `arrayShape` has no uniqueness option. Dropped;
+//     duplicate elements accepted.
+//   * `patternProperties` — `objectShape` has no regex-keyed-schema option.
+//     Dropped; the object degrades to its `properties`/`additionalProperties`
+//     policy only.
+//   * `propertyNames` — `objectShape` cannot constrain key strings. Dropped.
+//   * `minProperties`/`maxProperties` — `objectShape` has no
+//     property-count bound. Dropped.
+//   * `not` — the DSL cannot express negation. Dropped (accepts what the
+//     negation forbids). A fundamental DSL limitation.
+//   * `if`/`then`/`else` — the DSL cannot express conditional application.
+//     Dropped. A fundamental DSL limitation.
+//   * open-tail `prefixItems` (+ a SCHEMA `items` tail) — `tupleShape` is a
+//     CLOSED tuple; an open-tail positional array is unrepresentable. Mapped
+//     to the CLOSED tuple of the prefix (the least-wrong representation); the
+//     open tail's element typing is dropped.
+//   * `contains`/`dependentRequired`/`dependentSchemas`/
+//     `unevaluatedProperties` — no DSL representation. Dropped.
+//
+//  This is the inverse subsystem's documented fidelity contract (E5 owns the
+//  end-user guide note that points here).
+// ============================================================================
+
+/**
+ * A per-compilation map from an E1 canonical `$ref` pointer to the
+ * already-built (possibly still-being-built) {@link ContractShape} for that
+ * pointer — the D3 `lazyShape`-memo analogue keyed by pointer.
+ *
+ * @remarks
+ * Mirrors E2's `pointerCache` (`Map<string, SchemaMatcher>`): a recursive
+ * `$ref` reuses ONE shape per canonical pointer so a recursive schema yields
+ * a FINITE recursive shape (a `lazyShape` whose thunk returns the memoized
+ * shape) instead of an infinitely-expanded one. AGENTS.md types-first allows
+ * a module-local NON-exported impl alias here exactly like E2's
+ * `SchemaMatcher` / compilers' `LazyGuardCache`.
+ */
+type ShapeCache = Map<string, ContractShape>
+
+/**
+ * Compile a JSON Schema document into a {@link ContractShape} — the
+ * round-trip bridge from an external schema BACK into the forward pipeline
+ * (`compileGuard`/`compileParser`/`compileGenerator`/`compileSchema`/`Infer`
+ * via `compileContract`).
+ *
+ * @remarks
+ * Best-effort STRUCTURAL mapping. For the supported keyword subset
+ * `compileGuard(compileSchemaShape(s))` agrees with `compileSchemaGuard(s)`
+ * (E2) and `compileSchema(compileSchemaShape(s))` is structurally faithful;
+ * where the shape DSL cannot express a keyword the produced shape is strictly
+ * LOOSER (it omits that constraint) — an exhaustive, intended, tested list is
+ * in the module's "Round-trip fidelity" section. A recursive `$ref` maps to a
+ * `lazyShape` memoized by E1 canonical pointer, so a recursive schema yields
+ * a finite recursive shape the forward pipeline handles without stack
+ * overflow.
+ *
+ * Error model (AGENTS.md §13):
+ *
+ * - A malformed SCHEMA (unresolvable / external / pure-`$ref`-only-cycle /
+ *   `MAX_REF_DEPTH`) is a PROGRAMMER ERROR thrown at COMPILE time — E1's
+ *   precise `Error`s propagate (fail-fast, mirroring `compileSchemaGuard`).
+ * - A boolean `false` schema is UNSUPPORTED (no "never" shape in the DSL) ->
+ *   a precise compile-time `Error`.
+ * - A keyword whose value the forward builders reject (e.g. contradictory
+ *   numeric bounds; a non-object `allOf` member) throws the builder's own
+ *   precise §13 `Error` (deferred-to, not duplicated).
+ *
+ * The produced shape's static `Infer` is `unknown`-ish (a schema's static TS
+ * type is not statically known here — pinned in
+ * `tests/src/core/types.test-d.ts`).
+ *
+ * @param schema - The JSON Schema document to map back to a shape
+ * @returns A {@link ContractShape} that feeds the forward pipeline
+ * @throws Error If the schema contains a malformed `$ref`, is the `false`
+ *         boolean schema, or maps to a shape a forward builder §13-rejects
+ *
+ * @example
+ * ```ts
+ * const shape = compileSchemaShape({
+ *   type: 'object',
+ *   properties: { name: { type: 'string', minLength: 1 } },
+ *   required: ['name'],
+ *   additionalProperties: false,
+ * })
+ * const contract = compileContract(shape) // schema -> shape -> full contract
+ * contract.is({ name: 'Ada' }) // true
+ * ```
+ */
+export function compileSchemaShape(schema: JsonSchema): ContractShape {
+	// ONE resolver per compile call (E1 contract). The root is the schema
+	// itself — every internal `$ref`/`#`/`$defs` pointer resolves against it.
+	const resolver = createRefResolver(schema)
+	// D3 memo-by-pointer: a recursive `$ref` reuses ONE built shape.
+	const shapeCache: ShapeCache = new Map<string, ContractShape>()
+	return shapeFromNode(schema, resolver, shapeCache)
+}
+
+/**
+ * Map one schema node to a {@link ContractShape}.
+ *
+ * @remarks
+ * A boolean schema is a terminal (`true` -> `rawShape`; `false` -> §13 throw,
+ * there is no "never" shape). A `$ref` node is resolved via the D3
+ * lazy/memo-by-pointer contract (see {@link shapeFromRef}). Every non-`$ref`
+ * object node maps via {@link shapeFromKeywords}.
+ */
+function shapeFromNode(
+	node: JsonSchema,
+	resolver: RefResolver,
+	shapeCache: ShapeCache,
+): ContractShape {
+	if (typeof node === 'boolean') {
+		if (node) {
+			// `true` schema accepts anything — `rawShape` is the DSL's
+			// accept-everything terminal (its guard is always `true`).
+			return rawShape(true)
+		}
+		// `false` schema accepts NOTHING. There is no "never" `ContractShape`;
+		// mapping it to any inhabited shape would make the round-trip UNSOUND.
+		// Honest §13 throw (module design note 3).
+		throw new Error(
+			'compileSchemaShape: the `false` boolean schema is unsupported — the shape DSL has no "never" shape to represent a schema that accepts no value',
+		)
+	}
+	if (typeof node.$ref === 'string') {
+		return shapeFromRef(node.$ref, resolver, shapeCache)
+	}
+	return shapeFromKeywords(node, resolver, shapeCache)
+}
+
+/**
+ * Map a `$ref` position to a recursion-safe {@link ContractShape} (D3
+ * `lazyShape` contract — the EXACT mirror of E2's `compileRef`, producing a
+ * shape instead of a matcher).
+ *
+ * @remarks
+ * `resolver.lazy(ref)` canonicalises the pointer and reports `cyclic`. A
+ * recursive self-reference re-enters this function while the pointer's body
+ * is still being built; it then hits the in-progress memo and returns a
+ * `lazyShape` whose thunk yields the (eventually-)built shape — the
+ * self-reference resolves to ONE shape and the recursion is realised only
+ * over finite DATA at guard/parse time (D3). `thunk()` always returns a
+ * concrete non-`$ref` node OR throws a precise §13 `Error`
+ * (pure-`$ref`-only cycle / external / missing / `MAX_REF_DEPTH`) — that
+ * propagates at COMPILE time (fail-fast).
+ *
+ * EVERY `$ref` is wrapped in a `lazyShape` (recursive or not): a `lazyShape`
+ * is the forward pipeline's ONLY sanctioned recursion boundary (D3 —
+ * `assertAcyclicShape` treats it as a terminal), so wrapping every `$ref`
+ * keeps a recursive schema's shape acyclic-by-construction and never trips
+ * the forward §13 cyclic-shape guard. A non-recursive `$ref`'s `lazyShape`
+ * resolves one level (the forward pipeline's memoized `'lazy'` arm handles it
+ * exactly like the documented non-recursive `lazyShape` case).
+ */
+function shapeFromRef(
+	ref: string,
+	resolver: RefResolver,
+	shapeCache: ShapeCache,
+): ContractShape {
+	const indirection = resolver.lazy(ref)
+	const pointer = indirection.pointer
+	const cached = shapeCache.get(pointer)
+	if (cached !== undefined) {
+		// EVERY occurrence of this canonical pointer (the top one AND every
+		// recursive back-edge) returns the SAME memoized `lazyShape` node —
+		// hence the SAME thunk identity. The forward pipeline's D3 `'lazy'`
+		// arm memoizes the compiled artifact BY THUNK IDENTITY, so reusing
+		// one stable `lazyShape` per pointer is precisely what makes a
+		// recursive `$ref` compile to ONE recursive function (not an infinite
+		// one) — the EXACT canonical `lazyShape(() => treeShape)` single-
+		// stable-thunk pattern (one thunk, closing over a binding, returning
+		// the recursive shape).
+		return cached
+	}
+	// FIRST visit. Build the stable `lazyShape` node and memoize it BEFORE
+	// resolving the body, so a recursive self-`$ref` re-entering this function
+	// hits the `cached` branch and gets the SAME node back (D3 install-before-
+	// compile, mirroring E2's `compileRef`). The body is resolved lazily and
+	// memoized in `holder`; the thunk closes over `holder` so its identity is
+	// stable across every recursive occurrence and the forward thunk-keyed
+	// memo breaks the cycle. `thunk()` returns a concrete node OR throws a
+	// precise §13 Error (pure-ref cycle / external / missing) which propagates
+	// at compile time (fail-fast, mirrors compileSchemaGuard). It is invoked
+	// LAZILY (forward `'lazy'` arm calls the shape thunk on first compile of
+	// that boundary), by which point `holder.body` is set.
+	const holder: { body: ContractShape | undefined } = { body: undefined }
+	const node = lazyShape(() => {
+		if (holder.body === undefined) {
+			throw new Error(
+				`compileSchemaShape: recursive $ref body not resolved for pointer ${pointer}`,
+			)
+		}
+		return holder.body
+	})
+	shapeCache.set(pointer, node)
+	holder.body = shapeFromNode(indirection.thunk(), resolver, shapeCache)
+	return node
+}
+
+/**
+ * Map the keywords of a non-`$ref` object schema node to a
+ * {@link ContractShape}.
+ *
+ * @remarks
+ * Dispatch order encodes the keyword PRIORITY when a node mixes keywords (a
+ * JSON-Schema conjunction the DSL cannot fully express — module design note
+ * 5): `const` -> `enum` -> composition (`allOf`/`oneOf`/`anyOf`) -> `type`.
+ * The chosen keyword's family constraints are mapped; cross-family /
+ * DSL-inexpressible siblings are dropped per the "Round-trip fidelity" list.
+ * An object with no expressible structural keyword maps to `rawShape(true)`
+ * (accepts anything — the honest "no constraint we can model" terminal, also
+ * exactly E2's behaviour for a constraint-less node).
+ */
+function shapeFromKeywords(
+	node: JsonSchemaDefinition,
+	resolver: RefResolver,
+	shapeCache: ShapeCache,
+): ContractShape {
+	// --- const (D4 — a single structural value) -------------------------
+	if (node.const !== undefined) {
+		return applyDescription(constShape(node.const), node.description)
+	}
+
+	// --- enum: all-primitive -> literalShape; else const-union (D4) -----
+	if (node.enum !== undefined) {
+		return applyDescription(shapeFromEnum(node.enum), node.description)
+	}
+
+	// --- composition (object-only intersection / unions) ----------------
+	if (node.allOf !== undefined) {
+		// `allOf` -> D2 `intersectionShape`. Object-only is enforced by the
+		// builder's own §13 (module design note 4) — deferred-to, not
+		// duplicated. An empty `allOf` is degenerate -> the builder's §13
+		// throw is the precise, correct error.
+		const members = node.allOf.map((sub) => shapeFromNode(sub, resolver, shapeCache))
+		return applyDescription(intersectionShape(...members), node.description)
+	}
+	if (node.oneOf !== undefined) {
+		// `oneOf` -> B4 exactly-one `oneOfShape`.
+		const variants = node.oneOf.map((sub) => shapeFromNode(sub, resolver, shapeCache))
+		return applyDescription(oneOfShape(...variants), node.description)
+	}
+	if (node.anyOf !== undefined) {
+		const variants = node.anyOf.map((sub) => shapeFromNode(sub, resolver, shapeCache))
+		return applyDescription(unionShape(...variants), node.description)
+	}
+
+	// --- type ------------------------------------------------------------
+	if (node.type !== undefined) {
+		// `Array.isArray` narrows to `any[]`, which does NOT subtract the
+		// `readonly JsonSchemaType[]` interface from `JsonSchemaType | readonly
+		// JsonSchemaType[]` (the union-narrowing limitation documented in E2's
+		// `compileArrayKeywords`). Re-derive the array form into its own
+		// explicitly-typed local so the scalar branch stays `as`-free.
+		const typeKeyword = node.type
+		const typeArray: readonly JsonSchemaType[] | undefined = Array.isArray(typeKeyword)
+			? typeKeyword
+			: undefined
+		if (typeArray !== undefined) {
+			return shapeFromTypeArray(typeArray, node, resolver, shapeCache)
+		}
+		// `typeArray === undefined` ⇒ `typeKeyword` is the scalar form. TS
+		// cannot subtract `readonly JsonSchemaType[]` from the union via
+		// `Array.isArray` (documented union-narrowing limit), so re-narrow with
+		// a `typeof` discriminant: every `JsonSchemaType` is a `string`, an
+		// array is `'object'`, so `typeof === 'string'` cleanly isolates the
+		// scalar `as`-free.
+		if (typeof typeKeyword === 'string') {
+			return shapeFromSingleType(typeKeyword, node, resolver, shapeCache)
+		}
+	}
+
+	// No expressible structural keyword (e.g. `{}`, `{ description }`, or a
+	// node carrying ONLY DSL-inexpressible keywords like a bare `not`/`if`).
+	// The honest mapping is "accept anything" — `rawShape(true)` — which is
+	// also exactly E2's behaviour for a constraint-less node (its conjunction
+	// is empty -> `() => true`). Documented fidelity gap for bare
+	// `not`/`if` (module "Round-trip fidelity").
+	return rawShape(true)
+}
+
+/**
+ * Map a JSON-Schema `enum` to a {@link ContractShape}.
+ *
+ * @remarks
+ * All members primitive (`string`/`number`/`boolean`) ->
+ * `literalShape(...values)` (a `Set`-membership enum). Otherwise (any
+ * structural or `null` member) -> `unionShape(constShape(m0), …)` — D4
+ * `const` handles structural/`null` members that `literalShape` (typed
+ * `string|number|boolean`) cannot. A single-member structural enum still
+ * yields a 1-variant `unionShape`; that is harmless (its guard/`Infer` is
+ * exactly that one const) and keeps the mapping uniform. Module design note
+ * 3.
+ */
+function shapeFromEnum(members: readonly JsonValue[]): ContractShape {
+	const allPrimitive = members.every(
+		(m) => typeof m === 'string' || typeof m === 'number' || typeof m === 'boolean',
+	)
+	if (allPrimitive) {
+		// Re-derive the primitive tuple structurally (TS cannot subtract the
+		// structural JSON members from `readonly JsonValue[]` without an `as`;
+		// the `allPrimitive` check above proves every element is in-bounds, so
+		// the filtered copy is sound and `as`-free).
+		const primitives: (string | number | boolean)[] = []
+		for (const m of members) {
+			if (typeof m === 'string' || typeof m === 'number' || typeof m === 'boolean') {
+				primitives.push(m)
+			}
+		}
+		// An empty `enum` is a degenerate schema (no value can satisfy it) —
+		// `literalShape`'s own §13 throw is the precise, correct error.
+		return literalShape(...primitives)
+	}
+	if (members.length === 0) {
+		// Empty enum -> defer to `literalShape`'s §13 (uninhabited).
+		return literalShape()
+	}
+	// Structural / null members -> a union of D4 consts.
+	const consts = members.map((m) => constShape(m))
+	return unionShape(...consts)
+}
+
+/**
+ * Map a single JSON-Schema `type` (with its sibling family constraints) to a
+ * {@link ContractShape}.
+ *
+ * @remarks
+ * `'null'` -> `constShape(null)` (no `nullShape`; module design note 3).
+ * Other primitives carry only their OWN family's expressible constraints;
+ * cross-family / DSL-inexpressible siblings are dropped (module "Round-trip
+ * fidelity"). `object`/`array` recurse for their children.
+ */
+function shapeFromSingleType(
+	name: JsonSchemaType,
+	node: JsonSchemaDefinition,
+	resolver: RefResolver,
+	shapeCache: ShapeCache,
+): ContractShape {
+	switch (name) {
+		case 'string':
+			// `pattern` -> a flagless RegExp; a malformed pattern is a §13
+			// COMPILE-time defect in the author-controlled schema (mirrors E2's
+			// `pattern` arm). `format` (a string keyword) is DROPPED (fidelity
+			// gap).
+			return applyDescription(
+				stringShape({
+					min: node.minLength,
+					max: node.maxLength,
+					pattern: node.pattern !== undefined ? new RegExp(node.pattern) : undefined,
+				}),
+				node.description,
+			)
+		case 'number':
+			// `minimum`/`maximum` -> inclusive `min`/`max`. Contradictory
+			// bounds are passed through to `numberShape`'s own §13 validation
+			// (deferred-to, module design note 3). `exclusive*`/`multipleOf`
+			// DROPPED (fidelity gap).
+			return applyDescription(
+				numberShape({ min: node.minimum, max: node.maximum }),
+				node.description,
+			)
+		case 'integer':
+			return applyDescription(
+				integerShape({ min: node.minimum, max: node.maximum }),
+				node.description,
+			)
+		case 'boolean':
+			return booleanShape({ description: node.description })
+		case 'null':
+			// No `nullShape`; `const: null` is the cleanest exactly-`null`
+			// generic and round-trips through `compileSchema` as `{const:null}`.
+			return constShape(null)
+		case 'array':
+			return shapeFromArray(node, resolver, shapeCache)
+		case 'object':
+			return shapeFromObject(node, resolver, shapeCache)
+	}
+}
+
+/**
+ * Map a `type` ARRAY (e.g. `['string','null']`) to a {@link ContractShape}.
+ *
+ * @remarks
+ * Each member type is mapped to its per-type shape (carrying the node's
+ * sibling family constraints, same as the single-type path) and the results
+ * are combined with `unionShape`. A single-element type array degrades to the
+ * lone per-type shape (a 1-variant `unionShape` is pointless). Module design
+ * note 3.
+ */
+function shapeFromTypeArray(
+	types: readonly JsonSchemaType[],
+	node: JsonSchemaDefinition,
+	resolver: RefResolver,
+	shapeCache: ShapeCache,
+): ContractShape {
+	const variants = types.map((t) => shapeFromSingleType(t, node, resolver, shapeCache))
+	const [first, ...rest] = variants
+	if (first !== undefined && rest.length === 0) {
+		return first
+	}
+	// `type: []` is degenerate (no type can match) — defer to `unionShape`'s
+	// §13 (uninhabited). >=2 variants -> a real union.
+	return applyDescription(unionShape(...variants), node.description)
+}
+
+/**
+ * Map an `array`-typed node to an {@link ArrayShape}/{@link TupleShape}.
+ *
+ * @remarks
+ * `prefixItems` (with `items:false` or no `items`) -> `tupleShape(...)` (D1
+ * CLOSED tuple). `prefixItems` + a SCHEMA `items` tail is an OPEN-tail
+ * positional array the DSL cannot express -> the CLOSED tuple of the prefix
+ * (least-wrong; the tail typing is the documented fidelity gap). A scalar
+ * `items` schema -> `arrayShape(itemsShape, {min,max})`. A bare `type:'array'`
+ * (no `items`) -> `arrayShape(rawShape(true))` (any element). `items:false`
+ * with no prefix -> a max-0 array (only `[]` valid — the faithful
+ * closed-empty array). `uniqueItems` DROPPED (fidelity gap).
+ */
+function shapeFromArray(
+	node: JsonSchemaDefinition,
+	resolver: RefResolver,
+	shapeCache: ShapeCache,
+): ContractShape {
+	const { items, prefixItems } = node
+	// `prefixItems` (2020-12) AND the legacy draft-04 ARRAY form of `items`
+	// are the SAME positional-tuple notion; support both (mirrors E2's
+	// `compileArrayKeywords` both-forms decision). `Array.isArray` narrows to
+	// `any[]` which does not subtract the `readonly JsonSchema[]` interface
+	// from the union without an `as` (the documented union-narrowing
+	// limitation); re-derive the array form via its own `Array.isArray`.
+	const positional: readonly JsonSchema[] | undefined = Array.isArray(items)
+		? items
+		: prefixItems
+	if (positional !== undefined) {
+		// CLOSED tuple of the prefix. An open tail (`items` is a SCHEMA, not
+		// `false`/absent) cannot be represented — the tail typing is dropped
+		// (documented fidelity gap), the closed tuple of the prefix is the
+		// least-wrong mapping.
+		const elements = positional.map((sub) => shapeFromNode(sub, resolver, shapeCache))
+		return applyDescription(tupleShape(...elements), node.description)
+	}
+	if (items === false) {
+		// `items:false` with no prefix forbids ALL elements — only `[]` is
+		// valid. A max-0 array is the faithful closed-empty representation.
+		return applyDescription(arrayShape(rawShape(true), { max: 0 }), node.description)
+	}
+	const elementShape: ContractShape =
+		items !== undefined && items !== true && isJsonSchema(items)
+			? shapeFromNode(items, resolver, shapeCache)
+			: rawShape(true)
+	return applyDescription(
+		arrayShape(elementShape, { min: node.minItems, max: node.maxItems }),
+		node.description,
+	)
+}
+
+/**
+ * Map an `object`-typed node to an {@link ObjectShape}.
+ *
+ * @remarks
+ * Each `properties` entry is mapped; a property NOT in `required` is wrapped
+ * in `optionalShape` (how object-optionality round-trips the forward
+ * pipeline). `additionalProperties`: `false` -> CLOSED object; `true` OR
+ * ABSENT -> OPEN object (JSON-Schema semantics: an absent
+ * `additionalProperties` imposes NO extra-key constraint — mapping it to
+ * closed would be STRICTER than the schema and disagree with E2's
+ * `compileSchemaGuard`, whose object arm rejects an unknown key ONLY when
+ * `additionalProperties === false`); SCHEMA -> the sub-shape (typed-open).
+ * `patternProperties`/`propertyNames`/`min|maxProperties`/`dependentRequired`
+ * are DROPPED (fidelity gaps).
+ */
+function shapeFromObject(
+	node: JsonSchemaDefinition,
+	resolver: RefResolver,
+	shapeCache: ShapeCache,
+): ContractShape {
+	const required = new Set(node.required ?? [])
+	const properties: Record<string, ContractShape> = {}
+	if (node.properties !== undefined) {
+		for (const key of Object.keys(node.properties)) {
+			const sub = node.properties[key]
+			if (sub === undefined) {
+				continue
+			}
+			const childShape = shapeFromNode(sub, resolver, shapeCache)
+			// A property NOT in `required` -> optional (forward object-optional
+			// round-trip semantics: an `optionalShape` property may be absent
+			// and `compileSchema` re-emits it as non-`required`).
+			properties[key] = required.has(key) ? childShape : optionalShape(childShape)
+		}
+	}
+	const additional = node.additionalProperties
+	if (additional === false) {
+		// `additionalProperties: false` -> CLOSED object (`objectShape`'s
+		// default — reject unknown keys).
+		return applyObjectDescription(objectShape(properties), node.description)
+	}
+	if (additional === undefined || additional === true) {
+		// JSON-Schema semantics: an ABSENT `additionalProperties` imposes NO
+		// constraint on extra keys (OPEN), exactly like `true`. Mapping absent
+		// -> closed would make the round-tripped guard STRICTER than the
+		// schema AND disagree with E2's `compileSchemaGuard` (whose object arm
+		// rejects an extra key ONLY when `additionalProperties === false`).
+		// Both map to an OPEN `objectShape`.
+		return applyObjectDescription(
+			objectShape(properties, { additionalProperties: true }),
+			node.description,
+		)
+	}
+	if (isJsonSchema(additional)) {
+		// A SCHEMA `additionalProperties` -> validate every unknown key value
+		// against the sub-shape (forward typed-open object).
+		const additionalShape = shapeFromNode(additional, resolver, shapeCache)
+		return applyObjectDescription(
+			objectShape(properties, { additionalProperties: additionalShape }),
+			node.description,
+		)
+	}
+	// Unreachable: `additionalProperties` is `boolean | JsonSchema | undefined`
+	// and every case is handled above. Closed object is the safe default.
+	return applyObjectDescription(objectShape(properties), node.description)
+}
+
+/**
+ * Re-attach a JSON-Schema `description` annotation onto a built shape that
+ * carries an optional `description` field.
+ *
+ * @remarks
+ * The shape DSL kinds that model a `description`
+ * (`string`/`number`/`boolean`/`literal`/`const`/`array`/`tuple`/`union`/
+ * `intersection`) carry it as a readonly field. The builders called above do
+ * not all take a `description` option in the call shape used, so the
+ * annotation is merged onto the returned node WITHOUT `as` via a shallow
+ * spread copy, set only when present. Kinds with no `description` field
+ * (`optional`/`nullable`/`default`/`lazy`/`raw`) pass through unchanged — the
+ * annotation has no DSL slot there (documented: a wrapper/raw `description`
+ * is dropped, a benign annotation-only loss).
+ */
+function applyDescription(shape: ContractShape, description: string | undefined): ContractShape {
+	if (description === undefined) {
+		return shape
+	}
+	switch (shape.type) {
+		case 'string':
+		case 'number':
+		case 'boolean':
+		case 'literal':
+		case 'const':
+		case 'array':
+		case 'tuple':
+		case 'union':
+		case 'intersection':
+			return { ...shape, description }
+		default:
+			// `optional`/`nullable`/`default`/`lazy`/`raw`/`object` handled
+			// elsewhere or have no `description` slot — annotation dropped
+			// (benign, documented).
+			return shape
+	}
+}
+
+/** {@link applyDescription} specialised for the `object` kind. */
+function applyObjectDescription(
+	shape: ContractShape,
+	description: string | undefined,
+): ContractShape {
+	if (description === undefined || shape.type !== 'object') {
+		return shape
+	}
+	return { ...shape, description }
 }
