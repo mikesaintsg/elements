@@ -60,9 +60,9 @@ The factories in [src/core/factories.ts](../src/core/factories.ts) are the ergon
 
 `createRandom(seed)` (in [src/core/helpers.ts](../src/core/helpers.ts)) returns a deterministic Mulberry32 PRNG: a pure `() => number` yielding the same `[0, 1)` sequence for the same 32-bit seed. Feed it to the contract's `generate` method (or directly to `compileGenerator()`) for reproducible seed data across test runs.
 
-### Tool / agent schemas
+### Object-root schemas
 
-A tool input schema is just an object-root JSON Schema, so it uses the same compiler path as every other contract: `compileSchema(objectShape(...))` (or `createSchema(objectShape(...))`). The `ObjectShape` overload narrows the result to `JsonSchemaObject`, and the `ToolDefinition` / `ToolOptions` interfaces in [src/core/types.ts](../src/core/types.ts) type a `parameters` field as exactly that. There is no separate tool-schema builder — tool inputs are object-root contracts.
+An object-root JSON Schema uses the same compiler path as every other contract: `compileSchema(objectShape(...))` (or `createSchema(objectShape(...))`). The `ObjectShape` overload narrows the result to `JsonSchemaObject`. There is no separate object-schema builder — object-root schemas are ordinary contracts compiled from an `objectShape()`.
 
 > The flat value parsers (`parseString`, `parseNumber`, field extractors, env / JSON helpers) live in a sibling module and are documented in [parsers.md](parsers.md). The contract compilers reuse them internally for primitive coercion, but they are a standalone surface — not part of the contract DSL.
 
@@ -73,7 +73,7 @@ A tool input schema is just an object-root JSON Schema, so it uses the same comp
 These invariants hold across `src/core/{types,shapers,compilers,factories,helpers}.ts` ↔ `contracts.md`:
 
 1. **DOC → SOURCE.** Every backticked call-form API named in this guide — every builder, compiler, factory, and helper written in call form — is a real `export function` / `export const` in one of [src/core/shapers.ts](../src/core/shapers.ts), [src/core/compilers.ts](../src/core/compilers.ts), [src/core/factories.ts](../src/core/factories.ts), or [src/core/helpers.ts](../src/core/helpers.ts). A renamed or removed export breaks the gate until the doc is reconciled.
-2. **TYPES ARE THE SOURCE OF TRUTH.** `ContractShape`, `Infer<S>`, `ContractInterface<T>`, the JSON Schema family (`JsonSchema`, `JsonSchemaObject`, `JsonSchemaDefinition`), the Tool family (`ToolDefinition`, `ToolCall`, `ToolResult`, `ToolOptions`), and every `*ShapeOptions` bag are declared first in [src/core/types.ts](../src/core/types.ts). Builders and compilers conform to those types, never the reverse.
+2. **TYPES ARE THE SOURCE OF TRUTH.** `ContractShape`, `Infer<S>`, `ContractInterface<T>`, the JSON Schema family (`JsonSchema`, `JsonSchemaObject`, `JsonSchemaDefinition`), and every `*ShapeOptions` bag are declared first in [src/core/types.ts](../src/core/types.ts). Builders and compilers conform to those types, never the reverse.
 3. **DERIVED, NOT DUPLICATED.** Schema, guard, parser, and generator are all compiled from the one shape. No operation is hand-written per shape — adding a shape variant means extending the discriminated `ContractShape` union and every compiler `switch`, never patching call sites.
 
 Enforced by:
@@ -217,7 +217,7 @@ const parameters = compileSchema(
 // { type: 'object', properties: { ... }, required: ['operation'], additionalProperties: false }
 ```
 
-The `ObjectShape` overload of `compileSchema()` (and `createSchema()`) narrows the return to `JsonSchemaObject`, which is exactly the type a `ToolDefinition.parameters` field expects — no separate tool-schema builder needed.
+The `ObjectShape` overload of `compileSchema()` (and `createSchema()`) narrows the return to `JsonSchemaObject` — no separate object-schema builder needed.
 
 ### Inference with `Infer<S>`
 

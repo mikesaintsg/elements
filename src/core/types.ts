@@ -125,7 +125,7 @@ export type ZeroArgFunction = () => unknown
 /** An async function accepting zero arguments and returning a Promise. */
 export type ZeroArgAsyncFunction = () => Promise<unknown>
 
-// === Tool
+// === JSON Schema
 
 /** Primitive JSON values. */
 export type JsonPrimitive = string | number | boolean | null
@@ -219,11 +219,11 @@ export interface JsonSchemaDefinition {
 export type JsonSchema = boolean | JsonSchemaDefinition
 
 /**
- * JSON Schema object root used for tool input schemas.
+ * JSON Schema object root — constrains a schema node to `type: 'object'`.
  *
  * @remarks
- * Tool inputs must be object-shaped schemas so arguments are modeled as named
- * properties.
+ * The `ObjectShape` overload of `compileSchema()` narrows the return to this
+ * type, ensuring callers receive an object-rooted schema without casting.
  */
 export interface JsonSchemaObject extends JsonSchemaDefinition {
 	readonly type: 'object'
@@ -237,70 +237,6 @@ export interface JsonSchemaObject extends JsonSchemaDefinition {
 	readonly maxProperties?: number
 	readonly dependentRequired?: JsonSchemaStringArrayMap
 	readonly dependentSchemas?: JsonSchemaMap
-}
-
-/**
- * Definition of a tool that can be called by an agent.
- *
- * @remarks
- * `name`        — unique identifier for the tool.
- * `summary`     — brief one-line description.
- * `description` — detailed explanation of behavior.
- * `parameters`  — JSON Schema defining accepted arguments.
- */
-export interface ToolDefinition {
-	readonly name: string
-	readonly summary?: string
-	readonly description?: string
-	readonly parameters?: JsonSchemaObject
-}
-
-/**
- * A tool call request from the model.
- *
- * @remarks
- * `id`        — unique identifier for this call.
- * `name`      — the tool name being called.
- * `arguments` — parsed argument values.
- */
-export interface ToolCall {
-	readonly id: string
-	readonly name: string
-	readonly arguments: Readonly<Record<string, unknown>>
-}
-
-/**
- * Result of executing a tool call.
- *
- * @remarks
- * `id`    — the call id this result corresponds to.
- * `name`  — the tool name that was called.
- * `value` — the returned value on success.
- * `error` — the error message on failure.
- */
-export interface ToolResult {
-	readonly id: string
-	readonly name: string
-	readonly value?: unknown
-	readonly error?: string
-}
-
-/**
- * Options for constructing a {@link Tool}.
- *
- * @remarks
- * - `name`        — unique identifier for the tool
- * - `summary`     — brief one-line description
- * - `description` — detailed explanation of behavior
- * - `parameters`  — JSON Schema defining accepted arguments
- * - `handler`     — the function invoked when the tool is executed
- */
-export interface ToolOptions {
-	readonly name: string
-	readonly summary: string
-	readonly description: string
-	readonly parameters: JsonSchemaObject
-	readonly handler: (args: Readonly<Record<string, unknown>>) => Promise<unknown> | unknown
 }
 
 // === Contract Shape
