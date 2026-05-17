@@ -1886,6 +1886,15 @@ export function recordOf<S extends GuardsShape>(
  * - **`optional: K[]`** — the listed keys are optional; all others required.
  * - **`optional: true`** — every key in the shape is optional.
  *
+ * Key presence is tested with `Object.hasOwn` (consistent with
+ * {@link keyOf} / {@link pickOf} / {@link omitOf}), so a shape key satisfied
+ * only by an **inherited** prototype-chain member — `'toString'`,
+ * `'constructor'`, `'hasOwnProperty'`, `'valueOf'`, `'__proto__'`, etc. — is
+ * treated as **absent**: required-mode rejects, optional-mode passes without
+ * running the guard against the inherited member. A genuine own property that
+ * shadows a prototype name is accepted and validated. A non-object / `null` /
+ * array input returns `false` rather than throwing (§13).
+ *
  * @param shape - An object mapping property names to guards
  * @param optional - A key list, `true` (all optional), or omitted (all required)
  * @returns A guard for the inferred record type
@@ -1944,7 +1953,7 @@ export function recordOf<
 			if (!Object.prototype.hasOwnProperty.call(shape, key)) {
 				continue
 			}
-			const present = key in value
+			const present = Object.hasOwn(value, key)
 			if (!optionalSet.has(key) && !present) {
 				return false
 			}

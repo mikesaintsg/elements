@@ -680,6 +680,71 @@ describe('keyOf — F2 edge cases', () => {
 	})
 })
 
+// === FU7 — recordOf inherited-key edge cases
+
+describe('recordOf — FU7 inherited-key edge cases', () => {
+	it('rejects an inherited-only "toString" shape key — `{}` has no own toString', () => {
+		// `'toString' in {}` is true (Object.prototype), and value['toString']
+		// resolves to Object.prototype.toString (a function), so the old
+		// prototype-walking `in` check wrongly accepted `{}`. recordOf uses
+		// own-property presence (consistent with keyOf/pickOf/omitOf), so a
+		// shape key satisfied only by an inherited member is treated as absent.
+		expect(recordOf({ toString: isFunction })({})).toBe(false)
+	})
+
+	it('rejects an inherited-only "constructor" shape key — `{}` has no own constructor', () => {
+		expect(recordOf({ constructor: isFunction })({})).toBe(false)
+	})
+
+	it('rejects every prototype-named shape key when only inherited (required mode)', () => {
+		expect(recordOf({ toString: isFunction })({})).toBe(false)
+		expect(recordOf({ valueOf: isFunction })({})).toBe(false)
+		expect(recordOf({ hasOwnProperty: isFunction })({})).toBe(false)
+		expect(recordOf({ isPrototypeOf: isFunction })({})).toBe(false)
+		expect(recordOf({ propertyIsEnumerable: isFunction })({})).toBe(false)
+	})
+
+	it('accepts a genuine OWN property that shadows a prototype name', () => {
+		// The rejection is about inheritance, not the spelling — an own
+		// property whose name collides with Object.prototype is validated.
+		const own = { toString() {} }
+		expect(recordOf({ toString: isFunction })(own)).toBe(true)
+		expect(recordOf({ toString: isString })({ toString: 'x' })).toBe(true)
+		expect(recordOf({ toString: isString })({ toString: 1 })).toBe(false)
+	})
+
+	it('treats an inherited-named OPTIONAL key as absent, not present-via-prototype', () => {
+		// Optional + inherited-only: must behave as "absent" (pass), and must
+		// NOT run the guard against the inherited Object.prototype member.
+		const optList = recordOf({ id: isString, toString: isString }, ['toString'])
+		expect(optList({ id: 'u1' })).toBe(true)
+		// optional:true — every key optional; inherited toString stays absent.
+		const allOpt = recordOf({ toString: isString }, true)
+		expect(allOpt({})).toBe(true)
+		// A genuine own value for the optional key is still validated.
+		expect(optList({ id: 'u1', toString: 'hi' })).toBe(true)
+		expect(optList({ id: 'u1', toString: 1 })).toBe(false)
+	})
+
+	it('genuine own required/present keys and unexpected-own-key behavior unchanged', () => {
+		const user = recordOf({ id: isString, age: isNumber })
+		expect(user({ id: 'u1', age: 1 })).toBe(true)
+		expect(user({ id: 'u1' })).toBe(false)
+		expect(user({ id: 'u1', age: 'x' })).toBe(false)
+		expect(user({ id: 'u1', age: 1, extra: true })).toBe(false)
+	})
+
+	it('non-object / null / array inputs still return false without throwing (§13)', () => {
+		const guard = recordOf({ toString: isFunction })
+		expect(() => guard(null)).not.toThrow()
+		expect(guard(null)).toBe(false)
+		expect(guard(undefined)).toBe(false)
+		expect(guard(['x'])).toBe(false)
+		expect(guard(42)).toBe(false)
+		expect(guard('s')).toBe(false)
+	})
+})
+
 // === F2 — isFiniteNumber edge cases
 
 describe('isFiniteNumber — F2 edges', () => {
