@@ -162,6 +162,26 @@ The framework layers on Tailwind v4. The interop test verifies modifier+utility 
 | Composition test + collision detector | [`tests/src/styles/integration.test.ts`](../tests/src/styles/integration.test.ts) |
 | Collision watch list                  | [`tests/setup.ts`](../tests/setup.ts) § `TAILWIND_SINGLE_TOKEN_UTILITIES`         |
 
+### Core — contract / parser / validator surface (`@elements/core`)
+
+A standalone, browser-free package: a shape DSL that compiles to JSON Schema + runtime guard + input parser + seeded generator, plus the flat parser and validator primitives it composes from. No SCSS, no Vue, no DOM.
+
+| Role                            | File                                                                                                                                                                       |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spec — contracts DSL            | [`guides/contracts.md`](contracts.md)                                                                                                                                      |
+| Spec — parsers                  | [`guides/parsers.md`](parsers.md)                                                                                                                                          |
+| Spec — validators               | [`guides/validators.md`](validators.md)                                                                                                                                    |
+| Public barrel                   | [`src/core/index.ts`](../src/core/index.ts)                                                                                                                                |
+| Types (source of truth)         | [`src/core/types.ts`](../src/core/types.ts)                                                                                                                                |
+| Validators (guards/compositors) | [`src/core/validators.ts`](../src/core/validators.ts)                                                                                                                      |
+| Parsers (value/field/format)    | [`src/core/parsers.ts`](../src/core/parsers.ts)                                                                                                                            |
+| Shapers (shape DSL)             | [`src/core/shapers.ts`](../src/core/shapers.ts)                                                                                                                            |
+| Compilers (schema/guard/gen)    | [`src/core/compilers.ts`](../src/core/compilers.ts)                                                                                                                        |
+| Factories (contract builders)   | [`src/core/factories.ts`](../src/core/factories.ts)                                                                                                                        |
+| Helpers (internal utilities)    | [`src/core/helpers.ts`](../src/core/helpers.ts)                                                                                                                            |
+| Unit tests                      | [`tests/src/core/`](../tests/src/core/) — [`validators`](../tests/src/core/validators.test.ts), [`parsers`](../tests/src/core/parsers.test.ts), [`shapers`](../tests/src/core/shapers.test.ts), [`compilers`](../tests/src/core/compilers.test.ts) |
+| Doc parity                      | [`tests/guides/contracts.test.ts`](../tests/guides/contracts.test.ts), [`tests/guides/parsers.test.ts`](../tests/guides/parsers.test.ts), [`tests/guides/validators.test.ts`](../tests/guides/validators.test.ts) |
+
 ---
 
 ## By directory
@@ -182,6 +202,9 @@ The framework layers on Tailwind v4. The interop test verifies modifier+utility 
 | [`components.md`](components.md)   | Element compositions — element-driven + class-root patterns.                                             |
 | [`surfaces.md`](surfaces.md)       | Browser-rendered chrome — pseudo-elements, `[popover]`, anchor-position, etc.                            |
 | [`composables.md`](composables.md) | Vue + factory layer — adapter / factory split, naming, lifecycle.                                        |
+| [`contracts.md`](contracts.md)     | `@elements/core` — shape → JSON Schema / guard / parser / generator DSL.                                  |
+| [`parsers.md`](parsers.md)         | `@elements/core` — flat value / field / format parsers (`unknown` → typed, `undefined` on failure).      |
+| [`validators.md`](validators.md)   | `@elements/core` — runtime type guards + guard compositors.                                               |
 | [`mixins.md`](mixins.md)           | Sass-side helper registry + list constants.                                                              |
 | [`showcase.md`](showcase.md)       | The showcase app (`app/browser/`) — strict authoring rules, sidebar / TOC patterns, custom-class triage. |
 | [`mixins.md`](mixins.md)           | Sass mixin + function registry — `transition()`, `focus-ring()`, `palette-each`, etc.                    |
@@ -205,6 +228,21 @@ Frozen object trees and derived string-literal-union types. Every CSS identifier
 | [`composables/`](../src/browser/composables/) | 20 `use{Name}.ts` Vue adapters + `index.ts` barrel.                                                                                                   |
 | [`factories/`](../src/browser/factories/)     | 20 `create{Name}.ts` framework-agnostic factories + `index.ts` barrel.                                                                                |
 
+### `src/core/` — `@elements/core` package
+
+Browser-free contract / parser / validator surface. No SCSS, no Vue, no DOM. The sole public barrel is [`src/core/index.ts`](../src/core/index.ts). Specs: [contracts.md](contracts.md), [parsers.md](parsers.md), [validators.md](validators.md).
+
+| File                                          | Purpose                                                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [`index.ts`](../src/core/index.ts)            | Sole public barrel. `export *` from each surface file.                                                         |
+| [`types.ts`](../src/core/types.ts)            | SOURCE OF TRUTH for the package's types — shape DSL, contract, parser/guard signatures.                        |
+| [`helpers.ts`](../src/core/helpers.ts)        | Internal utilities shared by validators / parsers / shapers / compilers.                                       |
+| [`validators.ts`](../src/core/validators.ts)  | Runtime type guards (`unknown` → narrowed) + guard compositors.                                                |
+| [`parsers.ts`](../src/core/parsers.ts)        | Flat value / field / format parsers — coerce `unknown`, return `undefined` on failure.                         |
+| [`shapers.ts`](../src/core/shapers.ts)        | The shape DSL — declarative field descriptors a contract is built from.                                        |
+| [`compilers.ts`](../src/core/compilers.ts)    | Shape → JSON Schema / runtime guard / input parser / seeded generator.                                         |
+| [`factories.ts`](../src/core/factories.ts)    | Contract builders — assemble a shape into the four derived artifacts.                                          |
+
 ### `src/styles/` — SCSS source
 
 Compile pipeline: Sass → PostCSS (`@tailwindcss/postcss`). The compilation barrel is [`index.scss`](../src/styles/index.scss). Mixins are NOT `@use`d by the barrel; consumers write `@use '../mixins' as *;` directly.
@@ -225,7 +263,7 @@ Compile pipeline: Sass → PostCSS (`@tailwindcss/postcss`). The compilation bar
 
 Vitest projects defined in [`vite.config.ts`](../vite.config.ts). Each project owns one folder:
 
-- `src:core` — `tests/src/core/` (node env, currently empty placeholder)
+- `src:core` — `tests/src/core/` (node env, no browser — the `@elements/core` package)
 - `src:browser` — `tests/src/browser/` (chromium)
 - `src:styles` — `tests/src/styles/` (chromium, full cascade loaded)
 - `guides` — `tests/guides/` (node env, fast)
@@ -238,9 +276,21 @@ Vitest projects defined in [`vite.config.ts`](../vite.config.ts). Each project o
 | [`setup.ts`](../tests/setup.ts)               | Generic helpers: `createRecorder`, `extractProperty`, `waitForDelay`, `leaves`, `tableCellFor`, `extractBacktickedNames`. Re-exported by `setupBrowser` and `setupStyles`.                                                                                                                                                                                                |
 | [`setupBrowser.ts`](../tests/setupBrowser.ts) | Vue mounting (`mountSetup`, `withElement`), factory fixtures (`createFactoryFixture`), event helpers (`createPointerEvent`, `createDragEvent`), dispose hygiene (`assertCleanDispose`), DOM builder (`buildElement`), `waitForBootstrap`.                                                                                                                                 |
 | [`setupStyles.ts`](../tests/setupStyles.ts)   | CSS pipeline import, computed-style readers (`style`, `token`, `rootToken`, `pixels`), color helpers (`rgba`, `colorEqual`), fixture builders (`mount`, `render`, `build`), stylesheet introspection (`findRule`), SCSS source introspection (`stripComments`, `tagFromPath`, `declaresToken`, `declaresElementToken`, `usesMotionMixin`), Tailwind collision watch list. |
+| [`src/core/`](../tests/src/core/)             | `@elements/core` unit tests (node env, no browser) — validators / parsers / shapers / compilers.                                                                                                                                                                                                                                                                          |
 | [`src/browser/`](../tests/src/browser/)       | TS public-API parity tests + factory + composable tests.                                                                                                                                                                                                                                                                                                                  |
 | [`src/styles/`](../tests/src/styles/)         | Per-partial behavior tests + cross-cutting SCSS contract enforcers.                                                                                                                                                                                                                                                                                                       |
 | [`guides/`](../tests/guides/)                 | One test per guide (`{guide}.test.ts`) + cross-guide meta-tests.                                                                                                                                                                                                                                                                                                          |
+
+#### `tests/src/core/` — `@elements/core` unit tests
+
+Node-environment tests (no browser, no DOM). One file per `src/core/` module with substantive behaviour. Doc parity for these guides lives under `tests/guides/` ([`contracts.test.ts`](../tests/guides/contracts.test.ts), [`parsers.test.ts`](../tests/guides/parsers.test.ts), [`validators.test.ts`](../tests/guides/validators.test.ts)).
+
+| File                                                          | Purpose                                                          |
+| ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| [`validators.test.ts`](../tests/src/core/validators.test.ts)  | Runtime guards + guard compositors.                              |
+| [`parsers.test.ts`](../tests/src/core/parsers.test.ts)        | Value / field / format parsers; coercion + `undefined` failure.  |
+| [`shapers.test.ts`](../tests/src/core/shapers.test.ts)        | Shape DSL field descriptors.                                     |
+| [`compilers.test.ts`](../tests/src/core/compilers.test.ts)    | Shape → schema / guard / parser / generator compilation.         |
 
 #### `tests/src/browser/` — TS public-API parity + factory + composable behaviour
 
