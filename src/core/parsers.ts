@@ -372,6 +372,12 @@ export function coerceNumber(value: unknown): number | undefined {
  * Coerce an unknown value to a `Record<string, unknown>`.
  *
  * @remarks
+ * Total by design: unlike its `coerceString`/`coerceNumber` siblings (which
+ * return `… | undefined` on failure), this coercion NEVER returns `undefined` —
+ * an invalid input falls back to `{}`, so it is safe to use without a guard.
+ * The verb-shape asymmetry (§4.4) is a deliberate, documented exception, not an
+ * oversight: a "record or nothing" call site can branch on `isRecord` directly.
+ *
  * Alias-vs-copy policy (§15/§22): a valid record is returned BY REFERENCE (same
  * identity as the input — like {@link parseRecord}); only an invalid input is
  * replaced, and then with a FRESH empty object (never a shared singleton, so
