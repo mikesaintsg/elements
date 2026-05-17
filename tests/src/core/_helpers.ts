@@ -381,7 +381,7 @@ export function makeCyclicShape(): ContractShape {
  * plain objects; treats cyclic inputs as unequal-safe by tracking a
  * visited pair set so it cannot itself recurse forever.
  */
-function deepEquals(a: unknown, b: unknown, seen: Set<unknown> = new Set()): boolean {
+export function deepEquals(a: unknown, b: unknown, seen: Set<unknown> = new Set()): boolean {
 	if (Object.is(a, b)) {
 		return true
 	}
@@ -432,7 +432,7 @@ function deepEquals(a: unknown, b: unknown, seen: Set<unknown> = new Set()): boo
 }
 
 /** Count structurally distinct values in a list via {@link deepEquals}. */
-function countDistinct(values: readonly unknown[]): number {
+export function countDistinct(values: readonly unknown[]): number {
 	const distinct: unknown[] = []
 	for (const value of values) {
 		if (!distinct.some((existing) => deepEquals(existing, value))) {
@@ -443,7 +443,7 @@ function countDistinct(values: readonly unknown[]): number {
 }
 
 /** A short human-readable tag for a shape, used in failure messages. */
-function describeShape(shape: ContractShape): string {
+export function describeShape(shape: ContractShape): string {
 	if (shape.type === 'object') {
 		const keys = Object.keys(shape.properties).join(', ')
 		return `object{${keys}}`
@@ -458,7 +458,7 @@ function describeShape(shape: ContractShape): string {
 }
 
 /** Compact, recursion-safe rendering of an arbitrary value for messages. */
-function printValue(value: unknown): string {
+export function printValue(value: unknown): string {
 	try {
 		const seen = new WeakSet<object>()
 		return JSON.stringify(value, (_key, current) => {
