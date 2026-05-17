@@ -202,6 +202,88 @@ describe('compileSchema', () => {
 		})
 	})
 
+	// FU5 defect #1 (forward emission) — when an intersection member declares
+	// a property key ANOTHER member ALSO declares, that key's sub-schemas must
+	// be COMBINED via a per-key `allOf` (the JSON-Schema 2020-12 accept-set of
+	// `allOf` is exactly the intersection of the members' per-key accept-sets,
+	// matching the `compileGuard` per-member conjunction on that key). A naive
+	// last-writer-wins overwrite (`{a:{type:'integer'}}`) would WIDEN the
+	// schema — it would accept `{a:5}`, which the guard rejects (its accept-set
+	// for `a` is the EMPTY set: no value is both a string and an integer) —
+	// reintroducing the exact FU5 defect-#1 false positive. Pinning the full
+	// per-key `allOf` is what fails any such regression. `required` is the
+	// UNION (a key demanded present by ANY member is required).
+	it('compileSchema — intersection with an overlapping property key merges that key via allOf', () => {
+		expect(
+			compileSchema(
+				intersectionShape(
+					objectShape({ a: stringShape() }),
+					objectShape({ a: integerShape() }),
+				),
+			),
+		).toEqual({
+			type: 'object',
+			properties: { a: { allOf: [{ type: 'string' }, { type: 'integer' }] } },
+			required: ['a'],
+			additionalProperties: false,
+		})
+	})
+
+	// Same key, compatible-but-distinct keyword constraints from each member
+	// (`minLength` from one, `maxLength` from the other). Both keywords MUST
+	// survive the merge — a last-writer-wins overwrite would drop one bound
+	// (`{a:{type:'string',maxLength:5}}` loses `minLength:1`, or the reverse),
+	// silently widening the accepted set. Asserting the full per-key `allOf`
+	// of BOTH leaf schemas catches that constraint-dropping regression class.
+	it('compileSchema — overlapping key keeps every member’s keyword constraint in the allOf', () => {
+		expect(
+			compileSchema(
+				intersectionShape(
+					objectShape({ a: stringShape({ min: 1 }) }),
+					objectShape({ a: stringShape({ max: 5 }) }),
+				),
+			),
+		).toEqual({
+			type: 'object',
+			properties: {
+				a: {
+					allOf: [
+						{ type: 'string', minLength: 1 },
+						{ type: 'string', maxLength: 5 },
+					],
+				},
+			},
+			required: ['a'],
+			additionalProperties: false,
+		})
+	})
+
+	// Mixed: `a` overlaps (string ∩ integer → per-key `allOf`), `b` and `c`
+	// are disjoint (carried straight, NOT wrapped). This pins the exact
+	// boundary between the merge path and the bare-schema path: a regression
+	// that wrapped the WHOLE objects in a top-level `allOf` of closed members
+	// (the original unsatisfiable FU5 shape) — or that over-wrapped disjoint
+	// keys — would fail. `required` is the union of all three keys.
+	it('compileSchema — intersection with mixed overlapping + disjoint keys merges only the shared key', () => {
+		expect(
+			compileSchema(
+				intersectionShape(
+					objectShape({ a: stringShape(), b: booleanShape() }),
+					objectShape({ a: integerShape(), c: numberShape() }),
+				),
+			),
+		).toEqual({
+			type: 'object',
+			properties: {
+				a: { allOf: [{ type: 'string' }, { type: 'integer' }] },
+				b: { type: 'boolean' },
+				c: { type: 'number' },
+			},
+			required: ['a', 'b', 'c'],
+			additionalProperties: false,
+		})
+	})
+
 	it('object — marks required and optional', () => {
 		const schema = compileSchema(
 			objectShape({
