@@ -508,12 +508,18 @@ export function unescapeToken(token: string): string {
  * `value` is a multiple of `divisor` within IEEE-754 tolerance.
  *
  * @remarks
- * `value / divisor` must be (near) an integer. A small relative epsilon
- * tolerates representation error for common decimal divisors (`0.1`) while
- * still rejecting a clearly non-multiple. `Number.EPSILON * 8 * |quotient|`
- * is a few-ULP relative band that cleanly separates a genuine division
- * rounding error (`0.3 / 0.1` lands ~6.7e-16 off 3) from a clearly
- * non-multiple (`0.30000000000001 / 0.1` is ~1e-13 off, ~150x larger).
+ * `value / divisor` must be (near) an integer. A small ABSOLUTE epsilon on
+ * the quotient (`Number.EPSILON * 8`, ~1.8e-15) tolerates the genuine
+ * IEEE-754 rounding error of the division for common decimal divisors —
+ * `0.3 / 0.1` lands ~4.4e-16 off 3, `0.6 / 0.1` ~8.9e-16 off 6 — while
+ * still rejecting a clearly non-multiple (`0.30000000000001 / 0.1` is
+ * ~1e-13 off, ~50x the band). The band is deliberately NOT scaled by
+ * `|quotient|`: a quotient-proportional band grows without bound at large
+ * magnitude (for `MAX_SAFE_INTEGER / 2` it reached ~8, swallowing the 0.5
+ * residual of an odd/2 division and falsely accepting odd integers). A
+ * fixed band is sound because an exact large-magnitude integer division
+ * has zero rounding error (it stays accepted), whereas a non-multiple's
+ * residual is a meaningful fraction that always dwarfs ~1.8e-15.
  *
  * @param value - The dividend
  * @param divisor - The divisor (a zero divisor yields `false`)
@@ -536,10 +542,11 @@ export function isMultipleOf(value: number, divisor: number): boolean {
 		return true
 	}
 	// Tolerate ONLY genuine IEEE-754 representation error of the division
-	// (a few ULPs of the quotient — `0.3 / 0.1` lands ~6.7e-16 off 3),
-	// while still rejecting a clearly non-multiple (`0.30000000000001 / 0.1`
-	// is ~1e-13 off, ~150x larger). `Number.EPSILON * 8 * |quotient|` is a
-	// few-ULP relative band that cleanly separates the two (design note 7).
-	const epsilon = Number.EPSILON * 8 * Math.max(1, Math.abs(quotient))
+	// (`0.3 / 0.1` lands ~4.4e-16 off 3) with a FIXED absolute band — NOT
+	// scaled by |quotient|, which would grow unbounded and falsely accept
+	// large odd integers as multiples of 2 (FU10 §13). An exact large
+	// division rounds to zero error so it still passes; a non-multiple's
+	// residual always exceeds ~1.8e-15.
+	const epsilon = Number.EPSILON * 8
 	return Math.abs(quotient - rounded) <= epsilon
 }

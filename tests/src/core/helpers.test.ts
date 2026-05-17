@@ -1136,15 +1136,34 @@ describe('isMultipleOf', () => {
 		expect(isMultipleOf(Number.MAX_SAFE_INTEGER - 1, 2)).toBe(true)
 	})
 
-	it('ACTUAL behavior: the relative epsilon band is wide at huge magnitudes', () => {
-		// CHARACTERIZATION (not a spec the source promises): the tolerance is
-		// `Number.EPSILON * 8 * |quotient|`. For MAX_SAFE_INTEGER / 2 the
-		// quotient is ~4.5e15, so the band is ~8 — far larger than the 0.5
-		// residual of an odd/2 division. The code therefore returns `true`
-		// even though MAX_SAFE_INTEGER is odd. Pinned to lock the real
-		// behavior; the relative epsilon is by design (design note 7), not a
-		// bug, and only matters far outside the decimal-divisor use case.
-		expect(isMultipleOf(Number.MAX_SAFE_INTEGER, 2)).toBe(true)
+	it('large odd integer is NOT a multiple of 2 (FU10 soundness)', () => {
+		// MAX_SAFE_INTEGER is odd; the tolerance must not grow wide enough at
+		// huge magnitude to swallow the 0.5 residual of an odd/2 division.
+		expect(isMultipleOf(Number.MAX_SAFE_INTEGER, 2)).toBe(false)
+		expect(isMultipleOf(9007199254740990, 2)).toBe(true)
+		expect(isMultipleOf(Number.MAX_SAFE_INTEGER, 1)).toBe(true)
+	})
+
+	it('large-magnitude integer ÷ small divisor stays sound (FU10)', () => {
+		// 9007199254740991 (MAX_SAFE_INTEGER) is odd, ≢ 0 mod 3.
+		expect(isMultipleOf(9007199254740991, 1)).toBe(true)
+		expect(isMultipleOf(9007199254740991, 2)).toBe(false)
+		expect(isMultipleOf(9007199254740991, 3)).toBe(false)
+		// 9007199254740990 is even AND exactly divisible by 3
+		// (9007199254740990 / 3 = 3002399751580330).
+		expect(isMultipleOf(9007199254740990, 1)).toBe(true)
+		expect(isMultipleOf(9007199254740990, 2)).toBe(true)
+		expect(isMultipleOf(9007199254740990, 3)).toBe(true)
+		// 9007199254740989 ≡ 2 mod 3 → not a multiple of 3.
+		expect(isMultipleOf(9007199254740989, 3)).toBe(false)
+		// 9000000000000000 = 3 · 3000000000000000 (exact); +1 breaks it.
+		expect(isMultipleOf(9000000000000000, 3)).toBe(true)
+		expect(isMultipleOf(9000000000000001, 3)).toBe(false)
+	})
+
+	it('decimal-tolerance preserved at small magnitude (FU10)', () => {
+		expect(isMultipleOf(0.3, 0.1)).toBe(true)
+		expect(isMultipleOf(0.0003, 0.0001)).toBe(true)
 	})
 
 	it('very small values', () => {
