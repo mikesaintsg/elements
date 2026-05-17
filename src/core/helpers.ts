@@ -572,3 +572,167 @@ export function isMultipleOf(value: number, divisor: number): boolean {
 	const tolerance = Math.min(magnitudeBand, divisorCap)
 	return Math.abs(value - reconstructed) <= tolerance
 }
+
+/**
+ * Read one own property value off the right-hand operand of {@link deepEqual}.
+ *
+ * @remarks
+ * `deepEqual` reads the LEFT operand's property values directly (the trusted
+ * finite side) but routes every RIGHT-operand plain-object property value
+ * through this strategy so the caller chooses the read discipline:
+ *
+ * - The default (`compilers.ts` `const`) is a direct `Reflect.get` — the
+ *   trusted-input regime where a throwing accessor SHOULD propagate.
+ * - The hardened variant (`schema.ts` `enum`/`const`/`uniqueItems`) closes
+ *   over a `try`-wrapped read that returns a module-private sentinel on a
+ *   throwing getter; `deepEqual` then compares that opaque sentinel against
+ *   the trusted left value and reports inequality. The sentinel and its
+ *   throw-containment stay entirely inside `schema.ts` — this module never
+ *   imports it.
+ *
+ * Array elements are NOT routed through this strategy (both original
+ * implementations indexed array elements directly); only RIGHT-operand
+ * plain-object own-property values are.
+ *
+ * @param object - The right-hand operand (a plain object)
+ * @param key - The own enumerable string key to read
+ * @returns The opaque property value, however the strategy chooses to obtain
+ *          it
+ */
+export type PropertyReader = (object: object, key: string) => unknown
+
+/**
+ * Recursive structural deep-equality over finite JSON-shaped values.
+ *
+ * @remarks
+ * One shared implementation behind JSON-Schema `const` (compilers) and
+ * `enum`/`const`/`uniqueItems` (the inverse subsystem). The algorithm:
+ *
+ * - **Array** — when `a` is an array, `b` must be an array of the SAME
+ *   `length` and every element must be positionally deep-equal. Array
+ *   elements are read by direct index on both sides (never via `read`).
+ * - **Primitive leaf** — when `a` is neither an array nor a plain object the
+ *   result is `Object.is(a, b)`. `Object.is` (not `===`) is deliberate and
+ *   project-wide: `NaN` equals `NaN`, and `+0` is DISTINCT from `-0`.
+ * - **Plain object** — when `a` is a plain object (a `null`-prototype or
+ *   `Object.prototype`-prototype non-array — the inline discrimination is
+ *   behaviourally identical to validators' `isRecord` as used by the two
+ *   originals: array-excluded, prototype pinned to `Object.prototype` or
+ *   `null`), `b` must also be a plain object with an own-key set of the SAME
+ *   size, every `a` key must be an own key of `b` (`Object.hasOwn`, so an
+ *   inherited key is never mistaken for a present own property — B2
+ *   prototype-pollution discipline), and the values must be deep-equal.
+ *   `a`'s property values are read directly (`a` is the trusted finite side);
+ *   `b`'s property values flow through {@link PropertyReader} so the caller
+ *   owns the untrusted-input read discipline.
+ *
+ * `a` is the trusted SCHEMA-supplied operand — a finite acyclic `JsonValue`
+ * — so the recursion is bounded by `a`'s finite shape regardless of `b`
+ * (the untrusted input); no cycle/depth guard is needed. Total per AGENTS.md
+ * §13 when `read` is total (the default `Reflect.get` propagates a throwing
+ * accessor by design — that is the trusted-input contract; the hardened
+ * `schema.ts` variant supplies a non-throwing `read`).
+ *
+ * @param a - The trusted left operand (a finite acyclic JSON value)
+ * @param b - The untrusted right operand to compare structurally against `a`
+ * @param read - Strategy for reading `b`'s plain-object own-property values;
+ *        defaults to a direct `Reflect.get` (trusted-input regime)
+ * @returns `true` when `a` and `b` are structurally deep-equal under the
+ *          above rules
+ *
+ * @example
+ * ```ts
+ * deepEqual({ a: [1, 2] }, { a: [1, 2] })          // true
+ * deepEqual(Number.NaN, Number.NaN)                // true  (Object.is)
+ * deepEqual(0, -0)                                 // false (Object.is)
+ * deepEqual({ a: 1 }, { a: 1, b: 2 })              // false (key-set differs)
+ * ```
+ */
+export function deepEqual(
+	a: unknown,
+	b: unknown,
+	read: PropertyReader = Reflect.get,
+): boolean {
+	if (Array.isArray(a)) {
+		// `a` is an array: `b` must be an array of equal length whose elements
+		// are positionally deep-equal. Both sides indexed directly (the two
+		// originals never routed array elements through the read strategy).
+		const aArray: readonly unknown[] = a
+		if (!Array.isArray(b) || aArray.length !== b.length) {
+			return false
+		}
+		const bArray: readonly unknown[] = b
+		for (let index = 0; index < aArray.length; index += 1) {
+			if (!deepEqual(aArray[index], bArray[index], read)) {
+				return false
+			}
+		}
+		return true
+	}
+	if (!isPlainObject(a)) {
+		// Primitive / non-plain leaf: `Object.is` so `NaN` === `NaN` and
+		// `+0` ≠ `-0` (aligned with validators' `literalOf`).
+		return Object.is(a, b)
+	}
+	// `a` is a plain object: `b` must be a plain object with the IDENTICAL
+	// own-key set and every value deep-equal. Presence is tested via
+	// `Object.hasOwn` so an inherited key is never mistaken for an own one.
+	if (!isPlainObject(b)) {
+		return false
+	}
+	const aKeys = Object.keys(a)
+	const bKeys = Object.keys(b)
+	if (aKeys.length !== bKeys.length) {
+		return false
+	}
+	for (const key of aKeys) {
+		if (!Object.hasOwn(b, key)) {
+			return false
+		}
+		// Read `b`'s value through the injected strategy FIRST, then `a`'s
+		// (read directly — `a` is the trusted finite side). This evaluation
+		// order is load-bearing: it matches the original `schemaValueEquals`
+		// exactly, where `bChild = safeGet(b, key)` is evaluated and its
+		// throwing-getter sentinel checked BEFORE `a[key]` is ever touched.
+		// The hardened `schema.ts` variant's `read` returns a module-private
+		// sentinel on a throwing `b` getter; that sentinel is an opaque
+		// `unique symbol` that can never structurally equal a finite JSON `a`
+		// value, so the comparison below yields `false` — the exact
+		// `bChild === SAFE_GET_THREW ⇒ false` outcome. (For the `const`
+		// variant `read` is a direct `Reflect.get`; reordering vs the old
+		// `constEquals(a[key], b[key])` is unobservable there because `a` —
+		// the trusted const — never carries a throwing accessor, so the only
+		// order-sensitive case, BOTH sides throwing, is unreachable.)
+		const bValue = read(b, key)
+		if (!deepEqual(Reflect.get(a, key), bValue, read)) {
+			return false
+		}
+	}
+	return true
+}
+
+/**
+ * Inline plain-object discrimination for {@link deepEqual}.
+ *
+ * @remarks
+ * `helpers.ts` is a low-level leaf module: it must import ONLY `./types.js`
+ * and `./constants.js` (importing validators' `isRecord` would create an
+ * import cycle, since validators/compilers/schema import FROM here). This is
+ * a verbatim inline of `isRecord` AS USED by the two original equality
+ * functions: a non-`null` `object` that is not an array and whose prototype
+ * is exactly `Object.prototype` or `null`. (`isRecord` is
+ * `isObject(v) && !isArray(v) && (proto === Object.prototype || proto ===
+ * null)`; `isObject` is `typeof v === 'object' && v !== null`, `isArray` is
+ * `Array.isArray` — replicated exactly here.)
+ *
+ * @param value - The value to classify
+ * @returns `true` when `value` is a plain record (literal or
+ *          `Object.create(null)`), `false` otherwise
+ */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+		return false
+	}
+	const prototype = Object.getPrototypeOf(value)
+	return prototype === Object.prototype || prototype === null
+}

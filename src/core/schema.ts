@@ -27,7 +27,7 @@ import {
 } from './shapers.js'
 import { compileParser } from './compilers.js'
 import { EMAIL_FORMAT, MAX_RECURSION_DEPTH, URI_FORMAT, UUID_FORMAT } from './constants.js'
-import { isExternalRef, isMultipleOf, unescapeToken } from './helpers.js'
+import { deepEqual, isExternalRef, isMultipleOf, unescapeToken } from './helpers.js'
 import { isJsonSchema, isRecord } from './validators.js'
 
 // ============================================================================
@@ -469,11 +469,14 @@ export function createRefResolver(root: JsonSchema): RefResolver {
 //     throw a precise §13 `Error` (let it propagate).
 //
 //  4. STRUCTURAL EQUALITY (D4 parity). `enum`, `const`, and `uniqueItems`
-//     all use ONE equality (`schemaValueEquals`): primitive leaves by
-//     `Object.is` (so `NaN` === `NaN`, `+0` ≠ `-0` — the SAME equality
-//     validators' `literalOf` and compilers' `constEquals` use), arrays /
-//     plain objects by recursive structural deep-equality. Consistency
-//     across enum/const/uniqueItems/literal is deliberate and project-wide.
+//     all use ONE equality (`schemaValueEquals`, a thin wrapper over the
+//     shared `deepEqual` in helpers.ts injecting `safeGet` for the
+//     untrusted-input hardening): primitive leaves by `Object.is` (so
+//     `NaN` === `NaN`, `+0` ≠ `-0` — the SAME equality validators'
+//     `literalOf` and compilers' `const` arm use, since both now route
+//     through that one `deepEqual`), arrays / plain objects by recursive
+//     structural deep-equality. Consistency across enum/const/uniqueItems/
+//     literal is deliberate and project-wide.
 //
 //  5. `format` IS ANNOTATION-FIRST (JSON-Schema spec: `format` is an
 //     annotation, not by default an assertion). A DOCUMENTED known set
@@ -552,47 +555,23 @@ const SAFE_GET_THREW: unique symbol = Symbol('safe-get-threw')
  * Structural value equality shared by `enum`, `const`, and `uniqueItems`.
  *
  * @remarks
- * Primitive leaves by `Object.is` (so `NaN` === `NaN`, `+0` ≠ `-0` — the
- * SAME equality validators' `literalOf` and compilers' `constEquals` use);
- * arrays / plain records by recursive structural deep-equality. `a` is the
- * trusted SCHEMA-supplied value (a finite acyclic `JsonValue`), so the
- * recursion is bounded by `a`'s finite shape regardless of `b` (the
- * untrusted input). Own keys are read via `Object.hasOwn` (B2). Never
- * throws (§13) — a throwing getter on `b` surfaces as inequality.
+ * Delegates to the shared {@link deepEqual} (helpers.ts) — primitive leaves
+ * by `Object.is` (so `NaN` === `NaN`, `+0` ≠ `-0`, the SAME equality
+ * validators' `literalOf` uses), arrays / plain records by recursive
+ * structural deep-equality, `a` the trusted finite operand bounding the
+ * recursion. The untrusted-input hardening stays HERE: the injected
+ * {@link safeGet} `try`-wraps every right-operand plain-object property read
+ * and yields the module-private {@link SAFE_GET_THREW} sentinel on a throwing
+ * getter. `deepEqual` then compares that opaque sentinel against the trusted
+ * `a` value; since `a` is a finite acyclic `JsonValue` (no symbols), the
+ * sentinel can never structurally equal it, so the comparison reports
+ * inequality — byte-identical to the previous explicit
+ * `bChild === SAFE_GET_THREW ⇒ false` arm. The sentinel and its
+ * throw-containment never leave this module (helpers.ts imports neither).
+ * Never throws (§13) on a throwing getter on `b`.
  */
 function schemaValueEquals(a: unknown, b: unknown): boolean {
-	if (Array.isArray(a)) {
-		if (!Array.isArray(b) || a.length !== b.length) {
-			return false
-		}
-		for (let index = 0; index < a.length; index += 1) {
-			if (!schemaValueEquals(a[index], b[index])) {
-				return false
-			}
-		}
-		return true
-	}
-	if (!isRecord(a)) {
-		return Object.is(a, b)
-	}
-	if (!isRecord(b)) {
-		return false
-	}
-	const aKeys = Object.keys(a)
-	const bKeys = Object.keys(b)
-	if (aKeys.length !== bKeys.length) {
-		return false
-	}
-	for (const key of aKeys) {
-		if (!Object.hasOwn(b, key)) {
-			return false
-		}
-		const bChild = safeGet(b, key)
-		if (bChild === SAFE_GET_THREW || !schemaValueEquals(a[key], bChild)) {
-			return false
-		}
-	}
-	return true
+	return deepEqual(a, b, safeGet)
 }
 
 // The known `format` keywords that ASSERT (best-effort) — `EMAIL_FORMAT`,

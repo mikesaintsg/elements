@@ -12,6 +12,7 @@ import type {
 import { MAX_LAZY_DEPTH, MAX_ONEOF_ATTEMPTS, MAX_RECURSION_DEPTH } from './constants.js'
 import {
 	assertAcyclicShape,
+	deepEqual,
 	flattenIntersectionObjects,
 	guardPermitsAbsence,
 	isShapeAdditional,
@@ -29,59 +30,13 @@ import { isObject, isRecord } from './validators.js'
 // const `value` came through `constShape` typed as `JsonValue`, so it is a
 // finite acyclic JSON tree (no functions, no cycles) — a plain recursive
 // walk terminates without the WeakSet/depth guards the public JSON guards
-// need for untrusted input. `b` is untrusted (it is the guard's argument):
-// it is compared structurally against the trusted finite `a`, so the
-// recursion depth is bounded by `a`'s (finite) shape, not `b`'s.
-// `a` is typed `unknown` (not `JsonValue`) deliberately: TS's
-// `Array.isArray` type guard narrows to `any[]`, which does NOT subtract the
-// `JsonArray` interface from a `JsonArray | JsonObject` union, so a
-// `JsonValue`-typed parameter cannot be cleanly narrowed without an `as`
-// (forbidden by the AGENTS binding). The const value is always a `JsonValue`
-// at the call site (assignable to `unknown`), and we re-derive its structure
-// here via the codebase's own `Array.isArray` + `isRecord` guards — the SAME
-// discipline `validators.ts`' `isJsonValueInner` uses.
-function constEquals(a: unknown, b: unknown): boolean {
-	if (Array.isArray(a)) {
-		// `a` is a JSON array: `b` must be an array of the same length whose
-		// elements are positionally deep-equal.
-		const aArray: readonly unknown[] = a
-		if (!Array.isArray(b) || aArray.length !== b.length) {
-			return false
-		}
-		const bArray: readonly unknown[] = b
-		for (let index = 0; index < aArray.length; index += 1) {
-			if (!constEquals(aArray[index], bArray[index])) {
-				return false
-			}
-		}
-		return true
-	}
-	if (!isRecord(a)) {
-		// Primitive leaf (string/number/boolean/null): `Object.is` so `NaN`
-		// === `NaN`, `+0` ≠ `-0` (aligned with validators' `literalOf`).
-		return Object.is(a, b)
-	}
-	// `a` is a plain JSON object. `b` must be a plain record (not an array)
-	// with the IDENTICAL own-key set and every value deep-equal. Keys are
-	// read via `Object.hasOwn` so an inherited key can never be mistaken for
-	// a present own property (the object parser arm's untrusted-input
-	// discipline).
-	if (!isRecord(b)) {
-		return false
-	}
-	const aKeys = Object.keys(a)
-	const bKeys = Object.keys(b)
-	if (aKeys.length !== bKeys.length) {
-		return false
-	}
-	for (const key of aKeys) {
-		if (!Object.hasOwn(b, key) || !constEquals(a[key], b[key])) {
-			return false
-		}
-	}
-	return true
-}
-
+// need for untrusted input. The shared `deepEqual` (helpers.ts) IS that walk:
+// the const value is the trusted left operand `a` (bounding the recursion),
+// the guard argument is the untrusted right operand `b`. The default
+// property-read strategy is a direct `Reflect.get` — the trusted-input
+// regime where a throwing accessor SHOULD propagate (the inverse subsystem's
+// `schema.ts` injects a hardened, non-throwing read instead).
+//
 // A fresh deep copy of a (finite, acyclic) `JsonValue`. The const/default
 // parser and the const generator hand this out so a non-primitive canonical
 // value is NEVER a shared mutable reference into the shape (the codebase's
@@ -90,8 +45,8 @@ function constEquals(a: unknown, b: unknown): boolean {
 // recursion terminates without cycle/depth guards.
 // Parameter typed `JsonValue` for the call sites' clarity; narrowed
 // internally via `Array.isArray`/`isRecord` and recursed through `unknown`
-// children (same reason as `constEquals` — `Array.isArray` cannot subtract
-// the `JsonArray` interface from the union without an `as`). The return is
+// children (same reason `deepEqual` takes `unknown` — `Array.isArray` cannot
+// subtract the `JsonArray` interface from the union without an `as`). The return is
 // re-typed `JsonValue` (a deep copy of a JSON tree is itself a JSON tree).
 function cloneJsonValue(value: JsonValue): JsonValue {
 	return cloneJsonInner(value)
@@ -981,7 +936,7 @@ function compileGuardInner(
 			// trusted const value bounds the recursion (it is a finite
 			// acyclic `JsonValue`).
 			const constValue = shape.value
-			return (value) => constEquals(constValue, value)
+			return (value) => deepEqual(constValue, value)
 		}
 		case 'optional': {
 			const guard = compileGuardInner(shape.inner, lazyCache)
@@ -1555,7 +1510,7 @@ function compileParserInner(
 			// output IS a copy of `value`, which the guard accepts by
 			// definition; a non-matching input ⇒ `undefined`.
 			const constValue = shape.value
-			return (value) => (constEquals(constValue, value) ? cloneJsonValue(constValue) : undefined)
+			return (value) => (deepEqual(constValue, value) ? cloneJsonValue(constValue) : undefined)
 		}
 		case 'optional': {
 			const parser = compileParserInner(shape.inner, lazyCache)

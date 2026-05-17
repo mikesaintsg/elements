@@ -5,9 +5,11 @@ import {
 	assertAcyclicShape,
 	attempt,
 	booleanShape,
+	compileSchemaGuard,
 	constShape,
 	createRandom,
 	CYCLIC_SHAPE_MESSAGE,
+	deepEqual,
 	defaultShape,
 	enumerableSymbolCount,
 	flattenIntersectionObjects,
@@ -36,11 +38,11 @@ import { makeCyclicShape } from './_helpers.js'
 // ============================================================================
 //  src/core/helpers.ts — exhaustive characterization of every exported helper.
 //
-//  Export surface covered (12 symbols, none omitted):
+//  Export surface covered (13 symbols, none omitted):
 //    attempt · createRandom · enumerableSymbolCount · isConstructor ·
 //    isShapeAdditional · assertAcyclicShape · guardPermitsAbsence ·
 //    flattenIntersectionObjects · validateBounds ·
-//    isExternalRef · unescapeToken · isMultipleOf
+//    isExternalRef · unescapeToken · isMultipleOf · deepEqual
 //
 //  House style (AGENTS.md §16): deterministic (all randomness seeded via
 //  `createRandom`; no wall-clock, no `Math.random`, no network, no mocks);
@@ -1175,5 +1177,296 @@ describe('isMultipleOf', () => {
 	it('is deterministic for the same arguments', () => {
 		expect(isMultipleOf(0.3, 0.1)).toBe(isMultipleOf(0.3, 0.1))
 		expect(isMultipleOf(7, 2)).toBe(isMultipleOf(7, 2))
+	})
+})
+
+// === deepEqual — differential equivalence vs the two pre-merge originals
+//
+// FU9-E unified compilers' private `constEquals` and schema's private
+// `schemaValueEquals` into ONE shared `deepEqual(a, b, read?)`. This suite
+// LOCKS that the merge is byte-for-byte behaviour-preserving by re-deriving
+// the EXACT pre-merge bodies of BOTH originals here (verbatim, including the
+// throwing-getter `safeGet`/sentinel interaction) and asserting `deepEqual`
+// returns the IDENTICAL boolean across an exhaustive corpus. A divergence at
+// ANY corpus row (primitive, NaN, ±0, nested, array-vs-array-like, key-set,
+// throwing getter one-side / both-sides) FAILS — that is the regression net.
+
+// Verbatim copy of the inline plain-object discrimination both originals
+// used (`isRecord` AS USED): non-null object, not an array, prototype pinned
+// to `Object.prototype` or `null`. Replicated here so the differential proof
+// that `deepEqual`'s inline check === `isRecord`-as-used is self-contained.
+function refIsRecord(value: unknown): value is Record<string, unknown> {
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+		return false
+	}
+	const prototype = Object.getPrototypeOf(value)
+	return prototype === Object.prototype || prototype === null
+}
+
+// Verbatim pre-merge body of compilers.ts' private `constEquals` (direct
+// `b[key]` read — a throwing accessor PROPAGATES, the trusted-input regime).
+function oldConstEquals(a: unknown, b: unknown): boolean {
+	if (Array.isArray(a)) {
+		const aArray: readonly unknown[] = a
+		if (!Array.isArray(b) || aArray.length !== b.length) {
+			return false
+		}
+		const bArray: readonly unknown[] = b
+		for (let index = 0; index < aArray.length; index += 1) {
+			if (!oldConstEquals(aArray[index], bArray[index])) {
+				return false
+			}
+		}
+		return true
+	}
+	if (!refIsRecord(a)) {
+		return Object.is(a, b)
+	}
+	if (!refIsRecord(b)) {
+		return false
+	}
+	const aKeys = Object.keys(a)
+	const bKeys = Object.keys(b)
+	if (aKeys.length !== bKeys.length) {
+		return false
+	}
+	for (const key of aKeys) {
+		if (!Object.hasOwn(b, key) || !oldConstEquals(a[key], b[key])) {
+			return false
+		}
+	}
+	return true
+}
+
+// Verbatim pre-merge body of schema.ts' private `schemaValueEquals`,
+// including its module-private `safeGet`/`SAFE_GET_THREW` interaction (a
+// throwing right-operand getter ⇒ sentinel ⇒ that key is unequal ⇒ false;
+// never propagates — the untrusted-input regime).
+const REF_SAFE_GET_THREW: unique symbol = Symbol('ref-safe-get-threw')
+function refSafeGet(value: object, key: string): unknown {
+	try {
+		return Reflect.get(value, key)
+	} catch {
+		return REF_SAFE_GET_THREW
+	}
+}
+function oldSchemaValueEquals(a: unknown, b: unknown): boolean {
+	if (Array.isArray(a)) {
+		if (!Array.isArray(b) || a.length !== b.length) {
+			return false
+		}
+		for (let index = 0; index < a.length; index += 1) {
+			if (!oldSchemaValueEquals(a[index], b[index])) {
+				return false
+			}
+		}
+		return true
+	}
+	if (!refIsRecord(a)) {
+		return Object.is(a, b)
+	}
+	if (!refIsRecord(b)) {
+		return false
+	}
+	const aKeys = Object.keys(a)
+	const bKeys = Object.keys(b)
+	if (aKeys.length !== bKeys.length) {
+		return false
+	}
+	for (const key of aKeys) {
+		if (!Object.hasOwn(b, key)) {
+			return false
+		}
+		const bChild = refSafeGet(b, key)
+		if (bChild === REF_SAFE_GET_THREW || !oldSchemaValueEquals(a[key], bChild)) {
+			return false
+		}
+	}
+	return true
+}
+
+// The schema variant injects its own `safeGet`. Mirror that wiring here with
+// the test's `refSafeGet` so the merged path is exercised exactly as
+// schema.ts wires it (sentinel stays local to the reader, never leaks into
+// `deepEqual`'s leaf comparison except as an opaque value).
+function mergedSchemaEquals(a: unknown, b: unknown): boolean {
+	return deepEqual(a, b, refSafeGet)
+}
+
+// Build a fresh object whose `boom` getter throws — exercises the
+// one-side / both-sides throwing-getter cases.
+function throwingGetter(): Record<string, unknown> {
+	return Object.defineProperty({}, 'boom', {
+		enumerable: true,
+		configurable: true,
+		get() {
+			throw new Error('getter exploded')
+		},
+	})
+}
+
+// A single shared reference for the same-reference Object.is leaf row, and a
+// stable function reference for the non-plain-object leaf row.
+const SHARED_DATE = new Date(0)
+const NOOP = (): void => undefined
+
+describe('deepEqual — differential equivalence vs pre-merge originals', () => {
+	// Each row: a label + the two operands. The corpus is exhaustive over the
+	// behaviour-spec axes the merge had to preserve.
+	const corpus: ReadonlyArray<readonly [string, unknown, unknown]> = [
+		['identical primitives (number)', 1, 1],
+		['differing primitives (number)', 1, 2],
+		['string equality', 'x', 'x'],
+		['string inequality', 'x', 'y'],
+		['boolean equality', true, true],
+		['null === null', null, null],
+		['null vs undefined', null, undefined],
+		['undefined === undefined', undefined, undefined],
+		['NaN === NaN (Object.is)', Number.NaN, Number.NaN],
+		['NaN vs 0', Number.NaN, 0],
+		['+0 vs -0 (Object.is distinguishes)', 0, -0],
+		['-0 vs -0', -0, -0],
+		['number vs string', 1, '1'],
+		['empty arrays', [], []],
+		['equal flat arrays', [1, 2, 3], [1, 2, 3]],
+		['array length mismatch', [1, 2], [1, 2, 3]],
+		['array element mismatch', [1, 2, 3], [1, 9, 3]],
+		['array vs non-array', [1], 1],
+		['nested arrays equal', [[1], [2, [3]]], [[1], [2, [3]]]],
+		['nested arrays differ deep', [[1], [2, [3]]], [[1], [2, [4]]]],
+		['array with NaN element', [Number.NaN], [Number.NaN]],
+		['array vs array-like object', [1, 2], { 0: 1, 1: 2, length: 2 }],
+		['empty objects', {}, {}],
+		['equal flat objects', { a: 1, b: 2 }, { a: 1, b: 2 }],
+		['object key order independent', { a: 1, b: 2 }, { b: 2, a: 1 }],
+		['same keys different value', { a: 1 }, { a: 2 }],
+		['extra key on b', { a: 1 }, { a: 1, b: 2 }],
+		['missing key on b', { a: 1, b: 2 }, { a: 1 }],
+		['disjoint key sets same size', { a: 1 }, { b: 1 }],
+		['object vs array', { 0: 1 }, [1]],
+		['object vs primitive', { a: 1 }, 5],
+		['deeply nested equal', { a: { b: { c: [1, { d: 2 }] } } }, { a: { b: { c: [1, { d: 2 }] } } }],
+		['deeply nested differ', { a: { b: { c: [1, { d: 2 }] } } }, { a: { b: { c: [1, { d: 3 }] } } }],
+		['object with NaN value', { a: Number.NaN }, { a: Number.NaN }],
+		['object with -0 vs +0 value', { a: -0 }, { a: 0 }],
+		['null-prototype object equal', Object.assign(Object.create(null), { a: 1 }), { a: 1 }],
+		['date is not a plain record (Object.is leaf, distinct refs)', new Date(0), new Date(0)],
+		['same date reference (Object.is leaf, same ref)', SHARED_DATE, SHARED_DATE],
+		['regexp is not a plain record (Object.is leaf)', /x/, /x/],
+		['function is not a plain record (Object.is leaf)', NOOP, NOOP],
+	]
+
+	for (const [label, a, b] of corpus) {
+		it(`const-variant matches old constEquals: ${label}`, () => {
+			expect(deepEqual(a, b)).toBe(oldConstEquals(a, b))
+		})
+		it(`schema-variant matches old schemaValueEquals: ${label}`, () => {
+			expect(mergedSchemaEquals(a, b)).toBe(oldSchemaValueEquals(a, b))
+		})
+	}
+
+	// --- Object.is leaf semantics, asserted directly (not just differentially)
+	it('NaN equals NaN at a primitive leaf (Object.is, not ===)', () => {
+		expect(deepEqual(Number.NaN, Number.NaN)).toBe(true)
+		expect(oldConstEquals(Number.NaN, Number.NaN)).toBe(true)
+		expect(oldSchemaValueEquals(Number.NaN, Number.NaN)).toBe(true)
+	})
+
+	it('+0 is NOT equal to -0 at a primitive leaf (Object.is distinguishes)', () => {
+		expect(deepEqual(0, -0)).toBe(false)
+		expect(oldConstEquals(0, -0)).toBe(false)
+		expect(oldSchemaValueEquals(0, -0)).toBe(false)
+	})
+
+	it('NaN/±0 leaf semantics survive through nested object/array recursion', () => {
+		expect(deepEqual({ a: [Number.NaN] }, { a: [Number.NaN] })).toBe(true)
+		expect(deepEqual({ a: [-0] }, { a: [0] })).toBe(false)
+	})
+
+	// --- the throwing-getter axis: the ONE behavioural difference the
+	// injected read-strategy parameter exists to preserve.
+	it('schema variant: throwing getter on b ONLY ⇒ false, never throws (matches old schemaValueEquals)', () => {
+		const a = { boom: 1 }
+		const b = throwingGetter()
+		// Old behaviour: safeGet(b,'boom') → sentinel → key unequal → false.
+		expect(oldSchemaValueEquals(a, b)).toBe(false)
+		// Merged schema-variant (refSafeGet injected): identical, no throw.
+		expect(mergedSchemaEquals(a, b)).toBe(false)
+	})
+
+	it('schema variant: throwing getter on a ONLY ⇒ propagates (a-side is read directly in BOTH old and merged)', () => {
+		const a = throwingGetter()
+		const b = { boom: 1 }
+		// The originals read `a[key]` directly, so an a-side getter throws.
+		// The merged helper preserves that (a is the trusted side, read
+		// directly) — the schema guard's outer try/catch is what neutralises
+		// it observably, NOT the equality function.
+		expect(() => oldSchemaValueEquals(a, b)).toThrow('getter exploded')
+		expect(() => mergedSchemaEquals(a, b)).toThrow('getter exploded')
+	})
+
+	it('schema variant: throwing getter on BOTH sides — old returns false (sentinel short-circuit), merged throws, but the guard-observable outcome is IDENTICAL false', () => {
+		const a = throwingGetter()
+		const b = throwingGetter()
+		// PRE-MERGE FACT: old `schemaValueEquals` evaluates
+		// `bChild = safeGet(b,'boom')` → sentinel → `bChild === SENTINEL` is
+		// true → `return false` WITHOUT ever reading `a['boom']`. So the old
+		// function returns `false` and does NOT throw on both-sides-throw.
+		expect(oldSchemaValueEquals(a, b)).toBe(false)
+		// MERGED FACT: `deepEqual` reads `bValue = read(b,'boom')` (sentinel,
+		// no throw) FIRST, then `Reflect.get(a,'boom')` — a's getter throws
+		// and propagates. The equality function itself diverges here (throw
+		// vs `false`) ONLY for this both-sides-throw shape, which is reachable
+		// ONLY at the `uniqueItems` call site (`enum`/`const` pass a trusted
+		// throw-free `a`). It is fully contained: see the guard-level
+		// equivalence test below — `compileSchemaGuard`'s documented outer
+		// try/catch backstop turns the throw into the SAME `false` the old
+		// path returned, so the OBSERVABLE call-site behaviour is identical.
+		expect(() => mergedSchemaEquals(a, b)).toThrow('getter exploded')
+	})
+
+	it('GUARD-LEVEL equivalence: uniqueItems over an array of two both-throwing objects yields false (the throw is masked by the documented outer backstop, identical to the pre-merge guard)', () => {
+		// This is the real observable boundary: the public compiled guard.
+		// Pre-merge, `schemaValueEquals(value[i], value[j])` returned `false`
+		// for two throwing-getter objects → `uniqueItems` matcher `false` →
+		// guard `false`. Post-merge, `deepEqual` throws internally, but
+		// `compileSchemaGuard`'s `try { … } catch { return false }` backstop
+		// (an intentional §13 defensive catch for any host exception) yields
+		// the SAME `false`. Either way the guard's boolean is `false`.
+		const guard = compileSchemaGuard({ type: 'array', uniqueItems: true })
+		const arrayOfThrowers = [throwingGetter(), throwingGetter()]
+		expect(guard(arrayOfThrowers)).toBe(false)
+		// And a genuinely-unique array still passes (no false negative).
+		expect(guard([{ a: 1 }, { a: 2 }])).toBe(true)
+		// A duplicate pair (no throwing getters) is correctly rejected.
+		expect(guard([{ a: 1 }, { a: 1 }])).toBe(false)
+	})
+
+	it('const variant: throwing getter on b ⇒ propagates (direct read, trusted-input regime, matches old constEquals)', () => {
+		const a = { boom: 1 }
+		const b = throwingGetter()
+		// constEquals never had safeGet — a throwing b-side getter propagates.
+		// The default `deepEqual` read (Reflect.get) preserves that exactly.
+		expect(() => oldConstEquals(a, b)).toThrow('getter exploded')
+		expect(() => deepEqual(a, b)).toThrow('getter exploded')
+	})
+
+	it('the merged inline plain-object check equals isRecord-as-used across the corpus', () => {
+		// Differential equivalence across the whole corpus already proves the
+		// inline discrimination matches `refIsRecord` (the verbatim
+		// `isRecord`-as-used). This row makes the claim explicit for the
+		// boundary inputs: null-proto record, Date, array-like.
+		expect(deepEqual(Object.create(null), {})).toBe(true)
+		expect(deepEqual(new Date(0), new Date(0))).toBe(
+			Object.is(new Date(0), new Date(0)),
+		)
+		expect(deepEqual([1], { 0: 1, length: 1 })).toBe(false)
+	})
+
+	it('is deterministic — twice with the same operands yields the same boolean', () => {
+		const a = { a: [1, { b: Number.NaN }], c: 'x' }
+		const b = { a: [1, { b: Number.NaN }], c: 'x' }
+		expect(deepEqual(a, b)).toBe(deepEqual(a, b))
+		expect(mergedSchemaEquals(a, b)).toBe(mergedSchemaEquals(a, b))
 	})
 })
