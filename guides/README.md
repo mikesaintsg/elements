@@ -290,6 +290,7 @@ Node-environment tests (no browser, no DOM). One file per `src/core/` module wit
 | [`validators.test.ts`](../tests/src/core/validators.test.ts)  | Runtime guards + guard compositors.                              |
 | [`parsers.test.ts`](../tests/src/core/parsers.test.ts)        | Value / field / format parsers; coercion + `undefined` failure.  |
 | [`shapers.test.ts`](../tests/src/core/shapers.test.ts)        | Shape DSL field descriptors.                                     |
+| [`helpers.test.ts`](../tests/src/core/helpers.test.ts)        | Internal helpers/guards — PRNG, `attempt`, acyclicity, bounds.   |
 | [`compilers.test.ts`](../tests/src/core/compilers.test.ts)    | Shape → schema / guard / parser / generator compilation.         |
 | [`schema.test.ts`](../tests/src/core/schema.test.ts)          | Inverse subsystem — `$ref` resolver, schema → guard / shape / parser. |
 
