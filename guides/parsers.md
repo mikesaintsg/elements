@@ -229,5 +229,4 @@ parseShape({ name: 'Ada', age: '-1' }, personShape) // undefined  (fails shape v
 
 - [contracts.md](contracts.md) — the shape-driven DSL (schema / guard / parser / generator from one declaration); the contract compilers reuse these flat parsers for primitive coercion.
 - [validators.md](validators.md) — the type-guard library; `parseArray` / `parseJsonAs` take a `Guard<T>` from this module to vet elements / parsed JSON.
-- [schema.md](schema.md) — the inverse subsystem; its derived schema-parser inherits the coercion these flat parsers define.
 - [README.md](README.md) — the pointer file; the full repository map by concept and by directory.

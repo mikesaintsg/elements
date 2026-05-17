@@ -310,5 +310,4 @@ isNumberTree(['x']) // false
 
 - [contracts.md](contracts.md) — the shape-driven DSL; a contract's `is` is a `Guard<T>` built from one shape.
 - [parsers.md](parsers.md) — the flat coercing parsers; `parseJsonAs` / `parseArray` take a `Guard<T>` from this module.
-- [schema.md](schema.md) — the inverse subsystem; its `compileSchemaGuard` produces a `Guard<unknown>` from this library.
 - [README.md](README.md) — the pointer file; the full repository map by concept and by directory.

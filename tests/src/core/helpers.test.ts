@@ -5,7 +5,6 @@ import {
 	assertAcyclicShape,
 	attempt,
 	booleanShape,
-	compileSchemaGuard,
 	constShape,
 	createRandom,
 	CYCLIC_SHAPE_MESSAGE,
@@ -1436,61 +1435,6 @@ describe('deepEqual — differential equivalence vs pre-merge originals', () => 
 		// Strict parity: identical boolean from the reconstructed OLD and the
 		// merged NEW for this exact regression shape.
 		expect(mergedSchemaEquals(a, b)).toBe(oldSchemaValueEquals(a, b))
-	})
-
-	it('GUARD-LEVEL differential: uniqueItems over two both-throwing objects yields the SAME verdict as the reconstructed pre-FU9-E guard (ACCEPT/true) — RED@13382b4, GREEN post-fix', () => {
-		// The real observable boundary: the public compiled guard at HEAD.
-		// Model the PRE-FU9-E guard verdict by running the reconstructed
-		// verbatim old `schemaValueEquals` through the SAME `uniqueItems`
-		// algorithm schema.ts uses (pairwise i<j; a duplicate ⇒ reject). This
-		// is a GENUINE old-vs-new differential, not a tautology: the old guard
-		// verdict is COMPUTED here from the reconstructed old equality, not
-		// asserted as a hardcoded constant or an unverified prose claim.
-		function oldUniqueItemsEquivalent(value: readonly unknown[]): boolean {
-			for (let i = 0; i < value.length; i += 1) {
-				for (let j = i + 1; j < value.length; j += 1) {
-					// Pre-merge: a throwing-getter pair → old `schemaValueEquals`
-					// short-circuits on the b-side sentinel → `false` (= "not a
-					// duplicate") WITHOUT throwing, so the pair is NOT a dup.
-					if (oldSchemaValueEquals(value[i], value[j])) {
-						return false
-					}
-				}
-			}
-			return true
-		}
-
-		const guard = compileSchemaGuard({ type: 'array', uniqueItems: true })
-
-		// THE REGRESSION CASE. `[{boom:throw},{boom:throw}]`: both elements are
-		// UNTRUSTED (the `uniqueItems` site passes array elements as BOTH `a`
-		// and `b`). Pre-FU9-E the old eq returns `false` (b-sentinel, a never
-		// read) ⇒ no dup ⇒ guard ACCEPTS (`true`). The unfixed `13382b4`
-		// `deepEqual` instead threw on the a-side getter ⇒ outer catch ⇒ guard
-		// REJECTED (`false`) — OPPOSITE verdict, the soundness regression. This
-		// assertion FAILS against `13382b4` (guard returned `false` ≠ modeled
-		// `true`) and PASSES after the `READ_FAILED` short-circuit restores the
-		// b-side short-circuit (guard returns `true` === modeled `true`).
-		const arrayOfThrowers = [throwingGetter(), throwingGetter()]
-		const oldVerdict = oldUniqueItemsEquivalent([
-			throwingGetter(),
-			throwingGetter(),
-		])
-		expect(oldVerdict).toBe(true) // pre-FU9-E modeled: ACCEPT
-		expect(guard(arrayOfThrowers)).toBe(oldVerdict) // HEAD === old verdict
-		expect(guard([throwingGetter(), throwingGetter()])).toBe(true)
-
-		// Non-throwing controls — unchanged across old/new (no regression):
-		// a genuinely-unique array still passes; a real duplicate is rejected;
-		// the modeled old verdict agrees in both directions.
-		expect(guard([{ a: 1 }, { a: 2 }])).toBe(
-			oldUniqueItemsEquivalent([{ a: 1 }, { a: 2 }]),
-		)
-		expect(guard([{ a: 1 }, { a: 2 }])).toBe(true)
-		expect(guard([{ a: 1 }, { a: 1 }])).toBe(
-			oldUniqueItemsEquivalent([{ a: 1 }, { a: 1 }]),
-		)
-		expect(guard([{ a: 1 }, { a: 1 }])).toBe(false)
 	})
 
 	it('const variant: throwing getter on b ⇒ propagates (direct read, trusted-input regime, matches old constEquals)', () => {

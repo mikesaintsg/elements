@@ -164,24 +164,22 @@ The framework layers on Tailwind v4. The interop test verifies modifier+utility 
 
 ### Core — contract / parser / validator surface (`@elements/core`)
 
-A standalone, browser-free package: a shape DSL that compiles to JSON Schema + runtime guard + input parser + seeded generator, plus the flat parser and validator primitives it composes from, plus the inverse subsystem that walks an external JSON Schema back into the pipeline. No SCSS, no Vue, no DOM.
+A standalone, browser-free package: a shape DSL that compiles to JSON Schema + runtime guard + input parser + seeded generator, plus the flat parser and validator primitives it composes from. No SCSS, no Vue, no DOM.
 
 | Role                            | File                                                                                                                                                                       |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Spec — contracts DSL            | [`guides/contracts.md`](contracts.md)                                                                                                                                      |
 | Spec — parsers                  | [`guides/parsers.md`](parsers.md)                                                                                                                                          |
 | Spec — validators               | [`guides/validators.md`](validators.md)                                                                                                                                    |
-| Spec — schema (inverse)         | [`guides/schema.md`](schema.md)                                                                                                                                            |
 | Public barrel                   | [`src/core/index.ts`](../src/core/index.ts)                                                                                                                                |
 | Types (source of truth)         | [`src/core/types.ts`](../src/core/types.ts)                                                                                                                                |
 | Validators (guards/compositors) | [`src/core/validators.ts`](../src/core/validators.ts)                                                                                                                      |
 | Parsers (value/field/format)    | [`src/core/parsers.ts`](../src/core/parsers.ts)                                                                                                                            |
 | Shapers (shape DSL)             | [`src/core/shapers.ts`](../src/core/shapers.ts)                                                                                                                            |
 | Compilers (schema/guard/gen)    | [`src/core/compilers.ts`](../src/core/compilers.ts)                                                                                                                        |
-| Schema (inverse subsystem)      | [`src/core/schema.ts`](../src/core/schema.ts)                                                                                                                              |
 | Helpers (internal utilities)    | [`src/core/helpers.ts`](../src/core/helpers.ts)                                                                                                                            |
-| Unit tests                      | [`tests/src/core/`](../tests/src/core/) — [`validators.test.ts`](../tests/src/core/validators.test.ts), [`parsers.test.ts`](../tests/src/core/parsers.test.ts), [`shapers.test.ts`](../tests/src/core/shapers.test.ts), [`compilers.test.ts`](../tests/src/core/compilers.test.ts), [`schema.test.ts`](../tests/src/core/schema.test.ts) |
-| Doc parity                      | [`tests/guides/contracts.test.ts`](../tests/guides/contracts.test.ts), [`tests/guides/parsers.test.ts`](../tests/guides/parsers.test.ts), [`tests/guides/validators.test.ts`](../tests/guides/validators.test.ts), [`tests/guides/schema.test.ts`](../tests/guides/schema.test.ts) |
+| Unit tests                      | [`tests/src/core/`](../tests/src/core/) — [`validators.test.ts`](../tests/src/core/validators.test.ts), [`parsers.test.ts`](../tests/src/core/parsers.test.ts), [`shapers.test.ts`](../tests/src/core/shapers.test.ts), [`compilers.test.ts`](../tests/src/core/compilers.test.ts) |
+| Doc parity                      | [`tests/guides/contracts.test.ts`](../tests/guides/contracts.test.ts), [`tests/guides/parsers.test.ts`](../tests/guides/parsers.test.ts), [`tests/guides/validators.test.ts`](../tests/guides/validators.test.ts) |
 
 ### Traversals — native DOM walk/match primitives
 
@@ -218,7 +216,6 @@ Pure DOM traversal + node-type guards. No Vue, no framework state; safe to impor
 | [`contracts.md`](contracts.md)     | `@elements/core` — shape → JSON Schema / guard / parser / generator DSL.                                 |
 | [`parsers.md`](parsers.md)         | `@elements/core` — flat value / field / format parsers (`unknown` → typed, `undefined` on failure).      |
 | [`validators.md`](validators.md)   | `@elements/core` — runtime type guards + guard compositors.                                              |
-| [`schema.md`](schema.md)           | `@elements/core` — the inverse subsystem: JSON Schema → guard / `ContractShape` / parser, recursion-safe. |
 | [`traversals.md`](traversals.md)   | Native DOM traversal + node-type guard surface (`@elements/browser`).                                     |
 
 ### `src/browser/` — TypeScript public API
@@ -244,7 +241,7 @@ Frozen object trees and derived string-literal-union types. Every CSS identifier
 
 ### `src/core/` — `@elements/core` package
 
-Browser-free contract / parser / validator surface. No SCSS, no Vue, no DOM. The sole public barrel is [`src/core/index.ts`](../src/core/index.ts). Specs: [contracts.md](contracts.md), [parsers.md](parsers.md), [validators.md](validators.md), [schema.md](schema.md).
+Browser-free contract / parser / validator surface. No SCSS, no Vue, no DOM. The sole public barrel is [`src/core/index.ts`](../src/core/index.ts). Specs: [contracts.md](contracts.md), [parsers.md](parsers.md), [validators.md](validators.md).
 
 | File                                          | Purpose                                                                                                       |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -255,7 +252,6 @@ Browser-free contract / parser / validator surface. No SCSS, no Vue, no DOM. The
 | [`parsers.ts`](../src/core/parsers.ts)        | Flat value / field / format parsers — coerce `unknown`, return `undefined` on failure.                         |
 | [`shapers.ts`](../src/core/shapers.ts)        | The shape DSL — builders (`stringShape`, `objectShape`, `tupleShape`, `intersectionShape`, `lazyShape`, `constShape`, `defaultShape`, …) a contract compiles from.                       |
 | [`compilers.ts`](../src/core/compilers.ts)    | The forward pipeline — shape → JSON Schema / runtime guard / input parser / seeded generator (`compileSchema`, `compileGuard`, `compileParser`, `compileGenerator`, `compileContract`). |
-| [`schema.ts`](../src/core/schema.ts)          | The inverse subsystem — JSON Schema → guard / `ContractShape` / parser, `$ref`/`$defs`-resolved, recursion-safe. |
 
 ### `src/styles/` — SCSS source
 
@@ -298,7 +294,7 @@ Vitest projects defined in [`vite.config.ts`](../vite.config.ts). Each project o
 
 #### `tests/src/core/` — `@elements/core` unit tests
 
-Node-environment tests (no browser, no DOM). One file per `src/core/` module with substantive behaviour. Doc parity for these guides lives under `tests/guides/` ([`contracts.test.ts`](../tests/guides/contracts.test.ts), [`parsers.test.ts`](../tests/guides/parsers.test.ts), [`validators.test.ts`](../tests/guides/validators.test.ts), [`schema.test.ts`](../tests/guides/schema.test.ts)).
+Node-environment tests (no browser, no DOM). One file per `src/core/` module with substantive behaviour. Doc parity for these guides lives under `tests/guides/` ([`contracts.test.ts`](../tests/guides/contracts.test.ts), [`parsers.test.ts`](../tests/guides/parsers.test.ts), [`validators.test.ts`](../tests/guides/validators.test.ts)).
 
 | File                                                          | Purpose                                                          |
 | ------------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -307,7 +303,6 @@ Node-environment tests (no browser, no DOM). One file per `src/core/` module wit
 | [`shapers.test.ts`](../tests/src/core/shapers.test.ts)        | Shape DSL field descriptors.                                     |
 | [`helpers.test.ts`](../tests/src/core/helpers.test.ts)        | Internal helpers/guards — PRNG, `attempt`, acyclicity, bounds.   |
 | [`compilers.test.ts`](../tests/src/core/compilers.test.ts)    | Shape → schema / guard / parser / generator compilation.         |
-| [`schema.test.ts`](../tests/src/core/schema.test.ts)          | Inverse subsystem — `$ref` resolver, schema → guard / shape / parser. |
 
 #### `tests/src/browser/` — TS public-API parity + factory + composable behaviour
 
@@ -352,7 +347,6 @@ Node-environment tests. One driver per spec guide, plus the meta `README.test.ts
 | [`surfaces.test.ts`](../tests/guides/surfaces.test.ts)       | Bidirectional parity — every `surfaces/_*.scss` partial appears in `surfaces.md`; every `surfaces/_*.scss` reference resolves to a real file.                                                                                           |
 | [`composables.test.ts`](../tests/guides/composables.test.ts) | Event-name registry (`elements:{source}:{verb}` lifecycle vocabulary); JS↔CSS attribute parity (every `setAttribute('data-X-*', …)` referenced in `src/styles/`); factory↔guide pairing (every `create{Name}.ts` documented).           |
 | [`mixins.test.ts`](../tests/guides/mixins.test.ts)           | Bidirectional parity — every `@mixin` declared in `_mixins.scss` is documented in `mixins.md`; every documented mixin name resolves to a real declaration.                                                                              |
-| [`schema.test.ts`](../tests/guides/schema.test.ts)           | Bidirectional parity — every documented call-form API in `schema.md` resolves to a real `src/core/schema.ts` export; every `schema.ts` export is documented in `schema.md`.                                                            |
 
 ### `app/browser/` — showcase Vue app
 
