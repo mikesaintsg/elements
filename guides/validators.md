@@ -213,7 +213,7 @@ isId(42) // true
 A guard *is* the `Guard<T>` the flat parsers and contracts expect — hand it straight to `parseJsonAs` or compare against a contract's `is`:
 
 ```ts
-import { arrayOf, createContract, isString, objectShape, parseJsonAs, recordOf, stringShape } from '@elements/core'
+import { arrayOf, compileContract, isString, objectShape, parseJsonAs, recordOf, stringShape } from '@elements/core'
 
 const isConfig = recordOf({ host: isString, tags: arrayOf(isString) })
 
@@ -223,7 +223,7 @@ parseJsonAs('{"host":"localhost"}', isConfig) // undefined  (guard fails — tag
 parseJsonAs('not json', isConfig) // undefined  (parse fails; never throws)
 
 // A contract's `is` is itself a Guard<T> — interchangeable with these compositors.
-const userContract = createContract(objectShape({ name: stringShape() }))
+const userContract = compileContract(objectShape({ name: stringShape() }))
 const guard = userContract.is // Guard<{ readonly name: string }>
 ```
 

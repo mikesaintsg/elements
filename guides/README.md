@@ -177,7 +177,6 @@ A standalone, browser-free package: a shape DSL that compiles to JSON Schema + r
 | Parsers (value/field/format)    | [`src/core/parsers.ts`](../src/core/parsers.ts)                                                                                                                            |
 | Shapers (shape DSL)             | [`src/core/shapers.ts`](../src/core/shapers.ts)                                                                                                                            |
 | Compilers (schema/guard/gen)    | [`src/core/compilers.ts`](../src/core/compilers.ts)                                                                                                                        |
-| Factories (contract builders)   | [`src/core/factories.ts`](../src/core/factories.ts)                                                                                                                        |
 | Helpers (internal utilities)    | [`src/core/helpers.ts`](../src/core/helpers.ts)                                                                                                                            |
 | Unit tests                      | [`tests/src/core/`](../tests/src/core/) — [`validators.test.ts`](../tests/src/core/validators.test.ts), [`parsers.test.ts`](../tests/src/core/parsers.test.ts), [`shapers.test.ts`](../tests/src/core/shapers.test.ts), [`compilers.test.ts`](../tests/src/core/compilers.test.ts) |
 | Doc parity                      | [`tests/guides/contracts.test.ts`](../tests/guides/contracts.test.ts), [`tests/guides/parsers.test.ts`](../tests/guides/parsers.test.ts), [`tests/guides/validators.test.ts`](../tests/guides/validators.test.ts) |
@@ -240,8 +239,7 @@ Browser-free contract / parser / validator surface. No SCSS, no Vue, no DOM. The
 | [`validators.ts`](../src/core/validators.ts)  | Runtime type guards (`unknown` → narrowed) + guard compositors.                                                |
 | [`parsers.ts`](../src/core/parsers.ts)        | Flat value / field / format parsers — coerce `unknown`, return `undefined` on failure.                         |
 | [`shapers.ts`](../src/core/shapers.ts)        | The shape DSL — declarative field descriptors a contract is built from.                                        |
-| [`compilers.ts`](../src/core/compilers.ts)    | Shape → JSON Schema / runtime guard / input parser / seeded generator.                                         |
-| [`factories.ts`](../src/core/factories.ts)    | Contract builders — assemble a shape into the four derived artifacts.                                          |
+| [`compilers.ts`](../src/core/compilers.ts)    | Shape → JSON Schema / runtime guard / input parser / seeded generator / full contract entry point.             |
 
 ### `src/styles/` — SCSS source
 

@@ -180,7 +180,7 @@ parseJsonAs('not json', isConfig) // undefined  (parse fails)
 
 ### Shape-bridge parsers
 
-`matchesShape()` and `parseShape()` are the bridge into the contract DSL — pass a `ContractShape` (built with the `contracts.md` builders) to narrow or parse against it without constructing a full contract via `createContract`:
+`matchesShape()` and `parseShape()` are the bridge into the contract DSL — pass a `ContractShape` (built with the `contracts.md` builders) to narrow or parse against it without constructing a full contract via `compileContract`:
 
 ```ts
 import { integerShape, objectShape, parseShape, stringShape } from '@elements/core'
@@ -200,7 +200,7 @@ parseShape({ name: 'Ada', age: '-1' }, personShape) // undefined  (fails shape v
 - **Use the `*Field` variants for record access** — `parseStringField(record, 'k')` over `parseString(record['k'])`; identical behavior, clearer intent.
 - **`coerceRecord()` never returns `undefined`** — it falls back to `{}`, so it's safe to use without a guard.
 - **`parseJson()` / `parseJsonAs()` never throw** — no `try/catch` needed at the call site; check for `undefined`.
-- **Reach for the contract DSL when one shape feeds schema + guard + parser + generator** — these flat parsers are for the one-off `unknown` → typed value extraction. See the `createContract` pipeline in [contracts.md](contracts.md).
+- **Reach for the contract DSL when one shape feeds schema + guard + parser + generator** — these flat parsers are for the one-off `unknown` → typed value extraction. See the `compileContract` pipeline in [contracts.md](contracts.md).
 
 ---
 

@@ -49,12 +49,12 @@ The compilers in [src/core/compilers.ts](../src/core/compilers.ts) are the low-l
 | `compileGenerator()`  | a deterministic value from a `RandomFunction` seed               |
 | `compileContract()`   | a `ContractInterface<T>` bundling all four                       |
 
-### Factories
+### Entry points
 
-The factories in [src/core/factories.ts](../src/core/factories.ts) are the ergonomic entry points:
+The compilers in [src/core/compilers.ts](../src/core/compilers.ts) are also the public entry points:
 
-- `createContract(shape)` — the full `ContractInterface<Infer<S>>`: `schema`, `is`, `parse`, `generate`. Delegates to `compileContract()`.
-- `createSchema(shape)` — JSON Schema only, via `compileSchema()` directly — produces the same JSON Schema value as `createContract(shape).schema` but without constructing the guard, parser, or generator. An `ObjectShape` argument narrows the return to `JsonSchemaObject`.
+- `compileContract(shape)` — the full `ContractInterface<Infer<S>>`: `schema`, `is`, `parse`, `generate`.
+- `compileSchema(shape)` — JSON Schema only — produces the same JSON Schema value as `compileContract(shape).schema` but without constructing the guard, parser, or generator. An `ObjectShape` argument narrows the return to `JsonSchemaObject`.
 
 ### Seeded generation
 
@@ -62,7 +62,7 @@ The factories in [src/core/factories.ts](../src/core/factories.ts) are the ergon
 
 ### Object-root schemas
 
-An object-root JSON Schema uses the same compiler path as every other contract: `compileSchema(objectShape(...))` (or `createSchema(objectShape(...))`). The `ObjectShape` overload narrows the result to `JsonSchemaObject`. There is no separate object-schema builder — object-root schemas are ordinary contracts compiled from an `objectShape()`.
+An object-root JSON Schema uses the same compiler path as every other contract: `compileSchema(objectShape(...))`. The `ObjectShape` overload narrows the result to `JsonSchemaObject`. There is no separate object-schema builder — object-root schemas are ordinary contracts compiled from an `objectShape()`.
 
 > The flat value parsers (`parseString`, `parseNumber`, field extractors, env / JSON helpers) live in a sibling module and are documented in [parsers.md](parsers.md). The contract compilers reuse them internally for primitive coercion, but they are a standalone surface — not part of the contract DSL.
 
@@ -70,9 +70,9 @@ An object-root JSON Schema uses the same compiler path as every other contract: 
 
 ## Contract
 
-These invariants hold across `src/core/{types,shapers,compilers,factories,helpers}.ts` ↔ `contracts.md`:
+These invariants hold across `src/core/{types,shapers,compilers,helpers}.ts` ↔ `contracts.md`:
 
-1. **DOC → SOURCE.** Every backticked call-form API named in this guide — every builder, compiler, factory, and helper written in call form — is a real `export function` / `export const` in one of [src/core/shapers.ts](../src/core/shapers.ts), [src/core/compilers.ts](../src/core/compilers.ts), [src/core/factories.ts](../src/core/factories.ts), or [src/core/helpers.ts](../src/core/helpers.ts). A renamed or removed export breaks the gate until the doc is reconciled.
+1. **DOC → SOURCE.** Every backticked call-form API named in this guide — every builder, compiler, and helper written in call form — is a real `export function` / `export const` in one of [src/core/shapers.ts](../src/core/shapers.ts), [src/core/compilers.ts](../src/core/compilers.ts), or [src/core/helpers.ts](../src/core/helpers.ts). A renamed or removed export breaks the gate until the doc is reconciled.
 2. **TYPES ARE THE SOURCE OF TRUTH.** `ContractShape`, `Infer<S>`, `ContractInterface<T>`, the JSON Schema family (`JsonSchema`, `JsonSchemaObject`, `JsonSchemaDefinition`), and every `*ShapeOptions` bag are declared first in [src/core/types.ts](../src/core/types.ts). Builders and compilers conform to those types, never the reverse.
 3. **DERIVED, NOT DUPLICATED.** Schema, guard, parser, and generator are all compiled from the one shape. No operation is hand-written per shape — adding a shape variant means extending the discriminated `ContractShape` union and every compiler `switch`, never patching call sites.
 
@@ -90,9 +90,9 @@ Enforced by:
 
 ```ts
 import {
-	createContract,
+	compileContract,
+	compileSchema,
 	createRandom,
-	createSchema,
 	integerShape,
 	literalShape,
 	objectShape,
@@ -109,7 +109,7 @@ const userShape = objectShape({
 })
 
 // 2. Compile the full contract.
-const userContract = createContract(userShape)
+const userContract = compileContract(userShape)
 
 // 3. JSON Schema (e.g. for external schema validation / interop).
 userContract.schema
@@ -127,7 +127,7 @@ const parsed = userContract.parse(rawBody)
 const seed = userContract.generate(createRandom(42))
 
 // Schema-only when the guard/parser/generator aren't needed:
-const schema = createSchema(userShape)
+const schema = compileSchema(userShape)
 ```
 
 ### `additionalProperties` behaviour
@@ -217,7 +217,7 @@ const parameters = compileSchema(
 // { type: 'object', properties: { ... }, required: ['operation'], additionalProperties: false }
 ```
 
-The `ObjectShape` overload of `compileSchema()` (and `createSchema()`) narrows the return to `JsonSchemaObject` — no separate object-schema builder needed.
+The `ObjectShape` overload of `compileSchema()` narrows the return to `JsonSchemaObject` — no separate object-schema builder needed.
 
 ### Inference with `Infer<S>`
 
@@ -250,7 +250,7 @@ Optional properties wrapped in `optionalShape()` surface as true optional fields
 ### Practices
 
 - **Define shapes as named constants.** One shape reused across schema, guard, parser, and generator is the whole point — never re-declare the same structure per operation.
-- **`createContract()` for the full pipeline; `createSchema()` for schema-only.** Skip the wrapping when you only need the JSON Schema (for external validation or interop).
+- **`compileContract()` for the full pipeline; `compileSchema()` for schema-only.** Skip the full contract when you only need the JSON Schema (for external validation or interop).
 - **`compileSchema(objectShape(...))` for an object-root schema.** An object-root schema is just a contract compiled from an `objectShape()`.
 - **`createRandom()` with a fixed seed for reproducible fixtures.** Same seed, same generated data, every run.
 - **Wrap optional object fields in `optionalShape()`.** It is what makes a property truly optional in both the inferred type and the schema `required` set.
@@ -260,7 +260,7 @@ Optional properties wrapped in `optionalShape()` surface as true optional fields
 
 ## Tests
 
-- [`tests/guides/contracts.test.ts`](../tests/guides/contracts.test.ts) — doc ↔ source parity: every backticked call-form API in this guide resolves to a real export in `src/core/{shapers,compilers,factories,helpers}.ts`.
+- [`tests/guides/contracts.test.ts`](../tests/guides/contracts.test.ts) — doc ↔ source parity: every backticked call-form API in this guide resolves to a real export in `src/core/{shapers,compilers,helpers}.ts`.
 - [`tests/src/core/shapers.test.ts`](../tests/src/core/shapers.test.ts) — every builder (including `oneOfShape`, `recordShape`, `rawShape`, `additionalProperties`) produces the documented shape value and inferred type.
 - [`tests/src/core/compilers.test.ts`](../tests/src/core/compilers.test.ts) — `compileSchema` / `compileGuard` / `compileParser` / `compileGenerator` / `compileContract` behaviour, including `additionalProperties`, `oneOf`, raw passthrough, nullable, and object-root schema typing.
 

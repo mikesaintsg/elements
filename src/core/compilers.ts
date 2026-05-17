@@ -20,9 +20,23 @@ import { isRecord } from './validators.js'
  * Emits standard JSON Schema. Object shapes use
  * `additionalProperties: false` and only list non-optional keys
  * in `required`. Nullable shapes emit an `anyOf` with `{ type: 'null' }`.
+ * Convenience helper for callers that only need the schema (e.g.
+ * registering a tool with an agent provider) without paying for the
+ * guard, parser, and generator. Equivalent to
+ * `compileContract(shape).schema` but skips constructing the full contract.
  *
  * @param shape - The shape to compile
  * @returns A JSON Schema object suitable for tool and agent integration
+ *
+ * @example
+ * ```ts
+ * const schema = compileSchema(
+ *     objectShape({
+ *         query:  stringShape({ description: 'Search query' }),
+ *         limit:  optionalShape(integerShape({ min: 1, max: 100 })),
+ *     }),
+ * )
+ * ```
  */
 export function compileSchema(shape: ObjectShape): JsonSchemaObject
 export function compileSchema(shape: ContractShape): JsonSchema
@@ -504,12 +518,30 @@ export function compileGenerator(shape: ContractShape, random: RandomFunction): 
  * Compile a {@link ContractShape} into a closure-backed contract object.
  *
  * @remarks
- * This is the flat runtime composition behind `createContract()`. It precompiles
- * schema, guard, and parser once, then exposes them through a plain object with
- * a deterministic `generate()` method.
+ * Precompiles schema, guard, and parser once, then exposes them through a plain
+ * object with a deterministic `generate()` method. This is the single public
+ * entry point for creating a full contract — schema, guard, parser, and generator
+ * all derived from one shape.
  *
  * @param shape - The shape to compile
- * @returns A compiled contract interface
+ * @returns A {@link ContractInterface} with schema, guard, parser, and generator
+ *
+ * @example
+ * ```ts
+ * const userContract = compileContract(
+ *     objectShape({
+ *         name: stringShape({ min: 1 }),
+ *         age:  integerShape({ min: 0, max: 120 }),
+ *         role: literalShape('admin', 'member', 'guest'),
+ *         bio:  optionalShape(stringShape()),
+ *     }),
+ * )
+ *
+ * userContract.schema                  // JSON Schema for tools/agents
+ * userContract.is(input)               // type guard
+ * const user = userContract.parse(raw) // typed user or undefined
+ * const seed = userContract.generate(createRandom(42))
+ * ```
  */
 export function compileContract<S extends ContractShape>(shape: S): ContractInterface<Infer<S>>
 export function compileContract(shape: ContractShape): ContractInterface<unknown>

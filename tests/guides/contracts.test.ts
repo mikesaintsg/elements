@@ -1,4 +1,4 @@
-// guides/contracts.md ↔ src/core/{shapers,compilers,factories,helpers}.ts
+// guides/contracts.md ↔ src/core/{shapers,compilers,helpers}.ts
 // Bidirectional parity:
 //   1. DOC → SOURCE — every backticked call-form API named in the guide
 //      resolves to a real src/core export.
@@ -10,7 +10,7 @@ import { resolve as resolvePath } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { readGuide, WORKSPACE_ROOT } from '../setupServer'
 
-const SOURCES = ['shapers', 'compilers', 'factories', 'helpers'] as const
+const SOURCES = ['shapers', 'compilers', 'helpers'] as const
 const doc = readGuide('contracts')
 
 function exportedNames(file: string): readonly string[] {
@@ -48,7 +48,7 @@ const EXPORTS = new Set(SOURCES.flatMap(exportedNames))
 describe('contracts — every documented API resolves to a src/core export', () => {
 	for (const name of documentedApis(doc)) {
 		// On failure: `${name}(` is documented in guides/contracts.md but is
-		// not exported by any of src/core/{shapers,compilers,factories,helpers}.ts.
+		// not exported by any of src/core/{shapers,compilers,helpers}.ts.
 		// Fix the doc or restore the export.
 		it(`${name}() is a real src/core export`, () => {
 			expect(EXPORTS.has(name)).toBe(true)
@@ -60,7 +60,7 @@ describe('contracts — every src/core export is documented in contracts.md', ()
 	const DOCUMENTED = documentedNames(doc)
 	for (const name of EXPORTS) {
 		// On failure: `${name}` is an export of
-		// src/core/{shapers,compilers,factories,helpers}.ts but is not
+		// src/core/{shapers,compilers,helpers}.ts but is not
 		// backticked anywhere in guides/contracts.md. Document it (the guide
 		// advertises an exhaustive surface). If it is intentionally an
 		// internal not-for-doc export, that is itself a signal the symbol
