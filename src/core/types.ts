@@ -263,11 +263,16 @@ export interface JsonSchemaObject extends JsonSchemaDefinition {
  *   target lives at. Two `$ref`s reaching the same node yield the same
  *   `pointer`, so a consumer can memoize compiled artifacts by it (the
  *   `Map`-keyed-by-thunk strategy from D3, keyed here by `pointer`).
- * - `thunk()` — returns the resolved target {@link JsonSchema} (a non-`$ref`
- *   node, or a boolean schema). Invoking it is idempotent and ALWAYS
- *   terminates, even for a self-referential target: the back-edge is broken
- *   here, not followed. A consumer calls `thunk()` lazily (on first use of the
- *   recursive position) so the deferral closes the static cycle.
+ * - `thunk()` — returns the resolved target {@link JsonSchema} (a concrete
+ *   non-`$ref` node, or a boolean schema). Invoking it is idempotent and
+ *   ALWAYS either returns a concrete node/boolean OR throws a precise §13
+ *   `Error` — it never returns a still-unresolved `$ref`-containing node.
+ *   Throws `circular $ref with no concrete schema: …` if the `$ref` chain
+ *   forms a pure-`$ref`-only cycle (no concrete body anywhere in the loop).
+ *   For a legitimately self-referential target the back-edge is broken here,
+ *   not followed, so `thunk()` terminates. A consumer calls `thunk()` lazily
+ *   (on first use of the recursive position) so the deferral closes the static
+ *   cycle.
  * - `cyclic` — `true` iff this indirection was produced for a pointer ALREADY
  *   on the active resolution path (a genuine recursive back-edge). `false` on
  *   the first visit. A consumer that sees `cyclic === true` knows it must
@@ -288,13 +293,19 @@ export interface LazyRef {
  * Built by {@link createRefResolver}. `root` is the document every pointer is
  * resolved against (the only sanctioned base — see {@link resolveRef} for the
  * external-`$ref` policy). `resolve()` is the eager form (follow a `$ref`
- * chain to a concrete, non-`$ref` target — used for finite, non-recursive
- * positions); `lazy()` is the cycle-broken form (return a {@link LazyRef}
- * indirection — used for any position that may be self-referential, so the
- * recursion is realised over finite DATA at guard/parse time, never at
- * resolve time). Both throw a precise §13 `Error` on an unresolvable or
- * external pointer, and on a non-cyclic chain exceeding the documented depth
- * bound (the B5 `MAX_JSON_DEPTH` analogue) — never a native stack overflow.
+ * chain to a concrete non-`$ref` node or boolean — used for finite,
+ * non-recursive positions); `lazy()` is the cycle-broken form (return a
+ * {@link LazyRef} indirection — used for any position that may be
+ * self-referential, so the recursion is realised over finite DATA at
+ * guard/parse time, never at resolve time). Both ALWAYS either return a
+ * concrete non-`$ref` node / boolean OR throw a precise §13 `Error` —
+ * never a native stack overflow and never a still-unresolved `$ref` node.
+ *
+ * Precise §13 `Error` cases: unresolvable or external pointer; a non-cyclic
+ * chain exceeding `MAX_REF_DEPTH` (the B5 `MAX_JSON_DEPTH` analogue); and a
+ * `$ref` chain forming a pure-`$ref`-only cycle (no concrete body anywhere
+ * in the loop, e.g. `A.$ref→B`, `B.$ref→A`) — message:
+ * `circular $ref with no concrete schema: #/$defs/A -> #/$defs/B -> #/$defs/A`.
  */
 export interface RefResolver {
 	readonly root: JsonSchema

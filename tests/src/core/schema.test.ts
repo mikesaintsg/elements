@@ -274,6 +274,112 @@ describe('createRefResolver — recursive $ref (cycle-safe)', () => {
 	})
 })
 
+// === createRefResolver — pure-$ref-only cycle detection (§13 honest contract)
+
+describe('createRefResolver — pure-$ref-only cycle (no concrete body) throws precisely', () => {
+	// A pure-$ref-only 2-cycle: A.$ref→B, B.$ref→A — neither has a concrete
+	// (non-$ref) body. The chain can NEVER reach a concrete schema; the
+	// resolver MUST throw a precise §13 Error naming the cycle rather than
+	// silently returning a still-unresolved `{ $ref: … }` node (which would
+	// make the public contract FALSE for that input).
+	function makePureRef2Cycle(): JsonSchema {
+		return {
+			$defs: {
+				A: { $ref: '#/$defs/B' },
+				B: { $ref: '#/$defs/A' },
+			},
+		}
+	}
+
+	// A pure-$ref-only 3-cycle: A→B→C→A, no concrete bodies anywhere.
+	function makePureRef3Cycle(): JsonSchema {
+		return {
+			$defs: {
+				A: { $ref: '#/$defs/B' },
+				B: { $ref: '#/$defs/C' },
+				C: { $ref: '#/$defs/A' },
+			},
+		}
+	}
+
+	it('2-cycle: resolve() throws a precise Error naming the cycle', () => {
+		const resolver = createRefResolver(makePureRef2Cycle())
+		expect(() => resolver.resolve('#/$defs/A')).toThrow(/circular \$ref/i)
+	})
+
+	it('2-cycle: resolve() does NOT throw a RangeError (not a stack overflow)', () => {
+		const resolver = createRefResolver(makePureRef2Cycle())
+		expect(() => resolver.resolve('#/$defs/A')).not.toThrow(RangeError)
+	})
+
+	it('2-cycle: resolve() message names the offending pointer(s)', () => {
+		const resolver = createRefResolver(makePureRef2Cycle())
+		expect(() => resolver.resolve('#/$defs/A')).toThrow(/#\/\$defs\/[AB]/)
+	})
+
+	it('2-cycle: resolve() throws rather than returning a $ref-containing node', () => {
+		// A pure-$ref-only cycle ALWAYS throws — the contract guarantees a
+		// concrete node/boolean or an Error, never a still-unresolved $ref node.
+		const resolver = createRefResolver(makePureRef2Cycle())
+		expect(() => resolver.resolve('#/$defs/A')).toThrow(Error)
+	})
+
+	it('3-cycle: resolve() throws a precise Error naming the cycle', () => {
+		const resolver = createRefResolver(makePureRef3Cycle())
+		expect(() => resolver.resolve('#/$defs/A')).toThrow(/circular \$ref/i)
+	})
+
+	it('3-cycle: resolve() message names the offending pointer(s)', () => {
+		const resolver = createRefResolver(makePureRef3Cycle())
+		expect(() => resolver.resolve('#/$defs/A')).toThrow(/#\/\$defs\/[ABC]/)
+	})
+
+	it('2-cycle: lazy().thunk() throws a precise Error naming the cycle', () => {
+		const resolver = createRefResolver(makePureRef2Cycle())
+		// lazy() itself canonicalizes and thus detects the cycle at thunk-call time
+		expect(() => {
+			const ref = resolver.lazy('#/$defs/A')
+			ref.thunk()
+		}).toThrow(/circular \$ref/i)
+	})
+
+	it('3-cycle: lazy().thunk() throws a precise Error naming the cycle', () => {
+		const resolver = createRefResolver(makePureRef3Cycle())
+		expect(() => {
+			const ref = resolver.lazy('#/$defs/B')
+			ref.thunk()
+		}).toThrow(/circular \$ref/i)
+	})
+
+	// ── Boundary: a chain that DOES reach a concrete body must NOT throw ───
+
+	it('a $ref chain that reaches a concrete body resolves — no over-throw', () => {
+		// A.$ref→B, B = {type:'string'} — concrete reached, must resolve fine
+		const root: JsonSchema = {
+			$defs: {
+				A: { $ref: '#/$defs/B' },
+				B: { type: 'string' },
+			},
+		}
+		const resolver = createRefResolver(root)
+		expect(() => resolver.resolve('#/$defs/A')).not.toThrow()
+		expect(resolver.resolve('#/$defs/A')).toEqual({ type: 'string' })
+	})
+
+	it('A→B→C where C is concrete resolves — no over-throw', () => {
+		const root: JsonSchema = {
+			$defs: {
+				A: { $ref: '#/$defs/B' },
+				B: { $ref: '#/$defs/C' },
+				C: { type: 'number' },
+			},
+		}
+		const resolver = createRefResolver(root)
+		expect(() => resolver.resolve('#/$defs/A')).not.toThrow()
+		expect(resolver.resolve('#/$defs/A')).toEqual({ type: 'number' })
+	})
+})
+
 // === createRefResolver — depth backstop (B5 `MAX_JSON_DEPTH` analogue)
 
 describe('createRefResolver — pathological non-cyclic ref chain', () => {

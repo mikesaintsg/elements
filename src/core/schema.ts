@@ -292,17 +292,21 @@ export function resolveRef(root: JsonSchema, pointer: string): JsonSchemaDefinit
  * @remarks
  * `pointer` is normalised to the canonical pointer the value ultimately
  * lives at. A non-`$ref` node is its own canonical pointer. The
- * `seenChain` set is the per-CALL set of pointers visited while following
- * THIS chain (distinct from the ancestor set used for recursion detection):
- * a `$ref` chain that loops purely through `$ref`s (`A.$ref=#/$defs/B`,
- * `B.$ref=#/$defs/A`, no body between) is itself a cycle and is broken
- * here (returning the first repeated pointer as canonical). `depth` is the
- * `MAX_REF_DEPTH` backstop for a long ACYCLIC chain.
+ * `seenChain` array is the per-CALL ordered list of pointers visited while
+ * following THIS chain (distinct from the ancestor set used for recursion
+ * detection): a `$ref` chain that loops purely through `$ref`s with no
+ * concrete body ANYWHERE in the loop is detected here by pointer-revisit
+ * and converted into a precise §13 `Error` (consistent with the
+ * `external $ref unsupported` / missing-pointer / `MAX_REF_DEPTH` throws).
+ * `depth` is the `MAX_REF_DEPTH` backstop for a long ACYCLIC chain; a
+ * pure-ref CYCLE shorter than the bound throws the cycle error first
+ * (pointer-revisit fires before the depth cap).
  */
 function canonicalize(root: JsonSchema, pointer: string): { pointer: string; node: JsonSchema } {
 	let currentPointer = pointer === '' ? '#' : pointer
 	let node = resolveRef(root, currentPointer)
-	const seenChain = new Set<string>([currentPointer])
+	const seenChain: string[] = [currentPointer]
+	const seenSet = new Set<string>([currentPointer])
 	let depth = 0
 	while (typeof node !== 'boolean' && typeof node.$ref === 'string') {
 		depth += 1
@@ -315,13 +319,22 @@ function canonicalize(root: JsonSchema, pointer: string): { pointer: string; nod
 		if (isExternalRef(nextRef)) {
 			throw new Error(`external $ref unsupported: ${nextRef}`)
 		}
-		if (seenChain.has(nextRef)) {
-			// Pure `$ref`-only loop (no body between hops). The chain has no
-			// concrete target; the canonical pointer is the repeated node —
-			// the consumer's cycle handling (via `lazy`) takes over from here.
-			return { pointer: nextRef, node: resolveRef(root, nextRef) }
+		if (seenSet.has(nextRef)) {
+			// Pure `$ref`-only loop — the chain revisits a pointer it has
+			// already visited and has NEVER reached a concrete (non-`$ref`,
+			// non-boolean) body. This chain can never yield a usable schema
+			// node; returning here would give the caller a `$ref`-containing
+			// node and silently violate the `resolve`/`thunk` contract
+			// (both guarantee a concrete node or boolean). Throw a precise
+			// §13 Error that names the full cycle path so the author can fix
+			// the schema. The cycle starts at `nextRef` (the revisited pointer)
+			// and ends with the current `currentPointer` hop back to it.
+			const cycleStart = seenChain.indexOf(nextRef)
+			const cyclePath = [...seenChain.slice(cycleStart), nextRef].join(' -> ')
+			throw new Error(`circular $ref with no concrete schema: ${cyclePath}`)
 		}
-		seenChain.add(nextRef)
+		seenSet.add(nextRef)
+		seenChain.push(nextRef)
 		currentPointer = nextRef
 		node = resolveRef(root, nextRef)
 	}
@@ -338,9 +351,11 @@ function canonicalize(root: JsonSchema, pointer: string): { pointer: string; nod
  *
  * - `root` — the document every pointer resolves against.
  * - `resolve(pointer)` — the EAGER form: follow a `$ref` chain to a
- *   concrete (non-`$ref`) target. Use for finite, non-recursive positions.
- *   Throws (§13) on an unresolvable/external pointer or a non-cyclic chain
- *   exceeding `MAX_REF_DEPTH`.
+ *   concrete (non-`$ref`) node or boolean. Always returns a concrete node or
+ *   boolean, ELSE throws a precise §13 `Error`. Use for finite,
+ *   non-recursive positions. Throws on an unresolvable/external pointer, a
+ *   non-cyclic chain exceeding `MAX_REF_DEPTH`, or a pure-`$ref`-only cycle
+ *   (message: `circular $ref with no concrete schema: …`).
  * - `lazy(pointer)` — the CYCLE-BROKEN form: returns a {@link LazyRef}
  *   indirection. This is the JSON-Schema mirror of D3's `lazyShape` thunk
  *   memoization and the EXACT contract E2–E4 build a RECURSIVE compiled
@@ -357,10 +372,14 @@ function canonicalize(root: JsonSchema, pointer: string): { pointer: string; nod
  *        compiling its body — so the self-reference inside the body gets
  *        the cyclic hit at step 2.
  *
- *   `thunk()` is idempotent and always terminates: it returns the resolved
- *   target by pointer, never by re-entering a body. Recursion is realised
- *   only over the finite DATA at guard/parse time, exactly like the D3
- *   `'lazy'` compiler arm.
+ *   `thunk()` is idempotent and always either returns a concrete non-`$ref`
+ *   node/boolean OR throws a precise §13 `Error`: it never returns a
+ *   still-unresolved `$ref` node. For a legitimately self-referential target
+ *   it resolves by pointer, not by re-entering a body, so it terminates. A
+ *   pure-`$ref`-only cycle (no concrete body anywhere in the loop) throws
+ *   `circular $ref with no concrete schema: …`. Recursion is realised only
+ *   over the finite DATA at guard/parse time, exactly like the D3 `'lazy'`
+ *   compiler arm.
  *
  * Cycle detection mirrors D3's per-compilation `lazyCache` (compilers.ts
  * `'lazy'` arm): the resolver keeps a set of canonical pointers whose
