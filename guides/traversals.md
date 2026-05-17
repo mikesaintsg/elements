@@ -47,6 +47,8 @@ Pure DOM operations. Simple lookups delegate to native `querySelector` / `closes
 
 `isInViewport()`, `isPartiallyInViewport()`, `isRendered()`, `getViewportVisibility()`, `toArray()`, `findInCollection()`, `filterCollection()`.
 
+`getViewportVisibility()` returns the percentage (0–100) of the element's area within the viewport — `0` fully off-screen, `100` fully visible.
+
 ### Batch DOM mutation
 
 `append()`, `prepend()`, `insertBefore()`, `insertAfter()`, `replace()`, `clear()`, `remove()`, `move()`, `swap()`, `clone()`.
@@ -66,6 +68,7 @@ Pure DOM operations. Simple lookups delegate to native `querySelector` / `closes
 3. **TYPES ARE THE SOURCE OF TRUTH.** `ElementPredicate` and `MatcherOptions` are declared in [src/browser/types.ts](../src/browser/types.ts).
 4. **NO ASSERTIONS.** No `!` / `as` / `any` — every narrowing is a guard.
 5. **PURE DOM.** No Vue, no framework state; safe to import standalone.
+6. **LIVE vs STATIC COLLECTIONS.** `getDescendantsByTag()`, `getDescendantsByClass()`, `getElementsByTag()`, and `getElementsByClass()` return LIVE `HTMLCollection` objects that update automatically when the DOM changes; `getChildren()` and `toArray()` return a static array snapshot — use `toArray()` to freeze a live collection before mutating the DOM during iteration.
 
 Enforced by [`tests/guides/traversals.test.ts`](../tests/guides/traversals.test.ts) (doc ↔ source parity, bidirectional) and [`tests/src/browser/traversals.test.ts`](../tests/src/browser/traversals.test.ts) (DOM behavior).
 

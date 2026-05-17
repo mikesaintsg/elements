@@ -20,7 +20,7 @@ const doc = readGuide('traversals')
 function exportedNames(file: string): readonly string[] {
 	const src = readFileSync(resolvePath(WORKSPACE_ROOT, `src/browser/${file}.ts`), 'utf8')
 	const out: string[] = []
-	const regex = /^export\s+(?:async\s+)?function\*?\s+([A-Za-z][A-Za-z0-9]*)|^export\s+const\s+([A-Za-z][A-Za-z0-9]*)/gm
+	const regex = /^export\s+(?:async\s+)?function\s*\*?\s+([A-Za-z][A-Za-z0-9]*)|^export\s+const\s+([A-Za-z][A-Za-z0-9]*)/gm
 	let m: RegExpExecArray | null
 	while ((m = regex.exec(src)) !== null) {
 		const name = m[1] ?? m[2]
