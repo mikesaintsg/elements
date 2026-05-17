@@ -379,6 +379,24 @@ export function isPromise(value: unknown): boolean {
  *
  * Accepts any object exposing all three methods, not only native `Promise`
  * instances. Use {@link isPromise} when you specifically need `instanceof Promise`.
+ *
+ * @param value - The value to test
+ * @returns `true` when `value` is an object with callable `then`, `catch`, and
+ *   `finally` methods; narrows to `Promise<T> | (PromiseLike<T> & { catch: unknown; finally: unknown })`
+ *
+ * @example
+ * ```ts
+ * import { isPromiseLike } from '@elements/core'
+ *
+ * function handle(value: unknown): void {
+ *   if (isPromiseLike(value)) {
+ *     value.then((v) => console.log(v)).catch((e) => console.error(e))
+ *   }
+ * }
+ *
+ * handle(Promise.resolve(42))         // logs 42
+ * handle({ then: 'not a function' })  // no-op
+ * ```
  */
 export function isPromiseLike<T = unknown>(
 	value: unknown,
