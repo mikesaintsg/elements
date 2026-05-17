@@ -1,3 +1,4 @@
+import { MAX_JSON_DEPTH, STRUCTURED_SCHEMA_KEYWORDS } from './constants.js'
 import { attempt, enumerableSymbolCount, isConstructor } from './helpers.js'
 import type {
 	AnyAsyncFunction,
@@ -598,22 +599,9 @@ export function isJsonPrimitive(value: unknown): boolean {
 //  2. `depth` — a secondary stack-safety backstop. Precise cycle detection
 //     already terminates true cycles; the depth cap only defends against a
 //     pathologically deep BUT acyclic graph that the WeakSet cannot catch
-//     (no repeated reference) yet would still overflow the native stack.
-//     `MAX_JSON_DEPTH` is chosen empirically: this recursive worker's real
-//     stack frame (the `Object.values` allocation, the for-of iterator, the
-//     WeakSet add/delete, the recursion args) overflows the Node stack at a
-//     measured depth of ~4,650 — and a test runner / caller has already
-//     consumed part of the stack before the guard is even entered, so the
-//     true safe ceiling is lower still. 1,000 sits ~4.6x below the bare
-//     overflow point (ample margin even with a pre-consumed stack) while
-//     remaining far above any legitimate JSON: real schemas / documents nest
-//     a handful to low-tens of levels, so this never false-rejects genuine
-//     input — it only converts a pathological depth into a `false` return
-//     instead of a thrown `RangeError` (§13). `src/core` has no
-//     `constants.ts` (per AGENTS.md §5 a module-local UPPER_SNAKE `const` is
-//     acceptable when no constants module exists), so it lives here next to
-//     its sole consumers.
-const MAX_JSON_DEPTH = 1_000
+//     (no repeated reference) yet would still overflow the native stack. The
+//     bound itself (`MAX_JSON_DEPTH`) and its empirical rationale are
+//     centralized in `constants.ts`.
 
 function isJsonValueInner(value: unknown, seen: WeakSet<object>, depth: number): boolean {
 	if (isJsonPrimitive(value)) return true
@@ -818,44 +806,18 @@ export function isJsonSchemaStringArrayMapValue(value: unknown): value is JsonSc
 	return true
 }
 
-// Keywords whose value is STRUCTURALLY validated by the per-keyword checks in
-// `isJsonSchemaInner` below (as a sub-schema, sub-schema array, schema map,
-// string array, etc.). The trailing "unrecognized keys" sweep skips exactly
-// these so it never RE-WALKS an already-validated keyword — the redundant
-// blanket `Object.values → isJsonValue` pass that used to live at the end of
-// this guard doubled recursion cost (§5/§20) by re-validating every keyword a
-// second time as a plain JSON value. Correctness is preserved: the structured
-// checks fully validate these keywords (more strictly than `isJsonValue`
-// would — e.g. a sub-schema must be a schema, not merely any JSON value), and
-// the scoped sweep still JSON-validates every OTHER (unrecognized / annotation
-// / custom `x-*`) key so a non-JSON value at an unknown key (e.g. a function)
-// is still rejected.
-const STRUCTURED_SCHEMA_KEYWORDS: ReadonlySet<string> = new Set([
-	'type',
-	'properties',
-	'patternProperties',
-	'dependentSchemas',
-	'$defs',
-	'required',
-	'dependentRequired',
-	'additionalProperties',
-	'unevaluatedProperties',
-	'propertyNames',
-	'items',
-	'prefixItems',
-	'contains',
-	'anyOf',
-	'oneOf',
-	'allOf',
-	'not',
-	'if',
-	'then',
-	'else',
-	'enum',
-	'const',
-	'default',
-	'examples',
-])
+// `STRUCTURED_SCHEMA_KEYWORDS` (centralized in `constants.ts`) is the set of
+// keywords whose value is STRUCTURALLY validated by the per-keyword checks in
+// `isJsonSchemaInner` below. The trailing "unrecognized keys" sweep skips
+// exactly these so it never RE-WALKS an already-validated keyword — the
+// redundant blanket `Object.values → isJsonValue` pass that used to live at
+// the end of this guard doubled recursion cost (§5/§20) by re-validating every
+// keyword a second time as a plain JSON value. Correctness is preserved: the
+// structured checks fully validate these keywords (more strictly than
+// `isJsonValue` would — e.g. a sub-schema must be a schema, not merely any
+// JSON value), and the scoped sweep still JSON-validates every OTHER
+// (unrecognized / annotation / custom `x-*`) key so a non-JSON value at an
+// unknown key (e.g. a function) is still rejected.
 
 function isJsonSchemaInner(value: unknown, seen: WeakSet<object>, depth: number): boolean {
 	if (isBoolean(value)) return true

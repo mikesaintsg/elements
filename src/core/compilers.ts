@@ -10,6 +10,12 @@ import type {
 	ObjectShape,
 	RandomFunction,
 } from './types.js'
+import {
+	CYCLIC_SHAPE_MESSAGE,
+	MAX_LAZY_DATA_DEPTH,
+	MAX_LAZY_DEPTH,
+	MAX_ONEOF_ATTEMPTS,
+} from './constants.js'
 import { isShapeAdditional } from './helpers.js'
 import { parseBoolean, parseInteger, parseNumber } from './parsers.js'
 import { isRecord } from './validators.js'
@@ -34,8 +40,8 @@ import { isRecord } from './validators.js'
 // a true back-edge detector: a shared-but-acyclic sub-shape (the same child
 // shape object referenced under two sibling keys — a DAG, perfectly valid) is
 // fully walked and removed before its second occurrence is visited, so it is
-// never misreported as a cycle.
-const CYCLIC_SHAPE_MESSAGE = 'cyclic ContractShape: use a lazy/deferred shape for recursion'
+// never misreported as a cycle. The thrown message (`CYCLIC_SHAPE_MESSAGE`)
+// is centralized in `constants.ts`.
 
 function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>): void {
 	if (seen.has(shape)) {
@@ -434,29 +440,9 @@ function mergeIntersectionObjectSchema(
 //     reference for the ancestor set to catch) that would still overflow the
 //     native stack. Exceeding it converts that into a `false`/`undefined`
 //     return (§13) instead of a thrown `RangeError`. It bounds ONLY the
-//     `lazy`-recursion depth (each lazy re-entry increments it); a genuinely
-//     finite recursive value nests a handful to low-hundreds of lazy levels,
-//     so this never false-rejects legitimate data — true cycles are caught by
-//     the ancestor set independent of this bound. Chosen with the SAME value,
-//     rationale and UPPER_SNAKE style as B5's `MAX_JSON_DEPTH` (`src/core` has
-//     no `constants.ts`; per AGENTS.md §5 a module-local const is acceptable
-//     when no constants module exists). The bound is measured EMPIRICALLY the
-//     same way B5 measured `MAX_JSON_DEPTH`: a compiled recursive-lazy tree
-//     guard (`objectShape({ value, next: optionalShape(lazyShape(() => self))
-//     })`) over a deep ACYCLIC linked list overflows V8's native stack at a
-//     measured lazy-recursion depth of ~2,900 IN THE TEST RUNNER (each lazy
-//     level costs SEVERAL real frames: the object-guard field loop, the
-//     optional-guard, the lazy closure's try/finally, the WeakSet add/delete)
-//     — and a caller/runner has already consumed part of the stack before the
-//     guard is entered, so the true safe ceiling is lower still. 1,000 sits
-//     ~2.9x below that bare overflow (ample margin even with a pre-consumed
-//     stack) while remaining far above any legitimate recursive document
-//     (real recursive data nests a handful to low-hundreds of lazy levels),
-//     so it never false-rejects genuine input — it only converts a
-//     pathological acyclic depth into `false`/`undefined` instead of a thrown
-//     `RangeError` (§13). A true cycle is caught by the ancestor WeakSet long
-//     before this bound regardless of how large the bound is.
-const MAX_LAZY_DATA_DEPTH = 1_000
+//     `lazy`-recursion depth (each lazy re-entry increments it); a true cycle
+//     is caught by the ancestor `WeakSet` independent of this bound. The bound
+//     itself and its empirical rationale are centralized in `constants.ts`.
 
 /**
  * Per-compilation lazy-recursion DATA cycle/depth state (FU1). Threaded into
@@ -1841,14 +1827,11 @@ function compileParserInner(
 
 // === Generators
 
-// D3 generator termination contract (documented — analogous to B5's
-// `MAX_JSON_DEPTH`):
-//
-// A recursive lazy shape's generator can recurse FOREVER (an infinite tree:
-// every node spawns children that spawn children …). The generator therefore
-// bounds lazy-node recursion at `MAX_LAZY_DEPTH`. Below the bound a lazy node
-// resolves and generates its inner normally (so the output VARIES and is deep
-// enough to exercise the recursion — `assertGeneratorSatisfiesGuard`'s
+// D3 generator termination contract: a recursive lazy shape's generator can
+// recurse FOREVER (an infinite tree). The generator bounds lazy-node recursion
+// at `MAX_LAZY_DEPTH` (centralized in `constants.ts`). Below the bound a lazy
+// node resolves and generates its inner normally (so the output VARIES and is
+// deep enough to exercise the recursion — `assertGeneratorSatisfiesGuard`'s
 // variability clause is satisfied). At/past the bound the lazy node collapses
 // to the resolved shape's MINIMAL INHABITANT (see `minimalInhabitant`): the
 // smallest guard-valid value of that shape with every recursive child
@@ -1856,40 +1839,17 @@ function compileParserInner(
 // nullable → `null`, object → required keys only, each minimal). That value
 // still satisfies the guard, so `generator∘guard` holds, and it is a constant
 // for a given shape so determinism is preserved.
-//
-// `MAX_LAZY_DEPTH` is small and deterministic: a depth of 3 produces a
-// pleasantly-nested-but-finite recursive value (e.g. a 3-level tree), enough
-// for the generated data to be a realistic, varied fixture while keeping the
-// value (and generation time) bounded. It is the lazy-RECURSION depth, not
-// total shape depth — only `lazy` nodes increment it, so non-recursive nested
-// shapes are unaffected.
-const MAX_LAZY_DEPTH = 3
 
-// FU4 generator `oneOf` retry bound (documented — same UPPER_SNAKE,
-// module-local-const, empirically-justified discipline as `MAX_LAZY_DEPTH` /
-// `MAX_LAZY_DATA_DEPTH`; `src/core` has no `constants.ts`, so per AGENTS.md §5
-// a module-local const is the right home).
-//
-// A JSON-Schema `oneOf` is valid iff a value matches EXACTLY ONE variant. When
-// the variants are DISJOINT, a value generated from any single variant matches
-// only that one — one attempt always succeeds. When the variants OVERLAP
+// FU4 generator `oneOf` retry bound: a JSON-Schema `oneOf` is valid iff a
+// value matches EXACTLY ONE variant. When the variants OVERLAP
 // (`oneOf(number, integer)` — every integer matches both), a value generated
 // from a randomly-picked variant may satisfy ≥2 variants and the `oneOf` guard
 // (correctly) rejects it. The generator therefore generates a candidate, tests
 // it against the compiled `oneOf` guard, and — driven by the SAME seeded PRNG
-// so the retry stays reproducible per seed — retries up to this bound. The
-// probability of landing in a variant's exactly-one region is governed by that
-// region's measure relative to the whole; for any `oneOf` with a non-empty
-// exactly-one region this bound makes a miss astronomically unlikely (e.g. a
-// region covering merely 10% of draws fails all 64 independent attempts with
-// probability 0.9^64 ≈ 1.2e-3; a 25% region ≈ 1e-8 — and the realistic
-// disjoint case is region≈100%, succeeding on attempt 1). The bound is small
-// enough that an unsatisfiable `oneOf` (variants whose value sets are
-// identical — NO value matches exactly one) fails fast into a precise
-// generation-time §13 Error rather than spinning. 64 is the smallest power of
-// two that comfortably clears the realistic overlap regimes while keeping the
-// worst-case (deliberately unsatisfiable) generation bounded and fast.
-const MAX_ONEOF_ATTEMPTS = 64
+// so the retry stays reproducible per seed — retries up to `MAX_ONEOF_ATTEMPTS`
+// (centralized in `constants.ts`). The bound is small enough that an
+// unsatisfiable `oneOf` (variants whose value sets are identical) fails fast
+// into a precise generation-time §13 `Error` rather than spinning.
 
 // The smallest guard-valid value for `shape`, with every recursive (lazy)
 // child collapsed to ITS minimal form. Used by the generator's `lazy` arm

@@ -26,6 +26,13 @@ import {
 	unionShape,
 } from './shapers.js'
 import { compileParser } from './compilers.js'
+import {
+	EMAIL_FORMAT,
+	MAX_DATA_DEPTH,
+	MAX_REF_DEPTH,
+	URI_FORMAT,
+	UUID_FORMAT,
+} from './constants.js'
 import { isJsonSchema, isRecord } from './validators.js'
 
 // ============================================================================
@@ -113,10 +120,8 @@ import { isJsonSchema, isRecord } from './validators.js'
 //     (`Rn → R(n-1) → … → R0`, no repeated pointer) that the ancestor set
 //     cannot catch yet would still overflow the native stack. Exceeding it
 //     converts that into a precise §13 `Error` (naming the chain) instead
-//     of a bare `RangeError`. `src/core` has no `constants.ts` (AGENTS.md
-//     §5: a module-local UPPER_SNAKE `const` is acceptable when no
-//     constants module exists), so it lives here next to its sole consumer,
-//     documented like `MAX_JSON_DEPTH`.
+//     of a bare `RangeError`. The bound itself (`MAX_REF_DEPTH`) and its
+//     rationale are centralized in `constants.ts`.
 //
 //  5. `$defs` AND legacy `definitions` — BOTH resolve.
 //
@@ -141,20 +146,6 @@ import { isJsonSchema, isRecord } from './validators.js'
 //  rest). Per RFC 6901: `%`-decode the fragment FIRST (it is URI-layer),
 //  split on `/`, THEN `~1`/`~0`-unescape each token (it is pointer-layer).
 // ============================================================================
-
-/**
- * Depth bound for a single `$ref`-chain resolution — the inverse
- * subsystem's analogue of validators' `MAX_JSON_DEPTH`.
- *
- * @remarks
- * True cycles are caught precisely by the ancestor-pointer set; this cap
- * only converts a pathologically long ACYCLIC chain into a precise §13
- * `Error` instead of a native stack overflow. 1,000 sits far below any
- * stack-overflow point while remaining orders of magnitude above any
- * legitimate schema's `$ref` indirection depth (real schemas chain a
- * handful of refs), so it never false-rejects genuine input.
- */
-const MAX_REF_DEPTH = 1_000
 
 /**
  * Determine whether a `$ref` string is an EXTERNAL / non-local reference
@@ -560,19 +551,6 @@ export function createRefResolver(root: JsonSchema): RefResolver {
 // ============================================================================
 
 /**
- * Depth bound for the recursive DATA walk a compiled schema guard performs —
- * the inverse-subsystem analogue of validators' `MAX_JSON_DEPTH`.
- *
- * @remarks
- * The ancestor set catches every true cycle precisely; this cap only converts
- * a pathologically deep but ACYCLIC input into a `false` return instead of a
- * native stack overflow (§13 — the produced guard must never throw). 1,000
- * sits far below any stack-overflow point yet orders of magnitude above any
- * legitimate JSON document's nesting.
- */
-const MAX_DATA_DEPTH = 1_000
-
-/**
  * A compiled, depth/cycle-aware matcher for one schema node.
  *
  * @remarks
@@ -653,15 +631,9 @@ function schemaValueEquals(a: unknown, b: unknown): boolean {
 	return true
 }
 
-/** Known `format` keywords that ASSERT (best-effort). See design note 5. */
-const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const UUID_FORMAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-// RFC 3986 absolute-URI shape: `scheme:` then a non-empty, no-whitespace
-// remainder. A deliberately conservative SYNTACTIC best-effort (the core
-// build's lib is `ESNext` only — no DOM/Node `URL` constructor — and
-// `format` is annotation-first anyway, design note 5). `scheme` is
-// `ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )`.
-const URI_FORMAT = /^[a-z][a-z0-9+.-]*:\S+$/i
+// The known `format` keywords that ASSERT (best-effort) — `EMAIL_FORMAT`,
+// `UUID_FORMAT`, `URI_FORMAT` — are centralized in `constants.ts`. See design
+// note 5.
 
 /**
  * Best-effort assertion for the documented known `format` set.
