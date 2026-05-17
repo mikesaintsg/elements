@@ -11,7 +11,6 @@ import type {
 import { MAX_LAZY_DEPTH, MAX_ONEOF_ATTEMPTS, MAX_RECURSION_DEPTH } from './constants.js'
 import {
 	assertAcyclicShape,
-	deepEqual,
 	flattenIntersectionObjects,
 	guardPermitsAbsence,
 	isShapeAdditional,
@@ -71,6 +70,85 @@ function cloneJsonInner(value: unknown): JsonValue {
 		}
 	}
 	return result
+}
+
+/**
+ * Structural deep-equality for the JSON-Schema `const` arm.
+ *
+ * @remarks
+ * The single structural equality behind the `const` keyword in both
+ * {@link compileGuard} and {@link compileParser}. The rules:
+ *
+ * - **Array** — when `a` is an array, `b` must be an array of the SAME length
+ *   whose elements are positionally deep-equal.
+ * - **Primitive leaf** — when `a` is neither an array nor a plain object the
+ *   result is `Object.is(a, b)`. `Object.is` (not `===`) is deliberate and
+ *   project-wide: `NaN` equals `NaN`, and `+0` is DISTINCT from `-0`.
+ * - **Plain object** — when `a` is a plain object (a `null`-prototype or
+ *   `Object.prototype`-prototype non-array, per validators' {@link isRecord}),
+ *   `b` must also be a plain object with an own-key set of the SAME size,
+ *   every `a` key must be an own key of `b` (`Object.hasOwn`, so an inherited
+ *   key is never mistaken for a present own property — B2 prototype-pollution
+ *   discipline), and the values must be deep-equal.
+ *
+ * `a` is the trusted SCHEMA-supplied operand — a finite acyclic `JsonValue`
+ * — so the recursion is bounded by `a`'s finite shape regardless of `b`
+ * (the untrusted input); no cycle/depth guard is needed.
+ *
+ * @param a - The trusted left operand (a finite acyclic JSON value)
+ * @param b - The untrusted right operand to compare structurally against `a`
+ * @returns `true` when `a` and `b` are structurally deep-equal under the
+ *          above rules
+ *
+ * @example
+ * ```ts
+ * deepEqual({ a: [1, 2] }, { a: [1, 2] })          // true
+ * deepEqual(Number.NaN, Number.NaN)                // true  (Object.is)
+ * deepEqual(0, -0)                                 // false (Object.is)
+ * deepEqual({ a: 1 }, { a: 1, b: 2 })              // false (key-set differs)
+ * ```
+ */
+export function deepEqual(a: unknown, b: unknown): boolean {
+	if (Array.isArray(a)) {
+		// `a` is an array: `b` must be an array of equal length whose elements
+		// are positionally deep-equal.
+		const aArray: readonly unknown[] = a
+		if (!Array.isArray(b) || aArray.length !== b.length) {
+			return false
+		}
+		const bArray: readonly unknown[] = b
+		for (let index = 0; index < aArray.length; index += 1) {
+			if (!deepEqual(aArray[index], bArray[index])) {
+				return false
+			}
+		}
+		return true
+	}
+	if (!isRecord(a)) {
+		// Primitive / non-plain leaf: `Object.is` so `NaN` === `NaN` and
+		// `+0` ≠ `-0` (aligned with validators' `literalOf`).
+		return Object.is(a, b)
+	}
+	// `a` is a plain object: `b` must be a plain object with the IDENTICAL
+	// own-key set and every value deep-equal. Presence is tested via
+	// `Object.hasOwn` so an inherited key is never mistaken for an own one.
+	if (!isRecord(b)) {
+		return false
+	}
+	const aKeys = Object.keys(a)
+	const bKeys = Object.keys(b)
+	if (aKeys.length !== bKeys.length) {
+		return false
+	}
+	for (const key of aKeys) {
+		if (!Object.hasOwn(b, key)) {
+			return false
+		}
+		if (!deepEqual(Reflect.get(a, key), Reflect.get(b, key))) {
+			return false
+		}
+	}
+	return true
 }
 
 // === FU5 — intersection-of-objects schema MERGE (emission fidelity)

@@ -10,6 +10,7 @@ import {
 	compileSchema,
 	constShape,
 	createRandom,
+	deepEqual,
 	defaultShape,
 	integerShape,
 	intersectionShape,
@@ -3674,5 +3675,140 @@ describe('F3 — cycle-safety sweep — cyclic SHAPE throws precise B5 Error fro
 		expectPreciseCyclicError(() => compileParser(makeIt()))
 		expectPreciseCyclicError(() => compileSchema(makeIt()))
 		expectPreciseCyclicError(() => compileGenerator(makeIt(), createRandom(1)))
+	})
+})
+
+// === deepEqual — plain structural deep-equality contract
+//
+// `deepEqual(a, b)` is the single structural equality behind JSON-Schema
+// `const` (compilers). `a` is the trusted finite acyclic operand bounding
+// the recursion; `b` is the untrusted input. The contract: arrays compare by
+// length + positional recursion; primitive / non-plain leaves by `Object.is`
+// (so `NaN` === `NaN`, `+0` ≠ `-0`); plain objects (an inline
+// `isRecord`-equivalent: non-array, prototype `Object.prototype`/`null`) by
+// same-own-key-set (`Object.hasOwn`) then per-key recursion. A throwing
+// right-operand accessor PROPAGATES — the trusted-input regime reads `b`'s
+// properties directly via `Reflect.get`.
+
+// A single shared reference for the same-reference Object.is leaf row, and a
+// stable function reference for the non-plain-object leaf row.
+const SHARED_DATE = new Date(0)
+const NOOP = (): void => undefined
+
+// Build a fresh object whose `boom` getter throws — exercises the
+// right-operand throwing-accessor propagation row.
+function throwingGetter(): Record<string, unknown> {
+	return Object.defineProperty({}, 'boom', {
+		enumerable: true,
+		configurable: true,
+		get() {
+			throw new Error('getter exploded')
+		},
+	})
+}
+
+describe('deepEqual', () => {
+	// Each row: a label + the two operands + the expected boolean. The corpus
+	// is exhaustive over the behaviour-spec axes: primitives, `Object.is`
+	// (NaN, ±0), nested arrays/objects, key-set differences, array-vs-array-
+	// like, and the `isPlainObject` discrimination (Date/RegExp/function/
+	// null-prototype).
+	const corpus: ReadonlyArray<readonly [string, unknown, unknown, boolean]> = [
+		['identical primitives (number)', 1, 1, true],
+		['differing primitives (number)', 1, 2, false],
+		['string equality', 'x', 'x', true],
+		['string inequality', 'x', 'y', false],
+		['boolean equality', true, true, true],
+		['null === null', null, null, true],
+		['null vs undefined', null, undefined, false],
+		['undefined === undefined', undefined, undefined, true],
+		['NaN === NaN (Object.is)', Number.NaN, Number.NaN, true],
+		['NaN vs 0', Number.NaN, 0, false],
+		['+0 vs -0 (Object.is distinguishes)', 0, -0, false],
+		['-0 vs -0', -0, -0, true],
+		['number vs string', 1, '1', false],
+		['empty arrays', [], [], true],
+		['equal flat arrays', [1, 2, 3], [1, 2, 3], true],
+		['array length mismatch', [1, 2], [1, 2, 3], false],
+		['array element mismatch', [1, 2, 3], [1, 9, 3], false],
+		['array vs non-array', [1], 1, false],
+		['nested arrays equal', [[1], [2, [3]]], [[1], [2, [3]]], true],
+		['nested arrays differ deep', [[1], [2, [3]]], [[1], [2, [4]]], false],
+		['array with NaN element', [Number.NaN], [Number.NaN], true],
+		['array vs array-like object', [1, 2], { 0: 1, 1: 2, length: 2 }, false],
+		['empty objects', {}, {}, true],
+		['equal flat objects', { a: 1, b: 2 }, { a: 1, b: 2 }, true],
+		['object key order independent', { a: 1, b: 2 }, { b: 2, a: 1 }, true],
+		['same keys different value', { a: 1 }, { a: 2 }, false],
+		['extra key on b', { a: 1 }, { a: 1, b: 2 }, false],
+		['missing key on b', { a: 1, b: 2 }, { a: 1 }, false],
+		['disjoint key sets same size', { a: 1 }, { b: 1 }, false],
+		['object vs array', { 0: 1 }, [1], false],
+		['object vs primitive', { a: 1 }, 5, false],
+		[
+			'deeply nested equal',
+			{ a: { b: { c: [1, { d: 2 }] } } },
+			{ a: { b: { c: [1, { d: 2 }] } } },
+			true,
+		],
+		[
+			'deeply nested differ',
+			{ a: { b: { c: [1, { d: 2 }] } } },
+			{ a: { b: { c: [1, { d: 3 }] } } },
+			false,
+		],
+		['object with NaN value', { a: Number.NaN }, { a: Number.NaN }, true],
+		['object with -0 vs +0 value', { a: -0 }, { a: 0 }, false],
+		[
+			'null-prototype object equal',
+			Object.assign(Object.create(null), { a: 1 }),
+			{ a: 1 },
+			true,
+		],
+		['date is not a plain record (Object.is leaf, distinct refs)', new Date(0), new Date(0), false],
+		['same date reference (Object.is leaf, same ref)', SHARED_DATE, SHARED_DATE, true],
+		['regexp is not a plain record (Object.is leaf)', /x/, /x/, false],
+		['function is not a plain record (Object.is leaf)', NOOP, NOOP, true],
+	]
+
+	for (const [label, a, b, expected] of corpus) {
+		it(`${label} → ${String(expected)}`, () => {
+			expect(deepEqual(a, b)).toBe(expected)
+		})
+	}
+
+	// --- Object.is leaf semantics, asserted directly
+	it('NaN equals NaN at a primitive leaf (Object.is, not ===)', () => {
+		expect(deepEqual(Number.NaN, Number.NaN)).toBe(true)
+	})
+
+	it('+0 is NOT equal to -0 at a primitive leaf (Object.is distinguishes)', () => {
+		expect(deepEqual(0, -0)).toBe(false)
+	})
+
+	it('NaN/±0 leaf semantics survive through nested object/array recursion', () => {
+		expect(deepEqual({ a: [Number.NaN] }, { a: [Number.NaN] })).toBe(true)
+		expect(deepEqual({ a: [-0] }, { a: [0] })).toBe(false)
+	})
+
+	// --- the inline plain-object discrimination (isRecord-as-used)
+	it('the inline plain-object check equals isRecord-as-used at the boundaries', () => {
+		expect(deepEqual(Object.create(null), {})).toBe(true)
+		expect(deepEqual(new Date(0), new Date(0))).toBe(Object.is(new Date(0), new Date(0)))
+		expect(deepEqual([1], { 0: 1, length: 1 })).toBe(false)
+	})
+
+	// --- a throwing right-operand accessor propagates (trusted-input regime:
+	// `b`'s properties are read directly via `Reflect.get`, no containment).
+	it('throwing getter on b ⇒ propagates (direct read, trusted-input regime)', () => {
+		const a = { boom: 1 }
+		const b = throwingGetter()
+		expect(() => deepEqual(a, b)).toThrow('getter exploded')
+	})
+
+	it('is deterministic — twice with the same operands yields the same boolean', () => {
+		const a = { a: [1, { b: Number.NaN }], c: 'x' }
+		const b = { a: [1, { b: Number.NaN }], c: 'x' }
+		expect(deepEqual(a, b)).toBe(deepEqual(a, b))
 	})
 })
