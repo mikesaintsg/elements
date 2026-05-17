@@ -1,4 +1,4 @@
-import type { AnyConstructor, RandomFunction } from './types.js'
+import type { AnyConstructor, ContractShape, RandomFunction } from './types.js'
 
 /**
  * Deterministic Mulberry32 PRNG. Same seed → same `[0, 1)` sequence.
@@ -78,4 +78,43 @@ export function isConstructor(value: unknown): value is AnyConstructor<object> {
 	} catch {
 		return false
 	}
+}
+
+/**
+ * Determine whether an `ObjectShape.additionalProperties` slot carries a nested
+ * {@link ContractShape} (a "typed open object") rather than a boolean flag or
+ * absence.
+ *
+ * @remarks
+ * `additionalProperties` is `boolean | ContractShape | undefined`:
+ * - `undefined` / `false` — closed object (unknown keys rejected)
+ * - `true` — open object (unknown keys accepted as-is)
+ * - `ContractShape` — open object whose unknown values are validated against the
+ *   nested shape
+ *
+ * Only the last case requires recursively compiling the nested shape. Every
+ * `ContractShape` is a discriminated object (`{ readonly type: … }`) and is
+ * never `null`, so a single `typeof value === 'object'` test is precisely
+ * equivalent to the long-hand `value !== undefined && value !== true &&
+ * value !== false && typeof value === 'object'` predicate this guard replaces —
+ * `typeof` already yields `'undefined'` / `'boolean'` for the excluded cases,
+ * making the extra `!==` comparisons redundant (kept implicitly here, not
+ * dropped behaviour). The check reads no properties off `value`, so it cannot
+ * trip a `__proto__`/`constructor` accessor and is prototype-pollution-safe.
+ *
+ * @param value - The `additionalProperties` slot to classify
+ * @returns `true` (narrowing to {@link ContractShape}) when the slot is a
+ *          nested shape; `false` for `undefined`, `true`, and `false`
+ *
+ * @example
+ * ```ts
+ * isShapeAdditional(undefined)            // false (closed)
+ * isShapeAdditional(true)                 // false (open passthrough)
+ * isShapeAdditional(numberShape())        // true  (typed open object)
+ * ```
+ */
+export function isShapeAdditional(
+	value: boolean | ContractShape | undefined,
+): value is ContractShape {
+	return typeof value === 'object'
 }

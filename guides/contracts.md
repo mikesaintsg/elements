@@ -62,14 +62,15 @@ The compilers in [src/core/compilers.ts](../src/core/compilers.ts) are also the 
 
 ### Shared helpers
 
-`src/core/helpers.ts` is the home for general-purpose `{verb}{Noun}` utilities shared across the core surface (it has no domain of its own — implementation modules contain only their own domain). Alongside `createRandom()` it exports two reflection helpers used internally by the validators module:
+`src/core/helpers.ts` is the home for general-purpose `{verb}{Noun}` utilities shared across the core surface (it has no domain of its own — implementation modules contain only their own domain). Alongside `createRandom()` it exports the reflection helpers used internally by the validators module plus the `additionalProperties` discriminator shared by the compilers:
 
 | Helper                       | Returns                     | Behavior                                                                                                                  |
 | ---------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `enumerableSymbolCount(value)` | `number`                  | The count of enumerable own-symbol keys on `value` (string keys ignored). Backs the object-emptiness guards `isEmptyObject` / `isNonEmptyObject` so a symbol-only record is not mistaken for empty. |
 | `isConstructor(value)`         | `value is AnyConstructor<object>` | Whether `value` can be a `Reflect.construct` `newTarget` — a real constructor passes; arrow / plain functions and non-functions yield `false` (never throws). Backs the `instanceOf` guard compositor. |
+| `isShapeAdditional(value)`     | `value is ContractShape`    | Whether an `ObjectShape.additionalProperties` slot carries a nested `ContractShape` (a typed open object) rather than `undefined` / `false` / `true`. Single source of the discriminator the schema, guard, and parser compilers all branch on; prototype-pollution-safe (reads no properties off `value`). |
 
-These are real exports of the same module as `createRandom()`; prefer the validators-module guards they back (`isEmptyObject` / `isNonEmptyObject` / `instanceOf`, see [validators.md](validators.md)) at call sites rather than calling the helpers directly.
+These are real exports of the same module as `createRandom()`; prefer the validators-module guards they back (`isEmptyObject` / `isNonEmptyObject` / `instanceOf`, see [validators.md](validators.md)) at call sites rather than calling the helpers directly. `isShapeAdditional()` is consumed internally by the contract compilers — callers building shapes never invoke it directly.
 
 ### Object-root schemas
 

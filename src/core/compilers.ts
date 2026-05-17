@@ -8,6 +8,7 @@ import type {
 	ObjectShape,
 	RandomFunction,
 } from './types.js'
+import { isShapeAdditional } from './helpers.js'
 import { parseBoolean, parseInteger, parseNumber } from './parsers.js'
 import { isRecord } from './validators.js'
 
@@ -59,12 +60,7 @@ function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>):
 					assertAcyclicShape(child, seen)
 				}
 			}
-			if (
-				shape.additionalProperties !== undefined &&
-				shape.additionalProperties !== true &&
-				shape.additionalProperties !== false &&
-				typeof shape.additionalProperties === 'object'
-			) {
+			if (isShapeAdditional(shape.additionalProperties)) {
 				assertAcyclicShape(shape.additionalProperties, seen)
 			}
 			seen.delete(shape)
@@ -190,11 +186,7 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
 			}
 			if (shape.additionalProperties === true) {
 				result.additionalProperties = true
-			} else if (
-				shape.additionalProperties !== undefined &&
-				shape.additionalProperties !== false &&
-				typeof shape.additionalProperties === 'object'
-			) {
+			} else if (isShapeAdditional(shape.additionalProperties)) {
 				result.additionalProperties = compileSchemaInner(shape.additionalProperties)
 			} else {
 				result.additionalProperties = false
@@ -325,13 +317,9 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
 				})
 			}
 			const allowed = new Set(entries.map((entry) => entry.key))
-			const additionalGuard =
-				shape.additionalProperties !== undefined &&
-				shape.additionalProperties !== true &&
-				shape.additionalProperties !== false &&
-				typeof shape.additionalProperties === 'object'
-					? compileGuardInner(shape.additionalProperties)
-					: undefined
+			const additionalGuard = isShapeAdditional(shape.additionalProperties)
+				? compileGuardInner(shape.additionalProperties)
+				: undefined
 			const open = shape.additionalProperties === true || additionalGuard !== undefined
 			return (value) => {
 				if (!isRecord(value)) {
@@ -595,13 +583,9 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 				})
 			}
 			const known = new Set(entries.map((entry) => entry.key))
-			const additionalParser =
-				shape.additionalProperties !== undefined &&
-				shape.additionalProperties !== true &&
-				shape.additionalProperties !== false &&
-				typeof shape.additionalProperties === 'object'
-					? compileParserInner(shape.additionalProperties)
-					: undefined
+			const additionalParser = isShapeAdditional(shape.additionalProperties)
+				? compileParserInner(shape.additionalProperties)
+				: undefined
 			const open = shape.additionalProperties === true || additionalParser !== undefined
 			// Parse↔guard soundness: re-validate the FRESHLY BUILT result
 			// against THIS shape's guard. The per-field parsers are sound
@@ -670,8 +654,16 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 			}
 		}
 		case 'union': {
-			const parsers = shape.variants.map((variant) => compileParserInner(variant))
-			const guards = shape.variants.map((variant) => compileGuardInner(variant))
+			// One dense parser+guard pair per variant. `shape.variants` is a
+			// readonly array and `.map` yields a same-length dense array, so
+			// every entry is defined — the old `for (let index …)` loops'
+			// `if (x === undefined) continue` branches were provably dead and
+			// are removed here; iterating the pairs preserves variant order
+			// exactly (anyOf first-match, oneOf exactly-one count).
+			const variantPairs = shape.variants.map((variant) => ({
+				parser: compileParserInner(variant),
+				guard: compileGuardInner(variant),
+			}))
 			if (shape.mode === 'oneOf') {
 				// JSON-Schema `oneOf` exclusivity, kept parse↔guard
 				// SYMMETRIC with the oneOf guard above. The guard's notion of
@@ -694,29 +686,21 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 				// (C) soundness.
 				const guardThis = compileGuardInner(shape)
 				return (value) => {
-					let matchIndex = -1
+					let matched: { parser: (value: unknown) => unknown } | undefined
 					let matches = 0
-					for (let index = 0; index < guards.length; index += 1) {
-						const guard = guards[index]
-						if (guard === undefined) {
-							continue
-						}
-						if (guard(value)) {
+					for (const pair of variantPairs) {
+						if (pair.guard(value)) {
 							matches += 1
 							if (matches > 1) {
 								return undefined
 							}
-							matchIndex = index
+							matched = pair
 						}
 					}
-					if (matches !== 1) {
+					if (matches !== 1 || matched === undefined) {
 						return undefined
 					}
-					const parser = parsers[matchIndex]
-					if (parser === undefined) {
-						return undefined
-					}
-					const parsed = parser(value)
+					const parsed = matched.parser(value)
 					if (parsed === undefined) {
 						return undefined
 					}
@@ -724,14 +708,9 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 				}
 			}
 			return (value) => {
-				for (let index = 0; index < parsers.length; index += 1) {
-					const parser = parsers[index]
-					const guard = guards[index]
-					if (parser === undefined || guard === undefined) {
-						continue
-					}
-					const parsed = parser(value)
-					if (parsed !== undefined && guard(parsed)) {
+				for (const pair of variantPairs) {
+					const parsed = pair.parser(value)
+					if (parsed !== undefined && pair.guard(parsed)) {
 						return parsed
 					}
 				}
