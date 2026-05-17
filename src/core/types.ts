@@ -443,55 +443,151 @@ export interface RawShape {
  * `intersection` shape resolves to the `&`-intersection of its members'
  * inferred types.
  *
- * WHY a flat dispatch to NAMED per-kind helpers (not a deep nested ternary,
- * and not an eagerly-materialized lookup interface): the original
- * ever-deeper `S extends A ? … : S extends B ? …` chain instantiated EVERY
- * branch (and its recursive `Infer` calls) to resolve any one kind, so
- * nesting depth grew with the union and a deeply-recursive or explicitly
- * materialized `Infer<typeof shape>` tripped TS2589 ("excessively deep").
- * Each kind's result now lives in its OWN named helper conditional
- * (`InferLiteral`, `InferOptional`, …); `Infer` is a single distributive
- * shell that, per kind, performs a few O(1) discriminant checks and then
- * instantiates exactly ONE helper. Only the matched kind's helper (and its
- * own bounded recursion) is instantiated — adding `intersection` (or any
- * future kind) adds one branch of constant cost and does not deepen the
- * others. The leading `S extends unknown` keeps `Infer` distributing over a
- * `ContractShape` union exactly as before.
+ * WHY a single indexed-access dispatch on `S['type']` to NAMED per-kind
+ * helpers (not a chain of structural `S extends StringShape ? … : S extends
+ * NumberShape ? …` tests, and not an eagerly-materialized lookup interface):
+ *
+ * The public builders (`objectShape`/`tupleShape`/…) return a CONST-GENERIC
+ * precise literal INTERSECTED with the wide member interface — e.g.
+ * `objectShape({a})` is `{ readonly type:'object'; readonly properties:{a} }
+ * & ObjectShape`. Two failure modes followed from feeding that intersection
+ * through a structural `extends`-chain `Infer`:
+ *
+ * 1. EXPLOSION (TS2589). Every `S extends StringShape ? … : S extends
+ *    NumberShape ? …` step structurally compares the WHOLE
+ *    `{literal} & WideInterface` intersection against each interface, and the
+ *    children extracted with `infer` carried `& ContractShape` (the full
+ *    12-member union) into the next recursion, so each level re-instantiated
+ *    the entire chain against an ever-growing intersection — multiplicative
+ *    depth that tripped "Type instantiation is excessively deep" once
+ *    `compileContract<S>(): ContractInterface<Infer<S>>` materialized
+ *    `Infer<S>` at the call site for a const-generic combinator builder.
+ * 2. POLLUTION. `& ObjectShape` contributes `properties:
+ *    Readonly<Record<string, ContractShape>>`; `S extends { properties:
+ *    infer P }` then captured `{a} & Record<string, ContractShape>`, so
+ *    `InferObject` mapped the leaked string index signature and produced
+ *    `{ readonly [x:string]: unknown; a: … }` instead of `{ a: … }`.
+ *
+ * Fix (three cooperating mechanisms, all in this file):
+ *
+ * a. `Infer` is a single distributive shell that dispatches ONCE on the
+ *    discriminant via the indexed access `S['type']` (a literal string
+ *    lookup — O(1)) instead of a chain of structural `S extends StringShape`
+ *    comparisons against the whole wide intersection. The residual
+ *    `& WideInterface` keeps `S['type']` a single literal
+ *    (`'object' & 'object'` = `'object'`), so the dispatch resolves without
+ *    re-comparing the pile.
+ * b. Every recursive child is funnelled through {@link InferChild}, whose
+ *    `C extends ContractShape ? Infer<C> : never` lets the indexed dispatch
+ *    absorb the residual `& WideInterface` on a child
+ *    (`('string' & ('string' | … )) = 'string'`) without amplifying.
+ * c. The list-bearing kinds (`tuple`/`union`/`intersection`) first rebuild a
+ *    PRISTINE fixed tuple from the `[A,B] & readonly ContractShape[]` the
+ *    builder intersection produces, via {@link ShapeList} — a length-driven
+ *    positional reconstruction that neither rest-spread-peels nor `keyof`s
+ *    the tuple-intersected-array (both of which collapse the precise element
+ *    literals to the array element type and re-trigger the explosion).
+ *    Object `properties` similarly drop the leaked `string` index signature
+ *    via `as string extends K ? never : K` in {@link InferObject}.
+ *
+ * Instantiation is then linear in the shape's node count (each node: one
+ * indexed dispatch + one helper + bounded child recursion), independent of
+ * the union arity, so a deep realistic combinator shape stays well under the
+ * instantiation limit while every kind's inferred type stays precise (and
+ * STRICTLY more precise than before: the old structural-chain `Infer` leaked
+ * `{ readonly [x:string]: any; … }` into every object and widened
+ * tuple/union/intersection to `any`). The leading `S extends unknown` keeps
+ * `Infer` distributing over a `ContractShape` union exactly as before.
  */
 export type Infer<S extends ContractShape> = S extends unknown
-	? S extends StringShape
+	? S['type'] extends 'string'
 		? string
-		: S extends NumberShape
+		: S['type'] extends 'number'
 			? number
-			: S extends BooleanShape
+			: S['type'] extends 'boolean'
 				? boolean
-				: S extends { readonly type: 'raw' }
+				: S['type'] extends 'raw'
 					? unknown
-					: S extends { readonly type: 'literal' }
+					: S['type'] extends 'literal'
 						? InferLiteral<S>
-						: S extends { readonly type: 'optional' }
+						: S['type'] extends 'optional'
 							? InferOptional<S>
-							: S extends { readonly type: 'nullable' }
+							: S['type'] extends 'nullable'
 								? InferNullable<S>
-								: S extends { readonly type: 'array' }
+								: S['type'] extends 'array'
 									? InferArray<S>
-									: S extends { readonly type: 'tuple' }
+									: S['type'] extends 'tuple'
 										? InferTupleShape<S>
-										: S extends { readonly type: 'union' }
+										: S['type'] extends 'union'
 											? InferUnionShape<S>
-											: S extends { readonly type: 'intersection' }
+											: S['type'] extends 'intersection'
 												? InferIntersectionShape<S>
-												: S extends { readonly type: 'object' }
+												: S['type'] extends 'object'
 													? InferObjectShape<S>
 													: never
 	: never
+
+// === Recursive-child constraint
+//
+// The public builders return a precise const-generic literal INTERSECTED with
+// the wide member interface (`{ readonly type:'object'; readonly properties:P }
+// & ObjectShape`, etc.). A child shape extracted with `infer` therefore carries
+// `& <WideInterface>` (and, for object properties, the wide interface's
+// `Readonly<Record<string, ContractShape>>` index signature). The recursive
+// `Infer` MUST tolerate that intersection WITHOUT either (a) re-comparing the
+// whole pile against a structural `extends`-chain (the old TS2589 amplifier) or
+// (b) requiring a clean `ContractShape` bound the polluted child no longer
+// satisfies cleanly.
+//
+// `InferChild<C>` is the single recursive entrypoint for any extracted child.
+// It guards on the discriminant being present (always true for a real shape;
+// the residual `& WideInterface` keeps `C`'s `type` a string literal, so the
+// indexed dispatch in `Infer` resolves in O(1) — `('string' & ('string' |
+// 'number' | …))` collapses to `'string'`), then recurses. Centralizing the
+// child step here keeps every helper's recursion flat and the WHY in one place.
+type InferChild<C> = C extends ContractShape ? Infer<C> : never
+
+// === Clean-list reconstruction
+//
+// The list-bearing combinator builders (`tupleShape`/`unionShape`/`oneOfShape`/
+// `intersectionShape`) return `{ … readonly items:[A,B] } & TupleShape` (and
+// the `variants`/`members` analogues). The wide interface's field is
+// `readonly ContractShape[]`, so the EXTRACTED list is
+// `[A,B] & readonly ContractShape[]` — a tuple INTERSECTED with an unbounded
+// array.
+//
+// That intersection is the real TS2589 trigger AND a precision sink:
+//
+//   * A rest-spread peel `L extends readonly [infer Head, ...infer Tail]`
+//     over `[A,B] & readonly ContractShape[]` does NOT yield `Head=A`,
+//     `Tail=[B]`; TS resolves the tuple∩array by collapsing positions to the
+//     ARRAY ELEMENT type, so `Head` widens to the whole `ContractShape` union
+//     and `Tail` to `unknown[]` — the precise element literals are lost AND
+//     the union-typed `Head` re-amplifies the dispatch (the explosion).
+//   * Mapping `[K in keyof L]` over the same intersection ALSO iterates the
+//     array's `number`/prototype keys, not just `0|1`.
+//
+// `ShapeList<L>` rebuilds the clean fixed tuple `[A,B]` from
+// `[A,B] & readonly ContractShape[]` WITHOUT rest-spread or `keyof`: it is
+// length-driven and uses ONLY positional indexed access `L[Acc['length']]`
+// (probed: indexed access at a literal position survives the intersection
+// precisely, and `L['length']` is the literal arity `2`, also precise). The
+// recursion is bounded by the (small, build-fixed) combinator arity and yields
+// a pristine tuple every downstream mapper/fold can walk position-for-position
+// with full precision and zero amplification.
+type ShapeList<L extends readonly unknown[], Acc extends readonly unknown[] = []> = Acc['length'] extends L['length']
+	? Acc
+	: ShapeList<L, readonly [...Acc, L[Acc['length']]]>
 
 // === Per-kind named inference helpers
 //
 // One helper per recursive/structured kind. Keeping these named (rather than
 // inlined into one nested ternary) is what bounds `Infer`'s instantiation
 // depth: each is a single, independently-bounded conditional instantiated
-// ONLY when its kind matches.
+// ONLY when its kind matches. Each reads its structural child DIRECTLY (the
+// literal portion of the builder intersection wins for the precise keys) and
+// recurses via {@link InferChild}; the indexed-access dispatch in `Infer`
+// absorbs the residual `& WideInterface` without re-amplifying.
 
 type InferLiteral<S> = S extends { readonly values: infer V }
 	? V extends readonly (infer L)[]
@@ -500,66 +596,65 @@ type InferLiteral<S> = S extends { readonly values: infer V }
 	: never
 
 type InferOptional<S> = S extends { readonly inner: infer I }
-	? I extends ContractShape
-		? Infer<I> | undefined
-		: never
+	? InferChild<I> | undefined
 	: never
 
 type InferNullable<S> = S extends { readonly inner: infer I }
-	? I extends ContractShape
-		? Infer<I> | null
-		: never
+	? InferChild<I> | null
 	: never
 
 type InferArray<S> = S extends { readonly items: infer I }
-	? I extends ContractShape
-		? readonly Infer<I>[]
-		: never
+	? readonly InferChild<I>[]
 	: never
 
 type InferTupleShape<S> = S extends { readonly items: infer I }
-	? I extends readonly ContractShape[]
-		? InferTuple<I>
+	? I extends readonly unknown[]
+		? InferTuple<ShapeList<I>>
 		: never
 	: never
 
 type InferUnionShape<S> = S extends { readonly variants: infer V }
-	? V extends readonly ContractShape[]
-		? InferUnion<V>
+	? V extends readonly unknown[]
+		? InferUnion<ShapeList<V>>
 		: never
 	: never
 
 type InferIntersectionShape<S> = S extends { readonly members: infer M }
-	? M extends readonly ContractShape[]
-		? InferIntersection<M>
+	? M extends readonly unknown[]
+		? InferIntersection<ShapeList<M>>
 		: never
 	: never
 
+// The builder return `{ readonly properties:{a:…} } & ObjectShape` makes the
+// extracted `P` equal to `{a:…} & Readonly<Record<string, ContractShape>>` —
+// the `& ObjectShape` leaks a `string` index signature. `keyof P` would then
+// include that index key, so `InferObject` would emit a spurious
+// `[x:string]: …` member. `as string extends K ? never : K` removes EXACTLY
+// the index-signature key: a literal property key (e.g. `'a'`) is not a
+// supertype of `string`, so real keys survive; the synthetic `string` index
+// key is the only `K` with `string extends K`, so it (and only it) is dropped.
 type InferObjectShape<S> = S extends { readonly properties: infer P }
-	? P extends Readonly<Record<string, ContractShape>>
-		? InferObject<P>
-		: never
+	? InferObject<P>
 	: never
 
-type InferObject<P extends Readonly<Record<string, ContractShape>>> = Readonly<
+type InferObject<P> = Readonly<
 	{
-		[K in keyof P as P[K] extends { readonly type: 'optional' } ? never : K]: Infer<P[K]>
+		[K in keyof P as string extends K
+			? never
+			: P[K] extends { readonly type: 'optional' }
+				? never
+				: K]: InferChild<P[K]>
 	} & {
-	[K in keyof P as P[K] extends { readonly type: 'optional' } ? K : never]?: P[K] extends {
-			readonly type: 'optional'
-			readonly inner: infer I
-		}
-		? I extends ContractShape
-			? Infer<I>
-			: never
-		: never
+	[K in keyof P as string extends K
+		? never
+		: P[K] extends { readonly type: 'optional' }
+			? K
+			: never]?: P[K] extends { readonly inner: infer I } ? InferChild<I> : never
 }
 >
 
-type InferUnion<V extends readonly ContractShape[]> = V extends readonly (infer U)[]
-	? U extends ContractShape
-		? Infer<U>
-		: never
+type InferUnion<V extends readonly unknown[]> = V extends readonly (infer U)[]
+	? InferChild<U>
 	: never
 
 // Map a readonly tuple of element shapes to a readonly tuple of their
@@ -567,8 +662,8 @@ type InferUnion<V extends readonly ContractShape[]> = V extends readonly (infer 
 // the tuple's own keys preserves both arity and `readonly`-ness (the same
 // technique `TupleFromGuards` uses for guard tuples), so
 // `Infer<TupleShape>` recovers `readonly [Infer<I0>, Infer<I1>, …]`.
-type InferTuple<I extends readonly ContractShape[]> = Readonly<{
-	[K in keyof I]: I[K] extends ContractShape ? Infer<I[K]> : never
+type InferTuple<I extends readonly unknown[]> = Readonly<{
+	[K in keyof I]: InferChild<I[K]>
 }>
 
 // Map a readonly list of member shapes to the `&`-intersection of their
@@ -582,24 +677,20 @@ type InferTuple<I extends readonly ContractShape[]> = Readonly<{
 // and feeding the deferred `Infer` dispatch through that machinery compounds
 // instantiation depth — it tripped TS2589 once `Infer` was materialized on a
 // deep const-generic intersection-of-objectShapes. A left fold that peels
-// one member off the head per step and accumulates `Acc & Infer<Head>` keeps
-// each step FLAT (one `Infer` of one member + one `&`), with total depth
-// linear in the member COUNT (small — an intersection has a handful of
+// one member off the head per step and accumulates `Acc & InferChild<Head>`
+// keeps each step FLAT (one `Infer` of one member + one `&`), with total
+// depth linear in the member COUNT (small — an intersection has a handful of
 // members) rather than the recursive blow-up of distributing `Infer` inside
 // `UnionToIntersection`. `unknown` is the identity for `&` (`unknown & X` =
 // `X`), so the empty-tail base case contributes nothing; `intersectionShape`
 // guarantees ≥1 member at build (§13) so the result is never bare `unknown`.
-type InferIntersection<M extends readonly ContractShape[]> = InferIntersectionFold<M, unknown>
+type InferIntersection<M extends readonly unknown[]> = InferIntersectionFold<M, unknown>
 
-type InferIntersectionFold<M extends readonly ContractShape[], Acc> = M extends readonly [
+type InferIntersectionFold<M extends readonly unknown[], Acc> = M extends readonly [
 	infer Head,
 	...infer Tail,
 ]
-	? Head extends ContractShape
-		? Tail extends readonly ContractShape[]
-			? InferIntersectionFold<Tail, Acc & Infer<Head>>
-			: Acc & Infer<Head>
-		: Acc
+	? InferIntersectionFold<Tail, Acc & InferChild<Head>>
 	: Acc
 
 // === Random
