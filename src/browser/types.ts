@@ -141,6 +141,23 @@ export interface NavActivateDetail {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// DOM traversal primitives
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Predicate over an element — the matching contract for the `find*`
+ *  / `walk*` traversal helpers. */
+export type ElementPredicate = (element: Element) => boolean
+
+/** Criteria bag consumed by `createMatcher` to build an `ElementPredicate`. */
+export interface MatcherOptions {
+	readonly tag?: string
+	readonly id?: string
+	readonly class?: string
+	readonly classes?: readonly string[]
+	readonly attributes?: Readonly<Record<string, string | undefined>>
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Form primitives
 // ─────────────────────────────────────────────────────────────────────────
 

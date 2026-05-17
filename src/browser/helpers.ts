@@ -25,9 +25,11 @@ import type {
 	DragStartDetail,
 	DragTapDetail,
 	DropPosition,
+	ElementPredicate,
 	FormEntry,
 	FormError,
 	FormFieldElement,
+	MatcherOptions,
 	Placement,
 	Side,
 	TableCell,
@@ -110,6 +112,80 @@ export function extractTypes(event: DragEvent): readonly string[] {
 	return types ? Array.from(types) : []
 }
 
+// ── DOM node-type guards ────────────────────────────────────────────────────
+
+/** Narrow a node to an `Element`. */
+export function isElement(node: Node | null): node is Element {
+	return node !== null && node.nodeType === Node.ELEMENT_NODE
+}
+
+/** Narrow a node to an `HTMLElement`. */
+export function isHTMLElement(node: Node | null): node is HTMLElement {
+	return node instanceof HTMLElement
+}
+
+/** Narrow a node to a `Text` node. */
+export function isTextNode(node: Node | null): node is Text {
+	return node !== null && node.nodeType === Node.TEXT_NODE
+}
+
+/** Narrow an element to a specific tag. */
+export function isTagType<K extends keyof HTMLElementTagNameMap>(
+	element: Element | null,
+	tagName: K,
+): element is HTMLElementTagNameMap[K] {
+	return element !== null && element.tagName === tagName.toUpperCase()
+}
+
+/** Check an element's tag name (case-insensitive). */
+export function matchesTag(element: Element, tagName: string): boolean {
+	return element.tagName === tagName.toUpperCase()
+}
+
+/** Check a single class. */
+export function hasClass(element: Element, className: string): boolean {
+	return element.classList.contains(className)
+}
+
+/** Check every class in `classNames` is present. */
+export function hasClasses(element: Element, classNames: readonly string[]): boolean {
+	for (const className of classNames) {
+		if (!element.classList.contains(className)) return false
+	}
+	return true
+}
+
+/** Check an element id. */
+export function hasId(element: Element, id: string): boolean {
+	return element.id === id
+}
+
+/** Check attribute presence, or exact value when `value` is given. */
+export function hasAttribute(element: Element, name: string, value?: string): boolean {
+	return value === undefined ? element.hasAttribute(name) : element.getAttribute(name) === value
+}
+
+/** Build an `ElementPredicate` from a `MatcherOptions` criteria bag. */
+export function createMatcher(criteria: MatcherOptions): ElementPredicate {
+	return (element: Element): boolean => {
+		if (criteria.tag !== undefined && element.tagName !== criteria.tag.toUpperCase()) return false
+		if (criteria.id !== undefined && element.id !== criteria.id) return false
+		if (criteria.class !== undefined && !element.classList.contains(criteria.class)) return false
+		if (criteria.classes !== undefined && !hasClasses(element, criteria.classes)) return false
+		if (criteria.attributes !== undefined) {
+			for (const name in criteria.attributes) {
+				const expected = criteria.attributes[name]
+				if (expected === undefined) {
+					if (!element.hasAttribute(name)) return false
+				} else if (element.getAttribute(name) !== expected) {
+					return false
+				}
+			}
+		}
+		return true
+	}
+}
+
 // ── 2. Semantic-element gating ──────────────────────────────────────────────
 
 /**
@@ -156,7 +232,7 @@ export function assertElement<T extends HTMLElement>(
  * watchers / lazy guards where throwing isn't appropriate (e.g., during
  * SSR teardown when the host transitions through `null`).
  */
-export function isElement<T extends HTMLElement>(
+export function isTagged<T extends HTMLElement>(
 	element: HTMLElement | null | undefined,
 	expected: string | readonly string[],
 ): element is T {
