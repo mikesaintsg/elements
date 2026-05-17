@@ -40,6 +40,7 @@ import type {
 	TableRow,
 	TableTarget,
 	TaxonomyEntry,
+	ThemeSetting,
 } from './types.js'
 import {
 	BODY_LOCKED_ATTR,
@@ -92,6 +93,11 @@ export function extractProperty(value: unknown, key: string): unknown {
 /** Narrow an unknown value to a readonly string array. */
 export function isStringArray(value: unknown): value is readonly string[] {
 	return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+/** Narrow an unknown value to a `ThemeSetting`. */
+export function isSetting(value: unknown): value is ThemeSetting {
+	return value === 'light' || value === 'dark' || value === 'system'
 }
 
 /** Narrow an unknown value to a CustomEvent handler. */

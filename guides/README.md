@@ -225,6 +225,7 @@ Frozen object trees and derived string-literal-union types. Every CSS identifier
 | [`events.ts`](../src/browser/events.ts)       | Namespaced event-name registry (`elements:{source}:{verb}`).                                                                                          |
 | [`helpers.ts`](../src/browser/helpers.ts)     | `assertElement`, `attachListeners`, focus-ring helpers, etc.                                                                                          |
 | [`constants.ts`](../src/browser/constants.ts) | UPPER_SNAKE_CASE values, `*_EVENTS` maps, selector strings, storage keys.                                                                             |
+| [`theme.ts`](../src/browser/theme.ts)         | Page-global theme singleton service (`bootstrapTheme`, `themeState`, `resetTheme`); `createTheme.ts` is the thin per-caller wrapper.                  |
 | [`composables/`](../src/browser/composables/) | 20 `use{Name}.ts` Vue adapters + `index.ts` barrel.                                                                                                   |
 | [`factories/`](../src/browser/factories/)     | 20 `create{Name}.ts` framework-agnostic factories + `index.ts` barrel.                                                                                |
 
