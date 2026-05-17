@@ -22,8 +22,26 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import type { JsonSchema } from '@elements/core'
-import { createRefResolver, isJsonSchema, resolveRef } from '@elements/core'
+import type { ContractShape, JsonSchema } from '@elements/core'
+import {
+	arrayShape,
+	booleanShape,
+	compileGuard,
+	compileSchema,
+	compileSchemaGuard,
+	constShape,
+	createRefResolver,
+	integerShape,
+	isJsonSchema,
+	numberShape,
+	objectShape,
+	oneOfShape,
+	optionalShape,
+	resolveRef,
+	stringShape,
+	tupleShape,
+	unionShape,
+} from '@elements/core'
 
 // === resolveRef — single-pointer RFC-6901 resolution
 
@@ -412,5 +430,724 @@ describe('schema.test fixtures are isJsonSchema-valid', () => {
 			$ref: '#/$defs/Node',
 		}
 		expect(isJsonSchema(root)).toBe(true)
+	})
+})
+
+// ============================================================================
+//  E2 — compileSchemaGuard: JSON Schema -> runtime Guard<unknown>
+//
+//  Documented contract under test:
+//
+//   * `compileSchemaGuard(schema)` turns a JSON-Schema document into a
+//     runtime predicate. A schema is a CONJUNCTION of its keywords (all
+//     present constraints must hold). Absent keyword = no constraint.
+//   * The produced guard NEVER throws (§13) — hostile/cyclic/getter-throwing
+//     input returns `false`, never a thrown error.
+//   * Malformed SCHEMA defects (unresolvable/external/pure-ref-cycle `$ref`)
+//     are COMPILE-time precise throws (propagated from E1), not eval-time.
+//   * Recursive `$ref` (`#/$defs/Node` -> itself) compiles to a recursive
+//     (not infinite) guard via E1's lazy/memo contract.
+//   * Forward<->inverse: `compileSchemaGuard(compileSchema(S))` agrees with
+//     `compileGuard(S)` for the shapes the forward pipeline produces.
+// ============================================================================
+
+describe('compileSchemaGuard — type keyword', () => {
+	it('single primitive types', () => {
+		expect(compileSchemaGuard({ type: 'string' })('x')).toBe(true)
+		expect(compileSchemaGuard({ type: 'string' })(1)).toBe(false)
+		expect(compileSchemaGuard({ type: 'number' })(1.5)).toBe(true)
+		expect(compileSchemaGuard({ type: 'number' })('1')).toBe(false)
+		expect(compileSchemaGuard({ type: 'boolean' })(true)).toBe(true)
+		expect(compileSchemaGuard({ type: 'boolean' })(0)).toBe(false)
+		expect(compileSchemaGuard({ type: 'null' })(null)).toBe(true)
+		expect(compileSchemaGuard({ type: 'null' })(undefined)).toBe(false)
+		expect(compileSchemaGuard({ type: 'object' })({})).toBe(true)
+		expect(compileSchemaGuard({ type: 'object' })([])).toBe(false)
+		expect(compileSchemaGuard({ type: 'object' })(null)).toBe(false)
+		expect(compileSchemaGuard({ type: 'array' })([])).toBe(true)
+		expect(compileSchemaGuard({ type: 'array' })({})).toBe(false)
+	})
+
+	it('`integer` is number + Number.isInteger (rejects NaN/Infinity/float)', () => {
+		const g = compileSchemaGuard({ type: 'integer' })
+		expect(g(3)).toBe(true)
+		expect(g(3.5)).toBe(false)
+		expect(g(Number.NaN)).toBe(false)
+		expect(g(Number.POSITIVE_INFINITY)).toBe(false)
+		expect(g('3')).toBe(false)
+	})
+
+	it('`number` accepts integers but excludes NaN/Infinity', () => {
+		const g = compileSchemaGuard({ type: 'number' })
+		expect(g(3)).toBe(true)
+		expect(g(Number.NaN)).toBe(false)
+		expect(g(Number.POSITIVE_INFINITY)).toBe(false)
+	})
+
+	it('array-of-type is a union of allowed types', () => {
+		const g = compileSchemaGuard({ type: ['string', 'null'] })
+		expect(g('x')).toBe(true)
+		expect(g(null)).toBe(true)
+		expect(g(1)).toBe(false)
+	})
+
+	it('absent type imposes no type constraint', () => {
+		const g = compileSchemaGuard({})
+		expect(g('x')).toBe(true)
+		expect(g(123)).toBe(true)
+		expect(g(null)).toBe(true)
+		expect(g({ a: 1 })).toBe(true)
+	})
+
+	it('null is distinct from object', () => {
+		expect(compileSchemaGuard({ type: 'object' })(null)).toBe(false)
+		expect(compileSchemaGuard({ type: ['object', 'null'] })(null)).toBe(true)
+	})
+})
+
+describe('compileSchemaGuard — enum / const (structural equality, D4)', () => {
+	it('enum membership by structural equality', () => {
+		const g = compileSchemaGuard({ enum: ['a', 1, true, null] })
+		expect(g('a')).toBe(true)
+		expect(g(1)).toBe(true)
+		expect(g(true)).toBe(true)
+		expect(g(null)).toBe(true)
+		expect(g('b')).toBe(false)
+		expect(g(2)).toBe(false)
+	})
+
+	it('enum with object/array members compared deep-structurally', () => {
+		const g = compileSchemaGuard({ enum: [{ a: 1 }, [1, 2]] })
+		expect(g({ a: 1 })).toBe(true)
+		expect(g([1, 2])).toBe(true)
+		expect(g({ a: 2 })).toBe(false)
+		expect(g([1, 2, 3])).toBe(false)
+		expect(g({ a: 1, b: 2 })).toBe(false)
+	})
+
+	it('const structural-equal to the single value', () => {
+		expect(compileSchemaGuard({ const: 'fixed' })('fixed')).toBe(true)
+		expect(compileSchemaGuard({ const: 'fixed' })('other')).toBe(false)
+		const g = compileSchemaGuard({ const: { x: [1], y: 'z' } })
+		expect(g({ x: [1], y: 'z' })).toBe(true)
+		expect(g({ x: [2], y: 'z' })).toBe(false)
+	})
+
+	it('const NaN matches NaN (Object.is leaf semantics, +0 != -0)', () => {
+		expect(compileSchemaGuard({ const: Number.NaN })(Number.NaN)).toBe(true)
+		expect(compileSchemaGuard({ const: 0 })(-0)).toBe(false)
+		expect(compileSchemaGuard({ const: -0 })(0)).toBe(false)
+		expect(compileSchemaGuard({ enum: [Number.NaN] })(Number.NaN)).toBe(true)
+	})
+})
+
+describe('compileSchemaGuard — string constraints', () => {
+	it('minLength / maxLength (code-unit length)', () => {
+		const g = compileSchemaGuard({ type: 'string', minLength: 2, maxLength: 4 })
+		expect(g('ab')).toBe(true)
+		expect(g('abcd')).toBe(true)
+		expect(g('a')).toBe(false)
+		expect(g('abcde')).toBe(false)
+	})
+
+	it('pattern matches a substring (RegExp from the string)', () => {
+		const g = compileSchemaGuard({ type: 'string', pattern: 'ab+c' })
+		expect(g('xxabbcxx')).toBe(true)
+		expect(g('ac')).toBe(false)
+	})
+
+	it('stateful-regex hazard: a global-flag-ish pattern is consistent across calls', () => {
+		// `pattern` is a plain string; even if the impl uses a shared RegExp it
+		// MUST reset lastIndex / build fresh so repeated calls are consistent.
+		const g = compileSchemaGuard({ type: 'string', pattern: 'a' })
+		const first = g('a')
+		const second = g('a')
+		const third = g('a')
+		expect(first).toBe(true)
+		expect(second).toBe(true)
+		expect(third).toBe(true)
+	})
+
+	it('format: documented asserting set (email/uuid/date-time/uri)', () => {
+		expect(compileSchemaGuard({ type: 'string', format: 'email' })('a@b.com')).toBe(true)
+		expect(compileSchemaGuard({ type: 'string', format: 'email' })('not-an-email')).toBe(false)
+		expect(
+			compileSchemaGuard({ type: 'string', format: 'uuid' })(
+				'123e4567-e89b-12d3-a456-426614174000',
+			),
+		).toBe(true)
+		expect(compileSchemaGuard({ type: 'string', format: 'uuid' })('not-a-uuid')).toBe(false)
+		expect(
+			compileSchemaGuard({ type: 'string', format: 'date-time' })('2020-01-01T00:00:00Z'),
+		).toBe(true)
+		expect(compileSchemaGuard({ type: 'string', format: 'date-time' })('nope')).toBe(false)
+		expect(compileSchemaGuard({ type: 'string', format: 'uri' })('https://x.com/y')).toBe(true)
+		expect(compileSchemaGuard({ type: 'string', format: 'uri' })('not a uri')).toBe(false)
+	})
+
+	it('format: unknown format is annotation-only — passes (does not assert)', () => {
+		const g = compileSchemaGuard({ type: 'string', format: 'phone-number' })
+		expect(g('literally anything')).toBe(true)
+		expect(g('')).toBe(true)
+	})
+})
+
+describe('compileSchemaGuard — number constraints', () => {
+	it('minimum / maximum (inclusive)', () => {
+		const g = compileSchemaGuard({ type: 'number', minimum: 0, maximum: 10 })
+		expect(g(0)).toBe(true)
+		expect(g(10)).toBe(true)
+		expect(g(-1)).toBe(false)
+		expect(g(11)).toBe(false)
+	})
+
+	it('exclusiveMinimum / exclusiveMaximum (2020-12 numeric form)', () => {
+		const g = compileSchemaGuard({ type: 'number', exclusiveMinimum: 0, exclusiveMaximum: 10 })
+		expect(g(0)).toBe(false)
+		expect(g(10)).toBe(false)
+		expect(g(0.0001)).toBe(true)
+		expect(g(9.9999)).toBe(true)
+	})
+
+	it('multipleOf (float-tolerant)', () => {
+		const g = compileSchemaGuard({ type: 'number', multipleOf: 0.1 })
+		expect(g(0.3)).toBe(true)
+		expect(g(0.30000000000001)).toBe(false)
+		const i = compileSchemaGuard({ type: 'integer', multipleOf: 3 })
+		expect(i(9)).toBe(true)
+		expect(i(10)).toBe(false)
+	})
+})
+
+describe('compileSchemaGuard — array constraints', () => {
+	it('items applied to every element', () => {
+		const g = compileSchemaGuard({ type: 'array', items: { type: 'number' } })
+		expect(g([1, 2, 3])).toBe(true)
+		expect(g([1, 'x'])).toBe(false)
+		expect(g([])).toBe(true)
+	})
+
+	it('prefixItems (positional) + items:false closed tuple', () => {
+		const g = compileSchemaGuard({
+			type: 'array',
+			prefixItems: [{ type: 'string' }, { type: 'number' }],
+			items: false,
+		})
+		expect(g(['a', 1])).toBe(true)
+		expect(g(['a', 1, 2])).toBe(false)
+		expect(g(['a'])).toBe(true)
+		expect(g([1, 'a'])).toBe(false)
+	})
+
+	it('prefixItems with open tail (items schema applies past the prefix)', () => {
+		const g = compileSchemaGuard({
+			type: 'array',
+			prefixItems: [{ type: 'string' }],
+			items: { type: 'number' },
+		})
+		expect(g(['a', 1, 2])).toBe(true)
+		expect(g(['a', 'b'])).toBe(false)
+	})
+
+	it('minItems / maxItems', () => {
+		const g = compileSchemaGuard({ type: 'array', minItems: 1, maxItems: 2 })
+		expect(g([1])).toBe(true)
+		expect(g([1, 2])).toBe(true)
+		expect(g([])).toBe(false)
+		expect(g([1, 2, 3])).toBe(false)
+	})
+
+	it('uniqueItems (structural-equality dedup, consistent with enum/const)', () => {
+		const g = compileSchemaGuard({ type: 'array', uniqueItems: true })
+		expect(g([1, 2, 3])).toBe(true)
+		expect(g([1, 1])).toBe(false)
+		expect(g([{ a: 1 }, { a: 1 }])).toBe(false)
+		expect(g([{ a: 1 }, { a: 2 }])).toBe(true)
+		expect(g([[1], [1]])).toBe(false)
+	})
+})
+
+describe('compileSchemaGuard — object constraints (B2 pollution-safe)', () => {
+	it('properties + required', () => {
+		const g = compileSchemaGuard({
+			type: 'object',
+			properties: { a: { type: 'string' }, b: { type: 'number' } },
+			required: ['a'],
+		})
+		expect(g({ a: 'x' })).toBe(true)
+		expect(g({ a: 'x', b: 1 })).toBe(true)
+		expect(g({ b: 1 })).toBe(false)
+		expect(g({ a: 'x', b: 'oops' })).toBe(false)
+	})
+
+	it('additionalProperties false (closed) | true (open) | schema', () => {
+		const closed = compileSchemaGuard({
+			type: 'object',
+			properties: { a: { type: 'string' } },
+			additionalProperties: false,
+		})
+		expect(closed({ a: 'x' })).toBe(true)
+		expect(closed({ a: 'x', extra: 1 })).toBe(false)
+
+		const open = compileSchemaGuard({
+			type: 'object',
+			properties: { a: { type: 'string' } },
+			additionalProperties: true,
+		})
+		expect(open({ a: 'x', extra: 1 })).toBe(true)
+
+		const typed = compileSchemaGuard({
+			type: 'object',
+			properties: { a: { type: 'string' } },
+			additionalProperties: { type: 'number' },
+		})
+		expect(typed({ a: 'x', extra: 1 })).toBe(true)
+		expect(typed({ a: 'x', extra: 'no' })).toBe(false)
+	})
+
+	it('B2: __proto__ / constructor hostile input does not pollute and is guarded', () => {
+		const g = compileSchemaGuard({
+			type: 'object',
+			properties: { a: { type: 'string' } },
+			additionalProperties: false,
+		})
+		const before = Object.getOwnPropertyNames(Object.prototype).slice()
+		// Hostile own-key payload. JSON.parse produces an OWN __proto__ key.
+		const hostile = JSON.parse('{"a":"x","__proto__":{"polluted":true}}')
+		// Closed object: __proto__ is an extra own key -> rejected, no pollution.
+		expect(g(hostile)).toBe(false)
+		expect(({} as Record<string, unknown>)['polluted']).toBeUndefined()
+		expect(Object.getOwnPropertyNames(Object.prototype)).toEqual(before)
+		// `constructor` extra own key likewise rejected by a closed object.
+		const hostile2 = JSON.parse('{"a":"x","constructor":1}')
+		expect(g(hostile2)).toBe(false)
+	})
+
+	it('B2: a declared __proto__ property reads via Object.hasOwn (no chain trip)', () => {
+		const g = compileSchemaGuard({
+			type: 'object',
+			// eslint-disable-next-line no-proto
+			properties: { ['__proto__']: { type: 'string' } },
+			required: ['__proto__'],
+			additionalProperties: false,
+		})
+		const ok = JSON.parse('{"__proto__":"hello"}')
+		expect(g(ok)).toBe(true)
+		const bad = JSON.parse('{"__proto__":123}')
+		expect(g(bad)).toBe(false)
+		// A plain object WITHOUT an own __proto__ must fail required.
+		expect(g({})).toBe(false)
+	})
+
+	it('patternProperties (regex-keyed schemas)', () => {
+		const g = compileSchemaGuard({
+			type: 'object',
+			patternProperties: { '^x-': { type: 'number' } },
+			additionalProperties: false,
+		})
+		expect(g({ 'x-a': 1, 'x-b': 2 })).toBe(true)
+		expect(g({ 'x-a': 'no' })).toBe(false)
+		expect(g({ other: 1 })).toBe(false)
+	})
+
+	it('propertyNames (schema applied to each key string)', () => {
+		const g = compileSchemaGuard({
+			type: 'object',
+			propertyNames: { type: 'string', minLength: 3 },
+		})
+		expect(g({ abc: 1, defg: 2 })).toBe(true)
+		expect(g({ ab: 1 })).toBe(false)
+	})
+
+	it('minProperties / maxProperties', () => {
+		const g = compileSchemaGuard({ type: 'object', minProperties: 1, maxProperties: 2 })
+		expect(g({ a: 1 })).toBe(true)
+		expect(g({ a: 1, b: 2 })).toBe(true)
+		expect(g({})).toBe(false)
+		expect(g({ a: 1, b: 2, c: 3 })).toBe(false)
+	})
+
+	it('dependentRequired', () => {
+		const g = compileSchemaGuard({
+			type: 'object',
+			properties: { a: { type: 'string' }, b: { type: 'string' }, c: { type: 'string' } },
+			dependentRequired: { a: ['b', 'c'] },
+		})
+		expect(g({})).toBe(true)
+		expect(g({ a: 'x', b: 'y', c: 'z' })).toBe(true)
+		expect(g({ a: 'x', b: 'y' })).toBe(false)
+		expect(g({ b: 'y' })).toBe(true)
+	})
+})
+
+describe('compileSchemaGuard — composition', () => {
+	it('allOf — every subschema passes', () => {
+		const g = compileSchemaGuard({
+			allOf: [
+				{ type: 'object', properties: { a: { type: 'string' } }, required: ['a'] },
+				{ type: 'object', properties: { b: { type: 'number' } }, required: ['b'] },
+			],
+		})
+		expect(g({ a: 'x', b: 1 })).toBe(true)
+		expect(g({ a: 'x' })).toBe(false)
+	})
+
+	it('anyOf — at least one passes', () => {
+		const g = compileSchemaGuard({ anyOf: [{ type: 'string' }, { type: 'number' }] })
+		expect(g('x')).toBe(true)
+		expect(g(1)).toBe(true)
+		expect(g(true)).toBe(false)
+	})
+
+	it('oneOf — EXACTLY one passes (B4)', () => {
+		const g = compileSchemaGuard({
+			oneOf: [
+				{ type: 'number', minimum: 0 },
+				{ type: 'number', maximum: 100 },
+			],
+		})
+		// 50 matches BOTH -> exactly-one fails.
+		expect(g(50)).toBe(false)
+		// -5 matches only the second (maximum:100).
+		expect(g(-5)).toBe(true)
+		// 150 matches only the first (minimum:0).
+		expect(g(150)).toBe(true)
+		// 'x' matches neither.
+		expect(g('x')).toBe(false)
+	})
+
+	it('not — subschema must fail', () => {
+		const g = compileSchemaGuard({ not: { type: 'string' } })
+		expect(g(1)).toBe(true)
+		expect(g('x')).toBe(false)
+	})
+
+	it('if/then/else — all branches incl. absent then/else', () => {
+		const g = compileSchemaGuard({
+			if: { type: 'string' },
+			then: { minLength: 3 },
+			else: { type: 'number' },
+		})
+		expect(g('abc')).toBe(true)
+		expect(g('ab')).toBe(false)
+		expect(g(42)).toBe(true)
+		expect(g(true)).toBe(false)
+
+		// Absent `then` = pass when `if` matches.
+		const noThen = compileSchemaGuard({ if: { type: 'string' }, else: { type: 'number' } })
+		expect(noThen('anything')).toBe(true)
+		expect(noThen(1)).toBe(true)
+		expect(noThen(true)).toBe(false)
+
+		// Absent `else` = pass when `if` fails.
+		const noElse = compileSchemaGuard({ if: { type: 'string' }, then: { minLength: 2 } })
+		expect(noElse('ab')).toBe(true)
+		expect(noElse('a')).toBe(false)
+		expect(noElse(123)).toBe(true)
+
+		// No `if` -> if/then/else inert.
+		expect(compileSchemaGuard({ then: { type: 'string' } })(123)).toBe(true)
+	})
+})
+
+describe('compileSchemaGuard — boolean schemas', () => {
+	it('true accepts everything, false rejects everything', () => {
+		expect(compileSchemaGuard(true)(123)).toBe(true)
+		expect(compileSchemaGuard(true)(null)).toBe(true)
+		expect(compileSchemaGuard(false)(123)).toBe(false)
+		expect(compileSchemaGuard(false)(undefined)).toBe(false)
+	})
+
+	it('boolean sub-schemas inside properties', () => {
+		const g = compileSchemaGuard({
+			type: 'object',
+			properties: { open: true, closed: false },
+			required: ['open'],
+		})
+		expect(g({ open: 'anything' })).toBe(true)
+		expect(g({ open: 1, closed: 'x' })).toBe(false)
+	})
+})
+
+describe('compileSchemaGuard — $ref / recursive $ref', () => {
+	it('resolves a local $ref', () => {
+		const g = compileSchemaGuard({
+			$defs: { Id: { type: 'string', minLength: 1 } },
+			$ref: '#/$defs/Id',
+		})
+		expect(g('x')).toBe(true)
+		expect(g('')).toBe(false)
+		expect(g(1)).toBe(false)
+	})
+
+	it('recursive $ref guards a finite recursive value (no stack overflow)', () => {
+		const schema: JsonSchema = {
+			$defs: {
+				Node: {
+					type: 'object',
+					properties: {
+						value: { type: 'string' },
+						next: { anyOf: [{ $ref: '#/$defs/Node' }, { type: 'null' }] },
+					},
+					required: ['value', 'next'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/Node',
+		}
+		const g = compileSchemaGuard(schema)
+		const good = { value: 'a', next: { value: 'b', next: { value: 'c', next: null } } }
+		expect(g(good)).toBe(true)
+		const bad = { value: 'a', next: { value: 42, next: null } }
+		expect(g(bad)).toBe(false)
+		const malformed = { value: 'a' } // missing required `next`
+		expect(g(malformed)).toBe(false)
+	})
+
+	it('recursive $ref guard does NOT explode on a deep finite value', () => {
+		const schema: JsonSchema = {
+			$defs: {
+				List: {
+					type: 'object',
+					properties: { next: { anyOf: [{ $ref: '#/$defs/List' }, { type: 'null' }] } },
+					required: ['next'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/List',
+		}
+		const g = compileSchemaGuard(schema)
+		let deep: { next: unknown } = { next: null }
+		for (let i = 0; i < 500; i += 1) {
+			deep = { next: deep }
+		}
+		expect(g(deep)).toBe(true)
+	})
+
+	it('mutually-recursive $ref (A<->B) compiles and guards', () => {
+		const schema: JsonSchema = {
+			$defs: {
+				A: {
+					type: 'object',
+					properties: { b: { anyOf: [{ $ref: '#/$defs/B' }, { type: 'null' }] } },
+					required: ['b'],
+					additionalProperties: false,
+				},
+				B: {
+					type: 'object',
+					properties: { a: { anyOf: [{ $ref: '#/$defs/A' }, { type: 'null' }] } },
+					required: ['a'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/A',
+		}
+		const g = compileSchemaGuard(schema)
+		expect(g({ b: { a: { b: null } } })).toBe(true)
+		expect(g({ b: { a: { b: 1 } } })).toBe(false)
+	})
+})
+
+describe('compileSchemaGuard — §13: guard NEVER throws on hostile input', () => {
+	it('cyclic data returns false, never RangeError', () => {
+		const g = compileSchemaGuard({
+			type: 'object',
+			properties: { a: { type: 'string' } },
+			required: ['a'],
+			additionalProperties: false,
+		})
+		const cyclic: Record<string, unknown> = {}
+		cyclic['self'] = cyclic
+		expect(() => g(cyclic)).not.toThrow()
+		expect(g(cyclic)).toBe(false)
+	})
+
+	it('a getter that throws is caught — guard returns false', () => {
+		const hostile = {}
+		Object.defineProperty(hostile, 'a', {
+			enumerable: true,
+			get() {
+				throw new Error('boom')
+			},
+		})
+		const g = compileSchemaGuard({
+			type: 'object',
+			properties: { a: { type: 'string' } },
+			required: ['a'],
+		})
+		expect(() => g(hostile)).not.toThrow()
+		expect(g(hostile)).toBe(false)
+	})
+
+	it('recursive-$ref guard does not throw on cyclic data', () => {
+		const schema: JsonSchema = {
+			$defs: {
+				Node: {
+					type: 'object',
+					properties: { next: { anyOf: [{ $ref: '#/$defs/Node' }, { type: 'null' }] } },
+					required: ['next'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/Node',
+		}
+		const g = compileSchemaGuard(schema)
+		const cyclic: Record<string, unknown> = {}
+		cyclic['next'] = cyclic
+		expect(() => g(cyclic)).not.toThrow()
+		expect(g(cyclic)).toBe(false)
+	})
+
+	it('deeply pathological non-cyclic data returns false, not RangeError', () => {
+		const schema: JsonSchema = {
+			$defs: {
+				Node: {
+					type: 'object',
+					properties: { next: { anyOf: [{ $ref: '#/$defs/Node' }, { type: 'null' }] } },
+					required: ['next'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/Node',
+		}
+		const g = compileSchemaGuard(schema)
+		// Build a chain too deep for the native stack but with a non-conforming
+		// leaf — must terminate with `false`, never a RangeError.
+		let deep: Record<string, unknown> = { next: 'not-a-node-and-not-null' }
+		for (let i = 0; i < 20000; i += 1) {
+			deep = { next: deep }
+		}
+		expect(() => g(deep)).not.toThrow()
+		expect(g(deep)).toBe(false)
+	})
+})
+
+describe('compileSchemaGuard — §13: malformed SCHEMA throws at COMPILE time', () => {
+	it('unresolvable $ref throws at compile (not eval)', () => {
+		expect(() => compileSchemaGuard({ $ref: '#/$defs/Nope' })).toThrow(/#\/\$defs\/Nope/)
+	})
+
+	it('external $ref throws at compile', () => {
+		expect(() => compileSchemaGuard({ $ref: 'https://x/y#/z' })).toThrow(
+			/external \$ref unsupported/,
+		)
+	})
+
+	it('pure-$ref-only cycle throws a precise compile-time Error', () => {
+		expect(() =>
+			compileSchemaGuard({
+				$defs: { A: { $ref: '#/$defs/B' }, B: { $ref: '#/$defs/A' } },
+				$ref: '#/$defs/A',
+			}),
+		).toThrow(/circular \$ref/i)
+	})
+})
+
+// === Forward <-> inverse cross-consistency anchor
+//
+// For several ContractShapes S, `compileSchemaGuard(compileSchema(S))(x)` must
+// agree with `compileGuard(S)(x)` for a sample of x. This is the round-trip
+// soundness anchor between the forward (shape->schema) and inverse
+// (schema->guard) pipelines.
+
+describe('compileSchemaGuard — forward<->inverse cross-consistency', () => {
+	const cases: { name: string; shape: ContractShape; samples: readonly unknown[] }[] = [
+		{
+			name: 'string min/max',
+			shape: stringShape({ min: 2, max: 5 }),
+			samples: ['ab', 'a', 'abcdef', 1, null, ''],
+		},
+		{
+			name: 'integer min',
+			shape: integerShape({ min: 0 }),
+			samples: [0, -1, 3.5, 'x', Number.NaN],
+		},
+		{
+			name: 'number bounds',
+			shape: numberShape({ min: -1, max: 1 }),
+			samples: [0, -1, 1, 2, Number.POSITIVE_INFINITY],
+		},
+		{ name: 'boolean', shape: booleanShape(), samples: [true, false, 0, 'true'] },
+		{
+			name: 'array<string>',
+			shape: arrayShape(stringShape({ min: 1 })),
+			samples: [['a'], [], ['a', ''], [1], 'x'],
+		},
+		{
+			name: 'tuple [string, number]',
+			shape: tupleShape(stringShape(), numberShape()),
+			samples: [['a', 1], ['a'], ['a', 1, 2], [1, 'a'], []],
+		},
+		{
+			name: 'object person',
+			shape: objectShape({
+				name: stringShape({ min: 1 }),
+				age: integerShape({ min: 0 }),
+				bio: optionalShape(stringShape()),
+			}),
+			samples: [
+				{ name: 'Ada', age: 30 },
+				{ name: 'Ada', age: 30, bio: 'x' },
+				{ name: '', age: 30 },
+				{ name: 'Ada', age: -1 },
+				{ name: 'Ada', age: 30, extra: 1 },
+				{ name: 'Ada' },
+				'not-an-object',
+			],
+		},
+		{
+			name: 'union string|integer',
+			shape: unionShape(stringShape({ min: 1 }), integerShape({ min: 0 })),
+			samples: ['x', 3, '', -1, true],
+		},
+		{
+			name: 'oneOf string|integer',
+			shape: oneOfShape(stringShape({ min: 1 }), integerShape({ min: 0 })),
+			samples: ['x', 3, '', -1, true, null],
+		},
+		{
+			name: 'const object',
+			shape: constShape({ kind: 'a', n: 1 }),
+			samples: [{ kind: 'a', n: 1 }, { kind: 'a', n: 2 }, { kind: 'a' }, 'x'],
+		},
+	]
+
+	for (const { name, shape, samples } of cases) {
+		it(`agrees for ${name}`, () => {
+			const schema = compileSchema(shape)
+			const fromShape = compileGuard(shape)
+			const fromSchema = compileSchemaGuard(schema)
+			for (const sample of samples) {
+				expect(
+					fromSchema(sample),
+					`mismatch for ${name} sample ${JSON.stringify(sample)}`,
+				).toBe(fromShape(sample))
+			}
+		})
+	}
+
+	it('recursive shape round-trips (compileSchema lazy -> $defs -> guard)', () => {
+		// A recursive contract shape: list with a `next` that is the shape itself.
+		const properties: Record<string, ContractShape> = {
+			value: stringShape({ min: 1 }),
+		}
+		const listShape = objectShape(properties, { additionalProperties: false })
+		properties['next'] = optionalShape({
+			type: 'lazy',
+			thunk: () => listShape,
+		})
+		const schema = compileSchema(listShape)
+		const fromSchema = compileSchemaGuard(schema)
+		const fromShape = compileGuard(listShape)
+		const samples: readonly unknown[] = [
+			{ value: 'a' },
+			{ value: 'a', next: { value: 'b' } },
+			{ value: 'a', next: { value: 'b', next: { value: 'c' } } },
+			{ value: '' },
+			{ value: 'a', next: { value: 1 } },
+		]
+		for (const sample of samples) {
+			expect(fromSchema(sample)).toBe(fromShape(sample))
+		}
 	})
 })
