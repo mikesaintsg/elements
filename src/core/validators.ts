@@ -1,4 +1,4 @@
-import { MAX_JSON_DEPTH, STRUCTURED_SCHEMA_KEYWORDS } from './constants.js'
+import { MAX_RECURSION_DEPTH, STRUCTURED_SCHEMA_KEYWORDS } from './constants.js'
 import { attempt, enumerableSymbolCount, isConstructor } from './helpers.js'
 import type {
 	AnyAsyncFunction,
@@ -600,12 +600,12 @@ export function isJsonPrimitive(value: unknown): boolean {
 //     already terminates true cycles; the depth cap only defends against a
 //     pathologically deep BUT acyclic graph that the WeakSet cannot catch
 //     (no repeated reference) yet would still overflow the native stack. The
-//     bound itself (`MAX_JSON_DEPTH`) and its empirical rationale are
+//     bound itself (`MAX_RECURSION_DEPTH`) and its empirical rationale are
 //     centralized in `constants.ts`.
 
 function isJsonValueInner(value: unknown, seen: WeakSet<object>, depth: number): boolean {
 	if (isJsonPrimitive(value)) return true
-	if (depth > MAX_JSON_DEPTH) return false
+	if (depth > MAX_RECURSION_DEPTH) return false
 	if (Array.isArray(value)) {
 		if (seen.has(value)) return false
 		seen.add(value)
@@ -821,7 +821,7 @@ export function isJsonSchemaStringArrayMapValue(value: unknown): value is JsonSc
 
 function isJsonSchemaInner(value: unknown, seen: WeakSet<object>, depth: number): boolean {
 	if (isBoolean(value)) return true
-	if (depth > MAX_JSON_DEPTH) return false
+	if (depth > MAX_RECURSION_DEPTH) return false
 	if (!isRecord(value)) return false
 	if (seen.has(value)) return false
 	seen.add(value)

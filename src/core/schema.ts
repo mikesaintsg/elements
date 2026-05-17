@@ -26,13 +26,7 @@ import {
 	unionShape,
 } from './shapers.js'
 import { compileParser } from './compilers.js'
-import {
-	EMAIL_FORMAT,
-	MAX_DATA_DEPTH,
-	MAX_REF_DEPTH,
-	URI_FORMAT,
-	UUID_FORMAT,
-} from './constants.js'
+import { EMAIL_FORMAT, MAX_RECURSION_DEPTH, URI_FORMAT, UUID_FORMAT } from './constants.js'
 import { isExternalRef, isMultipleOf, unescapeToken } from './helpers.js'
 import { isJsonSchema, isRecord } from './validators.js'
 
@@ -114,15 +108,16 @@ import { isJsonSchema, isRecord } from './validators.js'
 //     finite DATA at guard time. The `thunk()` itself is idempotent and
 //     always terminates (it follows pointers, never re-enters a body).
 //
-//  4. DEPTH BACKSTOP — `MAX_REF_DEPTH`, the B5 `MAX_JSON_DEPTH` analogue.
+//  4. DEPTH BACKSTOP — `MAX_RECURSION_DEPTH`, the shared package-wide
+//     stack-safety ceiling.
 //
 //     Cycle detection terminates every TRUE cycle. The depth cap only
 //     defends a pathologically long but ACYCLIC `$ref` chain
 //     (`Rn → R(n-1) → … → R0`, no repeated pointer) that the ancestor set
 //     cannot catch yet would still overflow the native stack. Exceeding it
 //     converts that into a precise §13 `Error` (naming the chain) instead
-//     of a bare `RangeError`. The bound itself (`MAX_REF_DEPTH`) and its
-//     rationale are centralized in `constants.ts`.
+//     of a bare `RangeError`. The bound itself (`MAX_RECURSION_DEPTH`) and
+//     its rationale are centralized in `constants.ts`.
 //
 //  5. `$defs` AND legacy `definitions` — BOTH resolve.
 //
@@ -284,9 +279,9 @@ export function resolveRef(root: JsonSchema, pointer: string): JsonSchemaDefinit
  * detection): a `$ref` chain that loops purely through `$ref`s with no
  * concrete body ANYWHERE in the loop is detected here by pointer-revisit
  * and converted into a precise §13 `Error` (consistent with the
- * `external $ref unsupported` / missing-pointer / `MAX_REF_DEPTH` throws).
- * `depth` is the `MAX_REF_DEPTH` backstop for a long ACYCLIC chain; a
- * pure-ref CYCLE shorter than the bound throws the cycle error first
+ * `external $ref unsupported` / missing-pointer / `MAX_RECURSION_DEPTH`
+ * throws). `depth` is the `MAX_RECURSION_DEPTH` backstop for a long ACYCLIC
+ * chain; a pure-ref CYCLE shorter than the bound throws the cycle error first
  * (pointer-revisit fires before the depth cap).
  */
 function canonicalize(root: JsonSchema, pointer: string): { pointer: string; node: JsonSchema } {
@@ -297,9 +292,9 @@ function canonicalize(root: JsonSchema, pointer: string): { pointer: string; nod
 	let depth = 0
 	while (typeof node !== 'boolean' && typeof node.$ref === 'string') {
 		depth += 1
-		if (depth > MAX_REF_DEPTH) {
+		if (depth > MAX_RECURSION_DEPTH) {
 			throw new Error(
-				`$ref chain exceeded MAX_REF_DEPTH (${MAX_REF_DEPTH}) starting at: ${pointer}`,
+				`$ref chain exceeded the maximum depth (${MAX_RECURSION_DEPTH}) starting at: ${pointer}`,
 			)
 		}
 		const nextRef = node.$ref
@@ -341,8 +336,8 @@ function canonicalize(root: JsonSchema, pointer: string): { pointer: string; nod
  *   concrete (non-`$ref`) node or boolean. Always returns a concrete node or
  *   boolean, ELSE throws a precise §13 `Error`. Use for finite,
  *   non-recursive positions. Throws on an unresolvable/external pointer, a
- *   non-cyclic chain exceeding `MAX_REF_DEPTH`, or a pure-`$ref`-only cycle
- *   (message: `circular $ref with no concrete schema: …`).
+ *   non-cyclic chain exceeding `MAX_RECURSION_DEPTH`, or a pure-`$ref`-only
+ *   cycle (message: `circular $ref with no concrete schema: …`).
  * - `lazy(pointer)` — the CYCLE-BROKEN form: returns a {@link LazyRef}
  *   indirection. This is the JSON-Schema mirror of D3's `lazyShape` thunk
  *   memoization and the EXACT contract E2–E4 build a RECURSIVE compiled
@@ -451,17 +446,17 @@ export function createRefResolver(root: JsonSchema): RefResolver {
 //     forward `compileGuard` arm semantics (parity anchor).
 //
 //  2. ERROR SPLIT (§13). A malformed SCHEMA (unresolvable / external /
-//     pure-`$ref`-only-cycle / `MAX_REF_DEPTH`) is a PROGRAMMER ERROR caught
-//     at COMPILE time — E1's precise `Error`s propagate (fail-fast, exactly
+//     pure-`$ref`-only-cycle / `MAX_RECURSION_DEPTH`) is a PROGRAMMER ERROR
+//     caught at COMPILE time — E1's precise `Error`s propagate (fail-fast, exactly
 //     like `compileGuard`/`compileSchema` on a malformed shape). The
 //     PRODUCED guard, by contrast, NEVER throws on ANY runtime input
 //     (cyclic data, throwing getters, pathological depth): it returns
 //     `false`. Strategy: every property read goes through `safeGet` (a
 //     `try`-wrapped `Reflect.get`, so a throwing getter is `false` not a
 //     thrown error), and the recursive evaluator threads an ANCESTOR set +
-//     a `MAX_DATA_DEPTH` cap (the B5 `MAX_JSON_DEPTH` analogue) so cyclic
-//     or pathologically deep DATA terminates with `false` rather than a
-//     native stack overflow.
+//     a `MAX_RECURSION_DEPTH` cap (the shared package-wide stack-safety
+//     ceiling) so cyclic or pathologically deep DATA terminates with `false`
+//     rather than a native stack overflow.
 //
 //  3. RECURSIVE `$ref` (D3 mirror). A `Map<pointer, Matcher>` memoizes the
 //     compiled matcher per canonical pointer. On the FIRST visit to a
@@ -525,7 +520,7 @@ export function createRefResolver(root: JsonSchema): RefResolver {
  * @remarks
  * `seen` is the ANCESTOR set of object/array values on the active evaluation
  * path (added on entry, removed on exit — a true back-edge detector, exactly
- * like validators' `isJsonValueInner`). `depth` is the `MAX_DATA_DEPTH`
+ * like validators' `isJsonValueInner`). `depth` is the `MAX_RECURSION_DEPTH`
  * backstop. A matcher NEVER throws (§13): a defect in the input yields
  * `false`.
  */
@@ -641,7 +636,7 @@ function matchesFormat(format: string, value: string): boolean {
  * Error model (AGENTS.md §13, two halves):
  *
  * - A malformed SCHEMA (unresolvable / external / pure-`$ref`-only-cycle /
- *   `MAX_REF_DEPTH`) is a PROGRAMMER ERROR thrown at COMPILE time — E1's
+ *   `MAX_RECURSION_DEPTH`) is a PROGRAMMER ERROR thrown at COMPILE time — E1's
  *   precise `Error`s propagate (fail-fast, mirroring `compileGuard`).
  * - The PRODUCED guard NEVER throws on ANY runtime input: cyclic data,
  *   throwing getters, and pathological depth all return `false`.
@@ -734,7 +729,7 @@ function compileNode(
  * closure is installed BEFORE the referenced body is compiled, so the
  * recursive descent that re-enters this `$ref` gets the cache hit. `thunk()`
  * always returns a concrete non-`$ref` node OR throws a precise §13 `Error`
- * (pure-`$ref`-only cycle / external / missing / `MAX_REF_DEPTH`) — that
+ * (pure-`$ref`-only cycle / external / missing / `MAX_RECURSION_DEPTH`) — that
  * propagates at COMPILE time (fail-fast).
  */
 function compileRef(
@@ -753,7 +748,7 @@ function compileRef(
 	// non-`$ref` keyword recurses into strictly-smaller sub-values). This
 	// mirrors validators' `isJsonValueInner`: an object/array value already
 	// on the active path is a genuine back-edge → `false` (NOT a thrown
-	// `RangeError`); the `MAX_DATA_DEPTH` cap defends a pathologically deep
+	// `RangeError`); the `MAX_RECURSION_DEPTH` cap defends a pathologically deep
 	// but ACYCLIC input the ancestor set cannot catch.
 	const deferred: SchemaMatcher = (value, seen, depth) => {
 		if (resolved === undefined) {
@@ -762,7 +757,7 @@ function compileRef(
 			// mirrors compileGuard). Reached lazily on first DATA use.
 			resolved = compileNode(indirection.thunk(), resolver, pointerCache)
 		}
-		if (depth > MAX_DATA_DEPTH) {
+		if (depth > MAX_RECURSION_DEPTH) {
 			return false
 		}
 		if (typeof value === 'object' && value !== null) {
@@ -1391,7 +1386,7 @@ type ShapeCache = Map<string, ContractShape>
  * Error model (AGENTS.md §13):
  *
  * - A malformed SCHEMA (unresolvable / external / pure-`$ref`-only-cycle /
- *   `MAX_REF_DEPTH`) is a PROGRAMMER ERROR thrown at COMPILE time — E1's
+ *   `MAX_RECURSION_DEPTH`) is a PROGRAMMER ERROR thrown at COMPILE time — E1's
  *   precise `Error`s propagate (fail-fast, mirroring `compileSchemaGuard`).
  * - A boolean `false` schema is UNSUPPORTED (no "never" shape in the DSL) ->
  *   a precise compile-time `Error`.
@@ -1475,7 +1470,7 @@ function shapeFromNode(
  * self-reference resolves to ONE shape and the recursion is realised only
  * over finite DATA at guard/parse time (D3). `thunk()` always returns a
  * concrete non-`$ref` node OR throws a precise §13 `Error`
- * (pure-`$ref`-only cycle / external / missing / `MAX_REF_DEPTH`) — that
+ * (pure-`$ref`-only cycle / external / missing / `MAX_RECURSION_DEPTH`) — that
  * propagates at COMPILE time (fail-fast).
  *
  * EVERY `$ref` is wrapped in a `lazyShape` (recursive or not): a `lazyShape`
@@ -2004,7 +1999,7 @@ function applyObjectDescription(
 //  4. §13 ERROR SPLIT — unchanged from E2/E3, propagated through the
 //     derivation:
 //       * A malformed SCHEMA (unresolvable / external / pure-`$ref`-only
-//         cycle / `MAX_REF_DEPTH`) and the `false` boolean schema are
+//         cycle / `MAX_RECURSION_DEPTH`) and the `false` boolean schema are
 //         PROGRAMMER ERRORS thrown at COMPILE time — they propagate from
 //         `compileSchemaShape` (E3) BEFORE `compileParser` ever runs.
 //       * The PRODUCED parser NEVER throws on bad runtime input: it returns
@@ -2066,7 +2061,7 @@ function applyObjectDescription(
  * Error model (AGENTS.md §13):
  *
  * - A malformed SCHEMA (unresolvable / external / pure-`$ref`-only cycle /
- *   `MAX_REF_DEPTH`) and the `false` boolean schema are PROGRAMMER ERRORS
+ *   `MAX_RECURSION_DEPTH`) and the `false` boolean schema are PROGRAMMER ERRORS
  *   thrown at COMPILE time — E1/E3's precise `Error`s propagate from
  *   `compileSchemaShape` before any input is parsed.
  * - The produced parser NEVER throws on bad runtime input: it returns

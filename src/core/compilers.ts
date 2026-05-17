@@ -9,7 +9,7 @@ import type {
 	ObjectShape,
 	RandomFunction,
 } from './types.js'
-import { MAX_LAZY_DATA_DEPTH, MAX_LAZY_DEPTH, MAX_ONEOF_ATTEMPTS } from './constants.js'
+import { MAX_LAZY_DEPTH, MAX_ONEOF_ATTEMPTS, MAX_RECURSION_DEPTH } from './constants.js'
 import {
 	assertAcyclicShape,
 	flattenIntersectionObjects,
@@ -260,7 +260,7 @@ function mergeIntersectionObjectSchema(
 //     under two distinct keys/positions (a DAG, perfectly valid finite data)
 //     — is fully validated and removed before its second occurrence is
 //     reached, so it is never mis-flagged as a cycle.
-//  2. `MAX_LAZY_DATA_DEPTH` — a secondary stack-safety backstop. Precise
+//  2. `MAX_RECURSION_DEPTH` — a secondary stack-safety backstop. Precise
 //     cycle detection already terminates every TRUE cycle; this cap only
 //     defends a pathologically deep BUT ACYCLIC recursive value (no repeated
 //     reference for the ancestor set to catch) that would still overflow the
@@ -1014,7 +1014,7 @@ function compileGuardInner(
 			// terminates naturally because the data is finite (each level
 			// calls the one shared compiled guard on a strictly smaller
 			// sub-value). FU1 adds the runtime DATA cycle/depth wrapper
-			// below (see the `MAX_LAZY_DATA_DEPTH` block) so an ADVERSARIAL
+			// below (see the `MAX_RECURSION_DEPTH` block) so an ADVERSARIAL
 			// cyclic / pathologically-deep value yields `false` (§13 NEVER
 			// throw) instead of a `RangeError` out of the guard.
 			const cached = lazyCache.map.get(shape.thunk)
@@ -1035,7 +1035,7 @@ function compileGuardInner(
 				if (!isTrackableObject(value)) {
 					return resolved(value)
 				}
-				if (cycle.ancestors.has(value) || cycle.depth >= MAX_LAZY_DATA_DEPTH) {
+				if (cycle.ancestors.has(value) || cycle.depth >= MAX_RECURSION_DEPTH) {
 					return false
 				}
 				cycle.ancestors.add(value)
@@ -1622,7 +1622,7 @@ function compileParserInner(
 				if (!isTrackableObject(value)) {
 					return resolved(value)
 				}
-				if (cycle.ancestors.has(value) || cycle.depth >= MAX_LAZY_DATA_DEPTH) {
+				if (cycle.ancestors.has(value) || cycle.depth >= MAX_RECURSION_DEPTH) {
 					return undefined
 				}
 				cycle.ancestors.add(value)

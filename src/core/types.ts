@@ -302,9 +302,9 @@ export interface LazyRef {
  * never a native stack overflow and never a still-unresolved `$ref` node.
  *
  * Precise §13 `Error` cases: unresolvable or external pointer; a non-cyclic
- * chain exceeding `MAX_REF_DEPTH` (the B5 `MAX_JSON_DEPTH` analogue); and a
- * `$ref` chain forming a pure-`$ref`-only cycle (no concrete body anywhere
- * in the loop, e.g. `A.$ref→B`, `B.$ref→A`) — message:
+ * chain exceeding `MAX_RECURSION_DEPTH` (the shared package-wide stack-safety
+ * ceiling); and a `$ref` chain forming a pure-`$ref`-only cycle (no concrete
+ * body anywhere in the loop, e.g. `A.$ref→B`, `B.$ref→A`) — message:
  * `circular $ref with no concrete schema: #/$defs/A -> #/$defs/B -> #/$defs/A`.
  */
 export interface RefResolver {

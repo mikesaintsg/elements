@@ -18,7 +18,8 @@
 //     RECURSIVE `$ref` (`#/$defs/Node` → itself) yields a recursive — not
 //     infinite — resolution a downstream compiler turns into a recursive
 //     guard, exactly like D3 `lazyShape`. A pointer chain longer than
-//     `MAX_REF_DEPTH` (the B5-`MAX_JSON_DEPTH` analogue) throws precisely.
+//     `MAX_RECURSION_DEPTH` (the shared package-wide stack-safety ceiling)
+//     throws precisely.
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
@@ -412,13 +413,13 @@ describe('createRefResolver — pure-$ref-only cycle (no concrete body) throws p
 	})
 })
 
-// === createRefResolver — depth backstop (B5 `MAX_JSON_DEPTH` analogue)
+// === createRefResolver — depth backstop (`MAX_RECURSION_DEPTH`)
 
 describe('createRefResolver — pathological non-cyclic ref chain', () => {
 	it('a `$ref` chain longer than the depth bound throws precisely', () => {
 		// Build a long acyclic chain Rn → R(n-1) → … → R0 (a leaf). No
 		// repeated pointer, so cycle detection cannot fire — only the
-		// MAX_REF_DEPTH backstop converts this into a precise throw rather
+		// MAX_RECURSION_DEPTH backstop converts this into a precise throw rather
 		// than a native stack overflow.
 		const defs: Record<string, JsonSchema> = { R0: { type: 'string' } }
 		for (let i = 1; i <= 5000; i += 1) {
@@ -1497,7 +1498,7 @@ describe('compileSchemaShape — $ref / recursive $ref -> lazyShape', () => {
 	it('recursive $ref shape is the canonical lazyShape pattern; cyclic DATA is now guard-false (FU1), still equal to canonical', () => {
 		// FU1: the forward `compileGuard` D3 `'lazy'` arm is now
 		// cyclic-DATA-safe at the lazy boundary (ancestor-WeakSet +
-		// MAX_LAZY_DATA_DEPTH backstop, the §13 fix). E3's
+		// MAX_RECURSION_DEPTH backstop, the §13 fix). E3's
 		// produced shape has the IDENTICAL recursion profile (one stable
 		// `lazyShape` thunk per `$ref` pointer) as the canonical sanctioned
 		// pattern, so BOTH now return `false` on self-cyclic data, NEVER
@@ -2351,7 +2352,7 @@ describe('compileSchemaParser — recursive $ref non-explosive (compile + finite
 	it('recursive $ref parser on self-cyclic DATA is now undefined (FU1), still equal to the canonical lazyShape pattern', () => {
 		// FU1: the forward `compileParser` D3 `'lazy'` arm is now
 		// cyclic-DATA-safe at the lazy boundary (ancestor-WeakSet +
-		// MAX_LAZY_DATA_DEPTH backstop, the §13 fix).
+		// MAX_RECURSION_DEPTH backstop, the §13 fix).
 		// E4's produced shape has the IDENTICAL recursion profile (one stable
 		// `lazyShape` thunk per `$ref` pointer) as the canonical sanctioned
 		// pattern, so BOTH now return `undefined` (parse failure) on
