@@ -1,3 +1,5 @@
+import type { Placement, TableSortDirection } from './types.js'
+
 // ============================================================================
 //  Browser-side constants shared across composables / factories.
 //
@@ -316,3 +318,86 @@ export const TREE_EVENTS = {
 	select: 'elements:tree:select',
 	move: 'elements:tree:move',
 } as const
+
+// ── Relocated impl-file constants ───────────────────────────────────────────
+
+/** Selector for the dismiss control inside an alert. Authors mark a
+ *  child element with this attribute (typically a `<button>`); a click on
+ *  any descendant triggers `hide()`. Replaces Bootstrap's `.btn-close`. */
+export const ALERT_DISMISS_SELECTOR = '[data-alert-dismiss]'
+
+/** State classes the factory writes onto each `[data-index]` row.
+ *  Authors hook these for visual feedback in their own CSS. */
+export const DRAG_ROW_CLASSES: readonly string[] = [
+	'dragging',
+	'selected',
+	'drop-target',
+	'drop-indicator',
+	'drop-indicator-before',
+	'drop-indicator-after',
+] as const
+
+/** `[data-form-validated]` is set on the form once `check()` / `report()` /
+ *  `submit` has run. Replaces Bootstrap's `.was-validated` class — same
+ *  contract, attribute-based for our element-IS-component model. */
+export const FORM_VALIDATED_ATTR = 'data-form-validated'
+
+// Inner panel selector — the expansion `<tr>`'s `<td>` carries one element
+// flagged with `[data-table-expansion-panel]` that owns visibility. Replaces
+// the previous Bootstrap `.collapse` class soup.
+export const PANEL_ATTR = 'data-table-expansion-panel'
+export const PANEL_SELECTOR = `[${PANEL_ATTR}]`
+export const RESIZE_HANDLE_ATTR = 'data-table-resize-handle'
+export const RESIZE_HANDLE_SELECTOR = `thead th [${RESIZE_HANDLE_ATTR}]`
+export const ARIA_SORT_VALUE: Record<TableSortDirection, string> = {
+	asc: 'ascending',
+	desc: 'descending',
+	none: 'none',
+}
+
+/** All kebab-case segments containing no abbreviations and no digits-only segments. */
+export const SEGMENT = '[a-z][a-z0-9]*'
+
+// CSS `position-area` value per `Placement`. Single-side variants stay
+// centered; aligned variants use `span-*` so the panel keeps a flat edge
+// against the anchor (`bottom-start` = below + start-aligned, not the corner
+// cell). Logical `start` / `end` map to physical `left` / `right` because
+// Chromium's `position-area` parser only accepts the physical keywords today.
+export const PLACEMENT_AREAS: Readonly<Record<Placement, string>> = {
+	top: 'top',
+	'top-start': 'top span-right',
+	'top-end': 'top span-left',
+	bottom: 'bottom',
+	'bottom-start': 'bottom span-right',
+	'bottom-end': 'bottom span-left',
+	end: 'right',
+	'end-start': 'right span-bottom',
+	'end-end': 'right span-top',
+	start: 'left',
+	'start-start': 'left span-bottom',
+	'start-end': 'left span-top',
+}
+
+// `align-self` / `justify-self` per `Placement`. Mirrors mailbox's
+// `$placements` map in `_mixins.scss`. The surface default
+// (`align-self: start; justify-self: anchor-center`) only happens to be
+// correct for the `'bottom'` placement — every aligned placement
+// (`bottom-start`, `top-end`, etc.) needs an explicit override or it
+// inherits the surface default and visually CENTERS on the anchor or
+// drifts to the wrong edge of the position-area band. Composables write
+// these inline alongside `position-area` so the placement contract is
+// self-contained per panel.
+export const PLACEMENT_SELFS: Readonly<Record<Placement, readonly [string, string]>> = {
+	top: ['end', 'anchor-center'],
+	'top-start': ['end', 'start'],
+	'top-end': ['end', 'end'],
+	bottom: ['start', 'anchor-center'],
+	'bottom-start': ['start', 'start'],
+	'bottom-end': ['start', 'end'],
+	end: ['anchor-center', 'start'],
+	'end-start': ['start', 'start'],
+	'end-end': ['end', 'start'],
+	start: ['anchor-center', 'end'],
+	'start-start': ['start', 'end'],
+	'start-end': ['end', 'end'],
+}

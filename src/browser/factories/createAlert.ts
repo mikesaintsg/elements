@@ -1,12 +1,7 @@
 import type { CreateAlertInstance, CreateAlertOptions } from '../types.js'
 import { effectScope, readonly, ref } from '@vue/reactivity'
-import { ALERT_EVENTS } from '../constants.js'
+import { ALERT_DISMISS_SELECTOR, ALERT_EVENTS } from '../constants.js'
 import { attachListeners, bindEventMap, dispatch, emit, runTransition } from '../helpers.js'
-
-/** Selector for the dismiss control inside an alert. Authors mark a
- *  child element with this attribute (typically a `<button>`); a click on
- *  any descendant triggers `hide()`. Replaces Bootstrap's `.btn-close`. */
-const ALERT_DISMISS_SELECTOR = '[data-alert-dismiss]'
 
 /**
  * Framework-agnostic dismissible alert factory. Owns the visible-state

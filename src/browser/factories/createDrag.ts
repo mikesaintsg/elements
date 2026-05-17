@@ -9,19 +9,8 @@ import type {
 	DropPosition,
 } from '../types.js'
 import { effectScope, readonly, ref } from '@vue/reactivity'
-import { DRAG_EVENTS } from '../constants.js'
+import { DRAG_EVENTS, DRAG_ROW_CLASSES } from '../constants.js'
 import { emit, extractRow, extractRows, indexOfRow, listen } from '../helpers.js'
-
-/** State classes the factory writes onto each `[data-index]` row.
- *  Authors hook these for visual feedback in their own CSS. */
-const DRAG_ROW_CLASSES: readonly string[] = [
-	'dragging',
-	'selected',
-	'drop-target',
-	'drop-indicator',
-	'drop-indicator-before',
-	'drop-indicator-after',
-] as const
 
 /**
  * Framework-agnostic native drag-source / drop-target factory — wraps the

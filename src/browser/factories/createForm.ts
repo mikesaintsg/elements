@@ -9,7 +9,7 @@ import type {
 	FormValidityInterface,
 } from '../types.js'
 import { effectScope, readonly, ref } from '@vue/reactivity'
-import { FORM_EVENTS } from '../constants.js'
+import { FORM_EVENTS, FORM_VALIDATED_ATTR } from '../constants.js'
 import {
 	assertElement,
 	bindEventMap,
@@ -22,11 +22,6 @@ import {
 	readFormFields,
 	readFormNames,
 } from '../helpers.js'
-
-/** `[data-form-validated]` is set on the form once `check()` / `report()` /
- *  `submit` has run. Replaces Bootstrap's `.was-validated` class — same
- *  contract, attribute-based for our element-IS-component model. */
-const FORM_VALIDATED_ATTR = 'data-form-validated'
 
 /**
  * Framework-agnostic native form controller. Tracks form data, field

@@ -33,6 +33,10 @@ import {
 	shallowReactive,
 } from '@vue/reactivity'
 import {
+	ARIA_SORT_VALUE,
+	PANEL_SELECTOR,
+	RESIZE_HANDLE_ATTR,
+	RESIZE_HANDLE_SELECTOR,
 	TABLE_ARIA_ROWCOUNT,
 	TABLE_ARIA_SORT,
 	TABLE_EVENTS,
@@ -67,19 +71,6 @@ import {
 	writeTableRow,
 } from '../helpers.js'
 import { createPointer } from './createPointer.js'
-
-// Inner panel selector — the expansion `<tr>`'s `<td>` carries one element
-// flagged with `[data-table-expansion-panel]` that owns visibility. Replaces
-// the previous Bootstrap `.collapse` class soup.
-const PANEL_ATTR = 'data-table-expansion-panel'
-const PANEL_SELECTOR = `[${PANEL_ATTR}]`
-const RESIZE_HANDLE_ATTR = 'data-table-resize-handle'
-const RESIZE_HANDLE_SELECTOR = `thead th [${RESIZE_HANDLE_ATTR}]`
-const ARIA_SORT_VALUE: Record<TableSortDirection, string> = {
-	asc: 'ascending',
-	desc: 'descending',
-	none: 'none',
-}
 
 /**
  * Framework-agnostic native table controller. Reads and mutates semantic

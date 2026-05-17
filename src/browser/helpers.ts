@@ -40,6 +40,8 @@ import type {
 } from './types.js'
 import {
 	BODY_LOCKED_ATTR,
+	PLACEMENT_AREAS,
+	PLACEMENT_SELFS,
 	POPOVER_SIDE_SET,
 	TABLE_ARIA_ROWCOUNT,
 	TABLE_ARIA_ROWINDEX,
@@ -796,53 +798,9 @@ export function makePlacement(side: Side, align: Alignment | null): Placement {
 	return align ? `${side}-${align}` : side
 }
 
-// CSS `position-area` value per `Placement`. Single-side variants stay
-// centered; aligned variants use `span-*` so the panel keeps a flat edge
-// against the anchor (`bottom-start` = below + start-aligned, not the corner
-// cell). Logical `start` / `end` map to physical `left` / `right` because
-// Chromium's `position-area` parser only accepts the physical keywords today.
-const PLACEMENT_AREAS: Readonly<Record<Placement, string>> = {
-	top: 'top',
-	'top-start': 'top span-right',
-	'top-end': 'top span-left',
-	bottom: 'bottom',
-	'bottom-start': 'bottom span-right',
-	'bottom-end': 'bottom span-left',
-	end: 'right',
-	'end-start': 'right span-bottom',
-	'end-end': 'right span-top',
-	start: 'left',
-	'start-start': 'left span-bottom',
-	'start-end': 'left span-top',
-}
-
 /** Translate a `Placement` to a CSS `position-area` value. */
 export function areaForPopoverPlacement(placement: Placement): string {
 	return PLACEMENT_AREAS[placement] ?? PLACEMENT_AREAS.bottom
-}
-
-// `align-self` / `justify-self` per `Placement`. Mirrors mailbox's
-// `$placements` map in `_mixins.scss`. The surface default
-// (`align-self: start; justify-self: anchor-center`) only happens to be
-// correct for the `'bottom'` placement — every aligned placement
-// (`bottom-start`, `top-end`, etc.) needs an explicit override or it
-// inherits the surface default and visually CENTERS on the anchor or
-// drifts to the wrong edge of the position-area band. Composables write
-// these inline alongside `position-area` so the placement contract is
-// self-contained per panel.
-const PLACEMENT_SELFS: Readonly<Record<Placement, readonly [string, string]>> = {
-	top: ['end', 'anchor-center'],
-	'top-start': ['end', 'start'],
-	'top-end': ['end', 'end'],
-	bottom: ['start', 'anchor-center'],
-	'bottom-start': ['start', 'start'],
-	'bottom-end': ['start', 'end'],
-	end: ['anchor-center', 'start'],
-	'end-start': ['start', 'start'],
-	'end-end': ['end', 'start'],
-	start: ['anchor-center', 'end'],
-	'start-start': ['start', 'end'],
-	'start-end': ['end', 'end'],
 }
 
 /** `[alignSelf, justifySelf]` pair for a popover `Placement`. */

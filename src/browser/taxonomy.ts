@@ -1,3 +1,5 @@
+import { SEGMENT } from './constants.js'
+
 // ============================================================================
 // HTML Taxonomy Registry (TS mirror)
 //
@@ -310,9 +312,6 @@ export function describeTag(tag: string): TaxonomyEntry | null {
 //                       elevation, icon, floater, anchor, … see
 //                       tokens.ts § "Framework defaults that have no
 //                       Tailwind equivalent").
-
-/** All kebab-case segments containing no abbreviations and no digits-only segments. */
-const SEGMENT = '[a-z][a-z0-9]*'
 
 /** Element-scoped token regex: `--set-{tag}-{property...}`. */
 export const TOKEN_NAME_ELEMENT = new RegExp(`^--set-(${SEGMENT})-(${SEGMENT}(?:-${SEGMENT})*)$`)
