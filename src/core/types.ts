@@ -239,6 +239,69 @@ export interface JsonSchemaObject extends JsonSchemaDefinition {
 	readonly dependentSchemas?: JsonSchemaMap
 }
 
+// === JSON Schema — INVERSE subsystem ($ref/$defs resolution, E1)
+
+/**
+ * A lazily-resolvable, cycle-broken view of one `$ref` target — the recursion
+ * boundary the inverse subsystem (E2 schema→guard, E3 schema→shape, E4
+ * schema→parser) builds recursive compiled functions on.
+ *
+ * @remarks
+ * This is the JSON-Schema `$ref` analogue of {@link LazyShape}: it is the
+ * single sanctioned mechanism for a self-referential schema to be walked
+ * WITHOUT infinite recursion. A naive resolver that eagerly follows every
+ * `$ref` stack-overflows on a recursive schema (`#/$defs/Node` whose child is
+ * `{ $ref: '#/$defs/Node' }`); {@link RefResolver.lazy} instead returns this
+ * indirection so a consumer can build a recursive guard/shape/parser exactly
+ * the way D3's `compileGuard` memoizes a {@link LazyShape}'s thunk (install a
+ * deferred closure BEFORE compiling the inner; the self-reference reuses the
+ * one compiled function instead of recursing).
+ *
+ * Contract E2–E4 rely on:
+ *
+ * - `pointer` — the CANONICAL (fully-unescaped, ref-followed) JSON Pointer the
+ *   target lives at. Two `$ref`s reaching the same node yield the same
+ *   `pointer`, so a consumer can memoize compiled artifacts by it (the
+ *   `Map`-keyed-by-thunk strategy from D3, keyed here by `pointer`).
+ * - `thunk()` — returns the resolved target {@link JsonSchema} (a non-`$ref`
+ *   node, or a boolean schema). Invoking it is idempotent and ALWAYS
+ *   terminates, even for a self-referential target: the back-edge is broken
+ *   here, not followed. A consumer calls `thunk()` lazily (on first use of the
+ *   recursive position) so the deferral closes the static cycle.
+ * - `cyclic` — `true` iff this indirection was produced for a pointer ALREADY
+ *   on the active resolution path (a genuine recursive back-edge). `false` on
+ *   the first visit. A consumer that sees `cyclic === true` knows it must
+ *   reuse the in-progress compiled artifact for `pointer` (build a recursive
+ *   guard) rather than recurse into the body again.
+ */
+export interface LazyRef {
+	readonly pointer: string
+	readonly cyclic: boolean
+	thunk(): JsonSchema
+}
+
+/**
+ * A cycle-safe `$ref`/`$defs` resolver bound to one JSON-Schema document — the
+ * foundation the inverse subsystem (E2–E4) walks a schema with.
+ *
+ * @remarks
+ * Built by {@link createRefResolver}. `root` is the document every pointer is
+ * resolved against (the only sanctioned base — see {@link resolveRef} for the
+ * external-`$ref` policy). `resolve()` is the eager form (follow a `$ref`
+ * chain to a concrete, non-`$ref` target — used for finite, non-recursive
+ * positions); `lazy()` is the cycle-broken form (return a {@link LazyRef}
+ * indirection — used for any position that may be self-referential, so the
+ * recursion is realised over finite DATA at guard/parse time, never at
+ * resolve time). Both throw a precise §13 `Error` on an unresolvable or
+ * external pointer, and on a non-cyclic chain exceeding the documented depth
+ * bound (the B5 `MAX_JSON_DEPTH` analogue) — never a native stack overflow.
+ */
+export interface RefResolver {
+	readonly root: JsonSchema
+	resolve(pointer: string): JsonSchemaDefinition | boolean
+	lazy(pointer: string): LazyRef
+}
+
 // === Contract Shape
 
 /**
