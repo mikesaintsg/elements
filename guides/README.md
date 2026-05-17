@@ -183,6 +183,17 @@ A standalone, browser-free package: a shape DSL that compiles to JSON Schema + r
 | Unit tests                      | [`tests/src/core/`](../tests/src/core/) — [`validators.test.ts`](../tests/src/core/validators.test.ts), [`parsers.test.ts`](../tests/src/core/parsers.test.ts), [`shapers.test.ts`](../tests/src/core/shapers.test.ts), [`compilers.test.ts`](../tests/src/core/compilers.test.ts), [`schema.test.ts`](../tests/src/core/schema.test.ts) |
 | Doc parity                      | [`tests/guides/contracts.test.ts`](../tests/guides/contracts.test.ts), [`tests/guides/parsers.test.ts`](../tests/guides/parsers.test.ts), [`tests/guides/validators.test.ts`](../tests/guides/validators.test.ts), [`tests/guides/schema.test.ts`](../tests/guides/schema.test.ts) |
 
+### Traversals — native DOM walk/match primitives
+
+Pure DOM traversal + node-type guards. No Vue, no framework state; safe to import standalone.
+
+| Role            | File                                                                                                                                                                          |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spec            | [`guides/traversals.md`](traversals.md)                                                                                                                                       |
+| TS source       | [`src/browser/traversals.ts`](../src/browser/traversals.ts) + guards in [`helpers.ts`](../src/browser/helpers.ts)                                                             |
+| Behavior tests  | [`tests/src/browser/traversals.test.ts`](../tests/src/browser/traversals.test.ts), [`tests/src/browser/helpers.test.ts`](../tests/src/browser/helpers.test.ts)                |
+| Doc parity      | [`tests/guides/traversals.test.ts`](../tests/guides/traversals.test.ts)                                                                                                       |
+
 ---
 
 ## By directory
@@ -208,6 +219,7 @@ A standalone, browser-free package: a shape DSL that compiles to JSON Schema + r
 | [`parsers.md`](parsers.md)         | `@elements/core` — flat value / field / format parsers (`unknown` → typed, `undefined` on failure).      |
 | [`validators.md`](validators.md)   | `@elements/core` — runtime type guards + guard compositors.                                              |
 | [`schema.md`](schema.md)           | `@elements/core` — the inverse subsystem: JSON Schema → guard / `ContractShape` / parser, recursion-safe. |
+| [`traversals.md`](traversals.md)   | Native DOM traversal + node-type guard surface (`@elements/browser`).                                     |
 
 ### `src/browser/` — TypeScript public API
 
@@ -223,7 +235,8 @@ Frozen object trees and derived string-literal-union types. Every CSS identifier
 | [`taxonomy.ts`](../src/browser/taxonomy.ts)   | Per-tag treatment + indices (`SUBSTANTIVE_TAGS`, `COMPOSABLE_TAGS`, `TOKEN_GROUPS`, `INTERACTIVE_ELEMENTS`, `MODIFIABLE_TAGS`).                       |
 | [`patterns.ts`](../src/browser/patterns.ts)   | Per-folder contracts (`FOLDER_CONTRACTS`, `SURFACE_CONTRACTS`, `COMPONENT_CONTRACTS`, `COMPOSABLE_CONTRACTS`, …) and selector-classification helpers. |
 | [`events.ts`](../src/browser/events.ts)       | Namespaced event-name registry (`elements:{source}:{verb}`).                                                                                          |
-| [`helpers.ts`](../src/browser/helpers.ts)     | `assertElement`, `attachListeners`, focus-ring helpers, etc.                                                                                          |
+| [`helpers.ts`](../src/browser/helpers.ts)     | `assertElement`, `attachListeners`, focus-ring helpers, node-type / matching guards, etc.                                                             |
+| [`traversals.ts`](../src/browser/traversals.ts) | Native-API DOM traversal utilities. Node-type / matching guards live in `helpers.ts`.                                                               |
 | [`constants.ts`](../src/browser/constants.ts) | UPPER_SNAKE_CASE values, `*_EVENTS` maps, selector strings, storage keys.                                                                             |
 | [`theme.ts`](../src/browser/theme.ts)         | Page-global theme singleton service (`bootstrapTheme`, `themeState`, `resetTheme`); `createTheme.ts` is the thin per-caller wrapper.                  |
 | [`composables/`](../src/browser/composables/) | 20 `use{Name}.ts` Vue adapters + `index.ts` barrel.                                                                                                   |
