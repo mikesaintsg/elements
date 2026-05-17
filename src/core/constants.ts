@@ -114,6 +114,38 @@ export const MAX_ONEOF_ATTEMPTS = 64
  */
 export const CYCLIC_SHAPE_MESSAGE = 'cyclic ContractShape: use a lazy/deferred shape for recursion'
 
+// === deepEqual right-operand read-failure sentinel ==========================
+
+/**
+ * Opaque sentinel a `PropertyReader` returns from `deepEqual` (`helpers.ts`)
+ * when reading the RIGHT operand's property value FAILED (a throwing accessor
+ * on untrusted input).
+ *
+ * @remarks
+ * GENERIC, package-owned read-failure signal — deliberately NOT schema.ts'
+ * private `SAFE_GET_THREW`. `deepEqual` lives in the leaf `helpers.ts`, which
+ * may import ONLY `./types.js` + `./constants.js`; it therefore cannot know
+ * schema.ts' private sentinel. The hardened `schema.ts` reader maps its
+ * private `SAFE_GET_THREW` onto THIS shared symbol, and `deepEqual` treats it
+ * as a strict short-circuit: when the right-operand read yields `READ_FAILED`
+ * the per-key comparison returns `false` BEFORE the left operand's value is
+ * ever read — exactly reproducing pre-FU9-E `schemaValueEquals`'s
+ * `bChild === SAFE_GET_THREW ⇒ return false` arm (the left side, and array
+ * elements, are ALWAYS read directly, so a left-side throw still propagates
+ * exactly as both pre-merge originals did when they reached the left read).
+ * It lives in the package's import-free constants leaf (the established home
+ * for every `UPPER_SNAKE` module sentinel — alongside `CYCLIC_SHAPE_MESSAGE`)
+ * so the cycle-free `helpers.ts → constants.ts` edge is preserved and the
+ * `contracts.md` helper-table bijection (which scans only
+ * `shapers`/`compilers`/`helpers` for `export function|const` call-form
+ * APIs) is left untouched — identically to every other sentinel here. The
+ * DEFAULT reader (`compilers.ts` `const`, trusted-input regime) is a direct
+ * `Reflect.get` that NEVER returns this sentinel, so the `constEquals` path
+ * stays byte-identical: a throwing right-operand getter PROPAGATES, never
+ * short-circuits to `false`.
+ */
+export const READ_FAILED: unique symbol = Symbol('deepEqual.read-failed')
+
 // === Structured JSON-Schema keyword set =====================================
 
 /**

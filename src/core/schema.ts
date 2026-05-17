@@ -26,7 +26,7 @@ import {
 	unionShape,
 } from './shapers.js'
 import { compileParser } from './compilers.js'
-import { EMAIL_FORMAT, MAX_RECURSION_DEPTH, URI_FORMAT, UUID_FORMAT } from './constants.js'
+import { EMAIL_FORMAT, MAX_RECURSION_DEPTH, READ_FAILED, URI_FORMAT, UUID_FORMAT } from './constants.js'
 import { deepEqual, isExternalRef, isMultipleOf, unescapeToken } from './helpers.js'
 import { isJsonSchema, isRecord } from './validators.js'
 
@@ -559,19 +559,28 @@ const SAFE_GET_THREW: unique symbol = Symbol('safe-get-threw')
  * by `Object.is` (so `NaN` === `NaN`, `+0` ≠ `-0`, the SAME equality
  * validators' `literalOf` uses), arrays / plain records by recursive
  * structural deep-equality, `a` the trusted finite operand bounding the
- * recursion. The untrusted-input hardening stays HERE: the injected
- * {@link safeGet} `try`-wraps every right-operand plain-object property read
- * and yields the module-private {@link SAFE_GET_THREW} sentinel on a throwing
- * getter. `deepEqual` then compares that opaque sentinel against the trusted
- * `a` value; since `a` is a finite acyclic `JsonValue` (no symbols), the
- * sentinel can never structurally equal it, so the comparison reports
- * inequality — byte-identical to the previous explicit
- * `bChild === SAFE_GET_THREW ⇒ false` arm. The sentinel and its
- * throw-containment never leave this module (helpers.ts imports neither).
- * Never throws (§13) on a throwing getter on `b`.
+ * recursion. The untrusted-input hardening stays HERE: the injected reader
+ * calls the byte-unchanged {@link safeGet} (which `try`-wraps every
+ * right-operand plain-object property read and yields the module-private
+ * {@link SAFE_GET_THREW} sentinel on a throwing getter) and maps that PRIVATE
+ * sentinel onto the GENERIC `READ_FAILED` that `deepEqual` owns. `deepEqual`
+ * treats `READ_FAILED` as a strict short-circuit: the per-key comparison
+ * returns `false` BEFORE the trusted `a` value is ever read — byte-identical
+ * to pre-FU9-E `schemaValueEquals`'s explicit
+ * `bChild === SAFE_GET_THREW ⇒ return false` arm (the `a`-side getter is
+ * NEVER touched when the `b`-side read failed, so at the `uniqueItems` call
+ * site — where BOTH operands are untrusted array elements — an `a`-side
+ * throwing getter can no longer be tripped, preserving the pre-merge guard
+ * verdict). The PRIVATE `SAFE_GET_THREW` and its throw-containment never
+ * leave this module; only the generic `READ_FAILED` (a constants-leaf
+ * sentinel `helpers.ts` already imports) crosses the boundary. Never throws
+ * (§13) on a throwing getter on `b`.
  */
 function schemaValueEquals(a: unknown, b: unknown): boolean {
-	return deepEqual(a, b, safeGet)
+	return deepEqual(a, b, (object, key) => {
+		const value = safeGet(object, key)
+		return value === SAFE_GET_THREW ? READ_FAILED : value
+	})
 }
 
 // The known `format` keywords that ASSERT (best-effort) — `EMAIL_FORMAT`,

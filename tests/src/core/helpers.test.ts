@@ -27,6 +27,7 @@ import {
 	objectShape,
 	optionalShape,
 	rawShape,
+	READ_FAILED,
 	stringShape,
 	tupleShape,
 	unescapeToken,
@@ -1285,12 +1286,19 @@ function oldSchemaValueEquals(a: unknown, b: unknown): boolean {
 	return true
 }
 
-// The schema variant injects its own `safeGet`. Mirror that wiring here with
-// the test's `refSafeGet` so the merged path is exercised exactly as
-// schema.ts wires it (sentinel stays local to the reader, never leaks into
-// `deepEqual`'s leaf comparison except as an opaque value).
+// The hardened schema variant injects a reader that calls its module-private
+// `safeGet` and MAPS the private `SAFE_GET_THREW` sentinel onto the GENERIC
+// `READ_FAILED` that `deepEqual` owns and short-circuits on. This mirrors
+// schema.ts' real adapter byte-for-byte (private `REF_SAFE_GET_THREW` here
+// stands in for schema.ts' `SAFE_GET_THREW`; the public `READ_FAILED` is the
+// shared constants-leaf signal). `deepEqual` returns `false` on `READ_FAILED`
+// BEFORE reading `a`, reproducing the pre-merge
+// `bChild === SAFE_GET_THREW ⇒ return false` short-circuit exactly.
 function mergedSchemaEquals(a: unknown, b: unknown): boolean {
-	return deepEqual(a, b, refSafeGet)
+	return deepEqual(a, b, (object, key) => {
+		const value = refSafeGet(object, key)
+		return value === REF_SAFE_GET_THREW ? READ_FAILED : value
+	})
 }
 
 // Build a fresh object whose `boom` getter throws — exercises the
@@ -1405,7 +1413,7 @@ describe('deepEqual — differential equivalence vs pre-merge originals', () => 
 		expect(() => mergedSchemaEquals(a, b)).toThrow('getter exploded')
 	})
 
-	it('schema variant: throwing getter on BOTH sides — old returns false (sentinel short-circuit), merged throws, but the guard-observable outcome is IDENTICAL false', () => {
+	it('schema variant: throwing getter on BOTH sides — old returns false (b-sentinel short-circuit, a NEVER read), merged returns the SAME false WITHOUT throwing (FU9-E follow-up: the regression case)', () => {
 		const a = throwingGetter()
 		const b = throwingGetter()
 		// PRE-MERGE FACT: old `schemaValueEquals` evaluates
@@ -1413,32 +1421,75 @@ describe('deepEqual — differential equivalence vs pre-merge originals', () => 
 		// true → `return false` WITHOUT ever reading `a['boom']`. So the old
 		// function returns `false` and does NOT throw on both-sides-throw.
 		expect(oldSchemaValueEquals(a, b)).toBe(false)
-		// MERGED FACT: `deepEqual` reads `bValue = read(b,'boom')` (sentinel,
-		// no throw) FIRST, then `Reflect.get(a,'boom')` — a's getter throws
-		// and propagates. The equality function itself diverges here (throw
-		// vs `false`) ONLY for this both-sides-throw shape, which is reachable
-		// ONLY at the `uniqueItems` call site (`enum`/`const` pass a trusted
-		// throw-free `a`). It is fully contained: see the guard-level
-		// equivalence test below — `compileSchemaGuard`'s documented outer
-		// try/catch backstop turns the throw into the SAME `false` the old
-		// path returned, so the OBSERVABLE call-site behaviour is identical.
-		expect(() => mergedSchemaEquals(a, b)).toThrow('getter exploded')
+		// POST-FIX FACT: the schema-variant reader maps the private throwing-
+		// getter sentinel onto the generic `READ_FAILED`; `deepEqual` returns
+		// `false` on `READ_FAILED` BEFORE reading `a`, so `a`'s getter is NEVER
+		// invoked — the merged path returns the IDENTICAL `false` and, exactly
+		// like the old function, does NOT throw. This is a GENUINE differential
+		// (old vs new), not new-vs-new: it FAILS against the unfixed `13382b4`
+		// `deepEqual` (which evaluated `Reflect.get(a,key)` unconditionally and
+		// PROPAGATED a's throw → `.toBe(false)` would throw instead) and PASSES
+		// only after the `READ_FAILED` short-circuit is restored. RED@13382b4 /
+		// GREEN post-fix.
+		expect(mergedSchemaEquals(a, b)).toBe(false)
+		expect(() => mergedSchemaEquals(a, b)).not.toThrow()
+		// Strict parity: identical boolean from the reconstructed OLD and the
+		// merged NEW for this exact regression shape.
+		expect(mergedSchemaEquals(a, b)).toBe(oldSchemaValueEquals(a, b))
 	})
 
-	it('GUARD-LEVEL equivalence: uniqueItems over an array of two both-throwing objects yields false (the throw is masked by the documented outer backstop, identical to the pre-merge guard)', () => {
-		// This is the real observable boundary: the public compiled guard.
-		// Pre-merge, `schemaValueEquals(value[i], value[j])` returned `false`
-		// for two throwing-getter objects → `uniqueItems` matcher `false` →
-		// guard `false`. Post-merge, `deepEqual` throws internally, but
-		// `compileSchemaGuard`'s `try { … } catch { return false }` backstop
-		// (an intentional §13 defensive catch for any host exception) yields
-		// the SAME `false`. Either way the guard's boolean is `false`.
+	it('GUARD-LEVEL differential: uniqueItems over two both-throwing objects yields the SAME verdict as the reconstructed pre-FU9-E guard (ACCEPT/true) — RED@13382b4, GREEN post-fix', () => {
+		// The real observable boundary: the public compiled guard at HEAD.
+		// Model the PRE-FU9-E guard verdict by running the reconstructed
+		// verbatim old `schemaValueEquals` through the SAME `uniqueItems`
+		// algorithm schema.ts uses (pairwise i<j; a duplicate ⇒ reject). This
+		// is a GENUINE old-vs-new differential, not a tautology: the old guard
+		// verdict is COMPUTED here from the reconstructed old equality, not
+		// asserted as a hardcoded constant or an unverified prose claim.
+		function oldUniqueItemsEquivalent(value: readonly unknown[]): boolean {
+			for (let i = 0; i < value.length; i += 1) {
+				for (let j = i + 1; j < value.length; j += 1) {
+					// Pre-merge: a throwing-getter pair → old `schemaValueEquals`
+					// short-circuits on the b-side sentinel → `false` (= "not a
+					// duplicate") WITHOUT throwing, so the pair is NOT a dup.
+					if (oldSchemaValueEquals(value[i], value[j])) {
+						return false
+					}
+				}
+			}
+			return true
+		}
+
 		const guard = compileSchemaGuard({ type: 'array', uniqueItems: true })
+
+		// THE REGRESSION CASE. `[{boom:throw},{boom:throw}]`: both elements are
+		// UNTRUSTED (the `uniqueItems` site passes array elements as BOTH `a`
+		// and `b`). Pre-FU9-E the old eq returns `false` (b-sentinel, a never
+		// read) ⇒ no dup ⇒ guard ACCEPTS (`true`). The unfixed `13382b4`
+		// `deepEqual` instead threw on the a-side getter ⇒ outer catch ⇒ guard
+		// REJECTED (`false`) — OPPOSITE verdict, the soundness regression. This
+		// assertion FAILS against `13382b4` (guard returned `false` ≠ modeled
+		// `true`) and PASSES after the `READ_FAILED` short-circuit restores the
+		// b-side short-circuit (guard returns `true` === modeled `true`).
 		const arrayOfThrowers = [throwingGetter(), throwingGetter()]
-		expect(guard(arrayOfThrowers)).toBe(false)
-		// And a genuinely-unique array still passes (no false negative).
+		const oldVerdict = oldUniqueItemsEquivalent([
+			throwingGetter(),
+			throwingGetter(),
+		])
+		expect(oldVerdict).toBe(true) // pre-FU9-E modeled: ACCEPT
+		expect(guard(arrayOfThrowers)).toBe(oldVerdict) // HEAD === old verdict
+		expect(guard([throwingGetter(), throwingGetter()])).toBe(true)
+
+		// Non-throwing controls — unchanged across old/new (no regression):
+		// a genuinely-unique array still passes; a real duplicate is rejected;
+		// the modeled old verdict agrees in both directions.
+		expect(guard([{ a: 1 }, { a: 2 }])).toBe(
+			oldUniqueItemsEquivalent([{ a: 1 }, { a: 2 }]),
+		)
 		expect(guard([{ a: 1 }, { a: 2 }])).toBe(true)
-		// A duplicate pair (no throwing getters) is correctly rejected.
+		expect(guard([{ a: 1 }, { a: 1 }])).toBe(
+			oldUniqueItemsEquivalent([{ a: 1 }, { a: 1 }]),
+		)
 		expect(guard([{ a: 1 }, { a: 1 }])).toBe(false)
 	})
 

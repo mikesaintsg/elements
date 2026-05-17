@@ -6,7 +6,7 @@ import type {
 	RandomFunction,
 	Result,
 } from './types.js'
-import { CYCLIC_SHAPE_MESSAGE } from './constants.js'
+import { CYCLIC_SHAPE_MESSAGE, READ_FAILED } from './constants.js'
 
 /**
  * Invoke a user-supplied callback and capture the outcome as a {@link Result},
@@ -582,13 +582,19 @@ export function isMultipleOf(value: number, divisor: number): boolean {
  * through this strategy so the caller chooses the read discipline:
  *
  * - The default (`compilers.ts` `const`) is a direct `Reflect.get` — the
- *   trusted-input regime where a throwing accessor SHOULD propagate.
+ *   trusted-input regime where a throwing accessor SHOULD propagate. It NEVER
+ *   returns {@link READ_FAILED}, so `deepEqual`'s short-circuit is inert and
+ *   the `constEquals` path stays byte-identical (a throwing right-operand
+ *   getter propagates, exactly as the pre-merge `constEquals` did).
  * - The hardened variant (`schema.ts` `enum`/`const`/`uniqueItems`) closes
- *   over a `try`-wrapped read that returns a module-private sentinel on a
- *   throwing getter; `deepEqual` then compares that opaque sentinel against
- *   the trusted left value and reports inequality. The sentinel and its
- *   throw-containment stay entirely inside `schema.ts` — this module never
- *   imports it.
+ *   over a `try`-wrapped read that maps `schema.ts`' private throwing-getter
+ *   sentinel onto the GENERIC {@link READ_FAILED}; `deepEqual` treats
+ *   `READ_FAILED` as a strict short-circuit — the per-key comparison returns
+ *   `false` BEFORE the trusted left operand's value is ever read, exactly
+ *   reproducing pre-FU9-E `schemaValueEquals`'s
+ *   `bChild === SAFE_GET_THREW ⇒ return false` arm. `schema.ts`' private
+ *   sentinel and its throw-containment stay entirely inside `schema.ts`; this
+ *   module owns ONLY the generic `READ_FAILED` signal.
  *
  * Array elements are NOT routed through this strategy (both original
  * implementations indexed array elements directly); only RIGHT-operand
@@ -596,10 +602,10 @@ export function isMultipleOf(value: number, divisor: number): boolean {
  *
  * @param object - The right-hand operand (a plain object)
  * @param key - The own enumerable string key to read
- * @returns The opaque property value, however the strategy chooses to obtain
- *          it
+ * @returns The opaque property value, or {@link READ_FAILED} when the read
+ *          failed (the hardened variant's throwing-getter signal)
  */
-export type PropertyReader = (object: object, key: string) => unknown
+export type PropertyReader = (object: object, key: string) => unknown | typeof READ_FAILED
 
 /**
  * Recursive structural deep-equality over finite JSON-shaped values.
@@ -622,16 +628,26 @@ export type PropertyReader = (object: object, key: string) => unknown
  *   size, every `a` key must be an own key of `b` (`Object.hasOwn`, so an
  *   inherited key is never mistaken for a present own property — B2
  *   prototype-pollution discipline), and the values must be deep-equal.
- *   `a`'s property values are read directly (`a` is the trusted finite side);
- *   `b`'s property values flow through {@link PropertyReader} so the caller
- *   owns the untrusted-input read discipline.
+ *   `b`'s property value is read FIRST, through {@link PropertyReader}; if
+ *   that read yielded {@link READ_FAILED} the per-key comparison returns
+ *   `false` IMMEDIATELY — BEFORE `a`'s value is ever read. Only after that
+ *   short-circuit is `a`'s value read directly (`a`, like array elements, is
+ *   ALWAYS read directly — the trusted finite side). This order is
+ *   load-bearing: it reproduces pre-FU9-E `schemaValueEquals` exactly
+ *   (`bChild === SAFE_GET_THREW ⇒ return false`, the `a`-side getter never
+ *   touched), so the hardened variant cannot trip an `a`-side throw when the
+ *   `b`-side read already failed — the `uniqueItems` call site (untrusted `a`
+ *   AND `b`) stays byte-identical to the pre-merge guard.
  *
  * `a` is the trusted SCHEMA-supplied operand — a finite acyclic `JsonValue`
  * — so the recursion is bounded by `a`'s finite shape regardless of `b`
  * (the untrusted input); no cycle/depth guard is needed. Total per AGENTS.md
- * §13 when `read` is total (the default `Reflect.get` propagates a throwing
- * accessor by design — that is the trusted-input contract; the hardened
- * `schema.ts` variant supplies a non-throwing `read`).
+ * §13 when `read` never throws (it may either return a value or signal
+ * {@link READ_FAILED}): the default `Reflect.get` propagates a throwing
+ * accessor by design — that is the trusted-input `constEquals` contract, and
+ * it NEVER returns `READ_FAILED` so the short-circuit is inert there; the
+ * hardened `schema.ts` variant supplies a `read` that maps its private
+ * throwing-getter sentinel onto `READ_FAILED` instead of throwing.
  *
  * @param a - The trusted left operand (a finite acyclic JSON value)
  * @param b - The untrusted right operand to compare structurally against `a`
@@ -689,21 +705,31 @@ export function deepEqual(
 		if (!Object.hasOwn(b, key)) {
 			return false
 		}
-		// Read `b`'s value through the injected strategy FIRST, then `a`'s
-		// (read directly — `a` is the trusted finite side). This evaluation
-		// order is load-bearing: it matches the original `schemaValueEquals`
-		// exactly, where `bChild = safeGet(b, key)` is evaluated and its
-		// throwing-getter sentinel checked BEFORE `a[key]` is ever touched.
-		// The hardened `schema.ts` variant's `read` returns a module-private
-		// sentinel on a throwing `b` getter; that sentinel is an opaque
-		// `unique symbol` that can never structurally equal a finite JSON `a`
-		// value, so the comparison below yields `false` — the exact
-		// `bChild === SAFE_GET_THREW ⇒ false` outcome. (For the `const`
-		// variant `read` is a direct `Reflect.get`; reordering vs the old
-		// `constEquals(a[key], b[key])` is unobservable there because `a` —
-		// the trusted const — never carries a throwing accessor, so the only
-		// order-sensitive case, BOTH sides throwing, is unreachable.)
+		// Read `b`'s value through the injected strategy FIRST and apply the
+		// read-failure short-circuit BEFORE the `a`-side value is EVER read.
+		// This evaluation order is load-bearing: it reproduces pre-FU9-E
+		// `schemaValueEquals` EXACTLY, where `bChild = safeGet(b, key)` is
+		// evaluated and `bChild === SAFE_GET_THREW` (return false) is checked
+		// BEFORE `a[key]` is ever touched. The hardened `schema.ts` variant's
+		// `read` maps its private throwing-getter sentinel onto the generic
+		// `READ_FAILED`; returning `false` HERE — without reading `a` — is what
+		// preserves the old semantics at the `uniqueItems` call site (untrusted
+		// `a` AND `b`): a throwing `b` getter short-circuits to `false` and the
+		// `a`-side getter is NEVER invoked, so it cannot throw, so the
+		// `uniqueItems` verdict is byte-identical to the pre-merge guard. ONLY
+		// AFTER this check is `a`'s value read — directly (`a`, like array
+		// elements, is ALWAYS read directly, never via `read`), so a left-side
+		// throw still propagates exactly as both pre-merge originals did when
+		// they DID reach the `a` read. The DEFAULT (`const`) `read` is a direct
+		// `Reflect.get` that NEVER yields `READ_FAILED`, so this short-circuit
+		// is inert there and the `constEquals` path stays byte-identical (a
+		// throwing `b` getter propagates; the only order-sensitive case, BOTH
+		// sides throwing, is unreachable because the trusted const `a` carries
+		// no accessor).
 		const bValue = read(b, key)
+		if (bValue === READ_FAILED) {
+			return false
+		}
 		if (!deepEqual(Reflect.get(a, key), bValue, read)) {
 			return false
 		}
