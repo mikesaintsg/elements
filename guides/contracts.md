@@ -44,7 +44,7 @@ Builder option bags are typed in [src/core/types.ts](../src/core/types.ts): `Str
 
 ### The compile pipeline
 
-The compilers in [src/core/compilers.ts](../src/core/compilers.ts) are the low-level functions that turn a shape into a single operation. Use them directly for custom pipelines, or let a factory wire them together.
+The compilers in [src/core/compilers.ts](../src/core/compilers.ts) are the low-level functions that turn a shape into a single operation. Use them directly for custom pipelines, or let `compileContract()` bundle all four for you.
 
 | Compiler              | Produces                                                         |
 | --------------------- | ---------------------------------------------------------------- |
@@ -92,6 +92,8 @@ These invariants hold across `src/core/{types,shapers,compilers,helpers}.ts` ↔
 1. **DOC → SOURCE.** Every backticked call-form API named in this guide — every builder, compiler, and helper written in call form — is a real `export function` / `export const` in one of [src/core/shapers.ts](../src/core/shapers.ts), [src/core/compilers.ts](../src/core/compilers.ts), or [src/core/helpers.ts](../src/core/helpers.ts). A renamed or removed export breaks the gate until the doc is reconciled.
 2. **TYPES ARE THE SOURCE OF TRUTH.** `ContractShape`, `Infer<S>`, `ContractInterface<T>`, the JSON Schema family (`JsonSchema`, `JsonSchemaObject`, `JsonSchemaDefinition`), and every `*ShapeOptions` bag are declared first in [src/core/types.ts](../src/core/types.ts). Builders and compilers conform to those types, never the reverse.
 3. **DERIVED, NOT DUPLICATED.** Schema, guard, parser, and generator are all compiled from the one shape. No operation is hand-written per shape — adding a shape variant means extending the discriminated `ContractShape` union and every compiler `switch`, never patching call sites.
+4. **PARSE↔GUARD SOUNDNESS (B3).** For any compiled contract `{ is, parse }`: *(A) acceptance preservation* — a guard-valid input is never rejected by its own parser (returns non-`undefined`); *(B) round-trip validity* — parsing an already-valid value yields a value that still satisfies the guard; *(C) output soundness* — the parser never emits a value the guard would reject. The standalone flat parsers (`parseString`, `parseNumber`, etc.) in [parsers.md](parsers.md) are a SEPARATE opinionated surface that coerces more aggressively — they are not part of the B3 invariant, but the contract compilers reuse them internally for primitive coercion and then re-validate against the shape guard to keep A/B/C whole.
+5. **GENERATE∘GUARD SOUNDNESS.** `compileGenerator(shape, random)` is deterministic (same seed → same value; the `random` source is consumed in a fixed shape-document order) and its output satisfies `compileGuard(shape)` for every well-formed shape. `rawShape` generates `null` (the smallest valid JSON placeholder). Recursive `lazyShape` generation terminates at a bounded lazy-recursion depth via the minimal-inhabitant strategy; a required-recursive shape with no finite inhabitant throws a precise §13 Error rather than recurse forever. Exception: for a `oneOfShape` with non-disjoint (overlapping) variants, the generator may emit a value satisfying ≥2 variants — the `oneOf` guard then rejects it. This is an ill-posed user modelling error; generation is sound for disjoint variants.
 
 Enforced by:
 
@@ -182,7 +184,12 @@ const idOrFlag = oneOfShape(stringShape(), booleanShape())
 // JSON Schema: { oneOf: [{ type: 'string' }, { type: 'boolean' }] }
 ```
 
-Both behave identically at runtime — variants are checked in order, first match wins. The only difference is the emitted JSON Schema keyword (`anyOf` vs `oneOf`), which matters for schemas that must express mutual exclusivity.
+These two differ in both the emitted JSON Schema keyword **and** the runtime semantics:
+
+- **`unionShape()` (`anyOf`)** — variants checked in order; the first variant whose guard accepts the raw input wins. One or more matches is fine.
+- **`oneOfShape()` (`oneOf`)** — ALL variant guards are checked on the raw input; the result is valid iff **exactly one** guard accepts it (zero or ≥2 matches → guard returns `false`, parser returns `undefined`). The parser never silently picks a winner when two variants overlap.
+
+Caveat for generation: `compileGenerator` for a `oneOf` shape picks a random variant and generates from it without verifying exclusivity. If the variants are not mutually disjoint — e.g. `oneOfShape(numberShape(), integerShape())` — the generated value may satisfy two variant guards, causing the `oneOf` guard to reject it. Overlapping `oneOf` variants are an ill-posed user modelling error; generation is sound for disjoint variants (the expected case).
 
 ### `recordShape()` — open dictionaries
 
@@ -312,7 +319,24 @@ import { rawShape } from '@elements/core'
 const anyValue = rawShape({ description: 'Default value' })
 ```
 
-Embeds an arbitrary JSON Schema fragment for properties that accept any value or need keywords beyond the shape DSL. The compiled guard always returns `true`, the parser passes the value through unchanged, and `Infer` resolves it to `unknown` (the runtime type can't be recovered from the DSL). Use sparingly.
+Embeds an arbitrary JSON Schema fragment for properties that accept any value or need keywords beyond the shape DSL. The compiled guard always returns `true`, the parser passes the value through unchanged, the generator emits `null` (the smallest valid JSON value — a placeholder, since no constraints exist to vary over), and `Infer` resolves it to `unknown` (the runtime type can't be recovered from the DSL). Use sparingly.
+
+### Fail-fast build throws (§13)
+
+Certain mistakes are programmer errors that would silently corrupt compiled output if undetected. The shape builders and the `defaultShape` builder throw at construction time — the boundary where the cause is obvious — rather than letting the error surface inside a compiler:
+
+| Cause | Throws at |
+| ----- | --------- |
+| `literalShape()` with no arguments | `literalShape()` call |
+| `unionShape()` / `oneOfShape()` with no arguments | `unionShape()` / `oneOfShape()` call |
+| `intersectionShape()` with no members, or with a non-object member | `intersectionShape()` call |
+| `stringShape` / `arrayShape` bounds: non-finite, negative, or `min > max` | `stringShape()` / `arrayShape()` call |
+| `numberShape` / `integerShape` bounds: non-finite, or `min > max` | `numberShape()` / `integerShape()` call |
+| `defaultShape(inner, value)` where `value` does not satisfy `inner`'s guard | `defaultShape()` call |
+| A non-lazy structural cycle in the shape tree | first `compile*()` call on that shape — throws `'cyclic ContractShape: use a lazy/deferred shape for recursion'` |
+| A required, non-optional recursive `lazyShape` with no finite inhabitant | `compileContract(shape).generate(random)` / `compileGenerator(shape, random)` — throws `'recursive shape has no finite inhabitant within depth N: …'` |
+
+The compiled guard never throws on invocation; only build/compile-time boundaries do. `lazyShape` itself (the builder) never throws — deferral is its purpose.
 
 ### Object-root schema
 
