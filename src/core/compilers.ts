@@ -267,6 +267,24 @@ export function compileGuard(shape: ContractShape): (value: unknown) => boolean 
 		}
 		case 'union': {
 			const guards = shape.variants.map((variant) => compileGuard(variant))
+			if (shape.mode === 'oneOf') {
+				// JSON-Schema `oneOf`: a value is valid iff it matches
+				// EXACTLY ONE variant. `anyOf` (the default below) is
+				// at-least-one. We must count matches, not short-circuit on
+				// the first, so a value matching ≥2 variants is rejected.
+				return (value) => {
+					let matches = 0
+					for (const guard of guards) {
+						if (guard(value)) {
+							matches += 1
+							if (matches > 1) {
+								return false
+							}
+						}
+					}
+					return matches === 1
+				}
+			}
 			return (value) => guards.some((guard) => guard(value))
 		}
 		case 'optional': {
@@ -537,6 +555,57 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 		case 'union': {
 			const parsers = shape.variants.map((variant) => compileParser(variant))
 			const guards = shape.variants.map((variant) => compileGuard(variant))
+			if (shape.mode === 'oneOf') {
+				// JSON-Schema `oneOf` exclusivity, kept parse↔guard
+				// SYMMETRIC with the oneOf guard above. The guard's notion of
+				// a "match" is: a variant's guard accepts the RAW value. The
+				// parser must count matches the SAME way — counting
+				// parsed-and-revalidated results instead would diverge,
+				// because a variant parser may COERCE the input (e.g. the
+				// string parser turns the number 5 into the guard-valid '5'),
+				// inflating the match count past what the guard saw and
+				// breaking symmetry clause (A): `g(5)` is true (only the
+				// integer variant's guard matches) yet a coercion-based count
+				// would see two matches and reject.
+				//
+				// So: count variants whose GUARD accepts the raw value
+				// (mirrors the oneOf guard exactly). Tie policy (documented):
+				// if zero or ≥2 variant guards accept, the exclusive-one
+				// contract is unsatisfiable → `undefined` (never silently
+				// picks a winner). On exactly one, parse with THAT variant
+				// and re-validate the oneOf guard on the result for clause
+				// (C) soundness.
+				const guardThis = compileGuard(shape)
+				return (value) => {
+					let matchIndex = -1
+					let matches = 0
+					for (let index = 0; index < guards.length; index += 1) {
+						const guard = guards[index]
+						if (guard === undefined) {
+							continue
+						}
+						if (guard(value)) {
+							matches += 1
+							if (matches > 1) {
+								return undefined
+							}
+							matchIndex = index
+						}
+					}
+					if (matches !== 1) {
+						return undefined
+					}
+					const parser = parsers[matchIndex]
+					if (parser === undefined) {
+						return undefined
+					}
+					const parsed = parser(value)
+					if (parsed === undefined) {
+						return undefined
+					}
+					return guardThis(parsed) ? parsed : undefined
+				}
+			}
 			return (value) => {
 				for (let index = 0; index < parsers.length; index += 1) {
 					const parser = parsers[index]
@@ -582,13 +651,30 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 export function compileGenerator(shape: ContractShape, random: RandomFunction): unknown {
 	switch (shape.type) {
 		case 'string': {
+			// The generated value's TOTAL length (including the `str_`
+			// prefix) must satisfy the guard's [min, max] window — the prefix
+			// is part of the string the guard measures, so it must be counted
+			// here or a `max` (or a `min < 4`) constraint is silently
+			// violated under `assertGeneratorSatisfiesGuard`.
+			const prefix = 'str_'
 			const min = shape.min ?? 0
 			const max = shape.max ?? Math.max(min, 12)
-			const length = Math.max(min, Math.min(max, 8))
-			const suffix = Math.floor(random() * 1_000_000)
-				.toString()
-				.padStart(length, '0')
-			return `str_${suffix}`
+			// Target total length: clamp a pleasant default (8) into the
+			// [min, max] window. `validateBounds` already guarantees
+			// `min <= max` and both finite/non-negative, so the window is
+			// non-empty.
+			const total = Math.max(min, Math.min(max, 8))
+			const random6 = Math.floor(random() * 1_000_000).toString()
+			let value: string
+			if (total <= prefix.length) {
+				// Window is shorter than the prefix — derive the whole string
+				// from a deterministic digit fill so the length is exact.
+				value = random6.padStart(total, '0').slice(0, total)
+			} else {
+				const suffix = random6.padStart(total - prefix.length, '0').slice(0, total - prefix.length)
+				value = `${prefix}${suffix}`
+			}
+			return value
 		}
 		case 'number': {
 			const min = shape.min ?? 0
@@ -599,9 +685,12 @@ export function compileGenerator(shape: ContractShape, random: RandomFunction): 
 		case 'boolean':
 			return random() >= 0.5
 		case 'literal': {
-			if (shape.values.length === 0) {
-				throw new Error('literalShape requires at least one value')
-			}
+			// No empty-values guard here: `literalShape()` throws at build
+			// for an empty list (§13), so a values-less literal is
+			// unreachable through the public API. The dead defensive throw
+			// that used to live here was removed per §20 (no dead code) — a
+			// hand-built `{ type:'literal', values:[] }` that bypasses the
+			// builder is itself programmer error, out of contract.
 			const index = Math.floor(random() * shape.values.length)
 			return shape.values[index]
 		}
@@ -630,9 +719,11 @@ export function compileGenerator(shape: ContractShape, random: RandomFunction): 
 			return result
 		}
 		case 'union': {
-			if (shape.variants.length === 0) {
-				throw new Error('unionShape requires at least one variant')
-			}
+			// No empty-variants guard here: `unionShape()` / `oneOfShape()`
+			// throw at build for an empty variant list (§13), so this is
+			// unreachable through the public API. The dead defensive throw
+			// was removed per §20 — a hand-built variants-less union that
+			// bypasses the builder is itself programmer error.
 			const index = Math.floor(random() * shape.variants.length)
 			const variant = shape.variants[index]
 			if (variant === undefined) {
@@ -645,7 +736,19 @@ export function compileGenerator(shape: ContractShape, random: RandomFunction): 
 		case 'nullable':
 			return random() < 0.2 ? null : compileGenerator(shape.inner, random)
 		case 'raw':
-			return undefined
+			// Must emit a DEFINED, JSON-valid value: a required `rawShape`
+			// object property generating `undefined` collapses the key out
+			// of the object structurally (`{ r: undefined }` ≡ `{}`),
+			// breaking the object guard's `required` contract AND the raw
+			// guard's own always-true contract under
+			// `assertGeneratorSatisfiesGuard`. `null` is chosen as the
+			// placeholder: it is the smallest valid JSON value, the raw
+			// guard accepts it (always true), it keeps the property present
+			// so `required` holds, JSON-Schema consumers accept it, and it
+			// is constant — `rawShape` carries no constraints to vary over,
+			// so a constant is trivially deterministic for any seed (the
+			// `random` source is intentionally not consumed here).
+			return null
 	}
 }
 

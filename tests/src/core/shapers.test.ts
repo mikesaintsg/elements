@@ -59,6 +59,44 @@ describe('stringShape', () => {
 			description: 'Username',
 		})
 	})
+
+	// B4 fix 3 — shape-build bounds validation (AGENTS.md §13: a programmer
+	// error throws at the boundary where the shape is built, not deep in a
+	// compiler). Inverted/non-finite/negative-length bounds previously slipped
+	// through and produced guard-failing generator output + parser/guard
+	// disagreement.
+	it('throws when min > max (inverted bounds)', () => {
+		expect(() => stringShape({ min: 5, max: 2 })).toThrow(
+			'stringShape: min (5) must not exceed max (2)',
+		)
+	})
+
+	it('throws when min is non-finite', () => {
+		expect(() => stringShape({ min: Infinity })).toThrow(
+			'stringShape: min must be a finite number',
+		)
+	})
+
+	it('throws when max is non-finite (NaN)', () => {
+		expect(() => stringShape({ max: NaN })).toThrow(
+			'stringShape: max must be a finite number',
+		)
+	})
+
+	it('throws when length min is negative', () => {
+		// String length can never be negative — a negative `min` is a
+		// programmer error, not a satisfiable-but-vacuous constraint.
+		expect(() => stringShape({ min: -1 })).toThrow(
+			'stringShape: min (-1) must not be negative',
+		)
+	})
+
+	it('does not throw for valid bounds (min <= max, min === max allowed)', () => {
+		expect(() => stringShape({ min: 2, max: 5 })).not.toThrow()
+		expect(() => stringShape({ min: 3, max: 3 })).not.toThrow()
+		expect(() => stringShape({ min: 0 })).not.toThrow()
+		expect(() => stringShape()).not.toThrow()
+	})
 })
 
 // === numberShape
@@ -88,6 +126,33 @@ describe('numberShape', () => {
 		const shape = numberShape({ integer: true })
 		expect(shape.integer).toBe(true)
 	})
+
+	// B4 fix 3 — bounds validation at build (§13).
+	it('throws when min > max (inverted bounds)', () => {
+		expect(() => numberShape({ min: 10, max: 0 })).toThrow(
+			'numberShape: min (10) must not exceed max (0)',
+		)
+	})
+
+	it('throws when min is non-finite', () => {
+		expect(() => numberShape({ min: Infinity })).toThrow(
+			'numberShape: min must be a finite number',
+		)
+	})
+
+	it('throws when max is non-finite (NaN)', () => {
+		expect(() => numberShape({ max: NaN })).toThrow(
+			'numberShape: max must be a finite number',
+		)
+	})
+
+	it('does not throw for valid numeric bounds incl. negative (numbers may be negative)', () => {
+		// Unlike string/array LENGTH, a numeric VALUE bound may legitimately
+		// be negative — only inverted/non-finite is a programmer error.
+		expect(() => numberShape({ min: -10, max: 10 })).not.toThrow()
+		expect(() => numberShape({ min: 5, max: 5 })).not.toThrow()
+		expect(() => numberShape()).not.toThrow()
+	})
 })
 
 // === integerShape
@@ -115,6 +180,27 @@ describe('integerShape', () => {
 		// so the integer field is always true
 		const shape = integerShape()
 		expect(shape.integer).toBe(true)
+	})
+
+	// B4 fix 3 — bounds validation at build (§13).
+	it('throws when min > max (inverted bounds)', () => {
+		expect(() => integerShape({ min: 10, max: 0 })).toThrow(
+			'integerShape: min (10) must not exceed max (0)',
+		)
+	})
+
+	it('throws when a bound is non-finite', () => {
+		expect(() => integerShape({ min: Infinity })).toThrow(
+			'integerShape: min must be a finite number',
+		)
+		expect(() => integerShape({ max: NaN })).toThrow(
+			'integerShape: max must be a finite number',
+		)
+	})
+
+	it('does not throw for valid bounds incl. negative', () => {
+		expect(() => integerShape({ min: -5, max: 5 })).not.toThrow()
+		expect(() => integerShape({ min: 3, max: 3 })).not.toThrow()
 	})
 })
 
@@ -170,6 +256,17 @@ describe('literalShape', () => {
 		expect(shape.values[1]).toBe('y')
 		expect(shape.values[2]).toBe('z')
 	})
+
+	// B4 fix 4 — an empty literal is uninhabited (no value can ever satisfy
+	// it): a programmer error caught at build (§13), not deep in the
+	// generator.
+	it('throws when called with zero values', () => {
+		expect(() => literalShape()).toThrow('literalShape requires at least one value')
+	})
+
+	it('does not throw with at least one value', () => {
+		expect(() => literalShape('only')).not.toThrow()
+	})
 })
 
 // === arrayShape
@@ -204,6 +301,35 @@ describe('arrayShape', () => {
 		const inner = arrayShape(integerShape())
 		const outer = arrayShape(inner)
 		expect(outer.items.type).toBe('array')
+	})
+
+	// B4 fix 3 — bounds validation at build (§13).
+	it('throws when min > max (inverted bounds)', () => {
+		expect(() => arrayShape(stringShape(), { min: 3, max: 1 })).toThrow(
+			'arrayShape: min (3) must not exceed max (1)',
+		)
+	})
+
+	it('throws when a length bound is non-finite', () => {
+		expect(() => arrayShape(stringShape(), { min: Infinity })).toThrow(
+			'arrayShape: min must be a finite number',
+		)
+		expect(() => arrayShape(stringShape(), { max: NaN })).toThrow(
+			'arrayShape: max must be a finite number',
+		)
+	})
+
+	it('throws when length min is negative', () => {
+		// Array length can never be negative — programmer error.
+		expect(() => arrayShape(stringShape(), { min: -1 })).toThrow(
+			'arrayShape: min (-1) must not be negative',
+		)
+	})
+
+	it('does not throw for valid bounds (min === max allowed)', () => {
+		expect(() => arrayShape(stringShape(), { min: 1, max: 3 })).not.toThrow()
+		expect(() => arrayShape(stringShape(), { min: 2, max: 2 })).not.toThrow()
+		expect(() => arrayShape(stringShape())).not.toThrow()
 	})
 })
 
@@ -322,6 +448,11 @@ describe('unionShape', () => {
 	it('defaults mode to undefined (emits anyOf)', () => {
 		const shape = unionShape(stringShape(), numberShape())
 		expect(shape.mode).toBeUndefined()
+	})
+
+	// B4 fix 4 — an empty union is uninhabited: programmer error at build (§13).
+	it('throws when called with zero variants', () => {
+		expect(() => unionShape()).toThrow('unionShape requires at least one variant')
 	})
 })
 
@@ -471,6 +602,11 @@ describe('oneOfShape', () => {
 	it('accepts a single variant', () => {
 		const shape = oneOfShape(stringShape())
 		expect(shape.variants).toHaveLength(1)
+	})
+
+	// B4 fix 4 — an empty oneOf is uninhabited: programmer error at build (§13).
+	it('throws when called with zero variants', () => {
+		expect(() => oneOfShape()).toThrow('oneOfShape requires at least one variant')
 	})
 })
 

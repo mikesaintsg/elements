@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ContractShape, JsonSchemaObject, LiteralShape } from '@elements/core'
+import type { ContractShape, JsonSchemaObject } from '@elements/core'
 import {
 	arrayShape,
 	booleanShape,
@@ -23,8 +23,14 @@ import {
 } from '@elements/core'
 import {
 	POLLUTION_KEYS,
+	assertGeneratorSatisfiesGuard,
 	assertNoPrototypePollution,
 	assertParseGuardSymmetry,
+	createNestedShape,
+	createOneOfShape,
+	createPersonShape,
+	createRecordDictShape,
+	createUnionShape,
 } from './_helpers.js'
 
 // === compileSchema
@@ -427,8 +433,6 @@ describe('parse↔guard symmetry', () => {
 // === compileGenerator
 
 describe('compileGenerator', () => {
-	const random = createRandom(99)
-
 	it('string — returns a string prefixed with str_', () => {
 		const value = compileGenerator(stringShape(), createRandom(1))
 		expect(typeof value).toBe('string')
@@ -460,11 +464,16 @@ describe('compileGenerator', () => {
 		expect(values).toContain(value)
 	})
 
-	it('literal — throws when values is empty', () => {
-		const shape: LiteralShape = { type: 'literal', values: [] }
-		expect(() => compileGenerator(shape, random)).toThrow(
-			'literalShape requires at least one value',
-		)
+	// B4 fix 4 — corrected. The OLD test asserted the empty-literal guard
+	// lived in `compileGenerator`. Per §13 (programmer error throws at the
+	// boundary where the shape is BUILT) + §20 (no dead code), that throw is
+	// deleted from the generator and the contract is enforced in
+	// `literalShape()` itself. An empty `{ type: 'literal', values: [] }` is
+	// only constructible by hand-bypassing the builder — itself programmer
+	// error — so the generator no longer special-cases it; the boundary is
+	// the builder, asserted here.
+	it('literalShape() throws at build for empty values (boundary moved from generator)', () => {
+		expect(() => literalShape()).toThrow('literalShape requires at least one value')
 	})
 
 	it('array — returns an array with items matching shape', () => {
@@ -717,13 +726,18 @@ describe('compileSchema — oneOf mode', () => {
 	})
 })
 
-describe('compileGuard — oneOf (runtime behavior same as anyOf)', () => {
-	it('accepts a value matching the first variant', () => {
+// B4 fix 1 — `oneOf` is JSON-Schema EXACTLY-ONE, not anyOf first-match.
+// These describe blocks were renamed + their bodies corrected from the OLD
+// "runtime behavior same as anyOf" contract. Old assertions that happened to
+// only ever match one variant still hold; the new tests pin the exclusivity
+// behaviour the old contract silently violated.
+describe('compileGuard — oneOf (exactly one variant must match)', () => {
+	it('accepts a value matching the first variant only', () => {
 		const guard = compileGuard(oneOfShape(stringShape(), booleanShape()))
 		expect(guard('hello')).toBe(true)
 	})
 
-	it('accepts a value matching the second variant', () => {
+	it('accepts a value matching the second variant only', () => {
 		const guard = compileGuard(oneOfShape(stringShape(), booleanShape()))
 		expect(guard(true)).toBe(true)
 	})
@@ -732,30 +746,86 @@ describe('compileGuard — oneOf (runtime behavior same as anyOf)', () => {
 		const guard = compileGuard(oneOfShape(stringShape(), booleanShape()))
 		expect(guard(42)).toBe(false)
 	})
+
+	it('rejects a value matching MORE THAN ONE variant (exclusivity)', () => {
+		// '' satisfies BOTH an unconstrained string AND a literal('') —
+		// exactly-two matches → oneOf guard is false.
+		const guard = compileGuard(oneOfShape(stringShape(), literalShape('')))
+		expect(guard('')).toBe(false)
+		// 5 satisfies BOTH numberShape and integerShape → two matches.
+		const numGuard = compileGuard(oneOfShape(numberShape(), integerShape()))
+		expect(numGuard(5)).toBe(false)
+		// A value matching exactly one of the two still passes.
+		expect(numGuard(5.5)).toBe(true)
+	})
+
+	it('diverges from anyOf: same multi-match value — anyOf true, oneOf false', () => {
+		// The single most important contrast: identical variants, identical
+		// value; anyOf (unionShape) accepts (≥1), oneOf rejects (not ==1).
+		const value = ''
+		expect(compileGuard(unionShape(stringShape(), literalShape('')))(value)).toBe(true)
+		expect(compileGuard(oneOfShape(stringShape(), literalShape('')))(value)).toBe(false)
+		// And a single-match value agrees across both modes.
+		expect(compileGuard(unionShape(stringShape(), literalShape('')))('x')).toBe(true)
+		expect(compileGuard(oneOfShape(stringShape(), literalShape('')))('x')).toBe(true)
+		// A no-match value: both false.
+		expect(compileGuard(unionShape(stringShape(), literalShape('')))(42)).toBe(false)
+		expect(compileGuard(oneOfShape(stringShape(), literalShape('')))(42)).toBe(false)
+	})
 })
 
-describe('compileParser — oneOf (runtime behavior same as anyOf)', () => {
-	it('parses a value matching a variant', () => {
+describe('compileParser — oneOf (parse succeeds only if exactly one variant matches)', () => {
+	it('parses a value matching exactly one variant', () => {
 		// Variant order: integerShape() first so the numeric input resolves
 		// to the integer variant. (Corrected from `oneOfShape(stringShape(),
 		// integerShape())` expecting `parser(42) === 42`: the sound compiled
-		// string parser now coerces 42 → '42' — '42' passes the string guard
-		// so the first variant legitimately wins. That is correct parse↔guard
-		// behaviour, not a number; the test's intent — "each variant parses"
-		// — is preserved by ordering the integer variant first.)
+		// string parser now coerces 42 → '42' — '42' passes the string guard.
+		// Ordering the integer variant first preserves the test's intent.)
 		const parser = compileParser(oneOfShape(integerShape(), stringShape()))
 		expect(parser('hello')).toBe('hello')
 		expect(parser(42)).toBe(42)
 	})
 
 	it('returns undefined for non-matching value', () => {
-		// Corrected: with the sound string parser, 42 coerces to the
-		// guard-valid '42', so a string|boolean union legitimately parses 42
-		// (as '42'). To still exercise the "no variant matches" path we feed
-		// a value neither a boolean-coercible nor string-coercible primitive
-		// accepts: a plain object.
+		// A plain object is neither boolean-coercible nor string-coercible by
+		// any primitive parser → no variant produces a guard-valid result.
 		const parser = compileParser(oneOfShape(stringShape(), booleanShape()))
 		expect(parser({ not: 'a primitive' })).toBeUndefined()
+	})
+
+	it('returns undefined when MORE THAN ONE variant parses to a guard-valid result (tie → exclusivity violated)', () => {
+		// Documented tie behaviour: if the parsed-and-revalidated result is
+		// guard-valid under ≥2 variants, exclusivity is violated, so the
+		// oneOf parser returns `undefined` (it never silently picks one).
+		// 5 parses to a guard-valid value under BOTH numberShape and
+		// integerShape → tie → undefined.
+		const parser = compileParser(oneOfShape(numberShape(), integerShape()))
+		expect(parser(5)).toBeUndefined()
+		// 5.5 parses guard-valid under numberShape only (integer rejects) →
+		// exactly one → parses successfully.
+		expect(parser(5.5)).toBe(5.5)
+	})
+})
+
+describe('parse↔guard symmetry — oneOf exclusivity (B4)', () => {
+	it('createOneOfShape() stays sound under exactly-one semantics', () => {
+		// createOneOfShape() = oneOf(stringShape({min:1}), integerShape({min:0})).
+		// No value matches both a non-empty string and a non-negative integer,
+		// so exactly-one == any-match here; symmetry must still hold.
+		assertParseGuardSymmetry(createOneOfShape(), ['', 'hello', 5, '5', -1, 5.5, true])
+	})
+
+	it('multi-match oneOf — guard accepts iff exactly one, parser returns iff guard accepts', () => {
+		// numberShape | integerShape: integers match BOTH (tie → reject),
+		// non-integer finite numbers match exactly one (accept).
+		assertParseGuardSymmetry(oneOfShape(numberShape(), integerShape()), [
+			5, // both → guard false, parser undefined
+			5.5, // number only → guard true, parser 5.5
+			-3, // both (integer) → guard false
+			-3.25, // number only → guard true
+			'x', // none
+			true, // none
+		])
 	})
 })
 
@@ -796,9 +866,30 @@ describe('compileParser — rawShape', () => {
 })
 
 describe('compileGenerator — rawShape', () => {
-	it('returns undefined', () => {
+	// B4 fix 2 — corrected from `expect(result).toBeUndefined()`. That OLD
+	// expectation asserted unsound behaviour: a required `rawShape` object
+	// property generating `undefined` collapses to `{}` structurally, which
+	// violates the object's `required` contract AND the (always-true) raw
+	// guard contract under assertGeneratorSatisfiesGuard. The raw generator
+	// now emits a deterministic, JSON-valid placeholder (`null`).
+	it('returns a deterministic JSON-valid placeholder (null), never undefined', () => {
 		const result = compileGenerator(rawShape({}), createRandom(1))
-		expect(result).toBeUndefined()
+		expect(result).not.toBeUndefined()
+		expect(result).toBeNull()
+		// Determinism: same seed → same output.
+		expect(compileGenerator(rawShape({}), createRandom(1))).toBe(result)
+	})
+
+	it('bare rawShape() generator output is guard-valid', () => {
+		// The raw guard is always true, so any DEFINED JSON value satisfies
+		// it. Pinning the generator∘guard contract for the bare shape.
+		assertGeneratorSatisfiesGuard(rawShape({}), [1, 2, 3])
+	})
+
+	it('a required rawShape object property generates a present, guard-valid value', () => {
+		// The headline regression: `{ r: rawShape() }` previously generated
+		// `{ r: undefined }` ≡ `{}` — failing the object guard's `required`.
+		assertGeneratorSatisfiesGuard(objectShape({ r: rawShape({}) }), [1, 2, 3])
 	})
 })
 
@@ -904,6 +995,85 @@ describe('compileSchema — object root compatibility', () => {
 			}),
 		)
 		expect(schema.type).toBe('object')
+	})
+})
+
+// === B4 broad soundness matrix
+//
+// After all four B4 fixes, every shape kind's generator output must satisfy
+// its own guard, and parse↔guard symmetry must hold for oneOf + raw. This
+// matrix is the regression net the task requires.
+
+describe('B4 — assertGeneratorSatisfiesGuard across the full shape matrix', () => {
+	const seeds = [1, 2, 3, 7, 42, 99]
+
+	it('primitives + bounded primitives', () => {
+		assertGeneratorSatisfiesGuard(stringShape(), seeds)
+		assertGeneratorSatisfiesGuard(stringShape({ min: 5 }), seeds)
+		assertGeneratorSatisfiesGuard(stringShape({ min: 3, max: 8 }), seeds)
+		assertGeneratorSatisfiesGuard(stringShape({ min: 4, max: 4 }), seeds)
+		// Short windows that are <= the `str_` (4-char) prefix: the generator
+		// must count the prefix toward total length or `max` is violated.
+		assertGeneratorSatisfiesGuard(stringShape({ max: 2 }), seeds)
+		assertGeneratorSatisfiesGuard(stringShape({ min: 2, max: 2 }), seeds)
+		assertGeneratorSatisfiesGuard(stringShape({ max: 4 }), seeds)
+		assertGeneratorSatisfiesGuard(stringShape({ min: 1, max: 3 }), seeds)
+		assertGeneratorSatisfiesGuard(numberShape({ min: 10, max: 20 }), seeds)
+		assertGeneratorSatisfiesGuard(numberShape({ min: -10, max: -5 }), seeds)
+		assertGeneratorSatisfiesGuard(integerShape({ min: 1, max: 10 }), seeds)
+		assertGeneratorSatisfiesGuard(booleanShape(), seeds)
+		assertGeneratorSatisfiesGuard(literalShape('a', 'b', 'c'), seeds)
+	})
+
+	it('arrays incl. min === max and bounded', () => {
+		assertGeneratorSatisfiesGuard(arrayShape(stringShape({ min: 1 })), seeds)
+		assertGeneratorSatisfiesGuard(arrayShape(integerShape(), { min: 2, max: 2 }), seeds)
+		assertGeneratorSatisfiesGuard(arrayShape(stringShape(), { min: 0, max: 0 }), seeds)
+		assertGeneratorSatisfiesGuard(arrayShape(numberShape(), { min: 1, max: 4 }), seeds)
+	})
+
+	it('optional / nullable wrappers', () => {
+		assertGeneratorSatisfiesGuard(objectShape({ s: optionalShape(stringShape({ min: 1 })) }), seeds)
+		assertGeneratorSatisfiesGuard(nullableShape(integerShape({ min: 0 })), seeds)
+		assertGeneratorSatisfiesGuard(objectShape({ n: nullableShape(numberShape()) }), seeds)
+	})
+
+	it('objects, nested, record-dict, person/nested fixtures', () => {
+		assertGeneratorSatisfiesGuard(createPersonShape(), seeds)
+		assertGeneratorSatisfiesGuard(createNestedShape(), seeds)
+		assertGeneratorSatisfiesGuard(createRecordDictShape(), seeds)
+	})
+
+	it('object containing a required rawShape (B4 fix 2 regression)', () => {
+		assertGeneratorSatisfiesGuard(
+			objectShape({
+				r: rawShape({}),
+				name: stringShape({ min: 1 }),
+				tags: arrayShape(stringShape({ min: 1 }), { min: 1, max: 3 }),
+			}),
+			seeds,
+		)
+	})
+
+	it('unions and oneOf (B4 fix 1: generator output is exactly-one-valid)', () => {
+		assertGeneratorSatisfiesGuard(createUnionShape(), seeds)
+		// createOneOfShape() = oneOf(string{min:1}, integer{min:0}) — disjoint
+		// variants, so any generated variant value matches exactly one.
+		assertGeneratorSatisfiesGuard(createOneOfShape(), seeds)
+	})
+})
+
+describe('B4 — assertParseGuardSymmetry on oneOf + raw', () => {
+	it('createOneOfShape() — disjoint exactly-one stays sound', () => {
+		assertParseGuardSymmetry(createOneOfShape(), ['', 'hello', 0, 5, '5', -1, 5.5, true, null])
+	})
+
+	it('multi-match oneOf — symmetry under tie→undefined', () => {
+		assertParseGuardSymmetry(oneOfShape(numberShape(), integerShape()), [5, 5.5, -3, -3.25, 'x'])
+	})
+
+	it('rawShape — identity stays sound', () => {
+		assertParseGuardSymmetry(rawShape({}), ['x', 42, null, { a: 1 }, [1, 2], true])
 	})
 })
 
