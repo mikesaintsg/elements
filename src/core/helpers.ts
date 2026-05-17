@@ -516,21 +516,44 @@ export function unescapeToken(token: string): string {
  *   divided by a small integer SOUND with no tolerance argument at all —
  *   `9007199254740991 % 2 === 1`, so it rejects (returns `false`).
  *
- * - **Value-space relative band** for non-integer operands: reconstruct
- *   `rounded * divisor` and compare the residual in VALUE space
- *   (`|value - rounded*divisor|`) against a tolerance scaled by operand
- *   magnitude (`8 * Number.EPSILON * max(|value|, |reconstructed|)`).
- *   Because the band tracks the operands' own ULP it preserves decimal
- *   completeness at every magnitude — `0.28 / 0.01` (quotient
- *   `27.999999999999996`, value-space residual on the order of the cents
- *   ULP) through large money (`1234567890.12 / 0.01`) all accept — while a
- *   genuine non-multiple's residual is far larger than its magnitude-scaled
- *   band (`0.30000000000001 / 0.1` is ~1e-14 off in value space, orders of
- *   magnitude above its band) so it rejects.
+ * - **Value-space band, double-bounded** for non-integer operands:
+ *   reconstruct `rounded * divisor` and compare the residual in VALUE space
+ *   (`|value - rounded*divisor|`) against a tolerance that is the MINIMUM of
+ *   two bounds: a magnitude band (`8 * Number.EPSILON * max(|value|,
+ *   |reconstructed|)`) and a divisor cap (`|divisor| / 16`). The magnitude
+ *   band tracks the operands' own ULP so legitimate IEEE-754 division error
+ *   for normal-magnitude decimals is absorbed (`0.28 / 0.01`, quotient
+ *   `27.999999999999996`, through large money `1234567890.12 / 0.01` all
+ *   accept). The divisor cap is the soundness floor: a genuine non-multiple's
+ *   value-space residual is at least a fraction of `|divisor|`, so capping
+ *   the tolerance at `|divisor| / 16` means the band can NEVER reach a
+ *   genuine miss whose residual is `≥ |divisor| / 16` — soundness no longer
+ *   degrades as `|value|` grows (the magnitude-only band of earlier
+ *   revisions grew unbounded and falsely accepted distinct-representable
+ *   non-multiples once `|value| ≳ 2.8e12`; the cap removes that).
+ *
+ * - **Inherent IEEE-754 precision wall (bounded limitation)**: this is NOT
+ *   complete at every magnitude. The cap removes the tolerance-driven
+ *   false-accept, but it cannot help the early `quotient === rounded`
+ *   exact-integer return: once `|value|` is large enough that `value /
+ *   divisor` has no fractional bits left (empirically `|value| ≳ ~1e13` for
+ *   `divisor = 0.01`, `~1e14` for `divisor = 0.1`; `divisor = 0.001`
+ *   observed clean to ~1e19), a genuine non-multiple's quotient collapses to
+ *   an exact integer double and is indistinguishable from a true multiple by
+ *   ANY tolerance scheme — so it is (wrongly) accepted there. This is
+ *   unavoidable with doubles. Conversely, beyond `|value| ≳ |divisor| ·
+ *   8.8e12` a genuinely-representable decimal multiple may be (wrongly)
+ *   rejected. The predicate deliberately biases toward SOUNDNESS at realistic
+ *   JSON-Schema magnitudes (cents/money ≤ ~1e11–1e12, where it is both sound
+ *   and complete) and accepts the structural exotic-magnitude wall above that
+ *   as a known, bounded cost. It does NOT claim correctness at every
+ *   magnitude.
  *
  * @param value - The dividend
  * @param divisor - The divisor (a zero divisor yields `false`)
- * @returns `true` when `value` is a multiple of `divisor` within tolerance
+ * @returns `true` when `value` is a multiple of `divisor` within tolerance;
+ *   sound and complete for realistic magnitudes (≤ ~1e11–1e12), subject to
+ *   the documented inherent IEEE-754 precision wall above that
  *
  * @example
  * ```ts
@@ -554,13 +577,21 @@ export function isMultipleOf(value: number, divisor: number): boolean {
 	if (rounded === quotient) {
 		return true
 	}
-	// Non-integer operands: compare the residual in VALUE space against a
-	// band scaled by operand magnitude. Tracking the operands' own ULP
-	// preserves decimal completeness at every magnitude (cents → large
-	// money) while a genuine non-multiple's value-space residual dwarfs its
-	// magnitude-scaled band, so it still rejects (FU10 follow-up).
+	// Non-integer operands: compare the VALUE-space residual against the
+	// MIN of a magnitude band and a divisor cap. The magnitude band absorbs
+	// legitimate IEEE-754 division error for normal-magnitude decimals
+	// (cents → large money); the `|divisor| / 16` cap is the soundness
+	// floor — a genuine non-multiple's residual is at least a fraction of
+	// `|divisor|`, so the band can never reach a miss `≥ |divisor| / 16`,
+	// which stops the magnitude-only false-accept that grew with `|value|`.
+	// Above the documented IEEE-754 precision wall (`|value| ≳ ~1e13` for
+	// `divisor` `0.01`) the upstream `quotient === rounded` return still
+	// (wrongly) accepts some exotic-magnitude non-multiples — unavoidable
+	// with doubles; soundness-biased at realistic magnitudes (FU10 follow-up).
 	const reconstructed = rounded * divisor
-	const tolerance =
+	const magnitudeBand =
 		Number.EPSILON * 8 * Math.max(Math.abs(value), Math.abs(reconstructed))
+	const divisorCap = Math.abs(divisor) / 16
+	const tolerance = Math.min(magnitudeBand, divisorCap)
 	return Math.abs(value - reconstructed) <= tolerance
 }

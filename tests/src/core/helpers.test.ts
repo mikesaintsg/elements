@@ -1181,6 +1181,46 @@ describe('isMultipleOf', () => {
 		expect(isMultipleOf(9000000000000001, 3)).toBe(false)
 	})
 
+	it('large-magnitude decimal NON-multiples are rejected (FU10 follow-up)', () => {
+		// Round-3 regression set. The magnitude-only value-space band of
+		// 410e1a6 grew without bound and (wrongly) accepted these distinct-
+		// representable genuine non-multiples once |value| ≳ 2.8e12. The
+		// divisor cap (`|divisor| / 16`) is the soundness floor: a genuine
+		// miss's residual is at least a fraction of |divisor|, so the band
+		// can never reach it. These are RED against 410e1a6 (each returns
+		// `true` there) and must be `false` now. Each value is built from a
+		// safe-integer base multiple plus a sub-step offset that is itself
+		// NOT a multiple of the divisor (so the literals stay precision-safe
+		// AND the genuine-non-multiple property is explicit). All sit below
+		// the inherent IEEE-754 precision wall, so soundness is recoverable.
+		expect(isMultipleOf(1000000000000000 * 0.01 + 0.006, 0.01)).toBe(false)
+		expect(isMultipleOf(1000000000000000 * 0.1 + 0.05, 0.1)).toBe(false)
+		expect(isMultipleOf(2000000000000000 * 0.01 + 0.003, 0.01)).toBe(false)
+		expect(isMultipleOf(1000000000000000 * 0.001 + 0.0003, 0.001)).toBe(
+			false,
+		)
+	})
+
+	it('pins the documented inherent IEEE-754 precision wall (FU10 follow-up)', () => {
+		// This is the explicit, honest boundary pin — NOT a bug
+		// characterization. `wallValue` (= 56597500000000.016) is a genuine
+		// non-multiple of `0.01`: its nearest representable multiple is
+		// ~7.8e-3 away in value space (> 0). Yet `wallValue / 0.01`
+		// evaluates to the exact integer double `5659750000000001` (no
+		// fractional bits survive at this magnitude), so the upstream
+		// `quotient === rounded` return fires BEFORE any tolerance is
+		// considered. No tolerance scheme — magnitude band or divisor cap —
+		// can change this; it is the documented, soundness-biased inherent
+		// precision wall (begins ~1e13 for divisor 0.01, ~1e14 for 0.1).
+		// The predicate accepts here as a known, bounded cost above realistic
+		// JSON-Schema magnitudes (cents/money ≤ ~1e11–1e12, where it is both
+		// sound and complete). `5659750000000001` is < MAX_SAFE_INTEGER, so
+		// the construction is precision-safe.
+		const wallValue = 5659750000000001 * 0.01 + 0.006
+		expect(wallValue / 0.01).toBe(5659750000000001)
+		expect(isMultipleOf(wallValue, 0.01)).toBe(true)
+	})
+
 	it('decimal-tolerance preserved at small magnitude (FU10)', () => {
 		expect(isMultipleOf(0.3, 0.1)).toBe(true)
 		expect(isMultipleOf(0.0003, 0.0001)).toBe(true)
