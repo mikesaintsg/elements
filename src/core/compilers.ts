@@ -289,6 +289,106 @@ function flattenIntersectionObjects(shape: IntersectionShape): readonly ObjectSh
 	return out
 }
 
+// === FU5 — intersection-of-objects schema MERGE (emission fidelity)
+//
+// A naive `allOf: [<member schema>, …]` is UNSOUND for an intersection of
+// CLOSED objects: JSON-Schema `allOf` applies each sub-schema INDEPENDENTLY
+// to the whole instance, so a value carrying the union of every member's
+// keys is rejected by EVERY closed sub-schema (each treats a sibling
+// member's key as an "additional" property) — the emitted schema is
+// UNSATISFIABLE even though `compileGuard` for the same `intersectionShape`
+// accepts the merged object. `intersectionShape` (§13) guarantees every
+// effective leaf member is an OBJECT shape, so the conjunction is
+// well-defined as ONE merged object: union the `properties`, union
+// `required`, and reconcile `additionalProperties` with EXACTLY the guard
+// arm's `allClosed` policy (every leaf closed ⇒ the merged object is closed
+// over the UNION of known keys; any leaf open/typed-open ⇒ the merged object
+// keeps that open policy). This is the schema MIRROR of the `intersection`
+// guard arm (opened-member checks + closed-universe sweep over the union of
+// declared keys), so the emitted schema's accept-set equals the guard's.
+//
+// A typed-open member (`additionalProperties` is a `ContractShape`) keeps an
+// `allOf` over the per-member schemas as a fallback: there is no single
+// sound merged `additionalProperties` when distinct members constrain
+// unknown keys with DIFFERENT sub-schemas, and that case is rare; the guard
+// arm likewise defers to each member's own additional-key policy there. The
+// merge only short-circuits the unsatisfiable closed/closed (and
+// closed/plain-open) case, which is the actual FU5 defect.
+function mergeIntersectionObjectSchema(
+	objectMembers: readonly ObjectShape[],
+	lazyContext: LazySchemaContext | undefined,
+): JsonSchema {
+	const properties: { [key: string]: JsonSchema } = {}
+	const required = new Set<string>()
+	// `allClosed`: every leaf member rejects unknown keys (the default /
+	// `false`). `anyTypedOpen`: a leaf constrains unknown keys with a shape —
+	// no single merged `additionalProperties` is sound, fall back to `allOf`.
+	let allClosed = true
+	let anyTypedOpen = false
+	for (const member of objectMembers) {
+		for (const key of Object.keys(member.properties)) {
+			const child = member.properties[key]
+			if (child === undefined) {
+				continue
+			}
+			properties[key] = compileSchemaInner(child, lazyContext)
+			if (!guardPermitsAbsence(child)) {
+				required.add(key)
+			}
+		}
+		if (member.additionalProperties === true) {
+			allClosed = false
+		} else if (isShapeAdditional(member.additionalProperties)) {
+			allClosed = false
+			anyTypedOpen = true
+		}
+	}
+	if (anyTypedOpen) {
+		// Distinct typed-open members have no single sound merged
+		// unknown-key schema — keep the per-member conjunction (the guard
+		// arm likewise honours each member's own additional-key policy).
+		return {
+			allOf: objectMembers.map((member) => compileSchemaInner(member, lazyContext)),
+		}
+	}
+	const result: {
+		type: 'object'
+		properties?: JsonSchemaMap
+		required?: readonly string[]
+		additionalProperties: boolean
+	} = { type: 'object', additionalProperties: !allClosed }
+	if (Object.keys(properties).length > 0) {
+		result.properties = properties
+	}
+	if (required.size > 0) {
+		result.required = [...required]
+	}
+	return result
+}
+
+// === FU5 — top-level optional root encoding
+//
+// `anyOf: [<inner>, {}]` — the inner schema stays visible to external
+// consumers while the always-true `{}` branch admits `undefined`/absence so
+// the emitted schema's accept-set ⊇ the guard's (every value the
+// `optionalShape` guard accepts — the inner's domain ∪ `undefined` — the
+// emitted schema also accepts). A boolean inner schema (`rawShape(true)` ⇒
+// `true`, the always-true schema; `rawShape(false)` ⇒ `false`, the
+// never-true schema) cannot be an `anyOf` member usefully: `anyOf:[true,{}]`
+// is just the always-true schema and `anyOf:[false,{}]` reduces to `{}`
+// (the `false` branch never matches, the `{}` branch always does, which is
+// exactly the desired "optional ⇒ admit absence/anything" set since the
+// guard of an `optional(raw(false))` accepts only `undefined`). Return `{}`
+// (always-true) for a boolean inner so the result is a plain object schema
+// (an `anyOf` of a boolean member is needless and a bare boolean root cannot
+// carry sibling `$defs`).
+function wrapTopLevelOptional(inner: JsonSchema): JsonSchema {
+	if (typeof inner === 'boolean') {
+		return {}
+	}
+	return { anyOf: [inner, {}] }
+}
+
 // === FU1 — recursive-lazy DATA cycle/depth safety (§13: a guard NEVER throws)
 //
 // D3's `'lazy'` arm makes a recursive shape COMPILE (the static cycle-breaker)
@@ -428,6 +528,38 @@ function newLazyParserCache(): LazyParserCache {
  * guard, parser, and generator. Equivalent to
  * `compileContract(shape).schema` but skips constructing the full contract.
  *
+ * EMISSION FIDELITY (the emitted schema and {@link compileGuard} describe
+ * the SAME value set — a value satisfies the schema iff it satisfies the
+ * compiled guard):
+ *
+ * - **Intersection of object shapes** — `intersectionShape` does NOT emit a
+ *   naive `allOf: [<member>, …]`. JSON-Schema `allOf` applies every
+ *   sub-schema INDEPENDENTLY to the whole instance, so an `allOf` of CLOSED
+ *   objects (the default) is UNSATISFIABLE (each closed member rejects a
+ *   sibling member's keys as "additional") even though the guard accepts
+ *   the merged object. The effective leaf object members are instead MERGED
+ *   into one object schema: union of `properties`, union of `required`, and
+ *   `additionalProperties` reconciled exactly as the guard does — closed iff
+ *   EVERY leaf member is closed (then closed over the UNION of known keys),
+ *   open if any leaf is open. (Distinct typed-open members — each
+ *   constraining unknown keys with a different sub-schema — have no single
+ *   sound merged unknown-key schema and keep the per-member `allOf`, the
+ *   same way the guard arm defers to each member's own additional-key
+ *   policy there.)
+ * - **Optionality** — a NESTED/property `optionalShape` emits the BARE
+ *   inner schema; absence is carried structurally by the enclosing object
+ *   OMITTING the key from `required` (an absent optional key is never
+ *   validated). A TOP-LEVEL `optionalShape` root has no enclosing
+ *   `required` to carry absence and JSON Schema has no value-level
+ *   `undefined`, so the root is emitted as `anyOf: [<inner>, {}]`: the
+ *   inner schema stays visible AND the always-true `{}` branch makes the
+ *   schema admit `undefined`/absence so it accepts EVERY value the guard
+ *   accepts (the inner's domain ∪ `undefined`). The `{}` branch also widens
+ *   root acceptance to values outside `inner` — a deliberate, documented
+ *   best-effort (JSON Schema cannot encode "the inner OR undefined and
+ *   nothing else" at a bare document root; the same LOOSER known-divergence
+ *   class as the inverse `compileSchemaShape`).
+ *
  * @param shape - The shape to compile
  * @returns A JSON Schema object suitable for tool and agent integration
  *
@@ -465,7 +597,33 @@ export function compileSchema(shape: ContractShape): JsonSchema {
 	// `isJsonSchema`). Phase E builds the full `$ref`/`$defs` resolver on
 	// this seam.
 	const context: LazySchemaContext = { defs: {}, names: new Map(), counter: { value: 0 } }
-	const root = compileSchemaInner(shape, context)
+	// FU5 defect #2 — TOP-LEVEL optionality. `compileGuard(optionalShape(x))`
+	// accepts `undefined` AS WELL AS every value `inner` accepts. A NESTED
+	// optional carries "may be absent" structurally (the enclosing
+	// `objectShape` omits the key from `required`; see the `'optional'`
+	// arm), so it correctly emits the bare inner schema. The ROOT has NO
+	// enclosing `required` to carry that absence, and JSON Schema has no
+	// value-level `undefined`, so the bare inner schema at the root REJECTS
+	// `undefined` while the guard ACCEPTS it — an accept-set disagreement.
+	// The faithful root encoding is `anyOf: [<inner>, {}]`: the inner schema
+	// stays visible to external consumers (its constraints are not erased
+	// from the document) AND the always-true `{}` branch makes the schema
+	// admit `undefined`/absence exactly as the guard does, so EVERY value
+	// the guard accepts (the inner's domain ∪ `undefined`) the emitted
+	// schema also accepts — round-trip parity holds for the guard's
+	// accept-set. The `{}` branch also widens acceptance to values OUTSIDE
+	// `inner` at the root: this is the SAME deliberate, documented
+	// best-effort widening the package already ships for root constructs
+	// JSON Schema cannot express precisely (cf. `compileSchemaShape`'s
+	// LOOSER known-divergence contract) — JSON Schema simply cannot encode
+	// "the inner's values OR undefined and nothing else" at a bare document
+	// root. Done ONCE here at the public boundary so nested optionals keep
+	// their exact required-omission encoding.
+	const rootShape = shape.type === 'optional' ? shape.inner : shape
+	const root =
+		shape.type === 'optional'
+			? wrapTopLevelOptional(compileSchemaInner(rootShape, context))
+			: compileSchemaInner(rootShape, context)
 	if (Object.keys(context.defs).length === 0) {
 		return root
 	}
@@ -600,14 +758,27 @@ function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContex
 			}
 		}
 		case 'intersection': {
-			// Standard JSON-Schema conjunction: a value must validate against
-			// EVERY member sub-schema. `allOf` is the schema mirror of
-			// validators' `intersectionOf` (value valid iff every member guard
-			// passes) and of this arm's guard below.
-			return {
-				allOf: shape.members.map((member) => compileSchemaInner(member, lazyContext)),
-				...(shape.description !== undefined ? { description: shape.description } : {}),
+			// FU5 — emission fidelity. `intersectionShape` (§13) guarantees
+			// every effective leaf member is an OBJECT shape, so the
+			// conjunction is ONE merged object — NOT a naive
+			// `allOf: [<closed A>, <closed B>]`, which JSON Schema applies
+			// independently and which is therefore UNSATISFIABLE for closed
+			// members (each rejects the other's keys), disagreeing with the
+			// `compileGuard` accept-set. `mergeIntersectionObjectSchema`
+			// unions `properties`/`required` and reconciles
+			// `additionalProperties` with EXACTLY the guard arm's `allClosed`
+			// policy, so the emitted schema accepts precisely the guard's set
+			// (round-trip parity oracle). The nested-intersection case is
+			// flattened to its effective leaf objects first, mirroring the
+			// guard's `flattenIntersectionObjects`.
+			const merged = mergeIntersectionObjectSchema(
+				flattenIntersectionObjects(shape),
+				lazyContext,
+			)
+			if (shape.description !== undefined && typeof merged !== 'boolean') {
+				return { ...merged, description: shape.description }
 			}
+			return merged
 		}
 		case 'const': {
 			// Standard JSON-Schema `const`: the value must equal exactly
@@ -621,6 +792,22 @@ function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContex
 			}
 		}
 		case 'optional':
+			// A NESTED / PROPERTY optional emits the BARE inner schema. This
+			// is the package's canonical optionality encoding: an
+			// `objectShape` makes an optional property absent-tolerant by
+			// OMITTING it from `required` (NOT by changing the property's own
+			// schema), and the inverse subsystem's object matcher validates a
+			// property's schema ONLY when the key is PRESENT — so an absent
+			// optional key is never checked and a present one is checked
+			// against `inner`. Wrapping the inner here (e.g. `anyOf:[inner,
+			// {}]`) would OVER-APPROXIMATE every optional property (the
+			// always-true branch swallows the inner constraint) and break
+			// round-trip parity for present-but-invalid values. The
+			// TOP-LEVEL "may be undefined" aspect (FU5 defect #2) is a
+			// ROOT-only concern — JSON Schema has no value-level `undefined`
+			// and the root has no enclosing `required` to carry absence — so
+			// it is handled once at the `compileSchema` public boundary, not
+			// here (see `compileSchema`).
 			return compileSchemaInner(shape.inner, lazyContext)
 		case 'nullable':
 			return { anyOf: [compileSchemaInner(shape.inner, lazyContext), { type: 'null' }] }

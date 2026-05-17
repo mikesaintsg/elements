@@ -8,6 +8,7 @@ import {
 	compileGuard,
 	compileParser,
 	compileSchema,
+	compileSchemaGuard,
 	constShape,
 	createRandom,
 	defaultShape,
@@ -138,11 +139,16 @@ describe('compileSchema', () => {
 		})
 	})
 
-	// `intersectionShape` compiles to JSON-Schema `allOf`: one sub-schema per
-	// member, every one of which the value must satisfy. This is the schema
-	// mirror of validators' `intersectionOf` (value passes iff EVERY member
-	// guard passes) and the standard JSON-Schema conjunction encoding.
-	it('intersection — allOf of every member sub-schema', () => {
+	// FU5 — an intersection of CLOSED object members must NOT emit a naive
+	// `allOf: [{closed A}, {closed B}]`. Under JSON Schema `allOf` applies
+	// each sub-schema INDEPENDENTLY to the whole instance, so the merged
+	// `{a,b}` value the guard accepts would be rejected by EACH closed
+	// sub-schema (each sees the other's key as "additional") — an
+	// UNSATISFIABLE schema that disagrees with `compileGuard`. The correct
+	// JSON-Schema-faithful encoding merges the object sub-schemas: union the
+	// `properties`, union `required`, and (all members closed ⇒) close over
+	// the UNION of known keys.
+	it('intersection — closed object members merge into one closed object (not unsatisfiable allOf)', () => {
 		expect(
 			compileSchema(
 				intersectionShape(
@@ -151,14 +157,14 @@ describe('compileSchema', () => {
 				),
 			),
 		).toEqual({
-			allOf: [
-				{ type: 'object', properties: { a: { type: 'string' } }, required: ['a'], additionalProperties: false },
-				{ type: 'object', properties: { b: { type: 'integer' } }, required: ['b'], additionalProperties: false },
-			],
+			type: 'object',
+			properties: { a: { type: 'string' }, b: { type: 'integer' } },
+			required: ['a', 'b'],
+			additionalProperties: false,
 		})
 	})
 
-	it('intersection — nested member shapes compile recursively', () => {
+	it('intersection — nested closed members flatten + merge into one closed object', () => {
 		expect(
 			compileSchema(
 				intersectionShape(
@@ -167,15 +173,33 @@ describe('compileSchema', () => {
 				),
 			),
 		).toEqual({
-			allOf: [
-				{
-					allOf: [
-						{ type: 'object', properties: { a: { type: 'string' } }, required: ['a'], additionalProperties: false },
-						{ type: 'object', properties: { b: { type: 'boolean' } }, required: ['b'], additionalProperties: false },
-					],
-				},
-				{ type: 'object', properties: { c: { type: 'integer' } }, required: ['c'], additionalProperties: false },
-			],
+			type: 'object',
+			properties: {
+				a: { type: 'string' },
+				b: { type: 'boolean' },
+				c: { type: 'integer' },
+			},
+			required: ['a', 'b', 'c'],
+			additionalProperties: false,
+		})
+	})
+
+	// An OPEN member (`additionalProperties: true`) keeps the merged object
+	// open — mirrors the guard arm's `allClosed` policy (any open member ⇒
+	// the merged object stays open).
+	it('intersection — an open member keeps the merged object open', () => {
+		expect(
+			compileSchema(
+				intersectionShape(
+					objectShape({ a: stringShape() }),
+					objectShape({ b: integerShape() }, { additionalProperties: true }),
+				),
+			),
+		).toEqual({
+			type: 'object',
+			properties: { a: { type: 'string' }, b: { type: 'integer' } },
+			required: ['a', 'b'],
+			additionalProperties: true,
 		})
 	})
 
@@ -198,14 +222,271 @@ describe('compileSchema', () => {
 		expect(schema).toMatchObject({ anyOf: [{ type: 'string' }, { type: 'integer' }] })
 	})
 
-	it('optional — delegates to inner', () => {
-		expect(compileSchema(optionalShape(stringShape()))).toEqual({ type: 'string' })
+	// FU5 — a top-level `optionalShape` guard accepts `undefined` as well as
+	// the inner's value set. JSON Schema has no `undefined`, but the package
+	// already encodes "may be absent" as the omission of a key from
+	// `required` (the `objectShape` optional-property convention) and an
+	// "either/or" value set as `anyOf`. A top-level optional is faithfully
+	// the inner schema OR no value at all; since the package's accept-set for
+	// a guard that admits `undefined` is "inner ∪ {undefined}", the schema
+	// must NOT force the inner present. The minimal JSON-Schema-faithful
+	// encoding consistent with the inverse subsystem is `anyOf: [inner, {}]`
+	// — `{}` (the always-true schema) is the package's representation of
+	// "absent/anything", so the emitted schema's accept-set ⊇ the guard's
+	// (`compileSchemaGuard(compileSchema(optional(x)))` agrees with
+	// `compileGuard(optional(x))` on `undefined`, the round-trip oracle).
+	it('optional — admits the inner OR absence (does not force inner present)', () => {
+		expect(compileSchema(optionalShape(stringShape()))).toEqual({
+			anyOf: [{ type: 'string' }, {}],
+		})
 	})
 
 	it('nullable — emits anyOf with null', () => {
 		expect(compileSchema(nullableShape(stringShape()))).toEqual({
 			anyOf: [{ type: 'string' }, { type: 'null' }],
 		})
+	})
+})
+
+// === compileSchema — FU5 round-trip parity (emission fidelity)
+//
+// The emitted JSON Schema and the compiled guard MUST describe the SAME set
+// of values: a value satisfies `compileSchema(s)` iff it satisfies
+// `compileGuard(s)`. The package OWNS the inverse subsystem
+// (`compileSchemaGuard` — compiles an emitted JSON Schema back into a runtime
+// guard with faithful JSON-Schema 2020-12 semantics, incl. independent
+// `allOf` application and closed-object `additionalProperties: false`), so
+// `compileSchemaGuard(compileSchema(s))` vs `compileGuard(s)` over a value
+// corpus is the strongest available round-trip parity oracle and the one the
+// package itself would use to validate emitted schemas. Two pre-fix defects
+// this guards against: (1) an intersection of CLOSED objects emitting an
+// unsatisfiable `allOf` (rejected the merged object the guard accepts), and
+// (2) a top-level optional dropping the "may be undefined" aspect (rejected
+// `undefined` the guard accepts).
+
+/** Assert the emitted schema's accept-set EQUALS the compiled guard's. */
+function assertSchemaGuardParity(shape: ContractShape, corpus: readonly unknown[]): void {
+	const guard = compileGuard(shape)
+	const schemaGuard = compileSchemaGuard(compileSchema(shape))
+	for (const value of corpus) {
+		expect(
+			schemaGuard(value),
+			`emitted schema disagrees with guard on ${JSON.stringify(value) ?? String(value)}`,
+		).toBe(guard(value))
+	}
+}
+
+// FU5 defect #2 — a TOP-LEVEL `optionalShape` guard accepts the inner's
+// domain ∪ `undefined`. JSON Schema has no value-level `undefined` and a
+// bare document root has no enclosing `required` to carry absence, so the
+// root encoding is a deliberate, documented best-effort widening
+// (`anyOf:[inner,{}]`, the same LOOSER known-divergence the package already
+// ships for root constructs JSON Schema cannot express precisely — cf.
+// `compileSchemaShape`). The HARD contract the round-trip oracle must prove
+// is therefore one-directional: the emitted schema must admit EVERY value
+// the guard accepts (NO false negatives — this is exactly the "admits
+// undefined consistently with compileGuard accepting it" assertion, and is
+// what the unsatisfiable-`allOf` / dropped-optionality bugs violated). The
+// widening (schema accepts some values the guard rejects, at the root only)
+// is asserted as the documented, intentional divergence.
+function assertSchemaAdmitsGuardAcceptSet(
+	shape: ContractShape,
+	corpus: readonly unknown[],
+): void {
+	const guard = compileGuard(shape)
+	const schemaGuard = compileSchemaGuard(compileSchema(shape))
+	for (const value of corpus) {
+		// One UNCONDITIONAL assertion of the implication
+		// `guard(v) ⟹ schemaGuard(v)` (NO false negatives — every value the
+		// guard accepts the emitted schema must also accept). `!guard(value)`
+		// short-circuits the OR so a value the guard rejects vacuously
+		// satisfies the implication without widening the contract.
+		const admitsGuardAcceptSet = !guard(value) || schemaGuard(value)
+		expect(
+			admitsGuardAcceptSet,
+			`emitted schema REJECTS ${JSON.stringify(value) ?? String(value)} that the guard ACCEPTS (false negative — the FU5 emission-fidelity defect)`,
+		).toBe(true)
+	}
+}
+
+describe('compileSchema — FU5 round-trip parity oracle', () => {
+	it('intersection of closed objects — emitted schema accepts the merged value the guard accepts', () => {
+		const shape = intersectionShape(
+			objectShape({ a: stringShape() }),
+			objectShape({ b: integerShape() }),
+		)
+		const guard = compileGuard(shape)
+		const schemaGuard = compileSchemaGuard(compileSchema(shape))
+		// The merged value the guard accepts MUST NOT be rejected by the
+		// emitted schema (the unsatisfiable-allOf bug rejected it).
+		expect(guard({ a: 'x', b: 1 })).toBe(true)
+		expect(schemaGuard({ a: 'x', b: 1 })).toBe(true)
+		assertSchemaGuardParity(shape, [
+			{ a: 'x', b: 1 },
+			{ a: 'x' },
+			{ b: 1 },
+			{},
+			{ a: 'x', b: 1, extra: true },
+			'not-an-object',
+		])
+	})
+
+	it('intersection of nested closed objects — round-trip parity holds', () => {
+		assertSchemaGuardParity(
+			intersectionShape(
+				intersectionShape(objectShape({ a: stringShape() }), objectShape({ b: booleanShape() })),
+				objectShape({ c: integerShape() }),
+			),
+			[
+				{ a: 'x', b: true, c: 1 },
+				{ a: 'x', b: true },
+				{ a: 'x', b: true, c: 1, extra: 9 },
+				{},
+				42,
+			],
+		)
+	})
+
+	it('intersection with an open member — round-trip parity holds (extra keys allowed)', () => {
+		assertSchemaGuardParity(
+			intersectionShape(
+				objectShape({ a: stringShape() }),
+				objectShape({ b: integerShape() }, { additionalProperties: true }),
+			),
+			[
+				{ a: 'x', b: 1 },
+				{ a: 'x', b: 1, extra: 'kept' },
+				{ a: 'x' },
+				{},
+			],
+		)
+	})
+
+	it('top-level optional — emitted schema admits undefined consistently with the guard', () => {
+		const shape = optionalShape(stringShape())
+		const guard = compileGuard(shape)
+		const schemaGuard = compileSchemaGuard(compileSchema(shape))
+		// The guard accepts `undefined` AND every string; the emitted schema
+		// must admit BOTH (the dropped-optionality bug rejected `undefined`).
+		expect(guard(undefined)).toBe(true)
+		expect(schemaGuard(undefined)).toBe(true)
+		expect(schemaGuard('hello')).toBe(true)
+		expect(schemaGuard('')).toBe(true)
+		// No false negatives over the guard's accept-set (incl. `undefined`).
+		assertSchemaAdmitsGuardAcceptSet(shape, [undefined, 'hello', '', 42, null, {}])
+		// Documented intentional root widening: JSON Schema cannot express
+		// "string OR undefined and nothing else" at a bare document root, so
+		// the always-true `{}` branch also admits non-string roots. This is
+		// the package's existing LOOSER known-divergence contract (cf.
+		// `compileSchemaShape`), asserted explicitly so it is a deliberate
+		// behaviour, not a silent bug.
+		expect(schemaGuard(42)).toBe(true)
+		expect(guard(42)).toBe(false)
+	})
+
+	it('top-level optional object — emitted schema admits undefined + every valid inner', () => {
+		assertSchemaAdmitsGuardAcceptSet(
+			optionalShape(objectShape({ name: stringShape({ min: 1 }) })),
+			[undefined, { name: 'Ada' }, { name: '' }, { name: 'Ada', x: 1 }, 'str', null],
+		)
+	})
+
+	// Durable corpus regression guard (the user-requested round-trip parity
+	// test): a representative shape+value corpus — primitives, closed/open
+	// objects, intersections of closed objects, nested intersections, and
+	// (inside an object) an optional property — for which the emitted
+	// schema's accept-set MUST EXACTLY equal the guard's. This is the
+	// standing regression net beyond the two specific bug repros above; an
+	// intersection of closed objects appearing here would have FAILED before
+	// the FU5 fix (unsatisfiable `allOf`).
+	it('representative corpus — schema accept-set EXACTLY equals guard accept-set', () => {
+		const cases: readonly { readonly shape: ContractShape; readonly corpus: readonly unknown[] }[] =
+			[
+				{
+					shape: stringShape({ min: 1 }),
+					corpus: ['a', '', 1, undefined, null],
+				},
+				{
+					shape: objectShape({ id: stringShape() }),
+					corpus: [{ id: 'x' }, { id: 'x', y: 1 }, {}, 'no'],
+				},
+				{
+					shape: objectShape({ id: stringShape() }, { additionalProperties: true }),
+					corpus: [{ id: 'x' }, { id: 'x', y: 1 }, {}],
+				},
+				{
+					shape: intersectionShape(
+						objectShape({ a: stringShape() }),
+						objectShape({ b: integerShape() }),
+					),
+					corpus: [{ a: 'x', b: 1 }, { a: 'x' }, { b: 1 }, {}, { a: 'x', b: 1, z: 0 }],
+				},
+				{
+					shape: intersectionShape(
+						intersectionShape(
+							objectShape({ a: stringShape() }),
+							objectShape({ b: booleanShape() }),
+						),
+						objectShape({ c: integerShape() }),
+					),
+					corpus: [
+						{ a: 'x', b: false, c: 2 },
+						{ a: 'x', b: false },
+						{ a: 'x', b: false, c: 2, extra: 1 },
+						{},
+					],
+				},
+				{
+					// An optional PROPERTY inside an object round-trips
+					// EXACTLY (absence carried structurally by `required`
+					// omission), AND its value is an intersection of closed
+					// objects (the FU5 #1 case nested under a key).
+					shape: objectShape({
+						who: intersectionShape(
+							objectShape({ a: stringShape() }),
+							objectShape({ b: integerShape() }),
+						),
+						note: optionalShape(stringShape()),
+					}),
+					corpus: [
+						{ who: { a: 'x', b: 1 } },
+						{ who: { a: 'x', b: 1 }, note: 'hi' },
+						{ who: { a: 'x' } },
+						{ who: { a: 'x', b: 1, bad: 1 } },
+						{ who: { a: 'x', b: 1 }, note: 7 },
+					],
+				},
+			]
+		for (const { shape, corpus } of cases) {
+			assertSchemaGuardParity(shape, corpus)
+		}
+	})
+
+	// Durable corpus regression guard for FU5 #2 — TOP-LEVEL optionals. The
+	// hard one-directional contract (NO false negatives: the emitted schema
+	// admits EVERY value the guard accepts, incl. `undefined`) over a
+	// representative corpus including `undefined`, intersections-of-closed-
+	// objects as the optional inner, and out-of-domain values.
+	it('representative corpus — top-level optionals admit the full guard accept-set', () => {
+		const cases: readonly { readonly shape: ContractShape; readonly corpus: readonly unknown[] }[] =
+			[
+				{
+					shape: optionalShape(stringShape({ min: 1 })),
+					corpus: [undefined, 'ok', '', 7, null],
+				},
+				{
+					shape: optionalShape(
+						intersectionShape(
+							objectShape({ a: stringShape() }),
+							objectShape({ b: integerShape() }),
+						),
+					),
+					corpus: [undefined, { a: 'x', b: 1 }, { a: 'x' }, { a: 'x', b: 1, e: 0 }],
+				},
+			]
+		for (const { shape, corpus } of cases) {
+			assertSchemaAdmitsGuardAcceptSet(shape, corpus)
+		}
 	})
 })
 
