@@ -81,7 +81,7 @@ These are real exports of the same module as `createRandom()`; prefer the valida
 
 An object-root JSON Schema uses the same compiler path as every other contract: `compileSchema(objectShape(...))`. The `ObjectShape` overload narrows the result to `JsonSchemaObject`. There is no separate object-schema builder — object-root schemas are ordinary contracts compiled from an `objectShape()`.
 
-> The flat value parsers (`parseString`, `parseNumber`, field extractors, env / JSON helpers) live in a sibling module and are documented in [parsers.md](parsers.md). The contract compilers reuse them internally for primitive coercion, but they are a standalone surface — not part of the contract DSL.
+> Guards narrow, parsers coerce, contracts derive — see [validators.md](validators.md) for the full three-surface framing. The flat value parsers ([parsers.md](parsers.md)) are a standalone surface the contract compilers reuse internally for primitive coercion, but they are not part of the contract DSL.
 
 ---
 

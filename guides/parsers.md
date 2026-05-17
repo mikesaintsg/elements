@@ -6,7 +6,7 @@
 
 The parsers module is a flat library of pure, single-purpose functions that take an `unknown` (or a `Record`, or a raw `string`) and return a typed value — or `undefined` when the input doesn't fit. There is no state, no buffering, no lifecycle: every call is a fresh, total function of its argument.
 
-**Parsers vs. the contract DSL.** [contracts.md](contracts.md) documents the *shape-driven* pipeline — declare a `ContractShape` once and get a JSON Schema, a guard, a parser, and a generator compiled from it. This module is the *flat* counterpart: hand-reachable primitives for the everyday "I have an `unknown` field, give me a `string` or `undefined`" job, with no shape declaration. The contract compilers reuse these primitives internally for coercion, but they are an independent, directly-importable surface. Reach for a contract when one shape feeds schema + guard + parser + generator; reach for these when you just need to pull a typed value out of request bodies, query strings, or JSON blobs.
+Guards narrow, parsers coerce, contracts derive — see [validators.md](validators.md) for the full three-surface framing. This module is the *flat* counterpart to the shape-driven DSL: hand-reachable primitives for the everyday "I have an `unknown` field, give me a `string` or `undefined`" job, with no shape declaration. The contract compilers reuse these primitives internally for coercion, but they are an independent, directly-importable surface. Reach for a contract when one shape feeds schema + guard + parser + generator; reach for these when you just need to pull a typed value out of request bodies, query strings, or JSON blobs.
 
 ### Primitive parsers
 

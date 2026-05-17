@@ -238,11 +238,11 @@ Browser-free contract / parser / validator surface. No SCSS, no Vue, no DOM. The
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | [`index.ts`](../src/core/index.ts)            | Sole public barrel. `export *` from each surface file.                                                         |
 | [`types.ts`](../src/core/types.ts)            | SOURCE OF TRUTH for the package's types — shape DSL, contract, parser/guard signatures, `RefResolver`/`LazyRef`. |
-| [`helpers.ts`](../src/core/helpers.ts)        | Deterministic PRNG (`createRandom`, Mulberry32) — seeds `compileGenerator`.                                    |
+| [`helpers.ts`](../src/core/helpers.ts)        | General-purpose utilities shared across core: `createRandom` (Mulberry32 PRNG — seeds `compileGenerator`), `enumerableSymbolCount`, `isConstructor`, `isShapeAdditional`. |
 | [`validators.ts`](../src/core/validators.ts)  | Runtime type guards (`unknown` → narrowed) + guard compositors.                                                |
 | [`parsers.ts`](../src/core/parsers.ts)        | Flat value / field / format parsers — coerce `unknown`, return `undefined` on failure.                         |
-| [`shapers.ts`](../src/core/shapers.ts)        | The shape DSL — declarative field descriptors a contract is built from.                                        |
-| [`compilers.ts`](../src/core/compilers.ts)    | Shape → JSON Schema / runtime guard / input parser / seeded generator / full contract entry point.             |
+| [`shapers.ts`](../src/core/shapers.ts)        | The shape DSL — builders (`stringShape`, `objectShape`, `tupleShape`, `intersectionShape`, `lazyShape`, `constShape`, `defaultShape`, …) a contract compiles from.                       |
+| [`compilers.ts`](../src/core/compilers.ts)    | The forward pipeline — shape → JSON Schema / runtime guard / input parser / seeded generator (`compileSchema`, `compileGuard`, `compileParser`, `compileGenerator`, `compileContract`). |
 | [`schema.ts`](../src/core/schema.ts)          | The inverse subsystem — JSON Schema → guard / `ContractShape` / parser, `$ref`/`$defs`-resolved, recursion-safe. |
 
 ### `src/styles/` — SCSS source
