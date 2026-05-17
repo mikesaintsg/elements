@@ -28,7 +28,8 @@ import { isObject, isRecord } from './validators.js'
 // const `value` came through `constShape` typed as `JsonValue`, so it is a
 // finite acyclic JSON tree (no functions, no cycles) — a plain recursive
 // walk terminates without the WeakSet/depth guards the public JSON guards
-// need for untrusted input. The shared `deepEqual` (helpers.ts) IS that walk:
+// need for untrusted input. The `deepEqual` defined in this file IS that
+// walk (it narrows objects via validators' `isRecord`):
 // the const value is the trusted left operand `a` (bounding the recursion),
 // the guard argument is the untrusted right operand `b`. The default
 // property-read strategy is a direct `Reflect.get` — the trusted-input
@@ -463,8 +464,8 @@ export function compileSchema(shape: ContractShape): JsonSchema {
 	// emits the bare inner everywhere). `compileGuard(optionalShape(x))`
 	// accepts `undefined` AS WELL AS every value `inner` accepts. A NESTED
 	// optional carries "may be absent" structurally (the enclosing
-	// `objectShape` omits the key from `required` and the inverse object
-	// matcher only validates PRESENT keys), so the bare inner is EXACT
+	// `objectShape` omits the key from `required` and JSON-Schema object
+	// validation only checks PRESENT keys), so the bare inner is EXACT
 	// there. A bare top-level optional ROOT has NO enclosing `required` to
 	// carry absence and JSON Schema has no value-level `undefined`, so the
 	// emitted bare inner REJECTS exactly the one value (`undefined`) the

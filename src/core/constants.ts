@@ -8,55 +8,50 @@
 //  declaration now lives as TSDoc on the exported binding.
 //
 //  The recursion-depth ceiling `MAX_RECURSION_DEPTH` is the single shared
-//  stack-safety backstop for all four recursions that need one (JSON-value
-//  walk, lazy-data walk, `$ref`-chain resolution, compiled-schema data walk).
-//  Each was independently measured to overflow the native stack well above
-//  1000; they collapse to one constant because the conservative safe ceiling
-//  is identical for all of them — see its TSDoc for the per-recursion
-//  rationale.
+//  stack-safety backstop for both recursions that need one (the recursive
+//  JSON-value / JSON-schema walks in `validators.ts` and the lazy-data walk
+//  in `compilers.ts`). Each was independently measured to overflow the native
+//  stack well above 1000; they collapse to one constant because the
+//  conservative safe ceiling is identical for both — see its TSDoc for the
+//  per-recursion rationale.
 // ============================================================================
 
 // === Recursion-depth ceiling ================================================
 
 /**
  * Single shared stack-safety ceiling for every recursive walk in the package
- * that needs a secondary depth backstop. Four distinct recursions consume it:
+ * that needs a secondary depth backstop. Two distinct recursions consume it:
  *
- * 1. the recursive JSON-value walk in `isJsonValueInner` (`validators.ts`);
+ * 1. the recursive JSON-value / JSON-schema walks in `isJsonValueInner` /
+ *    `isJsonSchemaInner` (`validators.ts`);
  * 2. the lazy-recursion DATA walk in the compiled `'lazy'` arm
  *    (`compilers.ts`) — only `lazy` re-entries increment depth, so
- *    non-recursive nested shapes are unaffected;
- * 3. a single `$ref`-chain resolution in the inverse schema → guard subsystem
- *    (`schema.ts`);
- * 4. the recursive DATA walk a compiled schema guard performs (`schema.ts`).
+ *    non-recursive nested shapes are unaffected.
  *
  * @remarks
- * In every one of these sites a precise cycle detector — a per-call/-compilation
- * `WeakSet` ancestor path (1, 2, 4) or an ancestor-pointer set (3) — already
- * terminates every TRUE cycle. This cap is purely the SECONDARY stack-overflow
- * backstop for the residual case those detectors structurally cannot catch: a
- * pathologically deep BUT acyclic structure (no repeated reference / pointer).
- * Exceeding the cap converts that pathological depth into a graceful outcome
- * instead of a native `RangeError`: a `false` return for the validator and
- * compiled guard walks (1, 2, 4 — the produced guard/parser must never throw,
- * §13), and a precise §13 `Error` naming the chain for the `$ref` resolver (3).
+ * In both of these sites a precise cycle detector — a per-call/-compilation
+ * `WeakSet` ancestor path — already terminates every TRUE cycle. This cap is
+ * purely the SECONDARY stack-overflow backstop for the residual case those
+ * detectors structurally cannot catch: a pathologically deep BUT acyclic
+ * structure (no repeated reference). Exceeding the cap converts that
+ * pathological depth into a graceful outcome instead of a native `RangeError`:
+ * a `false` return for the validator and compiled guard walks (the produced
+ * guard/parser must never throw, §13).
  *
- * The four recursions were each measured separately and each empirically
+ * Both recursions were each measured separately and each empirically
  * overflows the native stack well above 1000 — the JSON-value walk overflows
  * the Node stack at a measured depth of ~4,650; the lazy-recursion data walk
  * overflows V8's stack at a measured lazy-recursion depth of ~2,900 in the
- * test runner (each lazy level costs several real frames); the two schema.ts
- * recursions overflow far above 1000 as well. A caller/test-runner has already
- * consumed part of the stack before any of these guards is entered, so the
- * true safe ceiling is lower than the bare-overflow figure in each case. A
- * single shared ceiling of `1_000` is the conservative backstop for all of
- * them: it sits several-fold below the lowest measured bare-overflow point
- * (ample margin even with a pre-consumed stack) while remaining orders of
- * magnitude above any legitimate input — real schemas/documents nest a handful
- * to low-tens of levels, real recursive documents a handful to low-hundreds of
- * lazy levels, real `$ref` indirection a handful of links — so it never
- * false-rejects genuine input. The value is interpolated into the `$ref`
- * resolver's thrown error message at its consumer site (`schema.ts`).
+ * test runner (each lazy level costs several real frames). A
+ * caller/test-runner has already consumed part of the stack before either of
+ * these guards is entered, so the true safe ceiling is lower than the
+ * bare-overflow figure in each case. A single shared ceiling of `1_000` is
+ * the conservative backstop for both of them: it sits several-fold below the
+ * lowest measured bare-overflow point (ample margin even with a pre-consumed
+ * stack) while remaining orders of magnitude above any legitimate input —
+ * real schemas/documents nest a handful to low-tens of levels, real recursive
+ * documents a handful to low-hundreds of lazy levels — so it never
+ * false-rejects genuine input.
  */
 export const MAX_RECURSION_DEPTH = 1_000
 
