@@ -21,6 +21,7 @@ import type {
 	UnionShape,
 } from './types.js'
 import { compileGuard } from './compilers.js'
+import { validateBounds } from './helpers.js'
 
 // === Build-time bounds validation
 //
@@ -29,42 +30,8 @@ import { compileGuard } from './compilers.js'
 // not deep in a compiler where the symptom (guard-failing generator output,
 // parser/guard disagreement) would surface far from the cause. Compilers
 // deliberately do NOT re-validate: the shape is already well-formed by the
-// time it reaches them.
-
-/**
- * Validate optional numeric `min`/`max` bounds for a shape builder.
- *
- * @param label - Builder name, used verbatim in the thrown message.
- * @param min - The `min` option (length or value lower bound) if supplied.
- * @param max - The `max` option (length or value upper bound) if supplied.
- * @param lengthBound - When true, a negative `min`/`max` is rejected too
- *        (string/array LENGTH can never be negative). Numeric VALUE bounds
- *        may legitimately be negative, so callers pass `false` there.
- * @throws Error when a bound is non-finite, negative where nonsensical, or
- *         `min` exceeds `max`.
- */
-function validateBounds(
-	label: string,
-	min: number | undefined,
-	max: number | undefined,
-	lengthBound: boolean,
-): void {
-	if (min !== undefined && !Number.isFinite(min)) {
-		throw new Error(`${label}: min must be a finite number`)
-	}
-	if (max !== undefined && !Number.isFinite(max)) {
-		throw new Error(`${label}: max must be a finite number`)
-	}
-	if (lengthBound && min !== undefined && min < 0) {
-		throw new Error(`${label}: min (${min}) must not be negative`)
-	}
-	if (lengthBound && max !== undefined && max < 0) {
-		throw new Error(`${label}: max (${max}) must not be negative`)
-	}
-	if (min !== undefined && max !== undefined && min > max) {
-		throw new Error(`${label}: min (${min}) must not exceed max (${max})`)
-	}
-}
+// time it reaches them. The check itself lives in `helpers.ts`
+// (`validateBounds`); the builders below invoke it at their build boundary.
 
 // === String
 

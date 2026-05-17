@@ -159,3 +159,147 @@ export function isShapeAdditional(
 ): value is ContractShape {
 	return typeof value === 'object'
 }
+
+/**
+ * Validate optional numeric `min`/`max` bounds for a shape builder.
+ *
+ * @remarks
+ * This is a BUILD-TIME programmer-error guard per AGENTS.md §13 — NOT a
+ * runtime guard. An inverted / non-finite / nonsensically-negative bound is a
+ * programmer error, so it throws at the boundary where the shape is BUILT,
+ * not deep in a compiler where the symptom (guard-failing generator output,
+ * parser/guard disagreement) would surface far from the cause. Compilers
+ * deliberately do NOT re-validate: the shape is already well-formed by the
+ * time it reaches them.
+ *
+ * @param label - Builder name, used verbatim in the thrown message.
+ * @param min - The `min` option (length or value lower bound) if supplied.
+ * @param max - The `max` option (length or value upper bound) if supplied.
+ * @param lengthBound - When true, a negative `min`/`max` is rejected too
+ *        (string/array LENGTH can never be negative). Numeric VALUE bounds
+ *        may legitimately be negative, so callers pass `false` there.
+ * @returns Nothing — completes silently when every bound is well-formed.
+ * @throws Error when a bound is non-finite, negative where nonsensical, or
+ *         `min` exceeds `max`.
+ *
+ * @example
+ * ```ts
+ * validateBounds('stringShape', 1, 80, true) // ok
+ * validateBounds('stringShape', 5, 2, true)  // throws: min (5) must not exceed max (2)
+ * ```
+ */
+export function validateBounds(
+	label: string,
+	min: number | undefined,
+	max: number | undefined,
+	lengthBound: boolean,
+): void {
+	if (min !== undefined && !Number.isFinite(min)) {
+		throw new Error(`${label}: min must be a finite number`)
+	}
+	if (max !== undefined && !Number.isFinite(max)) {
+		throw new Error(`${label}: max must be a finite number`)
+	}
+	if (lengthBound && min !== undefined && min < 0) {
+		throw new Error(`${label}: min (${min}) must not be negative`)
+	}
+	if (lengthBound && max !== undefined && max < 0) {
+		throw new Error(`${label}: max (${max}) must not be negative`)
+	}
+	if (min !== undefined && max !== undefined && min > max) {
+		throw new Error(`${label}: min (${min}) must not exceed max (${max})`)
+	}
+}
+
+/**
+ * Determine whether a `$ref` string is an EXTERNAL / non-local reference
+ * (a different document this resolver was not given).
+ *
+ * @remarks
+ * Local (supported) forms: `#`, `#/...` (URI fragment), `` (empty), and
+ * the bare RFC-6901 `/...` form — all of which resolve against the single
+ * document `root`. Anything with a scheme (`https:`, `urn:`) or any
+ * non-`#` prefix before a `#` (e.g. `other.json#/A`, `defs.json`) names a
+ * separate document → external.
+ *
+ * @param ref - The `$ref` string to classify
+ * @returns `true` when `ref` names a separate document; `false` for the
+ *          local single-document forms
+ *
+ * @example
+ * ```ts
+ * isExternalRef('#/$defs/Id')   // false (local fragment)
+ * isExternalRef('/a/b')         // false (bare RFC-6901)
+ * isExternalRef('other.json#/A') // true  (external document)
+ * ```
+ */
+export function isExternalRef(ref: string): boolean {
+	if (ref === '' || ref === '#' || ref.startsWith('#/') || ref.startsWith('/')) {
+		return false
+	}
+	// A bare `#fragment` with no path is still local; anything else
+	// (scheme-prefixed URI, relative document path, doc#fragment) is external.
+	return ref !== '#'
+}
+
+/**
+ * Unescape ONE RFC-6901 reference token: `~1` → `/` then `~0` → `~`.
+ *
+ * @remarks
+ * Order is mandatory: `~1` MUST be replaced before `~0` so the escape
+ * sequence `~01` decodes to the literal `~1` rather than being corrupted to
+ * `/`. Doing `~0`→`~` first would turn `~01` into `~1` and then `~1`→`/`
+ * would corrupt it to `/`.
+ *
+ * @param token - A single RFC-6901-escaped reference token
+ * @returns The unescaped token
+ *
+ * @example
+ * ```ts
+ * unescapeToken('a~1b') // 'a/b'
+ * unescapeToken('~01')  // '~1' (NOT '/')
+ * ```
+ */
+export function unescapeToken(token: string): string {
+	return token.replace(/~1/g, '/').replace(/~0/g, '~')
+}
+
+/**
+ * `value` is a multiple of `divisor` within IEEE-754 tolerance.
+ *
+ * @remarks
+ * `value / divisor` must be (near) an integer. A small relative epsilon
+ * tolerates representation error for common decimal divisors (`0.1`) while
+ * still rejecting a clearly non-multiple. `Number.EPSILON * 8 * |quotient|`
+ * is a few-ULP relative band that cleanly separates a genuine division
+ * rounding error (`0.3 / 0.1` lands ~6.7e-16 off 3) from a clearly
+ * non-multiple (`0.30000000000001 / 0.1` is ~1e-13 off, ~150x larger).
+ *
+ * @param value - The dividend
+ * @param divisor - The divisor (a zero divisor yields `false`)
+ * @returns `true` when `value` is a multiple of `divisor` within tolerance
+ *
+ * @example
+ * ```ts
+ * isMultipleOf(0.3, 0.1) // true  (tolerates IEEE-754 error)
+ * isMultipleOf(7, 2)     // false
+ * isMultipleOf(5, 0)     // false (zero divisor)
+ * ```
+ */
+export function isMultipleOf(value: number, divisor: number): boolean {
+	if (divisor === 0) {
+		return false
+	}
+	const quotient = value / divisor
+	const rounded = Math.round(quotient)
+	if (rounded === quotient) {
+		return true
+	}
+	// Tolerate ONLY genuine IEEE-754 representation error of the division
+	// (a few ULPs of the quotient — `0.3 / 0.1` lands ~6.7e-16 off 3),
+	// while still rejecting a clearly non-multiple (`0.30000000000001 / 0.1`
+	// is ~1e-13 off, ~150x larger). `Number.EPSILON * 8 * |quotient|` is a
+	// few-ULP relative band that cleanly separates the two (design note 7).
+	const epsilon = Number.EPSILON * 8 * Math.max(1, Math.abs(quotient))
+	return Math.abs(quotient - rounded) <= epsilon
+}

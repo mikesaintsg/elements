@@ -33,6 +33,7 @@ import {
 	URI_FORMAT,
 	UUID_FORMAT,
 } from './constants.js'
+import { isExternalRef, isMultipleOf, unescapeToken } from './helpers.js'
 import { isJsonSchema, isRecord } from './validators.js'
 
 // ============================================================================
@@ -146,38 +147,6 @@ import { isJsonSchema, isRecord } from './validators.js'
 //  rest). Per RFC 6901: `%`-decode the fragment FIRST (it is URI-layer),
 //  split on `/`, THEN `~1`/`~0`-unescape each token (it is pointer-layer).
 // ============================================================================
-
-/**
- * Determine whether a `$ref` string is an EXTERNAL / non-local reference
- * (a different document this resolver was not given).
- *
- * @remarks
- * Local (supported) forms: `#`, `#/...` (URI fragment), `` (empty), and
- * the bare RFC-6901 `/...` form — all of which resolve against the single
- * document `root`. Anything with a scheme (`https:`, `urn:`) or any
- * non-`#` prefix before a `#` (e.g. `other.json#/A`, `defs.json`) names a
- * separate document → external. See design note 2 for the future seam.
- */
-function isExternalRef(ref: string): boolean {
-	if (ref === '' || ref === '#' || ref.startsWith('#/') || ref.startsWith('/')) {
-		return false
-	}
-	// A bare `#fragment` with no path is still local; anything else
-	// (scheme-prefixed URI, relative document path, doc#fragment) is external.
-	return ref !== '#'
-}
-
-/**
- * Unescape ONE RFC-6901 reference token: `~1` → `/` then `~0` → `~`.
- *
- * @remarks
- * Order is mandatory (see the escaping note in the module header): `~1`
- * MUST be replaced before `~0` so the escape sequence `~01` decodes to the
- * literal `~1` rather than being corrupted to `/`.
- */
-function unescapeToken(token: string): string {
-	return token.replace(/~1/g, '/').replace(/~0/g, '~')
-}
 
 /**
  * Split a JSON Pointer into its already-unescaped reference tokens.
@@ -657,32 +626,6 @@ function matchesFormat(format: string, value: string): boolean {
 		default:
 			return true
 	}
-}
-
-/**
- * `value` is a multiple of `divisor` within IEEE-754 tolerance.
- *
- * @remarks
- * `value / divisor` must be (near) an integer. A small relative epsilon
- * tolerates representation error for common decimal divisors (`0.1`) while
- * still rejecting a clearly non-multiple. See design note 7.
- */
-function isMultipleOf(value: number, divisor: number): boolean {
-	if (divisor === 0) {
-		return false
-	}
-	const quotient = value / divisor
-	const rounded = Math.round(quotient)
-	if (rounded === quotient) {
-		return true
-	}
-	// Tolerate ONLY genuine IEEE-754 representation error of the division
-	// (a few ULPs of the quotient — `0.3 / 0.1` lands ~6.7e-16 off 3),
-	// while still rejecting a clearly non-multiple (`0.30000000000001 / 0.1`
-	// is ~1e-13 off, ~150x larger). `Number.EPSILON * 8 * |quotient|` is a
-	// few-ULP relative band that cleanly separates the two (design note 7).
-	const epsilon = Number.EPSILON * 8 * Math.max(1, Math.abs(quotient))
-	return Math.abs(quotient - rounded) <= epsilon
 }
 
 /**
