@@ -614,7 +614,25 @@ function compileGuardInner(
 ): (value: unknown) => boolean {
 	switch (shape.type) {
 		case 'string': {
-			const { min, max, pattern } = shape
+			const { min, max } = shape
+			// Strip the `g` (global) and `y` (sticky) flags from the pattern at
+			// compile time. Both flags make `RegExp.prototype.test` stateful
+			// (they advance `lastIndex` on a match), which would cause a compiled
+			// guard to return different results on identical inputs depending on
+			// prior call history — a direct violation of §13 ("a public type guard
+			// must never throw AND must be deterministic"). The guard tests
+			// presence-or-absence (boolean), not position, so neither flag is
+			// meaningful; stripping them produces the intended semantics. A new
+			// RegExp is created at compile time, not per-call, so the cost is
+			// paid once and the returned guard function captures a stable,
+			// stateless regex reference.
+			const pattern =
+				shape.pattern !== undefined
+					? new RegExp(
+							shape.pattern.source,
+							shape.pattern.flags.replace(/[gy]/g, ''),
+						)
+					: undefined
 			return (value) => {
 				if (typeof value !== 'string') {
 					return false

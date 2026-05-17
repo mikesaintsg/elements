@@ -38,7 +38,10 @@ import {
 	isIterable,
 	isJsonObject,
 	isJsonSchema,
+	isJsonSchemaArray,
+	isJsonSchemaMapValue,
 	isJsonSchemaObject,
+	isJsonSchemaStringArrayMapValue,
 	isJsonValue,
 	isJsonPrimitive,
 	isMap,
@@ -589,6 +592,350 @@ describe('domain validators', () => {
 		expect(isFiniteNumber(42)).toBe(true)
 		expect(isFiniteNumber(Number.POSITIVE_INFINITY)).toBe(false)
 		expect(isFiniteNumber('42')).toBe(false)
+	})
+})
+
+// === F2 — literalOf Object.is semantics
+
+describe('literalOf — F2 Object.is edge cases', () => {
+	it('literalOf(NaN)(NaN) → true (Object.is(NaN, NaN) === true)', () => {
+		const isNaNLiteral = literalOf(Number.NaN)
+		expect(isNaNLiteral(Number.NaN)).toBe(true)
+	})
+
+	it('literalOf(0)(-0) → false (Object.is(0, -0) === false)', () => {
+		const isZero = literalOf(0)
+		expect(isZero(-0)).toBe(false)
+	})
+
+	it('literalOf(-0)(0) → false (Object.is(-0, 0) === false)', () => {
+		const isNegZero = literalOf(-0)
+		expect(isNegZero(0)).toBe(false)
+	})
+
+	it('literalOf(-0)(-0) → true', () => {
+		const isNegZero = literalOf(-0)
+		expect(isNegZero(-0)).toBe(true)
+	})
+})
+
+// === F2 — keyOf edge cases
+
+describe('keyOf — F2 edge cases', () => {
+	it('"__proto__" — keyOf uses the `in` operator, which walks the prototype chain', () => {
+		// keyOf uses `entry in value`. '__proto__' is NOT an own key of `{}`, but
+		// `'__proto__' in {}` is TRUE because it resolves through Object.prototype.
+		// This is a documented proto-hazard. We pin the REAL behavior here:
+		// divergence tracked for Phase G (consider using Object.hasOwn in keyOf).
+		const guard = keyOf({})
+		// '__proto__' in {} === true (prototype chain lookup via `in`)
+		expect(guard('__proto__')).toBe(true)
+	})
+
+	it('symbol key: keyOf accepts a symbol that IS in the object', () => {
+		const sym = Symbol('key')
+		const obj = { [sym]: 42 }
+		const guard = keyOf(obj)
+		expect(guard(sym)).toBe(true)
+	})
+
+	it('symbol key: keyOf rejects a symbol that is NOT in the object', () => {
+		const sym = Symbol('absent')
+		const guard = keyOf({ a: 1 })
+		expect(guard(sym)).toBe(false)
+	})
+
+	it('numeric key: keyOf accepts a number that is a key of the object', () => {
+		const guard = keyOf({ 0: 'zero', 1: 'one' })
+		expect(guard(0)).toBe(true)
+		expect(guard(1)).toBe(true)
+		expect(guard(2)).toBe(false)
+	})
+})
+
+// === F2 — isFiniteNumber edge cases
+
+describe('isFiniteNumber — F2 edges', () => {
+	it('returns false for -Infinity', () => {
+		expect(isFiniteNumber(-Infinity)).toBe(false)
+	})
+
+	it('returns false for NaN', () => {
+		expect(isFiniteNumber(NaN)).toBe(false)
+	})
+
+	it('returns true for -0 (negative zero is finite)', () => {
+		// -0 passes Number.isFinite(-0) === true
+		expect(isFiniteNumber(-0)).toBe(true)
+	})
+})
+
+// === F2 — empty collection vacuous-true cases
+
+describe('arrayOf — F2 empty collection vacuous-true', () => {
+	it('arrayOf(isString)([] ) → true (vacuously all elements satisfy)', () => {
+		expect(arrayOf(isString)([])).toBe(true)
+	})
+
+	it('arrayOf(isNumber)([] ) → true', () => {
+		expect(arrayOf(isNumber)([])).toBe(true)
+	})
+})
+
+describe('setOf — F2 empty collection vacuous-true', () => {
+	it('setOf(isString)(new Set()) → true', () => {
+		expect(setOf(isString)(new Set())).toBe(true)
+	})
+})
+
+describe('mapOf — F2 empty collection vacuous-true', () => {
+	it('mapOf(isString, isNumber)(new Map()) → true', () => {
+		expect(mapOf(isString, isNumber)(new Map())).toBe(true)
+	})
+})
+
+describe('tupleOf — F2 edge cases', () => {
+	it('tupleOf() (zero guards) on [] → true (exact arity match)', () => {
+		const guard = tupleOf()
+		expect(guard([])).toBe(true)
+	})
+
+	it('tupleOf() (zero guards) on non-empty array → false (wrong arity)', () => {
+		const guard = tupleOf()
+		expect(guard([1])).toBe(false)
+		expect(guard(['a', 'b'])).toBe(false)
+	})
+})
+
+describe('unionOf — F2 zero-guards edge case', () => {
+	it('unionOf() (no guards) → false for every input (guards.some() on empty = false)', () => {
+		// [].some(...) returns false — so unionOf() always returns false.
+		const guard = unionOf()
+		expect(guard('anything')).toBe(false)
+		expect(guard(42)).toBe(false)
+		expect(guard(null)).toBe(false)
+	})
+})
+
+describe('intersectionOf — F2 zero-guards edge case', () => {
+	it('intersectionOf() (no guards) → true for every input (guards.every() on empty = true)', () => {
+		// [].every(...) returns true — so intersectionOf() always returns true.
+		const guard = intersectionOf()
+		expect(guard('anything')).toBe(true)
+		expect(guard(42)).toBe(true)
+		expect(guard(null)).toBe(true)
+	})
+})
+
+// === F2 — transformOf edge cases
+
+describe('transformOf — F2 edges', () => {
+	it('projector that throws: guard returns false (§13 — never throw from a public guard)', () => {
+		// Per §13, a public guard must NEVER throw. transformOf calls project(value)
+		// inside the guard — if project throws, the guard itself must not propagate
+		// that throw. Let's pin the REAL behavior:
+		const throwingGuard = transformOf(
+			isString,
+			(_value: string) => {
+				throw new Error('projection error')
+			},
+			isNumber,
+		)
+		// The guard wraps the projection call — if it throws, the throw propagates
+		// OUT of the guard (§13 violation). Pin the actual behavior:
+		// transformOf does NOT catch errors from the projector — it propagates.
+		// This is a documented divergence: transformOf is NOT §13-safe if the
+		// projector throws. Tracked for Phase G.
+		expect(() => throwingGuard('hello')).toThrow('projection error')
+	})
+
+	it('standard projector: guards the projected value, not the original', () => {
+		const positiveLength = transformOf(
+			isString,
+			(value: string) => value.length,
+			(value: unknown): value is number => isNumber(value) && (value as number) > 0,
+		)
+		expect(positiveLength('abc')).toBe(true)
+		expect(positiveLength('')).toBe(false)
+		expect(positiveLength(42)).toBe(false) // base guard fails
+	})
+})
+
+// === F2 — nullableOf edge cases
+
+describe('nullableOf — F2 edges', () => {
+	it('nullableOf(isString)(undefined) → false (only null is the null-extension, not undefined)', () => {
+		// nullableOf adds null tolerance, NOT undefined tolerance.
+		const guard = nullableOf(isString)
+		expect(guard(undefined)).toBe(false)
+	})
+
+	it('nullableOf(isString)(null) → true', () => {
+		expect(nullableOf(isString)(null)).toBe(true)
+	})
+
+	it('nullableOf(isString)("x") → true', () => {
+		expect(nullableOf(isString)('x')).toBe(true)
+	})
+})
+
+// === F2 — JSON-schema sub-guards directly
+
+describe('isJsonSchemaArray — F2 direct tests', () => {
+	it('non-array input → false', () => {
+		expect(isJsonSchemaArray({ type: 'string' })).toBe(false)
+		expect(isJsonSchemaArray('string')).toBe(false)
+		expect(isJsonSchemaArray(null)).toBe(false)
+		expect(isJsonSchemaArray(42)).toBe(false)
+	})
+
+	it('empty array → true (vacuously all schemas)', () => {
+		expect(isJsonSchemaArray([])).toBe(true)
+	})
+
+	it('array with valid schemas → true', () => {
+		expect(isJsonSchemaArray([{ type: 'string' }, { type: 'number' }])).toBe(true)
+		expect(isJsonSchemaArray([true, false])).toBe(true)
+	})
+
+	it('array with an invalid schema entry → false', () => {
+		expect(isJsonSchemaArray([{ type: 'string' }, { type: 'invalid-type' }])).toBe(false)
+		expect(isJsonSchemaArray([{ type: 'string' }, 42])).toBe(false)
+	})
+})
+
+describe('isJsonSchemaMapValue — F2 direct tests', () => {
+	it('non-record input → false', () => {
+		expect(isJsonSchemaMapValue([])).toBe(false)
+		expect(isJsonSchemaMapValue('string')).toBe(false)
+		expect(isJsonSchemaMapValue(null)).toBe(false)
+		expect(isJsonSchemaMapValue(42)).toBe(false)
+	})
+
+	it('empty record → true', () => {
+		expect(isJsonSchemaMapValue({})).toBe(true)
+	})
+
+	it('record with valid schemas as values → true', () => {
+		expect(isJsonSchemaMapValue({ name: { type: 'string' }, age: { type: 'integer' } })).toBe(true)
+		expect(isJsonSchemaMapValue({ allowed: true })).toBe(true)
+	})
+
+	it('record with an invalid schema value → false', () => {
+		expect(isJsonSchemaMapValue({ name: { type: 'string' }, bad: { type: 'invalid' } })).toBe(false)
+	})
+})
+
+describe('isJsonSchemaStringArrayMapValue — F2 direct tests', () => {
+	it('non-record input → false', () => {
+		expect(isJsonSchemaStringArrayMapValue([])).toBe(false)
+		expect(isJsonSchemaStringArrayMapValue('string')).toBe(false)
+		expect(isJsonSchemaStringArrayMapValue(null)).toBe(false)
+		expect(isJsonSchemaStringArrayMapValue(42)).toBe(false)
+	})
+
+	it('empty record → true', () => {
+		expect(isJsonSchemaStringArrayMapValue({})).toBe(true)
+	})
+
+	it('record with string arrays as values → true', () => {
+		expect(isJsonSchemaStringArrayMapValue({ a: ['b', 'c'], d: [] })).toBe(true)
+	})
+
+	it('record with a non-array value → false', () => {
+		expect(isJsonSchemaStringArrayMapValue({ a: 'not an array' })).toBe(false)
+	})
+
+	it('record with an array containing a non-string → false', () => {
+		expect(isJsonSchemaStringArrayMapValue({ a: ['ok', 42] })).toBe(false)
+	})
+})
+
+// === F2 — enumerableSymbolCount edge cases
+
+describe('enumerableSymbolCount — F2 edges', () => {
+	it('zero-symbol plain object → 0', () => {
+		expect(enumerableSymbolCount({})).toBe(0)
+	})
+
+	it('string-keyed-only object → 0 (string keys are NOT symbols)', () => {
+		expect(enumerableSymbolCount({ a: 1, b: 2 })).toBe(0)
+	})
+
+	it('non-enumerable symbol is excluded from count', () => {
+		const sym = Symbol('hidden')
+		const obj = Object.defineProperty({}, sym, { value: true, enumerable: false })
+		expect(enumerableSymbolCount(obj)).toBe(0)
+	})
+
+	it('enumerable symbol is included in count', () => {
+		const sym = Symbol('visible')
+		const obj = Object.defineProperty({}, sym, { value: true, enumerable: true })
+		expect(enumerableSymbolCount(obj)).toBe(1)
+	})
+
+	it('mixed: one enumerable + one non-enumerable symbol → 1', () => {
+		const visible = Symbol('visible')
+		const hidden = Symbol('hidden')
+		const obj = Object.defineProperty(
+			Object.defineProperty({}, visible, { value: 1, enumerable: true }),
+			hidden,
+			{ value: 2, enumerable: false },
+		)
+		expect(enumerableSymbolCount(obj)).toBe(1)
+	})
+})
+
+// === F2 — isConstructor edge cases
+
+describe('isConstructor — F2 edges', () => {
+	it('Array is a constructor', () => {
+		expect(isConstructor(Array)).toBe(true)
+	})
+
+	it('Symbol — Reflect.construct probe succeeds, so isConstructor(Symbol) returns true', () => {
+		// `new Symbol()` throws a TypeError at runtime, BUT `Reflect.construct(String, [], Symbol)`
+		// succeeds because Symbol does have an internal [[Construct]] slot.
+		// The isConstructor probe uses Reflect.construct(String, [], value) which
+		// tests whether the VALUE can be a newTarget argument — Symbol passes
+		// this test even though `new Symbol()` would throw (Symbol is a constructor
+		// for the "new.target" protocol but throws when invoked that way).
+		// Pin the REAL behavior: isConstructor(Symbol) === true.
+		expect(isConstructor(Symbol)).toBe(true)
+	})
+
+	it('Function.prototype.bind result of a class is still a constructor', () => {
+		class Foo {
+			x: number
+			constructor(x: number) {
+				this.x = x
+			}
+		}
+		const BoundFoo = Foo.bind(null)
+		expect(isConstructor(BoundFoo)).toBe(true)
+	})
+
+	it('arrow function is NOT a constructor', () => {
+		const arrow = () => undefined
+		expect(isConstructor(arrow)).toBe(false)
+	})
+
+	it('regular function IS a constructor', () => {
+		function regular() {
+			return undefined
+		}
+		expect(isConstructor(regular)).toBe(true)
+	})
+
+	it('class is a constructor', () => {
+		class Example {}
+		expect(isConstructor(Example)).toBe(true)
+	})
+
+	it('non-function value is not a constructor', () => {
+		expect(isConstructor({})).toBe(false)
+		expect(isConstructor(42)).toBe(false)
+		expect(isConstructor(null)).toBe(false)
 	})
 })
 

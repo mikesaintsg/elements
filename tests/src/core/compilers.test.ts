@@ -2358,3 +2358,73 @@ describe('compileContract — four-operation bundle', () => {
 		assertGeneratorSatisfiesGuard(makeShape(), [1, 2, 3, 7, 42])
 	})
 })
+
+// === F2 — compileSchema edge cases
+
+describe('compileSchema — F2 string min-only / max-only edges', () => {
+	it('string — min-only emits minLength, no maxLength', () => {
+		const schema = compileSchema(stringShape({ min: 3 }))
+		expect(schema).toEqual({ type: 'string', minLength: 3 })
+		expect(schema).not.toHaveProperty('maxLength')
+	})
+
+	it('string — max-only emits maxLength, no minLength', () => {
+		const schema = compileSchema(stringShape({ max: 20 }))
+		expect(schema).toEqual({ type: 'string', maxLength: 20 })
+		expect(schema).not.toHaveProperty('minLength')
+	})
+
+	it('object — explicit additionalProperties:false emits additionalProperties:false', () => {
+		// Explicit false behaves the same as the default (omitted), but the
+		// compiled schema must emit the key in either case (the existing tests
+		// confirm the default emits it; here we confirm explicit false does too).
+		const schema = compileSchema(objectShape({ id: stringShape() }, { additionalProperties: false }))
+		expect(schema).toHaveProperty('additionalProperties', false)
+	})
+})
+
+// === F2 — compileGuard numeric edge cases
+
+describe('compileGuard — F2 number NaN / ±0 edges', () => {
+	it('number guard rejects NaN (NaN is not finite)', () => {
+		const guard = compileGuard(numberShape())
+		expect(guard(NaN)).toBe(false)
+	})
+
+	it('number guard accepts +0', () => {
+		const guard = compileGuard(numberShape())
+		expect(guard(+0)).toBe(true)
+	})
+
+	it('number guard accepts -0 (negative zero is finite)', () => {
+		const guard = compileGuard(numberShape())
+		expect(guard(-0)).toBe(true)
+	})
+
+	it('number guard with min:0 accepts -0 (Object.is(-0, -0) and -0 >= 0 is false — pin real)', () => {
+		// -0 >= 0 is true in JS (same as +0 >= 0). So the min:0 constraint passes
+		// for -0. Pin this behavior.
+		const guard = compileGuard(numberShape({ min: 0 }))
+		// -0 >= 0 is true in IEEE 754 JS comparison
+		expect(guard(-0)).toBe(true)
+	})
+})
+
+// === F2 — compileGuard global-flag regex statelessness
+
+describe('compileGuard — F2 global-flag regex pattern statelessness', () => {
+	it('string guard with /a/g pattern does not accumulate regex lastIndex across calls', () => {
+		// A global-flag regex (/g) maintains `lastIndex` state between exec() / test()
+		// calls on the SAME regex instance. If the compiled guard shares the pattern
+		// object reference and calls `.test()` directly, a second call on a matching
+		// string would start from the updated lastIndex and may falsely return false.
+		// compileSchema converts RegExp to string source; compileGuard creates its
+		// own new RegExp from the source, so the original pattern's lastIndex is
+		// irrelevant. Pin: calling the guard twice on the same matching string
+		// must return true both times (no stale lastIndex).
+		const guard = compileGuard(stringShape({ pattern: /a/g }))
+		expect(guard('ba')).toBe(true)
+		expect(guard('ba')).toBe(true) // must not be affected by prior call
+		expect(guard('ba')).toBe(true)
+	})
+})

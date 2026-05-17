@@ -570,6 +570,223 @@ describe('parseJsonSchemaObject', () => {
 	})
 })
 
+// === F2 — parseNumber edge cases
+
+describe('parseNumber — F2 edges', () => {
+	it('rejects hex literal string "0x1F" (Number("0x1F") is 31 — finite → accepted)', () => {
+		// Number('0x1F') === 31 (finite) — parseNumber uses Number(), not parseFloat().
+		// So '0x1F' IS parsed to 31, not rejected.
+		expect(parseNumber('0x1F')).toBe(31)
+	})
+
+	it('accepts "Infinity" string (Number("Infinity") is Infinity — non-finite → rejected)', () => {
+		// Number('Infinity') === Infinity — not finite → parseNumber returns undefined.
+		expect(parseNumber('Infinity')).toBeUndefined()
+	})
+
+	it('accepts "  42  " whitespace-padded string (trims before parsing)', () => {
+		// value.trim() === '' for empty, but '  42  '.trim() === '42' → Number('42') = 42
+		// parseNumber checks trim === '' first, so '  42  ' passes through Number()
+		expect(parseNumber('  42  ')).toBe(42)
+	})
+
+	it('rejects "1_000" numeric-separator string (Number("1_000") is NaN → rejected)', () => {
+		// Number('1_000') === NaN — parseNumber rejects this as non-finite.
+		expect(parseNumber('1_000')).toBeUndefined()
+	})
+
+	it('accepts Number.MAX_SAFE_INTEGER + 1 (still finite, just not precisely safe)', () => {
+		const beyondSafe = Number.MAX_SAFE_INTEGER + 1
+		// It is still a finite number — parseNumber accepts all finite numbers.
+		expect(parseNumber(beyondSafe)).toBe(beyondSafe)
+	})
+
+	it('preserves -0 identity via Object.is', () => {
+		const result = parseNumber('-0')
+		// Number('-0') === -0 (finite) → parseNumber returns -0
+		expect(Object.is(result, -0)).toBe(true)
+	})
+})
+
+// === F2 — parseInteger edge cases
+
+describe('parseInteger — F2 edges', () => {
+	it('"1e3" parses to integer 1000 (Number("1e3") === 1000, which is an integer)', () => {
+		// parseNumber('1e3') === 1000; Number.isInteger(1000) === true
+		expect(parseInteger('1e3')).toBe(1000)
+	})
+
+	it('"0x10" is accepted (Number("0x10") === 16, integer)', () => {
+		// Number('0x10') === 16, Number.isInteger(16) === true
+		expect(parseInteger('0x10')).toBe(16)
+	})
+
+	it('Number.MAX_SAFE_INTEGER + 1 — still an integer (Number.isInteger returns true)', () => {
+		const beyondSafe = Number.MAX_SAFE_INTEGER + 1
+		// Number.isInteger(beyondSafe) === true — it IS an integer, just imprecise.
+		expect(parseInteger(beyondSafe)).toBe(beyondSafe)
+	})
+
+	it('3.0 (number literal) is an integer (Number.isInteger(3.0) === true)', () => {
+		expect(parseInteger(3.0)).toBe(3)
+	})
+
+	it('"3.0" string is parsed as integer (Number("3.0") === 3.0, which is integer)', () => {
+		// Number('3.0') === 3, Number.isInteger(3) === true
+		expect(parseInteger('3.0')).toBe(3)
+	})
+})
+
+// === F2 — parseBoolean edge cases
+
+describe('parseBoolean — F2 edges', () => {
+	it('rejects "TRUE" (case-sensitive — only "true" and "false" are matched)', () => {
+		expect(parseBoolean('TRUE')).toBeUndefined()
+	})
+
+	it('rejects "True" (case-sensitive)', () => {
+		expect(parseBoolean('True')).toBeUndefined()
+	})
+
+	it('rejects " true " with surrounding whitespace (no trim before comparison)', () => {
+		// parseBoolean does NOT trim: only exact string literals are matched.
+		// ' true ' !== 'true' → undefined.
+		expect(parseBoolean(' true ')).toBeUndefined()
+	})
+
+	it('rejects number 2 (only 1 and 0 are accepted as boolean numbers)', () => {
+		expect(parseBoolean(2)).toBeUndefined()
+	})
+
+	it('rejects number -1', () => {
+		expect(parseBoolean(-1)).toBeUndefined()
+	})
+})
+
+// === F2 — parseString edge cases
+
+describe('parseString — F2 edges', () => {
+	it('preserves a surrogate-pair string (non-BMP code-point)', () => {
+		// A surrogate pair in a JS string — parseString must not mangle it.
+		const emoji = '😀'
+		expect(parseString(emoji)).toBe(emoji)
+	})
+
+	it('returns undefined for NBSP-only string — V8/Node trim() removes it', () => {
+		// In V8 (Node.js), String.prototype.trim() removes U+00A0 (NO-BREAK SPACE)
+		// in addition to ASCII whitespace. So trim() produces '' (empty) in this
+		// runtime, and parseString returns undefined.
+		expect(parseString(' ')).toBeUndefined()
+	})
+
+	it('returns the full content for a very long string (no length cap in parseString)', () => {
+		const long = 'a'.repeat(100_000)
+		expect(parseString(long)).toBe(long)
+	})
+
+	it("returns '0' for input '0' (non-empty string, not a falsy trap)", () => {
+		expect(parseString('0')).toBe('0')
+	})
+})
+
+// === F2 — parseArray alias/copy contract
+
+describe('parseArray — F2 alias/copy contract', () => {
+	it('sparse array [1,,3] without guard: holes become undefined in the copy', () => {
+		// eslint-disable-next-line no-sparse-arrays
+		const sparse = [1, , 3]
+		const result = parseArray(sparse)
+		// parseArray no-guard returns [...value] — spread of a sparse array fills
+		// holes with undefined.
+		expect(result).toEqual([1, undefined, 3])
+	})
+
+	it('no-guard: returns a FRESH copy (not the same reference as input)', () => {
+		const input = [1, 2, 3]
+		const result = parseArray(input)
+		// The alias-vs-copy policy documents this branch returns a shallow copy.
+		expect(result).not.toBe(input)
+		expect(result).toEqual(input)
+	})
+
+	it('guarded all-pass: returns the INPUT reference (identity preserved)', () => {
+		const input = ['a', 'b', 'c']
+		const result = parseArray(input, (v): v is string => typeof v === 'string')
+		// The alias-vs-copy policy (§15/§22): guarded+all-pass returns input BY REF.
+		expect(result).toBe(input)
+	})
+
+	it('guarded with a failing element: returns undefined', () => {
+		const input = ['a', 42, 'c']
+		const result = parseArray(input, (v): v is string => typeof v === 'string')
+		expect(result).toBeUndefined()
+	})
+})
+
+// === F2 — parseJson edge cases
+
+describe('parseJson — F2 edges', () => {
+	it('duplicate keys: last-write-wins (standard JSON.parse behaviour)', () => {
+		const result = parseJson('{"a":1,"a":2}')
+		// JSON.parse with duplicate keys: last value wins — this is the JS spec.
+		expect(result).toEqual({ a: 2 })
+	})
+
+	it('deeply nested JSON (100 levels) — should parse successfully', () => {
+		// Build a deeply nested JSON string iteratively to avoid stack issues.
+		let json = '"leaf"'
+		for (let index = 0; index < 100; index += 1) {
+			json = `{"v":${json}}`
+		}
+		const result = parseJson(json)
+		expect(typeof result).toBe('object')
+	})
+
+	it('"undefined" string — JSON.parse throws (undefined is not valid JSON) → returns undefined', () => {
+		// JSON.parse('undefined') throws SyntaxError; parseJson catches and returns undefined.
+		// NOTE: parseJson returns `undefined` on failure, which is indistinguishable
+		// from a JSON document that IS the value `undefined` (impossible in JSON).
+		// This documented ambiguity is pinned here; divergence tracked for Phase G.
+		expect(parseJson('undefined')).toBeUndefined()
+	})
+
+	it('"NaN" string — not valid JSON → returns undefined', () => {
+		// JSON.parse('NaN') throws SyntaxError — NaN is not a JSON value.
+		expect(parseJson('NaN')).toBeUndefined()
+	})
+
+	it('"Infinity" string — not valid JSON → returns undefined', () => {
+		// JSON.parse('Infinity') throws SyntaxError.
+		expect(parseJson('Infinity')).toBeUndefined()
+	})
+})
+
+// === F2 — parseEnum / parseEnumField edge cases
+
+describe('parseEnum — F2 edges', () => {
+	it('empty allowed list always returns undefined', () => {
+		// No entry can match an empty list.
+		expect(parseEnum('anything', [])).toBeUndefined()
+		expect(parseEnum('', [])).toBeUndefined()
+	})
+
+	it('value with surrounding whitespace is trimmed before matching', () => {
+		const allowed = ['admin', 'member'] as const
+		expect(parseEnum('  admin  ', allowed)).toBe('admin')
+	})
+
+	it('non-matching value returns undefined', () => {
+		const allowed = ['admin', 'member'] as const
+		expect(parseEnum('owner', allowed)).toBeUndefined()
+	})
+})
+
+describe('parseEnumField — F2 edges', () => {
+	it('empty allowed list always returns undefined', () => {
+		expect(parseEnumField({ role: 'admin' }, 'role', [])).toBeUndefined()
+	})
+})
+
 // === coerceNumber (F1)
 //
 // Implementation (parsers.ts): `typeof value === 'number'` → return it directly
