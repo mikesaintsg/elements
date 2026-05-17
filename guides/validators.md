@@ -131,7 +131,7 @@ Each compositor returns a fresh `Guard<…>`. They accept any predicate `(value:
 | `literalOf()`       | `literalOf(...literals)`                               | accepts a value `Object.is`-equal to one of the given string/number/boolean literals.                  |
 | `instanceOf()`      | `instanceOf(ctor)`                                     | accepts an object that is `instanceof ctor` (returns `false` if `ctor` is not a constructor).          |
 | `enumOf()`          | `enumOf(enumeration)`                                  | accepts a `string`/`number` that is one of the enum object's values.                                   |
-| `keyOf()`           | `keyOf(object)`                                        | accepts a `string`/`symbol`/`number` key that is `in` the given object.                                |
+| `keyOf()`           | `keyOf(object)`                                        | accepts a `string`/`symbol`/`number` that is an **own** key of the given object (`Object.hasOwn`; inherited prototype keys like `'toString'`/`'__proto__'` are rejected). |
 | `pickOf()`          | `pickOf(shape, keys)`                                  | returns a **new guard shape** keeping only `keys` (for feeding back into `recordOf()`).                |
 | `omitOf()`          | `omitOf(shape, keys)`                                  | returns a **new guard shape** dropping `keys`.                                                         |
 | `andOf()`           | `andOf(left, right)`                                   | passes iff **both** `left` and `right` pass (type `A & B`).                                            |

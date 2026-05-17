@@ -622,34 +622,61 @@ describe('literalOf — F2 Object.is edge cases', () => {
 // === F2 — keyOf edge cases
 
 describe('keyOf — F2 edge cases', () => {
-	it('"__proto__" — keyOf uses the `in` operator, which walks the prototype chain', () => {
-		// keyOf uses `entry in value`. '__proto__' is NOT an own key of `{}`, but
-		// `'__proto__' in {}` is TRUE because it resolves through Object.prototype.
-		// This is a documented proto-hazard. We pin the REAL behavior here:
-		// divergence tracked for Phase G (consider using Object.hasOwn in keyOf).
+	it('rejects "__proto__" — keyOf uses own-property semantics, not the prototype-walking `in`', () => {
+		// '__proto__' is NOT an own key of `{}`; it only resolves through
+		// Object.prototype. keyOf uses Object.hasOwn (consistent with
+		// recordOf/pickOf/omitOf), so an inherited key is never accepted.
 		const guard = keyOf({})
-		// '__proto__' in {} === true (prototype chain lookup via `in`)
-		expect(guard('__proto__')).toBe(true)
+		expect(guard('__proto__')).toBe(false)
 	})
 
-	it('symbol key: keyOf accepts a symbol that IS in the object', () => {
+	it('rejects every inherited Object.prototype key (toString/constructor/hasOwnProperty/valueOf/__proto__)', () => {
+		const guard = keyOf({ a: 1 })
+		expect(guard('toString')).toBe(false)
+		expect(guard('constructor')).toBe(false)
+		expect(guard('hasOwnProperty')).toBe(false)
+		expect(guard('valueOf')).toBe(false)
+		expect(guard('__proto__')).toBe(false)
+		expect(guard('isPrototypeOf')).toBe(false)
+		expect(guard('propertyIsEnumerable')).toBe(false)
+		// Genuine own key still accepted.
+		expect(guard('a')).toBe(true)
+	})
+
+	it('accepts an own key that shadows a prototype name', () => {
+		// An own property whose name collides with Object.prototype must be
+		// accepted — the rejection is about inheritance, not the spelling.
+		expect(keyOf({ toString: 1 })('toString')).toBe(true)
+		expect(keyOf({ constructor: 'x' })('constructor')).toBe(true)
+		expect(keyOf({ __proto__: null, real: 1 })('real')).toBe(true)
+	})
+
+	it('symbol key: keyOf accepts a symbol that IS an own key of the object', () => {
 		const sym = Symbol('key')
 		const obj = { [sym]: 42 }
 		const guard = keyOf(obj)
 		expect(guard(sym)).toBe(true)
 	})
 
-	it('symbol key: keyOf rejects a symbol that is NOT in the object', () => {
+	it('symbol key: keyOf rejects a symbol that is NOT an own key of the object', () => {
 		const sym = Symbol('absent')
 		const guard = keyOf({ a: 1 })
 		expect(guard(sym)).toBe(false)
 	})
 
-	it('numeric key: keyOf accepts a number that is a key of the object', () => {
+	it('numeric key: keyOf accepts a number that is an own key of the object', () => {
 		const guard = keyOf({ 0: 'zero', 1: 'one' })
 		expect(guard(0)).toBe(true)
 		expect(guard(1)).toBe(true)
 		expect(guard(2)).toBe(false)
+	})
+
+	it('non-key-typed input returns false rather than throwing (§13)', () => {
+		const guard = keyOf({ a: 1 })
+		expect(guard(null)).toBe(false)
+		expect(guard(undefined)).toBe(false)
+		expect(guard({})).toBe(false)
+		expect(guard(true)).toBe(false)
 	})
 })
 

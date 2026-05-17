@@ -2000,6 +2000,15 @@ export function iterableOf(elementGuard: (value: unknown) => boolean): Guard<Ite
  * Useful for discriminating on the key set of a constant lookup table or
  * enum-like object without duplicating the key list.
  *
+ * @remarks
+ * Membership is tested with `Object.hasOwn` (consistent with
+ * {@link recordOf} / {@link pickOf} / {@link omitOf}), so **inherited**
+ * prototype-chain keys — `'toString'`, `'constructor'`, `'hasOwnProperty'`,
+ * `'valueOf'`, `'__proto__'`, etc. — are rejected. Only genuine own string,
+ * number, or symbol keys pass. An own property that shadows a prototype name
+ * is accepted; a non-key-typed input returns `false` rather than throwing
+ * (§13).
+ *
  * @param value - The object whose own keys define the allowed values
  * @returns A guard for `keyof O`
  *
@@ -2007,15 +2016,16 @@ export function iterableOf(elementGuard: (value: unknown) => boolean): Guard<Ite
  * ```ts
  * const COLORS = { red: '#f00', green: '#0f0', blue: '#00f' } as const
  * const isColorKey = keyOf(COLORS)
- * isColorKey('red')    // true
- * isColorKey('purple') // false
+ * isColorKey('red')      // true
+ * isColorKey('purple')   // false
+ * isColorKey('toString') // false — inherited, not an own key
  * ```
  */
 export function keyOf<const O extends Readonly<Record<PropertyKey, unknown>>>(
 	value: O,
 ): Guard<keyof O> {
 	return (entry: unknown): entry is keyof O =>
-		(isString(entry) || isSymbol(entry) || isNumber(entry)) && entry in value
+		(isString(entry) || isSymbol(entry) || isNumber(entry)) && Object.hasOwn(value, entry)
 }
 
 /**
