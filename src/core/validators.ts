@@ -1,3 +1,4 @@
+import { enumerableSymbolCount, isConstructor } from './helpers.js'
 import type {
 	AnyAsyncFunction,
 	AnyConstructor,
@@ -20,29 +21,6 @@ import type {
 	ZeroArgAsyncFunction,
 	ZeroArgFunction,
 } from './types.js'
-
-export function enumerableSymbolCount(value: object): number {
-	let count = 0
-	for (const symbol of Object.getOwnPropertySymbols(value)) {
-		if (Object.getOwnPropertyDescriptor(value, symbol)?.enumerable) {
-			count += 1
-		}
-	}
-	return count
-}
-
-export function isConstructor(value: unknown): value is AnyConstructor<object> {
-	if (!isFunction(value)) {
-		return false
-	}
-
-	try {
-		Reflect.construct(String, [], value)
-		return true
-	} catch {
-		return false
-	}
-}
 
 // === Primitive Guards
 
@@ -1032,22 +1010,19 @@ export function pickOf<S extends GuardsShape, K extends ReadonlyArray<keyof S & 
 	shape: S,
 	keys: K,
 ): Pick<S, K[number]> {
-	const result: Partial<Record<keyof S & string, Guard<unknown>>> = {}
+	// Honest typing: the accumulator IS the picked-shape type, so every
+	// `result[key] = shape[key]` write is checked against `S[P]` for that key —
+	// no `asserts`-laundering of a completeness the runtime never verifies, and
+	// no `as`/`!`. A precise generic mapped type has no `as`-free empty literal
+	// (TS won't seed `{ [P in K]: S[P] }` from `{}` or a string index sig), so
+	// the seed is a genuine null-prototype empty object; the binding annotation
+	// fixes its type immediately and it is filled before any read.
+	const result: { [P in K[number]]: S[P] } = Object.create(null)
 	for (const key of keys) {
 		if (Object.prototype.hasOwnProperty.call(shape, key)) {
 			result[key] = shape[key]
 		}
 	}
-	function ensureComplete(
-		value: unknown,
-		currentShape: S,
-		pickedKeys: K,
-	): asserts value is Pick<S, K[number]> {
-		void value
-		void currentShape
-		void pickedKeys
-	}
-	ensureComplete(result, shape, keys)
 	return result
 }
 
@@ -1060,7 +1035,11 @@ export function omitOf<S extends GuardsShape, K extends ReadonlyArray<keyof S & 
 	for (const key of keys) {
 		skipped.add(key)
 	}
-	const result: Partial<Record<keyof S & string, Guard<unknown>>> = {}
+	// Build into the full-shape type (sound over-approximation: only kept keys
+	// are written, so the value structurally satisfies `Omit<S, K[number]>` —
+	// every Omit-required key is copied, never skipped). Same honest typing as
+	// `pickOf`: no `as`/`!`/`asserts`; seed is a genuine empty object.
+	const result: { [P in keyof S]: S[P] } = Object.create(null)
 	for (const key in shape) {
 		if (!Object.prototype.hasOwnProperty.call(shape, key)) {
 			continue
@@ -1069,16 +1048,6 @@ export function omitOf<S extends GuardsShape, K extends ReadonlyArray<keyof S & 
 			result[key] = shape[key]
 		}
 	}
-	function ensureOmitted(
-		value: unknown,
-		currentShape: S,
-		omittedKeys: K,
-	): asserts value is Omit<S, K[number]> {
-		void value
-		void currentShape
-		void omittedKeys
-	}
-	ensureOmitted(result, shape, keys)
 	return result
 }
 

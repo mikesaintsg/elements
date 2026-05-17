@@ -101,12 +101,11 @@ Guards pair naturally with the parsers: `parseJsonAs` and `parseArray` (in [pars
 | `isNonEmptyMap()`    | `ReadonlyMap<K, V>`                 | `Map` with `size > 0`.                                                      |
 | `isNonEmptySet()`    | `ReadonlySet<T>`                    | `Set` with `size > 0`.                                                      |
 
-### Function & constructor guards
+### Function guards
 
 | Guard                       | Narrows to                          | Behavior                                                                            |
 | --------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------- |
 | `isFunction()`              | `AnyFunction`                       | `typeof === 'function'`.                                                              |
-| `isConstructor()`           | `AnyConstructor<object>`            | A function that `Reflect.construct` can use as a `newTarget` (arrow / plain functions fail). |
 | `isZeroArg()`               | `ZeroArgFunction`                   | A function whose declared `.length` is `0`.                                           |
 | `isAsyncFunction()`         | `AnyAsyncFunction`                  | `constructor.name === 'AsyncFunction'` — a non-async fn returning a promise fails.    |
 | `isGeneratorFunction()`     | generator function                  | `constructor.name === 'GeneratorFunction'`.                                           |
@@ -115,7 +114,7 @@ Guards pair naturally with the parsers: `parseJsonAs` and `parseArray` (in [pars
 | `isZeroArgGenerator()`      | zero-arg generator function         | `isFunction` + `isZeroArg` + `isGeneratorFunction`.                                   |
 | `isZeroArgAsyncGenerator()` | zero-arg async generator function   | `isFunction` + `isZeroArg` + `isAsyncGeneratorFunction`.                              |
 
-> `enumerableSymbolCount(value)` is a real export but is a helper, not a guard — it returns a `number` (the count of enumerable own-symbol keys on a value) and is used internally by the object-emptiness guards (`isEmptyObject`, `isNonEmptyObject`). Prefer those guards at call sites.
+> The object-emptiness guards (`isEmptyObject`, `isNonEmptyObject`) also count enumerable own-symbol keys, not just string keys, via the shared `enumerableSymbolCount` helper in [src/core/helpers.ts](../src/core/helpers.ts) (documented in [contracts.md](contracts.md) — the helpers home). Prefer the guards at call sites. Likewise the `instanceOf()` compositor below is backed by the `isConstructor` helper (same module) so a non-constructor argument yields a `false`-only guard rather than a throw.
 
 ### Compositors
 

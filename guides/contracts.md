@@ -60,6 +60,17 @@ The compilers in [src/core/compilers.ts](../src/core/compilers.ts) are also the 
 
 `createRandom(seed)` (in [src/core/helpers.ts](../src/core/helpers.ts)) returns a deterministic Mulberry32 PRNG: a pure `() => number` yielding the same `[0, 1)` sequence for the same 32-bit seed. Feed it to the contract's `generate` method (or directly to `compileGenerator()`) for reproducible seed data across test runs.
 
+### Shared helpers
+
+`src/core/helpers.ts` is the home for general-purpose `{verb}{Noun}` utilities shared across the core surface (it has no domain of its own — implementation modules contain only their own domain). Alongside `createRandom()` it exports two reflection helpers used internally by the validators module:
+
+| Helper                       | Returns                     | Behavior                                                                                                                  |
+| ---------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `enumerableSymbolCount(value)` | `number`                  | The count of enumerable own-symbol keys on `value` (string keys ignored). Backs the object-emptiness guards `isEmptyObject` / `isNonEmptyObject` so a symbol-only record is not mistaken for empty. |
+| `isConstructor(value)`         | `value is AnyConstructor<object>` | Whether `value` can be a `Reflect.construct` `newTarget` — a real constructor passes; arrow / plain functions and non-functions yield `false` (never throws). Backs the `instanceOf` guard compositor. |
+
+These are real exports of the same module as `createRandom()`; prefer the validators-module guards they back (`isEmptyObject` / `isNonEmptyObject` / `instanceOf`, see [validators.md](validators.md)) at call sites rather than calling the helpers directly.
+
 ### Object-root schemas
 
 An object-root JSON Schema uses the same compiler path as every other contract: `compileSchema(objectShape(...))`. The `ObjectShape` overload narrows the result to `JsonSchemaObject`. There is no separate object-schema builder — object-root schemas are ordinary contracts compiled from an `objectShape()`.
