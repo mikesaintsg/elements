@@ -1494,24 +1494,15 @@ describe('compileSchemaShape — $ref / recursive $ref -> lazyShape', () => {
 		expect(g(deep)).toBe(true)
 	})
 
-	it('recursive $ref shape is the canonical lazyShape pattern (cyclic-DATA is a forward-pipeline limitation, not an E3 defect)', () => {
-		// DOCUMENTED, SEPARATELY-OWNED forward-pipeline behavior: `compileGuard`
-		// (D3 `'lazy'` arm) is NOT cyclic-DATA-safe at the lazy boundary — it
-		// relies on FINITE recursive data (only E2's `compileSchemaGuard`
-		// `compileRef` adds an explicit seen-set + MAX_DATA_DEPTH). The
-		// CANONICAL sanctioned recursive pattern
-		// `objectShape({ children: arrayShape(lazyShape(() => treeShape)) })`
-		// itself RangeErrors on a self-cyclic value under `compileGuard`. E3's
+	it('recursive $ref shape is the canonical lazyShape pattern; cyclic DATA is now guard-false (FU1), still equal to canonical', () => {
+		// FU1: the forward `compileGuard` D3 `'lazy'` arm is now
+		// cyclic-DATA-safe at the lazy boundary (ancestor-WeakSet +
+		// MAX_LAZY_DATA_DEPTH backstop, the §13 fix). E3's
 		// produced shape has the IDENTICAL recursion profile (one stable
-		// `lazyShape` thunk per `$ref` pointer), so it inherits exactly that
-		// forward-pipeline property — this is NOT an E3 defect and E3 must not
-		// fight it (the task's "don't fight pre-existing forward gaps" rule).
-		// What E3 GUARANTEES (and is asserted here): the produced shape is the
-		// canonical single-stable-thunk lazy pattern and FINITE recursive data
-		// is handled correctly (covered by the sibling tests). The cyclic-data
-		// behavior is pinned here against the canonical pattern so a future D3
-		// hardening that makes the forward guard cyclic-safe also fixes this
-		// for free.
+		// `lazyShape` thunk per `$ref` pointer) as the canonical sanctioned
+		// pattern, so BOTH now return `false` on self-cyclic data, NEVER
+		// RangeError (§13). The equality-to-canonical relationship still holds
+		// AND the absolute correct value (false) is asserted directly.
 		const schema: JsonSchema = {
 			$defs: {
 				Node: {
@@ -1528,9 +1519,7 @@ describe('compileSchemaShape — $ref / recursive $ref -> lazyShape', () => {
 		// Finite recursive data: handled correctly (the E3 guarantee).
 		expect(g({ next: { next: null } })).toBe(true)
 		expect(g({ next: { next: 1 } })).toBe(false)
-		// Self-cyclic data behaves EXACTLY like the canonical sanctioned
-		// recursive shape under `compileGuard` (separately-owned forward
-		// D3 limitation — pinned, not fought).
+		// The canonical sanctioned single-stable-thunk recursive pattern.
 		const canonical: ContractShape = {
 			type: 'object',
 			properties: {
@@ -1546,23 +1535,13 @@ describe('compileSchemaShape — $ref / recursive $ref -> lazyShape', () => {
 		const canonicalGuard = compileGuard(canonical)
 		const cyclic: Record<string, unknown> = {}
 		cyclic['next'] = cyclic
-		const e3Threw = (() => {
-			try {
-				g(cyclic)
-				return 'no-throw'
-			} catch (error) {
-				return error instanceof RangeError ? 'RangeError' : 'other'
-			}
-		})()
-		const canonicalThrew = (() => {
-			try {
-				canonicalGuard(cyclic)
-				return 'no-throw'
-			} catch (error) {
-				return error instanceof RangeError ? 'RangeError' : 'other'
-			}
-		})()
-		expect(e3Threw).toBe(canonicalThrew)
+		// FU1: self-cyclic data is now guard-false, never RangeError (§13);
+		// E3's shape and the canonical pattern agree on the absolute value.
+		expect(() => g(cyclic)).not.toThrow()
+		expect(g(cyclic)).toBe(false)
+		expect(() => canonicalGuard(cyclic)).not.toThrow()
+		expect(canonicalGuard(cyclic)).toBe(false)
+		expect(g(cyclic)).toBe(canonicalGuard(cyclic))
 	})
 
 	it('mutually-recursive $ref (A<->B) -> recursive shape compiles and guards', () => {
@@ -2369,17 +2348,18 @@ describe('compileSchemaParser — recursive $ref non-explosive (compile + finite
 		expect(parse({ b: { a: { b: 1 } } })).toBeUndefined()
 	})
 
-	it('recursive $ref parser on self-cyclic DATA behaves EXACTLY like the canonical lazyShape pattern (separately-tracked D3 forward limitation, NOT an E4 defect)', () => {
-		// DOCUMENTED, SEPARATELY-OWNED forward-pipeline behavior: the forward
-		// `compileParser` D3 `'lazy'` arm is NOT cyclic-DATA-safe at the lazy
-		// boundary (it relies on FINITE recursive data — only E2's
-		// `compileSchemaGuard` adds an explicit seen-set + MAX_DATA_DEPTH).
+	it('recursive $ref parser on self-cyclic DATA is now undefined (FU1), still equal to the canonical lazyShape pattern', () => {
+		// FU1: the forward `compileParser` D3 `'lazy'` arm is now
+		// cyclic-DATA-safe at the lazy boundary (ancestor-WeakSet +
+		// MAX_LAZY_DATA_DEPTH backstop, the §13 fix).
 		// E4's produced shape has the IDENTICAL recursion profile (one stable
-		// `lazyShape` thunk per `$ref` pointer — E3's contract), so its parser
-		// inherits exactly that forward-pipeline property. This is NOT an E4
-		// defect; E4 must not fight it (pin against the canonical pattern, the
-		// same discipline E3 used). A future D3 hardening that makes the
-		// forward parser cyclic-safe fixes this for free.
+		// `lazyShape` thunk per `$ref` pointer) as the canonical sanctioned
+		// pattern, so BOTH now return `undefined` (parse failure) on
+		// self-cyclic data, NEVER RangeError (§13). Parse<->guard soundness is
+		// preserved: `undefined` is the canonical parse-failure value the FU1
+		// guard (which also returns false on cyclic data) rejects too. The
+		// equality-to-canonical relationship still holds AND the absolute
+		// correct value (undefined) is asserted directly.
 		const schema: JsonSchema = {
 			$defs: {
 				Node: {
@@ -2410,25 +2390,13 @@ describe('compileSchemaParser — recursive $ref non-explosive (compile + finite
 		const canonicalParse = compileParser(canonical)
 		const cyclic: Record<string, unknown> = {}
 		cyclic['next'] = cyclic
-		const e4Threw = (() => {
-			try {
-				parse(cyclic)
-				return 'no-throw'
-			} catch (error) {
-				return error instanceof RangeError ? 'RangeError' : 'other'
-			}
-		})()
-		const canonicalThrew = (() => {
-			try {
-				canonicalParse(cyclic)
-				return 'no-throw'
-			} catch (error) {
-				return error instanceof RangeError ? 'RangeError' : 'other'
-			}
-		})()
-		// E4's cyclic-DATA behavior is PINNED to the canonical pattern's, not
-		// asserted absolutely (separately-tracked D3 forward limitation).
-		expect(e4Threw).toBe(canonicalThrew)
+		// FU1: self-cyclic data is now parse-undefined, never RangeError (§13);
+		// E4's shape and the canonical pattern agree on the absolute value.
+		expect(() => parse(cyclic)).not.toThrow()
+		expect(parse(cyclic)).toBeUndefined()
+		expect(() => canonicalParse(cyclic)).not.toThrow()
+		expect(canonicalParse(cyclic)).toBeUndefined()
+		expect(parse(cyclic)).toBe(canonicalParse(cyclic))
 	})
 })
 

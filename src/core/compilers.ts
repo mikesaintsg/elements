@@ -289,6 +289,87 @@ function flattenIntersectionObjects(shape: IntersectionShape): readonly ObjectSh
 	return out
 }
 
+// === FU1 — recursive-lazy DATA cycle/depth safety (§13: a guard NEVER throws)
+//
+// D3's `'lazy'` arm makes a recursive shape COMPILE (the static cycle-breaker)
+// and terminates over genuinely FINITE recursive data. It did NOT, however,
+// defend the compiled GUARD/PARSER against adversarial *DATA*: feeding a
+// self-cyclic value (`const n = { value: 1 }; n.next = n`) — or a
+// pathologically deep acyclic one — to a recursive `lazyShape`-based guard
+// re-entered the resolved inner forever and V8 threw a bare
+// `RangeError: Maximum call stack size exceeded` OUT of the guard. AGENTS.md
+// §13: inside a type guard a cyclic/deep input must yield `false` (guard) /
+// `undefined` (parser) — NEVER a thrown `RangeError`.
+//
+// The fix mirrors B5's exact discipline (validators' `isJsonValueInner` /
+// `isJsonSchemaInner`) and E2's `compileRef` ancestor-pointer set, threaded
+// through the `'lazy'` recursion at GUARD-EVAL and PARSE time:
+//
+//  1. `ancestors` — a per-compilation `WeakSet<object>` of the object values
+//     currently ON the lazy-recursion path. Each `'lazy'` arm invocation that
+//     receives an `object` value adds it on ENTER and removes it on EXIT, so
+//     the set is the active root→node DATA path, NOT an all-visited set.
+//     Re-encountering a value already on that path is a genuine back-edge (a
+//     true data cycle) → the lazy guard returns `false` / parser `undefined`
+//     WITHOUT recursing. Because entries are removed on exit, a
+//     shared-but-ACYCLIC substructure — the SAME finite child object reached
+//     under two distinct keys/positions (a DAG, perfectly valid finite data)
+//     — is fully validated and removed before its second occurrence is
+//     reached, so it is never mis-flagged as a cycle.
+//  2. `MAX_LAZY_DATA_DEPTH` — a secondary stack-safety backstop. Precise
+//     cycle detection already terminates every TRUE cycle; this cap only
+//     defends a pathologically deep BUT ACYCLIC recursive value (no repeated
+//     reference for the ancestor set to catch) that would still overflow the
+//     native stack. Exceeding it converts that into a `false`/`undefined`
+//     return (§13) instead of a thrown `RangeError`. It bounds ONLY the
+//     `lazy`-recursion depth (each lazy re-entry increments it); a genuinely
+//     finite recursive value nests a handful to low-hundreds of lazy levels,
+//     so this never false-rejects legitimate data — true cycles are caught by
+//     the ancestor set independent of this bound. Chosen with the SAME value,
+//     rationale and UPPER_SNAKE style as B5's `MAX_JSON_DEPTH` (`src/core` has
+//     no `constants.ts`; per AGENTS.md §5 a module-local const is acceptable
+//     when no constants module exists). The bound is measured EMPIRICALLY the
+//     same way B5 measured `MAX_JSON_DEPTH`: a compiled recursive-lazy tree
+//     guard (`objectShape({ value, next: optionalShape(lazyShape(() => self))
+//     })`) over a deep ACYCLIC linked list overflows V8's native stack at a
+//     measured lazy-recursion depth of ~2,900 IN THE TEST RUNNER (each lazy
+//     level costs SEVERAL real frames: the object-guard field loop, the
+//     optional-guard, the lazy closure's try/finally, the WeakSet add/delete)
+//     — and a caller/runner has already consumed part of the stack before the
+//     guard is entered, so the true safe ceiling is lower still. 1,000 sits
+//     ~2.9x below that bare overflow (ample margin even with a pre-consumed
+//     stack) while remaining far above any legitimate recursive document
+//     (real recursive data nests a handful to low-hundreds of lazy levels),
+//     so it never false-rejects genuine input — it only converts a
+//     pathological acyclic depth into `false`/`undefined` instead of a thrown
+//     `RangeError` (§13). A true cycle is caught by the ancestor WeakSet long
+//     before this bound regardless of how large the bound is.
+const MAX_LAZY_DATA_DEPTH = 1_000
+
+/**
+ * Per-compilation lazy-recursion DATA cycle/depth state (FU1). Threaded into
+ * every `'lazy'` arm so the resolved inner guard/parser detects a DATA
+ * back-edge or pathological depth and returns `false`/`undefined` rather than
+ * throwing a `RangeError` (§13). `ancestors` is the active root→node path
+ * (add-on-enter / delete-on-exit — NOT a visited-set, so DAGs are not
+ * mis-flagged); `depth` is the lazy-recursion depth for the backstop.
+ */
+type LazyDataCycleState = { readonly ancestors: WeakSet<object>; depth: number }
+
+/** Fresh per-compilation lazy-recursion DATA cycle/depth tracker (FU1). */
+function newLazyDataCycleState(): LazyDataCycleState {
+	return { ancestors: new WeakSet<object>(), depth: 0 }
+}
+
+/**
+ * Test whether `value` is a non-null object (the only kind that can form a
+ * DATA cycle / be tracked on the ancestor set). Mirrors the `isRecord`/array
+ * discrimination B5 uses; arrays AND plain objects both qualify.
+ */
+function isTrackableObject(value: unknown): value is object {
+	return typeof value === 'object' && value !== null
+}
+
 // === D3 lazy memoization caches
 //
 // A recursive lazy shape's self-reference must reuse ONE compiled function
@@ -299,19 +380,38 @@ function flattenIntersectionObjects(shape: IntersectionShape): readonly ObjectSh
 // Named aliases + typed factories keep call sites `any`-free (a bare
 // `new Map()` would infer `Map<any, any>`).
 
-/** Per-compilation lazy-thunk → compiled-guard cache. */
-type LazyGuardCache = Map<() => ContractShape, (value: unknown) => boolean>
-/** Per-compilation lazy-thunk → compiled-parser cache. */
-type LazyParserCache = Map<() => ContractShape, (value: unknown) => unknown>
+// Per-compilation lazy context: the thunk→compiled-fn memo `map` (D3) PLUS
+// the FU1 runtime DATA cycle/depth `cycle` tracker. Both have exactly the
+// per-compilation lifetime and are shared across the whole shape tree and
+// every mutually-recursive lazy thunk, so they travel together as one object
+// threaded through every recursive `compile*Inner` call (no per-call-site
+// signature churn — only the `'lazy'` arm reads `.cycle`).
+
+/** Per-compilation lazy-thunk → compiled-guard cache + DATA cycle tracker. */
+type LazyGuardCache = {
+	readonly map: Map<() => ContractShape, (value: unknown) => boolean>
+	readonly cycle: LazyDataCycleState
+}
+/** Per-compilation lazy-thunk → compiled-parser cache + DATA cycle tracker. */
+type LazyParserCache = {
+	readonly map: Map<() => ContractShape, (value: unknown) => unknown>
+	readonly cycle: LazyDataCycleState
+}
 
 /** Fresh, typed lazy-guard cache (avoids an untyped `new Map()`). */
 function newLazyGuardCache(): LazyGuardCache {
-	return new Map<() => ContractShape, (value: unknown) => boolean>()
+	return {
+		map: new Map<() => ContractShape, (value: unknown) => boolean>(),
+		cycle: newLazyDataCycleState(),
+	}
 }
 
 /** Fresh, typed lazy-parser cache (avoids an untyped `new Map()`). */
 function newLazyParserCache(): LazyParserCache {
-	return new Map<() => ContractShape, (value: unknown) => unknown>()
+	return {
+		map: new Map<() => ContractShape, (value: unknown) => unknown>(),
+		cycle: newLazyDataCycleState(),
+	}
 }
 
 // === Schema
@@ -891,19 +991,41 @@ function compileGuardInner(
 			// on FIRST INVOCATION; recursion over genuinely recursive DATA
 			// terminates naturally because the data is finite (each level
 			// calls the one shared compiled guard on a strictly smaller
-			// sub-value).
-			const cached = lazyCache.get(shape.thunk)
+			// sub-value). FU1 adds the runtime DATA cycle/depth wrapper
+			// below (see the `MAX_LAZY_DATA_DEPTH` block) so an ADVERSARIAL
+			// cyclic / pathologically-deep value yields `false` (§13 NEVER
+			// throw) instead of a `RangeError` out of the guard.
+			const cached = lazyCache.map.get(shape.thunk)
 			if (cached !== undefined) {
 				return cached
 			}
 			let resolved: ((value: unknown) => boolean) | undefined
+			const cycle = lazyCache.cycle
 			const guard = (value: unknown): boolean => {
 				if (resolved === undefined) {
 					resolved = compileGuardInner(shape.thunk(), lazyCache)
 				}
-				return resolved(value)
+				// FU1: §13 NEVER-throw. Only objects can form a DATA cycle /
+				// be tracked. A primitive bypasses tracking (no edge). An
+				// ancestor-path member is a true back-edge -> false; the
+				// depth cap is the acyclic-but-deep stack backstop. Entries
+				// are removed on exit so a DAG is not mis-flagged.
+				if (!isTrackableObject(value)) {
+					return resolved(value)
+				}
+				if (cycle.ancestors.has(value) || cycle.depth >= MAX_LAZY_DATA_DEPTH) {
+					return false
+				}
+				cycle.ancestors.add(value)
+				cycle.depth += 1
+				try {
+					return resolved(value)
+				} finally {
+					cycle.depth -= 1
+					cycle.ancestors.delete(value)
+				}
 			}
-			lazyCache.set(shape.thunk, guard)
+			lazyCache.map.set(shape.thunk, guard)
 			return guard
 		}
 		case 'raw':
@@ -1455,18 +1577,42 @@ function compileParserInner(
 			// verbatim to the resolved inner shape's parser (the lazy node
 			// adds no normalization of its own), so clauses (A)(B)(C) hold
 			// for the lazy shape exactly as they hold for its inner.
-			const cached = lazyCache.get(shape.thunk)
+			const cached = lazyCache.map.get(shape.thunk)
 			if (cached !== undefined) {
 				return cached
 			}
 			let resolved: ((value: unknown) => unknown) | undefined
+			const cycle = lazyCache.cycle
 			const parser = (value: unknown): unknown => {
 				if (resolved === undefined) {
 					resolved = compileParserInner(shape.thunk(), lazyCache)
 				}
-				return resolved(value)
+				// FU1: §13 NEVER-throw, parser analogue of the guard arm. A
+				// DATA back-edge (an ancestor-path member) or a
+				// pathologically-deep ACYCLIC value yields `undefined`
+				// (parse failure) instead of a `RangeError`. Add-on-enter /
+				// delete-on-exit keeps `ancestors` the active path so a
+				// shared finite subtree (DAG) still parses; the depth cap is
+				// the acyclic-but-deep stack backstop. Parse<->guard
+				// soundness holds: `undefined` is the canonical
+				// parse-failure value the guard also rejects (cycle/deep
+				// data fails the FU1 guard too), so (A)(B)(C) are preserved.
+				if (!isTrackableObject(value)) {
+					return resolved(value)
+				}
+				if (cycle.ancestors.has(value) || cycle.depth >= MAX_LAZY_DATA_DEPTH) {
+					return undefined
+				}
+				cycle.ancestors.add(value)
+				cycle.depth += 1
+				try {
+					return resolved(value)
+				} finally {
+					cycle.depth -= 1
+					cycle.ancestors.delete(value)
+				}
 			}
-			lazyCache.set(shape.thunk, parser)
+			lazyCache.map.set(shape.thunk, parser)
 			return parser
 		}
 		case 'raw':

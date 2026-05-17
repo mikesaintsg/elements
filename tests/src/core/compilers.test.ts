@@ -3065,8 +3065,9 @@ describe('F3 — prototype-pollution sweep — every object-building compilePars
 
 describe('F3 — cycle-safety sweep — cyclic DATA through every compileGuard kind', () => {
 	// §13: compileGuard(shape)(cyclicData) must return false, NEVER throw.
-	// No shape's guard is allowed to stack-overflow on cyclic data
-	// (the D3 forward-lazy limitation for lazyShape is handled separately below).
+	// No shape's guard is allowed to stack-overflow on cyclic data —
+	// recursive `lazyShape` is now covered too (FU1; see the dedicated
+	// FU1 describe block below for the full cycle/depth/DAG matrix).
 
 	it('string/number/integer/boolean/literal guards return false on cyclic data', () => {
 		const cycArr = makeCyclicArray()
@@ -3216,15 +3217,14 @@ describe('F3 — cycle-safety sweep — cyclic DATA through every compileGuard k
 		expect(guard(cycObj)).toBe(true)
 	})
 
-	it('cyclic data to non-lazy recursive lazyShape guard — pinned against canonical pattern (pre-existing D3 forward limitation)', () => {
-		// DOCUMENTED PRE-EXISTING LIMITATION (D3-recursive-lazy-cyclic-data follow-up):
-		// The forward compileGuard for a `lazyShape`-based recursive shape is NOT
-		// cyclic-DATA-safe at the lazy boundary. The canonical sanctioned pattern
-		// (makeTreeShape) exhibits the same behavior. F3 pins the behavior of this
-		// specific lazy shape AGAINST the canonical pattern, so that a future D3
-		// hardening (making the lazy guard cyclic-DATA-safe) automatically passes
-		// this pinned test too — without F3 asserting absolute "returns false."
-		// pre-existing D3 forward limitation — tracked follow-up; pinned-not-fought
+	it('cyclic data to non-lazy recursive lazyShape guard — returns false, never RangeError (FU1)', () => {
+		// FU1: the forward compileGuard for a `lazyShape`-based recursive
+		// shape is now cyclic-DATA-safe at the lazy boundary (the §13 fix).
+		// Both the canonical sanctioned
+		// pattern and this specific tree shape MUST return false on a self-cyclic
+		// value — never RangeError (§13). The equality-to-canonical relationship
+		// still holds (both now return false) AND the absolute correct value is
+		// asserted directly.
 		const treeShape: ContractShape = objectShape({
 			value: integerShape({ min: 0 }),
 			children: arrayShape(lazyShape(() => treeShape), { max: 3 }),
@@ -3243,22 +3243,120 @@ describe('F3 — cycle-safety sweep — cyclic DATA through every compileGuard k
 		const innerCyclic: unknown[] = [cyclic]
 		cyclic['children'] = innerCyclic
 
-		// Capture tree-shape and canonical pattern outcomes as comparable strings.
-		// Comparing the two string outcomes is unconditional (no conditional expect).
-		const runOutcome = (fn: () => unknown): string => {
-			try {
-				fn()
-				return 'no-throw'
-			} catch (error) {
-				return error instanceof RangeError ? 'RangeError' : 'other'
-			}
+		// Absolute correct behavior: false, never throw (§13).
+		expect(() => treeGuard(cyclic)).not.toThrow()
+		expect(treeGuard(cyclic)).toBe(false)
+		expect(() => canonicalGuard(cyclic)).not.toThrow()
+		expect(canonicalGuard(cyclic)).toBe(false)
+		// Equality-to-canonical still holds (both now false).
+		expect(treeGuard(cyclic)).toBe(canonicalGuard(cyclic))
+	})
+})
+
+describe('FU1 — recursive lazyShape guard+parser are cycle/depth-safe over adversarial DATA (§13 never throw)', () => {
+	// The LEGITIMATE D3 pattern: a tree shape self-referential AT THE SHAPE
+	// LEVEL through the lazy boundary, built via a holder so `tree` is its own
+	// recursive `next`.
+	function makeNextTreeShape(): ContractShape {
+		const tree: ContractShape = objectShape({
+			value: integerShape({ min: 0 }),
+			next: optionalShape(lazyShape(() => tree)),
+		})
+		return tree
+	}
+
+	it('cyclic DATA → compileGuard returns false (NOT RangeError)', () => {
+		const tree = makeNextTreeShape()
+		const guard = compileGuard(tree)
+		const n: { value: number; next?: unknown } = { value: 1 }
+		n.next = n // self-cyclic data through the recursive lazy boundary
+		expect(() => guard(n)).not.toThrow()
+		expect(guard(n)).toBe(false)
+	})
+
+	it('cyclic DATA → compileParser returns undefined (NOT RangeError)', () => {
+		const tree = makeNextTreeShape()
+		const parse = compileParser(tree)
+		const n: { value: number; next?: unknown } = { value: 1 }
+		n.next = n
+		expect(() => parse(n)).not.toThrow()
+		expect(parse(n)).toBeUndefined()
+	})
+
+	it('deep-but-FINITE recursive value (300 deep) → guard true, parser round-trips (NOT over-rejected)', () => {
+		const tree = makeNextTreeShape()
+		const guard = compileGuard(tree)
+		const parse = compileParser(tree)
+		// Build a finite 300-deep linked list: { value, next: { value, next: ... } }
+		let node: { value: number; next?: unknown } = { value: 300 }
+		for (let i = 299; i >= 0; i -= 1) {
+			node = { value: i, next: node }
 		}
-		const treeResult = runOutcome(() => treeGuard(cyclic))
-		const canonicalResult = runOutcome(() => canonicalGuard(cyclic))
-		// The tree shape's cyclic-data behavior is PINNED to the canonical pattern's,
-		// not asserted absolutely — pre-existing D3 forward limitation — tracked follow-up;
-		// pinned-not-fought.
-		expect(treeResult, 'tree guard cyclic-data outcome diverged from canonical pattern').toBe(canonicalResult)
+		expect(() => guard(node)).not.toThrow()
+		expect(guard(node)).toBe(true)
+		expect(() => parse(node)).not.toThrow()
+		expect(parse(node)).toEqual(node)
+	})
+
+	it('shared-but-ACYCLIC subtree referenced twice (DAG) → guard true (ancestor tracker is NOT a visited-set)', () => {
+		// A non-recursive shape whose two siblings reference the SAME finite
+		// object: the ancestor-path tracker must NOT mis-flag a DAG as a cycle.
+		const leaf = { value: 7 }
+		const shape = objectShape({
+			left: objectShape({ value: integerShape({ min: 0 }) }),
+			right: objectShape({ value: integerShape({ min: 0 }) }),
+		})
+		const guard = compileGuard(shape)
+		const dag = { left: leaf, right: leaf } // same object under two keys
+		expect(() => guard(dag)).not.toThrow()
+		expect(guard(dag)).toBe(true)
+
+		// Same DAG discipline THROUGH the recursive lazy boundary: a finite
+		// linked list whose two distinct positions share one tail object.
+		const tree = makeNextTreeShape()
+		const treeGuard = compileGuard(tree)
+		const sharedTail: { value: number; next?: unknown } = { value: 99 }
+		const a: { value: number; next?: unknown } = { value: 1, next: sharedTail }
+		const b: { value: number; next?: unknown } = { value: 2, next: sharedTail }
+		// `a` and `b` are independent finite chains sharing `sharedTail`; guard
+		// each — the shared (already-exited) tail must not look like a cycle.
+		expect(treeGuard(a)).toBe(true)
+		expect(treeGuard(b)).toBe(true)
+	})
+
+	it('pathologically-deep ACYCLIC value (20000 deep) → guard false / parser undefined via depth backstop (NOT RangeError)', () => {
+		const tree = makeNextTreeShape()
+		const guard = compileGuard(tree)
+		const parse = compileParser(tree)
+		let node: { value: number; next?: unknown } = { value: 0 }
+		for (let i = 1; i < 20_000; i += 1) {
+			node = { value: i, next: node }
+		}
+		expect(() => guard(node)).not.toThrow()
+		expect(guard(node)).toBe(false)
+		expect(() => parse(node)).not.toThrow()
+		expect(parse(node)).toBeUndefined()
+	})
+
+	it('arrayShape(lazyShape) recursive tree — cyclic DATA → guard false / parser undefined (NOT RangeError)', () => {
+		// The other canonical recursive form: children is an array of the tree.
+		const treeShape: ContractShape = objectShape({
+			value: integerShape({ min: 0 }),
+			children: arrayShape(lazyShape(() => treeShape), { max: 8 }),
+		})
+		const guard = compileGuard(treeShape)
+		const parse = compileParser(treeShape)
+		const cyclic: Record<string, unknown> = { value: 0 }
+		cyclic['children'] = [cyclic] // node lists itself as its own child
+		expect(() => guard(cyclic)).not.toThrow()
+		expect(guard(cyclic)).toBe(false)
+		expect(() => parse(cyclic)).not.toThrow()
+		expect(parse(cyclic)).toBeUndefined()
+
+		// Finite recursive tree still validates / round-trips.
+		const finite = { value: 0, children: [{ value: 1, children: [] }] }
+		expect(guard(finite)).toBe(true)
+		expect(parse(finite)).toEqual(finite)
 	})
 })
 
