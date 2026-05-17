@@ -574,12 +574,26 @@ describe('helpers — bindEventMap', () => {
 		expect(() => bindEventMap(el, { onShow: 'elements:test:show' }, undefined)()).not.toThrow()
 	})
 
-	it('skips keys whose value is not a function', () => {
+	it('skips keys whose value is not a function, binds valid ones, teardown works', () => {
 		const el = buildElement('div')
-		const recorder = createRecorder<[]>()
-		bindEventMap(el, { onShow: 'elements:test:show' }, { onShow: 'not-a-fn' })
+		const validRecorder = createRecorder<[]>()
+		// onShow has a real handler; onHide has a non-function value — bindEventMap must not throw
+		const off = bindEventMap(
+			el,
+			{ onShow: 'elements:test:show', onHide: 'elements:test:hide' },
+			{ onShow: () => validRecorder.handler(), onHide: 'not-a-fn' as unknown as () => void },
+		)
+		// Emit both event names
 		emit(el, 'elements:test:show')
-		expect(recorder.count).toBe(0)
+		emit(el, 'elements:test:hide')
+		// (a) valid handler fired exactly once
+		expect(validRecorder.count).toBe(1)
+		// (b) teardown is a callable function and calling it does not throw
+		expect(typeof off).toBe('function')
+		expect(() => off()).not.toThrow()
+		// (c) after teardown, re-emitting the valid event does NOT increment the recorder
+		emit(el, 'elements:test:show')
+		expect(validRecorder.count).toBe(1)
 	})
 })
 
@@ -634,25 +648,39 @@ describe('helpers — runTransition', () => {
 	it('fires the callback on the fallback timeout', async () => {
 		const el = buildElement('div')
 		const recorder = createRecorder<[]>()
-		runTransition(el, () => recorder.handler(), 10)
-		await waitForDelay(40)
+		runTransition(el, () => recorder.handler(), 20)
+		await waitForDelay(80)
 		expect(recorder.count).toBe(1)
 	})
 
 	it('the returned canceller prevents the callback', async () => {
 		const el = buildElement('div')
 		const recorder = createRecorder<[]>()
-		const cancel = runTransition(el, () => recorder.handler(), 10)
+		const cancel = runTransition(el, () => recorder.handler(), 20)
 		cancel()
 		el.dispatchEvent(new TransitionEvent('transitionend'))
-		await waitForDelay(40)
+		await waitForDelay(80)
 		expect(recorder.count).toBe(0)
 	})
 })
 
 describe('helpers — waitForFrame', () => {
-	it('resolves on the next animation frame', async () => {
-		await expect(waitForFrame()).resolves.toBeUndefined()
+	it('waitForFrame defers to the next animation frame (not synchronous)', async () => {
+		let resolved = false
+		const pending = waitForFrame().then(() => {
+			resolved = true
+		})
+		expect(resolved).toBe(false) // not resolved synchronously
+		let rafSeen = false
+		await new Promise<void>((resolve) => {
+			requestAnimationFrame(() => {
+				rafSeen = true
+				resolve()
+			})
+		})
+		await pending
+		expect(rafSeen).toBe(true)
+		expect(resolved).toBe(true)
 	})
 })
 
@@ -1195,6 +1223,25 @@ describe('helpers — popover placement', () => {
 		panel.style.left = '200px'
 		panel.style.top = '205px'
 		expect(resolvePopoverSide(anchor, panel)).toBe('bottom')
+	})
+
+	it('resolvePopoverSide resolves "top" when panel bottom is exactly at anchor top + 1 (±1px tolerance boundary)', () => {
+		// impl: `if (p.bottom <= a.top + 1) return 'top'`
+		// At equality (p.bottom === a.top + 1) the condition is true → 'top'
+		const anchor = buildElement('div')
+		const panel = buildElement('div')
+		for (const el of [anchor, panel]) {
+			el.style.position = 'fixed'
+			el.style.width = '40px'
+			el.style.height = '20px'
+		}
+		// anchor.top = 200 → a.top + 1 = 201
+		anchor.style.left = '200px'
+		anchor.style.top = '200px'
+		// panel.top = 181 → panel.bottom = 181 + 20 = 201 = a.top + 1 (exact boundary)
+		panel.style.left = '200px'
+		panel.style.top = '181px'
+		expect(resolvePopoverSide(anchor, panel)).toBe('top')
 	})
 })
 
