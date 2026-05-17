@@ -254,6 +254,7 @@ export type ContractShape =
 	| NumberShape
 	| BooleanShape
 	| LiteralShape
+	| ConstShape
 	| ArrayShape
 	| TupleShape
 	| ObjectShape
@@ -261,6 +262,7 @@ export type ContractShape =
 	| IntersectionShape
 	| OptionalShape
 	| NullableShape
+	| DefaultShape
 	| LazyShape
 	| RawShape
 
@@ -310,6 +312,36 @@ export interface BooleanShape {
 export interface LiteralShape {
 	readonly type: 'literal'
 	readonly values: readonly (string | number | boolean)[]
+	readonly description?: string
+}
+
+/**
+ * Const shape — accepts exactly ONE fixed JSON value.
+ *
+ * @remarks
+ * `value` is a single JSON-serializable value (a valid JSON-Schema `const`).
+ * Compiles to the standard `{ const: <value> }` JSON-Schema keyword.
+ *
+ * WHY it is distinct from a single-element {@link LiteralShape}: `literalShape`
+ * is an enum of PRIMITIVES (`string | number | boolean`) and its guard is a
+ * `Set` membership test (`Object.is` semantics, primitives only). `constShape`
+ * is the JSON-Schema `const` — a single value that may be a STRUCTURED JSON
+ * value (object/array), so its guard is a structural value match (deep-equal),
+ * not a `Set.has`. The two are intentionally separate kinds: a const object
+ * cannot be expressed as a literal, and conflating them would either weaken
+ * the literal guard or mistype the const value.
+ *
+ * Equality rule (documented, enforced by the compiled guard): JSON-Schema
+ * `const` is a STRUCTURAL value match — primitive leaves compared by
+ * `Object.is` (so `NaN` matches `NaN` and `+0` ≠ `-0`, consistent with
+ * validators' `literalOf`), arrays/plain objects compared by recursive
+ * structural deep-equality. The matched value is canonical; the parser hands
+ * out a fresh deep copy for non-primitive consts (never a shared mutable
+ * reference).
+ */
+export interface ConstShape {
+	readonly type: 'const'
+	readonly value: JsonValue
 	readonly description?: string
 }
 
@@ -417,6 +449,45 @@ export interface OptionalShape {
 export interface NullableShape {
 	readonly type: 'nullable'
 	readonly inner: ContractShape
+}
+
+/**
+ * Default wrapper — `inner` plus an advisory default applied on ABSENCE.
+ *
+ * @remarks
+ * `value` SHOULD be a valid instance of `inner`; {@link defaultShape} enforces
+ * this at build time (AGENTS.md §13 — a default that fails its own inner is
+ * programmer error, and validating it keeps `generator∘guard` /
+ * `parse↔guard` sound by construction). Compiles to `inner`'s schema with the
+ * JSON-Schema `default` keyword added.
+ *
+ * Behavioural contract (a DELIBERATE, useful asymmetry — call it out exactly
+ * like {@link OptionalShape}'s `undefined` handling):
+ *
+ * - **guard** delegates VERBATIM to `inner`'s guard. The default is advisory
+ *   metadata; the guard does NOT accept `undefined` just because a default
+ *   exists (guard semantics = inner's, period).
+ * - **parser** applies the default on ABSENCE: `parse(undefined)` returns the
+ *   default (a fresh deep copy for a non-primitive default — same alias-free
+ *   policy as {@link ConstShape}); any other input parses through `inner`.
+ * - This means `guard(undefined)` is `inner.guard(undefined)` (false unless
+ *   `inner` is itself optional) while `parser(undefined)` = the default. The
+ *   parse↔guard A/B/C invariants still hold: the default is build-validated
+ *   to pass `inner`'s guard, so EVERY parser output (the default OR a
+ *   parsed-inner value) is guard-valid (clause C); clauses A/B are inherited
+ *   from `inner`'s own sound parser for every non-`undefined` input.
+ * - **generate** generates from `inner` (the default is just ONE valid
+ *   instance — generating from inner preserves variability;
+ *   `assertGeneratorSatisfiesGuard` still holds because inner's generator is
+ *   sound).
+ * - `Infer<DefaultShape>` is `Infer<inner>` — the advisory default does not
+ *   change the static type (the value is still required at the type level;
+ *   the parser fills it on absence at runtime).
+ */
+export interface DefaultShape {
+	readonly type: 'default'
+	readonly inner: ContractShape
+	readonly value: JsonValue
 }
 
 /**
@@ -539,23 +610,27 @@ export type Infer<S extends ContractShape> = S extends unknown
 					? unknown
 					: S['type'] extends 'literal'
 						? InferLiteral<S>
-						: S['type'] extends 'optional'
-							? InferOptional<S>
-							: S['type'] extends 'nullable'
-								? InferNullable<S>
-								: S['type'] extends 'array'
-									? InferArray<S>
-									: S['type'] extends 'tuple'
-										? InferTupleShape<S>
-										: S['type'] extends 'union'
-											? InferUnionShape<S>
-											: S['type'] extends 'intersection'
-												? InferIntersectionShape<S>
-												: S['type'] extends 'lazy'
-													? InferLazyShape<S>
-													: S['type'] extends 'object'
-														? InferObjectShape<S>
-														: never
+						: S['type'] extends 'const'
+							? InferConst<S>
+							: S['type'] extends 'optional'
+								? InferOptional<S>
+								: S['type'] extends 'nullable'
+									? InferNullable<S>
+									: S['type'] extends 'default'
+										? InferDefault<S>
+										: S['type'] extends 'array'
+											? InferArray<S>
+											: S['type'] extends 'tuple'
+												? InferTupleShape<S>
+												: S['type'] extends 'union'
+													? InferUnionShape<S>
+													: S['type'] extends 'intersection'
+														? InferIntersectionShape<S>
+														: S['type'] extends 'lazy'
+															? InferLazyShape<S>
+															: S['type'] extends 'object'
+																? InferObjectShape<S>
+																: never
 	: never
 
 // === Recursive-child constraint
@@ -626,6 +701,15 @@ type InferLiteral<S> = S extends { readonly values: infer V }
 		: never
 	: never
 
+// `Infer<ConstShape>` is the const-generic-preserved literal type of `value`
+// (the same technique `InferLiteral` uses for the literal element). The public
+// `constShape` builder returns `{ readonly type:'const'; readonly value:V } &
+// ConstShape`; the precise literal portion wins for `value`, so a single
+// string const infers the exact string-literal type and an object const
+// infers its structural type. No `InferChild` recursion: a const `value` is a
+// DATA value, not a child SHAPE.
+type InferConst<S> = S extends { readonly value: infer V } ? V : never
+
 type InferOptional<S> = S extends { readonly inner: infer I }
 	? InferChild<I> | undefined
 	: never
@@ -633,6 +717,13 @@ type InferOptional<S> = S extends { readonly inner: infer I }
 type InferNullable<S> = S extends { readonly inner: infer I }
 	? InferChild<I> | null
 	: never
+
+// `Infer<DefaultShape>` is EXACTLY `Infer<inner>` — the advisory default does
+// not widen or optionalise the static type (the value is required at the type
+// level; the parser fills it from the default on absence at runtime). Mirrors
+// `InferOptional`/`InferNullable`'s child extraction WITHOUT adding a
+// `| undefined`/`| null` arm.
+type InferDefault<S> = S extends { readonly inner: infer I } ? InferChild<I> : never
 
 // === Lazy (recursive / $ref) inference
 //

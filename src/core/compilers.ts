@@ -6,6 +6,7 @@ import type {
 	JsonSchema,
 	JsonSchemaMap,
 	JsonSchemaObject,
+	JsonValue,
 	ObjectShape,
 	RandomFunction,
 } from './types.js'
@@ -45,6 +46,10 @@ function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>):
 		case 'number':
 		case 'boolean':
 		case 'literal':
+		case 'const':
+		// `const` is a TERMINAL like `literal`/`raw`/primitives: its `value`
+		// is a DATA value, never a child SHAPE, so there is no edge to
+		// traverse and it can never participate in a structural shape cycle.
 		case 'raw':
 			return
 		case 'lazy':
@@ -107,13 +112,158 @@ function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>):
 			return
 		}
 		case 'optional':
-		case 'nullable': {
+		case 'nullable':
+		case 'default': {
+			// `default` RECURSES into `inner` exactly like the other wrapper
+			// kinds (optional/nullable): a non-lazy structural cycle THROUGH a
+			// defaultShape (an object whose property's shape IS the object,
+			// wrapped in `default`) is a genuine back-edge and MUST still
+			// throw the precise B5 §13 Error. A lazy boundary nested in
+			// `inner` is the only thing that legitimately breaks such a cycle
+			// (it is a terminal in the `'lazy'` arm above), exactly as for
+			// optional/nullable.
 			seen.add(shape)
 			assertAcyclicShape(shape.inner, seen)
 			seen.delete(shape)
 			return
 		}
 	}
+}
+
+// === D4 const equality + JSON deep copy
+//
+// JSON-Schema `const` is a STRUCTURAL value match (documented in
+// `constShape` / `ConstShape`): primitive leaves compared by `Object.is` (so
+// `NaN` matches `NaN` and `+0` ≠ `-0` — the SAME equality validators'
+// `literalOf` uses; consistency across the codebase is deliberate), and
+// arrays / plain objects compared by recursive structural deep-equality. The
+// const `value` came through `constShape` typed as `JsonValue`, so it is a
+// finite acyclic JSON tree (no functions, no cycles) — a plain recursive
+// walk terminates without the WeakSet/depth guards the public JSON guards
+// need for untrusted input. `b` is untrusted (it is the guard's argument):
+// it is compared structurally against the trusted finite `a`, so the
+// recursion depth is bounded by `a`'s (finite) shape, not `b`'s.
+// `a` is typed `unknown` (not `JsonValue`) deliberately: TS's
+// `Array.isArray` type guard narrows to `any[]`, which does NOT subtract the
+// `JsonArray` interface from a `JsonArray | JsonObject` union, so a
+// `JsonValue`-typed parameter cannot be cleanly narrowed without an `as`
+// (forbidden by the AGENTS binding). The const value is always a `JsonValue`
+// at the call site (assignable to `unknown`), and we re-derive its structure
+// here via the codebase's own `Array.isArray` + `isRecord` guards — the SAME
+// discipline `validators.ts`' `isJsonValueInner` uses.
+function constEquals(a: unknown, b: unknown): boolean {
+	if (Array.isArray(a)) {
+		// `a` is a JSON array: `b` must be an array of the same length whose
+		// elements are positionally deep-equal.
+		const aArray: readonly unknown[] = a
+		if (!Array.isArray(b) || aArray.length !== b.length) {
+			return false
+		}
+		const bArray: readonly unknown[] = b
+		for (let index = 0; index < aArray.length; index += 1) {
+			if (!constEquals(aArray[index], bArray[index])) {
+				return false
+			}
+		}
+		return true
+	}
+	if (!isRecord(a)) {
+		// Primitive leaf (string/number/boolean/null): `Object.is` so `NaN`
+		// === `NaN`, `+0` ≠ `-0` (aligned with validators' `literalOf`).
+		return Object.is(a, b)
+	}
+	// `a` is a plain JSON object. `b` must be a plain record (not an array)
+	// with the IDENTICAL own-key set and every value deep-equal. Keys are
+	// read via `Object.hasOwn` so an inherited key can never be mistaken for
+	// a present own property (the object parser arm's untrusted-input
+	// discipline).
+	if (!isRecord(b)) {
+		return false
+	}
+	const aKeys = Object.keys(a)
+	const bKeys = Object.keys(b)
+	if (aKeys.length !== bKeys.length) {
+		return false
+	}
+	for (const key of aKeys) {
+		if (!Object.hasOwn(b, key) || !constEquals(a[key], b[key])) {
+			return false
+		}
+	}
+	return true
+}
+
+// A fresh deep copy of a (finite, acyclic) `JsonValue`. The const/default
+// parser and the const generator hand this out so a non-primitive canonical
+// value is NEVER a shared mutable reference into the shape (the codebase's
+// C3 alias-free copy policy). A primitive returns as-is (immutable). Input is
+// always a builder-supplied `JsonValue` (finite acyclic JSON), so the plain
+// recursion terminates without cycle/depth guards.
+// Parameter typed `JsonValue` for the call sites' clarity; narrowed
+// internally via `Array.isArray`/`isRecord` and recursed through `unknown`
+// children (same reason as `constEquals` — `Array.isArray` cannot subtract
+// the `JsonArray` interface from the union without an `as`). The return is
+// re-typed `JsonValue` (a deep copy of a JSON tree is itself a JSON tree).
+function cloneJsonValue(value: JsonValue): JsonValue {
+	return cloneJsonInner(value)
+}
+
+function cloneJsonInner(value: unknown): JsonValue {
+	if (Array.isArray(value)) {
+		const valueArray: readonly unknown[] = value
+		return valueArray.map((item) => cloneJsonInner(item))
+	}
+	if (!isRecord(value)) {
+		// Primitive leaf — immutable, returned as-is. The input is a
+		// `JsonValue` subtree, so a non-record non-array is a JSON primitive.
+		if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+			return value
+		}
+		return null
+	}
+	const result: Record<string, JsonValue> = {}
+	for (const key of Object.keys(value)) {
+		const child = value[key]
+		if (child !== undefined) {
+			result[key] = cloneJsonInner(child)
+		}
+	}
+	return result
+}
+
+// === D4 — object-level absence policy for `default`
+//
+// An object PROPERTY may be absent iff its shape "permits absence". Before D4
+// that was exactly `child.type === 'optional'`. `defaultShape` adds a second,
+// distinct notion that the spec calls out as a DELIBERATE asymmetry:
+//
+//  * GUARD / SCHEMA / GENERATOR — the guard is INNER's guard (a default is
+//    advisory metadata, NOT optionality). So a `default` property permits
+//    absence ONLY when its (possibly nested-`default`) inner is itself
+//    `optional` — i.e. the inner guard already accepts `undefined`. A
+//    `defaultShape(integerShape(), 3)` property is REQUIRED by the guard
+//    (the guard does NOT auto-apply the default); a
+//    `defaultShape(optionalShape(x), …)` property may be absent because its
+//    inner is optional. `guardPermitsAbsence` recurses through `default`
+//    wrappers to that decision; it is a no-op for every pre-D4 kind
+//    (`optional` → true, everything else → false — `nullable` accepts `null`,
+//    not absence, so it stays required exactly as before, preserving B2–B5).
+//  * PARSER — separately, the parser APPLIES the default on absence, so an
+//    absent `default` key is NOT a parse failure: the object parser routes
+//    `undefined` through the `default` child's parser (which yields the
+//    default). That parser-only rule lives inline in the object parser arm
+//    (`child.type === 'default'`), not here.
+function guardPermitsAbsence(shape: ContractShape): boolean {
+	if (shape.type === 'optional') {
+		return true
+	}
+	if (shape.type === 'default') {
+		// Guard == inner's guard, so absence is permitted at the guard/schema
+		// level ONLY if the inner itself permits absence (its guard accepts
+		// `undefined`). Recurses through nested `default` wrappers.
+		return guardPermitsAbsence(shape.inner)
+	}
+	return false
 }
 
 // === Intersection member flattening
@@ -306,7 +456,14 @@ function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContex
 					continue
 				}
 				properties[key] = compileSchemaInner(child, lazyContext)
-				if (child.type !== 'optional') {
+				// A property is `required` unless it permits absence. D4: a
+				// `default` property is required iff its inner is NOT optional
+				// (the default is advisory; the type-level `Infer` is
+				// `Infer<inner>`, so a `default(optional(x))` is type-optional
+				// and not required, while `default(integer())` IS required —
+				// the guard does not auto-apply the default). `nullable`/
+				// primitive stay required exactly as before.
+				if (!guardPermitsAbsence(child)) {
 					required.push(key)
 				}
 			}
@@ -352,10 +509,38 @@ function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContex
 				...(shape.description !== undefined ? { description: shape.description } : {}),
 			}
 		}
+		case 'const': {
+			// Standard JSON-Schema `const`: the value must equal exactly
+			// `shape.value`. A fresh deep copy is embedded so the emitted
+			// schema can never alias (and be mutated through) the shape's own
+			// stored value (C3 alias-free policy; `isJsonSchema` validates a
+			// `const` keyword as any JSON value, so this is schema-valid).
+			return {
+				const: cloneJsonValue(shape.value),
+				...(shape.description !== undefined ? { description: shape.description } : {}),
+			}
+		}
 		case 'optional':
 			return compileSchemaInner(shape.inner, lazyContext)
 		case 'nullable':
 			return { anyOf: [compileSchemaInner(shape.inner, lazyContext), { type: 'null' }] }
+		case 'default': {
+			// Inner's schema with the JSON-Schema `default` keyword added. A
+			// boolean inner schema (only `rawShape(true/false)`) cannot carry
+			// a `default` keyword; wrap it in the equivalent object form so
+			// the annotation is not lost (mirrors the `$defs` boolean-root
+			// handling in `compileSchema`). A fresh deep copy of the default
+			// is embedded (no shared alias into the shape; `isJsonSchema`
+			// accepts a `default` of any JSON value).
+			const innerSchema = compileSchemaInner(shape.inner, lazyContext)
+			const defaultValue = cloneJsonValue(shape.value)
+			if (typeof innerSchema === 'boolean') {
+				return innerSchema
+					? { default: defaultValue }
+					: { not: {}, default: defaultValue }
+			}
+			return { ...innerSchema, default: defaultValue }
+		}
 		case 'lazy': {
 			// D3 lazy → JSON-Schema `$ref` / `$defs` (documented + Phase-E
 			// seam — see the `compileSchema` boundary comment). Memoize
@@ -516,7 +701,12 @@ function compileGuardInner(
 				entries.push({
 					key,
 					guard: compileGuardInner(child, lazyCache),
-					optional: child.type === 'optional',
+					// D4: absence is permitted iff the property permits absence
+					// at the guard level — `optional`, or a `default` whose
+					// inner is optional (guard == inner's, so a default does
+					// NOT make a required inner absent-tolerant). No-op for
+					// every pre-D4 kind.
+					optional: guardPermitsAbsence(child),
 				})
 			}
 			const allowed = new Set(entries.map((entry) => entry.key))
@@ -644,6 +834,16 @@ function compileGuardInner(
 				return true
 			}
 		}
+		case 'const': {
+			// JSON-Schema `const`: valid iff the input STRUCTURALLY equals
+			// `shape.value` — `Object.is` at primitive leaves (so `NaN`
+			// matches `NaN`, `+0` ≠ `-0`, consistent with validators'
+			// `literalOf`), recursive deep-equal for arrays/objects. The
+			// trusted const value bounds the recursion (it is a finite
+			// acyclic `JsonValue`).
+			const constValue = shape.value
+			return (value) => constEquals(constValue, value)
+		}
 		case 'optional': {
 			const guard = compileGuardInner(shape.inner, lazyCache)
 			return (value) => value === undefined || guard(value)
@@ -651,6 +851,14 @@ function compileGuardInner(
 		case 'nullable': {
 			const guard = compileGuardInner(shape.inner, lazyCache)
 			return (value) => value === null || guard(value)
+		}
+		case 'default': {
+			// Guard delegates VERBATIM to the inner guard — a default is
+			// advisory metadata, NOT optionality, so the guard does NOT
+			// accept `undefined` just because a default exists (documented
+			// parse-applies-default / guard-is-inner asymmetry). The
+			// `undefined → default` behaviour lives ONLY in the parser arm.
+			return compileGuardInner(shape.inner, lazyCache)
 		}
 		case 'lazy': {
 			// D3 recursion: a recursive lazy shape's guard must NOT recompile
@@ -914,6 +1122,7 @@ function compileParserInner(
 				key: string
 				parse: (value: unknown) => unknown
 				optional: boolean
+				appliesDefault: boolean
 			}[] = []
 			for (const key of Object.keys(shape.properties)) {
 				if (isDangerousKey(key)) {
@@ -926,7 +1135,18 @@ function compileParserInner(
 				entries.push({
 					key,
 					parse: compileParserInner(child, lazyCache),
-					optional: child.type === 'optional',
+					// `optional` = "skip on absence" — true for `optional` and
+					// for a `default` whose inner is itself optional (its
+					// parser would yield `undefined` for the default, which at
+					// the object level means the key is legitimately absent).
+					optional: guardPermitsAbsence(child),
+					// D4: a `default` property APPLIES its default on absence —
+					// an absent key is NOT a parse failure; route `undefined`
+					// through the child parser (which yields the default).
+					// This is the documented parse-applies-default-on-absence
+					// contract (the canonical use of a default), distinct from
+					// the guard (which does NOT auto-apply it).
+					appliesDefault: child.type === 'default',
 				})
 			}
 			const known = new Set(entries.map((entry) => entry.key))
@@ -958,6 +1178,20 @@ function compileParserInner(
 					// mistaken for a present own property.
 					const raw = Object.hasOwn(value, entry.key) ? value[entry.key] : undefined
 					if (raw === undefined) {
+						if (entry.appliesDefault) {
+							// D4: an absent `default` property APPLIES its
+							// default (parse-applies-default-on-absence) — route
+							// `undefined` through the child's `default` parser,
+							// which returns a fresh deep copy of the default.
+							// Checked BEFORE the optional skip so a
+							// `default(optional(x))` still materializes its
+							// default value rather than dropping the key.
+							const applied = entry.parse(undefined)
+							if (applied !== undefined) {
+								result[entry.key] = applied
+							}
+							continue
+						}
 						if (entry.optional) {
 							continue
 						}
@@ -1148,6 +1382,20 @@ function compileParserInner(
 				return guard(result) ? result : undefined
 			}
 		}
+		case 'const': {
+			// Parse↔guard soundness: the parser returns the CANONICAL value
+			// iff the input matches the const's structural-equality guard,
+			// else `undefined`. A non-primitive canonical value is handed out
+			// as a FRESH DEEP COPY (C3 alias-free policy) so a caller mutating
+			// the result cannot corrupt the shape's stored value or a later
+			// parse. Clauses (A)(B)(C): (A) input the guard accepts ⇒ it
+			// equals `value` ⇒ the returned canonical copy is itself
+			// guard-valid (deep-equal to `value`); (B)/(C) every defined
+			// output IS a copy of `value`, which the guard accepts by
+			// definition; a non-matching input ⇒ `undefined`.
+			const constValue = shape.value
+			return (value) => (constEquals(constValue, value) ? cloneJsonValue(constValue) : undefined)
+		}
 		case 'optional': {
 			const parser = compileParserInner(shape.inner, lazyCache)
 			return (value) => (value === undefined ? undefined : parser(value))
@@ -1155,6 +1403,26 @@ function compileParserInner(
 		case 'nullable': {
 			const parser = compileParserInner(shape.inner, lazyCache)
 			return (value) => (value === null ? null : parser(value))
+		}
+		case 'default': {
+			// DELIBERATE, useful asymmetry (documented; mirrors the
+			// `optional` arm's `undefined` handling): on ABSENCE
+			// (`value === undefined`) the parser APPLIES the default — a
+			// fresh deep copy of `shape.value` for a non-primitive default
+			// (C3 alias-free policy, identical to the `const` arm) so no
+			// shared mutable reference leaks. Any OTHER input parses through
+			// `inner`. Parse↔guard A/B/C: `shape.value` was §13
+			// build-validated by `defaultShape` to satisfy `inner`'s guard
+			// (== this shape's guard), so the `undefined → default` path
+			// emits a guard-valid value (C); the non-`undefined` path is
+			// `inner`'s own sound parser, so A/B/C are inherited. Note:
+			// `guard(undefined)` is `inner.guard(undefined)` (false unless
+			// `inner` is optional) yet `parser(undefined)` = default — the
+			// intended "apply default on absence" contract, distinct from
+			// B3's general rule and called out here exactly.
+			const parser = compileParserInner(shape.inner, lazyCache)
+			const defaultValue = shape.value
+			return (value) => (value === undefined ? cloneJsonValue(defaultValue) : parser(value))
 		}
 		case 'lazy': {
 			// D3 recursion — same memoization strategy as the guard arm: a
@@ -1279,12 +1547,16 @@ function minimalInhabitant(
 			return result
 		}
 		case 'object': {
-			// Only REQUIRED (non-optional) keys — an optional key absent is
-			// the minimal object. Each required key gets its child's minimal.
+			// Only REQUIRED keys — an absence-permitting key absent is the
+			// minimal object. D4: a `default(optional(x))` permits absence
+			// (so it is omitted from the minimal object), while a required
+			// `default(integer())` is included with its inner's minimal (the
+			// `default` arm of `minimalInhabitant` recurses to `inner`). Each
+			// required key gets its child's minimal.
 			const result: Record<string, unknown> = {}
 			for (const key of Object.keys(shape.properties)) {
 				const child = shape.properties[key]
-				if (child === undefined || child.type === 'optional') {
+				if (child === undefined || guardPermitsAbsence(child)) {
 					continue
 				}
 				result[key] = minimalInhabitant(child, random, seenThunks)
@@ -1316,6 +1588,10 @@ function minimalInhabitant(
 			}
 			return result
 		}
+		case 'const':
+			// A const has EXACTLY one inhabitant — its value (a fresh copy so
+			// the minimal value is never a shared alias into the shape).
+			return cloneJsonValue(shape.value)
 		case 'optional':
 			// The minimal optional value is ABSENT; as a bare value that is
 			// `undefined` (the guard accepts it, and at object level the key
@@ -1325,6 +1601,15 @@ function minimalInhabitant(
 			// `null` is the minimal nullable inhabitant (guard accepts it
 			// without instantiating the inner — terminates the recursion).
 			return null
+		case 'default':
+			// The default does not change the guard (guard == inner's), so
+			// the minimal inhabitant is the inner's minimal inhabitant — NOT
+			// the default value (the default is just one valid instance; the
+			// inner may have a strictly smaller one). Recursing `inner` also
+			// keeps the lazy-recursion termination chain intact (a `default`
+			// wrapping a recursive lazy continues the descent like
+			// optional/nullable).
+			return minimalInhabitant(shape.inner, random, seenThunks)
 		case 'lazy': {
 			if (seenThunks.has(shape.thunk)) {
 				throw new Error(
@@ -1459,7 +1744,14 @@ function compileGeneratorInner(
 				if (child === undefined) {
 					continue
 				}
-				if (child.type === 'optional' && random() < 0.3) {
+				// D4: an absence-permitting property (`optional`, or a
+				// `default` whose inner is optional) is randomly omitted, like
+				// `optional` before. A required `default(x)` is ALWAYS
+				// generated (the guard requires it) from its inner (the
+				// `default` arm of the generator delegates to `inner` for
+				// variability). `guardPermitsAbsence` is the no-op-for-pre-D4
+				// absence predicate.
+				if (guardPermitsAbsence(child) && random() < 0.3) {
 					continue
 				}
 				result[key] = compileGeneratorInner(child, random, lazyDepth)
@@ -1512,10 +1804,27 @@ function compileGeneratorInner(
 			}
 			return result
 		}
+		case 'const':
+			// A const has EXACTLY one inhabitant — the value. Emit a FRESH
+			// DEEP COPY (C3 alias-free policy — two generations must never
+			// share a mutable reference). Constant output is trivially
+			// deterministic for any seed, so the `random` source is
+			// intentionally not consumed; `assertGeneratorSatisfiesGuard`
+			// skips its variability clause for constant-output shapes.
+			return cloneJsonValue(shape.value)
 		case 'optional':
 			return compileGeneratorInner(shape.inner, random, lazyDepth)
 		case 'nullable':
 			return random() < 0.2 ? null : compileGeneratorInner(shape.inner, random, lazyDepth)
+		case 'default':
+			// Generate from INNER, not the fixed default: the default is just
+			// ONE valid instance, so generating from inner preserves
+			// variability (the generator∘guard variability clause). Sound
+			// because inner's generator is sound and the default never
+			// constrains the guard (guard == inner's). The `random` source is
+			// threaded into inner so output varies and stays deterministic
+			// per seed.
+			return compileGeneratorInner(shape.inner, random, lazyDepth)
 		case 'lazy': {
 			// D3 generator termination (the subtle case). A recursive lazy
 			// shape's generator could recurse forever; `lazyDepth` bounds it.

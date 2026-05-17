@@ -53,7 +53,9 @@ import {
 	compileGuard,
 	compileParser,
 	compileSchema,
+	constShape,
 	createRandom,
+	defaultShape,
 	integerShape,
 	intersectionShape,
 	lazyShape,
@@ -244,6 +246,33 @@ export const kindNullable: true = exactCheck<
 	number | null
 >()
 export const kindRaw: true = exactCheck<Infer<ReturnType<typeof rawShape>>, unknown>()
+
+// D4 — `constShape(value)`. `Infer<ConstShape>` is the const-generic-preserved
+// literal type of `value` (like `literalShape`): a single-string const infers
+// the exact string-literal type, an object const infers its structural type.
+export const kindConst: true = exactCheck<
+	Infer<ReturnType<typeof constShape<'x'>>>,
+	'x'
+>()
+export const kindConstNumber: true = exactCheck<
+	Infer<ReturnType<typeof constShape<42>>>,
+	42
+>()
+// D4 — `defaultShape(inner, value)`. The advisory `default` does NOT change
+// the static type — `Infer<DefaultShape>` is exactly `Infer<inner>` (the
+// value is still required at the type level; the parser fills it on absence).
+export const kindDefault: true = exactCheck<
+	Infer<ReturnType<typeof defaultShape<ReturnType<typeof stringShape>>>>,
+	string
+>()
+export const kindDefaultObject: true = exactCheck<
+	Infer<
+		ReturnType<
+			typeof defaultShape<ReturnType<typeof objectShape<{ a: ReturnType<typeof stringShape> }>>>
+		>
+	>,
+	Readonly<{ a: string } & Record<never, never>>
+>()
 
 // === 4. A deep-but-realistic nested shape (≥5 levels) stays precise
 //

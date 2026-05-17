@@ -7,7 +7,9 @@ import {
 	compileGuard,
 	compileParser,
 	compileSchema,
+	constShape,
 	createRandom,
+	defaultShape,
 	integerShape,
 	intersectionShape,
 	isJsonSchema,
@@ -1603,6 +1605,366 @@ describe('D3 — the no-finite-inhabitant case (documented termination contract)
 		// generator does — so they must still compile fine.
 		expect(() => compileGuard(makeInfiniteShape())).not.toThrow()
 		expect(() => compileSchema(makeInfiniteShape())).not.toThrow()
+	})
+})
+
+// === D4 — constShape (JSON-Schema `const`)
+//
+// `constShape(value)` is a single fixed JSON value. Documented equality rule:
+// JSON-Schema `const` is a STRUCTURAL value match — primitives compared by
+// `Object.is` (so `NaN` === `NaN`, `+0` ≠ `-0`, aligned with validators'
+// `literalOf`), arrays/objects compared by recursive structural deep-equality
+// with `Object.is` leaf semantics. The parser returns the CANONICAL value (a
+// fresh deep copy for non-primitives, so a shared mutable reference is never
+// handed out — aligns with the codebase's parser copy policy). The generator
+// deterministically emits that same canonical value (also a fresh copy).
+
+describe('D4 — constShape (JSON-Schema const)', () => {
+	it('schema — emits { const: value } and is isJsonSchema-valid', () => {
+		expect(compileSchema(constShape('x'))).toEqual({ const: 'x' })
+		expect(compileSchema(constShape(42))).toEqual({ const: 42 })
+		expect(compileSchema(constShape(null))).toEqual({ const: null })
+		const objSchema = compileSchema(constShape({ a: 1, b: ['y'] }))
+		expect(objSchema).toEqual({ const: { a: 1, b: ['y'] } })
+		expect(isJsonSchema(objSchema)).toBe(true)
+		expect(isJsonSchema(compileSchema(constShape('x')))).toBe(true)
+	})
+
+	it('guard — primitive equality is Object.is (NaN===NaN, +0 ≠ -0)', () => {
+		const isFortyTwo = compileGuard(constShape(42))
+		expect(isFortyTwo(42)).toBe(true)
+		expect(isFortyTwo(43)).toBe(false)
+		expect(isFortyTwo('42')).toBe(false)
+
+		// Object.is alignment with literalOf: NaN matches NaN.
+		const isNan = compileGuard(constShape(Number.NaN))
+		expect(isNan(Number.NaN)).toBe(true)
+		expect(isNan(0)).toBe(false)
+
+		// Object.is: +0 and -0 are DISTINCT consts.
+		const isNegZero = compileGuard(constShape(-0))
+		expect(isNegZero(-0)).toBe(true)
+		expect(isNegZero(0)).toBe(false)
+		const isPosZero = compileGuard(constShape(0))
+		expect(isPosZero(0)).toBe(true)
+		expect(isPosZero(-0)).toBe(false)
+
+		const isNull = compileGuard(constShape(null))
+		expect(isNull(null)).toBe(true)
+		expect(isNull(undefined)).toBe(false)
+	})
+
+	it('guard — object / array const is a STRUCTURAL deep-equal match', () => {
+		const guard = compileGuard(constShape({ a: 1, b: [2, 3] }))
+		expect(guard({ a: 1, b: [2, 3] })).toBe(true) // structurally equal
+		expect(guard({ b: [2, 3], a: 1 })).toBe(true) // key order irrelevant
+		expect(guard({ a: 1, b: [2, 4] })).toBe(false) // nested element differs
+		expect(guard({ a: 1 })).toBe(false) // missing key
+		expect(guard({ a: 1, b: [2, 3], c: 9 })).toBe(false) // extra key
+		expect(guard([1, 2])).toBe(false)
+		expect(guard(null)).toBe(false)
+
+		const arrGuard = compileGuard(constShape([1, { x: true }]))
+		expect(arrGuard([1, { x: true }])).toBe(true)
+		expect(arrGuard([1, { x: false }])).toBe(false)
+		expect(arrGuard([1, { x: true }, 2])).toBe(false) // length differs
+	})
+
+	it('parser — returns the canonical value (fresh copy for non-primitives)', () => {
+		const original = { a: 1, nested: { b: [2] } }
+		const parse = compileParser(constShape(original))
+		const out = parse({ a: 1, nested: { b: [2] } })
+		expect(out).toEqual(original)
+		// Must NOT hand out the builder's own reference (no shared mutable
+		// alias) — defensive deep copy, aligns with the C3 copy policy.
+		expect(out).not.toBe(original)
+		if (!isRecord(out) || !isRecord(out['nested'])) {
+			throw new Error('expected a record output with a nested record')
+		}
+		const outNested: unknown = out['nested']
+		expect(outNested).not.toBe(original.nested) // nested copy too (deep)
+		// Mutating the parser output must not corrupt a later parse.
+		out['a'] = 999
+		expect(parse({ a: 1, nested: { b: [2] } })).toEqual(original)
+	})
+
+	it('parser — non-matching input → undefined; primitive const aliases', () => {
+		const parse = compileParser(constShape('x'))
+		expect(parse('x')).toBe('x')
+		expect(parse('y')).toBeUndefined()
+		expect(parse(1)).toBeUndefined()
+	})
+
+	it('generator — deterministically the canonical value (fresh copy)', () => {
+		const shape = constShape({ a: 1, list: [1, 2] })
+		const a = compileGenerator(shape, createRandom(1))
+		const b = compileGenerator(shape, createRandom(2))
+		expect(a).toEqual({ a: 1, list: [1, 2] })
+		expect(b).toEqual({ a: 1, list: [1, 2] }) // deterministic / constant
+		expect(a).not.toBe(b) // distinct fresh copies (no shared alias)
+	})
+
+	it('parse↔guard symmetry (A)(B)(C) — primitive + object/array const', () => {
+		assertParseGuardSymmetry(constShape(42), [42, 43, '42', null, Number.NaN])
+		assertParseGuardSymmetry(constShape(Number.NaN), [Number.NaN, 0, 'NaN', null])
+		assertParseGuardSymmetry(constShape(-0), [-0, 0, '0'])
+		assertParseGuardSymmetry(constShape({ a: 1, b: [2] }), [
+			{ a: 1, b: [2] },
+			{ b: [2], a: 1 },
+			{ a: 1, b: [3] },
+			{ a: 1 },
+			null,
+			'x',
+			42,
+		])
+		assertParseGuardSymmetry(constShape([1, 'two', true]), [
+			[1, 'two', true],
+			[1, 'two', false],
+			[1, 'two'],
+			'nope',
+		])
+	})
+
+	it('generator∘guard (A)(B)(C) — constant-output const is sound', () => {
+		assertGeneratorSatisfiesGuard(constShape('only'), [1, 2, 3])
+		assertGeneratorSatisfiesGuard(constShape({ a: 1, b: [2, 3] }), [1, 2, 3, 4])
+	})
+
+	it('composes inside an object (a fixed discriminant field)', () => {
+		const shape = objectShape({
+			kind: constShape('user'),
+			name: stringShape({ min: 1 }),
+		})
+		const guard = compileGuard(shape)
+		expect(guard({ kind: 'user', name: 'Ada' })).toBe(true)
+		expect(guard({ kind: 'admin', name: 'Ada' })).toBe(false)
+		assertParseGuardSymmetry(shape, [
+			{ kind: 'user', name: 'Ada' },
+			{ kind: 'admin', name: 'Ada' },
+			{ kind: 'user', name: '' },
+		])
+	})
+})
+
+// === D4 — defaultShape (JSON-Schema `default`)
+//
+// `defaultShape(inner, value)` is inner + an advisory `default`. Documented
+// contracts:
+//  * §13 build-validation — the default MUST satisfy `compileGuard(inner)` or
+//    the builder throws (a default that fails its own inner is programmer
+//    error; this keeps generator∘guard / parse↔guard sound by construction).
+//  * GUARD = inner's guard exactly. The default is advisory metadata; the
+//    guard does NOT accept `undefined` just because a default exists.
+//  * PARSER applies the default on ABSENCE: parser(undefined) = the default
+//    (a fresh deep copy for non-primitives); any other input parses through
+//    inner. This is a DELIBERATE, useful asymmetry (like optionalShape's
+//    undefined handling): guard(undefined) is inner.guard(undefined) (false
+//    unless inner is optional) yet parser(undefined) = default. (A)(B)(C)
+//    still hold: the default is build-validated guard-valid, so any parser
+//    output (default OR parsed-inner) is guard-valid; the symmetry helper's
+//    bare-`undefined` sample is exercised only where inner accepts it.
+//  * GENERATOR generates from inner (variability — the default is just one
+//    valid instance), not the fixed default.
+//  * Infer<DefaultShape> = Infer<inner> (default does not change the type).
+
+describe('D4 — defaultShape (JSON-Schema default)', () => {
+	it('schema — inner schema + default keyword, isJsonSchema-valid', () => {
+		expect(compileSchema(defaultShape(stringShape(), 'd'))).toEqual({
+			type: 'string',
+			default: 'd',
+		})
+		const numSchema = compileSchema(
+			defaultShape(integerShape({ min: 0, max: 9 }), 5),
+		)
+		expect(numSchema).toEqual({ type: 'integer', minimum: 0, maximum: 9, default: 5 })
+		expect(isJsonSchema(numSchema)).toBe(true)
+		// Inner object schema gains `default` at its root.
+		const objSchema = compileSchema(
+			defaultShape(objectShape({ a: stringShape() }), { a: 'z' }),
+		)
+		expect(isJsonSchema(objSchema)).toBe(true)
+		if (typeof objSchema === 'boolean') {
+			throw new Error('expected object schema')
+		}
+		expect(objSchema.type).toBe('object')
+		expect(objSchema.default).toEqual({ a: 'z' })
+	})
+
+	it('guard — delegates verbatim to the inner guard (no undefined accept)', () => {
+		const direct = compileGuard(integerShape({ min: 0 }))
+		const withDefault = compileGuard(defaultShape(integerShape({ min: 0 }), 7))
+		for (const v of [0, 5, -1, '5', undefined, null, Number.NaN]) {
+			expect(withDefault(v)).toBe(direct(v))
+		}
+		// Explicitly: the guard does NOT accept undefined just because a
+		// default exists (default is advisory metadata, not optionality).
+		expect(withDefault(undefined)).toBe(false)
+	})
+
+	it('parser — applies the default on absence (undefined → default)', () => {
+		const parse = compileParser(defaultShape(integerShape({ min: 0 }), 7))
+		expect(parse(undefined)).toBe(7) // default applied
+		expect(parse(3)).toBe(3) // parses through inner
+		expect(parse('3')).toBe(3) // inner coercion still works
+		expect(parse(-1)).toBeUndefined() // inner rejects → undefined
+		expect(parse('nope')).toBeUndefined()
+	})
+
+	it('parser — default object is a fresh deep copy (no shared alias)', () => {
+		const dflt = { a: 1, nested: { b: [2] } }
+		const parse = compileParser(defaultShape(objectShape({ a: integerShape() }, {
+			additionalProperties: true,
+		}), dflt))
+		const out = parse(undefined)
+		expect(out).toEqual(dflt)
+		expect(out).not.toBe(dflt) // defensive copy
+		if (isRecord(out)) {
+			out['a'] = 999
+		}
+		expect(parse(undefined)).toEqual(dflt) // later parse uncorrupted
+	})
+
+	it('generator — generates from INNER (varies; not the fixed default)', () => {
+		const shape = defaultShape(integerShape({ min: 0, max: 1_000_000 }), 7)
+		const guard = compileGuard(shape)
+		const a = compileGenerator(shape, createRandom(1))
+		const b = compileGenerator(shape, createRandom(2))
+		expect(guard(a)).toBe(true)
+		expect(guard(b)).toBe(true)
+		// Deterministic per seed.
+		expect(compileGenerator(shape, createRandom(1))).toEqual(a)
+	})
+
+	it('parse↔guard symmetry (A)(B)(C) over non-undefined samples', () => {
+		// The bare-`undefined` sample is intentionally NOT included here: it is
+		// the documented parse-applies-default / guard-is-inner asymmetry
+		// (guard(undefined)=false, parser(undefined)=default). The helper's
+		// (A)(B)(C) clauses still hold for every OTHER input, and (C) holds for
+		// the default too because it is §13 build-validated guard-valid.
+		assertParseGuardSymmetry(defaultShape(integerShape({ min: 0 }), 7), [
+			0,
+			5,
+			-1,
+			'5',
+			'nope',
+			null,
+		])
+		assertParseGuardSymmetry(
+			defaultShape(stringShape({ min: 1 }), 'fallback'),
+			['a', '', 1, 'abc', null],
+		)
+		// (C) explicitly: parser(undefined) = default, and the default passes
+		// the (inner == this) guard.
+		const shape = defaultShape(integerShape({ min: 0 }), 7)
+		const parsedDefault = compileParser(shape)(undefined)
+		expect(compileGuard(shape)(parsedDefault)).toBe(true)
+	})
+
+	it('generator∘guard (A)(B)(C) — inner-driven generation is sound', () => {
+		assertGeneratorSatisfiesGuard(
+			defaultShape(integerShape({ min: 0, max: 50 }), 7),
+			[1, 2, 3, 4],
+		)
+		assertGeneratorSatisfiesGuard(
+			defaultShape(objectShape({ n: integerShape({ min: 0, max: 9 }) }), { n: 0 }),
+			[1, 2, 3, 4],
+		)
+	})
+
+	it('composes inside an object (optional-like default field at parse)', () => {
+		// At the object level a defaultShape property is REQUIRED by the guard
+		// (Infer = Infer<inner>, not optional) but the parser fills it from the
+		// default when the key is absent.
+		const shape = objectShape({
+			name: stringShape({ min: 1 }),
+			retries: defaultShape(integerShape({ min: 0 }), 3),
+		})
+		const guard = compileGuard(shape)
+		expect(guard({ name: 'Ada', retries: 5 })).toBe(true)
+		expect(guard({ name: 'Ada' })).toBe(false) // guard does NOT auto-default
+		const parse = compileParser(shape)
+		expect(parse({ name: 'Ada' })).toEqual({ name: 'Ada', retries: 3 })
+		expect(parse({ name: 'Ada', retries: 9 })).toEqual({ name: 'Ada', retries: 9 })
+	})
+})
+
+// === D4 — const/default interaction with B5 acyclicity (assertAcyclicShape)
+//
+// `const` is a TERMINAL for the acyclicity walk (like literal/raw — no child
+// shape). `default` RECURSES into its `inner` (like optional/nullable), so a
+// NON-lazy structural cycle THROUGH a defaultShape still throws the precise
+// B5 §13 Error, while a lazy boundary inside the default's inner still breaks
+// the cycle and compiles.
+
+describe('D4 — const/default × assertAcyclicShape (B5)', () => {
+	const expectedMessage = 'cyclic ContractShape: use a lazy/deferred shape for recursion'
+
+	function expectPreciseCyclicError(run: () => void): void {
+		let caught: unknown
+		try {
+			run()
+		} catch (error) {
+			caught = error
+		}
+		expect(caught).toBeInstanceOf(Error)
+		expect(caught).not.toBeInstanceOf(RangeError)
+		if (!(caught instanceof Error)) {
+			throw new Error('expected an Error to be thrown')
+		}
+		expect(caught.message).toContain(expectedMessage)
+	}
+
+	it('const is a terminal — compiles fine, no spurious cycle', () => {
+		expect(() => compileSchema(constShape({ a: 1 }))).not.toThrow()
+		expect(() => compileGuard(constShape({ a: 1 }))).not.toThrow()
+	})
+
+	it('a NON-lazy structural cycle THROUGH a defaultShape still throws B5', () => {
+		// `default`'s `inner` is traversed for cycle detection like other
+		// wrapper kinds: an object whose `self` property is a defaultShape
+		// wrapping the object itself is a genuine non-lazy back-edge.
+		const makeCyclicDefaultShape = (): ContractShape => {
+			const properties: Record<string, ContractShape> = {
+				name: stringShape({ min: 1 }),
+			}
+			const shape = objectShape(properties)
+			properties['self'] = defaultShape(shape, { name: 'x' })
+			return shape
+		}
+		expectPreciseCyclicError(() => compileSchema(makeCyclicDefaultShape()))
+		expectPreciseCyclicError(() => compileGuard(makeCyclicDefaultShape()))
+		expectPreciseCyclicError(() => compileParser(makeCyclicDefaultShape()))
+		expectPreciseCyclicError(() =>
+			compileGenerator(makeCyclicDefaultShape(), createRandom(1)),
+		)
+	})
+
+	it('the SAME recursion but with a lazy boundary inside default compiles', () => {
+		// Identical recursive intent, only difference: the back-edge goes
+		// through a lazyShape nested in the default's inner. The lazy node is
+		// the cycle-breaker, so this compiles where the non-lazy variant
+		// throws. The default `[]` validates against `arrayShape(lazy)`
+		// WITHOUT resolving the recursion (an empty array never iterates the
+		// element shape), so §13 build-validation succeeds and does not force
+		// premature lazy resolution of the not-yet-assigned binding.
+		const makeLazyDefaultTree = (): ContractShape => {
+			const treeShape: ContractShape = objectShape({
+				value: integerShape({ min: 0 }),
+				children: defaultShape(arrayShape(lazyShape(() => treeShape)), []),
+			})
+			return treeShape
+		}
+		expect(() => compileGuard(makeLazyDefaultTree())).not.toThrow()
+		expect(() => compileSchema(makeLazyDefaultTree())).not.toThrow()
+		const guard = compileGuard(makeLazyDefaultTree())
+		// `children` is a required `default(array(...))` (inner not optional),
+		// so the guard requires it; absence is NOT auto-defaulted (guard ==
+		// inner's). The parser, by contrast, applies the `[]` default.
+		expect(guard({ value: 1, children: [{ value: 2, children: [] }] })).toBe(true)
+		expect(guard({ value: 1, children: [] })).toBe(true)
+		expect(guard({ value: 1 })).toBe(false) // guard does NOT auto-default
+		const parse = compileParser(makeLazyDefaultTree())
+		expect(parse({ value: 1 })).toEqual({ value: 1, children: [] }) // default applied
 	})
 })
 

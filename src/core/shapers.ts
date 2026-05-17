@@ -4,7 +4,9 @@ import type {
 	BooleanShape,
 	BooleanShapeOptions,
 	ContractShape,
+	DefaultShape,
 	IntersectionShape,
+	JsonValue,
 	NullableShape,
 	NumberShape,
 	NumberShapeOptions,
@@ -18,6 +20,7 @@ import type {
 	TupleShape,
 	UnionShape,
 } from './types.js'
+import { compileGuard } from './compilers.js'
 
 // === Build-time bounds validation
 //
@@ -193,6 +196,65 @@ export function literalShape<const T extends readonly (string | number | boolean
 		throw new Error('literalShape requires at least one value')
 	}
 	return { type: 'literal', values }
+}
+
+// === Const
+
+/**
+ * Build a {@link ConstShape} — a single fixed JSON value (JSON-Schema
+ * `const`).
+ *
+ * @remarks
+ * The compiled guard accepts EXACTLY `value` by a structural value match:
+ * primitive leaves compared with `Object.is` (so `NaN` matches `NaN` and
+ * `+0` ≠ `-0` — the SAME equality validators' `literalOf` uses, kept
+ * consistent across the codebase), arrays/plain objects compared by recursive
+ * structural deep-equality. The parser returns the canonical `value` (a fresh
+ * deep copy for a non-primitive `value`, so a shared mutable reference is
+ * never handed out — the codebase's C3 parser copy policy); the generator
+ * deterministically emits that same canonical value.
+ *
+ * Unlike {@link literalShape} (an enum of PRIMITIVES, `Set`-membership guard),
+ * `constShape` is the JSON-Schema `const` of a SINGLE value that may be
+ * structured (object/array). It is always inhabited (its sole value is
+ * `value`), so — unlike an empty `literalShape()` / `unionShape()` — it never
+ * throws at build. The const generic preserves the literal type so
+ * `Infer<typeof shape>` is the exact type of `value` (like `literalShape`).
+ *
+ * @param value - The single JSON value the shape accepts (const-generic preserved)
+ * @returns A {@link ConstShape} node
+ *
+ * @example
+ * ```ts
+ * const kind = constShape('user')
+ * // Infer<typeof kind> = 'user'   JSON Schema: { const: 'user' }
+ * const origin = constShape({ x: 0, y: 0 })
+ * // Infer<typeof origin> = { x: number; y: number }
+ * ```
+ */
+export function constShape<const V extends JsonValue>(
+	value: V,
+): { readonly type: 'const'; readonly value: V } {
+	// No empty/invalid throw (cf. literalShape / unionShape): a const is
+	// ALWAYS inhabited — its sole value is `value` — so it is a valid,
+	// useful shape, never a §13 programmer error. The builder stores the
+	// supplied reference verbatim; handing out alias-free fresh copies is
+	// the parser's/generator's job (C3 copy policy), not the builder's.
+	//
+	// WHY the return type is the precise const-generic literal ALONE — NOT
+	// `… & ConstShape` like most builders (this mirrors `lazyShape`'s
+	// D2.5-driven decision): `ConstShape.value` is the WIDE `JsonValue`.
+	// Intersecting the precise `{ value: V }` with `ConstShape` makes
+	// `value`'s type `V & JsonValue`, and `InferConst` would then extract
+	// `V & JsonValue` instead of the precise `V` — collapsing
+	// `Infer<constShape('x')>` to `'x' & JsonValue` rather than `'x'` (the
+	// exact wide-interface pollution D2.5 eliminated). The precise literal
+	// `{ type:'const'; value: V }` with `V extends JsonValue` is ALREADY
+	// structurally assignable to `ConstShape` (and hence `ContractShape`):
+	// `V extends JsonValue` so `value: V` is assignable to `value:
+	// JsonValue`. Dropping the redundant `& ConstShape` keeps `value` the
+	// precise `V`, so `Infer` recovers the exact literal/structural type.
+	return { type: 'const', value }
 }
 
 // === Array
@@ -378,6 +440,75 @@ export function nullableShape<S extends ContractShape>(
 	inner: S,
 ): { readonly type: 'nullable'; readonly inner: S } & NullableShape {
 	return { type: 'nullable', inner }
+}
+
+// === Default
+
+/**
+ * Wrap a shape with an advisory default applied on ABSENCE.
+ *
+ * @remarks
+ * `defaultShape(inner, value)` is `inner` plus a JSON-Schema `default`. The
+ * behavioural contract is a DELIBERATE, useful asymmetry (mirrors
+ * {@link optionalShape}'s `undefined` handling — call it out, do not
+ * "fix" it):
+ *
+ * - **guard** delegates VERBATIM to `inner`'s guard — a default is advisory
+ *   metadata, NOT optionality, so the guard does not accept `undefined` just
+ *   because a default exists.
+ * - **parser** applies the default on ABSENCE: `parse(undefined)` returns the
+ *   default (a fresh deep copy for a non-primitive default, so no shared
+ *   mutable reference leaks — same C3 copy policy as {@link constShape}); any
+ *   other input parses through `inner`.
+ * - So `guard(undefined)` is `inner.guard(undefined)` (false unless `inner`
+ *   is itself optional) while `parser(undefined)` = the default. parse↔guard
+ *   A/B/C still hold: `value` is build-validated below to satisfy `inner`'s
+ *   guard, so every parser output (the default OR a parsed-inner value) is
+ *   guard-valid (C); A/B are inherited from `inner`'s sound parser for every
+ *   non-`undefined` input.
+ * - **generate** generates from `inner` (the default is just ONE valid
+ *   instance — generating from inner keeps variability;
+ *   `assertGeneratorSatisfiesGuard` holds because inner's generator is sound).
+ * - `Infer<typeof shape>` is `Infer<inner>` — the default does not change the
+ *   static type.
+ *
+ * Throws at build time (AGENTS.md §13 — programmer error caught at the
+ * boundary) when `value` does NOT satisfy `compileGuard(inner)`: a default
+ * that fails its own inner would silently break `generator∘guard` /
+ * `parse↔guard` downstream, so it is rejected here where the cause is
+ * obvious. (`compileGuard(inner)` also runs the standard acyclicity check, so
+ * a non-lazy structural cycle in `inner` is caught here too, consistent with
+ * every other compiler boundary.)
+ *
+ * @param inner - The shape to wrap
+ * @param value - The default, applied by the parser when input is `undefined`;
+ *        MUST be a valid instance of `inner` (validated at build, §13)
+ * @returns A {@link DefaultShape} wrapping `inner`
+ *
+ * @example
+ * ```ts
+ * const retries = defaultShape(integerShape({ min: 0 }), 3)
+ * // Infer<typeof retries> = number   JSON Schema: { type:'integer', minimum:0, default:3 }
+ * // parse(undefined) === 3 ; guard(undefined) === false (default is advisory)
+ * ```
+ */
+export function defaultShape<S extends ContractShape>(
+	inner: S,
+	value: JsonValue,
+): { readonly type: 'default'; readonly inner: S; readonly value: JsonValue } & DefaultShape {
+	// §13 — a default that does not satisfy its own inner is programmer
+	// error. Validate at the build boundary (NOT advisory/unchecked) so the
+	// generator∘guard and parse↔guard contracts stay sound by construction:
+	// the parser's `undefined → default` path can only ever emit a
+	// guard-valid value if the default itself is guard-valid. `compileGuard`
+	// also asserts `inner` acyclic up front (same as every compiler), so a
+	// non-lazy structural cycle is caught here too.
+	if (!compileGuard(inner)(value)) {
+		throw new Error(
+			'defaultShape: the default value must satisfy the inner shape (a default that fails its own inner is a programmer error)',
+		)
+	}
+	return { type: 'default', inner, value }
 }
 
 // === Lazy

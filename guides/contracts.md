@@ -26,6 +26,7 @@ Each builder produces a `ContractShape` value. Builders preserve const-generic t
 | `integerShape()`  | `{ type: 'integer' }` + bounds         | `number`                |
 | `booleanShape()`  | `{ type: 'boolean' }`                  | `boolean`               |
 | `literalShape()`  | `{ enum: [...] }`                      | literal union           |
+| `constShape()`    | `{ const: <value> }`                   | the value's literal/structural type |
 | `arrayShape()`    | `{ type: 'array', items: {...} }`      | `readonly T[]`          |
 | `tupleShape()`    | `{ type: 'array', prefixItems: [...], items: false, minItems: n, maxItems: n }` | `readonly [A, B]` |
 | `objectShape()`   | `{ type: 'object', properties: {...} }`| `{ key: T; opt?: U }`   |
@@ -34,6 +35,7 @@ Each builder produces a `ContractShape` value. Builders preserve const-generic t
 | `intersectionShape()` | `{ allOf: [...] }`                 | `A & B`                 |
 | `optionalShape()` | delegates to inner shape               | `T \| undefined`        |
 | `nullableShape()` | `{ anyOf: [inner, { type: 'null' }] }` | `T \| null`             |
+| `defaultShape()`  | inner schema + `default: <value>`      | `Infer<inner>` (default is advisory; type unchanged) |
 | `lazyShape()`     | `{ $ref: '#/$defs/Lazyn' }` + root `$defs` | `Infer<inner>` (recursive: `unknown` — supply a named `interface`) |
 | `recordShape()`   | `{ type: 'object', additionalProperties: {...} }` | `Record<string, T>` |
 | `rawShape()`      | pass-through fragment                  | `unknown`               |
@@ -208,6 +210,24 @@ const empty = tupleShape() // the inhabited `readonly []` type — only `[]` is 
 
 Each argument is the shape for that position. The compiled guard accepts an array of **exactly** that arity where every element satisfies its positional shape (the runtime mirror of `tupleOf` in [validators.md](validators.md)); the parser parses each position with that position's parser and fails on any arity or positional mismatch. The closed-tuple JSON Schema is the standard `prefixItems` + `items: false` + `minItems === maxItems === arity` encoding. Unlike an empty `literalShape()` / `unionShape()` (uninhabited → throws at build), an empty `tupleShape()` is the valid, inhabited `[]` type and does not throw.
 
+### `constShape()` — a single fixed JSON value (`const`)
+
+```ts
+import { constShape, objectShape, stringShape } from '@elements/core'
+
+const kind = constShape('user')
+// Infer<typeof kind> = 'user'   JSON Schema: { const: 'user' }
+
+const origin = constShape({ x: 0, y: 0 })
+// Infer<typeof origin> = { x: number; y: number }
+// JSON Schema: { const: { x: 0, y: 0 } }
+
+// A fixed discriminant field inside an object:
+const userEvent = objectShape({ kind: constShape('user'), name: stringShape({ min: 1 }) })
+```
+
+`constShape(value)` is the JSON-Schema `const` — a value valid iff it **equals** `value`. The **equality rule** (documented and consistent across the codebase): `const` is a *structural* value match — primitive leaves are compared with `Object.is` (so `NaN` matches `NaN`, and `+0` ≠ `-0` — exactly the equality `literalOf` in [validators.md](validators.md) uses), while arrays and plain objects are compared by recursive structural deep-equality (identical own-key sets, every value deep-equal; key order irrelevant). The parser returns the **canonical** value (a *fresh deep copy* for a non-primitive `value`, so a shared mutable reference is never handed out — the same alias-free policy the object parser follows); the generator deterministically emits that same canonical value (also a fresh copy). Unlike `literalShape()` (an enum of *primitives*, `Set`-membership guard), `constShape()` accepts a single value that may be *structured* (object/array) and is always inhabited, so — unlike an empty `literalShape()` / `unionShape()` — it never throws at build. The const generic preserves the literal type, so `Infer<typeof shape>` is the exact type of `value`.
+
 ### `intersectionShape()` — values satisfying all members (`allOf`)
 
 ```ts
@@ -254,6 +274,35 @@ Behavioural contract:
 - **guard / parse** — delegate verbatim to the resolved inner shape (memoized per compilation so the self-reference reuses one compiled function); recursion over genuinely recursive **data** terminates because the data is finite.
 - **generate** — bounded: a recursive lazy shape generates a finite nested value up to a small fixed lazy-recursion depth, then collapses the recursive child to its **minimal inhabitant** (array → `[]`, optional → absent, nullable → `null`, object → required keys only). The generated value still satisfies the guard and is deterministic. A required, non-optional, infinitely-deep recursive child (`objectShape({ self: lazyShape(() => self) })` — no terminating container) has **no finite inhabitant**: `generate` throws a precise `Error` (`recursive shape has no finite inhabitant within depth N`) rather than recurse forever or emit a guard-violating value (schema/guard/parse do not need a finite inhabitant and still compile).
 - **`Infer`** — `Infer<lazyShape(() => X)>` resolves one level to `Infer<X>` for a concrete `X`. For the self-recursive consumer pattern above (the thunk's static return type is the wide `ContractShape`), `Infer` is `unknown` — a genuinely self-recursive TS type needs a named interface boundary, so **supply the `interface Tree { … }`** for the precise static type while the runtime contract stays fully recursive.
+
+### `defaultShape()` — inner shape + an advisory default
+
+```ts
+import { compileParser, defaultShape, integerShape, objectShape, stringShape } from '@elements/core'
+
+const retries = defaultShape(integerShape({ min: 0 }), 3)
+// Infer<typeof retries> = number   JSON Schema: { type: 'integer', minimum: 0, default: 3 }
+
+const config = objectShape({
+	name: stringShape({ min: 1 }),
+	retries: defaultShape(integerShape({ min: 0 }), 3),
+})
+const parse = compileParser(config)
+parse({ name: 'job' })             // { name: 'job', retries: 3 } — default applied on absence
+parse({ name: 'job', retries: 5 }) // { name: 'job', retries: 5 } — present value parsed through inner
+```
+
+`defaultShape(inner, value)` is `inner` plus a JSON-Schema `default`. The `value` **must be a valid instance of `inner`** — `defaultShape` validates it at build time and **throws** if it fails `inner`'s guard (a default that fails its own inner is a programmer error; validating it keeps the generator∘guard / parse↔guard contracts sound by construction).
+
+The behavioural contract is a **deliberate, useful asymmetry** (it mirrors `optionalShape`'s `undefined` handling — it is intended, not a bug):
+
+- **guard** delegates **verbatim** to `inner`'s guard. A default is *advisory metadata, not optionality*: the guard does **not** accept `undefined` (nor auto-apply the default) just because a default exists. So at the object level a `defaultShape(integerShape(), 3)` property is **required** by the guard, while a `defaultShape(optionalShape(x), …)` property may be absent (its *inner* is optional).
+- **parse** applies the default on **absence**: parsing `undefined` returns the default (a *fresh deep copy* for a non-primitive default — the same alias-free policy as `constShape()`); any other input parses through `inner`. Inside an object, an absent `default` property is filled from the default rather than failing the record.
+- This means the **guard** on `undefined` is `inner`'s guard on `undefined` (false unless `inner` is itself optional) yet **parse** on `undefined` is the default. The parse↔guard **A/B/C** invariants still hold: the default is build-validated to satisfy `inner`'s guard, so *every* parser output (the default **or** a parsed-inner value) is guard-valid (clause C); A/B are inherited from `inner`'s own sound parser for every non-`undefined` input.
+- **generate** generates from `inner` (the default is just *one* valid instance — generating from inner preserves variability; `generator∘guard` still holds because inner's generator is sound).
+- **`Infer`** is `Infer<inner>` — the advisory default does not change the static type (the value is still required at the type level; the parser fills it on absence at runtime).
+
+A non-lazy structural cycle *through* a `defaultShape` (its `inner` is traversed by the acyclicity check, exactly like `optionalShape` / `nullableShape`) still throws the precise cyclic `Error`; a `lazyShape` boundary inside the default's inner still breaks the cycle and compiles.
 
 ### `rawShape()` — JSON Schema escape hatch
 

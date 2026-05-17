@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
 	arrayShape,
 	booleanShape,
+	constShape,
+	defaultShape,
 	integerShape,
 	intersectionShape,
 	lazyShape,
@@ -518,6 +520,77 @@ describe('lazyShape', () => {
 		// A lazy node carries only its thunk — annotations belong on the
 		// resolved inner shape, not the deferral wrapper.
 		expect('description' in shape).toBe(false)
+	})
+})
+
+// === constShape
+
+describe('constShape', () => {
+	it('produces a shape with type const and stores the value', () => {
+		const shape = constShape('x')
+		expect(shape.type).toBe('const')
+		expect(shape.value).toBe('x')
+	})
+
+	it('accepts every JSON primitive value verbatim (incl. null, NaN, -0)', () => {
+		expect(constShape(42).value).toBe(42)
+		expect(constShape(true).value).toBe(true)
+		expect(constShape(null).value).toBeNull()
+		expect(Number.isNaN(constShape(Number.NaN).value)).toBe(true)
+		expect(Object.is(constShape(-0).value, -0)).toBe(true)
+	})
+
+	it('stores an object / array const value (structural const)', () => {
+		const obj = { a: 1, b: ['x'] }
+		const shape = constShape(obj)
+		// The builder preserves the supplied value reference (the parser/
+		// generator are responsible for handing out fresh copies, not the
+		// builder — alias-vs-copy policy is a compile-time concern).
+		expect(shape.value).toBe(obj)
+	})
+
+	it('does not throw for any JSON value (a const is always inhabited)', () => {
+		expect(() => constShape('')).not.toThrow()
+		expect(() => constShape(0)).not.toThrow()
+		expect(() => constShape(false)).not.toThrow()
+		expect(() => constShape([])).not.toThrow()
+		expect(() => constShape({})).not.toThrow()
+	})
+})
+
+// === defaultShape
+
+describe('defaultShape', () => {
+	it('produces a shape with type default wrapping the inner + value', () => {
+		const inner = stringShape()
+		const shape = defaultShape(inner, 'd')
+		expect(shape.type).toBe('default')
+		expect(shape.inner).toBe(inner)
+		expect(shape.value).toBe('d')
+	})
+
+	it('§13 — throws at build when the default fails the inner guard', () => {
+		// A default that does not satisfy its own inner is programmer error
+		// caught at the build boundary (AGENTS.md §13), so the
+		// generator∘guard / parse↔guard contracts stay sound by construction.
+		expect(() => defaultShape(integerShape({ min: 0 }), -1)).toThrow(/default/i)
+		expect(() => defaultShape(stringShape({ min: 1 }), '')).toThrow(/default/i)
+		expect(() => defaultShape(booleanShape(), 'nope')).toThrow(/default/i)
+	})
+
+	it('§13 — accepts a default that DOES satisfy the inner guard', () => {
+		expect(() => defaultShape(integerShape({ min: 0 }), 5)).not.toThrow()
+		expect(() => defaultShape(stringShape({ min: 1 }), 'ok')).not.toThrow()
+		expect(() =>
+			defaultShape(objectShape({ a: stringShape() }), { a: 'x' }),
+		).not.toThrow()
+	})
+
+	it('wraps any inner shape kind (composes like optional/nullable)', () => {
+		const shape = defaultShape(arrayShape(integerShape({ min: 0 })), [1, 2])
+		expect(shape.type).toBe('default')
+		expect(shape.inner.type).toBe('array')
+		expect(shape.value).toEqual([1, 2])
 	})
 })
 
