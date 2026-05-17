@@ -4,6 +4,7 @@ import {
 	booleanShape,
 	integerShape,
 	intersectionShape,
+	lazyShape,
 	literalShape,
 	nullableShape,
 	numberShape,
@@ -16,6 +17,7 @@ import {
 	tupleShape,
 	unionShape,
 } from '@elements/core'
+import type { ContractShape } from '@elements/core'
 
 // === stringShape
 
@@ -459,6 +461,63 @@ describe('intersectionShape', () => {
 		expect(() =>
 			intersectionShape(objectShape({ a: stringShape() }), recordShape(integerShape())),
 		).not.toThrow()
+	})
+})
+
+// === lazyShape
+
+describe('lazyShape', () => {
+	it('produces a shape with type lazy', () => {
+		const shape = lazyShape(() => stringShape())
+		expect(shape.type).toBe('lazy')
+	})
+
+	it('stores the thunk and does NOT invoke it at build time', () => {
+		// The thunk is the deferral boundary: a self-referential consumer
+		// assigns the target AFTER the lazyShape call (mirrors validators'
+		// lazyOf), so the builder must NOT call the thunk eagerly or a
+		// recursive shape would be unconstructible.
+		let calls = 0
+		const shape = lazyShape(() => {
+			calls += 1
+			return stringShape()
+		})
+		expect(calls).toBe(0)
+		expect(typeof shape.thunk).toBe('function')
+		// Invoking it manually resolves the inner shape.
+		expect(shape.thunk().type).toBe('string')
+		expect(calls).toBe(1)
+	})
+
+	it('invokes the thunk per call (not cached at the builder) — mirrors lazyOf', () => {
+		let calls = 0
+		const shape = lazyShape(() => {
+			calls += 1
+			return integerShape()
+		})
+		shape.thunk()
+		shape.thunk()
+		expect(calls).toBe(2)
+	})
+
+	it('supports the recommended self-referential consumer pattern', () => {
+		// The documented named-interface + lazyShape pattern: a tree whose
+		// children are an array of the tree itself. The cycle is broken by
+		// the lazy thunk, so the builder call itself must not throw or recurse.
+		expect(() => {
+			const treeShape: ContractShape = objectShape({
+				value: numberShape(),
+				children: arrayShape(lazyShape(() => treeShape)),
+			})
+			return treeShape
+		}).not.toThrow()
+	})
+
+	it('leaves the lazy node free of a description (deferral-only node)', () => {
+		const shape = lazyShape(() => stringShape())
+		// A lazy node carries only its thunk — annotations belong on the
+		// resolved inner shape, not the deferral wrapper.
+		expect('description' in shape).toBe(false)
 	})
 })
 

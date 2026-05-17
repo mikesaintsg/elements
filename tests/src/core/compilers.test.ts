@@ -10,7 +10,9 @@ import {
 	createRandom,
 	integerShape,
 	intersectionShape,
+	isJsonSchema,
 	isRecord,
+	lazyShape,
 	literalShape,
 	nullableShape,
 	numberShape,
@@ -1379,6 +1381,228 @@ describe('B4 — assertParseGuardSymmetry on oneOf + raw', () => {
 
 	it('rawShape — identity stays sound', () => {
 		assertParseGuardSymmetry(rawShape({}), ['x', 42, null, { a: 1 }, [1, 2], true])
+	})
+})
+
+// === D3 — lazyShape (recursive / $ref shapes)
+//
+// `lazyShape(thunk)` is the SANCTIONED recursion boundary (mirrors validators'
+// `lazyOf`; maps to JSON-Schema `$ref`/`$defs`). It is the cycle-BREAKER:
+// `assertAcyclicShape` treats a 'lazy' node as a TERMINAL (it never invokes
+// the thunk), so a shape recursive THROUGH a lazyShape compiles, while a
+// NON-lazy structural cycle still throws the precise B5 Error.
+
+describe('D3 — lazyShape non-recursive (behaves exactly like its inner)', () => {
+	it('schema — emits an isJsonSchema-valid $ref + $defs of the resolved inner', () => {
+		// D3 schema decision (documented): a lazy node emits a self-contained
+		// `{ $ref, $defs }` — the resolved inner schema lives under a
+		// deterministic `$defs` name and the node is a `$ref` to it. This is
+		// `isJsonSchema`-valid (a `$ref` string + a `$defs` schema map). The
+		// full cross-document `$ref`/`$defs` flattening/dedup is the Phase-E
+		// seam.
+		const schema = compileSchema(lazyShape(() => stringShape()))
+		expect(isJsonSchema(schema)).toBe(true)
+		if (typeof schema === 'boolean') {
+			throw new Error('expected an object schema')
+		}
+		expect(typeof schema.$ref).toBe('string')
+		expect(schema.$defs).toBeDefined()
+	})
+
+	it('guard — identical acceptance to the resolved inner shape', () => {
+		const lazy = compileGuard(lazyShape(() => stringShape({ min: 1 })))
+		const direct = compileGuard(stringShape({ min: 1 }))
+		for (const v of ['a', '', 1, null, undefined, 'abc']) {
+			expect(lazy(v)).toBe(direct(v))
+		}
+	})
+
+	it('parser — identical normalization to the resolved inner shape', () => {
+		const lazy = compileParser(lazyShape(() => integerShape({ min: 0 })))
+		expect(lazy('5')).toBe(5)
+		expect(lazy(5)).toBe(5)
+		expect(lazy(-1)).toBeUndefined()
+		expect(lazy('x')).toBeUndefined()
+	})
+
+	it('generator — same guard-valid, deterministic output as the inner', () => {
+		const shape = lazyShape(() => integerShape({ min: 0, max: 9 }))
+		const a = compileGenerator(shape, createRandom(3))
+		const b = compileGenerator(shape, createRandom(3))
+		expect(a).toEqual(b)
+		expect(compileGuard(shape)(a)).toBe(true)
+	})
+
+	it('parse↔guard symmetry — non-recursive lazy is sound (A)(B)(C)', () => {
+		assertParseGuardSymmetry(lazyShape(() => stringShape({ min: 1 })), [
+			'a',
+			'',
+			1,
+			'abc',
+			null,
+		])
+		assertParseGuardSymmetry(
+			objectShape({ n: lazyShape(() => integerShape({ min: 0 })) }),
+			[{ n: 1 }, { n: -1 }, { n: 'x' }, {}],
+		)
+	})
+
+	it('generator∘guard — non-recursive lazy holds across seeds', () => {
+		assertGeneratorSatisfiesGuard(lazyShape(() => integerShape({ min: 0, max: 50 })), [
+			1, 2, 3, 4,
+		])
+	})
+})
+
+// A recursive tree, defined via the documented named-interface + lazyShape
+// consumer pattern. `treeShape` is annotated `ContractShape` so the thunk can
+// close over a binding assigned in the SAME statement — the lazy thunk is the
+// deferral that legitimately breaks the static cycle.
+function makeTreeShape(): ContractShape {
+	const treeShape: ContractShape = objectShape({
+		value: integerShape({ min: 0 }),
+		children: arrayShape(lazyShape(() => treeShape), { max: 3 }),
+	})
+	return treeShape
+}
+
+describe('D3 — recursive-via-lazy COMPILES and works (B5 cycle-breaker)', () => {
+	it('all four compilers build without throwing or infinitely recursing', () => {
+		const shape = makeTreeShape()
+		expect(() => compileSchema(shape)).not.toThrow()
+		expect(() => compileGuard(shape)).not.toThrow()
+		expect(() => compileParser(shape)).not.toThrow()
+		expect(() => compileGenerator(shape, createRandom(1))).not.toThrow()
+	})
+
+	it('guard accepts genuinely recursive tree DATA and rejects non-trees', () => {
+		const guard = compileGuard(makeTreeShape())
+		const leaf = { value: 1, children: [] }
+		const deep = {
+			value: 0,
+			children: [
+				{ value: 1, children: [{ value: 2, children: [{ value: 3, children: [] }] }] },
+				{ value: 4, children: [] },
+			],
+		}
+		expect(guard(leaf)).toBe(true)
+		expect(guard(deep)).toBe(true)
+		expect(guard({ value: 'x', children: [] })).toBe(false) // bad value type
+		expect(guard({ value: 1 })).toBe(false) // missing required children
+		expect(guard({ value: 1, children: [{ value: 'no', children: [] }] })).toBe(false)
+		expect(guard('not a tree')).toBe(false)
+	})
+
+	it('parser round-trips a deep recursive tree (terminates on finite data)', () => {
+		const parse = compileParser(makeTreeShape())
+		const tree = {
+			value: 0,
+			children: [
+				{ value: 1, children: [{ value: 2, children: [] }] },
+				{ value: 3, children: [] },
+			],
+		}
+		expect(parse(tree)).toEqual(tree)
+		expect(parse({ value: '5', children: [] })).toEqual({ value: 5, children: [] }) // coerced
+		expect(parse({ value: -1, children: [] })).toBeUndefined()
+	})
+
+	it('parse↔guard symmetry over real recursive tree values + non-trees (A)(B)(C)', () => {
+		assertParseGuardSymmetry(makeTreeShape(), [
+			{ value: 1, children: [] },
+			{ value: 0, children: [{ value: 1, children: [{ value: 2, children: [] }] }] },
+			{ value: 'x', children: [] },
+			{ value: 1 },
+			{ value: 1, children: [{ value: 'no', children: [] }] },
+			'not a tree',
+			42,
+		])
+	})
+
+	it('generator∘guard — recursive tree terminates, valid, deterministic, variable', () => {
+		// The generator MUST terminate (an unbounded recursive lazy could
+		// recurse forever): past MAX_LAZY_DEPTH the lazy arm emits the
+		// resolved shape's MINIMAL inhabitant (here `children: []`), so the
+		// output is finite, still guard-valid, and deterministic.
+		assertGeneratorSatisfiesGuard(makeTreeShape(), [1, 2, 3, 4, 5, 6])
+	})
+})
+
+describe('D3 — B5 reconciliation: non-lazy cycle STILL throws the precise Error', () => {
+	const expectedMessage = 'cyclic ContractShape: use a lazy/deferred shape for recursion'
+
+	function expectPreciseCyclicError(run: () => void): void {
+		let caught: unknown
+		try {
+			run()
+		} catch (error) {
+			caught = error
+		}
+		expect(caught).toBeInstanceOf(Error)
+		expect(caught).not.toBeInstanceOf(RangeError)
+		if (!(caught instanceof Error)) {
+			throw new Error('expected an Error to be thrown')
+		}
+		expect(caught.message).toContain(expectedMessage)
+	}
+
+	it('a NON-lazy structural cycle (no lazy boundary) still throws B5', () => {
+		// makeCyclicShape() is `shape.properties.self === shape` with NO lazy
+		// wrapper — B5 must still fire (lazyShape is the ONLY sanctioned
+		// recursion boundary).
+		expectPreciseCyclicError(() => compileSchema(makeCyclicShape()))
+		expectPreciseCyclicError(() => compileGuard(makeCyclicShape()))
+		expectPreciseCyclicError(() => compileParser(makeCyclicShape()))
+		expectPreciseCyclicError(() => compileGenerator(makeCyclicShape(), createRandom(1)))
+	})
+
+	it('a NON-lazy cycle through an array element still throws B5', () => {
+		const makeCyclicArrayShape = (): ContractShape => {
+			const properties: Record<string, ContractShape> = { name: stringShape({ min: 1 }) }
+			const shape = objectShape(properties)
+			properties['self'] = arrayShape(shape)
+			return shape
+		}
+		expectPreciseCyclicError(() => compileGuard(makeCyclicArrayShape()))
+	})
+
+	it('the SAME structure but with a lazy boundary compiles (cycle broken)', () => {
+		// Identical recursive intent, only difference: the back-edge goes
+		// through a lazyShape. This is the precise B5-reconciliation proof —
+		// the lazy node is the cycle-breaker, the non-lazy variant above
+		// throws, this one must NOT.
+		expect(() => compileGuard(makeTreeShape())).not.toThrow()
+	})
+})
+
+describe('D3 — the no-finite-inhabitant case (documented termination contract)', () => {
+	it('a required-recursive lazy with NO base case throws a precise §13 Error', () => {
+		// `objectShape({ self: lazyShape(() => sameShape) })` — a REQUIRED,
+		// non-optional recursive child with no finite inhabitant. The
+		// generator must STILL terminate: it throws a precise Error rather
+		// than silently violating generator∘guard or recursing forever.
+		const makeInfiniteShape = (): ContractShape => {
+			const shape: ContractShape = objectShape({
+				self: lazyShape(() => shape),
+			})
+			return shape
+		}
+		let caught: unknown
+		try {
+			compileGenerator(makeInfiniteShape(), createRandom(1))
+		} catch (error) {
+			caught = error
+		}
+		expect(caught).toBeInstanceOf(Error)
+		expect(caught).not.toBeInstanceOf(RangeError)
+		if (!(caught instanceof Error)) {
+			throw new Error('expected an Error to be thrown')
+		}
+		expect(caught.message).toContain('no finite inhabitant')
+		// Schema / guard / parser do NOT need a finite inhabitant — only the
+		// generator does — so they must still compile fine.
+		expect(() => compileGuard(makeInfiniteShape())).not.toThrow()
+		expect(() => compileSchema(makeInfiniteShape())).not.toThrow()
 	})
 })
 

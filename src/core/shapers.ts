@@ -380,6 +380,81 @@ export function nullableShape<S extends ContractShape>(
 	return { type: 'nullable', inner }
 }
 
+// === Lazy
+
+/**
+ * Build a {@link LazyShape} — the LEGITIMATE recursion / self-reference
+ * boundary (the runtime mirror of `lazyOf` in the validators module; maps to
+ * JSON-Schema `$ref` / `$defs`).
+ *
+ * @remarks
+ * `thunk` returns the actual inner shape and is invoked LAZILY — never at
+ * build time, and once per resolution at compile time (memoized per
+ * compilation; see {@link compileContract}). Deferring resolution is what
+ * lets the thunk close over a binding assigned AFTER this call, the only way
+ * to express a genuinely self-referential (recursive) shape:
+ *
+ * ```ts
+ * interface Tree { value: number; children: readonly Tree[] }
+ * const treeShape: ContractShape = objectShape({
+ *     value: numberShape(),
+ *     children: arrayShape(lazyShape(() => treeShape)),
+ * })
+ * ```
+ *
+ * WHY this is the cycle-BREAKER, not a §13 error (B5 reconciliation): every
+ * compiler runs `assertAcyclicShape` first, which throws the precise §13
+ * Error on any STRUCTURAL shape cycle. A `lazy` node is a TERMINAL for that
+ * walk (its thunk is NOT invoked during acyclicity checking), so a shape
+ * recursive THROUGH a `lazyShape` has no static back-edge and compiles,
+ * while a NON-lazy structural cycle (`makeCyclicShape`-style) still throws —
+ * `lazyShape` is the ONLY sanctioned recursion boundary.
+ *
+ * Generator termination: a recursive lazy shape's generator is bounded by a
+ * deterministic max lazy-recursion depth; past it the generator emits the
+ * resolved shape's MINIMAL inhabitant (see {@link compileGenerator}). A
+ * required-recursive shape with NO finite inhabitant makes the generator
+ * throw a precise §13 Error rather than silently violate `generator∘guard`.
+ *
+ * `Infer<lazyShape(() => X)>` resolves one level to `Infer<X>` for a
+ * concrete `X`; for the self-recursive consumer pattern (thunk annotated
+ * `() => ContractShape`) it is `unknown` — supply a named `interface` for
+ * the precise static type (see the `Infer` docs in
+ * [src/core/types.ts](./types.ts)).
+ *
+ * @param thunk - Zero-argument function returning the deferred inner shape
+ * @returns A {@link LazyShape} node
+ *
+ * @example
+ * ```ts
+ * const node = lazyShape(() => treeShape) // deferred self-reference
+ * ```
+ */
+export function lazyShape<S extends ContractShape>(
+	thunk: () => S,
+): { readonly type: 'lazy'; readonly thunk: () => S } {
+	// The thunk is NOT invoked here (cf. validators' `lazyOf`): a
+	// self-referential consumer assigns the target AFTER this call, so eager
+	// resolution would make a recursive shape unconstructible. Deferral is
+	// the entire point of this node.
+	//
+	// WHY the return type is the precise const-generic literal ALONE — NOT
+	// `… & LazyShape` like the other builders: `LazyShape.thunk` is
+	// `() => ContractShape` (the wide union). Intersecting the precise
+	// `{ thunk: () => S }` with that makes `thunk`'s type the function
+	// intersection `(() => S) & (() => ContractShape)`, whose `ReturnType`
+	// TS resolves to the WIDE `ContractShape` (overload-set last-return) —
+	// exactly the D2.5 "wide-interface pollution" failure mode, here it would
+	// collapse `Infer<lazyShape(() => stringShape())>` to `unknown` instead
+	// of `string`. The precise literal `{ type:'lazy'; thunk:() => S }` is
+	// ALREADY structurally assignable to `LazyShape` (and hence
+	// `ContractShape`): `S extends ContractShape` so `() => S` is assignable
+	// to `() => ContractShape` (covariant return). Dropping the redundant
+	// `& LazyShape` keeps `thunk`'s `ReturnType` the precise `S`, so the
+	// non-recursive `Infer` resolves one level exactly.
+	return { type: 'lazy', thunk }
+}
+
 // === OneOf
 
 /**

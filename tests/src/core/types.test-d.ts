@@ -56,6 +56,7 @@ import {
 	createRandom,
 	integerShape,
 	intersectionShape,
+	lazyShape,
 	literalShape,
 	nullableShape,
 	numberShape,
@@ -67,7 +68,7 @@ import {
 	tupleShape,
 	unionShape,
 } from '@elements/core'
-import type { JsonSchema } from '@elements/core'
+import type { ContractShape, JsonSchema } from '@elements/core'
 
 // Bidirectional (exact) type equality. Resolves to `true` only when `A` and
 // `B` are mutually assignable AS WRITTEN — the `(<T>() => T extends X ? 1 :
@@ -291,3 +292,64 @@ export const deepParseExact: true = exactCheck<
 	DeepExpected | undefined
 >()
 export const deepInferExact: true = exactCheck<Infer<typeof deepShape>, DeepExpected>()
+
+// === 5. lazyShape (D3) — recursive / $ref shape inference
+//
+// DOCUMENTED rule (pin it so a regression is caught):
+//
+//   * NON-recursive lazy — `lazyShape(() => <concreteShape>)` resolves ONE
+//     level via `ReturnType<thunk>` and infers EXACTLY its inner type. The
+//     thunk's return is a precise const-generic literal (e.g.
+//     `{ readonly type:'string' } & StringShape`), so `Infer<LazyShape>` is
+//     the inner's `Infer` — `string` here. This is the precise case.
+//   * SELF-recursive lazy — the recommended consumer pattern annotates the
+//     binding `const treeShape: ContractShape = …` so the thunk closes over
+//     it; the thunk's STATIC return type is then the wide `ContractShape`
+//     union. Resolving `Infer<ContractShape>` there would re-enter
+//     `Infer<lazy>` forever (TS2589). DOCUMENTED fallback: when the thunk's
+//     return type is the wide `ContractShape` union (no narrower literal),
+//     `Infer<LazyShape>` is `unknown` — the consumer supplies the named
+//     interface (`interface Tree { … }`) for the precise static type. This
+//     keeps `npm run check` green (no TS2589) and is pinned below.
+
+export const kindLazyNonRecursive: true = exactCheck<
+	Infer<ReturnType<typeof lazyShape<ReturnType<typeof stringShape>>>>,
+	string
+>()
+
+export const kindLazyNonRecursiveNested: true = exactCheck<
+	Infer<
+		ReturnType<
+			typeof lazyShape<
+				ReturnType<typeof objectShape<{ a: ReturnType<typeof stringShape> }>>
+			>
+		>
+	>,
+	Readonly<{ a: string } & Record<never, never>>
+>()
+
+// Self-recursive (widened-thunk) → documented `unknown` fallback. The thunk
+// here returns the wide `ContractShape` (exactly the recommended consumer
+// pattern's static type), so `Infer` of this lazy node is `unknown`.
+declare function recursiveThunk(): ContractShape
+export const kindLazySelfRecursive: true = exactCheck<
+	Infer<ReturnType<typeof lazyShape<ContractShape>>>,
+	unknown
+>()
+
+// The realistic value-level consumer pattern: a recursive lazy shape behind
+// `compileContract` must not trip TS2589 at the call site (the genuine
+// regression guard — a TS2589 here fails `npm run check`).
+export function lazyConsumer(x: unknown): { guarded: unknown; schema: JsonSchema } {
+	const treeShape: ContractShape = objectShape({
+		value: numberShape(),
+		children: arrayShape(lazyShape(() => treeShape)),
+	})
+	const contract = compileContract(treeShape)
+	return { guarded: contract.is(x) ? x : 'no', schema: contract.schema }
+}
+export const lazyConsumerSchemaExact: true = exactCheck<
+	ReturnType<typeof lazyConsumer>['schema'],
+	JsonSchema
+>()
+void recursiveThunk

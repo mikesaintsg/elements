@@ -261,6 +261,7 @@ export type ContractShape =
 	| IntersectionShape
 	| OptionalShape
 	| NullableShape
+	| LazyShape
 	| RawShape
 
 /**
@@ -419,6 +420,34 @@ export interface NullableShape {
 }
 
 /**
+ * Lazy wrapper — the LEGITIMATE recursion / self-reference boundary.
+ *
+ * @remarks
+ * `thunk` returns the actual inner shape and is invoked LAZILY, never at
+ * build time. This is the runtime mirror of `lazyOf` in the validators
+ * module: deferring resolution lets the thunk close over a binding assigned
+ * AFTER the shape is declared, which is the only way to express a genuinely
+ * self-referential (recursive) shape (a tree, a JSON value, …).
+ *
+ * WHY lazy is the cycle-BREAKER (B5 reconciliation): every `compile*`
+ * up-front runs `assertAcyclicShape`, which THROWS the precise §13 Error on
+ * any STRUCTURAL shape cycle (a back-edge with no deferral). A `lazy` node
+ * is treated as a TERMINAL by that walk — its thunk is NOT invoked during
+ * acyclicity checking — so a shape that is recursive THROUGH a `lazyShape`
+ * has no static back-edge and compiles, while a NON-lazy structural cycle
+ * still throws (preserving B5). The thunk is the deferral that legitimately
+ * breaks the static cycle; the recursion is realised only at
+ * guard/parse/generate time over the (finite) DATA.
+ *
+ * Maps to JSON-Schema `$ref` / `$defs` (a recursive schema is a named
+ * definition referenced by `$ref`).
+ */
+export interface LazyShape {
+	readonly type: 'lazy'
+	readonly thunk: () => ContractShape
+}
+
+/**
  * Raw JSON Schema passthrough — embeds an arbitrary schema fragment.
  *
  * @remarks
@@ -522,9 +551,11 @@ export type Infer<S extends ContractShape> = S extends unknown
 											? InferUnionShape<S>
 											: S['type'] extends 'intersection'
 												? InferIntersectionShape<S>
-												: S['type'] extends 'object'
-													? InferObjectShape<S>
-													: never
+												: S['type'] extends 'lazy'
+													? InferLazyShape<S>
+													: S['type'] extends 'object'
+														? InferObjectShape<S>
+														: never
 	: never
 
 // === Recursive-child constraint
@@ -601,6 +632,46 @@ type InferOptional<S> = S extends { readonly inner: infer I }
 
 type InferNullable<S> = S extends { readonly inner: infer I }
 	? InferChild<I> | null
+	: never
+
+// === Lazy (recursive / $ref) inference
+//
+// `Infer<LazyShape>` resolves ONE level through the thunk's return type:
+//
+//   * NON-recursive — `lazyShape(() => <concreteShape>)`. The thunk's static
+//     return type is the precise const-generic literal the inner builder
+//     produced (e.g. `{ readonly type:'string' } & StringShape`). `R` is
+//     that literal, `ContractShape` does NOT extend it (a single concrete
+//     kind is narrower than the 14-member union), so the precise branch runs
+//     and `Infer<LazyShape>` is exactly `InferChild<R>` — the inner's
+//     inferred type. This is the precise, desirable case.
+//
+//   * SELF-recursive — the recommended consumer pattern is
+//     `const treeShape: ContractShape = objectShape({ …,
+//     children: arrayShape(lazyShape(() => treeShape)) })`. The binding is
+//     annotated `ContractShape` so the thunk can close over it, so the
+//     thunk's STATIC return type is the wide `ContractShape` union itself.
+//     Naively resolving `Infer<ContractShape>` there distributes over every
+//     kind INCLUDING `lazy`, whose helper would resolve `Infer<ContractShape>`
+//     again — unbounded type instantiation → TS2589, the exact regression
+//     D2.5 eliminated and this arm must NOT reintroduce.
+//
+// DOCUMENTED rule (pinned in tests/src/core/types.test-d.ts): when the
+// thunk's return type is the wide `ContractShape` union (i.e.
+// `ContractShape extends R` — no narrower literal survived the annotation),
+// `Infer<LazyShape>` is `unknown`. The check `[ContractShape] extends [R]`
+// (wrapped in 1-tuples to compare invariantly, NOT distributively) is true
+// ONLY for the bare-union return; a concrete literal return fails it and
+// takes the precise branch. This is a deliberate, bounded fallback: a
+// genuinely self-recursive TS type needs a NAMED interface boundary (TS
+// forbids `type X = … X …` direct circularity), so the consumer supplies
+// `interface Tree { … }` for the precise static type while the runtime
+// contract stays fully recursive. The fallback caps the type-level recursion
+// at one indirection, keeping `Infer` linear and `npm run check` TS2589-free.
+type InferLazyShape<S> = S extends { readonly thunk: () => infer R }
+	? [ContractShape] extends [R]
+		? unknown
+		: InferChild<R>
 	: never
 
 type InferArray<S> = S extends { readonly items: infer I }

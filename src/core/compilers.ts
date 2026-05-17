@@ -47,6 +47,21 @@ function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>):
 		case 'literal':
 		case 'raw':
 			return
+		case 'lazy':
+			// B5 RECONCILIATION — `lazy` is the cycle-BREAKER, so it is a
+			// TERMINAL here: the thunk is DELIBERATELY NOT invoked during
+			// acyclicity checking. The thunk is the deferral that legitimately
+			// breaks a static shape cycle, so a shape recursive THROUGH a
+			// `lazyShape` (e.g. a tree whose `children` is
+			// `arrayShape(lazyShape(() => treeShape))`) has NO structural
+			// back-edge for `seen` to catch and therefore compiles. A NON-lazy
+			// structural cycle (`makeCyclicShape`-style: a property whose
+			// shape IS an ancestor object, no lazy wrapper) still hits the
+			// `seen.has(shape)` throw at the top of this function, so the
+			// precise §13/B5 Error is preserved for every unsanctioned cycle.
+			// Returning WITHOUT recursing into `thunk()` is exactly what makes
+			// the lazy boundary the only sanctioned recursion mechanism.
+			return
 		case 'array': {
 			seen.add(shape)
 			assertAcyclicShape(shape.items, seen)
@@ -124,6 +139,31 @@ function flattenIntersectionObjects(shape: IntersectionShape): readonly ObjectSh
 	return out
 }
 
+// === D3 lazy memoization caches
+//
+// A recursive lazy shape's self-reference must reuse ONE compiled function
+// per compilation rather than recompiling forever. Each public compiler
+// threads a fresh cache keyed by the lazy THUNK; the `'lazy'` arm installs a
+// deferred closure into the cache BEFORE compiling the inner, so the
+// self-referential descent gets a cache hit and the recursion terminates.
+// Named aliases + typed factories keep call sites `any`-free (a bare
+// `new Map()` would infer `Map<any, any>`).
+
+/** Per-compilation lazy-thunk → compiled-guard cache. */
+type LazyGuardCache = Map<() => ContractShape, (value: unknown) => boolean>
+/** Per-compilation lazy-thunk → compiled-parser cache. */
+type LazyParserCache = Map<() => ContractShape, (value: unknown) => unknown>
+
+/** Fresh, typed lazy-guard cache (avoids an untyped `new Map()`). */
+function newLazyGuardCache(): LazyGuardCache {
+	return new Map<() => ContractShape, (value: unknown) => boolean>()
+}
+
+/** Fresh, typed lazy-parser cache (avoids an untyped `new Map()`). */
+function newLazyParserCache(): LazyParserCache {
+	return new Map<() => ContractShape, (value: unknown) => unknown>()
+}
+
 // === Schema
 
 /**
@@ -155,10 +195,51 @@ export function compileSchema(shape: ObjectShape): JsonSchemaObject
 export function compileSchema(shape: ContractShape): JsonSchema
 export function compileSchema(shape: ContractShape): JsonSchema {
 	assertAcyclicShape(shape, new WeakSet<ContractShape>())
-	return compileSchemaInner(shape)
+	// D3 lazy/$ref decision (documented + Phase-E seam): a `lazy` node emits
+	// a `$ref` into a shared `$defs` map. The map is collected during the
+	// recursive walk (one named definition per distinct thunk, memoized so a
+	// recursive self-reference reuses the SAME `$ref` and the definition is
+	// emitted ONCE — this is also what makes the recursive schema FINITE
+	// rather than infinitely nested). At the public boundary the collected
+	// `$defs` are hoisted onto the root schema (standard JSON-Schema 2020-12:
+	// `$defs` lives at the document root, referenced by
+	// `#/$defs/<name>` JSON-Pointer `$ref`s). For an OBJECT root the
+	// `$defs`-augmented result is still a `type:'object'` schema, preserving
+	// the `JsonSchemaObject` overload. SCOPE / LIMITATION (Phase E owns the
+	// rest): this emits a single self-contained `$defs` block keyed by a
+	// deterministic per-compile name (`Lazy0`, `Lazy1`, …); it does NOT yet
+	// do cross-document `$id` resolution, `$ref` deduplication across
+	// SEPARATE `compileSchema` calls, or canonical-name stability across
+	// runs/processes. The emitted schema IS `isJsonSchema`-valid (a `$ref`
+	// string + a `$defs` schema map are both modelled and recognised by
+	// `isJsonSchema`). Phase E builds the full `$ref`/`$defs` resolver on
+	// this seam.
+	const context: LazySchemaContext = { defs: {}, names: new Map(), counter: { value: 0 } }
+	const root = compileSchemaInner(shape, context)
+	if (Object.keys(context.defs).length === 0) {
+		return root
+	}
+	// Hoist the collected definitions onto the document root. A boolean root
+	// (only `rawShape(true/false)`) cannot carry `$defs`; wrap it in the
+	// equivalent object form so the definitions are not lost.
+	if (typeof root === 'boolean') {
+		return root ? { $defs: context.defs } : { not: {}, $defs: context.defs }
+	}
+	return { ...root, $defs: context.defs }
 }
 
-function compileSchemaInner(shape: ContractShape): JsonSchema {
+// Per-compilation context for `lazy` → `$ref`/`$defs` emission. `names`
+// memoizes thunk → definition name so a recursive self-reference resolves to
+// the SAME `$ref` (and the definition body is built exactly once — the
+// guard against infinite schema nesting). `counter` yields deterministic
+// per-compile names (`Lazy0`, `Lazy1`, …).
+interface LazySchemaContext {
+	readonly defs: Record<string, JsonSchema>
+	readonly names: Map<() => ContractShape, string>
+	readonly counter: { value: number }
+}
+
+function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContext): JsonSchema {
 	switch (shape.type) {
 		case 'string': {
 			return {
@@ -192,7 +273,7 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
 		case 'array': {
 			return {
 				type: 'array',
-				items: compileSchemaInner(shape.items),
+				items: compileSchemaInner(shape.items, lazyContext),
 				...(shape.min !== undefined ? { minItems: shape.min } : {}),
 				...(shape.max !== undefined ? { maxItems: shape.max } : {}),
 				...(shape.description !== undefined ? { description: shape.description } : {}),
@@ -209,7 +290,7 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
 			const length = shape.items.length
 			return {
 				type: 'array',
-				prefixItems: shape.items.map((item) => compileSchemaInner(item)),
+				prefixItems: shape.items.map((item) => compileSchemaInner(item, lazyContext)),
 				items: false,
 				minItems: length,
 				maxItems: length,
@@ -224,7 +305,7 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
 				if (child === undefined) {
 					continue
 				}
-				properties[key] = compileSchemaInner(child)
+				properties[key] = compileSchemaInner(child, lazyContext)
 				if (child.type !== 'optional') {
 					required.push(key)
 				}
@@ -245,7 +326,7 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
 			if (shape.additionalProperties === true) {
 				result.additionalProperties = true
 			} else if (isShapeAdditional(shape.additionalProperties)) {
-				result.additionalProperties = compileSchemaInner(shape.additionalProperties)
+				result.additionalProperties = compileSchemaInner(shape.additionalProperties, lazyContext)
 			} else {
 				result.additionalProperties = false
 			}
@@ -255,7 +336,7 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
 			return result
 		}
 		case 'union': {
-			const compiled = shape.variants.map((variant) => compileSchemaInner(variant))
+			const compiled = shape.variants.map((variant) => compileSchemaInner(variant, lazyContext))
 			return {
 				...(shape.mode === 'oneOf' ? { oneOf: compiled } : { anyOf: compiled }),
 				...(shape.description !== undefined ? { description: shape.description } : {}),
@@ -267,14 +348,42 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
 			// validators' `intersectionOf` (value valid iff every member guard
 			// passes) and of this arm's guard below.
 			return {
-				allOf: shape.members.map((member) => compileSchemaInner(member)),
+				allOf: shape.members.map((member) => compileSchemaInner(member, lazyContext)),
 				...(shape.description !== undefined ? { description: shape.description } : {}),
 			}
 		}
 		case 'optional':
-			return compileSchemaInner(shape.inner)
+			return compileSchemaInner(shape.inner, lazyContext)
 		case 'nullable':
-			return { anyOf: [compileSchemaInner(shape.inner), { type: 'null' }] }
+			return { anyOf: [compileSchemaInner(shape.inner, lazyContext), { type: 'null' }] }
+		case 'lazy': {
+			// D3 lazy → JSON-Schema `$ref` / `$defs` (documented + Phase-E
+			// seam — see the `compileSchema` boundary comment). Memoize
+			// thunk → definition name so a RECURSIVE self-reference resolves
+			// to the SAME `$ref` and the definition body is materialized
+			// exactly ONCE: this is precisely what keeps a recursive shape's
+			// schema FINITE instead of infinitely nested. The name is
+			// reserved (added to `names`) BEFORE the body is compiled, so the
+			// recursive descent that re-enters this arm hits the memo and
+			// emits a bare `$ref` (no re-recursion). `lazyContext` is always
+			// present when reached via the public `compileSchema` boundary;
+			// the `?? new` fallback keeps this arm total for any direct inner
+			// call and still yields a valid self-contained ref+defs.
+			const context: LazySchemaContext =
+				lazyContext ?? { defs: {}, names: new Map(), counter: { value: 0 } }
+			const existing = context.names.get(shape.thunk)
+			if (existing !== undefined) {
+				return { $ref: `#/$defs/${existing}` }
+			}
+			const name = `Lazy${context.counter.value}`
+			context.counter.value += 1
+			context.names.set(shape.thunk, name)
+			// Compile the resolved inner shape into the shared `$defs`. A
+			// recursive thunk re-enters this arm with the SAME thunk → memo
+			// hit above → bare `$ref`, so this terminates.
+			context.defs[name] = compileSchemaInner(shape.thunk(), context)
+			return { $ref: `#/$defs/${name}` }
+		}
 		case 'raw':
 			return shape.schema
 	}
@@ -305,10 +414,19 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
  */
 export function compileGuard(shape: ContractShape): (value: unknown) => boolean {
 	assertAcyclicShape(shape, new WeakSet<ContractShape>())
-	return compileGuardInner(shape)
+	// D3 lazy memoization: a per-compilation cache keyed by the lazy thunk.
+	// A recursive shape's self-reference resolves to the SAME compiled guard
+	// rather than recompiling forever — the standard fix for compile-time
+	// non-termination on a recursive lazy shape. Threaded through every
+	// recursive `compileGuardInner` call so a nested lazy anywhere in the
+	// tree shares one cache.
+	return compileGuardInner(shape, newLazyGuardCache())
 }
 
-function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
+function compileGuardInner(
+	shape: ContractShape,
+	lazyCache: LazyGuardCache,
+): (value: unknown) => boolean {
 	switch (shape.type) {
 		case 'string': {
 			const { min, max, pattern } = shape
@@ -347,7 +465,7 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
 			return (value) => allowed.has(value)
 		}
 		case 'array': {
-			const itemGuard = compileGuardInner(shape.items)
+			const itemGuard = compileGuardInner(shape.items, lazyCache)
 			const { min, max } = shape
 			return (value) => {
 				if (!Array.isArray(value)) {
@@ -370,7 +488,7 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
 		case 'tuple': {
 			// Mirror validators' `tupleOf`: valid iff an array of EXACTLY the
 			// tuple arity where each element passes its POSITIONAL guard.
-			const itemGuards = shape.items.map((item) => compileGuardInner(item))
+			const itemGuards = shape.items.map((item) => compileGuardInner(item, lazyCache))
 			return (value) => {
 				if (!Array.isArray(value) || value.length !== itemGuards.length) {
 					return false
@@ -397,13 +515,13 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
 				}
 				entries.push({
 					key,
-					guard: compileGuardInner(child),
+					guard: compileGuardInner(child, lazyCache),
 					optional: child.type === 'optional',
 				})
 			}
 			const allowed = new Set(entries.map((entry) => entry.key))
 			const additionalGuard = isShapeAdditional(shape.additionalProperties)
-				? compileGuardInner(shape.additionalProperties)
+				? compileGuardInner(shape.additionalProperties, lazyCache)
 				: undefined
 			const open = shape.additionalProperties === true || additionalGuard !== undefined
 			return (value) => {
@@ -436,7 +554,7 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
 			}
 		}
 		case 'union': {
-			const guards = shape.variants.map((variant) => compileGuardInner(variant))
+			const guards = shape.variants.map((variant) => compileGuardInner(variant, lazyCache))
 			if (shape.mode === 'oneOf') {
 				// JSON-Schema `oneOf`: a value is valid iff it matches
 				// EXACTLY ONE variant. `anyOf` (the default below) is
@@ -503,9 +621,9 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
 						additionalProperties: true,
 						...(member.description !== undefined ? { description: member.description } : {}),
 					}
-					return compileGuardInner(opened)
+					return compileGuardInner(opened, lazyCache)
 				}
-				return compileGuardInner(member)
+				return compileGuardInner(member, lazyCache)
 			})
 			return (value) => {
 				if (!isRecord(value)) {
@@ -527,12 +645,40 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
 			}
 		}
 		case 'optional': {
-			const guard = compileGuardInner(shape.inner)
+			const guard = compileGuardInner(shape.inner, lazyCache)
 			return (value) => value === undefined || guard(value)
 		}
 		case 'nullable': {
-			const guard = compileGuardInner(shape.inner)
+			const guard = compileGuardInner(shape.inner, lazyCache)
 			return (value) => value === null || guard(value)
+		}
+		case 'lazy': {
+			// D3 recursion: a recursive lazy shape's guard must NOT recompile
+			// forever. Memoization strategy (documented): a per-compilation
+			// `Map` keyed by the lazy THUNK, threaded through every recursive
+			// `compileGuardInner`. The deferred closure is installed in the
+			// cache BEFORE the inner is compiled, so when compiling the inner
+			// re-enters this arm with the SAME thunk it gets the cache hit and
+			// returns the SAME deferred closure — the self-reference reuses
+			// one compiled guard instead of recursing. The compiled inner is
+			// itself memoized in a closure variable (`resolved`), built once
+			// on FIRST INVOCATION; recursion over genuinely recursive DATA
+			// terminates naturally because the data is finite (each level
+			// calls the one shared compiled guard on a strictly smaller
+			// sub-value).
+			const cached = lazyCache.get(shape.thunk)
+			if (cached !== undefined) {
+				return cached
+			}
+			let resolved: ((value: unknown) => boolean) | undefined
+			const guard = (value: unknown): boolean => {
+				if (resolved === undefined) {
+					resolved = compileGuardInner(shape.thunk(), lazyCache)
+				}
+				return resolved(value)
+			}
+			lazyCache.set(shape.thunk, guard)
+			return guard
 		}
 		case 'raw':
 			return () => true
@@ -569,10 +715,17 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
  */
 export function compileParser(shape: ContractShape): (value: unknown) => unknown {
 	assertAcyclicShape(shape, new WeakSet<ContractShape>())
-	return compileParserInner(shape)
+	// D3 lazy memoization: a per-compilation cache keyed by the lazy thunk,
+	// threaded through every recursive `compileParserInner` so a recursive
+	// shape's self-reference reuses ONE compiled parser instead of
+	// recompiling forever (same strategy as the guard compiler).
+	return compileParserInner(shape, newLazyParserCache())
 }
 
-function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
+function compileParserInner(
+	shape: ContractShape,
+	lazyCache: LazyParserCache,
+): (value: unknown) => unknown {
 	switch (shape.type) {
 		case 'string': {
 			// Parse↔guard soundness (the canonical contract in
@@ -593,7 +746,7 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 			//   5. else undefined.
 			// This makes (A)(B)(C) hold for every string constraint without
 			// per-call-site special-casing — it is shape-guard-driven.
-			const guard = compileGuardInner(shape)
+			const guard = compileGuardInner(shape, newLazyGuardCache())
 			return (value) => {
 				let raw: string | undefined
 				if (typeof value === 'string') {
@@ -622,7 +775,7 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 			// input — the raw is a non-number (string/etc.) the number guard
 			// would reject anyway, so undefined is correct.
 			const primitive = shape.integer === true ? parseInteger : parseNumber
-			const guard = compileGuardInner(shape)
+			const guard = compileGuardInner(shape, newLazyGuardCache())
 			return (value) => {
 				const parsed = primitive(value)
 				if (parsed !== undefined && guard(parsed)) {
@@ -646,7 +799,7 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 			// shape's own guard; never emit a trimmed value the literal
 			// guard would reject (C).
 			const allowed = new Set<unknown>(shape.values)
-			const guard = compileGuardInner(shape)
+			const guard = compileGuardInner(shape, newLazyGuardCache())
 			return (value) => {
 				if (guard(value)) {
 					return value
@@ -670,8 +823,8 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 			// array, then if it passes THIS shape's guard return it; else if
 			// the RAW array already passes the guard return it untouched
 			// (never reject a guard-valid input); else undefined.
-			const itemParser = compileParserInner(shape.items)
-			const guard = compileGuardInner(shape)
+			const itemParser = compileParserInner(shape.items, lazyCache)
+			const guard = compileGuardInner(shape, newLazyGuardCache())
 			return (value) => {
 				if (!Array.isArray(value)) {
 					return undefined
@@ -705,8 +858,8 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 			// guard-valid input), else undefined. Tuples are positional arrays
 			// (no string keys written to a fresh object) so the
 			// prototype-pollution concern of the object arm does not apply.
-			const itemParsers = shape.items.map((item) => compileParserInner(item))
-			const guard = compileGuardInner(shape)
+			const itemParsers = shape.items.map((item) => compileParserInner(item, lazyCache))
+			const guard = compileGuardInner(shape, newLazyGuardCache())
 			return (value) => {
 				if (!Array.isArray(value) || value.length !== itemParsers.length) {
 					return undefined
@@ -772,13 +925,13 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 				}
 				entries.push({
 					key,
-					parse: compileParserInner(child),
+					parse: compileParserInner(child, lazyCache),
 					optional: child.type === 'optional',
 				})
 			}
 			const known = new Set(entries.map((entry) => entry.key))
 			const additionalParser = isShapeAdditional(shape.additionalProperties)
-				? compileParserInner(shape.additionalProperties)
+				? compileParserInner(shape.additionalProperties, lazyCache)
 				: undefined
 			const open = shape.additionalProperties === true || additionalParser !== undefined
 			// Parse↔guard soundness: re-validate the FRESHLY BUILT result
@@ -793,7 +946,7 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 			// that the B2 prototype-pollution hardening drops — returning raw
 			// would re-expose them. The built accumulator is the only safe
 			// output, and it is guard-equivalent to a guard-valid input.
-			const guard = compileGuardInner(shape)
+			const guard = compileGuardInner(shape, newLazyGuardCache())
 			return (value) => {
 				if (!isRecord(value)) {
 					return undefined
@@ -855,8 +1008,8 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 			// are removed here; iterating the pairs preserves variant order
 			// exactly (anyOf first-match, oneOf exactly-one count).
 			const variantPairs = shape.variants.map((variant) => ({
-				parser: compileParserInner(variant),
-				guard: compileGuardInner(variant),
+				parser: compileParserInner(variant, lazyCache),
+				guard: compileGuardInner(variant, newLazyGuardCache()),
 			}))
 			if (shape.mode === 'oneOf') {
 				// JSON-Schema `oneOf` exclusivity, kept parse↔guard
@@ -878,7 +1031,7 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 				// picks a winner). On exactly one, parse with THAT variant
 				// and re-validate the oneOf guard on the result for clause
 				// (C) soundness.
-				const guardThis = compileGuardInner(shape)
+				const guardThis = compileGuardInner(shape, newLazyGuardCache())
 				return (value) => {
 					let matched: { parser: (value: unknown) => unknown } | undefined
 					let matches = 0
@@ -950,18 +1103,18 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 						...(member.description !== undefined ? { description: member.description } : {}),
 					}
 					return {
-						parse: compileParserInner(opened),
+						parse: compileParserInner(opened, lazyCache),
 						ownKeys: new Set(Object.keys(member.properties)),
 						scoped: true,
 					}
 				}
 				return {
-					parse: compileParserInner(member),
+					parse: compileParserInner(member, lazyCache),
 					ownKeys: new Set(Object.keys(member.properties)),
 					scoped: false,
 				}
 			})
-			const guard = compileGuardInner(shape)
+			const guard = compileGuardInner(shape, newLazyGuardCache())
 			return (value) => {
 				if (!isRecord(value)) {
 					return undefined
@@ -996,12 +1149,39 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 			}
 		}
 		case 'optional': {
-			const parser = compileParserInner(shape.inner)
+			const parser = compileParserInner(shape.inner, lazyCache)
 			return (value) => (value === undefined ? undefined : parser(value))
 		}
 		case 'nullable': {
-			const parser = compileParserInner(shape.inner)
+			const parser = compileParserInner(shape.inner, lazyCache)
 			return (value) => (value === null ? null : parser(value))
+		}
+		case 'lazy': {
+			// D3 recursion — same memoization strategy as the guard arm: a
+			// per-compilation `Map` keyed by the lazy THUNK, threaded through
+			// every recursive `compileParserInner`. The deferred parser is
+			// installed in the cache BEFORE compiling the inner, so the
+			// self-referential descent gets a cache hit and reuses ONE
+			// compiled parser instead of recompiling forever. The inner is
+			// compiled once on FIRST INVOCATION (`resolved`); over genuinely
+			// recursive DATA the recursion terminates because the data is
+			// finite. Parse↔guard soundness is inherited: this arm delegates
+			// verbatim to the resolved inner shape's parser (the lazy node
+			// adds no normalization of its own), so clauses (A)(B)(C) hold
+			// for the lazy shape exactly as they hold for its inner.
+			const cached = lazyCache.get(shape.thunk)
+			if (cached !== undefined) {
+				return cached
+			}
+			let resolved: ((value: unknown) => unknown) | undefined
+			const parser = (value: unknown): unknown => {
+				if (resolved === undefined) {
+					resolved = compileParserInner(shape.thunk(), lazyCache)
+				}
+				return resolved(value)
+			}
+			lazyCache.set(shape.thunk, parser)
+			return parser
 		}
 		case 'raw':
 			return (value) => value
@@ -1009,6 +1189,159 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 }
 
 // === Generators
+
+// D3 generator termination contract (documented — analogous to B5's
+// `MAX_JSON_DEPTH`):
+//
+// A recursive lazy shape's generator can recurse FOREVER (an infinite tree:
+// every node spawns children that spawn children …). The generator therefore
+// bounds lazy-node recursion at `MAX_LAZY_DEPTH`. Below the bound a lazy node
+// resolves and generates its inner normally (so the output VARIES and is deep
+// enough to exercise the recursion — `assertGeneratorSatisfiesGuard`'s
+// variability clause is satisfied). At/past the bound the lazy node collapses
+// to the resolved shape's MINIMAL INHABITANT (see `minimalInhabitant`): the
+// smallest guard-valid value of that shape with every recursive child
+// collapsed to its own minimal form (array → `[]`, optional → absent,
+// nullable → `null`, object → required keys only, each minimal). That value
+// still satisfies the guard, so `generator∘guard` holds, and it is a constant
+// for a given shape so determinism is preserved.
+//
+// `MAX_LAZY_DEPTH` is small and deterministic: a depth of 3 produces a
+// pleasantly-nested-but-finite recursive value (e.g. a 3-level tree), enough
+// for the generated data to be a realistic, varied fixture while keeping the
+// value (and generation time) bounded. It is the lazy-RECURSION depth, not
+// total shape depth — only `lazy` nodes increment it, so non-recursive nested
+// shapes are unaffected.
+const MAX_LAZY_DEPTH = 3
+
+// The smallest guard-valid value for `shape`, with every recursive (lazy)
+// child collapsed to ITS minimal form. Used by the generator's `lazy` arm
+// once `MAX_LAZY_DEPTH` is hit so generation always terminates with a
+// still-guard-valid value.
+//
+// `seenThunks` is the ANCESTOR PATH of lazy thunks currently being resolved
+// (added on entry, deleted on exit — a true back-edge detector). If resolving
+// a lazy node requires re-entering a thunk already on that path AND no
+// terminating container (an array that can be empty, an optional, a nullable)
+// broke the chain first, the shape has NO finite inhabitant (e.g.
+// `objectShape({ self: lazyShape(() => sameShape) })` — a REQUIRED,
+// non-optional, infinitely-deep recursive child). The minimal value cannot be
+// constructed, so a precise §13 Error is thrown rather than silently
+// recursing forever or emitting a guard-violating value — `generator∘guard`
+// is never silently broken. Schema/guard/parser do NOT need a finite
+// inhabitant, so only the generator enforces this.
+function minimalInhabitant(
+	shape: ContractShape,
+	random: RandomFunction,
+	seenThunks: Set<() => ContractShape>,
+): unknown {
+	switch (shape.type) {
+		case 'string': {
+			// Smallest string of the required length (the guard measures the
+			// whole string, so a `min` must be met exactly; default is `''`).
+			const min = shape.min ?? 0
+			if (shape.pattern !== undefined) {
+				// A pattern has no generic smallest match — defer to the
+				// regular generator (bounded: a string is a leaf, no
+				// recursion). Length still honoured by that generator.
+				return compileGeneratorInner(shape, random, 0)
+			}
+			return '0'.repeat(min)
+		}
+		case 'number':
+			return shape.min ?? 0
+		case 'boolean':
+			return false
+		case 'literal':
+			// `literalShape` guarantees ≥1 value at build (§13); the first is
+			// the deterministic minimal choice.
+			return shape.values[0]
+		case 'array': {
+			// The minimal array is the shortest the guard accepts. If a
+			// `min ≥ 1` is required, generate exactly `min` minimal elements
+			// (recursing — a lazy element continues the chain). With no `min`
+			// the empty array is minimal and the element shape is NEVER
+			// instantiated, which is exactly what TERMINATES the recursion for
+			// the common `arrayShape(lazyShape(...))` recursive pattern.
+			const min = shape.min ?? 0
+			const result: unknown[] = []
+			for (let index = 0; index < min; index += 1) {
+				result.push(minimalInhabitant(shape.items, random, seenThunks))
+			}
+			return result
+		}
+		case 'tuple': {
+			// Exactly one minimal element per position (arity is fixed).
+			const result: unknown[] = []
+			for (const item of shape.items) {
+				result.push(minimalInhabitant(item, random, seenThunks))
+			}
+			return result
+		}
+		case 'object': {
+			// Only REQUIRED (non-optional) keys — an optional key absent is
+			// the minimal object. Each required key gets its child's minimal.
+			const result: Record<string, unknown> = {}
+			for (const key of Object.keys(shape.properties)) {
+				const child = shape.properties[key]
+				if (child === undefined || child.type === 'optional') {
+					continue
+				}
+				result[key] = minimalInhabitant(child, random, seenThunks)
+			}
+			return result
+		}
+		case 'union': {
+			// Any variant works; the first is the deterministic minimal
+			// choice. `unionShape`/`oneOfShape` guarantee ≥1 variant (§13),
+			// so `variants[0]` is defined; the explicit narrow keeps this
+			// arm total without an `!` non-null assertion.
+			const first = shape.variants[0]
+			if (first === undefined) {
+				return undefined
+			}
+			return minimalInhabitant(first, random, seenThunks)
+		}
+		case 'intersection': {
+			// Merge every member's minimal object (all members are object
+			// shapes per §13) so the result satisfies every member.
+			const result: Record<string, unknown> = {}
+			for (const member of shape.members) {
+				const generated = minimalInhabitant(member, random, seenThunks)
+				if (isRecord(generated)) {
+					for (const key of Object.keys(generated)) {
+						result[key] = generated[key]
+					}
+				}
+			}
+			return result
+		}
+		case 'optional':
+			// The minimal optional value is ABSENT; as a bare value that is
+			// `undefined` (the guard accepts it, and at object level the key
+			// is dropped — both guard-valid).
+			return undefined
+		case 'nullable':
+			// `null` is the minimal nullable inhabitant (guard accepts it
+			// without instantiating the inner — terminates the recursion).
+			return null
+		case 'lazy': {
+			if (seenThunks.has(shape.thunk)) {
+				throw new Error(
+					`recursive shape has no finite inhabitant within depth ${MAX_LAZY_DEPTH}: a required, non-optional lazy child references itself with no terminating container (array/optional/nullable). Wrap the recursive child in optionalShape/nullableShape or make the recursive container an array.`,
+				)
+			}
+			seenThunks.add(shape.thunk)
+			const resolved = minimalInhabitant(shape.thunk(), random, seenThunks)
+			seenThunks.delete(shape.thunk)
+			return resolved
+		}
+		case 'raw':
+			// `rawShape`'s guard is always true; `null` is the smallest valid
+			// JSON value (mirrors the generator's own `raw` arm).
+			return null
+	}
+}
 
 /**
  * Compile a {@link ContractShape} and immediately generate a seed value from
@@ -1039,10 +1372,18 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
  */
 export function compileGenerator(shape: ContractShape, random: RandomFunction): unknown {
 	assertAcyclicShape(shape, new WeakSet<ContractShape>())
-	return compileGeneratorInner(shape, random)
+	// D3: `lazyDepth` starts at 0 and is incremented ONLY by `lazy` nodes; at
+	// `MAX_LAZY_DEPTH` the lazy arm collapses to the minimal inhabitant so a
+	// recursive lazy shape's generation always terminates (see the
+	// termination-contract comment above `MAX_LAZY_DEPTH`).
+	return compileGeneratorInner(shape, random, 0)
 }
 
-function compileGeneratorInner(shape: ContractShape, random: RandomFunction): unknown {
+function compileGeneratorInner(
+	shape: ContractShape,
+	random: RandomFunction,
+	lazyDepth: number,
+): unknown {
 	switch (shape.type) {
 		case 'string': {
 			// The generated value's TOTAL length (including the `str_`
@@ -1094,7 +1435,7 @@ function compileGeneratorInner(shape: ContractShape, random: RandomFunction): un
 			const length = Math.floor(random() * (max - min + 1)) + min
 			const result: unknown[] = []
 			for (let index = 0; index < length; index += 1) {
-				result.push(compileGeneratorInner(shape.items, random))
+				result.push(compileGeneratorInner(shape.items, random, lazyDepth))
 			}
 			return result
 		}
@@ -1107,7 +1448,7 @@ function compileGeneratorInner(shape: ContractShape, random: RandomFunction): un
 			// of assertGeneratorSatisfiesGuard skips constant-output shapes).
 			const result: unknown[] = []
 			for (const item of shape.items) {
-				result.push(compileGeneratorInner(item, random))
+				result.push(compileGeneratorInner(item, random, lazyDepth))
 			}
 			return result
 		}
@@ -1121,7 +1462,7 @@ function compileGeneratorInner(shape: ContractShape, random: RandomFunction): un
 				if (child.type === 'optional' && random() < 0.3) {
 					continue
 				}
-				result[key] = compileGeneratorInner(child, random)
+				result[key] = compileGeneratorInner(child, random, lazyDepth)
 			}
 			return result
 		}
@@ -1146,7 +1487,7 @@ function compileGeneratorInner(shape: ContractShape, random: RandomFunction): un
 			if (variant === undefined) {
 				return undefined
 			}
-			return compileGeneratorInner(variant, random)
+			return compileGeneratorInner(variant, random, lazyDepth)
 		}
 		case 'intersection': {
 			// All members are object shapes (§13 build constraint). Generate
@@ -1162,7 +1503,7 @@ function compileGeneratorInner(shape: ContractShape, random: RandomFunction): un
 			// guarantees ≥1 member at build (§13), so the merge is never empty.
 			const result: Record<string, unknown> = {}
 			for (const member of shape.members) {
-				const generated = compileGeneratorInner(member, random)
+				const generated = compileGeneratorInner(member, random, lazyDepth)
 				if (isRecord(generated)) {
 					for (const key of Object.keys(generated)) {
 						result[key] = generated[key]
@@ -1172,9 +1513,30 @@ function compileGeneratorInner(shape: ContractShape, random: RandomFunction): un
 			return result
 		}
 		case 'optional':
-			return compileGeneratorInner(shape.inner, random)
+			return compileGeneratorInner(shape.inner, random, lazyDepth)
 		case 'nullable':
-			return random() < 0.2 ? null : compileGeneratorInner(shape.inner, random)
+			return random() < 0.2 ? null : compileGeneratorInner(shape.inner, random, lazyDepth)
+		case 'lazy': {
+			// D3 generator termination (the subtle case). A recursive lazy
+			// shape's generator could recurse forever; `lazyDepth` bounds it.
+			// BELOW the bound: resolve the thunk and generate its inner with
+			// `lazyDepth + 1` — output is varied and deep enough to exercise
+			// the recursion (satisfies `assertGeneratorSatisfiesGuard`'s
+			// variability clause). AT/PAST the bound: collapse to the resolved
+			// shape's MINIMAL INHABITANT — still guard-valid (so
+			// `generator∘guard` holds), finite, and constant (so determinism
+			// holds). If that minimal value cannot exist (a required,
+			// non-optional, infinitely-deep recursive child),
+			// `minimalInhabitant` throws the precise §13 "no finite
+			// inhabitant" Error rather than recurse forever or silently emit a
+			// guard-violating value. The thunk is invoked here (NOT at
+			// acyclicity-check time) — generation is the point at which the
+			// deferred recursion is realised over a bounded depth.
+			if (lazyDepth >= MAX_LAZY_DEPTH) {
+				return minimalInhabitant(shape.thunk(), random, new Set<() => ContractShape>())
+			}
+			return compileGeneratorInner(shape.thunk(), random, lazyDepth + 1)
+		}
 		case 'raw':
 			// Must emit a DEFINED, JSON-valid value: a required `rawShape`
 			// object property generating `undefined` collapses the key out
