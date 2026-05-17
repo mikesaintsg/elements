@@ -150,7 +150,6 @@ export function booleanShape(options?: BooleanShapeOptions): BooleanShape {
  * @example
  * ```ts
  * const role = literalShape('admin', 'member', 'guest')
- * // Infer<typeof role> = 'admin' | 'member' | 'guest'
  * ```
  */
 export function literalShape<const T extends readonly (string | number | boolean)[]>(
@@ -185,8 +184,8 @@ export function literalShape<const T extends readonly (string | number | boolean
  * `constShape` is the JSON-Schema `const` of a SINGLE value that may be
  * structured (object/array). It is always inhabited (its sole value is
  * `value`), so — unlike an empty `literalShape()` / `unionShape()` — it never
- * throws at build. The const generic preserves the literal type so
- * `Infer<typeof shape>` is the exact type of `value` (like `literalShape`).
+ * throws at build. The const generic preserves the precise literal /
+ * structural type of `value` on the returned shape (like `literalShape`).
  *
  * @param value - The single JSON value the shape accepts (const-generic preserved)
  * @returns A {@link ConstShape} node
@@ -194,9 +193,9 @@ export function literalShape<const T extends readonly (string | number | boolean
  * @example
  * ```ts
  * const kind = constShape('user')
- * // Infer<typeof kind> = 'user'   JSON Schema: { const: 'user' }
+ * // JSON Schema: { const: 'user' }
  * const origin = constShape({ x: 0, y: 0 })
- * // Infer<typeof origin> = { x: number; y: number }
+ * // JSON Schema: { const: { x: 0, y: 0 } }
  * ```
  */
 export function constShape<const V extends JsonValue>(
@@ -212,15 +211,15 @@ export function constShape<const V extends JsonValue>(
 	// `… & ConstShape` like most builders (this mirrors `lazyShape`'s
 	// D2.5-driven decision): `ConstShape.value` is the WIDE `JsonValue`.
 	// Intersecting the precise `{ value: V }` with `ConstShape` makes
-	// `value`'s type `V & JsonValue`, and `InferConst` would then extract
-	// `V & JsonValue` instead of the precise `V` — collapsing
-	// `Infer<constShape('x')>` to `'x' & JsonValue` rather than `'x'` (the
-	// exact wide-interface pollution D2.5 eliminated). The precise literal
+	// `value`'s type the WIDE `V & JsonValue` rather than the precise
+	// `V`, so a consumer reading `typeof shape` would lose
+	// the exact literal/structural type of `value` (e.g. the precise
+	// `'x'` for `constShape('x')`, not `'x' & JsonValue`). The precise literal
 	// `{ type:'const'; value: V }` with `V extends JsonValue` is ALREADY
 	// structurally assignable to `ConstShape` (and hence `ContractShape`):
 	// `V extends JsonValue` so `value: V` is assignable to `value:
 	// JsonValue`. Dropping the redundant `& ConstShape` keeps `value` the
-	// precise `V`, so `Infer` recovers the exact literal/structural type.
+	// precise `V` for any `typeof shape` consumer.
 	return { type: 'const', value }
 }
 
@@ -274,7 +273,7 @@ export function arrayShape<S extends ContractShape>(
  * programmer error: `tupleShape()` is the inhabited empty-tuple type whose
  * only value is `[]` (a valid, useful JSON-Schema closed tuple), so it is
  * allowed and does not throw. The rest-spread preserves the const tuple of
- * element shapes so `Infer` recovers `readonly [Infer<I0>, Infer<I1>, …]`.
+ * element shapes on the returned shape.
  *
  * @param shapes - One shape per tuple position, in order (rest-spread)
  * @returns A {@link TupleShape} node
@@ -282,7 +281,6 @@ export function arrayShape<S extends ContractShape>(
  * @example
  * ```ts
  * const pair = tupleShape(stringShape(), integerShape())
- * // Infer<typeof pair> = readonly [string, number]
  * // JSON Schema: { type: 'array', prefixItems: [{type:'string'},{type:'integer'}],
  * //               items: false, minItems: 2, maxItems: 2 }
  * ```
@@ -346,7 +344,6 @@ export function objectShape<P extends Readonly<Record<string, ContractShape>>>(
  * @example
  * ```ts
  * const id = unionShape(stringShape(), integerShape())
- * // Infer<typeof id> = string | number
  * ```
  */
 export function unionShape<V extends readonly ContractShape[]>(
@@ -379,7 +376,6 @@ export function unionShape<V extends readonly ContractShape[]>(
  *     name: stringShape({ min: 1 }),
  *     bio:  optionalShape(stringShape()),
  * })
- * // Infer<typeof form> = { name: string; bio?: string }
  * ```
  */
 export function optionalShape<S extends ContractShape>(
@@ -400,7 +396,6 @@ export function optionalShape<S extends ContractShape>(
  * @example
  * ```ts
  * const maybeString = nullableShape(stringShape())
- * // Infer<typeof maybeString> = string | null
  * ```
  */
 export function nullableShape<S extends ContractShape>(
@@ -436,8 +431,8 @@ export function nullableShape<S extends ContractShape>(
  * - **generate** generates from `inner` (the default is just ONE valid
  *   instance — generating from inner keeps variability;
  *   `assertGeneratorSatisfiesGuard` holds because inner's generator is sound).
- * - `Infer<typeof shape>` is `Infer<inner>` — the default does not change the
- *   static type.
+ * - **static type** — a `defaultShape` carries the SAME static type as its
+ *   `inner`; the default does not change it.
  *
  * Throws at build time (AGENTS.md §13 — programmer error caught at the
  * boundary) when `value` does NOT satisfy `compileGuard(inner)`: a default
@@ -455,7 +450,7 @@ export function nullableShape<S extends ContractShape>(
  * @example
  * ```ts
  * const retries = defaultShape(integerShape({ min: 0 }), 3)
- * // Infer<typeof retries> = number   JSON Schema: { type:'integer', minimum:0, default:3 }
+ * // JSON Schema: { type:'integer', minimum:0, default:3 }
  * // parse(undefined) === 3 ; guard(undefined) === false (default is advisory)
  * ```
  */
@@ -514,11 +509,10 @@ export function defaultShape<S extends ContractShape>(
  * required-recursive shape with NO finite inhabitant makes the generator
  * throw a precise §13 Error rather than silently violate `generator∘guard`.
  *
- * `Infer<lazyShape(() => X)>` resolves one level to `Infer<X>` for a
- * concrete `X`; for the self-recursive consumer pattern (thunk annotated
- * `() => ContractShape`) it is `unknown` — supply a named `interface` for
- * the precise static type (see the `Infer` docs in
- * [src/core/types.ts](./types.ts)).
+ * Static typing: a genuinely self-recursive shape (the recommended consumer
+ * pattern annotates the binding `ContractShape` so the thunk can close over
+ * it) has no precise structural TypeScript type — supply a named `interface`
+ * for the static type while the runtime contract stays fully recursive.
  *
  * @param thunk - Zero-argument function returning the deferred inner shape
  * @returns A {@link LazyShape} node
@@ -542,14 +536,14 @@ export function lazyShape<S extends ContractShape>(
 	// `{ thunk: () => S }` with that makes `thunk`'s type the function
 	// intersection `(() => S) & (() => ContractShape)`, whose `ReturnType`
 	// TS resolves to the WIDE `ContractShape` (overload-set last-return) —
-	// exactly the D2.5 "wide-interface pollution" failure mode, here it would
-	// collapse `Infer<lazyShape(() => stringShape())>` to `unknown` instead
-	// of `string`. The precise literal `{ type:'lazy'; thunk:() => S }` is
+	// a wide-interface pollution that, for a `typeof shape` consumer, would
+	// lose the precise deferred-inner type (it would
+	// widen to `unknown`). The precise literal `{ type:'lazy'; thunk:() => S }` is
 	// ALREADY structurally assignable to `LazyShape` (and hence
 	// `ContractShape`): `S extends ContractShape` so `() => S` is assignable
 	// to `() => ContractShape` (covariant return). Dropping the redundant
 	// `& LazyShape` keeps `thunk`'s `ReturnType` the precise `S`, so the
-	// non-recursive `Infer` resolves one level exactly.
+	// deferred-inner type stays precise for a `typeof shape` consumer.
 	return { type: 'lazy', thunk }
 }
 
@@ -597,8 +591,8 @@ export function oneOfShape<V extends readonly ContractShape[]>(
  * module). Compiles to JSON-Schema `{ allOf: [...] }`.
  *
  * @remarks
- * `Infer<intersectionShape(A, B)>` is `Infer<A> & Infer<B>` (the
- * `&`-intersection of the members' inferred object types).
+ * A value satisfies the shape iff it satisfies EVERY member; the members are
+ * object-kind, so the accepted value carries the union of their keys.
  *
  * Throws at build time (AGENTS.md §13 — programmer error caught at the
  * boundary, mirroring B4-style boundary validation) when:
@@ -626,7 +620,6 @@ export function oneOfShape<V extends readonly ContractShape[]>(
  * const named = objectShape({ name: stringShape({ min: 1 }) })
  * const aged = objectShape({ age: integerShape({ min: 0 }) })
  * const person = intersectionShape(named, aged)
- * // Infer<typeof person> = { readonly name: string } & { readonly age: number }
  * // JSON Schema: { allOf: [<named schema>, <aged schema>] }
  * ```
  */

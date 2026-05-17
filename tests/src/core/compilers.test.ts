@@ -1891,7 +1891,7 @@ describe('D4 — constShape (JSON-Schema const)', () => {
 //    bare-`undefined` sample is exercised only where inner accepts it.
 //  * GENERATOR generates from inner (variability — the default is just one
 //    valid instance), not the fixed default.
-//  * Infer<DefaultShape> = Infer<inner> (default does not change the type).
+//  * STATIC TYPE: a defaultShape carries inner's type (default does not change it).
 
 describe('D4 — defaultShape (JSON-Schema default)', () => {
 	it('schema — inner schema + default keyword, isJsonSchema-valid', () => {
@@ -1999,7 +1999,7 @@ describe('D4 — defaultShape (JSON-Schema default)', () => {
 
 	it('composes inside an object (optional-like default field at parse)', () => {
 		// At the object level a defaultShape property is REQUIRED by the guard
-		// (Infer = Infer<inner>, not optional) but the parser fills it from the
+		// (static type is inner's, not optional) but the parser fills it from the
 		// default when the key is absent.
 		const shape = objectShape({
 			name: stringShape({ min: 1 }),

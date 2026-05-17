@@ -17,7 +17,7 @@ The shape is the **single source of truth**. The same shape feeds the schema, th
 
 ### Shape builders
 
-Each builder produces a `ContractShape` value. Builders preserve const-generic types so `Infer<S>` recovers the exact static type from the shape.
+Each builder produces a `ContractShape` value. Builders preserve const-generic types so a consumer reading `typeof shape` keeps the precise shape literal.
 
 | Builder           | JSON Schema (compiled)                 | Inferred type           |
 | ----------------- | -------------------------------------- | ----------------------- |
@@ -35,8 +35,8 @@ Each builder produces a `ContractShape` value. Builders preserve const-generic t
 | `intersectionShape()` | merged object schema (union of `properties`/`required`, overlapping key → per-key `allOf`, `additionalProperties` reconciled) | `A & B` |
 | `optionalShape()` | bare inner (nested: absence via `required` omission; bare top-level root: the one stricter known-divergence — `undefined` unrepresentable) | `T \| undefined` |
 | `nullableShape()` | `{ anyOf: [inner, { type: 'null' }] }` | `T \| null`             |
-| `defaultShape()`  | inner schema + `default: <value>`      | `Infer<inner>` (default is advisory; type unchanged) |
-| `lazyShape()`     | `{ $ref: '#/$defs/Lazyn' }` + root `$defs` | `Infer<inner>` (recursive: `unknown` — supply a named `interface`) |
+| `defaultShape()`  | inner schema + `default: <value>`      | inner's type (default is advisory; type unchanged) |
+| `lazyShape()`     | `{ $ref: '#/$defs/Lazyn' }` + root `$defs` | inner's type (recursive: supply a named `interface`) |
 | `recordShape()`   | `{ type: 'object', additionalProperties: {...} }` | `Record<string, T>` |
 | `rawShape()`      | pass-through fragment                  | `unknown`               |
 
@@ -58,7 +58,7 @@ The compilers in [src/core/compilers.ts](../src/core/compilers.ts) are the low-l
 
 The compilers in [src/core/compilers.ts](../src/core/compilers.ts) are also the public entry points:
 
-- `compileContract(shape)` — the full `ContractInterface<Infer<S>>`: `schema`, `is`, `parse`, `generate`.
+- `compileContract(shape)` — the full `ContractInterface<unknown>`: `schema`, `is`, `parse`, `generate`.
 - `compileSchema(shape)` — JSON Schema only — produces the same JSON Schema value as `compileContract(shape).schema` but without constructing the guard, parser, or generator. An `ObjectShape` argument narrows the return to `JsonSchemaObject`.
 
 ### Seeded generation
@@ -82,7 +82,7 @@ The compilers in [src/core/compilers.ts](../src/core/compilers.ts) are also the 
 | `assertAcyclicShape(shape, seen)` | `void`                   | Build-time acyclicity throw (§13 — NOT a runtime guard) every public compiler runs once up front: throws the precise `'cyclic ContractShape: use a lazy/deferred shape for recursion'` on a non-lazy structural shape cycle. `seen` is the ancestor path (a DAG of shared acyclic sub-shapes is fine); `lazy`/`const`/`raw` are terminals, wrapper kinds recurse. |
 | `guardPermitsAbsence(shape)`   | `boolean`                   | Whether an object property of this shape may be absent at the GUARD/SCHEMA/GENERATOR level: `optional` → `true`, `default` recurses to its inner (a default is advisory, not optionality, so a `defaultShape` is required unless its inner is optional), everything else → `false`. The parser-only "apply default on absence" rule lives elsewhere. |
 | `flattenIntersectionObjects(shape)` | `readonly ObjectShape[]` | The effective leaf `ObjectShape` members of an `IntersectionShape`, recursing through nested intersections so the merged-key universe and closed/open policy are computed over every real object member. Terminates because the shape is proven acyclic by `assertAcyclicShape` first. |
-| `deepEqual(a, b, read?)`       | `boolean`                   | Recursive structural deep-equality over finite JSON-shaped values — the ONE equality behind JSON-Schema `const` (compilers) and `enum`/`const`/`uniqueItems` (the inverse subsystem). Arrays compare by length + positional recursion (both sides indexed directly); primitive / non-plain leaves by `Object.is` (so `NaN` === `NaN`, `+0` ≠ `-0` — the SAME equality validators' `literalOf` uses); plain objects (an inline `isRecord`-equivalent: non-array, prototype `Object.prototype`/`null`) by same-own-key-set (`Object.hasOwn`, B2) then per-key recursion. `a` is the trusted finite operand bounding the recursion; `b`'s plain-object property values flow through the optional `read` strategy (defaults to a direct `Reflect.get` — the trusted-input regime where a throwing accessor propagates; the inverse subsystem injects a `try`-wrapped `safeGet` whose throwing-getter sentinel stays entirely in `schema.ts`). Total per §13 when `read` is total. |
+| `deepEqual(a, b, read?)`       | `boolean`                   | Recursive structural deep-equality over finite JSON-shaped values — the equality behind JSON-Schema `const` (compilers). Arrays compare by length + positional recursion (both sides indexed directly); primitive / non-plain leaves by `Object.is` (so `NaN` === `NaN`, `+0` ≠ `-0` — the SAME equality validators' `literalOf` uses); plain objects (an inline `isRecord`-equivalent: non-array, prototype `Object.prototype`/`null`) by same-own-key-set (`Object.hasOwn`, B2) then per-key recursion. `a` is the trusted finite operand bounding the recursion; `b`'s plain-object property values flow through the optional `read` strategy (defaults to a direct `Reflect.get` — the trusted-input regime where a throwing accessor propagates). Total per §13 when `read` is total. |
 
 These are real exports of the same module as `createRandom()`; prefer the validators-module guards they back (`isEmptyObject` / `isNonEmptyObject` / `instanceOf`, see [validators.md](validators.md)) at call sites rather than calling the helpers directly. `isShapeAdditional()` is consumed internally by the contract compilers — callers building shapes never invoke it directly. `attempt()` is the shared guard-body throw boundary used internally by the validators compositors; consumers compose guards, never invoke it directly.
 
@@ -99,7 +99,7 @@ An object-root JSON Schema uses the same compiler path as every other contract: 
 These invariants hold across `src/core/{types,shapers,compilers,helpers}.ts` ↔ `contracts.md`:
 
 1. **DOC → SOURCE.** Every backticked call-form API named in this guide — every builder, compiler, and helper written in call form — is a real `export function` / `export const` in one of [src/core/shapers.ts](../src/core/shapers.ts), [src/core/compilers.ts](../src/core/compilers.ts), or [src/core/helpers.ts](../src/core/helpers.ts). A renamed or removed export breaks the gate until the doc is reconciled.
-2. **TYPES ARE THE SOURCE OF TRUTH.** `ContractShape`, `Infer<S>`, `ContractInterface<T>`, the JSON Schema family (`JsonSchema`, `JsonSchemaObject`, `JsonSchemaDefinition`), and every `*ShapeOptions` bag are declared first in [src/core/types.ts](../src/core/types.ts). Builders and compilers conform to those types, never the reverse.
+2. **TYPES ARE THE SOURCE OF TRUTH.** `ContractShape`, `ContractInterface<T>`, the JSON Schema family (`JsonSchema`, `JsonSchemaObject`, `JsonSchemaDefinition`), and every `*ShapeOptions` bag are declared first in [src/core/types.ts](../src/core/types.ts). Builders and compilers conform to those types, never the reverse.
 3. **DERIVED, NOT DUPLICATED.** Schema, guard, parser, and generator are all compiled from the one shape. No operation is hand-written per shape — adding a shape variant means extending the discriminated `ContractShape` union and every compiler `switch`, never patching call sites.
 4. **PARSE↔GUARD SOUNDNESS (B3).** For any compiled contract `{ is, parse }`: *(A) acceptance preservation* — a guard-valid input is never rejected by its own parser (returns non-`undefined`); *(B) round-trip validity* — parsing an already-valid value yields a value that still satisfies the guard; *(C) output soundness* — the parser never emits a value the guard would reject. The standalone flat parsers (`parseString`, `parseNumber`, etc.) in [parsers.md](parsers.md) are a SEPARATE opinionated surface that coerces more aggressively — they are not part of the B3 invariant, but the contract compilers reuse them internally for primitive coercion and then re-validate against the shape guard to keep A/B/C whole.
 5. **GENERATE∘GUARD SOUNDNESS.** `compileGenerator(shape, random)` is deterministic (same seed → same value; the `random` source is consumed in a fixed shape-document order) and its output satisfies `compileGuard(shape)` for every well-formed shape. `rawShape` generates `null` (the smallest valid JSON placeholder). Recursive `lazyShape` generation terminates at a bounded lazy-recursion depth via the minimal-inhabitant strategy; a required-recursive shape with no finite inhabitant throws a precise §13 Error rather than recurse forever. For a `oneOfShape` with non-disjoint (overlapping) variants the generator generates a candidate, tests it against the compiled `oneOf` guard, and retries (driven by the same seeded `random`, so generation stays reproducible per seed) until an exactly-one-matching value is found — so the output is exactly-one valid even for resolvable overlapping variants. If the variants overlap so heavily that no exactly-one-matching value exists within the retry bound (an ill-posed `oneOf`), a precise generation-time §13 Error is thrown naming the variants and suggesting disjoint branches or `anyOf`.
@@ -217,7 +217,6 @@ const bindings = recordShape(numberShape(), { description: 'Variable bindings' }
 import { integerShape, stringShape, tupleShape } from '@elements/core'
 
 const pair = tupleShape(stringShape(), integerShape())
-// Infer<typeof pair> = readonly [string, number]
 // JSON Schema: { type: 'array', prefixItems: [{ type: 'string' }, { type: 'integer' }],
 //               items: false, minItems: 2, maxItems: 2 }
 
@@ -232,17 +231,16 @@ Each argument is the shape for that position. The compiled guard accepts an arra
 import { constShape, objectShape, stringShape } from '@elements/core'
 
 const kind = constShape('user')
-// Infer<typeof kind> = 'user'   JSON Schema: { const: 'user' }
+// JSON Schema: { const: 'user' }
 
 const origin = constShape({ x: 0, y: 0 })
-// Infer<typeof origin> = { x: number; y: number }
 // JSON Schema: { const: { x: 0, y: 0 } }
 
 // A fixed discriminant field inside an object:
 const userEvent = objectShape({ kind: constShape('user'), name: stringShape({ min: 1 }) })
 ```
 
-`constShape(value)` is the JSON-Schema `const` — a value valid iff it **equals** `value`. The **equality rule** (documented and consistent across the codebase): `const` is a *structural* value match — primitive leaves are compared with `Object.is` (so `NaN` matches `NaN`, and `+0` ≠ `-0` — exactly the equality `literalOf` in [validators.md](validators.md) uses), while arrays and plain objects are compared by recursive structural deep-equality (identical own-key sets, every value deep-equal; key order irrelevant). The parser returns the **canonical** value (a *fresh deep copy* for a non-primitive `value`, so a shared mutable reference is never handed out — the same alias-free policy the object parser follows); the generator deterministically emits that same canonical value (also a fresh copy). Unlike `literalShape()` (an enum of *primitives*, `Set`-membership guard), `constShape()` accepts a single value that may be *structured* (object/array) and is always inhabited, so — unlike an empty `literalShape()` / `unionShape()` — it never throws at build. The const generic preserves the literal type, so `Infer<typeof shape>` is the exact type of `value`.
+`constShape(value)` is the JSON-Schema `const` — a value valid iff it **equals** `value`. The **equality rule** (documented and consistent across the codebase): `const` is a *structural* value match — primitive leaves are compared with `Object.is` (so `NaN` matches `NaN`, and `+0` ≠ `-0` — exactly the equality `literalOf` in [validators.md](validators.md) uses), while arrays and plain objects are compared by recursive structural deep-equality (identical own-key sets, every value deep-equal; key order irrelevant). The parser returns the **canonical** value (a *fresh deep copy* for a non-primitive `value`, so a shared mutable reference is never handed out — the same alias-free policy the object parser follows); the generator deterministically emits that same canonical value (also a fresh copy). Unlike `literalShape()` (an enum of *primitives*, `Set`-membership guard), `constShape()` accepts a single value that may be *structured* (object/array) and is always inhabited, so — unlike an empty `literalShape()` / `unionShape()` — it never throws at build. The const generic preserves the literal type, so a consumer reading `typeof shape` keeps the exact type of `value`.
 
 ### `intersectionShape()` — values satisfying all members (merged object schema)
 
@@ -253,13 +251,12 @@ const named = objectShape({ name: stringShape({ min: 1 }) })
 const aged = objectShape({ age: integerShape({ min: 0 }) })
 
 const person = intersectionShape(named, aged)
-// Infer<typeof person> = { readonly name: string } & { readonly age: number }
 // JSON Schema (members MERGED — NOT a naive allOf):
 // { type: 'object', properties: { name: …, age: … }, required: ['name','age'],
 //   additionalProperties: false }
 ```
 
-A value satisfies an `intersectionShape` iff it satisfies **every** member — the runtime mirror of `intersectionOf` in [validators.md](validators.md). `Infer` resolves it to the `&`-intersection of the members' inferred types. The compiled value carries the union of all members' keys (each key validated/parsed/generated by its owning member); a closed-object member does not reject keys contributed by sibling members.
+A value satisfies an `intersectionShape` iff it satisfies **every** member — the runtime mirror of `intersectionOf` in [validators.md](validators.md). The accepted value is the `&`-intersection of the members' value types. The compiled value carries the union of all members' keys (each key validated/parsed/generated by its owning member); a closed-object member does not reject keys contributed by sibling members.
 
 **Schema emission is a MERGE, not a naive `allOf`.** JSON-Schema `allOf` applies every sub-schema *independently* to the whole instance, so an `allOf` of *closed* object members (the default) would be **unsatisfiable** — each closed member would reject the keys contributed by its siblings as "additional" — even though the guard accepts the merged object. `compileSchema` therefore merges the effective leaf object members into one object schema: the **union of their `properties`**, the **union of their `required`**, and `additionalProperties` reconciled exactly as the guard does (closed iff *every* leaf member is closed, then closed over the **union** of known keys; open if any leaf is open). A property key declared by **more than one member** is emitted as the per-key conjunction `{ allOf: [<member-A's value schema>, <member-B's value schema>, …] }` (a single declarer keeps its bare value schema — no needless wrapper); its accept-set for that key is the **intersection** of the members' per-key accept-sets — exactly what the guard enforces (each member's guard checks its own declared key conjunctively). So a guard-uninhabited overlap (`{a:string} ∩ {a:integer}`) and a compatible-but-distinct overlap (`{a:string,minLength:1} ∩ {a:string,maxLength:5}`) both round-trip **exactly** — not the pre-fix overwrite that kept only the last member's per-key schema. This keeps the emitted schema's accept-set equal to the guard's (round-trip parity). **Members must be object shapes — `objectShape`, `recordShape`, or a nested `intersectionShape`** (transitively object-only: a nested `intersectionShape` was itself validated object-only by its own builder call, so the merge stays sound): intersecting non-object shapes is degenerate (`string & number` is `never`; primitive/array intersections have no sound, generic parser/generator merge), so — like an empty `literalShape()` / `unionShape()` (uninhabited → throws at build) — calling `intersectionShape()` with no members, or with any member that is neither an object shape nor a nested `intersectionShape`, throws at build time (§13 — a programmer error caught at the boundary).
 
@@ -293,7 +290,7 @@ Behavioural contract:
 - **schema** — emits `{ $ref: '#/$defs/Lazyn' }` and hoists the resolved definition onto a root `$defs` (one named definition per distinct thunk, so a recursive schema is finite, not infinitely nested). The emitted schema is `isJsonSchema`-valid. *Limitation (Phase E seam):* this is a single self-contained `$defs` block with deterministic per-compile names (`Lazy0`, `Lazy1`, …); cross-document `$id` resolution and `$ref` dedup across separate `compileSchema` calls are completed in Phase E.
 - **guard / parse** — delegate verbatim to the resolved inner shape (memoized per compilation so the self-reference reuses one compiled function); recursion over genuinely recursive **data** terminates because the data is finite. **Adversarial data is §13-safe at runtime:** the compiled recursive‑lazy guard/parser thread a per‑compilation ancestor tracker (a `WeakSet` of the objects currently on the recursion path — added on enter, removed on exit) plus a generous depth backstop, so a **cyclic** value (`const n = { value: 1 }; n.next = n`) yields `false` (guard) / `undefined` (parser) and a **pathologically deep acyclic** value is capped the same way — **never a thrown `RangeError`**. A shared‑but‑acyclic substructure (the same finite object referenced under two keys — a DAG) is *not* mis‑flagged as a cycle, and genuinely finite recursive data still validates/parses correctly.
 - **generate** — bounded: a recursive lazy shape generates a finite nested value up to a small fixed lazy-recursion depth, then collapses the recursive child to its **minimal inhabitant** (array → `[]`, optional → absent, nullable → `null`, object → required keys only). The generated value still satisfies the guard and is deterministic. A required, non-optional, infinitely-deep recursive child (`objectShape({ self: lazyShape(() => self) })` — no terminating container) has **no finite inhabitant**: `generate` throws a precise `Error` (`recursive shape has no finite inhabitant within depth N`) rather than recurse forever or emit a guard-violating value (schema/guard/parse do not need a finite inhabitant and still compile).
-- **`Infer`** — `Infer<lazyShape(() => X)>` resolves one level to `Infer<X>` for a concrete `X`. For the self-recursive consumer pattern above (the thunk's static return type is the wide `ContractShape`), `Infer` is `unknown` — a genuinely self-recursive TS type needs a named interface boundary, so **supply the `interface Tree { … }`** for the precise static type while the runtime contract stays fully recursive.
+- **static type** — a genuinely self-recursive shape (the recommended consumer pattern above annotates the binding `ContractShape` so the thunk can close over it) has no precise structural TypeScript type, so **supply the `interface Tree { … }`** for the static type while the runtime contract stays fully recursive.
 
 ### `defaultShape()` — inner shape + an advisory default
 
@@ -301,7 +298,7 @@ Behavioural contract:
 import { compileParser, defaultShape, integerShape, objectShape, stringShape } from '@elements/core'
 
 const retries = defaultShape(integerShape({ min: 0 }), 3)
-// Infer<typeof retries> = number   JSON Schema: { type: 'integer', minimum: 0, default: 3 }
+// JSON Schema: { type: 'integer', minimum: 0, default: 3 }
 
 const config = objectShape({
 	name: stringShape({ min: 1 }),
@@ -320,7 +317,7 @@ The behavioural contract is a **deliberate, useful asymmetry** (it mirrors `opti
 - **parse** applies the default on **absence**: parsing `undefined` returns the default (a *fresh deep copy* for a non-primitive default — the same alias-free policy as `constShape()`); any other input parses through `inner`. Inside an object, an absent `default` property is filled from the default rather than failing the record.
 - This means the **guard** on `undefined` is `inner`'s guard on `undefined` (false unless `inner` is itself optional) yet **parse** on `undefined` is the default. The parse↔guard **A/B/C** invariants still hold: the default is build-validated to satisfy `inner`'s guard, so *every* parser output (the default **or** a parsed-inner value) is guard-valid (clause C); A/B are inherited from `inner`'s own sound parser for every non-`undefined` input.
 - **generate** generates from `inner` (the default is just *one* valid instance — generating from inner preserves variability; `generator∘guard` still holds because inner's generator is sound).
-- **`Infer`** is `Infer<inner>` — the advisory default does not change the static type (the value is still required at the type level; the parser fills it on absence at runtime).
+- **static type** — a `defaultShape` carries the SAME static type as its `inner`; the advisory default does not change it (the value is still required at the type level; the parser fills it on absence at runtime).
 
 A non-lazy structural cycle *through* a `defaultShape` (its `inner` is traversed by the acyclicity check, exactly like `optionalShape` / `nullableShape`) still throws the precise cyclic `Error`; a `lazyShape` boundary inside the default's inner still breaks the cycle and compiles.
 
@@ -332,7 +329,7 @@ import { rawShape } from '@elements/core'
 const anyValue = rawShape({ description: 'Default value' })
 ```
 
-Embeds an arbitrary JSON Schema fragment for properties that accept any value or need keywords beyond the shape DSL. The compiled guard always returns `true`, the parser passes the value through unchanged, the generator emits `null` (the smallest valid JSON value — a placeholder, since no constraints exist to vary over), and `Infer` resolves it to `unknown` (the runtime type can't be recovered from the DSL). Use sparingly.
+Embeds an arbitrary JSON Schema fragment for properties that accept any value or need keywords beyond the shape DSL. The compiled guard always returns `true`, the parser passes the value through unchanged, the generator emits `null` (the smallest valid JSON value — a placeholder, since no constraints exist to vary over), and its static type is `unknown` (the runtime type can't be recovered from the DSL). Use sparingly.
 
 ### Fail-fast build throws (§13)
 
@@ -383,35 +380,9 @@ const parameters = compileSchema(
 
 The `ObjectShape` overload of `compileSchema()` narrows the return to `JsonSchemaObject` — no separate object-schema builder needed.
 
-### Inference with `Infer<S>`
+### Forward-emission fidelity
 
-`Infer<S>` maps any `ContractShape` to its static TypeScript type at compile time — structural, recursive, optional-aware:
-
-```ts
-import { arrayShape, literalShape, nullableShape, numberShape, objectShape, optionalShape, stringShape } from '@elements/core'
-import type { Infer } from '@elements/core'
-
-const shape = objectShape({
-	name: stringShape(),
-	tags: arrayShape(stringShape()),
-	role: literalShape('admin', 'member'),
-	bio: optionalShape(stringShape()),
-	score: nullableShape(numberShape()),
-})
-
-type User = Infer<typeof shape>
-// {
-//   readonly name: string
-//   readonly tags: readonly string[]
-//   readonly role: 'admin' | 'member'
-//   readonly bio?: string
-//   readonly score: number | null
-// }
-```
-
-Optional properties wrapped in `optionalShape()` surface as true optional fields (and are omitted from the JSON Schema `required` array); `nullableShape()` adds `| null`; literal tuples become string-literal unions.
-
-**Forward-emission fidelity — the one stricter known-divergence.** For everything JSON Schema can represent, `compileSchema(s)` and `compileGuard(s)` describe the **exact same value set**. A **nested** `optionalShape()` property round-trips exactly — absence is carried structurally by the enclosing object omitting the key from `required`. There is exactly **one** stricter divergence: a **bare top-level `optionalShape()`** has no enclosing `required` to carry absence and JSON Schema has no value-level `undefined`, so the emitted bare-inner schema rejects exactly the single value `undefined` that the guard accepts — **and nothing wider** (the schema is strictly *tighter* than the guard by exactly `{undefined}` at a bare document root). It is **not** the prior degenerate `{ anyOf: [inner, {}] }`: JSON-Schema 2020-12 `{}` accepts every instance, so that collapsed to a universally-true root that erased all of `inner`'s structure.
+**The one stricter known-divergence.** For everything JSON Schema can represent, `compileSchema(s)` and `compileGuard(s)` describe the **exact same value set**. A **nested** `optionalShape()` property round-trips exactly — absence is carried structurally by the enclosing object omitting the key from `required`. There is exactly **one** stricter divergence: a **bare top-level `optionalShape()`** has no enclosing `required` to carry absence and JSON Schema has no value-level `undefined`, so the emitted bare-inner schema rejects exactly the single value `undefined` that the guard accepts — **and nothing wider** (the schema is strictly *tighter* than the guard by exactly `{undefined}` at a bare document root). It is **not** the prior degenerate `{ anyOf: [inner, {}] }`: JSON-Schema 2020-12 `{}` accepts every instance, so that collapsed to a universally-true root that erased all of `inner`'s structure.
 
 ### Practices
 

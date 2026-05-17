@@ -246,7 +246,7 @@ Browser-free contract / parser / validator surface. No SCSS, no Vue, no DOM. The
 | File                                          | Purpose                                                                                                       |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | [`index.ts`](../src/core/index.ts)            | Sole public barrel. `export *` from each surface file.                                                         |
-| [`types.ts`](../src/core/types.ts)            | SOURCE OF TRUTH for the package's types — shape DSL, contract, parser/guard signatures, `RefResolver`/`LazyRef`. |
+| [`types.ts`](../src/core/types.ts)            | SOURCE OF TRUTH for the package's types — shape DSL, contract, parser/guard signatures. |
 | [`helpers.ts`](../src/core/helpers.ts)        | General-purpose utilities shared across core: `createRandom` (Mulberry32 PRNG — seeds `compileGenerator`), `enumerableSymbolCount`, `isConstructor`, `isShapeAdditional`. |
 | [`validators.ts`](../src/core/validators.ts)  | Runtime type guards (`unknown` → narrowed) + guard compositors.                                                |
 | [`parsers.ts`](../src/core/parsers.ts)        | Flat value / field / format parsers — coerce `unknown`, return `undefined` on failure.                         |

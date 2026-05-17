@@ -1,7 +1,6 @@
 import type {
 	ContractInterface,
 	ContractShape,
-	Infer,
 	JsonSchema,
 	JsonSchemaMap,
 	JsonSchemaObject,
@@ -34,8 +33,7 @@ import { isObject, isRecord } from './validators.js'
 // the const value is the trusted left operand `a` (bounding the recursion),
 // the guard argument is the untrusted right operand `b`. The default
 // property-read strategy is a direct `Reflect.get` — the trusted-input
-// regime where a throwing accessor SHOULD propagate (the inverse subsystem's
-// `schema.ts` injects a hardened, non-throwing read instead).
+// regime where a throwing accessor SHOULD propagate.
 //
 // A fresh deep copy of a (finite, acyclic) `JsonValue`. The const/default
 // parser and the const generator hand this out so a non-primitive canonical
@@ -300,8 +298,7 @@ function newLazyParserCache(): LazyParserCache {
  * EMISSION FIDELITY. For everything JSON Schema can represent, the emitted
  * schema and {@link compileGuard} describe the EXACT SAME value set — a
  * value satisfies the emitted schema iff it satisfies the compiled guard
- * (verified by the round-trip oracle `compileSchemaGuard(compileSchema(s))`
- * ≡ `compileGuard(s)`). There is exactly ONE known STRICTER divergence,
+ * ({@link compileGuard}). There is exactly ONE known STRICTER divergence,
  * enumerated last.
  *
  * - **Intersection of object shapes** — `intersectionShape` does NOT emit a
@@ -329,10 +326,10 @@ function newLazyParserCache(): LazyParserCache {
  *   ∩ {a:string,maxLength:5}`).
  * - **Optionality (nested)** — a NESTED/property `optionalShape` emits the
  *   BARE inner schema; absence is carried structurally by the enclosing
- *   object OMITTING the key from `required` (the inverse subsystem's object
- *   matcher validates a property's schema ONLY when the key is PRESENT, so
- *   an absent optional key is never checked and a present one is checked
- *   against `inner`). This round-trips EXACTLY.
+ *   object OMITTING the key from `required` (JSON-Schema object validation
+ *   checks a property's schema ONLY when the key is PRESENT, so an absent
+ *   optional key is never checked and a present one is checked against
+ *   `inner`). This round-trips EXACTLY.
  * - **THE ONE STRICTER KNOWN-DIVERGENCE — a bare top-level optional.** A
  *   bare `optionalShape` ROOT has no enclosing `required` to carry absence
  *   and JSON Schema has no value-level `undefined`, so the emitted bare
@@ -343,11 +340,8 @@ function newLazyParserCache(): LazyParserCache {
  *   deliberate, documented STRICTER divergence (NOT the previous degenerate
  *   `anyOf:[<inner>,{}]`, which — since JSON-Schema 2020-12 `{}` accepts
  *   EVERY instance — collapsed to a universally-true root that erased ALL
- *   of `inner`'s structure: strictly worse). It mirrors the inverse
- *   subsystem's single stricter divergence (an open-tail positional array
- *   maps to the closed tuple of its prefix; see `compileSchemaShape` /
- *   guides/schema.md §Contract 7). A NESTED optional has no such gap (its
- *   absence is representable via `required` omission, above).
+ *   of `inner`'s structure: strictly worse). A NESTED optional has no such
+ *   gap (its absence is representable via `required` omission, above).
  *
  * @param shape - The shape to compile
  * @returns A JSON Schema object suitable for tool and agent integration
@@ -403,9 +397,9 @@ export function compileSchema(shape: ContractShape): JsonSchema {
 	// anything) — strictly worse than the honest bare inner. Emitting the
 	// bare inner makes this the SINGLE documented STRICTER known-divergence
 	// (the schema is tighter than the guard by exactly `{undefined}` at a
-	// bare root), mirroring the inverse subsystem's single stricter
-	// divergence (open-tail array → closed tuple; see guides/schema.md
-	// §Contract 7 and this function's TSDoc). No boundary branch is needed:
+	// bare root). This function's TSDoc documents the single stricter
+	// divergence; nothing wider than that single value diverges. No
+	// boundary branch is needed:
 	// the `'optional'` arm already returns `compileSchemaInner(shape.inner)`,
 	// so a top-level optional flows through it to the bare inner.
 	const root = compileSchemaInner(shape, context)
@@ -501,8 +495,8 @@ function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContex
 				properties[key] = compileSchemaInner(child, lazyContext)
 				// A property is `required` unless it permits absence. D4: a
 				// `default` property is required iff its inner is NOT optional
-				// (the default is advisory; the type-level `Infer` is
-				// `Infer<inner>`, so a `default(optional(x))` is type-optional
+				// (the default is advisory; a `DefaultShape` carries the
+				// SAME static type as its inner, so a `default(optional(x))` is type-optional
 				// and not required, while `default(integer())` IS required —
 				// the guard does not auto-apply the default). `nullable`/
 				// primitive stay required exactly as before.
@@ -581,7 +575,7 @@ function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContex
 			// AND top-level — no root special-casing). NESTED: an
 			// `objectShape` makes an optional property absent-tolerant by
 			// OMITTING it from `required` (NOT by changing the property's own
-			// schema), and the inverse subsystem's object matcher validates a
+			// schema), and JSON-Schema object validation checks a
 			// property's schema ONLY when the key is PRESENT — so an absent
 			// optional key is never checked and a present one is checked
 			// against `inner`: the bare inner is EXACT for a nested optional.
@@ -595,8 +589,8 @@ function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContex
 			// the package's SINGLE documented STRICTER known-divergence (the
 			// schema is tighter than the guard by exactly `{undefined}` at a
 			// bare root; nothing wider — every other value round-trips
-			// exactly). Mirrors the inverse subsystem's one stricter
-			// divergence (see `compileSchema`'s TSDoc / guides/schema.md).
+			// exactly; see `compileSchema`'s TSDoc for the full
+			// emission-fidelity contract).
 			return compileSchemaInner(shape.inner, lazyContext)
 		case 'nullable':
 			return { anyOf: [compileSchemaInner(shape.inner, lazyContext), { type: 'null' }] }
@@ -2074,7 +2068,6 @@ function compileGeneratorInner(
  * const seed = userContract.generate(createRandom(42))
  * ```
  */
-export function compileContract<S extends ContractShape>(shape: S): ContractInterface<Infer<S>>
 export function compileContract(shape: ContractShape): ContractInterface<unknown>
 export function compileContract(shape: ContractShape): ContractInterface<unknown> {
 	const schema: JsonSchema = compileSchema(shape)
