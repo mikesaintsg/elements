@@ -52,6 +52,14 @@ function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>):
 			seen.delete(shape)
 			return
 		}
+		case 'tuple': {
+			seen.add(shape)
+			for (const item of shape.items) {
+				assertAcyclicShape(item, seen)
+			}
+			seen.delete(shape)
+			return
+		}
 		case 'object': {
 			seen.add(shape)
 			for (const key of Object.keys(shape.properties)) {
@@ -155,6 +163,24 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
 				items: compileSchemaInner(shape.items),
 				...(shape.min !== undefined ? { minItems: shape.min } : {}),
 				...(shape.max !== undefined ? { maxItems: shape.max } : {}),
+				...(shape.description !== undefined ? { description: shape.description } : {}),
+			}
+		}
+		case 'tuple': {
+			// Standard JSON-Schema (2020-12) closed-tuple encoding: one schema
+			// per position in `prefixItems`, `items: false` to forbid any
+			// element past the prefix, and `minItems === maxItems === arity`
+			// to pin the EXACT length. This mirrors validators' `tupleOf`
+			// (array + exact-length + positional). An empty tuple yields
+			// `prefixItems: []`, `minItems: 0`, `maxItems: 0` — the closed `[]`
+			// schema.
+			const length = shape.items.length
+			return {
+				type: 'array',
+				prefixItems: shape.items.map((item) => compileSchemaInner(item)),
+				items: false,
+				minItems: length,
+				maxItems: length,
 				...(shape.description !== undefined ? { description: shape.description } : {}),
 			}
 		}
@@ -293,6 +319,23 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
 				}
 				for (const item of value) {
 					if (!itemGuard(item)) {
+						return false
+					}
+				}
+				return true
+			}
+		}
+		case 'tuple': {
+			// Mirror validators' `tupleOf`: valid iff an array of EXACTLY the
+			// tuple arity where each element passes its POSITIONAL guard.
+			const itemGuards = shape.items.map((item) => compileGuardInner(item))
+			return (value) => {
+				if (!Array.isArray(value) || value.length !== itemGuards.length) {
+					return false
+				}
+				for (let index = 0; index < itemGuards.length; index += 1) {
+					const guard = itemGuards[index]
+					if (guard === undefined || !guard(value[index])) {
 						return false
 					}
 				}
@@ -526,6 +569,46 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 				let allParsed = true
 				for (const item of value) {
 					const parsed = itemParser(item)
+					if (parsed === undefined) {
+						allParsed = false
+						break
+					}
+					result.push(parsed)
+				}
+				if (allParsed && guard(result)) {
+					return result
+				}
+				if (guard(value)) {
+					return value
+				}
+				return undefined
+			}
+		}
+		case 'tuple': {
+			// Parse↔guard soundness, mirroring the `array` arm but
+			// positionally: each position parser is itself sound recursively,
+			// so a guard-valid tuple maps to a tuple of guard-valid elements
+			// (A)(B). Arity is enforced by THIS shape's guard, so we re-validate
+			// the freshly built tuple for (C); if it fails we fall back to the
+			// RAW array only when the guard already accepts it (never reject a
+			// guard-valid input), else undefined. Tuples are positional arrays
+			// (no string keys written to a fresh object) so the
+			// prototype-pollution concern of the object arm does not apply.
+			const itemParsers = shape.items.map((item) => compileParserInner(item))
+			const guard = compileGuardInner(shape)
+			return (value) => {
+				if (!Array.isArray(value) || value.length !== itemParsers.length) {
+					return undefined
+				}
+				const result: unknown[] = []
+				let allParsed = true
+				for (let index = 0; index < itemParsers.length; index += 1) {
+					const parser = itemParsers[index]
+					if (parser === undefined) {
+						allParsed = false
+						break
+					}
+					const parsed = parser(value[index])
 					if (parsed === undefined) {
 						allParsed = false
 						break
@@ -817,6 +900,19 @@ function compileGeneratorInner(shape: ContractShape, random: RandomFunction): un
 			const result: unknown[] = []
 			for (let index = 0; index < length; index += 1) {
 				result.push(compileGeneratorInner(shape.items, random))
+			}
+			return result
+		}
+		case 'tuple': {
+			// One generated value per position, in order — exact arity by
+			// construction, so the result always satisfies the tuple guard.
+			// Determinism follows from each positional generator consuming the
+			// shared `random` source in a fixed order. An empty tuple yields
+			// `[]` (constant — trivially deterministic; the variability clause
+			// of assertGeneratorSatisfiesGuard skips constant-output shapes).
+			const result: unknown[] = []
+			for (const item of shape.items) {
+				result.push(compileGeneratorInner(item, random))
 			}
 			return result
 		}

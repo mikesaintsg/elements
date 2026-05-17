@@ -27,6 +27,7 @@ Each builder produces a `ContractShape` value. Builders preserve const-generic t
 | `booleanShape()`  | `{ type: 'boolean' }`                  | `boolean`               |
 | `literalShape()`  | `{ enum: [...] }`                      | literal union           |
 | `arrayShape()`    | `{ type: 'array', items: {...} }`      | `readonly T[]`          |
+| `tupleShape()`    | `{ type: 'array', prefixItems: [...], items: false, minItems: n, maxItems: n }` | `readonly [A, B]` |
 | `objectShape()`   | `{ type: 'object', properties: {...} }`| `{ key: T; opt?: U }`   |
 | `unionShape()`    | `{ anyOf: [...] }`                     | `A \| B`                |
 | `oneOfShape()`    | `{ oneOf: [...] }`                     | `A \| B`                |
@@ -189,6 +190,21 @@ const bindings = recordShape(numberShape(), { description: 'Variable bindings' }
 ```
 
 `recordShape(values)` is the convenience form of `objectShape({}, { additionalProperties: values })` — cleaner for `Record<string, T>`-style structures with no fixed keys.
+
+### `tupleShape()` — fixed-length heterogeneous arrays
+
+```ts
+import { integerShape, stringShape, tupleShape } from '@elements/core'
+
+const pair = tupleShape(stringShape(), integerShape())
+// Infer<typeof pair> = readonly [string, number]
+// JSON Schema: { type: 'array', prefixItems: [{ type: 'string' }, { type: 'integer' }],
+//               items: false, minItems: 2, maxItems: 2 }
+
+const empty = tupleShape() // the inhabited `readonly []` type — only `[]` is valid
+```
+
+Each argument is the shape for that position. The compiled guard accepts an array of **exactly** that arity where every element satisfies its positional shape (the runtime mirror of `tupleOf` in [validators.md](validators.md)); the parser parses each position with that position's parser and fails on any arity or positional mismatch. The closed-tuple JSON Schema is the standard `prefixItems` + `items: false` + `minItems === maxItems === arity` encoding. Unlike an empty `literalShape()` / `unionShape()` (uninhabited → throws at build), an empty `tupleShape()` is the valid, inhabited `[]` type and does not throw.
 
 ### `rawShape()` — JSON Schema escape hatch
 

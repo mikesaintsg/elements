@@ -19,6 +19,7 @@ import {
 	rawShape,
 	recordShape,
 	stringShape,
+	tupleShape,
 	unionShape,
 } from '@elements/core'
 import {
@@ -83,6 +84,47 @@ describe('compileSchema', () => {
 			items: { type: 'string' },
 			minItems: 1,
 			maxItems: 3,
+		})
+	})
+
+	// Closed-tuple JSON-Schema encoding (documented): a fixed-length
+	// heterogeneous array is `prefixItems` (one schema per position) +
+	// `items: false` (no extra elements past the prefix) + `minItems` ===
+	// `maxItems` === the tuple length (exact arity). This is the standard
+	// JSON-Schema (2020-12) closed-tuple form and mirrors validators' `tupleOf`
+	// arity check.
+	it('tuple — prefixItems + items:false + exact min/maxItems', () => {
+		expect(compileSchema(tupleShape(stringShape(), integerShape()))).toEqual({
+			type: 'array',
+			prefixItems: [{ type: 'string' }, { type: 'integer' }],
+			items: false,
+			minItems: 2,
+			maxItems: 2,
+		})
+	})
+
+	it('tuple — empty tuple is the closed [] schema', () => {
+		expect(compileSchema(tupleShape())).toEqual({
+			type: 'array',
+			prefixItems: [],
+			items: false,
+			minItems: 0,
+			maxItems: 0,
+		})
+	})
+
+	it('tuple — nested element shapes compile recursively', () => {
+		expect(
+			compileSchema(tupleShape(stringShape({ min: 1 }), tupleShape(booleanShape()))),
+		).toEqual({
+			type: 'array',
+			prefixItems: [
+				{ type: 'string', minLength: 1 },
+				{ type: 'array', prefixItems: [{ type: 'boolean' }], items: false, minItems: 1, maxItems: 1 },
+			],
+			items: false,
+			minItems: 2,
+			maxItems: 2,
 		})
 	})
 
@@ -192,6 +234,23 @@ describe('compileGuard', () => {
 		expect(guard(['a', 'b', 'c'])).toBe(false)
 	})
 
+	it('tuple — exact arity and positional element guards', () => {
+		const guard = compileGuard(tupleShape(stringShape(), integerShape()))
+		expect(guard(['a', 1])).toBe(true)
+		expect(guard(['a'])).toBe(false) // too short
+		expect(guard(['a', 1, 2])).toBe(false) // too long
+		expect(guard([1, 'a'])).toBe(false) // positions swapped
+		expect(guard(['a', 1.5])).toBe(false) // pos 1 not integer
+		expect(guard('not an array')).toBe(false)
+	})
+
+	it('tuple — empty tuple matches only the empty array', () => {
+		const guard = compileGuard(tupleShape())
+		expect(guard([])).toBe(true)
+		expect(guard([1])).toBe(false)
+		expect(guard('x')).toBe(false)
+	})
+
 	it('object — accepts exact key sets', () => {
 		const shape: ContractShape = objectShape({
 			name: stringShape(),
@@ -298,6 +357,23 @@ describe('compileParser', () => {
 		expect(parse('not array')).toBeUndefined()
 	})
 
+	it('tuple — parses each position with that position parser', () => {
+		const parse = compileParser(tupleShape(stringShape(), integerShape()))
+		expect(parse(['a', '2'])).toEqual(['a', 2]) // pos 1 coerced '2' → 2
+		expect(parse(['a', 1])).toEqual(['a', 1])
+		expect(parse(['a'])).toBeUndefined() // wrong arity
+		expect(parse(['a', 1, 2])).toBeUndefined() // wrong arity
+		expect(parse(['a', 'xyz'])).toBeUndefined() // pos 1 unparseable
+		expect(parse('not array')).toBeUndefined()
+	})
+
+	it('tuple — empty tuple parses only []', () => {
+		const parse = compileParser(tupleShape())
+		expect(parse([])).toEqual([])
+		expect(parse([1])).toBeUndefined()
+		expect(parse('x')).toBeUndefined()
+	})
+
 	it('object — parses known fields and ignores optional missing', () => {
 		const shape: ContractShape = objectShape({
 			name: stringShape(),
@@ -401,6 +477,38 @@ describe('parse↔guard symmetry', () => {
 		assertParseGuardSymmetry(arrayShape(stringShape()), [['', 'a'], [], 'not array'])
 	})
 
+	it('tupleShape(stringShape(), numberShape()) — arity + positional (A)(B)(C)', () => {
+		assertParseGuardSymmetry(tupleShape(stringShape(), numberShape()), [
+			['a', 1],
+			['', 1],
+			['a', 'x'],
+			['a'],
+			['a', 1, 2],
+			'notarray',
+			[],
+		])
+	})
+
+	it('tupleShape() — empty tuple symmetry', () => {
+		assertParseGuardSymmetry(tupleShape(), [[], [1], 'x'])
+	})
+
+	it('tupleShape nested in object + tuple-of-tuple symmetry', () => {
+		assertParseGuardSymmetry(
+			objectShape({ pair: tupleShape(stringShape({ min: 1 }), integerShape()) }),
+			[{ pair: ['a', 1] }, { pair: ['', 1] }, { pair: ['a'] }, {}],
+		)
+		assertParseGuardSymmetry(
+			tupleShape(tupleShape(stringShape(), integerShape()), booleanShape()),
+			[
+				[['a', 1], true],
+				[['a', 'x'], true],
+				[['a', 1], 'no'],
+				'notarray',
+			],
+		)
+	})
+
 	it('optionalShape(stringShape()) at object level', () => {
 		assertParseGuardSymmetry(
 			objectShape({ s: optionalShape(stringShape()) }),
@@ -487,6 +595,24 @@ describe('compileGenerator', () => {
 		for (const item of value) {
 			expect(Number.isInteger(item)).toBe(true)
 		}
+	})
+
+	it('tuple — returns a fixed-length tuple, one generated value per position', () => {
+		const shape = tupleShape(stringShape({ min: 1 }), integerShape())
+		const value = compileGenerator(shape, createRandom(1))
+		expect(Array.isArray(value)).toBe(true)
+		if (!Array.isArray(value)) {
+			throw new Error('Expected a generated tuple')
+		}
+		expect(value).toHaveLength(2)
+		expect(typeof value[0]).toBe('string')
+		expect(Number.isInteger(value[1])).toBe(true)
+		expect(compileGuard(shape)(value)).toBe(true)
+	})
+
+	it('tuple — empty tuple generates the empty array deterministically', () => {
+		const value = compileGenerator(tupleShape(), createRandom(7))
+		expect(value).toEqual([])
 	})
 
 	it('object — returns a record with required keys', () => {
@@ -1033,6 +1159,15 @@ describe('B4 — assertGeneratorSatisfiesGuard across the full shape matrix', ()
 		assertGeneratorSatisfiesGuard(arrayShape(numberShape(), { min: 1, max: 4 }), seeds)
 	})
 
+	it('tuples incl. nested + empty', () => {
+		assertGeneratorSatisfiesGuard(tupleShape(stringShape({ min: 1 }), integerShape()), [1, 2, 3])
+		assertGeneratorSatisfiesGuard(
+			tupleShape(stringShape(), tupleShape(integerShape(), booleanShape())),
+			seeds,
+		)
+		assertGeneratorSatisfiesGuard(tupleShape(), seeds)
+	})
+
 	it('optional / nullable wrappers', () => {
 		assertGeneratorSatisfiesGuard(objectShape({ s: optionalShape(stringShape({ min: 1 })) }), seeds)
 		assertGeneratorSatisfiesGuard(nullableShape(integerShape({ min: 0 })), seeds)
@@ -1121,6 +1256,26 @@ describe('§13 — cyclic ContractShape fails fast at compile (precise Error, no
 
 	it('compileGenerator throws a precise Error (not RangeError) on a cyclic shape', () => {
 		expectPreciseCyclicError(() => compileGenerator(makeCyclicShape(), createRandom(1)))
+	})
+
+	it('a tuple of a self-referential shape throws the precise cyclic Error', () => {
+		// Build a structural cycle through a tuple position: an object whose
+		// `self` property is a tuple containing the object itself. Each
+		// compiler must detect the back-edge through the tuple arm of
+		// assertAcyclicShape and fail fast with the precise Error, never a
+		// RangeError.
+		const makeCyclicTupleShape = (): ContractShape => {
+			const properties: Record<string, ContractShape> = {
+				name: stringShape({ min: 1 }),
+			}
+			const shape = objectShape(properties)
+			properties['self'] = tupleShape(shape)
+			return shape
+		}
+		expectPreciseCyclicError(() => compileSchema(makeCyclicTupleShape()))
+		expectPreciseCyclicError(() => compileGuard(makeCyclicTupleShape()))
+		expectPreciseCyclicError(() => compileParser(makeCyclicTupleShape()))
+		expectPreciseCyclicError(() => compileGenerator(makeCyclicTupleShape(), createRandom(1)))
 	})
 
 	it('a shared-but-acyclic sub-shape reused in two object keys is NOT a cycle', () => {

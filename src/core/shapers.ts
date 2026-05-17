@@ -14,6 +14,7 @@ import type {
 	RawShape,
 	StringShape,
 	StringShapeOptions,
+	TupleShape,
 	UnionShape,
 } from './types.js'
 
@@ -223,6 +224,46 @@ export function arrayShape<S extends ContractShape>(
 		max: options?.max,
 		description: options?.description,
 	}
+}
+
+// === Tuple
+
+/**
+ * Build a {@link TupleShape} — a fixed-length heterogeneous array whose
+ * elements are typed positionally.
+ *
+ * @remarks
+ * Each argument is the shape for the tuple element at that position; the
+ * compiled guard accepts an array of EXACTLY that many elements where every
+ * element satisfies its positional shape (the runtime mirror of `tupleOf`
+ * in the validators module). Compiles to the standard closed-tuple JSON
+ * Schema: `prefixItems` (one schema per position) + `items: false` +
+ * `minItems === maxItems === arity`.
+ *
+ * Unlike {@link literalShape} / {@link unionShape}, an empty call is NOT a
+ * programmer error: `tupleShape()` is the inhabited empty-tuple type whose
+ * only value is `[]` (a valid, useful JSON-Schema closed tuple), so it is
+ * allowed and does not throw. The rest-spread preserves the const tuple of
+ * element shapes so `Infer` recovers `readonly [Infer<I0>, Infer<I1>, …]`.
+ *
+ * @param shapes - One shape per tuple position, in order (rest-spread)
+ * @returns A {@link TupleShape} node
+ *
+ * @example
+ * ```ts
+ * const pair = tupleShape(stringShape(), integerShape())
+ * // Infer<typeof pair> = readonly [string, number]
+ * // JSON Schema: { type: 'array', prefixItems: [{type:'string'},{type:'integer'}],
+ * //               items: false, minItems: 2, maxItems: 2 }
+ * ```
+ */
+export function tupleShape<S extends readonly ContractShape[]>(
+	...shapes: S
+): { readonly type: 'tuple'; readonly items: S } & TupleShape {
+	// No empty-arguments throw (cf. literalShape / unionShape): an empty
+	// tuple is INHABITED — its sole value is `[]` — so it is a valid,
+	// useful shape, not a §13 programmer error.
+	return { type: 'tuple', items: shapes }
 }
 
 // === Object

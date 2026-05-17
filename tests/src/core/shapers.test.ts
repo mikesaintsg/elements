@@ -12,6 +12,7 @@ import {
 	rawShape,
 	recordShape,
 	stringShape,
+	tupleShape,
 	unionShape,
 } from '@elements/core'
 
@@ -330,6 +331,55 @@ describe('arrayShape', () => {
 		expect(() => arrayShape(stringShape(), { min: 1, max: 3 })).not.toThrow()
 		expect(() => arrayShape(stringShape(), { min: 2, max: 2 })).not.toThrow()
 		expect(() => arrayShape(stringShape())).not.toThrow()
+	})
+})
+
+// === tupleShape
+
+describe('tupleShape', () => {
+	it('produces a shape with type tuple', () => {
+		const shape = tupleShape(stringShape(), integerShape())
+		expect(shape.type).toBe('tuple')
+	})
+
+	it('stores the positional item shapes in order', () => {
+		const s = stringShape()
+		const n = integerShape()
+		const shape = tupleShape(s, n)
+		expect(shape.items).toHaveLength(2)
+		expect(shape.items[0]).toBe(s)
+		expect(shape.items[1]).toBe(n)
+	})
+
+	it('captures heterogeneous element types', () => {
+		const shape = tupleShape(stringShape(), integerShape(), booleanShape())
+		expect(shape.items).toHaveLength(3)
+		expect(shape.items[0]?.type).toBe('string')
+		expect(shape.items[1]?.type).toBe('number')
+		expect(shape.items[2]?.type).toBe('boolean')
+	})
+
+	it('leaves description undefined when omitted', () => {
+		const shape = tupleShape(stringShape())
+		expect(shape.description).toBeUndefined()
+	})
+
+	it('accepts nested tuple shapes', () => {
+		const inner = tupleShape(integerShape(), integerShape())
+		const outer = tupleShape(stringShape(), inner)
+		expect(outer.items[1]?.type).toBe('tuple')
+	})
+
+	// Empty-tuple decision (documented): an empty `tupleShape()` is the valid,
+	// useful JSON-Schema closed tuple matching ONLY `[]` (`prefixItems: []`,
+	// `items: false`, `minItems: 0`, `maxItems: 0`). Unlike an empty literal /
+	// union (uninhabited → throw at build per §13), the empty tuple IS
+	// inhabited (by `[]`), so it is allowed, not a programmer error.
+	it('allows an empty tuple (the [] type) — does not throw', () => {
+		expect(() => tupleShape()).not.toThrow()
+		const shape = tupleShape()
+		expect(shape.type).toBe('tuple')
+		expect(shape.items).toHaveLength(0)
 	})
 })
 

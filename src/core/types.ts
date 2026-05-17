@@ -255,6 +255,7 @@ export type ContractShape =
 	| BooleanShape
 	| LiteralShape
 	| ArrayShape
+	| TupleShape
 	| ObjectShape
 	| UnionShape
 	| OptionalShape
@@ -316,6 +317,27 @@ export interface ArrayShape {
 	readonly items: ContractShape
 	readonly min?: number
 	readonly max?: number
+	readonly description?: string
+}
+
+/**
+ * Tuple shape — a fixed-length heterogeneous array whose elements are
+ * positionally typed.
+ *
+ * @remarks
+ * `items` holds one child shape per tuple position, in order. A value is
+ * valid iff it is an array of EXACTLY `items.length` elements and each
+ * element satisfies the shape at its position. Compiles to the standard
+ * closed-tuple JSON Schema (`prefixItems` + `items: false` +
+ * `minItems === maxItems === items.length`). The runtime mirror of
+ * `tupleOf` in the validators module.
+ *
+ * An empty tuple (`items` length 0) is the inhabited `[]` type — valid and
+ * useful — not a programmer error (unlike an empty literal / union).
+ */
+export interface TupleShape {
+	readonly type: 'tuple'
+	readonly items: readonly ContractShape[]
 	readonly description?: string
 }
 
@@ -400,29 +422,33 @@ export type Infer<S extends ContractShape> = S extends StringShape
 				? V extends readonly (infer L)[]
 					? L
 					: never
-				: S extends { readonly type: 'array'; readonly items: infer I }
-					? I extends ContractShape
-						? readonly Infer<I>[]
+				: S extends { readonly type: 'tuple'; readonly items: infer I }
+					? I extends readonly ContractShape[]
+						? InferTuple<I>
 						: never
-					: S extends { readonly type: 'object'; readonly properties: infer P }
-						? P extends Readonly<Record<string, ContractShape>>
-							? InferObject<P>
+					: S extends { readonly type: 'array'; readonly items: infer I }
+						? I extends ContractShape
+							? readonly Infer<I>[]
 							: never
-						: S extends { readonly type: 'union'; readonly variants: infer V }
-							? V extends readonly ContractShape[]
-								? InferUnion<V>
+						: S extends { readonly type: 'object'; readonly properties: infer P }
+							? P extends Readonly<Record<string, ContractShape>>
+								? InferObject<P>
 								: never
-							: S extends { readonly type: 'optional'; readonly inner: infer I }
-								? I extends ContractShape
-									? Infer<I> | undefined
+							: S extends { readonly type: 'union'; readonly variants: infer V }
+								? V extends readonly ContractShape[]
+									? InferUnion<V>
 									: never
-								: S extends { readonly type: 'nullable'; readonly inner: infer I }
+								: S extends { readonly type: 'optional'; readonly inner: infer I }
 									? I extends ContractShape
-										? Infer<I> | null
+										? Infer<I> | undefined
 										: never
-									: S extends { readonly type: 'raw' }
-										? unknown
-										: never
+									: S extends { readonly type: 'nullable'; readonly inner: infer I }
+										? I extends ContractShape
+											? Infer<I> | null
+											: never
+										: S extends { readonly type: 'raw' }
+											? unknown
+											: never
 
 type InferObject<P extends Readonly<Record<string, ContractShape>>> = Readonly<
 	{
@@ -444,6 +470,15 @@ type InferUnion<V extends readonly ContractShape[]> = V extends readonly (infer 
 		? Infer<U>
 		: never
 	: never
+
+// Map a readonly tuple of element shapes to a readonly tuple of their
+// inferred types, position-for-position. The homomorphic mapped type over
+// the tuple's own keys preserves both arity and `readonly`-ness (the same
+// technique `TupleFromGuards` uses for guard tuples), so
+// `Infer<TupleShape>` recovers `readonly [Infer<I0>, Infer<I1>, …]`.
+type InferTuple<I extends readonly ContractShape[]> = Readonly<{
+	[K in keyof I]: I[K] extends ContractShape ? Infer<I[K]> : never
+}>
 
 // === Random
 
