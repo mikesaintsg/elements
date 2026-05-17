@@ -58,7 +58,7 @@ export function getFirstChild(element: Element): Element | null {
  *
  * Performance: O(1)
  */
-export function getLastChild(element:  Element): Element | null {
+export function getLastChild(element: Element): Element | null {
 	return element.lastElementChild
 }
 
@@ -69,7 +69,7 @@ export function getLastChild(element:  Element): Element | null {
  */
 export function getChildAt(element: Element, index: number): Element | null {
 	if (index < 0) return null
-	return element.children[index] ??  null
+	return element.children[index] ?? null
 }
 
 /**
@@ -139,7 +139,7 @@ export function getSiblings(element: Element): readonly Element[] {
  * Get all next siblings
  */
 export function getNextSiblings(element: Element): readonly Element[] {
-	const siblings:  Element[] = []
+	const siblings: Element[] = []
 	let current = element.nextElementSibling
 	while (current !== null) {
 		siblings.push(current)
@@ -261,7 +261,7 @@ export function findAncestorById(element: Element, id: string): Element | null {
  * const path = getAncestors(button, document.body)
  * ```
  */
-export function getAncestors(element: Element, boundary?:  Element | null): readonly Element[] {
+export function getAncestors(element: Element, boundary?: Element | null): readonly Element[] {
 	const ancestors: Element[] = []
 	let current = element.parentElement
 	while (current !== null && current !== boundary) {
@@ -276,7 +276,7 @@ export function getAncestors(element: Element, boundary?:  Element | null): read
  */
 export function findCommonAncestor(element1: Element, element2: Element): Element | null {
 	const ancestors1 = new Set<Element>()
-	let current:  Element | null = element1
+	let current: Element | null = element1
 	while (current !== null) {
 		ancestors1.add(current)
 		current = current.parentElement
@@ -314,7 +314,7 @@ export function findClosest(
 	element: Element,
 	predicate: ElementPredicate,
 ): Element | null {
-	let current:  Element | null = element
+	let current: Element | null = element
 	while (current !== null) {
 		if (predicate(current)) {
 			return current
@@ -344,7 +344,7 @@ export function findClosestByTag<K extends keyof HTMLElementTagNameMap>(
 /**
  * Find the closest ancestor (or self) by class name
  */
-export function findClosestByClass(element: Element, className:  string): Element | null {
+export function findClosestByClass(element: Element, className: string): Element | null {
 	let current: Element | null = element
 	while (current !== null) {
 		if (current.classList.contains(className)) {
@@ -498,7 +498,7 @@ export function findNextSiblingByTag<K extends keyof HTMLElementTagNameMap>(
 /**
  * Find the next sibling by class name
  */
-export function findNextSiblingByClass(element: Element, className:  string): Element | null {
+export function findNextSiblingByClass(element: Element, className: string): Element | null {
 	let current = element.nextElementSibling
 	while (current !== null) {
 		if (current.classList.contains(className)) {
@@ -571,7 +571,7 @@ export function findPreviousSiblingByClass(element: Element, className: string):
  * ```
  */
 export function findDescendant(element: Element, predicate: ElementPredicate): Element | null {
-	const stack:  Element[] = []
+	const stack: Element[] = []
 	// Push children in reverse order for correct traversal
 	let child = element.lastElementChild
 	while (child !== null) {
@@ -704,7 +704,7 @@ export function findDescendantsWithLimit(
  * ```
  */
 export function walkDescendants(
-	element:  Element,
+	element: Element,
 	callback: (element: Element) => boolean | void,
 ): void {
 	const stack: Element[] = []
@@ -808,7 +808,7 @@ export function getDescendantsByTag<K extends keyof HTMLElementTagNameMap>(
 /**
  * Get descendants by class name using native API
  */
-export function getDescendantsByClass(element: Element, className:  string): HTMLCollectionOf<Element> {
+export function getDescendantsByClass(element: Element, className: string): HTMLCollectionOf<Element> {
 	return element.getElementsByClassName(className)
 }
 
@@ -865,7 +865,7 @@ export function getElementsByClass(
 /**
  * Get elements by name attribute
  */
-export function getElementsByName(name: string, doc:  Document = document): NodeListOf<HTMLElement> {
+export function getElementsByName(name: string, doc: Document = document): NodeListOf<HTMLElement> {
 	return doc.getElementsByName(name)
 }
 
@@ -876,7 +876,7 @@ export function getElementsByName(name: string, doc:  Document = document): Node
 /**
  * Check if element is a descendant of another
  */
-export function isDescendantOf(element: Element, ancestor:  Element): boolean {
+export function isDescendantOf(element: Element, ancestor: Element): boolean {
 	let current = element.parentElement
 	while (current !== null) {
 		if (current === ancestor) {
@@ -931,7 +931,7 @@ export function getTreeDistance(element1: Element, element2: Element): number | 
 	if (commonAncestor === null) return null
 
 	let distance1 = 0
-	let current:  Element | null = element1
+	let current: Element | null = element1
 	while (current !== null && current !== commonAncestor) {
 		distance1++
 		current = current.parentElement
@@ -950,9 +950,9 @@ export function getTreeDistance(element1: Element, element2: Element): number | 
 /**
  * Get the path from element to an ancestor (or document root)
  */
-export function getPathToAncestor(element: Element, ancestor?:  Element | null): readonly Element[] {
+export function getPathToAncestor(element: Element, ancestor?: Element | null): readonly Element[] {
 	const path: Element[] = []
-	let current:  Element | null = element
+	let current: Element | null = element
 	while (current !== null && current !== ancestor) {
 		path.push(current)
 		current = current.parentElement
@@ -971,9 +971,9 @@ export function isInViewport(element: Element): boolean {
 	const rect = element.getBoundingClientRect()
 	return (
 		rect.top >= 0 &&
-    rect.left >= 0 &&
-    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+		rect.left >= 0 &&
+		rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+		rect.right <= (window.innerWidth || document.documentElement.clientWidth)
 	)
 }
 
@@ -1449,7 +1449,7 @@ export function isFocusable(element: HTMLElement): boolean {
  * Find all focusable elements within a container
  */
 export function findFocusableElements(element: Element): readonly HTMLElement[] {
-	const focusable:  HTMLElement[] = []
+	const focusable: HTMLElement[] = []
 
 	walkDescendants(element, (el) => {
 		if (el instanceof HTMLElement && isFocusable(el)) {
@@ -1464,7 +1464,7 @@ export function findFocusableElements(element: Element): readonly HTMLElement[] 
  * Find the first focusable element
  */
 export function findFirstFocusable(element: Element): HTMLElement | null {
-	let result:  HTMLElement | null = null
+	let result: HTMLElement | null = null
 
 	walkDescendants(element, (el) => {
 		if (el instanceof HTMLElement && isFocusable(el)) {
