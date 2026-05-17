@@ -378,29 +378,6 @@ export function flattenIntersectionObjects(shape: IntersectionShape): readonly O
 }
 
 /**
- * Type-guard predicate: `value` is a non-null object.
- *
- * @remarks
- * The only kind of value that can form a DATA cycle / be tracked on a
- * per-compilation ancestor `WeakSet`. Mirrors the `isRecord`/array
- * discrimination the B5 cycle detection uses — arrays AND plain objects both
- * qualify (`typeof value === 'object' && value !== null`).
- *
- * @param value - The value to test
- * @returns `true` (narrowing to `object`) when `value` is a non-null object.
- *
- * @example
- * ```ts
- * isTrackableObject({})    // true
- * isTrackableObject([])    // true
- * isTrackableObject(null)  // false
- * ```
- */
-export function isTrackableObject(value: unknown): value is object {
-	return typeof value === 'object' && value !== null
-}
-
-/**
  * Validate optional numeric `min`/`max` bounds for a shape builder.
  *
  * @remarks

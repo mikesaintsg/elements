@@ -18,7 +18,6 @@ import {
 	isExternalRef,
 	isMultipleOf,
 	isShapeAdditional,
-	isTrackableObject,
 	lazyShape,
 	literalShape,
 	nullableShape,
@@ -37,10 +36,10 @@ import { makeCyclicShape } from './_helpers.js'
 // ============================================================================
 //  src/core/helpers.ts — exhaustive characterization of every exported helper.
 //
-//  Export surface covered (13 symbols, none omitted):
+//  Export surface covered (12 symbols, none omitted):
 //    attempt · createRandom · enumerableSymbolCount · isConstructor ·
 //    isShapeAdditional · assertAcyclicShape · guardPermitsAbsence ·
-//    flattenIntersectionObjects · isTrackableObject · validateBounds ·
+//    flattenIntersectionObjects · validateBounds ·
 //    isExternalRef · unescapeToken · isMultipleOf
 //
 //  House style (AGENTS.md §16): deterministic (all randomness seeded via
@@ -775,76 +774,6 @@ describe('flattenIntersectionObjects', () => {
 		const result = flattenIntersectionObjects(intersectionShape(a, b))
 		expect(result[0]).toBe(a)
 		expect(result[1]).toBe(b)
-	})
-})
-
-// === isTrackableObject
-
-describe('isTrackableObject', () => {
-	it('a plain object → true', () => {
-		expect(isTrackableObject({})).toBe(true)
-		expect(isTrackableObject({ a: 1 })).toBe(true)
-	})
-
-	it('an array → true', () => {
-		expect(isTrackableObject([])).toBe(true)
-		expect(isTrackableObject([1, 2, 3])).toBe(true)
-	})
-
-	it('a class instance → true', () => {
-		class Example {}
-		expect(isTrackableObject(new Example())).toBe(true)
-	})
-
-	it('a Map / Set / Date / RegExp instance → true', () => {
-		expect(isTrackableObject(new Map())).toBe(true)
-		expect(isTrackableObject(new Set())).toBe(true)
-		expect(isTrackableObject(new Date())).toBe(true)
-		expect(isTrackableObject(/x/)).toBe(true)
-	})
-
-	it('an object with a null prototype → true', () => {
-		expect(isTrackableObject(Object.create(null))).toBe(true)
-	})
-
-	it('null → false (the classic typeof null === "object" trap)', () => {
-		expect(isTrackableObject(null)).toBe(false)
-	})
-
-	it('undefined → false', () => {
-		expect(isTrackableObject(undefined)).toBe(false)
-	})
-
-	it('numbers, strings, booleans → false', () => {
-		expect(isTrackableObject(0)).toBe(false)
-		expect(isTrackableObject(42)).toBe(false)
-		expect(isTrackableObject(Number.NaN)).toBe(false)
-		expect(isTrackableObject('')).toBe(false)
-		expect(isTrackableObject('object')).toBe(false)
-		expect(isTrackableObject(true)).toBe(false)
-		expect(isTrackableObject(false)).toBe(false)
-	})
-
-	it('symbol, bigint → false', () => {
-		expect(isTrackableObject(Symbol('s'))).toBe(false)
-		expect(isTrackableObject(10n)).toBe(false)
-	})
-
-	it('a function → false (typeof is "function", not "object")', () => {
-		expect(isTrackableObject(() => undefined)).toBe(false)
-		function regular(): void {
-			return undefined
-		}
-		expect(isTrackableObject(regular)).toBe(false)
-		expect(isTrackableObject(class Example {})).toBe(false)
-	})
-
-	it('narrows to object when true', () => {
-		const value: unknown = { key: 'value' }
-		// The guard narrows `unknown` to `object`; surface that narrowed
-		// value through a ternary so the assertion is unconditional.
-		const narrowed: object | undefined = isTrackableObject(value) ? value : undefined
-		expect(narrowed === undefined ? [] : Object.keys(narrowed)).toEqual(['key'])
 	})
 })
 

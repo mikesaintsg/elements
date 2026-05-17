@@ -15,10 +15,9 @@ import {
 	flattenIntersectionObjects,
 	guardPermitsAbsence,
 	isShapeAdditional,
-	isTrackableObject,
 } from './helpers.js'
 import { parseBoolean, parseInteger, parseNumber } from './parsers.js'
-import { isRecord } from './validators.js'
+import { isObject, isRecord } from './validators.js'
 
 // === D4 const equality + JSON deep copy
 //
@@ -1032,7 +1031,7 @@ function compileGuardInner(
 				// ancestor-path member is a true back-edge -> false; the
 				// depth cap is the acyclic-but-deep stack backstop. Entries
 				// are removed on exit so a DAG is not mis-flagged.
-				if (!isTrackableObject(value)) {
+				if (!isObject(value)) {
 					return resolved(value)
 				}
 				if (cycle.ancestors.has(value) || cycle.depth >= MAX_RECURSION_DEPTH) {
@@ -1619,7 +1618,7 @@ function compileParserInner(
 				// soundness holds: `undefined` is the canonical
 				// parse-failure value the guard also rejects (cycle/deep
 				// data fails the FU1 guard too), so (A)(B)(C) are preserved.
-				if (!isTrackableObject(value)) {
+				if (!isObject(value)) {
 					return resolved(value)
 				}
 				if (cycle.ancestors.has(value) || cycle.depth >= MAX_RECURSION_DEPTH) {

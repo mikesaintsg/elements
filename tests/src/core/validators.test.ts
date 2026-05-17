@@ -231,6 +231,78 @@ describe('collection and typed-array validators', () => {
 		expect(isRecord(new RecordLike())).toBe(false)
 	})
 
+	// Edge-case coverage ported from the removed `isTrackableObject` helper
+	// block (FU9-E fold): `isObject` is byte-equivalent
+	// (`typeof === 'object' && !== null`), so the shared contract is
+	// re-characterized here to keep net coverage intact.
+	describe('isObject — non-null object discrimination', () => {
+		it('a plain object → true', () => {
+			expect(isObject({})).toBe(true)
+			expect(isObject({ a: 1 })).toBe(true)
+		})
+
+		it('an array → true', () => {
+			expect(isObject([])).toBe(true)
+			expect(isObject([1, 2, 3])).toBe(true)
+		})
+
+		it('a class instance → true', () => {
+			class Example {}
+			expect(isObject(new Example())).toBe(true)
+		})
+
+		it('a Map / Set / Date / RegExp instance → true', () => {
+			expect(isObject(new Map())).toBe(true)
+			expect(isObject(new Set())).toBe(true)
+			expect(isObject(new Date())).toBe(true)
+			expect(isObject(/x/)).toBe(true)
+		})
+
+		it('an object with a null prototype → true', () => {
+			expect(isObject(Object.create(null))).toBe(true)
+		})
+
+		it('null → false (the classic typeof null === "object" trap)', () => {
+			expect(isObject(null)).toBe(false)
+		})
+
+		it('undefined → false', () => {
+			expect(isObject(undefined)).toBe(false)
+		})
+
+		it('numbers, strings, booleans → false', () => {
+			expect(isObject(0)).toBe(false)
+			expect(isObject(42)).toBe(false)
+			expect(isObject(Number.NaN)).toBe(false)
+			expect(isObject('')).toBe(false)
+			expect(isObject('object')).toBe(false)
+			expect(isObject(true)).toBe(false)
+			expect(isObject(false)).toBe(false)
+		})
+
+		it('symbol, bigint → false', () => {
+			expect(isObject(Symbol('s'))).toBe(false)
+			expect(isObject(10n)).toBe(false)
+		})
+
+		it('a function → false (typeof is "function", not "object")', () => {
+			expect(isObject(() => undefined)).toBe(false)
+			function regular(): void {
+				return undefined
+			}
+			expect(isObject(regular)).toBe(false)
+			expect(isObject(class Example {})).toBe(false)
+		})
+
+		it('narrows to object when true', () => {
+			const value: unknown = { key: 'value' }
+			// The guard narrows `unknown` to `object`; surface that narrowed
+			// value through a ternary so the assertion is unconditional.
+			const narrowed: object | undefined = isObject(value) ? value : undefined
+			expect(narrowed === undefined ? [] : Object.keys(narrowed)).toEqual(['key'])
+		})
+	})
+
 	it('detects arrays and array buffer views', () => {
 		const buffer = new ArrayBuffer(8)
 		expect(isArray([])).toBe(true)
