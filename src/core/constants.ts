@@ -114,38 +114,6 @@ export const MAX_ONEOF_ATTEMPTS = 64
  */
 export const CYCLIC_SHAPE_MESSAGE = 'cyclic ContractShape: use a lazy/deferred shape for recursion'
 
-// === deepEqual right-operand read-failure sentinel ==========================
-
-/**
- * Opaque sentinel a `PropertyReader` returns from `deepEqual` (`helpers.ts`)
- * when reading the RIGHT operand's property value FAILED (a throwing accessor
- * on untrusted input).
- *
- * @remarks
- * GENERIC, package-owned read-failure signal — deliberately NOT schema.ts'
- * private `SAFE_GET_THREW`. `deepEqual` lives in the leaf `helpers.ts`, which
- * may import ONLY `./types.js` + `./constants.js`; it therefore cannot know
- * schema.ts' private sentinel. The hardened `schema.ts` reader maps its
- * private `SAFE_GET_THREW` onto THIS shared symbol, and `deepEqual` treats it
- * as a strict short-circuit: when the right-operand read yields `READ_FAILED`
- * the per-key comparison returns `false` BEFORE the left operand's value is
- * ever read — exactly reproducing pre-FU9-E `schemaValueEquals`'s
- * `bChild === SAFE_GET_THREW ⇒ return false` arm (the left side, and array
- * elements, are ALWAYS read directly, so a left-side throw still propagates
- * exactly as both pre-merge originals did when they reached the left read).
- * It lives in the package's import-free constants leaf (the established home
- * for every `UPPER_SNAKE` module sentinel — alongside `CYCLIC_SHAPE_MESSAGE`)
- * so the cycle-free `helpers.ts → constants.ts` edge is preserved and the
- * `contracts.md` helper-table bijection (which scans only
- * `shapers`/`compilers`/`helpers` for `export function|const` call-form
- * APIs) is left untouched — identically to every other sentinel here. The
- * DEFAULT reader (`compilers.ts` `const`, trusted-input regime) is a direct
- * `Reflect.get` that NEVER returns this sentinel, so the `constEquals` path
- * stays byte-identical: a throwing right-operand getter PROPAGATES, never
- * short-circuits to `false`.
- */
-export const READ_FAILED: unique symbol = Symbol('deepEqual.read-failed')
-
 // === Structured JSON-Schema keyword set =====================================
 
 /**
@@ -187,31 +155,3 @@ export const STRUCTURED_SCHEMA_KEYWORDS: ReadonlySet<string> = new Set([
 	'default',
 	'examples',
 ])
-
-// === Known `format` keyword matchers ========================================
-
-/**
- * Syntactic best-effort matcher for the `email` `format` keyword
- * (`schema.ts`). See schema.ts design note 5.
- */
-export const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-/**
- * Syntactic best-effort matcher for the `uuid` `format` keyword
- * (`schema.ts`). The `i` flag accepts upper-case hex. See schema.ts design
- * note 5.
- */
-export const UUID_FORMAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-/**
- * Syntactic best-effort matcher for the `uri` `format` keyword (`schema.ts`).
- *
- * @remarks
- * RFC 3986 absolute-URI shape: `scheme:` then a non-empty, no-whitespace
- * remainder. Deliberately conservative — the core build's lib is `ESNext`
- * only (no DOM/Node `URL` constructor) and `format` is annotation-first
- * anyway (schema.ts design note 5). `scheme` is
- * `ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )`; the `i` flag makes it
- * case-insensitive.
- */
-export const URI_FORMAT = /^[a-z][a-z0-9+.-]*:\S+$/i

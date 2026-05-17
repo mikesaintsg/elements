@@ -6,7 +6,7 @@ import type {
 	RandomFunction,
 	Result,
 } from './types.js'
-import { CYCLIC_SHAPE_MESSAGE, READ_FAILED } from './constants.js'
+import { CYCLIC_SHAPE_MESSAGE } from './constants.js'
 
 /**
  * Invoke a user-supplied callback and capture the outcome as a {@link Result},
@@ -429,230 +429,32 @@ export function validateBounds(
 }
 
 /**
- * Determine whether a `$ref` string is an EXTERNAL / non-local reference
- * (a different document this resolver was not given).
- *
- * @remarks
- * Local (supported) forms: `#`, `#/...` (URI fragment), `` (empty), and
- * the bare RFC-6901 `/...` form — all of which resolve against the single
- * document `root`. Anything with a scheme (`https:`, `urn:`) or any
- * non-`#` prefix before a `#` (e.g. `other.json#/A`, `defs.json`) names a
- * separate document → external.
- *
- * @param ref - The `$ref` string to classify
- * @returns `true` when `ref` names a separate document; `false` for the
- *          local single-document forms
- *
- * @example
- * ```ts
- * isExternalRef('#/$defs/Id')   // false (local fragment)
- * isExternalRef('/a/b')         // false (bare RFC-6901)
- * isExternalRef('other.json#/A') // true  (external document)
- * ```
- */
-export function isExternalRef(ref: string): boolean {
-	if (ref === '' || ref === '#' || ref.startsWith('#/') || ref.startsWith('/')) {
-		return false
-	}
-	// A bare `#fragment` with no path is still local; anything else
-	// (scheme-prefixed URI, relative document path, doc#fragment) is external.
-	return ref !== '#'
-}
-
-/**
- * Unescape ONE RFC-6901 reference token: `~1` → `/` then `~0` → `~`.
- *
- * @remarks
- * Order is mandatory: `~1` MUST be replaced before `~0` so the escape
- * sequence `~01` decodes to the literal `~1` rather than being corrupted to
- * `/`. Doing `~0`→`~` first would turn `~01` into `~1` and then `~1`→`/`
- * would corrupt it to `/`.
- *
- * @param token - A single RFC-6901-escaped reference token
- * @returns The unescaped token
- *
- * @example
- * ```ts
- * unescapeToken('a~1b') // 'a/b'
- * unescapeToken('~01')  // '~1' (NOT '/')
- * ```
- */
-export function unescapeToken(token: string): string {
-	return token.replace(/~1/g, '/').replace(/~0/g, '~')
-}
-
-/**
- * `value` is a multiple of `divisor` within IEEE-754 tolerance.
- *
- * @remarks
- * Two regimes:
- *
- * - **Exact integer fast-path**: when both operands are integers,
- *   `value % divisor === 0` is exact (integer arithmetic on safe doubles
- *   carries no rounding slop). This is what makes a large odd integer
- *   divided by a small integer SOUND with no tolerance argument at all —
- *   `9007199254740991 % 2 === 1`, so it rejects (returns `false`).
- *
- * - **Value-space band, double-bounded** for non-integer operands:
- *   reconstruct `rounded * divisor` and compare the residual in VALUE space
- *   (`|value - rounded*divisor|`) against a tolerance that is the MINIMUM of
- *   two bounds: a magnitude band (`8 * Number.EPSILON * max(|value|,
- *   |reconstructed|)`) and a divisor cap (`|divisor| / 16`). The magnitude
- *   band tracks the operands' own ULP so legitimate IEEE-754 division error
- *   for normal-magnitude decimals is absorbed (`0.28 / 0.01`, quotient
- *   `27.999999999999996`, through large money `1234567890.12 / 0.01` all
- *   accept). The divisor cap is the soundness floor: a genuine non-multiple's
- *   value-space residual is at least a fraction of `|divisor|`, so capping
- *   the tolerance at `|divisor| / 16` means the band can NEVER reach a
- *   genuine miss whose residual is `≥ |divisor| / 16` — soundness no longer
- *   degrades as `|value|` grows (the magnitude-only band of earlier
- *   revisions grew unbounded and falsely accepted distinct-representable
- *   non-multiples once `|value| ≳ 2.8e12`; the cap removes that).
- *
- * - **Inherent IEEE-754 precision wall (bounded limitation)**: this is NOT
- *   complete at every magnitude. The cap removes the tolerance-driven
- *   false-accept, but it cannot help the early `quotient === rounded`
- *   exact-integer return: once `|value|` is large enough that `value /
- *   divisor` has no fractional bits left (empirically `|value| ≳ ~1e13` for
- *   `divisor = 0.01`, `~1e14` for `divisor = 0.1`, `~4.4e12` for
- *   `divisor = 0.001`), a genuine non-multiple's quotient collapses to
- *   an exact integer double and is indistinguishable from a true multiple by
- *   ANY tolerance scheme — so it is (wrongly) accepted there. This is
- *   unavoidable with doubles. Conversely, beyond `|value| ≳ |divisor| ·
- *   8.8e12` a genuinely-representable decimal multiple may be (wrongly)
- *   rejected. The predicate deliberately biases toward SOUNDNESS at realistic
- *   JSON-Schema magnitudes (cents/money ≤ ~1e11–1e12, where it is both sound
- *   and complete) and accepts the structural exotic-magnitude wall above that
- *   as a known, bounded cost. It does NOT claim correctness at every
- *   magnitude.
- *
- * @param value - The dividend
- * @param divisor - The divisor (a zero divisor yields `false`)
- * @returns `true` when `value` is a multiple of `divisor` within tolerance;
- *   sound and complete for realistic magnitudes (≤ ~1e11–1e12), subject to
- *   the documented inherent IEEE-754 precision wall above that
- *
- * @example
- * ```ts
- * isMultipleOf(0.3, 0.1) // true  (tolerates IEEE-754 error)
- * isMultipleOf(7, 2)     // false
- * isMultipleOf(5, 0)     // false (zero divisor)
- * ```
- */
-export function isMultipleOf(value: number, divisor: number): boolean {
-	if (divisor === 0) {
-		return false
-	}
-	// Exact integer fast-path: integer % integer on safe doubles is exact,
-	// so a large odd integer ÷ small integer is SOUND with no tolerance
-	// (`9007199254740991 % 2 === 1` → false). FU10 §13.
-	if (Number.isInteger(value) && Number.isInteger(divisor)) {
-		return value % divisor === 0
-	}
-	const quotient = value / divisor
-	const rounded = Math.round(quotient)
-	if (rounded === quotient) {
-		return true
-	}
-	// Non-integer operands: compare the VALUE-space residual against the
-	// MIN of a magnitude band and a divisor cap. The magnitude band absorbs
-	// legitimate IEEE-754 division error for normal-magnitude decimals
-	// (cents → large money); the `|divisor| / 16` cap is the soundness
-	// floor — a genuine non-multiple's residual is at least a fraction of
-	// `|divisor|`, so the band can never reach a miss `≥ |divisor| / 16`,
-	// which stops the magnitude-only false-accept that grew with `|value|`.
-	// Above the documented IEEE-754 precision wall (`|value| ≳ ~1e13` for
-	// `divisor` `0.01`) the upstream `quotient === rounded` return still
-	// (wrongly) accepts some exotic-magnitude non-multiples — unavoidable
-	// with doubles; soundness-biased at realistic magnitudes (FU10 follow-up).
-	const reconstructed = rounded * divisor
-	const magnitudeBand =
-		Number.EPSILON * 8 * Math.max(Math.abs(value), Math.abs(reconstructed))
-	const divisorCap = Math.abs(divisor) / 16
-	const tolerance = Math.min(magnitudeBand, divisorCap)
-	return Math.abs(value - reconstructed) <= tolerance
-}
-
-/**
- * Read one own property value off the right-hand operand of {@link deepEqual}.
- *
- * @remarks
- * `deepEqual` reads the LEFT operand's property values directly (the trusted
- * finite side) but routes every RIGHT-operand plain-object property value
- * through this strategy so the caller chooses the read discipline:
- *
- * - The default (`compilers.ts` `const`) is a direct `Reflect.get` — the
- *   trusted-input regime where a throwing accessor SHOULD propagate. It NEVER
- *   returns {@link READ_FAILED}, so `deepEqual`'s short-circuit is inert and
- *   the `constEquals` path stays byte-identical (a throwing right-operand
- *   getter propagates, exactly as the pre-merge `constEquals` did).
- * - The hardened variant (`schema.ts` `enum`/`const`/`uniqueItems`) closes
- *   over a `try`-wrapped read that maps `schema.ts`' private throwing-getter
- *   sentinel onto the GENERIC {@link READ_FAILED}; `deepEqual` treats
- *   `READ_FAILED` as a strict short-circuit — the per-key comparison returns
- *   `false` BEFORE the trusted left operand's value is ever read, exactly
- *   reproducing pre-FU9-E `schemaValueEquals`'s
- *   `bChild === SAFE_GET_THREW ⇒ return false` arm. `schema.ts`' private
- *   sentinel and its throw-containment stay entirely inside `schema.ts`; this
- *   module owns ONLY the generic `READ_FAILED` signal.
- *
- * Array elements are NOT routed through this strategy (both original
- * implementations indexed array elements directly); only RIGHT-operand
- * plain-object own-property values are.
- *
- * @param object - The right-hand operand (a plain object)
- * @param key - The own enumerable string key to read
- * @returns The opaque property value, or {@link READ_FAILED} when the read
- *          failed (the hardened variant's throwing-getter signal)
- */
-export type PropertyReader = (object: object, key: string) => unknown | typeof READ_FAILED
-
-/**
  * Recursive structural deep-equality over finite JSON-shaped values.
  *
  * @remarks
- * One shared implementation behind JSON-Schema `const` (compilers) and
- * `enum`/`const`/`uniqueItems` (the inverse subsystem). The algorithm:
+ * The single shared equality behind JSON-Schema `const` (compilers). The
+ * algorithm:
  *
  * - **Array** — when `a` is an array, `b` must be an array of the SAME
- *   `length` and every element must be positionally deep-equal. Array
- *   elements are read by direct index on both sides (never via `read`).
+ *   `length` and every element must be positionally deep-equal.
  * - **Primitive leaf** — when `a` is neither an array nor a plain object the
  *   result is `Object.is(a, b)`. `Object.is` (not `===`) is deliberate and
  *   project-wide: `NaN` equals `NaN`, and `+0` is DISTINCT from `-0`.
  * - **Plain object** — when `a` is a plain object (a `null`-prototype or
  *   `Object.prototype`-prototype non-array — the inline discrimination is
- *   behaviourally identical to validators' `isRecord` as used by the two
- *   originals: array-excluded, prototype pinned to `Object.prototype` or
- *   `null`), `b` must also be a plain object with an own-key set of the SAME
- *   size, every `a` key must be an own key of `b` (`Object.hasOwn`, so an
- *   inherited key is never mistaken for a present own property — B2
- *   prototype-pollution discipline), and the values must be deep-equal.
- *   `b`'s property value is read FIRST, through {@link PropertyReader}; if
- *   that read yielded {@link READ_FAILED} the per-key comparison returns
- *   `false` IMMEDIATELY — BEFORE `a`'s value is ever read. Only after that
- *   short-circuit is `a`'s value read directly (`a`, like array elements, is
- *   ALWAYS read directly — the trusted finite side). This order is
- *   load-bearing: it reproduces pre-FU9-E `schemaValueEquals` exactly
- *   (`bChild === SAFE_GET_THREW ⇒ return false`, the `a`-side getter never
- *   touched), so the hardened variant cannot trip an `a`-side throw when the
- *   `b`-side read already failed — the `uniqueItems` call site (untrusted `a`
- *   AND `b`) stays byte-identical to the pre-merge guard.
+ *   behaviourally identical to validators' `isRecord`: array-excluded,
+ *   prototype pinned to `Object.prototype` or `null`), `b` must also be a
+ *   plain object with an own-key set of the SAME size, every `a` key must be
+ *   an own key of `b` (`Object.hasOwn`, so an inherited key is never mistaken
+ *   for a present own property — B2 prototype-pollution discipline), and the
+ *   values must be deep-equal.
  *
  * `a` is the trusted SCHEMA-supplied operand — a finite acyclic `JsonValue`
  * — so the recursion is bounded by `a`'s finite shape regardless of `b`
- * (the untrusted input); no cycle/depth guard is needed. Total per AGENTS.md
- * §13 when `read` never throws (it may either return a value or signal
- * {@link READ_FAILED}): the default `Reflect.get` propagates a throwing
- * accessor by design — that is the trusted-input `constEquals` contract, and
- * it NEVER returns `READ_FAILED` so the short-circuit is inert there; the
- * hardened `schema.ts` variant supplies a `read` that maps its private
- * throwing-getter sentinel onto `READ_FAILED` instead of throwing.
+ * (the untrusted input); no cycle/depth guard is needed.
  *
  * @param a - The trusted left operand (a finite acyclic JSON value)
  * @param b - The untrusted right operand to compare structurally against `a`
- * @param read - Strategy for reading `b`'s plain-object own-property values;
- *        defaults to a direct `Reflect.get` (trusted-input regime)
  * @returns `true` when `a` and `b` are structurally deep-equal under the
  *          above rules
  *
@@ -664,22 +466,17 @@ export type PropertyReader = (object: object, key: string) => unknown | typeof R
  * deepEqual({ a: 1 }, { a: 1, b: 2 })              // false (key-set differs)
  * ```
  */
-export function deepEqual(
-	a: unknown,
-	b: unknown,
-	read: PropertyReader = Reflect.get,
-): boolean {
+export function deepEqual(a: unknown, b: unknown): boolean {
 	if (Array.isArray(a)) {
 		// `a` is an array: `b` must be an array of equal length whose elements
-		// are positionally deep-equal. Both sides indexed directly (the two
-		// originals never routed array elements through the read strategy).
+		// are positionally deep-equal.
 		const aArray: readonly unknown[] = a
 		if (!Array.isArray(b) || aArray.length !== b.length) {
 			return false
 		}
 		const bArray: readonly unknown[] = b
 		for (let index = 0; index < aArray.length; index += 1) {
-			if (!deepEqual(aArray[index], bArray[index], read)) {
+			if (!deepEqual(aArray[index], bArray[index])) {
 				return false
 			}
 		}
@@ -705,32 +502,7 @@ export function deepEqual(
 		if (!Object.hasOwn(b, key)) {
 			return false
 		}
-		// Read `b`'s value through the injected strategy FIRST and apply the
-		// read-failure short-circuit BEFORE the `a`-side value is EVER read.
-		// This evaluation order is load-bearing: it reproduces pre-FU9-E
-		// `schemaValueEquals` EXACTLY, where `bChild = safeGet(b, key)` is
-		// evaluated and `bChild === SAFE_GET_THREW` (return false) is checked
-		// BEFORE `a[key]` is ever touched. The hardened `schema.ts` variant's
-		// `read` maps its private throwing-getter sentinel onto the generic
-		// `READ_FAILED`; returning `false` HERE — without reading `a` — is what
-		// preserves the old semantics at the `uniqueItems` call site (untrusted
-		// `a` AND `b`): a throwing `b` getter short-circuits to `false` and the
-		// `a`-side getter is NEVER invoked, so it cannot throw, so the
-		// `uniqueItems` verdict is byte-identical to the pre-merge guard. ONLY
-		// AFTER this check is `a`'s value read — directly (`a`, like array
-		// elements, is ALWAYS read directly, never via `read`), so a left-side
-		// throw still propagates exactly as both pre-merge originals did when
-		// they DID reach the `a` read. The DEFAULT (`const`) `read` is a direct
-		// `Reflect.get` that NEVER yields `READ_FAILED`, so this short-circuit
-		// is inert there and the `constEquals` path stays byte-identical (a
-		// throwing `b` getter propagates; the only order-sensitive case, BOTH
-		// sides throwing, is unreachable because the trusted const `a` carries
-		// no accessor).
-		const bValue = read(b, key)
-		if (bValue === READ_FAILED) {
-			return false
-		}
-		if (!deepEqual(Reflect.get(a, key), bValue, read)) {
+		if (!deepEqual(Reflect.get(a, key), Reflect.get(b, key))) {
 			return false
 		}
 	}

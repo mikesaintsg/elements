@@ -16,8 +16,6 @@ import {
 	integerShape,
 	intersectionShape,
 	isConstructor,
-	isExternalRef,
-	isMultipleOf,
 	isShapeAdditional,
 	lazyShape,
 	literalShape,
@@ -26,10 +24,8 @@ import {
 	objectShape,
 	optionalShape,
 	rawShape,
-	READ_FAILED,
 	stringShape,
 	tupleShape,
-	unescapeToken,
 	unionShape,
 	validateBounds,
 } from '@elements/core'
@@ -38,11 +34,10 @@ import { makeCyclicShape } from './_helpers.js'
 // ============================================================================
 //  src/core/helpers.ts — exhaustive characterization of every exported helper.
 //
-//  Export surface covered (13 symbols, none omitted):
+//  Export surface covered (10 symbols, none omitted):
 //    attempt · createRandom · enumerableSymbolCount · isConstructor ·
 //    isShapeAdditional · assertAcyclicShape · guardPermitsAbsence ·
-//    flattenIntersectionObjects · validateBounds ·
-//    isExternalRef · unescapeToken · isMultipleOf · deepEqual
+//    flattenIntersectionObjects · validateBounds · deepEqual
 //
 //  House style (AGENTS.md §16): deterministic (all randomness seeded via
 //  `createRandom`; no wall-clock, no `Math.random`, no network, no mocks);
@@ -895,413 +890,25 @@ describe('validateBounds', () => {
 	})
 })
 
-// === isExternalRef
-
-describe('isExternalRef', () => {
-	it('empty string → false (local — resolves against root)', () => {
-		expect(isExternalRef('')).toBe(false)
-	})
-
-	it('bare "#" → false (local whole-document fragment)', () => {
-		expect(isExternalRef('#')).toBe(false)
-	})
-
-	it('"#/..." JSON-Pointer fragment → false (local)', () => {
-		expect(isExternalRef('#/$defs/Id')).toBe(false)
-		expect(isExternalRef('#/properties/name')).toBe(false)
-	})
-
-	it('bare RFC-6901 "/..." form → false (local)', () => {
-		expect(isExternalRef('/a/b')).toBe(false)
-		expect(isExternalRef('/')).toBe(false)
-	})
-
-	it('a relative document path → true (external)', () => {
-		expect(isExternalRef('other.json')).toBe(true)
-		expect(isExternalRef('defs.json')).toBe(true)
-	})
-
-	it('a relative document path with a fragment → true (external)', () => {
-		expect(isExternalRef('other.json#/A')).toBe(true)
-	})
-
-	it('an http(s):// URL → true (external)', () => {
-		expect(isExternalRef('https://example.com/schema.json')).toBe(true)
-		expect(isExternalRef('http://example.com/s#/A')).toBe(true)
-	})
-
-	it('a scheme-prefixed URI (urn:) → true (external)', () => {
-		expect(isExternalRef('urn:uuid:1234')).toBe(true)
-	})
-
-	it('a bare "#fragment" (no leading "#/" and not exactly "#") → true (external per impl)', () => {
-		// Source contract: only '', '#', '#/...', '/...' are local. A bare
-		// `#fragment` does not start with `#/`, is not exactly `#`, so the
-		// final `ref !== '#'` returns true. Pin the ACTUAL behavior.
-		expect(isExternalRef('#fragment')).toBe(true)
-		expect(isExternalRef('#$defs')).toBe(true)
-	})
-
-	it('a name not starting with # or / → true (external)', () => {
-		expect(isExternalRef('Id')).toBe(true)
-		expect(isExternalRef('a/b')).toBe(true)
-	})
-})
-
-// === unescapeToken
-
-describe('unescapeToken', () => {
-	it('a token with no escapes is returned unchanged', () => {
-		expect(unescapeToken('plain')).toBe('plain')
-		expect(unescapeToken('a-b_c.d')).toBe('a-b_c.d')
-	})
-
-	it('the empty string maps to the empty string', () => {
-		expect(unescapeToken('')).toBe('')
-	})
-
-	it('~1 → /', () => {
-		expect(unescapeToken('a~1b')).toBe('a/b')
-		expect(unescapeToken('~1')).toBe('/')
-	})
-
-	it('~0 → ~', () => {
-		expect(unescapeToken('a~0b')).toBe('a~b')
-		expect(unescapeToken('~0')).toBe('~')
-	})
-
-	it('multiple escapes of each kind are all replaced', () => {
-		expect(unescapeToken('~1~1~1')).toBe('///')
-		expect(unescapeToken('~0~0')).toBe('~~')
-		expect(unescapeToken('a~1b~0c~1d')).toBe('a/b~c/d')
-	})
-
-	it('RFC-6901 order: ~01 decodes to the literal ~1 (NOT /)', () => {
-		// ~1 is replaced before ~0: '~01' → '~0' + '1' (the ~1 sub-match is
-		// '0','1'? no — '~01' has no '~1'), then '~0' → '~' giving '~1'.
-		expect(unescapeToken('~01')).toBe('~1')
-	})
-
-	it('RFC-6901 order: ~10 decodes to /0', () => {
-		// '~10' contains '~1' → '/', leaving '/0'. No '~0' remains.
-		expect(unescapeToken('~10')).toBe('/0')
-	})
-
-	it('a literal ~ not followed by 0 or 1 is left as-is', () => {
-		expect(unescapeToken('~')).toBe('~')
-		expect(unescapeToken('~2')).toBe('~2')
-		expect(unescapeToken('a~z')).toBe('a~z')
-	})
-
-	it('mixed escaped and literal tilde sequences', () => {
-		expect(unescapeToken('~0~')).toBe('~~')
-		expect(unescapeToken('foo~1bar~0baz')).toBe('foo/bar~baz')
-	})
-
-	it('a slash that is already literal is untouched', () => {
-		expect(unescapeToken('a/b')).toBe('a/b')
-	})
-
-	it('is idempotent on already-unescaped output for escape-free tokens', () => {
-		const once = unescapeToken('plain/token')
-		expect(unescapeToken(once)).toBe('plain/token')
-	})
-})
-
-// === isMultipleOf
-
-describe('isMultipleOf', () => {
-	it('exact integer multiples → true', () => {
-		expect(isMultipleOf(10, 5)).toBe(true)
-		expect(isMultipleOf(9, 3)).toBe(true)
-		expect(isMultipleOf(100, 25)).toBe(true)
-	})
-
-	it('non-multiples → false', () => {
-		expect(isMultipleOf(7, 2)).toBe(false)
-		expect(isMultipleOf(10, 3)).toBe(false)
-	})
-
-	it('divisor === 0 → false (zero divisor short-circuit)', () => {
-		expect(isMultipleOf(0, 0)).toBe(false)
-		expect(isMultipleOf(5, 0)).toBe(false)
-		expect(isMultipleOf(-5, 0)).toBe(false)
-	})
-
-	it('value === 0 with a non-zero divisor → true (0 is a multiple of everything)', () => {
-		expect(isMultipleOf(0, 5)).toBe(true)
-		expect(isMultipleOf(0, -3)).toBe(true)
-		expect(isMultipleOf(0, 0.1)).toBe(true)
-	})
-
-	it('negative values and divisors', () => {
-		expect(isMultipleOf(-10, 5)).toBe(true)
-		expect(isMultipleOf(10, -5)).toBe(true)
-		expect(isMultipleOf(-10, -5)).toBe(true)
-		expect(isMultipleOf(-7, 2)).toBe(false)
-	})
-
-	it('tolerates genuine IEEE-754 representation error (0.3 / 0.1 → true)', () => {
-		// 0.3 / 0.1 lands ~6.7e-16 off 3 — within the few-ULP relative band.
-		expect(isMultipleOf(0.3, 0.1)).toBe(true)
-		expect(isMultipleOf(0.6, 0.1)).toBe(true)
-		expect(isMultipleOf(0.9, 0.3)).toBe(true)
-	})
-
-	it('rejects a clearly non-multiple just outside the epsilon band', () => {
-		// ~1e-13 off, ~150x the tolerance band — must be rejected.
-		expect(isMultipleOf(0.30000000000001, 0.1)).toBe(false)
-	})
-
-	it('money / moderate-quotient decimals stay complete (FU10 follow-up)', () => {
-		// These quotients are NOT exactly representable — e.g.
-		// 0.28 / 0.01 === 27.999999999999996 (qErr ~2.8e-14). A fixed
-		// quotient-space band rejected them (~13.6% of dollar-and-cent
-		// values); the value-space magnitude-scaled band must accept them.
-		expect(isMultipleOf(0.28, 0.01)).toBe(true)
-		expect(isMultipleOf(0.29, 0.01)).toBe(true)
-		expect(isMultipleOf(0.58, 0.01)).toBe(true)
-		expect(isMultipleOf(1.15, 0.01)).toBe(true)
-		expect(isMultipleOf(1234567890.12, 0.01)).toBe(true)
-		expect(isMultipleOf(999999999999.99, 0.01)).toBe(true)
-	})
-
-	it('large-magnitude decimal multiples stay complete (FU10 follow-up)', () => {
-		expect(isMultipleOf(1e14, 0.1)).toBe(true)
-		expect(isMultipleOf(100000000 * 0.01, 0.01)).toBe(true)
-		expect(isMultipleOf(123456789 * 0.01, 0.01)).toBe(true)
-		expect(isMultipleOf(987654321 * 0.01, 0.01)).toBe(true)
-	})
-
-	it('non-integer divisor with an exact multiple → true', () => {
-		expect(isMultipleOf(1, 0.25)).toBe(true)
-		expect(isMultipleOf(2.5, 0.5)).toBe(true)
-	})
-
-	it('non-integer divisor with a non-multiple → false', () => {
-		expect(isMultipleOf(1, 0.3)).toBe(false)
-	})
-
-	it('very large exact multiples → true', () => {
-		expect(isMultipleOf(1e15, 1e5)).toBe(true)
-		expect(isMultipleOf(Number.MAX_SAFE_INTEGER - 1, 2)).toBe(true)
-	})
-
-	it('large odd integer is NOT a multiple of 2 (FU10 soundness)', () => {
-		// MAX_SAFE_INTEGER is odd; the tolerance must not grow wide enough at
-		// huge magnitude to swallow the 0.5 residual of an odd/2 division.
-		expect(isMultipleOf(Number.MAX_SAFE_INTEGER, 2)).toBe(false)
-		expect(isMultipleOf(9007199254740990, 2)).toBe(true)
-		expect(isMultipleOf(Number.MAX_SAFE_INTEGER, 1)).toBe(true)
-	})
-
-	it('large-magnitude integer ÷ small divisor stays sound (FU10)', () => {
-		// 9007199254740991 (MAX_SAFE_INTEGER) is odd, ≢ 0 mod 3.
-		expect(isMultipleOf(9007199254740991, 1)).toBe(true)
-		expect(isMultipleOf(9007199254740991, 2)).toBe(false)
-		expect(isMultipleOf(9007199254740991, 3)).toBe(false)
-		// 9007199254740990 is even AND exactly divisible by 3
-		// (9007199254740990 / 3 = 3002399751580330).
-		expect(isMultipleOf(9007199254740990, 1)).toBe(true)
-		expect(isMultipleOf(9007199254740990, 2)).toBe(true)
-		expect(isMultipleOf(9007199254740990, 3)).toBe(true)
-		// 9007199254740989 ≡ 2 mod 3 → not a multiple of 3.
-		expect(isMultipleOf(9007199254740989, 3)).toBe(false)
-		// 9000000000000000 = 3 · 3000000000000000 (exact); +1 breaks it.
-		expect(isMultipleOf(9000000000000000, 3)).toBe(true)
-		expect(isMultipleOf(9000000000000001, 3)).toBe(false)
-	})
-
-	it('large-magnitude decimal NON-multiples are rejected (FU10 follow-up)', () => {
-		// Round-3 regression set. The magnitude-only value-space band of
-		// 410e1a6 grew without bound and (wrongly) accepted these distinct-
-		// representable genuine non-multiples once |value| ≳ 2.8e12. The
-		// divisor cap (`|divisor| / 16`) is the soundness floor: a genuine
-		// miss's residual is at least a fraction of |divisor|, so the band
-		// can never reach it. These are RED against 410e1a6 (each returns
-		// `true` there) and must be `false` now. Each value is built from a
-		// safe-integer base multiple plus a sub-step offset that is itself
-		// NOT a multiple of the divisor (so the literals stay precision-safe
-		// AND the genuine-non-multiple property is explicit). All sit below
-		// the inherent IEEE-754 precision wall, so soundness is recoverable.
-		expect(isMultipleOf(1000000000000000 * 0.01 + 0.006, 0.01)).toBe(false)
-		expect(isMultipleOf(1000000000000000 * 0.1 + 0.05, 0.1)).toBe(false)
-		expect(isMultipleOf(2000000000000000 * 0.01 + 0.003, 0.01)).toBe(false)
-		expect(isMultipleOf(1000000000000000 * 0.001 + 0.0003, 0.001)).toBe(
-			false,
-		)
-	})
-
-	it('pins the documented inherent IEEE-754 precision wall (FU10 follow-up)', () => {
-		// This is the explicit, honest boundary pin — NOT a bug
-		// characterization. `wallValue` (= 56597500000000.016) is a genuine
-		// non-multiple of `0.01`: its nearest representable multiple is
-		// ~7.8e-3 away in value space (> 0). Yet `wallValue / 0.01`
-		// evaluates to the exact integer double `5659750000000001` (no
-		// fractional bits survive at this magnitude), so the upstream
-		// `quotient === rounded` return fires BEFORE any tolerance is
-		// considered. No tolerance scheme — magnitude band or divisor cap —
-		// can change this; it is the documented, soundness-biased inherent
-		// precision wall (begins ~1e13 for divisor 0.01, ~1e14 for 0.1).
-		// The predicate accepts here as a known, bounded cost above realistic
-		// JSON-Schema magnitudes (cents/money ≤ ~1e11–1e12, where it is both
-		// sound and complete). `5659750000000001` is < MAX_SAFE_INTEGER, so
-		// the construction is precision-safe.
-		const wallValue = 5659750000000001 * 0.01 + 0.006
-		expect(wallValue / 0.01).toBe(5659750000000001)
-		expect(isMultipleOf(wallValue, 0.01)).toBe(true)
-	})
-
-	it('decimal-tolerance preserved at small magnitude (FU10)', () => {
-		expect(isMultipleOf(0.3, 0.1)).toBe(true)
-		expect(isMultipleOf(0.0003, 0.0001)).toBe(true)
-	})
-
-	it('very small values', () => {
-		expect(isMultipleOf(1e-9, 1e-9)).toBe(true)
-		expect(isMultipleOf(2e-9, 1e-9)).toBe(true)
-	})
-
-	it('a value equal to its divisor → true (quotient 1)', () => {
-		expect(isMultipleOf(5, 5)).toBe(true)
-		expect(isMultipleOf(0.1, 0.1)).toBe(true)
-		expect(isMultipleOf(-4, -4)).toBe(true)
-	})
-
-	it('divisor of 1 → every finite integer is a multiple', () => {
-		expect(isMultipleOf(0, 1)).toBe(true)
-		expect(isMultipleOf(123456, 1)).toBe(true)
-		expect(isMultipleOf(-99, 1)).toBe(true)
-	})
-
-	it('is deterministic for the same arguments', () => {
-		expect(isMultipleOf(0.3, 0.1)).toBe(isMultipleOf(0.3, 0.1))
-		expect(isMultipleOf(7, 2)).toBe(isMultipleOf(7, 2))
-	})
-})
-
-// === deepEqual — differential equivalence vs the two pre-merge originals
+// === deepEqual — plain structural deep-equality contract
 //
-// FU9-E unified compilers' private `constEquals` and schema's private
-// `schemaValueEquals` into ONE shared `deepEqual(a, b, read?)`. This suite
-// LOCKS that the merge is byte-for-byte behaviour-preserving by re-deriving
-// the EXACT pre-merge bodies of BOTH originals here (verbatim, including the
-// throwing-getter `safeGet`/sentinel interaction) and asserting `deepEqual`
-// returns the IDENTICAL boolean across an exhaustive corpus. A divergence at
-// ANY corpus row (primitive, NaN, ±0, nested, array-vs-array-like, key-set,
-// throwing getter one-side / both-sides) FAILS — that is the regression net.
+// `deepEqual(a, b)` is the single structural equality behind JSON-Schema
+// `const` (compilers). `a` is the trusted finite acyclic operand bounding
+// the recursion; `b` is the untrusted input. The contract: arrays compare by
+// length + positional recursion; primitive / non-plain leaves by `Object.is`
+// (so `NaN` === `NaN`, `+0` ≠ `-0`); plain objects (an inline
+// `isRecord`-equivalent: non-array, prototype `Object.prototype`/`null`) by
+// same-own-key-set (`Object.hasOwn`) then per-key recursion. A throwing
+// right-operand accessor PROPAGATES — the trusted-input regime reads `b`'s
+// properties directly via `Reflect.get`.
 
-// Verbatim copy of the inline plain-object discrimination both originals
-// used (`isRecord` AS USED): non-null object, not an array, prototype pinned
-// to `Object.prototype` or `null`. Replicated here so the differential proof
-// that `deepEqual`'s inline check === `isRecord`-as-used is self-contained.
-function refIsRecord(value: unknown): value is Record<string, unknown> {
-	if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-		return false
-	}
-	const prototype = Object.getPrototypeOf(value)
-	return prototype === Object.prototype || prototype === null
-}
-
-// Verbatim pre-merge body of compilers.ts' private `constEquals` (direct
-// `b[key]` read — a throwing accessor PROPAGATES, the trusted-input regime).
-function oldConstEquals(a: unknown, b: unknown): boolean {
-	if (Array.isArray(a)) {
-		const aArray: readonly unknown[] = a
-		if (!Array.isArray(b) || aArray.length !== b.length) {
-			return false
-		}
-		const bArray: readonly unknown[] = b
-		for (let index = 0; index < aArray.length; index += 1) {
-			if (!oldConstEquals(aArray[index], bArray[index])) {
-				return false
-			}
-		}
-		return true
-	}
-	if (!refIsRecord(a)) {
-		return Object.is(a, b)
-	}
-	if (!refIsRecord(b)) {
-		return false
-	}
-	const aKeys = Object.keys(a)
-	const bKeys = Object.keys(b)
-	if (aKeys.length !== bKeys.length) {
-		return false
-	}
-	for (const key of aKeys) {
-		if (!Object.hasOwn(b, key) || !oldConstEquals(a[key], b[key])) {
-			return false
-		}
-	}
-	return true
-}
-
-// Verbatim pre-merge body of schema.ts' private `schemaValueEquals`,
-// including its module-private `safeGet`/`SAFE_GET_THREW` interaction (a
-// throwing right-operand getter ⇒ sentinel ⇒ that key is unequal ⇒ false;
-// never propagates — the untrusted-input regime).
-const REF_SAFE_GET_THREW: unique symbol = Symbol('ref-safe-get-threw')
-function refSafeGet(value: object, key: string): unknown {
-	try {
-		return Reflect.get(value, key)
-	} catch {
-		return REF_SAFE_GET_THREW
-	}
-}
-function oldSchemaValueEquals(a: unknown, b: unknown): boolean {
-	if (Array.isArray(a)) {
-		if (!Array.isArray(b) || a.length !== b.length) {
-			return false
-		}
-		for (let index = 0; index < a.length; index += 1) {
-			if (!oldSchemaValueEquals(a[index], b[index])) {
-				return false
-			}
-		}
-		return true
-	}
-	if (!refIsRecord(a)) {
-		return Object.is(a, b)
-	}
-	if (!refIsRecord(b)) {
-		return false
-	}
-	const aKeys = Object.keys(a)
-	const bKeys = Object.keys(b)
-	if (aKeys.length !== bKeys.length) {
-		return false
-	}
-	for (const key of aKeys) {
-		if (!Object.hasOwn(b, key)) {
-			return false
-		}
-		const bChild = refSafeGet(b, key)
-		if (bChild === REF_SAFE_GET_THREW || !oldSchemaValueEquals(a[key], bChild)) {
-			return false
-		}
-	}
-	return true
-}
-
-// The hardened schema variant injects a reader that calls its module-private
-// `safeGet` and MAPS the private `SAFE_GET_THREW` sentinel onto the GENERIC
-// `READ_FAILED` that `deepEqual` owns and short-circuits on. This mirrors
-// schema.ts' real adapter byte-for-byte (private `REF_SAFE_GET_THREW` here
-// stands in for schema.ts' `SAFE_GET_THREW`; the public `READ_FAILED` is the
-// shared constants-leaf signal). `deepEqual` returns `false` on `READ_FAILED`
-// BEFORE reading `a`, reproducing the pre-merge
-// `bChild === SAFE_GET_THREW ⇒ return false` short-circuit exactly.
-function mergedSchemaEquals(a: unknown, b: unknown): boolean {
-	return deepEqual(a, b, (object, key) => {
-		const value = refSafeGet(object, key)
-		return value === REF_SAFE_GET_THREW ? READ_FAILED : value
-	})
-}
+// A single shared reference for the same-reference Object.is leaf row, and a
+// stable function reference for the non-plain-object leaf row.
+const SHARED_DATE = new Date(0)
+const NOOP = (): void => undefined
 
 // Build a fresh object whose `boom` getter throws — exercises the
-// one-side / both-sides throwing-getter cases.
+// right-operand throwing-accessor propagation row.
 function throwingGetter(): Record<string, unknown> {
 	return Object.defineProperty({}, 'boom', {
 		enumerable: true,
@@ -1312,77 +919,83 @@ function throwingGetter(): Record<string, unknown> {
 	})
 }
 
-// A single shared reference for the same-reference Object.is leaf row, and a
-// stable function reference for the non-plain-object leaf row.
-const SHARED_DATE = new Date(0)
-const NOOP = (): void => undefined
-
-describe('deepEqual — differential equivalence vs pre-merge originals', () => {
-	// Each row: a label + the two operands. The corpus is exhaustive over the
-	// behaviour-spec axes the merge had to preserve.
-	const corpus: ReadonlyArray<readonly [string, unknown, unknown]> = [
-		['identical primitives (number)', 1, 1],
-		['differing primitives (number)', 1, 2],
-		['string equality', 'x', 'x'],
-		['string inequality', 'x', 'y'],
-		['boolean equality', true, true],
-		['null === null', null, null],
-		['null vs undefined', null, undefined],
-		['undefined === undefined', undefined, undefined],
-		['NaN === NaN (Object.is)', Number.NaN, Number.NaN],
-		['NaN vs 0', Number.NaN, 0],
-		['+0 vs -0 (Object.is distinguishes)', 0, -0],
-		['-0 vs -0', -0, -0],
-		['number vs string', 1, '1'],
-		['empty arrays', [], []],
-		['equal flat arrays', [1, 2, 3], [1, 2, 3]],
-		['array length mismatch', [1, 2], [1, 2, 3]],
-		['array element mismatch', [1, 2, 3], [1, 9, 3]],
-		['array vs non-array', [1], 1],
-		['nested arrays equal', [[1], [2, [3]]], [[1], [2, [3]]]],
-		['nested arrays differ deep', [[1], [2, [3]]], [[1], [2, [4]]]],
-		['array with NaN element', [Number.NaN], [Number.NaN]],
-		['array vs array-like object', [1, 2], { 0: 1, 1: 2, length: 2 }],
-		['empty objects', {}, {}],
-		['equal flat objects', { a: 1, b: 2 }, { a: 1, b: 2 }],
-		['object key order independent', { a: 1, b: 2 }, { b: 2, a: 1 }],
-		['same keys different value', { a: 1 }, { a: 2 }],
-		['extra key on b', { a: 1 }, { a: 1, b: 2 }],
-		['missing key on b', { a: 1, b: 2 }, { a: 1 }],
-		['disjoint key sets same size', { a: 1 }, { b: 1 }],
-		['object vs array', { 0: 1 }, [1]],
-		['object vs primitive', { a: 1 }, 5],
-		['deeply nested equal', { a: { b: { c: [1, { d: 2 }] } } }, { a: { b: { c: [1, { d: 2 }] } } }],
-		['deeply nested differ', { a: { b: { c: [1, { d: 2 }] } } }, { a: { b: { c: [1, { d: 3 }] } } }],
-		['object with NaN value', { a: Number.NaN }, { a: Number.NaN }],
-		['object with -0 vs +0 value', { a: -0 }, { a: 0 }],
-		['null-prototype object equal', Object.assign(Object.create(null), { a: 1 }), { a: 1 }],
-		['date is not a plain record (Object.is leaf, distinct refs)', new Date(0), new Date(0)],
-		['same date reference (Object.is leaf, same ref)', SHARED_DATE, SHARED_DATE],
-		['regexp is not a plain record (Object.is leaf)', /x/, /x/],
-		['function is not a plain record (Object.is leaf)', NOOP, NOOP],
+describe('deepEqual', () => {
+	// Each row: a label + the two operands + the expected boolean. The corpus
+	// is exhaustive over the behaviour-spec axes: primitives, `Object.is`
+	// (NaN, ±0), nested arrays/objects, key-set differences, array-vs-array-
+	// like, and the `isPlainObject` discrimination (Date/RegExp/function/
+	// null-prototype).
+	const corpus: ReadonlyArray<readonly [string, unknown, unknown, boolean]> = [
+		['identical primitives (number)', 1, 1, true],
+		['differing primitives (number)', 1, 2, false],
+		['string equality', 'x', 'x', true],
+		['string inequality', 'x', 'y', false],
+		['boolean equality', true, true, true],
+		['null === null', null, null, true],
+		['null vs undefined', null, undefined, false],
+		['undefined === undefined', undefined, undefined, true],
+		['NaN === NaN (Object.is)', Number.NaN, Number.NaN, true],
+		['NaN vs 0', Number.NaN, 0, false],
+		['+0 vs -0 (Object.is distinguishes)', 0, -0, false],
+		['-0 vs -0', -0, -0, true],
+		['number vs string', 1, '1', false],
+		['empty arrays', [], [], true],
+		['equal flat arrays', [1, 2, 3], [1, 2, 3], true],
+		['array length mismatch', [1, 2], [1, 2, 3], false],
+		['array element mismatch', [1, 2, 3], [1, 9, 3], false],
+		['array vs non-array', [1], 1, false],
+		['nested arrays equal', [[1], [2, [3]]], [[1], [2, [3]]], true],
+		['nested arrays differ deep', [[1], [2, [3]]], [[1], [2, [4]]], false],
+		['array with NaN element', [Number.NaN], [Number.NaN], true],
+		['array vs array-like object', [1, 2], { 0: 1, 1: 2, length: 2 }, false],
+		['empty objects', {}, {}, true],
+		['equal flat objects', { a: 1, b: 2 }, { a: 1, b: 2 }, true],
+		['object key order independent', { a: 1, b: 2 }, { b: 2, a: 1 }, true],
+		['same keys different value', { a: 1 }, { a: 2 }, false],
+		['extra key on b', { a: 1 }, { a: 1, b: 2 }, false],
+		['missing key on b', { a: 1, b: 2 }, { a: 1 }, false],
+		['disjoint key sets same size', { a: 1 }, { b: 1 }, false],
+		['object vs array', { 0: 1 }, [1], false],
+		['object vs primitive', { a: 1 }, 5, false],
+		[
+			'deeply nested equal',
+			{ a: { b: { c: [1, { d: 2 }] } } },
+			{ a: { b: { c: [1, { d: 2 }] } } },
+			true,
+		],
+		[
+			'deeply nested differ',
+			{ a: { b: { c: [1, { d: 2 }] } } },
+			{ a: { b: { c: [1, { d: 3 }] } } },
+			false,
+		],
+		['object with NaN value', { a: Number.NaN }, { a: Number.NaN }, true],
+		['object with -0 vs +0 value', { a: -0 }, { a: 0 }, false],
+		[
+			'null-prototype object equal',
+			Object.assign(Object.create(null), { a: 1 }),
+			{ a: 1 },
+			true,
+		],
+		['date is not a plain record (Object.is leaf, distinct refs)', new Date(0), new Date(0), false],
+		['same date reference (Object.is leaf, same ref)', SHARED_DATE, SHARED_DATE, true],
+		['regexp is not a plain record (Object.is leaf)', /x/, /x/, false],
+		['function is not a plain record (Object.is leaf)', NOOP, NOOP, true],
 	]
 
-	for (const [label, a, b] of corpus) {
-		it(`const-variant matches old constEquals: ${label}`, () => {
-			expect(deepEqual(a, b)).toBe(oldConstEquals(a, b))
-		})
-		it(`schema-variant matches old schemaValueEquals: ${label}`, () => {
-			expect(mergedSchemaEquals(a, b)).toBe(oldSchemaValueEquals(a, b))
+	for (const [label, a, b, expected] of corpus) {
+		it(`${label} → ${String(expected)}`, () => {
+			expect(deepEqual(a, b)).toBe(expected)
 		})
 	}
 
-	// --- Object.is leaf semantics, asserted directly (not just differentially)
+	// --- Object.is leaf semantics, asserted directly
 	it('NaN equals NaN at a primitive leaf (Object.is, not ===)', () => {
 		expect(deepEqual(Number.NaN, Number.NaN)).toBe(true)
-		expect(oldConstEquals(Number.NaN, Number.NaN)).toBe(true)
-		expect(oldSchemaValueEquals(Number.NaN, Number.NaN)).toBe(true)
 	})
 
 	it('+0 is NOT equal to -0 at a primitive leaf (Object.is distinguishes)', () => {
 		expect(deepEqual(0, -0)).toBe(false)
-		expect(oldConstEquals(0, -0)).toBe(false)
-		expect(oldSchemaValueEquals(0, -0)).toBe(false)
 	})
 
 	it('NaN/±0 leaf semantics survive through nested object/array recursion', () => {
@@ -1390,78 +1003,24 @@ describe('deepEqual — differential equivalence vs pre-merge originals', () => 
 		expect(deepEqual({ a: [-0] }, { a: [0] })).toBe(false)
 	})
 
-	// --- the throwing-getter axis: the ONE behavioural difference the
-	// injected read-strategy parameter exists to preserve.
-	it('schema variant: throwing getter on b ONLY ⇒ false, never throws (matches old schemaValueEquals)', () => {
-		const a = { boom: 1 }
-		const b = throwingGetter()
-		// Old behaviour: safeGet(b,'boom') → sentinel → key unequal → false.
-		expect(oldSchemaValueEquals(a, b)).toBe(false)
-		// Merged schema-variant (refSafeGet injected): identical, no throw.
-		expect(mergedSchemaEquals(a, b)).toBe(false)
-	})
-
-	it('schema variant: throwing getter on a ONLY ⇒ propagates (a-side is read directly in BOTH old and merged)', () => {
-		const a = throwingGetter()
-		const b = { boom: 1 }
-		// The originals read `a[key]` directly, so an a-side getter throws.
-		// The merged helper preserves that (a is the trusted side, read
-		// directly) — the schema guard's outer try/catch is what neutralises
-		// it observably, NOT the equality function.
-		expect(() => oldSchemaValueEquals(a, b)).toThrow('getter exploded')
-		expect(() => mergedSchemaEquals(a, b)).toThrow('getter exploded')
-	})
-
-	it('schema variant: throwing getter on BOTH sides — old returns false (b-sentinel short-circuit, a NEVER read), merged returns the SAME false WITHOUT throwing (FU9-E follow-up: the regression case)', () => {
-		const a = throwingGetter()
-		const b = throwingGetter()
-		// PRE-MERGE FACT: old `schemaValueEquals` evaluates
-		// `bChild = safeGet(b,'boom')` → sentinel → `bChild === SENTINEL` is
-		// true → `return false` WITHOUT ever reading `a['boom']`. So the old
-		// function returns `false` and does NOT throw on both-sides-throw.
-		expect(oldSchemaValueEquals(a, b)).toBe(false)
-		// POST-FIX FACT: the schema-variant reader maps the private throwing-
-		// getter sentinel onto the generic `READ_FAILED`; `deepEqual` returns
-		// `false` on `READ_FAILED` BEFORE reading `a`, so `a`'s getter is NEVER
-		// invoked — the merged path returns the IDENTICAL `false` and, exactly
-		// like the old function, does NOT throw. This is a GENUINE differential
-		// (old vs new), not new-vs-new: it FAILS against the unfixed `13382b4`
-		// `deepEqual` (which evaluated `Reflect.get(a,key)` unconditionally and
-		// PROPAGATED a's throw → `.toBe(false)` would throw instead) and PASSES
-		// only after the `READ_FAILED` short-circuit is restored. RED@13382b4 /
-		// GREEN post-fix.
-		expect(mergedSchemaEquals(a, b)).toBe(false)
-		expect(() => mergedSchemaEquals(a, b)).not.toThrow()
-		// Strict parity: identical boolean from the reconstructed OLD and the
-		// merged NEW for this exact regression shape.
-		expect(mergedSchemaEquals(a, b)).toBe(oldSchemaValueEquals(a, b))
-	})
-
-	it('const variant: throwing getter on b ⇒ propagates (direct read, trusted-input regime, matches old constEquals)', () => {
-		const a = { boom: 1 }
-		const b = throwingGetter()
-		// constEquals never had safeGet — a throwing b-side getter propagates.
-		// The default `deepEqual` read (Reflect.get) preserves that exactly.
-		expect(() => oldConstEquals(a, b)).toThrow('getter exploded')
-		expect(() => deepEqual(a, b)).toThrow('getter exploded')
-	})
-
-	it('the merged inline plain-object check equals isRecord-as-used across the corpus', () => {
-		// Differential equivalence across the whole corpus already proves the
-		// inline discrimination matches `refIsRecord` (the verbatim
-		// `isRecord`-as-used). This row makes the claim explicit for the
-		// boundary inputs: null-proto record, Date, array-like.
+	// --- the inline plain-object discrimination (isRecord-as-used)
+	it('the inline plain-object check equals isRecord-as-used at the boundaries', () => {
 		expect(deepEqual(Object.create(null), {})).toBe(true)
-		expect(deepEqual(new Date(0), new Date(0))).toBe(
-			Object.is(new Date(0), new Date(0)),
-		)
+		expect(deepEqual(new Date(0), new Date(0))).toBe(Object.is(new Date(0), new Date(0)))
 		expect(deepEqual([1], { 0: 1, length: 1 })).toBe(false)
+	})
+
+	// --- a throwing right-operand accessor propagates (trusted-input regime:
+	// `b`'s properties are read directly via `Reflect.get`, no containment).
+	it('throwing getter on b ⇒ propagates (direct read, trusted-input regime)', () => {
+		const a = { boom: 1 }
+		const b = throwingGetter()
+		expect(() => deepEqual(a, b)).toThrow('getter exploded')
 	})
 
 	it('is deterministic — twice with the same operands yields the same boolean', () => {
 		const a = { a: [1, { b: Number.NaN }], c: 'x' }
 		const b = { a: [1, { b: Number.NaN }], c: 'x' }
 		expect(deepEqual(a, b)).toBe(deepEqual(a, b))
-		expect(mergedSchemaEquals(a, b)).toBe(mergedSchemaEquals(a, b))
 	})
 })
