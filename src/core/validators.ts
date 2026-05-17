@@ -255,22 +255,74 @@ export function isJsonPrimitive(value: unknown): boolean {
 	return value === null || isString(value) || isNumber(value) || isBoolean(value)
 }
 
+// §13: a PUBLIC type guard must NEVER throw. `isJsonValue` / `isJsonObject` /
+// `isJsonSchema` recurse over arbitrary object graphs, so a cyclic input
+// (`const a={}; a.self=a`) or a pathologically deep input would otherwise
+// recurse until V8 throws a `RangeError` out of the guard. The internal
+// workers below thread two pieces of recursion state — never exposed in the
+// public signatures:
+//
+//  1. `seen` — a WeakSet of the ANCESTOR objects currently on the recursion
+//     stack. An object is added on entry and REMOVED on exit, so the set is
+//     the current root→node path, not an all-visited set. Re-encountering a
+//     member of that path is a genuine back-edge (a cycle) → the guard
+//     returns `false`. Crucially this does NOT false-positive on
+//     shared-but-acyclic substructure: a child reused under two sibling keys
+//     (a DAG, valid JSON) is fully validated and removed before the second
+//     sibling is visited, so it is never seen as a cycle.
+//  2. `depth` — a secondary stack-safety backstop. Precise cycle detection
+//     already terminates true cycles; the depth cap only defends against a
+//     pathologically deep BUT acyclic graph that the WeakSet cannot catch
+//     (no repeated reference) yet would still overflow the native stack.
+//     `MAX_JSON_DEPTH` is chosen empirically: this recursive worker's real
+//     stack frame (the `Object.values` allocation, the for-of iterator, the
+//     WeakSet add/delete, the recursion args) overflows the Node stack at a
+//     measured depth of ~4,650 — and a test runner / caller has already
+//     consumed part of the stack before the guard is even entered, so the
+//     true safe ceiling is lower still. 1,000 sits ~4.6x below the bare
+//     overflow point (ample margin even with a pre-consumed stack) while
+//     remaining far above any legitimate JSON: real schemas / documents nest
+//     a handful to low-tens of levels, so this never false-rejects genuine
+//     input — it only converts a pathological depth into a `false` return
+//     instead of a thrown `RangeError` (§13). `src/core` has no
+//     `constants.ts` (per AGENTS.md §5 a module-local UPPER_SNAKE `const` is
+//     acceptable when no constants module exists), so it lives here next to
+//     its sole consumers.
+const MAX_JSON_DEPTH = 1_000
+
+function isJsonValueInner(value: unknown, seen: WeakSet<object>, depth: number): boolean {
+	if (isJsonPrimitive(value)) return true
+	if (depth > MAX_JSON_DEPTH) return false
+	if (Array.isArray(value)) {
+		if (seen.has(value)) return false
+		seen.add(value)
+		for (const entry of value) {
+			if (!isJsonValueInner(entry, seen, depth + 1)) {
+				seen.delete(value)
+				return false
+			}
+		}
+		seen.delete(value)
+		return true
+	}
+	if (!isRecord(value)) return false
+	if (seen.has(value)) return false
+	seen.add(value)
+	for (const entry of Object.values(value)) {
+		if (!isJsonValueInner(entry, seen, depth + 1)) {
+			seen.delete(value)
+			return false
+		}
+	}
+	seen.delete(value)
+	return true
+}
+
 /** Determine whether a value is any valid JSON value. */
 export function isJsonValue(value: JsonValue): boolean
 export function isJsonValue(value: unknown): value is JsonValue
 export function isJsonValue(value: unknown): boolean {
-	if (isJsonPrimitive(value)) return true
-	if (Array.isArray(value)) {
-		for (const entry of value) {
-			if (!isJsonValue(entry)) return false
-		}
-		return true
-	}
-	if (!isRecord(value)) return false
-	for (const entry of Object.values(value)) {
-		if (!isJsonValue(entry)) return false
-	}
-	return true
+	return isJsonValueInner(value, new WeakSet<object>(), 0)
 }
 
 /** Determine whether a value is a JSON object. */
@@ -278,8 +330,9 @@ export function isJsonObject(value: JsonObject): boolean
 export function isJsonObject(value: unknown): value is JsonObject
 export function isJsonObject(value: unknown): boolean {
 	if (!isRecord(value)) return false
+	const seen = new WeakSet<object>()
 	for (const entry of Object.values(value)) {
-		if (!isJsonValue(entry)) return false
+		if (!isJsonValueInner(entry, seen, 1)) return false
 	}
 	return true
 }
@@ -302,20 +355,36 @@ export function isJsonSchemaType(value: string): boolean {
 	}
 }
 
-export function isJsonSchemaArray(value: unknown): value is readonly JsonSchema[] {
+function isJsonSchemaArrayInner(
+	value: unknown,
+	seen: WeakSet<object>,
+	depth: number,
+): value is readonly JsonSchema[] {
 	if (!Array.isArray(value)) return false
 	for (const entry of value) {
-		if (!isJsonSchema(entry)) return false
+		if (!isJsonSchemaInner(entry, seen, depth)) return false
+	}
+	return true
+}
+
+export function isJsonSchemaArray(value: unknown): value is readonly JsonSchema[] {
+	return isJsonSchemaArrayInner(value, new WeakSet<object>(), 0)
+}
+
+function isJsonSchemaMapValueInner(
+	value: unknown,
+	seen: WeakSet<object>,
+	depth: number,
+): value is JsonSchemaMap {
+	if (!isRecord(value)) return false
+	for (const entry of Object.values(value)) {
+		if (!isJsonSchemaInner(entry, seen, depth)) return false
 	}
 	return true
 }
 
 export function isJsonSchemaMapValue(value: unknown): value is JsonSchemaMap {
-	if (!isRecord(value)) return false
-	for (const entry of Object.values(value)) {
-		if (!isJsonSchema(entry)) return false
-	}
-	return true
+	return isJsonSchemaMapValueInner(value, new WeakSet<object>(), 0)
 }
 
 export function isJsonSchemaStringArrayMapValue(value: unknown): value is JsonSchemaStringArrayMap {
@@ -329,13 +398,62 @@ export function isJsonSchemaStringArrayMapValue(value: unknown): value is JsonSc
 	return true
 }
 
-/** Determine whether a value is a valid JSON Schema node. */
-export function isJsonSchema(value: JsonSchema): boolean
-export function isJsonSchema(value: unknown): value is JsonSchema
-export function isJsonSchema(value: unknown): boolean {
-	if (isBoolean(value)) return true
-	if (!isRecord(value)) return false
+// Keywords whose value is STRUCTURALLY validated by the per-keyword checks in
+// `isJsonSchemaInner` below (as a sub-schema, sub-schema array, schema map,
+// string array, etc.). The trailing "unrecognized keys" sweep skips exactly
+// these so it never RE-WALKS an already-validated keyword — the redundant
+// blanket `Object.values → isJsonValue` pass that used to live at the end of
+// this guard doubled recursion cost (§5/§20) by re-validating every keyword a
+// second time as a plain JSON value. Correctness is preserved: the structured
+// checks fully validate these keywords (more strictly than `isJsonValue`
+// would — e.g. a sub-schema must be a schema, not merely any JSON value), and
+// the scoped sweep still JSON-validates every OTHER (unrecognized / annotation
+// / custom `x-*`) key so a non-JSON value at an unknown key (e.g. a function)
+// is still rejected.
+const STRUCTURED_SCHEMA_KEYWORDS: ReadonlySet<string> = new Set([
+	'type',
+	'properties',
+	'patternProperties',
+	'dependentSchemas',
+	'$defs',
+	'required',
+	'dependentRequired',
+	'additionalProperties',
+	'unevaluatedProperties',
+	'propertyNames',
+	'items',
+	'prefixItems',
+	'contains',
+	'anyOf',
+	'oneOf',
+	'allOf',
+	'not',
+	'if',
+	'then',
+	'else',
+	'enum',
+	'const',
+	'default',
+	'examples',
+])
 
+function isJsonSchemaInner(value: unknown, seen: WeakSet<object>, depth: number): boolean {
+	if (isBoolean(value)) return true
+	if (depth > MAX_JSON_DEPTH) return false
+	if (!isRecord(value)) return false
+	if (seen.has(value)) return false
+	seen.add(value)
+	const next = depth + 1
+	const ok = isJsonSchemaBody(value, seen, next)
+	seen.delete(value)
+	return ok
+}
+
+function isJsonSchemaBody(
+	value: Record<string, unknown>,
+	seen: WeakSet<object>,
+	depth: number,
+): boolean {
 	const typeValue = value['type']
 	if (typeValue !== undefined) {
 		if (isString(typeValue)) {
@@ -349,12 +467,20 @@ export function isJsonSchema(value: unknown): boolean {
 		}
 	}
 
-	if (value['properties'] !== undefined && !isJsonSchemaMapValue(value['properties'])) return false
-	if (value['patternProperties'] !== undefined && !isJsonSchemaMapValue(value['patternProperties']))
+	if (value['properties'] !== undefined && !isJsonSchemaMapValueInner(value['properties'], seen, depth))
 		return false
-	if (value['dependentSchemas'] !== undefined && !isJsonSchemaMapValue(value['dependentSchemas']))
+	if (
+		value['patternProperties'] !== undefined &&
+		!isJsonSchemaMapValueInner(value['patternProperties'], seen, depth)
+	)
 		return false
-	if (value['$defs'] !== undefined && !isJsonSchemaMapValue(value['$defs'])) return false
+	if (
+		value['dependentSchemas'] !== undefined &&
+		!isJsonSchemaMapValueInner(value['dependentSchemas'], seen, depth)
+	)
+		return false
+	if (value['$defs'] !== undefined && !isJsonSchemaMapValueInner(value['$defs'], seen, depth))
+		return false
 	if (value['required'] !== undefined) {
 		if (!Array.isArray(value['required'])) return false
 		for (const entry of value['required']) {
@@ -366,46 +492,66 @@ export function isJsonSchema(value: unknown): boolean {
 	}
 	if (value['additionalProperties'] !== undefined) {
 		const additionalProperties = value['additionalProperties']
-		if (!isBoolean(additionalProperties) && !isJsonSchema(additionalProperties)) return false
+		if (!isBoolean(additionalProperties) && !isJsonSchemaInner(additionalProperties, seen, depth))
+			return false
 	}
 	if (value['unevaluatedProperties'] !== undefined) {
 		const unevaluatedProperties = value['unevaluatedProperties']
-		if (!isBoolean(unevaluatedProperties) && !isJsonSchema(unevaluatedProperties)) return false
+		if (!isBoolean(unevaluatedProperties) && !isJsonSchemaInner(unevaluatedProperties, seen, depth))
+			return false
 	}
-	if (value['propertyNames'] !== undefined && !isJsonSchema(value['propertyNames'])) return false
+	if (value['propertyNames'] !== undefined && !isJsonSchemaInner(value['propertyNames'], seen, depth))
+		return false
 	if (value['items'] !== undefined) {
 		const items = value['items']
-		if (!isJsonSchema(items) && !isJsonSchemaArray(items)) return false
+		if (!isJsonSchemaInner(items, seen, depth) && !isJsonSchemaArrayInner(items, seen, depth))
+			return false
 	}
-	if (value['prefixItems'] !== undefined && !isJsonSchemaArray(value['prefixItems'])) return false
-	if (value['contains'] !== undefined && !isJsonSchema(value['contains'])) return false
-	if (value['anyOf'] !== undefined && !isJsonSchemaArray(value['anyOf'])) return false
-	if (value['oneOf'] !== undefined && !isJsonSchemaArray(value['oneOf'])) return false
-	if (value['allOf'] !== undefined && !isJsonSchemaArray(value['allOf'])) return false
-	if (value['not'] !== undefined && !isJsonSchema(value['not'])) return false
-	if (value['if'] !== undefined && !isJsonSchema(value['if'])) return false
-	if (value['then'] !== undefined && !isJsonSchema(value['then'])) return false
-	if (value['else'] !== undefined && !isJsonSchema(value['else'])) return false
+	if (value['prefixItems'] !== undefined && !isJsonSchemaArrayInner(value['prefixItems'], seen, depth))
+		return false
+	if (value['contains'] !== undefined && !isJsonSchemaInner(value['contains'], seen, depth))
+		return false
+	if (value['anyOf'] !== undefined && !isJsonSchemaArrayInner(value['anyOf'], seen, depth))
+		return false
+	if (value['oneOf'] !== undefined && !isJsonSchemaArrayInner(value['oneOf'], seen, depth))
+		return false
+	if (value['allOf'] !== undefined && !isJsonSchemaArrayInner(value['allOf'], seen, depth))
+		return false
+	if (value['not'] !== undefined && !isJsonSchemaInner(value['not'], seen, depth)) return false
+	if (value['if'] !== undefined && !isJsonSchemaInner(value['if'], seen, depth)) return false
+	if (value['then'] !== undefined && !isJsonSchemaInner(value['then'], seen, depth)) return false
+	if (value['else'] !== undefined && !isJsonSchemaInner(value['else'], seen, depth)) return false
 	if (value['enum'] !== undefined) {
 		if (!Array.isArray(value['enum'])) return false
 		for (const entry of value['enum']) {
-			if (!isJsonValue(entry)) return false
+			if (!isJsonValueInner(entry, seen, depth)) return false
 		}
 	}
-	if (value['const'] !== undefined && !isJsonValue(value['const'])) return false
-	if (value['default'] !== undefined && !isJsonValue(value['default'])) return false
+	if (value['const'] !== undefined && !isJsonValueInner(value['const'], seen, depth)) return false
+	if (value['default'] !== undefined && !isJsonValueInner(value['default'], seen, depth)) return false
 	if (value['examples'] !== undefined) {
 		if (!Array.isArray(value['examples'])) return false
 		for (const entry of value['examples']) {
-			if (!isJsonValue(entry)) return false
+			if (!isJsonValueInner(entry, seen, depth)) return false
 		}
 	}
 
-	for (const entry of Object.values(value)) {
-		if (!isJsonValue(entry)) return false
+	// Scoped replacement for the old blanket sweep: only UNRECOGNIZED keys are
+	// JSON-validated here; structurally-validated keywords are skipped so they
+	// are not re-walked a second time (the doubled-recursion §5/§20 defect).
+	for (const key of Object.keys(value)) {
+		if (STRUCTURED_SCHEMA_KEYWORDS.has(key)) continue
+		if (!isJsonValueInner(value[key], seen, depth)) return false
 	}
 
 	return true
+}
+
+/** Determine whether a value is a valid JSON Schema node. */
+export function isJsonSchema(value: JsonSchema): boolean
+export function isJsonSchema(value: unknown): value is JsonSchema
+export function isJsonSchema(value: unknown): boolean {
+	return isJsonSchemaInner(value, new WeakSet<object>(), 0)
 }
 
 /** Determine whether a value is an object-root JSON Schema. */

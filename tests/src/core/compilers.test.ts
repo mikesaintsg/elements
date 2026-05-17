@@ -31,6 +31,7 @@ import {
 	createPersonShape,
 	createRecordDictShape,
 	createUnionShape,
+	makeCyclicShape,
 } from './_helpers.js'
 
 // === compileSchema
@@ -1074,6 +1075,63 @@ describe('B4 — assertParseGuardSymmetry on oneOf + raw', () => {
 
 	it('rawShape — identity stays sound', () => {
 		assertParseGuardSymmetry(rawShape({}), ['x', 42, null, { a: 1 }, [1, 2], true])
+	})
+})
+
+// === §13 — cyclic ContractShape compile guard
+//
+// `compile*` recurse over the shape tree at COMPILE time. A self-referential
+// `ContractShape` (constructible via makeCyclicShape — `shape.properties.self
+// === shape`) infinitely recursed → `RangeError`. Contract chosen: a cyclic
+// shape built WITHOUT a lazy/deferred wrapper is PROGRAMMER ERROR (§13 row 1 —
+// invalid argument). `lazyShape` does not exist until Phase D, so for now a
+// cyclic shape is malformed input and the compiler must FAIL FAST with a
+// precise `Error` that names the problem and points at the fix — NOT recurse
+// to a `RangeError`, and NOT silently emit a broken compiled function.
+
+describe('§13 — cyclic ContractShape fails fast at compile (precise Error, not RangeError)', () => {
+	const expectedMessage = 'cyclic ContractShape: use a lazy/deferred shape for recursion'
+
+	function expectPreciseCyclicError(run: () => void): void {
+		let caught: unknown
+		try {
+			run()
+		} catch (error) {
+			caught = error
+		}
+		expect(caught).toBeInstanceOf(Error)
+		expect(caught).not.toBeInstanceOf(RangeError)
+		if (!(caught instanceof Error)) {
+			throw new Error('expected an Error to be thrown')
+		}
+		expect(caught.message).toContain(expectedMessage)
+	}
+
+	it('compileSchema throws a precise Error (not RangeError) on a cyclic shape', () => {
+		expectPreciseCyclicError(() => compileSchema(makeCyclicShape()))
+	})
+
+	it('compileGuard throws a precise Error (not RangeError) on a cyclic shape', () => {
+		expectPreciseCyclicError(() => compileGuard(makeCyclicShape()))
+	})
+
+	it('compileParser throws a precise Error (not RangeError) on a cyclic shape', () => {
+		expectPreciseCyclicError(() => compileParser(makeCyclicShape()))
+	})
+
+	it('compileGenerator throws a precise Error (not RangeError) on a cyclic shape', () => {
+		expectPreciseCyclicError(() => compileGenerator(makeCyclicShape(), createRandom(1)))
+	})
+
+	it('a shared-but-acyclic sub-shape reused in two object keys is NOT a cycle', () => {
+		// The same child shape object referenced from two sibling properties is
+		// a DAG, not a cycle — compilation must succeed and the guard work.
+		const child = stringShape({ min: 1 })
+		const shape = objectShape({ a: child, b: child })
+		const guard = compileGuard(shape)
+		expect(guard({ a: 'x', b: 'y' })).toBe(true)
+		expect(guard({ a: '', b: 'y' })).toBe(false)
+		expect(() => compileSchema(shape)).not.toThrow()
 	})
 })
 

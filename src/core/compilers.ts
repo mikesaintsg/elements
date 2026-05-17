@@ -11,6 +11,83 @@ import type {
 import { parseBoolean, parseInteger, parseNumber } from './parsers.js'
 import { isRecord } from './validators.js'
 
+// === Cyclic-shape guard (§13 — programmer error, fail fast)
+//
+// Every `compile*` walks the shape tree recursively. A self-referential
+// `ContractShape` (e.g. `objectShape(props)` then `props.self = shape` — see
+// tests/src/core/_helpers.ts `makeCyclicShape`) made that descent recurse
+// until V8 threw a bare `RangeError: Maximum call stack size exceeded`.
+//
+// Contract: a cyclic shape built WITHOUT a lazy/deferred wrapper is a
+// PROGRAMMER ERROR (AGENTS.md §13 row 1 — "invalid arguments → throw Error"),
+// NOT an external/optional condition. (`lazyShape` — the future deferred
+// wrapper that will make recursion legitimate — does not exist until Phase D,
+// so for now any structural cycle is malformed input.) Each public compiler
+// therefore validates the tree is acyclic ONCE, up front, and FAILS FAST with
+// a precise `Error` that names the defect and points at the fix — never a
+// `RangeError`, and never a silently-broken compiled function.
+//
+// `seen` tracks the ANCESTOR path (added on entry, removed on exit), so it is
+// a true back-edge detector: a shared-but-acyclic sub-shape (the same child
+// shape object referenced under two sibling keys — a DAG, perfectly valid) is
+// fully walked and removed before its second occurrence is visited, so it is
+// never misreported as a cycle.
+const CYCLIC_SHAPE_MESSAGE = 'cyclic ContractShape: use a lazy/deferred shape for recursion'
+
+function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>): void {
+	if (seen.has(shape)) {
+		throw new Error(CYCLIC_SHAPE_MESSAGE)
+	}
+	switch (shape.type) {
+		case 'string':
+		case 'number':
+		case 'boolean':
+		case 'literal':
+		case 'raw':
+			return
+		case 'array': {
+			seen.add(shape)
+			assertAcyclicShape(shape.items, seen)
+			seen.delete(shape)
+			return
+		}
+		case 'object': {
+			seen.add(shape)
+			for (const key of Object.keys(shape.properties)) {
+				const child = shape.properties[key]
+				if (child !== undefined) {
+					assertAcyclicShape(child, seen)
+				}
+			}
+			if (
+				shape.additionalProperties !== undefined &&
+				shape.additionalProperties !== true &&
+				shape.additionalProperties !== false &&
+				typeof shape.additionalProperties === 'object'
+			) {
+				assertAcyclicShape(shape.additionalProperties, seen)
+			}
+			seen.delete(shape)
+			return
+		}
+		case 'union': {
+			seen.add(shape)
+			for (const variant of shape.variants) {
+				assertAcyclicShape(variant, seen)
+			}
+			seen.delete(shape)
+			return
+		}
+		case 'optional':
+		case 'nullable': {
+			seen.add(shape)
+			assertAcyclicShape(shape.inner, seen)
+			seen.delete(shape)
+			return
+		}
+	}
+}
+
 // === Schema
 
 /**
@@ -41,6 +118,11 @@ import { isRecord } from './validators.js'
 export function compileSchema(shape: ObjectShape): JsonSchemaObject
 export function compileSchema(shape: ContractShape): JsonSchema
 export function compileSchema(shape: ContractShape): JsonSchema {
+	assertAcyclicShape(shape, new WeakSet<ContractShape>())
+	return compileSchemaInner(shape)
+}
+
+function compileSchemaInner(shape: ContractShape): JsonSchema {
 	switch (shape.type) {
 		case 'string': {
 			return {
@@ -74,7 +156,7 @@ export function compileSchema(shape: ContractShape): JsonSchema {
 		case 'array': {
 			return {
 				type: 'array',
-				items: compileSchema(shape.items),
+				items: compileSchemaInner(shape.items),
 				...(shape.min !== undefined ? { minItems: shape.min } : {}),
 				...(shape.max !== undefined ? { maxItems: shape.max } : {}),
 				...(shape.description !== undefined ? { description: shape.description } : {}),
@@ -88,7 +170,7 @@ export function compileSchema(shape: ContractShape): JsonSchema {
 				if (child === undefined) {
 					continue
 				}
-				properties[key] = compileSchema(child)
+				properties[key] = compileSchemaInner(child)
 				if (child.type !== 'optional') {
 					required.push(key)
 				}
@@ -113,7 +195,7 @@ export function compileSchema(shape: ContractShape): JsonSchema {
 				shape.additionalProperties !== false &&
 				typeof shape.additionalProperties === 'object'
 			) {
-				result.additionalProperties = compileSchema(shape.additionalProperties)
+				result.additionalProperties = compileSchemaInner(shape.additionalProperties)
 			} else {
 				result.additionalProperties = false
 			}
@@ -123,16 +205,16 @@ export function compileSchema(shape: ContractShape): JsonSchema {
 			return result
 		}
 		case 'union': {
-			const compiled = shape.variants.map((variant) => compileSchema(variant))
+			const compiled = shape.variants.map((variant) => compileSchemaInner(variant))
 			return {
 				...(shape.mode === 'oneOf' ? { oneOf: compiled } : { anyOf: compiled }),
 				...(shape.description !== undefined ? { description: shape.description } : {}),
 			}
 		}
 		case 'optional':
-			return compileSchema(shape.inner)
+			return compileSchemaInner(shape.inner)
 		case 'nullable':
-			return { anyOf: [compileSchema(shape.inner), { type: 'null' }] }
+			return { anyOf: [compileSchemaInner(shape.inner), { type: 'null' }] }
 		case 'raw':
 			return shape.schema
 	}
@@ -152,6 +234,11 @@ export function compileSchema(shape: ContractShape): JsonSchema {
  * @returns A runtime predicate for the shape
  */
 export function compileGuard(shape: ContractShape): (value: unknown) => boolean {
+	assertAcyclicShape(shape, new WeakSet<ContractShape>())
+	return compileGuardInner(shape)
+}
+
+function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
 	switch (shape.type) {
 		case 'string': {
 			const { min, max, pattern } = shape
@@ -190,7 +277,7 @@ export function compileGuard(shape: ContractShape): (value: unknown) => boolean 
 			return (value) => allowed.has(value)
 		}
 		case 'array': {
-			const itemGuard = compileGuard(shape.items)
+			const itemGuard = compileGuardInner(shape.items)
 			const { min, max } = shape
 			return (value) => {
 				if (!Array.isArray(value)) {
@@ -223,7 +310,7 @@ export function compileGuard(shape: ContractShape): (value: unknown) => boolean 
 				}
 				entries.push({
 					key,
-					guard: compileGuard(child),
+					guard: compileGuardInner(child),
 					optional: child.type === 'optional',
 				})
 			}
@@ -233,7 +320,7 @@ export function compileGuard(shape: ContractShape): (value: unknown) => boolean 
 				shape.additionalProperties !== true &&
 				shape.additionalProperties !== false &&
 				typeof shape.additionalProperties === 'object'
-					? compileGuard(shape.additionalProperties)
+					? compileGuardInner(shape.additionalProperties)
 					: undefined
 			const open = shape.additionalProperties === true || additionalGuard !== undefined
 			return (value) => {
@@ -266,7 +353,7 @@ export function compileGuard(shape: ContractShape): (value: unknown) => boolean 
 			}
 		}
 		case 'union': {
-			const guards = shape.variants.map((variant) => compileGuard(variant))
+			const guards = shape.variants.map((variant) => compileGuardInner(variant))
 			if (shape.mode === 'oneOf') {
 				// JSON-Schema `oneOf`: a value is valid iff it matches
 				// EXACTLY ONE variant. `anyOf` (the default below) is
@@ -288,11 +375,11 @@ export function compileGuard(shape: ContractShape): (value: unknown) => boolean 
 			return (value) => guards.some((guard) => guard(value))
 		}
 		case 'optional': {
-			const guard = compileGuard(shape.inner)
+			const guard = compileGuardInner(shape.inner)
 			return (value) => value === undefined || guard(value)
 		}
 		case 'nullable': {
-			const guard = compileGuard(shape.inner)
+			const guard = compileGuardInner(shape.inner)
 			return (value) => value === null || guard(value)
 		}
 		case 'raw':
@@ -314,6 +401,11 @@ export function compileGuard(shape: ContractShape): (value: unknown) => boolean 
  * @returns A runtime parser for the shape
  */
 export function compileParser(shape: ContractShape): (value: unknown) => unknown {
+	assertAcyclicShape(shape, new WeakSet<ContractShape>())
+	return compileParserInner(shape)
+}
+
+function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 	switch (shape.type) {
 		case 'string': {
 			// Parse↔guard soundness (the canonical contract in
@@ -334,7 +426,7 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 			//   5. else undefined.
 			// This makes (A)(B)(C) hold for every string constraint without
 			// per-call-site special-casing — it is shape-guard-driven.
-			const guard = compileGuard(shape)
+			const guard = compileGuardInner(shape)
 			return (value) => {
 				let raw: string | undefined
 				if (typeof value === 'string') {
@@ -363,7 +455,7 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 			// input — the raw is a non-number (string/etc.) the number guard
 			// would reject anyway, so undefined is correct.
 			const primitive = shape.integer === true ? parseInteger : parseNumber
-			const guard = compileGuard(shape)
+			const guard = compileGuardInner(shape)
 			return (value) => {
 				const parsed = primitive(value)
 				if (parsed !== undefined && guard(parsed)) {
@@ -387,7 +479,7 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 			// shape's own guard; never emit a trimmed value the literal
 			// guard would reject (C).
 			const allowed = new Set<unknown>(shape.values)
-			const guard = compileGuard(shape)
+			const guard = compileGuardInner(shape)
 			return (value) => {
 				if (guard(value)) {
 					return value
@@ -411,8 +503,8 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 			// array, then if it passes THIS shape's guard return it; else if
 			// the RAW array already passes the guard return it untouched
 			// (never reject a guard-valid input); else undefined.
-			const itemParser = compileParser(shape.items)
-			const guard = compileGuard(shape)
+			const itemParser = compileParserInner(shape.items)
+			const guard = compileGuardInner(shape)
 			return (value) => {
 				if (!Array.isArray(value)) {
 					return undefined
@@ -473,7 +565,7 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 				}
 				entries.push({
 					key,
-					parse: compileParser(child),
+					parse: compileParserInner(child),
 					optional: child.type === 'optional',
 				})
 			}
@@ -483,7 +575,7 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 				shape.additionalProperties !== true &&
 				shape.additionalProperties !== false &&
 				typeof shape.additionalProperties === 'object'
-					? compileParser(shape.additionalProperties)
+					? compileParserInner(shape.additionalProperties)
 					: undefined
 			const open = shape.additionalProperties === true || additionalParser !== undefined
 			// Parse↔guard soundness: re-validate the FRESHLY BUILT result
@@ -498,7 +590,7 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 			// that the B2 prototype-pollution hardening drops — returning raw
 			// would re-expose them. The built accumulator is the only safe
 			// output, and it is guard-equivalent to a guard-valid input.
-			const guard = compileGuard(shape)
+			const guard = compileGuardInner(shape)
 			return (value) => {
 				if (!isRecord(value)) {
 					return undefined
@@ -553,8 +645,8 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 			}
 		}
 		case 'union': {
-			const parsers = shape.variants.map((variant) => compileParser(variant))
-			const guards = shape.variants.map((variant) => compileGuard(variant))
+			const parsers = shape.variants.map((variant) => compileParserInner(variant))
+			const guards = shape.variants.map((variant) => compileGuardInner(variant))
 			if (shape.mode === 'oneOf') {
 				// JSON-Schema `oneOf` exclusivity, kept parse↔guard
 				// SYMMETRIC with the oneOf guard above. The guard's notion of
@@ -575,7 +667,7 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 				// picks a winner). On exactly one, parse with THAT variant
 				// and re-validate the oneOf guard on the result for clause
 				// (C) soundness.
-				const guardThis = compileGuard(shape)
+				const guardThis = compileGuardInner(shape)
 				return (value) => {
 					let matchIndex = -1
 					let matches = 0
@@ -622,11 +714,11 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 			}
 		}
 		case 'optional': {
-			const parser = compileParser(shape.inner)
+			const parser = compileParserInner(shape.inner)
 			return (value) => (value === undefined ? undefined : parser(value))
 		}
 		case 'nullable': {
-			const parser = compileParser(shape.inner)
+			const parser = compileParserInner(shape.inner)
 			return (value) => (value === null ? null : parser(value))
 		}
 		case 'raw':
@@ -649,6 +741,11 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
  * @returns A value matching the shape
  */
 export function compileGenerator(shape: ContractShape, random: RandomFunction): unknown {
+	assertAcyclicShape(shape, new WeakSet<ContractShape>())
+	return compileGeneratorInner(shape, random)
+}
+
+function compileGeneratorInner(shape: ContractShape, random: RandomFunction): unknown {
 	switch (shape.type) {
 		case 'string': {
 			// The generated value's TOTAL length (including the `str_`
@@ -700,7 +797,7 @@ export function compileGenerator(shape: ContractShape, random: RandomFunction): 
 			const length = Math.floor(random() * (max - min + 1)) + min
 			const result: unknown[] = []
 			for (let index = 0; index < length; index += 1) {
-				result.push(compileGenerator(shape.items, random))
+				result.push(compileGeneratorInner(shape.items, random))
 			}
 			return result
 		}
@@ -714,7 +811,7 @@ export function compileGenerator(shape: ContractShape, random: RandomFunction): 
 				if (child.type === 'optional' && random() < 0.3) {
 					continue
 				}
-				result[key] = compileGenerator(child, random)
+				result[key] = compileGeneratorInner(child, random)
 			}
 			return result
 		}
@@ -739,12 +836,12 @@ export function compileGenerator(shape: ContractShape, random: RandomFunction): 
 			if (variant === undefined) {
 				return undefined
 			}
-			return compileGenerator(variant, random)
+			return compileGeneratorInner(variant, random)
 		}
 		case 'optional':
-			return compileGenerator(shape.inner, random)
+			return compileGeneratorInner(shape.inner, random)
 		case 'nullable':
-			return random() < 0.2 ? null : compileGenerator(shape.inner, random)
+			return random() < 0.2 ? null : compileGeneratorInner(shape.inner, random)
 		case 'raw':
 			// Must emit a DEFINED, JSON-valid value: a required `rawShape`
 			// object property generating `undefined` collapses the key out

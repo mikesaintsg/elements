@@ -91,6 +91,7 @@ import {
 	unionOf,
 	whereOf,
 } from '@elements/core'
+import { makeCyclicArray, makeCyclicObject } from './_helpers.js'
 
 describe('primitive validators', () => {
 	test('detects null and undefined values', () => {
@@ -588,5 +589,101 @@ describe('domain validators', () => {
 		expect(isFiniteNumber(42)).toBe(true)
 		expect(isFiniteNumber(Number.POSITIVE_INFINITY)).toBe(false)
 		expect(isFiniteNumber('42')).toBe(false)
+	})
+})
+
+// === §13 — a public type guard must NEVER throw (cycle / depth safety)
+//
+// `isJsonValue` / `isJsonObject` / `isJsonSchema` recurse over arbitrary
+// object graphs. A cyclic input (`const a={}; a.self=a`) or a pathologically
+// deep input caused unbounded recursion → a `RangeError` thrown OUT of a
+// PUBLIC GUARD, violating AGENTS.md §13 ("Inside a type guard → return false —
+// never throw"). These tests pin the recursion-safe contract: such input must
+// resolve to a boolean (here: `false`), never throw / blow the stack.
+
+describe('§13 — JSON guards are cycle- and depth-safe (never throw)', () => {
+	it('isJsonValue returns false (not RangeError) for a self-referential array', () => {
+		const cyclic = makeCyclicArray()
+		expect(() => isJsonValue(cyclic)).not.toThrow()
+		expect(isJsonValue(cyclic)).toBe(false)
+	})
+
+	it('isJsonValue returns false (not RangeError) for a self-referential object', () => {
+		const cyclic = makeCyclicObject()
+		expect(() => isJsonValue(cyclic)).not.toThrow()
+		expect(isJsonValue(cyclic)).toBe(false)
+	})
+
+	it('isJsonObject returns false (not RangeError) for a self-referential object', () => {
+		const cyclic = makeCyclicObject()
+		expect(() => isJsonObject(cyclic)).not.toThrow()
+		expect(isJsonObject(cyclic)).toBe(false)
+	})
+
+	it('isJsonSchema returns false (not RangeError) for a cyclic schema-ish object', () => {
+		// A schema-shaped object whose `default` keyword points back at itself:
+		// the structured `default` check recurses via isJsonValue. Must resolve
+		// to a boolean, never RangeError out of the guard.
+		const cyclic: Record<string, unknown> = { type: 'object' }
+		cyclic['default'] = cyclic
+		expect(() => isJsonSchema(cyclic)).not.toThrow()
+		expect(isJsonSchema(cyclic)).toBe(false)
+	})
+
+	it('isJsonValue does not stack-overflow on a 100k-deep nested array', () => {
+		// Built iteratively (not recursively) so constructing the fixture
+		// itself cannot blow the stack — only the guard's recursion is tested.
+		let deep: unknown[] = []
+		const root = deep
+		for (let i = 0; i < 100_000; i += 1) {
+			const next: unknown[] = []
+			deep.push(next)
+			deep = next
+		}
+		let result: boolean | undefined
+		expect(() => {
+			result = isJsonValue(root)
+		}).not.toThrow()
+		expect(typeof result).toBe('boolean')
+	})
+
+	it('isJsonValue does not stack-overflow on a 100k-deep nested object', () => {
+		let deep: Record<string, unknown> = {}
+		const root = deep
+		for (let i = 0; i < 100_000; i += 1) {
+			const next: Record<string, unknown> = {}
+			deep['child'] = next
+			deep = next
+		}
+		let result: boolean | undefined
+		expect(() => {
+			result = isJsonValue(root)
+		}).not.toThrow()
+		expect(typeof result).toBe('boolean')
+	})
+
+	it('isJsonValue: a child object reused in two sibling keys is NOT a cycle → true', () => {
+		// Shared-but-acyclic substructure must not false-positive as a cycle.
+		// The same leaf object referenced from two distinct sibling keys is a
+		// DAG, not a cycle — it is valid JSON and must validate `true`.
+		const shared = { a: 1, b: 'ok' }
+		const value = { left: shared, right: shared, list: [shared, shared] }
+		expect(isJsonValue(value)).toBe(true)
+	})
+
+	it('isJsonValue: a legitimately deep-but-acyclic object still validates true', () => {
+		// 50-level nested acyclic object — guard must NOT over-reject genuine
+		// deep JSON (the cycle guard must be precise, not a blanket depth ban).
+		let node: Record<string, unknown> = { leaf: 'value' }
+		for (let i = 0; i < 50; i += 1) {
+			node = { child: node }
+		}
+		expect(isJsonValue(node)).toBe(true)
+	})
+
+	it('isJsonSchema: a sub-schema reused in two keyword slots is NOT a cycle → true', () => {
+		const sub = { type: 'string' } as const
+		const schema = { type: 'object', if: sub, then: sub, else: sub }
+		expect(isJsonSchema(schema)).toBe(true)
 	})
 })
