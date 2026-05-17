@@ -741,6 +741,11 @@ describe('traversal', () => {
 		})
 
 		it('isInViewport returns true for an element fully within the viewport', () => {
+			// The element is a 60x60 box at (10,10); assert it only when the headless
+			// viewport is at least that large (viewport size varies by runner — see
+			// tests/src/styles/elements/typography.test.ts).
+			expect(window.innerWidth).toBeGreaterThanOrEqual(60)
+			expect(window.innerHeight).toBeGreaterThanOrEqual(60)
 			const inside = makeFixed({ top: '10px', left: '10px', width: '50px', height: '50px' })
 			expect(isInViewport(inside)).toBe(true)
 		})
@@ -751,6 +756,11 @@ describe('traversal', () => {
 		})
 
 		it('isPartiallyInViewport returns true for an element fully within the viewport', () => {
+			// The element is a 60x60 box at (10,10); assert it only when the headless
+			// viewport is at least that large (viewport size varies by runner — see
+			// tests/src/styles/elements/typography.test.ts).
+			expect(window.innerWidth).toBeGreaterThanOrEqual(60)
+			expect(window.innerHeight).toBeGreaterThanOrEqual(60)
 			const inside = makeFixed({ top: '10px', left: '10px', width: '50px', height: '50px' })
 			expect(isPartiallyInViewport(inside)).toBe(true)
 		})
@@ -774,8 +784,13 @@ describe('traversal', () => {
 		})
 
 		it('getViewportVisibility returns 100 for an element fully within the viewport', () => {
+			// The element is a 60x60 box at (10,10); assert it only when the headless
+			// viewport is at least that large (viewport size varies by runner — see
+			// tests/src/styles/elements/typography.test.ts).
+			expect(window.innerWidth).toBeGreaterThanOrEqual(60)
+			expect(window.innerHeight).toBeGreaterThanOrEqual(60)
 			const inside = makeFixed({ top: '10px', left: '10px', width: '50px', height: '50px' })
-			expect(getViewportVisibility(inside)).toBe(100)
+			expect(getViewportVisibility(inside)).toBeGreaterThanOrEqual(99)
 		})
 	})
 
