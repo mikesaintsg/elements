@@ -1174,6 +1174,92 @@ describe('compileGenerator — rawShape', () => {
 	})
 })
 
+// FU4 — `compileGenerator` for a NON-DISJOINT `oneOf` previously picked a
+// random variant blindly: a value generated from variant A could also satisfy
+// variant B, so the `oneOf` guard (exactly-one) rejected it, breaking the
+// generator∘guard invariant. The generator now retries (driven by the same
+// seeded PRNG) until an exactly-one-matching value is found, throwing a precise
+// generation-time §13 Error only when no resolvable value exists within bound.
+describe('compileGenerator — non-disjoint oneOf (FU4)', () => {
+	const seeds = [1, 2, 3, 7, 11, 42, 99, 137, 256, 1009] as const
+
+	it('overlapping numeric oneOf — every generated value matches EXACTLY one variant', () => {
+		// `number` ⊇ `integer`: a generated integer satisfies BOTH the
+		// numberShape variant and the integerShape variant, so the OLD blind
+		// generator produced values the oneOf guard rejected. Pin the fixed
+		// invariant: generator∘guard holds across many seeds.
+		const shape = oneOfShape(numberShape(), integerShape())
+		const guard = compileGuard(shape)
+		for (const seed of seeds) {
+			const value = compileGenerator(shape, createRandom(seed))
+			expect(
+				guard(value),
+				`seed ${seed}: generated ${JSON.stringify(value)} fails the non-disjoint oneOf guard`,
+			).toBe(true)
+		}
+		assertGeneratorSatisfiesGuard(shape, [...seeds])
+	})
+
+	it('overlapping object oneOf — generated value matches EXACTLY one variant', () => {
+		// Two open object shapes where one's instances also satisfy the other
+		// ({a} ⊂ {a, b?-open}). Blind generation could emit a value matching
+		// both branches.
+		const shape = oneOfShape(
+			objectShape({ a: stringShape({ min: 1 }) }, { additionalProperties: true }),
+			objectShape({ a: stringShape({ min: 1 }), b: integerShape({ min: 0 }) }, { additionalProperties: true }),
+		)
+		const guard = compileGuard(shape)
+		for (const seed of seeds) {
+			const value = compileGenerator(shape, createRandom(seed))
+			expect(guard(value), `seed ${seed}: ${JSON.stringify(value)} fails oneOf`).toBe(true)
+		}
+	})
+
+	it('disjoint oneOf — no regression: still exactly-one across many seeds', () => {
+		// string{min:1} vs integer{min:0} are disjoint by JS type — the retry
+		// path must not perturb the already-sound disjoint case.
+		assertGeneratorSatisfiesGuard(oneOfShape(stringShape({ min: 1 }), integerShape({ min: 0 })), [...seeds])
+		assertGeneratorSatisfiesGuard(oneOfShape(stringShape(), booleanShape()), [...seeds])
+		assertGeneratorSatisfiesGuard(
+			oneOfShape(
+				objectShape({ kind: literalShape('a'), value: stringShape() }),
+				objectShape({ kind: literalShape('b'), value: integerShape() }),
+			),
+			[...seeds],
+		)
+	})
+
+	it('deterministic — same seed yields the same exactly-one value (or same error)', () => {
+		const shape = oneOfShape(numberShape(), integerShape())
+		for (const seed of [1, 5, 42, 1009]) {
+			const a = compileGenerator(shape, createRandom(seed))
+			const b = compileGenerator(shape, createRandom(seed))
+			expect(a).toEqual(b)
+		}
+	})
+
+	it('unsatisfiable oneOf — throws a precise generation-time Error, deterministically', () => {
+		// Two variants whose value sets are IDENTICAL: every value matches
+		// BOTH, so NO exactly-one-matching value exists. The retry bound is
+		// exhausted → a precise §13 generation-time throw (NOT a RangeError,
+		// NOT a silent guard-invalid value), and the throw is deterministic.
+		const shape = oneOfShape(integerShape({ min: 0, max: 10 }), integerShape({ min: 0, max: 10 }))
+		const run = (): unknown => compileGenerator(shape, createRandom(1))
+		expect(run).toThrow(/oneOf/i)
+		expect(run).toThrow(/disjoint|anyOf/i)
+		// Deterministic: the same seed throws the SAME message every time.
+		const messageOf = (): string => {
+			try {
+				run()
+			} catch (reason) {
+				return reason instanceof Error ? reason.message : String(reason)
+			}
+			throw new Error('expected compileGenerator to throw for an unsatisfiable oneOf')
+		}
+		expect(messageOf()).toBe(messageOf())
+	})
+})
+
 // === object root compatibility
 
 describe('compileSchema — object root compatibility', () => {
@@ -2791,8 +2877,11 @@ describe('F3 — assertGeneratorSatisfiesGuard sweep — every shape kind + comp
 		assertGeneratorSatisfiesGuard(unionShape(stringShape({ min: 1 }), integerShape({ min: 0 })), F3_SEEDS)
 		assertGeneratorSatisfiesGuard(unionShape(booleanShape(), numberShape({ min: 0 })), F3_SEEDS)
 		assertGeneratorSatisfiesGuard(unionShape(stringShape({ min: 1 }), integerShape(), booleanShape()), F3_SEEDS)
-		// oneOf disjoint variants only — overlapping would produce no guard-valid output (documented)
+		// oneOf disjoint: exactly-one matches on the first attempt.
 		assertGeneratorSatisfiesGuard(oneOfShape(stringShape({ min: 1 }), integerShape({ min: 0 })), F3_SEEDS)
+		// oneOf NON-disjoint (FU4): number ⊇ integer — the generator retries
+		// under the same seeded PRNG until it lands an exactly-one value.
+		assertGeneratorSatisfiesGuard(oneOfShape(numberShape(), integerShape()), F3_SEEDS)
 	})
 
 	it('optional and nullable wrappers', () => {

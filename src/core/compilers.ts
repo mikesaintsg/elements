@@ -1646,6 +1646,32 @@ function compileParserInner(
 // shapes are unaffected.
 const MAX_LAZY_DEPTH = 3
 
+// FU4 generator `oneOf` retry bound (documented — same UPPER_SNAKE,
+// module-local-const, empirically-justified discipline as `MAX_LAZY_DEPTH` /
+// `MAX_LAZY_DATA_DEPTH`; `src/core` has no `constants.ts`, so per AGENTS.md §5
+// a module-local const is the right home).
+//
+// A JSON-Schema `oneOf` is valid iff a value matches EXACTLY ONE variant. When
+// the variants are DISJOINT, a value generated from any single variant matches
+// only that one — one attempt always succeeds. When the variants OVERLAP
+// (`oneOf(number, integer)` — every integer matches both), a value generated
+// from a randomly-picked variant may satisfy ≥2 variants and the `oneOf` guard
+// (correctly) rejects it. The generator therefore generates a candidate, tests
+// it against the compiled `oneOf` guard, and — driven by the SAME seeded PRNG
+// so the retry stays reproducible per seed — retries up to this bound. The
+// probability of landing in a variant's exactly-one region is governed by that
+// region's measure relative to the whole; for any `oneOf` with a non-empty
+// exactly-one region this bound makes a miss astronomically unlikely (e.g. a
+// region covering merely 10% of draws fails all 64 independent attempts with
+// probability 0.9^64 ≈ 1.2e-3; a 25% region ≈ 1e-8 — and the realistic
+// disjoint case is region≈100%, succeeding on attempt 1). The bound is small
+// enough that an unsatisfiable `oneOf` (variants whose value sets are
+// identical — NO value matches exactly one) fails fast into a precise
+// generation-time §13 Error rather than spinning. 64 is the smallest power of
+// two that comfortably clears the realistic overlap regimes while keeping the
+// worst-case (deliberately unsatisfiable) generation bounded and fast.
+const MAX_ONEOF_ATTEMPTS = 64
+
 // The smallest guard-valid value for `shape`, with every recursive (lazy)
 // child collapsed to ITS minimal form. Used by the generator's `lazy` arm
 // once `MAX_LAZY_DEPTH` is hit so generation always terminates with a
@@ -1799,14 +1825,28 @@ function minimalInhabitant(
  * @remarks
  * Walks the shape tree producing a value of the inferred type. The same
  * shape and the same `random` seed always yield the same value, making
- * generated data reproducible across test runs. For `oneOf` union shapes,
- * generation picks a random variant and does not verify exclusivity — see
- * the inline note in the implementation for the known limitation with
- * overlapping variants.
+ * generated data reproducible across test runs. The output always satisfies
+ * `compileGuard(shape)`.
+ *
+ * For `oneOf` union shapes (JSON-Schema exactly-one), a candidate is
+ * generated from a PRNG-picked variant and tested against the compiled
+ * `oneOf` guard; if it matches more than one variant (the variants overlap —
+ * e.g. `oneOf(numberShape(), integerShape())`, where every integer matches
+ * both) the generator retries, driven by the same seeded `random`, up to a
+ * bounded number of attempts. Disjoint variants succeed on the first attempt,
+ * so the common case is unaffected and stays exactly-one valid. If no
+ * exactly-one-matching value exists within the bound (the variants overlap so
+ * heavily that every value matches ≥2 of them — an ill-posed `oneOf`), a
+ * precise generation-time {@link Error} is thrown naming the overlapping
+ * variants and suggesting disjoint branches or `anyOf`/`unionShape`. The
+ * throw is deterministic for a given seed.
  *
  * @param shape - The shape to generate a value from
  * @param random - Seeded deterministic random source (see {@link createRandom})
  * @returns A value that matches the shape
+ * @throws {Error} When `shape` is a `oneOf` whose variants overlap so
+ *         heavily that no exactly-one-matching value can be generated within
+ *         the retry bound.
  *
  * @example
  * ```ts
@@ -1928,22 +1968,50 @@ function compileGeneratorInner(
 			// unreachable through the public API. The dead defensive throw
 			// was removed per §20 — a hand-built variants-less union that
 			// bypasses the builder is itself programmer error.
-			//
-			// §15 limitation — overlapping oneOf variants: generation picks a
-			// random variant and generates from it without checking exclusivity.
-			// For `mode:'oneOf'`, a value generated from variant A may also
-			// satisfy variant B (e.g. `number` ∩ `integer`), causing the
-			// oneOf guard to see ≥2 matches and reject. This is acceptable:
-			// JSON-Schema `oneOf` requires mutually-exclusive (disjoint)
-			// subschemas by contract — overlapping variants are an ill-posed
-			// user modelling error. Generation is sound for disjoint variants
-			// (the supported/expected case).
-			const index = Math.floor(random() * shape.variants.length)
-			const variant = shape.variants[index]
-			if (variant === undefined) {
-				return undefined
+			if (shape.mode !== 'oneOf') {
+				// `anyOf`: a value matching ≥1 variant is valid, so a value
+				// generated from any single PRNG-picked variant always
+				// satisfies the union guard — one draw suffices.
+				const index = Math.floor(random() * shape.variants.length)
+				const variant = shape.variants[index]
+				if (variant === undefined) {
+					return undefined
+				}
+				return compileGeneratorInner(variant, random, lazyDepth)
 			}
-			return compileGeneratorInner(variant, random, lazyDepth)
+			// FU4 — `oneOf` is exactly-one. A value generated from a single
+			// PRNG-picked variant can ALSO satisfy a sibling variant when the
+			// variants OVERLAP (`oneOf(number, integer)` — every integer
+			// matches both), which the `oneOf` guard (correctly) rejects.
+			// Strategy A: generate a candidate, test it against the compiled
+			// `oneOf` guard, and — driven by the SAME threaded `random` so
+			// generation stays reproducible per seed — retry up to
+			// `MAX_ONEOF_ATTEMPTS`. The first exactly-one-matching candidate
+			// is returned (disjoint variants succeed on attempt 1, so the
+			// already-sound disjoint case is unperturbed). If the bound is
+			// exhausted the `oneOf` has no (reachable) exactly-one region — an
+			// ill-posed shape (e.g. two variants with identical value sets) —
+			// so a precise generation-time §13 Error is thrown rather than
+			// silently emitting a guard-invalid value. This is a build/
+			// generation-boundary throw, NOT a guard, so §13 permits it (cf.
+			// `minimalInhabitant`'s "no finite inhabitant" throw).
+			const oneOfGuard = compileGuard(shape)
+			for (let attempt = 0; attempt < MAX_ONEOF_ATTEMPTS; attempt += 1) {
+				const index = Math.floor(random() * shape.variants.length)
+				const variant = shape.variants[index]
+				if (variant === undefined) {
+					return undefined
+				}
+				const candidate = compileGeneratorInner(variant, random, lazyDepth)
+				if (oneOfGuard(candidate)) {
+					return candidate
+				}
+			}
+			throw new Error(
+				`oneOf has no exactly-one-matching value within ${MAX_ONEOF_ATTEMPTS} generation attempts: its variants (${shape.variants
+					.map((variant) => variant.type)
+					.join(', ')}) overlap so heavily that every generated value satisfies two or more of them, which the JSON-Schema oneOf contract (exactly one) rejects. Make the variants disjoint (mutually exclusive) or use anyOf/unionShape if a value is allowed to match more than one.`,
+			)
 		}
 		case 'intersection': {
 			// All members are object shapes (§13 build constraint). Generate
