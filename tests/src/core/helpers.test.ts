@@ -1122,6 +1122,26 @@ describe('isMultipleOf', () => {
 		expect(isMultipleOf(0.30000000000001, 0.1)).toBe(false)
 	})
 
+	it('money / moderate-quotient decimals stay complete (FU10 follow-up)', () => {
+		// These quotients are NOT exactly representable — e.g.
+		// 0.28 / 0.01 === 27.999999999999996 (qErr ~2.8e-14). A fixed
+		// quotient-space band rejected them (~13.6% of dollar-and-cent
+		// values); the value-space magnitude-scaled band must accept them.
+		expect(isMultipleOf(0.28, 0.01)).toBe(true)
+		expect(isMultipleOf(0.29, 0.01)).toBe(true)
+		expect(isMultipleOf(0.58, 0.01)).toBe(true)
+		expect(isMultipleOf(1.15, 0.01)).toBe(true)
+		expect(isMultipleOf(1234567890.12, 0.01)).toBe(true)
+		expect(isMultipleOf(999999999999.99, 0.01)).toBe(true)
+	})
+
+	it('large-magnitude decimal multiples stay complete (FU10 follow-up)', () => {
+		expect(isMultipleOf(1e14, 0.1)).toBe(true)
+		expect(isMultipleOf(100000000 * 0.01, 0.01)).toBe(true)
+		expect(isMultipleOf(123456789 * 0.01, 0.01)).toBe(true)
+		expect(isMultipleOf(987654321 * 0.01, 0.01)).toBe(true)
+	})
+
 	it('non-integer divisor with an exact multiple → true', () => {
 		expect(isMultipleOf(1, 0.25)).toBe(true)
 		expect(isMultipleOf(2.5, 0.5)).toBe(true)

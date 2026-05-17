@@ -508,18 +508,25 @@ export function unescapeToken(token: string): string {
  * `value` is a multiple of `divisor` within IEEE-754 tolerance.
  *
  * @remarks
- * `value / divisor` must be (near) an integer. A small ABSOLUTE epsilon on
- * the quotient (`Number.EPSILON * 8`, ~1.8e-15) tolerates the genuine
- * IEEE-754 rounding error of the division for common decimal divisors —
- * `0.3 / 0.1` lands ~4.4e-16 off 3, `0.6 / 0.1` ~8.9e-16 off 6 — while
- * still rejecting a clearly non-multiple (`0.30000000000001 / 0.1` is
- * ~1e-13 off, ~50x the band). The band is deliberately NOT scaled by
- * `|quotient|`: a quotient-proportional band grows without bound at large
- * magnitude (for `MAX_SAFE_INTEGER / 2` it reached ~8, swallowing the 0.5
- * residual of an odd/2 division and falsely accepting odd integers). A
- * fixed band is sound because an exact large-magnitude integer division
- * has zero rounding error (it stays accepted), whereas a non-multiple's
- * residual is a meaningful fraction that always dwarfs ~1.8e-15.
+ * Two regimes:
+ *
+ * - **Exact integer fast-path**: when both operands are integers,
+ *   `value % divisor === 0` is exact (integer arithmetic on safe doubles
+ *   carries no rounding slop). This is what makes a large odd integer
+ *   divided by a small integer SOUND with no tolerance argument at all —
+ *   `9007199254740991 % 2 === 1`, so it rejects (returns `false`).
+ *
+ * - **Value-space relative band** for non-integer operands: reconstruct
+ *   `rounded * divisor` and compare the residual in VALUE space
+ *   (`|value - rounded*divisor|`) against a tolerance scaled by operand
+ *   magnitude (`8 * Number.EPSILON * max(|value|, |reconstructed|)`).
+ *   Because the band tracks the operands' own ULP it preserves decimal
+ *   completeness at every magnitude — `0.28 / 0.01` (quotient
+ *   `27.999999999999996`, value-space residual on the order of the cents
+ *   ULP) through large money (`1234567890.12 / 0.01`) all accept — while a
+ *   genuine non-multiple's residual is far larger than its magnitude-scaled
+ *   band (`0.30000000000001 / 0.1` is ~1e-14 off in value space, orders of
+ *   magnitude above its band) so it rejects.
  *
  * @param value - The dividend
  * @param divisor - The divisor (a zero divisor yields `false`)
@@ -536,17 +543,24 @@ export function isMultipleOf(value: number, divisor: number): boolean {
 	if (divisor === 0) {
 		return false
 	}
+	// Exact integer fast-path: integer % integer on safe doubles is exact,
+	// so a large odd integer ÷ small integer is SOUND with no tolerance
+	// (`9007199254740991 % 2 === 1` → false). FU10 §13.
+	if (Number.isInteger(value) && Number.isInteger(divisor)) {
+		return value % divisor === 0
+	}
 	const quotient = value / divisor
 	const rounded = Math.round(quotient)
 	if (rounded === quotient) {
 		return true
 	}
-	// Tolerate ONLY genuine IEEE-754 representation error of the division
-	// (`0.3 / 0.1` lands ~4.4e-16 off 3) with a FIXED absolute band — NOT
-	// scaled by |quotient|, which would grow unbounded and falsely accept
-	// large odd integers as multiples of 2 (FU10 §13). An exact large
-	// division rounds to zero error so it still passes; a non-multiple's
-	// residual always exceeds ~1.8e-15.
-	const epsilon = Number.EPSILON * 8
-	return Math.abs(quotient - rounded) <= epsilon
+	// Non-integer operands: compare the residual in VALUE space against a
+	// band scaled by operand magnitude. Tracking the operands' own ULP
+	// preserves decimal completeness at every magnitude (cents → large
+	// money) while a genuine non-multiple's value-space residual dwarfs its
+	// magnitude-scaled band, so it still rejects (FU10 follow-up).
+	const reconstructed = rounded * divisor
+	const tolerance =
+		Number.EPSILON * 8 * Math.max(Math.abs(value), Math.abs(reconstructed))
+	return Math.abs(value - reconstructed) <= tolerance
 }
