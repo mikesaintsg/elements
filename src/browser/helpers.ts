@@ -987,10 +987,28 @@ export function resolvePopoverSide(anchor: HTMLElement, panel: HTMLElement): Sid
 // The real focusability predicate plus container scans built on it. These
 // live here (not in `traversals.ts`) so `traversals.ts` stays free of focus
 // logic and `helpers.ts` keeps a one-way `traversals → helpers` edge with no
-// import cycle. `findFocusableElements` / `findFirstFocusable` use a
-// self-contained depth-first stack walk (same pre-order as the traversals
-// `walkDescendants`: children pushed last-first so the stack pops in document
-// order) so this module imports NOTHING from `traversals.ts`.
+// import cycle. All three scans share a single private depth-first generator
+// (`eachDescendant`) — same pre-order as the traversals `walkDescendantsGenerator`:
+// children pushed last-first so the stack pops in document order.
+
+function* eachDescendant(element: Element): Generator<Element, void, unknown> {
+	const stack: Element[] = []
+	let child = element.lastElementChild
+	while (child !== null) {
+		stack.push(child)
+		child = child.previousElementSibling
+	}
+	while (stack.length > 0) {
+		const current = stack.pop()
+		if (current === undefined) break
+		yield current
+		child = current.lastElementChild
+		while (child !== null) {
+			stack.push(child)
+			child = child.previousElementSibling
+		}
+	}
+}
 
 /** Check if an element can actually receive focus. */
 export function isFocusable(element: HTMLElement): boolean {
@@ -1030,54 +1048,27 @@ export function isFocusable(element: HTMLElement): boolean {
 /** Find all focusable elements within a container, in document order. */
 export function findFocusableElements(element: Element): readonly HTMLElement[] {
 	const focusable: HTMLElement[] = []
-	const stack: Element[] = []
-	let child = element.lastElementChild
-	while (child !== null) {
-		stack.push(child)
-		child = child.previousElementSibling
-	}
-	while (stack.length > 0) {
-		const current = stack.pop()
-		if (current === undefined) break
-		if (current instanceof HTMLElement && isFocusable(current)) {
-			focusable.push(current)
-		}
-		child = current.lastElementChild
-		while (child !== null) {
-			stack.push(child)
-			child = child.previousElementSibling
-		}
+	for (const el of eachDescendant(element)) {
+		if (el instanceof HTMLElement && isFocusable(el)) focusable.push(el)
 	}
 	return focusable
 }
 
 /** Find the first focusable element (depth-first, document order). */
 export function findFirstFocusable(element: Element): HTMLElement | null {
-	const stack: Element[] = []
-	let child = element.lastElementChild
-	while (child !== null) {
-		stack.push(child)
-		child = child.previousElementSibling
-	}
-	while (stack.length > 0) {
-		const current = stack.pop()
-		if (current === undefined) break
-		if (current instanceof HTMLElement && isFocusable(current)) {
-			return current
-		}
-		child = current.lastElementChild
-		while (child !== null) {
-			stack.push(child)
-			child = child.previousElementSibling
-		}
+	for (const el of eachDescendant(element)) {
+		if (el instanceof HTMLElement && isFocusable(el)) return el
 	}
 	return null
 }
 
 /** Find the last focusable element. */
 export function findLastFocusable(element: Element): HTMLElement | null {
-	const focusable = findFocusableElements(element)
-	return focusable.length > 0 ? focusable[focusable.length - 1] ?? null : null
+	let last: HTMLElement | null = null
+	for (const el of eachDescendant(element)) {
+		if (el instanceof HTMLElement && isFocusable(el)) last = el
+	}
+	return last
 }
 
 // ── Roving keyboard navigation ──────────────────────────────────────────────
