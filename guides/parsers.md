@@ -164,7 +164,7 @@ coerceString(42) // '42'     (finite number → string)
 coerceString(Infinity) // undefined  (non-finite)
 coerceNumber('12px') // 12        (parseFloat — leading numeric ok)
 coerceNumber(Infinity) // Infinity  (looser than parseNumber, which rejects it)
-coerceNumber('nope') // undefined  (only NaN fails)
+coerceNumber('nope') // undefined  (parseFloat('nope') is NaN)
 coerceRecord({ a: 1 }) // { a: 1 }
 coerceRecord('not a record') // {}        (never undefined)
 ```
