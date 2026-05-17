@@ -70,6 +70,9 @@ function validateBounds(
  * Throws if `min`/`max` are not finite, are negative, or `min > max`
  * (programmer error per AGENTS.md §13 — caught at build, not in a compiler).
  *
+ * @param options - Optional constraints: `min`/`max` length, `pattern`, `description`
+ * @returns A {@link StringShape} node
+ *
  * @example
  * ```ts
  * const name = stringShape({ min: 1, max: 80, description: 'Display name' })
@@ -93,8 +96,16 @@ export function stringShape(options?: StringShapeOptions): StringShape {
  *
  * @remarks
  * Throws if `min`/`max` are not finite or `min > max`. A negative numeric
- * VALUE bound is allowed (unlike string/array length) — programmer error per
- * AGENTS.md §13.
+ * value bound is allowed (unlike string/array length bounds) — programmer
+ * error per AGENTS.md §13.
+ *
+ * @param options - Optional constraints: `min`, `max`, `integer`, `description`
+ * @returns A {@link NumberShape} node
+ *
+ * @example
+ * ```ts
+ * const score = numberShape({ min: 0, max: 1 })
+ * ```
  */
 export function numberShape(options?: NumberShapeOptions): NumberShape {
 	validateBounds('numberShape', options?.min, options?.max, false)
@@ -111,8 +122,16 @@ export function numberShape(options?: NumberShapeOptions): NumberShape {
  * Build an integer {@link NumberShape}.
  *
  * @remarks
- * Convenience wrapper that forces `integer: true`. The emitted JSON
- * Schema uses `"type": "integer"`.
+ * Convenience wrapper around {@link numberShape} that forces `integer: true`.
+ * The emitted JSON Schema uses `"type": "integer"`. Throws on invalid bounds.
+ *
+ * @param options - Optional constraints: `min`, `max`, `description` (no `integer`)
+ * @returns A {@link NumberShape} node with `integer: true`
+ *
+ * @example
+ * ```ts
+ * const age = integerShape({ min: 0, max: 120 })
+ * ```
  */
 export function integerShape(options?: Omit<NumberShapeOptions, 'integer'>): NumberShape {
 	validateBounds('integerShape', options?.min, options?.max, false)
@@ -127,7 +146,17 @@ export function integerShape(options?: Omit<NumberShapeOptions, 'integer'>): Num
 
 // === Boolean
 
-/** Build a {@link BooleanShape}. */
+/**
+ * Build a {@link BooleanShape}.
+ *
+ * @param options - Optional `description` annotation
+ * @returns A {@link BooleanShape} node
+ *
+ * @example
+ * ```ts
+ * const flag = booleanShape({ description: 'Feature enabled' })
+ * ```
+ */
 export function booleanShape(options?: BooleanShapeOptions): BooleanShape {
 	return {
 		type: 'boolean',
@@ -139,6 +168,12 @@ export function booleanShape(options?: BooleanShapeOptions): BooleanShape {
 
 /**
  * Build a {@link LiteralShape} from a fixed set of primitive values.
+ *
+ * Throws at build time when called with no arguments (an empty literal is
+ * uninhabited — programmer error per AGENTS.md §13).
+ *
+ * @param values - One or more string, number, or boolean literals (rest-spread)
+ * @returns A shape whose compiled guard accepts exactly those values
  *
  * @example
  * ```ts
@@ -167,6 +202,10 @@ export function literalShape<const T extends readonly (string | number | boolean
  * Throws if the length `min`/`max` are not finite, are negative, or
  * `min > max` (programmer error per AGENTS.md §13).
  *
+ * @param items - Shape for each array element
+ * @param options - Optional constraints: `min`/`max` length, `description`
+ * @returns An {@link ArrayShape} node
+ *
  * @example
  * ```ts
  * const tags = arrayShape(stringShape(), { max: 10 })
@@ -193,7 +232,12 @@ export function arrayShape<S extends ContractShape>(
  *
  * @remarks
  * Wrap any property in {@link optionalShape} to mark it absent-allowed.
- * The compiled guard rejects unknown keys.
+ * The compiled guard rejects unknown keys unless `additionalProperties` is
+ * set on the options.
+ *
+ * @param properties - Map from property name to child shape
+ * @param options - Optional `additionalProperties` constraint and `description`
+ * @returns An {@link ObjectShape} node
  *
  * @example
  * ```ts
@@ -219,7 +263,14 @@ export function objectShape<P extends Readonly<Record<string, ContractShape>>>(
 // === Union
 
 /**
- * Build a {@link UnionShape} from a list of variant shapes.
+ * Build a {@link UnionShape} (`anyOf`) from a list of variant shapes.
+ *
+ * The compiled guard accepts a value matching at least one variant. Throws
+ * at build time when called with no arguments. For exactly-one semantics,
+ * use {@link oneOfShape}.
+ *
+ * @param variants - Two or more variant shapes (rest-spread)
+ * @returns A {@link UnionShape} node with `anyOf` semantics
  *
  * @example
  * ```ts
@@ -241,11 +292,24 @@ export function unionShape<V extends readonly ContractShape[]>(
 // === Optional / Nullable
 
 /**
- * Wrap a shape so it may be absent.
+ * Wrap a shape so it may be absent (`undefined`).
  *
  * @remarks
- * Inside an {@link objectShape}, optional properties become true
- * optional fields in the inferred type.
+ * Inside an {@link objectShape}, optional properties become true optional
+ * fields in the inferred type (`T | undefined`). The compiled guard accepts
+ * `undefined` or any value satisfying the inner shape.
+ *
+ * @param inner - The shape to make optional
+ * @returns An {@link OptionalShape} wrapping `inner`
+ *
+ * @example
+ * ```ts
+ * const form = objectShape({
+ *     name: stringShape({ min: 1 }),
+ *     bio:  optionalShape(stringShape()),
+ * })
+ * // Infer<typeof form> = { name: string; bio?: string }
+ * ```
  */
 export function optionalShape<S extends ContractShape>(
 	inner: S,
@@ -253,7 +317,21 @@ export function optionalShape<S extends ContractShape>(
 	return { type: 'optional', inner }
 }
 
-/** Wrap a shape so it may be `null`. */
+/**
+ * Wrap a shape so it may be `null`.
+ *
+ * The compiled guard accepts `null` or any value satisfying the inner shape.
+ * The emitted JSON Schema uses `anyOf: [inner, { type: 'null' }]`.
+ *
+ * @param inner - The shape to make nullable
+ * @returns A {@link NullableShape} wrapping `inner`
+ *
+ * @example
+ * ```ts
+ * const maybeString = nullableShape(stringShape())
+ * // Infer<typeof maybeString> = string | null
+ * ```
+ */
 export function nullableShape<S extends ContractShape>(
 	inner: S,
 ): { readonly type: 'nullable'; readonly inner: S } & NullableShape {
@@ -271,10 +349,13 @@ export function nullableShape<S extends ContractShape>(
  * (`anyOf`), which accepts a value matching one OR MORE variants. The
  * emitted JSON Schema keyword (`oneOf` vs `anyOf`) matches the runtime rule.
  *
- * The compiled parser succeeds only when exactly one variant parses to a
- * guard-valid result; if two or more variants would each yield a guard-valid
- * result the exclusivity contract is violated and the parser returns
- * `undefined` (it never silently picks a winner).
+ * The compiled parser succeeds only when exactly one variant guard accepts
+ * the raw input; if two or more variant guards match the raw input the
+ * exclusivity contract is violated and the parser returns `undefined` — it
+ * never silently picks a winner.
+ *
+ * @param variants - Two or more mutually-exclusive variant shapes (rest-spread)
+ * @returns A {@link UnionShape} node with `mode: 'oneOf'`
  *
  * @example
  * ```ts
@@ -301,6 +382,10 @@ export function oneOfShape<V extends readonly ContractShape[]>(
  * @remarks
  * Convenience wrapper for `objectShape({}, { additionalProperties: values })`.
  * Useful for dictionary-like structures such as `Record<string, number>`.
+ *
+ * @param values - Shape applied to every additional property value
+ * @param options - Optional `description` annotation
+ * @returns An open {@link ObjectShape} where all values must satisfy `values`
  *
  * @example
  * ```ts
@@ -330,13 +415,18 @@ export function recordShape<S extends ContractShape>(
  * Build a {@link RawShape} from an arbitrary JSON Schema fragment.
  *
  * @remarks
- * Use for properties that accept any value or require JSON Schema
- * features beyond the shape DSL. The compiled guard always returns
- * `true`; the parser passes the value through unchanged.
+ * Use for properties that accept any value or require JSON Schema features
+ * beyond the shape DSL. The compiled guard always returns `true`; the parser
+ * passes the value through unchanged; the generator emits `null` (the
+ * smallest valid JSON value) as a placeholder.
+ *
+ * @param schema - An arbitrary JSON Schema fragment to embed verbatim
+ * @returns A {@link RawShape} node
  *
  * @example
  * ```ts
  * const anyValue = rawShape({ description: 'Default value' })
+ * // The compiled guard accepts any value; the schema is embedded as-is.
  * ```
  */
 export function rawShape(schema: JsonSchema): RawShape {

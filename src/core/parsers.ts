@@ -98,12 +98,49 @@ export function parseJsonSchemaObject(value: unknown): JsonSchemaObject | undefi
 	return isJsonSchemaObject(value) ? value : undefined
 }
 
-/** Narrow an unknown value against a compiled shape guard. */
+/**
+ * Narrow an unknown value against a compiled shape guard.
+ *
+ * Compiles `shape` on every call. If you need to guard the same shape
+ * repeatedly, compile once with {@link compileGuard} and reuse the result.
+ *
+ * @param value - The value to narrow
+ * @param shape - The contract shape to compile and check against
+ * @returns `true` when `value` satisfies the shape; narrows to `T`
+ *
+ * @example
+ * ```ts
+ * const userShape = objectShape({ name: stringShape({ min: 1 }), age: integerShape() })
+ * if (matchesShape<{ name: string; age: number }>(input, userShape)) {
+ *     console.log(input.name)
+ * }
+ * ```
+ */
 export function matchesShape<T>(value: unknown, shape: ContractShape): value is T {
 	return compileGuard(shape)(value)
 }
 
-/** Parse and narrow an unknown value against a compiled shape. */
+/**
+ * Parse and coerce an unknown value, then narrow it against a compiled shape.
+ *
+ * @remarks
+ * Compiles `shape` on every call; prefer {@link compileParser} + {@link matchesShape}
+ * (or {@link compileContract}) when calling repeatedly. The compiled parser
+ * coerces and normalises input (e.g. numeric strings → numbers); the shape
+ * guard then validates the normalised result. Returns `undefined` if parsing
+ * or guard validation fails.
+ *
+ * @param body - The raw value to parse and validate
+ * @param shape - The contract shape defining parsing rules and the guard
+ * @returns The narrowed, parsed value or `undefined`
+ *
+ * @example
+ * ```ts
+ * const userShape = objectShape({ name: stringShape({ min: 1 }), age: integerShape() })
+ * const user = parseShape<{ name: string; age: number }>(rawInput, userShape)
+ * // user is typed or undefined
+ * ```
+ */
 export function parseShape<T>(body: unknown, shape: ContractShape): T | undefined {
 	const parsed = compileParser(shape)(body)
 	return matchesShape<T>(parsed, shape) ? parsed : undefined

@@ -223,15 +223,25 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
 // === Guards
 
 /**
- * Compile a {@link ContractShape} into a runtime predicate.
+ * Compile a {@link ContractShape} into a runtime type-guard predicate.
  *
  * @remarks
  * The returned function is `(value: unknown) => boolean`. The
- * {@link ContractInterface} wraps it in a typed `Guard<T>` predicate
- * so consumers get full narrowing.
+ * {@link ContractInterface} wraps it in a typed `Guard<T>` predicate so
+ * consumers get full narrowing. Never throws on guard invocation — guards
+ * are cycle-safe when built from the public shape builders (a cyclic shape
+ * built without a lazy wrapper is detected up front and throws at compile
+ * time with a precise message, not a `RangeError` deep in the call stack).
  *
  * @param shape - The shape to compile
- * @returns A runtime predicate for the shape
+ * @returns A runtime predicate `(value: unknown) => boolean` for the shape
+ *
+ * @example
+ * ```ts
+ * const isUser = compileGuard(objectShape({ name: stringShape({ min: 1 }) }))
+ * isUser({ name: 'Ada' }) // true
+ * isUser({ name: '' })    // false — fails minLength: 1
+ * ```
  */
 export function compileGuard(shape: ContractShape): (value: unknown) => boolean {
 	assertAcyclicShape(shape, new WeakSet<ContractShape>())
@@ -393,12 +403,27 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
  * Compile a {@link ContractShape} into an input parser.
  *
  * @remarks
- * The returned parser coerces and normalizes input. It returns the
- * parsed value on success or `undefined` on failure. Object parsers
- * fail the whole record on any required-field failure.
+ * The returned parser coerces and normalises input (e.g. numeric strings to
+ * numbers, trimming strings) and returns the parsed value on success or
+ * `undefined` on failure. Parse↔guard soundness contract: the parser never
+ * emits a value that the same shape's compiled guard would reject, and it
+ * never rejects a value the guard already accepts (A/B/C invariants). Object
+ * parsers fail the whole record when any required field is absent or fails to
+ * parse. `oneOf` union parsers enforce exclusivity: if two or more variant
+ * guards match the raw input, the parser returns `undefined` rather than
+ * silently picking a winner.
  *
  * @param shape - The shape to compile
- * @returns A runtime parser for the shape
+ * @returns A parser `(value: unknown) => unknown` that returns the normalised
+ *          value or `undefined`
+ *
+ * @example
+ * ```ts
+ * const parseAge = compileParser(integerShape({ min: 0, max: 120 }))
+ * parseAge('36')  // 36 (numeric string coerced)
+ * parseAge(-1)    // undefined — below min
+ * parseAge('abc') // undefined
+ * ```
  */
 export function compileParser(shape: ContractShape): (value: unknown) => unknown {
 	assertAcyclicShape(shape, new WeakSet<ContractShape>())
@@ -729,16 +754,31 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 // === Generators
 
 /**
- * Compile a {@link ContractShape} into a deterministic seed value.
+ * Compile a {@link ContractShape} and immediately generate a seed value from
+ * it using the provided random source.
  *
  * @remarks
- * Walks the shape tree producing a value of the inferred type. The
- * same shape and the same `random` seed always produce the same value,
- * which makes seed data reproducible across test runs.
+ * Walks the shape tree producing a value of the inferred type. The same
+ * shape and the same `random` seed always yield the same value, making
+ * generated data reproducible across test runs. For `oneOf` union shapes,
+ * generation picks a random variant and does not verify exclusivity — see
+ * the inline note in the implementation for the known limitation with
+ * overlapping variants.
  *
- * @param shape - The shape to generate from
- * @param random - Seeded random source
- * @returns A value matching the shape
+ * @param shape - The shape to generate a value from
+ * @param random - Seeded deterministic random source (see {@link createRandom})
+ * @returns A value that matches the shape
+ *
+ * @example
+ * ```ts
+ * import { createRandom } from '@elements/core'
+ * const random = createRandom(42)
+ * const user = compileGenerator(
+ *     objectShape({ name: stringShape({ min: 1, max: 20 }), age: integerShape({ min: 0, max: 120 }) }),
+ *     random,
+ * )
+ * // user: { name: 'str_xxx', age: 42 } — deterministic for seed 42
+ * ```
  */
 export function compileGenerator(shape: ContractShape, random: RandomFunction): unknown {
 	assertAcyclicShape(shape, new WeakSet<ContractShape>())
