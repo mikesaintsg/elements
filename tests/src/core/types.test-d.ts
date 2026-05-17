@@ -25,17 +25,25 @@
 // `tests/src/core/**/*.test.ts`) does NOT collect it — the runtime test
 // count is unchanged; this is a pure compile-time gate.
 //
-// HOW IT ASSERTS — no test framework. Every assertion is a type-level
-// `export type … = AssertExact<Actual, Expected>` (each resolves to the
-// literal `true` ONLY when the two types are mutually assignable as written;
-// any `any`/`unknown`/index-signature widening or a lost
-// optional/readonly/null modifier resolves it to `never`, and the trailing
-// `extends true` constraint then fails the build). The realistic VALUE-LEVEL
-// consumer pattern (`compileContract(...).parse(x)`, `.is`, `.generate`, and
-// the single-purpose compilers) lives in exported functions whose return
-// types are pinned the same way, so a TS2589 at those call sites also fails
-// `npm run check`. No leading-underscore identifiers, no unused bindings
-// (AGENTS / oxlint clean).
+// HOW IT ASSERTS — no test framework. Every assertion is a value-level
+// `export const kind*: true = exactCheck<Actual, Expected>()`. The ambient
+// `exactCheck<A, B>()` declaration returns `IsExact<A, B>`, which resolves to
+// the literal `true` ONLY when A and B are bidirectionally equal as written
+// (the `(<T>() => T extends X ? 1 : 2)` invariant-comparison trick). Any
+// `any`/`unknown`/index-signature widening, lost optional/readonly/null
+// modifier, or `never` collapse makes `IsExact` resolve to `false`, and the
+// `: true` annotation makes TS error (TS2322) — a hard build failure.
+//
+// WHY VALUE-LEVEL (not bare `type` aliases):
+// The old pattern was `export type KindX = Assert<Exact<A, B>>` where
+// `Assert<C extends true> = C`. A bare unused `type` alias is NEVER a build
+// error: when `Exact<A, B>` resolves to `never`, `Assert<never>` satisfies
+// `never extends true` (vacuously true) and TS emits zero diagnostics — a
+// silent false-green. Only a value-level `: true` annotation on a `const`
+// forces TS to evaluate the condition and emit TS2322 when it is not `true`.
+//
+// No leading-underscore identifiers, no unused bindings (AGENTS / oxlint
+// clean). No `as`/`any`/`!`/`@ts-*`. No test framework collected by vitest.
 
 import {
 	type Infer,
@@ -64,14 +72,17 @@ import type { JsonSchema } from '@elements/core'
 // Bidirectional (exact) type equality. Resolves to `true` only when `A` and
 // `B` are mutually assignable AS WRITTEN — the `(<T>() => T extends X ? 1 :
 // 2)` trick compares invariantly, so a stray `any`/`unknown`/leaked index
-// signature makes it resolve to `never`. `Assert<C>` then constrains `C` to
-// `true`; a `never` (regression) violates the constraint and fails the build,
-// turning a precision COLLAPSE — not only a TS2589 — into a hard typecheck
-// failure that `npm run check` reports.
-type Exact<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
-	? true
-	: never
-type Assert<Condition extends true> = Condition
+// signature or a `never` collapse makes it resolve to `false`.
+// `exactCheck<A, B>()` is ambient-declared (no implementation) to return this
+// type directly — no `as` cast required. Pinning a const `: true` then makes
+// TS error (TS2322) on any mismatch, turning a precision collapse into a hard
+// typecheck failure that `npm run check` reports.
+type IsExact<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+	? (<T>() => T extends B ? 1 : 2) extends <T>() => T extends A ? 1 : 2
+		? true
+		: false
+	: false
+declare function exactCheck<A, B>(): IsExact<A, B>
 
 // === 1. Tuple — the canonical TS2589 reproduction (D1 `tupleShape`)
 //
@@ -92,15 +103,18 @@ export function tupleConsumer(x: unknown): {
 	return { parsed, guarded, generated, schema: contract.schema }
 }
 
-export type TupleParseExact = Assert<
-	Exact<ReturnType<typeof tupleConsumer>['parsed'], readonly [string, number] | undefined>
->
-export type TupleGuardFnExact = Assert<
-	Exact<ReturnType<typeof compileGuard>, (value: unknown) => boolean>
->
-export type TupleParseFnExact = Assert<
-	Exact<ReturnType<typeof compileParser>, (value: unknown) => unknown>
->
+export const tupleParseExact: true = exactCheck<
+	ReturnType<typeof tupleConsumer>['parsed'],
+	readonly [string, number] | undefined
+>()
+export const tupleGuardFnExact: true = exactCheck<
+	ReturnType<typeof compileGuard>,
+	(value: unknown) => boolean
+>()
+export const tupleParseFnExact: true = exactCheck<
+	ReturnType<typeof compileParser>,
+	(value: unknown) => unknown
+>()
 export function tupleSingleCompilers(): {
 	guard: (value: unknown) => boolean
 	parse: (value: unknown) => unknown
@@ -130,12 +144,10 @@ export function interConsumer(x: unknown): {
 	return { parsed, guarded, generated, schema: contract.schema }
 }
 
-export type InterParseExact = Assert<
-	Exact<
-		ReturnType<typeof interConsumer>['parsed'],
-		({ readonly a: string } & { readonly b: number }) | undefined
-	>
->
+export const interParseExact: true = exactCheck<
+	ReturnType<typeof interConsumer>['parsed'],
+	({ readonly a: string } & { readonly b: number }) | undefined
+>()
 export function interSingleCompilers(): {
 	guard: (value: unknown) => boolean
 	parse: (value: unknown) => unknown
@@ -157,86 +169,80 @@ export function interSingleCompilers(): {
 // === 3. Every primitive / wrapper / combinator kind stays PRECISE
 //
 // A regression to `any`, a leaked `[x: string]` index signature, or a lost
-// optional/readonly/null modifier makes `Exact<…>` resolve to `never` and
-// the `Assert<…>` constraint fails the build.
+// optional/readonly/null modifier makes `IsExact<…>` resolve to `false` and
+// the `: true` annotation errors (TS2322) — a hard build failure.
 
-export type KindString = Assert<Exact<Infer<ReturnType<typeof stringShape>>, string>>
-export type KindNumber = Assert<Exact<Infer<ReturnType<typeof numberShape>>, number>>
-export type KindInteger = Assert<Exact<Infer<ReturnType<typeof integerShape>>, number>>
-export type KindBoolean = Assert<Exact<Infer<ReturnType<typeof booleanShape>>, boolean>>
-export type KindLiteral = Assert<
-	Exact<Infer<ReturnType<typeof literalShape<['a', 'b', 3, true]>>>, 'a' | 'b' | 3 | true>
->
-export type KindArray = Assert<
-	Exact<Infer<ReturnType<typeof arrayShape<ReturnType<typeof stringShape>>>>, readonly string[]>
->
-export type KindTuple = Assert<
-	Exact<
-		Infer<
-			ReturnType<
-				typeof tupleShape<[ReturnType<typeof stringShape>, ReturnType<typeof integerShape>]>
+export const kindString: true = exactCheck<Infer<ReturnType<typeof stringShape>>, string>()
+export const kindNumber: true = exactCheck<Infer<ReturnType<typeof numberShape>>, number>()
+export const kindInteger: true = exactCheck<Infer<ReturnType<typeof integerShape>>, number>()
+export const kindBoolean: true = exactCheck<Infer<ReturnType<typeof booleanShape>>, boolean>()
+export const kindLiteral: true = exactCheck<
+	Infer<ReturnType<typeof literalShape<['a', 'b', 3, true]>>>,
+	'a' | 'b' | 3 | true
+>()
+export const kindArray: true = exactCheck<
+	Infer<ReturnType<typeof arrayShape<ReturnType<typeof stringShape>>>>,
+	readonly string[]
+>()
+export const kindTuple: true = exactCheck<
+	Infer<
+		ReturnType<
+			typeof tupleShape<[ReturnType<typeof stringShape>, ReturnType<typeof integerShape>]>
+		>
+	>,
+	readonly [string, number]
+>()
+export const kindObject: true = exactCheck<
+	Infer<
+		ReturnType<
+			typeof objectShape<{
+				a: ReturnType<typeof stringShape>
+				b: ReturnType<typeof optionalShape<ReturnType<typeof integerShape>>>
+				c: ReturnType<typeof nullableShape<ReturnType<typeof booleanShape>>>
+			}>
+		>
+	>,
+	Readonly<{ a: string; c: boolean | null } & { b?: number }>
+>()
+export const kindUnion: true = exactCheck<
+	Infer<
+		ReturnType<
+			typeof unionShape<[ReturnType<typeof stringShape>, ReturnType<typeof integerShape>]>
+		>
+	>,
+	string | number
+>()
+export const kindOneOf: true = exactCheck<
+	Infer<
+		ReturnType<
+			typeof oneOfShape<[ReturnType<typeof stringShape>, ReturnType<typeof booleanShape>]>
+		>
+	>,
+	string | boolean
+>()
+export const kindIntersection: true = exactCheck<
+	Infer<
+		ReturnType<
+			typeof intersectionShape<
+				[
+					ReturnType<typeof objectShape<{ a: ReturnType<typeof stringShape> }>>,
+					ReturnType<typeof objectShape<{ b: ReturnType<typeof integerShape> }>>,
+				]
 			>
-		>,
-		readonly [string, number]
-	>
->
-export type KindObject = Assert<
-	Exact<
-		Infer<
-			ReturnType<
-				typeof objectShape<{
-					a: ReturnType<typeof stringShape>
-					b: ReturnType<typeof optionalShape<ReturnType<typeof integerShape>>>
-					c: ReturnType<typeof nullableShape<ReturnType<typeof booleanShape>>>
-				}>
-			>
-		>,
-		Readonly<{ a: string; c: boolean | null } & { b?: number }>
-	>
->
-export type KindUnion = Assert<
-	Exact<
-		Infer<
-			ReturnType<
-				typeof unionShape<[ReturnType<typeof stringShape>, ReturnType<typeof integerShape>]>
-			>
-		>,
-		string | number
-	>
->
-export type KindOneOf = Assert<
-	Exact<
-		Infer<
-			ReturnType<
-				typeof oneOfShape<[ReturnType<typeof stringShape>, ReturnType<typeof booleanShape>]>
-			>
-		>,
-		string | boolean
-	>
->
-export type KindIntersection = Assert<
-	Exact<
-		Infer<
-			ReturnType<
-				typeof intersectionShape<
-					[
-						ReturnType<typeof objectShape<{ a: ReturnType<typeof stringShape> }>>,
-						ReturnType<typeof objectShape<{ b: ReturnType<typeof integerShape> }>>,
-					]
-				>
-			>
-		>,
-		Readonly<{ a: string } & Record<never, never>> &
-			Readonly<{ b: number } & Record<never, never>>
-	>
->
-export type KindOptional = Assert<
-	Exact<Infer<ReturnType<typeof optionalShape<ReturnType<typeof stringShape>>>>, string | undefined>
->
-export type KindNullable = Assert<
-	Exact<Infer<ReturnType<typeof nullableShape<ReturnType<typeof numberShape>>>>, number | null>
->
-export type KindRaw = Assert<Exact<Infer<ReturnType<typeof rawShape>>, unknown>>
+		>
+	>,
+	Readonly<{ a: string } & Record<never, never>> &
+		Readonly<{ b: number } & Record<never, never>>
+>()
+export const kindOptional: true = exactCheck<
+	Infer<ReturnType<typeof optionalShape<ReturnType<typeof stringShape>>>>,
+	string | undefined
+>()
+export const kindNullable: true = exactCheck<
+	Infer<ReturnType<typeof nullableShape<ReturnType<typeof numberShape>>>>,
+	number | null
+>()
+export const kindRaw: true = exactCheck<Infer<ReturnType<typeof rawShape>>, unknown>()
 
 // === 4. A deep-but-realistic nested shape (≥5 levels) stays precise
 //
@@ -280,7 +286,8 @@ export function deepConsumer(x: unknown): {
 	return { parsed, guarded, generated }
 }
 
-export type DeepParseExact = Assert<
-	Exact<ReturnType<typeof deepConsumer>['parsed'], DeepExpected | undefined>
->
-export type DeepInferExact = Assert<Exact<Infer<typeof deepShape>, DeepExpected>>
+export const deepParseExact: true = exactCheck<
+	ReturnType<typeof deepConsumer>['parsed'],
+	DeepExpected | undefined
+>()
+export const deepInferExact: true = exactCheck<Infer<typeof deepShape>, DeepExpected>()
