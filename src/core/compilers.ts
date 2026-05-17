@@ -8,7 +8,7 @@ import type {
 	ObjectShape,
 	RandomFunction,
 } from './types.js'
-import { parseBoolean, parseInteger, parseNumber, parseString } from './parsers.js'
+import { parseBoolean, parseInteger, parseNumber } from './parsers.js'
 import { isRecord } from './validators.js'
 
 // === Schema
@@ -297,16 +297,81 @@ export function compileGuard(shape: ContractShape): (value: unknown) => boolean 
  */
 export function compileParser(shape: ContractShape): (value: unknown) => unknown {
 	switch (shape.type) {
-		case 'string':
-			return parseString
-		case 'number':
-			return shape.integer === true ? parseInteger : parseNumber
+		case 'string': {
+			// Parse↔guard soundness (the canonical contract in
+			// tests/src/core/_helpers.ts): the COMPILED parser must accept
+			// exactly what THIS shape's guard accepts and never emit a value
+			// the guard rejects. The standalone `parseString` is the
+			// opinionated primitive (trims, rejects '') and DIVERGES from
+			// guard semantics — delegating to it broke (A) (it rejected the
+			// guard-valid '') and (B)/(C) (its trim could shrink a value
+			// below `min` or its trim/`''`-rejection could yield a value the
+			// `min`/`max`/`pattern` guard would reject). Discipline:
+			//   1. coerce a numeric input to its string form (preserves the
+			//      "JSON number arriving where a string is wanted" intent);
+			//   2. produce a normalized candidate (the trimmed string);
+			//   3. if the candidate passes THIS shape's guard, return it;
+			//   4. else if the RAW string passes the guard, return it
+			//      untrimmed (never reject input the guard already accepts);
+			//   5. else undefined.
+			// This makes (A)(B)(C) hold for every string constraint without
+			// per-call-site special-casing — it is shape-guard-driven.
+			const guard = compileGuard(shape)
+			return (value) => {
+				let raw: string | undefined
+				if (typeof value === 'string') {
+					raw = value
+				} else if (typeof value === 'number' && Number.isFinite(value)) {
+					raw = String(value)
+				} else {
+					return undefined
+				}
+				const trimmed = raw.trim()
+				if (guard(trimmed)) {
+					return trimmed
+				}
+				if (guard(raw)) {
+					return raw
+				}
+				return undefined
+			}
+		}
+		case 'number': {
+			// Parse↔guard soundness: keep the `parseNumber`/`parseInteger`
+			// coercion intent (numeric strings like '5' → 5) but re-validate
+			// the coerced value against THIS shape's guard so a coercion
+			// outcome can never violate min/max/integer (C). If the coerced
+			// value fails the shape guard we do NOT fall back to the raw
+			// input — the raw is a non-number (string/etc.) the number guard
+			// would reject anyway, so undefined is correct.
+			const primitive = shape.integer === true ? parseInteger : parseNumber
+			const guard = compileGuard(shape)
+			return (value) => {
+				const parsed = primitive(value)
+				if (parsed !== undefined && guard(parsed)) {
+					return parsed
+				}
+				if (guard(value)) {
+					return value
+				}
+				return undefined
+			}
+		}
 		case 'boolean':
+			// `parseBoolean` only ever returns a boolean or undefined, and
+			// the boolean guard accepts every boolean — so its output is
+			// already guard-sound (A)(B)(C). No re-validation needed.
 			return parseBoolean
 		case 'literal': {
+			// Parse↔guard soundness: the literal guard does NOT trim, so a
+			// trimmed candidate is only sound if it is itself an allowed
+			// literal. Re-validate every produced candidate against the
+			// shape's own guard; never emit a trimmed value the literal
+			// guard would reject (C).
 			const allowed = new Set<unknown>(shape.values)
+			const guard = compileGuard(shape)
 			return (value) => {
-				if (allowed.has(value)) {
+				if (guard(value)) {
 					return value
 				}
 				if (typeof value === 'string') {
@@ -319,20 +384,38 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 			}
 		}
 		case 'array': {
+			// Parse↔guard soundness: the per-item parser is itself sound
+			// (recursively), so a guard-valid array maps to an array of
+			// guard-valid items (A)(B). But the array's OWN min/max length
+			// constraint is enforced only by the array guard — without a
+			// final re-validation a length-violating input would still
+			// produce a populated array, breaking (C). So: build the parsed
+			// array, then if it passes THIS shape's guard return it; else if
+			// the RAW array already passes the guard return it untouched
+			// (never reject a guard-valid input); else undefined.
 			const itemParser = compileParser(shape.items)
+			const guard = compileGuard(shape)
 			return (value) => {
 				if (!Array.isArray(value)) {
 					return undefined
 				}
 				const result: unknown[] = []
+				let allParsed = true
 				for (const item of value) {
 					const parsed = itemParser(item)
 					if (parsed === undefined) {
-						return undefined
+						allParsed = false
+						break
 					}
 					result.push(parsed)
 				}
-				return result
+				if (allParsed && guard(result)) {
+					return result
+				}
+				if (guard(value)) {
+					return value
+				}
+				return undefined
 			}
 		}
 		case 'object': {
@@ -385,6 +468,19 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 					? compileParser(shape.additionalProperties)
 					: undefined
 			const open = shape.additionalProperties === true || additionalParser !== undefined
+			// Parse↔guard soundness: re-validate the FRESHLY BUILT result
+			// against THIS shape's guard. The per-field parsers are sound
+			// recursively, so a guard-valid input yields a guard-valid built
+			// object (A)(B); the final check additionally guarantees (C) for
+			// any path that could otherwise produce a guard-invalid object
+			// (e.g. an `additionalProperties` constraint, or a required key
+			// whose normalized form drifts). We deliberately DO NOT fall back
+			// to the raw input here (unlike string/number/array): the raw
+			// object may carry `__proto__`/`constructor`/`prototype` own keys
+			// that the B2 prototype-pollution hardening drops — returning raw
+			// would re-expose them. The built accumulator is the only safe
+			// output, and it is guard-equivalent to a guard-valid input.
+			const guard = compileGuard(shape)
 			return (value) => {
 				if (!isRecord(value)) {
 					return undefined
@@ -433,7 +529,9 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 						}
 					}
 				}
-				return result
+				// Final (C) gate: never emit an object the shape's own guard
+				// would reject (no raw fallback — see arm header comment).
+				return guard(result) ? result : undefined
 			}
 		}
 		case 'union': {

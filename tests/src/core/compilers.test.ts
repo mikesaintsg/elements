@@ -21,7 +21,11 @@ import {
 	stringShape,
 	unionShape,
 } from '@elements/core'
-import { POLLUTION_KEYS, assertNoPrototypePollution } from './_helpers.js'
+import {
+	POLLUTION_KEYS,
+	assertNoPrototypePollution,
+	assertParseGuardSymmetry,
+} from './_helpers.js'
 
 // === compileSchema
 
@@ -229,12 +233,22 @@ describe('compileGuard', () => {
 // === compileParser
 
 describe('compileParser', () => {
-	it('string — trims and normalizes', () => {
+	it('string — trims, accepts guard-valid empties, coerces numbers', () => {
+		// Corrected from the prior unsound expectations (parse('') →
+		// undefined, parse('   ') → undefined, parse(42) → undefined). Those
+		// asserted the OLD behaviour where the COMPILED string parser
+		// delegated to the opinionated standalone `parseString` (trims,
+		// rejects ''), which VIOLATED parse↔guard soundness:
+		// `compileGuard(stringShape())('')` is true, so by clause (A) the
+		// parser MUST accept '' (and '   ' normalizes to the guard-valid '').
+		// Number coercion (42 → '42') preserves the documented coerce-string
+		// intent and '42' passes the unconstrained string guard, so (C)
+		// holds. The standalone `parseString` export is unchanged.
 		const parse = compileParser(stringShape())
 		expect(parse('  hello  ')).toBe('hello')
-		expect(parse('')).toBeUndefined()
-		expect(parse('   ')).toBeUndefined()
-		expect(parse(42)).toBeUndefined()
+		expect(parse('')).toBe('')
+		expect(parse('   ')).toBe('')
+		expect(parse(42)).toBe('42')
 	})
 
 	it('number — coerces numeric strings', () => {
@@ -319,6 +333,94 @@ describe('compileParser', () => {
 		expect(parse('30')).toBe(30)
 		expect(parse(30)).toBe(30)
 		expect(parse('30.5')).toBeUndefined()
+	})
+})
+
+// === parse↔guard symmetry
+
+describe('parse↔guard symmetry', () => {
+	it('stringShape() — unconstrained, including empty + whitespace-padded', () => {
+		assertParseGuardSymmetry(stringShape(), ['', '  hi  ', 'abc', 'a'.repeat(1000)])
+	})
+
+	it('stringShape({ min: 4 })', () => {
+		assertParseGuardSymmetry(stringShape({ min: 4 }), ['  hi  ', 'abcd', 'abcdef', ''])
+	})
+
+	it('stringShape({ min: 5 })', () => {
+		assertParseGuardSymmetry(stringShape({ min: 5 }), ['ab', 'abcde'])
+	})
+
+	it('stringShape({ max: 3 })', () => {
+		assertParseGuardSymmetry(stringShape({ max: 3 }), ['abcd', 'abc'])
+	})
+
+	it('stringShape({ pattern })', () => {
+		assertParseGuardSymmetry(stringShape({ pattern: /^[a-z]+$/ }), ['abc', 'AB', '  ab  '])
+	})
+
+	it('literalShape(a, b)', () => {
+		assertParseGuardSymmetry(literalShape('a', 'b'), ['a', '  a  ', 'b', 'c'])
+	})
+
+	it('numberShape()', () => {
+		assertParseGuardSymmetry(numberShape(), [5, '5', -1, 'x', 5.5])
+	})
+
+	it('numberShape({ min: 0, max: 10 })', () => {
+		assertParseGuardSymmetry(numberShape({ min: 0, max: 10 }), [5, '5', -1, 'x', 5.5])
+	})
+
+	it('integerShape()', () => {
+		assertParseGuardSymmetry(integerShape(), [3, '3', 3.5, '3.0'])
+	})
+
+	it('booleanShape()', () => {
+		assertParseGuardSymmetry(booleanShape(), [true, false, 'true', '0', 1, 'yes'])
+	})
+
+	it('objectShape({ s: stringShape() }) — empty-string field survives', () => {
+		assertParseGuardSymmetry(objectShape({ s: stringShape() }), [{ s: '' }, { s: 'x' }])
+	})
+
+	it('objectShape with additionalProperties — open object passthrough', () => {
+		assertParseGuardSymmetry(
+			objectShape({ name: stringShape({ min: 1 }) }, { additionalProperties: true }),
+			[{ name: 'ok', extra: 'kept' }, { name: '' }],
+		)
+	})
+
+	it('arrayShape(stringShape()) — empty-string elements survive', () => {
+		assertParseGuardSymmetry(arrayShape(stringShape()), [['', 'a'], [], 'not array'])
+	})
+
+	it('optionalShape(stringShape()) at object level', () => {
+		assertParseGuardSymmetry(
+			objectShape({ s: optionalShape(stringShape()) }),
+			[{ s: '' }, { s: 'x' }, {}],
+		)
+	})
+
+	it('nullableShape(numberShape()) at object level', () => {
+		assertParseGuardSymmetry(
+			objectShape({ n: nullableShape(numberShape()) }),
+			[{ n: null }, { n: 5 }, { n: '5' }, { n: 'x' }],
+		)
+	})
+
+	it('unionShape(stringShape({min:1}), integerShape())', () => {
+		assertParseGuardSymmetry(unionShape(stringShape({ min: 1 }), integerShape()), [
+			'',
+			'hello',
+			5,
+			'5',
+			5.5,
+			true,
+		])
+	})
+
+	it('rawShape — identity', () => {
+		assertParseGuardSymmetry(rawShape({}), ['x', 42, null, { a: 1 }])
 	})
 })
 
@@ -634,14 +736,26 @@ describe('compileGuard — oneOf (runtime behavior same as anyOf)', () => {
 
 describe('compileParser — oneOf (runtime behavior same as anyOf)', () => {
 	it('parses a value matching a variant', () => {
-		const parser = compileParser(oneOfShape(stringShape(), integerShape()))
+		// Variant order: integerShape() first so the numeric input resolves
+		// to the integer variant. (Corrected from `oneOfShape(stringShape(),
+		// integerShape())` expecting `parser(42) === 42`: the sound compiled
+		// string parser now coerces 42 → '42' — '42' passes the string guard
+		// so the first variant legitimately wins. That is correct parse↔guard
+		// behaviour, not a number; the test's intent — "each variant parses"
+		// — is preserved by ordering the integer variant first.)
+		const parser = compileParser(oneOfShape(integerShape(), stringShape()))
 		expect(parser('hello')).toBe('hello')
 		expect(parser(42)).toBe(42)
 	})
 
 	it('returns undefined for non-matching value', () => {
+		// Corrected: with the sound string parser, 42 coerces to the
+		// guard-valid '42', so a string|boolean union legitimately parses 42
+		// (as '42'). To still exercise the "no variant matches" path we feed
+		// a value neither a boolean-coercible nor string-coercible primitive
+		// accepts: a plain object.
 		const parser = compileParser(oneOfShape(stringShape(), booleanShape()))
-		expect(parser(42)).toBeUndefined()
+		expect(parser({ not: 'a primitive' })).toBeUndefined()
 	})
 })
 
