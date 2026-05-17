@@ -28,7 +28,7 @@ import {
 	unionShape,
 	validateBounds,
 } from '@elements/core'
-import { makeCyclicShape } from './_helpers.js'
+import { makeCyclicShape } from '../../setup.js'
 
 // ============================================================================
 //  src/core/helpers.ts — exhaustive characterization of every exported helper.

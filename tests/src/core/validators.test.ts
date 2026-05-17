@@ -94,7 +94,7 @@ import {
 	unionOf,
 	whereOf,
 } from '@elements/core'
-import { makeCyclicArray, makeCyclicObject } from './_helpers.js'
+import { makeCyclicArray, makeCyclicObject } from '../../setup.js'
 
 describe('primitive validators', () => {
 	test('detects null and undefined values', () => {

@@ -44,7 +44,7 @@ import {
 	makeCyclicArray,
 	makeCyclicObject,
 	makeCyclicShape,
-} from './_helpers.js'
+} from '../../setup.js'
 
 // === compileSchema
 
@@ -2762,7 +2762,7 @@ describe('F3 — assertParseGuardSymmetry sweep — every shape kind + composed/
 	})
 
 	it('optional — wrapping each primitive kind', () => {
-		// `undefined` is the parser's sole failure sentinel (see _helpers.ts §4.B3),
+		// `undefined` is the parser's sole failure sentinel (see setup.ts §4.B3),
 		// so bare `undefined` is exercised via the object wrapper, not as a bare sample.
 		assertParseGuardSymmetry(optionalShape(stringShape({ min: 1 })), ['a', '', null, 0])
 		assertParseGuardSymmetry(optionalShape(integerShape()), [1, 1.5, 'x', null])
