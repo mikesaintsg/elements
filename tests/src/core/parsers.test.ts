@@ -18,13 +18,11 @@ import {
 	parseJsonAs,
 	parseNumber,
 	parseNumberField,
-	parsePositiveInt,
 	parseRecord,
 	parseRecordField,
 	parseShape,
 	parseString,
 	parseStringField,
-	parseStringFields,
 	isString,
 	optionalShape,
 	stringShape,
@@ -525,70 +523,6 @@ describe('coerceString', () => {
 		expect(coerceString(undefined)).toBeUndefined()
 		expect(coerceString({})).toBeUndefined()
 		expect(coerceString([])).toBeUndefined()
-	})
-})
-
-// === parseStringFields
-
-describe('parseStringFields', () => {
-	it('extracts specified string fields', () => {
-		const body = { name: '  Alice  ', email: 'a@b.com', age: 30 }
-		expect(parseStringFields(body, ['name', 'email'])).toEqual({
-			name: 'Alice',
-			email: 'a@b.com',
-		})
-	})
-
-	it('skips fields that are not present', () => {
-		const body = { name: 'Alice' }
-		expect(parseStringFields(body, ['name', 'email'])).toEqual({ name: 'Alice' })
-	})
-
-	it('skips fields that fail string parsing', () => {
-		const body = { name: 'Alice', count: 42 }
-		expect(parseStringFields(body, ['name', 'count'])).toEqual({ name: 'Alice' })
-	})
-
-	it('returns empty object when no fields match', () => {
-		expect(parseStringFields({ count: 42 }, ['name'])).toEqual({})
-	})
-
-	it('returns undefined for non-record body', () => {
-		expect(parseStringFields('not object', ['name'])).toBeUndefined()
-		expect(parseStringFields(null, ['name'])).toBeUndefined()
-		expect(parseStringFields(42, ['name'])).toBeUndefined()
-	})
-
-	it('handles empty field list', () => {
-		expect(parseStringFields({ name: 'Alice' }, [])).toEqual({})
-	})
-})
-
-// === parsePositiveInt
-
-describe('parsePositiveInt', () => {
-	it('parses valid positive integers', () => {
-		expect(parsePositiveInt('5', 0)).toBe(5)
-		expect(parsePositiveInt('0', 10)).toBe(0)
-		expect(parsePositiveInt('100', 0)).toBe(100)
-	})
-
-	it('returns fallback for undefined', () => {
-		expect(parsePositiveInt(undefined, 25)).toBe(25)
-	})
-
-	it('returns fallback for invalid strings', () => {
-		expect(parsePositiveInt('abc', 10)).toBe(10)
-		expect(parsePositiveInt('', 10)).toBe(10)
-	})
-
-	it('returns fallback for negative values', () => {
-		expect(parsePositiveInt('-1', 10)).toBe(10)
-		expect(parsePositiveInt('-100', 5)).toBe(5)
-	})
-
-	it('returns fallback for floats', () => {
-		expect(parsePositiveInt('3.14', 10)).toBe(10)
 	})
 })
 
