@@ -666,21 +666,24 @@ describe('helpers — runTransition', () => {
 
 describe('helpers — waitForFrame', () => {
 	it('waitForFrame defers to the next animation frame (not synchronous)', async () => {
+		let frameRan = false
+		requestAnimationFrame(() => {
+			frameRan = true
+		})
 		let resolved = false
 		const pending = waitForFrame().then(() => {
 			resolved = true
 		})
-		expect(resolved).toBe(false) // not resolved synchronously
-		let rafSeen = false
-		await new Promise<void>((resolve) => {
-			requestAnimationFrame(() => {
-				rafSeen = true
-				resolve()
-			})
-		})
+		// Drain the microtask queue WITHOUT yielding a frame. A synchronous or
+		// `Promise.resolve()` implementation would have flipped `resolved` by
+		// now; a real frame-bound one cannot resolve until an actual rAF tick.
+		await Promise.resolve()
+		await Promise.resolve()
+		expect(resolved).toBe(false)
+		expect(frameRan).toBe(false)
 		await pending
-		expect(rafSeen).toBe(true)
 		expect(resolved).toBe(true)
+		expect(frameRan).toBe(true)
 	})
 })
 
