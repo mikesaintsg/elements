@@ -1,4 +1,6 @@
+import type { TaxonomyEntry } from './types.js'
 import { SEGMENT } from './constants.js'
+import { entry } from './helpers.js'
 
 // ============================================================================
 // HTML Taxonomy Registry (TS mirror)
@@ -42,41 +44,6 @@ import { SEGMENT } from './constants.js'
 // design intent is documented), then mirror it here, then create the SCSS
 // partial. The parity tests close the loop.
 // ============================================================================
-
-export type ElementCategory =
-	| 'main-root'
-	| 'sectioning-root'
-	| 'content-sectioning'
-	| 'text-content'
-	| 'inline-text'
-	| 'image-multimedia'
-	| 'embedded-content'
-	| 'demarcating-edits'
-	| 'table-content'
-	| 'forms'
-	| 'interactive'
-	| 'class-component'
-
-export type ElementTreatment = 'substantive' | 'reset' | 'composable' | 'passthrough'
-
-export interface TaxonomyEntry {
-	readonly tag: string
-	readonly category: ElementCategory
-	readonly treatment: ElementTreatment
-	/** `use{Name}` factory key when treatment === 'composable'. */
-	readonly composable: string | null
-}
-
-// ── Helper: factor out the boilerplate so adding rows stays a one-liner ────
-
-function entry(
-	tag: string,
-	category: ElementCategory,
-	treatment: ElementTreatment,
-	composable: string | null = null,
-): TaxonomyEntry {
-	return { tag, category, treatment, composable }
-}
 
 // ── Registry ────────────────────────────────────────────────────────────────
 //

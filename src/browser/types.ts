@@ -45,6 +45,34 @@ export interface ThemeChangeDetail {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Taxonomy primitives
+// ─────────────────────────────────────────────────────────────────────────
+
+export type ElementCategory =
+	| 'main-root'
+	| 'sectioning-root'
+	| 'content-sectioning'
+	| 'text-content'
+	| 'inline-text'
+	| 'image-multimedia'
+	| 'embedded-content'
+	| 'demarcating-edits'
+	| 'table-content'
+	| 'forms'
+	| 'interactive'
+	| 'class-component'
+
+export type ElementTreatment = 'substantive' | 'reset' | 'composable' | 'passthrough'
+
+export interface TaxonomyEntry {
+	readonly tag: string
+	readonly category: ElementCategory
+	readonly treatment: ElementTreatment
+	/** `use{Name}` factory key when treatment === 'composable'. */
+	readonly composable: string | null
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Popover placement primitives
 // ─────────────────────────────────────────────────────────────────────────
 

@@ -25,7 +25,9 @@ import type {
 	DragStartDetail,
 	DragTapDetail,
 	DropPosition,
+	ElementCategory,
 	ElementPredicate,
+	ElementTreatment,
 	FormEntry,
 	FormError,
 	FormFieldElement,
@@ -37,6 +39,7 @@ import type {
 	TableRange,
 	TableRow,
 	TableTarget,
+	TaxonomyEntry,
 } from './types.js'
 import {
 	BODY_LOCKED_ATTR,
@@ -186,6 +189,138 @@ export function createMatcher(criteria: MatcherOptions): ElementPredicate {
 		}
 		return true
 	}
+}
+
+// ── Taxonomy primitives ─────────────────────────────────────────────────────
+// Factor out the boilerplate so adding rows stays a one-liner.
+
+export function entry(
+	tag: string,
+	category: ElementCategory,
+	treatment: ElementTreatment,
+	composable: string | null = null,
+): TaxonomyEntry {
+	return { tag, category, treatment, composable }
+}
+
+// ── Table sort / escape primitives ──────────────────────────────────────────
+
+/** Minimal CSS.escape polyfill for attribute selector key values. */
+export function cssEscape(value: string): string {
+	if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value)
+	return value.replace(/(["\\\][])/g, '\\$1')
+}
+
+/**
+ * Smart-compare two cell text values. Numeric-looking strings are
+ * compared numerically; otherwise we fall back to a locale-aware
+ * collator (`numeric: true` so "row 9" sorts before "row 10"; case
+ * insensitive so "B" doesn't always trail "a"). Returns `<0`, `0`,
+ * or `>0` per `Array.sort` convention.
+ */
+export const sortCollator =
+	typeof Intl !== 'undefined'
+		? new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+		: null
+export function compareCellValues(a: string, b: string): number {
+	const at = a.trim()
+	const bt = b.trim()
+	const an = Number(at)
+	const bn = Number(bt)
+	if (at !== '' && bt !== '' && Number.isFinite(an) && Number.isFinite(bn)) {
+		return an - bn
+	}
+	if (sortCollator) return sortCollator.compare(at, bt)
+	return at < bt ? -1 : at > bt ? 1 : 0
+}
+
+// ── SCSS selector parsing ───────────────────────────────────────────────────
+
+/**
+ * Split `s` by `sep` only at the top level — respecting paren and bracket
+ * nesting so functional pseudos and attribute selectors stay intact.
+ */
+export function splitTopLevel(s: string, sep: string): string[] {
+	const out: string[] = []
+	let depth = 0
+	let start = 0
+	for (let i = 0; i < s.length; i += 1) {
+		const ch = s[i]
+		if (ch === '(' || ch === '[') depth += 1
+		else if (ch === ')' || ch === ']') depth = Math.max(0, depth - 1)
+		else if (ch === sep && depth === 0) {
+			const part = s.slice(start, i).trim()
+			if (part.length > 0) out.push(part)
+			start = i + 1
+		}
+	}
+	const last = s.slice(start).trim()
+	if (last.length > 0) out.push(last)
+	return out
+}
+
+/**
+ * Extract tag names from the LEADING compound of a piece (e.g., `nav` from
+ * `nav.foo[bar]:not(...)`, or `[a, b]` from `:is(a, b)`). Returns empty
+ * array if the compound has no tag head (class, attribute, `*`, pseudo).
+ */
+export function leadingTagsOfCompound(piece: string): readonly string[] {
+	// A piece may be a descendant chain: `body:has(main) header` — the LEADING
+	// compound for the next `>` combinator is `body:has(main)`. Split by
+	// whitespace at top level; take the first chunk.
+	const chunks = splitTopLevel(piece, ' ')
+	return tagsInHead(chunks[0] ?? '')
+}
+
+/**
+ * Mirror of `leadingTagsOfCompound` but for the TRAILING compound (the side
+ * preceding the `>`). When a piece is `body:has(main) nav`, the relevant
+ * compound for the `>` is `nav`, not `body:has(main)`.
+ */
+export function trailingTagsOfCombinatorChain(piece: string): readonly string[] {
+	const chunks = splitTopLevel(piece, ' ')
+	return tagsInHead(chunks[chunks.length - 1] ?? '')
+}
+
+/**
+ * Return the tag names at the head of a single compound selector.
+ * `:is(a, b)` / `:where(a, b)` flatten to their inner tag branches.
+ * Universal (`*`), classes, attributes, and other pseudos return empty.
+ */
+export function tagsInHead(compound: string): readonly string[] {
+	const trimmed = compound.trim()
+	if (trimmed.length === 0) return []
+	if (trimmed.startsWith('&')) return []
+	if (trimmed === '*' || trimmed.startsWith('*')) return []
+
+	// :is(...) / :where(...) at start (no preceding tag) — flatten.
+	const fnMatch = trimmed.match(/^:(is|where)\(/)
+	if (fnMatch) {
+		const open = trimmed.indexOf('(')
+		let depth = 1
+		let i = open + 1
+		for (; i < trimmed.length && depth > 0; i += 1) {
+			const ch = trimmed[i]
+			if (ch === '(') depth += 1
+			else if (ch === ')') depth -= 1
+		}
+		const inner = trimmed.slice(open + 1, i - 1)
+		return splitTopLevel(inner, ',').flatMap((b) => tagsInHead(b))
+	}
+
+	// Bare tag at start. Reject leading `:`, `[`, `.`, `#`.
+	const tagMatch = trimmed.match(/^([a-z][a-z0-9]*)\b/)
+	if (tagMatch && tagMatch[1] !== undefined) return [tagMatch[1]]
+	return []
+}
+
+// ── String-list coercion ────────────────────────────────────────────────────
+
+/** Coerce the `value` option into the internal `readonly string[]` form. */
+export function toStringList(input: string | readonly string[] | undefined): readonly string[] {
+	if (input === undefined) return []
+	if (typeof input === 'string') return input === '' ? [] : [input]
+	return [...input]
 }
 
 // ── 2. Semantic-element gating ──────────────────────────────────────────────

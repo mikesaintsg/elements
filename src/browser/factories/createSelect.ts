@@ -21,6 +21,7 @@ import {
 	emit,
 	generateId,
 	rove,
+	toStringList,
 } from '../helpers.js'
 import { createMenu } from './createMenu.js'
 
@@ -72,7 +73,7 @@ export function createSelect(
 	// === Reactive state
 	const scope = effectScope()
 	const visible = scope.run(() => ref<boolean>(false))
-	const values = scope.run(() => ref<readonly string[]>(normalize(options.value)))
+	const values = scope.run(() => ref<readonly string[]>(toStringList(options.value)))
 	const value = scope.run(() => ref<string | null>(values?.value[0] ?? null))
 	const query = scope.run(() => ref<string>(''))
 	if (!visible || !value || !values || !query) {
@@ -477,11 +478,4 @@ export function createSelect(
 		update,
 		destroy,
 	}
-}
-
-/** Coerce the `value` option into the internal `readonly string[]` form. */
-function normalize(input: string | readonly string[] | undefined): readonly string[] {
-	if (input === undefined) return []
-	if (typeof input === 'string') return input === '' ? [] : [input]
-	return [...input]
 }

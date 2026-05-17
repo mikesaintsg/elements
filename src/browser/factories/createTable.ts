@@ -51,6 +51,8 @@ import {
 	assertElement,
 	bindEventMap,
 	cleanTableSelection,
+	compareCellValues,
+	cssEscape,
 	emit,
 	extractRowId,
 	findDetailRow,
@@ -1639,33 +1641,4 @@ export function createTable(
 		clear,
 		destroy,
 	}
-}
-
-/** Minimal CSS.escape polyfill for attribute selector key values. */
-function cssEscape(value: string): string {
-	if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value)
-	return value.replace(/(["\\\][])/g, '\\$1')
-}
-
-/**
- * Smart-compare two cell text values. Numeric-looking strings are
- * compared numerically; otherwise we fall back to a locale-aware
- * collator (`numeric: true` so "row 9" sorts before "row 10"; case
- * insensitive so "B" doesn't always trail "a"). Returns `<0`, `0`,
- * or `>0` per `Array.sort` convention.
- */
-const sortCollator =
-	typeof Intl !== 'undefined'
-		? new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
-		: null
-function compareCellValues(a: string, b: string): number {
-	const at = a.trim()
-	const bt = b.trim()
-	const an = Number(at)
-	const bn = Number(bt)
-	if (at !== '' && bt !== '' && Number.isFinite(an) && Number.isFinite(bn)) {
-		return an - bn
-	}
-	if (sortCollator) return sortCollator.compare(at, bt)
-	return at < bt ? -1 : at > bt ? 1 : 0
 }
