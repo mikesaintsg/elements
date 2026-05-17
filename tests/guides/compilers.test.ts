@@ -1,17 +1,25 @@
-// guides/contracts.md ↔ src/core/{shapers,compilers,helpers}.ts
+// guides/compilers.md ↔ src/core/compilers.ts (+ helpers.ts minus validateBounds)
 // Bidirectional parity:
 //   1. DOC → SOURCE — every backticked call-form API named in the guide
 //      resolves to a real src/core export.
-//   2. SOURCE → DOC — every export function/const in those modules is
-//      documented (backticked, in call or bare form) in the guide. Makes the
-//      guide's advertised "the documented surface is exhaustive" contract real.
+//   2. SOURCE → DOC — every export function/const in compilers.ts, plus every
+//      helpers.ts export EXCEPT validateBounds (which is the shape-builders'
+//      bounds check, documented in shapers.md), is documented (backticked, in
+//      call or bare form) in the guide. Makes the guide's advertised "the
+//      documented surface is exhaustive" contract real.
 import { readFileSync } from 'node:fs'
 import { resolve as resolvePath } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { readGuide, WORKSPACE_ROOT } from '../setupServer'
 
-const SOURCES = ['shapers', 'compilers', 'helpers'] as const
-const doc = readGuide('contracts')
+const SOURCES = ['compilers'] as const
+// validateBounds lives in helpers.ts but is documented in shapers.md (it is
+// the shape-builders' bounds check). Every OTHER helpers.ts export is
+// documented HERE. Excluding exactly validateBounds keeps the union of the
+// shapers + compilers bijection sets exactly equal to the old contracts set
+// ({shapers} ∪ {compilers} ∪ {helpers}) with each export in exactly one home.
+const HELPERS_EXCLUDED = new Set<string>(['validateBounds'])
+const doc = readGuide('compilers')
 
 function exportedNames(file: string): readonly string[] {
 	const src = readFileSync(resolvePath(WORKSPACE_ROOT, `src/core/${file}.ts`), 'utf8')
@@ -43,12 +51,16 @@ function documentedNames(source: string): ReadonlySet<string> {
 	return out
 }
 
-const EXPORTS = new Set(SOURCES.flatMap(exportedNames))
+const HELPERS_DOCUMENTED_HERE = exportedNames('helpers').filter(
+	(name) => !HELPERS_EXCLUDED.has(name),
+)
+const EXPORTS = new Set([...SOURCES.flatMap(exportedNames), ...HELPERS_DOCUMENTED_HERE])
 
-describe('contracts — every documented API resolves to a src/core export', () => {
+describe('compilers — every documented API resolves to a src/core export', () => {
 	for (const name of documentedApis(doc)) {
-		// On failure: `${name}(` is documented in guides/contracts.md but is
-		// not exported by any of src/core/{shapers,compilers,helpers}.ts.
+		// On failure: `${name}(` is documented in guides/compilers.md but is
+		// not exported by src/core/compilers.ts or src/core/helpers.ts
+		// (validateBounds is documented in shapers.md, not here).
 		// Fix the doc or restore the export.
 		it(`${name}() is a real src/core export`, () => {
 			expect(EXPORTS.has(name)).toBe(true)
@@ -56,16 +68,16 @@ describe('contracts — every documented API resolves to a src/core export', () 
 	}
 })
 
-describe('contracts — every src/core export is documented in contracts.md', () => {
+describe('compilers — every src/core export is documented in compilers.md', () => {
 	const DOCUMENTED = documentedNames(doc)
 	for (const name of EXPORTS) {
-		// On failure: `${name}` is an export of
-		// src/core/{shapers,compilers,helpers}.ts but is not
-		// backticked anywhere in guides/contracts.md. Document it (the guide
+		// On failure: `${name}` is an export of src/core/compilers.ts (or a
+		// src/core/helpers.ts export other than validateBounds) but is not
+		// backticked anywhere in guides/compilers.md. Document it (the guide
 		// advertises an exhaustive surface). If it is intentionally an
 		// internal not-for-doc export, that is itself a signal the symbol
 		// should not be a public export — do not allowlist it here.
-		it(`${name} is documented in guides/contracts.md`, () => {
+		it(`${name} is documented in guides/compilers.md`, () => {
 			expect(DOCUMENTED.has(name)).toBe(true)
 		})
 	}

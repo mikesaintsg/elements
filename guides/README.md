@@ -162,13 +162,14 @@ The framework layers on Tailwind v4. The interop test verifies modifier+utility 
 | Composition test + collision detector | [`tests/src/styles/integration.test.ts`](../tests/src/styles/integration.test.ts) |
 | Collision watch list                  | [`tests/setup.ts`](../tests/setup.ts) § `TAILWIND_SINGLE_TOKEN_UTILITIES`         |
 
-### Core — contract / parser / validator surface (`@elements/core`)
+### Core — shaper / compiler / parser / validator surface (`@elements/core`)
 
-A standalone, browser-free package: a shape DSL that compiles to JSON Schema + runtime guard + input parser + seeded generator, plus the flat parser and validator primitives it composes from. No SCSS, no Vue, no DOM.
+A standalone, browser-free package: a shape DSL ([shapers.md](shapers.md)) that the forward compilers ([compilers.md](compilers.md)) turn into JSON Schema + runtime guard + input parser + seeded generator, plus the flat parser and validator primitives it composes from. No SCSS, no Vue, no DOM.
 
 | Role                            | File                                                                                                                                                                       |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Spec — contracts DSL            | [`guides/contracts.md`](contracts.md)                                                                                                                                      |
+| Spec — shapers (shape DSL)      | [`guides/shapers.md`](shapers.md)                                                                                                                                          |
+| Spec — compilers (forward pipeline) | [`guides/compilers.md`](compilers.md)                                                                                                                                  |
 | Spec — parsers                  | [`guides/parsers.md`](parsers.md)                                                                                                                                          |
 | Spec — validators               | [`guides/validators.md`](validators.md)                                                                                                                                    |
 | Public barrel                   | [`src/core/index.ts`](../src/core/index.ts)                                                                                                                                |
@@ -179,7 +180,7 @@ A standalone, browser-free package: a shape DSL that compiles to JSON Schema + r
 | Compilers (schema/guard/gen)    | [`src/core/compilers.ts`](../src/core/compilers.ts)                                                                                                                        |
 | Helpers (internal utilities)    | [`src/core/helpers.ts`](../src/core/helpers.ts)                                                                                                                            |
 | Unit tests                      | [`tests/src/core/`](../tests/src/core/) — [`validators.test.ts`](../tests/src/core/validators.test.ts), [`parsers.test.ts`](../tests/src/core/parsers.test.ts), [`shapers.test.ts`](../tests/src/core/shapers.test.ts), [`compilers.test.ts`](../tests/src/core/compilers.test.ts) |
-| Doc parity                      | [`tests/guides/contracts.test.ts`](../tests/guides/contracts.test.ts), [`tests/guides/parsers.test.ts`](../tests/guides/parsers.test.ts), [`tests/guides/validators.test.ts`](../tests/guides/validators.test.ts) |
+| Doc parity                      | [`tests/guides/shapers.test.ts`](../tests/guides/shapers.test.ts), [`tests/guides/compilers.test.ts`](../tests/guides/compilers.test.ts), [`tests/guides/parsers.test.ts`](../tests/guides/parsers.test.ts), [`tests/guides/validators.test.ts`](../tests/guides/validators.test.ts) |
 
 ### Traversals — native DOM walk/match primitives
 
@@ -213,7 +214,8 @@ Pure DOM traversal + node-type guards. No Vue, no framework state; safe to impor
 | [`composables.md`](composables.md) | Vue + factory layer — adapter / factory split, naming, lifecycle.                                        |
 | [`mixins.md`](mixins.md)           | Sass mixin + function registry + list constants — `transition()`, `focus-ring()`, `palette-each`, etc.   |
 | [`showcase.md`](showcase.md)       | The showcase app (`app/browser/`) — strict authoring rules, sidebar / TOC patterns, custom-class triage. |
-| [`contracts.md`](contracts.md)     | `@elements/core` — shape → JSON Schema / guard / parser / generator DSL.                                 |
+| [`shapers.md`](shapers.md)         | `@elements/core` — the shape DSL (`*Shape` builders) + the shared `validateBounds` bounds check.         |
+| [`compilers.md`](compilers.md)     | `@elements/core` — shape → JSON Schema / guard / parser / generator pipeline + shared core helpers.      |
 | [`parsers.md`](parsers.md)         | `@elements/core` — flat value / field / format parsers (`unknown` → typed, `undefined` on failure).      |
 | [`validators.md`](validators.md)   | `@elements/core` — runtime type guards + guard compositors.                                              |
 | [`traversals.md`](traversals.md)   | Native DOM traversal + node-type guard surface (`@elements/browser`).                                     |
@@ -241,7 +243,7 @@ Frozen object trees and derived string-literal-union types. Every CSS identifier
 
 ### `src/core/` — `@elements/core` package
 
-Browser-free contract / parser / validator surface. No SCSS, no Vue, no DOM. The sole public barrel is [`src/core/index.ts`](../src/core/index.ts). Specs: [contracts.md](contracts.md), [parsers.md](parsers.md), [validators.md](validators.md).
+Browser-free shaper / compiler / parser / validator surface. No SCSS, no Vue, no DOM. The sole public barrel is [`src/core/index.ts`](../src/core/index.ts). Specs: [shapers.md](shapers.md), [compilers.md](compilers.md), [parsers.md](parsers.md), [validators.md](validators.md).
 
 | File                                          | Purpose                                                                                                       |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -294,7 +296,7 @@ Vitest projects defined in [`vite.config.ts`](../vite.config.ts). Each project o
 
 #### `tests/src/core/` — `@elements/core` unit tests
 
-Node-environment tests (no browser, no DOM). One file per `src/core/` module with substantive behaviour. Doc parity for these guides lives under `tests/guides/` ([`contracts.test.ts`](../tests/guides/contracts.test.ts), [`parsers.test.ts`](../tests/guides/parsers.test.ts), [`validators.test.ts`](../tests/guides/validators.test.ts)).
+Node-environment tests (no browser, no DOM). One file per `src/core/` module with substantive behaviour. Doc parity for these guides lives under `tests/guides/` ([`shapers.test.ts`](../tests/guides/shapers.test.ts), [`compilers.test.ts`](../tests/guides/compilers.test.ts), [`parsers.test.ts`](../tests/guides/parsers.test.ts), [`validators.test.ts`](../tests/guides/validators.test.ts)).
 
 | File                                                          | Purpose                                                          |
 | ------------------------------------------------------------- | ---------------------------------------------------------------- |

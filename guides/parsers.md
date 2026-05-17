@@ -77,7 +77,7 @@ These invariants hold across `src/core/parsers.ts` ↔ `parsers.md`:
 2. **SOURCE → DOC.** Every public parser exported from `src/core/parsers.ts` is documented in a `## Surface` table above — the surface is exhaustive, not a sample.
 3. **TYPES ARE THE SOURCE OF TRUTH.** `Guard<T>`, `ContractShape`, `JsonSchema`, and `JsonSchemaObject` are declared first in [src/core/types.ts](../src/core/types.ts); the parsers conform to those types, never the reverse.
 4. **UNDEFINED ON FAILURE.** Every parser is total and pure: it never throws. A value that doesn't fit yields `undefined` — except `coerceRecord()` (always a record, `{}` on failure). Coercion parsers are deliberately more permissive than the strict primitives; the tables above call out each leniency.
-5. **FLAT PARSERS ARE STANDALONE PRIMITIVES.** These functions are opinionated standalone primitives (e.g. `parseString()` rejects `''` and whitespace) and are NOT the same as a shape's compiled `parse` operation (which is parse↔guard-sound per [contracts.md](contracts.md)). `matchesShape()` and `parseShape()` are the bridge between the two layers.
+5. **FLAT PARSERS ARE STANDALONE PRIMITIVES.** These functions are opinionated standalone primitives (e.g. `parseString()` rejects `''` and whitespace) and are NOT the same as a shape's compiled `parse` operation (which is parse↔guard-sound per [compilers.md](compilers.md)). `matchesShape()` and `parseShape()` are the bridge between the two layers.
 
 ### Aliasing
 
@@ -194,7 +194,7 @@ parseJsonAs('not json', isConfig) // undefined  (parse fails)
 
 ### Shape-bridge parsers
 
-`matchesShape()` and `parseShape()` are the bridge into the contract DSL — pass a `ContractShape` (built with the `contracts.md` builders) to narrow or parse against it without constructing a full contract via `compileContract`:
+`matchesShape()` and `parseShape()` are the bridge into the contract DSL — pass a `ContractShape` (built with the [shapers.md](shapers.md) builders) to narrow or parse against it without constructing a full contract via `compileContract`:
 
 ```ts
 import { integerShape, objectShape, parseShape, stringShape } from '@elements/core'
@@ -214,7 +214,7 @@ parseShape({ name: 'Ada', age: '-1' }, personShape) // undefined  (fails shape v
 - **Use the `*Field` variants for record access** — `parseStringField(record, 'k')` over `parseString(record['k'])`; identical behavior, clearer intent.
 - **`coerceRecord()` never returns `undefined`** — it falls back to `{}`, so it's safe to use without a guard.
 - **`parseJson()` / `parseJsonAs()` never throw** — no `try/catch` needed at the call site; check for `undefined`.
-- **Reach for the contract DSL when one shape feeds schema + guard + parser + generator** — these flat parsers are for the one-off `unknown` → typed value extraction. See the `compileContract` pipeline in [contracts.md](contracts.md).
+- **Reach for the contract DSL when one shape feeds schema + guard + parser + generator** — these flat parsers are for the one-off `unknown` → typed value extraction. See the `compileContract` pipeline in [compilers.md](compilers.md).
 
 ---
 
@@ -227,6 +227,7 @@ parseShape({ name: 'Ada', age: '-1' }, personShape) // undefined  (fails shape v
 
 ## See also
 
-- [contracts.md](contracts.md) — the shape-driven DSL (schema / guard / parser / generator from one declaration); the contract compilers reuse these flat parsers for primitive coercion.
+- [shapers.md](shapers.md) — the shape DSL; declare a `ContractShape` once for the bridge parsers `matchesShape` / `parseShape`.
+- [compilers.md](compilers.md) — the forward pipeline (schema / guard / parser / generator from one declaration); the contract compilers reuse these flat parsers for primitive coercion.
 - [validators.md](validators.md) — the type-guard library; `parseArray` / `parseJsonAs` take a `Guard<T>` from this module to vet elements / parsed JSON.
 - [README.md](README.md) — the pointer file; the full repository map by concept and by directory.

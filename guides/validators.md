@@ -15,7 +15,7 @@ Every guard takes one `unknown`, returns a `boolean` that TypeScript reads as a 
 **Guards vs. the contract DSL vs. flat parsers.** Three sibling surfaces, three jobs:
 
 - These **guards** answer "*is* this value a `T`?" — a boolean predicate that narrows in place. They neither coerce nor transform; a `string` field that arrived as a number stays rejected.
-- The **contract DSL** ([contracts.md](contracts.md)) is shape-driven: declare a `ContractShape` once and the compilers derive a JSON Schema, a guard, a parser, and a generator from it. Reach for it when one shape feeds schema + guard + parser + generator.
+- The **contract DSL** is shape-driven: declare a `ContractShape` once with the shape builders ([shapers.md](shapers.md)) and the forward compilers ([compilers.md](compilers.md)) derive a JSON Schema, a guard, a parser, and a generator from it. Reach for it when one shape feeds schema + guard + parser + generator.
 - The **flat parsers** ([parsers.md](parsers.md)) answer "give me a `T` *or* `undefined`" — they coerce (`"36"` → `36`) and return the typed value or `undefined`. Reach for those when you want extraction with coercion rather than a yes/no narrowing.
 
 Guards pair naturally with the parsers: `parseJsonAs` and `parseArray` (in [parsers.md](parsers.md)) take a `Guard<T>` to validate after parsing, and a contract's `is` is itself a `Guard<T>`.
@@ -114,7 +114,7 @@ Guards pair naturally with the parsers: `parseJsonAs` and `parseArray` (in [pars
 | `isZeroArgGenerator()`      | zero-arg generator function         | `isFunction` + `isZeroArg` + `isGeneratorFunction`.                                   |
 | `isZeroArgAsyncGenerator()` | zero-arg async generator function   | `isFunction` + `isZeroArg` + `isAsyncGeneratorFunction`.                              |
 
-> The object-emptiness guards (`isEmptyObject`, `isNonEmptyObject`) also count enumerable own-symbol keys, not just string keys, via the shared `enumerableSymbolCount` helper in [src/core/helpers.ts](../src/core/helpers.ts) (documented in [contracts.md](contracts.md) — the helpers home). Prefer the guards at call sites. Likewise the `instanceOf()` compositor below is backed by the `isConstructor` helper (same module) so a non-constructor argument yields a `false`-only guard rather than a throw.
+> The object-emptiness guards (`isEmptyObject`, `isNonEmptyObject`) also count enumerable own-symbol keys, not just string keys, via the shared `enumerableSymbolCount` helper in [src/core/helpers.ts](../src/core/helpers.ts) (documented in [compilers.md](compilers.md) — the shared-helpers home). Prefer the guards at call sites. Likewise the `instanceOf()` compositor below is backed by the `isConstructor` helper (same module) so a non-constructor argument yields a `false`-only guard rather than a throw.
 
 ### Compositors
 
@@ -295,7 +295,7 @@ isNumberTree(['x']) // false
 - **`isObject()` is broad, `isRecord()` is strict.** Arrays and class instances satisfy `isObject()` but fail `isRecord()` — use `isRecord()` for plain config/JSON-style objects.
 - **`recordOf()` is exact.** Extra string keys fail by default; declare optional keys with a key list, or `true` for all-optional. Use `pickOf()` / `omitOf()` to derive related shapes from one map.
 - **Use `lazyOf()` for self-referential guards** — the thunk defers construction so recursive definitions don't reference themselves before they exist.
-- **A guard is a `Guard<T>`.** Pass it straight to the `parseJsonAs` / `parseArray` parsers, or use a contract's `is` interchangeably — see [parsers.md](parsers.md) and [contracts.md](contracts.md).
+- **A guard is a `Guard<T>`.** Pass it straight to the `parseJsonAs` / `parseArray` parsers, or use a contract's `is` interchangeably — see [parsers.md](parsers.md) and [compilers.md](compilers.md).
 
 ---
 
@@ -308,6 +308,7 @@ isNumberTree(['x']) // false
 
 ## See also
 
-- [contracts.md](contracts.md) — the shape-driven DSL; a contract's `is` is a `Guard<T>` built from one shape.
+- [shapers.md](shapers.md) — the shape DSL; `tupleOf` / `intersectionOf` / `lazyOf` are the guard mirrors of the like-named shape builders.
+- [compilers.md](compilers.md) — the forward pipeline; a contract's `is` is a `Guard<T>` the compilers build from one shape.
 - [parsers.md](parsers.md) — the flat coercing parsers; `parseJsonAs` / `parseArray` take a `Guard<T>` from this module.
 - [README.md](README.md) — the pointer file; the full repository map by concept and by directory.
