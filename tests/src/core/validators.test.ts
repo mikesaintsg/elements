@@ -732,8 +732,9 @@ describe('intersectionOf — F2 zero-guards edge case', () => {
 describe('transformOf — F2 edges', () => {
 	it('projector that throws: guard returns false (§13 — never throw from a public guard)', () => {
 		// Per §13, a public guard must NEVER throw. transformOf calls project(value)
-		// inside the guard — if project throws, the guard itself must not propagate
-		// that throw. Let's pin the REAL behavior:
+		// inside the guard body; project is a user-supplied projector with no
+		// never-throw contract. A throw from the projector must be contained and
+		// surface as a non-match, not propagate out of the guard.
 		const throwingGuard = transformOf(
 			isString,
 			(_value: string) => {
@@ -741,12 +742,25 @@ describe('transformOf — F2 edges', () => {
 			},
 			isNumber,
 		)
-		// The guard wraps the projection call — if it throws, the throw propagates
-		// OUT of the guard (§13 violation). Pin the actual behavior:
-		// transformOf does NOT catch errors from the projector — it propagates.
-		// This is a documented divergence: transformOf is NOT §13-safe if the
-		// projector throws. Tracked for Phase G.
-		expect(() => throwingGuard('hello')).toThrow('projection error')
+		expect(() => throwingGuard('hello')).not.toThrow()
+		expect(throwingGuard('hello')).toBe(false)
+		// Base-guard rejection still short-circuits before the projector runs.
+		expect(throwingGuard(42)).toBe(false)
+	})
+
+	it('curried projector that throws: guard returns false (§13)', () => {
+		// transformOf also supports a projector returning a unary function that
+		// is then applied to the value. A throw from that inner application is
+		// equally inside the guard body and must be contained.
+		const throwingCurried = transformOf(
+			isString,
+			(_value: string) => (_input: string) => {
+				throw new Error('curried projection error')
+			},
+			isNumber,
+		)
+		expect(() => throwingCurried('hello')).not.toThrow()
+		expect(throwingCurried('hello')).toBe(false)
 	})
 
 	it('standard projector: guards the projected value, not the original', () => {
@@ -758,6 +772,45 @@ describe('transformOf — F2 edges', () => {
 		expect(positiveLength('abc')).toBe(true)
 		expect(positiveLength('')).toBe(false)
 		expect(positiveLength(42)).toBe(false) // base guard fails
+	})
+})
+
+// === FU2 — guard-body user-callback throw containment (§13)
+
+describe('whereOf — throwing refinement predicate is contained (§13)', () => {
+	it('predicate that throws: guard returns false, never propagates', () => {
+		// whereOf invokes a user-supplied refinement predicate inside the guard
+		// body. The predicate is a plain boolean function with no never-throw
+		// contract — a throw must surface as a non-match per §13.
+		const throwingRefine = whereOf(isString, (_value: string): boolean => {
+			throw new Error('refinement error')
+		})
+		expect(() => throwingRefine('hello')).not.toThrow()
+		expect(throwingRefine('hello')).toBe(false)
+		// Base-guard rejection short-circuits before the predicate runs.
+		expect(throwingRefine(42)).toBe(false)
+	})
+})
+
+describe('lazyOf — throwing thunk is contained (§13)', () => {
+	it('thunk that throws: guard returns false, never propagates', () => {
+		// lazyOf invokes a user-supplied factory (thunk) inside the guard body
+		// on every call. A throw from the thunk must surface as a non-match.
+		const throwingThunk = lazyOf<string>(() => {
+			throw new Error('thunk error')
+		})
+		expect(() => throwingThunk('hello')).not.toThrow()
+		expect(throwingThunk('hello')).toBe(false)
+	})
+
+	it('thunk returns a guard that throws: guard returns false, never propagates', () => {
+		// Even when the thunk resolves, the resolved guard it returns is itself
+		// invoked inside lazyOf's guard body; a throw there must be contained.
+		const throwingResolved = lazyOf<string>(() => (_value: unknown): _value is string => {
+			throw new Error('resolved guard error')
+		})
+		expect(() => throwingResolved('hello')).not.toThrow()
+		expect(throwingResolved('hello')).toBe(false)
 	})
 })
 

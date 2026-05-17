@@ -1,4 +1,4 @@
-import { enumerableSymbolCount, isConstructor } from './helpers.js'
+import { attempt, enumerableSymbolCount, isConstructor } from './helpers.js'
 import type {
 	AnyAsyncFunction,
 	AnyConstructor,
@@ -2271,8 +2271,12 @@ export function intersectionOf(
  * type-safe operations without re-checking. Used internally to build
  * {@link isFiniteNumber}.
  *
+ * Per AGENTS.md §13 the returned guard never throws: if `predicate` throws,
+ * the throw is contained and the guard reports a non-match (`false`).
+ *
  * @param base - The base guard; provides initial narrowing
- * @param predicate - Further refinement predicate; only called when `base` passes
+ * @param predicate - Further refinement predicate; only called when `base`
+ *                     passes. A throw from it is treated as a non-match
  * @returns A guard that requires both `base` and `predicate` to return `true`
  *
  * @example
@@ -2292,7 +2296,10 @@ export function whereOf<T>(base: Guard<T>, predicate: (value: T) => boolean): Gu
 		if (!base(value)) {
 			return false
 		}
-		return predicate(value)
+		// `predicate` is a user-supplied refinement with no never-throw
+		// contract; §13 forbids the guard from propagating its throw.
+		const outcome = attempt(() => predicate(value))
+		return outcome.success && outcome.value
 	}
 }
 
@@ -2306,7 +2313,12 @@ export function whereOf<T>(base: Guard<T>, predicate: (value: T) => boolean): Gu
  * `lazyOf` is called, which is the primary use case — self-referential
  * recursive guards. Do not rely on the thunk being called exactly once.
  *
- * @param thunk - A zero-argument function that returns the guard
+ * Per AGENTS.md §13 the returned guard never throws: if `thunk` (or the
+ * guard it resolves to) throws, the throw is contained and the guard
+ * reports a non-match (`false`).
+ *
+ * @param thunk - A zero-argument function that returns the guard. A throw
+ *                 from it (or its resolved guard) is treated as a non-match
  * @returns A guard that delegates to `thunk()` on every call
  *
  * @example
@@ -2321,7 +2333,12 @@ export function whereOf<T>(base: Guard<T>, predicate: (value: T) => boolean): Gu
  * ```
  */
 export function lazyOf<T>(thunk: () => Guard<T>): Guard<T> {
-	return (value: unknown): value is T => thunk()(value)
+	return (value: unknown): value is T => {
+		// `thunk` and the guard it returns are user-supplied and invoked
+		// inside the guard body; §13 forbids propagating either throw.
+		const outcome = attempt(() => thunk()(value))
+		return outcome.success && outcome.value
+	}
 }
 
 /**
@@ -2332,8 +2349,13 @@ export function lazyOf<T>(thunk: () => Guard<T>): Guard<T> {
  * target check is a validity constraint on a derived view of the value, not
  * a type transformation.
  *
+ * Per AGENTS.md §13 the returned guard never throws: if `project` (or the
+ * unary function it may return) throws, the throw is contained and the guard
+ * reports a non-match (`false`) rather than propagating the exception.
+ *
  * @param base - Base guard; provides initial narrowing to `T`
- * @param project - Function that derives `U` from the narrowed `T`
+ * @param project - Function that derives `U` from the narrowed `T`. A throw
+ *                   from it is treated as a non-match
  * @param target - Guard applied to the projected value
  * @returns A guard for `T` that additionally validates the projection
  *
@@ -2368,12 +2390,18 @@ export function transformOf<T>(
 		if (!base(value)) {
 			return false
 		}
-		const projected = project(value)
 		function isUnary<R>(candidate: unknown): candidate is (input: T) => R {
 			return isFunction(candidate)
 		}
-		const result = isUnary<unknown>(projected) ? projected(value) : projected
-		return target(result)
+		// `project` (and the unary function it may return) is user-supplied
+		// with no never-throw contract; §13 forbids the guard from
+		// propagating its throw. `target` is itself a Guard and so is
+		// already §13-bound — it stays outside the contained region.
+		const outcome = attempt(() => {
+			const projected = project(value)
+			return isUnary<unknown>(projected) ? projected(value) : projected
+		})
+		return outcome.success && target(outcome.value)
 	}
 }
 

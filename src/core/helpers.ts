@@ -1,4 +1,45 @@
-import type { AnyConstructor, ContractShape, RandomFunction } from './types.js'
+import type { AnyConstructor, ContractShape, RandomFunction, Result } from './types.js'
+
+/**
+ * Invoke a user-supplied callback and capture the outcome as a {@link Result},
+ * never letting a throw escape.
+ *
+ * @remarks
+ * Combinators such as `transformOf`, `whereOf`, and `lazyOf` invoke a
+ * caller-supplied projector / predicate / factory *inside the runtime guard
+ * body*. Those callbacks are plain user functions with no never-throw
+ * contract, yet per AGENTS.md §13 a guard must NEVER throw — it returns a
+ * `boolean`. This helper is the single sanctioned boundary that converts a
+ * throwing callback into a `Failure` so the surrounding guard can treat it as
+ * a non-match instead of propagating the exception. It exists so the
+ * containment is written once and shared, not copy-pasted as ad-hoc
+ * `try`/`catch` across every combinator (§20). Build-time programmer-error
+ * checks must NOT route through this helper — a genuine §13 build-boundary
+ * throw is the correct behaviour there.
+ *
+ * @param callback - The user-supplied callback to invoke with no arguments
+ * @returns A `Success` carrying the return value, or a `Failure` carrying the
+ *          thrown reason normalised to an `Error`
+ *
+ * @example
+ * ```ts
+ * const outcome = attempt(() => project(value))
+ * if (!outcome.success) {
+ *     return false // contain the throw — the guard reports a non-match
+ * }
+ * use(outcome.value)
+ * ```
+ */
+export function attempt<T>(callback: () => T): Result<T> {
+	try {
+		return { success: true, value: callback() }
+	} catch (reason) {
+		return {
+			success: false,
+			error: reason instanceof Error ? reason : new Error(String(reason)),
+		}
+	}
+}
 
 /**
  * Deterministic Mulberry32 PRNG. Same seed → same `[0, 1)` sequence.
