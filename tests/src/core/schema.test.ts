@@ -35,6 +35,7 @@ import {
 	constShape,
 	createRefResolver,
 	integerShape,
+	defaultShape,
 	isJsonSchema,
 	isRecord,
 	numberShape,
@@ -46,7 +47,15 @@ import {
 	tupleShape,
 	unionShape,
 } from '@elements/core'
-import { POLLUTION_KEYS, assertNoPrototypePollution } from './_helpers.js'
+import {
+	POLLUTION_KEYS,
+	assertNoPrototypePollution,
+	assertParseGuardSymmetry,
+	assertGeneratorSatisfiesGuard,
+	makeCyclicArray,
+	makeCyclicObject,
+	makeCyclicShape,
+} from './_helpers.js'
 
 // === resolveRef — single-pointer RFC-6901 resolution
 
@@ -2500,5 +2509,387 @@ describe('compileSchemaParser — documented fidelity gaps (KNOWN-looser than co
 		const parse = compileSchemaParser(schema)
 		expect(parse(['a'])).toEqual(['a'])
 		expect(compileGuard(compileSchemaShape(schema))(parse(['a']))).toBe(true)
+	})
+})
+
+// ============================================================================
+//  F3 — SYSTEMATIC INVERSE-SURFACE SWEEPS
+//
+//  Sweep 3 (inverse) — prototype-pollution through compileSchemaParser for
+//  every object-building JSON-Schema kind.
+//  Sweep 4 (inverse) — cycle-safety: cyclic DATA through compileSchemaGuard
+//  representative schemas; cyclic SHAPE through compile* (covered in
+//  compilers.test.ts; this file adds the inverse compileSchemaGuard side).
+// ============================================================================
+
+describe('F3 — prototype-pollution sweep — compileSchemaParser (E4) object-building schemas', () => {
+	// E4 = compileParser(compileSchemaShape(s)), so B2 pollution hardening must
+	// hold for every object-building JSON Schema kind.
+
+	function makeHostile(): unknown {
+		return JSON.parse(
+			'{"__proto__":{"polluted":true},"constructor":{"x":1},"prototype":{"y":1},"safe":"ok"}',
+		)
+	}
+
+	function assertInverseClean(parsed: unknown): void {
+		expect(
+			(({}) as Record<string, unknown>)['polluted'],
+			'Object.prototype polluted via compileSchemaParser',
+		).toBeUndefined()
+		// Unconditional combined check — avoids oxlint vitest/no-conditional-expect.
+		const dangerousKeyPresent =
+			isRecord(parsed) &&
+			POLLUTION_KEYS.some((key) => Object.hasOwn(parsed, key))
+		expect(dangerousKeyPresent, 'E4 parsed result retained a dangerous own key').toBe(false)
+	}
+
+	it('closed object schema — drops dangerous keys, keeps safe', () => {
+		assertNoPrototypePollution(() => {
+			const parse = compileSchemaParser({
+				type: 'object',
+				properties: { safe: { type: 'string' } },
+				required: ['safe'],
+				additionalProperties: false,
+			})
+			const parsed = parse(makeHostile())
+			expect(parsed).toEqual({ safe: 'ok' })
+			assertInverseClean(parsed)
+		})
+	})
+
+	it('open object schema (additionalProperties:true) — drops dangerous keys', () => {
+		assertNoPrototypePollution(() => {
+			const parse = compileSchemaParser({
+				type: 'object',
+				properties: { safe: { type: 'string' } },
+				required: ['safe'],
+				additionalProperties: true,
+			})
+			const parsed = parse(makeHostile())
+			expect(parsed).toEqual({ safe: 'ok' })
+			assertInverseClean(parsed)
+		})
+	})
+
+	it('object with typed additionalProperties — drops dangerous keys, validates extras', () => {
+		assertNoPrototypePollution(() => {
+			const parse = compileSchemaParser({
+				type: 'object',
+				properties: { safe: { type: 'string' } },
+				required: ['safe'],
+				additionalProperties: { type: 'number' },
+			})
+			const hostile: unknown = JSON.parse(
+				'{"__proto__":{"polluted":true},"constructor":{"x":1},"prototype":{"y":1},"safe":"ok","score":7}',
+			)
+			const parsed = parse(hostile)
+			expect(parsed).toEqual({ safe: 'ok', score: 7 })
+			assertInverseClean(parsed)
+		})
+	})
+
+	it('allOf object conjunction — drops dangerous keys from merged result', () => {
+		assertNoPrototypePollution(() => {
+			const parse = compileSchemaParser({
+				allOf: [
+					{ type: 'object', properties: { safe: { type: 'string' } }, required: ['safe'] },
+					{ type: 'object', properties: { n: { type: 'integer' } }, required: ['n'] },
+				],
+			})
+			const hostile: unknown = JSON.parse(
+				'{"__proto__":{"polluted":true},"constructor":{"x":1},"prototype":{"y":1},"safe":"ok","n":3}',
+			)
+			const parsed = parse(hostile)
+			assertInverseClean(parsed)
+		})
+	})
+
+	it('anyOf with object variant — drops dangerous keys from matched object variant', () => {
+		assertNoPrototypePollution(() => {
+			const parse = compileSchemaParser({
+				anyOf: [
+					{ type: 'object', properties: { safe: { type: 'string' } }, required: ['safe'], additionalProperties: false },
+					{ type: 'string' },
+				],
+			})
+			const parsed = parse(makeHostile())
+			assertInverseClean(parsed)
+		})
+	})
+
+	it('array of objects — drops dangerous keys from each array element', () => {
+		assertNoPrototypePollution(() => {
+			const parse = compileSchemaParser({
+				type: 'array',
+				items: {
+					type: 'object',
+					properties: { safe: { type: 'string' } },
+					required: ['safe'],
+					additionalProperties: false,
+				},
+			})
+			const hostile: unknown = JSON.parse(
+				'[{"__proto__":{"polluted":true},"safe":"ok"},{"safe":"also"}]',
+			)
+			const parsed = parse(hostile)
+			if (Array.isArray(parsed)) {
+				for (const item of parsed) {
+					assertInverseClean(item)
+				}
+			}
+		})
+	})
+
+	it('$ref resolving to object — drops dangerous keys', () => {
+		assertNoPrototypePollution(() => {
+			const parse = compileSchemaParser({
+				$defs: {
+					SafeObj: {
+						type: 'object',
+						properties: { safe: { type: 'string' } },
+						required: ['safe'],
+						additionalProperties: false,
+					},
+				},
+				$ref: '#/$defs/SafeObj',
+			})
+			const parsed = parse(makeHostile())
+			expect(parsed).toEqual({ safe: 'ok' })
+			assertInverseClean(parsed)
+		})
+	})
+})
+
+describe('F3 — cycle-safety sweep — compileSchemaGuard on cyclic data (E2 §13)', () => {
+	// E2: compileSchemaGuard must return false on cyclic data, never throw.
+	// These are new cross-kind cases beyond the targeted E2 §13 tests above.
+
+	it('cyclic DATA through type:object schema — false, not RangeError', () => {
+		const cycArr = makeCyclicArray()
+		const cycObj = makeCyclicObject()
+		const g = compileSchemaGuard({
+			type: 'object',
+			properties: { x: { type: 'string' } },
+			required: ['x'],
+			additionalProperties: false,
+		})
+		expect(() => g(cycArr)).not.toThrow()
+		expect(g(cycArr)).toBe(false)
+		expect(() => g(cycObj)).not.toThrow()
+		// cycObj has `self` which is an extra key → closed → false
+		expect(g(cycObj)).toBe(false)
+	})
+
+	it('cyclic DATA through type:array schema — false, not RangeError', () => {
+		const cycArr = makeCyclicArray()
+		const g = compileSchemaGuard({ type: 'array', items: { type: 'string' } })
+		expect(() => g(cycArr)).not.toThrow()
+		expect(g(cycArr)).toBe(false)
+	})
+
+	it('cyclic DATA through allOf schema — false, not RangeError', () => {
+		const cycObj = makeCyclicObject()
+		const g = compileSchemaGuard({
+			allOf: [
+				{ type: 'object', properties: { a: { type: 'string' } }, required: ['a'] },
+				{ type: 'object', properties: { b: { type: 'number' } }, required: ['b'] },
+			],
+		})
+		expect(() => g(cycObj)).not.toThrow()
+		expect(g(cycObj)).toBe(false)
+	})
+
+	it('cyclic DATA through anyOf schema — false, not RangeError', () => {
+		const cycArr = makeCyclicArray()
+		const cycObj = makeCyclicObject()
+		const g = compileSchemaGuard({
+			anyOf: [{ type: 'string' }, { type: 'integer' }],
+		})
+		expect(() => g(cycArr)).not.toThrow()
+		expect(g(cycArr)).toBe(false)
+		expect(() => g(cycObj)).not.toThrow()
+		expect(g(cycObj)).toBe(false)
+	})
+
+	it('cyclic DATA through oneOf schema — false, not RangeError', () => {
+		const cycArr = makeCyclicArray()
+		const g = compileSchemaGuard({
+			oneOf: [{ type: 'string' }, { type: 'number' }],
+		})
+		expect(() => g(cycArr)).not.toThrow()
+		expect(g(cycArr)).toBe(false)
+	})
+
+	it('cyclic DATA through type:null schema — false, not RangeError', () => {
+		const cycObj = makeCyclicObject()
+		const g = compileSchemaGuard({ type: 'null' })
+		expect(() => g(cycObj)).not.toThrow()
+		expect(g(cycObj)).toBe(false)
+	})
+})
+
+describe('F3 — cycle-safety sweep — cyclic SHAPE through forward compile* (forward only; schema.test.ts addendum)', () => {
+	// Verifies the B5 precise-cyclic-error contract for cyclic SHAPES fed to
+	// compileGuard/compileParser/compileSchema/compileGenerator.
+	// (Covered comprehensively in compilers.test.ts; these are representative
+	// addendum cases verifying the contract holds from this test module's
+	// imports as well.)
+	const CYCLIC_MSG = 'cyclic ContractShape: use a lazy/deferred shape for recursion'
+
+	function expectCyclicError(run: () => void): void {
+		expect(run).toThrow(Error)
+		expect(run).not.toThrow(RangeError)
+		expect(run).toThrow(CYCLIC_MSG)
+	}
+
+	it('makeCyclicShape() → precise B5 Error from compileGuard and compileParser', () => {
+		expectCyclicError(() => compileGuard(makeCyclicShape()))
+		expectCyclicError(() => compileParser(makeCyclicShape()))
+	})
+
+	it('cyclic shape through defaultShape inner → precise B5 Error', () => {
+		// `defaultShape`'s `inner` is recursed by assertAcyclicShape; a cycle
+		// through it must also throw B5.
+		const makeDefaultCyclic = (): ContractShape => {
+			const props: Record<string, ContractShape> = { name: stringShape({ min: 1 }) }
+			const shape = objectShape(props)
+			props['self'] = defaultShape(shape, { name: 'x' })
+			return shape
+		}
+		expectCyclicError(() => compileGuard(makeDefaultCyclic()))
+		expectCyclicError(() => compileParser(makeDefaultCyclic()))
+	})
+})
+
+describe('F3 — assertParseGuardSymmetry sweep — representative inverse JSON-Schema kinds (E3/E4 cross-check)', () => {
+	// assertParseGuardSymmetry uses the FORWARD compileGuard/compileParser.
+	// For shapes produced by compileSchemaShape this exercises the same contracts
+	// as the E3/E4 per-phase tests but from a cross-surface (compilers↔schema)
+	// perspective without duplicating exact cases.
+
+	it('compileSchemaShape of string/number/integer/boolean — symmetry holds', () => {
+		assertParseGuardSymmetry(compileSchemaShape({ type: 'string', minLength: 1 }), ['a', '', 0, null])
+		assertParseGuardSymmetry(compileSchemaShape({ type: 'number', minimum: 0 }), [0, -1, '3', 'x'])
+		assertParseGuardSymmetry(compileSchemaShape({ type: 'integer', minimum: 1, maximum: 9 }), [1, 9, 0, 10, 1.5, 'x'])
+		assertParseGuardSymmetry(compileSchemaShape({ type: 'boolean' }), [true, false, 1, 'true', null])
+	})
+
+	it('compileSchemaShape of array/closed-tuple — symmetry holds', () => {
+		assertParseGuardSymmetry(
+			compileSchemaShape({ type: 'array', items: { type: 'number' }, minItems: 1, maxItems: 3 }),
+			[[1], [1, 2, 3], [], [1, 2, 3, 4], [1, 'x'], 'no'],
+		)
+		assertParseGuardSymmetry(
+			compileSchemaShape({
+				type: 'array',
+				prefixItems: [{ type: 'string' }, { type: 'number' }],
+				items: false,
+			}),
+			[['a', 1], ['a', 1, 2], [1, 'a'], ['a', 'b'], 'no'],
+		)
+	})
+
+	it('compileSchemaShape of object (closed + open + additionalProperties:schema) — symmetry holds', () => {
+		assertParseGuardSymmetry(
+			compileSchemaShape({
+				type: 'object',
+				properties: { name: { type: 'string', minLength: 1 }, age: { type: 'integer', minimum: 0 } },
+				required: ['name', 'age'],
+				additionalProperties: false,
+			}),
+			[{ name: 'Ada', age: 30 }, { name: '', age: 30 }, { name: 'Ada' }, 'nope', null],
+		)
+		assertParseGuardSymmetry(
+			compileSchemaShape({
+				type: 'object',
+				properties: { a: { type: 'string' } },
+				required: ['a'],
+				additionalProperties: { type: 'number' },
+			}),
+			[{ a: 'x' }, { a: 'x', extra: 1 }, { a: 'x', extra: 'no' }, {}],
+		)
+	})
+
+	it('compileSchemaShape of anyOf/oneOf/allOf — symmetry holds', () => {
+		assertParseGuardSymmetry(
+			compileSchemaShape({ anyOf: [{ type: 'string', minLength: 1 }, { type: 'integer', minimum: 0 }] }),
+			['', 'hi', -1, 0, 5, true],
+		)
+		assertParseGuardSymmetry(
+			compileSchemaShape({ allOf: [
+				{ type: 'object', properties: { a: { type: 'string' } }, required: ['a'] },
+				{ type: 'object', properties: { b: { type: 'number' } }, required: ['b'] },
+			] }),
+			[{ a: 'x', b: 1 }, { a: 'x' }, { b: 1 }, {}, 'nope'],
+		)
+	})
+})
+
+describe('F3 — assertGeneratorSatisfiesGuard sweep — shapes produced by compileSchemaShape', () => {
+	// Verifies generator∘guard holds on shapes produced by the inverse pipeline.
+
+	it('primitive shapes from compileSchemaShape', () => {
+		assertGeneratorSatisfiesGuard(compileSchemaShape({ type: 'string', minLength: 1 }), [1, 2, 3, 7])
+		assertGeneratorSatisfiesGuard(compileSchemaShape({ type: 'integer', minimum: 0, maximum: 9 }), [1, 2, 3, 7])
+		assertGeneratorSatisfiesGuard(compileSchemaShape({ type: 'boolean' }), [1, 2, 3, 7])
+	})
+
+	it('array + closed tuple shapes from compileSchemaShape', () => {
+		assertGeneratorSatisfiesGuard(
+			compileSchemaShape({ type: 'array', items: { type: 'integer', minimum: 0 }, minItems: 1, maxItems: 3 }),
+			[1, 2, 3, 7],
+		)
+		assertGeneratorSatisfiesGuard(
+			compileSchemaShape({
+				type: 'array',
+				prefixItems: [{ type: 'string' }, { type: 'integer' }],
+				items: false,
+			}),
+			[1, 2, 3, 7],
+		)
+	})
+
+	it('object shape from compileSchemaShape', () => {
+		assertGeneratorSatisfiesGuard(
+			compileSchemaShape({
+				type: 'object',
+				properties: { name: { type: 'string', minLength: 1 }, count: { type: 'integer', minimum: 0 } },
+				required: ['name', 'count'],
+				additionalProperties: false,
+			}),
+			[1, 2, 3, 7],
+		)
+	})
+
+	it('anyOf shape from compileSchemaShape', () => {
+		assertGeneratorSatisfiesGuard(
+			compileSchemaShape({ anyOf: [{ type: 'string', minLength: 1 }, { type: 'integer', minimum: 0 }] }),
+			[1, 2, 3, 7],
+		)
+	})
+
+	it('recursive $ref shape from compileSchemaShape — terminates when optional wrapper provides base case', () => {
+		// The D3 generator terminates when the recursive child is optional or in an array.
+		// Here the recursive `next` is optional (not in `required`), giving the generator
+		// a finite-inhabitant base case (omit `next`). This mirrors the E3/D3 contract:
+		// the `lazyShape` generator terminates when an optional/array wrapper exists.
+		assertGeneratorSatisfiesGuard(
+			compileSchemaShape({
+				$defs: {
+					Node: {
+						type: 'object',
+						properties: {
+							value: { type: 'string', minLength: 1 },
+							next: { $ref: '#/$defs/Node' },
+						},
+						required: ['value'],
+						additionalProperties: false,
+					},
+				},
+				$ref: '#/$defs/Node',
+			}),
+			[1, 2, 3],
+		)
 	})
 })
