@@ -222,23 +222,23 @@ describe('compileSchema', () => {
 		expect(schema).toMatchObject({ anyOf: [{ type: 'string' }, { type: 'integer' }] })
 	})
 
-	// FU5 — a top-level `optionalShape` guard accepts `undefined` as well as
-	// the inner's value set. JSON Schema has no `undefined`, but the package
-	// already encodes "may be absent" as the omission of a key from
-	// `required` (the `objectShape` optional-property convention) and an
-	// "either/or" value set as `anyOf`. A top-level optional is faithfully
-	// the inner schema OR no value at all; since the package's accept-set for
-	// a guard that admits `undefined` is "inner ∪ {undefined}", the schema
-	// must NOT force the inner present. The minimal JSON-Schema-faithful
-	// encoding consistent with the inverse subsystem is `anyOf: [inner, {}]`
-	// — `{}` (the always-true schema) is the package's representation of
-	// "absent/anything", so the emitted schema's accept-set ⊇ the guard's
-	// (`compileSchemaGuard(compileSchema(optional(x)))` agrees with
-	// `compileGuard(optional(x))` on `undefined`, the round-trip oracle).
-	it('optional — admits the inner OR absence (does not force inner present)', () => {
-		expect(compileSchema(optionalShape(stringShape()))).toEqual({
-			anyOf: [{ type: 'string' }, {}],
-		})
+	// FU5 defect #2 — a top-level `optionalShape` emits the BARE inner schema.
+	// JSON Schema has no value-level `undefined`, and the prior `anyOf:
+	// [inner, {}]` encoding was DEGENERATE: `{}` accepts EVERY instance, so
+	// `anyOf:[inner,{}]` ≡ `{}` (a universally-true root that erased all of
+	// `inner`'s structure — it accepted `42`, `[]`, `null`, anything). The
+	// honest encoding is the bare inner schema; the single unrepresentable
+	// arm — a bare top-level optional's `undefined`/absence — is a DOCUMENTED
+	// STRICTER known-divergence (the schema rejects exactly that one value
+	// the guard accepts), mirroring the inverse subsystem's single stricter
+	// divergence (open-tail array → closed tuple; see guides/schema.md). The
+	// round-trip oracle below asserts the divergence is precisely that one
+	// `undefined` value and nothing wider.
+	it('top-level optional — emits the bare inner (NOT the degenerate universally-true {})', () => {
+		expect(compileSchema(optionalShape(stringShape()))).toEqual({ type: 'string' })
+		// NOT the old degenerate root: a universally-true `{}`/`anyOf:[…,{}]`
+		// would have accepted `42`; the bare inner does not.
+		expect(compileSchemaGuard(compileSchema(optionalShape(stringShape())))(42)).toBe(false)
 	})
 
 	it('nullable — emits anyOf with null', () => {
@@ -250,21 +250,41 @@ describe('compileSchema', () => {
 
 // === compileSchema — FU5 round-trip parity (emission fidelity)
 //
-// The emitted JSON Schema and the compiled guard MUST describe the SAME set
-// of values: a value satisfies `compileSchema(s)` iff it satisfies
-// `compileGuard(s)`. The package OWNS the inverse subsystem
-// (`compileSchemaGuard` — compiles an emitted JSON Schema back into a runtime
-// guard with faithful JSON-Schema 2020-12 semantics, incl. independent
-// `allOf` application and closed-object `additionalProperties: false`), so
-// `compileSchemaGuard(compileSchema(s))` vs `compileGuard(s)` over a value
-// corpus is the strongest available round-trip parity oracle and the one the
-// package itself would use to validate emitted schemas. Two pre-fix defects
-// this guards against: (1) an intersection of CLOSED objects emitting an
-// unsatisfiable `allOf` (rejected the merged object the guard accepts), and
-// (2) a top-level optional dropping the "may be undefined" aspect (rejected
-// `undefined` the guard accepts).
+// The emitted JSON Schema and the compiled guard describe the SAME set of
+// values for everything JSON Schema can represent: a value satisfies
+// `compileSchema(s)` iff it satisfies `compileGuard(s)`. The package OWNS the
+// inverse subsystem (`compileSchemaGuard` — compiles an emitted JSON Schema
+// back into a runtime guard with faithful JSON-Schema 2020-12 semantics,
+// incl. independent `allOf` application and closed-object
+// `additionalProperties: false`), so `compileSchemaGuard(compileSchema(s))`
+// vs `compileGuard(s)` over a value corpus is the strongest available
+// round-trip parity oracle and the one the package itself would use to
+// validate emitted schemas. Two pre-fix defects this guards against:
+// (1) an intersection of object members emitting an `allOf` that DROPPED an
+// overlapping key's other constraints (a key declared by more than one
+// member kept only the LAST member's schema — a false positive: a closed
+// `allOf` of `{a:string}` ∩ `{a:integer}` is guard-uninhabited yet the old
+// emission accepted `{a:5}`); and (2) a top-level optional emitting the
+// DEGENERATE `anyOf:[inner,{}]` ≡ `{}` (a universally-true root that erased
+// all structure — it accepted `42`, `[]`, `null`, anything).
+//
+// THE ONE KNOWN STRICTER DIVERGENCE. Everything representable round-trips
+// EXACTLY. The single divergence: a BARE top-level `optionalShape` whose
+// `undefined`/absence arm is not representable in JSON Schema (no value-level
+// `undefined`; no enclosing object `required` to carry absence at a bare
+// document root). `compileSchema` emits the bare inner — the guard accepts
+// `undefined`, the emitted schema rejects exactly that one value and NOTHING
+// WIDER. This is a STRICTER divergence (the schema is strictly tighter than
+// the guard by exactly `{undefined}`), mirroring the inverse subsystem's
+// single stricter divergence (open-tail array → closed tuple; see
+// guides/schema.md §Contract 7). It is asserted explicitly as the
+// intended, bounded divergence — not via a trivially-true implication.
 
-/** Assert the emitted schema's accept-set EQUALS the compiled guard's. */
+/**
+ * Assert the emitted schema's accept-set EXACTLY equals the compiled guard's
+ * over `corpus` (the strict round-trip oracle — every representable shape,
+ * incl. overlapping-key intersections and nested optionals).
+ */
 function assertSchemaGuardParity(shape: ContractShape, corpus: readonly unknown[]): void {
 	const guard = compileGuard(shape)
 	const schemaGuard = compileSchemaGuard(compileSchema(shape))
@@ -276,36 +296,40 @@ function assertSchemaGuardParity(shape: ContractShape, corpus: readonly unknown[
 	}
 }
 
-// FU5 defect #2 — a TOP-LEVEL `optionalShape` guard accepts the inner's
-// domain ∪ `undefined`. JSON Schema has no value-level `undefined` and a
-// bare document root has no enclosing `required` to carry absence, so the
-// root encoding is a deliberate, documented best-effort widening
-// (`anyOf:[inner,{}]`, the same LOOSER known-divergence the package already
-// ships for root constructs JSON Schema cannot express precisely — cf.
-// `compileSchemaShape`). The HARD contract the round-trip oracle must prove
-// is therefore one-directional: the emitted schema must admit EVERY value
-// the guard accepts (NO false negatives — this is exactly the "admits
-// undefined consistently with compileGuard accepting it" assertion, and is
-// what the unsatisfiable-`allOf` / dropped-optionality bugs violated). The
-// widening (schema accepts some values the guard rejects, at the root only)
-// is asserted as the documented, intentional divergence.
-function assertSchemaAdmitsGuardAcceptSet(
+/**
+ * Assert the ONE known stricter divergence for a BARE top-level
+ * `optionalShape`: the emitted schema's accept-set equals the guard's on
+ * EVERY corpus value EXCEPT `undefined`, which the guard ACCEPTS and the
+ * emitted schema REJECTS (the single unrepresentable arm). Also proves the
+ * emitted schema is NOT the degenerate universally-true root (the pre-fix
+ * `anyOf:[inner,{}]` bug) by requiring at least one corpus value the guard
+ * rejects to ALSO be rejected by the schema — a universally-true root could
+ * never satisfy that.
+ */
+function assertTopLevelOptionalStricterDivergence(
 	shape: ContractShape,
 	corpus: readonly unknown[],
 ): void {
 	const guard = compileGuard(shape)
 	const schemaGuard = compileSchemaGuard(compileSchema(shape))
+	// Guard accepts a bare-root `undefined`; the emitted schema rejects it —
+	// the single intended stricter divergence.
+	expect(guard(undefined), 'guard must accept a bare top-level optional undefined').toBe(true)
+	expect(
+		schemaGuard(undefined),
+		'emitted schema must REJECT the unrepresentable bare-root undefined (stricter divergence)',
+	).toBe(false)
 	for (const value of corpus) {
-		// One UNCONDITIONAL assertion of the implication
-		// `guard(v) ⟹ schemaGuard(v)` (NO false negatives — every value the
-		// guard accepts the emitted schema must also accept). `!guard(value)`
-		// short-circuits the OR so a value the guard rejects vacuously
-		// satisfies the implication without widening the contract.
-		const admitsGuardAcceptSet = !guard(value) || schemaGuard(value)
+		if (value === undefined) {
+			continue
+		}
+		// For every NON-undefined value the round-trip is EXACT (the schema
+		// is the bare inner, so it agrees with the guard everywhere the
+		// guard's accept-set is representable).
 		expect(
-			admitsGuardAcceptSet,
-			`emitted schema REJECTS ${JSON.stringify(value) ?? String(value)} that the guard ACCEPTS (false negative — the FU5 emission-fidelity defect)`,
-		).toBe(true)
+			schemaGuard(value),
+			`emitted schema disagrees with guard on ${JSON.stringify(value) ?? String(value)} (only the bare-root undefined may diverge)`,
+		).toBe(guard(value))
 	}
 }
 
@@ -362,30 +386,88 @@ describe('compileSchema — FU5 round-trip parity oracle', () => {
 		)
 	})
 
-	it('top-level optional — emitted schema admits undefined consistently with the guard', () => {
+	// FU5 defect #1 — OVERLAPPING-KEY intersection. The same key declared by
+	// more than one member: the guard requires the value at that key to
+	// satisfy ALL members' per-key schemas (each member guard checks its own
+	// key conjunctively). The pre-fix merge OVERWROTE `properties[key]` on
+	// collision, keeping only the LAST member's schema — a false positive.
+	// `{a:string} ∩ {a:integer}` is guard-UNINHABITED on `a`; the emitted
+	// schema must also be (`properties.a = allOf:[string,integer]`). This
+	// EXACT-equality oracle FAILS pre-fix (old emission accepted `{a:5}`).
+	it('intersection — overlapping key (string ∩ integer): guard-uninhabited, schema agrees exactly', () => {
+		const shape = intersectionShape(
+			objectShape({ a: stringShape() }),
+			objectShape({ a: integerShape() }),
+		)
+		const guard = compileGuard(shape)
+		const schemaGuard = compileSchemaGuard(compileSchema(shape))
+		// `a` must be BOTH string AND integer → no value inhabits it. The
+		// pre-fix emission kept only `{a:{type:'integer'}}` and wrongly
+		// accepted `{a:5}` (false positive).
+		expect(guard({ a: 5 })).toBe(false)
+		expect(schemaGuard({ a: 5 })).toBe(false)
+		expect(guard({ a: 'x' })).toBe(false)
+		expect(schemaGuard({ a: 'x' })).toBe(false)
+		assertSchemaGuardParity(shape, [
+			{ a: 5 },
+			{ a: 'x' },
+			{},
+			{ a: 5, b: 1 },
+			'not-an-object',
+		])
+	})
+
+	// FU5 defect #1 — OVERLAPPING key with COMPATIBLE-but-distinct
+	// constraints: `{a:string,minLength:1} ∩ {a:string,maxLength:5}`. The
+	// guard accepts a string of length 1..5; the pre-fix merge dropped one
+	// keyword (kept only the last member's `{type:'string',maxLength:5}`),
+	// wrongly accepting `''`. The fix emits `allOf:[{minLength:1},{maxLength:5}]`.
+	it('intersection — overlapping key (min ∩ max): both keywords retained, schema agrees exactly', () => {
+		const shape = intersectionShape(
+			objectShape({ a: stringShape({ min: 1 }) }),
+			objectShape({ a: stringShape({ max: 5 }) }),
+		)
+		const guard = compileGuard(shape)
+		const schemaGuard = compileSchemaGuard(compileSchema(shape))
+		// `''` violates the first member's minLength:1 — guard rejects; the
+		// pre-fix emission (only maxLength:5 kept) wrongly accepted it.
+		expect(guard({ a: '' })).toBe(false)
+		expect(schemaGuard({ a: '' })).toBe(false)
+		// `'abcdef'` violates the second member's maxLength:5.
+		expect(guard({ a: 'abcdef' })).toBe(false)
+		expect(schemaGuard({ a: 'abcdef' })).toBe(false)
+		assertSchemaGuardParity(shape, [
+			{ a: 'abc' },
+			{ a: '' },
+			{ a: 'abcdef' },
+			{},
+			{ a: 'abc', extra: 1 },
+		])
+	})
+
+	it('top-level optional — bare inner emitted; the ONE stricter divergence is exactly undefined', () => {
 		const shape = optionalShape(stringShape())
 		const guard = compileGuard(shape)
 		const schemaGuard = compileSchemaGuard(compileSchema(shape))
-		// The guard accepts `undefined` AND every string; the emitted schema
-		// must admit BOTH (the dropped-optionality bug rejected `undefined`).
-		expect(guard(undefined)).toBe(true)
-		expect(schemaGuard(undefined)).toBe(true)
+		// The emitted schema is the BARE inner — NOT the degenerate
+		// universally-true root (`anyOf:[inner,{}]` ≡ `{}`) the pre-fix code
+		// produced. A universally-true root would accept `42`; the bare
+		// inner rejects it (the structure is preserved).
+		expect(schemaGuard(42)).toBe(false)
+		expect(schemaGuard(null)).toBe(false)
+		expect(schemaGuard({})).toBe(false)
 		expect(schemaGuard('hello')).toBe(true)
 		expect(schemaGuard('')).toBe(true)
-		// No false negatives over the guard's accept-set (incl. `undefined`).
-		assertSchemaAdmitsGuardAcceptSet(shape, [undefined, 'hello', '', 42, null, {}])
-		// Documented intentional root widening: JSON Schema cannot express
-		// "string OR undefined and nothing else" at a bare document root, so
-		// the always-true `{}` branch also admits non-string roots. This is
-		// the package's existing LOOSER known-divergence contract (cf.
-		// `compileSchemaShape`), asserted explicitly so it is a deliberate
-		// behaviour, not a silent bug.
-		expect(schemaGuard(42)).toBe(true)
-		expect(guard(42)).toBe(false)
+		// The single intended STRICTER divergence: the guard accepts a
+		// bare-root `undefined`; the emitted schema rejects exactly that one
+		// value (and nothing wider — every other value round-trips exactly).
+		expect(guard(undefined)).toBe(true)
+		expect(schemaGuard(undefined)).toBe(false)
+		assertTopLevelOptionalStricterDivergence(shape, [undefined, 'hello', '', 42, null, {}])
 	})
 
-	it('top-level optional object — emitted schema admits undefined + every valid inner', () => {
-		assertSchemaAdmitsGuardAcceptSet(
+	it('top-level optional object — bare inner; only the bare-root undefined diverges', () => {
+		assertTopLevelOptionalStricterDivergence(
 			optionalShape(objectShape({ name: stringShape({ min: 1 }) })),
 			[undefined, { name: 'Ada' }, { name: '' }, { name: 'Ada', x: 1 }, 'str', null],
 		)
@@ -420,6 +502,24 @@ describe('compileSchema — FU5 round-trip parity oracle', () => {
 						objectShape({ b: integerShape() }),
 					),
 					corpus: [{ a: 'x', b: 1 }, { a: 'x' }, { b: 1 }, {}, { a: 'x', b: 1, z: 0 }],
+				},
+				{
+					// OVERLAPPING key, guard-uninhabited (`a` string ∩ integer)
+					// — the FU5 #1 false-positive repro in the durable net.
+					shape: intersectionShape(
+						objectShape({ a: stringShape() }),
+						objectShape({ a: integerShape() }),
+					),
+					corpus: [{ a: 5 }, { a: 'x' }, {}, { a: 5, b: 1 }, 'no'],
+				},
+				{
+					// OVERLAPPING key, compatible-but-distinct constraints
+					// (min ∩ max) — both keywords must survive the merge.
+					shape: intersectionShape(
+						objectShape({ a: stringShape({ min: 1 }) }),
+						objectShape({ a: stringShape({ max: 5 }) }),
+					),
+					corpus: [{ a: 'abc' }, { a: '' }, { a: 'abcdef' }, {}, { a: 'abc', z: 0 }],
 				},
 				{
 					shape: intersectionShape(
@@ -463,11 +563,12 @@ describe('compileSchema — FU5 round-trip parity oracle', () => {
 	})
 
 	// Durable corpus regression guard for FU5 #2 — TOP-LEVEL optionals. The
-	// hard one-directional contract (NO false negatives: the emitted schema
-	// admits EVERY value the guard accepts, incl. `undefined`) over a
-	// representative corpus including `undefined`, intersections-of-closed-
-	// objects as the optional inner, and out-of-domain values.
-	it('representative corpus — top-level optionals admit the full guard accept-set', () => {
+	// emitted schema is the BARE inner; the ONLY divergence from the guard is
+	// the unrepresentable bare-root `undefined` (STRICTER — the schema is
+	// tighter by exactly that one value). Every other value round-trips
+	// EXACTLY (a degenerate universally-true root would fail this — it would
+	// accept the out-of-domain values the guard rejects).
+	it('representative corpus — top-level optionals: bare inner, only undefined diverges', () => {
 		const cases: readonly { readonly shape: ContractShape; readonly corpus: readonly unknown[] }[] =
 			[
 				{
@@ -481,11 +582,11 @@ describe('compileSchema — FU5 round-trip parity oracle', () => {
 							objectShape({ b: integerShape() }),
 						),
 					),
-					corpus: [undefined, { a: 'x', b: 1 }, { a: 'x' }, { a: 'x', b: 1, e: 0 }],
+					corpus: [undefined, { a: 'x', b: 1 }, { a: 'x' }, { a: 'x', b: 1, e: 0 }, 'no'],
 				},
 			]
 		for (const { shape, corpus } of cases) {
-			assertSchemaAdmitsGuardAcceptSet(shape, corpus)
+			assertTopLevelOptionalStricterDivergence(shape, corpus)
 		}
 	})
 })
