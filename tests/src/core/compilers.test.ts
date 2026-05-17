@@ -21,6 +21,7 @@ import {
 	stringShape,
 	unionShape,
 } from '@elements/core'
+import { POLLUTION_KEYS, assertNoPrototypePollution } from './_helpers.js'
 
 // === compileSchema
 
@@ -513,6 +514,83 @@ describe('compileParser — additionalProperties', () => {
 			objectShape({ name: stringShape() }, { additionalProperties: numberShape() }),
 		)
 		expect(parser({ name: 'test', a: 1, b: 2 })).toEqual({ name: 'test', a: 1, b: 2 })
+	})
+})
+
+// === prototype pollution (security)
+
+describe('compileParser — prototype pollution', () => {
+	// A JSON.parse'd body where `__proto__` is an OWN enumerable key (not the
+	// accessor): JSON.parse defeats the `__proto__` setter, so this object
+	// genuinely carries dangerous keys that flow through isRecord +
+	// Object.keys into the object parser's accumulator.
+	const hostilePayload = () =>
+		JSON.parse(
+			'{"__proto__":{"polluted":true},"constructor":{"x":1},"prototype":{"y":1},"safe":"ok"}',
+		) as unknown
+
+	function assertCleanResult(parsed: unknown): void {
+		// (a) Object.prototype itself is untouched.
+		expect(({} as Record<string, unknown>)['polluted']).toBeUndefined()
+		// Sanity: the parsed result's prototype is a normal plain-object
+		// prototype (or null), never an attacker-grafted one.
+		const proto = parsed === undefined ? null : Object.getPrototypeOf(parsed)
+		expect(proto === Object.prototype || proto === null).toBe(true)
+		if (parsed === undefined || typeof parsed !== 'object') {
+			return
+		}
+		// (b) The dangerous keys are DROPPED — never present as own keys
+		// carrying the malicious nested value.
+		for (const key of POLLUTION_KEYS) {
+			expect(Object.prototype.hasOwnProperty.call(parsed, key)).toBe(false)
+		}
+	}
+
+	it('closed object shape drops dangerous keys and keeps safe ones', () => {
+		assertNoPrototypePollution(() => {
+			const parser = compileParser(objectShape({ safe: stringShape() }))
+			const parsed = parser(hostilePayload())
+			// (c) Legitimate keys still parse; result is exactly the safe subset.
+			expect(parsed).toEqual({ safe: 'ok' })
+			assertCleanResult(parsed)
+		})
+	})
+
+	it('open object (additionalProperties: true) drops dangerous keys, keeps safe passthrough', () => {
+		assertNoPrototypePollution(() => {
+			const parser = compileParser(
+				objectShape({ safe: stringShape() }, { additionalProperties: true }),
+			)
+			const parsed = parser(hostilePayload())
+			expect(parsed).toEqual({ safe: 'ok' })
+			assertCleanResult(parsed)
+		})
+	})
+
+	it('additionalProperties: shape drops dangerous keys and validates safe extras', () => {
+		assertNoPrototypePollution(() => {
+			const parser = compileParser(
+				objectShape({ safe: stringShape() }, { additionalProperties: numberShape() }),
+			)
+			const parsed = parser(
+				JSON.parse(
+					'{"__proto__":{"polluted":true},"constructor":{"x":1},"prototype":{"y":1},"safe":"ok","extra":7}',
+				) as unknown,
+			)
+			expect(parsed).toEqual({ safe: 'ok', extra: 7 })
+			assertCleanResult(parsed)
+		})
+	})
+
+	it('recordShape dictionary drops dangerous keys and keeps safe entries', () => {
+		assertNoPrototypePollution(() => {
+			const parser = compileParser(recordShape(numberShape()))
+			const parsed = parser(
+				JSON.parse('{"__proto__":{"polluted":true},"constructor":{"x":1},"a":1,"b":2}') as unknown,
+			)
+			expect(parsed).toEqual({ a: 1, b: 2 })
+			assertCleanResult(parsed)
+		})
 	})
 })
 

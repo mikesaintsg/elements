@@ -336,12 +336,36 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 			}
 		}
 		case 'object': {
+			// Prototype-pollution policy (security): this is the only parser
+			// arm that BUILDS a fresh `{}` accumulator and writes
+			// externally-derived keys into it. A `JSON.parse` body can carry
+			// `__proto__` / `constructor` / `prototype` as OWN enumerable
+			// keys (JSON.parse bypasses the `__proto__` setter), and those
+			// keys then flow through `isRecord` (which accepts an
+			// Object.prototype-proto object) + `Object.keys`. Writing them
+			// onto a plain `{}` via `result[key] = …` would invoke the
+			// `__proto__` accessor / graft `constructor`/`prototype` and
+			// pollute the prototype chain. Policy: such keys are DROPPED
+			// (never written, not even as own props) — "normalize untrusted
+			// input safely" means a hostile key is absent from the output,
+			// not silently preserved. Source keys are read with
+			// `Object.hasOwn` (never a bare `value[key]` over `Object.keys`
+			// without an own-check, and never `key in value` which would
+			// also see inherited keys). The same DROP policy is applied
+			// uniformly to the closed-properties arm below for consistency,
+			// even though shape keys are fixed (it only matters if a shape
+			// literally declares one of these names as a property).
+			const isDangerousKey = (key: string): boolean =>
+				key === '__proto__' || key === 'constructor' || key === 'prototype'
 			const entries: {
 				key: string
 				parse: (value: unknown) => unknown
 				optional: boolean
 			}[] = []
 			for (const key of Object.keys(shape.properties)) {
+				if (isDangerousKey(key)) {
+					continue
+				}
 				const child = shape.properties[key]
 				if (child === undefined) {
 					continue
@@ -367,7 +391,10 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 				}
 				const result: Record<string, unknown> = {}
 				for (const entry of entries) {
-					const raw = value[entry.key]
+					// entry.key is already dangerous-key-filtered above; read
+					// via Object.hasOwn so an inherited value can never be
+					// mistaken for a present own property.
+					const raw = Object.hasOwn(value, entry.key) ? value[entry.key] : undefined
 					if (raw === undefined) {
 						if (entry.optional) {
 							continue
@@ -383,6 +410,16 @@ export function compileParser(shape: ContractShape): (value: unknown) => unknown
 				if (open) {
 					for (const key of Object.keys(value)) {
 						if (known.has(key)) {
+							continue
+						}
+						// DROP prototype-pollution keys: never write
+						// __proto__/constructor/prototype onto the plain
+						// accumulator (would taint the prototype chain) and
+						// do not let them fail the whole record either.
+						if (isDangerousKey(key)) {
+							continue
+						}
+						if (!Object.hasOwn(value, key)) {
 							continue
 						}
 						if (additionalParser !== undefined) {
