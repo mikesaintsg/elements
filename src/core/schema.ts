@@ -25,6 +25,7 @@ import {
 	tupleShape,
 	unionShape,
 } from './shapers.js'
+import { compileParser } from './compilers.js'
 import { isJsonSchema, isRecord } from './validators.js'
 
 // ============================================================================
@@ -1986,4 +1987,208 @@ function applyObjectDescription(
 		return shape
 	}
 	return { ...shape, description }
+}
+
+// ============================================================================
+//  E4 — compileSchemaParser: JSON Schema -> an input parser/coercer
+//
+//  The inverse trio's third member (E2 `compileSchemaGuard`, E3
+//  `compileSchemaShape`, E4 `compileSchemaParser`). Given a JSON-Schema
+//  document, build a parser/coercer `(value: unknown) => unknown | undefined`
+//  that normalises an input toward the schema's described value (returning
+//  `undefined` on failure).
+//
+//  ── Design notes (decisions, with the WHY) ────────────────────────────
+//
+//  1. DERIVE-FROM-E3, NOT a direct implementation.
+//
+//       compileSchemaParser(s) := compileParser(compileSchemaShape(s))
+//
+//     This is the cleanest, soundest E4 and is STRONGLY preferred over a
+//     direct schema-walking parser. A direct implementation would have to
+//     RE-DERIVE, in this module, every soundness property the forward
+//     `compileParser` already carries and proves:
+//
+//       * B3 parse↔guard discipline (parse → re-validate against THIS
+//         shape's guard → raw-fallback where sound → `undefined`), per-arm;
+//       * B2 prototype-pollution hardening (the object arm's fresh-`{}`
+//         accumulator that DROPS `__proto__`/`constructor`/`prototype` own
+//         keys, reads via `Object.hasOwn`, and never falls back to the raw
+//         object — see compilers.ts `'object'` arm);
+//       * D3 lazy memoization (a recursive `lazyShape` reuses ONE compiled
+//         parser per thunk identity);
+//       * the B4 `oneOf` exactly-one parse↔guard-symmetric counting.
+//
+//     Re-implementing those here would duplicate security- and
+//     soundness-critical logic with a second place to drift. Deriving from
+//     E3 instead inherits ALL of them verbatim AND inherits E3's
+//     already-documented-and-tested fidelity contract for free. E3 produces
+//     a `ContractShape` SPECIFICALLY so an external schema can flow back
+//     into the forward pipeline (its module header: "the round-trip
+//     bridge"); `compileParser` is exactly the forward pipeline's parser.
+//     There is NO soundness reason the derivation fails: E3's shape is
+//     acyclic-by-construction (every `$ref` wrapped in a stable-thunk
+//     `lazyShape`, the forward pipeline's only sanctioned recursion
+//     boundary), so `compileParser`'s up-front `assertAcyclicShape` never
+//     false-throws on an E3 shape, and E3's recursive-`$ref` shape is the
+//     canonical single-stable-thunk `lazyShape` pattern the forward D3
+//     `'lazy'` parser arm is built for. (DECISION: derive from E3.)
+//
+//  2. THE TWO-TIER PARSE↔GUARD CONTRACT (the precise invariants).
+//
+//     Let g2 = `compileSchemaGuard(s)` (E2), shp = `compileSchemaShape(s)`
+//     (E3), p4 = `compileSchemaParser(s)` = `compileParser(shp)`, and
+//     g4 = `compileGuard(shp)` (the parser's OWN derived-shape guard).
+//
+//     (a) SUPPORTED SUBSET (E3 design note 2 — `type`/`enum`/`const`/
+//         `minLength`/`maxLength`/`pattern`/`minimum`/`maximum`/`items`/
+//         `prefixItems`(+`items:false`)/`minItems`/`maxItems`/`properties`/
+//         `required`/`additionalProperties`/`allOf`(object-only)/`anyOf`/
+//         `oneOf`/boolean-`true`/`$ref`/`$defs`): E3 PROVED `g4 ≡ g2` on
+//         this subset (the "supported-subset invariant", tested in
+//         schema.test.ts). The forward `compileParser` satisfies B3 A/B/C
+//         vs `g4` for EVERY shape. Substituting `g4 ≡ g2` gives, for the
+//         supported subset, A/B/C vs `g2` directly:
+//           (A) g2(x) ⇒ p4(x) !== undefined
+//           (B) g2(x) ⇒ g2(p4(x))
+//           (C) p4(x) !== undefined ⇒ g2(p4(x))
+//         These follow from B3-on-`compileParser` + E3's supported-subset
+//         guard equivalence — VERIFIED by the supported-subset A/B/C suite,
+//         not assumed.
+//
+//     (b) GAP KEYWORDS (E3's "Round-trip fidelity" list: `format`,
+//         `exclusive*`, `multipleOf`, `uniqueItems`, `patternProperties`,
+//         `propertyNames`, `min|maxProperties`, `not`, `if`/`then`/`else`,
+//         open-tail `prefixItems`, `contains`/`dependent*`/
+//         `unevaluatedProperties`): E3's shape OMITS these, so it is
+//         strictly LOOSER than `s`. `compileSchemaParser` is correspondingly
+//         LOOSER than `g2` EXACTLY there — it will parse (return a defined
+//         value for) an input `g2` rejects on a dropped constraint. This is
+//         the SAME documented fidelity gap as E3, inherited verbatim — NO
+//         new and NO silent looseness is introduced by E4.
+//
+//     (c) UNIVERSAL (every schema, gap keywords included): because p4 is
+//         literally `compileParser(shp)`, B3 A/B/C hold UNIVERSALLY vs `g4`
+//         (the parser's own derived-shape guard): p4 never emits a value g4
+//         rejects, and accepts everything g4 accepts. So E4 is always
+//         parse↔guard-consistent with `compileGuard∘compileSchemaShape`;
+//         it is two-tier ONLY relative to `compileSchemaGuard` (tight on
+//         the supported subset, documented-looser on the gap keywords).
+//
+//  3. COERCION — inherited verbatim from the forward `compileParser`, NOT
+//     redefined here. The forward parser COERCES per-arm (compilers.ts):
+//     a numeric string to a number for a `numberShape`/`integerShape`
+//     (`'5'` -> `5`), a finite number to its string form for a
+//     `stringShape` (`5` -> `'5'`, with a trim), a `default` materialised
+//     on absence, etc. `compileSchemaParser` performs EXACTLY this
+//     coercion because it IS `compileParser` over E3's shape — e.g.
+//     `compileSchemaParser({type:'number'})('36') === 36`. No coercion
+//     policy is defined in this module; it is the documented forward
+//     behaviour, verified by the coercion suite.
+//
+//  4. §13 ERROR SPLIT — unchanged from E2/E3, propagated through the
+//     derivation:
+//       * A malformed SCHEMA (unresolvable / external / pure-`$ref`-only
+//         cycle / `MAX_REF_DEPTH`) and the `false` boolean schema are
+//         PROGRAMMER ERRORS thrown at COMPILE time — they propagate from
+//         `compileSchemaShape` (E3) BEFORE `compileParser` ever runs.
+//       * The PRODUCED parser NEVER throws on bad runtime input: it returns
+//         `undefined` (the forward `compileParser`'s sole failure
+//         sentinel). The SOLE exception is the SEPARATELY-TRACKED,
+//         pre-existing D3 forward limitation: the forward `compileParser`
+//         `'lazy'` arm is not cyclic-DATA-safe at the lazy boundary, so a
+//         recursive-`$ref` schema's parser fed genuinely SELF-CYCLIC data
+//         can `RangeError` exactly like the canonical sanctioned
+//         single-stable-thunk `lazyShape` pattern under `compileParser`.
+//         That is a forward-pipeline property E4 inherits and PINS against
+//         the canonical pattern (the same discipline E3 used for its
+//         guard) — it is NOT an E4 defect and E4 must not fight it; a
+//         future D3 hardening that makes the forward parser cyclic-safe
+//         fixes it here for free. FINITE recursive data parses correctly
+//         (the E4 guarantee, verified).
+// ============================================================================
+
+/**
+ * Compile a JSON Schema document into an input parser/coercer — the inverse
+ * trio's third member (E2 {@link compileSchemaGuard} guard, E3
+ * {@link compileSchemaShape} shape, E4 parser).
+ *
+ * @remarks
+ * DERIVED, not directly implemented:
+ * `compileSchemaParser(s) = compileParser(compileSchemaShape(s))`. This
+ * inherits — verbatim, with no re-implementation — the forward
+ * `compileParser`'s B3 parse↔guard discipline, its B2 prototype-pollution
+ * hardening (object parsing drops `__proto__`/`constructor`/`prototype`
+ * own keys and never falls back to the raw object), its D3 lazy
+ * memoization (a recursive `$ref` reuses ONE compiled parser), and E3's
+ * already-documented best-effort fidelity contract.
+ *
+ * Two-tier parse↔guard contract (let `g2 = compileSchemaGuard(s)`):
+ *
+ * - SUPPORTED SUBSET (E3 design note 2): E3 proved
+ *   `compileGuard(compileSchemaShape(s)) ≡ g2`, so the produced parser
+ *   satisfies the B3 A/B/C clauses against `g2` directly — (A) `g2(x)` ⇒
+ *   parse is defined; (B) `g2(x)` ⇒ `g2(parse(x))`; (C) a defined
+ *   `parse(x)` ⇒ `g2(parse(x))`.
+ * - GAP KEYWORDS (E3's "Round-trip fidelity" list — `format`,
+ *   `exclusiveMinimum`/`exclusiveMaximum`, `multipleOf`, `uniqueItems`,
+ *   `patternProperties`, `propertyNames`, `minProperties`/`maxProperties`,
+ *   `not`, `if`/`then`/`else`, open-tail `prefixItems`, `contains`/
+ *   `dependentRequired`/`dependentSchemas`/`unevaluatedProperties`): the
+ *   parser is LOOSER than `g2` EXACTLY there (it will not enforce the
+ *   dropped constraint) — the SAME documented fidelity gap as E3, inherited
+ *   verbatim with no new or silent looseness.
+ * - UNIVERSAL: because it IS `compileParser` over E3's shape, the B3 A/B/C
+ *   clauses also hold UNIVERSALLY against the parser's OWN derived-shape
+ *   guard `compileGuard(compileSchemaShape(s))` (every schema, gap keywords
+ *   included).
+ *
+ * Coercion is the forward `compileParser`'s, inherited verbatim (a numeric
+ * string coerces to a number for `{type:'number'}`/`{type:'integer'}`; a
+ * finite number coerces to its string form for `{type:'string'}`; etc.) —
+ * no coercion policy is defined here.
+ *
+ * Error model (AGENTS.md §13):
+ *
+ * - A malformed SCHEMA (unresolvable / external / pure-`$ref`-only cycle /
+ *   `MAX_REF_DEPTH`) and the `false` boolean schema are PROGRAMMER ERRORS
+ *   thrown at COMPILE time — E1/E3's precise `Error`s propagate from
+ *   `compileSchemaShape` before any input is parsed.
+ * - The produced parser NEVER throws on bad runtime input: it returns
+ *   `undefined`. The SOLE exception is the separately-tracked, pre-existing
+ *   D3 forward limitation — the forward `compileParser` `'lazy'` arm is not
+ *   cyclic-DATA-safe, so a recursive-`$ref` parser fed genuinely
+ *   SELF-CYCLIC data can `RangeError` exactly like the canonical sanctioned
+ *   `lazyShape` pattern under `compileParser` (NOT an E4 defect; pinned
+ *   against the canonical pattern). FINITE recursive data parses correctly.
+ *
+ * @param schema - The JSON Schema document to compile into a parser
+ * @returns A parser `(value: unknown) => unknown | undefined` that returns
+ *          the normalised value or `undefined`
+ * @throws Error If the schema contains a malformed `$ref`, is the `false`
+ *         boolean schema, or maps to a shape a forward builder §13-rejects
+ *         (all at COMPILE time, propagated from E1/E3)
+ *
+ * @example
+ * ```ts
+ * const parseUser = compileSchemaParser({
+ *   type: 'object',
+ *   properties: { name: { type: 'string', minLength: 1 }, age: { type: 'integer' } },
+ *   required: ['name', 'age'],
+ *   additionalProperties: false,
+ * })
+ * parseUser({ name: 'Ada', age: '36' }) // { name: 'Ada', age: 36 } — coerced
+ * parseUser({ name: '', age: 36 })      // undefined — fails minLength: 1
+ * parseUser('not-an-object')            // undefined — never throws
+ * ```
+ */
+export function compileSchemaParser(schema: JsonSchema): (value: unknown) => unknown | undefined {
+	// Derive from E3 (design note 1): E3's `compileSchemaShape` produces the
+	// round-trip `ContractShape`; the forward `compileParser` is the forward
+	// pipeline's parser over it. This single composition inherits B3 (parse↔
+	// guard), B2 (object prototype-pollution hardening), D3 (lazy memo) and
+	// E3's documented fidelity contract — nothing is re-implemented here. A
+	// malformed schema / `false` schema throws inside `compileSchemaShape` at
+	// COMPILE time (§13, design note 4) before `compileParser` runs.
+	return compileParser(compileSchemaShape(schema))
 }

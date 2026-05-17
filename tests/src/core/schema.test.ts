@@ -27,13 +27,16 @@ import {
 	arrayShape,
 	booleanShape,
 	compileGuard,
+	compileParser,
 	compileSchema,
 	compileSchemaGuard,
+	compileSchemaParser,
 	compileSchemaShape,
 	constShape,
 	createRefResolver,
 	integerShape,
 	isJsonSchema,
+	isRecord,
 	numberShape,
 	objectShape,
 	oneOfShape,
@@ -43,6 +46,7 @@ import {
 	tupleShape,
 	unionShape,
 } from '@elements/core'
+import { POLLUTION_KEYS, assertNoPrototypePollution } from './_helpers.js'
 
 // === resolveRef — single-pointer RFC-6901 resolution
 
@@ -1966,4 +1970,535 @@ describe('compileSchemaShape — structural round-trip compileSchema∘compileSc
 			}
 		})
 	}
+})
+
+// ============================================================================
+//  E4 — compileSchemaParser: JSON Schema -> an input parser/coercer
+//
+//  The inverse trio's third member (E2 guard, E3 shape, E4 parser). E4 is
+//  DERIVED: `compileSchemaParser(s) = compileParser(compileSchemaShape(s))`,
+//  so it inherits the forward `compileParser`'s B3 parse↔guard discipline,
+//  B2 prototype-pollution hardening, and D3 lazy memoization, AND E3's
+//  documented best-effort fidelity contract.
+//
+//  Two-tier parse↔guard contract under test:
+//   * SUPPORTED SUBSET — E2's `compileSchemaGuard(s)` and
+//     `compileGuard(compileSchemaShape(s))` agree (E3 proved this), so the
+//     B3 A/B/C clauses hold for `compileSchemaParser(s)` vs
+//     `compileSchemaGuard(s)`.
+//   * GAP KEYWORDS — E4 is LOOSER than `compileSchemaGuard(s)` exactly where
+//     E3's shape is looser (same documented fidelity gap, no new looseness).
+//   * UNIVERSAL — E4 is parse↔guard-consistent with
+//     `compileGuard(compileSchemaShape(s))` (its own derived shape's guard)
+//     per B3, on EVERY schema.
+// ============================================================================
+
+/**
+ * Assert the two-tier supported-subset symmetry: `compileSchemaParser(s)`
+ * (= the derived parser) is parse↔guard-sound vs `compileSchemaGuard(s)`
+ * (E2). This is the schema-pair analogue of `_helpers.ts`'s
+ * `assertParseGuardSymmetry` (which is shape-keyed); it is built locally
+ * here rather than modifying the shared `_helpers.ts`. Also asserts the
+ * UNIVERSAL clause (C) against the parser's own derived-shape guard.
+ */
+function assertSchemaParseGuardSymmetry(
+	schema: JsonSchema,
+	samples: readonly unknown[],
+): void {
+	const guard = compileSchemaGuard(schema)
+	const parser = compileSchemaParser(schema)
+	const derivedGuard = compileGuard(compileSchemaShape(schema))
+	for (const sample of samples) {
+		const printed = JSON.stringify(sample) ?? String(sample)
+		const accepted = guard(sample)
+		const parsed = parser(sample)
+		const defined = parsed !== undefined
+		// Each clause is the boolean ENCODING of its parse↔guard implication
+		// (`p ⇒ q` ≡ `!p || q`) asserted UNCONDITIONALLY — same semantics as
+		// `_helpers.ts`'s `assertParseGuardSymmetry`, but no conditional
+		// `expect` (oxlint vitest/no-conditional-expect; `_helpers.ts` is not
+		// a `*.test.ts` file so the rule does not reach it, and the task
+		// forbids modifying it — so the equivalent is inlined here).
+		expect(
+			!accepted || defined,
+			`(A) guard accepts ${printed} but compileSchemaParser rejected it`,
+		).toBe(true)
+		expect(
+			!accepted || guard(parsed),
+			`(B) parsed result of accepted ${printed} no longer satisfies compileSchemaGuard`,
+		).toBe(true)
+		expect(
+			!defined || guard(parsed),
+			`(C) compileSchemaParser produced a compileSchemaGuard-invalid value from ${printed}`,
+		).toBe(true)
+		// (C-universal) output soundness vs the parser's OWN derived-shape
+		// guard — holds for EVERY schema (gap keywords included) by B3.
+		expect(
+			!defined || derivedGuard(parsed),
+			`(C-universal) compileSchemaParser produced a value the derived-shape guard rejects from ${printed}`,
+		).toBe(true)
+	}
+}
+
+describe('compileSchemaParser — supported-subset parse↔guard symmetry vs compileSchemaGuard (A/B/C)', () => {
+	const cases: { name: string; schema: JsonSchema; samples: readonly unknown[] }[] = [
+		{
+			name: 'string min/max/pattern',
+			schema: { type: 'string', minLength: 2, maxLength: 5, pattern: 'a' },
+			samples: ['ab', 'a', 'abcdef', 'xax', 'bb', 1, null],
+		},
+		{
+			name: 'integer min/max',
+			schema: { type: 'integer', minimum: 0, maximum: 10 },
+			samples: [0, 10, -1, 11, 3.5, 'x', Number.NaN],
+		},
+		{
+			name: 'number bounds',
+			schema: { type: 'number', minimum: -1, maximum: 1 },
+			samples: [0, -1, 1, 2, Number.POSITIVE_INFINITY, 'x'],
+		},
+		{ name: 'boolean', schema: { type: 'boolean' }, samples: [true, false, 0, 'true'] },
+		{ name: 'null', schema: { type: 'null' }, samples: [null, undefined, 0, ''] },
+		{
+			name: 'type union [string,null]',
+			schema: { type: ['string', 'null'] },
+			samples: ['x', null, 1, undefined],
+		},
+		{
+			name: 'enum primitives',
+			schema: { enum: ['a', 1, true] },
+			samples: ['a', 1, true, 'b', 2, false],
+		},
+		{
+			name: 'enum structural (const-union)',
+			schema: { enum: [{ k: 1 }, [1, 2], null] },
+			samples: [{ k: 1 }, [1, 2], null, { k: 2 }, [1], 'x'],
+		},
+		{
+			name: 'const object',
+			schema: { const: { kind: 'a', n: 1 } },
+			samples: [{ kind: 'a', n: 1 }, { kind: 'a', n: 2 }, { kind: 'a' }, 'x'],
+		},
+		{
+			name: 'array<number> minItems',
+			schema: { type: 'array', items: { type: 'number' }, minItems: 1 },
+			samples: [[1], [1, 2, 3], [], [1, 'x'], 'no'],
+		},
+		{
+			name: 'closed tuple [string,number] (length >= arity)',
+			schema: {
+				type: 'array',
+				prefixItems: [{ type: 'string' }, { type: 'number' }],
+				items: false,
+			},
+			samples: [['a', 1], ['a', 1, 2], [1, 'a'], ['a', 'b'], 'no'],
+		},
+		{
+			name: 'object person (required + optional + closed)',
+			schema: {
+				type: 'object',
+				properties: {
+					name: { type: 'string', minLength: 1 },
+					age: { type: 'integer', minimum: 0 },
+					bio: { type: 'string' },
+				},
+				required: ['name', 'age'],
+				additionalProperties: false,
+			},
+			samples: [
+				{ name: 'Ada', age: 30 },
+				{ name: 'Ada', age: 30, bio: 'x' },
+				{ name: '', age: 30 },
+				{ name: 'Ada', age: -1 },
+				{ name: 'Ada', age: 30, extra: 1 },
+				{ name: 'Ada' },
+				'not-an-object',
+			],
+		},
+		{
+			name: 'object open (absent additionalProperties)',
+			schema: {
+				type: 'object',
+				properties: { a: { type: 'string' } },
+				required: ['a'],
+			},
+			samples: [{ a: 'x' }, { a: 'x', extra: 1 }, { a: 1 }, {}],
+		},
+		{
+			name: 'object typed additionalProperties',
+			schema: {
+				type: 'object',
+				properties: { a: { type: 'string' } },
+				required: ['a'],
+				additionalProperties: { type: 'number' },
+			},
+			samples: [{ a: 'x' }, { a: 'x', extra: 1 }, { a: 'x', extra: 'no' }, {}],
+		},
+		{
+			name: 'anyOf string|integer',
+			schema: { anyOf: [{ type: 'string', minLength: 1 }, { type: 'integer', minimum: 0 }] },
+			samples: ['x', 3, '', -1, true],
+		},
+		{
+			name: 'oneOf string|boolean (exactly-one)',
+			schema: { oneOf: [{ type: 'string' }, { type: 'boolean' }] },
+			samples: ['x', true, 1, null],
+		},
+		{
+			name: 'allOf object conjunction',
+			schema: {
+				allOf: [
+					{ type: 'object', properties: { a: { type: 'string' } }, required: ['a'] },
+					{ type: 'object', properties: { b: { type: 'number' } }, required: ['b'] },
+				],
+			},
+			samples: [{ a: 'x', b: 1 }, { a: 'x' }, { b: 1 }, {}],
+		},
+		{
+			name: 'local $ref',
+			schema: { $defs: { Id: { type: 'string', minLength: 1 } }, $ref: '#/$defs/Id' },
+			samples: ['x', '', 1],
+		},
+		{
+			name: 'recursive $ref (finite data)',
+			schema: {
+				$defs: {
+					Node: {
+						type: 'object',
+						properties: {
+							value: { type: 'string' },
+							next: { anyOf: [{ $ref: '#/$defs/Node' }, { type: 'null' }] },
+						},
+						required: ['value', 'next'],
+						additionalProperties: false,
+					},
+				},
+				$ref: '#/$defs/Node',
+			},
+			samples: [
+				{ value: 'a', next: null },
+				{ value: 'a', next: { value: 'b', next: null } },
+				{ value: 'a', next: { value: 1, next: null } },
+				{ value: 'a' },
+				'no',
+			],
+		},
+	]
+
+	for (const { name, schema, samples } of cases) {
+		it(`A/B/C holds vs compileSchemaGuard for ${name}`, () => {
+			assertSchemaParseGuardSymmetry(schema, samples)
+		})
+	}
+})
+
+describe('compileSchemaParser — coercion (inherits forward compileParser coercion)', () => {
+	it('numeric string -> number for {type:number} (forward parser coerces)', () => {
+		// The forward `compileParser` number arm coerces a numeric string to a
+		// number; the derived schema parser inherits this verbatim.
+		const parse = compileSchemaParser({ type: 'number' })
+		expect(parse('36')).toBe(36)
+		expect(parse(36)).toBe(36)
+		expect(parse('abc')).toBeUndefined()
+		// Sanity: identical to compileParser(compileSchemaShape(...)).
+		expect(parse('36')).toBe(compileParser(compileSchemaShape({ type: 'number' }))('36'))
+	})
+
+	it('numeric string -> integer for {type:integer}', () => {
+		const parse = compileSchemaParser({ type: 'integer', minimum: 0, maximum: 120 })
+		expect(parse('36')).toBe(36)
+		expect(parse(-1)).toBeUndefined()
+		expect(parse('3.5')).toBeUndefined()
+	})
+
+	it('number -> string coercion for {type:string} (forward parser coerces)', () => {
+		// Forward string arm coerces a finite number to its string form.
+		const parse = compileSchemaParser({ type: 'string' })
+		expect(parse(36)).toBe('36')
+		expect(parse('  hi  ')).toBe('hi')
+	})
+
+	it('parsed object is guard-valid and a fresh accumulator', () => {
+		const schema: JsonSchema = {
+			type: 'object',
+			properties: { n: { type: 'number' } },
+			required: ['n'],
+			additionalProperties: false,
+		}
+		const parse = compileSchemaParser(schema)
+		const parsed = parse({ n: '5' })
+		expect(parsed).toEqual({ n: 5 })
+		expect(compileSchemaGuard(schema)(parsed)).toBe(true)
+	})
+})
+
+describe('compileSchemaParser — B2 prototype-pollution safe (inherited from forward compileParser)', () => {
+	it('hostile __proto__/constructor/prototype keys are DROPPED, safe keys parsed', () => {
+		const schema: JsonSchema = {
+			type: 'object',
+			properties: { safe: { type: 'string' } },
+			required: ['safe'],
+			additionalProperties: true,
+		}
+		const parse = compileSchemaParser(schema)
+		assertNoPrototypePollution(() => {
+			// `JSON.parse` carries `__proto__`/`constructor`/`prototype` as OWN
+			// enumerable keys (it bypasses the `__proto__` setter). Typed
+			// `unknown` (no `as`) — `parse` accepts `unknown`.
+			const hostile: unknown = JSON.parse(
+				'{"safe":"ok","__proto__":{"polluted":1},"constructor":{"x":1},"prototype":{"y":1}}',
+			)
+			const parsed = parse(hostile)
+			// Safe key survives; the result is a clean record with NONE of the
+			// dangerous keys present as an own property (B2 DROP policy).
+			expect(parsed).toEqual({ safe: 'ok' })
+			const hasAnyDangerousOwnKey =
+				isRecord(parsed) && POLLUTION_KEYS.some((key) => Object.hasOwn(parsed, key))
+			expect(
+				hasAnyDangerousOwnKey,
+				'parsed result retained a prototype-pollution own key',
+			).toBe(false)
+		})
+		// Object.prototype stayed clean.
+		const probe: Record<string, unknown> = {}
+		expect(Reflect.get(probe, 'polluted')).toBeUndefined()
+	})
+})
+
+describe('compileSchemaParser — §13 error split (compile-throw vs parser-undefined)', () => {
+	it('the `false` boolean schema throws at COMPILE time (propagated from E3)', () => {
+		expect(() => compileSchemaParser(false)).toThrow(/false.*boolean schema|never/i)
+	})
+
+	it('unresolvable $ref throws at COMPILE time (propagated from E1/E3)', () => {
+		expect(() => compileSchemaParser({ $ref: '#/$defs/Nope' })).toThrow(/#\/\$defs\/Nope/)
+	})
+
+	it('external $ref throws at COMPILE time', () => {
+		expect(() => compileSchemaParser({ $ref: 'https://x/y#/z' })).toThrow(
+			/external \$ref unsupported/,
+		)
+	})
+
+	it('pure-$ref-only cycle throws a precise COMPILE-time Error', () => {
+		expect(() =>
+			compileSchemaParser({
+				$defs: { A: { $ref: '#/$defs/B' }, B: { $ref: '#/$defs/A' } },
+				$ref: '#/$defs/A',
+			}),
+		).toThrow(/circular \$ref/i)
+	})
+
+	it('the produced parser returns undefined (NEVER throws) on bad NON-cyclic input', () => {
+		const parse = compileSchemaParser({
+			type: 'object',
+			properties: { n: { type: 'number' } },
+			required: ['n'],
+			additionalProperties: false,
+		})
+		expect(() => parse('not-an-object')).not.toThrow()
+		expect(parse('not-an-object')).toBeUndefined()
+		expect(parse({ n: 'x' })).toBeUndefined()
+		expect(parse(42)).toBeUndefined()
+		expect(parse(null)).toBeUndefined()
+	})
+})
+
+describe('compileSchemaParser — recursive $ref non-explosive (compile + finite eval)', () => {
+	it('compiles and round-trips a FINITE recursive value (non-explosive)', () => {
+		const schema: JsonSchema = {
+			$defs: {
+				Node: {
+					type: 'object',
+					properties: {
+						value: { type: 'string' },
+						next: { anyOf: [{ $ref: '#/$defs/Node' }, { type: 'null' }] },
+					},
+					required: ['value', 'next'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/Node',
+		}
+		// Compile (schema -> shape -> forward parser) must NOT explode.
+		const parse = compileSchemaParser(schema)
+		const finite = { value: 'a', next: { value: 'b', next: null } }
+		expect(parse(finite)).toEqual(finite)
+		// Documented forward coercion (design note 3): the string arm coerces a
+		// finite number to its string form, so `next.value: 1` parses to '1'
+		// and the result is guard-valid (B3-sound). Use a value string
+		// coercion CANNOT rescue (an object) to exercise the reject path.
+		expect(parse({ value: 'a', next: { value: 1, next: null } })).toEqual({
+			value: 'a',
+			next: { value: '1', next: null },
+		})
+		expect(parse({ value: 'a', next: { value: {}, next: null } })).toBeUndefined()
+		expect(parse('no')).toBeUndefined()
+	})
+
+	it('mutually-recursive $ref (A<->B) compiles and parses finite data', () => {
+		const schema: JsonSchema = {
+			$defs: {
+				A: {
+					type: 'object',
+					properties: { b: { anyOf: [{ $ref: '#/$defs/B' }, { type: 'null' }] } },
+					required: ['b'],
+					additionalProperties: false,
+				},
+				B: {
+					type: 'object',
+					properties: { a: { anyOf: [{ $ref: '#/$defs/A' }, { type: 'null' }] } },
+					required: ['a'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/A',
+		}
+		const parse = compileSchemaParser(schema)
+		const finite = { b: { a: { b: null } } }
+		expect(parse(finite)).toEqual(finite)
+		expect(parse({ b: { a: { b: 1 } } })).toBeUndefined()
+	})
+
+	it('recursive $ref parser on self-cyclic DATA behaves EXACTLY like the canonical lazyShape pattern (separately-tracked D3 forward limitation, NOT an E4 defect)', () => {
+		// DOCUMENTED, SEPARATELY-OWNED forward-pipeline behavior: the forward
+		// `compileParser` D3 `'lazy'` arm is NOT cyclic-DATA-safe at the lazy
+		// boundary (it relies on FINITE recursive data — only E2's
+		// `compileSchemaGuard` adds an explicit seen-set + MAX_DATA_DEPTH).
+		// E4's produced shape has the IDENTICAL recursion profile (one stable
+		// `lazyShape` thunk per `$ref` pointer — E3's contract), so its parser
+		// inherits exactly that forward-pipeline property. This is NOT an E4
+		// defect; E4 must not fight it (pin against the canonical pattern, the
+		// same discipline E3 used). A future D3 hardening that makes the
+		// forward parser cyclic-safe fixes this for free.
+		const schema: JsonSchema = {
+			$defs: {
+				Node: {
+					type: 'object',
+					properties: { next: { anyOf: [{ $ref: '#/$defs/Node' }, { type: 'null' }] } },
+					required: ['next'],
+					additionalProperties: false,
+				},
+			},
+			$ref: '#/$defs/Node',
+		}
+		const parse = compileSchemaParser(schema)
+		// Finite recursive data: handled correctly (the E4 guarantee).
+		expect(parse({ next: { next: null } })).toEqual({ next: { next: null } })
+		// The canonical sanctioned single-stable-thunk recursive pattern.
+		const canonical: ContractShape = {
+			type: 'object',
+			properties: {
+				next: {
+					type: 'union',
+					variants: [
+						{ type: 'lazy', thunk: () => canonical },
+						{ type: 'const', value: null },
+					],
+				},
+			},
+		}
+		const canonicalParse = compileParser(canonical)
+		const cyclic: Record<string, unknown> = {}
+		cyclic['next'] = cyclic
+		const e4Threw = (() => {
+			try {
+				parse(cyclic)
+				return 'no-throw'
+			} catch (error) {
+				return error instanceof RangeError ? 'RangeError' : 'other'
+			}
+		})()
+		const canonicalThrew = (() => {
+			try {
+				canonicalParse(cyclic)
+				return 'no-throw'
+			} catch (error) {
+				return error instanceof RangeError ? 'RangeError' : 'other'
+			}
+		})()
+		// E4's cyclic-DATA behavior is PINNED to the canonical pattern's, not
+		// asserted absolutely (separately-tracked D3 forward limitation).
+		expect(e4Threw).toBe(canonicalThrew)
+	})
+})
+
+// === Documented fidelity gaps — E4 is KNOWN-looser than compileSchemaGuard
+// exactly where E3's shape is looser (same gap, no new/silent looseness).
+// Each asserts E4 parses (returns a defined, derived-guard-valid value) a
+// value `compileSchemaGuard` would REJECT — and that the parsed result is
+// still consistent with the parser's OWN derived-shape guard (B3 universal).
+
+describe('compileSchemaParser — documented fidelity gaps (KNOWN-looser than compileSchemaGuard, by design — same as E3)', () => {
+	function assertGapLooser(schema: JsonSchema, value: unknown): void {
+		// compileSchemaGuard REJECTS the value (E2 enforces the gap keyword).
+		expect(compileSchemaGuard(schema)(value)).toBe(false)
+		// E4 ACCEPTS it (parses to a defined value) — the documented fidelity
+		// gap inherited verbatim from E3's shape.
+		const parsed = compileSchemaParser(schema)(value)
+		expect(parsed).not.toBeUndefined()
+		// UNIVERSAL B3: the parsed value still satisfies the parser's OWN
+		// derived-shape guard (no NEW/silent looseness beyond E3's gap).
+		expect(compileGuard(compileSchemaShape(schema))(parsed)).toBe(true)
+	}
+
+	it('format: DROPPED — E4 parses a value E2 rejects (documented fidelity gap)', () => {
+		assertGapLooser({ type: 'string', format: 'email' }, 'not-an-email')
+	})
+
+	it('exclusiveMinimum/Maximum: DROPPED — boundary value parsed (documented fidelity gap)', () => {
+		assertGapLooser({ type: 'number', exclusiveMinimum: 0 }, 0)
+	})
+
+	it('multipleOf: DROPPED — a non-multiple is parsed (documented fidelity gap)', () => {
+		assertGapLooser({ type: 'integer', multipleOf: 3 }, 10)
+	})
+
+	it('uniqueItems: DROPPED — duplicate elements parsed (documented fidelity gap)', () => {
+		assertGapLooser({ type: 'array', items: { type: 'number' }, uniqueItems: true }, [1, 1])
+	})
+
+	it('patternProperties: DROPPED — pattern-violating value parsed (documented fidelity gap)', () => {
+		assertGapLooser(
+			{ type: 'object', patternProperties: { '^x-': { type: 'number' } } },
+			{ 'x-a': 'no' },
+		)
+	})
+
+	it('propertyNames: DROPPED — name-violating key parsed (documented fidelity gap)', () => {
+		assertGapLooser(
+			{
+				type: 'object',
+				propertyNames: { type: 'string', minLength: 3 },
+				additionalProperties: true,
+			},
+			{ ab: 1 },
+		)
+	})
+
+	it('min/maxProperties: DROPPED — out-of-range count parsed (documented fidelity gap)', () => {
+		assertGapLooser({ type: 'object', minProperties: 1 }, {})
+	})
+
+	it('not: DROPPED — a value the negation forbids is parsed (documented fidelity gap)', () => {
+		assertGapLooser({ not: { type: 'string' } }, 'x')
+	})
+
+	it('if/then/else: DROPPED — a value failing the conditional is parsed (documented fidelity gap)', () => {
+		assertGapLooser({ if: { type: 'string' }, then: { minLength: 3 } }, 'ab')
+	})
+
+	it('open-tail prefixItems: tail constraint DROPPED (closed tuple of prefix — documented fidelity gap)', () => {
+		// E3 maps open-tail prefixItems to the CLOSED tuple of the prefix;
+		// E4's parser inherits that. The lone prefix is parsed (E2 also
+		// accepts it) while the lost tail typing is the documented gap.
+		const schema: JsonSchema = {
+			type: 'array',
+			prefixItems: [{ type: 'string' }],
+			items: { type: 'number' },
+		}
+		const parse = compileSchemaParser(schema)
+		expect(parse(['a'])).toEqual(['a'])
+		expect(compileGuard(compileSchemaShape(schema))(parse(['a']))).toBe(true)
+	})
 })
