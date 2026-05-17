@@ -537,8 +537,8 @@ export function unescapeToken(token: string): string {
  *   false-accept, but it cannot help the early `quotient === rounded`
  *   exact-integer return: once `|value|` is large enough that `value /
  *   divisor` has no fractional bits left (empirically `|value| ≳ ~1e13` for
- *   `divisor = 0.01`, `~1e14` for `divisor = 0.1`; `divisor = 0.001`
- *   observed clean to ~1e19), a genuine non-multiple's quotient collapses to
+ *   `divisor = 0.01`, `~1e14` for `divisor = 0.1`, `~4.4e12` for
+ *   `divisor = 0.001`), a genuine non-multiple's quotient collapses to
  *   an exact integer double and is indistinguishable from a true multiple by
  *   ANY tolerance scheme — so it is (wrongly) accepted there. This is
  *   unavoidable with doubles. Conversely, beyond `|value| ≳ |divisor| ·
