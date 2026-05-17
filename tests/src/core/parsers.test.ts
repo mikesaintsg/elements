@@ -744,9 +744,9 @@ describe('parseJson — F2 edges', () => {
 
 	it('"undefined" string — JSON.parse throws (undefined is not valid JSON) → returns undefined', () => {
 		// JSON.parse('undefined') throws SyntaxError; parseJson catches and returns undefined.
-		// NOTE: parseJson returns `undefined` on failure, which is indistinguishable
+		// Ambiguity: parseJson returns `undefined` on failure, which is indistinguishable
 		// from a JSON document that IS the value `undefined` (impossible in JSON).
-		// This documented ambiguity is pinned here; divergence tracked for Phase G.
+		// This known nuance is documented in parsers.md (§ JSON parsers).
 		expect(parseJson('undefined')).toBeUndefined()
 	})
 
@@ -794,13 +794,9 @@ describe('parseEnumField — F2 edges', () => {
 // → `parseFloat(value)`, return iff `!Number.isNaN(parsed)`; anything else →
 // undefined.
 //
-// JSDoc says "Returns `undefined` only for NaN" — but the implementation returns
-// NaN directly when the INPUT is the numeric NaN (it only blocks NaN that arises
-// from parseFloat of a string). The NaN-input case is pinned to the actual code
-// behaviour below.
-// NOTE: The JSDoc claim "returns `undefined` only for NaN" diverges from the
-// implementation for a numeric NaN input (which returns NaN, not undefined).
-// Doc reconciliation is tracked for Phase G.
+// The `undefined` return only occurs when `parseFloat` of a STRING yields NaN —
+// a numeric NaN input is returned as-is (coerce, not parse: no filtering of
+// numeric values). This is correctly documented in parsers.md and the JSDoc.
 
 describe('coerceNumber', () => {
 	it('returns a finite number directly', () => {
@@ -825,10 +821,8 @@ describe('coerceNumber', () => {
 	})
 
 	it('returns NaN directly when the input is a numeric NaN', () => {
-		// NOTE: doc says "returns `undefined` only for NaN" — divergence tracked
-		// for Phase G doc reconciliation. The implementation path is
-		// `typeof NaN === 'number'` → `return value` (returns NaN, not undefined).
-		// We pin the ACTUAL code behaviour here.
+		// `typeof NaN === 'number'` → the number branch returns it as-is.
+		// Only NaN arising from parseFloat of a string string is filtered to undefined.
 		const result = coerceNumber(NaN)
 		expect(Number.isNaN(result)).toBe(true)
 	})

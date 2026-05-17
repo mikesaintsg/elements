@@ -350,11 +350,14 @@ export function coerceString(value: unknown): string | undefined {
 /**
  * Coerce an unknown value to a number.
  *
- * Accepts numbers directly (including ±Infinity) or numeric strings.
- * Returns `undefined` only for `NaN`.
+ * Numeric inputs (including `NaN` and `±Infinity`) are returned as-is.
+ * Strings are parsed via `parseFloat` — leading-numeric strings are accepted
+ * (`'12px'` → 12, `'Infinity'` → Infinity); `undefined` is returned only when
+ * `parseFloat` itself yields `NaN` (e.g. `''`, `'abc'`). Non-string,
+ * non-number inputs → `undefined`.
  *
  * @param value - The value to coerce
- * @returns Number when coercible, `undefined` otherwise
+ * @returns The number as-is (numbers), leading-numeric parse (strings), or `undefined`
  */
 export function coerceNumber(value: unknown): number | undefined {
 	if (typeof value === 'number') return value

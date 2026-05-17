@@ -54,7 +54,7 @@ Each reads `record[key]` and delegates to the matching primitive/structural pars
 
 | Parser           | Input → Output                       | Behavior                                                                              |
 | ---------------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
-| `parseJson()`    | `string` → `unknown`                 | `JSON.parse` wrapped in try/catch; any parse error → `undefined` (never throws).       |
+| `parseJson()`    | `string` → `unknown`                 | `JSON.parse` wrapped in try/catch; any parse error → `undefined` (never throws). **Ambiguity:** `undefined` is returned both for invalid JSON and for a parse that legitimately yields no value — but JSON has no `undefined`, so `'null'`→`null` is distinguishable while `'undefined'` (invalid JSON) is not. |
 | `parseJsonAs()`  | `string`, `Guard<T>` → `T?`          | `parseJson()` then applies the guard; invalid JSON or failed guard → `undefined`.      |
 
 ### Coercion parsers
@@ -64,7 +64,7 @@ Looser than the strict primitive parsers — they accept cross-type input where 
 | Parser            | Input → Output                          | Behavior                                                                                            |
 | ----------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `coerceString()`  | `unknown` → `string?`                   | Strings pass through; **finite** numbers become `String(value)`; everything else → `undefined`.     |
-| `coerceNumber()`  | `unknown` → `number?`                   | Numbers pass through **including `±Infinity`**; strings go through `parseFloat` (leading-numeric ok); only `NaN` → `undefined`. Stricter `parseNumber()` rejects `±Infinity` and trailing junk — `coerceNumber()` is the lenient sibling. |
+| `coerceNumber()`  | `unknown` → `number?`                   | Numbers pass through **as-is — including `±Infinity` and `NaN`** (all numeric inputs are returned directly); strings go through `parseFloat` (leading-numeric ok: `'12px'`→12, `'1e3'`→1000, `'Infinity'`→Infinity); `undefined` only when `parseFloat` itself yields NaN (e.g. `''`, `'abc'`). Non-string/non-number → `undefined`. Stricter `parseNumber()` rejects `±Infinity`, `NaN`, and trailing junk — `coerceNumber()` is the lenient sibling. |
 | `coerceRecord()`  | `unknown` → `Record<string, unknown>`   | Plain objects pass through; **anything else returns `{}`** (never `undefined` — the one always-defined parser). |
 
 ---
@@ -77,6 +77,20 @@ These invariants hold across `src/core/parsers.ts` ↔ `parsers.md`:
 2. **SOURCE → DOC.** Every public parser exported from `src/core/parsers.ts` is documented in a `## Surface` table above — the surface is exhaustive, not a sample.
 3. **TYPES ARE THE SOURCE OF TRUTH.** `Guard<T>`, `ContractShape`, `JsonSchema`, and `JsonSchemaObject` are declared first in [src/core/types.ts](../src/core/types.ts); the parsers conform to those types, never the reverse.
 4. **UNDEFINED ON FAILURE.** Every parser is total and pure: it never throws. A value that doesn't fit yields `undefined` — except `coerceRecord()` (always a record, `{}` on failure). Coercion parsers are deliberately more permissive than the strict primitives; the tables above call out each leniency.
+5. **FLAT PARSERS ARE STANDALONE PRIMITIVES.** These functions are opinionated standalone primitives (e.g. `parseString()` rejects `''` and whitespace) and are NOT the same as a shape's compiled `parse` operation (which is parse↔guard-sound per [contracts.md](contracts.md)). `matchesShape()` and `parseShape()` are the bridge between the two layers.
+
+### Aliasing
+
+Callers mutating a returned value should know whether they hold the original reference or a copy:
+
+| Function | On success: alias or copy? | On failure |
+| --- | --- | --- |
+| `parseRecord()` | **input BY REFERENCE** — type-narrowing only, no clone | `undefined` |
+| `parseRecordField()` | **input BY REFERENCE** (delegates to `parseRecord`) | `undefined` |
+| `coerceRecord()` | **input BY REFERENCE** when valid; `{}` fresh object when not | never `undefined` |
+| `parseArray()` — no guard | **fresh shallow copy** (`[...value]`) | `undefined` |
+| `parseArray()` — with guard (all pass) | **input array BY REFERENCE** | `undefined` |
+| `parseArrayField()` | mirrors `parseArray` aliasing rules | `undefined` |
 
 Enforced by:
 
