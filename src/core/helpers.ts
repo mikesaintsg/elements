@@ -1,4 +1,12 @@
-import type { AnyConstructor, ContractShape, RandomFunction, Result } from './types.js'
+import type {
+	AnyConstructor,
+	ContractShape,
+	IntersectionShape,
+	ObjectShape,
+	RandomFunction,
+	Result,
+} from './types.js'
+import { CYCLIC_SHAPE_MESSAGE } from './constants.js'
 
 /**
  * Invoke a user-supplied callback and capture the outcome as a {@link Result},
@@ -158,6 +166,238 @@ export function isShapeAdditional(
 	value: boolean | ContractShape | undefined,
 ): value is ContractShape {
 	return typeof value === 'object'
+}
+
+/**
+ * Assert that a {@link ContractShape} tree contains no non-lazy structural
+ * cycle, throwing the precise {@link CYCLIC_SHAPE_MESSAGE} on a back-edge.
+ *
+ * @remarks
+ * This is a BUILD-TIME programmer-error throw per AGENTS.md §13 — NOT a
+ * runtime guard. A cyclic shape built WITHOUT a lazy/deferred wrapper is a
+ * programmer error (a property whose shape IS an ancestor object, no lazy
+ * boundary), so every public compiler validates the tree is acyclic ONCE, up
+ * front, and fails fast with this precise message that names the defect and
+ * points at the fix — never a bare `RangeError` from V8, and never a
+ * silently-broken compiled function.
+ *
+ * `seen` tracks the ANCESTOR path (added on entry, removed on exit), so it is
+ * a true back-edge detector: a shared-but-acyclic sub-shape (the same child
+ * shape object referenced under two sibling keys — a DAG, perfectly valid) is
+ * fully walked and removed before its second occurrence is visited, so it is
+ * never misreported as a cycle. The `'lazy'` arm is a TERMINAL — the thunk is
+ * deliberately NOT invoked, since the deferral is the only sanctioned
+ * recursion mechanism that legitimately breaks a static shape cycle. `const`
+ * and `raw` are likewise terminals (their `value` is DATA, never a child
+ * shape). The wrapper kinds (`optional`/`nullable`/`default`) recurse into
+ * `inner` exactly like array/tuple/object/union/intersection do, so a cycle
+ * threaded through a wrapper still throws.
+ *
+ * @param shape - The root shape to walk
+ * @param seen - The mutable ancestor-path set (callers pass a fresh
+ *        `new WeakSet<ContractShape>()`)
+ * @returns Nothing — completes silently when the tree is acyclic.
+ * @throws Error with {@link CYCLIC_SHAPE_MESSAGE} on a non-lazy structural
+ *         shape cycle.
+ *
+ * @example
+ * ```ts
+ * assertAcyclicShape(objectShape({ a: stringShape() }), new WeakSet()) // ok
+ * ```
+ */
+export function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>): void {
+	if (seen.has(shape)) {
+		throw new Error(CYCLIC_SHAPE_MESSAGE)
+	}
+	switch (shape.type) {
+		case 'string':
+		case 'number':
+		case 'boolean':
+		case 'literal':
+		case 'const':
+		// `const` is a TERMINAL like `literal`/`raw`/primitives: its `value`
+		// is a DATA value, never a child SHAPE, so there is no edge to
+		// traverse and it can never participate in a structural shape cycle.
+		case 'raw':
+			return
+		case 'lazy':
+			// B5 RECONCILIATION — `lazy` is the cycle-BREAKER, so it is a
+			// TERMINAL here: the thunk is DELIBERATELY NOT invoked during
+			// acyclicity checking. The thunk is the deferral that legitimately
+			// breaks a static shape cycle, so a shape recursive THROUGH a
+			// `lazyShape` (e.g. a tree whose `children` is
+			// `arrayShape(lazyShape(() => treeShape))`) has NO structural
+			// back-edge for `seen` to catch and therefore compiles. A NON-lazy
+			// structural cycle (`makeCyclicShape`-style: a property whose
+			// shape IS an ancestor object, no lazy wrapper) still hits the
+			// `seen.has(shape)` throw at the top of this function, so the
+			// precise §13/B5 Error is preserved for every unsanctioned cycle.
+			// Returning WITHOUT recursing into `thunk()` is exactly what makes
+			// the lazy boundary the only sanctioned recursion mechanism.
+			return
+		case 'array': {
+			seen.add(shape)
+			assertAcyclicShape(shape.items, seen)
+			seen.delete(shape)
+			return
+		}
+		case 'tuple': {
+			seen.add(shape)
+			for (const item of shape.items) {
+				assertAcyclicShape(item, seen)
+			}
+			seen.delete(shape)
+			return
+		}
+		case 'object': {
+			seen.add(shape)
+			for (const key of Object.keys(shape.properties)) {
+				const child = shape.properties[key]
+				if (child !== undefined) {
+					assertAcyclicShape(child, seen)
+				}
+			}
+			if (isShapeAdditional(shape.additionalProperties)) {
+				assertAcyclicShape(shape.additionalProperties, seen)
+			}
+			seen.delete(shape)
+			return
+		}
+		case 'union': {
+			seen.add(shape)
+			for (const variant of shape.variants) {
+				assertAcyclicShape(variant, seen)
+			}
+			seen.delete(shape)
+			return
+		}
+		case 'intersection': {
+			seen.add(shape)
+			for (const member of shape.members) {
+				assertAcyclicShape(member, seen)
+			}
+			seen.delete(shape)
+			return
+		}
+		case 'optional':
+		case 'nullable':
+		case 'default': {
+			// `default` RECURSES into `inner` exactly like the other wrapper
+			// kinds (optional/nullable): a non-lazy structural cycle THROUGH a
+			// defaultShape (an object whose property's shape IS the object,
+			// wrapped in `default`) is a genuine back-edge and MUST still
+			// throw the precise B5 §13 Error. A lazy boundary nested in
+			// `inner` is the only thing that legitimately breaks such a cycle
+			// (it is a terminal in the `'lazy'` arm above), exactly as for
+			// optional/nullable.
+			seen.add(shape)
+			assertAcyclicShape(shape.inner, seen)
+			seen.delete(shape)
+			return
+		}
+	}
+}
+
+/**
+ * Determine whether an object PROPERTY whose shape is `shape` may be absent
+ * at the GUARD / SCHEMA / GENERATOR level.
+ *
+ * @remarks
+ * Before `defaultShape` this was exactly `shape.type === 'optional'`.
+ * `defaultShape` introduces a DELIBERATE asymmetry the spec calls out: a
+ * `default` is advisory metadata, NOT optionality — the guard is INNER's
+ * guard and does NOT auto-apply the default. So a `default` property permits
+ * absence ONLY when its (possibly nested-`default`) inner is itself
+ * `optional` — i.e. the inner guard already accepts `undefined`. A
+ * `defaultShape(integerShape(), 3)` property is REQUIRED by the guard; a
+ * `defaultShape(optionalShape(x), …)` property may be absent. This recurses
+ * through nested `default` wrappers to that decision and is a no-op for every
+ * other kind (`optional` → `true`, everything else → `false`; `nullable`
+ * accepts `null`, not absence, so it stays required). The separate
+ * parser-only rule (an absent `default` key applies the default rather than
+ * failing) lives inline in the object parser arm, not here.
+ *
+ * @param shape - The property's shape
+ * @returns `true` when a property of this shape may be absent at the
+ *          guard/schema/generator level; `false` otherwise.
+ *
+ * @example
+ * ```ts
+ * guardPermitsAbsence(optionalShape(stringShape()))      // true
+ * guardPermitsAbsence(defaultShape(integerShape(), 3))   // false (required)
+ * ```
+ */
+export function guardPermitsAbsence(shape: ContractShape): boolean {
+	if (shape.type === 'optional') {
+		return true
+	}
+	if (shape.type === 'default') {
+		// Guard == inner's guard, so absence is permitted at the guard/schema
+		// level ONLY if the inner itself permits absence (its guard accepts
+		// `undefined`). Recurses through nested `default` wrappers.
+		return guardPermitsAbsence(shape.inner)
+	}
+	return false
+}
+
+/**
+ * Flatten an {@link IntersectionShape} to its effective leaf
+ * {@link ObjectShape} members, recursing through nested intersections.
+ *
+ * @remarks
+ * `intersectionShape` (§13) guarantees every member is an OBJECT shape or a
+ * nested `intersection`. The guard and parser arms need the EFFECTIVE leaf
+ * object members (a nested intersection contributes its own object members,
+ * transitively) so the merged-key universe and closed/open policy are
+ * computed over every real object member, not just the direct ones. The shape
+ * is already proven acyclic by {@link assertAcyclicShape} before any compile,
+ * so this recursion terminates.
+ *
+ * @param shape - The intersection shape to flatten
+ * @returns The transitively-collected leaf object members, in member order.
+ *
+ * @example
+ * ```ts
+ * flattenIntersectionObjects(
+ *   intersectionShape(objectShape({ a: stringShape() }), objectShape({ b: numberShape() })),
+ * ) // [ObjectShape<{a}>, ObjectShape<{b}>]
+ * ```
+ */
+export function flattenIntersectionObjects(shape: IntersectionShape): readonly ObjectShape[] {
+	const out: ObjectShape[] = []
+	for (const member of shape.members) {
+		if (member.type === 'object') {
+			out.push(member)
+		} else if (member.type === 'intersection') {
+			for (const nested of flattenIntersectionObjects(member)) {
+				out.push(nested)
+			}
+		}
+	}
+	return out
+}
+
+/**
+ * Type-guard predicate: `value` is a non-null object.
+ *
+ * @remarks
+ * The only kind of value that can form a DATA cycle / be tracked on a
+ * per-compilation ancestor `WeakSet`. Mirrors the `isRecord`/array
+ * discrimination the B5 cycle detection uses — arrays AND plain objects both
+ * qualify (`typeof value === 'object' && value !== null`).
+ *
+ * @param value - The value to test
+ * @returns `true` (narrowing to `object`) when `value` is a non-null object.
+ *
+ * @example
+ * ```ts
+ * isTrackableObject({})    // true
+ * isTrackableObject([])    // true
+ * isTrackableObject(null)  // false
+ * ```
+ */
+export function isTrackableObject(value: unknown): value is object {
+	return typeof value === 'object' && value !== null
 }
 
 /**

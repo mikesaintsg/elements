@@ -2,7 +2,6 @@ import type {
 	ContractInterface,
 	ContractShape,
 	Infer,
-	IntersectionShape,
 	JsonSchema,
 	JsonSchemaMap,
 	JsonSchemaObject,
@@ -10,131 +9,16 @@ import type {
 	ObjectShape,
 	RandomFunction,
 } from './types.js'
+import { MAX_LAZY_DATA_DEPTH, MAX_LAZY_DEPTH, MAX_ONEOF_ATTEMPTS } from './constants.js'
 import {
-	CYCLIC_SHAPE_MESSAGE,
-	MAX_LAZY_DATA_DEPTH,
-	MAX_LAZY_DEPTH,
-	MAX_ONEOF_ATTEMPTS,
-} from './constants.js'
-import { isShapeAdditional } from './helpers.js'
+	assertAcyclicShape,
+	flattenIntersectionObjects,
+	guardPermitsAbsence,
+	isShapeAdditional,
+	isTrackableObject,
+} from './helpers.js'
 import { parseBoolean, parseInteger, parseNumber } from './parsers.js'
 import { isRecord } from './validators.js'
-
-// === Cyclic-shape guard (§13 — programmer error, fail fast)
-//
-// Every `compile*` walks the shape tree recursively. A self-referential
-// `ContractShape` (e.g. `objectShape(props)` then `props.self = shape` — see
-// tests/src/core/_helpers.ts `makeCyclicShape`) made that descent recurse
-// until V8 threw a bare `RangeError: Maximum call stack size exceeded`.
-//
-// Contract: a cyclic shape built WITHOUT a lazy/deferred wrapper is a
-// PROGRAMMER ERROR (AGENTS.md §13 row 1 — "invalid arguments → throw Error"),
-// NOT an external/optional condition. (`lazyShape` — the future deferred
-// wrapper that will make recursion legitimate — does not exist until Phase D,
-// so for now any structural cycle is malformed input.) Each public compiler
-// therefore validates the tree is acyclic ONCE, up front, and FAILS FAST with
-// a precise `Error` that names the defect and points at the fix — never a
-// `RangeError`, and never a silently-broken compiled function.
-//
-// `seen` tracks the ANCESTOR path (added on entry, removed on exit), so it is
-// a true back-edge detector: a shared-but-acyclic sub-shape (the same child
-// shape object referenced under two sibling keys — a DAG, perfectly valid) is
-// fully walked and removed before its second occurrence is visited, so it is
-// never misreported as a cycle. The thrown message (`CYCLIC_SHAPE_MESSAGE`)
-// is centralized in `constants.ts`.
-
-function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>): void {
-	if (seen.has(shape)) {
-		throw new Error(CYCLIC_SHAPE_MESSAGE)
-	}
-	switch (shape.type) {
-		case 'string':
-		case 'number':
-		case 'boolean':
-		case 'literal':
-		case 'const':
-		// `const` is a TERMINAL like `literal`/`raw`/primitives: its `value`
-		// is a DATA value, never a child SHAPE, so there is no edge to
-		// traverse and it can never participate in a structural shape cycle.
-		case 'raw':
-			return
-		case 'lazy':
-			// B5 RECONCILIATION — `lazy` is the cycle-BREAKER, so it is a
-			// TERMINAL here: the thunk is DELIBERATELY NOT invoked during
-			// acyclicity checking. The thunk is the deferral that legitimately
-			// breaks a static shape cycle, so a shape recursive THROUGH a
-			// `lazyShape` (e.g. a tree whose `children` is
-			// `arrayShape(lazyShape(() => treeShape))`) has NO structural
-			// back-edge for `seen` to catch and therefore compiles. A NON-lazy
-			// structural cycle (`makeCyclicShape`-style: a property whose
-			// shape IS an ancestor object, no lazy wrapper) still hits the
-			// `seen.has(shape)` throw at the top of this function, so the
-			// precise §13/B5 Error is preserved for every unsanctioned cycle.
-			// Returning WITHOUT recursing into `thunk()` is exactly what makes
-			// the lazy boundary the only sanctioned recursion mechanism.
-			return
-		case 'array': {
-			seen.add(shape)
-			assertAcyclicShape(shape.items, seen)
-			seen.delete(shape)
-			return
-		}
-		case 'tuple': {
-			seen.add(shape)
-			for (const item of shape.items) {
-				assertAcyclicShape(item, seen)
-			}
-			seen.delete(shape)
-			return
-		}
-		case 'object': {
-			seen.add(shape)
-			for (const key of Object.keys(shape.properties)) {
-				const child = shape.properties[key]
-				if (child !== undefined) {
-					assertAcyclicShape(child, seen)
-				}
-			}
-			if (isShapeAdditional(shape.additionalProperties)) {
-				assertAcyclicShape(shape.additionalProperties, seen)
-			}
-			seen.delete(shape)
-			return
-		}
-		case 'union': {
-			seen.add(shape)
-			for (const variant of shape.variants) {
-				assertAcyclicShape(variant, seen)
-			}
-			seen.delete(shape)
-			return
-		}
-		case 'intersection': {
-			seen.add(shape)
-			for (const member of shape.members) {
-				assertAcyclicShape(member, seen)
-			}
-			seen.delete(shape)
-			return
-		}
-		case 'optional':
-		case 'nullable':
-		case 'default': {
-			// `default` RECURSES into `inner` exactly like the other wrapper
-			// kinds (optional/nullable): a non-lazy structural cycle THROUGH a
-			// defaultShape (an object whose property's shape IS the object,
-			// wrapped in `default`) is a genuine back-edge and MUST still
-			// throw the precise B5 §13 Error. A lazy boundary nested in
-			// `inner` is the only thing that legitimately breaks such a cycle
-			// (it is a terminal in the `'lazy'` arm above), exactly as for
-			// optional/nullable.
-			seen.add(shape)
-			assertAcyclicShape(shape.inner, seen)
-			seen.delete(shape)
-			return
-		}
-	}
-}
 
 // === D4 const equality + JSON deep copy
 //
@@ -235,64 +119,6 @@ function cloneJsonInner(value: unknown): JsonValue {
 		}
 	}
 	return result
-}
-
-// === D4 — object-level absence policy for `default`
-//
-// An object PROPERTY may be absent iff its shape "permits absence". Before D4
-// that was exactly `child.type === 'optional'`. `defaultShape` adds a second,
-// distinct notion that the spec calls out as a DELIBERATE asymmetry:
-//
-//  * GUARD / SCHEMA / GENERATOR — the guard is INNER's guard (a default is
-//    advisory metadata, NOT optionality). So a `default` property permits
-//    absence ONLY when its (possibly nested-`default`) inner is itself
-//    `optional` — i.e. the inner guard already accepts `undefined`. A
-//    `defaultShape(integerShape(), 3)` property is REQUIRED by the guard
-//    (the guard does NOT auto-apply the default); a
-//    `defaultShape(optionalShape(x), …)` property may be absent because its
-//    inner is optional. `guardPermitsAbsence` recurses through `default`
-//    wrappers to that decision; it is a no-op for every pre-D4 kind
-//    (`optional` → true, everything else → false — `nullable` accepts `null`,
-//    not absence, so it stays required exactly as before, preserving B2–B5).
-//  * PARSER — separately, the parser APPLIES the default on absence, so an
-//    absent `default` key is NOT a parse failure: the object parser routes
-//    `undefined` through the `default` child's parser (which yields the
-//    default). That parser-only rule lives inline in the object parser arm
-//    (`child.type === 'default'`), not here.
-function guardPermitsAbsence(shape: ContractShape): boolean {
-	if (shape.type === 'optional') {
-		return true
-	}
-	if (shape.type === 'default') {
-		// Guard == inner's guard, so absence is permitted at the guard/schema
-		// level ONLY if the inner itself permits absence (its guard accepts
-		// `undefined`). Recurses through nested `default` wrappers.
-		return guardPermitsAbsence(shape.inner)
-	}
-	return false
-}
-
-// === Intersection member flattening
-//
-// `intersectionShape` (§13) guarantees every member is an OBJECT shape or a
-// nested `intersection`. The guard and parser arms need the EFFECTIVE leaf
-// object members (a nested intersection contributes its own object members,
-// transitively) so the merged-key universe and closed/open policy are
-// computed over every real object member, not just the direct ones. The
-// shape is already proven acyclic by `assertAcyclicShape` before any
-// compile, so this recursion terminates.
-function flattenIntersectionObjects(shape: IntersectionShape): readonly ObjectShape[] {
-	const out: ObjectShape[] = []
-	for (const member of shape.members) {
-		if (member.type === 'object') {
-			out.push(member)
-		} else if (member.type === 'intersection') {
-			for (const nested of flattenIntersectionObjects(member)) {
-				out.push(nested)
-			}
-		}
-	}
-	return out
 }
 
 // === FU5 — intersection-of-objects schema MERGE (emission fidelity)
@@ -457,15 +283,6 @@ type LazyDataCycleState = { readonly ancestors: WeakSet<object>; depth: number }
 /** Fresh per-compilation lazy-recursion DATA cycle/depth tracker (FU1). */
 function newLazyDataCycleState(): LazyDataCycleState {
 	return { ancestors: new WeakSet<object>(), depth: 0 }
-}
-
-/**
- * Test whether `value` is a non-null object (the only kind that can form a
- * DATA cycle / be tracked on the ancestor set). Mirrors the `isRecord`/array
- * discrimination B5 uses; arrays AND plain objects both qualify.
- */
-function isTrackableObject(value: unknown): value is object {
-	return typeof value === 'object' && value !== null
 }
 
 // === D3 lazy memoization caches
