@@ -4,6 +4,7 @@ import type {
 	BooleanShape,
 	BooleanShapeOptions,
 	ContractShape,
+	IntersectionShape,
 	NullableShape,
 	NumberShape,
 	NumberShapeOptions,
@@ -413,6 +414,74 @@ export function oneOfShape<V extends readonly ContractShape[]>(
 		throw new Error('oneOfShape requires at least one variant')
 	}
 	return { type: 'union', variants, mode: 'oneOf' }
+}
+
+// === Intersection
+
+/**
+ * Build an {@link IntersectionShape} — a value satisfying ALL member shapes
+ * simultaneously (the runtime mirror of `intersectionOf` in the validators
+ * module). Compiles to JSON-Schema `{ allOf: [...] }`.
+ *
+ * @remarks
+ * `Infer<intersectionShape(A, B)>` is `Infer<A> & Infer<B>` (the
+ * `&`-intersection of the members' inferred object types).
+ *
+ * Throws at build time (AGENTS.md §13 — programmer error caught at the
+ * boundary, mirroring B4-style boundary validation) when:
+ *
+ * 1. called with NO members — an empty intersection is degenerate (vacuously
+ *    `unknown`, not a useful contract; cf. empty `literalShape` / `unionShape`);
+ * 2. any member is NOT an object shape. Object-only is a deliberate
+ *    GENERIC-SOUNDNESS decision: intersecting non-object shapes is degenerate
+ *    (`string & number` is `never`; an array/primitive intersection has no
+ *    sound, generic parser/generator merge that could satisfy
+ *    `generator∘guard`). Object intersection IS well-defined — the value
+ *    carries the union of every member's keys, each validated by its owning
+ *    member, and merging generated/parsed member objects is sound. An object
+ *    member is `objectShape(...)` or `recordShape(...)` (both `type:
+ *    'object'`); a `union`/`tuple`/primitive member is rejected here rather
+ *    than producing a silently-unsound contract downstream.
+ *
+ * @param members - Two or more object shapes the value must conjointly
+ *        satisfy (rest-spread). One member is allowed (it is just that
+ *        member) — only an empty list throws.
+ * @returns An {@link IntersectionShape} node
+ *
+ * @example
+ * ```ts
+ * const named = objectShape({ name: stringShape({ min: 1 }) })
+ * const aged = objectShape({ age: integerShape({ min: 0 }) })
+ * const person = intersectionShape(named, aged)
+ * // Infer<typeof person> = { readonly name: string } & { readonly age: number }
+ * // JSON Schema: { allOf: [<named schema>, <aged schema>] }
+ * ```
+ */
+export function intersectionShape<M extends readonly ContractShape[]>(
+	...members: M
+): { readonly type: 'intersection'; readonly members: M } & IntersectionShape {
+	// §13 — empty intersection is degenerate (no members ⇒ vacuously every
+	// value; not a useful, well-defined contract). Programmer error at the
+	// build boundary, like an empty literal/union.
+	if (members.length === 0) {
+		throw new Error('intersectionShape requires at least one member')
+	}
+	// §13 — object-only soundness constraint. A non-object member has no
+	// sound, generic parser/generator merge (see the @remarks WHY). Reject
+	// at the boundary so a degenerate intersection can never reach a
+	// compiler and silently produce guard-failing generator output or a
+	// parser↔guard mismatch. A nested `intersectionShape` member is allowed:
+	// it was itself validated object-only by its own builder call (this same
+	// check runs recursively), so it transitively resolves to object members
+	// and the merge stays sound.
+	for (const member of members) {
+		if (member.type !== 'object' && member.type !== 'intersection') {
+			throw new Error(
+				`intersectionShape members must be object shapes (objectShape/recordShape) or nested intersections; received a '${member.type}' member`,
+			)
+		}
+	}
+	return { type: 'intersection', members }
 }
 
 // === Record

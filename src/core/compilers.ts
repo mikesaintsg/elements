@@ -2,6 +2,7 @@ import type {
 	ContractInterface,
 	ContractShape,
 	Infer,
+	IntersectionShape,
 	JsonSchema,
 	JsonSchemaMap,
 	JsonSchemaObject,
@@ -82,6 +83,14 @@ function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>):
 			seen.delete(shape)
 			return
 		}
+		case 'intersection': {
+			seen.add(shape)
+			for (const member of shape.members) {
+				assertAcyclicShape(member, seen)
+			}
+			seen.delete(shape)
+			return
+		}
 		case 'optional':
 		case 'nullable': {
 			seen.add(shape)
@@ -90,6 +99,29 @@ function assertAcyclicShape(shape: ContractShape, seen: WeakSet<ContractShape>):
 			return
 		}
 	}
+}
+
+// === Intersection member flattening
+//
+// `intersectionShape` (§13) guarantees every member is an OBJECT shape or a
+// nested `intersection`. The guard and parser arms need the EFFECTIVE leaf
+// object members (a nested intersection contributes its own object members,
+// transitively) so the merged-key universe and closed/open policy are
+// computed over every real object member, not just the direct ones. The
+// shape is already proven acyclic by `assertAcyclicShape` before any
+// compile, so this recursion terminates.
+function flattenIntersectionObjects(shape: IntersectionShape): readonly ObjectShape[] {
+	const out: ObjectShape[] = []
+	for (const member of shape.members) {
+		if (member.type === 'object') {
+			out.push(member)
+		} else if (member.type === 'intersection') {
+			for (const nested of flattenIntersectionObjects(member)) {
+				out.push(nested)
+			}
+		}
+	}
+	return out
 }
 
 // === Schema
@@ -226,6 +258,16 @@ function compileSchemaInner(shape: ContractShape): JsonSchema {
 			const compiled = shape.variants.map((variant) => compileSchemaInner(variant))
 			return {
 				...(shape.mode === 'oneOf' ? { oneOf: compiled } : { anyOf: compiled }),
+				...(shape.description !== undefined ? { description: shape.description } : {}),
+			}
+		}
+		case 'intersection': {
+			// Standard JSON-Schema conjunction: a value must validate against
+			// EVERY member sub-schema. `allOf` is the schema mirror of
+			// validators' `intersectionOf` (value valid iff every member guard
+			// passes) and of this arm's guard below.
+			return {
+				allOf: shape.members.map((member) => compileSchemaInner(member)),
 				...(shape.description !== undefined ? { description: shape.description } : {}),
 			}
 		}
@@ -414,6 +456,75 @@ function compileGuardInner(shape: ContractShape): (value: unknown) => boolean {
 				}
 			}
 			return (value) => guards.some((guard) => guard(value))
+		}
+		case 'intersection': {
+			// Runtime mirror of validators' `intersectionOf`: valid iff the
+			// value satisfies EVERY member. All members are object shapes
+			// (enforced at build by `intersectionShape` §13). Compiling each
+			// member guard as-is would be UNSOUND for the intersection: a
+			// CLOSED object member (`additionalProperties: false`, the default)
+			// rejects any key it does not itself declare — but a sibling
+			// member's key is part of the intersection contract, NOT an
+			// "unknown" key. So a member's unknown-key rejection must be
+			// relaxed to the set of ALL members' declared keys.
+			//
+			// Implementation: each member is guarded by a CLONE opened with
+			// `additionalProperties: true` (so it stops rejecting/over-checking
+			// keys it does not own — its required/typed checks for its OWN keys
+			// are unchanged), AND a final "closed-universe" check rejects any
+			// key declared by NO member WHEN every member was originally closed
+			// (preserving closed-object strictness for the merged shape). A
+			// member that is open (`true`) or constrained (a shape) keeps its
+			// own additional-key policy via its original guard.
+			// The EFFECTIVE leaf object members (nested intersections flattened
+			// in) define the merged key universe and the closed/open policy.
+			const objectMembers = flattenIntersectionObjects(shape)
+			const declaredKeys = new Set<string>()
+			let allClosed = true
+			for (const member of objectMembers) {
+				for (const key of Object.keys(member.properties)) {
+					declaredKeys.add(key)
+				}
+				if (member.additionalProperties !== undefined && member.additionalProperties !== false) {
+					allClosed = false
+				}
+			}
+			// One guard per LEAF object member: a closed member is opened to
+			// sibling keys (`additionalProperties: true`) so it still enforces
+			// its OWN declared keys' presence/type but no longer rejects a
+			// sibling member's key; the closed-universe check below restores
+			// closed-object strictness across the merged key set. An
+			// open/constrained member keeps its own additional-key policy.
+			const memberGuards = objectMembers.map((member) => {
+				if (member.additionalProperties === undefined || member.additionalProperties === false) {
+					const opened: ObjectShape = {
+						type: 'object',
+						properties: member.properties,
+						additionalProperties: true,
+						...(member.description !== undefined ? { description: member.description } : {}),
+					}
+					return compileGuardInner(opened)
+				}
+				return compileGuardInner(member)
+			})
+			return (value) => {
+				if (!isRecord(value)) {
+					return false
+				}
+				for (const guard of memberGuards) {
+					if (!guard(value)) {
+						return false
+					}
+				}
+				if (allClosed) {
+					for (const key of Object.keys(value)) {
+						if (!declaredKeys.has(key)) {
+							return false
+						}
+					}
+				}
+				return true
+			}
 		}
 		case 'optional': {
 			const guard = compileGuardInner(shape.inner)
@@ -800,6 +911,90 @@ function compileParserInner(shape: ContractShape): (value: unknown) => unknown {
 				return undefined
 			}
 		}
+		case 'intersection': {
+			// Parse↔guard soundness for the conjunction. All members are
+			// object shapes (§13 build constraint). Strategy: parse the value
+			// through EVERY member's parser, then MERGE the parsed member
+			// objects into one result; a key-collision is resolved
+			// last-member-wins (sound: each parsed member object is
+			// independently guard-valid for its member, and the documented
+			// contract scopes intersection to object members with
+			// disjoint/compatible keys, so the merge never invents a
+			// guard-invalid value). The merged object is then re-validated
+			// against THIS shape's guard for clause (C). Like the `object`
+			// arm we DO NOT fall back to the raw value (it could carry
+			// `__proto__`/`constructor`/`prototype` own keys the per-member
+			// object parsers' B2 hardening drops — returning raw would
+			// re-expose them); the merged accumulator is the only safe output
+			// and is guard-equivalent to a guard-valid input (clause A/B hold
+			// because each member parser is itself sound and accepts
+			// everything its member guard accepts).
+			//
+			// Each closed member is parsed via a clone opened to sibling keys
+			// (`additionalProperties: true`) so a sibling member's key is not
+			// rejected as "unknown" — exactly mirroring the guard arm. Opening
+			// to `true` makes that member parser PASS THROUGH unknown (sibling)
+			// keys; we then keep only the keys the member declares from each
+			// member's parsed output so a sibling's raw (unparsed) value never
+			// leaks in — every key in the final result was parsed by the
+			// member that declares it.
+			// Operate on the EFFECTIVE leaf object members (nested
+			// intersections flattened in) so a nested intersection's keys are
+			// each parsed by their own declaring object member.
+			const memberParsers = flattenIntersectionObjects(shape).map((member) => {
+				if (member.additionalProperties === undefined || member.additionalProperties === false) {
+					const opened: ObjectShape = {
+						type: 'object',
+						properties: member.properties,
+						additionalProperties: true,
+						...(member.description !== undefined ? { description: member.description } : {}),
+					}
+					return {
+						parse: compileParserInner(opened),
+						ownKeys: new Set(Object.keys(member.properties)),
+						scoped: true,
+					}
+				}
+				return {
+					parse: compileParserInner(member),
+					ownKeys: new Set(Object.keys(member.properties)),
+					scoped: false,
+				}
+			})
+			const guard = compileGuardInner(shape)
+			return (value) => {
+				if (!isRecord(value)) {
+					return undefined
+				}
+				const result: Record<string, unknown> = {}
+				for (const member of memberParsers) {
+					const parsed = member.parse(value)
+					if (parsed === undefined || !isRecord(parsed)) {
+						return undefined
+					}
+					if (member.scoped) {
+						// Keep only keys this member declares (its parsed,
+						// normalized values); sibling keys it passed through
+						// untouched are owned/parsed by their own member.
+						for (const key of member.ownKeys) {
+							if (Object.hasOwn(parsed, key)) {
+								result[key] = parsed[key]
+							}
+						}
+					} else {
+						// Open/constrained member: it owns its full parsed
+						// output (declared keys + its additionalProperties
+						// policy applied to the rest).
+						for (const key of Object.keys(parsed)) {
+							if (Object.hasOwn(parsed, key)) {
+								result[key] = parsed[key]
+							}
+						}
+					}
+				}
+				return guard(result) ? result : undefined
+			}
+		}
 		case 'optional': {
 			const parser = compileParserInner(shape.inner)
 			return (value) => (value === undefined ? undefined : parser(value))
@@ -952,6 +1147,29 @@ function compileGeneratorInner(shape: ContractShape, random: RandomFunction): un
 				return undefined
 			}
 			return compileGeneratorInner(variant, random)
+		}
+		case 'intersection': {
+			// All members are object shapes (§13 build constraint). Generate
+			// each member object in order and MERGE them: the result carries
+			// the UNION of every member's generated keys, so it satisfies
+			// EVERY member's guard (each member's required keys are all present
+			// with member-valid values) — hence the intersection guard. On a
+			// key shared by ≥2 members the last member's value wins; the
+			// documented contract scopes intersection to object members with
+			// disjoint/compatible keys, so this never produces a member-invalid
+			// value. Determinism follows from each member generator consuming
+			// the shared `random` source in a fixed order. `intersectionShape`
+			// guarantees ≥1 member at build (§13), so the merge is never empty.
+			const result: Record<string, unknown> = {}
+			for (const member of shape.members) {
+				const generated = compileGeneratorInner(member, random)
+				if (isRecord(generated)) {
+					for (const key of Object.keys(generated)) {
+						result[key] = generated[key]
+					}
+				}
+			}
+			return result
 		}
 		case 'optional':
 			return compileGeneratorInner(shape.inner, random)

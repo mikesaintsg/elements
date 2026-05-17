@@ -9,6 +9,7 @@ import {
 	compileSchema,
 	createRandom,
 	integerShape,
+	intersectionShape,
 	isRecord,
 	literalShape,
 	nullableShape,
@@ -125,6 +126,47 @@ describe('compileSchema', () => {
 			items: false,
 			minItems: 2,
 			maxItems: 2,
+		})
+	})
+
+	// `intersectionShape` compiles to JSON-Schema `allOf`: one sub-schema per
+	// member, every one of which the value must satisfy. This is the schema
+	// mirror of validators' `intersectionOf` (value passes iff EVERY member
+	// guard passes) and the standard JSON-Schema conjunction encoding.
+	it('intersection — allOf of every member sub-schema', () => {
+		expect(
+			compileSchema(
+				intersectionShape(
+					objectShape({ a: stringShape() }),
+					objectShape({ b: integerShape() }),
+				),
+			),
+		).toEqual({
+			allOf: [
+				{ type: 'object', properties: { a: { type: 'string' } }, required: ['a'], additionalProperties: false },
+				{ type: 'object', properties: { b: { type: 'integer' } }, required: ['b'], additionalProperties: false },
+			],
+		})
+	})
+
+	it('intersection — nested member shapes compile recursively', () => {
+		expect(
+			compileSchema(
+				intersectionShape(
+					intersectionShape(objectShape({ a: stringShape() }), objectShape({ b: booleanShape() })),
+					objectShape({ c: integerShape() }),
+				),
+			),
+		).toEqual({
+			allOf: [
+				{
+					allOf: [
+						{ type: 'object', properties: { a: { type: 'string' } }, required: ['a'], additionalProperties: false },
+						{ type: 'object', properties: { b: { type: 'boolean' } }, required: ['b'], additionalProperties: false },
+					],
+				},
+				{ type: 'object', properties: { c: { type: 'integer' } }, required: ['c'], additionalProperties: false },
+			],
 		})
 	})
 
@@ -251,6 +293,41 @@ describe('compileGuard', () => {
 		expect(guard('x')).toBe(false)
 	})
 
+	// Intersection guard mirrors validators' `intersectionOf`: a value is
+	// valid iff it satisfies EVERY member. For object members this means it
+	// must carry every member's required keys with each key's value passing
+	// that member's property guard — i.e. the conjunction of all members,
+	// which for disjoint-key object members is the merged object. A closed
+	// object member does NOT reject a sibling member's keys (those are part
+	// of the intersection contract, not "unknown").
+	it('intersection — value must satisfy every member', () => {
+		const guard = compileGuard(
+			intersectionShape(
+				objectShape({ a: stringShape() }),
+				objectShape({ b: integerShape() }),
+			),
+		)
+		expect(guard({ a: 'x', b: 1 })).toBe(true) // satisfies both
+		expect(guard({ a: 'x' })).toBe(false) // missing b (2nd member)
+		expect(guard({ b: 1 })).toBe(false) // missing a (1st member)
+		expect(guard({ a: 'x', b: 'no' })).toBe(false) // b not integer
+		expect(guard({ a: 1, b: 1 })).toBe(false) // a not string
+		expect(guard('notobj')).toBe(false)
+		expect(guard({})).toBe(false)
+	})
+
+	it('intersection — three members, overlapping-compatible keys', () => {
+		const guard = compileGuard(
+			intersectionShape(
+				objectShape({ a: stringShape() }),
+				objectShape({ b: integerShape() }),
+				objectShape({ c: booleanShape() }),
+			),
+		)
+		expect(guard({ a: 'x', b: 1, c: true })).toBe(true)
+		expect(guard({ a: 'x', b: 1 })).toBe(false) // missing c
+	})
+
 	it('object — accepts exact key sets', () => {
 		const shape: ContractShape = objectShape({
 			name: stringShape(),
@@ -372,6 +449,25 @@ describe('compileParser', () => {
 		expect(parse([])).toEqual([])
 		expect(parse([1])).toBeUndefined()
 		expect(parse('x')).toBeUndefined()
+	})
+
+	// Intersection parser: parse the value through every member, merge the
+	// parsed objects (later members win on key collision — sound because each
+	// parsed object is independently guard-valid for its member), then the
+	// merged result is re-validated against the intersection guard for clause
+	// (C). Per-member coercion (e.g. '30' → 30) is preserved.
+	it('intersection — parses through every member and merges', () => {
+		const parse = compileParser(
+			intersectionShape(
+				objectShape({ a: stringShape() }),
+				objectShape({ b: integerShape() }),
+			),
+		)
+		expect(parse({ a: 'x', b: '2' })).toEqual({ a: 'x', b: 2 }) // b coerced
+		expect(parse({ a: 'x', b: 1 })).toEqual({ a: 'x', b: 1 })
+		expect(parse({ a: 'x' })).toBeUndefined() // missing b
+		expect(parse({ a: 'x', b: 'no' })).toBeUndefined() // b unparseable
+		expect(parse('not object')).toBeUndefined()
 	})
 
 	it('object — parses known fields and ignores optional missing', () => {
@@ -509,6 +605,40 @@ describe('parse↔guard symmetry', () => {
 		)
 	})
 
+	it('intersectionShape(objectShape, objectShape) — parse↔guard (A)(B)(C)', () => {
+		assertParseGuardSymmetry(
+			intersectionShape(
+				objectShape({ a: stringShape() }),
+				objectShape({ b: integerShape() }),
+			),
+			[{ a: 'x', b: 1 }, { a: 'x' }, { b: 1 }, { a: 'x', b: 'no' }, 'notobj', {}],
+		)
+	})
+
+	it('intersectionShape nested + intersection-of-intersection symmetry', () => {
+		assertParseGuardSymmetry(
+			objectShape({
+				pair: intersectionShape(
+					objectShape({ a: stringShape({ min: 1 }) }),
+					objectShape({ b: integerShape() }),
+				),
+			}),
+			[{ pair: { a: 'x', b: 1 } }, { pair: { a: '', b: 1 } }, { pair: { a: 'x' } }, {}],
+		)
+		assertParseGuardSymmetry(
+			intersectionShape(
+				intersectionShape(objectShape({ a: stringShape() }), objectShape({ b: integerShape() })),
+				objectShape({ c: booleanShape() }),
+			),
+			[
+				{ a: 'x', b: 1, c: true },
+				{ a: 'x', b: 1 },
+				{ a: 'x', b: 'no', c: true },
+				'notobj',
+			],
+		)
+	})
+
 	it('optionalShape(stringShape()) at object level', () => {
 		assertParseGuardSymmetry(
 			objectShape({ s: optionalShape(stringShape()) }),
@@ -613,6 +743,21 @@ describe('compileGenerator', () => {
 	it('tuple — empty tuple generates the empty array deterministically', () => {
 		const value = compileGenerator(tupleShape(), createRandom(7))
 		expect(value).toEqual([])
+	})
+
+	it('intersection — generates a merged object satisfying every member', () => {
+		const shape = intersectionShape(
+			objectShape({ a: stringShape({ min: 1 }) }),
+			objectShape({ b: integerShape() }),
+		)
+		const value = compileGenerator(shape, createRandom(1))
+		expect(isRecord(value)).toBe(true)
+		if (!isRecord(value)) {
+			throw new Error('Expected a generated record')
+		}
+		expect(typeof value['a']).toBe('string')
+		expect(Number.isInteger(value['b'])).toBe(true)
+		expect(compileGuard(shape)(value)).toBe(true)
 	})
 
 	it('object — returns a record with required keys', () => {
@@ -1168,6 +1313,30 @@ describe('B4 — assertGeneratorSatisfiesGuard across the full shape matrix', ()
 		assertGeneratorSatisfiesGuard(tupleShape(), seeds)
 	})
 
+	it('intersections incl. nested object members', () => {
+		assertGeneratorSatisfiesGuard(
+			intersectionShape(
+				objectShape({ a: stringShape({ min: 1 }) }),
+				objectShape({ b: integerShape() }),
+			),
+			seeds,
+		)
+		assertGeneratorSatisfiesGuard(
+			intersectionShape(
+				objectShape({ a: stringShape({ min: 1 }), nested: objectShape({ x: integerShape() }) }),
+				objectShape({ b: arrayShape(integerShape(), { min: 1, max: 3 }) }),
+			),
+			seeds,
+		)
+		assertGeneratorSatisfiesGuard(
+			intersectionShape(
+				intersectionShape(objectShape({ a: stringShape({ min: 1 }) }), objectShape({ b: integerShape() })),
+				objectShape({ c: booleanShape() }),
+			),
+			seeds,
+		)
+	})
+
 	it('optional / nullable wrappers', () => {
 		assertGeneratorSatisfiesGuard(objectShape({ s: optionalShape(stringShape({ min: 1 })) }), seeds)
 		assertGeneratorSatisfiesGuard(nullableShape(integerShape({ min: 0 })), seeds)
@@ -1276,6 +1445,28 @@ describe('§13 — cyclic ContractShape fails fast at compile (precise Error, no
 		expectPreciseCyclicError(() => compileGuard(makeCyclicTupleShape()))
 		expectPreciseCyclicError(() => compileParser(makeCyclicTupleShape()))
 		expectPreciseCyclicError(() => compileGenerator(makeCyclicTupleShape(), createRandom(1)))
+	})
+
+	it('an intersection of a self-referential shape throws the precise cyclic Error', () => {
+		// Build a structural cycle through an intersection member: an object
+		// whose `self` property is an intersection containing the object
+		// itself. Each compiler must detect the back-edge through the
+		// intersection arm of assertAcyclicShape and fail fast with the
+		// precise Error, never a RangeError.
+		const makeCyclicIntersectionShape = (): ContractShape => {
+			const properties: Record<string, ContractShape> = {
+				name: stringShape({ min: 1 }),
+			}
+			const shape = objectShape(properties)
+			properties['self'] = intersectionShape(shape)
+			return shape
+		}
+		expectPreciseCyclicError(() => compileSchema(makeCyclicIntersectionShape()))
+		expectPreciseCyclicError(() => compileGuard(makeCyclicIntersectionShape()))
+		expectPreciseCyclicError(() => compileParser(makeCyclicIntersectionShape()))
+		expectPreciseCyclicError(() =>
+			compileGenerator(makeCyclicIntersectionShape(), createRandom(1)),
+		)
 	})
 
 	it('a shared-but-acyclic sub-shape reused in two object keys is NOT a cycle', () => {

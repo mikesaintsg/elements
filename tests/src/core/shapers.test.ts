@@ -3,6 +3,7 @@ import {
 	arrayShape,
 	booleanShape,
 	integerShape,
+	intersectionShape,
 	literalShape,
 	nullableShape,
 	numberShape,
@@ -380,6 +381,84 @@ describe('tupleShape', () => {
 		const shape = tupleShape()
 		expect(shape.type).toBe('tuple')
 		expect(shape.items).toHaveLength(0)
+	})
+})
+
+// === intersectionShape
+
+describe('intersectionShape', () => {
+	it('produces a shape with type intersection', () => {
+		const shape = intersectionShape(
+			objectShape({ a: stringShape() }),
+			objectShape({ b: integerShape() }),
+		)
+		expect(shape.type).toBe('intersection')
+	})
+
+	it('stores the member shapes in order', () => {
+		const a = objectShape({ a: stringShape() })
+		const b = objectShape({ b: integerShape() })
+		const shape = intersectionShape(a, b)
+		expect(shape.members).toHaveLength(2)
+		expect(shape.members[0]).toBe(a)
+		expect(shape.members[1]).toBe(b)
+	})
+
+	it('accepts more than two object members', () => {
+		const shape = intersectionShape(
+			objectShape({ a: stringShape() }),
+			objectShape({ b: integerShape() }),
+			objectShape({ c: booleanShape() }),
+		)
+		expect(shape.members).toHaveLength(3)
+		expect(shape.members[0]?.type).toBe('object')
+		expect(shape.members[2]?.type).toBe('object')
+	})
+
+	it('leaves description undefined when omitted', () => {
+		const shape = intersectionShape(objectShape({ a: stringShape() }))
+		expect(shape.description).toBeUndefined()
+	})
+
+	it('accepts nested object intersections', () => {
+		const inner = intersectionShape(
+			objectShape({ a: stringShape() }),
+			objectShape({ b: integerShape() }),
+		)
+		const outer = intersectionShape(inner, objectShape({ c: booleanShape() }))
+		expect(outer.members[0]?.type).toBe('intersection')
+	})
+
+	// §13 build-time constraint (documented): `intersectionShape` is only
+	// well-defined for OBJECT shapes. Intersecting primitives/arrays is
+	// degenerate (`string & number` = never; `[] & [string]` uninhabited) and
+	// has no sound generator/parser merge. So every member MUST be an object
+	// shape (objectShape / recordShape) — a non-object member is a programmer
+	// error caught at the build boundary (§13), mirroring B4-style boundary
+	// validation, never a silent unsoundness downstream.
+	it('throws when called with no members (§13 — uninhabited)', () => {
+		expect(() => intersectionShape()).toThrow('intersectionShape requires at least one member')
+	})
+
+	it('throws when a member is a non-object shape (§13)', () => {
+		expect(() => intersectionShape(stringShape())).toThrow(
+			'intersectionShape members must be object shapes',
+		)
+		expect(() =>
+			intersectionShape(objectShape({ a: stringShape() }), stringShape()),
+		).toThrow('intersectionShape members must be object shapes')
+		expect(() => intersectionShape(tupleShape(stringShape()))).toThrow(
+			'intersectionShape members must be object shapes',
+		)
+		expect(() =>
+			intersectionShape(unionShape(objectShape({ a: stringShape() }))),
+		).toThrow('intersectionShape members must be object shapes')
+	})
+
+	it('accepts recordShape members (open objects are object shapes)', () => {
+		expect(() =>
+			intersectionShape(objectShape({ a: stringShape() }), recordShape(integerShape())),
+		).not.toThrow()
 	})
 })
 
