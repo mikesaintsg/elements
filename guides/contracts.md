@@ -8,7 +8,7 @@ A **contract** is a single data shape compiled into four cohesive operations. Yo
 
 | Operation  | Purpose                                     | Output            |
 | ---------- | ------------------------------------------- | ----------------- |
-| `schema`   | JSON Schema for tool / agent integration    | `JsonSchema`      |
+| `schema`   | JSON Schema document (for external validators / interop) | `JsonSchema`      |
 | `is`       | Runtime type guard with full narrowing      | `Guard<T>`        |
 | `parse`    | Input normalization and coercion            | `T \| undefined`  |
 | `generate` | Deterministic seed data from a seeded PRNG  | `T`               |
@@ -111,7 +111,7 @@ const userShape = objectShape({
 // 2. Compile the full contract.
 const userContract = createContract(userShape)
 
-// 3. JSON Schema (e.g. for tool registration).
+// 3. JSON Schema (e.g. for external schema validation / interop).
 userContract.schema
 
 // 4. Runtime type guard with full narrowing.
@@ -165,7 +165,7 @@ const idOrFlag = oneOfShape(stringShape(), booleanShape())
 // JSON Schema: { oneOf: [{ type: 'string' }, { type: 'boolean' }] }
 ```
 
-Both behave identically at runtime — variants are checked in order, first match wins. The only difference is the emitted JSON Schema keyword (`anyOf` vs `oneOf`), which matters for tool parameter schemas that must express exclusivity.
+Both behave identically at runtime — variants are checked in order, first match wins. The only difference is the emitted JSON Schema keyword (`anyOf` vs `oneOf`), which matters for schemas that must express mutual exclusivity.
 
 ### `recordShape()` — open dictionaries
 
@@ -188,7 +188,7 @@ const anyValue = rawShape({ description: 'Default value' })
 
 Embeds an arbitrary JSON Schema fragment for properties that accept any value or need keywords beyond the shape DSL. The compiled guard always returns `true`, the parser passes the value through unchanged, and `Infer` resolves it to `unknown` (the runtime type can't be recovered from the DSL). Use sparingly.
 
-### Tool input schema
+### Object-root schema
 
 ```ts
 import {
@@ -250,8 +250,8 @@ Optional properties wrapped in `optionalShape()` surface as true optional fields
 ### Practices
 
 - **Define shapes as named constants.** One shape reused across schema, guard, parser, and generator is the whole point — never re-declare the same structure per operation.
-- **`createContract()` for the full pipeline; `createSchema()` for schema-only.** Skip the wrapping when you only need the JSON Schema (tool registration).
-- **`compileSchema(objectShape(...))` for tool inputs.** Tool parameters are just object-root contracts.
+- **`createContract()` for the full pipeline; `createSchema()` for schema-only.** Skip the wrapping when you only need the JSON Schema (for external validation or interop).
+- **`compileSchema(objectShape(...))` for an object-root schema.** An object-root schema is just a contract compiled from an `objectShape()`.
 - **`createRandom()` with a fixed seed for reproducible fixtures.** Same seed, same generated data, every run.
 - **Wrap optional object fields in `optionalShape()`.** It is what makes a property truly optional in both the inferred type and the schema `required` set.
 - **`oneOfShape()` for exclusive unions, `recordShape()` for dictionaries, `rawShape()` only as a last resort.**
