@@ -342,10 +342,11 @@ export interface ObjectShape {
  * Union shape — accepts a value matching any one variant.
  *
  * @remarks
- * Variants are checked in order; the first match wins.
- * `mode` controls the emitted JSON Schema keyword:
- * - `'anyOf'` (default) — at least one variant must match
- * - `'oneOf'` — exactly one variant must match
+ * `mode` controls both the emitted JSON Schema keyword and match semantics:
+ * - `'anyOf'` (default) — short-circuits on the first matching variant;
+ *   any match wins
+ * - `'oneOf'` — all variants are checked; exactly one must match
+ *   (zero or ≥2 matches ⇒ no match)
  */
 export interface UnionShape {
 	readonly type: 'union'

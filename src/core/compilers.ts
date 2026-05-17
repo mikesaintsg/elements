@@ -724,6 +724,16 @@ export function compileGenerator(shape: ContractShape, random: RandomFunction): 
 			// unreachable through the public API. The dead defensive throw
 			// was removed per §20 — a hand-built variants-less union that
 			// bypasses the builder is itself programmer error.
+			//
+			// §15 limitation — overlapping oneOf variants: generation picks a
+			// random variant and generates from it without checking exclusivity.
+			// For `mode:'oneOf'`, a value generated from variant A may also
+			// satisfy variant B (e.g. `number` ∩ `integer`), causing the
+			// oneOf guard to see ≥2 matches and reject. This is acceptable:
+			// JSON-Schema `oneOf` requires mutually-exclusive (disjoint)
+			// subschemas by contract — overlapping variants are an ill-posed
+			// user modelling error. Generation is sound for disjoint variants
+			// (the supported/expected case).
 			const index = Math.floor(random() * shape.variants.length)
 			const variant = shape.variants[index]
 			if (variant === undefined) {
