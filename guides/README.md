@@ -196,16 +196,14 @@ A standalone, browser-free package: a shape DSL that compiles to JSON Schema + r
 | [`ROADMAP.md`](../ROADMAP.md)      | Phase-by-phase blueprint and current work-in-progress roster.                                            |
 | [`styles.md`](styles.md)           | Top-level architecture: layer order, Tailwind interop, design philosophy.                                |
 | [`patterns.md`](patterns.md)       | Per-folder structural contracts. The operational reference when authoring or refactoring a SCSS partial. |
-| [`elements.md`](elements.md)       | Every native HTML tag with its framework treatment. The first stop before authoring a new element.       |
+| [`elements.md`](elements.md)       | Every native HTML tag with its framework treatment — substantive / override / non-styled / non-visual.   |
 | [`tokens.md`](tokens.md)           | Token surface — `--set-*` namespace, fallback chains, theming contract.                                  |
 | [`modifiers.md`](modifiers.md)     | Five-dimension cascade — variant / size / style / state / placement.                                     |
-| [`elements.md`](elements.md)       | Per-tag catalog — substantive / override / non-styled / non-visual.                                      |
 | [`components.md`](components.md)   | Element compositions — element-driven + class-root patterns.                                             |
 | [`surfaces.md`](surfaces.md)       | Browser-rendered chrome — pseudo-elements, `[popover]`, anchor-position, etc.                            |
 | [`composables.md`](composables.md) | Vue + factory layer — adapter / factory split, naming, lifecycle.                                        |
-| [`mixins.md`](mixins.md)           | Sass-side helper registry + list constants.                                                              |
+| [`mixins.md`](mixins.md)           | Sass mixin + function registry + list constants — `transition()`, `focus-ring()`, `palette-each`, etc.   |
 | [`showcase.md`](showcase.md)       | The showcase app (`app/browser/`) — strict authoring rules, sidebar / TOC patterns, custom-class triage. |
-| [`mixins.md`](mixins.md)           | Sass mixin + function registry — `transition()`, `focus-ring()`, `palette-each`, etc.                    |
 | [`contracts.md`](contracts.md)     | `@elements/core` — shape → JSON Schema / guard / parser / generator DSL.                                 |
 | [`parsers.md`](parsers.md)         | `@elements/core` — flat value / field / format parsers (`unknown` → typed, `undefined` on failure).      |
 | [`validators.md`](validators.md)   | `@elements/core` — runtime type guards + guard compositors.                                              |
