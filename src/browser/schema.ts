@@ -225,7 +225,6 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where flow content is expected; as a child of an hgroup element.',
 		'children',
 		'groupings#the-p-element',
-		{ forbidden: [] },
 	),
 	defineModel(
 		'hr',
