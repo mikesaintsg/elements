@@ -242,7 +242,7 @@ five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
 | 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                 | ✅     |
 | 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)              | ✅     |
 | 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant) | ✅     |
-| 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel    | ⬜     |
+| 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel    | ✅     |
 | 5     | Presentation lens (computed-style: load-bearing rendering overrides)                | ⬜     |
 | 6     | Showcase self-audit suite — run Inspector on every page; remediate our findings     | ⬜     |
 | 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                  | ⬜     |
@@ -666,25 +666,71 @@ The frozen TS mirror of the corpus, shaped exactly like
 
 ## Phase 4 — Findings + `Inspector` entity
 
-- ⬜ `Finding` (data, `readonly`): `severity`, `rule` (id), `element`,
-  `path` (stable DOM path from `getPathToAncestor()`), `message`, `cite`
-  (guide anchor), `expected`/`actual` where applicable. Declared **once**
-  as an `@elements/core` `ContractShape` (minus the live `element` ref) so
-  `compileContract()` yields a **JSON Schema for the findings report**
-  (machine-consumable CI output) and a **`Guard<Finding>`** consumers can
-  import — derived from the one declaration, never hand-maintained
-  ([compilers.md](guides/compilers.md)).
-- ⬜ `FindingManager` (§9/§10): `finding(id)` / `findings()`; filter by
-  `severity` / `lens` / subtree; `clear()` / `clear(id)` / `clear(ids)`.
-- ⬜ `Inspector` (§7 class order, §14 emitter): `inspect(root = document)`
-  → `InspectionResult` (`findings`, counts by severity, walked-node count,
-  duration). `InspectorOptions` per §4.2.1:
-  `{ on?, severity?, lens?, root? }`. Emits `start` → `finding`\* →
-  `done`.
-- ⬜ `export * from './inspector/index.js'` through the sole barrel; full
-  TSDoc + an `@example`.
-- ⬜ Suite: end-to-end on hand-built clean and dirty trees; emitter event
-  order; severity filtering; manager batch ops.
+> **§14 amended (governing-doc correction, owner-authorized).** AGENTS.md
+> §14 described a class-based `Emitter<TMap>` / `EmitterInterface` /
+> `EmitterHooks` primitive that **did not exist anywhere in the repo** (the
+> tokens appeared only in ROADMAP/AGENTS prose; no `src/**` implementation).
+> The repo's real observable-events idiom is the DOM `CustomEvent` model —
+> `emit` / `dispatch` / `listen` / `bindEventMap` (`helpers.ts`), the
+> `elements:{source}:{verb}` name constants (`constants.ts`, mirrored into
+> the composable/component CSS-parity tree in `events.ts`), and
+> `{Entity}Options.on?: Partial<{Entity}EventMap>` wired via `bindEventMap`
+> — used by every `create*` factory. §14 was rewritten to describe that real
+> contract faithfully (only §14; house style kept; nothing invented; the
+> unimplemented `Emitter` primitive description removed). Same doctrine as
+> the corpus rule: spec/reality is source of truth — correct the
+> aspirational doc to match established code. The Inspector uses this
+> established idiom; it invents no `Emitter` class. The inspector is a
+> dev-tool ENTITY, not a composable, so its `INSPECTOR_EVENTS` constant
+> lives in `constants.ts` only and is deliberately NOT registered into the
+> `events.ts` composable tree (whose `composables.test.ts` vocabulary gate
+> governs composables/components, not the inspector) — keeping that Phase-1
+> gate green and semantically honest with zero escape-hatch.
+
+- ✅ `Finding` (data, `readonly`): `severity`, `rule` (id), `element`,
+  `path` (stable DOM `Element[]` from `getPathToAncestor()`), `message`,
+  `cite`, `expected`/`actual`. The **serializable** projection
+  `FindingRecord` (live `element` dropped, `path` the serializable
+  `describePath` string) is declared **once** in `types.ts` and expressed
+  as an `@elements/core` `ContractShape` run through `compileContract()` in
+  `schema.ts` (`findingContract`, beside the Phase-1 `contentModelContract`,
+  with a module-load `FINDING_CONTRACT_GUARDED` `generate∘is` soundness IIFE
+  mirroring `CONTRACT_GUARDED`) — yields the JSON Schema findings-report
+  contract + a `Guard` consumers import, DERIVED from the one declaration.
+  The in-memory `Finding` is reconciled ADDITIVELY (`extends
+  Omit<FindingRecord,'path'>` + the runtime `element` / `Element[]` path):
+  zero duplication, no hand-maintained parallel interface, the Phase-3
+  `Finding` / `RuleInterface` / rules.ts untouched (structurally identical).
+- ✅ `FindingManager` (§9/§10, `src/browser/inspector/FindingManager.ts`):
+  `finding(id)` / `findings()` (overloaded by argument TYPE — `severity` /
+  `lens` / subtree `ParentNode`); `clear()` / `clear(id)` / `clear(ids)` the
+  §10 three-overload single verb (`clear(id)`/`clear(ids)` → `boolean`).
+  Modeled on the in-repo `createTable` `TableSelectionManagerInterface` +
+  `selectionClear`/`selectionSelect` function-overload precedent.
+- ✅ `Inspector` (§7 class order, the §14-amended CustomEvent emitter,
+  `src/browser/inspector/Inspector.ts`): `inspect(options? = { root:
+  document })` → `InspectionResult` (`findings`, `counts` by severity,
+  `walked`, `duration`). `InspectorOptions` per §4.2.1
+  `{ on?, severity?, lens?, root? }`. Emits `start` → `finding` (×N) →
+  `done` via `emit` on the resolved root element (the events bubble);
+  `options.on` wired via `bindEventMap`, scoped to the pass. `inspect()`
+  composes the Phase-2 `Walker` + the frozen Phase-3 `rules` registry with
+  ZERO re-implementation of walking / rule-eval / dedup; a non-Element /
+  rootless `ParentNode` throws per §13.
+- ✅ `export * from './Inspector.js'` (+ `./FindingManager.js'`) through the
+  inspector barrel → the sole `src/browser/index.ts`; full TSDoc + an
+  `@example` on `Inspector` and `FindingManager`.
+- ✅ Suite `tests/src/browser/inspector/Inspector.test.ts` — real-DOM
+  (§16.2, no mocks): clean tree → zero findings; the registry-proven dirty
+  tree → exact `['content/required']` + `InspectionResult`
+  counts/walked/duration≥0; emitter order EXACTLY `['start','finding',
+  'finding','done']` via the real `listen` helper AND `options.on`;
+  pass-scoped `on` (no stale accumulation); `severity` filter bites
+  (`'warning'` drops the real `error`); `lens` filter
+  (`'presentation'`→none); `FindingManager` singular/plural + the §10
+  three-overload `clear`; `inspect()` determinism + `inspector.rules === rules`;
+  §13 rootless-`ParentNode` throw; `findingContract` validates the
+  serializable projection (and bites on an empty `rule`).
 
 ---
 

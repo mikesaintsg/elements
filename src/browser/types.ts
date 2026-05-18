@@ -523,33 +523,69 @@ export type FindingSeverity = 'error' | 'warning' | 'advice'
 export type RuleLens = 'structure' | 'presentation'
 
 /**
- * One reported content-model violation — a pure data record (no behavior,
- * every member `readonly`, single-word per §4.1). Emitted by a
- * {@link RuleInterface}'s `evaluate`; collected by the Phase-4
- * `FindingManager`.
+ * The **JSON-serializable** projection of a {@link Finding} — every field a
+ * primitive, no live DOM ref. This is the SINGLE source of truth for the
+ * finding record shape: the Phase-4 `findingContract` (`schema.ts`, an
+ * `@elements/core` ContractShape run through `compileContract()`, exactly
+ * mirroring the Phase-1 `contentModelContract` precedent) is its compiled
+ * contract — guard (`findingContract.is`) + JSON Schema
+ * (`findingContract.schema`, the machine-consumable findings-report contract
+ * CI / agents import) + seeded generator (`findingContract.generate`),
+ * DERIVED from this declaration, never a hand-maintained parallel interface
+ * that can drift. The in-memory {@link Finding} is this record's runtime
+ * composition (live `element` + `readonly Element[]` `path`), so the two
+ * cannot diverge — `Finding` is `FindingRecord` minus the serializable
+ * `path` string, plus the runtime refs.
  *
  * @remarks
  * - `severity` — see {@link FindingSeverity}.
  * - `rule` — the emitting rule's {@link RuleInterface.id}.
- * - `element` — the live offending element (the Phase-4 ContractShape omits
- *   this non-serializable ref; the record keeps it for in-memory consumers).
- * - `path` — the stable DOM path to the element, nearest first, via the
- *   Phase-2 `nodePath` helper (which wraps `getPathToAncestor()`).
+ * - `path` — the **stable serializable DOM path string** to the offending
+ *   element (the faithful serializable projection of {@link Finding.path},
+ *   derived from the same `nodePath` / `getPathToAncestor()` ancestor walk —
+ *   NOT live `Element`s). Stable across runs over the same DOM.
  * - `message` — the human-readable restatement of the violated clause.
  * - `cite` — the `guides/w3c` anchor carried on the schema entry's `cite`
  *   (`{file}#{slug}`), so every finding resolves back to the corpus.
  * - `expected` / `actual` — the spec-expected vs. observed shape, when the
  *   rule can name them (cardinality / order / category mismatches).
  */
-export interface Finding {
+export interface FindingRecord {
 	readonly severity: FindingSeverity
 	readonly rule: string
-	readonly element: Element
-	readonly path: readonly Element[]
+	readonly path: string
 	readonly message: string
 	readonly cite: string
 	readonly expected?: string
 	readonly actual?: string
+}
+
+/**
+ * One reported content-model violation — a pure data record (no behavior,
+ * every member `readonly`, single-word per §4.1). Emitted by a
+ * {@link RuleInterface}'s `evaluate`; collected by the Phase-4
+ * `FindingManager`.
+ *
+ * Defined ADDITIVELY as {@link FindingRecord} (the one serializable source of
+ * truth — `severity` / `rule` / `message` / `cite` / `expected` / `actual`
+ * are inherited verbatim, never re-declared) with its serializable `path`
+ * string replaced by the in-memory runtime refs: the live offending
+ * `element` and the `readonly Element[]` ancestor `path`. The structural
+ * shape every Phase-3 rule / suite depends on is unchanged; there is no
+ * second hand-maintained finding interface to drift.
+ *
+ * @remarks
+ * - `element` — the live offending element (the serializable
+ *   {@link FindingRecord} / `findingContract` omits this non-serializable
+ *   ref; the in-memory record keeps it for live consumers).
+ * - `path` — the stable DOM path to the element, nearest first, via the
+ *   Phase-2 `nodePath` helper (which wraps `getPathToAncestor()`). Its
+ *   serializable string projection is {@link FindingRecord.path}.
+ * - All other members are {@link FindingRecord}'s, inherited unchanged.
+ */
+export interface Finding extends Omit<FindingRecord, 'path'> {
+	readonly element: Element
+	readonly path: readonly Element[]
 }
 
 /**
@@ -622,6 +658,184 @@ export interface FindingDraft {
 	readonly message: string
 	readonly expected?: string
 	readonly actual?: string
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Inspector entity primitives
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Phase 4 of the semantic HTML inspector: the root `Inspector` entity that
+// composes the Phase-2 `Walker` + the frozen Phase-3 `rules` registry into a
+// single `inspect(root) → InspectionResult` pass, the `FindingManager` it
+// exposes for querying the collected findings (§9 singular/plural + §10
+// three-overload `clear`), and the observable-events surface. Per AGENTS §14
+// (the CustomEvent idiom — there is NO `Emitter` class): the inspector emits
+// typed `CustomEvent`s on the inspected ROOT element via the `emit` helper
+// (`elements:inspector:{verb}` names from `INSPECTOR_EVENTS`), and
+// `InspectorOptions.on` initial listeners are wired with `bindEventMap`
+// exactly as every `create*` factory does. ZERO re-implementation of
+// walking / rule-eval / dedup — Phase 3 already guarantees one finding per
+// violation; the Inspector only orchestrates and aggregates.
+
+/** Detail for `elements:inspector:start` — an inspection pass began over
+ *  the resolved root element. */
+export interface InspectorStartDetail {
+	readonly root: Element
+}
+
+/** Detail for `elements:inspector:finding` — one {@link Finding} was
+ *  collected (emitted in walk order, after severity/lens filtering). */
+export interface InspectorFindingDetail {
+	readonly finding: Finding
+}
+
+/** Detail for `elements:inspector:done` — the pass completed; carries the
+ *  same {@link InspectionResult} `inspect()` returns. */
+export interface InspectorDoneDetail {
+	readonly result: InspectionResult
+}
+
+/**
+ * The observable events an {@link InspectorInterface} dispatches, typed like
+ * every other `{Entity}EventMap` (AGENTS §14, the `TableEventMap` precedent):
+ * a `readonly {verb}` handler member per event, the `CustomEvent` carrying
+ * the matching detail. A pass emits exactly `start` → `finding`* → `done` on
+ * the inspected root element; `InspectorOptions.on` is the partial map of
+ * initial listeners wired via `bindEventMap`.
+ *
+ * @remarks
+ * - `start` — fired once before the walk ({@link InspectorStartDetail}).
+ * - `finding` — fired once per collected finding, in walk order, AFTER the
+ *   `severity` / `lens` filters ({@link InspectorFindingDetail}).
+ * - `done` — fired once after the walk with the full result
+ *   ({@link InspectorDoneDetail}).
+ */
+export interface InspectorEventMap {
+	readonly start: (event: CustomEvent<InspectorStartDetail>) => void
+	readonly finding: (event: CustomEvent<InspectorFindingDetail>) => void
+	readonly done: (event: CustomEvent<InspectorDoneDetail>) => void
+}
+
+/**
+ * Options for {@link InspectorInterface.inspect} — grouped per AGENTS §4.2.1
+ * (every leaf a single word; no flat prefixes). All optional: the bare
+ * `inspect()` walks `document` and collects every finding.
+ *
+ * @remarks
+ * - `on` — the partial {@link InspectorEventMap} of initial listeners, wired
+ *   on the inspected root via `bindEventMap` at the start of each pass and
+ *   torn down when the pass ends (the §8 reserved `on` key).
+ * - `severity` — keep only findings of this {@link FindingSeverity}
+ *   (omitted ⇒ all severities). Filters the collected findings AND the
+ *   `finding` events AND the `FindingManager` contents for the pass.
+ * - `lens` — keep only findings from this {@link RuleLens} (omitted ⇒ all
+ *   lenses; only `structure`-lens rules exist until Phase 5).
+ * - `root` — the subtree root to walk; defaults to `document`. A non-Element
+ *   root that is not a `Document` is a programmer error → `throw` (§13),
+ *   delegated to the Phase-2 `Walker` (the inspector never re-implements the
+ *   root guard).
+ */
+export interface InspectorOptions {
+	readonly on?: Partial<InspectorEventMap>
+	readonly severity?: FindingSeverity
+	readonly lens?: RuleLens
+	readonly root?: ParentNode
+}
+
+/**
+ * The structured outcome of one {@link InspectorInterface.inspect} pass — a
+ * value, not a fallible `Result` (a DOM walk does not "fail"; an invalid
+ * root is a `throw`, §13). Every member `readonly`, single-word per §4.1.
+ *
+ * @remarks
+ * - `findings` — every collected {@link Finding} in walk order, after the
+ *   `severity` / `lens` filters.
+ * - `counts` — finding tallies keyed by {@link FindingSeverity}
+ *   (`error` / `warning` / `advice`); each is the count AFTER filtering.
+ * - `walked` — the number of elements the Walker yielded (the flat-tree
+ *   node count actually inspected).
+ * - `duration` — wall-clock milliseconds the pass took (`≥ 0`,
+ *   `performance.now()` delta — deterministic only in magnitude, never
+ *   asserted for an exact value).
+ */
+export interface InspectionResult {
+	readonly findings: readonly Finding[]
+	readonly counts: Readonly<Record<FindingSeverity, number>>
+	readonly walked: number
+	readonly duration: number
+}
+
+/**
+ * The query surface over one pass's collected findings — the §4.2.2
+ * sub-entity the {@link InspectorInterface} exposes as a single-word
+ * `readonly findings` property, modeled exactly on the in-repo
+ * `TableSelectionManagerInterface` precedent (singular/plural accessors per
+ * §9; the §10 three-overload single-verb `clear`).
+ *
+ * A finding's `id` is the deterministic `{rule}@{path}` composite (the
+ * serializable {@link FindingRecord.path} string) — stable across runs over
+ * the same DOM, exactly as the inspector itself is deterministic, and unique
+ * because Phase 3 guarantees one finding per violation.
+ *
+ * @remarks
+ * - `finding(id)` — look up ONE finding by its `{rule}@{path}` id, or
+ *   `undefined` (the §9 singular accessor; §13 optional-lookup → `undefined`).
+ * - `findings()` — ALL collected findings in walk order; `findings(severity)`
+ *   / `findings(lens)` — only that severity / lens; `findings(root)` — only
+ *   findings whose element is contained by `root` (the subtree filter). The
+ *   single-word plural accessor (§9), the discriminator overloaded not
+ *   compounded (§4.2.3 spirit — distinct argument TYPES, not a flag).
+ * - `clear()` / `clear(id)` / `clear(ids)` — the §10 batch pattern: drop ALL
+ *   / ONE (→ `boolean`) / LISTED (→ `boolean`, all-succeeded) findings from
+ *   the manager. `clear` per §11 resets the collection without destroying
+ *   the manager; it does not mutate the DOM.
+ * - `count` — the number of findings currently held (post-filter for the
+ *   pass; updated by `clear`).
+ */
+export interface FindingManagerInterface {
+	readonly count: number
+	readonly finding: (id: string) => Finding | undefined
+	readonly findings: {
+		(): readonly Finding[]
+		(severity: FindingSeverity): readonly Finding[]
+		(lens: RuleLens): readonly Finding[]
+		(root: ParentNode): readonly Finding[]
+	}
+	readonly clear: {
+		(): void
+		(id: string): boolean
+		(ids: string[]): boolean
+	}
+}
+
+/**
+ * The root semantic-inspector entity (the §4.5 behavioral-interface role
+ * for the one-class-per-file `Inspector`). Composes the Phase-2 `Walker`
+ * (DOM-walk spine) + the frozen Phase-3 `rules` registry into a single
+ * deterministic pass; aggregates the collected {@link Finding}s into an
+ * {@link InspectionResult} and the {@link FindingManagerInterface} query
+ * surface; emits the {@link InspectorEventMap} CustomEvents on the inspected
+ * root per AGENTS §14 (no `Emitter` object — the root element IS the
+ * emitter; subscribe with `addEventListener` / the `listen` helper on it or
+ * any ancestor, since the events bubble). Single-word public surface (§4.1):
+ * `inspect`, `findings`, `rules`.
+ *
+ * @remarks
+ * - `inspect(options?)` — run one pass over `options.root` (default
+ *   `document`), applying the `severity` / `lens` filters; returns the
+ *   {@link InspectionResult}. Re-runnable; each call replaces the
+ *   `findings` manager contents and emits a fresh `start` → `finding`
+ *   (×N) → `done` sequence on that pass's root.
+ * - `findings` — the {@link FindingManagerInterface} over the LAST pass's
+ *   collected findings (empty before the first `inspect`).
+ * - `rules` — the frozen Phase-3 `rules` registry the inspector evaluates
+ *   (the same `readonly RuleInterface[]`, exposed read-only; the inspector
+ *   adds no rules — Phase 4 is orchestration only).
+ */
+export interface InspectorInterface {
+	readonly rules: readonly RuleInterface[]
+	readonly findings: FindingManagerInterface
+	readonly inspect: (options?: InspectorOptions) => InspectionResult
 }
 
 /**

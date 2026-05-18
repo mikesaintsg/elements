@@ -3,6 +3,7 @@ import {
 	arrayShape,
 	booleanShape,
 	compileContract,
+	createRandom,
 	lazyShape,
 	literalShape,
 	objectShape,
@@ -1799,6 +1800,79 @@ export const CONTRACT_GUARDED: boolean = (() => {
 				`schema.ts: contentModel entry for <${tag}> violates the ContentModelEntry contract`,
 			)
 		}
+	}
+	return true
+})()
+
+// ============================================================================
+// The Finding contract (Phase 4 — derived, not duplicated)
+// ============================================================================
+//
+// `FindingRecord` (the JSON-serializable projection of a `Finding`, the
+// single source of truth in types.ts) is expressed ONCE here as an
+// @elements/core ContractShape and run through compileContract() — EXACTLY
+// the Phase-1 `contentModelContract` precedent above. That derives — for
+// free, never hand-maintained:
+//
+//   - findingContract.is        a runtime Guard<FindingRecord> consumers
+//                               (CI / agents) import to validate a findings
+//                               report
+//   - findingContract.schema    a JSON Schema of the findings record (the
+//                               machine-consumable findings-report contract)
+//   - findingContract.generate  a seeded synthetic-finding generator
+//
+// `FindingRecord` is the one declaration; the in-memory `Finding`
+// (types.ts) is its ADDITIVE runtime composition (live `element` + the
+// `readonly Element[]` `path`, the serializable `path` string replaced) —
+// `Finding extends Omit<FindingRecord,'path'>`, so the contract and the
+// in-memory record cannot drift: there is no second hand-maintained finding
+// interface. The Phase-3 `Finding` / rule contract is untouched (it still
+// resolves structurally identical), reconciled additively, not churned.
+//
+// The shape is flat (no recursion): `path` is the serializable stable DOM
+// path STRING (the faithful projection of `Finding.path` — derived from the
+// same `nodePath` / `getPathToAncestor()` ancestor walk, never live
+// `Element`s); the live `element` ref is deliberately absent (not
+// serializable). `severity` is the closed `FindingSeverity` union;
+// `expected` / `actual` are optional, mirroring `FindingRecord` one-for-one.
+
+const severityShape = literalShape('error', 'warning', 'advice')
+
+/**
+ * The compiled contract for one serializable {@link FindingRecord}. Derived
+ * from the single source-of-truth type — guard + JSON Schema + seeded
+ * generator from one declaration ([guides/shapers.md] · [guides/compilers.md]),
+ * the machine-consumable findings-report contract Phase 6+ CI / agents
+ * import. Mirrors {@link FindingRecord} field-for-field.
+ */
+export const findingContract = compileContract(
+	objectShape({
+		severity: severityShape,
+		rule: stringShape({ min: 1 }),
+		path: stringShape({ min: 1 }),
+		message: stringShape({ min: 1 }),
+		cite: stringShape({ min: 1 }),
+		expected: optionalShape(stringShape({ min: 1 })),
+		actual: optionalShape(stringShape({ min: 1 })),
+	}),
+)
+
+/**
+ * The compiled contract validated at module load — the `generate ∘ is`
+ * soundness invariant the contract must satisfy (a seeded synthetic record
+ * must pass its own guard), mirroring how {@link CONTRACT_GUARDED} validates
+ * the Phase-1 contract at load. There is no frozen finding REGISTRY to walk
+ * (findings are produced at runtime by the Phase-3 rules), so the load-time
+ * proof is that the derived guard/schema/generator agree — a drift between
+ * the shape and `FindingRecord` is a programmer error surfaced immediately
+ * (AGENTS.md §13), not a latent bug a Phase-4 consumer trips over.
+ */
+export const FINDING_CONTRACT_GUARDED: boolean = (() => {
+	const sample = findingContract.generate(createRandom(1))
+	if (!findingContract.is(sample)) {
+		throw new Error(
+			'schema.ts: findingContract generator output violates the FindingRecord contract',
+		)
 	}
 	return true
 })()

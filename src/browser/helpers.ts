@@ -98,7 +98,7 @@ import {
 	TRANSITION_FALLBACK_MS,
 } from './constants.js'
 import { categoriesOf, isKnownElement, isTransparent, modelOf } from './schema.js'
-import { getAncestors, getPathToAncestor, toArray } from './traversals.js'
+import { getAncestors, getPathToAncestor, getSiblingIndex, toArray } from './traversals.js'
 
 // ── Identity / narrowing ────────────────────────────────────────────────────
 
@@ -479,6 +479,37 @@ export function* flatDescendants(element: Element): Generator<Element, void, unk
  */
 export function nodePath(element: Element, ancestor?: Element | null): readonly Element[] {
 	return getPathToAncestor(element, ancestor)
+}
+
+/**
+ * The **serializable stable DOM path string** for `element` — the faithful
+ * serializable projection of {@link nodePath} (the `getPathToAncestor()`
+ * element chain) for a `Finding` / the JSON-serializable `FindingRecord`.
+ *
+ * Each path step is `{tag}:{siblingIndex}` (the lowercased tag + the
+ * `traversals.getSiblingIndex()` structural position — the same stable,
+ * deterministic locator CSS `:nth-child` uses), joined root-first with `>`.
+ * Derived ENTIRELY from the existing `nodePath` / `getPathToAncestor()` +
+ * `getSiblingIndex()` traversals (no bespoke DOM walk); deterministic across
+ * runs over the same DOM, exactly as the inspector itself is deterministic.
+ * Contains no live `Element` refs — it is the serializable counterpart of
+ * the in-memory `Finding.path` `readonly Element[]`.
+ *
+ * @param element - The element to locate (the path's leaf).
+ * @param ancestor - Exclusive upper bound; omitted ⇒ path to the root.
+ * @returns The `root > … > leaf` path string (`'html:0 > body:0 > p:2'`).
+ */
+export function describePath(element: Element, ancestor?: Element | null): string {
+	const chain = nodePath(element, ancestor)
+	const steps: string[] = []
+	// `nodePath` is nearest-first (leaf at index 0); emit root-first so the
+	// string reads top-down like a CSS path.
+	for (let index = chain.length - 1; index >= 0; index -= 1) {
+		const node = chain[index]
+		if (node === undefined) continue
+		steps.push(`${node.tagName.toLowerCase()}:${getSiblingIndex(node)}`)
+	}
+	return steps.join(' > ')
 }
 
 // ── Inspector attribute-value coercion ───────────────────────────────────────

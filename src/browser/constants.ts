@@ -380,6 +380,31 @@ export const TREE_EVENTS = {
 	move: 'elements:tree:move',
 } as const
 
+// The semantic Inspector (ROADMAP Phase 4) is a dev-tool analyzer ENTITY,
+// not a UI composable/component painting CSS chrome. It follows the same
+// `elements:{source}:{verb}` CustomEvent idiom (AGENTS §14) and the same
+// `emit` / `bindEventMap` plumbing every `create*` factory uses, but its
+// constant lives HERE only — it is deliberately NOT mirrored into the
+// `events.ts` composable tree (that tree + its `composables.test.ts`
+// vocabulary gate are the composable/component public CSS-parity surface;
+// the inspector is a distinct entity class). One inspection pass dispatches
+// exactly `start` → `finding`* → `done` on the inspected root element.
+export const INSPECTOR_EVENTS = {
+	start: 'elements:inspector:start',
+	finding: 'elements:inspector:finding',
+	done: 'elements:inspector:done',
+} as const
+
+/** The closed {@link FindingSeverity} value set (types.ts is the type
+ *  truth; this is its runtime tuple — drives the `FindingManager`
+ *  severity-vs-lens argument discrimination and severity-keyed counts). */
+export const FINDING_SEVERITIES = ['error', 'warning', 'advice'] as const
+
+/** The closed {@link RuleLens} value set (the runtime tuple of the
+ *  types.ts union) — the `FindingManager` uses it to tell a `lens`
+ *  filter argument apart from a `severity` one. */
+export const RULE_LENSES = ['structure', 'presentation'] as const
+
 // ── Relocated impl-file constants ───────────────────────────────────────────
 
 /** Shared frozen-empty reactive sentinels. Composables fall back to these
