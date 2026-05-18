@@ -23,6 +23,7 @@ import type {
 	TableSortManagerInterface,
 	TableStrategy,
 } from '../types.js'
+import { isArray, isFiniteNumber, isNumber, isUndefined } from '@elements/core'
 import {
 	computed,
 	effect,
@@ -376,7 +377,7 @@ export function createTable(
 					if (!destroyed) writeRowIndex()
 				}),
 			)
-		} else if (typeof provided === 'number') {
+		} else if (isNumber(provided)) {
 			offsetValue.value = provided
 		}
 	}
@@ -390,7 +391,7 @@ export function createTable(
 					if (!destroyed) writeRowCount()
 				}),
 			)
-		} else if (typeof provided === 'number') {
+		} else if (isNumber(provided)) {
 			totalValue.value = provided
 		}
 	}
@@ -403,7 +404,7 @@ export function createTable(
 					sizeValue.value = provided.value ?? 0
 				}),
 			)
-		} else if (typeof provided === 'number') {
+		} else if (isNumber(provided)) {
 			sizeValue.value = provided
 		}
 	}
@@ -431,7 +432,7 @@ export function createTable(
 	}
 
 	const to = (page: number): void => {
-		if (!Number.isFinite(page)) return
+		if (!isFiniteNumber(page)) return
 		const size = sizeResolved.value
 		const target = Math.max(1, Math.min(Math.floor(page), pageTotal.value))
 		const offset = size > 0 ? (target - 1) * size + 1 : 1
@@ -730,7 +731,7 @@ export function createTable(
 		const entries: TableSortEntry[] = []
 		for (const key of sortKeys) {
 			const dir = sortDirection.get(key)
-			if (dir) entries.push({ key, direction: dir })
+			if (!isUndefined(dir)) entries.push({ key, direction: dir })
 		}
 		sortColumns.value = entries
 	}
@@ -787,9 +788,9 @@ export function createTable(
 		entries.sort((a, b) => {
 			for (const key of sortKeys) {
 				const direction = sortDirection.get(key)
-				if (!direction) continue
+				if (isUndefined(direction)) continue
 				const cellIndex = indexByKey.get(key)
-				if (cellIndex === undefined) continue
+				if (isUndefined(cellIndex)) continue
 				const av = a.row.cells[cellIndex]?.textContent ?? ''
 				const bv = b.row.cells[cellIndex]?.textContent ?? ''
 				const cmp = compareCellValues(av, bv)
@@ -816,7 +817,7 @@ export function createTable(
 
 	const sortToggle = (key: string): void => {
 		const col = schemaByKey.get(key)
-		if (!col || col.sortable !== true) return
+		if (isUndefined(col) || col.sortable !== true) return
 		const current = sortDirectionOf(key)
 		const opposite: 'asc' | 'desc' = sortOrder === 'asc' ? 'desc' : 'asc'
 		if (!sortMultiple) {
@@ -952,7 +953,7 @@ export function createTable(
 	function selectionSelect(id: string): void
 	function selectionSelect(ids: string[]): void
 	function selectionSelect(arg?: string | string[]): void {
-		if (arg === undefined) {
+		if (isUndefined(arg)) {
 			if (selectionStrategy === 'single') return
 			const ids = selectableScope()
 				.map((row) => extractRowId(row))
@@ -960,7 +961,7 @@ export function createTable(
 			selectIds(ids)
 			return
 		}
-		if (Array.isArray(arg)) selectIds(arg)
+		if (isArray(arg)) selectIds(arg)
 		else selectIds([arg])
 	}
 
@@ -968,13 +969,13 @@ export function createTable(
 	function selectionClear(id: string): void
 	function selectionClear(ids: string[]): void
 	function selectionClear(arg?: string | string[]): void {
-		if (arg === undefined) {
+		if (isUndefined(arg)) {
 			if (selectedIds.size === 0) return
 			selectedIds.clear()
 			selectionMutated()
 			return
 		}
-		if (Array.isArray(arg)) clearIds(arg)
+		if (isArray(arg)) clearIds(arg)
 		else clearIds([arg])
 	}
 
@@ -982,12 +983,12 @@ export function createTable(
 	function selectionToggle(id: string): void
 	function selectionToggle(ids: string[]): void
 	function selectionToggle(arg?: string | string[]): void {
-		if (arg === undefined) {
+		if (isUndefined(arg)) {
 			if (allComputed.value) selectionClear()
 			else selectionSelect()
 			return
 		}
-		if (Array.isArray(arg)) toggleIds(arg)
+		if (isArray(arg)) toggleIds(arg)
 		else toggleIds([arg])
 	}
 
@@ -1096,11 +1097,11 @@ export function createTable(
 	function expansionExpand(id: string): void
 	function expansionExpand(ids: string[]): void
 	function expansionExpand(arg?: string | string[]): void {
-		if (arg === undefined) {
+		if (isUndefined(arg)) {
 			for (const id of allBodyRowIds()) expandOne(id)
 			return
 		}
-		if (Array.isArray(arg)) {
+		if (isArray(arg)) {
 			for (const id of arg) expandOne(id)
 			return
 		}
@@ -1111,11 +1112,11 @@ export function createTable(
 	function expansionCollapse(id: string): void
 	function expansionCollapse(ids: string[]): void
 	function expansionCollapse(arg?: string | string[]): void {
-		if (arg === undefined) {
+		if (isUndefined(arg)) {
 			for (const id of Array.from(expandedIds)) collapseOne(id)
 			return
 		}
-		if (Array.isArray(arg)) {
+		if (isArray(arg)) {
 			for (const id of arg) collapseOne(id)
 			return
 		}
@@ -1126,14 +1127,14 @@ export function createTable(
 	function expansionToggle(id: string): void
 	function expansionToggle(ids: string[]): void
 	function expansionToggle(arg?: string | string[]): void {
-		if (arg === undefined) {
+		if (isUndefined(arg)) {
 			const ids = allBodyRowIds()
 			const allOpen = ids.length > 0 && ids.every((id) => expandedIds.has(id))
 			if (allOpen) expansionCollapse()
 			else expansionExpand()
 			return
 		}
-		const list = Array.isArray(arg) ? arg : [arg]
+		const list = isArray(arg) ? arg : [arg]
 		for (const id of list) {
 			if (expandedIds.has(id)) collapseOne(id)
 			else expandOne(id)

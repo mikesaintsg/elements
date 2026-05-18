@@ -19,6 +19,7 @@ import type {
 	UseTableOptions,
 	UseTableReturn,
 } from '../types.js'
+import { isArray, isUndefined } from '@elements/core'
 import { computed, shallowReactive, shallowRef, watch } from 'vue'
 import { EMPTY_ARRAY, TABLE_EVENTS } from '../constants.js'
 import { createTable } from '../factories/createTable.js'
@@ -117,24 +118,24 @@ export function useTable(
 	function selectionSelect(id: string): void
 	function selectionSelect(ids: string[]): void
 	function selectionSelect(arg?: string | string[]): void {
-		if (arg === undefined) factory.value?.selection.select()
-		else if (Array.isArray(arg)) factory.value?.selection.select(arg)
+		if (isUndefined(arg)) factory.value?.selection.select()
+		else if (isArray(arg)) factory.value?.selection.select(arg)
 		else factory.value?.selection.select(arg)
 	}
 	function selectionClear(): void
 	function selectionClear(id: string): void
 	function selectionClear(ids: string[]): void
 	function selectionClear(arg?: string | string[]): void {
-		if (arg === undefined) factory.value?.selection.clear()
-		else if (Array.isArray(arg)) factory.value?.selection.clear(arg)
+		if (isUndefined(arg)) factory.value?.selection.clear()
+		else if (isArray(arg)) factory.value?.selection.clear(arg)
 		else factory.value?.selection.clear(arg)
 	}
 	function selectionToggle(): void
 	function selectionToggle(id: string): void
 	function selectionToggle(ids: string[]): void
 	function selectionToggle(arg?: string | string[]): void {
-		if (arg === undefined) factory.value?.selection.toggle()
-		else if (Array.isArray(arg)) factory.value?.selection.toggle(arg)
+		if (isUndefined(arg)) factory.value?.selection.toggle()
+		else if (isArray(arg)) factory.value?.selection.toggle(arg)
 		else factory.value?.selection.toggle(arg)
 	}
 
@@ -153,24 +154,24 @@ export function useTable(
 	function expansionExpand(id: string): void
 	function expansionExpand(ids: string[]): void
 	function expansionExpand(arg?: string | string[]): void {
-		if (arg === undefined) factory.value?.expansion.expand()
-		else if (Array.isArray(arg)) factory.value?.expansion.expand(arg)
+		if (isUndefined(arg)) factory.value?.expansion.expand()
+		else if (isArray(arg)) factory.value?.expansion.expand(arg)
 		else factory.value?.expansion.expand(arg)
 	}
 	function expansionCollapse(): void
 	function expansionCollapse(id: string): void
 	function expansionCollapse(ids: string[]): void
 	function expansionCollapse(arg?: string | string[]): void {
-		if (arg === undefined) factory.value?.expansion.collapse()
-		else if (Array.isArray(arg)) factory.value?.expansion.collapse(arg)
+		if (isUndefined(arg)) factory.value?.expansion.collapse()
+		else if (isArray(arg)) factory.value?.expansion.collapse(arg)
 		else factory.value?.expansion.collapse(arg)
 	}
 	function expansionToggle(): void
 	function expansionToggle(id: string): void
 	function expansionToggle(ids: string[]): void
 	function expansionToggle(arg?: string | string[]): void {
-		if (arg === undefined) factory.value?.expansion.toggle()
-		else if (Array.isArray(arg)) factory.value?.expansion.toggle(arg)
+		if (isUndefined(arg)) factory.value?.expansion.toggle()
+		else if (isArray(arg)) factory.value?.expansion.toggle(arg)
 		else factory.value?.expansion.toggle(arg)
 	}
 

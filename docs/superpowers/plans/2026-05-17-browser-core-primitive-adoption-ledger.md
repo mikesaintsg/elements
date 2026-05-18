@@ -189,6 +189,88 @@ surfaces. Companion to the plan
   guards (wrapper functions keeping `value is DragTapDetail` etc.). No
   public type widened or weakened; no `as`/`!`/`any` used.
 
+- **createTable.ts / useTable.ts (B5): all substitutions behavior-identical;
+  ZERO divergences (no test change — `createTable.test.ts` 17 tests + full
+  `src:browser` 30 files / 1224 tests stayed green pre- AND post-change).**
+  Converted sites, each a semantically exact swap on a loose/boundary input:
+  - `createTable.ts:initOffset/initTotal/initSize` — `typeof provided ===
+    'number'` → `isNumber(provided)` (`provided` is `number | Ref<number> |
+    undefined` from `options.*`; `isNumber` IS `typeof === 'number'`, NaN
+    still admitted exactly as before — identical).
+  - `createTable.ts:to` — `!Number.isFinite(page)` → `!isFiniteNumber(page)`
+    (`page: number` typed param; `isFiniteNumber` = `typeof === 'number' &&
+    Number.isFinite` — for a `number` input identical to `Number.isFinite`).
+  - `createTable.ts:recomputeSortColumns` — `if (dir)` (Map-lookup `'asc' |
+    'desc' | undefined`) → `if (!isUndefined(dir))`. Used `!isUndefined`
+    NOT `isDefined` (B4 precedent rule 2): core `isDefined<T>`'s `value is T`
+    cannot peel `undefined` off the union (`T` absorbs the whole union → no
+    narrowing → vue-tsc `TS2322` on the `{ direction: dir }` literal), but
+    `!isUndefined` lets TS control-flow remove `undefined` → `'asc' | 'desc'`.
+    Value is never null so it is exact, not just admit-null-safe.
+  - `createTable.ts:applySortToDOM` — `if (!direction) continue` /
+    `if (cellIndex === undefined) continue` (Map-lookup `'asc'|'desc'|
+    undefined` and `number | undefined`) → `isUndefined(...)`. `isUndefined(0)
+    === false`, so the valid `cellIndex === 0` column is preserved exactly
+    (no degenerate-zero shift); the `'asc'|'desc'` union has no falsy member
+    so `!direction` ≡ `=== undefined`.
+  - `createTable.ts:sortToggle` — `if (!col || …)` (Map-lookup `TableColumn |
+    undefined`) → `if (isUndefined(col) || …)`; a `TableColumn` object is
+    always truthy so `!col` ≡ `col === undefined`. `col.sortable !== true`
+    left native (typed-optional-boolean comparison, declared).
+  - `createTable.ts` selection/expansion overloads + `useTable.ts`
+    selection/expansion overloads — `arg === undefined` → `isUndefined(arg)`
+    and `Array.isArray(arg)` → `isArray(arg)` on the overloaded
+    `arg?: string | string[]` API-boundary param. `isArray` wraps
+    `Array.isArray`; narrowing `string | string[]` → `readonly string[]`
+    feeds `selectIds`/`clearIds`/`toggleIds`/`expandOne`-iteration unchanged
+    (all accept `readonly string[]`); no public type weakened.
+
+  Native, NOT converted (B4 precedent — no re-derivation):
+  - `options.caption !== undefined` (createTable.ts:seed): typed-optional
+    options-presence boundary — same class as B4's `MatcherOptions !==
+    undefined` left native.
+  - `if (target === null)` ×3 (headers/rows/footer `insert`): `target` is
+    `normalizeIndex(...)`'s DECLARED `number | null` return (a B2
+    core-canonical helper) — declared typed-null state, not loose input.
+  - `sortDirection.get(key) ?? 'none'` / `col?.sortable === true`: `??` and
+    optional-chaining idioms, not `typeof`/`=== undefined`/`Array.isArray`
+    guards — nothing to substitute.
+  - `selectionAnchor !== null` ×2: `selectionAnchor: string | null` declared
+    internal state (typed-null discriminator, B4 precedent).
+  - `selectionStrategy === 'single'|'page'`, `direction === 'none'`,
+    `sortOrder === 'asc'`, `current === sortOrder`, `expansionClick ===
+    'caret'`, etc.: comparisons on ALREADY-typed unions (`TableStrategy`,
+    `TableSortDirection`, `'asc'|'desc'`) — typed discriminators, B4
+    precedent (LEAVE NATIVE).
+  - `if (!reactives)` / `if (!computedAll || !computedMixed)` / `factory
+    .value?.…` / `?.value ?? …` / `provided.value ?? 1`: Vue
+    effect-scope-result + ref-reactivity mechanics — unconditionally native.
+  - `typeof window === 'undefined'` (useTable.ts watch): SSR env probe —
+    unconditionally native (`isUndefined(window)` ReferenceErrors under the
+    DOM-less smoke), B4 precedent.
+  - `useTable.ts:145` `(options.selection?.strategy ?? 'page') as
+    TableStrategy`: a PRE-EXISTING `as` on a typed-optional default, not an
+    ad-hoc JS-domain guard/parser — out of B5 substitution scope, left
+    untouched (no new `as` introduced by B5).
+  - All DOM `instanceof`/`.dataset`/`.cells`/`.rows`/`.tBodies`/`.closest`/
+    `.querySelector*`/`.getAttribute`/`.setAttribute`/`.style`/`.textContent`/
+    `aria-*` and `Array.from(Set)`/`Array.from(HTMLCollection)` iteration:
+    the clean DOM boundary — never ceremony-wrapped, B4 precedent.
+
+  No `Number(...)`/`parseInt`/`parseFloat`/`Number(el.dataset.*)`/
+  `Number(el.getAttribute('aria-*'))` raw coercion exists in either file —
+  every table numeric helper (`normalizeIndex`/`applyRowIndex`/
+  `applyRowCount`/`compareCellValues`/`extractRowId`) is imported from
+  `./helpers.js` and was already core-canonicalized in B2, so there is no
+  `Number(dataset/aria)` coercion shift to resolve in B5. All sort/select
+  event-detail object literals (`{ part, action }`, `{ ids: new Set(...) }`,
+  `{ cell }`, `{ columns }`, `{ id }`, `{ page, offset, size }`,
+  `{ key, direction: dir }`) remain EXACT-shape with only static declared
+  keys — no spreads / dynamic keys — so helpers.ts's strict B2 `recordOf`
+  table/detail guards still accept them unchanged. `src/browser/types.ts`:
+  NO change (every converted guard preserved its exact narrowing; no public
+  type widened).
+
 - **createDrag.ts / useDrag.ts (B4): all substitutions behavior-identical
   (no divergence).** The single converted site —
   `createDrag.ts:reorder`'s `if (item !== undefined)` (splice-extracted
@@ -215,5 +297,7 @@ createDrag.ts / useDrag.ts (B4): exactly one core-substitutable site across both
 - **Vue-reactivity / internal numeric state (createDrag.ts):** `if (!refs)` (typed `scope.run()` result — Vue effect-scope mechanic), `selectionAnchor !== null` / `target.value` / index `.sort`/`.filter`/`Math.max`/`Math.min` (index arithmetic on already-`number` reactive state), `String(startIndex)` (number→string serialization for `dataTransfer.setData`, the inverse of a core parser — not unknown→typed). Native, per "Vue reactivity / index arithmetic stays native".
 - **DOM structural nullness (createDrag.ts):** `row.parentElement === element`, `!!row` on `HTMLElement | null`, `if (!row)` early-returns — DOM-ref structural checks, native (NOT loose-input value guards).
 - **SSR environment probe + Vue reactivity (useDrag.ts):** `typeof window === 'undefined'` is the environment-existence idiom core deliberately does not replace (identical boundary as B2's `typeof CSS/Intl/requestAnimationFrame` and the DOM-less import contract — `isObject(window)` would `ReferenceError` under SSR). `!el` (Vue `Ref<HTMLElement | null>.value`), `options.list?.value ?? []`, `options.items?.value ?? []`, `?? false`/`?? EMPTY_SET`/`?? null` on `computed`/ref reads, `options.list ? … : undefined`, `if (!arr)` on a Vue ref `.value` — all Vue-reactivity mechanics, native. **Net: useDrag.ts has zero core-substitutable JS-domain sites — DOM/Vue-adapter by design, clean boundary, not a gap.**
+
+createTable.ts / useTable.ts (B5): all substitutions behavior-identical; native sites cite B4 precedent. createTable.ts converted 13 sites (3× `typeof provided === 'number'` → `isNumber`; 1× `!Number.isFinite(page)` → `!isFiniteNumber`; 4 Map-lookup undefined-guards → `isUndefined`/`!isUndefined`; 3× `arg === undefined` → `isUndefined` + 3× `Array.isArray(arg)` → `isArray` across the selection/expansion overloads). useTable.ts converted 12 sites (6× `arg === undefined` → `isUndefined` + 6× `Array.isArray(arg)` → `isArray` across its selection/expansion overload adapters). Zero behavior shifts (no test/`types.ts` change; `createTable.test.ts` 17 + full `src:browser` 30/1224 green pre- and post-change). `normalizeIndex`/`applyRowIndex`/`applyRowCount`/`compareCellValues`/`extractRowId` reused from B2-core-canonical `./helpers.js` (NOT re-coerced). Full native-exclusion rationale (typed discriminators, declared `number | null` helper returns, Vue/SSR mechanics, pre-existing `as`, DOM boundary) detailed under the B5 entry in `### No-shift / boundary notes`.
 
 All six drag-detail object literals in createDrag.ts (`DragEndDetail` L137, `DragStartDetail` ~L165, `DragOverDetail` ~L188, `DragDropDetail` ~L226, `DragTapDetail` ~L371, the `reorder` emit payload ~L216) remain EXACT-shape object literals with only static declared keys — no spreads, no dynamic keys introduced — so helpers.ts's strict `recordOf({...})` drag-detail guards (B2) still accept them unchanged.
