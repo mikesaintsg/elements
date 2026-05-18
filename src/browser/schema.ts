@@ -1833,10 +1833,15 @@ export const CONTRACT_GUARDED: boolean = (() => {
 // path STRING (the faithful projection of `Finding.path` — derived from the
 // same `nodePath` / `getPathToAncestor()` ancestor walk, never live
 // `Element`s); the live `element` ref is deliberately absent (not
-// serializable). `severity` is the closed `FindingSeverity` union;
-// `expected` / `actual` are optional, mirroring `FindingRecord` one-for-one.
+// serializable). `severity` is the closed `FindingSeverity` union; `lens` is
+// the closed `RuleLens` union (the authoritative value the Inspector stamps
+// from `RuleInterface.lens` — a report consumer legitimately filters by it,
+// so the contract REQUIRES it, shaped exactly like `severity`); `expected` /
+// `actual` are optional, mirroring `FindingRecord` one-for-one.
 
 const severityShape = literalShape('error', 'warning', 'advice')
+
+const lensShape = literalShape('structure', 'presentation')
 
 /**
  * The compiled contract for one serializable {@link FindingRecord}. Derived
@@ -1852,6 +1857,7 @@ export const findingContract = compileContract(
 		path: stringShape({ min: 1 }),
 		message: stringShape({ min: 1 }),
 		cite: stringShape({ min: 1 }),
+		lens: lensShape,
 		expected: optionalShape(stringShape({ min: 1 })),
 		actual: optionalShape(stringShape({ min: 1 })),
 	}),

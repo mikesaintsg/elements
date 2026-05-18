@@ -498,7 +498,7 @@ The host element is the only emitter; events bubble, so a consumer may also list
 
 **Event naming:**
 
-- Each event name's `{verb}` is a **single present-tense lifecycle verb** from the `events.ts` vocabulary: `show`/`hide`, `open`/`close`, `start`/`stop`, `change`, `select`, `done`, …
+- Each event name's `{verb}` is a **single present-tense lifecycle verb**. For a composable / component it MUST come from the closed `events.ts` vocabulary the `composables.test.ts` parity gate binds (`show`/`hide`, `open`/`close`, `start`/`stop`, `change`, `select`, …); a non-composable entity (e.g. the inspector — not registered in the `events.ts` tree, per the exemption above) uses any present-tense lifecycle verb that names its transition (e.g. its `start` / `finding` / `done`).
 - **Never** use a generic `status` event that passes the value as a parameter — each transition is its own named event
 - 4–8 events per entity
 

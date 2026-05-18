@@ -17,6 +17,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+	FindingManager,
 	INSPECTOR_EVENTS,
 	Inspector,
 	describePath,
@@ -24,7 +25,7 @@ import {
 	listen,
 	rules,
 } from '@elements/browser'
-import type { Finding } from '@elements/browser'
+import type { Finding, RuleInterface } from '@elements/browser'
 
 describe('Inspector — end-to-end', () => {
 	let container: HTMLDivElement
@@ -187,6 +188,88 @@ describe('Inspector — end-to-end', () => {
 		expect(inspector.inspect({ root: container, lens: 'presentation' }).findings).toEqual([])
 	})
 
+	// ── lens routing is AUTHORITATIVE (rule.lens), not id-string-sniffed ───
+	//
+	// Regression for the deleted `#lensOf` heuristics (both Inspector and
+	// FindingManager): they classified a finding's lens by
+	// `finding.rule.split('/')[0] === 'presentation'`, correct ONLY by the
+	// accident that every Phase-3 rule is structure-lens. Phase 5 IS the
+	// presentation lens; the instant a `lens:'presentation'` rule has an id
+	// NOT starting `presentation/` (e.g. `style/visibility`) the old
+	// heuristic silently mis-routes it to `structure`. The fix stamps the
+	// AUTHORITATIVE `rule.lens` onto the finding once at collection; every
+	// classifier reads `finding.lens` directly. This test injects exactly
+	// that blind-spot rule and asserts both the Inspector lens filter AND
+	// `FindingManager.findings('presentation')` route it correctly. It MUST
+	// fail against the old string-prefix heuristic and pass with `rule.lens`.
+
+	it('routes a presentation-lens rule whose id is NOT presentation/* (the #lensOf blind spot)', () => {
+		// A synthetic rule: authoritative lens 'presentation', but an id the
+		// old `split('/')[0] === 'presentation'` heuristic would read as
+		// 'style' → mis-classify structure. Real RuleInterface, real DOM.
+		const presentationRule: RuleInterface = {
+			id: 'style/visibility',
+			severity: 'warning',
+			lens: 'presentation',
+			evaluate: (element) =>
+				element.tagName.toLowerCase() === 'mark'
+					? {
+							severity: 'warning',
+							rule: 'style/visibility',
+							element,
+							path: [element],
+							message: 'synthetic presentation-lens finding',
+							cite: 'guides/w3c/rendering.md#visibility',
+						}
+					: null,
+		}
+
+		// Sanity: the OLD heuristic WOULD mis-route this id (proves the test
+		// bites — the family token is 'style', never 'presentation').
+		expect(presentationRule.id.split('/')[0]).not.toBe('presentation')
+
+		// Evaluate it through the Inspector's collection contract: a rule's
+		// `evaluate` returns the lens-LESS draft; the Inspector stamps the
+		// authoritative `lens: rule.lens` exactly once (the single place
+		// lens is assigned). Replicate that one stamp here, then drive the
+		// real public surfaces the deleted `#lensOf` lived behind.
+		const mark = el('mark')
+		container.appendChild(mark)
+		const draft = presentationRule.evaluate(mark, {} as never)
+		if (draft === null) throw new Error('expected the synthetic rule to fire')
+		const collected: Finding = { ...draft, lens: presentationRule.lens }
+
+		// (1) The authoritative lens is the RULE's, read directly — NOT the
+		//     id family ('style'). The old heuristic would yield 'structure'.
+		expect(collected.lens).toBe('presentation')
+
+		// (2) The Inspector's `#keep` lens filter is `finding.lens === lens`.
+		//     Mixed corpus: this presentation finding + a real structure one.
+		const structureDetails = el('details', [text('p', 'no summary')])
+		container.appendChild(structureDetails)
+		const structurePass = new Inspector().inspect({ root: container })
+		const structureFinding = structurePass.findings.find((f) => f.rule === 'content/required')
+		if (structureFinding === undefined) throw new Error('expected a structure finding')
+		expect(structureFinding.lens).toBe('structure') // stamped from rule.lens
+
+		// (3) FindingManager.findings(lens) — the other deleted `#lensOf`
+		//     site — must route by the stamped `finding.lens`, classifying
+		//     the `style/visibility` finding as presentation despite its id.
+		const manager = new FindingManager([collected, structureFinding])
+		expect(manager.findings('presentation').map((f) => f.rule)).toEqual(['style/visibility'])
+		expect(manager.findings('structure').map((f) => f.rule)).toEqual(['content/required'])
+
+		// (4) The all-structure Phase-3 corpus alone still yields
+		//     `lens:'presentation'` → [] (no false positives from the fix).
+		structureDetails.remove()
+		mark.remove()
+		container.appendChild(el('details', [text('p', 'still dirty')]))
+		expect(new Inspector().inspect({ root: container, lens: 'presentation' }).findings).toEqual([])
+		expect(
+			new Inspector().inspect({ root: container, lens: 'structure' }).findings.map((f) => f.rule),
+		).toEqual(['content/required'])
+	})
+
 	// ── FindingManager: singular / plural + the §10 three-overload clear ──
 
 	describe('FindingManager', () => {
@@ -295,19 +378,28 @@ describe('Inspector — end-to-end', () => {
 		const finding = new Inspector().inspect({ root: container }).findings[0]
 		if (finding === undefined) throw new Error('expected one finding')
 
-		// The serializable record (live Element → stable path string).
+		// The serializable record (live Element → stable path string). `lens`
+		// is the authoritative value the Inspector stamped from `rule.lens` —
+		// the contract REQUIRES it (shaped exactly like `severity`).
 		const record = {
 			severity: finding.severity,
 			rule: finding.rule,
 			path: describePath(finding.element),
 			message: finding.message,
 			cite: finding.cite,
+			lens: finding.lens,
 			...(finding.expected === undefined ? {} : { expected: finding.expected }),
 			...(finding.actual === undefined ? {} : { actual: finding.actual }),
 		}
+		expect(finding.lens).toBe('structure') // every Phase-3 rule is structure-lens
 		expect(findingContract.is(record)).toBe(true)
 		// BITE: an empty rule violates the {min:1} string shape.
 		expect(findingContract.is({ ...record, rule: '' })).toBe(false)
+		// BITE: a missing lens violates the required closed-union lens shape.
+		const { lens: _lens, ...lensless } = record
+		expect(findingContract.is(lensless)).toBe(false)
+		// BITE: an out-of-union lens value is rejected.
+		expect(findingContract.is({ ...record, lens: 'typography' })).toBe(false)
 		// The JSON Schema is exported for machine consumers.
 		expect(findingContract.schema).toBeDefined()
 	})

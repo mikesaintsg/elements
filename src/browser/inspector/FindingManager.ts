@@ -1,5 +1,5 @@
 import type { Finding, FindingManagerInterface, FindingSeverity, RuleLens } from '../types.js'
-import { FINDING_SEVERITIES, RULE_LENSES } from '../constants.js'
+import { FINDING_SEVERITIES } from '../constants.js'
 import { describePath } from '../helpers.js'
 import { isArray, isString, isUndefined } from '@elements/core'
 
@@ -76,7 +76,7 @@ export class FindingManager implements FindingManagerInterface {
 			if (this.#isSeverity(filter)) {
 				return this.#findings.filter((finding) => finding.severity === filter)
 			}
-			return this.#findings.filter((finding) => this.#lensOf(finding) === filter)
+			return this.#findings.filter((finding) => finding.lens === filter)
 		}
 		// A `ParentNode` (Document / Element / DocumentFragment): the subtree
 		// filter. `Node.contains` is inclusive — a finding on `root` itself
@@ -124,16 +124,11 @@ export class FindingManager implements FindingManagerInterface {
 		return `${finding.rule}@${describePath(finding.element)}`
 	}
 
+	// Runtime discrimination of the FILTER ARGUMENT (severity string vs lens
+	// string vs Element) — legitimate overload dispatch, NOT lens
+	// re-derivation. A finding's own `lens` is the authoritative value the
+	// Inspector stamped from `rule.lens`; `findings(lens)` reads it directly.
 	#isSeverity(value: string): value is FindingSeverity {
 		return (FINDING_SEVERITIES as readonly string[]).includes(value)
-	}
-
-	// The lens a finding belongs to, read from its rule-id family — never
-	// re-derived per element. Until Phase 5 only `structure`-lens rules
-	// exist, so a `presentation` filter correctly yields nothing; the
-	// Phase-5 presentation family will id its rules `presentation/*`.
-	#lensOf(finding: Finding): RuleLens {
-		const family = finding.rule.split('/')[0] ?? ''
-		return family === RULE_LENSES[1] ? RULE_LENSES[1] : RULE_LENSES[0]
 	}
 }

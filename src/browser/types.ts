@@ -547,6 +547,17 @@ export type RuleLens = 'structure' | 'presentation'
  * - `message` — the human-readable restatement of the violated clause.
  * - `cite` — the `guides/w3c` anchor carried on the schema entry's `cite`
  *   (`{file}#{slug}`), so every finding resolves back to the corpus.
+ * - `lens` — the {@link RuleLens} the emitting rule belongs to, the
+ *   AUTHORITATIVE value the Phase-4 Inspector stamps verbatim from
+ *   {@link RuleInterface.lens} once at collection (NEVER re-derived by
+ *   string-sniffing the `rule` id). Part of a finding's serializable
+ *   identity — a findings-report consumer legitimately filters by lens — so
+ *   the `findingContract` REQUIRES it (mirroring how `severity` is shaped).
+ *   The field is `?` here only because the lens-less rule-eval draft a rule
+ *   returns (a {@link Finding} before the Inspector completes it) does not
+ *   carry it; every collected/serialized finding always does (the contract
+ *   guard proves it). It is a property of the RULE, never restated by each
+ *   rule's per-violation finding-construction.
  * - `expected` / `actual` — the spec-expected vs. observed shape, when the
  *   rule can name them (cardinality / order / category mismatches).
  */
@@ -556,6 +567,7 @@ export interface FindingRecord {
 	readonly path: string
 	readonly message: string
 	readonly cite: string
+	readonly lens?: RuleLens
 	readonly expected?: string
 	readonly actual?: string
 }
@@ -567,12 +579,20 @@ export interface FindingRecord {
  * `FindingManager`.
  *
  * Defined ADDITIVELY as {@link FindingRecord} (the one serializable source of
- * truth — `severity` / `rule` / `message` / `cite` / `expected` / `actual`
- * are inherited verbatim, never re-declared) with its serializable `path`
- * string replaced by the in-memory runtime refs: the live offending
+ * truth — `severity` / `rule` / `message` / `cite` / `lens` / `expected` /
+ * `actual` are inherited verbatim, never re-declared) with its serializable
+ * `path` string replaced by the in-memory runtime refs: the live offending
  * `element` and the `readonly Element[]` ancestor `path`. The structural
  * shape every Phase-3 rule / suite depends on is unchanged; there is no
  * second hand-maintained finding interface to drift.
+ *
+ * A rule's `evaluate` returns this shape WITHOUT `lens` (the lens-less
+ * rule-eval draft — lens is the RULE's, not restated by each rule's
+ * finding-construction); the Phase-4 Inspector then stamps the authoritative
+ * `lens: rule.lens` exactly ONCE at collection. So a collected / serialized
+ * finding always carries `lens` (the `findingContract` requires it); the
+ * `?` on {@link FindingRecord.lens} models only that pre-stamp draft, and
+ * there is exactly one place lens is ever assigned.
  *
  * @remarks
  * - `element` — the live offending element (the serializable
@@ -581,6 +601,10 @@ export interface FindingRecord {
  * - `path` — the stable DOM path to the element, nearest first, via the
  *   Phase-2 `nodePath` helper (which wraps `getPathToAncestor()`). Its
  *   serializable string projection is {@link FindingRecord.path}.
+ * - `lens` — inherited from {@link FindingRecord}; the authoritative
+ *   {@link RuleInterface.lens} the Inspector stamps at collection (never
+ *   re-derived from the `rule` id). Absent only on a rule-eval draft, always
+ *   present on a collected finding.
  * - All other members are {@link FindingRecord}'s, inherited unchanged.
  */
 export interface Finding extends Omit<FindingRecord, 'path'> {
@@ -600,8 +624,14 @@ export interface Finding extends Omit<FindingRecord, 'path'> {
  * - `id` — the stable rule identifier (`{family}/{concern}`), copied onto
  *   every {@link Finding.rule} it emits.
  * - `severity` — the {@link FindingSeverity} every finding it emits carries.
- * - `lens` — the {@link RuleLens} this rule belongs to.
+ * - `lens` — the {@link RuleLens} this rule belongs to; the AUTHORITATIVE
+ *   lens source the Phase-4 Inspector stamps onto every {@link Finding} it
+ *   collects (`finding.lens = rule.lens`, once, never re-derived from the
+ *   `rule` id anywhere).
  * - `evaluate` — `(element, context) => Finding | null`, side-effect-free.
+ *   It returns the lens-less rule-eval draft (lens is the rule's, not the
+ *   per-finding construction's); the Inspector completes it with
+ *   `lens: rule.lens`.
  */
 export interface RuleInterface {
 	readonly id: string
@@ -684,7 +714,8 @@ export interface InspectorStartDetail {
 }
 
 /** Detail for `elements:inspector:finding` — one {@link Finding} was
- *  collected (emitted in walk order, after severity/lens filtering). */
+ *  collected (emitted after the walk completes, in walk order, after
+ *  severity/lens filtering — the walk fully finishes, then findings emit). */
 export interface InspectorFindingDetail {
 	readonly finding: Finding
 }
@@ -705,8 +736,10 @@ export interface InspectorDoneDetail {
  *
  * @remarks
  * - `start` — fired once before the walk ({@link InspectorStartDetail}).
- * - `finding` — fired once per collected finding, in walk order, AFTER the
- *   `severity` / `lens` filters ({@link InspectorFindingDetail}).
+ * - `finding` — fired once per collected finding AFTER the walk completes
+ *   (the walk fully finishes, then the findings emit as a batch), in walk
+ *   order, after the `severity` / `lens` filters
+ *   ({@link InspectorFindingDetail}).
  * - `done` — fired once after the walk with the full result
  *   ({@link InspectorDoneDetail}).
  */

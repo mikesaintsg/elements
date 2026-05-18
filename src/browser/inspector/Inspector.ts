@@ -102,8 +102,13 @@ export class Inspector implements InspectorInterface {
 				walked += 1
 				const context = walker.context(node)
 				for (const rule of rules) {
-					const finding = rule.evaluate(node, context)
-					if (finding === null) continue
+					const draft = rule.evaluate(node, context)
+					if (draft === null) continue
+					// Stamp the AUTHORITATIVE lens from the rule in hand — the
+					// single place lens is ever assigned (never re-derived by
+					// string-sniffing the rule id). `lens` is a property of
+					// the RULE, not of the rule-eval draft.
+					const finding: Finding = { ...draft, lens: rule.lens }
 					if (!this.#keep(finding, options.severity, options.lens)) continue
 					collected.push(finding)
 				}
@@ -113,7 +118,7 @@ export class Inspector implements InspectorInterface {
 				findings: collected,
 				counts: this.#counts(collected),
 				walked,
-				duration: duration < 0 ? 0 : duration,
+				duration,
 			}
 			this.#findings = new FindingManager(collected)
 			for (const finding of collected) {
@@ -148,9 +153,12 @@ export class Inspector implements InspectorInterface {
 	}
 
 	// Apply the optional severity / lens filters (omitted ⇒ keep all).
+	// Both read the finding's own fields directly — `lens` is the
+	// authoritative value stamped from `rule.lens` at collection (above),
+	// never re-derived by string-sniffing the rule id.
 	#keep(finding: Finding, severity?: FindingSeverity, lens?: RuleLens): boolean {
 		if (!isUndefined(severity) && finding.severity !== severity) return false
-		if (!isUndefined(lens) && this.#lensOf(finding) !== lens) return false
+		if (!isUndefined(lens) && finding.lens !== lens) return false
 		return true
 	}
 
@@ -170,13 +178,5 @@ export class Inspector implements InspectorInterface {
 			warning: tally.get('warning') ?? 0,
 			advice: tally.get('advice') ?? 0,
 		}
-	}
-
-	// The lens a finding belongs to, read from its rule-id family (the same
-	// projection `FindingManager` uses). Until Phase 5 every shipped rule is
-	// structure-lens; the Phase-5 presentation family ids its rules
-	// `presentation/*`.
-	#lensOf(finding: Finding): RuleLens {
-		return finding.rule.split('/')[0] === 'presentation' ? 'presentation' : 'structure'
 	}
 }
