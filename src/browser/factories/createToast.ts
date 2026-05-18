@@ -4,7 +4,7 @@ import type {
 	CreateToastInstance,
 	CreateToastOptions,
 } from '../types.js'
-import { isUndefined, parseNumber } from '@elements/core'
+import { coerceNumber, isFiniteNumber, isUndefined, parseNumber } from '@elements/core'
 import {
 	DEFAULT_TOAST_DELAY_MS,
 	DEFAULT_TOAST_SWIPE_THRESHOLD_PX,
@@ -80,15 +80,15 @@ export function createToast(
 
 	const length = (value: string, host: HTMLElement): number => {
 		const text = value.trim()
-		const amount = Number.parseFloat(text)
-		if (!Number.isFinite(amount)) return 0
+		const amount = coerceNumber(text)
+		if (!isFiniteNumber(amount)) return 0
 		if (text.endsWith('rem')) {
-			const size = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
-			return amount * (Number.isFinite(size) ? size : 16)
+			const size = coerceNumber(getComputedStyle(document.documentElement).fontSize)
+			return amount * (isFiniteNumber(size) ? size : 16)
 		}
 		if (text.endsWith('em')) {
-			const size = Number.parseFloat(getComputedStyle(host).fontSize)
-			return amount * (Number.isFinite(size) ? size : 16)
+			const size = coerceNumber(getComputedStyle(host).fontSize)
+			return amount * (isFiniteNumber(size) ? size : 16)
 		}
 		return amount
 	}
