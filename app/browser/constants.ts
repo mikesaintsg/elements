@@ -1377,3 +1377,123 @@ const { active, toggle } = useButton(btn, {
     {{ active ? 'On' : 'Off' }}
   </button>
 </template>`
+
+// ── InspectorPage ────────────────────────────────────────────────────────
+//
+// The `/inspector` page DOGFOODS the public `Inspector` (`@elements/browser`)
+// on the live document. App-side display data only (the cite→spec-URL map +
+// the deliberately non-conformant fixture markup + the code snippets) — the
+// inspector itself, its rules, schema, and types are NEVER touched here
+// (ROADMAP Phase 7 is page + docs only).
+
+/**
+ * The canonical WHATWG-spec base. Every `Finding.cite` is a
+ * `{corpusFile}#{anchor}` string against the local `guides/w3c/**` mirror;
+ * `INSPECTOR_CITE_PAGES` maps the corpus-file segment to its canonical
+ * `multipage` page so the page can render each citation as a real
+ * spec-anchor link. The mapping is corpus-verified (every page below is the
+ * `> Source:` line of the matching `guides/w3c/**` file — see the ROADMAP
+ * "W3C spec reference map").
+ */
+export const INSPECTOR_SPEC_BASE = 'https://html.spec.whatwg.org/multipage/'
+
+/** corpus-file segment of a `Finding.cite` → canonical multipage page. */
+export const INSPECTOR_CITE_PAGES: Readonly<Record<string, string>> = {
+	dom: 'dom.html',
+	document: 'semantics.html',
+	sections: 'sections.html',
+	groupings: 'grouping-content.html',
+	texts: 'text-level-semantics.html',
+	edits: 'edits.html',
+	embeddeds: 'embedded-content.html',
+	links: 'links.html',
+	tables: 'tables.html',
+	forms: 'forms.html',
+	interactives: 'interactive-elements.html',
+	interactions: 'interaction.html',
+	renderings: 'rendering.html',
+}
+
+/**
+ * Severity display order + the framework variant each severity maps onto
+ * (the page tints its grouped finding lists through the modifier cascade —
+ * `danger`/`warning`/`information` — never bespoke CSS). `error` first
+ * because the inspector's contract is "zero errors = conformant".
+ */
+export const INSPECTOR_SEVERITY_ORDER = ['error', 'warning', 'advice'] as const
+
+export const INSPECTOR_SEVERITY_VARIANT: Readonly<Record<string, Variant>> = {
+	error: 'danger',
+	warning: 'warning',
+	advice: 'information',
+}
+
+/**
+ * The deliberately NON-conformant demo fixture. Parsed into a DETACHED
+ * `<div>` (never inserted into the live document) so the inspector finds
+ * real, varied violations to render WITHOUT making the InspectorPage itself
+ * non-conformant — the Phase-6 `semantics.test.ts` gate auto-audits this
+ * page and requires ZERO `error` findings. Every break below is authored
+ * so the HTML parser PRESERVES it in a detached `<div>` (parser-corrected
+ * shapes like a nested `<a>` or `<p><div>` are deliberately avoided — they
+ * never reach the inspector). It produces FIVE real `error` findings
+ * across FOUR distinct rule families (verified against the shipped
+ * inspector via the live `/inspector` page):
+ *   - `<ul><div>` — `context/parent-model` (`<ul>` admits only `<li>` +
+ *     script-supporting; `groupings#the-ul-element`).
+ *   - `<dl><span>` — `context/parent-model` (`<dl>` admits `<dt>`/`<dd>` /
+ *     `<div>` groups; `groupings#the-dl-element`).
+ *   - `<a href>…<button>` — both `content/forbidden` (the `<a>` has a
+ *     forbidden interactive descendant) AND
+ *     `transparent/interactive-descendant` (the `<button>` itself);
+ *     `texts#the-a-element`.
+ *   - two `<figcaption>` in one `<figure>` — `structure/edge-child`
+ *     (the trailing caption is at no permitted edge;
+ *     `groupings#the-figcaption-element`).
+ * The trailing `<details>` with two `<summary>` is structural noise the
+ * walk still traverses WITHOUT a false positive — the dogfood property
+ * holds even inside the dirty fixture.
+ */
+export const INSPECTOR_DIRTY_FIXTURE = `<section>
+  <ul>
+    <div>A bare div is not a permitted child of ul.</div>
+    <li>This li is fine.</li>
+  </ul>
+  <dl>
+    <span>A span is not a permitted child of dl.</span>
+  </dl>
+  <p>
+    A link must not wrap interactive content:
+    <a href="#outer">open <button type="button">a button</button></a>.
+  </p>
+  <details>
+    <summary>First summary</summary>
+    <summary>Second summary — details takes exactly one, first.</summary>
+    <p>Disclosure body.</p>
+  </details>
+  <figure>
+    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="pixel" />
+    <figcaption>First caption</figcaption>
+    <figcaption>Second caption — only one is allowed.</figcaption>
+  </figure>
+</section>`
+
+export const INSPECTOR_SNIPPET_RUN = `import { Inspector } from '@elements/browser'
+
+const inspector = new Inspector()
+const result = inspector.inspect({ root: document.body })
+
+result.counts.error                 // hard content-model violations
+result.findings                     // every Finding, in walk order
+inspector.findings.findings('error')// query just the errors`
+
+export const INSPECTOR_SNIPPET_EVENTS = `inspector.inspect({
+  root: panel,
+  severity: 'error',           // keep only error-severity findings
+  lens: 'structure',           // structure | presentation
+  on: {
+    start:   (e) => console.time('inspect'),
+    finding: (e) => console.warn(e.detail.finding.message),
+    done:    (e) => console.timeEnd('inspect') ?? e.detail.result.counts,
+  },
+})`

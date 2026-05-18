@@ -62,6 +62,7 @@ import UseFocusPage from './pages/UseFocusPage.vue'
 import UsePointerPage from './pages/UsePointerPage.vue'
 import UseDragDropPage from './pages/UseDragDropPage.vue'
 import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
+import InspectorPage from './pages/InspectorPage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -331,6 +332,12 @@ const USE_THEME_BUTTON: Route = {
 	group: 'Composables — Primitives',
 	page: UseThemeButtonPage,
 }
+const INSPECTOR: Route = {
+	id: 'inspector',
+	title: 'Inspector',
+	group: 'Composables — Primitives',
+	page: InspectorPage,
+}
 
 export const routes: readonly Route[] = [
 	HOME,
@@ -376,6 +383,7 @@ export const routes: readonly Route[] = [
 	USE_POINTER,
 	USE_DRAG_DROP,
 	USE_THEME_BUTTON,
+	INSPECTOR,
 ]
 
 const parse = (fallback: string): RouteLocation => {

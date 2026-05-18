@@ -117,7 +117,7 @@ afterAll(() => {
 
 describe('semantics — Inspector self-audit over every showcase page (zero error-severity findings)', () => {
 	it('discovers the barrel page surface (vacuous-pass guard)', () => {
-		expect(pageEntries.length).toBe(43)
+		expect(pageEntries.length).toBe(44)
 	})
 
 	for (const [name, page] of pageEntries) {
