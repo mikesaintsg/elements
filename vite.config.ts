@@ -173,18 +173,15 @@ export const srcBrowser = (config?: UserConfig): UserConfig =>
 					},
 					outDir: 'dist/src/browser',
 					// `@elements/browser` and `@elements/core` publish as two
-					// subpaths of one package. The browser lib build must
-					// IMPORT the sibling core build rather than INLINE a copy
-					// of `src/core`, so a consumer importing both subpaths
-					// doesn't get core duplicated.
+					// subpaths of one package. Externalize ONLY `@elements/core`
+					// so the browser lib imports the sibling core build rather
+					// than inlining a copy of `src/core`. Vue stays inlined
+					// exactly as in the parent build — the predicate is
+					// deliberately minimal.
 					rollupOptions: {
-						external: (id: string) =>
-							id === '@elements/core' ||
-							id.startsWith('@elements/core/') ||
-							id === '@vue/reactivity' ||
-							id.startsWith('@vue/'),
+						external: (id: string) => id === '@elements/core',
 						output: {
-							paths: { '@elements/core': './core/index.js' },
+							paths: { '@elements/core': '../core/index.js' },
 						},
 					},
 				},

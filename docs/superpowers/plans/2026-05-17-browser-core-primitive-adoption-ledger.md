@@ -24,32 +24,48 @@ surfaces. Companion to the plan
 
   ```ts
   rollupOptions: {
-  	external: (id: string) =>
-  		id === '@elements/core' ||
-  		id.startsWith('@elements/core/') ||
-  		id === '@vue/reactivity' ||
-  		id.startsWith('@vue/'),
+  	external: (id: string) => id === '@elements/core',
   	output: {
-  		paths: { '@elements/core': './core/index.js' },
+  		paths: { '@elements/core': '../core/index.js' },
   	},
   },
   ```
 
   Rationale: `@elements/browser` and `@elements/core` publish as two
-  subpaths of one package; the browser lib build must IMPORT the sibling
-  core build rather than INLINE a copy of `src/core`, so a consumer
-  importing both subpaths does not get core duplicated.
+  subpaths of one package; externalize ONLY `@elements/core` so the
+  browser lib imports the sibling core build rather than inlining a copy
+  of `src/core`. Vue stays inlined exactly as in the parent build — Vite
+  lib mode inlines deps by default and the `external` function overrides
+  that selectively, so the predicate is deliberately minimal. The
+  `@elements/core/` sub-path and `@vue/` clauses that appeared in B1 are
+  removed: core has no `@elements/core/*` subpaths, and externalizing vue
+  caused bare `@vue/runtime-dom` imports that consumers cannot resolve
+  (`@vue/runtime-dom` is not a declared dependency).
 
 - **Emitted external-import line (Step 4):** the first line of the built
   `dist/src/browser/index.js` is exactly:
 
   ```js
-  import { isFunction } from "./core/index.js";
+  import { isFunction } from "../core/index.js";
   ```
 
   No `function isFunction` body is inlined anywhere in the browser bundle
   (verified by grep) — core is externalized to the sibling build, not
-  duplicated.
+  duplicated. Vue is fully inlined (zero bare `from "@vue/` imports in the
+  bundle; bundle size ~445 KB, matching the parent build).
+
+- **Real-resolution smoke test (required boundary check for future batches):**
+  The `tsconfig` alias masks bundle resolution at `npm run check` / vitest
+  time. After every build that touches `rollupOptions`, verify the emitted
+  bundle actually resolves by running:
+
+  ```sh
+  node --input-type=module -e "import('./dist/src/browser/index.js').then(()=>console.log('RESOLVED OK')).catch(e=>{console.error('IMPORT FAILED:',e.code,e.message);process.exit(1)})"
+  ```
+
+  Expected output: `RESOLVED OK`. A failing `ERR_MODULE_NOT_FOUND` means
+  the `paths` mapping is wrong; do not declare the build done until this
+  passes.
 
 ## Divergences
 
