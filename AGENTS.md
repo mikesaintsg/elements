@@ -472,22 +472,33 @@ Narrow with `if (result.success)` — never use `as` or `!`.
 
 ## 14. Emitter Pattern (For Stateful Entities With Observable Events)
 
-Stateful entities own an `Emitter<TMap>` instance as a `#emitter` private field and expose it through a `readonly emitter: EmitterInterface<TEventMap>` property (single-word — see §4.1). Consumers subscribe via `entity.emitter.on(...)`.
+Observable events are DOM `CustomEvent`s dispatched on the entity's host `Element`. There is no `Emitter` class: the host element **is** the emitter, `addEventListener` **is** the subscription, and the bubbling `CustomEvent` **is** the message. An entity (a `create{Name}` closure factory or a one-class-per-file `{Entity}` class) emits a typed `CustomEvent` on its bound element via the `emit` / `dispatch` helpers in `helpers.ts`; consumers observe with native `addEventListener` (or the `listen` helper) on that element or any ancestor. This is the idiom every `create*` factory already uses (`createTable`, `createDialog`, …).
+
+**The helpers (`src/browser/helpers.ts`):**
+
+- `emit(el, name, detail?)` — `el.dispatchEvent(new CustomEvent(name, { bubbles: true, cancelable: false, detail }))`. A post-transition / notification event (`open`, `close`, `change`, `done`).
+- `dispatch(el, name, detail?) → boolean` — the cancelable form (`cancelable: true`); returns `false` when a listener called `event.preventDefault()`. Use for pre-transition gates (`show`, `hide`, `slide`).
+- `listen(el, name, handler) → () => void` — typed `CustomEvent` listener; returns a teardown that removes it.
+- `bindEventMap(el, EVENT_NAME_MAP, on) → () => void` — wires every key in `on` that has a matching name in the event-name map, returning one composite teardown. This is how `{Entity}Options.on` is applied at construction.
+
+**The event-name registry (`src/browser/constants.ts` + `events.ts`):**
+
+Every event name is a string constant of the form `elements:{source}:{verb}`, declared once in a frozen `{SOURCE}_EVENTS = { … } as const` map in `constants.ts` (the authority). `{source}` is an HTML element or entity noun; `{verb}` is one spelled-out present-tense lifecycle word, one meaning across the framework (§11). The **composable / component** event maps are additionally mirrored into the public, CSS-parity `events` tree in `events.ts` (so consumers can write `events.{source}.{verb}` and the `tests/guides/composables.test.ts` parity gate binds the closed composable lifecycle vocabulary). A non-composable stateful entity (e.g. a dev-tool analyzer) declares its own `{SOURCE}_EVENTS` constant in `constants.ts` and uses the same `emit` / `bindEventMap` idiom, but is **not** registered into the `events.ts` composable tree — that tree and its vocabulary gate are the composable/component public surface, not a universal emitter registry.
 
 **Structure:**
 
-1. Define `{Entity}EventMap` in `*/types.ts`
-2. `{Entity}Options` has `readonly on?: EmitterHooks<{Entity}EventMap>`
-3. `{Entity}Interface` has `readonly emitter: EmitterInterface<{Entity}EventMap>`
-4. Class owns `readonly #emitter: Emitter<{Entity}EventMap>` and exposes `get emitter()`
-5. Constructor: `new Emitter({ on: options?.on })`
-6. Entity's `destroy()` calls `this.#emitter.destroy()` last
+1. Add the frozen `{SOURCE}_EVENTS = { {verb}: 'elements:{source}:{verb}', … } as const` map to `constants.ts`. If the entity is a composable / component, also register it in the `events` tree in `events.ts` (the public CSS-parity surface — its `{verb}`s must be in the documented composable lifecycle vocabulary). A non-composable entity keeps its constant in `constants.ts` only.
+2. Define `{Entity}EventMap` in `*/types.ts` as `{ readonly {verb}: (event: CustomEvent<{Detail}>) => void }` — one handler member per event, the value typed to the event's detail. Per-event detail records (`{Entity}{Verb}Detail`) live in `types.ts` too.
+3. `{Entity}Options` has `readonly on?: Partial<{Entity}EventMap>` — the partial map of initial listeners (the `on` key is reserved for exactly this everywhere — see §8).
+4. The entity emits each transition with `emit(host, {SOURCE}_EVENTS.{verb}, detail)` (or `dispatch(...)` for a cancelable gate) on its host element.
+5. Initial listeners are wired once at construction with `bindEventMap(host, {SOURCE}_EVENTS, options.on)`; the returned teardown is released when the entity tears down. There is no `emitter` property and no `#emitter` field — subscription is `addEventListener` on the host (or the `listen` helper), and teardown is `removeEventListener` (the `listen` / `bindEventMap` teardown closures).
+6. Choose the host element faithfully to the factory precedent (the element the entity is bound to / operates on) and document the choice in the entity's TSDoc so consumers know what to `addEventListener` on.
 
-No inheritance from `Emitter`, no delegation boilerplate.
+The host element is the only emitter; events bubble, so a consumer may also listen on a common ancestor (`document`). No inheritance, no delegation boilerplate, no emitter object.
 
 **Event naming:**
 
-- Each event name is a **single present-tense verb or noun**: `start`, `connect`, `expire`, `drain`, `chunk`
+- Each event name's `{verb}` is a **single present-tense lifecycle verb** from the `events.ts` vocabulary: `show`/`hide`, `open`/`close`, `start`/`stop`, `change`, `select`, `done`, …
 - **Never** use a generic `status` event that passes the value as a parameter — each transition is its own named event
 - 4–8 events per entity
 
