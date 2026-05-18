@@ -49,20 +49,23 @@
 //    focusable <button style=outline:none>          → 1 presentation/focus error
 //    <button style="outline:none;box-shadow:…">     → 0 (replacement affordance)
 //    <pre style=white-space:normal>                 → 1 presentation/preformatted error
-//    first-party <textarea wrap=off> (real cascade) → 1 presentation/preformatted
-//                                                      error — LOCKED as a
-//                                                      KNOWN GENUINE
-//                                                      FRAMEWORK-CASCADE
-//                                                      NON-CONFORMANCE
-//                                                      (`_textarea.scss:54`
-//                                                      ignores the `wrap=off`
-//                                                      hint; corpus §15.5.17
-//                                                      requires `white-space:
-//                                                      pre`). NOT a false
-//                                                      positive — the rule is
-//                                                      corpus-faithful; Phase 6
-//                                                      remediates _textarea.scss
-//                                                      and flips this to → 0.
+//    first-party <textarea wrap=off> (real cascade) → 0 — PHASE-6 REMEDIATED.
+//                                                      `_textarea.scss` now
+//                                                      carries
+//                                                      `textarea[wrap='off' i]
+//                                                      { white-space: pre }`
+//                                                      (corpus §15.5.17), so
+//                                                      the cascade honors the
+//                                                      `wrap=off` hint and the
+//                                                      corpus-faithful rule
+//                                                      (UNCHANGED) yields
+//                                                      nothing. Was a LOCKED
+//                                                      "→ 1" tracking a genuine
+//                                                      framework-cascade
+//                                                      non-conformance; the
+//                                                      framework was fixed at
+//                                                      the source — the rule
+//                                                      was NEVER weakened.
 // ============================================================================
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -578,30 +581,17 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 				// presentation/preformatted — conformant <pre> (UA
 				// white-space:pre) + default <textarea> (framework
 				// `_textarea.scss` sets white-space:pre-wrap, the rule's
-				// expected for a no-`wrap` textarea → 0).
-				//
-				// NOTE — `<textarea wrap="off">` is INTENTIONALLY NOT in this
-				// conformant sweep, and that is CORRECT (not an omission to
-				// silence a finding): under the REAL framework cascade a
-				// `<textarea wrap="off">` is NOT conformant-rendering. Per
-				// `renderings.md §15.5.17` (corpus line 1735) a `wrap=off`
-				// textarea is a presentational hint setting `white-space:pre`,
-				// but `_textarea.scss:54` sets `white-space:pre-wrap`
-				// UNCONDITIONALLY (no `wrap`-attribute branch). The framework
-				// cascade ignores the hint, so the computed value is `pre-wrap`
-				// ≠ the corpus-required `pre`. `presentation/preformatted`
-				// keying on `white-space` is corpus-faithful and CORRECT: it
-				// fires a TRUE positive on a GENUINE FRAMEWORK-CASCADE
-				// NON-CONFORMANCE — exactly what the presentation lens is
-				// designed to catch (ROADMAP: Phase 5 is a self-audit of our
-				// own cascade). That genuine finding is LOCKED by its own
-				// dedicated positive-assertion test below (it is a tracked,
-				// bites-both-ways fact, NOT a weakened probe or a hidden
-				// symptom); Phase 6 remediates `_textarea.scss` and the locked
-				// test flips to expect zero. Every conformant case in THIS
-				// sweep still asserts ZERO error findings.
+				// expected for a no-`wrap` textarea → 0) + `<textarea
+				// wrap="off">` (PHASE-6 REMEDIATED: `_textarea.scss` now
+				// carries `textarea[wrap='off' i] { white-space: pre }` per
+				// `renderings.md §15.5.17`, so the cascade honors the hint
+				// and the corpus-faithful rule yields nothing — it is now a
+				// genuinely conformant case and rightly joins this sweep; its
+				// own bites-both-ways flipped test below additionally locks
+				// the remediation against silent regression).
 				'<pre>a\n  b</pre>',
 				'<textarea>raw</textarea>',
+				'<textarea wrap="off">no-wrap</textarea>',
 				// presentation/hidden — conformant [hidden] (UA display:none),
 				// [hidden=until-found] (UA content-visibility:hidden), and the
 				// :not(embed) carve-out (an <embed hidden> is NOT display:none).
@@ -653,67 +643,55 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 			).toEqual([])
 		})
 
-		it('LOCKED KNOWN GENUINE FRAMEWORK-CASCADE NON-CONFORMANCE: first-party <textarea wrap="off"> under the real cascade → EXACTLY ONE presentation/preformatted error (Phase-6 must remediate)', () => {
-			// This asserts a TRUE positive, NOT a false positive. It is the
-			// inverse of the conformant sweep above: under the REAL
-			// `src/styles` cascade a first-party `<textarea wrap="off">` is
-			// genuinely NON-conformant-rendering and the SURVIVING, CORRECT,
-			// corpus-faithful `presentation/preformatted` rule rightly fires.
+		it('PHASE-6 REMEDIATED: first-party <textarea wrap="off"> under the real cascade → ZERO presentation/preformatted (the corpus-mandated _textarea.scss fix)', () => {
+			// FLIPPED in Phase 6 (was: LOCKED "EXACTLY ONE error" tracking a
+			// genuine framework-cascade non-conformance). This asserts the
+			// REMEDIATION holds — and stays BITES-BOTH-WAYS: it goes red again
+			// if the `_textarea.scss` `wrap=off` branch is ever removed /
+			// regressed (silently re-introducing the non-conformance).
 			//
 			//   • Corpus (`guides/w3c/renderings.md §15.5.17`, line 1735):
 			//     "if the element has a `wrap` attribute whose value is an
 			//     ASCII case-insensitive match for the string `off`, then the
 			//     user agent is expected to treat the attribute as a
 			//     presentational hint setting the element's `white-space`
-			//     property to `pre`." So a conformant `<textarea wrap=off>`
-			//     MUST compute `white-space: pre`.
-			//   • Framework defect: `src/styles/elements/_textarea.scss:54`
-			//     sets `textarea { white-space: pre-wrap }` UNCONDITIONALLY —
-			//     it has NO `textarea[wrap="off" i]` branch, so it IGNORES the
-			//     `wrap=off` presentational hint. The computed value is
-			//     `pre-wrap`, NOT the corpus-required `pre`.
-			//   • `presentation/preformatted` keys on `white-space`, which IS
-			//     the genuine semantic the `wrap` attribute controls and IS
-			//     corpus-stated as load-bearing. The rule is corpus-faithful
-			//     and CORRECT; this firing is a GENUINE FRAMEWORK-CASCADE
-			//     NON-CONFORMANCE the presentation lens is DESIGNED to surface
-			//     (ROADMAP: Phase 5 = "a self-audit of our own cascade").
-			//
-			// This is OWNER-DECIDED Phase-6 scope (Phase 5 ships rules only;
-			// `_textarea.scss` framework-cascade remediation is Phase 6). It
-			// is LOCKED here as a tracked, asserted, BITES-BOTH-WAYS fact —
-			// NOT omitted, NOT a weakened assertion, NOT symptom-hidden.
-			//
-			// PHASE-6 REMEDIATION: when Phase 6 adds
-			// `textarea[wrap="off" i] { white-space: pre }` (or equivalent) to
-			// `_textarea.scss`, the computed value flips to `pre` and this
-			// finding disappears. AT THAT POINT THIS TEST MUST BE FLIPPED TO
-			// EXPECT ZERO (assert `evaluateOn(preRule, ta, ta)` is `null`,
-			// and the registry yields no `presentation/preformatted`). Until
-			// then it stays red-if-the-defect-is-silently-papered-over.
+			//     property to `pre`." A conformant `<textarea wrap=off>` MUST
+			//     compute `white-space: pre`.
+			//   • Phase-6 remediation (SHIPPED): `_textarea.scss` now carries
+			//     `textarea[wrap='off' i] { white-space: pre }` (same
+			//     `@layer elements`, higher specificity than the bare
+			//     `textarea { white-space: pre-wrap }`), so the framework
+			//     cascade now HONORS the `wrap=off` presentational hint. The
+			//     computed value is the corpus-required `pre`.
+			//   • `presentation/preformatted` keys on `white-space` (the
+			//     genuine corpus-stated semantic the `wrap` attribute
+			//     controls). It is corpus-faithful and UNCHANGED — the rule
+			//     was always correct; the firing was a TRUE positive on a
+			//     genuine `_textarea.scss` defect, now fixed at the source
+			//     (the framework was made to conform; the rule/test were NOT
+			//     weakened — ROADMAP Phase 6 doctrine).
 			const ta = mount(el('textarea', { wrap: 'off' }))
-			// Sanity: the real framework cascade really did resolve the
-			// `wrap=off` textarea to `pre-wrap` (NOT the corpus `pre`) — this
-			// proves the fixture exercises the genuine non-conformance, not a
-			// JSDOM/cascade artifact.
+			// Sanity: the real framework cascade now resolves the `wrap=off`
+			// textarea to the corpus-required `pre` (NOT `pre-wrap`) — proves
+			// the remediation genuinely took, not a test-shim.
+			expect(getComputedStyle(ta).whiteSpace).toBe('pre')
+			// The corpus-faithful rule now (correctly) yields NOTHING: the
+			// cascade conforms, so there is no genuine non-conformance left.
+			expect(evaluateOn(preRule, ta, ta)).toBeNull()
+			// Whole-registry: ZERO findings — no `presentation/preformatted`,
+			// no other presentation rule co-fires (the bites-both-ways lock,
+			// inverted: red again if the remediation regresses).
+			expect(registryFindings(container)).toEqual([])
+		})
+
+		it('REGRESSION GUARD: a default <textarea> (no wrap) still computes white-space:pre-wrap → 0', () => {
+			// The Phase-6 `wrap=off` branch must NOT disturb the default: a
+			// no-`wrap` textarea keeps the framework's `pre-wrap` (the rule's
+			// corpus-conformant expected for a default textarea → no finding).
+			const ta = mount(el('textarea'))
 			expect(getComputedStyle(ta).whiteSpace).toBe('pre-wrap')
-			const finding = evaluateOn(preRule, ta, ta)
-			if (finding === null) {
-				throw new Error(
-					'expected the LOCKED genuine framework-cascade non-conformance: a presentation/preformatted error on <textarea wrap="off">. ' +
-						'If this is now null, Phase-6 likely remediated _textarea.scss — FLIP this test to expect zero (see the Phase-6 comment).',
-				)
-			}
-			expect(finding.rule).toBe('presentation/preformatted')
-			expect(finding.severity).toBe('error')
-			expect(finding.cite).toBe('renderings#the-textarea-element')
-			expect(finding.expected).toBe('white-space: pre')
-			expect(finding.actual).toBe('white-space: pre-wrap')
-			expect(finding.element).toBe(ta)
-			// Whole-registry: EXACTLY ONE finding for this single genuine
-			// break — `presentation/preformatted`, no double-report, no other
-			// presentation rule co-fires (the bites-both-ways lock).
-			expect(registryFindings(container)).toEqual(['presentation/preformatted'])
+			expect(evaluateOn(preRule, ta, ta)).toBeNull()
+			expect(registryFindings(container)).toEqual([])
 		})
 
 		it('a single presentation break yields EXACTLY ONE finding (no double-report)', () => {

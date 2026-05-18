@@ -72,6 +72,17 @@
 
 		// Placeholder color/opacity owned by `surfaces/_placeholder.scss`.
 
+		// `wrap=off` is a presentational hint: per the HTML rendering spec
+		// (renderings.md §15.5.17) a `<textarea>` whose `wrap` attribute is
+		// an ASCII case-insensitive match for `off` computes
+		// `white-space: pre` (no soft wrapping), NOT the default `pre-wrap`.
+		// Higher specificity than the bare `textarea` rule above, same
+		// `@layer elements`, so it deterministically wins for `wrap=off`
+		// while every other textarea keeps `pre-wrap`.
+		&[wrap='off' i] {
+			white-space: pre;
+		}
+
 		&:focus-visible {
 			outline: none;
 			border-color: var(--set-textarea-focus-border-color);
