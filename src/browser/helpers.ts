@@ -54,6 +54,7 @@ import type {
 } from './types.js'
 import {
 	arrayOf,
+	coerceNumber,
 	instanceOf,
 	isFiniteNumber,
 	isFunction,
@@ -532,6 +533,32 @@ export function runTransition(
 		cancelled = true
 		finish()
 	}
+}
+
+/**
+ * Report whether `el` has a non-zero declared CSS `transition-duration`.
+ *
+ * A non-zero declared `transition-duration` means the open/close
+ * transition will actually fire, so the lifecycle must wait for
+ * `transitionend` (via {@link runTransition}); a `0s` duration means the
+ * open/close events can be emitted synchronously. This replaces the legacy
+ * `.fade` opt-in: any CSS transition the author declares — via a modifier
+ * class, an attribute selector, or a custom property — automatically
+ * participates.
+ *
+ * `transition-duration` may be a comma-separated list; any non-zero entry
+ * counts. `coerceNumber`'s string branch is `parseFloat`, so `'0.3s'` → 0.3
+ * and `'0s'` → 0; a non-numeric token (`''`, `'s'`) yields `undefined`, so
+ * `!isUndefined(n) && n > 0` is the precise non-zero test.
+ */
+export function hasTransitionDuration(el: HTMLElement): boolean {
+	if (typeof getComputedStyle === 'undefined') return false
+	const raw = getComputedStyle(el).transitionDuration
+	if (!raw) return false
+	return raw.split(',').some((v) => {
+		const n = coerceNumber(v.trim())
+		return !isUndefined(n) && n > 0
+	})
 }
 
 /**

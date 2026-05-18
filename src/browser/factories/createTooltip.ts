@@ -4,7 +4,6 @@ import type {
 	CreateTooltipOptions,
 	Placement,
 } from '../types.js'
-import { coerceNumber, isUndefined } from '@elements/core'
 import { effectScope, readonly, ref } from '@vue/reactivity'
 import { DEFAULT_FLOATING_OFFSET, TOOLTIP_EVENTS } from '../constants.js'
 import {
@@ -13,6 +12,7 @@ import {
 	dispatch,
 	emit,
 	generateId,
+	hasTransitionDuration,
 	resolvePopoverSide,
 	runTransition,
 	selfsForPopoverPlacement,
@@ -128,23 +128,9 @@ export function createTooltip(
 		if (panel.matches(':popover-open')) panel.hidePopover()
 	}
 
-	const hasTransition = (): boolean => {
-		if (typeof getComputedStyle === 'undefined') return false
-		const raw = getComputedStyle(panel).transitionDuration
-		if (!raw) return false
-		// Mirrors `createPopover`'s `hasTransition`: `coerceNumber`'s string
-		// branch IS `parseFloat`, so `'0.3s'` → 0.3 / `'0s'` → 0 unchanged;
-		// a non-numeric token yields `undefined` (old `NaN > 0` was `false`),
-		// so `!isUndefined(n) && n > 0` is behavior-identical.
-		return raw.split(',').some((v) => {
-			const n = coerceNumber(v.trim())
-			return !isUndefined(n) && n > 0
-		})
-	}
-
 	const finishOpen = (): void => {
 		cancelTransition()
-		if (!hasTransition()) {
+		if (!hasTransitionDuration(panel)) {
 			emit(anchor, TOOLTIP_EVENTS.open)
 			return
 		}
@@ -155,7 +141,7 @@ export function createTooltip(
 	}
 	const finishClose = (): void => {
 		cancelTransition()
-		if (!hasTransition()) {
+		if (!hasTransitionDuration(panel)) {
 			emit(anchor, TOOLTIP_EVENTS.close)
 			return
 		}

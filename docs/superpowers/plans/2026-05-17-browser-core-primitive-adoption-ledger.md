@@ -408,3 +408,111 @@ Data / registry files (`constants.ts`, `elements.ts`, `events.ts`, `modifiers.ts
 **`src/browser/types.ts`: NO change required.** No new narrowing introduced; `attempt` returns `Result<T>` with a concrete `.value: T` branch — no `as` cast needed, TS infers `result.value` as `ThemeSetting | null` directly from the callback return type.
 
 **B8 divergences: none.** Both `attempt` substitutions are behavior-identical; no test/`types.ts` change. Full `src:browser` 30 files / 1224 tests green pre- and post-change. `npm run check` 0/0. `npm run build` succeeds; `node --input-type=module -e "import('./dist/src/browser/index.js')"` → `OK`.
+
+consolidation (B9): the one duplicated core-composition introduced by
+B1–B8 — the byte-identical `hasTransition()` closure in
+`createPopover.ts` and `createTooltip.ts` (both `if (typeof
+getComputedStyle === 'undefined') return false` → `getComputedStyle(panel)
+.transitionDuration` → `if (!raw) return false` → `raw.split(',').some(v
+=> { const n = coerceNumber(v.trim()); return !isUndefined(n) && n > 0
+})`, differing only in the explanatory comment and the closed-over
+`panel`) — was hoisted into a single shared `helpers.ts` export
+`hasTransitionDuration(el: HTMLElement): boolean` (placed in the
+`Transition coordination` section beside `runTransition`, with one TSDoc
+explaining the WHY). Both factories now `import { …,
+hasTransitionDuration, … } from '../helpers.js'` and call
+`hasTransitionDuration(panel)` at their `finishOpen`/`finishClose` sites;
+the local function bodies, the duplicated explanatory comments, the
+`createTooltip` "Mirrors `createPopover`'s `hasTransition`"
+cross-reference, and the now-unused `import { coerceNumber, isUndefined }
+from '@elements/core'` lines were removed from both files (`helpers.ts`
+merged `coerceNumber` into its existing single `@elements/core` import,
+alphabetized; `isUndefined` was already imported). **Behavior-identical
+for both callers — zero divergence, no test change** (both originals were
+byte-faithful; the shared helper reproduces the exact `getComputedStyle`
+property read + `raw.split(',').some(...)` + `coerceNumber`/`!isUndefined`/
+`> 0` logic). `createPopover.test.ts` 14 + `createTooltip.test.ts` 8 +
+full `src:browser` 30/1224 stayed green pre- AND post-change. Broader
+consolidation scan of `src/browser` for any OTHER duplicated
+`literalOf(...)`/`recordOf({...})`/`arrayOf(...)`/composed-guard built
+identically in ≥2 files: **none found** — every core *composition*
+(`literalOf`/`recordOf`/`arrayOf`/`instanceOf`/`orOf`/`nullableOf`) lives
+once in `helpers.ts`; the remaining direct `@elements/core` consumers
+(`theme.ts`, `createDrag.ts`, `createTable.ts`/`useTable.ts`,
+`createToast.ts`) call only atomic primitive guards
+(`attempt`/`isArray`/`isUndefined`/`isNumber`/`isFiniteNumber`/
+`coerceNumber`/`parseNumber`) directly, which are the canonical shared
+primitives — not duplicated compositions, and hoisting an `isUndefined(x)`
+call into a wrapper would be forbidden ceremony (AGENTS no-ceremony /
+YAGNI).
+
+guide / doc parity (B9): `grep -rn` of `guides/` for documented BEHAVIOR
+of the 6 B2-shifted symbols (`extractProperty` rejecting class
+instances/arrays; the 4 drag-detail `recordOf` guards rejecting unknown
+extra keys; `indexOfRow('')`→null) — **no guide documents the shifted
+browser-side behavior**. The only `guides/` hit for `extractProperty` is
+`README.md`'s setup-file table, which references the unrelated
+`tests/setup.ts` recorder test-helper `extractProperty` (a different
+symbol), not the `src/browser/helpers.ts` guard. `validators.md`/
+`compilers.md` describe core `isRecord`/`recordOf` *core* semantics
+(unchanged — B2 *adopted* those canonical semantics; the core guides were
+always accurate and `src/core` is out of scope). B1–B8 renamed no public
+export and were behavior-identical except the 6 ledgered B2 shifts (none
+surfaced through guide prose), so **no guide prose required updating**.
+`npx vitest run --project guides` → 17 files / 4053 tests pass (green
+pre- AND post-B9; no doc↔source parity driver referenced any
+shifted/renamed symbol — no driver weakened).
+
+## Summary
+
+- **Total JS-domain sites converted across B1–B8 (re-derived from this
+  ledger's own per-batch entries):** **118** — B1 `1` (`isEventHandler`
+  → `isFunction`, the boundary smoke-proof) + B2 `76` (the `helpers.ts`
+  core-canonical epicenter) + B3 `0` (`traversals.ts` is DOM-native by
+  design) + B4 `1` (`createDrag.ts:reorder` `!isUndefined`; `useDrag.ts`
+  `0`) + B5 `32` (`createTable.ts` `20` + `useTable.ts` `12`) + B6 `4`
+  (`createToast.ts`: `1` depth + `3` `length()`; `createForm.ts`/
+  `useForm.ts` `0`) + B7 `2` (`createPopover.ts`/`createTooltip.ts`
+  `hasTransition`; the other 6 B7 files `0`) + B8 `2` (`theme.ts`
+  `loadStored` + `writeStorage`; all other B8 files `0`). B9 then
+  *consolidated* the two B7 `hasTransition` sites into one shared
+  `helpers.ts` export (a net dedupe, not a new conversion).
+- **Total real behavior divergences: 6**, all in B2 (B3–B8 introduced
+  none; every B3–B8 substitution was a semantically exact swap):
+  `extractProperty` (core `isRecord` rejects class instances/arrays/DOM
+  objects); `isDragTapDetail`, `isDragStartDetail`, `isDragOverDetail`,
+  `isDragDropDetail` (core `recordOf` rejects unknown extra keys);
+  `indexOfRow` (core `parseNumber` returns `undefined` for the degenerate
+  empty/whitespace `data-index=""`, now `null` instead of `0`). Each row
+  in the `## Divergences` table names the exact `helpers.test.ts` test
+  that locks the new canonical contract.
+- **Deliberately left DOM/Vue/env-native (the clean architectural
+  boundary, not a gap):** every DOM `instanceof` (`HTMLElement`/
+  `HTML*Element` unions in `isFormFieldElement`/`isValidityElement`/
+  `isFocusable`, `event instanceof PointerEvent/DragEvent/MouseEvent/
+  KeyboardEvent/Node/CustomEvent`), `node.nodeType`
+  (`isElement`/`isTextNode`), all `.dataset`/`.getAttribute`/`.style`/
+  `.classList`/`.closest`/`.querySelector*`/`getBoundingClientRect`/
+  `.showPopover` DOM API + their `string | null`/empty structural
+  checks, `getComputedStyle` reads (the DOM read inside
+  `hasTransitionDuration`), the drag-detail `PointerEvent`/`HTMLElement`
+  fields (native lazy closures inside the core `recordOf` so
+  `helpers.ts` stays import-safe in a DOM-less runtime), Vue
+  effect-scope/`ref`/`computed`/`watch` reactivity mechanics across all
+  `composables/*.ts` (pure Vue adapters), SSR/environment-existence
+  probes (`typeof window/document/getComputedStyle/performance/CSS/Intl/
+  requestAnimationFrame === 'undefined'|'function'` — `isUndefined(global)`
+  would `ReferenceError` under the DOM-less bundle smoke), typed-union
+  discriminators and typed-optional option-presence `??`/`=== undefined`
+  comparisons, and `String(n)` number→string serialization (inverse of a
+  parser). One-line reason: these are `@elements/core`'s deliberate
+  environment-agnostic non-scope — wrapping them in core would be
+  zero-correctness-gain ceremony (the complexity-philosophy "no
+  circumvention / no awkward exception" rule).
+- **Build externalization confirmed:** `vite.config.ts` `srcBrowser`
+  `build.rollupOptions.external` externalizes ONLY `@elements/core`; the
+  first line of the built `dist/src/browser/index.js` is `import { … }
+  from "../core/index.js"` (no `src/core` body inlined), and the
+  DOM-less resolution smoke `node --input-type=module -e
+  "import('./dist/src/browser/index.js')…"` → `OK`. Verified intact
+  after B9 (final gate below).
