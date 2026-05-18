@@ -8,6 +8,7 @@
 
 import type { ComputedRef, WatchHandle } from '@vue/reactivity'
 import type { CreateThemeOptions, ThemeMode, ThemeSetting, ThemeStateRefs } from './types.js'
+import { attempt } from '@elements/core'
 import { computed, ref, watch } from '@vue/reactivity'
 import { STORAGE_KEY_THEME, THEME_EVENTS } from './constants.js'
 import { emit, isSetting } from './helpers.js'
@@ -40,7 +41,7 @@ let stopApply: WatchHandle | null = null
 let storageKey: string | null = STORAGE_KEY_THEME
 
 const loadStored = (key: string): ThemeSetting | null => {
-	try {
+	const result = attempt(() => {
 		const raw = localStorage.getItem(key)
 		if (!raw) return null
 		// Tolerate the legacy `'mode:core'` storage format from the earlier
@@ -48,9 +49,8 @@ const loadStored = (key: string): ThemeSetting | null => {
 		// null so the caller can fall back to options / 'system'.
 		const head = raw.split(':')[0] ?? ''
 		return isSetting(head) ? head : null
-	} catch {
-		return null
-	}
+	})
+	return result.success ? result.value : null
 }
 
 const writeAttribute = (next: ThemeSetting): void => {
@@ -62,11 +62,8 @@ const writeAttribute = (next: ThemeSetting): void => {
 
 const writeStorage = (key: string | null, next: ThemeSetting): void => {
 	if (!key) return
-	try {
-		localStorage.setItem(key, next)
-	} catch {
-		// Storage unavailable (quota, privacy mode, file:// origin) — silent no-op.
-	}
+	// Storage unavailable (quota, privacy mode, file:// origin) — silent no-op.
+	attempt(() => localStorage.setItem(key, next))
 }
 
 const fireChange = (): void => {
