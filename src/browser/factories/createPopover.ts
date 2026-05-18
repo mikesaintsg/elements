@@ -26,9 +26,14 @@ import {
  * placement to the surface layer's CSS Anchor Positioning recipe.
  *
  * Element-IS-component coupling:
- *   - The panel is set to `popover="manual"` (the surface CSS scope is
- *     `[popover]:not(output)` so toast `<output popover>` keeps its own
- *     fixed-positioned chrome).
+ *   - The panel is set to `popover="manual"`. The surface placement
+ *     scope is `[popover]:not(:where(aside, dialog, nav, [role='status']))`
+ *     (see `surfaces/_anchor-position.scss`) — a toast is excluded
+ *     because it carries `role="status"` (a `<div role="status"
+ *     popover>`, NOT an `<output>`), so it keeps its own
+ *     `position: fixed` viewport-corner chrome instead of inheriting
+ *     anchor placement. The other three exclusions own their own
+ *     non-anchor geometry (aside drawers, dialogs, nav rails).
  *   - Placement is propagated via two surfaces:
  *       1. `panel.style.positionArea` — the inline override that wins
  *          over `var(--set-anchor-position-area)` in the surface rule.

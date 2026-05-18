@@ -55,11 +55,24 @@
 //     stacked notification shape — a distinct floating surface, not the
 //     panel with overrides. See guides/surfaces.md § "Floating surface
 //     family" for the canonical-vs-deviation map.
-//   - This partial keeps the `_output.scss` filename for cascade-order
-//     stability (it loaded after `_aside.scss` so toast band chrome beats
-//     the alert band defaults on shared selectors); the toast root is no
-//     longer an `<output>` but the filename is an index key, not a
-//     semantic claim.
+//   - This partial keeps the `components/_output.scss` filename NOT for
+//     cascade order (barrel order is set by `index.scss`, not the
+//     filename) but because the name is a load-bearing PARITY KEY. A
+//     chain binds it: `COMPONENT_CONTRACTS['output']` (in
+//     `src/browser/patterns.ts`, keyed by tag `output`, `tokens.prefix:
+//     'toast'`) ⟷ taxonomy `entry('output', 'forms', 'composable',
+//     'useToast')` (in `src/browser/taxonomy.ts`) ⟷ the parity clauses
+//     in `tests/src/styles/components/_index.test.ts` (iterates
+//     `COMPONENT_CONTRACTS` keys, asserts `components/_<name>.scss`
+//     exists) and `tests/guides/elements.test.ts` (asserts every
+//     taxonomy tag has a matching partial + `useToast` → `createToast`
+//     factory). As long as the taxonomy registers tag `output` as the
+//     `useToast` host, this file MUST stay `components/_output.scss`.
+//     Renaming is a Phase-8 taxonomy reconciliation (rename the contract
+//     key + mutate the taxonomy entry + `elements.ts` / `elements.md` /
+//     `guides/README.md` in lockstep), correctly out of scope here. The
+//     toast root is no longer an `<output>`, but the filename is a
+//     registry key, not a semantic claim.
 // ============================================================================
 
 @use '../mixins' as *;

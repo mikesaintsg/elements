@@ -212,18 +212,10 @@ const lifecycleDropdown = useMenu(lifecycleToggle, lifecycleMenu, {
 			<button ref="defaultToggle" type="button" class="dropdown">Open menu</button>
 		</div>
 		<menu ref="defaultMenu" popover>
-			<li>
-				<menu>
-					<li><button type="button" @click="onCommand('Profile')">Profile</button></li>
-					<li><button type="button" @click="onCommand('Settings')">Settings</button></li>
-					<li><button type="button" @click="onCommand('Billing')">Billing</button></li>
-				</menu>
-			</li>
-			<li>
-				<menu>
-					<li><button type="button" @click="onCommand('Sign out')">Sign out</button></li>
-				</menu>
-			</li>
+			<li><button type="button" @click="onCommand('Profile')">Profile</button></li>
+			<li><button type="button" @click="onCommand('Settings')">Settings</button></li>
+			<li><button type="button" @click="onCommand('Billing')">Billing</button></li>
+			<li><button type="button" @click="onCommand('Sign out')">Sign out</button></li>
 		</menu>
 		<small class="block mt-2">
 			<strong>Last picked:</strong>
@@ -238,17 +230,10 @@ const dropdown = useMenu(toggle, menu, { placement: 'bottom-start' })
 
 &lt;button ref="toggle" type="button" class="dropdown"&gt;Open menu&lt;/button&gt;
 &lt;menu ref="menu" popover&gt;
-  &lt;li&gt;
-    &lt;menu&gt;
-      &lt;li&gt;&lt;button&gt;Profile&lt;/button&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;button&gt;Settings&lt;/button&gt;&lt;/li&gt;
-    &lt;/menu&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;menu&gt;
-      &lt;li&gt;&lt;button&gt;Sign out&lt;/button&gt;&lt;/li&gt;
-    &lt;/menu&gt;
-  &lt;/li&gt;
+  &lt;li&gt;&lt;button&gt;Profile&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;button&gt;Settings&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;button&gt;Billing&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;button&gt;Sign out&lt;/button&gt;&lt;/li&gt;
 &lt;/menu&gt;</code></pre>
 		</details>
 	</section>
@@ -392,11 +377,7 @@ useMenu(toggleRef, menuRef, { placement: 'bottom-start', flip: 8 })
 				</menu>
 			</li>
 			<li>
-				<menu>
-					<li>
-						<button type="button" class="subtle" @click="filterDropdown.hide()">Done</button>
-					</li>
-				</menu>
+				<button type="button" class="subtle" @click="filterDropdown.hide()">Done</button>
 			</li>
 		</menu>
 		<details>

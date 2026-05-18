@@ -331,6 +331,43 @@ describe('menu — `<menu popover>` conformant command-group composition', () =>
 		expect(pixels(group2, 'border-top-width')).toBeGreaterThan(0)
 	})
 
+	it('a FLAT trailing `<li><button>` after a group `<li>` receives the same separator border', () => {
+		// The rendered showcase (`MenuPage` #demo-dropdown-full "Delete",
+		// `UseMenuPage` filter "Done") places a flat command `<li>` —
+		// NOT a second labelled group — directly after a real group. The
+		// `menu[popover] > li:has(> menu) + li` rule fires on ANY `<li>`
+		// following a group wrapper, so the trailing flat command gets the
+		// inter-group divider without artificial `<li><menu>` over-nesting.
+		// The two-labelled-group case above only exercises group→group;
+		// this locks the group→flat path the showcase actually relies on.
+		const menu = build('menu')
+		menu.setAttribute('popover', '')
+		menu.id = 'group-then-flat-menu'
+
+		const group = build('li')
+		const h6 = build('h6', '', 'Edit')
+		const nested = build('menu')
+		const groupItem = build('li')
+		const groupBtn = build('button')
+		groupBtn.textContent = 'Cut'
+		groupItem.appendChild(groupBtn)
+		nested.appendChild(groupItem)
+		group.append(h6, nested)
+
+		const flat = build('li')
+		const flatBtn = build('button')
+		flatBtn.textContent = 'Delete'
+		flat.appendChild(flatBtn)
+
+		menu.append(group, flat)
+		mount(menu)
+		menu.showPopover()
+
+		expect(pixels(flat, 'border-top-width')).toBeGreaterThan(0)
+		expect(style(flat, 'border-top-style')).toBe('solid')
+		menu.hidePopover()
+	})
+
 	it('an `aria-disabled="true"` item is opacity-muted + pointer-events: none', () => {
 		const menu = build('menu')
 		menu.setAttribute('popover', '')

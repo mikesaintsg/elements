@@ -613,11 +613,12 @@ export const tokens = {
 		transitionDuration: '--set-output-transition-duration',
 	},
 
-	// Component tokens declared on `<output>` when promoted to a toast
+	// Component tokens declared on the toast root — a `<div role="status">`
 	// (popover or standalone status banner). Lives in components/_output.scss
-	// alongside the calc-chip element baseline. Edge-inset is the distance
-	// from the viewport corner; placement modifiers `.start` / `.top` flip
-	// the corner.
+	// alongside the calc-chip `<output>` element baseline (the filename is a
+	// parity-registry key, not a claim that the toast is an `<output>`).
+	// Edge-inset is the distance from the viewport corner; placement
+	// modifiers `.start` / `.top` flip the corner.
 	toast: {
 		color: '--set-toast-color',
 		backgroundColor: '--set-toast-background-color',
@@ -639,9 +640,9 @@ export const tokens = {
 		spacing: '--set-toast-spacing',
 		// Per-toast offset written inline by `createToast.stack()` —
 		// declared on `:root` with a `0px` default so the parity test
-		// resolves it on a bare `<output>` and `var(--set-toast-stack-
-		// offset)` references in `composables/_toast.scss` always have
-		// a fallback value.
+		// resolves it on a bare `<div role="status">` and `var(--set-
+		// toast-stack-offset)` references in `composables/_toast.scss`
+		// always have a fallback value.
 		stackOffset: '--set-toast-stack-offset',
 		// Per-toast deck index — 0 means the front card. Same default-
 		// on-:root pattern as `stackOffset`; the factory overwrites the
