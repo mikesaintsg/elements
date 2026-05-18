@@ -15,16 +15,10 @@ import type {
 	RuleInterface,
 	RuleSubject,
 } from '../types.js'
+import { andOf, literalOf, notOf, parseString, whereOf } from '@elements/core'
 import {
-	andOf,
-	literalOf,
-	notOf,
-	parseEnum,
-	parseInteger,
-	parseString,
-	whereOf,
-} from '@elements/core'
-import {
+	coerceEnumAttribute,
+	coerceIntegerAttribute,
 	effectiveCategories,
 	flatChildren,
 	flatDescendants,
@@ -91,12 +85,13 @@ import {
 //                    generic) plus `void-has-children`.
 //    - attribute    coupling (`AttributeRule.requires`), required-attribute
 //                    (`AttributeRule.required`), enum-value
-//                    (`AttributeRule.values` via `parseEnum`),
+//                    (`AttributeRule.values` via `coerceEnumAttribute`),
 //                    coupling-domain (the `note`-keyed corpus DOM checks —
 //                    `time`/`datetime`, `img`/`ismap`, `colgroup`/`span`,
-//                    `dialog`/`tabindex`), integer/range (`parseInteger`
-//                    over the corpus-bound `ATTRIBUTE_INTEGER_BOUNDS`), and
-//                    global-enum (`parseEnum` over `ATTRIBUTE_ENUM_DOMAINS`)
+//                    `dialog`/`tabindex`), integer/range
+//                    (`coerceIntegerAttribute` over the corpus-bound
+//                    `ATTRIBUTE_INTEGER_BOUNDS`), and global-enum
+//                    (`coerceEnumAttribute` over `ATTRIBUTE_ENUM_DOMAINS`)
 //                    — generic, schema-data-driven, attribute-only (the
 //                    other families never read attributes ⇒ disjoint).
 //
@@ -1061,10 +1056,13 @@ const structureVoidRule: RuleInterface = {
 //  `entry.attributes` (`AttributeRule` — `{attribute, requires?, values?,
 //  required?, note?}`) DATA, never an `if (tag==='a')` branch. Predicates are
 //  named `@elements/core` validator/parser compositions; every attribute
-//  VALUE check coerces through an `@elements/core` parser
-//  (`parseString`/`parseInteger`/`parseEnum`) — coerce-or-`undefined`, never a
-//  hand-rolled `parseInt`/regex/`Number()` on an attribute. The corpus is the
-//  source of truth: each rule fires only on a card-stated constraint and every
+//  VALUE check coerces through the inspector's HTML-attribute coercion layer
+//  (`helpers.ts` `coerceEnumAttribute` / `coerceIntegerAttribute` composing
+//  the `@elements/core` `parseEnum` / `parseInteger`; child text via
+//  `parseString`) — coerce-or-`undefined`, HTML-faithful (enumerated values
+//  ASCII case-insensitive, integers `-?[0-9]+`), never a hand-rolled
+//  `parseInt`/regex/`Number()` on an attribute. The corpus is the source of
+//  truth: each rule fires only on a card-stated constraint and every
 //  `Finding.cite` resolves to the offending element's own schema-entry anchor.
 //
 //  Concerns (one finding per violation, disjoint from context/content/
@@ -1075,7 +1073,8 @@ const structureVoidRule: RuleInterface = {
 //    2. required          an `AttributeRule.required` attribute is absent
 //                          (`bdo` ⇒ dir, `data` ⇒ value, `map` ⇒ name).
 //    3. value             an `AttributeRule.values` (closed domain) attribute
-//                          is present but `parseEnum` rejects it (`bdo` dir ∈
+//                          is present but `coerceEnumAttribute` rejects it
+//                          (ASCII case-insensitive — `bdo` dir ∈
 //                          {ltr,rtl}; `th` scope ∈ {row,col,rowgroup,
 //                          colgroup}; `dialog` closedby ∈ {any,closerequest,
 //                          none}).
@@ -1093,7 +1092,8 @@ const structureVoidRule: RuleInterface = {
 //                          `colgroup`/`col` `span` ∈ [1,1000];
 //                          `td`/`th` `colspan` ∈ [1,1000], `rowspan` ∈
 //                          [0,65534] (tables.html bounds). Coerced via
-//                          `parseInteger`, then the corpus bound.
+//                          `coerceIntegerAttribute` (HTML valid-integer
+//                          grammar, then `parseInteger`), then the bound.
 //    6. enum (global)     the global enumerated attributes whose closed
 //                          domain the corpus cards STATE: `dir` ∈
 //                          {ltr,rtl,auto}, `contenteditable` ∈ {true,'',false,
@@ -1222,9 +1222,11 @@ const attributeRequiredRule: RuleInterface = {
 
 // 3. value — an `AttributeRule.values` (closed domain) attribute is present
 // but its value is not in the domain. The domain check coerces through the
-// `@elements/core` `parseEnum` parser (string-only, trims, exact match →
-// typed-or-`undefined`) over the schema-carried `values` — never a
-// hand-written membership test.
+// inspector's `coerceEnumAttribute` (ASCII-lowercase per the HTML spec — the
+// corpus cards `scope`/`dir`/etc. as "Enumerated attribute", which is ASCII
+// case-insensitive — then the `@elements/core` `parseEnum`) over the
+// schema-carried `values` — never a hand-written membership test, and the
+// SAME enumerated-value coercion `attribute/enum` uses (one source of truth).
 function offendingEnumAttribute(
 	entry: ContentModelEntry | null,
 	element: Element,
@@ -1233,7 +1235,7 @@ function offendingEnumAttribute(
 		if (rule.values === undefined) return false
 		const raw = element.getAttribute(rule.attribute)
 		if (raw === null) return false
-		return parseEnum(raw, rule.values) === undefined
+		return coerceEnumAttribute(raw, rule.values) === undefined
 	})
 }
 
@@ -1379,8 +1381,10 @@ const attributeCouplingDomainRule: RuleInterface = {
 
 // 5. integer / range — the corpus integer attributes. `tabindex` is GLOBAL
 // (any element; interactions.md §6.6.3 "a valid integer"); the bounded ones
-// carry their corpus bound. Coerced via the `@elements/core` `parseInteger`
-// parser (parseNumber ∘ Number.isInteger → number-or-`undefined`), then the
+// carry their corpus bound. Coerced via the inspector's
+// `coerceIntegerAttribute` (gates the HTML *valid integer* grammar `-?[0-9]+`
+// — no hex/exponent/leading-`+`/whitespace, which `Number(...)` would wrongly
+// accept — then composes the `@elements/core` `parseInteger`), then the
 // corpus bound — never a hand-rolled `parseInt`. The bound DATA is the
 // corpus-bound `ATTRIBUTE_INTEGER_BOUNDS` constant (constants.ts — the §5
 // module-data home; bidirectionally bound to the cards by w3c.test.ts), NOT
@@ -1392,7 +1396,7 @@ function offendingIntegerBound(element: Element, tag: string): AttributeIntegerB
 		if (bound.tags !== undefined && !bound.tags.includes(tag)) continue
 		const raw = element.getAttribute(bound.attribute)
 		if (raw === null) continue
-		const value = parseInteger(raw)
+		const value = coerceIntegerAttribute(raw)
 		if (value === undefined) return bound
 		if (bound.min !== undefined && value < bound.min) return bound
 		if (bound.max !== undefined && value > bound.max) return bound
@@ -1437,9 +1441,13 @@ const attributeIntegerRule: RuleInterface = {
 }
 
 // 6. enum (global) — the global enumerated attributes whose closed keyword
-// domain the corpus cards STATE. Coerced via the `@elements/core` `parseEnum`
-// parser over the corpus-bound `ATTRIBUTE_ENUM_DOMAINS` constant
-// (constants.ts — bidirectionally bound to the cards by w3c.test.ts).
+// domain the corpus cards STATE. Coerced via the inspector's
+// `coerceEnumAttribute` (ASCII-lowercase per the HTML spec, then the
+// `@elements/core` `parseEnum`) — the SAME enumerated-value coercion
+// `attribute/value` uses (one source of truth: an HTML enumerated value is
+// matched ASCII case-insensitively in exactly ONE place) — over the
+// corpus-bound `ATTRIBUTE_ENUM_DOMAINS` constant (constants.ts —
+// bidirectionally bound to the cards by w3c.test.ts).
 // `contenteditable`'s empty-string value IS its valid `true` state per the
 // card ("`true` (or the empty string)"), so an empty raw value is faithful,
 // not a violation — only a non-empty out-of-domain value fires.
@@ -1475,7 +1483,7 @@ function offendingEnumDomain(
 		const raw = element.getAttribute(domain.attribute)
 		if (raw === null) continue
 		if (domain.empty === true && raw === '') continue
-		if (parseEnum(raw, domain.values) === undefined) return domain
+		if (coerceEnumAttribute(raw, domain.values) === undefined) return domain
 	}
 	return null
 }
@@ -1513,8 +1521,10 @@ const attributeEnumRule: RuleInterface = {
 // The frozen, ordered rule registry every Phase-3 family contributes to and
 // Phase-4 (`Inspector` / `FindingManager`) consumes unchanged. Each family
 // guard above is a named `@elements/core` composition (`whereOf` / `andOf` /
-// `notOf` / `literalOf` / the `parseEnum`/`parseInteger` parsers); the part-3
-// interaction family extends this same array with the same vocabulary.
+// `notOf` / `literalOf`), with the attribute-value rules composing the
+// inspector's `coerceEnumAttribute` / `coerceIntegerAttribute` over the core
+// `parseEnum` / `parseInteger` parsers; the part-3 interaction family extends
+// this same array with the same vocabulary.
 
 /**
  * The frozen inspector rule registry — the Phase-3 part-1 families

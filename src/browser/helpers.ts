@@ -83,6 +83,7 @@ import {
 	literalOf,
 	nullableOf,
 	orOf,
+	parseEnum,
 	parseInteger,
 	parseNumber,
 	recordOf,
@@ -478,6 +479,76 @@ export function* flatDescendants(element: Element): Generator<Element, void, unk
  */
 export function nodePath(element: Element, ancestor?: Element | null): readonly Element[] {
 	return getPathToAncestor(element, ancestor)
+}
+
+// ── Inspector attribute-value coercion ───────────────────────────────────────
+// HOW an HTML attribute value is coerced before a closed-domain / numeric
+// check — the ONE source of truth the inspector's attribute rules compose
+// over the GENERIC `@elements/core` parsers. The case-insensitivity / integer
+// grammar is a property of HTML *attribute parsing*, NOT of the environment-
+// agnostic core parsers (not every enum is case-insensitive; a JS integer
+// string is not the HTML integer microsyntax) — so it lives here, on the
+// inspector edge, composing core rather than mutating it (the correct blast
+// radius). Both enum value paths (`attribute/value` schema `values` +
+// `attribute/enum` global `ATTRIBUTE_ENUM_DOMAINS`) route through
+// `coerceEnumAttribute`; every corpus integer attribute through
+// `coerceIntegerAttribute`.
+
+/**
+ * Coerce a raw HTML enumerated-attribute value against its (already
+ * ASCII-lowercase, corpus-faithful) keyword domain, returning the matched
+ * keyword or `undefined`.
+ *
+ * @remarks HTML enumerated-attribute keyword matching is **ASCII
+ * case-insensitive** (the corpus cards `scope` / `dir` / `contenteditable` /
+ * `inputmode` / `closedby` explicitly as *"Enumerated attribute"*), so the
+ * raw value is ASCII-lowercased (per the HTML spec — NOT a locale
+ * `toLowerCase`, which has non-ASCII surprises like Turkish dotless-i) before
+ * delegating to the generic `@elements/core` {@link parseEnum} (which trims +
+ * exact-matches). The domain stays the corpus keyword list verbatim,
+ * unwidened; only the input is normalised. This is the single coercion the
+ * inspector's enum-value rules share so "valid enumerated value" is decided
+ * one way, not via two scattered `.toLowerCase()` patches.
+ *
+ * @param raw - The raw attribute string (e.g. `getAttribute(...)`).
+ * @param domain - The corpus keyword domain (already lowercase).
+ * @returns The matched keyword (always lowercase) or `undefined`.
+ */
+export function coerceEnumAttribute<T extends string>(
+	raw: string,
+	domain: readonly T[],
+): T | undefined {
+	// ASCII-only lower-casing per the HTML spec's ASCII case-insensitive
+	// keyword match — replace just A–Z, never a locale fold.
+	const lowered = raw.replace(/[A-Z]/g, (c) => c.toLowerCase())
+	return parseEnum(lowered, domain)
+}
+
+/**
+ * Coerce a raw HTML integer-attribute value to its integer, gating on the
+ * HTML **valid integer** grammar before the numeric/bounds check.
+ *
+ * @remarks The corpus cards the inspector's integer attributes plainly —
+ * `tabindex` *"a valid integer"* (interactions.md §6.6.3), `colspan` /
+ * `rowspan` *"a valid non-negative integer"* (tables.md §4.9.11), `span`
+ * *"number of columns spanned"* (tables.md) — and an HTML *valid integer* is
+ * exactly `-?[0-9]+` (optional `U+002D` then ASCII digits): no hex, no
+ * exponent, no leading `+`, no surrounding whitespace. The corpus reserves
+ * the *"potentially surrounded by spaces"* allowance for URL attributes
+ * (`cite` / `src`) and does **not** state it for these integer cards, so the
+ * faithful gate is STRICT — `" 2 "` is not a valid integer. The generic
+ * `@elements/core` {@link parseInteger} (→ `Number(...)`) would accept
+ * `"0x10"` / `"1e3"` / `"+5"` / `" 5 "`; this gates the value on the HTML
+ * grammar FIRST, then composes `parseInteger` for the actual int parse (not a
+ * reinvented number parse). Callers apply the corpus min/max afterwards.
+ *
+ * @param raw - The raw attribute string (e.g. `getAttribute(...)`).
+ * @returns The integer when the value is an HTML valid integer, else
+ *   `undefined`.
+ */
+export function coerceIntegerAttribute(raw: string): number | undefined {
+	if (!/^-?\d+$/.test(raw)) return undefined
+	return parseInteger(raw)
 }
 
 // ── Table sort / escape primitives ──────────────────────────────────────────

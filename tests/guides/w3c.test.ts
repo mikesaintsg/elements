@@ -757,6 +757,74 @@ describe('w3c corpus — Phase 3.2 attribute family is corpus-bound', () => {
 	})
 })
 
+// ── attribute/value ↔ attribute/enum disjointness invariant (guarded) ───────
+//
+// The two value-domain rules PARTITION the attribute-value space:
+//   • `attribute/value` owns every attribute a schema `AttributeRule` carries
+//     a closed `.values` domain for (the spec's NARROWER per-element set).
+//   • `attribute/enum` owns the GLOBAL `ATTRIBUTE_ENUM_DOMAINS` attributes,
+//     and DEFERS (`schemaConstrainsValues` ⇒ skip) on any element whose
+//     schema entry constrains that attribute's values — so one violation is
+//     reported once, by exactly one rule.
+//
+// The runtime `offendingEnumDomain` deferral + 2 example assertions enforce
+// this only by behaviour on the inputs tested — the SAME weaker-than-precedent
+// shape the §1/§2 unguarded invariants had when they slipped two reviews.
+// This adds the Phase-3.1-style UNCONDITIONAL whole-set guard: it FAILS
+// LOUDLY if any future schema edit makes the partition leak (an
+// `ATTRIBUTE_ENUM_DOMAINS` attribute carried on an entry WITHOUT `.values` —
+// so `attribute/enum` would NOT defer and would fire on a schema-owned
+// attribute, a silent double-report path), or makes the two domains disagree
+// (a schema `.values` keyword the global domain lacks — a value `attribute/
+// value` accepts that `attribute/enum` would still flag elsewhere). Both as
+// ONE whole-set diff each (empty ⇒ invariant holds) in the established
+// guarded-invariant idiom.
+
+describe('rules.ts — attribute/value ↔ attribute/enum disjointness invariant (guarded)', () => {
+	const ENUM_ATTRS: ReadonlySet<string> = new Set(ATTRIBUTE_ENUM_DOMAINS.map((d) => d.attribute))
+
+	it('every schema AttributeRule on an ATTRIBUTE_ENUM_DOMAINS attribute carries a closed `.values` (deferral is total)', () => {
+		// If ANY entry carried e.g. `dir`/`contenteditable`/`inputmode` as a
+		// bare `required`/`note` rule with NO `.values`, `schemaConstrainsValues`
+		// would return false, the global `attribute/enum` would NOT defer, and
+		// it would fire on a schema-owned attribute — the exact silent
+		// double-report leak this guard exists to catch. Whole-set diff:
+		// `{tag}[{attr}]` for every offending entry; empty ⇒ deferral total.
+		const valuelessGlobalRules = contentModel
+			.flatMap((e) =>
+				e.attributes
+					.filter((r) => ENUM_ATTRS.has(r.attribute) && r.values === undefined)
+					.map((r) => `${e.tag}[${r.attribute}]`),
+			)
+			.sort()
+		expect(valuelessGlobalRules).toEqual([])
+	})
+
+	it('every schema `.values` on an ATTRIBUTE_ENUM_DOMAINS attribute is a SUBSET of the global domain (domains never disagree)', () => {
+		// The per-element schema domain must be the spec's NARROWER set ⊂ the
+		// global one (`bdo dir∈{ltr,rtl} ⊂ {ltr,rtl,auto}`). A schema keyword
+		// the global domain lacks would mean `attribute/value` accepts a value
+		// the still-active global `attribute/enum` rejects for other elements —
+		// an incoherent partition. Whole-set diff of every escaping keyword;
+		// empty ⇒ every schema sub-domain is consistent with its global parent.
+		const globalDomainOf = new Map(
+			ATTRIBUTE_ENUM_DOMAINS.map((d) => [d.attribute, new Set<string>(d.values)] as const),
+		)
+		const escapingKeywords = contentModel
+			.flatMap((e) =>
+				e.attributes
+					.filter((r) => ENUM_ATTRS.has(r.attribute) && r.values !== undefined)
+					.flatMap((r) =>
+						(r.values ?? [])
+							.filter((v) => !(globalDomainOf.get(r.attribute)?.has(v) ?? false))
+							.map((v) => `${e.tag}[${r.attribute}]=${v}`),
+					),
+			)
+			.sort()
+		expect(escapingKeywords).toEqual([])
+	})
+})
+
 describe('w3c corpus — void set is exactly the corpus-stated void elements', () => {
 	// The set of tags the CORPUS itself declares void, derived purely from
 	// each card's **Tag omission** prose ("No end tag" / "(void element)").

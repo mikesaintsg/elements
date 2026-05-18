@@ -198,6 +198,42 @@ describe('rules — attribute family', () => {
 			container.appendChild(dialog)
 			expect(evaluateOn(valueRule, dialog, dialog)?.rule).toBe('attribute/value')
 		})
+
+		// HTML enumerated-attribute keyword matching is ASCII case-insensitive
+		// (the corpus cards `scope`/`dir`/`closedby` as "Enumerated attribute").
+		// Latent before Phase-3.2 because every prior fixture was lowercase.
+		it('clean: <th scope=ROW> (uppercase) in a valid table is allowed', () => {
+			const th = el('th', { scope: 'ROW' })
+			const tr = el('tr', {}, [th])
+			container.appendChild(el('table', {}, [el('tbody', {}, [tr])]))
+			expect(evaluateOn(valueRule, th, th)).toBeNull()
+		})
+
+		it('clean: <th scope=Row> (mixed-case) in a valid table is allowed', () => {
+			const th = el('th', { scope: 'Row' })
+			const tr = el('tr', {}, [th])
+			container.appendChild(el('table', {}, [el('tbody', {}, [tr])]))
+			expect(evaluateOn(valueRule, th, th)).toBeNull()
+		})
+
+		it('clean: <bdo dir=LTR> (uppercase) is allowed', () => {
+			const bdo = el('bdo', { dir: 'LTR' })
+			container.appendChild(bdo)
+			expect(evaluateOn(valueRule, bdo, bdo)).toBeNull()
+		})
+
+		it('clean: <dialog closedby=ANY> (uppercase) is allowed', () => {
+			const dialog = el('dialog', { closedby: 'ANY' })
+			container.appendChild(dialog)
+			expect(evaluateOn(valueRule, dialog, dialog)).toBeNull()
+		})
+
+		it('dirty: <th scope=bogus> still flags (case-insensitivity does not relax the domain)', () => {
+			const th = el('th', { scope: 'bogus' })
+			const tr = el('tr', {}, [th])
+			container.appendChild(el('table', {}, [el('tbody', {}, [tr])]))
+			expect(evaluateOn(valueRule, th, th)?.rule).toBe('attribute/value')
+		})
 	})
 
 	// ── coupling-domain (note-keyed corpus DOM checks) ─────────────────────
@@ -356,6 +392,54 @@ describe('rules — attribute family', () => {
 			container.appendChild(el('table', {}, [colgroup]))
 			expect(evaluateOn(integerRule, colgroup, colgroup)).toBeNull()
 		})
+
+		// An HTML *valid integer* is exactly `-?[0-9]+`. `Number(...)` (the
+		// generic core `parseInteger`) wrongly accepts hex / exponent /
+		// leading-`+` / surrounding whitespace; `coerceIntegerAttribute` gates
+		// the HTML grammar FIRST, so these are missed-violation regressions
+		// that must now flag. The corpus cards `colspan`/`rowspan`/`span` as
+		// "valid non-negative integer" with NO "potentially surrounded by
+		// spaces" allowance (that phrasing is reserved for URL attributes), so
+		// the gate is STRICT — `" 2 "` is not a valid integer.
+		it('dirty: <td colspan=0x2> is flagged (hex is not an HTML valid integer)', () => {
+			const td = el('td', { colspan: '0x2' })
+			const tr = el('tr', {}, [td])
+			container.appendChild(el('table', {}, [el('tbody', {}, [tr])]))
+			const finding = evaluateOn(integerRule, td, td)
+			if (finding === null) throw new Error('expected an attribute/integer finding')
+			expect(finding.rule).toBe('attribute/integer')
+			expect(finding.actual).toBe('0x2')
+		})
+
+		it('dirty: <td colspan=1e3> is flagged (exponent is not an HTML valid integer)', () => {
+			const td = el('td', { colspan: '1e3' })
+			const tr = el('tr', {}, [td])
+			container.appendChild(el('table', {}, [el('tbody', {}, [tr])]))
+			expect(evaluateOn(integerRule, td, td)?.rule).toBe('attribute/integer')
+		})
+
+		it('dirty: <td colspan=+5> is flagged (leading + is not an HTML valid integer)', () => {
+			const td = el('td', { colspan: '+5' })
+			const tr = el('tr', {}, [td])
+			container.appendChild(el('table', {}, [el('tbody', {}, [tr])]))
+			expect(evaluateOn(integerRule, td, td)?.rule).toBe('attribute/integer')
+		})
+
+		it('dirty: <td colspan=" 2 "> is flagged (surrounding whitespace — corpus states no space allowance)', () => {
+			const td = el('td', { colspan: ' 2 ' })
+			const tr = el('tr', {}, [td])
+			container.appendChild(el('table', {}, [el('tbody', {}, [tr])]))
+			expect(evaluateOn(integerRule, td, td)?.rule).toBe('attribute/integer')
+		})
+
+		it('clean: <td colspan=2> / <td rowspan=0> (plain valid integers) still pass', () => {
+			const cspan = el('td', { colspan: '2' })
+			container.appendChild(el('table', {}, [el('tbody', {}, [el('tr', {}, [cspan])])]))
+			expect(evaluateOn(integerRule, cspan, cspan)).toBeNull()
+			const rspan = el('td', { rowspan: '0' })
+			container.appendChild(el('table', {}, [el('tbody', {}, [el('tr', {}, [rspan])])]))
+			expect(evaluateOn(integerRule, rspan, rspan)).toBeNull()
+		})
 	})
 
 	// ── enum (global) (parseEnum over ATTRIBUTE_ENUM_DOMAINS) ──────────────
@@ -405,6 +489,33 @@ describe('rules — attribute family', () => {
 			const input = el('input', { inputmode: 'keyboard' })
 			container.appendChild(input)
 			expect(evaluateOn(enumRule, input, input)?.rule).toBe('attribute/enum')
+		})
+
+		// Global enumerated attributes are ASCII case-insensitive too — the
+		// SAME `coerceEnumAttribute` coercion `attribute/value` uses, so an
+		// uppercase global value is conformant, not a violation.
+		it('clean: <div dir=RTL> (uppercase) is allowed', () => {
+			const div = el('div', { dir: 'RTL' })
+			container.appendChild(div)
+			expect(evaluateOn(enumRule, div, div)).toBeNull()
+		})
+
+		it('clean: <div contenteditable=TRUE> (uppercase) is allowed', () => {
+			const div = el('div', { contenteditable: 'TRUE' })
+			container.appendChild(div)
+			expect(evaluateOn(enumRule, div, div)).toBeNull()
+		})
+
+		it('clean: <input inputmode=NUMERIC> (uppercase) is allowed', () => {
+			const input = el('input', { inputmode: 'NUMERIC' })
+			container.appendChild(input)
+			expect(evaluateOn(enumRule, input, input)).toBeNull()
+		})
+
+		it('dirty: <div dir=sideways> still flags (case-insensitivity does not widen the domain)', () => {
+			const div = el('div', { dir: 'sideways' })
+			container.appendChild(div)
+			expect(evaluateOn(enumRule, div, div)?.rule).toBe('attribute/enum')
 		})
 	})
 
@@ -460,6 +571,58 @@ describe('rules — attribute family', () => {
 			// over-suppress a genuinely global-only violation).
 			container.appendChild(el('div', { dir: 'sideways' }))
 			expect(registryFindings(container)).toEqual(['attribute/enum'])
+		})
+
+		// HTML enumerated attributes are ASCII case-insensitive — uppercase /
+		// mixed-case conformant markup must produce ZERO findings through the
+		// WHOLE registry (the realistic inspection pass), not a false positive.
+		it('<th scope=ROW> inside a valid table → zero findings (case-insensitive)', () => {
+			const th = el('th', { scope: 'ROW' })
+			container.appendChild(el('table', {}, [el('tbody', {}, [el('tr', {}, [th])])]))
+			expect(registryFindings(container)).toEqual([])
+		})
+
+		it('<bdo dir=LTR> → zero findings (uppercase schema-domain value, dir required satisfied)', () => {
+			container.appendChild(el('bdo', { dir: 'LTR' }))
+			expect(registryFindings(container)).toEqual([])
+		})
+
+		it('<div dir=RTL> → zero findings (uppercase global-domain value)', () => {
+			container.appendChild(el('div', { dir: 'RTL' }))
+			expect(registryFindings(container)).toEqual([])
+		})
+
+		it('<div contenteditable=TRUE> → zero findings (uppercase global-domain value)', () => {
+			container.appendChild(el('div', { contenteditable: 'TRUE' }))
+			expect(registryFindings(container)).toEqual([])
+		})
+
+		it('<input inputmode=NUMERIC> → zero findings (uppercase global-domain value)', () => {
+			container.appendChild(el('input', { inputmode: 'NUMERIC' }))
+			expect(registryFindings(container)).toEqual([])
+		})
+
+		it('<th scope=bogus> still → exactly one attribute/value (genuine invalid still bites)', () => {
+			const th = el('th', { scope: 'bogus' })
+			container.appendChild(el('table', {}, [el('tbody', {}, [el('tr', {}, [th])])]))
+			expect(registryFindings(container)).toEqual(['attribute/value'])
+		})
+
+		it('<div dir=sideways> still → exactly one attribute/enum (genuine invalid still bites)', () => {
+			container.appendChild(el('div', { dir: 'sideways' }))
+			expect(registryFindings(container)).toEqual(['attribute/enum'])
+		})
+
+		it('<td colspan=0x2> → exactly one attribute/integer (hex is not an HTML valid integer)', () => {
+			const td = el('td', { colspan: '0x2' })
+			container.appendChild(el('table', {}, [el('tbody', {}, [el('tr', {}, [td])])]))
+			expect(registryFindings(container)).toEqual(['attribute/integer'])
+		})
+
+		it('<td colspan=1e3> → exactly one attribute/integer (exponent is not an HTML valid integer)', () => {
+			const td = el('td', { colspan: '1e3' })
+			container.appendChild(el('table', {}, [el('tbody', {}, [el('tr', {}, [td])])]))
+			expect(registryFindings(container)).toEqual(['attribute/integer'])
 		})
 
 		it('a fully clean attribute-rich tree → zero findings', () => {
@@ -562,6 +725,34 @@ describe('rules — attribute family', () => {
 				expect(first).toBe(second)
 				// ancestor a[href] ⇒ clean; no a[href] ancestor ⇒ flagged.
 				expect(first).toBe(!hasLinkAncestor)
+			}
+		})
+
+		it('seeded <th scope> case-insensitive verdict is reproducible & bites both ways', () => {
+			// The `coerceEnumAttribute` discriminator: an in-domain keyword in
+			// ANY case is conformant (zero findings); a genuinely out-of-domain
+			// value still flags `attribute/value` regardless of case. If the
+			// helper's ASCII-lowercase step is reverted, the `valid`-branch
+			// (uppercase keyword) verdict flips to `['attribute/value']` and
+			// this fails — the perturbation proof the helper bites.
+			for (const seed of [7, 77, 707, 70007]) {
+				const random = createRandom(seed)
+				const valid = random() < 0.5
+
+				const buildOnce = (): readonly string[] => {
+					// A valid keyword in mixed/upper case vs a genuine non-keyword.
+					const th = el('th', { scope: valid ? 'ROW' : 'BOGUS' })
+					const table = el('table', {}, [el('tbody', {}, [el('tr', {}, [th])])])
+					container.appendChild(table)
+					const ids = registryFindings(container)
+					table.remove()
+					return ids
+				}
+
+				const first = buildOnce()
+				const second = buildOnce()
+				expect(first).toEqual(second)
+				expect(first).toEqual(valid ? [] : ['attribute/value'])
 			}
 		})
 	})

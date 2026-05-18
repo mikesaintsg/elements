@@ -605,6 +605,9 @@ The frozen TS mirror of the corpus, shaped exactly like
     `colspan` 1–1000 / `rowspan` 0–65534), `attribute/enum` (`parseEnum`
     over the corpus-stated global domains — `dir∈{ltr,rtl,auto}`,
     `contenteditable`, `inputmode`). All attribute-VALUE checks coerce via
+    the inspector's HTML-faithful coercion helpers (`coerceEnumAttribute` —
+    ASCII case-insensitive enumerated-keyword match — / `coerceIntegerAttribute`
+    — HTML `-?[0-9]+` valid-integer grammar) composing the
     [`@elements/core` parsers](guides/parsers.md) (coerce-or-`undefined`,
     never hand-written attribute parsing); attribute-only ⇒ disjoint from
     the other families (one finding per violation). `loading`/`crossorigin`
