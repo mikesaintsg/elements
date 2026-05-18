@@ -897,7 +897,7 @@ For `[input](input.html#the-input-element)` elements where the `[type](input.htm
 
 The [inner display type](https://drafts.csswg.org/css-display/#inner-display-type) is always 'flow-root'.
 
-#### 15.3.11 The `[hr](grouping-content.html#the-hr-element)` element
+#### 15.3.11 The hr element
 
 ```
 @namespace "http://www.w3.org/1999/xhtml";
@@ -931,7 +931,7 @@ The `[width](obsolete.html#attr-hr-width)` attribute on an `[hr](grouping-conten
 
 When an `[hr](grouping-content.html#the-hr-element)` element has a `[color](obsolete.html#attr-hr-color)` attribute, its value is [expected](#expected) to be parsed using the [rules for parsing a legacy color value](common-microsyntaxes.html#rules-for-parsing-a-legacy-colour-value), and if that does not return failure, the user agent is [expected](#expected) to treat the attribute as a [presentational hint](#presentational-hints) setting the element's ['color'](https://drafts.csswg.org/css-color/#the-color-property) property to the resulting color.
 
-#### 15.3.12 The `[fieldset](form-elements.html#the-fieldset-element)` and `[legend](form-elements.html#the-legend-element)` elements
+#### 15.3.12 The fieldset and legend elements
 
 ```
 @namespace "http://www.w3.org/1999/xhtml";
@@ -1232,11 +1232,11 @@ If the box does not overflow in the horizontal axis, then it is centered horizon
 
 Need to define the [primitive appearance](https://drafts.csswg.org/css-ui/#primitive-appearance).
 
-#### 15.5.4 The `[button](form-elements.html#the-button-element)` element
+#### 15.5.4 The button element
 
 The `[button](form-elements.html#the-button-element)` element, when it generates a [CSS box](https://drafts.csswg.org/css-display/#css-box), is[expected](#expected) to depict a button and to use [button layout](#button-layout-2) whose[anonymous button content box](#anonymous-button-content-box)'s contents (if there is an [anonymous button content box](#anonymous-button-content-box)) are the child boxes the element's box would otherwise have.
 
-#### 15.5.5 The `[details](interactive-elements.html#the-details-element)` and `[summary](interactive-elements.html#the-summary-element)` elements
+#### 15.5.5 The details and summary elements
 
 ```
 @namespace "http://www.w3.org/1999/xhtml";
@@ -1279,7 +1279,7 @@ The position of this child element relative to the other two is not observable. 
 
 The structure of this shadow tree is observable through the ways that the children of the `[details](interactive-elements.html#the-details-element)` element and the ['::details-content'](https://drafts.csswg.org/css-pseudo/#details-content-pseudo) pseudo-element respond to CSS styles.
 
-#### 15.5.6 The `[input](input.html#the-input-element)` element as a text entry widget
+#### 15.5.6 The input element as a text entry widget
 
 An `[input](input.html#the-input-element)` element whose `[type](input.html#attr-input-type)` attribute is in the [Text](input.html#text-%28type=text%29-state-and-search-state-%28type=search%29), [Telephone](input.html#telephone-state-%28type=tel%29), [URL](input.html#url-state-%28type=url%29), or[Email](input.html#email-state-%28type=email%29) state, is a [devolvable widget](https://drafts.csswg.org/css-ui/#devolvable). Its[native appearance](https://drafts.csswg.org/css-ui/#native-appearance) is [expected](#expected) to render as an['inline-block'](https://drafts.csswg.org/css2/#value-def-inline-block) box depicting a one-line text control.
 
@@ -1305,7 +1305,7 @@ These text controls are [expected](#expected) to be [scroll containers](https://
 
 Need to detail the [native appearance](https://drafts.csswg.org/css-ui/#native-appearance) and [primitive appearance](https://drafts.csswg.org/css-ui/#primitive-appearance).
 
-#### 15.5.7 The `[input](input.html#the-input-element)` element as domain-specific widgets
+#### 15.5.7 The input element as domain-specific widgets
 
 An `[input](input.html#the-input-element)` element whose `[type](input.html#attr-input-type)` attribute is in the [Date](input.html#date-state-%28type=date%29) state is a [devolvable widget](https://drafts.csswg.org/css-ui/#devolvable) [expected](#expected) to render as an ['inline-block'](https://drafts.csswg.org/css2/#value-def-inline-block) box depicting a date control.
 
@@ -1325,7 +1325,7 @@ An `[input](input.html#the-input-element)` element whose `[type](input.html#attr
 
 Need to detail the [native appearance](https://drafts.csswg.org/css-ui/#native-appearance) and [primitive appearance](https://drafts.csswg.org/css-ui/#primitive-appearance).
 
-#### 15.5.8 The `[input](input.html#the-input-element)` element as a range control
+#### 15.5.8 The input element as a range control
 
 An `[input](input.html#the-input-element)` element whose `[type](input.html#attr-input-type)` attribute is in the [Range](input.html#range-state-%28type=range%29) state is a [non-devolvable widget](https://drafts.csswg.org/css-ui/#non-devolvable). Its [native appearance](https://drafts.csswg.org/css-ui/#native-appearance) is [expected](#expected) to render as an['inline-block'](https://drafts.csswg.org/css2/#value-def-inline-block) box depicting a slider control.
 
@@ -1335,7 +1335,7 @@ Predefined suggested values (provided by the `[list](input.html#attr-input-list)
 
 Need to detail the [primitive appearance](https://drafts.csswg.org/css-ui/#primitive-appearance).
 
-#### 15.5.9 The `[input](input.html#the-input-element)` element as a color well
+#### 15.5.9 The input element as a color well
 
 An `[input](input.html#the-input-element)` element whose `[type](input.html#attr-input-type)` attribute is in the [Color](input.html#color-state-%28type=color%29) state is [expected](#expected) to depict a color well, which, when activated, provides the user with a color picker (e.g. a color wheel or color palette) from which the color can be changed. The element, when it generates a [CSS box](https://drafts.csswg.org/css-display/#css-box), is [expected](#expected) to use [button layout](#button-layout-2), that has no child boxes of the [anonymous button content box](#anonymous-button-content-box). The [anonymous button content box](#anonymous-button-content-box) is [expected](#expected) to have a [presentational hint](#presentational-hints) setting the ['background-color'](https://drafts.csswg.org/css-backgrounds/#propdef-background-color) property to the element's [value](form-control-infrastructure.html#concept-fe-value).
 
@@ -1343,7 +1343,7 @@ Predefined suggested values (provided by the `[list](input.html#attr-input-list)
 
 Need to detail the [native appearance](https://drafts.csswg.org/css-ui/#native-appearance) and [primitive appearance](https://drafts.csswg.org/css-ui/#primitive-appearance).
 
-#### 15.5.10 The `[input](input.html#the-input-element)` element as a checkbox and radio button widgets
+#### 15.5.10 The input element as a checkbox and radio button widgets
 
 An `[input](input.html#the-input-element)` element whose `[type](input.html#attr-input-type)` attribute is in the [Checkbox](input.html#checkbox-state-%28type=checkbox%29) state is a [non-devolvable widget](https://drafts.csswg.org/css-ui/#non-devolvable) [expected](#expected) to render as an ['inline-block'](https://drafts.csswg.org/css2/#value-def-inline-block) box containing a single checkbox control, with no label.
 
@@ -1353,17 +1353,17 @@ An `[input](input.html#the-input-element)` element whose `[type](input.html#attr
 
 Need to detail the [native appearance](https://drafts.csswg.org/css-ui/#native-appearance) and [primitive appearance](https://drafts.csswg.org/css-ui/#primitive-appearance).
 
-#### 15.5.11 The `[input](input.html#the-input-element)` element as a file upload control
+#### 15.5.11 The input element as a file upload control
 
 An `[input](input.html#the-input-element)` element whose `[type](input.html#attr-input-type)` attribute is in the [File Upload](input.html#file-upload-state-%28type=file%29) state, when it generates a [CSS box](https://drafts.csswg.org/css-display/#css-box), is [expected](#expected) to render as an ['inline-block'](https://drafts.csswg.org/css2/#value-def-inline-block) box containing a span of text giving the filename(s) of the [selected files](input.html#concept-input-type-file-selected), if any, followed by a button that, when activated, provides the user with a file picker from which the selection can be changed. The button is [expected](#expected) to use [button layout](#button-layout-2) and match the['::file-selector-button'](https://drafts.csswg.org/css-pseudo/#file-selector-button-pseudo) pseudo-element. The contents of its [anonymous button content box](#anonymous-button-content-box) are [expected](#expected) to be [implementation-defined](https://infra.spec.whatwg.org/#implementation-defined) (and possibly locale-specific) text, for example "Choose file".
 
 User agents may handle an `[input](input.html#the-input-element)` element whose`[type](input.html#attr-input-type)` attribute is in the[File Upload](input.html#file-upload-state-%28type=file%29) state as an[element with default preferred size](https://drafts.csswg.org/css-ui/#element-with-default-preferred-size), and user agents may apply the['field-sizing'](https://drafts.csswg.org/css-ui/#field-sizing) CSS property to the element. If the ['field-sizing'](https://drafts.csswg.org/css-ui/#field-sizing) property on the element has a [computed value](https://drafts.csswg.org/css-cascade/#computed-value) of['content'](https://drafts.csswg.org/css-ui/#valdef-field-sizing-content), the [intrinsic size](https://drafts.csswg.org/css-sizing/#intrinsic-size) of the element is [expected](#expected) to depend on its content such as the['::file-selector-button'](https://drafts.csswg.org/css-pseudo/#file-selector-button-pseudo) pseudo-element and chosen file names.
 
-#### 15.5.12 The `[input](input.html#the-input-element)` element as a button
+#### 15.5.12 The input element as a button
 
 An `[input](input.html#the-input-element)` element whose `[type](input.html#attr-input-type)` attribute is in the [Submit Button](input.html#submit-button-state-%28type=submit%29), [Reset Button](input.html#reset-button-state-%28type=reset%29), or [Button](input.html#button-state-%28type=button%29) state, when it generates a [CSS box](https://drafts.csswg.org/css-display/#css-box), is[expected](#expected) to depict a button and use [button layout](#button-layout-2) and the contents of the [anonymous button content box](#anonymous-button-content-box) are [expected](#expected) to be the text of the element's `[value](input.html#attr-input-value)` attribute, if any, or text derived from the element's `[type](input.html#attr-input-type)` attribute in an[implementation-defined](https://infra.spec.whatwg.org/#implementation-defined) (and probably locale-specific) fashion, if not.
 
-#### 15.5.13 The `[marquee](obsolete.html#the-marquee-element)` element
+#### 15.5.13 The marquee element
 
 ```
 @namespace "http://www.w3.org/1999/xhtml";
@@ -1465,7 +1465,7 @@ The [natural height](https://drafts.csswg.org/css-images/#natural-height) of a `
 
 The `vspace` attribute of a`[marquee](obsolete.html#the-marquee-element)` element [maps to the dimension properties](#maps-to-the-dimension-property) ['margin-top'](https://drafts.csswg.org/css-box/#propdef-margin-top) and ['margin-bottom'](https://drafts.csswg.org/css-box/#propdef-margin-bottom) on the element. The`hspace` attribute of a `[marquee](obsolete.html#the-marquee-element)` element [maps to the dimension properties](#maps-to-the-dimension-property) ['margin-left'](https://drafts.csswg.org/css-box/#propdef-margin-left) and ['margin-right'](https://drafts.csswg.org/css-box/#propdef-margin-right) on the element.
 
-#### 15.5.14 The `[meter](form-elements.html#the-meter-element)` element
+#### 15.5.14 The meter element
 
 ```
 @namespace "http://www.w3.org/1999/xhtml";
@@ -1483,7 +1483,7 @@ Requirements for what must be depicted in the gauge are included in the definiti
 
 Need to detail the [primitive appearance](https://drafts.csswg.org/css-ui/#primitive-appearance).
 
-#### 15.5.15 The `[progress](form-elements.html#the-progress-element)` element
+#### 15.5.15 The progress element
 
 ```
 @namespace "http://www.w3.org/1999/xhtml";
@@ -1501,7 +1501,7 @@ Requirements for how to determine if the progress bar is determinate or indeterm
 
 Need to detail the [primitive appearance](https://drafts.csswg.org/css-ui/#primitive-appearance).
 
-#### 15.5.16 The `[select](form-elements.html#the-select-element)` element
+#### 15.5.16 The select element
 
 The `[select](form-elements.html#the-select-element)` element is an [element with default preferred size](https://drafts.csswg.org/css-ui/#element-with-default-preferred-size), and user agents are [expected](#expected) to apply the ['field-sizing'](https://drafts.csswg.org/css-ui/#field-sizing) CSS property to`[select](form-elements.html#the-select-element)` elements.
 
@@ -1720,7 +1720,7 @@ select {
 }
 ```
 
-#### 15.5.17 The `[textarea](form-elements.html#the-textarea-element)` element
+#### 15.5.17 The textarea element
 
 The `[textarea](form-elements.html#the-textarea-element)` element is a [devolvable widget](https://drafts.csswg.org/css-ui/#devolvable) [expected](#expected) to render as an ['inline-block'](https://drafts.csswg.org/css2/#value-def-inline-block) box depicting a multiline text control. If this multiline text control provides a selection, then, when the user changes the current selection, the user agent is [expected](#expected) to [queue an element task](webappapis.html#queue-an-element-task) on the [user interaction task source](webappapis.html#user-interaction-task-source) given the `[textarea](form-elements.html#the-textarea-element)` element to [fire an event](https://dom.spec.whatwg.org/#concept-event-fire) named `[select](indices.html#event-select)` at the element, with the `[bubbles](https://dom.spec.whatwg.org/#dom-event-bubbles)` attribute initialized to true.
 
@@ -1818,7 +1818,7 @@ User agents may allow users to [navigate](browsing-the-web.html#navigate) [navig
 
 User agents may surface [hyperlinks](links.html#hyperlink) created by `[link](semantics.html#the-link-element)` elements in their user interface, as discussed [previously](semantics.html#providing-users-with-a-means-to-follow-hyperlinks-created-using-the-link-element).
 
-#### 15.7.2 The `[title](dom.html#attr-title)` attribute
+#### 15.7.2 The title attribute
 
 User agents are [expected](#expected) to expose the [advisory information](dom.html#advisory-information) of elements upon user request, and to make the user aware of the presence of such information.
 

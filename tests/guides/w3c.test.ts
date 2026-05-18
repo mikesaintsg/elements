@@ -31,6 +31,7 @@ import {
 	ATTRIBUTE_ENUM_DOMAINS,
 	ATTRIBUTE_INTEGER_BOUNDS,
 	CATEGORY_MEMBERS,
+	PRESENTATION_DEFAULTS,
 	SCHEMA_BY_TAG,
 	TRANSPARENT_TAGS,
 	VOID_TAGS,
@@ -754,6 +755,113 @@ describe('w3c corpus — Phase 3.2 attribute family is corpus-bound', () => {
 		const attrs = ATTRIBUTE_ENUM_DOMAINS.map((d) => d.attribute)
 		expect(attrs).not.toContain('loading')
 		expect(attrs).not.toContain('crossorigin')
+	})
+})
+
+// ── Phase 5 presentation family — PRESENTATION_DEFAULTS ⇄ corpus parity ──────
+//
+// The `presentation` rule family's tabular core (list-item / bidi / table-
+// model / preformatted) is driven by the corpus-bound `PRESENTATION_DEFAULTS`
+// module constant (constants.ts). This binding holds it to the SAME corpus-
+// is-source-of-truth discipline the schema `cite` / `ATTRIBUTE_*` constants
+// are held to — STRENGTHEN-ONLY (a new gate; no prior assertion is touched or
+// weakened), bidirectional, perturbation-failing: every entry's `cite`
+// resolves through the `renderings` chapter path AND the exact
+// `property: expected` UA stylesheet declaration appears VERBATIM in the
+// cited `renderings.md §15` block (flip a `cite`, an `expected` value, or a
+// `property` and the verbatim-membership equality breaks). No escape-hatch,
+// no invented CSS value — the corpus UA stylesheet is the sole authority.
+
+// Extract the renderings.md prose block for one chapter slug — from its
+// heading line to the next same-or-higher heading. The cited UA declaration
+// must appear in THIS block (not merely anywhere in the file), so a cite
+// pointing at the wrong section fails even though the string exists elsewhere.
+function renderingsSection(slug: string): string {
+	const lines = readW3cCorpus('renderings').split('\n')
+	let start = -1
+	let level = 0
+	for (let index = 0; index < lines.length; index += 1) {
+		const line = lines[index] ?? ''
+		const heading = line.match(/^(#{1,6})\s/)
+		if (heading === null) continue
+		if (start === -1) {
+			if (slugifyHeading(line) === slug) {
+				start = index
+				level = (heading[1] ?? '').length
+			}
+			continue
+		}
+		if ((heading[1] ?? '').length <= level) {
+			return lines.slice(start, index).join('\n')
+		}
+	}
+	return start === -1 ? '' : lines.slice(start).join('\n')
+}
+
+describe('w3c corpus — Phase 5 PRESENTATION_DEFAULTS is corpus-bound', () => {
+	it('every PRESENTATION_DEFAULTS entry cites a resolvable renderings anchor', () => {
+		const unresolved = PRESENTATION_DEFAULTS.filter((d) => !citeResolves(d.cite)).map(
+			(d) => `${d.tags.join('/')}.${d.property} → ${d.cite}`,
+		)
+		expect(unresolved).toEqual([])
+	})
+
+	it('every cite points at the `renderings` chapter (the §15 UA stylesheet)', () => {
+		const offFile = PRESENTATION_DEFAULTS.filter((d) => d.cite.split('#')[0] !== 'renderings').map(
+			(d) => `${d.tags.join('/')} → ${d.cite}`,
+		)
+		expect(offFile).toEqual([])
+	})
+
+	it('every `property: expected` UA declaration appears VERBATIM in the cited section', () => {
+		// The bidirectional, perturbation-failing core: for every entry, for
+		// every expected value, the literal `property: value` UA stylesheet
+		// declaration MUST be present in the cited renderings.md section's own
+		// prose. A schema edit that invents an `expected` the §15 UA sheet
+		// never states, or mis-cites the section, breaks this whole-set diff
+		// (empty ⇒ every value corpus-grounded). No allowlist, no relaxation.
+		const orphans: string[] = []
+		for (const fallback of PRESENTATION_DEFAULTS) {
+			const [, slug] = fallback.cite.split('#')
+			const section = renderingsSection(slug ?? '')
+			for (const value of fallback.expected) {
+				const declaration = `${fallback.property}: ${value}`
+				if (!section.includes(declaration)) {
+					orphans.push(`${fallback.tags.join('/')} :: "${declaration}" ∉ renderings#${slug ?? ''}`)
+				}
+			}
+		}
+		expect(orphans).toEqual([])
+	})
+
+	it('the table-model entries are exactly the role-bearing corpus elements (colgroup/col excluded)', () => {
+		// aria.md §112 cards `colgroup`/`col` as *no corresponding role* — an
+		// override strips no exposed semantic, so they MUST NOT be in the
+		// table-model data (their inclusion would be a structural false-
+		// positive generator contradicting the ROADMAP non-goal). The
+		// role-bearing set is exactly the corpus aria.md §110-116 list.
+		const tableTags = PRESENTATION_DEFAULTS.filter(
+			(d) => d.property === 'display' && d.expected.every((v) => v.startsWith('table')),
+		).flatMap((d) => d.tags)
+		expect(tableTags).not.toContain('colgroup')
+		expect(tableTags).not.toContain('col')
+		expect([...tableTags].sort()).toEqual(
+			['caption', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr'].sort(),
+		)
+	})
+
+	it('the corpus aria.md cards the compensating roles every `roles` entry names', () => {
+		// SCHEMA → CORPUS: every ARIA role used as a compensation MUST be a
+		// role the corpus aria.md actually maps the element to (no invented
+		// compensation). Whole-set diff; empty ⇒ every role corpus-grounded.
+		const aria = readW3cCorpus('aria').toLowerCase()
+		const ungrounded: string[] = []
+		for (const fallback of PRESENTATION_DEFAULTS) {
+			for (const role of fallback.roles ?? []) {
+				if (!aria.includes(`\`${role}\``)) ungrounded.push(`${fallback.tags.join('/')}→${role}`)
+			}
+		}
+		expect(ungrounded).toEqual([])
 	})
 })
 

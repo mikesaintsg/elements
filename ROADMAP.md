@@ -243,7 +243,7 @@ five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
 | 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)              | ✅     |
 | 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant) | ✅     |
 | 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel    | ✅     |
-| 5     | Presentation lens (computed-style: load-bearing rendering overrides)                | ⬜     |
+| 5     | Presentation lens (computed-style: load-bearing rendering overrides)                | ✅     |
 | 6     | Showcase self-audit suite — run Inspector on every page; remediate our findings     | ⬜     |
 | 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                  | ⬜     |
 | 8     | Public-API parity hardening + large-tree performance budget                         | ⬜     |
@@ -741,24 +741,65 @@ fires only when an override **breaks semantics** (corpus:
 [`renderings.md`](guides/w3c/renderings.md) §15, canonical
 [rendering.html](https://html.spec.whatwg.org/multipage/rendering.html)):
 
-- ⬜ `li` ⇒ `display: list-item`; `ul`/`ol` + `list-style:none` + non-list
-  `li` ⇒ list semantics stripped with no compensating `role=list`.
-- ⬜ `bdo` ⇒ `unicode-bidi: isolate-override`; `bdi`/`[dir]` ⇒ `isolate`.
-- ⬜ Table display model intact (`table`/`tr`/`td`/`th`/`thead`/`tbody`/
-  `caption`/`col*` keep their `display:table-*`); flag collapse w/o ARIA
-  table roles.
-- ⬜ `[hidden]:not([until-found])` ⇒ `display:none`; `[hidden=until-found]`
-  ⇒ `content-visibility:hidden` (not `display:none/contents/inline`).
-- ⬜ `pre` ⇒ `white-space: pre|pre-wrap`; `textarea` ⇒ `pre-wrap`
-  (or `pre` when `wrap=off`).
-- ⬜ Focusable/interactive elements: no `outline:none`/`0` on
-  `:focus-visible` **without** a replacement affordance (box-shadow /
-  border / background delta).
-- ⬜ `dialog:not([open])` / `[popover]:not(:popover-open)` ⇒ not visibly
-  rendered; `summary:first-of-type` ⇒ `display:list-item`; closed
-  `details` content not `display:none` (find-in-page reveal).
-- ⬜ Reuses the running-showcase / `getComputedStyle` harness already
-  proven by the theme-retune / reduced-motion / forced-colors audits.
+> **Phase 5 COMPLETE.** Eight `lens:'presentation'` rules
+> (`presentation/{list-item,list-style,bidi,table,preformatted,hidden,focus,
+> visibility}`) appended to the frozen `rules` registry, the tabular core
+> driven by the parity-gated `PRESENTATION_DEFAULTS` corpus DATA
+> (`constants.ts`, `PresentationDefault` in `types.ts`, STRENGTHENED
+> bidirectional binding in `tests/guides/w3c.test.ts`), unit suite
+> `tests/src/browser/inspector/presentation.test.ts` (real DOM + real
+> framework CSS; valid-default + valid-with-compensation → 0,
+> genuine-violation → 1, seeded perturbation, whole-registry
+> disjointness). Two scope boundaries are corpus-faithfully documented +
+> tested (the Phase-3.3 "correct the plan to what faithfully ships"
+> precedent — spec/decidability is the source of truth):
+> **(a)** the `summary:first-of-type ⇒ display:list-item` MARKER is
+> presentational, not the summary's semantic (it stays the disclosure
+> control at any `display`; the genuine "summary first child" rule is the
+> STRUCTURE lens) — per the ROADMAP non-goal ("nothing stylistic") +
+> the false-positive doctrine (virtually every design system / this
+> framework restyles it), it is deliberately OUT OF SCOPE;
+> **(b)** the closed-`<details>` body-hiding is shadow-`::details-content`
+> internal and (per the §15.5.5 corpus prose itself) "not directly
+> visible to author code", so a light-child computed-style check would
+> false-positive on every conformant closed `<details>` — NOT statically
+> decidable, deliberately OUT OF SCOPE; **(c)** `presentation/focus` is
+> scoped to the INLINE `outline` removal (the one false-positive-free
+> decidable signal — a conformant `<button>`'s BASE computed
+> `outline-style` is `none`, the ring being `:focus-visible`-only), the
+> dynamic-pseudo synthesis deliberately not invented.
+
+- ✅ `li` ⇒ `display: list-item` (no compensating `role=listitem`);
+  `ul`/`ol`/`menu` computed `list-style-type:none` ⇒ list semantics
+  stripped with no compensating `role=list` (`presentation/list-style`,
+  `warning` — a degraded affordance). `[dir]`-generic deliberately scoped
+  out (ARIA-roleless, stylistic-adjacent — documented boundary).
+- ✅ `bdo` ⇒ `unicode-bidi: isolate-override`; `bdi` ⇒ `isolate`
+  (`presentation/bidi`, scoped to the bidi elements themselves).
+- ✅ Table display model intact — `table`/`caption`/`thead`/`tbody`/
+  `tfoot`/`tr`/`td`/`th` keep their `display:table-*` with no compensating
+  ARIA table role (corpus `aria.md` §110-116). `colgroup`/`col` excluded
+  (aria.md §112 cards them roleless — an override strips no exposed
+  semantic; including them would be a structural false positive).
+- ✅ `[hidden]:not([until-found]):not(embed)` ⇒ `display:none`;
+  `[hidden=until-found]:not(embed)` ⇒ `content-visibility:hidden` (not
+  `display:none/contents/inline`). The `:not(embed)` carve-out honored.
+- ✅ `pre` ⇒ `white-space: pre|pre-wrap`; `textarea` ⇒ `pre-wrap`
+  (or `pre` when `wrap` is an ASCII-case-insensitive `off`).
+- ✅ Focusable/interactive elements: an INLINE `outline:none`/`0`
+  (provably defeats `:focus-visible{outline:auto}` by inline specificity
+  in every state) **without** a replacement affordance (box-shadow /
+  border / non-interactive role). `:focus-visible` synthesis is not
+  decidable in a tree-walk and is deliberately not invented (boundary
+  documented above + in `rules.ts`).
+- ✅ `dialog:not([open])` / `[popover]:not(:popover-open)` ⇒ not visibly
+  rendered (`presentation/visibility`). The `summary:first-of-type` marker
+  and closed-`details` body checks are documented OUT OF SCOPE (above) —
+  presentational / shadow-internal-undecidable per the corpus.
+- ✅ Reuses the running `src:browser` (chromium) `getComputedStyle`
+  harness (`setupBrowser.ts` loads `src/styles/index.scss`) — same
+  instrumented-audit muscle as the theme-retune / reduced-motion /
+  forced-colors passes.
 
 ---
 

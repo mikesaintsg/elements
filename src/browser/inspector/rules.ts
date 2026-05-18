@@ -11,6 +11,7 @@ import type {
 	ContentModelEntry,
 	Finding,
 	FindingDraft,
+	PresentationDefault,
 	RuleContext,
 	RuleInterface,
 	RuleSubject,
@@ -27,7 +28,11 @@ import {
 	nodePath,
 } from '../helpers.js'
 import { getElementById } from '../traversals.js'
-import { ATTRIBUTE_ENUM_DOMAINS, ATTRIBUTE_INTEGER_BOUNDS } from '../constants.js'
+import {
+	ATTRIBUTE_ENUM_DOMAINS,
+	ATTRIBUTE_INTEGER_BOUNDS,
+	PRESENTATION_DEFAULTS,
+} from '../constants.js'
 import {
 	CATEGORY_MEMBERS,
 	describeElement,
@@ -1670,6 +1675,646 @@ const interactionHiddenReferenceRule: RuleInterface = {
 	},
 }
 
+// ============================================================================
+//  Family: presentation — computed-style semantic-break rules (Phase 5).
+//
+//  The ONLY family that reads `context.style()` (lazily — the structure
+//  families never do, keeping them fast/style-free). Each rule fires ONLY
+//  when a CSS override BREAKS an element's semantically load-bearing default
+//  rendering (corpus = `guides/w3c/renderings.md §15`), NEVER for a merely
+//  stylistic difference (ROADMAP non-goal: "Not a CSS linter — only flags
+//  overrides that contradict an element's semantics, nothing stylistic").
+//  `lens: 'presentation'` so the Phase-4 Inspector stamps it onto every
+//  `Finding` and `inspect({lens:'presentation'})` / `findings('presentation')`
+//  route it.
+//
+//  FALSE-POSITIVE-ON-VALID-MARKUP is this initiative's recurring Critical
+//  defect (resolved `getComputedStyle` values legitimately vary; a
+//  compensating ARIA role / replacement affordance makes a "stripped"
+//  default conformant). EVERY rule therefore fires ONLY when the semantic is
+//  genuinely broken AND no corpus-sanctioned compensation exists — the
+//  compensation logic is designed from the corpus prose (`renderings.md` +
+//  `aria.md`), never intuition:
+//    - presentation/list-item   `li` `display` ≠ `list-item`, no implicit/
+//                                explicit `role=listitem` (aria.md §60).
+//    - presentation/list-style  `ul`/`ol`/`menu` computed `list-style-type:
+//                                none` with NO compensating `role=list`
+//                                (aria.md §58/§165-168) — the genuinely-
+//                                stripped, uncompensated list (degraded
+//                                affordance ⇒ `warning`).
+//    - presentation/bidi        `bdo` ≠ `isolate-override` / `bdi` ≠
+//                                `isolate` (renderings.md §15.3.5). Scoped to
+//                                the elements whose ENTIRE semantic IS the
+//                                bidi algorithm; a generic `[dir]` override
+//                                is stylistic-adjacent and ARIA-roleless
+//                                (aria.md §85) — flagging it would false-
+//                                positive on every CSS-reset `[dir]` element
+//                                (documented decidable boundary).
+//    - presentation/table       a role-bearing table-model element whose
+//                                `display` left its `table-*` value with NO
+//                                compensating ARIA table role (aria.md
+//                                §110-116). `colgroup`/`col` are excluded —
+//                                aria.md §112 cards them roleless, so an
+//                                override strips no exposed semantic.
+//    - presentation/hidden      `[hidden]:not([hidden=until-found])
+//                                :not(embed)` `display` ≠ `none`;
+//                                `[hidden=until-found]:not(embed)`
+//                                `content-visibility` ≠ `hidden` (or forced
+//                                `display:none`/`contents`/`inline`) —
+//                                renderings.md §15.3.1 exact UA rule, the
+//                                `:not(embed)` carve-out honored faithfully.
+//    - presentation/preformatted `pre` `white-space` ∉ {pre,pre-wrap};
+//                                `textarea` ≠ `pre-wrap` (≠ `pre` when
+//                                `wrap` is an ASCII-case-insensitive `off`)
+//                                — renderings.md §15.3.3 / §15.5.17.
+//    - presentation/focus       a focusable element whose INLINE `style`
+//                                removes the UA focus outline (`outline:
+//                                none`/`0` — inline specificity provably
+//                                defeats `:focus-visible{outline:auto}` in
+//                                EVERY state) with NO inline replacement
+//                                affordance (box-shadow / border / explicit
+//                                non-interactive role) — renderings.md
+//                                §15.3.4. `:focus-visible` is a dynamic
+//                                pseudo NOT synthesizable in a tree-walk
+//                                (a conformant `<button>`'s BASE computed
+//                                `outline-style` is `none`), so the rule is
+//                                scoped to the ONE false-positive-free
+//                                decidable signal — the inline override
+//                                (documented boundary; no invented
+//                                `:focus-visible` synthesis).
+//    - presentation/visibility  `dialog:not([open])` / `[popover]:not(
+//                                :popover-open)` `display` ≠ `none` — a
+//                                CLOSED dialog/popover painted visibly is a
+//                                genuine semantic break (renderings.md
+//                                §15.3.3). The `summary` `list-item` MARKER
+//                                and the shadow-internal closed-`<details>`
+//                                body-hiding are presentational / not light-
+//                                tree-decidable respectively, so deliberately
+//                                OUT OF SCOPE per the ROADMAP non-goal
+//                                ("nothing stylistic") + the false-positive
+//                                doctrine (documented boundaries).
+//
+//  The tabular list/bidi/table/pre checks ITERATE the parity-gated
+//  `PRESENTATION_DEFAULTS` corpus DATA (constants.ts) — no per-element
+//  branch; the bespoke hidden/focus/visibility rules are focused individual
+//  rules, still corpus-faithful + cited. DISJOINT: every presentation rule
+//  keys on a distinct element/property/state, so an element failing two
+//  presentation checks reports each distinct corpus violation once (like the
+//  attribute family) and never double-reports ONE conceptual issue; disjoint
+//  from the structure-lens families (those never read style). One finding
+//  per violation; pure/total (AGENTS §13) — non-match ⇒ `null`, nothing
+//  throws.
+// ============================================================================
+
+// A computed-style value, normalized: `getComputedStyle` returns canonical
+// lowercase keywords already, but trim defensively. Never parses/regexes —
+// just the trimmed string the CSSOM resolved.
+function styleValue(context: RuleContext, property: string): string {
+	return context.style().getPropertyValue(property).trim().toLowerCase()
+}
+
+// The element's explicit ARIA role tokens (the `role` attribute is a
+// space-separated token list; the first valid token wins per ARIA, but for a
+// compensation test ANY listed token suffices). Lowercased, never parsed
+// beyond a whitespace split (HTML-faithful token list).
+function roleTokens(element: Element): readonly string[] {
+	const raw = element.getAttribute('role')
+	if (raw === null) return []
+	return raw
+		.trim()
+		.toLowerCase()
+		.split(/\s+/)
+		.filter((token) => token.length > 0)
+}
+
+// Does the element carry one of the corpus-sanctioned compensating ARIA
+// roles for this `PRESENTATION_DEFAULTS` entry? (The false-positive guard —
+// a re-asserted implicit role preserves the stripped semantic.) An entry
+// with no `roles` can never be compensated this way (`bidi`/`pre`).
+function hasCompensatingRole(element: Element, fallback: PresentationDefault): boolean {
+	if (fallback.roles === undefined) return false
+	const tokens = roleTokens(element)
+	return fallback.roles.some((role) => tokens.includes(role))
+}
+
+// The first `PRESENTATION_DEFAULTS` entry whose `tags` includes this tag
+// AND whose property the element's COMPUTED style resolves OUTSIDE
+// `expected` AND for which no compensating ARIA role is present — i.e. the
+// genuine, uncompensated semantic break. `null` ⇒ conformant (the common
+// case: every default-rendered element). Iterates the corpus DATA, never a
+// per-element branch.
+function offendingPresentationDefault(subject: RuleSubject): PresentationDefault | null {
+	for (const fallback of PRESENTATION_DEFAULTS) {
+		if (!fallback.tags.includes(subject.tag)) continue
+		const actual = styleValue(subject.context, fallback.property)
+		// An empty computed value (detached / `display:none` ancestor in a
+		// non-rendered subtree) is NOT a semantic-break signal — the override
+		// rule needs a RESOLVED value to contradict. Skip (conservative: a
+		// genuine violation in a rendered tree always resolves a value).
+		if (actual === '') continue
+		if (fallback.expected.includes(actual)) continue
+		if (hasCompensatingRole(subject.element, fallback)) continue
+		return fallback
+	}
+	return null
+}
+
+const violatesPresentationDefault = whereOf(isSubject, (subject: RuleSubject): boolean => {
+	const fallback = offendingPresentationDefault(subject)
+	// `list-item` is the corpus's own `li`-display anchor; `bidi`/`table`/
+	// `pre` are reported by their own dedicated rules below so each cite
+	// is the precise corpus section. This guard owns ONLY the `li`
+	// `display:list-item` break (renderings.md §15.3.7) — the data entry
+	// for `li`. The other PRESENTATION_DEFAULTS rows are consumed by the
+	// `presentation/bidi`, `presentation/table`, `presentation/pre` rules
+	// (same data, distinct rule id + cite — disjoint).
+	return fallback !== null && fallback.tags.includes('li') && subject.tag === 'li'
+})
+
+const presentationListItemRule: RuleInterface = {
+	id: 'presentation/list-item',
+	severity: 'error',
+	lens: 'presentation',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesPresentationDefault(subject)) return null
+		const fallback = offendingPresentationDefault(subject)
+		if (fallback === null) return null
+		return buildFinding({
+			rule: 'presentation/list-item',
+			severity: fallback.severity,
+			element,
+			cite: fallback.cite,
+			message: `<li> must render as 'display: ${fallback.expected.join(' | ')}' (list semantics) or carry a compensating role="listitem".`,
+			expected: `display: ${fallback.expected.join(' | ')}`,
+			actual: `display: ${styleValue(context, 'display')}`,
+		})
+	},
+}
+
+// presentation/list-style — the `ul`/`ol`/`menu` list whose computed
+// `list-style-type` is `none` with NO compensating `role="list"`. This is
+// the corpus-stated list-semantics-stripping case (renderings.md §15.3.7
+// `dir, menu, ul { list-style-type: disc }` / `ol { list-style-type:
+// decimal }` define the marker; aria.md §58/§165-168: a `list-style: none`
+// list loses its implicit `list` role in some engines unless `role="list"`
+// re-asserts it). It is a DEGRADED affordance, not a destroyed element
+// (`warning`, not `error` — the list still groups items; only the visual/
+// AT list affordance is weakened). The compensation guard (`role="list"`)
+// is the false-positive bound: `ul[role=list]` with `list-style:none` (the
+// single most common real-world reset) is conformant ⇒ ZERO findings.
+const LIST_CONTAINER_TAGS = new Set(['ul', 'ol', 'menu'])
+
+const violatesListStyle = whereOf(isSubject, (subject: RuleSubject): boolean => {
+	if (!LIST_CONTAINER_TAGS.has(subject.tag)) return false
+	if (roleTokens(subject.element).includes('list')) return false
+	const value = styleValue(subject.context, 'list-style-type')
+	return value === 'none'
+})
+
+const presentationListStyleRule: RuleInterface = {
+	id: 'presentation/list-style',
+	severity: 'warning',
+	lens: 'presentation',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesListStyle(subject)) return null
+		return buildFinding({
+			rule: 'presentation/list-style',
+			severity: 'warning',
+			element,
+			cite: 'renderings#lists',
+			message: `<${subject.tag}> with computed 'list-style-type: none' strips the list affordance — add role="list" to preserve list semantics, or keep a marker.`,
+			expected: `a list marker, or a compensating role="list"`,
+			actual: 'list-style-type: none with no role="list"',
+		})
+	},
+}
+
+// presentation/bidi — the `bdo`/`bdi` PRESENTATION_DEFAULTS rows. Scoped to
+// the bidi elements themselves (their ENTIRE semantic is the bidi algorithm
+// override/isolation): a `bdo` whose `unicode-bidi` is not
+// `isolate-override`, or a `bdi` whose `unicode-bidi` is not `isolate`, has
+// had its sole purpose stripped (renderings.md §15.3.5). A generic `[dir]`
+// element is DELIBERATELY out of scope — aria.md §85 cards `bdo`/`bdi` (and
+// every `[dir]`-bearing element) roleless for directionality, so no ARIA
+// compensation exists and flagging every CSS-reset `[dir]` element would be
+// the exact false-positive-on-valid-markup Critical this initiative keeps
+// shipping. The decidable, semantic-only boundary is the two bidi elements.
+function offendingBidiDefault(subject: RuleSubject): PresentationDefault | null {
+	if (subject.tag !== 'bdo' && subject.tag !== 'bdi') return null
+	const fallback = offendingPresentationDefault(subject)
+	return fallback !== null && fallback.property === 'unicode-bidi' ? fallback : null
+}
+
+const violatesBidi = whereOf(
+	isSubject,
+	(subject: RuleSubject): boolean => offendingBidiDefault(subject) !== null,
+)
+
+const presentationBidiRule: RuleInterface = {
+	id: 'presentation/bidi',
+	severity: 'error',
+	lens: 'presentation',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesBidi(subject)) return null
+		const fallback = offendingBidiDefault(subject)
+		if (fallback === null) return null
+		return buildFinding({
+			rule: 'presentation/bidi',
+			severity: fallback.severity,
+			element,
+			cite: fallback.cite,
+			message: `<${subject.tag}> must keep 'unicode-bidi: ${fallback.expected.join(' | ')}' — its directional ${subject.tag === 'bdo' ? 'override' : 'isolation'} semantic is otherwise stripped.`,
+			expected: `unicode-bidi: ${fallback.expected.join(' | ')}`,
+			actual: `unicode-bidi: ${styleValue(context, 'unicode-bidi')}`,
+		})
+	},
+}
+
+// presentation/table — the role-bearing table-model PRESENTATION_DEFAULTS
+// rows. A `table`/`caption`/`thead`/`tbody`/`tfoot`/`tr`/`td`/`th` whose
+// computed `display` left the spec `table-*`/`table` value WITH NO
+// compensating ARIA table role (the corpus aria.md §110-116 implicit-role
+// map — `role="table"` / `row` / `cell` / `rowgroup` / `columnheader`
+// etc.) has had its table-model participation stripped (renderings.md
+// §15.3.8). The ARIA compensation is the framework/grid-library false-
+// positive guard (a CSS-grid "table" that re-asserts `role="table"` is
+// conformant). `colgroup`/`col` are excluded by the data (aria.md §112
+// roleless — an override strips no exposed semantic).
+function offendingTableDefault(subject: RuleSubject): PresentationDefault | null {
+	const fallback = offendingPresentationDefault(subject)
+	if (fallback === null) return null
+	return fallback.property === 'display' &&
+		fallback.expected.every((value) => value.startsWith('table'))
+		? fallback
+		: null
+}
+
+const violatesTable = whereOf(
+	isSubject,
+	(subject: RuleSubject): boolean => offendingTableDefault(subject) !== null,
+)
+
+const presentationTableRule: RuleInterface = {
+	id: 'presentation/table',
+	severity: 'error',
+	lens: 'presentation',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesTable(subject)) return null
+		const fallback = offendingTableDefault(subject)
+		if (fallback === null) return null
+		const roles = (fallback.roles ?? []).join(' | ')
+		return buildFinding({
+			rule: 'presentation/table',
+			severity: fallback.severity,
+			element,
+			cite: fallback.cite,
+			message: `<${subject.tag}> must keep 'display: ${fallback.expected.join(' | ')}' (table model) or carry a compensating role="${roles}".`,
+			expected: `display: ${fallback.expected.join(' | ')}`,
+			actual: `display: ${styleValue(context, 'display')}`,
+		})
+	},
+}
+
+// presentation/pre — the `pre` PRESENTATION_DEFAULTS row PLUS the corpus
+// `textarea` rule. `pre`'s `white-space` ∉ {pre,pre-wrap} collapses its
+// preformatted whitespace semantic (renderings.md §15.3.3 — the `pre[wrap]`
+// presentational hint resolves the conformant `pre-wrap`). `textarea` is
+// not in PRESENTATION_DEFAULTS (its expected value is `wrap`-attribute-
+// dependent, not a flat tabular constant): the corpus (§15.5.17) sets
+// `white-space: pre-wrap`, OR `pre` when the `wrap` attribute is an ASCII
+// case-insensitive match for "off" (the historical presentational hint).
+// `coerceEnumAttribute` is the SAME ASCII-case-insensitive enumerated-value
+// coercion the attribute family uses (no hand-rolled `.toLowerCase()` test).
+function textareaExpectedWhiteSpace(element: Element): readonly string[] {
+	const raw = element.getAttribute('wrap')
+	if (raw !== null && coerceEnumAttribute(raw, ['off']) === 'off') return ['pre']
+	return ['pre-wrap']
+}
+
+const violatesPre = whereOf(isSubject, (subject: RuleSubject): boolean => {
+	if (subject.tag === 'pre') {
+		const fallback = offendingPresentationDefault(subject)
+		return fallback !== null && fallback.property === 'white-space'
+	}
+	if (subject.tag === 'textarea') {
+		const actual = styleValue(subject.context, 'white-space')
+		if (actual === '') return false
+		return !textareaExpectedWhiteSpace(subject.element).includes(actual)
+	}
+	return false
+})
+
+const presentationPreRule: RuleInterface = {
+	id: 'presentation/preformatted',
+	severity: 'error',
+	lens: 'presentation',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesPre(subject)) return null
+		if (subject.tag === 'pre') {
+			const fallback = offendingPresentationDefault(subject)
+			if (fallback === null) return null
+			return buildFinding({
+				rule: 'presentation/preformatted',
+				severity: fallback.severity,
+				element,
+				cite: fallback.cite,
+				message: `<pre> must keep 'white-space: ${fallback.expected.join(' | ')}' — its preformatted-whitespace semantic is otherwise collapsed.`,
+				expected: `white-space: ${fallback.expected.join(' | ')}`,
+				actual: `white-space: ${styleValue(context, 'white-space')}`,
+			})
+		}
+		const expected = textareaExpectedWhiteSpace(element)
+		return buildFinding({
+			rule: 'presentation/preformatted',
+			severity: 'error',
+			element,
+			// `textarea`'s preformatted rule is in the same §15.5.17 chapter
+			// the corpus cards it; the anchor resolves through the SAME
+			// `renderings` chapter path the data-driven cites use.
+			cite: 'renderings#the-textarea-element',
+			message: `<textarea> must keep 'white-space: ${expected.join(' | ')}' — its multiline raw-value semantic is otherwise collapsed.`,
+			expected: `white-space: ${expected.join(' | ')}`,
+			actual: `white-space: ${styleValue(context, 'white-space')}`,
+		})
+	},
+}
+
+// presentation/hidden — renderings.md §15.3.1, the EXACT UA rule:
+//   [hidden]:not([hidden=until-found i]):not(embed) { display: none }
+//   [hidden=until-found i]:not(embed) { content-visibility: hidden }
+//   embed[hidden] { display: inline; height: 0; width: 0 }
+// The `:not(embed)` carve-out is honored faithfully: an `<embed hidden>` is
+// NEVER flagged (the UA does not give it `display:none`; it gets
+// `display:inline` by design). `hidden=until-found` (ASCII case-insensitive)
+// must compute `content-visibility: hidden` AND must not be forced to
+// `display:none`/`contents`/`inline` (the corpus prose: the choice of
+// `content-visibility:hidden` instead of `display:none` is load-bearing for
+// the find-in-page reveal — §15.5.5's analogous note). A plain `[hidden]`
+// (not `until-found`, not `embed`) must compute `display: none`.
+function hiddenState(element: Element): 'plain' | 'until-found' | null {
+	const raw = element.getAttribute('hidden')
+	if (raw === null) return null
+	// `hidden` is an enumerated attribute; `until-found` is its only non-
+	// default keyword (ASCII case-insensitive). `coerceEnumAttribute` is the
+	// SAME ASCII-case-insensitive coercion the attribute family uses.
+	if (coerceEnumAttribute(raw, ['until-found']) === 'until-found') return 'until-found'
+	return 'plain'
+}
+
+const violatesHidden = whereOf(isSubject, (subject: RuleSubject): boolean => {
+	if (subject.tag === 'embed') return false // the §15.3.1 :not(embed) carve-out
+	const state = hiddenState(subject.element)
+	if (state === null) return false
+	if (state === 'plain') {
+		const display = styleValue(subject.context, 'display')
+		return display !== '' && display !== 'none'
+	}
+	// until-found: content-visibility MUST be hidden, and the box must not be
+	// forced display:none/contents/inline (those defeat the find-in-page
+	// reveal the corpus mandates content-visibility:hidden specifically for).
+	const cv = styleValue(subject.context, 'content-visibility')
+	const display = styleValue(subject.context, 'display')
+	if (cv === '' && display === '') return false
+	if (cv !== 'hidden') return true
+	return display === 'none' || display === 'contents' || display === 'inline'
+})
+
+const presentationHiddenRule: RuleInterface = {
+	id: 'presentation/hidden',
+	severity: 'error',
+	lens: 'presentation',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesHidden(subject)) return null
+		const state = hiddenState(element)
+		if (state === 'plain') {
+			return buildFinding({
+				rule: 'presentation/hidden',
+				severity: 'error',
+				element,
+				cite: 'renderings#hidden-elements',
+				message: `<${subject.tag}> with [hidden] must compute 'display: none' — an override re-reveals content the author hid.`,
+				expected: 'display: none',
+				actual: `display: ${styleValue(context, 'display')}`,
+			})
+		}
+		return buildFinding({
+			rule: 'presentation/hidden',
+			severity: 'error',
+			element,
+			cite: 'renderings#hidden-elements',
+			message: `<${subject.tag}> with [hidden=until-found] must compute 'content-visibility: hidden' and must not be forced display:none/contents/inline (find-in-page reveal).`,
+			expected: 'content-visibility: hidden',
+			actual: `content-visibility: ${styleValue(context, 'content-visibility')}, display: ${styleValue(context, 'display')}`,
+		})
+	},
+}
+
+// presentation/focus — renderings.md §15.3.4 `:focus-visible { outline:
+// auto }`. A focusable element whose author CSS removes that UA focus ring
+// with no replacement affordance makes keyboard focus invisible (an
+// accessibility-breaking presentation override).
+//
+// DECIDABLE BOUNDARY (documented, no invention): `:focus-visible` is a
+// dynamic pseudo-state — a tree-walker visits an UNFOCUSED element, and the
+// UA `:focus-visible{outline:auto}` ring exists ONLY in that state, so the
+// element's BASE computed `outline-style` is `none` for a *perfectly
+// conformant* `<button>` (verified empirically: chromium resolves a bare
+// `<button>` to `outline-style: none`, the ring being `:focus-visible`-only).
+// Reading the base computed outline would therefore FALSE-POSITIVE on every
+// conformant focusable element — the exact Critical this initiative keeps
+// shipping. The ONE statically decidable, false-positive-free signal is an
+// **inline `style` outline removal**: an inline `outline: none` / `outline:
+// 0` has inline specificity (1,0,0,0) and therefore overrides the UA
+// `:focus-visible{outline:auto}` rule (specificity 0,1,0) in EVERY state,
+// including `:focus-visible` — the focus ring is *provably, statically,
+// unconditionally removed*. This reads the element's own inline declaration
+// (decidable author intent), NOT the ambiguous base computed style; the
+// replacement-affordance guard (the false-positive bound) likewise reads the
+// inline declaration so the signal is one coherent decidable surface. A bare
+// `<button>` (no inline outline) is never flagged. The narrower author-rule
+// `button:focus-visible{outline:none}` form is NOT statically decidable from
+// a walk (it needs the pseudo-state) and is deliberately out of scope — the
+// honest corpus-faithful boundary, documented, not invented.
+const FOCUSABLE_TAGS = new Set(['a', 'button', 'input', 'select', 'textarea', 'summary'])
+
+function isFocusableElement(element: Element, tag: string): boolean {
+	// A negative `tabindex` removes the element from sequential focus AND the
+	// `:focus-visible` keyboard-focus contract — not a focus-affordance
+	// concern (decidable, corpus-consistent). A `disabled` form control is
+	// likewise not keyboard-focusable.
+	const tabindex = element.getAttribute('tabindex')
+	if (tabindex !== null) {
+		const value = coerceIntegerAttribute(tabindex)
+		if (value !== undefined && value < 0) return false
+	}
+	if (element.hasAttribute('disabled')) return false
+	if (FOCUSABLE_TAGS.has(tag)) {
+		// `<a>` is focusable only with an `href` (the spec's tabbable rule);
+		// other listed tags are intrinsically focusable.
+		if (tag === 'a') return element.hasAttribute('href')
+		return true
+	}
+	// Any element made focusable by an explicit non-negative `tabindex`.
+	return tabindex !== null && coerceIntegerAttribute(tabindex) !== undefined
+}
+
+// The element's INLINE style declaration (decidable author intent — the
+// `style` attribute, NOT computed style; this is the documented-boundary
+// signal, deliberately distinct from `context.style()` which is the
+// ambiguous base computed value for this dynamic-pseudo rule).
+function inlineStyle(element: Element): CSSStyleDeclaration | null {
+	return element instanceof HTMLElement ? element.style : null
+}
+
+// The author painted a replacement focus affordance inline — a non-`none`
+// box-shadow, a real border (style + non-zero width), or an explicit
+// non-interactive role (the corpus aria.md `presentation`/`none` decorative
+// carve-out — the element opted OUT of the interactive focus contract).
+function hasReplacementAffordance(element: Element): boolean {
+	const style = inlineStyle(element)
+	if (style === null) return false
+	const shadow = style.boxShadow.trim().toLowerCase()
+	if (shadow !== '' && shadow !== 'none') return true
+	const borderStyle = style.borderStyle.trim().toLowerCase()
+	const borderWidth = style.borderWidth.trim().toLowerCase()
+	if (
+		borderStyle !== '' &&
+		borderStyle !== 'none' &&
+		borderStyle !== 'hidden' &&
+		borderWidth !== '' &&
+		borderWidth !== '0px' &&
+		borderWidth !== '0'
+	) {
+		return true
+	}
+	const roles = roleTokens(element)
+	return roles.includes('presentation') || roles.includes('none')
+}
+
+const violatesFocus = whereOf(isSubject, (subject: RuleSubject): boolean => {
+	if (!isFocusableElement(subject.element, subject.tag)) return false
+	const style = inlineStyle(subject.element)
+	if (style === null) return false
+	// The inline outline removal that provably defeats `:focus-visible{
+	// outline:auto}` in every state by inline specificity.
+	const outlineStyle = style.outlineStyle.trim().toLowerCase()
+	const outlineWidth = style.outlineWidth.trim().toLowerCase()
+	const removed = outlineStyle === 'none' || outlineWidth === '0px' || outlineWidth === '0'
+	if (!removed) return false
+	return !hasReplacementAffordance(subject.element)
+})
+
+const presentationFocusRule: RuleInterface = {
+	id: 'presentation/focus',
+	severity: 'error',
+	lens: 'presentation',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesFocus(subject)) return null
+		return buildFinding({
+			rule: 'presentation/focus',
+			severity: 'error',
+			element,
+			// §15.3.4 Phrasing content carries the `:focus-visible { outline:
+			// auto }` UA rule; the anchor resolves through the `renderings`
+			// chapter path.
+			cite: 'renderings#phrasing-content',
+			message: `focusable <${subject.tag}> removes its UA focus outline with no replacement affordance (no box-shadow / border focus indicator) — keyboard focus is invisible.`,
+			expected: 'a visible focus indicator (UA outline or a replacement box-shadow/border)',
+			actual: 'outline removed, no replacement affordance',
+		})
+	},
+}
+
+// presentation/visibility — renderings.md §15.3.3. The corpus state-
+// rendering invariants that are genuine SEMANTIC breaks (not stylistic) AND
+// decidable from the NODE's OWN computed style (`context.style()`):
+//   1. `dialog:not([open])` MUST compute `display: none`
+//      (§15.3.3 `dialog:not([open]) { display: none }`) — a CLOSED dialog
+//      rendered visibly is a genuine semantic break (the user sees a
+//      dialog that the document model says is closed).
+//   2. `[popover]:not(:popover-open):not(dialog[open])` MUST compute
+//      `display: none` (§15.3.3) — same: a closed popover visibly painted
+//      contradicts its closed state. `:popover-open` is decidable via the
+//      `:popover-open` match (top layer iff matched).
+//
+// SCOPE BOUNDARIES (documented, corpus-faithful, false-positive-safe — the
+// recurring Critical of this initiative is flagging conformant markup):
+//   • `details > summary:first-of-type { display: list-item }` (§15.5.5) is
+//     DELIBERATELY OUT OF SCOPE. Per the ROADMAP non-goal ("only flags
+//     overrides that contradict an element's SEMANTICS, nothing stylistic"),
+//     a `<summary>`'s `list-item`+`disclosure-closed` is the default MARKER
+//     RENDERING, not the summary's semantic — the summary remains the
+//     disclosure control for its `<details>` at ANY `display` (the genuine
+//     "summary must be the first child" constraint is the STRUCTURE lens's,
+//     Phase 3). Virtually every design system / this framework restyles the
+//     summary marker (`display:flex`); flagging it would false-positive on
+//     conformant real-world markup — the exact Critical defect class. The
+//     marker is presentational; the semantic is intact.
+//   • The closed-`<details>` body-hiding is implemented on the UA SHADOW
+//     `::details-content` slot wrapper's `content-visibility:hidden`, which
+//     the corpus §15.5.5 prose itself states is "not directly visible to
+//     author code". A conformant closed `<details>`'s LIGHT body child
+//     therefore computes a fully-visible box — a light-child check would
+//     false-positive on every conformant closed `<details>`. NOT decidable
+//     from a tree-walk; deliberately OUT OF SCOPE (the corpus says the
+//     mechanism is shadow-internal; inventing a light-child check would
+//     contradict it).
+function isPopoverOpen(element: Element): boolean {
+	try {
+		return element.matches(':popover-open')
+	} catch {
+		// `:popover-open` unsupported ⇒ cannot decide ⇒ conservatively treat
+		// as open (do NOT false-positive on an undecidable engine). Total.
+		return true
+	}
+}
+
+const violatesVisibility = whereOf(isSubject, (subject: RuleSubject): boolean => {
+	const { tag, element, context } = subject
+	if (tag === 'dialog' && !element.hasAttribute('open') && !element.hasAttribute('popover')) {
+		const display = styleValue(context, 'display')
+		return display !== '' && display !== 'none'
+	}
+	if (element.hasAttribute('popover') && !isPopoverOpen(element)) {
+		// `dialog[open]` popovers are exempt (the §15.3.3 selector's
+		// `:not(dialog[open])` arm).
+		if (tag === 'dialog' && element.hasAttribute('open')) return false
+		const display = styleValue(context, 'display')
+		return display !== '' && display !== 'none'
+	}
+	return false
+})
+
+const presentationVisibilityRule: RuleInterface = {
+	id: 'presentation/visibility',
+	severity: 'error',
+	lens: 'presentation',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesVisibility(subject)) return null
+		const tag = subject.tag
+		const kind = element.hasAttribute('popover')
+			? '[popover] (not :popover-open)'
+			: 'dialog:not([open])'
+		return buildFinding({
+			rule: 'presentation/visibility',
+			severity: 'error',
+			element,
+			cite: 'renderings#flow-content',
+			message: `${kind} must compute 'display: none' — an override renders a closed ${tag === 'dialog' ? 'dialog' : 'popover'} visibly.`,
+			expected: 'display: none',
+			actual: `display: ${styleValue(context, 'display')}`,
+		})
+	},
+}
+
 // ── Registry ────────────────────────────────────────────────────────────────
 //
 // The frozen, ordered rule registry every Phase-3 family contributes to and
@@ -1731,4 +2376,13 @@ export const rules: readonly RuleInterface[] = [
 	attributeEnumRule,
 	// interaction (Phase 3.3)
 	interactionHiddenReferenceRule,
+	// presentation (Phase 5 — computed-style semantic-break, lens:'presentation')
+	presentationListItemRule,
+	presentationListStyleRule,
+	presentationBidiRule,
+	presentationTableRule,
+	presentationPreRule,
+	presentationHiddenRule,
+	presentationFocusRule,
+	presentationVisibilityRule,
 ] as const

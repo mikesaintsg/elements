@@ -2,6 +2,7 @@ import type {
 	AttributeEnumDomain,
 	AttributeIntegerBound,
 	Placement,
+	PresentationDefault,
 	TableSortDirection,
 } from './types.js'
 
@@ -224,6 +225,154 @@ export const ATTRIBUTE_ENUM_DOMAINS: readonly AttributeEnumDomain[] = [
 		attribute: 'inputmode',
 		values: ['none', 'text', 'tel', 'url', 'email', 'numeric', 'decimal', 'search'],
 		cite: 'interactions#input-modalities-the-inputmode-attribute',
+	},
+] as const
+
+// ── Presentation-lens load-bearing computed-style defaults (Phase 5) ───────
+//
+// The `presentation` rule family's TABULAR core (list-item / bidi /
+// table-model / preformatted) is corpus DATA, mirroring the
+// `ATTRIBUTE_INTEGER_BOUNDS` precedent EXACTLY: a `readonly` typed array with
+// a `cite` field, the type in `types.ts`, and a STRENGTHENED bidirectional
+// binding in `tests/guides/w3c.test.ts` (each `cite` resolves through the
+// `renderings` chapter path; each `property: expected` UA declaration appears
+// VERBATIM in the cited `renderings.md §15` block). The rules ITERATE this
+// data — no per-element `if (tag==='li')` branch — and fire ONLY when
+// `getComputedStyle(el).{property}` is OUTSIDE `expected` AND no
+// corpus-sanctioned ARIA `roles` compensation is present (the
+// false-positive-on-valid-markup guard, designed from the `aria.md`
+// implicit-role prose, never intuition).
+//
+// `colgroup` / `col` are DELIBERATELY excluded from the table-model entry:
+// the corpus `aria.md` §112 cards them as *no corresponding role* — they
+// expose NO accessibility semantic a `display` override could strip, so
+// flagging them would be a structural false positive that contradicts the
+// ROADMAP non-goal ("only flags overrides that contradict an element's
+// semantics, nothing stylistic"). The role-bearing table elements
+// (`table`/`caption`/`thead`/`tbody`/`tfoot`/`tr`/`td`/`th`) ARE covered,
+// each compensable by the exact implicit role the corpus `aria.md` §110-116
+// cards for it. `bidi` carries no `roles` — `aria.md` §85 cards `bdo`/`bdi`
+// as *no corresponding role*, so no role can carry directional-override
+// semantics; its false-positive guard is the narrow `expected` set plus the
+// rule's `dir`/element precondition (rules.ts).
+
+/** Every load-bearing computed-style default the §15 UA stylesheet sets
+ *  whose override strips a semantic. Verbatim from `renderings.md`: `li`
+ *  §15.3.7, `bdo`/`bdi`/`[dir]` §15.3.5, the table model §15.3.8, `pre`
+ *  §15.3.3 (the `pre[wrap]` presentational-hint `pre-wrap` is an accepted
+ *  member — it preserves the preformatted semantic). ARIA `roles`
+ *  compensation per `aria.md` §110-168. */
+export const PRESENTATION_DEFAULTS: readonly PresentationDefault[] = [
+	// list-item — `li { display: list-item }` (renderings.md §15.3.7).
+	// Compensated by an explicit `role="listitem"` (aria.md §60 — the
+	// implicit `li` role; an author re-asserting it preserves the semantic).
+	{
+		tags: ['li'],
+		property: 'display',
+		expected: ['list-item'],
+		roles: ['listitem'],
+		severity: 'error',
+		cite: 'renderings#lists',
+	},
+	// bidi — `bdo, bdo[dir] { unicode-bidi: isolate-override }` and the
+	// `bdi` / `[dir=…]` `{ unicode-bidi: isolate }` rules (§15.3.5). No ARIA
+	// role carries bidi-override semantics (aria.md §85).
+	{
+		tags: ['bdo'],
+		property: 'unicode-bidi',
+		expected: ['isolate-override'],
+		severity: 'error',
+		cite: 'renderings#bidirectional-text',
+	},
+	{
+		tags: ['bdi'],
+		property: 'unicode-bidi',
+		expected: ['isolate'],
+		severity: 'error',
+		cite: 'renderings#bidirectional-text',
+	},
+	// table model — `renderings.md §15.3.8`. Each role-bearing element
+	// compensable by the exact implicit ARIA role `aria.md §110-116` cards
+	// for it (so a `display:block` table that re-asserts `role="table"` etc.
+	// is conformant — the framework/grid-library false-positive guard).
+	{
+		tags: ['table'],
+		property: 'display',
+		expected: ['table'],
+		// Only `table` — the corpus `aria.md` §110 cards `<table>`→`table`
+		// (NOT `grid`/`treegrid`; encoding those would invent a compensation
+		// the corpus does not state — the spec-faithfulness rule).
+		roles: ['table'],
+		severity: 'error',
+		cite: 'renderings#tables',
+	},
+	{
+		tags: ['caption'],
+		property: 'display',
+		expected: ['table-caption'],
+		roles: ['caption'],
+		severity: 'error',
+		cite: 'renderings#tables',
+	},
+	{
+		tags: ['thead'],
+		property: 'display',
+		expected: ['table-header-group'],
+		roles: ['rowgroup'],
+		severity: 'error',
+		cite: 'renderings#tables',
+	},
+	{
+		tags: ['tbody'],
+		property: 'display',
+		expected: ['table-row-group'],
+		roles: ['rowgroup'],
+		severity: 'error',
+		cite: 'renderings#tables',
+	},
+	{
+		tags: ['tfoot'],
+		property: 'display',
+		expected: ['table-footer-group'],
+		roles: ['rowgroup'],
+		severity: 'error',
+		cite: 'renderings#tables',
+	},
+	{
+		tags: ['tr'],
+		property: 'display',
+		expected: ['table-row'],
+		roles: ['row'],
+		severity: 'error',
+		cite: 'renderings#tables',
+	},
+	{
+		tags: ['td'],
+		property: 'display',
+		expected: ['table-cell'],
+		roles: ['cell', 'gridcell'],
+		severity: 'error',
+		cite: 'renderings#tables',
+	},
+	{
+		tags: ['th'],
+		property: 'display',
+		expected: ['table-cell'],
+		roles: ['columnheader', 'rowheader', 'cell', 'gridcell'],
+		severity: 'error',
+		cite: 'renderings#tables',
+	},
+	// preformatted — `pre { white-space: pre }` (§15.3.3); the `pre[wrap]`
+	// presentational hint resolves `pre-wrap`, which STILL preserves the
+	// preformatted semantic, so both are conformant. No ARIA role carries
+	// preformatting (aria.md §56 — `pre` is *generic*); the guard is the
+	// narrow `expected` set.
+	{
+		tags: ['pre'],
+		property: 'white-space',
+		expected: ['pre', 'pre-wrap'],
+		severity: 'error',
+		cite: 'renderings#flow-content',
 	},
 ] as const
 

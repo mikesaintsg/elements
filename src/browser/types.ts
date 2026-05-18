@@ -920,6 +920,48 @@ export interface AttributeEnumDomain {
 	readonly cite: string
 }
 
+/**
+ * One corpus-derived **load-bearing computed-style default** the Phase-5
+ * `presentation` rule family enforces: the WHATWG §15 UA stylesheet sets
+ * `property` to one of `expected` on every element in `tags`, and that
+ * rendering is *semantically load-bearing* (it is the element's list-item /
+ * bidi / table-model / preformatted box). A framework CSS override that
+ * resolves `getComputedStyle(element).{property}` to a value OUTSIDE
+ * `expected` strips that semantic — unless a corpus-sanctioned ARIA `roles`
+ * compensation is present (the `aria.md` implicit-role mapping), in which
+ * case the semantic is preserved and the rule MUST NOT fire. The DATA lives
+ * in `constants.ts § PRESENTATION_DEFAULTS` (the §5 module-data home, the
+ * `ATTRIBUTE_INTEGER_BOUNDS` precedent), bound BIDIRECTIONALLY to the corpus
+ * prose by `tests/guides/w3c.test.ts` (each `cite` resolves; each
+ * `tag { property: expected }` UA declaration appears verbatim in the cited
+ * `renderings.md` block) so it can never become a hidden invented allowlist.
+ *
+ * @remarks
+ * - `tags` — the lowercased element tags this UA default applies to.
+ * - `property` — the CSS property name read via `RuleContext.style()`
+ *   (lazily — only the presentation lens calls it).
+ * - `expected` — the closed set of computed values the spec default
+ *   resolves to (≥1: e.g. `pre` accepts `pre` *or* the `pre-wrap` from the
+ *   `pre[wrap]` presentational hint — both preserve the semantic).
+ * - `roles` — the implicit/explicit ARIA roles (corpus `aria.md`) that, when
+ *   carried on the element via `role="…"`, PRESERVE the semantic so a
+ *   stripped UA default is conformant (the false-positive guard); omitted
+ *   for a property whose semantic no ARIA role can carry (e.g. `bidi`).
+ * - `severity` — corpus-faithful: a destroyed semantic is `error`; a merely
+ *   degraded affordance is `warning`/`advice`.
+ * - `cite` — the `guides/w3c/renderings.md` chapter anchor (`renderings#…`)
+ *   the UA declaration is stated in; resolves through the same
+ *   `citeResolves` chapter path the Phase-3.2 constants use.
+ */
+export interface PresentationDefault {
+	readonly tags: readonly string[]
+	readonly property: string
+	readonly expected: readonly string[]
+	readonly roles?: readonly string[]
+	readonly severity: FindingSeverity
+	readonly cite: string
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Popover placement primitives
 // ─────────────────────────────────────────────────────────────────────────
