@@ -4,6 +4,7 @@ import type {
 	CreateToastInstance,
 	CreateToastOptions,
 } from '../types.js'
+import { isUndefined, parseNumber } from '@elements/core'
 import {
 	DEFAULT_TOAST_DELAY_MS,
 	DEFAULT_TOAST_SWIPE_THRESHOLD_PX,
@@ -120,8 +121,8 @@ export function createToast(
 		if (!isDeck) return
 
 		const depthRaw = getComputedStyle(container).getPropertyValue('--set-toast-stack-depth').trim()
-		const depthValue = Number(depthRaw)
-		const depth = Number.isFinite(depthValue) && depthValue >= 1 ? Math.floor(depthValue) : 3
+		const depthValue = parseNumber(depthRaw)
+		const depth = !isUndefined(depthValue) && depthValue >= 1 ? Math.floor(depthValue) : 3
 
 		const front = ordered[0]
 		const frontHeight = front ? front.getBoundingClientRect().height : 0
