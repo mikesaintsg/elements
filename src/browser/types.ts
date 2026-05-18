@@ -246,6 +246,100 @@ export interface ContentModelEntry {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Inspector context primitives
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Phase 2 of the semantic HTML inspector: the Walker (the DOM-walk spine,
+// a thin layer over `traversals`) and the per-node `RuleContext` the
+// Phase-3 rule families consume. The Walker yields every relevant element
+// in a live subtree — descending the flat tree (shadow roots, slotted
+// elements, `<template>` content) and skipping foreign-content subtrees
+// (`<svg>` / `<math>`, `guides/w3c/categories.md` §3.2.5.2.6) — and resolves
+// each yielded node's `RuleContext`. The structure lens never reads style;
+// the presentation lens (Phase 5) pulls `RuleContext.style()` lazily.
+
+/**
+ * The accumulated descendant restrictions an ancestor imposes on a node —
+ * the transparent-content-model side-channel the spec attaches to specific
+ * containers (`a`, `button`, `canvas`, media elements). Each flag is `true`
+ * once *any* ancestor on the resolved chain forbids that descendant kind;
+ * the Phase-3 `transparent` rule family reads them directly.
+ *
+ * @remarks
+ * - `interactive` — no interactive-content descendant permitted (an
+ *   ancestor `a` / `button` / `canvas`,
+ *   `dom.html#the-a-element` "no interactive content descendant").
+ * - `link` — no `a` descendant permitted (inside an ancestor `a`).
+ * - `tabindex` — no descendant with the `tabindex` attribute (inside an
+ *   ancestor `a` / `button`).
+ * - `media` — no nested `audio` / `video` descendant (inside an ancestor
+ *   `audio` / `video`).
+ */
+export interface RuleRestrictions {
+	readonly interactive: boolean
+	readonly link: boolean
+	readonly tabindex: boolean
+	readonly media: boolean
+}
+
+/**
+ * The per-node resolved context the Walker hands every rule. Built once per
+ * yielded element; the structure lens reads `model` / `categories` /
+ * `parents` / `restrictions` and never touches `style` (the lazy
+ * presentation accessor — only the Phase-5 lens calls it, and it is memoized
+ * so repeated calls cost one `getComputedStyle`).
+ *
+ * @remarks
+ * - `model` — the element's *effective* content model. For a transparent
+ *   element (`a`, `ins`, `del`, `object`, `video`, `audio`, `canvas`, `map`,
+ *   `slot`) this is the model its nearest non-transparent ancestor imposes;
+ *   a transparent element with no parent resolves to `'children'` (the
+ *   flow-content fallback the spec mandates). For every other known element
+ *   it is the element's own schema model; `null` for an unknown tag.
+ * - `categories` — the element's effective content categories: a
+ *   transparent element exposes the categories of the model it resolved to
+ *   (flow when detached), so a rule asking "is this flow content?" gets the
+ *   spec answer without re-walking.
+ * - `parents` — the resolved ancestor chain, nearest first
+ *   (`traversals.getAncestors()` directly — closest ancestor at index 0).
+ * - `restrictions` — see {@link RuleRestrictions}; accumulated across
+ *   `parents`.
+ * - `style` — lazily-computed, memoized `getComputedStyle(element)`. The
+ *   structure lens must not call it; the presentation lens does.
+ */
+export interface RuleContext {
+	readonly element: Element
+	readonly model: ContentModel | null
+	readonly categories: readonly ContentCategory[]
+	readonly parents: readonly Element[]
+	readonly restrictions: RuleRestrictions
+	readonly style: () => CSSStyleDeclaration
+}
+
+/**
+ * The contract the {@link RuleContext}-producing DOM-walk spine implements
+ * (the §4.5 behavioral-interface role). `walk` is the lazy generator the
+ * inspector iterates (`for…of`, O(depth), no recursion limit) — it yields
+ * every relevant element of the flat subtree rooted at the Walker's host,
+ * descending shadow roots / slotted elements / `<template>` content and
+ * skipping foreign-content (`<svg>` / `<math>`) subtrees. `context`
+ * resolves the per-node {@link RuleContext} (transparent model resolved
+ * over live ancestors).
+ *
+ * @remarks
+ * - `walk()` — lazy depth-first generator over the flat subtree.
+ * - `nodes()` — the eager frozen array snapshot of `walk()` (DOM-safe to
+ *   iterate while mutating, per `traversals.md` §Contract 6).
+ * - `context(element)` — the resolved {@link RuleContext} for one element.
+ */
+export interface WalkerInterface {
+	readonly element: Element
+	readonly walk: () => Generator<Element, void, unknown>
+	readonly nodes: () => readonly Element[]
+	readonly context: (element: Element) => RuleContext
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Popover placement primitives
 // ─────────────────────────────────────────────────────────────────────────
 

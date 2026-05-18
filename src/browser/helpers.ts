@@ -2,13 +2,24 @@
 //  Browser-side helpers shared across composables / factories.
 //
 //  Everything here is framework-agnostic: no Vue imports, no SCSS class
-//  manipulation, and no import from `traversals.ts` (the dependency edge is
-//  strictly one-way: `traversals.ts` imports `isTagType` from here). Helpers
-//  are grouped, in file order, as:
+//  manipulation. The pure DOM / table / event helpers take no `traversals`
+//  or `schema` dependency. The inspector content-model adapters
+//  (`resolveModel` / `effectiveCategories` / `flatChildren` / `nodePath`)
+//  are the deliberate exception: they COMPOSE `traversals` (ancestor /
+//  child / path walks) and `schema` (the frozen content-model registry)
+//  rather than re-implement either. Every cross-imported symbol on that
+//  edge is a hoisted `function` used only at call time, so the resulting
+//  `helpers ↔ traversals` / `helpers ↔ schema` import cycle is
+//  initialization-safe (`schema.ts` builds its frozen array from the
+//  hoisted `defineModel` here at module load; nothing here runs at load).
+//  Helpers are grouped, in file order, as:
 //
 //    • Identity / narrowing — `generateId`, value guards.
 //    • DOM node-type guards — `isElement`, `isTagType`, `createMatcher`, …
 //    • Taxonomy primitives — `entry` (taxonomy registry row builder).
+//    • Content-model schema primitives — `defineModel` (schema row
+//      builder) + the inspector adapters `resolveModel` /
+//      `effectiveCategories` / `flatChildren` / `nodePath`.
 //    • Table sort / escape — `cssEscape`, `compareCellValues`.
 //    • SCSS selector parsing — `splitTopLevel`, `tagsInHead`, …
 //    • String-list coercion — `toStringList`.
@@ -85,6 +96,8 @@ import {
 	TABLE_EXPANSION_ATTR,
 	TRANSITION_FALLBACK_MS,
 } from './constants.js'
+import { categoriesOf, isKnownElement, isTransparent, modelOf } from './schema.js'
+import { getAncestors, getPathToAncestor, toArray } from './traversals.js'
 
 // ── Identity / narrowing ────────────────────────────────────────────────────
 
@@ -281,6 +294,109 @@ export function defineModel(
 		void: model === 'void',
 		cite,
 	}
+}
+
+// ── Inspector content-model adapters ────────────────────────────────────────
+// Thin adapters that COMPOSE `traversals` (live ancestor / child / path
+// walks) and `schema` (the frozen content-model registry). They re-implement
+// neither DOM walking nor content-model data — they bridge the two so the
+// Phase-2 Walker / RuleContext (and the Phase-3 rule families) read one
+// resolved answer per node. The transparent resolution is a bounded,
+// stack-based ancestor walk over `getAncestors()` (O(depth), no recursion
+// limit — already adversarial-input-safe per the traversals contract), NOT
+// a hand-rolled recursive loop and NOT a self-referential `lazyShape`.
+
+/**
+ * The element's *effective* content model — the transparent-content-model
+ * resolver, the spine of the inspector's structure lens.
+ *
+ * A non-transparent known element resolves to its own schema model. A
+ * transparent element (`a`, `ins`, `del`, `object`, `video`, `audio`,
+ * `canvas`, `map`, `slot`) inherits the model of its nearest
+ * **non-transparent** ancestor — walking up through any chain of
+ * transparent ancestors. A transparent element with **no non-transparent
+ * ancestor** (a detached / fully-transparent root) resolves to `'children'`:
+ * the spec rule *"when a transparent element has no parent, its content
+ * model restrictions are instead based on flow content"* (flow content's
+ * model shape is `children`).
+ *
+ * @param element - The element whose effective model to resolve.
+ * @returns The resolved {@link ContentModel}, or `null` when the element's
+ *   tag (or the resolved ancestor's tag) is not a known HTML element.
+ */
+export function resolveModel(element: Element): ContentModel | null {
+	const tag = element.tagName.toLowerCase()
+	if (!isTransparent(tag)) return isKnownElement(tag) ? modelOf(tag) : null
+	for (const ancestor of getAncestors(element)) {
+		const ancestorTag = ancestor.tagName.toLowerCase()
+		if (!isTransparent(ancestorTag)) {
+			return isKnownElement(ancestorTag) ? modelOf(ancestorTag) : null
+		}
+	}
+	// No non-transparent ancestor: a detached / fully-transparent root —
+	// content model restrictions fall back to flow content.
+	return 'children'
+}
+
+/**
+ * The element's *effective* content categories. A non-transparent known
+ * element exposes its own schema categories. A transparent element exposes
+ * the categories of the nearest **non-transparent** ancestor it resolved
+ * to (so a rule asking "is this flow content?" gets the spec answer without
+ * re-walking); a detached / fully-transparent transparent root falls back
+ * to `['flow']` (the same flow-content fallback {@link resolveModel} uses).
+ *
+ * @param element - The element whose effective categories to resolve.
+ * @returns The resolved categories (empty array when the tag is unknown).
+ */
+export function effectiveCategories(element: Element): readonly ContentCategory[] {
+	const tag = element.tagName.toLowerCase()
+	if (!isTransparent(tag)) return categoriesOf(tag)
+	for (const ancestor of getAncestors(element)) {
+		const ancestorTag = ancestor.tagName.toLowerCase()
+		if (!isTransparent(ancestorTag)) return categoriesOf(ancestorTag)
+	}
+	return ['flow']
+}
+
+/**
+ * The element's flat-tree element children — slot / shadow / template
+ * aware, frozen with `toArray()` before return so callers can iterate
+ * while mutating the DOM (`traversals.md` §Contract 6):
+ *
+ * - a `<slot>` yields its `assignedElements()` (the flattened distribution);
+ * - a shadow host yields its `shadowRoot` children (the shadow tree);
+ * - a `<template>` yields its inert `content` document-fragment children;
+ * - anything else yields its ordinary element `children`.
+ *
+ * @param element - The element whose flat children to read.
+ * @returns A frozen snapshot of the flat-tree element children.
+ */
+export function flatChildren(element: Element): readonly Element[] {
+	if (element instanceof HTMLSlotElement) {
+		return element.assignedElements()
+	}
+	if (element.shadowRoot !== null) {
+		return toArray(element.shadowRoot.children)
+	}
+	if (element instanceof HTMLTemplateElement) {
+		return toArray(element.content.children)
+	}
+	return toArray(element.children)
+}
+
+/**
+ * The stable DOM path from `element` up to (but excluding) `ancestor` —
+ * a thin wrapper over `traversals.getPathToAncestor()`. With no `ancestor`
+ * the path runs to the document root. The Phase-4 `Finding` uses this for
+ * a deterministic, serializable element locator.
+ *
+ * @param element - The path's starting element (index 0).
+ * @param ancestor - Exclusive upper bound; omitted ⇒ walk to the root.
+ * @returns The element chain, nearest first, `ancestor` excluded.
+ */
+export function nodePath(element: Element, ancestor?: Element | null): readonly Element[] {
+	return getPathToAncestor(element, ancestor)
 }
 
 // ── Table sort / escape primitives ──────────────────────────────────────────

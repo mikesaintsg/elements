@@ -240,7 +240,7 @@ five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
 | ----- | ----------------------------------------------------------------------------------- | ------ |
 | 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec               | ✅     |
 | 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                 | ✅     |
-| 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)              | ⬜     |
+| 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)              | ✅     |
 | 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant) | ⬜     |
 | 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel    | ⬜     |
 | 5     | Presentation lens (computed-style: load-bearing rendering overrides)                | ⬜     |
@@ -490,7 +490,7 @@ The frozen TS mirror of the corpus, shaped exactly like
 
 ## Phase 2 — Walker + Context
 
-- ⬜ `Walker` class: **thin layer over [`traversals`](guides/traversals.md)** —
+- ✅ `Walker` class: **thin layer over [`traversals`](guides/traversals.md)** —
   the spine is `walkDescendantsGenerator()` (lazy `for…of`, O(depth), no
   recursion limit; `walkDescendantsBreadthFirst()` available where a BFS
   pass is cheaper). The Walker adds only what `traversals` doesn't: flat-tree
@@ -500,16 +500,16 @@ The frozen TS mirror of the corpus, shaped exactly like
   typing via the `isElement` / `isHTMLElement` / `matchesTag` / `isTagType`
   guards, never hand-rolled `nodeType` checks. Freeze live collections with
   `toArray()` before any DOM-sensitive pass (traversals.md §Contract 6).
-- ⬜ `RuleContext` per node: resolved effective content model (via
+- ✅ `RuleContext` per node: resolved effective content model (via
   `resolveModel`, which walks `getAncestors()` / `findClosest()`),
   `parentChain` = `getAncestors()`, inherited restrictions
   (no-interactive / no-`a` / no-`tabindex` flags accumulated from ancestors),
   and a lazily-computed `getComputedStyle` accessor (only read when the
   presentation lens asks — keeps the structure lens style-free and fast).
-- ⬜ `resolveModel` / `effectiveCategories` / `flatChildren` / `nodePath`
+- ✅ `resolveModel` / `effectiveCategories` / `flatChildren` / `nodePath`
   (the last wraps `getPathToAncestor()`) helpers in `helpers.ts` — adapters,
   not re-implementations.
-- ⬜ Unit suite (`tests/src/browser/inspector/Walker.test.ts`) — real DOM
+- ✅ Unit suite (`tests/src/browser/inspector/Walker.test.ts`) — real DOM
   fixtures per AGENTS §16.2 (seeded via `compileGenerator()` +
   `createRandom()` for synthetic trees): detached root → flow; nested
   transparent (`<a><ins>…`) resolution; slotted/shadow descent;
