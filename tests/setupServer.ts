@@ -135,6 +135,19 @@ export function readW3cElementCards(): Record<string, string> {
 }
 
 /**
+ * Synchronously read a single top-level W3C-corpus file (not an element
+ * card — the chapter-level corpus prose under `guides/w3c/`, e.g.
+ * `interactions`, `categories`, `renderings`). `name` is the bare basename
+ * without `.md`. Used by `tests/guides/w3c.test.ts` to bind the Phase-3
+ * `attribute`-family global-attribute bound/domain constants back to the
+ * chapter prose that states them (the same corpus-is-source-of-truth
+ * discipline the element-card parity already enforces). Throws if missing.
+ */
+export function readW3cCorpus(name: string): string {
+	return readFileSync(resolve(WORKSPACE_ROOT, `guides/w3c/${name}.md`), 'utf8')
+}
+
+/**
  * Synchronously read every `*Page.vue` showcase page in
  * `app/browser/pages/`. Returns `{ basename: rawSource }` (basename without
  * the `.vue` extension, e.g. `TokensPage`). The pages-suite analogue of

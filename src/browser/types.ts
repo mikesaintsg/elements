@@ -624,6 +624,55 @@ export interface FindingDraft {
 	readonly actual?: string
 }
 
+/**
+ * One integer-valued attribute the W3C corpus bounds, with the spec-stated
+ * range the Phase-3 `attribute` family's `attribute/integer` rule enforces
+ * via the `@elements/core` `parseInteger` parser. The bound DATA lives in
+ * `constants.ts § ATTRIBUTE_INTEGER_BOUNDS` (the §5 home for module data,
+ * corpus-bound by `tests/guides/w3c.test.ts`); this is its shape.
+ *
+ * @remarks
+ * - `attribute` — the lowercased attribute name (`tabindex`, `span`,
+ *   `colspan`, `rowspan`).
+ * - `min` / `max` — the inclusive corpus bound, omitted when the spec states
+ *   no bound (`tabindex` is "a valid integer" with no range).
+ * - `tags` — the element tags the bound applies to, omitted for a GLOBAL
+ *   attribute that applies to any element (`tabindex`).
+ * - `cite` — the `guides/w3c` card anchor the corpus bound is stated in, so
+ *   the parity gate binds the constant back to the prose bidirectionally.
+ */
+export interface AttributeIntegerBound {
+	readonly attribute: string
+	readonly min?: number
+	readonly max?: number
+	readonly tags?: readonly string[]
+	readonly cite: string
+}
+
+/**
+ * One global enumerated attribute whose closed keyword domain the W3C corpus
+ * cards STATE — the Phase-3 `attribute` family's `attribute/enum` rule
+ * coerces the value through the `@elements/core` `parseEnum` parser over
+ * `values`. The DATA lives in `constants.ts § ATTRIBUTE_ENUM_DOMAINS`
+ * (corpus-bound by `tests/guides/w3c.test.ts`); this is its shape.
+ *
+ * @remarks
+ * - `attribute` — the lowercased attribute name (`dir`, `contenteditable`,
+ *   `inputmode`).
+ * - `values` — the closed keyword domain, verbatim from the corpus card.
+ * - `empty` — `true` iff the empty-string value is a valid keyword (the
+ *   `contenteditable` *true* state — the card states "`true` (or the empty
+ *   string)"), so a present-but-empty attribute is faithful, not a violation.
+ * - `cite` — the `guides/w3c` card anchor the keyword domain is stated in
+ *   (the parity gate resolves it, same discipline as the schema `cite`).
+ */
+export interface AttributeEnumDomain {
+	readonly attribute: string
+	readonly values: readonly string[]
+	readonly empty?: boolean
+	readonly cite: string
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Popover placement primitives
 // ─────────────────────────────────────────────────────────────────────────

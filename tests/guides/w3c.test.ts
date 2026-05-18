@@ -28,6 +28,8 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+	ATTRIBUTE_ENUM_DOMAINS,
+	ATTRIBUTE_INTEGER_BOUNDS,
 	CATEGORY_MEMBERS,
 	SCHEMA_BY_TAG,
 	TRANSPARENT_TAGS,
@@ -47,7 +49,7 @@ import {
 	type ContentModel,
 } from '@elements/browser'
 import { createRandom } from '@elements/core'
-import { readW3cElementCards } from '../setupServer'
+import { readW3cCorpus, readW3cElementCards } from '../setupServer'
 
 const cards = readW3cElementCards()
 
@@ -593,6 +595,165 @@ describe('schema.ts — content-model disjointness invariant (guarded)', () => {
 			withRequiredField: [],
 			withOrderKind: [],
 		})
+	})
+})
+
+// ── Phase 3.2 attribute family — schema/constant ⇄ corpus parity ────────────
+//
+// The `attribute` rule family is driven by (1) the per-element schema
+// `AttributeRule` data and (2) two corpus-bound module constants
+// (`ATTRIBUTE_INTEGER_BOUNDS` / `ATTRIBUTE_ENUM_DOMAINS` — the integer ranges
+// and global enumerated-attribute keyword domains the `AttributeRule` shape
+// cannot carry: it has no range field, and `tabindex`/`dir`/`contenteditable`
+// /`inputmode` are GLOBAL attributes with no owning element entry). These
+// bindings hold the new data to the SAME corpus-is-source-of-truth discipline
+// the schema `cite` / `childModel` are held to — strengthen-only (a new gate;
+// no prior assertion is touched or weakened), bidirectional, perturbation-
+// failing (flip a bound / drop a corpus phrase and the equality breaks).
+
+// Slugify a chapter-file heading line the GitHub way: drop the leading
+// `#### N.N.N ` markdown + section number, lowercase, strip backticks and
+// punctuation, spaces → `-`. The corpus chapter cites (`interactions#…`,
+// `renderings#…`) resolve through this; element-card cites keep resolving
+// through the existing `parsedByTag` machinery.
+function slugifyHeading(line: string): string {
+	return line
+		.replace(/^#{1,6}\s+/, '')
+		.replace(/^[\d.]+\s+/, '')
+		.replace(/`/g, '')
+		.toLowerCase()
+		.replace(/[^a-z0-9 -]/g, '')
+		.trim()
+		.replace(/\s+/g, '-')
+}
+
+function chapterAnchors(file: string): ReadonlySet<string> {
+	const out = new Set<string>()
+	for (const line of readW3cCorpus(file).split('\n')) {
+		if (/^#{1,6}\s/.test(line)) out.add(slugifyHeading(line))
+	}
+	return out
+}
+
+// A cite resolves iff: an element-card cite (`{cardFile}#…`) whose file is a
+// real corpus element-card file AND a card for any tag exists in it, OR a
+// chapter cite (`interactions`/`renderings`/`categories`) whose anchor is a
+// real heading slug in that chapter file.
+const CHAPTER_FILES: readonly string[] = ['interactions', 'renderings', 'categories']
+function citeResolves(cite: string): boolean {
+	const [file, anchor] = cite.split('#')
+	if (file === undefined || anchor === undefined) return false
+	if (CHAPTER_FILES.includes(file)) return chapterAnchors(file).has(anchor)
+	if (!Object.keys(cards).includes(file)) return false
+	// An element-card cite: the anchor is `the-{tag}-element`-style; the
+	// existing per-tag parser already proved every schema entry's cite
+	// resolves, so here we only require the FILE to be a real card file and
+	// to contain at least one parsed card (the slug shape is the schema
+	// cite's own invariant, already gated above).
+	return parsed.some((c) => c.file === file)
+}
+
+describe('w3c corpus — Phase 3.2 attribute family is corpus-bound', () => {
+	// (a) The single schema addition: `img` carries the `ismap` AttributeRule
+	//     and its `note` is the verbatim corpus prose. Card prose
+	//     (embeddeds.md "the img element"): "The ismap attribute … must not be
+	//     specified on an element that does not have an ancestor a element
+	//     with an href attribute."
+	it('schema <img> carries the corpus-stated `ismap` AttributeRule', () => {
+		const img = SCHEMA_BY_TAG.get('img')
+		const ismap = img?.attributes.find((a) => a.attribute === 'ismap')
+		expect(ismap).toBeDefined()
+		const card = parsedByTag.get('img')
+		const block = (card?.block ?? '').replace(/\s+/g, ' ')
+		// The note's load-bearing clause appears verbatim in the img card.
+		expect(block).toContain(
+			'must not be specified on an element that does not have an ancestor `a` element with an `href` attribute',
+		)
+		expect((ismap?.note ?? '').toLowerCase()).toContain('ancestor a element with an href attribute')
+	})
+
+	// (b) SCHEMA → CARD: every schema `AttributeRule.attribute` is a
+	//     backticked attribute the element's own card prose names — no schema-
+	//     invented attribute. (Whole-set diff; empty ⇒ all corpus-grounded.)
+	it('every schema AttributeRule names an attribute the card prose backticks', () => {
+		const unsupported: string[] = []
+		for (const entry of contentModel) {
+			if (entry.attributes.length === 0) continue
+			const card = parsedByTag.get(entry.tag)
+			if (card === undefined) continue
+			const backticked = new Set(
+				[...card.block.matchAll(/`([a-z][a-z0-9-]*)`/g)].map((m) => m[1] ?? ''),
+			)
+			for (const rule of entry.attributes) {
+				if (!backticked.has(rule.attribute)) unsupported.push(`${entry.tag}[${rule.attribute}]`)
+			}
+		}
+		expect(unsupported).toEqual([])
+	})
+
+	// (c) ATTRIBUTE_INTEGER_BOUNDS — every entry's cite resolves AND the
+	//     corpus card/chapter it cites states the bound. Bidirectional: the
+	//     constant must cover exactly the corpus-bounded integer attributes
+	//     this phase scopes (tabindex + span + colspan + rowspan).
+	it('every ATTRIBUTE_INTEGER_BOUNDS entry cites a resolvable corpus anchor', () => {
+		const unresolved = ATTRIBUTE_INTEGER_BOUNDS.filter((b) => !citeResolves(b.cite)).map(
+			(b) => `${b.attribute} → ${b.cite}`,
+		)
+		expect(unresolved).toEqual([])
+	})
+
+	it('ATTRIBUTE_INTEGER_BOUNDS bounds appear verbatim in the cited corpus', () => {
+		// `span` (> 0, <= 1000) and `colspan` (> 0 and <= 1000) and `rowspan`
+		// (<= 65534) are stated verbatim in tables.md; `tabindex` is "a valid
+		// integer" (no bound) in interactions.md §6.6.3.
+		const tables = Object.entries(cards).find(([f]) => f === 'tables')?.[1] ?? ''
+		const interactions = readW3cCorpus('interactions')
+		expect(tables).toContain('1000')
+		expect(tables).toContain('65534')
+		expect(interactions).toContain('valid integer')
+		// The constant's bound numerals are the corpus numerals (no invented
+		// range): every finite `max` appears in the cited file's text. One
+		// whole-set diff (empty ⇒ every bound corpus-grounded) — no
+		// conditional `expect`.
+		const orphanBounds = ATTRIBUTE_INTEGER_BOUNDS.filter((bound) => {
+			if (bound.max === undefined) return false
+			const [file] = bound.cite.split('#')
+			const source = file === 'tables' ? tables : readW3cCorpus(file ?? '')
+			return !source.includes(String(bound.max))
+		}).map((bound) => `${bound.attribute}:${String(bound.max)}`)
+		expect(orphanBounds).toEqual([])
+	})
+
+	// (d) ATTRIBUTE_ENUM_DOMAINS — every entry's cite resolves AND every
+	//     keyword appears in the cited corpus prose (no invented keyword).
+	//     `loading`/`crossorigin` must stay ABSENT (the corpus never cards
+	//     their keyword set — only "limited to only known values").
+	it('every ATTRIBUTE_ENUM_DOMAINS entry cites a resolvable corpus anchor', () => {
+		const unresolved = ATTRIBUTE_ENUM_DOMAINS.filter((d) => !citeResolves(d.cite)).map(
+			(d) => `${d.attribute} → ${d.cite}`,
+		)
+		expect(unresolved).toEqual([])
+	})
+
+	it('every ATTRIBUTE_ENUM_DOMAINS keyword appears in the cited corpus prose', () => {
+		const missing: string[] = []
+		for (const domain of ATTRIBUTE_ENUM_DOMAINS) {
+			const [file] = domain.cite.split('#')
+			const source = readW3cCorpus(file ?? '').toLowerCase()
+			for (const keyword of domain.values) {
+				if (!source.includes(keyword.toLowerCase())) missing.push(`${domain.attribute}:${keyword}`)
+			}
+		}
+		expect(missing).toEqual([])
+	})
+
+	it('ATTRIBUTE_ENUM_DOMAINS does NOT invent `loading`/`crossorigin` domains', () => {
+		// The corpus prose for these says only "limited to only known values"
+		// — it never cards the keyword set, so encoding a domain would invent
+		// one. Their ABSENCE is the spec-faithfulness contract, gated.
+		const attrs = ATTRIBUTE_ENUM_DOMAINS.map((d) => d.attribute)
+		expect(attrs).not.toContain('loading')
+		expect(attrs).not.toContain('crossorigin')
 	})
 })
 

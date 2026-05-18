@@ -1,4 +1,9 @@
-import type { Placement, TableSortDirection } from './types.js'
+import type {
+	AttributeEnumDomain,
+	AttributeIntegerBound,
+	Placement,
+	TableSortDirection,
+} from './types.js'
 
 // ============================================================================
 //  Browser-side constants shared across composables / factories.
@@ -165,6 +170,62 @@ export const CAROUSEL_ITEM_SELECTOR =
  *  (matches the documented markup contract + `composables/_carousel.scss`'s
  *  `.carousel-indicators > li > button` chrome). */
 export const CAROUSEL_INDICATOR_SELECTOR = ':scope > [role="tablist"] > li > button'
+
+// ── Inspector attribute-family corpus bounds (Phase 3.2) ───────────────────
+//
+// The W3C-corpus-stated integer ranges and global enumerated-attribute
+// keyword domains the `attribute` rule family (`src/browser/inspector/
+// rules.ts`) enforces via the `@elements/core` `parseInteger` / `parseEnum`
+// parsers. These are spec CONSTANTS the cards state in prose — NOT
+// per-element schema `AttributeRule` data (the `AttributeRule` shape carries
+// no integer-range field, and `tabindex`/`dir`/`contenteditable`/`inputmode`
+// are GLOBAL attributes with no single owning element entry). They live here
+// (the §5 module-data home, modelled on `PLACEMENT_AREAS`) and are bound
+// back to the corpus prose BIDIRECTIONALLY by `tests/guides/w3c.test.ts`
+// (each `cite` resolves, each bound/keyword appears verbatim in the cited
+// card / chapter) so they can never become a hidden allowlist — the same
+// corpus-is-source-of-truth discipline the schema `cite` is held to.
+
+/** Every integer-valued attribute the corpus bounds, with its spec range.
+ *  `tabindex` is global (no `tags`) and unbounded ("a valid integer",
+ *  interactions.md §6.6.3); the table bounds are verbatim from the
+ *  `colgroup`/`col`/`td`/`th` cards (tables.md). */
+export const ATTRIBUTE_INTEGER_BOUNDS: readonly AttributeIntegerBound[] = [
+	{ attribute: 'tabindex', cite: 'interactions#the-tabindex-attribute' },
+	{
+		attribute: 'span',
+		min: 1,
+		max: 1000,
+		tags: ['colgroup', 'col'],
+		cite: 'tables#the-colgroup-element',
+	},
+	{ attribute: 'colspan', min: 1, max: 1000, tags: ['td', 'th'], cite: 'tables#the-td-element' },
+	{ attribute: 'rowspan', min: 0, max: 65534, tags: ['td', 'th'], cite: 'tables#the-td-element' },
+] as const
+
+/** Every global enumerated attribute whose closed keyword domain the corpus
+ *  cards STATE. `loading`/`crossorigin` are deliberately ABSENT — the corpus
+ *  prose says only "limited to only known values", never the keyword set, so
+ *  encoding a domain would invent one (the spec-faithfulness rule). */
+export const ATTRIBUTE_ENUM_DOMAINS: readonly AttributeEnumDomain[] = [
+	// `dir`'s global {ltr,rtl,auto} domain is corpus-stated by the UA
+	// stylesheet's `[dir=ltr i], [dir=rtl i], [dir=auto i]` selectors
+	// (renderings.md §15.3.5 Bidirectional text) — the only place the cache
+	// cards the closed keyword set (no prose `dir` chapter exists; the
+	// `bdo[dir]∈{ltr,rtl}` narrower domain is the carded schema AttributeRule).
+	{ attribute: 'dir', values: ['ltr', 'rtl', 'auto'], cite: 'renderings#bidirectional-text' },
+	{
+		attribute: 'contenteditable',
+		values: ['true', 'false', 'plaintext-only'],
+		empty: true,
+		cite: 'interactions#making-document-regions-editable-the-contenteditable-content-attribute',
+	},
+	{
+		attribute: 'inputmode',
+		values: ['none', 'text', 'tel', 'url', 'email', 'numeric', 'decimal', 'search'],
+		cite: 'interactions#input-modalities-the-inputmode-attribute',
+	},
+] as const
 
 // ── Popover side vocabulary ────────────────────────────────────────────────
 

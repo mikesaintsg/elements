@@ -837,6 +837,23 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where embedded content is expected; as a child of a picture element after all source elements.',
 		'void',
 		'embeddeds#the-img-element',
+		{
+			// Card prose (embeddeds.md "the img element"): "The ismap
+			// attribute, when used on an element that is a descendant of an a
+			// element with an href attribute … The attribute must not be
+			// specified on an element that does not have an ancestor a element
+			// with an href attribute." Encoded as the established note-only
+			// AttributeRule precedent (cf. `dialog`/`tabindex`,
+			// `time`/`datetime`) — the `attribute/coupling-domain` rule
+			// recognizes the `ismap` datum and applies the corpus-stated
+			// flat-ancestor `a[href]` check a DOM-walker can decide.
+			attributes: [
+				{
+					attribute: 'ismap',
+					note: 'The ismap attribute must not be specified on an element that does not have an ancestor a element with an href attribute.',
+				},
+			],
+		},
 	),
 	defineModel(
 		'iframe',
@@ -1039,6 +1056,18 @@ export const contentModel: readonly ContentModelEntry[] = [
 					// caption elements and before any thead/tbody/tfoot/tr."
 					relation: 'child',
 					note: 'As a child of a table element.',
+				},
+			],
+			// Card prose (tables.md "the colgroup element"): "If it contains
+			// no col elements it may have a span attribute (> 0 and <= 1000)"
+			// / Content model "If span is present: nothing." The note-only
+			// AttributeRule (the `time`/`datetime`, `img`/`ismap` precedent)
+			// the `attribute/coupling-domain` rule recognizes — the DOM check
+			// (span present ⇒ no col children) a tree-walker can decide.
+			attributes: [
+				{
+					attribute: 'span',
+					note: 'If the colgroup element has a span attribute it must not contain any col elements.',
 				},
 			],
 		},

@@ -527,14 +527,16 @@ The frozen TS mirror of the corpus, shaped exactly like
 
 ## Phase 3 — Rule engine + rule families
 
-> Split into 3 sequential, independently-reviewable parts. **Part 1 ✅
-> (this slice):** the `RuleInterface`/`Finding`/`FindingSeverity`/`RuleLens`
-> types + the rule engine + the four schema-data-driven families
-> (`context` / `content` / `transparent` / `structure`) + their real-DOM
-> fixture suites. **Parts 2 & 3 ⬜ (pending):** the `attribute` family +
-> `@elements/core` parsers (part 2) and the `interaction` family (part 3),
-> which plug into the same frozen `rules` registry / `RuleInterface`
-> contract unchanged.
+> Split into 3 sequential, independently-reviewable parts. **Part 1 ✅:**
+> the `RuleInterface`/`Finding`/`FindingSeverity`/`RuleLens` types + the
+> rule engine + the four schema-data-driven families (`context` /
+> `content` / `transparent` / `structure`) + their real-DOM fixture
+> suites. **Part 2 ✅:** the `attribute` family (coupling +
+> parser-coerced value rules) over the same frozen `rules` registry,
+> driven by the Phase-1 `AttributeRule` data + two corpus-bound
+> attribute-bound/domain constants. **Part 3 ⬜ (pending):** the
+> `interaction` family, which plugs into the same `rules` registry /
+> `RuleInterface` contract unchanged.
 
 - ✅ `RuleInterface`: `{ id, severity, lens, evaluate(element, context) }`
   — pure, side-effect-free, one finding or null. Composite predicates are
@@ -548,7 +550,7 @@ The frozen TS mirror of the corpus, shaped exactly like
   [`types.ts`](src/browser/types.ts) (the shared shape Phase 4 compiles).
 - 🟡 Rule families (each a small set of generic rules driven by the schema
   data, not per-element hand-code) — **context / content / transparent /
-  structure ✅ (part 1); attribute / interaction ⬜ (parts 2/3)**:
+  structure ✅ (part 1); attribute ✅ (part 2); interaction ⬜ (part 3)**:
   - ✅ **context** — element not allowed in its parent's resolved model
     ([dom.html#content-models](https://html.spec.whatwg.org/multipage/dom.html#content-models)).
   - ✅ **content** — the parent's `childModel` order/cardinality unsatisfied
@@ -582,21 +584,36 @@ The frozen TS mirror of the corpus, shaped exactly like
     are reported by the `transparent` family via `RuleContext.restrictions`
     (one finding per violation — the structure family deliberately does not
     re-evaluate those two kinds).
-  - ⬜ **attribute** _(part 2)_ — coupling rules (`a[target|download|ping|rel|hreflang|
-type|referrerpolicy]` ⇒ `href`
-    ([links.html](https://html.spec.whatwg.org/multipage/links.html));
-    `bdo` ⇒ `dir∈{ltr,rtl}`; `data` ⇒ `value`; `time` w/o `datetime` ⇒
-    text-only datetime
-    ([text-level-semantics.html](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-time-element));
-    `img[ismap]` ⇒ ancestor `a[href]`; `colgroup[span]` ⇒ no `col`
-    children; `th[scope]` domain
-    ([tables.html](https://html.spec.whatwg.org/multipage/tables.html#the-th-element))).
-    Attribute-VALUE checks use [`@elements/core` parsers](guides/parsers.md):
-    `parseInteger` (`tabindex`, `colgroup[span]`/`col[span]` 1–1000,
-    `td`/`th` `colspan`/`rowspan`), `parseEnum` (`th[scope]` ∈
-    {row,col,rowgroup,colgroup}, `dir` ∈ {ltr,rtl,auto}, `loading`,
-    `crossorigin`, `contenteditable`, `inputmode`), `parseBoolean` —
-    coerce-or-`undefined`, never hand-written attribute parsing.
+  - ✅ **attribute** _(part 2)_ — six generic schema-data-driven rules over
+    the Phase-1 `entry.attributes` (`AttributeRule`) data + two
+    corpus-bound module constants (`ATTRIBUTE_INTEGER_BOUNDS` /
+    `ATTRIBUTE_ENUM_DOMAINS`): `attribute/coupling`
+    (`a`/`area[target|download|ping|rel|hreflang|type|referrerpolicy]` ⇒
+    `href`, [links.html](https://html.spec.whatwg.org/multipage/links.html)),
+    `attribute/required` (`bdo` ⇒ `dir`, `data` ⇒ `value`, `map` ⇒
+    `name`), `attribute/value` (`AttributeRule.values` via `parseEnum` —
+    `bdo` `dir∈{ltr,rtl}`, `th` `scope` domain
+    ([tables.html](https://html.spec.whatwg.org/multipage/tables.html#the-th-element)),
+    `dialog` `closedby`), `attribute/coupling-domain` (the note-keyed
+    corpus DOM checks a tree-walker can decide — `time` w/o `datetime` ⇒
+    non-empty child text
+    ([text-level-semantics.html](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-time-element)),
+    `img[ismap]` ⇒ flat ancestor `a[href]`, `colgroup[span]` ⇒ no `col`
+    children, `dialog[tabindex]` ⇒ must not be specified),
+    `attribute/integer` (`parseInteger` over the corpus bounds —
+    `tabindex` valid integer, `colgroup`/`col` `span` 1–1000, `td`/`th`
+    `colspan` 1–1000 / `rowspan` 0–65534), `attribute/enum` (`parseEnum`
+    over the corpus-stated global domains — `dir∈{ltr,rtl,auto}`,
+    `contenteditable`, `inputmode`). All attribute-VALUE checks coerce via
+    [`@elements/core` parsers](guides/parsers.md) (coerce-or-`undefined`,
+    never hand-written attribute parsing); attribute-only ⇒ disjoint from
+    the other families (one finding per violation). `loading`/`crossorigin`
+    deliberately NOT encoded — the corpus prose states only "limited to
+    only known values", never the keyword set (faithfulness: no invented
+    domain). One faithful schema addition: `img`'s `ismap` and `colgroup`'s
+    `span` note-only `AttributeRule` (the established `time`/`datetime`,
+    `dialog`/`tabindex` precedent), bidirectionally parity-bound in
+    `tests/guides/w3c.test.ts` (strengthen-only).
   - ⬜ **interaction** _(part 3)_ — `hidden`/`inert` reference integrity (a non-hidden
     `a[href="#id"]`/`label[for]`/`output[for]` must not target a `hidden`
     element; active `aria-*` IDREF must not point into an `[inert]` /
@@ -606,11 +623,13 @@ type|referrerpolicy]` ⇒ `href`
     `isDescendantOf` / `findClosest` / `isFocusable` /
     `findFocusableElements` — not bespoke DOM walks.
 - 🟡 Each family gets a fixture-driven unit suite (real DOM, no mocks;
-  synthetic dirty/clean trees seeded via `compileGenerator()` +
-  `createRandom()` so failures are reproducible). **Part 1 ✅:**
-  `tests/src/browser/inspector/{context,content,transparent,structure}.test.ts`
-  — clean-pass + dirty-fail + seeded perturbation-verified per family.
-  **Parts 2/3 ⬜:** attribute / interaction suites pending.
+  seeded `createRandom()` perturbation so failures are reproducible).
+  **Part 1 ✅:**
+  `tests/src/browser/inspector/{context,content,transparent,structure}.test.ts`.
+  **Part 2 ✅:** `tests/src/browser/inspector/attribute.test.ts` —
+  clean-pass + dirty-fail + seeded perturbation per rule, plus
+  whole-`rules`-registry one-finding-per-violation / disjointness
+  assertions. **Part 3 ⬜:** interaction suite pending.
 
 ---
 

@@ -1,4 +1,7 @@
 import type {
+	AttributeEnumDomain,
+	AttributeIntegerBound,
+	AttributeRule,
 	ChildModel,
 	ChildSegment,
 	ContentCategory,
@@ -12,7 +15,15 @@ import type {
 	RuleInterface,
 	RuleSubject,
 } from '../types.js'
-import { andOf, literalOf, notOf, whereOf } from '@elements/core'
+import {
+	andOf,
+	literalOf,
+	notOf,
+	parseEnum,
+	parseInteger,
+	parseString,
+	whereOf,
+} from '@elements/core'
 import {
 	effectiveCategories,
 	flatChildren,
@@ -21,6 +32,7 @@ import {
 	matchesTag,
 	nodePath,
 } from '../helpers.js'
+import { ATTRIBUTE_ENUM_DOMAINS, ATTRIBUTE_INTEGER_BOUNDS } from '../constants.js'
 import {
 	CATEGORY_MEMBERS,
 	describeElement,
@@ -66,7 +78,7 @@ import {
 //  double-report — `structure/child-order` is GONE; `childModel` is the sole
 //  order owner).
 //
-//  Families (Phase 3 part 1):
+//  Families (Phase 3 parts 1 + 2):
 //    - context      child tag the parent's `childModel` can never admit
 //                    (dom.html#content-models).
 //    - content      parent's `childModel` order/cardinality unsatisfied;
@@ -77,11 +89,21 @@ import {
 //                    (dom.html#transparent-content-models).
 //    - structure    the discrete named `entry.constraints` (per `kind`,
 //                    generic) plus `void-has-children`.
+//    - attribute    coupling (`AttributeRule.requires`), required-attribute
+//                    (`AttributeRule.required`), enum-value
+//                    (`AttributeRule.values` via `parseEnum`),
+//                    coupling-domain (the `note`-keyed corpus DOM checks —
+//                    `time`/`datetime`, `img`/`ismap`, `colgroup`/`span`,
+//                    `dialog`/`tabindex`), integer/range (`parseInteger`
+//                    over the corpus-bound `ATTRIBUTE_INTEGER_BOUNDS`), and
+//                    global-enum (`parseEnum` over `ATTRIBUTE_ENUM_DOMAINS`)
+//                    — generic, schema-data-driven, attribute-only (the
+//                    other families never read attributes ⇒ disjoint).
 //
-//  Phase 3 parts 2/3 (attribute / interaction families) and Phase 4
-//  (FindingManager / Inspector / ContractShape) plug into THIS `RuleInterface`
-//  + `rules` registry unchanged — the contract is designed for them, not
-//  built here (YAGNI).
+//  Phase 3 part 3 (interaction family) and Phase 4 (FindingManager /
+//  Inspector / ContractShape) plug into THIS `RuleInterface` + `rules`
+//  registry unchanged — the contract is designed for them, not built here
+//  (YAGNI).
 // ============================================================================
 
 // ── Rule subject ────────────────────────────────────────────────────────────
@@ -1032,20 +1054,475 @@ const structureVoidRule: RuleInterface = {
 	},
 }
 
+// ============================================================================
+//  Family: attribute — coupling + parser-coerced attribute-value rules.
+//
+//  GENERIC & schema-data-driven: the per-element rules iterate the Phase-1
+//  `entry.attributes` (`AttributeRule` — `{attribute, requires?, values?,
+//  required?, note?}`) DATA, never an `if (tag==='a')` branch. Predicates are
+//  named `@elements/core` validator/parser compositions; every attribute
+//  VALUE check coerces through an `@elements/core` parser
+//  (`parseString`/`parseInteger`/`parseEnum`) — coerce-or-`undefined`, never a
+//  hand-rolled `parseInt`/regex/`Number()` on an attribute. The corpus is the
+//  source of truth: each rule fires only on a card-stated constraint and every
+//  `Finding.cite` resolves to the offending element's own schema-entry anchor.
+//
+//  Concerns (one finding per violation, disjoint from context/content/
+//  transparent/structure — those families never read attributes):
+//    1. coupling          an `AttributeRule.requires` sibling is absent
+//                          (`a`/`area` target/download/ping/rel/hreflang/type/
+//                          referrerpolicy ⇒ href) — links.html.
+//    2. required          an `AttributeRule.required` attribute is absent
+//                          (`bdo` ⇒ dir, `data` ⇒ value, `map` ⇒ name).
+//    3. value             an `AttributeRule.values` (closed domain) attribute
+//                          is present but `parseEnum` rejects it (`bdo` dir ∈
+//                          {ltr,rtl}; `th` scope ∈ {row,col,rowgroup,
+//                          colgroup}; `dialog` closedby ∈ {any,closerequest,
+//                          none}).
+//    4. coupling-domain   the corpus DOM-relationship rules a tree-walker can
+//                          decide, recognized from a `note`-bearing
+//                          `AttributeRule` the rule knows (the established
+//                          Phase-1 note-only precedent — `time`/`datetime`,
+//                          `dialog`/`tabindex`, `img`/`ismap`): `time` w/o
+//                          `datetime` ⇒ non-empty child text; `img[ismap]` ⇒
+//                          a flat-tree ancestor `a[href]`; `colgroup[span]` ⇒
+//                          no `col` flat children; `dialog[tabindex]` ⇒ must
+//                          not be specified.
+//    5. integer/range     the corpus integer attributes: `tabindex` (any
+//                          element — a valid integer; interactions.md §6.6.3);
+//                          `colgroup`/`col` `span` ∈ [1,1000];
+//                          `td`/`th` `colspan` ∈ [1,1000], `rowspan` ∈
+//                          [0,65534] (tables.html bounds). Coerced via
+//                          `parseInteger`, then the corpus bound.
+//    6. enum (global)     the global enumerated attributes whose closed
+//                          domain the corpus cards STATE: `dir` ∈
+//                          {ltr,rtl,auto}, `contenteditable` ∈ {true,'',false,
+//                          plaintext-only}, `inputmode` ∈ {none,text,tel,url,
+//                          email,numeric,decimal,search} (interactions.md
+//                          §6.8.1/§6.8.9). `loading`/`crossorigin` are NOT
+//                          encoded — the corpus prose states only "limited to
+//                          only known values", never the keyword set, so
+//                          encoding a domain would invent one.
+// ============================================================================
+
+// The element's flat-tree ancestor chain carries an `a` with a non-empty
+// `href` — the `img[ismap]` corpus check, over the SAME flat parent chain
+// `readSubject` resolves "the parent" from (`flatParent` — slot conduits
+// collapsed), never light-tree `closest`. Bounded by the finite flat depth.
+function hasLinkAncestorWithHref(element: Element): boolean {
+	let current = flatParent(element)
+	while (current !== null) {
+		if (current.tagName.toLowerCase() === 'a' && current.hasAttribute('href')) return true
+		current = flatParent(current)
+	}
+	return false
+}
+
+// The element's child text content, trimmed via the `@elements/core`
+// `parseString` parser (coerce-or-`undefined`: a whitespace-only / empty
+// result is `undefined`) — never a hand-rolled `.trim()` length test. Only
+// the element's OWN text nodes count (the corpus `time` datetime value is the
+// element's child text content).
+function childText(element: Element): string | undefined {
+	let text = ''
+	for (const node of element.childNodes) {
+		if (node.nodeType === Node.TEXT_NODE) text += node.textContent ?? ''
+	}
+	return parseString(text)
+}
+
+// Find the first `AttributeRule` on an entry matching a predicate — the
+// generic accessor every schema-data-driven attribute rule iterates through,
+// so no rule hand-codes a per-element attribute list.
+function attributeRuleWhere(
+	entry: ContentModelEntry | null,
+	match: (rule: AttributeRule) => boolean,
+): AttributeRule | null {
+	if (entry === null) return null
+	for (const rule of entry.attributes) {
+		if (match(rule)) return rule
+	}
+	return null
+}
+
+// 1. coupling — an `AttributeRule.requires` sibling attribute is absent while
+// its trigger attribute is present (the spec's "if `target` is present,
+// `href` must be present" couplings, all carried as schema DATA).
+const violatesCoupling = whereOf(isSubject, (subject: RuleSubject): boolean =>
+	subject.entry === null
+		? false
+		: subject.entry.attributes.some(
+				(rule) =>
+					rule.requires !== undefined &&
+					subject.element.hasAttribute(rule.attribute) &&
+					!subject.element.hasAttribute(rule.requires),
+			),
+)
+
+const attributeCouplingRule: RuleInterface = {
+	id: 'attribute/coupling',
+	severity: 'error',
+	lens: 'structure',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesCoupling(subject)) return null
+		const rule = attributeRuleWhere(
+			subject.entry,
+			(candidate) =>
+				candidate.requires !== undefined &&
+				element.hasAttribute(candidate.attribute) &&
+				!element.hasAttribute(candidate.requires),
+		)
+		if (rule?.requires === undefined) return null
+		return buildFinding({
+			rule: 'attribute/coupling',
+			severity: 'error',
+			element,
+			cite: citeOf(subject.entry, 'links#attributes-common-to-ins-and-del-elements'),
+			message: `<${subject.tag}> with [${rule.attribute}] must also have [${rule.requires}].`,
+			expected: `[${rule.requires}] present`,
+			actual: `[${rule.attribute}] without [${rule.requires}]`,
+		})
+	},
+}
+
+// 2. required — an `AttributeRule.required` attribute is absent (the spec's
+// "the `value` attribute must be present" mandatory attributes, as DATA).
+const violatesRequiredAttribute = whereOf(isSubject, (subject: RuleSubject): boolean =>
+	subject.entry === null
+		? false
+		: subject.entry.attributes.some(
+				(rule) => rule.required === true && !subject.element.hasAttribute(rule.attribute),
+			),
+)
+
+const attributeRequiredRule: RuleInterface = {
+	id: 'attribute/required',
+	severity: 'error',
+	lens: 'structure',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesRequiredAttribute(subject)) return null
+		const rule = attributeRuleWhere(
+			subject.entry,
+			(candidate) => candidate.required === true && !element.hasAttribute(candidate.attribute),
+		)
+		if (rule === null) return null
+		return buildFinding({
+			rule: 'attribute/required',
+			severity: 'error',
+			element,
+			cite: citeOf(subject.entry, 'dom#content-models'),
+			message: rule.note ?? `<${subject.tag}> must have the [${rule.attribute}] attribute.`,
+			expected: `[${rule.attribute}] present`,
+			actual: `[${rule.attribute}] absent`,
+		})
+	},
+}
+
+// 3. value — an `AttributeRule.values` (closed domain) attribute is present
+// but its value is not in the domain. The domain check coerces through the
+// `@elements/core` `parseEnum` parser (string-only, trims, exact match →
+// typed-or-`undefined`) over the schema-carried `values` — never a
+// hand-written membership test.
+function offendingEnumAttribute(
+	entry: ContentModelEntry | null,
+	element: Element,
+): AttributeRule | null {
+	return attributeRuleWhere(entry, (rule) => {
+		if (rule.values === undefined) return false
+		const raw = element.getAttribute(rule.attribute)
+		if (raw === null) return false
+		return parseEnum(raw, rule.values) === undefined
+	})
+}
+
+const violatesAttributeValue = whereOf(
+	isSubject,
+	(subject: RuleSubject): boolean =>
+		offendingEnumAttribute(subject.entry, subject.element) !== null,
+)
+
+const attributeValueRule: RuleInterface = {
+	id: 'attribute/value',
+	severity: 'error',
+	lens: 'structure',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesAttributeValue(subject)) return null
+		const rule = offendingEnumAttribute(subject.entry, element)
+		if (rule?.values === undefined) return null
+		return buildFinding({
+			rule: 'attribute/value',
+			severity: 'error',
+			element,
+			cite: citeOf(subject.entry, 'dom#content-models'),
+			message: `<${subject.tag}> [${rule.attribute}] must be one of: ${rule.values.join(', ')}.`,
+			expected: rule.values.join(', '),
+			actual: element.getAttribute(rule.attribute) ?? '(absent)',
+		})
+	},
+}
+
+// 4. coupling-domain — the corpus DOM-relationship rules a tree-walker can
+// decide, recognized from a `note`-bearing `AttributeRule` the schema carries
+// (the established Phase-1 note-only precedent). Each branch is a NAMED
+// predicate keyed off the SCHEMA datum (the attribute name on the entry's
+// `attributes`), so the rule stays driven by the corpus, not a tag literal.
+function hasAttributeRule(entry: ContentModelEntry | null, attribute: string): boolean {
+	return attributeRuleWhere(entry, (rule) => rule.attribute === attribute) !== null
+}
+
+// The four `coupling-domain` branch predicates are PLAIN `RuleSubject →
+// boolean` checks (not `whereOf` guards): they are dispatched inside ONE
+// rule body, so a `Guard` would negatively-narrow `subject` to `never` on
+// the next branch. The rule's structural shape is already guaranteed by
+// `readSubject`; these only decide WHICH corpus DOM-relationship fired. Each
+// stays driven by the SCHEMA datum (`hasAttributeRule` — the note-bearing
+// `AttributeRule` the entry carries), never a tag literal.
+
+// `time` whose schema carries the `datetime` note-rule, with NO `datetime`
+// attribute, must have a non-empty child text (the corpus datetime value).
+function violatesTimeDatetime(subject: RuleSubject): boolean {
+	if (!hasAttributeRule(subject.entry, 'datetime')) return false
+	if (subject.element.hasAttribute('datetime')) return false
+	return childText(subject.element) === undefined
+}
+
+// `img` whose schema carries the `ismap` note-rule, WITH `ismap` present,
+// must have a flat-tree ancestor `a[href]`.
+function violatesIsmap(subject: RuleSubject): boolean {
+	if (!hasAttributeRule(subject.entry, 'ismap')) return false
+	if (!subject.element.hasAttribute('ismap')) return false
+	return !hasLinkAncestorWithHref(subject.element)
+}
+
+// `colgroup` whose schema carries the `span` note-rule, WITH `span` present,
+// must have no `col` flat children ("If span is present: nothing").
+function violatesColgroupSpan(subject: RuleSubject): boolean {
+	if (!hasAttributeRule(subject.entry, 'span')) return false
+	if (!subject.element.hasAttribute('span')) return false
+	return flatChildren(subject.element).some((child) => child.tagName.toLowerCase() === 'col')
+}
+
+// `dialog` whose schema carries the `tabindex` note-rule, WITH `tabindex`
+// present — the attribute must not be specified on a `dialog`.
+function violatesDialogTabindex(subject: RuleSubject): boolean {
+	if (!hasAttributeRule(subject.entry, 'tabindex')) return false
+	return subject.element.hasAttribute('tabindex')
+}
+
+const attributeCouplingDomainRule: RuleInterface = {
+	id: 'attribute/coupling-domain',
+	severity: 'error',
+	lens: 'structure',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (violatesTimeDatetime(subject)) {
+			const rule = attributeRuleWhere(
+				subject.entry,
+				(candidate) => candidate.attribute === 'datetime',
+			)
+			return buildFinding({
+				rule: 'attribute/coupling-domain',
+				severity: 'error',
+				element,
+				cite: citeOf(subject.entry, 'texts#the-time-element'),
+				message:
+					rule?.note ?? `<${subject.tag}> without [datetime] must have a valid datetime text.`,
+				expected: '[datetime] present, or non-empty datetime text',
+				actual: 'no [datetime] and empty text content',
+			})
+		}
+		if (violatesIsmap(subject)) {
+			const rule = attributeRuleWhere(subject.entry, (candidate) => candidate.attribute === 'ismap')
+			return buildFinding({
+				rule: 'attribute/coupling-domain',
+				severity: 'error',
+				element,
+				cite: citeOf(subject.entry, 'embeddeds#the-img-element'),
+				message: rule?.note ?? `<${subject.tag}>[ismap] requires an ancestor <a href>.`,
+				expected: 'an ancestor <a> with [href]',
+				actual: '[ismap] without an <a href> ancestor',
+			})
+		}
+		if (violatesColgroupSpan(subject)) {
+			return buildFinding({
+				rule: 'attribute/coupling-domain',
+				severity: 'error',
+				element,
+				cite: citeOf(subject.entry, 'tables#the-colgroup-element'),
+				message: `<${subject.tag}> with [span] must have no <col> children.`,
+				expected: 'no <col> children when [span] is present',
+				actual: '[span] present with <col> children',
+			})
+		}
+		if (violatesDialogTabindex(subject)) {
+			const rule = attributeRuleWhere(
+				subject.entry,
+				(candidate) => candidate.attribute === 'tabindex',
+			)
+			return buildFinding({
+				rule: 'attribute/coupling-domain',
+				severity: 'error',
+				element,
+				cite: citeOf(subject.entry, 'interactives#the-dialog-element'),
+				message:
+					rule?.note ?? `the [tabindex] attribute must not be specified on <${subject.tag}>.`,
+				expected: 'no [tabindex] on <dialog>',
+				actual: '[tabindex] specified',
+			})
+		}
+		return null
+	},
+}
+
+// 5. integer / range — the corpus integer attributes. `tabindex` is GLOBAL
+// (any element; interactions.md §6.6.3 "a valid integer"); the bounded ones
+// carry their corpus bound. Coerced via the `@elements/core` `parseInteger`
+// parser (parseNumber ∘ Number.isInteger → number-or-`undefined`), then the
+// corpus bound — never a hand-rolled `parseInt`. The bound DATA is the
+// corpus-bound `ATTRIBUTE_INTEGER_BOUNDS` constant (constants.ts — the §5
+// module-data home; bidirectionally bound to the cards by w3c.test.ts), NOT
+// per-element schema `values` (the `AttributeRule` shape has no range field
+// and `tabindex` is a GLOBAL attribute with no owning entry). Cites the
+// offending element's own entry (its anchor is where the rule fired).
+function offendingIntegerBound(element: Element, tag: string): AttributeIntegerBound | null {
+	for (const bound of ATTRIBUTE_INTEGER_BOUNDS) {
+		if (bound.tags !== undefined && !bound.tags.includes(tag)) continue
+		const raw = element.getAttribute(bound.attribute)
+		if (raw === null) continue
+		const value = parseInteger(raw)
+		if (value === undefined) return bound
+		if (bound.min !== undefined && value < bound.min) return bound
+		if (bound.max !== undefined && value > bound.max) return bound
+	}
+	return null
+}
+
+const violatesIntegerBound = whereOf(
+	isSubject,
+	(subject: RuleSubject): boolean => offendingIntegerBound(subject.element, subject.tag) !== null,
+)
+
+function describeBound(bound: AttributeIntegerBound): string {
+	if (bound.min !== undefined && bound.max !== undefined) {
+		return `an integer in [${bound.min}, ${bound.max}]`
+	}
+	return 'a valid integer'
+}
+
+const attributeIntegerRule: RuleInterface = {
+	id: 'attribute/integer',
+	severity: 'error',
+	lens: 'structure',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesIntegerBound(subject)) return null
+		const bound = offendingIntegerBound(element, subject.tag)
+		if (bound === null) return null
+		return buildFinding({
+			rule: 'attribute/integer',
+			severity: 'error',
+			element,
+			// The bound's OWN corpus anchor is its single source of truth
+			// (interactions.md / tables.md) — not the element's content-model
+			// card; the constant carries the resolvable cite, parity-bound.
+			cite: bound.cite,
+			message: `<${subject.tag}> [${bound.attribute}] must be ${describeBound(bound)}.`,
+			expected: describeBound(bound),
+			actual: element.getAttribute(bound.attribute) ?? '(absent)',
+		})
+	},
+}
+
+// 6. enum (global) — the global enumerated attributes whose closed keyword
+// domain the corpus cards STATE. Coerced via the `@elements/core` `parseEnum`
+// parser over the corpus-bound `ATTRIBUTE_ENUM_DOMAINS` constant
+// (constants.ts — bidirectionally bound to the cards by w3c.test.ts).
+// `contenteditable`'s empty-string value IS its valid `true` state per the
+// card ("`true` (or the empty string)"), so an empty raw value is faithful,
+// not a violation — only a non-empty out-of-domain value fires.
+// `loading`/`crossorigin` are deliberately ABSENT (the corpus never cards
+// their keyword set, only "limited to only known values" — encoding a domain
+// would invent one).
+//
+// DISJOINT SINGLE SOURCE (one finding per violation): when the element's OWN
+// schema entry already carries an `AttributeRule.values` (a closed domain) on
+// the same attribute, `attribute/value` is the sole reporter and this global
+// rule DEFERS — the element-specific schema domain is authoritative (it is
+// the spec's NARROWER per-element set, e.g. `bdo` `dir∈{ltr,rtl}` ⊂ the
+// global `dir∈{ltr,rtl,auto}`; double-reporting `<bdo dir=sideways>` as both
+// `attribute/value` + `attribute/enum` would violate one-finding-per-
+// violation). The two value-domain rules are thus disjoint by construction:
+// `attribute/value` owns every schema-`values`-constrained attribute,
+// `attribute/enum` owns the GLOBAL attributes no element entry constrains.
+function schemaConstrainsValues(entry: ContentModelEntry | null, attribute: string): boolean {
+	return (
+		attributeRuleWhere(
+			entry,
+			(rule) => rule.attribute === attribute && rule.values !== undefined,
+		) !== null
+	)
+}
+
+function offendingEnumDomain(
+	element: Element,
+	entry: ContentModelEntry | null,
+): AttributeEnumDomain | null {
+	for (const domain of ATTRIBUTE_ENUM_DOMAINS) {
+		if (schemaConstrainsValues(entry, domain.attribute)) continue
+		const raw = element.getAttribute(domain.attribute)
+		if (raw === null) continue
+		if (domain.empty === true && raw === '') continue
+		if (parseEnum(raw, domain.values) === undefined) return domain
+	}
+	return null
+}
+
+const violatesEnumDomain = whereOf(
+	isSubject,
+	(subject: RuleSubject): boolean => offendingEnumDomain(subject.element, subject.entry) !== null,
+)
+
+const attributeEnumRule: RuleInterface = {
+	id: 'attribute/enum',
+	severity: 'error',
+	lens: 'structure',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesEnumDomain(subject)) return null
+		const domain = offendingEnumDomain(element, subject.entry)
+		if (domain === null) return null
+		return buildFinding({
+			rule: 'attribute/enum',
+			severity: 'error',
+			element,
+			// The domain's OWN corpus anchor (interactions.md / renderings.md)
+			// is its source of truth — parity-bound by w3c.test.ts.
+			cite: domain.cite,
+			message: `<${subject.tag}> [${domain.attribute}] must be one of: ${domain.values.join(', ')}.`,
+			expected: domain.values.join(', '),
+			actual: element.getAttribute(domain.attribute) ?? '(absent)',
+		})
+	},
+}
+
 // ── Registry ────────────────────────────────────────────────────────────────
 //
 // The frozen, ordered rule registry every Phase-3 family contributes to and
 // Phase-4 (`Inspector` / `FindingManager`) consumes unchanged. Each family
 // guard above is a named `@elements/core` composition (`whereOf` / `andOf` /
-// `notOf` / `literalOf`); the parts-2/3 attribute / interaction families
-// extend this same array with the same compositor vocabulary.
+// `notOf` / `literalOf` / the `parseEnum`/`parseInteger` parsers); the part-3
+// interaction family extends this same array with the same vocabulary.
 
 /**
- * The frozen inspector rule registry — the four Phase-3 part-1 families
- * (`context` / `content` / `transparent` / `structure`), each a generic
+ * The frozen inspector rule registry — the Phase-3 part-1 families
+ * (`context` / `content` / `transparent` / `structure`) plus the part-2
+ * `attribute` family (coupling + parser-coerced value rules), each a generic
  * schema-data-driven {@link RuleInterface}. Pure: every `evaluate` is
- * side-effect-free and total (one {@link Finding} or `null`). Parts 2/3
- * (attribute / interaction) append to this same array; Phase 4 iterates it.
+ * side-effect-free and total (one {@link Finding} or `null`). Part 3
+ * (interaction) appends to this same array; Phase 4 iterates it.
  *
  * @example
  * ```ts
@@ -1079,4 +1556,11 @@ export const rules: readonly RuleInterface[] = [
 	structureEdgeChildRule,
 	structureNoSelfNestRule,
 	structureVoidRule,
+	// attribute (Phase 3.2)
+	attributeCouplingRule,
+	attributeRequiredRule,
+	attributeValueRule,
+	attributeCouplingDomainRule,
+	attributeIntegerRule,
+	attributeEnumRule,
 ] as const
