@@ -7,10 +7,11 @@
 
 **Framework baseline (done — not the subject of this roadmap):** every
 framework layer (tokens, theme, mixins, modifiers, elements, components,
-surfaces, composables) and all 43 showcase pages ship green — full suite
-**146 files / 7057 tests**, `npm run check` 0/0, all 11 build phases
-complete. The framework is the _substrate_ the inspector validates; it is
-not re-planned here.
+surfaces, composables) and all 43 showcase pages ship green — `npm run
+check` 0/0, all 11 build phases complete. The framework is the _substrate_
+the inspector validates; it is not re-planned here. With the inspector
+initiative now complete (Phases 0–8), the full repo suite stands at
+**173 files / 10069 tests**, all green.
 
 ---
 
@@ -249,7 +250,7 @@ five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
 | 5     | Presentation lens (computed-style: load-bearing rendering overrides)                                                                                                                                                                              | ✅     |
 | 6     | Showcase self-audit suite — gate SHIPPED + GREEN on all 43 pages (0 errors); `_textarea`/`<menu>`-group/`createToast`-root remediated at source; 30 TRUE-positive errors → 0; 113→120 list-style warnings remain by-design (reported, not failed) | ✅     |
 | 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                                                                                                                                                                                | ✅     |
-| 8     | Public-API parity hardening + large-tree performance budget                                                                                                                                                                                       | ⬜     |
+| 8     | Public-API parity hardening + large-tree performance budget                                                                                                                                                                                       | ✅     |
 
 ---
 
@@ -1054,22 +1055,38 @@ child`). Added a generic, schema-data-driven `content/cardinality` rule
 
 ## Phase 8 — Public-API parity hardening + performance
 
-- ⬜ Treat the inspector as part of the public `src/browser` API: it ships
+- ✅ The inspector is part of the public `src/browser` API: it ships
   through the sole barrel; `tests/src/browser/inspector/**` covers it;
   schema↔guides parity is permanent (Phase 1). The inspector's own guide
   ([`guides/inspector.md`](guides/inspector.md), shipped Phase 7) is held
   to the **same doc↔source contract** the five tooling guides exemplify —
-  [`tests/guides/inspector.test.ts`](tests/guides/inspector.test.ts)
-  (every backticked API resolves to a real export, bidirectional — SHIPPED
-  & GREEN in Phase 7, not deferred) ↔ `tests/src/browser/inspector/**`
-  (behavior). Phase 8 adds the large-tree perf budget + final hardening
-  ONLY — the doc↔source parity is already real.
-- ⬜ Large-tree budget: a perf test over a **deterministic** deep/wide DOM
-  built from `compileGenerator()` + `createRandom(seed)` (reproducible
-  across runs), asserting a walked-node-per-ms floor so a walker / rule
-  complexity regression is caught. Tune only with evidence (AGENTS §16.3).
-- ⬜ Final sweep: `npm run check` 0/0, targeted suites green, `npm run
-format`, ROADMAP + guides updated, commit/push.
+  [`tests/guides/inspector.test.ts`](tests/guides/inspector.test.ts) is a
+  strict SUPERSET of the exemplar contract (DOC→SOURCE + SOURCE→DOC like
+  `traversals.test.ts`, PLUS bidirectional rule-catalog parity + a
+  bidirectional TYPES-ARE-TRUTH binding). Phase-8 verification confirmed it
+  standing GREEN and complete versus the five exemplars — no clause was
+  missing, so nothing was added (the parity was already real in Phase 7;
+  Phase 8 added the perf budget + the final sweep ONLY).
+- ✅ Large-tree budget: [`tests/src/browser/inspector/perf.test.ts`](tests/src/browser/inspector/perf.test.ts)
+  builds a **deterministic** deep/wide DOM (depth 7 × breadth ~5 ⇒ ~8.7k
+  valid elements) from `createRandom(seed)` via the established seeded
+  `el()` synthetic-DOM idiom (the same `createRandom`-driven builder
+  `Walker.test.ts` / `registry.test.ts` use — no parallel reinvention;
+  byte-reproducibility asserted), measures the full public
+  `new Inspector().inspect({ root })` (Walker walk + all 27 frozen rules
+  per node) via the Inspector's own `InspectionResult.walked/.duration`
+  instrumentation, and asserts a median walked-node/ms floor so a Walker
+  OR rule-complexity regression is caught. The floor (3 nodes/ms) is
+  evidence-tuned ~12× below the measured ~37–46 nodes/ms median (AGENTS
+  §16.3 — warmup + median absorb JIT/GC noise; no special runner config;
+  proven non-flaky over repeated runs). It is a normal standing gate.
+- ✅ Final sweep: `npm run check` 0/0, all targeted suites + full
+  regression green (no Phase 1–7 regression), `npm run format`, ROADMAP +
+  `guides/README.md` updated, committed (push is the owner's separate
+  per-push decision — this initiative works locally on `main`).
+
+**Phase 8 complete — the Semantic HTML Inspector initiative (Phases 0–8) is
+fully shipped and green.**
 
 ---
 
