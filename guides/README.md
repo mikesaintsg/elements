@@ -207,14 +207,15 @@ The curated WHATWG-spec cache (`guides/w3c/**`) and its frozen TS mirror. The se
 
 ### Semantic HTML inspector — the structure lens spine
 
-The DOM-walk spine (ROADMAP Phase 2). A thin composition over `traversals` (ancestor / child / path walks) + the frozen `schema`: the `Walker` yields every relevant element of a flat subtree (shadow / slot / `<template>` aware, `<svg>` / `<math>` pruned) and resolves each node's `RuleContext` (transparent-resolved effective model / categories, ancestor chain, inherited descendant restrictions, lazy computed-style).
+The DOM-walk spine (ROADMAP Phase 2) + the rule engine and the four schema-data-driven rule families (ROADMAP Phase 3 part 1: `context` / `content` / `transparent` / `structure`). A thin composition over `traversals` (ancestor / child / path walks) + the frozen `schema`: the `Walker` yields every relevant element of a flat subtree (shadow / slot / `<template>` aware, `<svg>` / `<math>` pruned) and resolves each node's `RuleContext`; each pure `RuleInterface` rule (a named `@elements/core` guard composition over the schema data) returns one `Finding` or `null`. (Phase 3 parts 2/3 — `attribute` / `interaction` families — and Phase 4 — `FindingManager` / `Inspector` — plug into the same frozen `rules` registry.)
 
 | Role           | File                                                                                                                                                          |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Types (truth)  | [`src/browser/types.ts`](../src/browser/types.ts) — `RuleContext`, `RuleRestrictions`, `WalkerInterface`                                                       |
+| Types (truth)  | [`src/browser/types.ts`](../src/browser/types.ts) — `RuleContext`, `RuleRestrictions`, `WalkerInterface`, `Finding`, `FindingSeverity`, `RuleLens`, `RuleInterface` |
 | Adapters       | [`src/browser/helpers.ts`](../src/browser/helpers.ts) — `resolveModel`, `effectiveCategories`, `flatChildren`, `nodePath`                                      |
 | Walker         | [`src/browser/inspector/Walker.ts`](../src/browser/inspector/Walker.ts) + [`src/browser/inspector/index.ts`](../src/browser/inspector/index.ts) (sole barrel) |
-| Behavior tests | [`tests/src/browser/inspector/Walker.test.ts`](../tests/src/browser/inspector/Walker.test.ts)                                                                 |
+| Rules          | [`src/browser/inspector/rules.ts`](../src/browser/inspector/rules.ts) — frozen `rules: readonly RuleInterface[]` (the 4 part-1 families)                       |
+| Behavior tests | [`tests/src/browser/inspector/Walker.test.ts`](../tests/src/browser/inspector/Walker.test.ts), [`context.test.ts`](../tests/src/browser/inspector/context.test.ts), [`content.test.ts`](../tests/src/browser/inspector/content.test.ts), [`transparent.test.ts`](../tests/src/browser/inspector/transparent.test.ts), [`structure.test.ts`](../tests/src/browser/inspector/structure.test.ts) |
 
 ---
 
@@ -264,7 +265,7 @@ Frozen object trees and derived string-literal-union types. Every CSS identifier
 | [`theme.ts`](../src/browser/theme.ts)           | Page-global theme singleton service (`bootstrapTheme`, `themeState`, `resetTheme`); `createTheme.ts` is the thin per-caller wrapper.                  |
 | [`composables/`](../src/browser/composables/)   | 20 `use{Name}.ts` Vue adapters + `index.ts` barrel.                                                                                                   |
 | [`factories/`](../src/browser/factories/)       | 20 `create{Name}.ts` framework-agnostic factories + `index.ts` barrel.                                                                                |
-| [`inspector/`](../src/browser/inspector/)       | Semantic-inspector classes (one per file, Manager pattern) + `index.ts` barrel. Phase 2: `Walker.ts` (DOM-walk spine + `RuleContext` resolver).        |
+| [`inspector/`](../src/browser/inspector/)       | Semantic-inspector source + `index.ts` barrel. Phase 2: `Walker.ts` (DOM-walk spine + `RuleContext` resolver). Phase 3 part 1: `rules.ts` (pure rule engine + the `context`/`content`/`transparent`/`structure` families). |
 
 ### `src/core/` — `@elements/core` package
 
@@ -341,7 +342,7 @@ Browser-environment tests. The bidirectional TS↔SCSS parity tests for `element
 | [`tokens.test.ts`](../tests/src/browser/tokens.test.ts)       | `tokens.ts` ↔ `--set-*` declarations parity; runtime token resolution on `:root` + per-element + per-modifier. |
 | [`composables/`](../tests/src/browser/composables/)           | Per-composable Vue-adapter tests.                                                                              |
 | [`factories/`](../tests/src/browser/factories/)               | Per-factory behaviour tests (real DOM via Vitest browser provider).                                            |
-| [`inspector/`](../tests/src/browser/inspector/)               | Semantic-inspector behaviour tests. `Walker.test.ts` — walk + `RuleContext` + transparent resolver (real DOM). |
+| [`inspector/`](../tests/src/browser/inspector/)               | Semantic-inspector behaviour tests (real DOM, no mocks). `Walker.test.ts` — walk + `RuleContext` + transparent resolver. `context`/`content`/`transparent`/`structure.test.ts` — the Phase 3 part-1 rule families (clean-pass + dirty-fail + seeded perturbation). |
 
 #### `tests/src/styles/` — SCSS contracts + per-partial behaviour
 
