@@ -39,12 +39,15 @@ Two lenses, one walk:
 
 2. **Presentation lens** — for elements whose **default rendering is
    semantically load-bearing**, read `getComputedStyle` and flag framework
-   CSS that strips the semantics: `<li>` not `display: list-item`, `<bdo>`
-   not `unicode-bidi: isolate-override`, the `<table>` display model
-   collapsed, focus outline removed with no replacement affordance,
-   `[hidden]` overridden visible, `<pre>` losing `white-space: pre`,
-   `<textarea>` losing `pre-wrap`, list-semantics stripped with no
-   compensating ARIA, etc. This turns the inspector into a **self-audit of
+   CSS that strips the semantics: `<bdo>` not
+   `unicode-bidi: isolate-override`, focus outline removed with no
+   replacement affordance, `[hidden]` overridden visible, `<pre>` losing
+   `white-space: pre`, `<textarea>` losing `pre-wrap`, list-marker semantics
+   stripped with no compensating ARIA, etc. (neither a `<li>`'s nor a
+   table element's `display` is **load-bearing** — each keeps its a11y role
+   (`listitem` / `table`/`row`/`cell`/…) at any `display`; those two
+   inherently-stylistic checks were removed, see Phase 5 boundary (e)). This
+   turns the inspector into a **self-audit of
    our own cascade** — the same instrumented-audit muscle the theme-retune /
    reduced-motion / forced-colors passes used, made permanent and codified.
 
@@ -698,7 +701,7 @@ The frozen TS mirror of the corpus, shaped exactly like
   mirroring `CONTRACT_GUARDED`) — yields the JSON Schema findings-report
   contract + a `Guard` consumers import, DERIVED from the one declaration.
   The in-memory `Finding` is reconciled ADDITIVELY (`extends
-  Omit<FindingRecord,'path'>` + the runtime `element` / `Element[]` path):
+Omit<FindingRecord,'path'>` + the runtime `element` / `Element[]` path):
   zero duplication, no hand-maintained parallel interface, the Phase-3
   `Finding` / `RuleInterface` / rules.ts untouched (structurally identical).
 - ✅ `FindingManager` (§9/§10, `src/browser/inspector/FindingManager.ts`):
@@ -709,7 +712,7 @@ The frozen TS mirror of the corpus, shaped exactly like
   `selectionClear`/`selectionSelect` function-overload precedent.
 - ✅ `Inspector` (§7 class order, the §14-amended CustomEvent emitter,
   `src/browser/inspector/Inspector.ts`): `inspect(options? = { root:
-  document })` → `InspectionResult` (`findings`, `counts` by severity,
+document })` → `InspectionResult` (`findings`, `counts` by severity,
   `walked`, `duration`). `InspectorOptions` per §4.2.1
   `{ on?, severity?, lens?, root? }`. Emits `start` → `finding` (×N) →
   `done` via `emit` on the resolved root element (the events bubble);
@@ -724,7 +727,7 @@ The frozen TS mirror of the corpus, shaped exactly like
   (§16.2, no mocks): clean tree → zero findings; the registry-proven dirty
   tree → exact `['content/required']` + `InspectionResult`
   counts/walked/duration≥0; emitter order EXACTLY `['start','finding',
-  'finding','done']` via the real `listen` helper AND `options.on`;
+'finding','done']` via the real `listen` helper AND `options.on`;
   pass-scoped `on` (no stale accumulation); `severity` filter bites
   (`'warning'` drops the real `error`); `lens` filter
   (`'presentation'`→none); `FindingManager` singular/plural + the §10
@@ -741,18 +744,18 @@ fires only when an override **breaks semantics** (corpus:
 [`renderings.md`](guides/w3c/renderings.md) §15, canonical
 [rendering.html](https://html.spec.whatwg.org/multipage/rendering.html)):
 
-> **Phase 5 COMPLETE.** Eight `lens:'presentation'` rules
-> (`presentation/{list-item,list-style,bidi,table,preformatted,hidden,focus,
-> visibility}`) appended to the frozen `rules` registry, the tabular core
+> **Phase 5 COMPLETE.** Six `lens:'presentation'` rules
+> (`presentation/{list-style,bidi,preformatted,hidden,focus,visibility}`)
+> appended to the frozen `rules` registry, the tabular core
 > driven by the parity-gated `PRESENTATION_DEFAULTS` corpus DATA
 > (`constants.ts`, `PresentationDefault` in `types.ts`, STRENGTHENED
 > bidirectional binding in `tests/guides/w3c.test.ts`), unit suite
 > `tests/src/browser/inspector/presentation.test.ts` (real DOM + real
 > framework CSS; valid-default + valid-with-compensation → 0,
 > genuine-violation → 1, seeded perturbation, whole-registry
-> disjointness). Two scope boundaries are corpus-faithfully documented +
+> disjointness). Scope boundaries are corpus-faithfully documented +
 > tested (the Phase-3.3 "correct the plan to what faithfully ships"
-> precedent — spec/decidability is the source of truth):
+> precedent — spec/decidability/non-goal is the source of truth):
 > **(a)** the `summary:first-of-type ⇒ display:list-item` MARKER is
 > presentational, not the summary's semantic (it stays the disclosure
 > control at any `display`; the genuine "summary first child" rule is the
@@ -768,42 +771,91 @@ fires only when an override **breaks semantics** (corpus:
 > decidable signal — a conformant `<button>`'s BASE computed
 > `outline-style` is `none`, the ring being `:focus-visible`-only), the
 > dynamic-pseudo synthesis deliberately not invented;
-> **(d)** a computed `display: contents` on a `display`-model
-> `PRESENTATION_DEFAULTS` element (the `li` list-item row AND the
-> table-model rows) is a documented corpus-grounded CARVE-OUT — per CSS
-> Display 3 / HTML-AAM (`aria.md` §58-60/§110-116) `display:contents`
-> elides ONLY the generated box; the element keeps its implicit role in
-> the a11y tree (a `<li display:contents>` is still a list item; a
-> `<tr display:contents>` still a row), so a stripped *box* is not a
-> stripped *semantic* (ROADMAP non-goal: "nothing stylistic"). It is the
-> framework's own conformant `<menu> > li { display: contents }` toolbar
-> idiom (`_menu.scss`); the carve-out is applied UNIFORMLY across the
-> box-vs-semantic `display` checks (`presentation/list-item` +
-> `presentation/table`) and is RULE LOGIC in
-> `offendingPresentationDefault`, NOT a `PRESENTATION_DEFAULTS` data
-> change (the §15 UA sheet says `li{display:list-item}`; the verbatim
-> `w3c.test.ts` parity binding stays un-weakened — `contents` only carved,
-> never `none`/`block`/…). Conscious related decision: `presentation/
-> list-style` will (correctly, BY DESIGN) surface as a `warning` on a
-> `list-style:none` list lacking `role="list"` INCLUDING the first-party
-> `<menu>` (`_menu.scss` strips `list-style`) — corpus-grounded
-> (`aria.md` §58-59/§165-168 + `renderings.md` §15 marker) as a genuine
-> degraded AT list affordance; kept a `warning` (NOT downgraded — that
-> would be symptom-hiding), and Phase 6 triages warnings (only FAILS on
-> `error`), so it is expected & non-blocking.
+> **(d)** the former `display: contents` box-vs-semantic CARVE-OUT in
+> `offendingPresentationDefault` is now **OBSOLETE and REMOVED**. It
+> existed solely to keep `presentation/list-item` + `presentation/table`
+> from firing on a box-eliding `display:contents` (the element keeps its
+> a11y role per CSS Display 3 / HTML-AAM). With BOTH those rules removed
+> (boundary (e)), NO `PRESENTATION_DEFAULTS` entry has
+> `property === 'display'` (only the bidi `unicode-bidi` + preformatted
+> `white-space` rows remain), so the
+> `if (property==='display' && actual==='contents') continue` branch was
+> dead code; per the philosophy "reduce root complexity, do not leave
+> vestigial exceptions / dead carve-outs" it is DELETED, not retained. The
+> surviving `unicode-bidi`/`white-space` rules are a different semantic
+> axis a `display:contents` never preserved, so bidi/pre behavior is
+> byte-equivalent and the verbatim `w3c.test.ts` parity binding stays
+> un-weakened (the data was never the carve-out's mechanism — it was rule
+> logic, now gone with its sole consumers); **(e)** `presentation/list-item`
+> (the `li ⇒ display:list-item` rule) **AND** `presentation/table` (the
+> `table`/`caption`/`thead`/`tbody`/`tfoot`/`tr`/`td`/`th ⇒ display:table-*`
+> rule) are **BOTH DELIBERATELY REMOVED — neither ships.** Per WHATWG HTML
+> / CSS Display Module Level 3 / HTML-AAM an element's a11y-tree role does
+> NOT depend on its `display` value: a `<li>` styled
+> `flex`/`grid`/`inline-flex`/`contents`/`block` is STILL a list item, and
+> a `<td>`/`<tr>` so styled is STILL a cell/row (each loses only the
+> purely-visual generated marker/table box). Keying an `error` on
+> `display ∉ ['list-item']` / `display ∉ ['table-*']` is therefore the
+> exact STYLISTIC CSS-linting the ROADMAP non-goal forbids ("only flags
+> overrides that contradict an element's SEMANTICS, nothing stylistic") —
+> list-item `error`-false-positived on the framework's OWN
+> documented-conformant breadcrumb (`_nav.scss`
+> `nav[aria-label] > :is(ol,ul) > li { display: inline-flex }`,
+> `NavPage.vue` §Breadcrumb, no `role=listitem`) and pagination row, and
+> table `error`-false-positived on the framework's OWN documented
+> expandable-table idiom (`_table.scss` `table > tbody >
+tr:has(+ tr[data-table-expansion]) > td:first-child { display: flex }`,
+> `TablesPage.vue`, no `role="cell"`). An a11y-OUTCOME-correct version of
+> either would fire only on `display:none` (already owned by
+> `presentation/hidden`) or a `role` reassignment (the "not an ARIA
+> auditor" non-goal) — redundant or disclaimed either way. The
+> genuinely-semantic, corpus-stated, tree-decidable list concern
+> (`list-style:none` stripping the list role without `role=list`) ALREADY
+> ships as the surviving `presentation/list-style` `warning`; there is no
+> analogous tree-decidable table concern beyond `display:none` (owned by
+> `presentation/hidden`). Phase-3.3 doctrine: when the spec / non-goal
+> wins, CORRECT THE PLAN and reduce root complexity — do not pile
+> carve-outs onto an inherently-stylistic rule. The `li` row **and** the 8
+> table-model rows are removed from `PRESENTATION_DEFAULTS` alongside the
+> rules (they existed ONLY for these rules); parity is un-weakened (the
+> binding is the forall "every entry corpus-supported" — removing
+> corpus-supported entries cannot weaken it). Conscious related decision:
+> `presentation/list-style` will
+> (correctly, BY DESIGN) surface as a `warning` on a `list-style:none`
+> list lacking `role="list"` INCLUDING the first-party `<menu>`
+> (`_menu.scss` strips `list-style`) — corpus-grounded (`aria.md`
+> §58-59/§165-168 + `renderings.md` §15 marker) as a genuine degraded AT
+> list affordance; kept a `warning` (NOT downgraded — that would be
+> symptom-hiding), and Phase 6 triages warnings (only FAILS on `error`),
+> so it is expected & non-blocking.
 
-- ✅ `li` ⇒ `display: list-item` (no compensating `role=listitem`);
-  `ul`/`ol`/`menu` computed `list-style-type:none` ⇒ list semantics
+- ✅ `ul`/`ol`/`menu` computed `list-style-type:none` ⇒ list semantics
   stripped with no compensating `role=list` (`presentation/list-style`,
-  `warning` — a degraded affordance). `[dir]`-generic deliberately scoped
-  out (ARIA-roleless, stylistic-adjacent — documented boundary).
+  `warning` — a degraded affordance). The `li ⇒ display:list-item` rule
+  was **REMOVED** (not shipped): a `display` change does NOT strip the
+  `<li>`'s a11y `listitem` role (WHATWG / CSS Display 3 / HTML-AAM), so it
+  was the inherently-stylistic CSS-linting the non-goal forbids and
+  `error`-false-positived on the framework's own conformant breadcrumb /
+  pagination — spec/non-goal wins, plan corrected (boundary (e) above;
+  Phase-3.3 doctrine). `[dir]`-generic deliberately scoped out
+  (ARIA-roleless, stylistic-adjacent — documented boundary).
 - ✅ `bdo` ⇒ `unicode-bidi: isolate-override`; `bdi` ⇒ `isolate`
   (`presentation/bidi`, scoped to the bidi elements themselves).
-- ✅ Table display model intact — `table`/`caption`/`thead`/`tbody`/
-  `tfoot`/`tr`/`td`/`th` keep their `display:table-*` with no compensating
-  ARIA table role (corpus `aria.md` §110-116). `colgroup`/`col` excluded
-  (aria.md §112 cards them roleless — an override strips no exposed
-  semantic; including them would be a structural false positive).
+- The `table`/`caption`/`thead`/`tbody`/`tfoot`/`tr`/`td`/`th ⇒
+display:table-*` rule (`presentation/table`) was **REMOVED** (not
+  shipped): a `display` change does NOT strip a table element's a11y
+  `table`/`row`/`cell`/`rowgroup`/`columnheader` role (WHATWG / CSS Display
+  3 / HTML-AAM), so it was the inherently-stylistic CSS-linting the non-goal
+  forbids and `error`-false-positived on the framework's own
+  documented-conformant expandable-table idiom (`_table.scss` `table >
+tbody > tr:has(+ tr[data-table-expansion]) > td:first-child {
+display: flex }`, `TablesPage.vue`, no `role="cell"`). The only
+  tree-decidable table concern (`display:none`) is owned by
+  `presentation/hidden`; a `role` reassignment is the "not an ARIA auditor"
+  non-goal — redundant or disclaimed either way. The 8 table-model
+  `PRESENTATION_DEFAULTS` rows are removed with it — spec/non-goal wins,
+  plan corrected (boundary (e) above; Phase-3.3 doctrine; same root cause
+  as the removed `presentation/list-item`).
 - ✅ `[hidden]:not([until-found]):not(embed)` ⇒ `display:none`;
   `[hidden=until-found]:not(embed)` ⇒ `content-visibility:hidden` (not
   `display:none/contents/inline`). The `:not(embed)` carve-out honored.
@@ -838,6 +890,22 @@ fires only when an override **breaks semantics** (corpus:
   markup and our own cascade (the whole point — dogfood it against the
   framework). Each fix follows the established per-item rhythm
   (check 0/0 → suite → show → format → ROADMAP → commit/push).
+- ⬜ **`_textarea.scss` `wrap=off` non-conformance (a Phase-5-surfaced
+  genuine finding).** `src/styles/elements/_textarea.scss` (line 54) sets
+  `white-space: pre-wrap` UNCONDITIONALLY; per `renderings.md §15.5.17`
+  (corpus line 1735) a `<textarea wrap="off">` is a presentational hint
+  that MUST compute `white-space: pre`. `presentation/preformatted` keys
+  on `white-space` (the genuine corpus-stated semantic of the `wrap`
+  attribute) and CORRECTLY flags this as a genuine framework-cascade
+  non-conformance — a TRUE positive, not a false positive (the rule is
+  corpus-faithful and ships as-is; this is a `_textarea.scss` defect, NOT
+  a Phase-5 rule defect). Phase-6 remediation: add
+  `textarea[wrap="off" i] { white-space: pre }` (or equivalent) to
+  `_textarea.scss`, then FLIP the locked
+  `<textarea wrap="off">`→`presentation/preformatted` test in
+  `tests/src/browser/inspector/presentation.test.ts` to expect zero (it is
+  currently a tracked, bites-both-ways lock asserting exactly one
+  `presentation/preformatted` error).
 
 ---
 

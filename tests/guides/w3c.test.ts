@@ -760,8 +760,11 @@ describe('w3c corpus — Phase 3.2 attribute family is corpus-bound', () => {
 
 // ── Phase 5 presentation family — PRESENTATION_DEFAULTS ⇄ corpus parity ──────
 //
-// The `presentation` rule family's tabular core (list-item / bidi / table-
-// model / preformatted) is driven by the corpus-bound `PRESENTATION_DEFAULTS`
+// The `presentation` rule family's tabular core (bidi / preformatted; the
+// inherently-stylistic `li`⇒`list-item` row + rule AND the table-model
+// `display:table-*` rows + `presentation/table` rule were removed —
+// semantics not box-model, Phase-3.3 doctrine) is driven by the corpus-bound
+// `PRESENTATION_DEFAULTS`
 // module constant (constants.ts). This binding holds it to the SAME corpus-
 // is-source-of-truth discipline the schema `cite` / `ATTRIBUTE_*` constants
 // are held to — STRENGTHEN-ONLY (a new gate; no prior assertion is touched or
@@ -834,20 +837,21 @@ describe('w3c corpus — Phase 5 PRESENTATION_DEFAULTS is corpus-bound', () => {
 		expect(orphans).toEqual([])
 	})
 
-	it('the table-model entries are exactly the role-bearing corpus elements (colgroup/col excluded)', () => {
-		// aria.md §112 cards `colgroup`/`col` as *no corresponding role* — an
-		// override strips no exposed semantic, so they MUST NOT be in the
-		// table-model data (their inclusion would be a structural false-
-		// positive generator contradicting the ROADMAP non-goal). The
-		// role-bearing set is exactly the corpus aria.md §110-116 list.
-		const tableTags = PRESENTATION_DEFAULTS.filter(
-			(d) => d.property === 'display' && d.expected.every((v) => v.startsWith('table')),
-		).flatMap((d) => d.tags)
-		expect(tableTags).not.toContain('colgroup')
-		expect(tableTags).not.toContain('col')
-		expect([...tableTags].sort()).toEqual(
-			['caption', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr'].sort(),
+	it('NO `display`-model entry remains (list-item + table-model rules removed)', () => {
+		// `presentation/list-item` + `presentation/table` were DELIBERATELY
+		// REMOVED (an element's a11y role does not depend on its `display` —
+		// the inherently-stylistic CSS-linting the ROADMAP non-goal forbids;
+		// Phase-3.3 doctrine). Their `display:list-item` / `display:table-*`
+		// rows were removed from PRESENTATION_DEFAULTS alongside them. ONLY
+		// the `unicode-bidi` (bidi) + `white-space` (pre) rows survive — no
+		// entry has `property === 'display'`. (Removing corpus-supported
+		// entries cannot weaken the "every entry corpus-supported" forall.)
+		const displayEntries = PRESENTATION_DEFAULTS.filter((d) => d.property === 'display').flatMap(
+			(d) => d.tags,
 		)
+		expect(displayEntries).toEqual([])
+		const properties = [...new Set(PRESENTATION_DEFAULTS.map((d) => d.property))].sort()
+		expect(properties).toEqual(['unicode-bidi', 'white-space'])
 	})
 
 	it('the corpus aria.md cards the compensating roles every `roles` entry names', () => {

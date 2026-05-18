@@ -924,8 +924,12 @@ export interface AttributeEnumDomain {
  * One corpus-derived **load-bearing computed-style default** the Phase-5
  * `presentation` rule family enforces: the WHATWG §15 UA stylesheet sets
  * `property` to one of `expected` on every element in `tags`, and that
- * rendering is *semantically load-bearing* (it is the element's list-item /
- * bidi / table-model / preformatted box). A framework CSS override that
+ * rendering is *semantically load-bearing* (it is the element's bidi or
+ * preformatted box). The inherently-stylistic `li`⇒`list-item` row AND the
+ * table-model `display:table-*` rows were REMOVED — an element's a11y-tree
+ * role does not depend on its `display` value, so those were not
+ * semantically load-bearing (box-model, not semantics; the surviving rows
+ * are `unicode-bidi`/`white-space` only). A framework CSS override that
  * resolves `getComputedStyle(element).{property}` to a value OUTSIDE
  * `expected` strips that semantic — unless a corpus-sanctioned ARIA `roles`
  * compensation is present (the `aria.md` implicit-role mapping), in which
@@ -946,7 +950,11 @@ export interface AttributeEnumDomain {
  * - `roles` — the implicit/explicit ARIA roles (corpus `aria.md`) that, when
  *   carried on the element via `role="…"`, PRESERVE the semantic so a
  *   stripped UA default is conformant (the false-positive guard); omitted
- *   for a property whose semantic no ARIA role can carry (e.g. `bidi`).
+ *   for a property whose semantic no ARIA role can carry (e.g. `bidi`/`pre`).
+ *   No surviving entry currently carries `roles` (the only role-bearing
+ *   entries were the removed table-model rows); the optional field + the
+ *   `hasCompensatingRole` guard remain part of the faithful data-iteration
+ *   contract (a future role-bearing default would slot in unchanged).
  * - `severity` — corpus-faithful: a destroyed semantic is `error`; a merely
  *   degraded affordance is `warning`/`advice`.
  * - `cite` — the `guides/w3c/renderings.md` chapter anchor (`renderings#…`)

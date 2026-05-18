@@ -20,14 +20,28 @@
 //  violation / disjointness assertions, and `createRandom`-seeded
 //  perturbation that BITES in BOTH directions.
 //
+//  NOTE: `presentation/list-item` AND `presentation/table` were BOTH
+//  DELIBERATELY REMOVED — an element's a11y role does NOT depend on its
+//  `display` value (WHATWG / CSS Display 3 / HTML-AAM): a `<li>` is still a
+//  list item and a `<td>`/`<tr>` still a cell/row at any `display`. The
+//  `display ∉ ['list-item']` / `display ∉ ['table-*']` `error`s were the
+//  exact inherently-stylistic CSS-linting the ROADMAP non-goal forbids and
+//  false-positived on the framework's OWN documented-conformant breadcrumb
+//  (`_nav.scss` `li { display: inline-flex }`, no `role=listitem`),
+//  pagination, AND the expandable-table idiom (`_table.scss` `td:first-child
+//  { display: flex }`, `TablesPage.vue`, no `role=cell`). The genuinely-
+//  semantic list concern (`list-style:none` w/o `role=list`) ships as the
+//  surviving `presentation/list-style` warning; the only tree-decidable
+//  table concern (`display:none`) is owned by `presentation/hidden`.
+//  Phase-3.3 doctrine: spec/non-goal wins → correct the plan, reduce root
+//  complexity. The shared `display:contents` carve-out (its sole consumers)
+//  is therefore also GONE (no `display`-model entry remains). This suite no
+//  longer has a list-item or a table triplet.
+//
 //  Exact expected outcomes (quoted in the report):
-//    <li style=display:block> in a plain <ul>       → 1 presentation/list-item error  renderings#lists
-//    <li role=listitem style=display:block>         → 0
 //    <ul role=list style=list-style:none>           → 0
 //    <ul style=list-style:none> (no role)           → 1 presentation/list-style warning
 //    <bdo style=unicode-bidi:normal>                → 1 presentation/bidi error
-//    <table style=display:block> (no role)          → 1 presentation/table error
-//    <div role=table style=display:block> table…    → 0 (role compensation)
 //    <p hidden style=display:block>                 → 1 presentation/hidden error
 //    <embed hidden>                                  → 0 (the :not(embed) carve-out)
 //    closed <dialog> (UA display:none)              → 0
@@ -35,6 +49,20 @@
 //    focusable <button style=outline:none>          → 1 presentation/focus error
 //    <button style="outline:none;box-shadow:…">     → 0 (replacement affordance)
 //    <pre style=white-space:normal>                 → 1 presentation/preformatted error
+//    first-party <textarea wrap=off> (real cascade) → 1 presentation/preformatted
+//                                                      error — LOCKED as a
+//                                                      KNOWN GENUINE
+//                                                      FRAMEWORK-CASCADE
+//                                                      NON-CONFORMANCE
+//                                                      (`_textarea.scss:54`
+//                                                      ignores the `wrap=off`
+//                                                      hint; corpus §15.5.17
+//                                                      requires `white-space:
+//                                                      pre`). NOT a false
+//                                                      positive — the rule is
+//                                                      corpus-faithful; Phase 6
+//                                                      remediates _textarea.scss
+//                                                      and flips this to → 0.
 // ============================================================================
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -47,10 +75,8 @@ function ruleById(id: string): (typeof rules)[number] {
 	return found
 }
 
-const listItemRule = ruleById('presentation/list-item')
 const listStyleRule = ruleById('presentation/list-style')
 const bidiRule = ruleById('presentation/bidi')
-const tableRule = ruleById('presentation/table')
 const preRule = ruleById('presentation/preformatted')
 const hiddenRule = ruleById('presentation/hidden')
 const focusRule = ruleById('presentation/focus')
@@ -109,85 +135,23 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 		return node
 	}
 
-	// ── presentation/list-item ────────────────────────────────────────────
-
-	describe('list-item — <li> display must be list-item (renderings#lists)', () => {
-		it('valid-default: <li> in a plain <ul> (UA display:list-item) → 0', () => {
-			const ul = mount(el('ul', {}, [el('li', {}, [])]))
-			const li = ul.firstElementChild as Element
-			expect(evaluateOn(listItemRule, ul, li)).toBeNull()
-		})
-
-		it('valid-with-compensation: <li role=listitem style=display:block> → 0', () => {
-			const ul = mount(el('ul', {}, [el('li', { role: 'listitem', style: 'display:block' })]))
-			const li = ul.firstElementChild as Element
-			expect(evaluateOn(listItemRule, ul, li)).toBeNull()
-		})
-
-		it('genuine-violation: <li style=display:block> (no role) → exactly 1 error', () => {
-			const ul = mount(el('ul', {}, [el('li', { style: 'display:block' })]))
-			const li = ul.firstElementChild as Element
-			const finding = evaluateOn(listItemRule, ul, li)
-			if (finding === null) throw new Error('expected a presentation/list-item finding')
-			expect(finding.rule).toBe('presentation/list-item')
-			expect(finding.severity).toBe('error')
-			expect(finding.cite).toBe('renderings#lists')
-			expect(finding.element).toBe(li)
-		})
-
-		it('carve-out: <ul><li style=display:contents> (box elided, role preserved) → 0', () => {
-			// CSS Display 3: `display:contents` removes ONLY the generated box;
-			// the <li> stays in the a11y tree with its implicit `listitem` role
-			// (aria.md §60). A stripped box is not a stripped semantic — the
-			// presentation lens flags only semantic breaks (ROADMAP non-goal:
-			// "nothing stylistic"). Documented corpus-grounded carve-out.
-			const ul = mount(el('ul', {}, [el('li', { style: 'display:contents' }, [el('span')])]))
-			const li = ul.firstElementChild as Element
-			expect(evaluateOn(listItemRule, ul, li)).toBeNull()
-		})
-
-		it('carve-out: conformant first-party <menu><li><button> (real framework CSS) → 0 presentation/*', () => {
-			// `_menu.scss` ships `<menu> > li { display: contents }` as the
-			// conformant toolbar idiom (MenuPage.vue ships it with NO
-			// role="listitem"). Under the REAL framework cascade the <li>
-			// computes `display:contents` — the box is elided but the list-item
-			// SEMANTIC is preserved (CSS Display 3 / HTML-AAM). The whole
-			// registry must be SILENT on this conformant first-party markup.
-			const menu = mount(el('menu', {}, [el('li', {}, [el('button')])]))
-			const li = menu.firstElementChild as Element
-			expect(evaluateOn(listItemRule, menu, li)).toBeNull()
-			// And the whole presentation lens over the subtree: zero findings.
-			const ids = registryFindings(menu)
-			expect(ids.filter((id) => id.startsWith('presentation/'))).toEqual([])
-		})
-
-		it('perturbation (carve-out present): contents → 0, block → exactly 1 error', () => {
-			// BITES BOTH WAYS: the genuine semantic break (display:block strips
-			// the list-item box AND semantic) still fires exactly once; the
-			// box-only elision (display:contents) does not. Removing the
-			// `actual === 'contents'` carve-out in offendingPresentationDefault
-			// makes the `contents` branch below FAIL (it would report
-			// ['presentation/list-item']).
-			for (const seed of [11, 222, 3003, 44004]) {
-				const random = createRandom(seed)
-				const broken = random() < 0.5
-				const buildOnce = (): readonly string[] => {
-					const ul = el('ul', {}, [
-						el('li', broken ? { style: 'display:block' } : { style: 'display:contents' }, [
-							el('span'),
-						]),
-					])
-					container.appendChild(ul)
-					const ids = registryFindings(ul)
-					ul.remove()
-					return ids
-				}
-				const first = buildOnce()
-				expect(first).toEqual(buildOnce())
-				expect(first).toEqual(broken ? ['presentation/list-item'] : [])
-			}
-		})
-	})
+	// ── presentation/list-item + presentation/table are REMOVED ────────────
+	// (no describe blocks for either). An element's a11y role does NOT depend
+	// on its `display` value (WHATWG / CSS Display 3 / HTML-AAM): a `<li>` is
+	// still a list item and a `<td>`/`<tr>` still a cell/row at any
+	// `display`. The former `display ∉ ['list-item']` / `display ∉
+	// ['table-*']` `error`s were the exact inherently-stylistic CSS-linting
+	// the ROADMAP non-goal forbids; they false-positived on the framework's
+	// own documented-conformant breadcrumb/pagination (list-item) and
+	// expandable-table idiom (table). Removed (rules + data rows + triplets +
+	// the box-vs-semantic `display:contents` carve-out they were the sole
+	// consumers of — no `display`-model entry survives, so the carve-out is
+	// dead code, deleted not retained). The conformant first-party SILENCE
+	// (`<menu>`/breadcrumb/pagination + the `TablesPage` expandable table) is
+	// asserted by the surviving whole-registry conformant-sweep test. The
+	// genuinely-semantic list concern ships as `presentation/list-style`
+	// (unchanged below); the only tree-decidable table concern
+	// (`display:none`) is owned by `presentation/hidden`.
 
 	// ── presentation/list-style ───────────────────────────────────────────
 
@@ -257,93 +221,22 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 		})
 	})
 
-	// ── presentation/table ────────────────────────────────────────────────
-
-	describe('table — table-model display intact w/o ARIA role (renderings#tables)', () => {
-		it('valid-default: a canonical <table> (UA display:table) → 0', () => {
-			const table = mount(el('table', {}, [el('tbody', {}, [el('tr', {}, [el('td')])])]))
-			const tr = table.querySelector('tr') as Element
-			const td = table.querySelector('td') as Element
-			expect(evaluateOn(tableRule, table, table)).toBeNull()
-			expect(evaluateOn(tableRule, table, tr)).toBeNull()
-			expect(evaluateOn(tableRule, table, td)).toBeNull()
-		})
-
-		it('valid-with-compensation: <table role=table style=display:block> → 0', () => {
-			const table = mount(el('table', { role: 'table', style: 'display:block' }))
-			expect(evaluateOn(tableRule, table, table)).toBeNull()
-		})
-
-		it('genuine-violation: <table style=display:block> (no role) → exactly 1 error', () => {
-			const table = mount(el('table', { style: 'display:block' }))
-			const finding = evaluateOn(tableRule, table, table)
-			if (finding === null) throw new Error('expected a presentation/table finding')
-			expect(finding.rule).toBe('presentation/table')
-			expect(finding.severity).toBe('error')
-			expect(finding.cite).toBe('renderings#tables')
-		})
-
-		it('genuine-violation: <tr style=display:block> with no role=row → exactly 1', () => {
-			// The tr is wrapped so its computed display override is the only
-			// break (the parent table stays a real table).
-			const table = mount(
-				el('table', {}, [el('tbody', {}, [el('tr', { style: 'display:block' }, [el('td')])])]),
-			)
-			const tr = table.querySelector('tr') as Element
-			const finding = evaluateOn(tableRule, table, tr)
-			if (finding === null) throw new Error('expected a presentation/table finding')
-			expect(finding.rule).toBe('presentation/table')
-		})
-
-		it('carve-out: <tr style=display:contents> (role-less, box elided) → 0', () => {
-			// Same CSS-Display-3/ARIA basis as the <li> carve-out, applied
-			// UNIFORMLY to the table-model display rows: a `<tr
-			// display:contents>` keeps its implicit `row` role (aria.md §110-
-			// 116) — only the box is elided. The identical latent false-
-			// positive must be closed here too, not just on <li>.
-			const table = mount(
-				el('table', {}, [el('tbody', {}, [el('tr', { style: 'display:contents' }, [el('td')])])]),
-			)
-			const tr = table.querySelector('tr') as Element
-			expect(evaluateOn(tableRule, table, tr)).toBeNull()
-		})
-
-		it('still BITES: <tr style=display:block> role-less → exactly 1 (only contents is carved)', () => {
-			// Only `contents` is carved (box-elide). `display:block` strips the
-			// table-row box AND the row semantic — still a genuine violation.
-			const table = mount(
-				el('table', {}, [el('tbody', {}, [el('tr', { style: 'display:block' }, [el('td')])])]),
-			)
-			const tr = table.querySelector('tr') as Element
-			const finding = evaluateOn(tableRule, table, tr)
-			if (finding === null) throw new Error('expected a presentation/table finding')
-			expect(finding.rule).toBe('presentation/table')
-			expect(finding.severity).toBe('error')
-		})
-
-		it('valid-with-compensation: <td role=cell style=display:block> → 0', () => {
-			const table = mount(
-				el('table', {}, [
-					el('tbody', {}, [el('tr', {}, [el('td', { role: 'cell', style: 'display:block' })])]),
-				]),
-			)
-			const td = table.querySelector('td') as Element
-			expect(evaluateOn(tableRule, table, td)).toBeNull()
-		})
-
-		it('does NOT fire on <colgroup>/<col> (corpus aria.md §112: roleless)', () => {
-			const table = mount(
-				el('table', {}, [
-					el('colgroup', { style: 'display:block' }, [el('col', { style: 'display:block' })]),
-					el('tbody', {}, [el('tr', {}, [el('td')])]),
-				]),
-			)
-			const colgroup = table.querySelector('colgroup') as Element
-			const col = table.querySelector('col') as Element
-			expect(evaluateOn(tableRule, table, colgroup)).toBeNull()
-			expect(evaluateOn(tableRule, table, col)).toBeNull()
-		})
-	})
+	// ── presentation/table is REMOVED (no describe block) ─────────────────
+	// A `<table>`/`<tr>`/`<td>`/… keeps its table/row/cell a11y role at ANY
+	// `display` (WHATWG / CSS Display 3 / HTML-AAM) — the `display ∉
+	// ['table-*']` `error` was the exact inherently-stylistic CSS-linting the
+	// ROADMAP non-goal forbids; it false-positived on the framework's OWN
+	// documented-conformant expandable-table idiom (`_table.scss` `table >
+	// tbody > tr:has(+ tr[data-table-expansion]) > td:first-child { display:
+	// flex }`, `TablesPage.vue`, no `role=cell`). Removed (rule + the 8
+	// table-model data rows + triplet + the `<tr display:contents>`
+	// carve-out/perturbation — the box-vs-semantic `display:contents`
+	// carve-out had ONLY list-item + table as consumers, so with both gone it
+	// is dead code, deleted). The only tree-decidable table concern
+	// (`display:none` removing the element from the a11y tree) is owned by
+	// `presentation/hidden`. The conformant first-party `TablesPage`
+	// expandable table SILENCE is asserted by the whole-registry
+	// conformant-sweep test below.
 
 	// ── presentation/preformatted ─────────────────────────────────────────
 
@@ -555,7 +448,9 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 			// overrides) — the presentation lens must be SILENT on conformant
 			// markup. <summary>'s framework `display:flex` is correctly NOT a
 			// presentation finding (the marker is presentational per the
-			// ROADMAP non-goal — out of scope).
+			// ROADMAP non-goal — out of scope). The plain `<table>` yields 0
+			// too (a conformant table; `presentation/table` is REMOVED — a
+			// `display` change never stripped a table element's a11y role).
 			mount(
 				el('div', {}, [
 					el('ul', {}, [el('li'), el('li')]),
@@ -570,23 +465,61 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 			expect(registryFindings(container)).toEqual([])
 		})
 
-		it('first-party <menu><li><button>: ZERO error-severity findings; ONLY the documented list-style warning', () => {
-			// The conformant first-party menu toolbar (`_menu.scss`:
-			// `<menu> > li { display: contents }` + `list-style: none`,
-			// shipped by MenuPage.vue with NO role="listitem"/role="list").
-			//   • presentation/list-item is SILENT — the documented
-			//     display:contents carve-out (box elided, listitem semantic
-			//     preserved per CSS Display 3 / aria.md §60).
-			//   • presentation/list-style surfaces (CORRECTLY, BY DESIGN) as a
-			//     `warning` on the <menu> (list affordance stripped, no
-			//     role="list" — aria.md §58-59/§165-168). A CONSCIOUS,
-			//     corpus-grounded decision; Phase 6 triages warnings and only
-			//     FAILS on `error`, so this is expected & non-blocking.
-			// The Phase-6 invariant the carve-out unblocks: ZERO error-severity
-			// presentation findings over conformant first-party markup.
+		it('conformant first-party menu/breadcrumb/pagination/expandable-table (real CSS): ZERO error-severity presentation findings; ONLY documented list-style warnings', () => {
+			// The DECISIVE regression guard. FOUR documented-conformant
+			// first-party patterns under the REAL framework cascade, NO ARIA
+			// compensation (exactly as the framework ships them):
+			//   • `<menu><li><button>` toolbar — `_menu.scss` `<menu> > li {
+			//     display: contents }` + `list-style: none` (MenuPage.vue).
+			//   • `<nav aria-label="Breadcrumb"><ol><li>` — `_nav.scss`
+			//     `nav[aria-label] > :is(ol,ul) > li { display: inline-flex }`
+			//     (NavPage.vue §Breadcrumb), NO `role=listitem`.
+			//   • `<nav aria-label="Pagination"><ul><li><a>` — same `li`
+			//     `display:inline-flex` (NavPage.vue §Pagination).
+			//   • the expandable `<table>` — `_table.scss` `table > tbody >
+			//     tr:has(+ tr[data-table-expansion]) > td:first-child {
+			//     display: flex }` (TablesPage.vue), NO `role="cell"`: the
+			//     leading cell of an expandable row computes `display:flex`.
+			// The now-REMOVED `presentation/list-item` `error`-false-positived
+			// on the first three (a `<li>` styled `flex`/`inline-flex`/
+			// `contents` is STILL a list item per CSS Display 3 / HTML-AAM);
+			// the now-REMOVED `presentation/table` `error`-false-positived on
+			// the fourth (a `<td display:flex>` is STILL a cell). Both were
+			// box-model, not semantics. With BOTH rules gone the ONLY
+			// presentation findings are the documented `presentation/
+			// list-style` `warning` on the role-less `list-style:none` list
+			// containers (aria.md §58-59/§165-168 — a CONSCIOUS, corpus-
+			// grounded, Phase-6-non-blocking by-design surfacing; Phase 6 only
+			// FAILS on `error`). The Phase-6-unblocking invariant: ZERO
+			// error-severity presentation findings over conformant first-party
+			// markup.
 			const menu = mount(
 				el('menu', {}, [el('li', {}, [el('button')]), el('li', {}, [el('button')])]),
 			)
+			const breadcrumb = document.createElement('nav')
+			breadcrumb.setAttribute('aria-label', 'Breadcrumb')
+			breadcrumb.innerHTML =
+				'<ol><li><a href="#/home">Home</a></li><li><a href="#/nav">Nav</a></li>' +
+				'<li aria-current="page">Breadcrumb</li></ol>'
+			container.appendChild(breadcrumb)
+			const pagination = document.createElement('nav')
+			pagination.setAttribute('aria-label', 'Pagination')
+			pagination.innerHTML =
+				'<ul><li><a href="#" aria-label="previous">‹</a></li>' +
+				'<li><a href="#" aria-current="page">1</a></li><li><a href="#">2</a></li></ul>'
+			container.appendChild(pagination)
+			// TablesPage.vue expandable-table idiom: an expandable data row
+			// (immediately followed by a `tr[data-table-expansion]` detail
+			// row) — `_table.scss` resolves its `td:first-child` to
+			// `display:flex`. NO `role="cell"`: the removed presentation/table
+			// would have `error`-false-positived on this leading cell.
+			const expandable = document.createElement('table')
+			expandable.innerHTML =
+				'<tbody>' +
+				'<tr data-table-expanded><td>Row</td><td>Value</td></tr>' +
+				'<tr data-table-expansion><td colspan="2"><div data-table-expansion-panel>Detail</div></td></tr>' +
+				'</tbody>'
+			container.appendChild(expandable)
 			const walker = new Walker(container)
 			const found: { rule: string; severity: string }[] = []
 			for (const node of walker.walk()) {
@@ -597,31 +530,209 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 				}
 			}
 			const presentation = found.filter((f) => f.rule.startsWith('presentation/'))
-			// No error-severity presentation finding on conformant first-party
-			// markup (the Phase-6 gate the list-item carve-out unblocks).
+			// Sanity: the expandable-row leading cell really did compute
+			// `display:flex` under the real cascade (the FP precondition the
+			// table-rule removal closes — proves the fixture exercises it).
+			const lead = expandable.querySelector('tr[data-table-expanded] > td:first-child') as Element
+			expect(getComputedStyle(lead).display).toBe('flex')
+			// (a) ZERO error-severity presentation findings on conformant
+			// first-party markup (the Phase-6 gate; the FPs the removals close).
 			expect(presentation.filter((f) => f.severity === 'error')).toEqual([])
-			// No list-item finding at all (the carve-out makes it silent).
-			expect(presentation.filter((f) => f.rule === 'presentation/list-item')).toEqual([])
-			// Exactly the documented list-style WARNING on the <menu> (the
-			// conscious, corpus-grounded, non-blocking by-design surfacing).
-			expect(presentation).toEqual([{ rule: 'presentation/list-style', severity: 'warning' }])
+			// (b) No `presentation/list-item` NOR `presentation/table` finding
+			// AT ALL — both rules are GONE from the registry (not merely
+			// silent).
+			expect(
+				presentation.filter(
+					(f) => f.rule === 'presentation/list-item' || f.rule === 'presentation/table',
+				),
+			).toEqual([])
+			expect(rules.some((r) => r.id === 'presentation/list-item')).toBe(false)
+			expect(rules.some((r) => r.id === 'presentation/table')).toBe(false)
+			// (c) Every remaining presentation finding is the documented
+			// `presentation/list-style` `warning` (the role-less <menu>/<ol>/
+			// <ul> with stripped/UA list-style — by-design, non-blocking).
+			expect(presentation.every((f) => f.rule === 'presentation/list-style')).toBe(true)
+			expect(presentation.every((f) => f.severity === 'warning')).toBe(true)
+			expect(presentation.length).toBeGreaterThan(0)
 			expect(menu.tagName.toLowerCase()).toBe('menu')
 		})
 
+		it('EXHAUSTIVE conformant-first-party sweep over EVERY surviving error rule → ZERO error findings (real CSS)', () => {
+			// The recurring-Critical guard, made exhaustive (Phase-3.3 / the
+			// Phase-6 "zero error findings over the showcase" precondition).
+			// For each surviving error-severity presentation rule, mount its
+			// documented conformant first-party / spec-conformant markup under
+			// the REAL `src/styles` cascade and assert NO error-severity
+			// finding from ANY presentation rule. `presentation/list-style` is
+			// `warning`-by-design (excluded from the error-zero invariant; it
+			// is allowed to surface on role-less `list-style:none`).
+			const div = document.createElement('div')
+			div.innerHTML = [
+				// presentation/bidi — bare conformant bidi elements (UA
+				// unicode-bidi: isolate-override / isolate) + a generic [dir]
+				// (deliberately out of scope) — none is an error.
+				'<bdo dir="rtl">rtl</bdo>',
+				'<bdi>123</bdi>',
+				'<span dir="rtl">generic dir, out of scope</span>',
+				'<p dir="auto">auto</p>',
+				// presentation/preformatted — conformant <pre> (UA
+				// white-space:pre) + default <textarea> (framework
+				// `_textarea.scss` sets white-space:pre-wrap, the rule's
+				// expected for a no-`wrap` textarea → 0).
+				//
+				// NOTE — `<textarea wrap="off">` is INTENTIONALLY NOT in this
+				// conformant sweep, and that is CORRECT (not an omission to
+				// silence a finding): under the REAL framework cascade a
+				// `<textarea wrap="off">` is NOT conformant-rendering. Per
+				// `renderings.md §15.5.17` (corpus line 1735) a `wrap=off`
+				// textarea is a presentational hint setting `white-space:pre`,
+				// but `_textarea.scss:54` sets `white-space:pre-wrap`
+				// UNCONDITIONALLY (no `wrap`-attribute branch). The framework
+				// cascade ignores the hint, so the computed value is `pre-wrap`
+				// ≠ the corpus-required `pre`. `presentation/preformatted`
+				// keying on `white-space` is corpus-faithful and CORRECT: it
+				// fires a TRUE positive on a GENUINE FRAMEWORK-CASCADE
+				// NON-CONFORMANCE — exactly what the presentation lens is
+				// designed to catch (ROADMAP: Phase 5 is a self-audit of our
+				// own cascade). That genuine finding is LOCKED by its own
+				// dedicated positive-assertion test below (it is a tracked,
+				// bites-both-ways fact, NOT a weakened probe or a hidden
+				// symptom); Phase 6 remediates `_textarea.scss` and the locked
+				// test flips to expect zero. Every conformant case in THIS
+				// sweep still asserts ZERO error findings.
+				'<pre>a\n  b</pre>',
+				'<textarea>raw</textarea>',
+				// presentation/hidden — conformant [hidden] (UA display:none),
+				// [hidden=until-found] (UA content-visibility:hidden), and the
+				// :not(embed) carve-out (an <embed hidden> is NOT display:none).
+				'<p hidden>hidden</p>',
+				'<section hidden="until-found">uf</section>',
+				'<embed hidden>',
+				// presentation/focus — conformant focusable elements relying on
+				// the framework :focus-visible box-shadow ring (NO inline
+				// outline removal — the base computed outline-style is `none`
+				// by design, the ring being :focus-visible-only; that is NOT a
+				// finding, the documented decidable boundary).
+				'<button type="button">btn</button>',
+				'<a href="#/x">link</a>',
+				'<input type="text">',
+				'<select><option>o</option></select>',
+				// presentation/visibility — a CLOSED <dialog> / closed
+				// [popover] (UA display:none) is conformant; an OPEN one
+				// painted visibly is conformant; a generic element styled
+				// display:flex/grid/contents is NOT a presentation concern (no
+				// rule keys on box display anymore).
+				'<dialog>closed</dialog>',
+				'<div popover="auto">closed popover</div>',
+				'<details><summary>s</summary><p>body</p></details>',
+				'<div style="display:flex">flex box, not a finding</div>',
+				'<div style="display:grid">grid box, not a finding</div>',
+				'<section style="display:contents"><p>contents wrapper</p></section>',
+			].join('')
+			mount(div)
+			const walker = new Walker(div)
+			const found: { rule: string; severity: string }[] = []
+			for (const node of walker.walk()) {
+				const ctx = walker.context(node)
+				for (const rule of rules) {
+					const f = rule.evaluate(node, ctx)
+					if (f !== null) found.push({ rule: f.rule, severity: f.severity })
+				}
+			}
+			const presentation = found.filter((f) => f.rule.startsWith('presentation/'))
+			// The Phase-6-unblocking invariant: ZERO error-severity
+			// presentation findings on conformant first-party markup, for
+			// EVERY surviving error rule (bidi/preformatted/hidden/focus/
+			// visibility). Quote the actual error findings on failure.
+			expect(presentation.filter((f) => f.severity === 'error')).toEqual([])
+			// And neither removed rule can ever appear (registry-gone).
+			expect(
+				presentation.filter(
+					(f) => f.rule === 'presentation/list-item' || f.rule === 'presentation/table',
+				),
+			).toEqual([])
+		})
+
+		it('LOCKED KNOWN GENUINE FRAMEWORK-CASCADE NON-CONFORMANCE: first-party <textarea wrap="off"> under the real cascade → EXACTLY ONE presentation/preformatted error (Phase-6 must remediate)', () => {
+			// This asserts a TRUE positive, NOT a false positive. It is the
+			// inverse of the conformant sweep above: under the REAL
+			// `src/styles` cascade a first-party `<textarea wrap="off">` is
+			// genuinely NON-conformant-rendering and the SURVIVING, CORRECT,
+			// corpus-faithful `presentation/preformatted` rule rightly fires.
+			//
+			//   • Corpus (`guides/w3c/renderings.md §15.5.17`, line 1735):
+			//     "if the element has a `wrap` attribute whose value is an
+			//     ASCII case-insensitive match for the string `off`, then the
+			//     user agent is expected to treat the attribute as a
+			//     presentational hint setting the element's `white-space`
+			//     property to `pre`." So a conformant `<textarea wrap=off>`
+			//     MUST compute `white-space: pre`.
+			//   • Framework defect: `src/styles/elements/_textarea.scss:54`
+			//     sets `textarea { white-space: pre-wrap }` UNCONDITIONALLY —
+			//     it has NO `textarea[wrap="off" i]` branch, so it IGNORES the
+			//     `wrap=off` presentational hint. The computed value is
+			//     `pre-wrap`, NOT the corpus-required `pre`.
+			//   • `presentation/preformatted` keys on `white-space`, which IS
+			//     the genuine semantic the `wrap` attribute controls and IS
+			//     corpus-stated as load-bearing. The rule is corpus-faithful
+			//     and CORRECT; this firing is a GENUINE FRAMEWORK-CASCADE
+			//     NON-CONFORMANCE the presentation lens is DESIGNED to surface
+			//     (ROADMAP: Phase 5 = "a self-audit of our own cascade").
+			//
+			// This is OWNER-DECIDED Phase-6 scope (Phase 5 ships rules only;
+			// `_textarea.scss` framework-cascade remediation is Phase 6). It
+			// is LOCKED here as a tracked, asserted, BITES-BOTH-WAYS fact —
+			// NOT omitted, NOT a weakened assertion, NOT symptom-hidden.
+			//
+			// PHASE-6 REMEDIATION: when Phase 6 adds
+			// `textarea[wrap="off" i] { white-space: pre }` (or equivalent) to
+			// `_textarea.scss`, the computed value flips to `pre` and this
+			// finding disappears. AT THAT POINT THIS TEST MUST BE FLIPPED TO
+			// EXPECT ZERO (assert `evaluateOn(preRule, ta, ta)` is `null`,
+			// and the registry yields no `presentation/preformatted`). Until
+			// then it stays red-if-the-defect-is-silently-papered-over.
+			const ta = mount(el('textarea', { wrap: 'off' }))
+			// Sanity: the real framework cascade really did resolve the
+			// `wrap=off` textarea to `pre-wrap` (NOT the corpus `pre`) — this
+			// proves the fixture exercises the genuine non-conformance, not a
+			// JSDOM/cascade artifact.
+			expect(getComputedStyle(ta).whiteSpace).toBe('pre-wrap')
+			const finding = evaluateOn(preRule, ta, ta)
+			if (finding === null) {
+				throw new Error(
+					'expected the LOCKED genuine framework-cascade non-conformance: a presentation/preformatted error on <textarea wrap="off">. ' +
+						'If this is now null, Phase-6 likely remediated _textarea.scss — FLIP this test to expect zero (see the Phase-6 comment).',
+				)
+			}
+			expect(finding.rule).toBe('presentation/preformatted')
+			expect(finding.severity).toBe('error')
+			expect(finding.cite).toBe('renderings#the-textarea-element')
+			expect(finding.expected).toBe('white-space: pre')
+			expect(finding.actual).toBe('white-space: pre-wrap')
+			expect(finding.element).toBe(ta)
+			// Whole-registry: EXACTLY ONE finding for this single genuine
+			// break — `presentation/preformatted`, no double-report, no other
+			// presentation rule co-fires (the bites-both-ways lock).
+			expect(registryFindings(container)).toEqual(['presentation/preformatted'])
+		})
+
 		it('a single presentation break yields EXACTLY ONE finding (no double-report)', () => {
-			mount(el('ul', {}, [el('li', { style: 'display:block' })]))
-			expect(registryFindings(container)).toEqual(['presentation/list-item'])
+			// `<bdo>` with `unicode-bidi:normal` is a genuine single break
+			// (presentation/bidi) — the former `<li display:block>` fixture is
+			// gone with the removed presentation/list-item rule.
+			mount(el('bdo', { dir: 'rtl', style: 'unicode-bidi:normal' }))
+			expect(registryFindings(container)).toEqual(['presentation/bidi'])
 		})
 
 		it('two DISTINCT presentation breaks on different elements → exactly one each', () => {
 			mount(
 				el('div', {}, [
-					el('ul', {}, [el('li', { style: 'display:block' })]),
 					el('bdo', { dir: 'rtl', style: 'unicode-bidi:normal' }),
+					el('pre', { style: 'white-space:normal' }),
 				]),
 			)
 			expect([...registryFindings(container)].sort()).toEqual(
-				['presentation/bidi', 'presentation/list-item'].sort(),
+				['presentation/bidi', 'presentation/preformatted'].sort(),
 			)
 		})
 
@@ -634,31 +745,51 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 			expect(ids.filter((id) => id.startsWith('presentation/'))).toEqual([])
 		})
 
-		it('every presentation rule carries lens:"presentation"', () => {
+		it('every presentation rule carries lens:"presentation"; list-item + table are GONE', () => {
 			const presentationRules = rules.filter((r) => r.id.startsWith('presentation/'))
-			expect(presentationRules.length).toBe(8)
+			// 6 (was 8): the inherently-stylistic presentation/list-item AND
+			// presentation/table were BOTH removed — surviving set is
+			// list-style / bidi / preformatted / hidden / focus / visibility.
+			expect(presentationRules.length).toBe(6)
+			expect([...presentationRules.map((r) => r.id)].sort()).toEqual(
+				[
+					'presentation/bidi',
+					'presentation/focus',
+					'presentation/hidden',
+					'presentation/list-style',
+					'presentation/preformatted',
+					'presentation/visibility',
+				].sort(),
+			)
+			expect(presentationRules.map((r) => r.id)).not.toContain('presentation/list-item')
+			expect(presentationRules.map((r) => r.id)).not.toContain('presentation/table')
 			for (const r of presentationRules) expect(r.lens).toBe('presentation')
 		})
 
-		it('perturbation: seeded valid/broken table verdict reproducible & exactly-one', () => {
-			// Walk `container` (the Walker yields DESCENDANTS of its root, not
-			// the root itself — the registry.test.ts idiom): the fixture is a
-			// child of container so it IS visited.
+		it('perturbation: seeded valid/broken bidi verdict reproducible & exactly-one', () => {
+			// Replaces the removed table perturbation (presentation/table is
+			// gone). `<bdo>` is a surviving error-rule with a clean binary
+			// signal: `unicode-bidi:normal` strips the directional-override
+			// semantic (fires exactly once); the bare `<bdo dir=rtl>` UA
+			// default (`isolate-override`) is silent. Walk `container` (the
+			// Walker yields DESCENDANTS of its root — the registry.test.ts
+			// idiom): the fixture is a child of container so it IS visited.
 			for (const seed of [7, 99, 1212, 30303]) {
 				const random = createRandom(seed)
 				const broken = random() < 0.5
 				const buildOnce = (): readonly string[] => {
-					const table = el('table', broken ? { style: 'display:block' } : {}, [
-						el('tbody', {}, [el('tr', {}, [el('td')])]),
-					])
-					container.appendChild(table)
+					const bdo = el(
+						'bdo',
+						broken ? { dir: 'rtl', style: 'unicode-bidi:normal' } : { dir: 'rtl' },
+					)
+					container.appendChild(bdo)
 					const ids = registryFindings(container)
-					table.remove()
+					bdo.remove()
 					return ids
 				}
 				const first = buildOnce()
 				expect(first).toEqual(buildOnce())
-				expect(first).toEqual(broken ? ['presentation/table'] : [])
+				expect(first).toEqual(broken ? ['presentation/bidi'] : [])
 			}
 		})
 

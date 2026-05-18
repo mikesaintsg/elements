@@ -1697,8 +1697,6 @@ const interactionHiddenReferenceRule: RuleInterface = {
 //  genuinely broken AND no corpus-sanctioned compensation exists — the
 //  compensation logic is designed from the corpus prose (`renderings.md` +
 //  `aria.md`), never intuition:
-//    - presentation/list-item   `li` `display` ≠ `list-item`, no implicit/
-//                                explicit `role=listitem` (aria.md §60).
 //    - presentation/list-style  `ul`/`ol`/`menu` computed `list-style-type:
 //                                none` with NO compensating `role=list`
 //                                (aria.md §58/§165-168) — the genuinely-
@@ -1712,12 +1710,9 @@ const interactionHiddenReferenceRule: RuleInterface = {
 //                                (aria.md §85) — flagging it would false-
 //                                positive on every CSS-reset `[dir]` element
 //                                (documented decidable boundary).
-//    - presentation/table       a role-bearing table-model element whose
-//                                `display` left its `table-*` value with NO
-//                                compensating ARIA table role (aria.md
-//                                §110-116). `colgroup`/`col` are excluded —
-//                                aria.md §112 cards them roleless, so an
-//                                override strips no exposed semantic.
+//    (presentation/table is DELIBERATELY REMOVED — see the boundary block
+//     below; a `<td>`/`<tr>`'s a11y cell/row role does not depend on its
+//     `display`, so the rule was inherently-stylistic CSS-linting.)
 //    - presentation/hidden      `[hidden]:not([hidden=until-found])
 //                                :not(embed)` `display` ≠ `none`;
 //                                `[hidden=until-found]:not(embed)`
@@ -1767,30 +1762,59 @@ const interactionHiddenReferenceRule: RuleInterface = {
 //                                doctrine (documented boundaries).
 //
 //  DOCUMENTED CORPUS-GROUNDED BOUNDARIES (the Phase-3.3 precedent — faithful
-//  carve-outs, NOT ad-hoc exceptions; each grounded in `renderings.md §15` /
-//  `aria.md` prose, never intuition):
-//    • `display: contents` on a `display`-model `PRESENTATION_DEFAULTS`
-//      element (the `li` list-item row AND the `table`-model rows) is
-//      NON-OFFENDING. Per CSS Display Module Level 3, `display:contents`
-//      removes ONLY the element's generated box; the element REMAINS in the
-//      accessibility tree with its implicit role (HTML-AAM / `aria.md`
-//      §58-60/§110-116) — a `<li display:contents>` is still a list item, a
-//      `<tr display:contents>` still a row. A stripped *box* is not a
-//      stripped *semantic* (ROADMAP non-goal: "nothing stylistic"); this is
-//      the framework's own conformant `<menu> > li { display: contents }`
-//      toolbar idiom (`_menu.scss`). Carved UNIFORMLY across the box-vs-
-//      semantic `display` checks (`presentation/list-item` +
-//      `presentation/table`) so the identical latent false-positive is closed
-//      everywhere, not just on `li`. ONLY `contents` is carved (NOT
-//      `none`/`block`/… — those strip the box AND the semantic); the
-//      `unicode-bidi`/`white-space`/`content-visibility` rows are a different
-//      semantic axis and intentionally unaffected (a `display:contents` does
-//      not preserve a bidi/preformatted semantic). It is a RULE-LOGIC carve-
-//      out in `offendingPresentationDefault`, NOT a `PRESENTATION_DEFAULTS`
-//      data change — the §15 UA sheet says `li { display: list-item }`, so
-//      adding `contents` to `expected` would weaken the verbatim
-//      `w3c.test.ts` parity binding (forbidden); the data stays unchanged and
-//      parity un-weakened.
+//  carve-outs / spec-non-goal-driven removals, NOT ad-hoc exceptions; each
+//  grounded in `renderings.md §15` / `aria.md` / CSS-Display-3 / HTML-AAM
+//  prose, never intuition):
+//    • `presentation/list-item` (the `li` ⇒ `display:list-item` rule) AND
+//      `presentation/table` (the `table`/`caption`/`thead`/`tbody`/`tfoot`/
+//      `tr`/`td`/`th` ⇒ `display:table-*` rule) are BOTH DELIBERATELY
+//      REMOVED — neither ships. Per WHATWG HTML / CSS Display Module Level 3
+//      / HTML-AAM, an element's a11y-tree role does NOT depend on its
+//      `display` value: a `<li>` styled `flex`/`grid`/`inline-flex`/
+//      `contents`/`block` is STILL a list item, and a `<td>`/`<tr>` so
+//      styled is STILL a cell/row in the accessibility tree (each loses only
+//      its generated marker/table box, a purely visual layout affordance).
+//      Keying an `error` on `display ∉ ['list-item']` / `display ∉
+//      ['table-*']` is therefore the exact STYLISTIC CSS-linting the ROADMAP
+//      non-goal forbids ("only flags overrides that contradict an element's
+//      SEMANTICS, nothing stylistic"): list-item false-positived on the
+//      framework's OWN documented-conformant breadcrumb (`_nav.scss`
+//      `nav[aria-label] > :is(ol,ul) > li { display: inline-flex }`,
+//      `NavPage.vue` §Breadcrumb, no `role=listitem`) and pagination row,
+//      and table false-positived on the framework's OWN documented
+//      expandable-table idiom (`_table.scss` `table > tbody >
+//      tr:has(+ tr[data-table-expansion]) > td:first-child { display:
+//      flex }`, `TablesPage.vue`, no `role="cell"`). An a11y-OUTCOME-correct
+//      version of either would fire only on (a) `display:none` — already
+//      owned by `presentation/hidden` — or (b) a `role` reassignment, the
+//      ROADMAP "not an ARIA auditor" non-goal: redundant or disclaimed
+//      either way. The genuinely-semantic, corpus-stated, tree-decidable
+//      list concern — `list-style:none` stripping the list role without
+//      `role=list` — ALREADY ships as the surviving `presentation/list-style`
+//      `warning` below (there is no analogous tree-decidable table concern
+//      beyond `display:none`, already owned by `presentation/hidden`). This
+//      is the Phase-3.3 doctrine: when the spec / non-goal wins, CORRECT THE
+//      PLAN and reduce root complexity, do not pile carve-outs onto an
+//      inherently-stylistic rule. The `li` row AND the 8 table-model rows
+//      are removed from `PRESENTATION_DEFAULTS` alongside the rules (they
+//      existed ONLY for these rules); the parity binding ("every entry
+//      corpus-supported") is un-weakened — removing corpus-supported entries
+//      cannot weaken a forall.
+//    • The former `display: contents` box-vs-semantic CARVE-OUT in
+//      `offendingPresentationDefault` is now GONE. It existed ONLY to keep
+//      `presentation/list-item` + `presentation/table` from firing on a
+//      box-eliding `display:contents` (the element keeps its a11y role per
+//      CSS Display 3 / HTML-AAM). With BOTH rules removed, no
+//      `PRESENTATION_DEFAULTS` entry has `property === 'display'` (only the
+//      bidi `unicode-bidi` + preformatted `white-space` rows remain), so the
+//      `if (property==='display' && actual==='contents') continue` branch was
+//      dead code. Per the philosophy "reduce root complexity, do not leave
+//      vestigial exceptions / dead carve-outs", it is DELETED, not retained.
+//      The surviving `unicode-bidi`/`white-space` rows are a different
+//      semantic axis a `display:contents` never preserved, so the bidi/pre
+//      behavior is byte-equivalent and the verbatim `w3c.test.ts` parity
+//      binding stays un-weakened (the data was never the carve-out's
+//      mechanism — it was rule logic).
 //    • `presentation/list-style` will (CORRECTLY, BY DESIGN) surface as a
 //      `warning` on a `list-style:none` list lacking `role="list"` —
 //      INCLUDING the framework's own first-party `<menu>` (`_menu.scss`
@@ -1867,68 +1891,24 @@ function offendingPresentationDefault(subject: RuleSubject): PresentationDefault
 		// genuine violation in a rendered tree always resolves a value).
 		if (actual === '') continue
 		if (fallback.expected.includes(actual)) continue
-		// `display: contents` CARVE-OUT (CSS Display 3 + HTML-AAM / aria.md).
-		// `display:contents` removes ONLY the element's generated box; per the
-		// CSS Display Module Level 3 prose the element REMAINS in the
-		// accessibility tree with its implicit role (a `<li display:contents>`
-		// is still a list item; a `<tr display:contents>` is still a row) —
-		// unlike `display:none`/`block` which strip the list-item/table box
-		// AND, for `none`, the element from the a11y tree. A stripped *box* is
-		// not a stripped *semantic*; the presentation lens flags only overrides
-		// that break SEMANTICS (ROADMAP non-goal: "nothing stylistic"). This is
-		// the framework's own conformant `<menu> > li { display: contents }`
-		// toolbar idiom (`_menu.scss`). Scoped to the box-vs-semantic `display`
-		// checks (list-item / table model); `unicode-bidi`/`white-space`/
-		// `content-visibility` rows are a DIFFERENT semantic axis and unaffected
-		// (a `display:contents` does not preserve a bidi/preformatted semantic),
-		// and ONLY `contents` is carved (NOT `none`/other values — those DO
-		// strip the box AND the semantic).
-		if (fallback.property === 'display' && actual === 'contents') continue
+		// No `display`-model entry survives in PRESENTATION_DEFAULTS (only the
+		// bidi `unicode-bidi` + preformatted `white-space` rows remain), so
+		// the former `display:contents` box-vs-semantic CARVE-OUT here is gone
+		// — it was REMOVED with the inherently-stylistic `presentation/
+		// list-item` + `presentation/table` rules it existed to guard (a
+		// `<li>`/`<tr display:contents>` keeps its a11y role per CSS Display 3
+		// / HTML-AAM; flagging the box-elision was the stylistic CSS-linting
+		// the ROADMAP non-goal forbids — see the head-comment boundary block).
+		// Per the philosophy "remove root complexity, do not leave vestigial
+		// exceptions", the now-dead `if (property==='display' && actual===
+		// 'contents') continue` is deleted rather than left as dead code. The
+		// surviving `unicode-bidi`/`white-space` rows are a different semantic
+		// axis a `display:contents` never preserved, so behavior for bidi/pre
+		// is byte-equivalent.
 		if (hasCompensatingRole(subject.element, fallback)) continue
 		return fallback
 	}
 	return null
-}
-
-const violatesPresentationDefault = whereOf(isSubject, (subject: RuleSubject): boolean => {
-	const fallback = offendingPresentationDefault(subject)
-	// `list-item` is the corpus's own `li`-display anchor; `bidi`/`table`/
-	// `pre` are reported by their own dedicated rules below so each cite
-	// is the precise corpus section. This guard owns ONLY the `li`
-	// `display:list-item` break (renderings.md §15.3.7) — the data entry
-	// for `li`. The other PRESENTATION_DEFAULTS rows are consumed by the
-	// `presentation/bidi`, `presentation/table`, `presentation/pre` rules
-	// (same data, distinct rule id + cite — disjoint). The property-based
-	// narrowing (the `li` row is the sole `display:list-item` entry) is
-	// symmetric with `offendingTableDefault`/`offendingBidiDefault` — and
-	// precise: `offendingPresentationDefault` already guarantees
-	// `fallback.tags.includes(subject.tag)`, so the prior `tags.includes('li')
-	// && tag==='li'` pair was tautological once `property==='display' &&
-	// expected.includes('list-item')` identifies the `li` row uniquely.
-	return (
-		fallback !== null && fallback.property === 'display' && fallback.expected.includes('list-item')
-	)
-})
-
-const presentationListItemRule: RuleInterface = {
-	id: 'presentation/list-item',
-	severity: 'error',
-	lens: 'presentation',
-	evaluate: (element, context): Finding | null => {
-		const subject = readSubject(element, context)
-		if (!violatesPresentationDefault(subject)) return null
-		const fallback = offendingPresentationDefault(subject)
-		if (fallback === null) return null
-		return buildFinding({
-			rule: 'presentation/list-item',
-			severity: fallback.severity,
-			element,
-			cite: fallback.cite,
-			message: `<li> must render as 'display: ${fallback.expected.join(' | ')}' (list semantics) or carry a compensating role="listitem".`,
-			expected: `display: ${fallback.expected.join(' | ')}`,
-			actual: `display: ${styleValue(context, 'display')}`,
-		})
-	},
 }
 
 // presentation/list-style — the `ul`/`ol`/`menu` list whose computed
@@ -2012,51 +1992,28 @@ const presentationBidiRule: RuleInterface = {
 	},
 }
 
-// presentation/table — the role-bearing table-model PRESENTATION_DEFAULTS
-// rows. A `table`/`caption`/`thead`/`tbody`/`tfoot`/`tr`/`td`/`th` whose
-// computed `display` left the spec `table-*`/`table` value WITH NO
-// compensating ARIA table role (the corpus aria.md §110-116 implicit-role
-// map — `role="table"` / `row` / `cell` / `rowgroup` / `columnheader`
-// etc.) has had its table-model participation stripped (renderings.md
-// §15.3.8). The ARIA compensation is the framework/grid-library false-
-// positive guard (a CSS-grid "table" that re-asserts `role="table"` is
-// conformant). `colgroup`/`col` are excluded by the data (aria.md §112
-// roleless — an override strips no exposed semantic).
-function offendingTableDefault(subject: RuleSubject): PresentationDefault | null {
-	const fallback = offendingPresentationDefault(subject)
-	if (fallback === null) return null
-	return fallback.property === 'display' &&
-		fallback.expected.every((value) => value.startsWith('table'))
-		? fallback
-		: null
-}
-
-const violatesTable = whereOf(
-	isSubject,
-	(subject: RuleSubject): boolean => offendingTableDefault(subject) !== null,
-)
-
-const presentationTableRule: RuleInterface = {
-	id: 'presentation/table',
-	severity: 'error',
-	lens: 'presentation',
-	evaluate: (element, context): Finding | null => {
-		const subject = readSubject(element, context)
-		if (!violatesTable(subject)) return null
-		const fallback = offendingTableDefault(subject)
-		if (fallback === null) return null
-		const roles = (fallback.roles ?? []).join(' | ')
-		return buildFinding({
-			rule: 'presentation/table',
-			severity: fallback.severity,
-			element,
-			cite: fallback.cite,
-			message: `<${subject.tag}> must keep 'display: ${fallback.expected.join(' | ')}' (table model) or carry a compensating role="${roles}".`,
-			expected: `display: ${fallback.expected.join(' | ')}`,
-			actual: `display: ${styleValue(context, 'display')}`,
-		})
-	},
-}
+// presentation/table — DELIBERATELY REMOVED (does not ship), same root-cause
+// doctrine as `presentation/list-item` (see the head-comment boundary
+// block). Per WHATWG HTML / CSS Display Module Level 3 / HTML-AAM a
+// table-model element's a11y-tree role (`table`/`row`/`cell`/`rowgroup`/
+// `columnheader`/…) does NOT depend on its `display` value: a `<td>`/`<tr>`
+// styled `flex`/`grid`/`block`/`contents` is STILL a cell/row in the
+// accessibility tree (it loses only its generated table box, a purely
+// visual layout affordance). Keying an `error` on `display ∉ ['table-*']`
+// is therefore the exact STYLISTIC CSS-linting the ROADMAP non-goal forbids
+// — it `error`-false-positived on the framework's OWN documented-conformant
+// expandable-table idiom (`_table.scss` `table > tbody >
+// tr:has(+ tr[data-table-expansion]) > td:first-child { display: flex }`,
+// `TablesPage.vue`, no `role="cell"`). The only genuinely-semantic,
+// tree-decidable table concern — `display:none` removing the element from
+// the a11y tree — is ALREADY owned by `presentation/hidden`; a `role`
+// reassignment is the ROADMAP "not an ARIA auditor" non-goal: redundant or
+// disclaimed either way. Phase-3.3 doctrine: when the spec / non-goal wins,
+// CORRECT THE PLAN and reduce root complexity, do not pile carve-outs onto
+// an inherently-stylistic rule. The 8 table-model `PRESENTATION_DEFAULTS`
+// rows are removed alongside it (they existed ONLY for this rule); the
+// parity binding ("every entry corpus-supported") is un-weakened — removing
+// corpus-supported entries cannot weaken a forall.
 
 // presentation/pre — the `pre` PRESENTATION_DEFAULTS row PLUS the corpus
 // `textarea` rule. `pre`'s `white-space` ∉ {pre,pre-wrap} collapses its
@@ -2456,10 +2413,8 @@ export const rules: readonly RuleInterface[] = [
 	// interaction (Phase 3.3)
 	interactionHiddenReferenceRule,
 	// presentation (Phase 5 — computed-style semantic-break, lens:'presentation')
-	presentationListItemRule,
 	presentationListStyleRule,
 	presentationBidiRule,
-	presentationTableRule,
 	presentationPreRule,
 	presentationHiddenRule,
 	presentationFocusRule,
