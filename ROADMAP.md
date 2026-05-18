@@ -535,9 +535,10 @@ The frozen TS mirror of the corpus, shaped exactly like
 > parser-coerced value rules) over the same frozen `rules` registry,
 > driven by the Phase-1 `AttributeRule` data + two corpus-bound
 > attribute-bound/domain constants. **Part 3 ✅:** the `interaction`
-> family (hidden / inert reference integrity), plugged into the same
-> `rules` registry / `RuleInterface` contract unchanged. **Phase 3 is
-> COMPLETE.**
+> family (hidden reference integrity — the invented inert-reference rule
+> was removed as non-corpus; spec is source of truth), plugged into the
+> same `rules` registry / `RuleInterface` contract unchanged. **Phase 3
+> is COMPLETE.**
 
 - ✅ `RuleInterface`: `{ id, severity, lens, evaluate(element, context) }`
   — pure, side-effect-free, one finding or null. Composite predicates are
@@ -618,17 +619,30 @@ The frozen TS mirror of the corpus, shaped exactly like
     `span` note-only `AttributeRule` (the established `time`/`datetime`,
     `dialog`/`tabindex` precedent), bidirectionally parity-bound in
     `tests/guides/w3c.test.ts` (strengthen-only).
-  - ✅ **interaction** _(part 3)_ — `hidden`/`inert` reference integrity: a
+  - ✅ **interaction** _(part 3)_ — `hidden` reference integrity: a
     non-hidden `a[href="#id"]`/`label[for]`/`output[for]` must not target a
-    `hidden` element (`interaction/hidden-reference`); an active referrer
-    via the same corpus-carded associations must not point into an
-    `[inert]` / modal-inert subtree (`interaction/inert-reference`)
+    `hidden` element (`interaction/hidden-reference`)
     ([interaction.html](https://html.spec.whatwg.org/multipage/interaction.html)
-    §6.1 / §6.3). Generic over the corpus associations (the `for` IDREF
-    read via the schema `AttributeRule`, never a tag literal); reference
-    resolution composed from [`traversals`](guides/traversals.md)
-    `getElementById` / `contains` — not bespoke DOM walks. `dialog` must
-    not carry `tabindex` is **owned by the `attribute` family**
+    §6.1, corpus-faithful per interactions.md §6.1). Generic over the
+    corpus associations (the `for` IDREF read via the schema
+    `AttributeRule`, never a tag literal); reference resolution composed
+    from [`traversals`](guides/traversals.md) `getElementById` — not
+    bespoke DOM walks. **No inert reference-integrity rule ships.** An
+    `interaction/inert-reference` rule was specified here and built, then
+    **removed**: the WHATWG spec (interaction.html §6.3 "Inert subtrees",
+    incl. §6.3.1 / §6.3.2) states only what inertness _does_ and _how_ a
+    node becomes inert — it states **no** inert reference-integrity
+    conformance rule, and its only near-prose (§6.3 "an inert subtree
+    should not contain content or controls which are critical to
+    understanding…") is explicitly non-normative AND not
+    tree-walker-decidable. Encoding it would have **invented a rule the
+    spec does not state**, citing a section that does not state it. Per
+    this ROADMAP's own governing doctrine (the WHATWG spec is the source of
+    truth; code never invents a rule the spec doesn't state; **when cache
+    and spec disagree, the spec wins and the cache — here the plan's
+    rule-list text — is corrected**), the rule was removed and this
+    spec-text corrected to match what ships. `dialog` must not carry
+    `tabindex` is **owned by the `attribute` family**
     (`attribute/coupling-domain`, interactives.md:552) — the interaction
     family deliberately defers it (no double-report); `aria-*` IDREFs are
     deliberately NOT a reference kind (the corpus never cards an `aria-*`

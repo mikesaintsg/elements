@@ -1,30 +1,37 @@
 // ============================================================================
-//  interaction family — hidden / inert reference integrity (Phase 3.3).
+//  interaction family — hidden reference integrity (Phase 3.3).
 //
-//  Real DOM per AGENTS §16.2 (no mocks): real `hidden` / `inert` / `id` /
-//  `for` / `href="#id"` attributes and a real `<dialog>` opened modally. The
-//  family is GENERIC over the corpus-stated reference associations — the
-//  hyperlink `a[href="#id"]` plus the schema-carried `for` AttributeRule on
-//  `label` / `output` — never an `if (tag==='label')` branch. Reachability /
-//  inertness is decided with `@elements/browser` `traversals`
-//  (`isDescendantOf` / `findClosest` / `getElementById` / `contains`) and the
-//  flat-tree helpers, never a bespoke DOM walk.
+//  Real DOM per AGENTS §16.2 (no mocks): real `hidden` / `id` / `for` /
+//  `href="#id"` attributes (and a real modal `<dialog>` only as the
+//  attribute-family disjointness fixture). The family is GENERIC over the
+//  corpus-stated reference associations — the hyperlink `a[href="#id"]` plus
+//  the schema-carried `for` AttributeRule on `label` / `output` — never an
+//  `if (tag==='label')` branch. Resolution is decided with
+//  `@elements/browser` `traversals` (`getElementById`) and the flat-tree
+//  helpers, never a bespoke DOM walk.
 //
-//  Each rule gets a clean-pass + dirty-fail + a seeded `createRandom`
+//  NOTE: an "inert reference" rule was deliberately NOT shipped — the WHATWG
+//  spec (interactions.md §6.3) states no inert reference-integrity
+//  conformance rule (its only near-prose is non-normative and not
+//  tree-walker-decidable), so encoding one would invent a rule the corpus
+//  does not state (spec is source of truth). These tests therefore cover the
+//  single surviving corpus-faithful rule only.
+//
+//  The rule gets a clean-pass + dirty-fail + a seeded `createRandom`
 //  perturbation that BITES both directions. The whole-`rules`-registry walk
 //  over the real `Walker` asserts the one-finding-per-violation guarantee and
 //  disjointness from the attribute family — in particular `<dialog tabindex>`
 //  stays EXACTLY ONE `attribute/coupling-domain` finding (owned by the
-//  Phase-3.2 attribute family), never a second interaction finding.
+//  Phase-3.2 attribute family), never an interaction finding.
 //
 //  Exact expected outcomes (quoted in the report):
 //    non-hidden <a href="#t"> → <div id=t hidden>      → 1 interaction/hidden-reference
 //    same with target NOT hidden                       → 0
 //    <label for=t> → hidden target                     → 1 interaction/hidden-reference
-//    active control with for/href into an [inert] tree → 1 interaction/inert-reference
+//    referrer inside [inert] subtree referenced        → 0 (no inert-reference rule)
 //    <dialog tabindex=0>                               → exactly ONE attribute/
-//                                                         coupling-domain (NOT a
-//                                                         second interaction finding)
+//                                                         coupling-domain (NOT an
+//                                                         interaction finding)
 // ============================================================================
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -38,7 +45,6 @@ function ruleById(id: string): (typeof rules)[number] {
 }
 
 const hiddenReferenceRule = ruleById('interaction/hidden-reference')
-const inertReferenceRule = ruleById('interaction/inert-reference')
 
 describe('rules — interaction family', () => {
 	let container: HTMLDivElement
@@ -49,11 +55,6 @@ describe('rules — interaction family', () => {
 	})
 
 	afterEach(() => {
-		// Close any modal dialog a test left open so the document is not
-		// blocked / inert for the next test.
-		for (const dialog of container.querySelectorAll('dialog')) {
-			if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close()
-		}
 		container.remove()
 	})
 
@@ -181,110 +182,6 @@ describe('rules — interaction family', () => {
 		})
 	})
 
-	// ── inert reference integrity (interactions.md §6.3 / §6.3.1) ───────────
-
-	describe('inert-reference — active referrer for/href into an [inert] / modal-inert subtree', () => {
-		it('clean: <label for=t> → target NOT in an inert subtree is allowed', () => {
-			const input = el('input', { id: 't' })
-			const label = el('label', { for: 't' })
-			container.append(label, input)
-			expect(evaluateOn(inertReferenceRule, container, label)).toBeNull()
-		})
-
-		it('dirty: active <label for=t> → target inside an [inert] subtree is flagged', () => {
-			const input = el('input', { id: 't' })
-			const region = el('div', { inert: '' }, [input])
-			const label = el('label', { for: 't' })
-			container.append(label, region)
-			const finding = evaluateOn(inertReferenceRule, container, label)
-			if (finding === null) throw new Error('expected an interaction/inert-reference finding')
-			expect(finding.rule).toBe('interaction/inert-reference')
-			expect(finding.severity).toBe('error')
-			expect(finding.cite).toBe('interactions#inert-subtrees')
-		})
-
-		it('clean: an INERT referrer → inert target is allowed (referrer not active)', () => {
-			const input = el('input', { id: 't' })
-			const region = el('div', { inert: '' }, [el('label', { for: 't' }), input])
-			container.appendChild(region)
-			const label = region.querySelector('label')
-			if (label === null) throw new Error('fixture: label missing')
-			expect(evaluateOn(inertReferenceRule, container, label)).toBeNull()
-		})
-
-		it('dirty: active <a href="#t"> → target inside an [inert] subtree is flagged', () => {
-			const target = el('span', { id: 't' })
-			const region = el('div', { inert: '' }, [target])
-			const a = el('a', { href: '#t' })
-			container.append(a, region)
-			expect(evaluateOn(inertReferenceRule, container, a)?.rule).toBe('interaction/inert-reference')
-		})
-
-		it('dirty: active referrer INSIDE the modal → target OUTSIDE it (modal-inert) is flagged', () => {
-			// An open modal <dialog> makes every connected node EXCEPT the
-			// dialog and its flat-tree descendants inert (interactions.md
-			// §6.3.1). The realistic violation: an ACTIVE referrer inside the
-			// modal (it escapes inertness) pointing at a target OUTSIDE the
-			// modal (which is modal-inert and thus unreachable).
-			const target = el('span', { id: 't' })
-			const a = el('a', { href: '#t' })
-			const dialog = el('dialog', {}, [a])
-			container.append(target, dialog)
-			if (!(dialog instanceof HTMLDialogElement)) throw new Error('fixture: not a dialog')
-			dialog.showModal()
-			try {
-				expect(evaluateOn(inertReferenceRule, container, a)?.rule).toBe(
-					'interaction/inert-reference',
-				)
-			} finally {
-				dialog.close()
-			}
-		})
-
-		it('clean: referrer OUTSIDE the modal → target OUTSIDE it is allowed (referrer itself modal-inert)', () => {
-			// Both the referrer and the target are outside the open modal, so
-			// BOTH are modal-inert: the referrer is not "active", mirroring the
-			// hidden-referrer exemption (a co-located inert pair is not a
-			// cross-boundary reference into inert).
-			const target = el('span', { id: 't' })
-			const a = el('a', { href: '#t' })
-			const dialog = el('dialog', {}, [el('p', {}, [])])
-			container.append(a, target, dialog)
-			if (!(dialog instanceof HTMLDialogElement)) throw new Error('fixture: not a dialog')
-			dialog.showModal()
-			try {
-				expect(evaluateOn(inertReferenceRule, container, a)).toBeNull()
-			} finally {
-				dialog.close()
-			}
-		})
-
-		it('clean: referrer INSIDE the modal dialog → target inside it is allowed', () => {
-			const target = el('span', { id: 't' })
-			const a = el('a', { href: '#t' })
-			const dialog = el('dialog', {}, [a, target])
-			container.appendChild(dialog)
-			if (!(dialog instanceof HTMLDialogElement)) throw new Error('fixture: not a dialog')
-			dialog.showModal()
-			try {
-				expect(evaluateOn(inertReferenceRule, container, a)).toBeNull()
-			} finally {
-				dialog.close()
-			}
-		})
-
-		it('clean: ARIA aria-controls into an [inert] subtree is allowed (no invented ARIA domain)', () => {
-			// The corpus never cards an `aria-*` IDREF domain; the family is
-			// faithfully scoped to the corpus-stated for/href associations only
-			// (the Phase-3.2 loading/crossorigin deliberate-omission precedent).
-			const panel = el('div', { id: 'p' })
-			const region = el('div', { inert: '' }, [panel])
-			const trigger = el('button', { 'aria-controls': 'p' })
-			container.append(trigger, region)
-			expect(evaluateOn(inertReferenceRule, container, trigger)).toBeNull()
-		})
-	})
-
 	// ── one finding per violation / disjointness (full registry) ───────────
 
 	describe('one finding per violation & disjoint from the attribute family', () => {
@@ -303,15 +200,20 @@ describe('rules — interaction family', () => {
 			expect(registryFindings(container)).toEqual(['interaction/hidden-reference'])
 		})
 
-		it('active <label for=t> → [inert] target → exactly one interaction/inert-reference', () => {
+		it('active <label for=t> → element inside an [inert] subtree → ZERO findings (no inert-reference rule)', () => {
+			// The invented `interaction/inert-reference` rule was removed (the
+			// WHATWG spec §6.3 states no such conformance rule). A non-hidden
+			// referrer into an `[inert]` subtree is therefore NOT a finding —
+			// and no other corpus-faithful rule legitimately fires for a plain
+			// `<label for>` → `<input id>` pair, so the verdict is exactly `[]`.
 			container.append(
 				el('label', { for: 't' }),
 				el('div', { inert: '' }, [el('input', { id: 't' })]),
 			)
-			expect(registryFindings(container)).toEqual(['interaction/inert-reference'])
+			expect(registryFindings(container)).toEqual([])
 		})
 
-		it('<dialog tabindex=0> → exactly ONE attribute/coupling-domain (NOT a second interaction finding)', () => {
+		it('<dialog tabindex=0> → exactly ONE attribute/coupling-domain (NOT an interaction finding)', () => {
 			// CRITICAL disjointness: the Phase-3.2 attribute family OWNS
 			// dialog[tabindex] via `attribute/coupling-domain`. The interaction
 			// family deliberately does NOT re-implement it — so a bare
@@ -357,7 +259,11 @@ describe('rules — interaction family', () => {
 			}
 		})
 
-		it('seeded <label for=t> inert/active target verdict is reproducible & exactly-one', () => {
+		it('seeded <label for=t> inside/outside an [inert] subtree → always ZERO (rule removed)', () => {
+			// Cross-check the removal: whether or not the target sits in an
+			// `[inert]` subtree, the verdict is reproducibly `[]` — the
+			// removed `interaction/inert-reference` rule never fires again, and
+			// no other corpus-faithful rule fills the gap.
 			for (const seed of [9, 99, 909, 90009]) {
 				const random = createRandom(seed)
 				const targetInert = random() < 0.5
@@ -376,7 +282,7 @@ describe('rules — interaction family', () => {
 				const first = buildOnce()
 				const second = buildOnce()
 				expect(first).toEqual(second)
-				expect(first).toEqual(targetInert ? ['interaction/inert-reference'] : [])
+				expect(first).toEqual([])
 			}
 		})
 

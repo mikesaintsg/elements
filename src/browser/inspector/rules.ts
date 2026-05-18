@@ -26,7 +26,7 @@ import {
 	matchesTag,
 	nodePath,
 } from '../helpers.js'
-import { contains, getElementById } from '../traversals.js'
+import { getElementById } from '../traversals.js'
 import { ATTRIBUTE_ENUM_DOMAINS, ATTRIBUTE_INTEGER_BOUNDS } from '../constants.js'
 import {
 	CATEGORY_MEMBERS,
@@ -95,15 +95,20 @@ import {
 //                    (`coerceEnumAttribute` over `ATTRIBUTE_ENUM_DOMAINS`)
 //                    — generic, schema-data-driven, attribute-only (the
 //                    other families never read attributes ⇒ disjoint).
-//    - interaction  hidden / inert REFERENCE integrity — a non-hidden
+//    - interaction  hidden REFERENCE integrity — a non-hidden
 //                    `a[href="#id"]`/`label[for]`/`output[for]` referencing
-//                    a `hidden` target; an active referrer pointing into an
-//                    `[inert]` / modal-inert subtree (interactions.md §6.1 /
-//                    §6.3). Generic over the corpus-carded associations
-//                    (the `for` IDREF read via the schema `AttributeRule`),
-//                    reference resolution composed from `traversals`
-//                    (`getElementById` / `contains`). `dialog[tabindex]` is
-//                    deferred to the attribute family (no double-report).
+//                    a `hidden` target (interactions.md §6.1). Generic over
+//                    the corpus-carded associations (the `for` IDREF read
+//                    via the schema `AttributeRule`), reference resolution
+//                    composed from `traversals` (`getElementById`).
+//                    `dialog[tabindex]` is deferred to the attribute family
+//                    (no double-report). NOTE: an "inert reference" rule was
+//                    deliberately NOT encoded — the WHATWG spec (§6.3) never
+//                    states an inert reference-integrity conformance rule
+//                    (§6.3's only near-prose is non-normative and not
+//                    tree-walker-decidable); encoding one would invent a
+//                    rule the corpus does not state (spec is source of
+//                    truth — see the omitted-ARIA-domain rationale below).
 //
 //  Phase 4 (FindingManager / Inspector / ContractShape) plugs into THIS
 //  `RuleInterface` + `rules` registry unchanged — the contract is designed
@@ -1526,9 +1531,9 @@ const attributeEnumRule: RuleInterface = {
 }
 
 // ============================================================================
-//  Family: interaction — hidden / inert reference integrity (Phase 3.3).
+//  Family: interaction — hidden reference integrity (Phase 3.3).
 //
-//  Two corpus-stated reference-integrity rules a tree-walker can decide,
+//  One corpus-stated reference-integrity rule a tree-walker can decide,
 //  GENERIC over the corpus-carded reference associations (NOT a per-element
 //  branch). The associations are the corpus's own list, resolved as DATA:
 //    - the hyperlink `a[href="#id"]` (interactions.md §6.1: "it would be
@@ -1548,10 +1553,23 @@ const attributeEnumRule: RuleInterface = {
 //  invent one"). The corpus is the source of truth; no invented ARIA rule.
 //
 //  Reference resolution composes `@elements/browser` `traversals`
-//  (`getElementById` for the IDREF / `#id`-fragment lookup, `contains` for
-//  the modal-inert reachability), NOT a bespoke DOM walk; the inert/hidden
-//  SUBTREE test walks the SAME flat parent chain (`flatParent`) the structure
-//  family's `hasFlatAncestorTag` uses (§3 — never light-tree `closest`).
+//  (`getElementById` for the IDREF / `#id`-fragment lookup), NOT a bespoke
+//  DOM walk; the hidden SUBTREE test walks the SAME flat parent chain
+//  (`flatParent`) the structure family's `hasFlatAncestorTag` uses (§3 —
+//  never light-tree `closest`).
+//
+//  NO INERT REFERENCE RULE: an "inert reference integrity" rule was
+//  deliberately NOT encoded. The WHATWG spec (interactions.md §6.3 / §6.3.1
+//  / §6.3.2) states only what inertness DOES and HOW a node becomes inert;
+//  it states no inert reference-integrity conformance rule. Its only
+//  near-prose (§6.3 "an inert subtree should not contain content or
+//  controls which are critical to understanding…") is explicitly
+//  non-normative AND not tree-walker-decidable. Encoding a rule citing
+//  `interactions#inert-subtrees` would therefore restate a rule the section
+//  does not state — the exact invent-a-rule line the omitted-ARIA-domain
+//  rationale above draws. The corpus is the source of truth; no invented
+//  inert rule (spec wins; the ROADMAP rule-list text was corrected to
+//  match).
 //
 //  DISJOINTNESS (one finding per violation):
 //    - `dialog[tabindex]` is OWNED by the Phase-3.2 attribute family
@@ -1565,13 +1583,6 @@ const attributeEnumRule: RuleInterface = {
 //      `<dialog tabindex>` stays EXACTLY ONE `attribute/coupling-domain`
 //      finding, never double-reported (the `interaction.test.ts` registry
 //      assertion + the structure-lens guard below pin this boundary).
-//    - The two interaction rules are disjoint by STATE: `hidden-reference`
-//      fires only when the resolved target is hidden (and the referrer is
-//      not); `inert-reference` fires only when the resolved target is
-//      inert (and the referrer is not). A target that is BOTH hidden and
-//      inert is two genuinely distinct corpus violations (§6.1 vs §6.3) —
-//      reported once each, the same way `attribute/*` reports each distinct
-//      attribute defect once.
 // ============================================================================
 
 // A referencing element points at a target by one of the corpus-carded
@@ -1610,9 +1621,13 @@ function referencedTarget(subject: RuleSubject): Element | null {
 // An element is in the Hidden state, or inside a `[hidden]` subtree — the
 // corpus §6.1 "hidden" state, decided over the SAME flat parent chain the
 // structure family walks (§3 — never light-tree `closest`). `hidden` is an
-// enumerated attribute whose `until-found` state is still "hidden like the
-// Hidden state" for reference purposes (interactions.md §6.1), so presence
-// alone is the test.
+// enumerated attribute; `hidden=until-found` is treated as hidden here, a
+// DELIBERATE conservative reading: the corpus (interactions.md §6.1) does
+// not explicitly exempt the `until-found` state for the `href="#id"`
+// fragment-reveal case, so presence alone is the test. Treating it as
+// hidden cannot under-report a genuine §6.1 violation; carving out an
+// until-found exemption would be an unauthorized corpus-judgment change
+// (the spec does not state one). Accepted conservative reading.
 function isHiddenNode(element: Element): boolean {
 	let current: Element | null = element
 	while (current !== null) {
@@ -1622,41 +1637,10 @@ function isHiddenNode(element: Element): boolean {
 	return false
 }
 
-// An element is inert: either inside an `[inert]` flat subtree, OR made
-// inert by an open modal `<dialog>` (interactions.md §6.3 / §6.3.1 — "every
-// node connected to document, with the exception of the subject element and
-// its flat tree descendants, must become inert"). The modal-inert arm uses
-// the live `:modal` element + `traversals` `contains` (the topmost modal's
-// flat-tree containment) rather than re-deriving the top layer.
-function hasInertAncestor(element: Element): boolean {
-	let current: Element | null = element
-	while (current !== null) {
-		if (current.hasAttribute('inert')) return true
-		current = flatParent(current)
-	}
-	return false
-}
-
-function topmostModal(element: Element): Element | null {
-	const doc = element.ownerDocument
-	const modal = doc.querySelector('dialog:modal')
-	return modal
-}
-
-function isInertNode(element: Element): boolean {
-	if (hasInertAncestor(element)) return true
-	const modal = topmostModal(element)
-	// While a modal dialog is open every connected node EXCEPT the dialog
-	// and its flat-tree descendants is inert. `contains` is the flat-tree
-	// containment check (the dialog's own subtree escapes inertness).
-	if (modal !== null && modal !== element && !contains(modal, element)) return true
-	return false
-}
-
-// The referrer is "active" for the corpus rules iff it is NOT itself in the
-// state it must not reference into: the §6.1 / §6.3 rules both scope to
-// referrers "that are not themselves hidden" / "not themselves inert" (a
-// hidden/inert referrer legitimately co-locates with a hidden/inert target).
+// The referrer is "active" for the corpus rule iff it is NOT itself in the
+// state it must not reference into: the §6.1 rule scopes to referrers "that
+// are not themselves hidden" (a hidden referrer legitimately co-locates
+// with a hidden target).
 const violatesHiddenReference = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	if (isHiddenNode(subject.element)) return false
 	const target = referencedTarget(subject)
@@ -1686,34 +1670,6 @@ const interactionHiddenReferenceRule: RuleInterface = {
 	},
 }
 
-const violatesInertReference = whereOf(isSubject, (subject: RuleSubject): boolean => {
-	if (isInertNode(subject.element)) return false
-	const target = referencedTarget(subject)
-	return target !== null && isInertNode(target)
-})
-
-const interactionInertReferenceRule: RuleInterface = {
-	id: 'interaction/inert-reference',
-	severity: 'error',
-	lens: 'structure',
-	evaluate: (element, context): Finding | null => {
-		const subject = readSubject(element, context)
-		if (!violatesInertReference(subject)) return null
-		return buildFinding({
-			rule: 'interaction/inert-reference',
-			severity: 'error',
-			element,
-			// interactions.md §6.3 "Inert subtrees" — the chapter section the
-			// inert-reference rule restates (an active referrer must not
-			// point into an inert / modal-inert subtree).
-			cite: 'interactions#inert-subtrees',
-			message: `an active <${subject.tag}> must not reference an element inside an [inert] / modal-inert subtree (it is unreachable).`,
-			expected: 'a reachable (non-inert) referenced target',
-			actual: 'references a target inside an [inert] / modal-inert subtree',
-		})
-	},
-}
-
 // ── Registry ────────────────────────────────────────────────────────────────
 //
 // The frozen, ordered rule registry every Phase-3 family contributes to and
@@ -1723,13 +1679,13 @@ const interactionInertReferenceRule: RuleInterface = {
 // inspector's `coerceEnumAttribute` / `coerceIntegerAttribute` over the core
 // `parseEnum` / `parseInteger` parsers; the part-3 interaction family extends
 // this same array with the same vocabulary (reference resolution via
-// `@elements/browser` `traversals` `getElementById` / `contains`).
+// `@elements/browser` `traversals` `getElementById`).
 
 /**
  * The frozen inspector rule registry — the Phase-3 part-1 families
  * (`context` / `content` / `transparent` / `structure`), the part-2
  * `attribute` family (coupling + parser-coerced value rules), and the part-3
- * `interaction` family (hidden / inert reference integrity), each a generic
+ * `interaction` family (hidden reference integrity), each a generic
  * corpus-data-driven {@link RuleInterface}. Pure: every `evaluate` is
  * side-effect-free and total (one {@link Finding} or `null`). Phase 4
  * iterates it; Phase 3 is now COMPLETE.
@@ -1775,5 +1731,4 @@ export const rules: readonly RuleInterface[] = [
 	attributeEnumRule,
 	// interaction (Phase 3.3)
 	interactionHiddenReferenceRule,
-	interactionInertReferenceRule,
 ] as const
