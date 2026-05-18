@@ -1303,6 +1303,19 @@ export const TRANSPARENT_TAGS: ReadonlySet<string> = new Set(
 	contentModel.filter((row) => row.transparent).map((row) => row.tag),
 )
 
+// Foreign content (`guides/w3c/categories.md` §3.2.5.2.6): "Elements that are
+// from namespaces other than the HTML namespace … (e.g. MathML, or SVG)".
+// Derived — not a hand-maintained literal — from the corpus signal the
+// Phase-1 parity test already binds bidirectionally: a foreign element's card
+// is the only kind headed by a non-HTML namespace marker (`MathML — …` /
+// `SVG — …`), mirrored in its `cite` anchor as a `mathml-` / `svg-` slug
+// prefix. Every HTML-namespace card is `{file}#the-{tag}-element`; only the
+// two foreign cards carry the namespace prefix, so this stays in lock-step
+// with the carded prose with no second source of truth.
+export const FOREIGN_TAGS: ReadonlySet<string> = new Set(
+	contentModel.filter((row) => /#(?:mathml|svg)-/.test(row.cite)).map((row) => row.tag),
+)
+
 /** Inverted lookup: content category → tags that declare it. */
 export const CATEGORY_MEMBERS: ReadonlyMap<ContentCategory, ReadonlySet<string>> = (() => {
 	const map = new Map<ContentCategory, Set<string>>()
@@ -1333,6 +1346,16 @@ export function isVoid(tag: string): boolean {
 /** True when the element has the transparent content model. */
 export function isTransparent(tag: string): boolean {
 	return TRANSPARENT_TAGS.has(tag)
+}
+
+/**
+ * True when the element is foreign content (`<svg>` / `<math>`): a non-HTML
+ * namespace whose subtree follows its own (SVG / MathML) content model, not
+ * the HTML ones the inspector enforces (`guides/w3c/categories.md`
+ * §3.2.5.2.6). The Walker yields a foreign host but never descends into it.
+ */
+export function isForeign(tag: string): boolean {
+	return FOREIGN_TAGS.has(tag)
 }
 
 /** The element's content-model shape, or `null` if the tag is unknown. */

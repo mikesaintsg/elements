@@ -142,12 +142,11 @@ describe('Walker', () => {
 			expect(resolveModel(span)).toBe('children')
 		})
 
-		it('transparent chain bottoming out at a void ancestor inherits void', () => {
+		it('transparent `<object>` resolves through to its non-transparent `<td>` host', () => {
 			// object is transparent; its nearest non-transparent ancestor here
-			// is the table cell's model. Use a concrete non-transparent host.
+			// is the table cell, so it inherits td's ('children') model.
 			const obj = el('object')
 			const td = el('td', [obj])
-			el('tr', [td])
 			expect(resolveModel(td)).toBe('children')
 			expect(resolveModel(obj)).toBe('children')
 		})
@@ -233,6 +232,30 @@ describe('Walker', () => {
 
 			const tags = Array.from(new Walker(root).walk()).map((n) => n.tagName.toLowerCase())
 			expect(tags).toEqual(['math'])
+		})
+
+		it('a Walker rooted AT a foreign `<svg>` yields nothing (root prune)', () => {
+			// The foreign host is reported by its PARENT Walker; a Walker
+			// rooted at the foreign element itself must yield nothing — its
+			// whole subtree is the pruned foreign subtree.
+			const wrap = document.createElement('div')
+			wrap.innerHTML = '<svg viewBox="0 0 1 1"><rect/><g><circle/></g></svg>'
+			container.appendChild(wrap)
+			const svg = wrap.querySelector('svg')
+			if (svg === null) throw new Error('fixture: <svg> not parsed')
+
+			expect(Array.from(new Walker(svg).walk())).toEqual([])
+			expect(new Walker(svg).nodes()).toEqual([])
+		})
+
+		it('a Walker rooted AT a foreign `<math>` yields nothing (root prune)', () => {
+			const wrap = document.createElement('div')
+			wrap.innerHTML = '<math><mrow><mi>x</mi></mrow></math>'
+			container.appendChild(wrap)
+			const math = wrap.querySelector('math')
+			if (math === null) throw new Error('fixture: <math> not parsed')
+
+			expect(Array.from(new Walker(math).walk())).toEqual([])
 		})
 	})
 

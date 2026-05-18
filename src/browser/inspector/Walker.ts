@@ -6,13 +6,8 @@ import {
 	matchesTag,
 	resolveModel,
 } from '../helpers.js'
+import { isForeign } from '../schema.js'
 import { getAncestors } from '../traversals.js'
-
-// Foreign-content roots (`guides/w3c/categories.md` §3.2.5.2.6): elements
-// from non-HTML namespaces convey embedded content but follow their own
-// (MathML / SVG) content models, not the HTML ones the inspector enforces.
-// The Walker yields the host but never descends into the foreign subtree.
-const FOREIGN_TAGS: ReadonlySet<string> = new Set(['svg', 'math'])
 
 /**
  * The DOM-walk spine of the semantic inspector — a thin layer over
@@ -66,15 +61,23 @@ export class Walker implements WalkerInterface {
 	 * Lazily yield every relevant element of the flat subtree rooted at
 	 * {@link element}, depth-first, in document order. Descends shadow
 	 * roots / slotted elements / `<template>` content; yields a foreign
-	 * (`<svg>` / `<math>`) host but never its subtree. Early `break` is
-	 * safe — nothing is materialized ahead of the consumer.
+	 * (`<svg>` / `<math>`) host but never its subtree — and a Walker rooted
+	 * *at* a foreign element yields nothing at all (its parent Walker reports
+	 * the host; this one would only ever descend the pruned foreign subtree).
+	 * Early `break` is safe — nothing is materialized ahead of the consumer.
 	 */
 	*walk(): Generator<Element, void, unknown> {
+		// A Walker rooted AT a foreign element yields nothing: the foreign
+		// host is reported by its parent Walker, never by one rooted at it
+		// ("yields a foreign host but never its subtree" — the root's own
+		// subtree IS that foreign subtree). Without this short-circuit a
+		// `new Walker(svg)` would descend the SVG/MathML subtree.
+		if (this.#foreign(this.#element)) return
 		const stack: Element[] = []
 		this.#push(stack, flatChildren(this.#element))
 		while (stack.length > 0) {
 			const current = stack.pop()
-			if (current === undefined) break
+			if (current === undefined) break // pop() under-narrows to T|undefined
 			yield current
 			// Prune foreign-content subtrees: the host is reported, its
 			// non-HTML descendants follow a different content model.
@@ -125,9 +128,10 @@ export class Walker implements WalkerInterface {
 		}
 	}
 
+	// Foreign-ness is owned by the parity-gated schema registry
+	// (`isForeign`), not a second hand-maintained list in this impl file.
 	#foreign(element: Element): boolean {
-		const tag = element.tagName.toLowerCase()
-		return FOREIGN_TAGS.has(tag)
+		return isForeign(element.tagName.toLowerCase())
 	}
 
 	// Accumulate the transparent-content-model descendant restrictions every

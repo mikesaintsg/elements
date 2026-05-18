@@ -321,8 +321,11 @@ export function defineModel(
  * model shape is `children`).
  *
  * @param element - The element whose effective model to resolve.
- * @returns The resolved {@link ContentModel}, or `null` when the element's
- *   tag (or the resolved ancestor's tag) is not a known HTML element.
+ * @returns The resolved {@link ContentModel}; `'children'` when the element
+ *   is a transparent chain with no non-transparent ancestor (the detached /
+ *   fully-transparent flow-content fallback); or `null` when the element's
+ *   tag (or the resolved non-transparent ancestor's tag) is not a known
+ *   HTML element.
  */
 export function resolveModel(element: Element): ContentModel | null {
 	const tag = element.tagName.toLowerCase()
@@ -388,8 +391,15 @@ export function flatChildren(element: Element): readonly Element[] {
 /**
  * The stable DOM path from `element` up to (but excluding) `ancestor` —
  * a thin wrapper over `traversals.getPathToAncestor()`. With no `ancestor`
- * the path runs to the document root. The Phase-4 `Finding` uses this for
- * a deterministic, serializable element locator.
+ * the path runs to the document root.
+ *
+ * This is an *intentional* public-API seam, not accidental dead indirection:
+ * the ROADMAP enumerates `nodePath` as a Phase-2 `helpers.ts` deliverable
+ * (alongside `resolveModel` / `effectiveCategories` / `flatChildren`) and
+ * names its concrete consumer — Phase-4 `Finding.path` ("stable DOM path
+ * from `getPathToAncestor()`"). Landing the named seam now keeps the public
+ * surface stable across phases; it deliberately adds no behavior over
+ * `getPathToAncestor()` because none is required of it.
  *
  * @param element - The path's starting element (index 0).
  * @param ancestor - Exclusive upper bound; omitted ⇒ walk to the root.
