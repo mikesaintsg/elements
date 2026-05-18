@@ -767,7 +767,30 @@ fires only when an override **breaks semantics** (corpus:
 > scoped to the INLINE `outline` removal (the one false-positive-free
 > decidable signal — a conformant `<button>`'s BASE computed
 > `outline-style` is `none`, the ring being `:focus-visible`-only), the
-> dynamic-pseudo synthesis deliberately not invented.
+> dynamic-pseudo synthesis deliberately not invented;
+> **(d)** a computed `display: contents` on a `display`-model
+> `PRESENTATION_DEFAULTS` element (the `li` list-item row AND the
+> table-model rows) is a documented corpus-grounded CARVE-OUT — per CSS
+> Display 3 / HTML-AAM (`aria.md` §58-60/§110-116) `display:contents`
+> elides ONLY the generated box; the element keeps its implicit role in
+> the a11y tree (a `<li display:contents>` is still a list item; a
+> `<tr display:contents>` still a row), so a stripped *box* is not a
+> stripped *semantic* (ROADMAP non-goal: "nothing stylistic"). It is the
+> framework's own conformant `<menu> > li { display: contents }` toolbar
+> idiom (`_menu.scss`); the carve-out is applied UNIFORMLY across the
+> box-vs-semantic `display` checks (`presentation/list-item` +
+> `presentation/table`) and is RULE LOGIC in
+> `offendingPresentationDefault`, NOT a `PRESENTATION_DEFAULTS` data
+> change (the §15 UA sheet says `li{display:list-item}`; the verbatim
+> `w3c.test.ts` parity binding stays un-weakened — `contents` only carved,
+> never `none`/`block`/…). Conscious related decision: `presentation/
+> list-style` will (correctly, BY DESIGN) surface as a `warning` on a
+> `list-style:none` list lacking `role="list"` INCLUDING the first-party
+> `<menu>` (`_menu.scss` strips `list-style`) — corpus-grounded
+> (`aria.md` §58-59/§165-168 + `renderings.md` §15 marker) as a genuine
+> degraded AT list affordance; kept a `warning` (NOT downgraded — that
+> would be symptom-hiding), and Phase 6 triages warnings (only FAILS on
+> `error`), so it is expected & non-blocking.
 
 - ✅ `li` ⇒ `display: list-item` (no compensating `role=listitem`);
   `ul`/`ol`/`menu` computed `list-style-type:none` ⇒ list semantics

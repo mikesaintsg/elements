@@ -135,12 +135,48 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 			expect(finding.element).toBe(li)
 		})
 
-		it('perturbation: seeded block/list-item verdict is reproducible & exactly-one', () => {
+		it('carve-out: <ul><li style=display:contents> (box elided, role preserved) → 0', () => {
+			// CSS Display 3: `display:contents` removes ONLY the generated box;
+			// the <li> stays in the a11y tree with its implicit `listitem` role
+			// (aria.md §60). A stripped box is not a stripped semantic — the
+			// presentation lens flags only semantic breaks (ROADMAP non-goal:
+			// "nothing stylistic"). Documented corpus-grounded carve-out.
+			const ul = mount(el('ul', {}, [el('li', { style: 'display:contents' }, [el('span')])]))
+			const li = ul.firstElementChild as Element
+			expect(evaluateOn(listItemRule, ul, li)).toBeNull()
+		})
+
+		it('carve-out: conformant first-party <menu><li><button> (real framework CSS) → 0 presentation/*', () => {
+			// `_menu.scss` ships `<menu> > li { display: contents }` as the
+			// conformant toolbar idiom (MenuPage.vue ships it with NO
+			// role="listitem"). Under the REAL framework cascade the <li>
+			// computes `display:contents` — the box is elided but the list-item
+			// SEMANTIC is preserved (CSS Display 3 / HTML-AAM). The whole
+			// registry must be SILENT on this conformant first-party markup.
+			const menu = mount(el('menu', {}, [el('li', {}, [el('button')])]))
+			const li = menu.firstElementChild as Element
+			expect(evaluateOn(listItemRule, menu, li)).toBeNull()
+			// And the whole presentation lens over the subtree: zero findings.
+			const ids = registryFindings(menu)
+			expect(ids.filter((id) => id.startsWith('presentation/'))).toEqual([])
+		})
+
+		it('perturbation (carve-out present): contents → 0, block → exactly 1 error', () => {
+			// BITES BOTH WAYS: the genuine semantic break (display:block strips
+			// the list-item box AND semantic) still fires exactly once; the
+			// box-only elision (display:contents) does not. Removing the
+			// `actual === 'contents'` carve-out in offendingPresentationDefault
+			// makes the `contents` branch below FAIL (it would report
+			// ['presentation/list-item']).
 			for (const seed of [11, 222, 3003, 44004]) {
 				const random = createRandom(seed)
 				const broken = random() < 0.5
 				const buildOnce = (): readonly string[] => {
-					const ul = el('ul', {}, [el('li', broken ? { style: 'display:block' } : {})])
+					const ul = el('ul', {}, [
+						el('li', broken ? { style: 'display:block' } : { style: 'display:contents' }, [
+							el('span'),
+						]),
+					])
 					container.appendChild(ul)
 					const ids = registryFindings(ul)
 					ul.remove()
@@ -257,6 +293,32 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 			const finding = evaluateOn(tableRule, table, tr)
 			if (finding === null) throw new Error('expected a presentation/table finding')
 			expect(finding.rule).toBe('presentation/table')
+		})
+
+		it('carve-out: <tr style=display:contents> (role-less, box elided) → 0', () => {
+			// Same CSS-Display-3/ARIA basis as the <li> carve-out, applied
+			// UNIFORMLY to the table-model display rows: a `<tr
+			// display:contents>` keeps its implicit `row` role (aria.md §110-
+			// 116) — only the box is elided. The identical latent false-
+			// positive must be closed here too, not just on <li>.
+			const table = mount(
+				el('table', {}, [el('tbody', {}, [el('tr', { style: 'display:contents' }, [el('td')])])]),
+			)
+			const tr = table.querySelector('tr') as Element
+			expect(evaluateOn(tableRule, table, tr)).toBeNull()
+		})
+
+		it('still BITES: <tr style=display:block> role-less → exactly 1 (only contents is carved)', () => {
+			// Only `contents` is carved (box-elide). `display:block` strips the
+			// table-row box AND the row semantic — still a genuine violation.
+			const table = mount(
+				el('table', {}, [el('tbody', {}, [el('tr', { style: 'display:block' }, [el('td')])])]),
+			)
+			const tr = table.querySelector('tr') as Element
+			const finding = evaluateOn(tableRule, table, tr)
+			if (finding === null) throw new Error('expected a presentation/table finding')
+			expect(finding.rule).toBe('presentation/table')
+			expect(finding.severity).toBe('error')
 		})
 
 		it('valid-with-compensation: <td role=cell style=display:block> → 0', () => {
@@ -506,6 +568,44 @@ describe('rules — presentation family (computed-style, real CSS)', () => {
 				]),
 			)
 			expect(registryFindings(container)).toEqual([])
+		})
+
+		it('first-party <menu><li><button>: ZERO error-severity findings; ONLY the documented list-style warning', () => {
+			// The conformant first-party menu toolbar (`_menu.scss`:
+			// `<menu> > li { display: contents }` + `list-style: none`,
+			// shipped by MenuPage.vue with NO role="listitem"/role="list").
+			//   • presentation/list-item is SILENT — the documented
+			//     display:contents carve-out (box elided, listitem semantic
+			//     preserved per CSS Display 3 / aria.md §60).
+			//   • presentation/list-style surfaces (CORRECTLY, BY DESIGN) as a
+			//     `warning` on the <menu> (list affordance stripped, no
+			//     role="list" — aria.md §58-59/§165-168). A CONSCIOUS,
+			//     corpus-grounded decision; Phase 6 triages warnings and only
+			//     FAILS on `error`, so this is expected & non-blocking.
+			// The Phase-6 invariant the carve-out unblocks: ZERO error-severity
+			// presentation findings over conformant first-party markup.
+			const menu = mount(
+				el('menu', {}, [el('li', {}, [el('button')]), el('li', {}, [el('button')])]),
+			)
+			const walker = new Walker(container)
+			const found: { rule: string; severity: string }[] = []
+			for (const node of walker.walk()) {
+				const ctx = walker.context(node)
+				for (const rule of rules) {
+					const f = rule.evaluate(node, ctx)
+					if (f !== null) found.push({ rule: f.rule, severity: f.severity })
+				}
+			}
+			const presentation = found.filter((f) => f.rule.startsWith('presentation/'))
+			// No error-severity presentation finding on conformant first-party
+			// markup (the Phase-6 gate the list-item carve-out unblocks).
+			expect(presentation.filter((f) => f.severity === 'error')).toEqual([])
+			// No list-item finding at all (the carve-out makes it silent).
+			expect(presentation.filter((f) => f.rule === 'presentation/list-item')).toEqual([])
+			// Exactly the documented list-style WARNING on the <menu> (the
+			// conscious, corpus-grounded, non-blocking by-design surfacing).
+			expect(presentation).toEqual([{ rule: 'presentation/list-style', severity: 'warning' }])
+			expect(menu.tagName.toLowerCase()).toBe('menu')
 		})
 
 		it('a single presentation break yields EXACTLY ONE finding (no double-report)', () => {

@@ -376,6 +376,33 @@ export const PRESENTATION_DEFAULTS: readonly PresentationDefault[] = [
 	},
 ] as const
 
+// ── Presentation-lens rule tag vocabularies ───────────────────────────────
+//
+// HTML-standard tag lists the bespoke `presentation/list-style` /
+// `presentation/focus` rules key on (NOT corpus-carded scalar data like
+// `PRESENTATION_DEFAULTS`, so no parity gate — the `POPOVER_SIDES` precedent:
+// a `readonly` collection with a one-line derivation comment, data in
+// constants.ts, the rule logic in rules.ts). Kept here so `rules.ts` carries
+// ZERO module-level const collections (§4.6/§5 — the FOREIGN_TAGS /
+// TRANSPARENT_CITE precedent).
+
+/** The list-container elements whose implicit ARIA role is `list`
+ *  (`aria.md §58-59`: `ol`/`ul`/`menu`→`list`) — the `presentation/list-style`
+ *  `list-style:none` subjects. */
+export const LIST_CONTAINER_TAGS: ReadonlySet<string> = new Set(['ul', 'ol', 'menu'])
+
+/** The intrinsically keyboard-focusable HTML elements (the spec's tabbable
+ *  set; `<a>` additionally requires `href`, gated in `rules.ts`) — the
+ *  `presentation/focus` candidate tags. */
+export const FOCUSABLE_TAGS: ReadonlySet<string> = new Set([
+	'a',
+	'button',
+	'input',
+	'select',
+	'textarea',
+	'summary',
+])
+
 // ── Popover side vocabulary ────────────────────────────────────────────────
 
 export const POPOVER_SIDES: readonly string[] = ['top', 'end', 'bottom', 'start']

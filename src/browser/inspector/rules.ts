@@ -31,6 +31,8 @@ import { getElementById } from '../traversals.js'
 import {
 	ATTRIBUTE_ENUM_DOMAINS,
 	ATTRIBUTE_INTEGER_BOUNDS,
+	FOCUSABLE_TAGS,
+	LIST_CONTAINER_TAGS,
 	PRESENTATION_DEFAULTS,
 } from '../constants.js'
 import {
@@ -1741,7 +1743,17 @@ const interactionHiddenReferenceRule: RuleInterface = {
 //                                scoped to the ONE false-positive-free
 //                                decidable signal — the inline override
 //                                (documented boundary; no invented
-//                                `:focus-visible` synthesis).
+//                                `:focus-visible` synthesis). The
+//                                replacement-affordance check is symmetrically
+//                                inline-only BY DESIGN: it reads the SAME
+//                                inline `style` surface as the inline-outline-
+//                                removal trigger, so a stylesheet
+//                                `:focus-visible` replacement deliberately does
+//                                NOT suppress an inline removal (reading
+//                                computed style on the affordance side would
+//                                reintroduce the `:focus-visible` non-
+//                                decidability the trigger side exists to avoid
+//                                — do not "fix" the asymmetry away).
 //    - presentation/visibility  `dialog:not([open])` / `[popover]:not(
 //                                :popover-open)` `display` ≠ `none` — a
 //                                CLOSED dialog/popover painted visibly is a
@@ -1753,6 +1765,48 @@ const interactionHiddenReferenceRule: RuleInterface = {
 //                                OUT OF SCOPE per the ROADMAP non-goal
 //                                ("nothing stylistic") + the false-positive
 //                                doctrine (documented boundaries).
+//
+//  DOCUMENTED CORPUS-GROUNDED BOUNDARIES (the Phase-3.3 precedent — faithful
+//  carve-outs, NOT ad-hoc exceptions; each grounded in `renderings.md §15` /
+//  `aria.md` prose, never intuition):
+//    • `display: contents` on a `display`-model `PRESENTATION_DEFAULTS`
+//      element (the `li` list-item row AND the `table`-model rows) is
+//      NON-OFFENDING. Per CSS Display Module Level 3, `display:contents`
+//      removes ONLY the element's generated box; the element REMAINS in the
+//      accessibility tree with its implicit role (HTML-AAM / `aria.md`
+//      §58-60/§110-116) — a `<li display:contents>` is still a list item, a
+//      `<tr display:contents>` still a row. A stripped *box* is not a
+//      stripped *semantic* (ROADMAP non-goal: "nothing stylistic"); this is
+//      the framework's own conformant `<menu> > li { display: contents }`
+//      toolbar idiom (`_menu.scss`). Carved UNIFORMLY across the box-vs-
+//      semantic `display` checks (`presentation/list-item` +
+//      `presentation/table`) so the identical latent false-positive is closed
+//      everywhere, not just on `li`. ONLY `contents` is carved (NOT
+//      `none`/`block`/… — those strip the box AND the semantic); the
+//      `unicode-bidi`/`white-space`/`content-visibility` rows are a different
+//      semantic axis and intentionally unaffected (a `display:contents` does
+//      not preserve a bidi/preformatted semantic). It is a RULE-LOGIC carve-
+//      out in `offendingPresentationDefault`, NOT a `PRESENTATION_DEFAULTS`
+//      data change — the §15 UA sheet says `li { display: list-item }`, so
+//      adding `contents` to `expected` would weaken the verbatim
+//      `w3c.test.ts` parity binding (forbidden); the data stays unchanged and
+//      parity un-weakened.
+//    • `presentation/list-style` will (CORRECTLY, BY DESIGN) surface as a
+//      `warning` on a `list-style:none` list lacking `role="list"` —
+//      INCLUDING the framework's own first-party `<menu>` (`_menu.scss`
+//      strips `list-style` so the menu reads as a toolbar). This is a
+//      CONSCIOUS, corpus-grounded decision, NOT a false positive: `aria.md`
+//      §58-59 card `ol`/`ul`/`menu`→implicit `list` role, and `aria.md`
+//      §165-168 states the presentation lens flags `list-style:none` +
+//      non-`list-item` `display` stripping the list role without a
+//      compensating `role="list"` (per `renderings.md §15` which sets the
+//      `dir, menu, ul { list-style-type: disc }` marker affordance). A list
+//      stripped of its marker affordance with NO `role="list"` genuinely
+//      DEGRADES the AT list affordance — defensible AS a `warning` (the list
+//      still groups items; only the affordance is weakened, hence `warning`
+//      not `error`). Phase 6 reports/triages warnings and only FAILS on
+//      `error`, so this surfacing on first-party `<menu>` is expected and
+//      non-blocking. NOT downgraded/removed (that would be symptom-hiding).
 //
 //  The tabular list/bidi/table/pre checks ITERATE the parity-gated
 //  `PRESENTATION_DEFAULTS` corpus DATA (constants.ts) — no per-element
@@ -1813,6 +1867,23 @@ function offendingPresentationDefault(subject: RuleSubject): PresentationDefault
 		// genuine violation in a rendered tree always resolves a value).
 		if (actual === '') continue
 		if (fallback.expected.includes(actual)) continue
+		// `display: contents` CARVE-OUT (CSS Display 3 + HTML-AAM / aria.md).
+		// `display:contents` removes ONLY the element's generated box; per the
+		// CSS Display Module Level 3 prose the element REMAINS in the
+		// accessibility tree with its implicit role (a `<li display:contents>`
+		// is still a list item; a `<tr display:contents>` is still a row) —
+		// unlike `display:none`/`block` which strip the list-item/table box
+		// AND, for `none`, the element from the a11y tree. A stripped *box* is
+		// not a stripped *semantic*; the presentation lens flags only overrides
+		// that break SEMANTICS (ROADMAP non-goal: "nothing stylistic"). This is
+		// the framework's own conformant `<menu> > li { display: contents }`
+		// toolbar idiom (`_menu.scss`). Scoped to the box-vs-semantic `display`
+		// checks (list-item / table model); `unicode-bidi`/`white-space`/
+		// `content-visibility` rows are a DIFFERENT semantic axis and unaffected
+		// (a `display:contents` does not preserve a bidi/preformatted semantic),
+		// and ONLY `contents` is carved (NOT `none`/other values — those DO
+		// strip the box AND the semantic).
+		if (fallback.property === 'display' && actual === 'contents') continue
 		if (hasCompensatingRole(subject.element, fallback)) continue
 		return fallback
 	}
@@ -1827,8 +1898,16 @@ const violatesPresentationDefault = whereOf(isSubject, (subject: RuleSubject): b
 	// `display:list-item` break (renderings.md §15.3.7) — the data entry
 	// for `li`. The other PRESENTATION_DEFAULTS rows are consumed by the
 	// `presentation/bidi`, `presentation/table`, `presentation/pre` rules
-	// (same data, distinct rule id + cite — disjoint).
-	return fallback !== null && fallback.tags.includes('li') && subject.tag === 'li'
+	// (same data, distinct rule id + cite — disjoint). The property-based
+	// narrowing (the `li` row is the sole `display:list-item` entry) is
+	// symmetric with `offendingTableDefault`/`offendingBidiDefault` — and
+	// precise: `offendingPresentationDefault` already guarantees
+	// `fallback.tags.includes(subject.tag)`, so the prior `tags.includes('li')
+	// && tag==='li'` pair was tautological once `property==='display' &&
+	// expected.includes('list-item')` identifies the `li` row uniquely.
+	return (
+		fallback !== null && fallback.property === 'display' && fallback.expected.includes('list-item')
+	)
 })
 
 const presentationListItemRule: RuleInterface = {
@@ -1863,8 +1942,8 @@ const presentationListItemRule: RuleInterface = {
 // AT list affordance is weakened). The compensation guard (`role="list"`)
 // is the false-positive bound: `ul[role=list]` with `list-style:none` (the
 // single most common real-world reset) is conformant ⇒ ZERO findings.
-const LIST_CONTAINER_TAGS = new Set(['ul', 'ol', 'menu'])
-
+// `LIST_CONTAINER_TAGS` is the corpus-derived tag vocabulary in constants.ts
+// (§4.6/§5 — no module-level const collection lives in rules.ts).
 const violatesListStyle = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	if (!LIST_CONTAINER_TAGS.has(subject.tag)) return false
 	if (roleTokens(subject.element).includes('list')) return false
@@ -2141,8 +2220,8 @@ const presentationHiddenRule: RuleInterface = {
 // `button:focus-visible{outline:none}` form is NOT statically decidable from
 // a walk (it needs the pseudo-state) and is deliberately out of scope — the
 // honest corpus-faithful boundary, documented, not invented.
-const FOCUSABLE_TAGS = new Set(['a', 'button', 'input', 'select', 'textarea', 'summary'])
-
+// `FOCUSABLE_TAGS` is the tag vocabulary in constants.ts (§4.6/§5 — no
+// module-level const collection lives in rules.ts).
 function isFocusableElement(element: Element, tag: string): boolean {
 	// A negative `tabindex` removes the element from sequential focus AND the
 	// `:focus-visible` keyboard-focus contract — not a focus-affordance
