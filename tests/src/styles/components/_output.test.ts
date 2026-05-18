@@ -1,10 +1,17 @@
 // ============================================================================
-//  components/_output.scss — `<output>` calc-result chip + toast banner.
+//  components/_output.scss — toast / status-banner surface.
 //
-//  Output's element baseline (in `elements/_output.scss`) styles it as a
-//  calc-result chip; the component layer here extends two shapes on top:
-//  a top-layer `popover`-promoted toast, and an in-flow status banner
-//  (`output[role="status"]`).
+//  The toast root is a `<div role="status">`: a toast renders flow content
+//  (`<header>` bands + paragraphs) that `<output>`'s phrasing-only HTML
+//  content model forbids. `role="status"` IS `<output>`'s implicit ARIA
+//  role (an atomic, polite live region), so the announcement semantic is
+//  preserved exactly. (The bare `<output>` calc-result chip is unrelated
+//  and keeps its own baseline in `elements/_output.scss` /
+//  `tests/src/styles/elements/_output.test.ts`.)
+//
+//  Two toast shapes: a top-layer `popover`-promoted toast
+//  (`[popover][role="status"]`), and an in-flow status banner
+//  (`div[role="status"]:not([popover])`).
 // ============================================================================
 
 import { afterEach, describe, expect, it } from 'vitest'
@@ -12,11 +19,11 @@ import { build, mount, pixels, rootToken, style } from '../../../setupStyles'
 
 afterEach(() => {
 	for (const child of Array.from(document.body.children)) {
-		if (child.tagName === 'OUTPUT') child.remove()
+		if (child.tagName === 'DIV' && child.getAttribute('role') === 'status') child.remove()
 	}
 })
 
-describe('output — toast token surface', () => {
+describe('toast — token surface', () => {
 	it('exposes --set-toast-* on :root', () => {
 		expect(rootToken('--set-toast-color').trim()).not.toBe('')
 		expect(rootToken('--set-toast-border-color').trim()).not.toBe('')
@@ -24,9 +31,10 @@ describe('output — toast token surface', () => {
 	})
 })
 
-describe('output — `<output popover>` is a fixed-position banner', () => {
+describe('toast — `<div role="status" popover>` is a fixed-position banner', () => {
 	it('paints flex layout with non-zero padding', () => {
-		const out = build('output')
+		const out = build('div')
+		out.setAttribute('role', 'status')
 		out.setAttribute('popover', 'manual')
 		out.id = 'toast-1'
 		out.textContent = 'Saved'
@@ -41,7 +49,8 @@ describe('output — `<output popover>` is a fixed-position banner', () => {
 	})
 
 	it('positions at the bottom-end corner by default', () => {
-		const out = build('output')
+		const out = build('div')
+		out.setAttribute('role', 'status')
 		out.setAttribute('popover', 'manual')
 		out.id = 'toast-corner'
 		out.textContent = 'Saved'
@@ -52,9 +61,9 @@ describe('output — `<output popover>` is a fixed-position banner', () => {
 	})
 })
 
-describe('output — `<output role="status">` (in-flow) gets banner shape', () => {
-	it('without `.filled` (the calc-chip opt-in), an output[role=status] is a flex banner', () => {
-		const out = build('output')
+describe('toast — `<div role="status">` (in-flow, no popover) gets banner shape', () => {
+	it('without `.filled`, a div[role=status] is a flex banner', () => {
+		const out = build('div')
 		out.setAttribute('role', 'status')
 		out.textContent = 'Saving…'
 		mount(out)

@@ -1766,7 +1766,10 @@ export interface UseSelectReturn {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// useToast. Bound to the native `<output>` element.
+// useToast. Bound to a `<div role="status">` root — a toast renders flow
+// content (header / footer bands + paragraphs) that `<output>`'s phrasing-
+// only content model forbids; `role="status"` is `<output>`'s implicit role
+// (atomic polite live region) so the announcement semantic is preserved.
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface UseToastEventMap {

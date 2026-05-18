@@ -113,7 +113,7 @@ describe('backdrop — bare-pseudo transition keeps the scrim animating through 
 
 describe('backdrop — non-blocking surfaces stay transparent', () => {
 	// Transparent default for non-blocking popovers: non-modal `<dialog>`,
-	// `<output popover>` (toasts), `<menu popover>` (dropdowns),
+	// `<div role="status" popover>` (toasts), `<menu popover>` (dropdowns),
 	// `[popover='hint']` (tooltips), and bare `[popover]` panels keep
 	// the UA-default transparent backdrop so they don't dim the page.
 

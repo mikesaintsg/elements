@@ -1,13 +1,14 @@
 // ============================================================================
-// useToast — `<output popover>` notification chrome.
+// useToast — `<div role="status" popover>` notification chrome.
 //
 // The toast baseline (banner layout, tokens, default bottom-end placement,
 // fade-in/out via `[popover]:popover-open` + `@starting-style`) lives in
-// `components/_output.scss` alongside the bare `<output>` calc-chip rule.
-// This composable partial extends that baseline with the surfaces a real
-// toast deck needs:
+// `components/_output.scss` (the file keeps its index-key name; the toast
+// root is a `<div role="status">`, NOT an `<output>` — see that file's
+// header for the content-model rationale). This composable partial extends
+// that baseline with the surfaces a real toast deck needs:
 //
-//   1. Linear stack offset — multiple `<output popover>` siblings inside
+//   1. Linear stack offset — multiple `<div role="status" popover>` siblings inside
 //      one container space themselves apart. The factory writes a per-
 //      toast `--set-toast-stack-offset` (sum of older toasts' heights +
 //      gap); this rule turns that token into a `inset-block-end` lift so
@@ -31,7 +32,7 @@
 //
 // Top-layer constraint
 // --------------------
-// `output[popover]` elevates to the browser top layer when open, so the
+// `[popover][role='status']` elevates to the browser top layer when open, so the
 // deck CANNOT be built by absolutely positioning cards inside the
 // container — the container's box collapses to zero. Instead every card
 // keeps its inherited `position: fixed` (from `components/_output.scss`)
@@ -93,7 +94,7 @@
 	// wrote (consumer crossed threshold → commit dismiss). The motion-contract
 	// tokens (`--set-motion-duration` + `--set-motion-timing-function`) drive
 	// the snap so it feels like the rest of the framework's in-flow surfaces.
-	output[popover] {
+	[popover][role='status'] {
 		translate: var(--set-toast-swipe-offset, 0px) 0;
 		opacity: var(--set-toast-swipe-opacity, 1);
 		// `touch-action: pan-y` declares the touch contract directly: the
@@ -113,7 +114,7 @@
 		touch-action: pan-y;
 	}
 
-	output[popover]:not([data-toast-swiping]) {
+	[popover][role='status']:not([data-toast-swiping]) {
 		@include transition(
 			(
 				translate var(--set-motion-duration) var(--set-motion-timing-function),
@@ -122,7 +123,7 @@
 		);
 	}
 
-	output[popover][data-toast-swiping] {
+	[popover][role='status'][data-toast-swiping] {
 		// Active drag — no transition; translate follows pointer per-frame.
 		// `cursor: grabbing` reinforces the affordance for mouse users
 		// (touch users get the visual feedback from the translate itself).
@@ -135,7 +136,8 @@
 	// card's hide transition. Without this, swiping one card would let the
 	// container's `:has(:hover)` drop (the pointer leaves the swiped card's
 	// box) and the deck collapses mid-swipe.
-	[data-toast-stack]:has(> output[popover][data-toast-swiping]) > output[popover]:popover-open {
+	[data-toast-stack]:has(> [popover][role='status'][data-toast-swiping])
+		> [popover][role='status']:popover-open {
 		block-size: auto;
 		overflow: visible;
 		opacity: var(--set-toast-swipe-opacity, 1);
@@ -148,8 +150,8 @@
 		);
 	}
 
-	[data-toast-stack][data-toast-position='top']:has(> output[popover][data-toast-swiping])
-		> output[popover]:popover-open {
+	[data-toast-stack][data-toast-position='top']:has(> [popover][role='status'][data-toast-swiping])
+		> [popover][role='status']:popover-open {
 		transform: translateY(
 			calc(
 				var(--set-toast-stack-index, 0) * (var(--set-toast-front-height) + var(--set-toast-spacing))
@@ -170,14 +172,14 @@
 	// `--set-toast-padding-{inline,block}` tokens (declared in
 	// `components/_output.scss`) would be defeated by the surface
 	// padding. Composables sits after surfaces, so this rule wins.
-	output[popover] {
+	[popover][role='status'] {
 		// Default to 0 so a single toast falls back to the corner inset.
 		--set-toast-stack-offset: 0px;
 		inset-block-end: calc(var(--set-toast-edge-inset) + var(--set-toast-stack-offset));
 
 		// Re-paint the toast's chrome here in the composables layer (which
 		// beats surfaces) so the variant tint set by `.success` /
-		// `.warning` / etc. on `<output popover>` actually reaches the
+		// `.warning` / etc. on `<div role="status" popover>` actually reaches the
 		// rendered element. Without this re-paint, `surfaces/_popover.scss`
 		// wins on `background-color` / `border` / `padding` (it paints
 		// `[popover]` directly, not via the toast token chain), and every
@@ -245,8 +247,8 @@
 	// can grow to fill mobile-wide viewports (e.g. 480-px breakpoint
 	// edge) without leaving a gap on one side.
 	@media (max-width: 480px) {
-		output[popover],
-		output[role='status']:not(.filled) {
+		[popover][role='status'],
+		div[role='status']:not([popover]):not(.filled) {
 			inset-inline-start: var(--set-toast-edge-inset);
 			inset-inline-end: var(--set-toast-edge-inset);
 			inline-size: auto;
@@ -273,7 +275,7 @@
 	// Gating on `:popover-open` lets the closed card surrender its
 	// transform/opacity to the popover-surface defaults during the
 	// close transition, producing a clean fade-out.
-	[data-toast-stack] > output[popover]:popover-open {
+	[data-toast-stack] > [popover][role='status']:popover-open {
 		// Cancel the linear lift — every card lands at the SAME corner so
 		// the deck transform alone produces the visual stack.
 		--set-toast-stack-offset: 0px;
@@ -307,7 +309,7 @@
 	// height. The `style*=` attribute selector matches the inline custom
 	// property the factory writes via `element.style.setProperty(...)`.
 	// `:popover-open` gate matches the deck rule above — same rationale.
-	[data-toast-stack] > output[popover]:popover-open[style*='--set-toast-stack-index: 0'] {
+	[data-toast-stack] > [popover][role='status']:popover-open[style*='--set-toast-stack-index: 0'] {
 		transform: none;
 		opacity: 1;
 		block-size: auto;
@@ -316,14 +318,14 @@
 	// Top-anchored stacks — flip the lift direction (cards peek DOWNWARD
 	// behind the front) and pivot the scale around the top edge.
 	// `:popover-open` gate as above.
-	[data-toast-stack][data-toast-position='top'] > output[popover]:popover-open {
+	[data-toast-stack][data-toast-position='top'] > [popover][role='status']:popover-open {
 		transform: translateY(calc(var(--set-toast-stack-index, 0) * var(--set-toast-peek-height)))
 			scale(calc(1 - var(--set-toast-stack-index, 0) * var(--set-toast-scale-step)));
 		transform-origin: center top;
 	}
 
 	[data-toast-stack][data-toast-position='top']
-		> output[popover]:popover-open[style*='--set-toast-stack-index: 0'] {
+		> [popover][role='status']:popover-open[style*='--set-toast-stack-index: 0'] {
 		transform: none;
 	}
 
@@ -332,7 +334,7 @@
 	// so the autohide timer keeps running and the front-card slot rotates
 	// as older toasts expire. `aria-hidden="true"` is written by the
 	// factory for the assistive-tech contract.
-	[data-toast-stack] > output[popover][data-toast-stack-hidden] {
+	[data-toast-stack] > [popover][role='status'][data-toast-stack-hidden] {
 		opacity: 0;
 		pointer-events: none;
 	}
@@ -345,23 +347,25 @@
 	// each card by `index × (front-height + spacing)` instead of
 	// reflowing them.
 	//
-	// `:has(> output[popover]:popover-open:hover)` gates the expansion on
+	// `:has(> [popover][role='status']:popover-open:hover)` gates the expansion on
 	// the popover ITSELF being hovered, not the container. The previous
 	// `[data-toast-stack]:hover` selector matched whenever ANY descendant
 	// was hovered — fine when the container sits at the anchored corner
 	// and only the popover cards live inside it, but wrong when the
 	// container also holds the consumer's trigger buttons (the UseToastPage
-	// demos co-locate the `<output>` siblings with the buttons that emit
-	// them so the factory's `parentElement.children` walk can sibling-stack).
+	// demos co-locate the toast `<div role="status">` siblings with the
+	// buttons that emit them so the factory's `parentElement.children`
+	// walk can sibling-stack).
 	// Without the `:has` gate, hovering the trigger panel from across the
 	// page expanded a deck whose cards were sitting in the opposite
 	// viewport corner. The gate also covers focus-within (tabbing into the
 	// deck's controls expands), and the `[data-toast-stack-closing]` pin
 	// (kept ungated since it's set by the factory only while a card's
 	// close transition plays out — strictly bracketed lifetime).
-	[data-toast-stack]:has(> output[popover]:popover-open:hover) > output[popover],
-	[data-toast-stack]:has(> output[popover]:popover-open:focus-within) > output[popover],
-	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open {
+	[data-toast-stack]:has(> [popover][role='status']:popover-open:hover) > [popover][role='status'],
+	[data-toast-stack]:has(> [popover][role='status']:popover-open:focus-within)
+		> [popover][role='status'],
+	[data-toast-stack][data-toast-stack-closing] > [popover][role='status']:popover-open {
 		block-size: auto;
 		// `overflow: visible` is required so the `::after` hit-area
 		// extension below (which bridges the gap between expanded cards
@@ -381,12 +385,14 @@
 		);
 	}
 
-	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:hover)
-		> output[popover],
-	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:focus-within)
-		> output[popover],
+	[data-toast-stack][data-toast-position='top']:has(> [popover][role='status']:popover-open:hover)
+		> [popover][role='status'],
+	[data-toast-stack][data-toast-position='top']:has(
+			> [popover][role='status']:popover-open:focus-within
+		)
+		> [popover][role='status'],
 	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
-		> output[popover]:popover-open {
+		> [popover][role='status']:popover-open {
 		transform: translateY(
 			calc(
 				var(--set-toast-stack-index, 0) * (var(--set-toast-front-height) + var(--set-toast-spacing))
@@ -435,16 +441,16 @@
 	// on the host card, but a future refactor could land a global
 	// `pointer-events: none` on `::before` / `::after` and silently
 	// break the bridge; re-stating here is cheap insurance.
-	[data-toast-stack]:has(> output[popover]:popover-open:hover)
-		> output[popover]:popover-open::before,
-	[data-toast-stack]:has(> output[popover]:popover-open:hover)
-		> output[popover]:popover-open::after,
-	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
-		> output[popover]:popover-open::before,
-	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
-		> output[popover]:popover-open::after,
-	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::before,
-	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::after {
+	[data-toast-stack]:has(> [popover][role='status']:popover-open:hover)
+		> [popover][role='status']:popover-open::before,
+	[data-toast-stack]:has(> [popover][role='status']:popover-open:hover)
+		> [popover][role='status']:popover-open::after,
+	[data-toast-stack]:has(> [popover][role='status']:popover-open:focus-within)
+		> [popover][role='status']:popover-open::before,
+	[data-toast-stack]:has(> [popover][role='status']:popover-open:focus-within)
+		> [popover][role='status']:popover-open::after,
+	[data-toast-stack][data-toast-stack-closing] > [popover][role='status']:popover-open::before,
+	[data-toast-stack][data-toast-stack-closing] > [popover][role='status']:popover-open::after {
 		content: '';
 		position: absolute;
 		inset-inline: 0;
@@ -455,11 +461,11 @@
 	// `::after` extends DOWN from each card's bottom edge into the gap
 	// below — bridging to the card visually beneath (lower stack index)
 	// for bottom-anchored decks.
-	[data-toast-stack]:has(> output[popover]:popover-open:hover)
-		> output[popover]:popover-open::after,
-	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
-		> output[popover]:popover-open::after,
-	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::after {
+	[data-toast-stack]:has(> [popover][role='status']:popover-open:hover)
+		> [popover][role='status']:popover-open::after,
+	[data-toast-stack]:has(> [popover][role='status']:popover-open:focus-within)
+		> [popover][role='status']:popover-open::after,
+	[data-toast-stack][data-toast-stack-closing] > [popover][role='status']:popover-open::after {
 		inset-block-start: 100%;
 	}
 
@@ -467,11 +473,11 @@
 	// — bridging to the card visually above (higher stack index). The
 	// `inset-block-end: 100%` puts the pseudo's bottom flush against the
 	// card's top edge, extending upward.
-	[data-toast-stack]:has(> output[popover]:popover-open:hover)
-		> output[popover]:popover-open::before,
-	[data-toast-stack]:has(> output[popover]:popover-open:focus-within)
-		> output[popover]:popover-open::before,
-	[data-toast-stack][data-toast-stack-closing] > output[popover]:popover-open::before {
+	[data-toast-stack]:has(> [popover][role='status']:popover-open:hover)
+		> [popover][role='status']:popover-open::before,
+	[data-toast-stack]:has(> [popover][role='status']:popover-open:focus-within)
+		> [popover][role='status']:popover-open::before,
+	[data-toast-stack][data-toast-stack-closing] > [popover][role='status']:popover-open::before {
 		inset-block-end: 100%;
 	}
 
@@ -479,22 +485,26 @@
 	// extends UP (cards stack downward, so a card's "below-the-fold"
 	// neighbour is above its top edge), `::before` extends DOWN. Same
 	// 2× spacing buffer.
-	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:hover)
-		> output[popover]:popover-open::after,
-	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:focus-within)
-		> output[popover]:popover-open::after,
+	[data-toast-stack][data-toast-position='top']:has(> [popover][role='status']:popover-open:hover)
+		> [popover][role='status']:popover-open::after,
+	[data-toast-stack][data-toast-position='top']:has(
+			> [popover][role='status']:popover-open:focus-within
+		)
+		> [popover][role='status']:popover-open::after,
 	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
-		> output[popover]:popover-open::after {
+		> [popover][role='status']:popover-open::after {
 		inset-block-start: auto;
 		inset-block-end: 100%;
 	}
 
-	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:hover)
-		> output[popover]:popover-open::before,
-	[data-toast-stack][data-toast-position='top']:has(> output[popover]:popover-open:focus-within)
-		> output[popover]:popover-open::before,
+	[data-toast-stack][data-toast-position='top']:has(> [popover][role='status']:popover-open:hover)
+		> [popover][role='status']:popover-open::before,
+	[data-toast-stack][data-toast-position='top']:has(
+			> [popover][role='status']:popover-open:focus-within
+		)
+		> [popover][role='status']:popover-open::before,
 	[data-toast-stack][data-toast-position='top'][data-toast-stack-closing]
-		> output[popover]:popover-open::before {
+		> [popover][role='status']:popover-open::before {
 		inset-block-end: auto;
 		inset-block-start: 100%;
 	}

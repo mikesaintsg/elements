@@ -239,17 +239,17 @@ five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
 
 ## At a glance
 
-| Phase | Description                                                                         | Status |
-| ----- | ----------------------------------------------------------------------------------- | ------ |
-| 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec               | ✅     |
-| 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                 | ✅     |
-| 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)              | ✅     |
-| 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant) | ✅     |
-| 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel    | ✅     |
-| 5     | Presentation lens (computed-style: load-bearing rendering overrides)                | ✅     |
-| 6     | Showcase self-audit suite — gate SHIPPED (40/43 green) + `_textarea` fixed; 3-page error inventory ESCALATED for owner triage | ⬜     |
-| 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                  | ⬜     |
-| 8     | Public-API parity hardening + large-tree performance budget                         | ⬜     |
+| Phase | Description                                                                                                                                                                                                                                       | Status |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec                                                                                                                                                                             | ✅     |
+| 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                                                                                                                                                                               | ✅     |
+| 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)                                                                                                                                                                            | ✅     |
+| 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant)                                                                                                                                                               | ✅     |
+| 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel                                                                                                                                                                  | ✅     |
+| 5     | Presentation lens (computed-style: load-bearing rendering overrides)                                                                                                                                                                              | ✅     |
+| 6     | Showcase self-audit suite — gate SHIPPED + GREEN on all 43 pages (0 errors); `_textarea`/`<menu>`-group/`createToast`-root remediated at source; 30 TRUE-positive errors → 0; 113→120 list-style warnings remain by-design (reported, not failed) | ✅     |
+| 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                                                                                                                                                                                | ⬜     |
+| 8     | Public-API parity hardening + large-tree performance budget                                                                                                                                                                                       | ⬜     |
 
 ---
 
@@ -890,45 +890,71 @@ display: flex }`, `TablesPage.vue`, no `role="cell"`). The only
   non-failing `afterAll` `console.warn` summary), NOT failed. Mirrors the
   `parity.test.ts` / `pages.test.ts` standing-driver pattern (barrel
   `*Page` identity map, no separate registry); a permanent
-  continuously-verified conformance corpus. SHIPPED & green for 40/43
-  pages; the 3 red pages are the genuine inventory escalated below.
-- ⬜ Triage + remediate every real finding the inspector surfaces on our own
-  markup and our own cascade. **ESCALATED (NEEDS_CONTEXT) — substantial &
-  judgment-laden, NOT mass-edited unilaterally** (per the ROADMAP
-  escalation bar: documented framework idioms, competing remediation
-  approaches, high blast radius). The COMPLETE actual inventory from the
-  real run (the source of truth — not a prediction):
+  continuously-verified conformance corpus. SHIPPED & GREEN on all 43
+  pages (zero `error`-severity findings) after the source remediations
+  below.
+- ✅ Triage + remediate every real finding the inspector surfaced on our
+  own markup and our own cascade — **all 30 TRUE-positive errors fixed at
+  the SOURCE** (markup / factory / SCSS made genuinely spec-conformant; the
+  inspector, the `semantics.test.ts` gate, and `tests/guides/w3c.test.ts`
+  were NEVER weakened — only framework code + matching test expectations
+  changed). The COMPLETE inventory from the real run, now resolved:
   - **`error` · `context/parent-model` · MenuPage (×4) + UseMenuPage (×4)
-    · cite `groupings#the-menu-element`.** `<h6>` and `<hr>` are direct
-    children of `<menu>` (MenuPage `<menu popover id="demo-dropdown-full">`
-    "Section headers + dividers"; UseMenuPage `stickyMenu`/`filterMenu`
-    `<h6>`, `defaultMenu`/`filterMenu` `<hr>`). `<menu>`'s content model
-    is "zero or more `li` and script-supporting elements"
-    (`groupings.md` line 804) — a GENUINE markup non-conformance, but a
-    DELIBERATE JSDoc-documented "Mailbox-parity composition" framework
-    idiom used repeatedly across the canonical `<menu>` reference page +
-    its composable page + embedded `<pre><code>` doc snippets. Remediation
-    is a judgment call (per-group `<li>` wrappers vs. role vs. element
-    restructure) touching ≥2 pages + `_menu.scss` chrome — owner-decided.
+    · cite `groupings#the-menu-element` — REMEDIATED.** `<h6>` and `<hr>`
+    were direct children of `<menu>`; `<menu>`'s content model is "Zero or
+    more `li` and script-supporting elements" (`groupings.md` §4.4.7).
+    **Fix:** every grouped `<menu>` now wraps each command group in an
+    `<li>` holding an optional `<h6>` label + a nested command `<menu>`
+    (`<menu><li><h6>…</h6><menu><li>…cmd…</li></menu></li>…</menu>`);
+    bare `<hr>` separators removed — the inter-group divider is now a CSS
+    top-border on adjacent group `<li>`s (`_menu.scss`), not a spec-illegal
+    DOM child of `<menu>`. Applied to `MenuPage.vue`, `UseMenuPage.vue`
+    (live demos + every embedded `<pre><code>` doc snippet — the docs now
+    show the conformant pattern), `_menu.scss` (dropdown chrome retargeted
+    to the nested structure; `menu>hr` rule deleted), and
+    `STRUCTURAL_PAIRINGS` (`menu>h6`/`menu>hr` → `li>h6`/`li>menu` slot
+    pairings). `<menu>` kept (command-list semantic preserved);
+    `useMenu` arrow-key roving + item-dismiss verified intact (focusable
+    walk is depth-agnostic). Visually verified: grouped dropdowns render
+    identically (eyebrow labels + separator rule), no regression.
   - **`error` · `content/category` · UseToastPage (×22) · cite
-    `forms#the-output-element`.** `<p>` (×21) and `<header>` (×1) are
-    direct children of `<output popover>` (the toast composable's core
-    chrome — `<output>` + `<p>` body + optional `<header>`/`<footer>`).
-    `<output>`'s content model is "phrasing content" (`forms.md` line
-    881); `<p>`/`<header>` are flow — a GENUINE non-conformance, but it is
-    the FUNDAMENTAL element architecture of the shipped `createToast`
-    composable (highest blast radius: `createToast` + `_toast.scss` +
-    `UseToastPage.vue` + toast tests) — owner-decided.
-  - **`warning` · `presentation/list-style` ×113 across the showcase** —
-    role-less `list-style:none` lists (incl. the first-party `<menu>`).
-    BY-DESIGN per Phase-5 boundary (e); REPORTED by the gate, NOT failed.
-    Expected & non-blocking. No remediation (a conscious design warning).
+    `forms#the-output-element` — REMEDIATED.** `<p>`/`<header>` (flow
+    content) were direct children of `<output popover>`; `<output>`'s
+    content model is "Phrasing content" (`forms.md` §4.10.12). **Fix:**
+    the toast root changed from `<output>` to `<div role="status">`.
+    `role="status"` IS `<output>`'s implicit ARIA role (an atomic, polite
+    live region) — the screen-reader announcement semantic is preserved
+    EXACTLY while the element's content model now accepts the flow content
+    a toast renders. Applied to `createToast.ts` (root gate `div` +
+    sets `role="status"` if absent + sibling-stack predicate), `useToast.ts`
+    / `types.ts` (`HTMLDivElement`), `_output.scss` + `_toast.scss` (every
+    `output[popover]` → `[popover][role="status"]`, the non-broadening
+    toast signature — no other framework popover carries that role; in-flow
+    flavour → `div[role="status"]:not([popover])`, `div`-scoped so it never
+    collides with `<aside role="status">` alerts / `<span role="status">`
+    spinners), `_anchor-position.scss` (exclusion `output` →
+    `[role="status"]`), `_tokens.scss` comment, `UseToastPage.vue` (all
+    toast elements + doc snippets + prose), and the toast tests
+    (`createToast.test.ts`, `_output.test.ts`, `_anchor-position.test.ts`,
+    `_backdrop.test.ts` — updated to assert the conformant
+    `<div role="status">` root; this is a CORRECT test update to a
+    conformant source fix, NOT symptom-hiding). Visually verified on the
+    live dev server: single / linear-stack / banded-header (the headline
+    `<header>`+`<p>` flow case) / variant / dark-mode toasts all render +
+    behave + announce (`role="status"` live region) identically, no
+    regression.
+  - **`warning` · `presentation/list-style` ×120 across the showcase** —
+    role-less `list-style:none` lists (incl. the first-party `<menu>`;
+    113→120 because the conformant nested command `<menu>`s add a few more
+    such lists). BY-DESIGN per Phase-5 boundary (e); REPORTED by the gate
+    (non-failing `afterAll` `console.warn`), NOT failed. Expected &
+    non-blocking. No remediation (a conscious design warning).
   - `advice`: none. No other `error` rules fired over the 27-rule × 43-page
-    matrix.
+    matrix; the gate is now GREEN on all 43 pages.
 - ✅ **`_textarea.scss` `wrap=off` non-conformance (a Phase-5-surfaced
   genuine finding) — REMEDIATED.** `src/styles/elements/_textarea.scss`
   set `white-space: pre-wrap` UNCONDITIONALLY; per `renderings.md
-  §15.5.17` a `<textarea wrap="off">` is a presentational hint that MUST
+§15.5.17` a `<textarea wrap="off">` is a presentational hint that MUST
   compute `white-space: pre`. **Done:** added
   `&[wrap='off' i] { white-space: pre }` inside the `@layer elements`
   `textarea` block (higher specificity than the bare rule, same layer →

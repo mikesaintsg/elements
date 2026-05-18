@@ -178,7 +178,7 @@
 	// instead of z-index — these tokens still matter for:
 	//   - Non-popover dropdowns / sticky panels in the regular stacking
 	//     context (`<select>` listbox in fallback mode, `useNav` rail).
-	//   - In-flow `output[role="status"]` banners that opt out of popover.
+	//   - In-flow `div[role="status"]` toast banners that opt out of popover.
 	//   - Consumer-authored chrome (custom layouts that need to layer
 	//     against the framework's surfaces without guessing values).
 	//

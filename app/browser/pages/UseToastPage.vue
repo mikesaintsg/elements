@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 /**
- * UseToastPage — JS-driven `<output popover>` toast composable.
+ * UseToastPage — JS-driven `<div role="status" popover>` toast composable.
  *
  * `useToast(elementRef, options?)` is the framework's adapter over
  * `createToast`. The platform owns top-layer rendering + the popover
@@ -55,16 +55,16 @@ import { useLog } from '../composables.js'
 // ─────────────────────────────────────────────────────────────────────
 // Demo 1 — single linear toast. Default auto-hide, pause-on-hover.
 // ─────────────────────────────────────────────────────────────────────
-const linearRef = useTemplateRef<HTMLOutputElement>('linearRef')
+const linearRef = useTemplateRef<HTMLDivElement>('linearRef')
 const linear = useToast(linearRef)
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 2 — linear stack: multiple toasts share a placement-anchored
 // container, no `[data-toast-stack]`. Cumulative vertical offset.
 // ─────────────────────────────────────────────────────────────────────
-const stack1Ref = useTemplateRef<HTMLOutputElement>('stack1Ref')
-const stack2Ref = useTemplateRef<HTMLOutputElement>('stack2Ref')
-const stack3Ref = useTemplateRef<HTMLOutputElement>('stack3Ref')
+const stack1Ref = useTemplateRef<HTMLDivElement>('stack1Ref')
+const stack2Ref = useTemplateRef<HTMLDivElement>('stack2Ref')
+const stack3Ref = useTemplateRef<HTMLDivElement>('stack3Ref')
 const stack1 = useToast(stack1Ref, { autohide: false })
 const stack2 = useToast(stack2Ref, { autohide: false })
 const stack3 = useToast(stack3Ref, { autohide: false })
@@ -85,11 +85,11 @@ const hideAllLinear = (): void => {
 // cards peek behind each other, depth-clamped, hidden-count indicator.
 // 5 toasts; default depth=3 means 2 get the hidden-count overflow.
 // ─────────────────────────────────────────────────────────────────────
-const deck1Ref = useTemplateRef<HTMLOutputElement>('deck1Ref')
-const deck2Ref = useTemplateRef<HTMLOutputElement>('deck2Ref')
-const deck3Ref = useTemplateRef<HTMLOutputElement>('deck3Ref')
-const deck4Ref = useTemplateRef<HTMLOutputElement>('deck4Ref')
-const deck5Ref = useTemplateRef<HTMLOutputElement>('deck5Ref')
+const deck1Ref = useTemplateRef<HTMLDivElement>('deck1Ref')
+const deck2Ref = useTemplateRef<HTMLDivElement>('deck2Ref')
+const deck3Ref = useTemplateRef<HTMLDivElement>('deck3Ref')
+const deck4Ref = useTemplateRef<HTMLDivElement>('deck4Ref')
+const deck5Ref = useTemplateRef<HTMLDivElement>('deck5Ref')
 const deck1 = useToast(deck1Ref, { autohide: false })
 const deck2 = useToast(deck2Ref, { autohide: false })
 const deck3 = useToast(deck3Ref, { autohide: false })
@@ -116,10 +116,10 @@ const hideAllDeck = (): void => {
 // all flow through the variant-context cascade.
 // ─────────────────────────────────────────────────────────────────────
 const variantRefs = {
-	primary: useTemplateRef<HTMLOutputElement>('vPrimary'),
-	success: useTemplateRef<HTMLOutputElement>('vSuccess'),
-	warning: useTemplateRef<HTMLOutputElement>('vWarning'),
-	danger: useTemplateRef<HTMLOutputElement>('vDanger'),
+	primary: useTemplateRef<HTMLDivElement>('vPrimary'),
+	success: useTemplateRef<HTMLDivElement>('vSuccess'),
+	warning: useTemplateRef<HTMLDivElement>('vWarning'),
+	danger: useTemplateRef<HTMLDivElement>('vDanger'),
 } as const
 
 const variants = {
@@ -134,10 +134,10 @@ const variants = {
 // (`.top`, `.start`) flip the corner; combinations cover all four.
 // ─────────────────────────────────────────────────────────────────────
 const cornerRefs = {
-	bottomEnd: useTemplateRef<HTMLOutputElement>('cBottomEnd'),
-	bottomStart: useTemplateRef<HTMLOutputElement>('cBottomStart'),
-	topEnd: useTemplateRef<HTMLOutputElement>('cTopEnd'),
-	topStart: useTemplateRef<HTMLOutputElement>('cTopStart'),
+	bottomEnd: useTemplateRef<HTMLDivElement>('cBottomEnd'),
+	bottomStart: useTemplateRef<HTMLDivElement>('cBottomStart'),
+	topEnd: useTemplateRef<HTMLDivElement>('cTopEnd'),
+	topStart: useTemplateRef<HTMLDivElement>('cTopStart'),
 } as const
 
 const corners = {
@@ -153,8 +153,8 @@ const corners = {
 // flex-column with a tinted band; trailing dismiss button gets the
 // variant-context reset (reads as a quiet icon).
 // ─────────────────────────────────────────────────────────────────────
-const bandHeaderRef = useTemplateRef<HTMLOutputElement>('bandHeaderRef')
-const bandFooterRef = useTemplateRef<HTMLOutputElement>('bandFooterRef')
+const bandHeaderRef = useTemplateRef<HTMLDivElement>('bandHeaderRef')
+const bandFooterRef = useTemplateRef<HTMLDivElement>('bandFooterRef')
 const bandHeader = useToast(bandHeaderRef, { autohide: false })
 const bandFooter = useToast(bandFooterRef, { autohide: false })
 
@@ -165,7 +165,7 @@ const bandFooter = useToast(bandFooterRef, { autohide: false })
 // log on the right shows show / open / hide / close events as they fire
 // so the user can confirm the swipe path runs the cancellable hide.
 // ─────────────────────────────────────────────────────────────────────
-const swipeRef = useTemplateRef<HTMLOutputElement>('swipeRef')
+const swipeRef = useTemplateRef<HTMLDivElement>('swipeRef')
 const { entries: swipeLog, push: noteSwipe } = useLog(6)
 const swipe = useToast(swipeRef, {
 	autohide: false,
@@ -179,13 +179,13 @@ const swipe = useToast(swipeRef, {
 
 // Disabled-swipe demo so the contrast is visible — `swipe: false`
 // keeps the dismiss button as the only path.
-const noSwipeRef = useTemplateRef<HTMLOutputElement>('noSwipeRef')
+const noSwipeRef = useTemplateRef<HTMLDivElement>('noSwipeRef')
 const noSwipe = useToast(noSwipeRef, { autohide: false, swipe: false })
 
 // ─────────────────────────────────────────────────────────────────────
 // Demo 8 — cancellable lifecycle. preventDefault on on.show vetoes.
 // ─────────────────────────────────────────────────────────────────────
-const lifecycleRef = useTemplateRef<HTMLOutputElement>('lifecycleRef')
+const lifecycleRef = useTemplateRef<HTMLDivElement>('lifecycleRef')
 const { entries: lifecycleLog, push: note } = useLog(6)
 const allowShow = ref(true)
 const lifecycle = useToast(lifecycleRef, {
@@ -211,11 +211,18 @@ const lifecycle = useToast(lifecycleRef, {
 		<hgroup>
 			<h1>useToast</h1>
 			<p>
-				JS-driven adapter for the native <code>&lt;output popover&gt;</code> toast surface. Pass a
-				<code>Ref&lt;HTMLOutputElement&gt;</code> + optional <code>autohide</code> /
+				JS-driven adapter for the native
+				<code>&lt;div role="status" popover&gt;</code> toast surface. Pass a
+				<code>Ref&lt;HTMLDivElement&gt;</code> + optional <code>autohide</code> /
 				<code>on</code> handlers — the composable wires the popover lifecycle, manages the auto-hide
 				timer (pause-on-hover, pause-on-focus), and coordinates linear-stack or Sonner-deck layout
-				via the parent container's <code>[data-toast-stack]</code> opt-in.
+				via the parent container's <code>[data-toast-stack]</code> opt-in. The root is a
+				<code>&lt;div&gt;</code> with <code>role="status"</code> — that role is
+				<code>&lt;output&gt;</code>'s own implicit ARIA role (an atomic, polite live region), so
+				screen readers announce the toast exactly as before, while the element's content model now
+				accepts the flow content (<code>&lt;header&gt;</code> bands, paragraphs) a toast renders
+				(<code>&lt;output&gt;</code> is phrasing-only). <code>useToast</code> sets
+				<code>role="status"</code> for you if you omit it.
 			</p>
 		</hgroup>
 		<p>
@@ -229,13 +236,13 @@ const lifecycle = useToast(lifecycleRef, {
 		</p>
 		<p>
 			<strong>Note on the demo panels below.</strong> Each panel is the consumer's
-			<em>trigger surface</em> — the bit of UI that holds the buttons that emit toasts. The
-			<code>&lt;output&gt;</code> element lives inside the panel as a DOM sibling of those buttons
-			(the factory reads <code>parentElement.children</code> for stack grouping), but when opened it
-			elevates to the browser <em>top layer</em> and renders at the viewport corner indicated by
-			each panel's caption — not inside the panel itself. The trailing <code>×</code> button in
-			every toast is the dismiss control; the framework styles the last direct-child
-			<code>&lt;button&gt;</code> as the close.
+			<em>trigger surface</em> — the bit of UI that holds the buttons that emit toasts. The toast
+			<code>&lt;div role="status"&gt;</code> lives inside the panel as a DOM sibling of those
+			buttons (the factory reads <code>parentElement.children</code> for stack grouping), but when
+			opened it elevates to the browser <em>top layer</em> and renders at the viewport corner
+			indicated by each panel's caption — not inside the panel itself. The trailing
+			<code>×</code> button in every toast is the dismiss control; the framework styles the last
+			direct-child <code>&lt;button&gt;</code> as the close.
 		</p>
 		<aside role="status" class="information" data-alert-open>
 			<p>
@@ -267,7 +274,7 @@ const lifecycle = useToast(lifecycleRef, {
 				<li><button type="button" @click="linear.pause()">Pause timer</button></li>
 				<li><button type="button" @click="linear.resume()">Resume timer</button></li>
 			</menu>
-			<output ref="linearRef" popover>
+			<div ref="linearRef" role="status" popover>
 				<p><strong>Saved.</strong> Your changes are in. Hover here to pause the auto-hide timer.</p>
 				<button
 					type="button"
@@ -277,31 +284,32 @@ const lifecycle = useToast(lifecycleRef, {
 				>
 					×
 				</button>
-			</output>
+			</div>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
-			<pre v-pre><code>const ref = useTemplateRef&lt;HTMLOutputElement&gt;('ref')
+			<pre v-pre><code>const ref = useTemplateRef&lt;HTMLDivElement&gt;('ref')
 const toast = useToast(ref) // default autohide
 
 &lt;button @click="toast.show()"&gt;Show&lt;/button&gt;
-&lt;output ref="ref" popover&gt;
+&lt;div ref="ref" role="status" popover&gt;
   &lt;p&gt;Saved. …&lt;/p&gt;
   &lt;button @click="toast.hide()" aria-label="Dismiss"&gt;×&lt;/button&gt;
-&lt;/output&gt;</code></pre>
+&lt;/div&gt;</code></pre>
 		</details>
 	</section>
 
 	<section id="use-toast-linear-stack">
 		<h2>2. Linear stack — multiple toasts, cumulative vertical offset</h2>
 		<p>
-			When multiple <code>&lt;output popover&gt;</code> elements share the same placement-anchored
-			ancestor (here a container with <code>class="end bottom"</code>), the factory writes
-			<code>--set-toast-stack-offset</code> on each open toast so they stack vertically with the
-			framework's <code>--set-toast-spacing</code> gap. The newest open toast goes to the bottom of
-			the stack (or top, in a top-anchored container — set <code>data-toast-position="top"</code> on
-			the container to reverse). Sticky here (<code>autohide: false</code>) so you can compare
-			layout shifts.
+			When multiple <code>&lt;div role="status" popover&gt;</code> toasts share the same
+			placement-anchored ancestor (here a container with <code>class="end bottom"</code>), the
+			factory writes <code>--set-toast-stack-offset</code> on each open toast so they stack
+			vertically with the framework's <code>--set-toast-spacing</code> gap. The newest open toast
+			goes to the bottom of the stack (or top, in a top-anchored container — set
+			<code>data-toast-position="top"</code> on the container to reverse). Sticky here (<code
+				>autohide: false</code
+			>) so you can compare layout shifts.
 		</p>
 		<div class="showcase-toast-trigger">
 			<small class="showcase-renders-at">
@@ -313,7 +321,7 @@ const toast = useToast(ref) // default autohide
 				<li><button type="button" @click="hideAllLinear">Hide all 3</button></li>
 				<li><button type="button" @click="stack2.hide()">Hide middle</button></li>
 			</menu>
-			<output ref="stack1Ref" popover class="information">
+			<div ref="stack1Ref" role="status" popover class="information">
 				<p><strong>1.</strong> First toast — sticky.</p>
 				<button
 					type="button"
@@ -323,8 +331,8 @@ const toast = useToast(ref) // default autohide
 				>
 					×
 				</button>
-			</output>
-			<output ref="stack2Ref" popover class="information">
+			</div>
+			<div ref="stack2Ref" role="status" popover class="information">
 				<p><strong>2.</strong> Middle toast — sticky. Hide me to see the others reflow.</p>
 				<button
 					type="button"
@@ -334,8 +342,8 @@ const toast = useToast(ref) // default autohide
 				>
 					×
 				</button>
-			</output>
-			<output ref="stack3Ref" popover class="information">
+			</div>
+			<div ref="stack3Ref" role="status" popover class="information">
 				<p><strong>3.</strong> Last toast — sticky.</p>
 				<button
 					type="button"
@@ -345,7 +353,7 @@ const toast = useToast(ref) // default autohide
 				>
 					×
 				</button>
-			</output>
+			</div>
 		</div>
 	</section>
 
@@ -371,32 +379,32 @@ const toast = useToast(ref) // default autohide
 				<li><button type="button" @click="hideAllDeck">Hide all 5</button></li>
 				<li><button type="button" @click="deck1.hide()">Hide toast 1</button></li>
 			</menu>
-			<output ref="deck1Ref" popover class="information">
+			<div ref="deck1Ref" role="status" popover class="information">
 				<p><strong>1.</strong> Deck card.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="deck1.hide()">×</button>
-			</output>
-			<output ref="deck2Ref" popover class="information">
+			</div>
+			<div ref="deck2Ref" role="status" popover class="information">
 				<p><strong>2.</strong> Deck card.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="deck2.hide()">×</button>
-			</output>
-			<output ref="deck3Ref" popover class="information">
+			</div>
+			<div ref="deck3Ref" role="status" popover class="information">
 				<p><strong>3.</strong> Deck card.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="deck3.hide()">×</button>
-			</output>
-			<output ref="deck4Ref" popover class="information">
+			</div>
+			<div ref="deck4Ref" role="status" popover class="information">
 				<p><strong>4.</strong> Deck card.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="deck4.hide()">×</button>
-			</output>
-			<output ref="deck5Ref" popover class="information">
+			</div>
+			<div ref="deck5Ref" role="status" popover class="information">
 				<p><strong>5.</strong> Deck card.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="deck5.hide()">×</button>
-			</output>
+			</div>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre v-pre><code>&lt;div data-toast-stack class="end bottom"&gt;
-  &lt;output popover&gt;…&lt;/output&gt;
-  &lt;output popover&gt;…&lt;/output&gt;
+  &lt;div role="status" popover&gt;…&lt;/div&gt;
+  &lt;div role="status" popover&gt;…&lt;/div&gt;
   …
 &lt;/div&gt;
 
@@ -438,30 +446,30 @@ const toast = useToast(ref) // default autohide
 					<button type="button" class="danger" @click="variants.danger.show()">Danger</button>
 				</li>
 			</menu>
-			<output ref="vPrimary" popover class="primary top">
+			<div ref="vPrimary" role="status" popover class="primary top">
 				<p><strong>New release.</strong> Read the changelog.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="variants.primary.hide()">
 					×
 				</button>
-			</output>
-			<output ref="vSuccess" popover class="success top">
+			</div>
+			<div ref="vSuccess" role="status" popover class="success top">
 				<p><strong>Saved.</strong> Your changes are live.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="variants.success.hide()">
 					×
 				</button>
-			</output>
-			<output ref="vWarning" popover class="warning top">
+			</div>
+			<div ref="vWarning" role="status" popover class="warning top">
 				<p><strong>Heads up.</strong> Your session expires in 5 minutes.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="variants.warning.hide()">
 					×
 				</button>
-			</output>
-			<output ref="vDanger" popover class="danger top">
+			</div>
+			<div ref="vDanger" role="status" popover class="danger top">
 				<p><strong>Failed to fetch.</strong> Check your connection.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="variants.danger.hide()">
 					×
 				</button>
-			</output>
+			</div>
 		</div>
 	</section>
 
@@ -477,9 +485,9 @@ const toast = useToast(ref) // default autohide
 		<p>
 			<small>
 				Each corner toast lives in its <strong>own trigger panel</strong> — the factory computes
-				<code>--set-toast-stack-offset</code> across an <code>&lt;output popover&gt;</code>'s DOM
-				siblings, so co-locating toasts at different corners inside one container would have them
-				shift each other.
+				<code>--set-toast-stack-offset</code> across a toast
+				<code>&lt;div role="status" popover&gt;</code>'s DOM siblings, so co-locating toasts at
+				different corners inside one container would have them shift each other.
 			</small>
 		</p>
 		<div class="showcase-toast-trigger-grid">
@@ -489,7 +497,7 @@ const toast = useToast(ref) // default autohide
 					<li><button type="button" @click="corners.bottomEnd.show()">Show</button></li>
 					<li><button type="button" @click="corners.bottomEnd.hide()">Hide</button></li>
 				</menu>
-				<output ref="cBottomEnd" popover class="information">
+				<div ref="cBottomEnd" role="status" popover class="information">
 					<p><strong>Bottom-end.</strong> Default corner — viewport bottom-right (LTR).</p>
 					<button
 						type="button"
@@ -499,7 +507,7 @@ const toast = useToast(ref) // default autohide
 					>
 						×
 					</button>
-				</output>
+				</div>
 			</div>
 			<div class="showcase-toast-trigger">
 				<small class="showcase-renders-at">Renders at <code>bottom-start</code></small>
@@ -507,7 +515,7 @@ const toast = useToast(ref) // default autohide
 					<li><button type="button" @click="corners.bottomStart.show()">Show</button></li>
 					<li><button type="button" @click="corners.bottomStart.hide()">Hide</button></li>
 				</menu>
-				<output ref="cBottomStart" popover class="information start">
+				<div ref="cBottomStart" role="status" popover class="information start">
 					<p><strong>Bottom-start.</strong> Viewport bottom-left (LTR) / bottom-right (RTL).</p>
 					<button
 						type="button"
@@ -517,7 +525,7 @@ const toast = useToast(ref) // default autohide
 					>
 						×
 					</button>
-				</output>
+				</div>
 			</div>
 			<div class="showcase-toast-trigger">
 				<small class="showcase-renders-at">Renders at <code>top-end</code></small>
@@ -525,12 +533,12 @@ const toast = useToast(ref) // default autohide
 					<li><button type="button" @click="corners.topEnd.show()">Show</button></li>
 					<li><button type="button" @click="corners.topEnd.hide()">Hide</button></li>
 				</menu>
-				<output ref="cTopEnd" popover class="information top">
+				<div ref="cTopEnd" role="status" popover class="information top">
 					<p><strong>Top-end.</strong> Viewport top-right (LTR).</p>
 					<button type="button" class="subtle" aria-label="Dismiss" @click="corners.topEnd.hide()">
 						×
 					</button>
-				</output>
+				</div>
 			</div>
 			<div class="showcase-toast-trigger">
 				<small class="showcase-renders-at">Renders at <code>top-start</code></small>
@@ -538,7 +546,7 @@ const toast = useToast(ref) // default autohide
 					<li><button type="button" @click="corners.topStart.show()">Show</button></li>
 					<li><button type="button" @click="corners.topStart.hide()">Hide</button></li>
 				</menu>
-				<output ref="cTopStart" popover class="information start top">
+				<div ref="cTopStart" role="status" popover class="information start top">
 					<p><strong>Top-start.</strong> Viewport top-left (LTR).</p>
 					<button
 						type="button"
@@ -548,22 +556,22 @@ const toast = useToast(ref) // default autohide
 					>
 						×
 					</button>
-				</output>
+				</div>
 			</div>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre v-pre><code>&lt;!-- Default: bottom-end --&gt;
-&lt;output popover&gt;…&lt;/output&gt;
+&lt;div role="status" popover&gt;…&lt;/div&gt;
 
 &lt;!-- Bottom-start --&gt;
-&lt;output popover class="start"&gt;…&lt;/output&gt;
+&lt;div role="status" popover class="start"&gt;…&lt;/div&gt;
 
 &lt;!-- Top-end --&gt;
-&lt;output popover class="top"&gt;…&lt;/output&gt;
+&lt;div role="status" popover class="top"&gt;…&lt;/div&gt;
 
 &lt;!-- Top-start --&gt;
-&lt;output popover class="start top"&gt;…&lt;/output&gt;</code></pre>
+&lt;div role="status" popover class="start top"&gt;…&lt;/div&gt;</code></pre>
 		</details>
 	</section>
 
@@ -598,7 +606,7 @@ const toast = useToast(ref) // default autohide
 					</button>
 				</li>
 			</menu>
-			<output ref="bandHeaderRef" popover class="success">
+			<div ref="bandHeaderRef" role="status" popover class="success">
 				<header>
 					<strong>Deployment complete</strong>
 					<button type="button" class="subtle" aria-label="Dismiss" @click="bandHeader.hide()">
@@ -609,8 +617,8 @@ const toast = useToast(ref) // default autohide
 					Build <code>v1.4.2</code> shipped to production at 14:32 UTC. Logs and rollback are in the
 					dashboard.
 				</p>
-			</output>
-			<output ref="bandFooterRef" popover class="warning">
+			</div>
+			<div ref="bandFooterRef" role="status" popover class="warning">
 				<p>
 					<strong>Session expiring.</strong> You'll be signed out in 5 minutes unless you extend the
 					session.
@@ -621,27 +629,27 @@ const toast = useToast(ref) // default autohide
 						×
 					</button>
 				</footer>
-			</output>
+			</div>
 		</div>
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre v-pre><code>&lt;!-- Header band --&gt;
-&lt;output popover class="success"&gt;
+&lt;div role="status" popover class="success"&gt;
   &lt;header&gt;
     &lt;strong&gt;Deployment complete&lt;/strong&gt;
     &lt;button class="subtle" aria-label="Dismiss"&gt;×&lt;/button&gt;
   &lt;/header&gt;
   &lt;p&gt;Build v1.4.2 shipped …&lt;/p&gt;
-&lt;/output&gt;
+&lt;/div&gt;
 
 &lt;!-- Footer band --&gt;
-&lt;output popover class="warning"&gt;
+&lt;div role="status" popover class="warning"&gt;
   &lt;p&gt;Session expiring …&lt;/p&gt;
   &lt;footer&gt;
     &lt;button class="warning small"&gt;Extend session&lt;/button&gt;
     &lt;button class="subtle" aria-label="Dismiss"&gt;×&lt;/button&gt;
   &lt;/footer&gt;
-&lt;/output&gt;</code></pre>
+&lt;/div&gt;</code></pre>
 		</details>
 	</section>
 
@@ -671,21 +679,21 @@ const toast = useToast(ref) // default autohide
 					<button type="button" @click="noSwipe.show()">Show NON-swipeable (control)</button>
 				</li>
 			</menu>
-			<output ref="swipeRef" popover class="success">
+			<div ref="swipeRef" role="status" popover class="success">
 				<p>
 					<strong>Drag me.</strong> Swipe left or right past 80 px to dismiss, or use the
 					<code>×</code> button. Button clicks survive — the factory rejects pointer-down on
 					trailing controls.
 				</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="swipe.hide()">×</button>
-			</output>
-			<output ref="noSwipeRef" popover class="warning">
+			</div>
+			<div ref="noSwipeRef" role="status" popover class="warning">
 				<p>
 					<strong>Swipe disabled.</strong> This toast was constructed with
 					<code>swipe: false</code>; dragging does nothing.
 				</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="noSwipe.hide()">×</button>
-			</output>
+			</div>
 			<small class="showcase-lifecycle-log">
 				<strong>Lifecycle log:</strong>
 				<span v-if="swipeLog.length === 0">open the toast and swipe it to either side</span>
@@ -699,10 +707,10 @@ const toast = useToast(ref) // default autohide
   swipe: { threshold: 80 }, // default; pass `false` to opt out
 })
 
-&lt;output ref="ref" popover&gt;
+&lt;div ref="ref" role="status" popover&gt;
   &lt;p&gt;Drag me…&lt;/p&gt;
   &lt;button aria-label="Dismiss"&gt;×&lt;/button&gt;
-&lt;/output&gt;</code></pre>
+&lt;/div&gt;</code></pre>
 		</details>
 	</section>
 
@@ -731,12 +739,12 @@ const toast = useToast(ref) // default autohide
 					<button type="button" @click="lifecycle.hide()">Hide</button>
 				</li>
 			</menu>
-			<output ref="lifecycleRef" popover>
+			<div ref="lifecycleRef" role="status" popover>
 				<p><strong>Lifecycle toast.</strong> Toggle the checkbox to veto the next open.</p>
 				<button type="button" class="subtle" aria-label="Dismiss" @click="lifecycle.hide()">
 					×
 				</button>
-			</output>
+			</div>
 			<small class="showcase-lifecycle-log">
 				<strong>Lifecycle log:</strong>
 				<span v-if="lifecycleLog.length === 0">flip the checkbox and click Try to show</span>
@@ -750,8 +758,9 @@ const toast = useToast(ref) // default autohide
 		<dl>
 			<dt><code>useToast(elementRef, options?): UseToastReturn</code></dt>
 			<dd>
-				Composable. <code>elementRef</code> MUST point at an <code>HTMLOutputElement</code> — the
-				factory throws on mismatch.
+				Composable. <code>elementRef</code> MUST point at an <code>HTMLDivElement</code> — the
+				factory throws on mismatch and sets <code>role="status"</code> (the polite live-region
+				announcement semantic) if you didn't.
 			</dd>
 			<dt><code>options.autohide</code></dt>
 			<dd>
@@ -785,8 +794,9 @@ const toast = useToast(ref) // default autohide
 
 <style scoped>
 /* Trigger panel — the consumer's surface that emits toasts. Holds the
- * buttons + the `<output popover>` elements as DOM siblings (the factory
- * reads `parentElement.children` for stack grouping). The toast itself
+ * buttons + the `<div role="status" popover>` toast elements as DOM
+ * siblings (the factory reads `parentElement.children` for stack
+ * grouping). The toast itself
  * elevates to the top layer and renders at the viewport corner indicated
  * by its placement modifier — NOT inside this box. The `.showcase-renders-at`
  * caption tells the reader where to look. */

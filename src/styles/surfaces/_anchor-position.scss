@@ -36,14 +36,19 @@
 // so a bare popover lands somewhere sensible without extra classes.
 //
 // What about toasts?
-//   Toasts are `output[popover='manual']` and want viewport-fixed corner
-//   placement, not anchor-positioning. The toast component partial
+//   Toasts are `[popover][role="status"]` (a `<div role="status"
+//   popover="manual">`) and want viewport-fixed corner placement, not
+//   anchor-positioning. The toast component partial
 //   (`components/_output.scss`) overrides position with explicit
 //   `position: fixed; inset-*` values; @layer components beats @layer
 //   surfaces so the toast wins regardless of selector specificity.
-//   Manual popovers that aren't toasts (e.g. a `<div popover="manual">`
-//   tied to a `<button popovertarget>`) get the standard anchor-position
-//   behavior — exactly what consumers expect.
+//   Manual popovers that aren't toasts (e.g. a bare `<div
+//   popover="manual">` WITHOUT `role="status"`, tied to a `<button
+//   popovertarget>`) get the standard anchor-position behavior — exactly
+//   what consumers expect. The `role="status"` is the toast
+//   discriminator (it is `<output>`'s implicit role; the toast root moved
+//   off `<output>` because a toast renders flow content `<output>`'s
+//   content model forbids).
 //
 // Quirks:
 //   - `position-try-fallbacks` lets the browser flip the popover to the
@@ -184,13 +189,13 @@
 	// Placement modifiers (.top / .bottom-start / etc.) override the area
 	// + alignment per-host without re-stating the gap or fallback list.
 	//
-	// Toasts (`output[popover]`) override this entirely with `position:
-	// fixed` + viewport corner insets via the components-layer rule — that
-	// rule wins because @layer components beats @layer surfaces.
+	// Toasts (`[popover][role="status"]`) override this entirely with
+	// `position: fixed` + viewport corner insets via the components-layer
+	// rule — that rule wins because @layer components beats @layer surfaces.
 	// --------------------------------------------------------------------------
-	// `:not(:where(aside, dialog, nav, output))` scopes the surface defaults to anchor-
-	// anchored popovers and tooltips. Four exclusions, each with its own
-	// non-anchor placement geometry:
+	// `:not(:where(aside, dialog, nav, [role="status"]))` scopes the surface
+	// defaults to anchor-anchored popovers and tooltips. Four exclusions,
+	// each with its own non-anchor placement geometry:
 	//   - `<aside popover>` (drawers / offcanvas) — full-viewport-edge
 	//     slide-in panels (see `components/_aside.scss` for the drawer
 	//     geometry + per-edge slide transforms).
@@ -199,15 +204,21 @@
 	//     positioning would fight that centering.
 	//   - `<nav popover>` — site navigation / menu panels use their own
 	//     placement chrome (see `components/_nav.scss`).
-	//   - `<output popover>` (toasts) — corner-anchored notifications
-	//     with `position: fixed` + viewport-corner insets.
+	//   - `[popover][role="status"]` (toasts) — corner-anchored
+	//     notifications with `position: fixed` + viewport-corner insets.
+	//     A popover that ALSO carries `role="status"` is unambiguously a
+	//     toast (no other framework popover surface declares that role),
+	//     so this exclusion is exact and does NOT broaden to non-popover
+	//     status regions (`<aside role="status">` alerts, `<span
+	//     role="status">` spinners) — those are not `[popover]` so they
+	//     never matched this `[popover]` rule in the first place.
 	// All four override `position: absolute` to `position: fixed` (or
 	// rely on the UA top-layer placement) with explicit insets. Cascade
 	// order (theme < base < elements < components < surfaces < modifiers
 	// < utilities) means the SURFACES layer wins over components when
 	// selectors collide; excluding the four here lets their component-
 	// layer rules resolve without `!important` or layer reshuffling.
-	[popover]:not(:where(aside, dialog, nav, output)) {
+	[popover]:not(:where(aside, dialog, nav, [role='status'])) {
 		// Take the panel out of normal flow. Top-layer popovers default
 		// to `position: fixed` (pinned to viewport coordinates), which
 		// means scrolling a nested ancestor doesn't relayout the popover.

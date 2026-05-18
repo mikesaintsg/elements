@@ -26,11 +26,18 @@ import { createPointer } from './createPointer.js'
 import { createPopover } from './createPopover.js'
 
 /**
- * Framework-agnostic toast factory. Bound to `<output>` because the toast
- * surface (`src/styles/surfaces/_anchor-position.scss` exclusion +
- * `src/styles/components/_toast.scss` rule) scopes itself with
- * `output[popover]` — that keeps toast's component-layer `position: fixed`
- * from being beat by the surface-layer popover positioning.
+ * Framework-agnostic toast factory. Bound to `<div role="status">`: a toast
+ * renders flow content (`<header>` + `<p>` bands), which `<output>`'s
+ * phrasing-only HTML content model forbids. `role="status"` IS `<output>`'s
+ * implicit ARIA role (a polite, atomic live region), so the screen-reader
+ * announcement semantic is preserved EXACTLY while the element accepts the
+ * flow content the toast actually renders. The toast surface
+ * (`src/styles/surfaces/_anchor-position.scss` exclusion +
+ * `src/styles/components/_output.scss` rule) scopes itself with
+ * `[popover][role="status"]` — the only popover the framework gives
+ * `role="status"`, so the scope is exact (non-broadening) and keeps the
+ * toast's component-layer `position: fixed` from being beat by the
+ * surface-layer popover positioning.
  *
  * Composes `createPopover` for native top-layer visibility, owns the
  * autohide timer (paused while the pointer hovers / focus is inside),
@@ -44,13 +51,20 @@ import { createPopover } from './createPopover.js'
  *   - `--set-toast-stack-offset` per-toast cumulative offset (linear mode).
  *   - `--set-toast-front-height` deck-mode shared height (written here).
  *
- * Element gating: throws if the host is not `<output>`.
+ * Element gating: throws if the host is not a `<div>`. The factory sets
+ * `role="status"` if the consumer didn't, so the live-region contract holds
+ * regardless of markup discipline.
  */
 export function createToast(
-	element: HTMLOutputElement,
+	element: HTMLDivElement,
 	options: CreateToastOptions = {},
 ): CreateToastInstance {
-	assertElement<HTMLOutputElement>(element, 'output', 'createToast')
+	assertElement<HTMLDivElement>(element, 'div', 'createToast')
+	// `role="status"` is `<output>`'s implicit role — set it so the toast is
+	// a polite, atomic live region (the AT semantic the old `<output>` root
+	// carried for free) AND so the chrome selector `[popover][role="status"]`
+	// matches. Idempotent: respects a consumer-set role.
+	if (!element.hasAttribute('role')) element.setAttribute('role', 'status')
 
 	const auto = options.autohide !== false
 	const delay = options.autohide === false ? 0 : (options.autohide?.delay ?? DEFAULT_TOAST_DELAY_MS)
@@ -98,8 +112,9 @@ export function createToast(
 		if (!container) return
 
 		const toasts = Array.from(container.children).filter(
-			(child): child is HTMLOutputElement =>
-				child instanceof HTMLOutputElement &&
+			(child): child is HTMLDivElement =>
+				child instanceof HTMLDivElement &&
+				child.getAttribute('role') === 'status' &&
 				child.hasAttribute('popover') &&
 				child.matches(':popover-open'),
 		)
@@ -309,11 +324,11 @@ export function createToast(
 				// action buttons (`<button class="warning">Extend
 				// session</button>`), and rich toasts might contain
 				// `<a>` links or inputs. The `closest()` walk stops at
-				// the toast itself if it doesn't match — `<output>`
-				// isn't in the interactive set, so a pointer-down on a
-				// non-interactive descendant (paragraph text, decorative
-				// `<span>`, the `<header>` band background) correctly
-				// engages the swipe.
+				// the toast itself if it doesn't match — the toast root
+				// `<div role="status">` isn't in the interactive set, so
+				// a pointer-down on a non-interactive descendant
+				// (paragraph text, decorative `<span>`, the `<header>`
+				// band background) correctly engages the swipe.
 				const target = event.target
 				if (
 					target instanceof Element &&

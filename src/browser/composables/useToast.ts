@@ -5,18 +5,22 @@ import { createToast } from '../factories/createToast.js'
 
 /**
  * Toast composable. Vue adapter over `createToast` — resolves the
- * `Ref<HTMLOutputElement | null>` and delegates the autohide pipeline,
+ * `Ref<HTMLDivElement | null>` and delegates the autohide pipeline,
  * stack-deck layout, and event lifecycle to the framework-agnostic
  * factory.
  *
- * Element gating: the host MUST be `<output>` (HTMLOutputElement). The
- * toast surface in `_anchor-position.scss` exclusively scopes itself
- * around `output[popover]` so this gate is non-negotiable.
+ * Element gating: the host MUST be a `<div>` (HTMLDivElement). A toast
+ * renders flow content (`<header>` + `<p>` bands) that `<output>`'s
+ * phrasing-only content model forbids; the factory sets `role="status"`
+ * (`<output>`'s implicit role — an atomic polite live region) so the
+ * announcement semantic is preserved while the element accepts flow
+ * content. The toast surface in `_anchor-position.scss` /
+ * `components/_output.scss` scopes itself around `[popover][role="status"]`.
  *
  * @see src/browser/factories/createToast.ts
  */
 export function useToast(
-	elementRef: Ref<HTMLOutputElement | null>,
+	elementRef: Ref<HTMLDivElement | null>,
 	options: UseToastOptions = {},
 ): UseToastReturn {
 	const factory = shallowRef<CreateToastInstance | null>(null)

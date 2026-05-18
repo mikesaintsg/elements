@@ -104,9 +104,10 @@ describe('anchor-position — applies to every popover flavour', () => {
 		// Manual popovers used to be excluded; that meant a bare
 		// `<div popover="manual">` defaulted to UA top-left placement,
 		// which is awful UX. Now they consume the same anchor surface as
-		// auto / hint. The toast component overrides this via @layer
-		// components (selector `output[popover]`); see the toast test
-		// below for the override path.
+		// auto / hint. A bare `<div popover>` WITHOUT `role="status"` is
+		// NOT a toast, so it gets the anchor surface (the toast component
+		// overrides this only for `[popover][role="status"]` via @layer
+		// components; see the toast test below for the override path).
 		const div = build('div')
 		div.setAttribute('popover', 'manual')
 		div.id = 'manual-anchor'
@@ -115,17 +116,22 @@ describe('anchor-position — applies to every popover flavour', () => {
 	})
 })
 
-describe('anchor-position — toast (output[popover]) excluded from surface defaults', () => {
-	it('an `output[popover=manual]` keeps the toast component-layer `position: fixed`', () => {
-		const out = build('output')
-		out.setAttribute('popover', 'manual')
-		out.id = 'toast-anchor'
-		mount(out)
-		// The surface rule scopes itself with `:not(output)` so toast's
-		// component-layer `position: fixed` resolves cleanly. Without the
-		// scope, the surface `[popover] { position: absolute }` would
-		// win because surfaces layer beats components in our cascade
+describe('anchor-position — toast ([popover][role="status"]) excluded from surface defaults', () => {
+	it('a `<div role="status" popover="manual">` keeps the toast component-layer `position: fixed`', () => {
+		// The toast root is `<div role="status">` (a toast renders flow
+		// content `<output>`'s phrasing-only content model forbids;
+		// `role="status"` is `<output>`'s implicit role so the polite
+		// live-region announcement semantic is preserved). The surface
+		// rule scopes itself with `:not(:where(…, [role="status"]))` so
+		// toast's component-layer `position: fixed` resolves cleanly.
+		// Without the scope, the surface `[popover] { position: absolute }`
+		// would win because surfaces layer beats components in our cascade
 		// order (theme < base < elements < components < surfaces).
-		expect(style(out, 'position').trim()).toBe('fixed')
+		const toast = build('div')
+		toast.setAttribute('role', 'status')
+		toast.setAttribute('popover', 'manual')
+		toast.id = 'toast-anchor'
+		mount(toast)
+		expect(style(toast, 'position').trim()).toBe('fixed')
 	})
 })

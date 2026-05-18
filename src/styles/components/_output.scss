@@ -1,42 +1,53 @@
 // ============================================================================
-// output (toast / status banner) — `<output>` promoted to a notification.
+// toast / status banner — `<div role="status">` notification surface.
 //
-// `<output>` already carries `role="status"` implicitly (per ARIA's "calc
-// result" semantics, which is a polite live region) — that's the perfect
-// root for a toast / status announcement: screen-readers pick up changes
-// without `aria-live` boilerplate. The element baseline in
-// `elements/_output.scss` styles bare `<output>` as an inline calculation
-// chip; this component layer extends two specific shapes on top:
+// A toast renders FLOW content: a `<header>` / `<footer>` band, paragraphs,
+// action buttons. `<output>`'s HTML content model is phrasing-only, so
+// `<output>` cannot host that markup conformantly. The root is therefore a
+// `<div>` carrying `role="status"` — which is `<output>`'s OWN implicit
+// ARIA role (an atomic, polite live region): screen-readers pick up the
+// toast text without `aria-live` boilerplate, the exact announcement
+// semantic the `<output>` root previously provided, now on an element whose
+// content model accepts the flow content the toast actually renders. (The
+// bare `<output>` calc-result chip is unrelated and keeps its own baseline
+// in `elements/_output.scss`.)
 //
-//   1. `<output popover>` (preferred for toasts) — top-layer floating
-//      banner. `popover="manual"` gives the consumer full control of
-//      open/close (no light-dismiss); the framework adopts it without
-//      caring which value the consumer picked. Position is fixed at the
-//      configured corner via the placement modifier (.start / .end /
-//      .top / .bottom — bottom-end is the conventional default).
+// This component layer paints two toast shapes:
 //
-//   2. `<output role="status">` without `popover` — in-flow banner that
-//      reads inside the page rather than floating. Useful for inline
-//      success / info messages (e.g. inside an `<aside>` rail or beneath
-//      a form). Same banner layout, no top-layer adoption.
+//   1. `[popover][role="status"]` (preferred) — top-layer floating banner.
+//      `popover="manual"` gives the consumer full control of open/close
+//      (no light-dismiss); the framework adopts it without caring which
+//      value the consumer picked. Position is fixed at the configured
+//      corner via the placement modifier (.start / .end / .top / .bottom —
+//      bottom-end is the conventional default). A popover that ALSO carries
+//      `role="status"` is unambiguously a toast (no other framework popover
+//      surface declares that role), so the selector scope is exact and does
+//      NOT broaden to every `[role="status"]` on the page.
+//
+//   2. `div[role="status"]` without `popover` — in-flow banner that reads
+//      inside the page rather than floating. Useful for inline success /
+//      info messages (e.g. inside an `<aside>` rail or beneath a form).
+//      Same banner layout, no top-layer adoption. Scoped to `div` so it
+//      never collides with `<aside role="status">` (alert chrome lives in
+//      `components/_aside.scss`) or `<span role="status">` (spinner).
 //
 // Markup contract:
-//   <output popover="manual" id="save-toast" class="end">
-//     ✓ Document saved
-//   </output>
+//   <div role="status" popover="manual" id="save-toast" class="end">
+//     <p>✓ Document saved</p>
+//   </div>
 //   <button popovertarget="save-toast">Save</button>
 //
-// Composable wiring (Phase 6 `useToast`): the composable opens / closes
-// via `showPopover()` / `hidePopover()`, manages the autohide timer, and
-// stacks multiple toasts into a corner. The framework's job here is the
-// chrome only.
+// Composable wiring (`useToast`): the composable opens / closes via
+// `showPopover()` / `hidePopover()`, manages the autohide timer, and
+// stacks multiple toasts into a corner. `createToast` sets `role="status"`
+// if the consumer didn't, so the live-region contract holds regardless of
+// markup discipline. The framework's job here is the chrome only.
 //
 // Quirks:
-//   - When `<output>` is `popover`-promoted, browsers replace its
-//     in-flow display with the top-layer rendering. Only top-layer
-//     rendering + the open/close display flip come from the popover
-//     surface (`surfaces/_popover.scss`); the toast paints its OWN
-//     surface.
+//   - When the toast is `popover`-promoted, browsers replace its in-flow
+//     display with the top-layer rendering. Only top-layer rendering + the
+//     open/close display flip come from the popover surface
+//     (`surfaces/_popover.scss`); the toast paints its OWN surface.
 //   - Toast is a DELIBERATE, documented deviation from the bare
 //     `--set-popover-*` panel: it declares a full `--set-toast-*` token
 //     family (color / bg / border / border-radius / padding / box-
@@ -44,13 +55,18 @@
 //     stacked notification shape — a distinct floating surface, not the
 //     panel with overrides. See guides/surfaces.md § "Floating surface
 //     family" for the canonical-vs-deviation map.
+//   - This partial keeps the `_output.scss` filename for cascade-order
+//     stability (it loaded after `_aside.scss` so toast band chrome beats
+//     the alert band defaults on shared selectors); the toast root is no
+//     longer an `<output>` but the filename is an index key, not a
+//     semantic claim.
 // ============================================================================
 
 @use '../mixins' as *;
 
 @layer components {
 	// Toast tokens declare on `:root` so they're globally resolvable —
-	// `<output popover>` consumers may sit anywhere in the DOM. The
+	// `<div role="status" popover>` consumers may sit anywhere in the DOM. The
 	// element-scoped chrome below consumes these defaults; modifier
 	// cascades (variant / size / style) thread through normally because
 	// the rule consumes `var(--set-style-…, var(--set-variant-…, fallback))`
@@ -121,10 +137,10 @@
 		// stacking (the browser owns that), but the deck rule applies
 		// `z-index: calc(var(--set-toast-z-index) - var(--set-toast-
 		// stack-index))` per card so consumers who choose to render a
-		// non-popover toast (`output[role='status']` outside the deck)
+		// non-popover toast (`div[role='status']` outside the deck)
 		// can pin a sensible value too.
 		--set-toast-z-index: 1090;
-		// Header / footer band chrome — `output[popover]:has(> header)`
+		// Header / footer band chrome — `[popover][role='status']:has(> header)`
 		// and `:has(> footer)` switch to flex-column with banded chrome
 		// (mirrors `aside[role='alert']`'s pattern). The band tint
 		// resolves from `currentColor` so it adapts to the active
@@ -147,8 +163,9 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// Toast root — `<output popover>` OR `<output role="status">` standalone
-	// (i.e. NOT the inline calc-chip case from `_output.scss`).
+	// Toast root — `<div role="status" popover>` OR standalone
+	// `<div role="status">` (i.e. the toast surface, distinct from the bare
+	// `<output>` calc-chip baseline in `elements/_output.scss`).
 	//
 	// Two-rule split is intentional. `display: flex` MUST be gated on
 	// `:popover-open` for the popover-mode toast; an unconditional
@@ -162,19 +179,19 @@
 	// the popover surface's discrete-transition tail (display:none →
 	// block transition with `transition-behavior: allow-discrete` keeps
 	// the element in the render tree for ~150 ms after `hidePopover()`).
-	// `output[role='status']:not(.filled)` is the non-popover live-region
+	// `div[role='status']:not([popover]):not(.filled)` is the non-popover live-region
 	// flavour — it has no open/closed lifecycle, so it stays in both
 	// rules ungated.
 	// --------------------------------------------------------------------------
-	output[popover]:popover-open,
-	output[role='status']:not(.filled) {
+	[popover][role='status']:popover-open,
+	div[role='status']:not([popover]):not(.filled) {
 		display: flex;
 		align-items: center;
 		gap: var(--set-toast-gap);
 	}
 
-	output[popover],
-	output[role='status']:not(.filled) {
+	[popover][role='status'],
+	div[role='status']:not([popover]):not(.filled) {
 		// Floater-bounds — TAKE the smaller of the design width
 		// (`--set-toast-inline-size`) and the framework's viewport budget
 		// (`--set-floater-max-inline-size`, dvw minus safe-area-aware
@@ -220,8 +237,8 @@
 	// the toast's variant chrome without a follow-up edit here.
 	// --------------------------------------------------------------------------
 	@each $variant in (primary, secondary, tertiary, success, warning, danger, information) {
-		output[popover].#{$variant},
-		output[role='status'].#{$variant}:not(.filled) {
+		[popover][role='status'].#{$variant},
+		div[role='status']:not([popover]).#{$variant}:not(.filled) {
 			--set-toast-color: var(--color-#{$variant}-text-emphasis);
 			--set-toast-background-color: var(--color-#{$variant}-bg-subtle);
 			--set-toast-border-color: var(--color-#{$variant}-border-subtle);
@@ -235,7 +252,7 @@
 	// placement modifiers `.start`, `.end`, `.top`, `.bottom` flip the
 	// corner without classes specific to "toast".
 	// --------------------------------------------------------------------------
-	output[popover] {
+	[popover][role='status'] {
 		position: fixed;
 		// Reset top-layer adoption insets so our explicit edges win.
 		inset: auto;
@@ -274,9 +291,9 @@
 	// a rounded toast.
 	//
 	// Selector specificity note: `:popover-open` is REQUIRED on the
-	// `output[popover]:has(> …)` band-mode selectors so the rule outranks
+	// `[popover][role='status']:has(> …)` band-mode selectors so the rule outranks
 	// the open-state row layout above
-	// (`output[popover]:popover-open` paints `display: flex` +
+	// (`[popover][role='status']:popover-open` paints `display: flex` +
 	// `align-items: center`; without `:popover-open` on the band-mode rule,
 	// `:has(> header)` carries only `(0,0,1)` arg specificity vs
 	// `:popover-open`'s `(0,1,0)`, and the open-state's `align-items: center`
@@ -285,25 +302,25 @@
 	// band edge-to-edge of the toast's border-box).
 	//
 	// Rules live in components/ rather than composables/ because they
-	// describe `<output>`'s structural chrome (the same shape applies
+	// describe the toast's structural chrome (the same shape applies
 	// whether the toast is opened by `useToast` or driven manually) —
 	// matches the `<aside role="alert">` band rules that also live in
 	// `components/_aside.scss`.
 	// --------------------------------------------------------------------------
-	output[popover]:popover-open:has(> header),
-	output[popover]:popover-open:has(> footer),
-	output[role='status']:not(.filled):has(> header),
-	output[role='status']:not(.filled):has(> footer) {
+	[popover][role='status']:popover-open:has(> header),
+	[popover][role='status']:popover-open:has(> footer),
+	div[role='status']:not([popover]):not(.filled):has(> header),
+	div[role='status']:not([popover]):not(.filled):has(> footer) {
 		flex-direction: column;
 		align-items: stretch;
 		gap: var(--set-toast-gap);
 		overflow: hidden;
 	}
 
-	output[popover] > header:first-child,
-	output[popover] > footer:last-child,
-	output[role='status']:not(.filled) > header:first-child,
-	output[role='status']:not(.filled) > footer:last-child {
+	[popover][role='status'] > header:first-child,
+	[popover][role='status'] > footer:last-child,
+	div[role='status']:not([popover]):not(.filled) > header:first-child,
+	div[role='status']:not([popover]):not(.filled) > footer:last-child {
 		display: flex;
 		align-items: center;
 		gap: var(--set-toast-gap);
@@ -324,28 +341,29 @@
 		}
 	}
 
-	output[popover] > header:first-child,
-	output[role='status']:not(.filled) > header:first-child {
+	[popover][role='status'] > header:first-child,
+	div[role='status']:not([popover]):not(.filled) > header:first-child {
 		// Bleed past the toast's block-start padding so the header sits
 		// flush against the toast's top edge.
 		margin-block-start: calc(var(--set-toast-padding-block) * -1);
 		border-block-end: 1px solid var(--set-toast-band-border-color);
 	}
 
-	output[popover] > footer:last-child,
-	output[role='status']:not(.filled) > footer:last-child {
+	[popover][role='status'] > footer:last-child,
+	div[role='status']:not([popover]):not(.filled) > footer:last-child {
 		margin-block-end: calc(var(--set-toast-padding-block) * -1);
 		border-block-start: 1px solid var(--set-toast-band-border-color);
 	}
 
 	// Variant-context reset for trailing dismiss / close buttons across
-	// EVERY toast slot — body row (`<output popover> > button:last-child`)
-	// AND banded header / footer (`> header > button:last-child` /
-	// `> footer > button:last-child`). Mirrors the aside-alert pattern
-	// (`components/_aside.scss` line 342) so the dismiss reads as a quiet
-	// icon regardless of the surface variant. Without this reset, a
-	// `<output class="warning">` would propagate its yellow variant tokens
-	// down into the dismiss `<button>` and paint the close affordance
+	// EVERY toast slot — body row
+	// (`[popover][role="status"] > button:last-child`) AND banded header /
+	// footer (`> header > button:last-child` / `> footer > button:last-
+	// child`). Mirrors the aside-alert pattern (`components/_aside.scss`
+	// line 342) so the dismiss reads as a quiet icon regardless of the
+	// surface variant. Without this reset, a `<div role="status"
+	// class="warning">` would propagate its yellow variant tokens down
+	// into the dismiss `<button>` and paint the close affordance
 	// filled-yellow.
 	//
 	// Covers the bare-variant tier AND the `.subtle` modifier tier so
@@ -356,12 +374,12 @@
 	// close button"; folded in here so all dismiss chrome is in one
 	// rule and consumers driving the toast manually (without `useToast`)
 	// get the same affordance.
-	output[popover] > button:last-child,
-	output[popover] > header > button:last-child,
-	output[popover] > footer > button:last-child,
-	output[role='status']:not(.filled) > button:last-child,
-	output[role='status']:not(.filled) > header > button:last-child,
-	output[role='status']:not(.filled) > footer > button:last-child {
+	[popover][role='status'] > button:last-child,
+	[popover][role='status'] > header > button:last-child,
+	[popover][role='status'] > footer > button:last-child,
+	div[role='status']:not([popover]):not(.filled) > button:last-child,
+	div[role='status']:not([popover]):not(.filled) > header > button:last-child,
+	div[role='status']:not([popover]):not(.filled) > footer > button:last-child {
 		margin-inline-start: auto;
 		flex-shrink: 0;
 		align-self: center;
