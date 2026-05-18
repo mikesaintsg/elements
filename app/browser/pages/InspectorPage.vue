@@ -341,13 +341,17 @@ function findingKey(finding: Finding): string {
 			The same <code>Inspector</code> over a DETACHED fixture — markup parsed into an off-document
 			<code>&lt;div&gt;</code> that is never inserted into the live page (so it can never affect
 			this page's own conformance). Every break is authored to survive HTML parsing intact. It
-			produces <strong>five real <code>error</code> findings across four rule families</strong>: a
+			produces <strong>six real <code>error</code> findings across four rule families</strong>: a
 			bare <code>&lt;div&gt;</code> child of <code>&lt;ul&gt;</code> and a
 			<code>&lt;span&gt;</code> child of
 			<code>&lt;dl&gt;</code> (<code>context/parent-model</code>), a
 			<code>&lt;button&gt;</code> inside an <code>&lt;a href&gt;</code> (both
-			<code>content/forbidden</code> and <code>transparent/interactive-descendant</code>), and a
-			second <code>&lt;figcaption&gt;</code> in a <code>&lt;figure&gt;</code>
+			<code>content/forbidden</code> and <code>transparent/interactive-descendant</code>), a second
+			<code>&lt;summary&gt;</code> in a <code>&lt;details&gt;</code> (<code
+				>content/cardinality</code
+			>
+			— its content model permits exactly one), and a second <code>&lt;figcaption&gt;</code> in a
+			<code>&lt;figure&gt;</code>
 			(<code>structure/edge-child</code>). Each becomes one scannable, spec-cited finding.
 		</p>
 		<menu>

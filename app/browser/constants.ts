@@ -1436,7 +1436,7 @@ export const INSPECTOR_SEVERITY_VARIANT: Readonly<Record<string, Variant>> = {
  * page and requires ZERO `error` findings. Every break below is authored
  * so the HTML parser PRESERVES it in a detached `<div>` (parser-corrected
  * shapes like a nested `<a>` or `<p><div>` are deliberately avoided — they
- * never reach the inspector). It produces FIVE real `error` findings
+ * never reach the inspector). It produces SIX real `error` findings
  * across FOUR distinct rule families (verified against the shipped
  * inspector via the live `/inspector` page):
  *   - `<ul><div>` — `context/parent-model` (`<ul>` admits only `<li>` +
@@ -1447,12 +1447,14 @@ export const INSPECTOR_SEVERITY_VARIANT: Readonly<Record<string, Variant>> = {
  *     forbidden interactive descendant) AND
  *     `transparent/interactive-descendant` (the `<button>` itself);
  *     `texts#the-a-element`.
+ *   - two `<summary>` in one `<details>` — `content/cardinality`
+ *     (`<details>`'s prefix content model "One summary element followed by
+ *     flow content." permits at most one `<summary>`; the second is a
+ *     tree-decidable content-model violation the inspector correctly flags;
+ *     `interactives#the-details-element`).
  *   - two `<figcaption>` in one `<figure>` — `structure/edge-child`
  *     (the trailing caption is at no permitted edge;
  *     `groupings#the-figcaption-element`).
- * The trailing `<details>` with two `<summary>` is structural noise the
- * walk still traverses WITHOUT a false positive — the dogfood property
- * holds even inside the dirty fixture.
  */
 export const INSPECTOR_DIRTY_FIXTURE = `<section>
   <ul>
@@ -1468,7 +1470,7 @@ export const INSPECTOR_DIRTY_FIXTURE = `<section>
   </p>
   <details>
     <summary>First summary</summary>
-    <summary>Second summary — details takes exactly one, first.</summary>
+    <summary>Second summary — a second summary is a content-model violation the inspector flags.</summary>
     <p>Disclosure body.</p>
   </details>
   <figure>
