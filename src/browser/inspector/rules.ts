@@ -26,6 +26,7 @@ import {
 	matchesTag,
 	nodePath,
 } from '../helpers.js'
+import { contains, getElementById } from '../traversals.js'
 import { ATTRIBUTE_ENUM_DOMAINS, ATTRIBUTE_INTEGER_BOUNDS } from '../constants.js'
 import {
 	CATEGORY_MEMBERS,
@@ -72,7 +73,7 @@ import {
 //  double-report — `structure/child-order` is GONE; `childModel` is the sole
 //  order owner).
 //
-//  Families (Phase 3 parts 1 + 2):
+//  Families (Phase 3 parts 1 + 2 + 3 — Phase 3 COMPLETE):
 //    - context      child tag the parent's `childModel` can never admit
 //                    (dom.html#content-models).
 //    - content      parent's `childModel` order/cardinality unsatisfied;
@@ -94,11 +95,19 @@ import {
 //                    (`coerceEnumAttribute` over `ATTRIBUTE_ENUM_DOMAINS`)
 //                    — generic, schema-data-driven, attribute-only (the
 //                    other families never read attributes ⇒ disjoint).
+//    - interaction  hidden / inert REFERENCE integrity — a non-hidden
+//                    `a[href="#id"]`/`label[for]`/`output[for]` referencing
+//                    a `hidden` target; an active referrer pointing into an
+//                    `[inert]` / modal-inert subtree (interactions.md §6.1 /
+//                    §6.3). Generic over the corpus-carded associations
+//                    (the `for` IDREF read via the schema `AttributeRule`),
+//                    reference resolution composed from `traversals`
+//                    (`getElementById` / `contains`). `dialog[tabindex]` is
+//                    deferred to the attribute family (no double-report).
 //
-//  Phase 3 part 3 (interaction family) and Phase 4 (FindingManager /
-//  Inspector / ContractShape) plug into THIS `RuleInterface` + `rules`
-//  registry unchanged — the contract is designed for them, not built here
-//  (YAGNI).
+//  Phase 4 (FindingManager / Inspector / ContractShape) plugs into THIS
+//  `RuleInterface` + `rules` registry unchanged — the contract is designed
+//  for it, not built here (YAGNI). Phase 3 is COMPLETE.
 // ============================================================================
 
 // ── Rule subject ────────────────────────────────────────────────────────────
@@ -1516,6 +1525,195 @@ const attributeEnumRule: RuleInterface = {
 	},
 }
 
+// ============================================================================
+//  Family: interaction — hidden / inert reference integrity (Phase 3.3).
+//
+//  Two corpus-stated reference-integrity rules a tree-walker can decide,
+//  GENERIC over the corpus-carded reference associations (NOT a per-element
+//  branch). The associations are the corpus's own list, resolved as DATA:
+//    - the hyperlink `a[href="#id"]` (interactions.md §6.1: "it would be
+//      incorrect to use the `href` attribute to link to a section marked
+//      with the `hidden` attribute");
+//    - the `for` IDREF carried as a SCHEMA `AttributeRule` on `label` /
+//      `output` (interactions.md §6.1: "The `for` attributes of `label` and
+//      `output` elements …") — read via the SAME `hasAttributeRule` schema
+//      accessor the attribute family uses, so the family stays schema-data-
+//      driven, never an `if (tag==='label')`.
+//  `aria-*` IDREFs are DELIBERATELY NOT a reference kind here: the corpus
+//  never cards an `aria-*` IDREF domain (the only `aria-*` it mentions is
+//  `aria-describedby`, and only to EXEMPT it from the hidden rule —
+//  interactions.md §6.1). Encoding an `aria-*` domain would invent one — the
+//  exact faithfulness line the Phase-3.2 `loading`/`crossorigin` omission
+//  drew ("the corpus never cards the keyword set, so encoding a domain would
+//  invent one"). The corpus is the source of truth; no invented ARIA rule.
+//
+//  Reference resolution composes `@elements/browser` `traversals`
+//  (`getElementById` for the IDREF / `#id`-fragment lookup, `contains` for
+//  the modal-inert reachability), NOT a bespoke DOM walk; the inert/hidden
+//  SUBTREE test walks the SAME flat parent chain (`flatParent`) the structure
+//  family's `hasFlatAncestorTag` uses (§3 — never light-tree `closest`).
+//
+//  DISJOINTNESS (one finding per violation):
+//    - `dialog[tabindex]` is OWNED by the Phase-3.2 attribute family
+//      (`attribute/coupling-domain` `violatesDialogTabindex`, citing
+//      interactives#the-dialog-element). The ROADMAP lists "dialog must not
+//      carry tabindex" under interaction, but it is ALREADY fully covered
+//      there (verified: interactives.md:552 "The `tabindex` attribute must
+//      not be specified on `dialog` elements." — the card carries the
+//      `tabindex` note `AttributeRule`, the rule fires on its presence). The
+//      interaction family therefore does NOT re-implement it — a bare
+//      `<dialog tabindex>` stays EXACTLY ONE `attribute/coupling-domain`
+//      finding, never double-reported (the `interaction.test.ts` registry
+//      assertion + the structure-lens guard below pin this boundary).
+//    - The two interaction rules are disjoint by STATE: `hidden-reference`
+//      fires only when the resolved target is hidden (and the referrer is
+//      not); `inert-reference` fires only when the resolved target is
+//      inert (and the referrer is not). A target that is BOTH hidden and
+//      inert is two genuinely distinct corpus violations (§6.1 vs §6.3) —
+//      reported once each, the same way `attribute/*` reports each distinct
+//      attribute defect once.
+// ============================================================================
+
+// A referencing element points at a target by one of the corpus-carded
+// associations. `a[href="#id"]` is a same-document fragment; `label[for]` /
+// `output[for]` are plain IDREFs carried as a schema `AttributeRule` (so the
+// recognition is schema-data-driven, never a tag literal). Returns the raw
+// referenced id, or `null` when the element is not a corpus referrer / the
+// reference is not a same-document id.
+function referencedId(subject: RuleSubject): string | null {
+	// Fragment hyperlink: only a bare `#id` same-document fragment is a
+	// "link to a section" the corpus §6.1 rule scopes (an absolute / path
+	// URL is a navigation, not an in-document reference).
+	if (matchesTag(subject.element, 'a')) {
+		const href = subject.element.getAttribute('href')
+		if (href !== null && href.startsWith('#') && href.length > 1) return href.slice(1)
+		return null
+	}
+	// `for` IDREF — recognized from the SCHEMA `AttributeRule` the element's
+	// own card carries (`label` / `output`), never a hardcoded tag set.
+	if (hasAttributeRule(subject.entry, 'for')) {
+		const target = subject.element.getAttribute('for')
+		if (target !== null && target.length > 0) return target
+	}
+	return null
+}
+
+// Resolve a corpus referrer's same-document target through `traversals`
+// `getElementById` over the referring element's own document (faithful IDREF
+// resolution — never a bespoke `querySelector`); `null` when unresolved.
+function referencedTarget(subject: RuleSubject): Element | null {
+	const id = referencedId(subject)
+	if (id === null) return null
+	return getElementById(id, subject.element.ownerDocument)
+}
+
+// An element is in the Hidden state, or inside a `[hidden]` subtree — the
+// corpus §6.1 "hidden" state, decided over the SAME flat parent chain the
+// structure family walks (§3 — never light-tree `closest`). `hidden` is an
+// enumerated attribute whose `until-found` state is still "hidden like the
+// Hidden state" for reference purposes (interactions.md §6.1), so presence
+// alone is the test.
+function isHiddenNode(element: Element): boolean {
+	let current: Element | null = element
+	while (current !== null) {
+		if (current.hasAttribute('hidden')) return true
+		current = flatParent(current)
+	}
+	return false
+}
+
+// An element is inert: either inside an `[inert]` flat subtree, OR made
+// inert by an open modal `<dialog>` (interactions.md §6.3 / §6.3.1 — "every
+// node connected to document, with the exception of the subject element and
+// its flat tree descendants, must become inert"). The modal-inert arm uses
+// the live `:modal` element + `traversals` `contains` (the topmost modal's
+// flat-tree containment) rather than re-deriving the top layer.
+function hasInertAncestor(element: Element): boolean {
+	let current: Element | null = element
+	while (current !== null) {
+		if (current.hasAttribute('inert')) return true
+		current = flatParent(current)
+	}
+	return false
+}
+
+function topmostModal(element: Element): Element | null {
+	const doc = element.ownerDocument
+	const modal = doc.querySelector('dialog:modal')
+	return modal
+}
+
+function isInertNode(element: Element): boolean {
+	if (hasInertAncestor(element)) return true
+	const modal = topmostModal(element)
+	// While a modal dialog is open every connected node EXCEPT the dialog
+	// and its flat-tree descendants is inert. `contains` is the flat-tree
+	// containment check (the dialog's own subtree escapes inertness).
+	if (modal !== null && modal !== element && !contains(modal, element)) return true
+	return false
+}
+
+// The referrer is "active" for the corpus rules iff it is NOT itself in the
+// state it must not reference into: the §6.1 / §6.3 rules both scope to
+// referrers "that are not themselves hidden" / "not themselves inert" (a
+// hidden/inert referrer legitimately co-locates with a hidden/inert target).
+const violatesHiddenReference = whereOf(isSubject, (subject: RuleSubject): boolean => {
+	if (isHiddenNode(subject.element)) return false
+	const target = referencedTarget(subject)
+	return target !== null && isHiddenNode(target)
+})
+
+const interactionHiddenReferenceRule: RuleInterface = {
+	id: 'interaction/hidden-reference',
+	severity: 'error',
+	lens: 'structure',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesHiddenReference(subject)) return null
+		return buildFinding({
+			rule: 'interaction/hidden-reference',
+			severity: 'error',
+			element,
+			// The corpus single source of truth for this rule is the
+			// `hidden` chapter section (interactions.md §6.1) — the chapter
+			// cite resolves through the SAME `citeResolves` path the
+			// Phase-3.2 chapter-cited constants use.
+			cite: 'interactions#the-hidden-attribute',
+			message: `a non-hidden <${subject.tag}> must not reference the [hidden] element it points at (user confusion).`,
+			expected: 'a non-hidden referenced target',
+			actual: 'references a [hidden] target',
+		})
+	},
+}
+
+const violatesInertReference = whereOf(isSubject, (subject: RuleSubject): boolean => {
+	if (isInertNode(subject.element)) return false
+	const target = referencedTarget(subject)
+	return target !== null && isInertNode(target)
+})
+
+const interactionInertReferenceRule: RuleInterface = {
+	id: 'interaction/inert-reference',
+	severity: 'error',
+	lens: 'structure',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesInertReference(subject)) return null
+		return buildFinding({
+			rule: 'interaction/inert-reference',
+			severity: 'error',
+			element,
+			// interactions.md §6.3 "Inert subtrees" — the chapter section the
+			// inert-reference rule restates (an active referrer must not
+			// point into an inert / modal-inert subtree).
+			cite: 'interactions#inert-subtrees',
+			message: `an active <${subject.tag}> must not reference an element inside an [inert] / modal-inert subtree (it is unreachable).`,
+			expected: 'a reachable (non-inert) referenced target',
+			actual: 'references a target inside an [inert] / modal-inert subtree',
+		})
+	},
+}
+
 // ── Registry ────────────────────────────────────────────────────────────────
 //
 // The frozen, ordered rule registry every Phase-3 family contributes to and
@@ -1524,15 +1722,17 @@ const attributeEnumRule: RuleInterface = {
 // `notOf` / `literalOf`), with the attribute-value rules composing the
 // inspector's `coerceEnumAttribute` / `coerceIntegerAttribute` over the core
 // `parseEnum` / `parseInteger` parsers; the part-3 interaction family extends
-// this same array with the same vocabulary.
+// this same array with the same vocabulary (reference resolution via
+// `@elements/browser` `traversals` `getElementById` / `contains`).
 
 /**
  * The frozen inspector rule registry — the Phase-3 part-1 families
- * (`context` / `content` / `transparent` / `structure`) plus the part-2
- * `attribute` family (coupling + parser-coerced value rules), each a generic
- * schema-data-driven {@link RuleInterface}. Pure: every `evaluate` is
- * side-effect-free and total (one {@link Finding} or `null`). Part 3
- * (interaction) appends to this same array; Phase 4 iterates it.
+ * (`context` / `content` / `transparent` / `structure`), the part-2
+ * `attribute` family (coupling + parser-coerced value rules), and the part-3
+ * `interaction` family (hidden / inert reference integrity), each a generic
+ * corpus-data-driven {@link RuleInterface}. Pure: every `evaluate` is
+ * side-effect-free and total (one {@link Finding} or `null`). Phase 4
+ * iterates it; Phase 3 is now COMPLETE.
  *
  * @example
  * ```ts
@@ -1573,4 +1773,7 @@ export const rules: readonly RuleInterface[] = [
 	attributeCouplingDomainRule,
 	attributeIntegerRule,
 	attributeEnumRule,
+	// interaction (Phase 3.3)
+	interactionHiddenReferenceRule,
+	interactionInertReferenceRule,
 ] as const

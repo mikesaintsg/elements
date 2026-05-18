@@ -241,7 +241,7 @@ five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
 | 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec               | ✅     |
 | 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                 | ✅     |
 | 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)              | ✅     |
-| 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant) | ⬜     |
+| 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant) | ✅     |
 | 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel    | ⬜     |
 | 5     | Presentation lens (computed-style: load-bearing rendering overrides)                | ⬜     |
 | 6     | Showcase self-audit suite — run Inspector on every page; remediate our findings     | ⬜     |
@@ -534,9 +534,10 @@ The frozen TS mirror of the corpus, shaped exactly like
 > suites. **Part 2 ✅:** the `attribute` family (coupling +
 > parser-coerced value rules) over the same frozen `rules` registry,
 > driven by the Phase-1 `AttributeRule` data + two corpus-bound
-> attribute-bound/domain constants. **Part 3 ⬜ (pending):** the
-> `interaction` family, which plugs into the same `rules` registry /
-> `RuleInterface` contract unchanged.
+> attribute-bound/domain constants. **Part 3 ✅:** the `interaction`
+> family (hidden / inert reference integrity), plugged into the same
+> `rules` registry / `RuleInterface` contract unchanged. **Phase 3 is
+> COMPLETE.**
 
 - ✅ `RuleInterface`: `{ id, severity, lens, evaluate(element, context) }`
   — pure, side-effect-free, one finding or null. Composite predicates are
@@ -548,9 +549,9 @@ The frozen TS mirror of the corpus, shaped exactly like
   frozen `rules: readonly RuleInterface[]` registry; `Finding` /
   `FindingSeverity` / `RuleLens` types live in
   [`types.ts`](src/browser/types.ts) (the shared shape Phase 4 compiles).
-- 🟡 Rule families (each a small set of generic rules driven by the schema
+- ✅ Rule families (each a small set of generic rules driven by the schema
   data, not per-element hand-code) — **context / content / transparent /
-  structure ✅ (part 1); attribute ✅ (part 2); interaction ⬜ (part 3)**:
+  structure ✅ (part 1); attribute ✅ (part 2); interaction ✅ (part 3)**:
   - ✅ **context** — element not allowed in its parent's resolved model
     ([dom.html#content-models](https://html.spec.whatwg.org/multipage/dom.html#content-models)).
   - ✅ **content** — the parent's `childModel` order/cardinality unsatisfied
@@ -617,22 +618,35 @@ The frozen TS mirror of the corpus, shaped exactly like
     `span` note-only `AttributeRule` (the established `time`/`datetime`,
     `dialog`/`tabindex` precedent), bidirectionally parity-bound in
     `tests/guides/w3c.test.ts` (strengthen-only).
-  - ⬜ **interaction** _(part 3)_ — `hidden`/`inert` reference integrity (a non-hidden
-    `a[href="#id"]`/`label[for]`/`output[for]` must not target a `hidden`
-    element; active `aria-*` IDREF must not point into an `[inert]` /
-    modal-inert subtree); `dialog` must not carry `tabindex`
-    ([interaction.html](https://html.spec.whatwg.org/multipage/interaction.html)).
-    Reachability/relationship decided with [`traversals`](guides/traversals.md)
-    `isDescendantOf` / `findClosest` / `isFocusable` /
-    `findFocusableElements` — not bespoke DOM walks.
-- 🟡 Each family gets a fixture-driven unit suite (real DOM, no mocks;
+  - ✅ **interaction** _(part 3)_ — `hidden`/`inert` reference integrity: a
+    non-hidden `a[href="#id"]`/`label[for]`/`output[for]` must not target a
+    `hidden` element (`interaction/hidden-reference`); an active referrer
+    via the same corpus-carded associations must not point into an
+    `[inert]` / modal-inert subtree (`interaction/inert-reference`)
+    ([interaction.html](https://html.spec.whatwg.org/multipage/interaction.html)
+    §6.1 / §6.3). Generic over the corpus associations (the `for` IDREF
+    read via the schema `AttributeRule`, never a tag literal); reference
+    resolution composed from [`traversals`](guides/traversals.md)
+    `getElementById` / `contains` — not bespoke DOM walks. `dialog` must
+    not carry `tabindex` is **owned by the `attribute` family**
+    (`attribute/coupling-domain`, interactives.md:552) — the interaction
+    family deliberately defers it (no double-report); `aria-*` IDREFs are
+    deliberately NOT a reference kind (the corpus never cards an `aria-*`
+    domain — the only `aria-*` it mentions, `aria-describedby`, is the
+    hidden-rule EXEMPTION — so encoding one would invent it; the Phase-3.2
+    `loading`/`crossorigin` faithfulness precedent).
+- ✅ Each family gets a fixture-driven unit suite (real DOM, no mocks;
   seeded `createRandom()` perturbation so failures are reproducible).
   **Part 1 ✅:**
   `tests/src/browser/inspector/{context,content,transparent,structure}.test.ts`.
   **Part 2 ✅:** `tests/src/browser/inspector/attribute.test.ts` —
   clean-pass + dirty-fail + seeded perturbation per rule, plus
   whole-`rules`-registry one-finding-per-violation / disjointness
-  assertions. **Part 3 ⬜:** interaction suite pending.
+  assertions. **Part 3 ✅:**
+  `tests/src/browser/inspector/interaction.test.ts` — clean-pass +
+  dirty-fail + seeded perturbation per rule, plus whole-`rules`-registry
+  one-finding-per-violation / disjointness assertions (incl. the
+  `dialog[tabindex]`-stays-one-`attribute/coupling-domain` boundary).
 
 ---
 
