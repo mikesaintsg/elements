@@ -248,7 +248,7 @@ five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
 | 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel                                                                                                                                                                  | ✅     |
 | 5     | Presentation lens (computed-style: load-bearing rendering overrides)                                                                                                                                                                              | ✅     |
 | 6     | Showcase self-audit suite — gate SHIPPED + GREEN on all 43 pages (0 errors); `_textarea`/`<menu>`-group/`createToast`-root remediated at source; 30 TRUE-positive errors → 0; 113→120 list-style warnings remain by-design (reported, not failed) | ✅     |
-| 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                                                                                                                                                                                | ⬜     |
+| 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                                                                                                                                                                                | ✅     |
 | 8     | Public-API parity hardening + large-tree performance budget                                                                                                                                                                                       | ⬜     |
 
 ---
@@ -974,17 +974,36 @@ display: flex }`, `TablesPage.vue`, no `role="cell"`). The only
 
 ## Phase 7 — `/inspector` showcase page + guide
 
-- ⬜ `app/browser/pages/InspectorPage.vue` + route + `tests/app/browser/
-pages/InspectorPage.test.ts` (the standard page bijection) — a live,
-  in-page panel that runs the inspector on the current document and renders
-  findings (severity, element path, message, spec citation). Authored
-  framework-faithfully (elements → modifiers → utilities → `showcase.css`
-  only if unavoidable), no inline styles, app logic out of framework code.
-- ⬜ `guides/inspector.md` — the spec for the inspector: schema shape, rule
-  catalog, the transparent algorithm, the two lenses, how to add a rule
-  (types-first → schema/rule → fixture suite → parity), citing
-  `guides/w3c/**`. Add to the `AGENTS.md` companion-doc list + the phase
-  spec-guide map.
+- ✅ `app/browser/pages/InspectorPage.vue` + route (`id:'inspector'`,
+  `Composables — Primitives`) + barrel export +
+  `tests/app/browser/pages/InspectorPage.test.ts` (the standard page
+  bijection + the inspect-control interaction smoke) — a live, in-page
+  panel that runs `new Inspector().inspect({ root })` on the current
+  document (the conform / dogfood proof) AND on a deliberately-broken
+  detached fixture (real findings), rendering findings grouped by severity
+  with rule id, severity, stable element path, message, and the spec
+  citation as a real WHATWG anchor link, with lens + severity filtering and
+  an explicit conform empty state. Authored framework-faithfully (framework
+  elements → the modifier cascade → Tailwind utilities only; NO inline
+  styles, NO custom CSS, NO `<style>` block), app logic out of framework
+  code (demo constants in `app/browser/constants.ts`). The page is itself
+  content-model-conformant: the Phase-6 `semantics.test.ts` gate
+  auto-audits it → ZERO `error` findings (the dogfood property holds).
+- ✅ `guides/inspector.md` — the spec for the inspector: the public Surface
+  (`Inspector` / `FindingManager` / `Walker` / `rules`), the full rule
+  catalog per family (incl. the 6 `presentation/*` rules), the
+  content-model schema shape, the transparent-content-model algorithm, the
+  two lenses, how to add a rule (corpus-first → types → schema/rule →
+  fixture suite → parity), citing `guides/w3c/**`; numbered `## Contract`
+  binding doc↔source + types-are-truth + corpus-is-source-of-truth + the
+  Phase-6 self-audit gate. The REAL bidirectional doc↔source parity test
+  `tests/guides/inspector.test.ts` ships now (NOT a Phase-8 stub) — every
+  backticked call-form API resolves to a real `@elements/browser` export
+  (DOC→SOURCE), every inspector-barrel export is documented (SOURCE→DOC),
+  the public types are bound to `src/browser/types.ts` (TYPES-ARE-TRUTH);
+  it genuinely bites. Added to the `AGENTS.md` companion-doc list, the
+  `guides/README.md` concept + directory maps, and the phase spec-guide
+  map below.
 
 ---
 
@@ -993,10 +1012,13 @@ pages/InspectorPage.test.ts` (the standard page bijection) — a live,
 - ⬜ Treat the inspector as part of the public `src/browser` API: it ships
   through the sole barrel; `tests/src/browser/inspector/**` covers it;
   schema↔guides parity is permanent (Phase 1). The inspector's own guide
-  (`guides/inspector.md`, Phase 7) is held to the **same doc↔source
-  contract** the five tooling guides exemplify — `tests/guides/inspector.test.ts`
-  (every backticked API resolves to a real export, bidirectional) ↔
-  `tests/src/browser/inspector/**` (behavior).
+  ([`guides/inspector.md`](guides/inspector.md), shipped Phase 7) is held
+  to the **same doc↔source contract** the five tooling guides exemplify —
+  [`tests/guides/inspector.test.ts`](tests/guides/inspector.test.ts)
+  (every backticked API resolves to a real export, bidirectional — SHIPPED
+  & GREEN in Phase 7, not deferred) ↔ `tests/src/browser/inspector/**`
+  (behavior). Phase 8 adds the large-tree perf budget + final hardening
+  ONLY — the doc↔source parity is already real.
 - ⬜ Large-tree budget: a perf test over a **deterministic** deep/wide DOM
   built from `compileGenerator()` + `createRandom(seed)` (reproducible
   across runs), asserting a walked-node-per-ms floor so a walker / rule
