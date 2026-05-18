@@ -193,6 +193,18 @@ Pure DOM traversal + node-type guards. No Vue, no framework state; safe to impor
 | Behavior tests  | [`tests/src/browser/traversals.test.ts`](../tests/src/browser/traversals.test.ts), [`tests/src/browser/helpers.test.ts`](../tests/src/browser/helpers.test.ts)                |
 | Doc parity      | [`tests/guides/traversals.test.ts`](../tests/guides/traversals.test.ts)                                                                                                       |
 
+### W3C content-model corpus — the inspector's spec mirror
+
+The curated WHATWG-spec cache (`guides/w3c/**`) and its frozen TS mirror. The semantic inspector (ROADMAP) resolves every content-model rule against the schema; a bidirectional parity test binds corpus ↔ schema.
+
+| Role                 | File                                                                                                                                                                       |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spec / pointer       | [`guides/w3c.md`](w3c.md)                                                                                                                                                  |
+| Corpus (cache)       | [`guides/w3c/`](w3c/) — `categories.md`, `elements/*.md`, `links.md`, `interactions.md`, `renderings.md`, `aria.md`                                                         |
+| Types (truth)        | [`src/browser/types.ts`](../src/browser/types.ts) — `ContentCategory`, `ContentModel`, `ContentModelEntry`, `ContentConstraint`, `ContentSequenceSegment`, `AttributeRule` |
+| TS mirror            | [`src/browser/schema.ts`](../src/browser/schema.ts) — frozen `contentModel` + indices + predicates + `contentModelContract`                                                |
+| Bidirectional parity | [`tests/guides/w3c.test.ts`](../tests/guides/w3c.test.ts)                                                                                                                  |
+
 ---
 
 ## By directory
@@ -219,6 +231,7 @@ Pure DOM traversal + node-type guards. No Vue, no framework state; safe to impor
 | [`parsers.md`](parsers.md)         | `@elements/core` — flat value / field / format parsers (`unknown` → typed, `undefined` on failure).      |
 | [`validators.md`](validators.md)   | `@elements/core` — runtime type guards + guard compositors.                                              |
 | [`traversals.md`](traversals.md)   | Native DOM traversal + node-type guard surface (`@elements/browser`).                                     |
+| [`w3c.md`](w3c.md)                 | The W3C content-model corpus (`guides/w3c/**`) + its frozen `schema.ts` mirror. Pointer + parity contract. |
 
 ### `src/browser/` — TypeScript public API
 

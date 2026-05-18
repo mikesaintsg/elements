@@ -115,6 +115,26 @@ export function readAllGuides(): Record<string, string> {
 }
 
 /**
+ * Synchronously read every element-card markdown file under
+ * `guides/w3c/elements/`. Returns `{ basename: rawSource }` (basename
+ * without the `.md` extension, e.g. `texts`, `tables`). The W3C-corpus
+ * analogue of `readAllGuides()` — the Phase-1 schema↔corpus parity driver
+ * in `tests/guides/w3c.test.ts` keys off it. Resolved against the shared
+ * `WORKSPACE_ROOT` anchor with the same `node:fs` machinery the other
+ * loaders above use (no duplicated path logic).
+ */
+export function readW3cElementCards(): Record<string, string> {
+	const out: Record<string, string> = {}
+	const absDir = resolve(WORKSPACE_ROOT, 'guides/w3c/elements')
+	for (const file of readdirSync(absDir)) {
+		if (!file.endsWith('.md')) continue
+		const name = file.replace(/\.md$/, '')
+		out[name] = readFileSync(resolve(absDir, file), 'utf8')
+	}
+	return out
+}
+
+/**
  * Synchronously read every `*Page.vue` showcase page in
  * `app/browser/pages/`. Returns `{ basename: rawSource }` (basename without
  * the `.vue` extension, e.g. `TokensPage`). The pages-suite analogue of

@@ -85,6 +85,167 @@ export interface TaxonomyEntry {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Content-model schema primitives
+// ─────────────────────────────────────────────────────────────────────────
+//
+// The frozen TS mirror of the W3C content-model corpus (`guides/w3c/**`).
+// One `ContentModelEntry` per HTML element the spec cards. The inspector's
+// structure lens resolves every element's contextual / content-model /
+// transparent rule against this registry. The vocabulary below is derived
+// verbatim from `guides/w3c/categories.md` §3.2.5; the entry shape mirrors
+// each card's **Categories** / **Contexts** / **Content model** boxes.
+
+/**
+ * The HTML content-category vocabulary (`guides/w3c/categories.md` §3.2.5).
+ *
+ * @remarks
+ * The seven categories with explicit element-membership lists (`metadata`,
+ * `flow`, `sectioning`, `heading`, `phrasing`, `embedded`, `interactive`),
+ * plus `palpable` (the derived non-empty category), `script-supporting`
+ * (`script` / `template`, always permitted where a constrained list says
+ * "optionally intermixed"), and `transparent` (the §3.2.5.1 model — an
+ * element whose content model is its parent's). These are the buckets a
+ * `context` / `content` rule checks against.
+ */
+export type ContentCategory =
+	| 'metadata'
+	| 'flow'
+	| 'sectioning'
+	| 'heading'
+	| 'phrasing'
+	| 'embedded'
+	| 'interactive'
+	| 'palpable'
+	| 'script-supporting'
+	| 'transparent'
+
+/**
+ * The shape of an element's content model — the kind of children the spec
+ * permits.
+ *
+ * - `transparent` — model derived from the parent (`a`, `ins`, `del`, …).
+ * - `void` — no children, no end tag (`br`, `img`, `hr`, …).
+ * - `text` — text only (`title`, `textarea`, `option` w/ `label`, …).
+ * - `nothing` — neither children nor text (`base`, `col`, `track`, …).
+ * - `children` — an element/category-constrained child list (everything
+ *   else — flow/phrasing content, the `table` model, list models, …).
+ */
+export type ContentModel = 'transparent' | 'void' | 'text' | 'nothing' | 'children'
+
+/**
+ * The discrete, tree-decidable named constraints the spec attaches to
+ * specific elements (encoded as DATA so rules stay generic, never
+ * per-element hand-code). Each kind maps to one rule family in Phase 3.
+ *
+ * - `no-self-nest` — no descendant of the element's own tag (`a`, `dfn`).
+ * - `no-interactive-descendant` — no interactive-content descendant
+ *   (`a`, `button`).
+ * - `no-tabindex-descendant` — no descendant with `tabindex` (`a`,
+ *   `button`).
+ * - `single-first-child` — exactly one `tag` child, and it must be first
+ *   (`summary`→`details`, `legend`→`fieldset`, `caption`→`table`).
+ * - `edge-child` — the element must be the first or last child of `parent`
+ *   (`figcaption`→`figure`).
+ * - `parent-restricted` — the element is only valid inside one of `parents`
+ *   (`li`→`ul`/`ol`/`menu`, `td`/`th`→`tr`, `option`→`select`/`optgroup`/
+ *   `datalist`).
+ * - `group-order` — ordered/grouped sibling spec (`dt`/`dd`, `ruby` rt/rp).
+ * - `child-order` — an ordered/cardinal child sequence (`picture`:
+ *   `source`* then one `img`; the `table` model; `hgroup`; `dl`).
+ */
+export type ContentConstraintKind =
+	| 'no-self-nest'
+	| 'no-interactive-descendant'
+	| 'no-tabindex-descendant'
+	| 'single-first-child'
+	| 'edge-child'
+	| 'parent-restricted'
+	| 'group-order'
+	| 'child-order'
+
+/**
+ * One discrete named constraint, encoded as data. `kind` selects the rule
+ * family; the optional fields carry that family's parameters (a constraint
+ * only sets the fields its `kind` consumes).
+ */
+export interface ContentConstraint {
+	readonly kind: ContentConstraintKind
+	/** Allowed parent tags (`parent-restricted`) or the required single
+	 *  parent (`single-first-child` / `edge-child`). */
+	readonly parents?: readonly string[]
+	/** The constrained child tag (`single-first-child` — e.g. `summary`). */
+	readonly child?: string
+	/** Which edge the element must occupy (`edge-child`). */
+	readonly edge?: 'first' | 'last' | 'first-or-last'
+	/** The ordered child-tag sequence spec (`child-order` / `group-order`),
+	 *  each segment naming its tag and cardinality. */
+	readonly sequence?: readonly ContentSequenceSegment[]
+	/** Human-readable restatement of the spec clause, for the Finding
+	 *  message Phase 3/4 emit. */
+	readonly note?: string
+}
+
+/** One segment of an ordered child-sequence (`child-order`/`group-order`). */
+export interface ContentSequenceSegment {
+	readonly tag: string
+	/** `'?'` zero-or-one · `'*'` zero-or-more · `'+'` one-or-more ·
+	 *  `'1'` exactly one. */
+	readonly count: '?' | '*' | '+' | '1'
+}
+
+/**
+ * An attribute-coupling rule — an attribute whose presence requires
+ * another attribute (`a[target]` ⇒ `href`), a value domain (`bdo` ⇒
+ * `dir∈{ltr,rtl}`), or a mandatory attribute (`data` ⇒ `value`). The
+ * Phase-3 `attribute` family consumes these; Phase 1 only records them.
+ */
+export interface AttributeRule {
+	readonly attribute: string
+	/** Sibling attribute that must also be present when `attribute` is. */
+	readonly requires?: string
+	/** Closed value domain for `attribute` when present. */
+	readonly values?: readonly string[]
+	/** `attribute` is mandatory on the element (not merely coupled). */
+	readonly required?: boolean
+	readonly note?: string
+}
+
+/**
+ * One frozen content-model registry row — the TS mirror of one
+ * `guides/w3c/**` element card. Authoring surface is the frozen
+ * `contentModel` array in `schema.ts`; the `@elements/core` `ContractShape`
+ * in `schema.ts` is this interface's compiled contract (guard + JSON
+ * Schema + generator), derived from this declaration, never duplicated.
+ */
+export interface ContentModelEntry {
+	/** Lowercase tag name, no chevrons (`a`, `li`, `h1`). */
+	readonly tag: string
+	/** Content categories the element belongs to (card **Categories**). */
+	readonly categories: readonly ContentCategory[]
+	/** Allowed-parent / ancestor context (card **Contexts**), restated. */
+	readonly context: string
+	/** The element's content-model shape (card **Content model**). */
+	readonly model: ContentModel
+	/** Ordered / cardinal child spec when `model === 'children'` and the
+	 *  card constrains the child list (empty for free flow/phrasing). */
+	readonly required: readonly ContentSequenceSegment[]
+	/** Forbidden descendant categories / tags the card's prose names
+	 *  (e.g. `dt` forbids `header`/`footer`/sectioning/heading). */
+	readonly forbidden: readonly (ContentCategory | string)[]
+	/** Discrete named constraints, as data (see {@link ContentConstraint}). */
+	readonly constraints: readonly ContentConstraint[]
+	/** Attribute-coupling rules the card states. */
+	readonly attributes: readonly AttributeRule[]
+	/** True when `model === 'transparent'`. */
+	readonly transparent: boolean
+	/** True when `model === 'void'` (no children, no end tag). */
+	readonly void: boolean
+	/** The `guides/w3c` card anchor — `{file}#{slug}` (e.g.
+	 *  `texts#the-a-element`). The Phase-1 parity test resolves it. */
+	readonly cite: string
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Popover placement primitives
 // ─────────────────────────────────────────────────────────────────────────
 

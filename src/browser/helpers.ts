@@ -30,6 +30,12 @@
 
 import type {
 	Alignment,
+	AttributeRule,
+	ContentCategory,
+	ContentConstraint,
+	ContentModel,
+	ContentModelEntry,
+	ContentSequenceSegment,
 	DragDropDetail,
 	DragOverDetail,
 	DragStartDetail,
@@ -240,6 +246,41 @@ export function entry(
 	composable: string | null = null,
 ): TaxonomyEntry {
 	return { tag, category, treatment, composable }
+}
+
+// ── Content-model schema primitives ──────────────────────────────────────────
+// Row builder for `schema.ts` — the §4.2.1 options bag keeps the optional
+// fields single-word leaves instead of a long positional argument list. The
+// builder normalizes `transparent` / `void` from `model` so the registry
+// can never drift those booleans away from the model shape.
+
+/** Build a {@link ContentModelEntry} row for the content-model registry. */
+export function defineModel(
+	tag: string,
+	categories: readonly ContentCategory[],
+	context: string,
+	model: ContentModel,
+	cite: string,
+	options: {
+		readonly required?: readonly ContentSequenceSegment[]
+		readonly forbidden?: readonly (ContentCategory | string)[]
+		readonly constraints?: readonly ContentConstraint[]
+		readonly attributes?: readonly AttributeRule[]
+	} = {},
+): ContentModelEntry {
+	return {
+		tag,
+		categories,
+		context,
+		model,
+		required: options.required ?? [],
+		forbidden: options.forbidden ?? [],
+		constraints: options.constraints ?? [],
+		attributes: options.attributes ?? [],
+		transparent: model === 'transparent',
+		void: model === 'void',
+		cite,
+	}
 }
 
 // ── Table sort / escape primitives ──────────────────────────────────────────

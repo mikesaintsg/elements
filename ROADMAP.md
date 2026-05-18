@@ -239,7 +239,7 @@ five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
 | Phase | Description                                                                                  | Status |
 | ----- | -------------------------------------------------------------------------------------------- | ------ |
 | 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec                         | ✅     |
-| 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                          | ⬜     |
+| 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                          | ✅     |
 | 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)                       | ⬜     |
 | 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant)          | ⬜     |
 | 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel             | ⬜     |
@@ -421,10 +421,11 @@ above):
   the deep-in-long-page elements the fetch tool structurally truncates got
   concise clearly-labeled *illustrative* examples (never misattributed —
   the canonical spec URL is on every card).
-- ⬜ **`tests/guides/w3c.test.ts` gate** — lands with **Phase 1** (not
-  Phase 0): asserts every `taxonomy.ts` element has a fully carded entry
-  under `guides/w3c/**` and every schema `cite` resolves. The corpus
-  content is done; this test mechanizes the invariant.
+- ✅ **`tests/guides/w3c.test.ts` gate** — landed with **Phase 1** (not
+  Phase 0): asserts every carded element under `guides/w3c/**` has a
+  `contentModel` entry whose categories/context/model match the prose, and
+  every schema `cite` resolves bidirectionally. The corpus content was
+  done; this test mechanizes the invariant.
 
 ---
 
@@ -433,17 +434,23 @@ above):
 The frozen TS mirror of the corpus, shaped exactly like
 [`taxonomy.ts`](src/browser/taxonomy.ts).
 
-- ⬜ **Types first** in `types.ts`: `ContentCategory`, `ContentModel`,
+- ✅ **Types first** in `types.ts`: `ContentCategory`, `ContentModel`,
   `ContentModelEntry` (`tag`, `categories`, `context` — allowed
   parents/ancestor predicate, `model`, `required` — ordered/cardinal child
   spec, `forbidden` — forbidden descendant categories/tags, `transparent`,
   `void`, `attributes` — coupling rules, `cite` — `guides/w3c` anchor).
-- ⬜ **`schema.ts`**: frozen `contentModel: readonly ContentModelEntry[]`
-  via a typed `entry(...)` helper; pre-computed `SCHEMA_BY_TAG`,
-  `VOID_TAGS`, `TRANSPARENT_TAGS`, `CATEGORY_MEMBERS`; single-word
-  predicates `isVoid`, `isTransparent`, `modelOf`, `categoriesOf`,
-  `contextOf`, `isKnownElement`.
-- ⬜ Encode the discrete named constraints as data (so rules stay generic):
+  Sub-types `ContentConstraint` / `ContentSequenceSegment` / `AttributeRule`
+  land alongside (constraints-as-data + coupling rules).
+- ✅ **`schema.ts`**: frozen `contentModel: readonly ContentModelEntry[]`
+  via a typed `defineModel(...)` helper (the `entry(...)` analogue — bare
+  `entry` is taxonomy's; `defineModel` is the schema's, both in
+  `helpers.ts`); pre-computed `SCHEMA_BY_TAG`, `VOID_TAGS`,
+  `TRANSPARENT_TAGS`, `CATEGORY_MEMBERS`; single-word predicates `isVoid`,
+  `isTransparent`, `modelOf`, `categoriesOf`, `contextOf`,
+  `isKnownElement`. 108 entries (the 93 taxonomy tags with `h1`–`h6`
+  expanded to six real elements, plus the 10 metadata / media / image-map
+  elements the corpus additionally cards).
+- ✅ Encode the discrete named constraints as data (so rules stay generic):
   `no-self-nest` (`a`, `dfn`), `no-interactive-descendant` (`a`,
   `button`), `single-first-child` (`summary`→`details`,
   `legend`→`fieldset`, `caption`→`table`), `edge-child`
@@ -451,23 +458,30 @@ The frozen TS mirror of the corpus, shaped exactly like
   `ruby` rt/rp), `parent-restricted` (`li`→ul/ol/menu, `td`/`th`→tr,
   `option`→select/optgroup/datalist), the `table` model, `picture` order
   (`source`* then one `img`).
-- ⬜ **Express the entry as an `@elements/core` `ContractShape`** (an
+- ✅ **Express the entry as an `@elements/core` `ContractShape`** (an
   `objectShape` of the fields above; `literalShape` for the category /
-  model unions; `lazyShape` for the recursive transparent arm) and run it
-  through `compileContract()` — the inspector gets a **runtime guard**
-  (validates the frozen registry at module load, fixture inputs in tests)
-  and a **JSON Schema** of `ContentModelEntry` (machine-readable corpus
-  export) for free, plus a **seeded generator** of synthetic entries for
-  Phase-3 fixtures. The frozen `taxonomy.ts`-style array stays the
-  authoring surface; the shape is its compiled contract — derived, not
-  duplicated ([shapers.md](guides/shapers.md) / [compilers.md](guides/compilers.md)).
-- ⬜ Barrel: `export * from './schema.js'` in
+  model unions) run through `compileContract()` — the inspector gets a
+  **runtime guard** (`contentModelContract.is`; the frozen registry is
+  validated against it at module load via `CONTRACT_GUARDED`, fixture
+  inputs in tests) and a **JSON Schema** of `ContentModelEntry`
+  (machine-readable corpus export) for free, plus a **seeded generator**
+  of synthetic entries for Phase-3 fixtures. The frozen `taxonomy.ts`-style
+  array stays the authoring surface; the shape is its compiled contract —
+  derived, not duplicated ([shapers.md](guides/shapers.md) /
+  [compilers.md](guides/compilers.md)). NB: no `lazyShape` arm — the entry
+  tree is finite/acyclic (a `ContentSequenceSegment` is a flat
+  `{ tag, count }`, never nested), so a recursion boundary would be
+  speculative generality (YAGNI); the transparent model is resolved at
+  WALK time (Phase 2) over live ancestors, not as a self-referential shape.
+- ✅ Barrel: `export * from './schema.js'` in
   [`src/browser/index.ts`](src/browser/index.ts).
-- ⬜ **`tests/guides/w3c.test.ts`** (bidirectional, mirrors
+- ✅ **`tests/guides/w3c.test.ts`** (bidirectional, mirrors
   `tests/guides/elements.test.ts`): every `guides/w3c/**` carded element
   has a `contentModel` entry whose categories/context/model match the
   prose; every schema entry's `cite` resolves to a real guide anchor; no
-  schema entry without a card; no card without a schema entry.
+  schema entry without a card; no card without a schema entry. Paired 1:1
+  with the new pointer guide [`guides/w3c.md`](guides/w3c.md) (the total
+  test↔guide bijection `README.test.ts` enforces).
 
 ---
 
