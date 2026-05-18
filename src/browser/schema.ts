@@ -97,7 +97,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'base',
 		['metadata'],
 		'In a head element containing no other base elements.',
-		'nothing',
+		'void',
 		'document#the-base-element',
 		{ attributes: [{ attribute: 'href' }, { attribute: 'target' }] },
 	),
@@ -105,14 +105,14 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'link',
 		['metadata', 'flow', 'phrasing'],
 		'Where metadata content is expected; in a noscript child of head; if body-OK where phrasing content is expected.',
-		'nothing',
+		'void',
 		'document#the-link-element',
 	),
 	defineModel(
 		'meta',
 		['metadata', 'flow', 'phrasing'],
 		'Where metadata content is expected; if itemprop is present where flow/phrasing content is expected.',
-		'nothing',
+		'void',
 		'document#the-meta-element',
 	),
 	defineModel(
@@ -231,7 +231,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'hr',
 		['flow'],
 		'Where flow content is expected; as a child of a select element.',
-		'nothing',
+		'void',
 		'groupings#the-hr-element',
 	),
 	defineModel(
@@ -706,7 +706,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'source',
 		[],
 		'As a child of a picture element before img; as a child of a media element before flow content / track.',
-		'nothing',
+		'void',
 		'embeddeds#the-source-element',
 		{
 			constraints: [
@@ -722,7 +722,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'img',
 		['flow', 'phrasing', 'embedded', 'palpable', 'interactive'],
 		'Where embedded content is expected; as a child of a picture element after all source elements.',
-		'nothing',
+		'void',
 		'embeddeds#the-img-element',
 	),
 	defineModel(
@@ -798,7 +798,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'track',
 		[],
 		'As a child of a media element (audio/video), before any flow content.',
-		'nothing',
+		'void',
 		'embeddeds#the-track-element',
 		{
 			constraints: [
@@ -822,7 +822,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'area',
 		['flow', 'phrasing'],
 		'Where phrasing content is expected, but only if there is a map element ancestor.',
-		'nothing',
+		'void',
 		'embeddeds#the-area-element',
 		{
 			attributes: [
@@ -935,7 +935,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'col',
 		[],
 		'As a child of a colgroup element that doesn’t have a span attribute.',
-		'nothing',
+		'void',
 		'tables#the-col-element',
 		{
 			constraints: [
@@ -1080,7 +1080,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'input',
 		['flow', 'phrasing', 'interactive', 'palpable'],
 		'Where phrasing content is expected.',
-		'nothing',
+		'void',
 		'forms#the-input-element',
 		{ attributes: [{ attribute: 'type' }, { attribute: 'name' }, { attribute: 'value' }] },
 	),

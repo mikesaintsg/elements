@@ -62,6 +62,7 @@ interface ParsedCard {
 	readonly categories: string
 	readonly context: string
 	readonly model: string
+	readonly omission: string
 }
 
 // A card heading: `## N.N The ... element(s)` or `### N.N.N The ... element(s)`,
@@ -117,12 +118,13 @@ function parseCards(): readonly ParsedCard[] {
 			const categories = fieldValue(block, 'Categories')
 			const context = fieldValue(block, 'Contexts')
 			const model = fieldValue(block, 'Content model')
+			const omission = fieldValue(block, 'Tag omission')
 			// A genuine element card always carries all three boxes. Section
 			// dividers like "4.3.11 Headings and outlines" carry none and are
 			// skipped here (no false card).
 			if (categories === '' && context === '' && model === '') continue
 			for (const tag of current.tags) {
-				out.push({ tag, file, categories, context, model })
+				out.push({ tag, file, categories, context, model, omission })
 			}
 		}
 	}
@@ -153,11 +155,24 @@ function categoriesFromProse(prose: string): ReadonlySet<ContentCategory> {
 	return set
 }
 
-// Prose "Content model" box → the ContentModel shape the schema must carry.
-function modelFromProse(prose: string): ContentModel | null {
-	const value = prose.trim().toLowerCase()
+// Corpus source of truth for void-ness: the card's **Tag omission** box. A
+// void element's card states "No end tag" (often "(void element)"); a
+// non-void element's card never does (it has an end tag). This is parsed
+// from the card's own prose — no hand-maintained per-element allowlist.
+function cardIsVoid(card: ParsedCard): boolean {
+	return /no end tag|void element/i.test(card.omission)
+}
+
+// Prose "Content model" box → the ContentModel shape the schema must carry,
+// resolved against the card's **Tag omission** prose so the void/nothing
+// split is corpus-driven, not arbitrary. A `**Content model:** Nothing.`
+// card maps to `'void'` when the card's Tag omission says the element has no
+// end tag (a true void element), and to `'nothing'` only for a non-void
+// "Nothing" element (end tag present/not omissible — e.g. `iframe`).
+function modelFromProse(card: ParsedCard): ContentModel | null {
+	const value = card.model.trim().toLowerCase()
 	if (value === '') return null
-	if (/^nothing\b/.test(value)) return 'nothing'
+	if (/^nothing\b/.test(value)) return cardIsVoid(card) ? 'void' : 'nothing'
 	// The transparent model — either declared outright ("Transparent.") or
 	// as the terminal arm of a media element's compound model ("…then
 	// transparent, but with no media element descendants."). Both ARE the
@@ -183,11 +198,6 @@ const MULTI_ARM_MODEL: ReadonlySet<string> = new Set([
 	'link', // metadata; nothing
 	'meta', // metadata; nothing
 ])
-
-// Tags carded with `model: void` in the schema whose prose says "Nothing"
-// but whose **Tag omission** is "No end tag" (true void elements). The
-// model-shape check treats nothing/void as compatible for these.
-const VOID_BY_OMISSION: ReadonlySet<string> = new Set(['br', 'wbr', 'embed'])
 
 // ── 1. CARD → SCHEMA ────────────────────────────────────────────────────────
 
@@ -228,29 +238,36 @@ describe('w3c corpus — card Categories match the schema entry', () => {
 // unconditionally — the parser/relaxation policy lives here, the assertion
 // stays a single deterministic check.
 function modelAgrees(card: ParsedCard): { readonly ok: boolean; readonly why: string } {
-	const prose = modelFromProse(card.model)
+	const prose = modelFromProse(card)
 	const schema = modelOf(card.tag)
 	if (schema === null) {
 		return { ok: false, why: `<${card.tag}>: schema carries no model` }
 	}
+	// Void-ness is asserted bidirectionally against the card's own **Tag
+	// omission** prose (the corpus source of truth) for EVERY element — no
+	// per-element allowlist. Schema `model: 'void'` MUST coincide with the
+	// card stating "No end tag" / "(void element)", and vice versa. This
+	// fires before MULTI_ARM relaxation so a multi-arm card can never paper
+	// over a void/Nothing disagreement.
+	const cardVoid = cardIsVoid(card)
+	const schemaVoid = schema === 'void'
+	if (cardVoid !== schemaVoid) {
+		return {
+			ok: false,
+			why: `<${card.tag}>: card Tag-omission ${cardVoid ? 'IS' : 'is NOT'} void ("${card.omission}") but schema model is "${schema}"`,
+		}
+	}
 	if (prose === null) {
 		// Combined-card edge with no parseable Content-model box — the only
-		// requirement is that the schema carries a known model (it does).
+		// requirement is that the schema carries a known model (it does) and
+		// the void/non-void check above already passed.
 		return { ok: true, why: '' }
 	}
 	if (MULTI_ARM_MODEL.has(card.tag)) {
 		// Documented multi-arm prose — schema picks the dominant arm by
-		// design (see schema.ts); only require a known model.
+		// design (see schema.ts); only require a known model. The void
+		// bidirectional check above is NOT relaxed for these.
 		return { ok: true, why: '' }
-	}
-	if (VOID_BY_OMISSION.has(card.tag) && schema === 'void') {
-		// Card says "Nothing" but **Tag omission** is "No end tag" — a true
-		// void element; nothing/void are compatible here.
-		const ok = prose === 'nothing' || prose === 'void'
-		return {
-			ok,
-			why: `<${card.tag}>: void-by-omission but card parsed to "${prose}"`,
-		}
 	}
 	return {
 		ok: schema === prose,
@@ -269,6 +286,39 @@ describe('w3c corpus — card Content model matches the schema entry', () => {
 			expect(result.ok ? '' : result.why).toBe('')
 		})
 	}
+})
+
+describe('w3c corpus — void set is exactly the corpus-stated void elements', () => {
+	// The set of tags the CORPUS itself declares void, derived purely from
+	// each card's **Tag omission** prose ("No end tag" / "(void element)").
+	// No hand-maintained allowlist — this set is whatever the cards say.
+	const corpusVoid = new Set(parsed.filter((card) => cardIsVoid(card)).map((card) => card.tag))
+
+	it('the corpus declares exactly the 13 HTML void elements', () => {
+		const expected = [
+			'area',
+			'base',
+			'br',
+			'col',
+			'embed',
+			'hr',
+			'img',
+			'input',
+			'link',
+			'meta',
+			'source',
+			'track',
+			'wbr',
+		]
+		expect([...corpusVoid].sort()).toEqual(expected)
+	})
+
+	it('schema VOID_TAGS equals the corpus-stated void set (bidirectional)', () => {
+		// Both directions in one diff: a schema-only tag (model:void with no
+		// corpus void prose) OR a corpus-only tag (void prose but schema not
+		// model:void) fails. No per-element exception.
+		expect([...VOID_TAGS].sort()).toEqual([...corpusVoid].sort())
+	})
 })
 
 describe('w3c corpus — card Contexts populate the schema entry', () => {

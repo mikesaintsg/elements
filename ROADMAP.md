@@ -9,7 +9,7 @@
 framework layer (tokens, theme, mixins, modifiers, elements, components,
 surfaces, composables) and all 43 showcase pages ship green — full suite
 **146 files / 7057 tests**, `npm run check` 0/0, all 11 build phases
-complete. The framework is the *substrate* the inspector validates; it is
+complete. The framework is the _substrate_ the inspector validates; it is
 not re-planned here.
 
 ---
@@ -23,9 +23,9 @@ interaction, and spec-rendering rules.
 
 Two lenses, one walk:
 
-1. **Structure lens** — for every element, decide: *is this element allowed
-   where it sits* (its parent's / ancestor context), and *does its own
-   subtree satisfy its content model* (required children present and ordered,
+1. **Structure lens** — for every element, decide: _is this element allowed
+   where it sits_ (its parent's / ancestor context), and _does its own
+   subtree satisfy its content model_ (required children present and ordered,
    no forbidden descendants, every child an allowed category). Plus the
    discrete spec constraints a tree-walker can decide: no `<a>` inside `<a>`,
    no interactive content inside `<a>`/`<button>`, exactly one `<summary>` as
@@ -48,7 +48,7 @@ Two lenses, one walk:
    our own cascade** — the same instrumented-audit muscle the theme-retune /
    reduced-motion / forced-colors passes used, made permanent and codified.
 
-**Why from scratch:** no off-the-shelf tool does *DOM-tree* semantic
+**Why from scratch:** no off-the-shelf tool does _DOM-tree_ semantic
 conformance with a citeable rule corpus and zero dependencies. The HTML
 validator parses source strings; linters are AST/source based; AT-focused
 tools check ARIA, not HTML content models. We already own a mirrored W3C
@@ -56,7 +56,7 @@ corpus (`guides/w3c/**`), a frozen-registry + parity-test discipline, and a
 DOM-walking idiom across every factory. The inspector is the natural apex of
 that doctrine: **the WHATWG spec is the source of truth, the `guides/w3c/**`
 cache + a frozen schema mirror it, the inspector enforces it on real DOM,
-parity tests keep cache ↔ schema ↔ spec in lock-step** (see the
+parity tests keep cache ↔ schema ↔ spec in lock-step\*\* (see the
 [W3C spec reference map](#w3c-spec-reference-map)).
 
 ### Hard constraints (non-negotiable)
@@ -69,7 +69,7 @@ parity tests keep cache ↔ schema ↔ spec in lock-step** (see the
   / [validators](guides/validators.md) / [parsers](guides/parsers.md)).
   These are not new deps; using them is mandatory (see
   [Existing tooling we build on](#existing-tooling-we-build-on-no-reinvention)).
-- **No string / regex HTML parsing.** The inspector consumes a *parsed*
+- **No string / regex HTML parsing.** The inspector consumes a _parsed_
   `ParentNode` (default `document`); it walks via
   [`traversals`](guides/traversals.md) (`walkDescendantsGenerator()`,
   `getAncestors()`, the `is*`/`matchesTag` guards) and reads `tagName` /
@@ -81,7 +81,7 @@ parity tests keep cache ↔ schema ↔ spec in lock-step** (see the
   Manager pattern (§4.2.2) when a verb family grows.
 - **Operates on the post-parse DOM.** Tag-omission and implicit-element
   insertion (`<tbody>`, `<head>`) are already resolved by the parser, so
-  omission rules are out of scope *by construction* — but the engine must
+  omission rules are out of scope _by construction_ — but the engine must
   know the DOM can differ from source (implicit `<tbody>`; `<table>` model).
 - **Deterministic, offline, fast.** Same DOM → same findings. A budget for
   large trees (Phase 8). Runs inside the existing Chromium test harness.
@@ -89,7 +89,7 @@ parity tests keep cache ↔ schema ↔ spec in lock-step** (see the
 ### Non-goals
 
 - Not an accessibility/ARIA auditor (axe-core's domain) — implicit-role data
-  is used only where the *HTML* spec makes it content-model-relevant.
+  is used only where the _HTML_ spec makes it content-model-relevant.
 - Not a CSS linter — the presentation lens only flags overrides that
   contradict an element's **semantics**, nothing stylistic.
 - Not a source/string validator — the DOM is the input, always.
@@ -172,7 +172,7 @@ tests/                         ← parity (schema↔guides), unit (rule↔fixtur
   rules use the [`@elements/core` parsers](guides/parsers.md). These are
   first-party packages already shipped + parity-gated — using them honors
   "no new dependencies" **and** "no reinvention".
-- **No `errors.ts`** — findings are *data*, not exceptions.
+- **No `errors.ts`** — findings are _data_, not exceptions.
 
 ### The transparent content model (first-class)
 
@@ -182,14 +182,14 @@ tests/                         ← parity (schema↔guides), unit (rule↔fixtur
 `resolveModel(node)` walks ancestors: if the parent is itself transparent,
 recurse; otherwise the effective model is the one the nearest
 **non-transparent** ancestor imposes; a detached root resolves to **flow**
-(verbatim spec rule: *"when a transparent element has no parent, its content
-model restrictions are instead based on flow content"*). Ancestor
-*restrictions* propagate through (no interactive / no `<a>` / no `tabindex`
+(verbatim spec rule: _"when a transparent element has no parent, its content
+model restrictions are instead based on flow content"_). Ancestor
+_restrictions_ propagate through (no interactive / no `<a>` / no `tabindex`
 descendant of [`<a>`](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element);
 no nested `<audio>`/`<video>`). This resolver is the spine of the structure
 lens and gets its own dedicated unit suite. **Implementation:** the
 ancestor walk is [`traversals`](guides/traversals.md) `getAncestors()` /
-`findClosest()` (not a hand-rolled loop); the recursive *guard* form of a
+`findClosest()` (not a hand-rolled loop); the recursive _guard_ form of a
 transparent/recursive content model is expressed with
 [`@elements/core`](guides/validators.md) `lazyOf` (guard) /
 [`lazyShape`](guides/shapers.md) (the only sanctioned recursion boundary —
@@ -207,24 +207,24 @@ first-party packages**. The build composes them; it does not re-implement
 them. Every row's API is exhaustively documented + doc↔source-gated in the
 linked guide.
 
-| Inspector need | Reuse (already shipped) | Source / guide |
-| -------------- | ----------------------- | -------------- |
-| Depth-first element walk (lazy, no recursion limit) | `walkDescendantsGenerator()` (`for…of`), `walkDescendants()`, `walkDescendantsBreadthFirst()` | [`traversals`](guides/traversals.md) · `src/browser/traversals.ts` |
-| Transparent-model ancestor resolution | `getAncestors()`, `findClosest()`, `findAncestor()`, `findCommonAncestor()` | [traversals.md](guides/traversals.md) |
-| Node typing / matching guards | `isElement`, `isHTMLElement`, `isTextNode`, `isTagType`, `matchesTag`, `hasAttribute`, `createMatcher` (`ElementPredicate`) | [traversals.md](guides/traversals.md) · `helpers.ts` |
-| Stable DOM path for a `Finding` | `getPathToAncestor()`, `getTreeDistance()`, `getSiblingIndex()` | [traversals.md](guides/traversals.md) |
-| Relationship checks (interaction lens) | `isDescendantOf`, `isAncestorOf`, `isBefore`, `isAfter`, `contains` | [traversals.md](guides/traversals.md) |
-| Focus/interaction rules | `isFocusable`, `findFocusableElements`, `findFirstFocusable`, `findLastFocusable` | [traversals.md](guides/traversals.md) |
-| Live-vs-static collection safety while walking | `toArray()` to freeze before DOM-sensitive iteration | [traversals.md](guides/traversals.md) §Contract 6 |
-| `ContentModelEntry` constraint data + `Finding` / `InspectionResult` shape → free **guard + JSON Schema** | declare a `ContractShape` once; `compileContract()` derives `is` + `schema` | [shapers.md](guides/shapers.md) · [compilers.md](guides/compilers.md) |
-| Recursive content model (transparent / `ruby` / nested) | `lazyShape()` (shape) · `lazyOf` (guard) — the only sanctioned recursion boundary, cycle-safe + depth-capped | [shapers.md](guides/shapers.md) · [validators.md](guides/validators.md) |
-| Deterministic synthetic DOM/shape fixtures + perf-budget trees | `compileGenerator()` + `createRandom(seed)` (reproducible per seed) | [compilers.md](guides/compilers.md) |
-| Rule predicate composition | `andOf` / `orOf` / `unionOf` / `whereOf` / `notOf` / `enumOf` / `literalOf` / `recordOf` | [validators.md](guides/validators.md) |
-| Attribute-value rules (`tabindex` integer · `colgroup[span]` ≤1000 · `th[scope]` enum · `dir∈{ltr,rtl}` · `loading`/`crossorigin` enums · `data[value]`) | `parseInteger` / `parseEnum` / `parseBoolean` / `parseString` (coerce → typed-or-`undefined`) | [parsers.md](guides/parsers.md) |
-| Machine-consumable findings output (JSON Schema + a guard for consumers) | the `Finding` `ContractShape`'s compiled `schema` + `is` | [compilers.md](guides/compilers.md) |
+| Inspector need                                                                                                                                           | Reuse (already shipped)                                                                                                     | Source / guide                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Depth-first element walk (lazy, no recursion limit)                                                                                                      | `walkDescendantsGenerator()` (`for…of`), `walkDescendants()`, `walkDescendantsBreadthFirst()`                               | [`traversals`](guides/traversals.md) · `src/browser/traversals.ts`      |
+| Transparent-model ancestor resolution                                                                                                                    | `getAncestors()`, `findClosest()`, `findAncestor()`, `findCommonAncestor()`                                                 | [traversals.md](guides/traversals.md)                                   |
+| Node typing / matching guards                                                                                                                            | `isElement`, `isHTMLElement`, `isTextNode`, `isTagType`, `matchesTag`, `hasAttribute`, `createMatcher` (`ElementPredicate`) | [traversals.md](guides/traversals.md) · `helpers.ts`                    |
+| Stable DOM path for a `Finding`                                                                                                                          | `getPathToAncestor()`, `getTreeDistance()`, `getSiblingIndex()`                                                             | [traversals.md](guides/traversals.md)                                   |
+| Relationship checks (interaction lens)                                                                                                                   | `isDescendantOf`, `isAncestorOf`, `isBefore`, `isAfter`, `contains`                                                         | [traversals.md](guides/traversals.md)                                   |
+| Focus/interaction rules                                                                                                                                  | `isFocusable`, `findFocusableElements`, `findFirstFocusable`, `findLastFocusable`                                           | [traversals.md](guides/traversals.md)                                   |
+| Live-vs-static collection safety while walking                                                                                                           | `toArray()` to freeze before DOM-sensitive iteration                                                                        | [traversals.md](guides/traversals.md) §Contract 6                       |
+| `ContentModelEntry` constraint data + `Finding` / `InspectionResult` shape → free **guard + JSON Schema**                                                | declare a `ContractShape` once; `compileContract()` derives `is` + `schema`                                                 | [shapers.md](guides/shapers.md) · [compilers.md](guides/compilers.md)   |
+| Recursive content model (transparent / `ruby` / nested)                                                                                                  | `lazyShape()` (shape) · `lazyOf` (guard) — the only sanctioned recursion boundary, cycle-safe + depth-capped                | [shapers.md](guides/shapers.md) · [validators.md](guides/validators.md) |
+| Deterministic synthetic DOM/shape fixtures + perf-budget trees                                                                                           | `compileGenerator()` + `createRandom(seed)` (reproducible per seed)                                                         | [compilers.md](guides/compilers.md)                                     |
+| Rule predicate composition                                                                                                                               | `andOf` / `orOf` / `unionOf` / `whereOf` / `notOf` / `enumOf` / `literalOf` / `recordOf`                                    | [validators.md](guides/validators.md)                                   |
+| Attribute-value rules (`tabindex` integer · `colgroup[span]` ≤1000 · `th[scope]` enum · `dir∈{ltr,rtl}` · `loading`/`crossorigin` enums · `data[value]`) | `parseInteger` / `parseEnum` / `parseBoolean` / `parseString` (coerce → typed-or-`undefined`)                               | [parsers.md](guides/parsers.md)                                         |
+| Machine-consumable findings output (JSON Schema + a guard for consumers)                                                                                 | the `Finding` `ContractShape`'s compiled `schema` + `is`                                                                    | [compilers.md](guides/compilers.md)                                     |
 
 **Consequence for the phases:** Phase 2's "Walker" shrinks to a Context
-resolver over `traversals`; Phase 1's schema gains a *compiled* guard +
+resolver over `traversals`; Phase 1's schema gains a _compiled_ guard +
 JSON Schema for free; Phase 3 rule predicates are validator compositions
 and attribute checks are `parsers` calls; Phase 3/8 fixtures + the perf
 budget use the seeded generator. **The doc↔source parity discipline these
@@ -236,17 +236,17 @@ five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
 
 ## At a glance
 
-| Phase | Description                                                                                  | Status |
-| ----- | -------------------------------------------------------------------------------------------- | ------ |
-| 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec                         | ✅     |
-| 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                          | ✅     |
-| 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)                       | ⬜     |
-| 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant)          | ⬜     |
-| 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel             | ⬜     |
-| 5     | Presentation lens (computed-style: load-bearing rendering overrides)                         | ⬜     |
-| 6     | Showcase self-audit suite — run Inspector on every page; remediate our findings              | ⬜     |
-| 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                           | ⬜     |
-| 8     | Public-API parity hardening + large-tree performance budget                                  | ⬜     |
+| Phase | Description                                                                         | Status |
+| ----- | ----------------------------------------------------------------------------------- | ------ |
+| 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec               | ✅     |
+| 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                 | ✅     |
+| 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)              | ⬜     |
+| 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant) | ⬜     |
+| 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel    | ⬜     |
+| 5     | Presentation lens (computed-style: load-bearing rendering overrides)                | ⬜     |
+| 6     | Showcase self-audit suite — run Inspector on every page; remediate our findings     | ⬜     |
+| 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                  | ⬜     |
+| 8     | Public-API parity hardening + large-tree performance budget                         | ⬜     |
 
 ---
 
@@ -259,24 +259,24 @@ its **local cache file** (what the schema mirrors today) and its
 tightly-scoped, subsection-named prompt). Every phase, rule family, and
 Phase-0 gap links back to the matching row here.
 
-| Corpus area | Local cache | Canonical multipage page |
-| ----------- | ----------- | ------------------------ |
-| Content categories · content models · **transparent** · palpable · inter-element whitespace | *(none — Phase 0 adds `categories.md`)* | [dom.html](https://html.spec.whatwg.org/multipage/dom.html#content-models) |
-| Sectioning — `article` `section` `nav` `aside` `h1`–`h6` `hgroup` `header` `footer` `address` | [`elements/sections.md`](guides/w3c/elements/sections.md) *(truncated)* | [sections.html](https://html.spec.whatwg.org/multipage/sections.html) |
-| Grouping — `p` `hr` `pre` `blockquote` `ol` `ul` `menu` `li` `dl` `dt` `dd` `figure` `figcaption` `main` `search` `div` | [`elements/groupings.md`](guides/w3c/elements/groupings.md) | [grouping-content.html](https://html.spec.whatwg.org/multipage/grouping-content.html) |
-| Text-level (incl. `a`, `bdo`, `data`, `time`, `ruby`, `br`/`wbr`) | [`elements/texts.md`](guides/w3c/elements/texts.md) | [text-level-semantics.html](https://html.spec.whatwg.org/multipage/text-level-semantics.html) |
-| Link mechanics — `href` `rel` `ping` `hreflang` keyword tables | [`elements/links.md`](guides/w3c/elements/links.md) | [links.html](https://html.spec.whatwg.org/multipage/links.html) |
-| Edits — `ins` `del` (transparent) | [`elements/edits.md`](guides/w3c/elements/edits.md) | [edits.html](https://html.spec.whatwg.org/multipage/edits.html) |
-| Embedded — `picture` `source` `img` `iframe` `embed` `object` | [`elements/embeddeds.md`](guides/w3c/elements/embeddeds.md) *(partial)* | [embedded-content.html](https://html.spec.whatwg.org/multipage/embedded-content.html) |
-| Media — `video` `audio` `track` (transparent media) | *(none — Phase 0)* | [media.html](https://html.spec.whatwg.org/multipage/media.html) |
-| Image maps — `map` `area` | *(none — Phase 0)* | [image-maps.html](https://html.spec.whatwg.org/multipage/image-maps.html) |
-| Tabular — `table` `caption` `colgroup` `col` `thead` `tbody` `tfoot` `tr` `td` `th` | [`elements/tables.md`](guides/w3c/elements/tables.md) | [tables.html](https://html.spec.whatwg.org/multipage/tables.html) |
-| Forms — `form`, `label` | [`elements/forms.md`](guides/w3c/elements/forms.md) *(form/label only)* | [forms.html](https://html.spec.whatwg.org/multipage/forms.html#the-form-element) |
-| Forms — `input` | *(none — Phase 0)* | [input.html](https://html.spec.whatwg.org/multipage/input.html#the-input-element) |
-| Forms — `button` `select` `optgroup` `option` `textarea` `fieldset` `legend` `output` `datalist` `meter` `progress` | *(none — Phase 0)* | [form-elements.html](https://html.spec.whatwg.org/multipage/form-elements.html) |
-| Interactive — `details` `summary` `dialog` | [`elements/interactives.md`](guides/w3c/elements/interactives.md) | [interactive-elements.html](https://html.spec.whatwg.org/multipage/interactive-elements.html) |
-| Interaction — `hidden` `inert` focus/`tabindex` `contenteditable` popover, page visibility, user activation | [`interactions.md`](guides/w3c/interactions.md) *(§6.1–6.4 only)* | [interaction.html](https://html.spec.whatwg.org/multipage/interaction.html) |
-| Rendering — UA default CSS / semantically load-bearing presentation | [`renderings.md`](guides/w3c/renderings.md) | [rendering.html](https://html.spec.whatwg.org/multipage/rendering.html) |
+| Corpus area                                                                                                             | Local cache                                                             | Canonical multipage page                                                                      |
+| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Content categories · content models · **transparent** · palpable · inter-element whitespace                             | _(none — Phase 0 adds `categories.md`)_                                 | [dom.html](https://html.spec.whatwg.org/multipage/dom.html#content-models)                    |
+| Sectioning — `article` `section` `nav` `aside` `h1`–`h6` `hgroup` `header` `footer` `address`                           | [`elements/sections.md`](guides/w3c/elements/sections.md) _(truncated)_ | [sections.html](https://html.spec.whatwg.org/multipage/sections.html)                         |
+| Grouping — `p` `hr` `pre` `blockquote` `ol` `ul` `menu` `li` `dl` `dt` `dd` `figure` `figcaption` `main` `search` `div` | [`elements/groupings.md`](guides/w3c/elements/groupings.md)             | [grouping-content.html](https://html.spec.whatwg.org/multipage/grouping-content.html)         |
+| Text-level (incl. `a`, `bdo`, `data`, `time`, `ruby`, `br`/`wbr`)                                                       | [`elements/texts.md`](guides/w3c/elements/texts.md)                     | [text-level-semantics.html](https://html.spec.whatwg.org/multipage/text-level-semantics.html) |
+| Link mechanics — `href` `rel` `ping` `hreflang` keyword tables                                                          | [`elements/links.md`](guides/w3c/elements/links.md)                     | [links.html](https://html.spec.whatwg.org/multipage/links.html)                               |
+| Edits — `ins` `del` (transparent)                                                                                       | [`elements/edits.md`](guides/w3c/elements/edits.md)                     | [edits.html](https://html.spec.whatwg.org/multipage/edits.html)                               |
+| Embedded — `picture` `source` `img` `iframe` `embed` `object`                                                           | [`elements/embeddeds.md`](guides/w3c/elements/embeddeds.md) _(partial)_ | [embedded-content.html](https://html.spec.whatwg.org/multipage/embedded-content.html)         |
+| Media — `video` `audio` `track` (transparent media)                                                                     | _(none — Phase 0)_                                                      | [media.html](https://html.spec.whatwg.org/multipage/media.html)                               |
+| Image maps — `map` `area`                                                                                               | _(none — Phase 0)_                                                      | [image-maps.html](https://html.spec.whatwg.org/multipage/image-maps.html)                     |
+| Tabular — `table` `caption` `colgroup` `col` `thead` `tbody` `tfoot` `tr` `td` `th`                                     | [`elements/tables.md`](guides/w3c/elements/tables.md)                   | [tables.html](https://html.spec.whatwg.org/multipage/tables.html)                             |
+| Forms — `form`, `label`                                                                                                 | [`elements/forms.md`](guides/w3c/elements/forms.md) _(form/label only)_ | [forms.html](https://html.spec.whatwg.org/multipage/forms.html#the-form-element)              |
+| Forms — `input`                                                                                                         | _(none — Phase 0)_                                                      | [input.html](https://html.spec.whatwg.org/multipage/input.html#the-input-element)             |
+| Forms — `button` `select` `optgroup` `option` `textarea` `fieldset` `legend` `output` `datalist` `meter` `progress`     | _(none — Phase 0)_                                                      | [form-elements.html](https://html.spec.whatwg.org/multipage/form-elements.html)               |
+| Interactive — `details` `summary` `dialog`                                                                              | [`elements/interactives.md`](guides/w3c/elements/interactives.md)       | [interactive-elements.html](https://html.spec.whatwg.org/multipage/interactive-elements.html) |
+| Interaction — `hidden` `inert` focus/`tabindex` `contenteditable` popover, page visibility, user activation             | [`interactions.md`](guides/w3c/interactions.md) _(§6.1–6.4 only)_       | [interaction.html](https://html.spec.whatwg.org/multipage/interaction.html)                   |
+| Rendering — UA default CSS / semantically load-bearing presentation                                                     | [`renderings.md`](guides/w3c/renderings.md)                             | [rendering.html](https://html.spec.whatwg.org/multipage/rendering.html)                       |
 
 **Stable anchor conventions** (verified live): per-element anchors are
 `#the-{tag}-element` (headings are the combined
@@ -296,7 +296,7 @@ cache anchor; the Phase-1 parity test resolves each.
 
 **Canonical source:** the **live WHATWG spec at
 <https://html.spec.whatwg.org/>** is the authority. `guides/w3c/**` is a
-curated *local cache* of it — convenient and citeable, but it has drifted /
+curated _local cache_ of it — convenient and citeable, but it has drifted /
 truncated. Phase 0 **reconciles the cache against the canonical spec** and
 the schema (Phase 1) mirrors the reconciled cache; parity tests bind all
 three. Where the cache and the spec disagree, **the spec wins** and the
@@ -313,12 +313,13 @@ even from large pages. Canonical section URLs (from the multipage TOC):
 `edits.html`, `embedded-content.html`, `media.html`, `image-maps.html`,
 `tables.html`, `forms.html`, `interactive-elements.html`,
 `interaction.html`. Two live validations:
-- *Sections gap* → `multipage/sections.html`: `header`/`footer` (flow, **no
+
+- _Sections gap_ → `multipage/sections.html`: `header`/`footer` (flow, **no
   `header`/`footer` descendants**), `hgroup` (`p* · one h1–h6 · p*`,
   intermixed script-supporting), `address` (flow, **no heading /
   sectioning / `header` / `footer` / `address` descendants**), `nav`/`aside`
   (flow, sectioning, palpable).
-- *Category linchpin* (absent from the cache entirely) →
+- _Category linchpin_ (absent from the cache entirely) →
   `multipage/dom.html` §3.2.5.2–3.2.5.3: full element-membership lists for
   all eight categories + palpable rule + the transparent rule verbatim
   ("content model derived from the parent's content model; **when a
@@ -353,7 +354,7 @@ above):
   [form-elements.html](https://html.spec.whatwg.org/multipage/form-elements.html),
   `form`/`label` from
   [forms.html](https://html.spec.whatwg.org/multipage/forms.html#the-form-element).
-- [`elements/links.md`](guides/w3c/elements/links.md) — link *mechanics*
+- [`elements/links.md`](guides/w3c/elements/links.md) — link _mechanics_
   only; **no element cards** for `a` / `area` / `map`. → `a` from
   [text-level-semantics.html#the-a-element](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element);
   `map`/`area` from
@@ -377,7 +378,7 @@ above):
   "heading", "metadata", "script-supporting", "form-associated" …). →
   source from
   [dom.html#kinds-of-content](https://html.spec.whatwg.org/multipage/dom.html#kinds-of-content).
-- **No implicit-ARIA role table** (needed only where the *HTML* spec makes
+- **No implicit-ARIA role table** (needed only where the _HTML_ spec makes
   a role content-model-relevant, e.g. `main`'s "hierarchically correct").
 
 **Work:**
@@ -419,7 +420,7 @@ above):
   (sections ×7, button/select/datalist/optgroup/input, iframe/object/
   video/audio/track/map/canvas, html/head/title/base/link/meta/style);
   the deep-in-long-page elements the fetch tool structurally truncates got
-  concise clearly-labeled *illustrative* examples (never misattributed —
+  concise clearly-labeled _illustrative_ examples (never misattributed —
   the canonical spec URL is on every card).
 - ✅ **`tests/guides/w3c.test.ts` gate** — landed with **Phase 1** (not
   Phase 0): asserts every carded element under `guides/w3c/**` has a
@@ -447,9 +448,11 @@ The frozen TS mirror of the corpus, shaped exactly like
   `helpers.ts`); pre-computed `SCHEMA_BY_TAG`, `VOID_TAGS`,
   `TRANSPARENT_TAGS`, `CATEGORY_MEMBERS`; single-word predicates `isVoid`,
   `isTransparent`, `modelOf`, `categoriesOf`, `contextOf`,
-  `isKnownElement`. 108 entries (the 93 taxonomy tags with `h1`–`h6`
-  expanded to six real elements, plus the 10 metadata / media / image-map
-  elements the corpus additionally cards).
+  `isKnownElement`. 110 entries (the 93 taxonomy tags with the single
+  `h1`–`h6` taxonomy entry expanded to six real elements, plus the 12
+  metadata / media / image-map elements the corpus additionally cards:
+  `area`, `base`, `br`, `head`, `link`, `map`, `meta`, `source`, `style`,
+  `title`, `track`, `wbr`).
 - ✅ Encode the discrete named constraints as data (so rules stay generic):
   `no-self-nest` (`a`, `dfn`), `no-interactive-descendant` (`a`,
   `button`), `single-first-child` (`summary`→`details`,
@@ -457,7 +460,7 @@ The frozen TS mirror of the corpus, shaped exactly like
   (`figcaption`→`figure` first|last), `group-order` (`dt`/`dd`,
   `ruby` rt/rp), `parent-restricted` (`li`→ul/ol/menu, `td`/`th`→tr,
   `option`→select/optgroup/datalist), the `table` model, `picture` order
-  (`source`* then one `img`).
+  (`source`\* then one `img`).
 - ✅ **Express the entry as an `@elements/core` `ContractShape`** (an
   `objectShape` of the fields above; `literalShape` for the category /
   model unions) run through `compileContract()` — the inspector gets a
@@ -550,7 +553,7 @@ The frozen TS mirror of the corpus, shaped exactly like
     ([picture](https://html.spec.whatwg.org/multipage/embedded-content.html#the-picture-element)),
     void-has-children.
   - **attribute** — coupling rules (`a[target|download|ping|rel|hreflang|
-    type|referrerpolicy]` ⇒ `href`
+type|referrerpolicy]` ⇒ `href`
     ([links.html](https://html.spec.whatwg.org/multipage/links.html));
     `bdo` ⇒ `dir∈{ltr,rtl}`; `data` ⇒ `value`; `time` w/o `datetime` ⇒
     text-only datetime
@@ -648,7 +651,7 @@ fires only when an override **breaks semantics** (corpus:
 ## Phase 7 — `/inspector` showcase page + guide
 
 - ⬜ `app/browser/pages/InspectorPage.vue` + route + `tests/app/browser/
-  pages/InspectorPage.test.ts` (the standard page bijection) — a live,
+pages/InspectorPage.test.ts` (the standard page bijection) — a live,
   in-page panel that runs the inspector on the current document and renders
   findings (severity, element path, message, spec citation). Authored
   framework-faithfully (elements → modifiers → utilities → `showcase.css`
@@ -675,7 +678,7 @@ fires only when an override **breaks semantics** (corpus:
   across runs), asserting a walked-node-per-ms floor so a walker / rule
   complexity regression is caught. Tune only with evidence (AGENTS §16.3).
 - ⬜ Final sweep: `npm run check` 0/0, targeted suites green, `npm run
-  format`, ROADMAP + guides updated, commit/push.
+format`, ROADMAP + guides updated, commit/push.
 
 ---
 
