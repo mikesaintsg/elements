@@ -4,6 +4,7 @@ import type {
 	CreatePopoverOptions,
 	Placement,
 } from '../types.js'
+import { coerceNumber, isUndefined } from '@elements/core'
 import { computed, effectScope, readonly, ref } from '@vue/reactivity'
 import { DEFAULT_FLOATING_OFFSET, POPOVER_EVENTS, POPOVER_TOUCH_GUARD_MS } from '../constants.js'
 import {
@@ -167,8 +168,15 @@ export function createPopover(
 		const raw = getComputedStyle(panel).transitionDuration
 		if (!raw) return false
 		// `transition-duration` may be a comma-separated list. Any non-zero
-		// value means a transition is declared.
-		return raw.split(',').some((v) => parseFloat(v.trim()) > 0)
+		// value means a transition is declared. `coerceNumber`'s string
+		// branch IS `parseFloat`, so `'0.3s'` → 0.3 and `'0s'` → 0 exactly
+		// as before; a non-numeric token (`''`, `'s'`) yields `undefined`
+		// (the old `NaN > 0` was already `false`), so `!isUndefined(n) &&
+		// n > 0` is behavior-identical to the prior `parseFloat(...) > 0`.
+		return raw.split(',').some((v) => {
+			const n = coerceNumber(v.trim())
+			return !isUndefined(n) && n > 0
+		})
 	}
 
 	const finishOpen = (): void => {
