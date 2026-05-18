@@ -183,6 +183,30 @@ export interface ContentConstraint {
 	/** Allowed parent tags (`parent-restricted`) or the required single
 	 *  parent (`single-first-child` / `edge-child`). */
 	readonly parents?: readonly string[]
+	/**
+	 * Qualifies a `parent-restricted` constraint with the spec's
+	 * child-vs-descendant distinction (the corpus card's **Contexts** prose):
+	 *
+	 * - `'child'` ⇒ the element must be a *direct* flat-tree child of one of
+	 *   `parents` (the ~13 "**as a child of** X" / "inside an X element"
+	 *   constraints — `li`→ul/ol/menu, `td`/`th`→tr, `tr`→thead/tbody/tfoot,
+	 *   `rt`/`rp`→ruby, `source`→picture/media, `track`→media,
+	 *   `col`/`colgroup`/`tbody`/`thead`/`tfoot`→table/colgroup). This is the
+	 *   deliberate `<div><td>` detection.
+	 * - `'descendant'` ⇒ the element must merely have one of `parents` as a
+	 *   flat-tree *ancestor*; spec-permitted generic wrappers (`<div>` /
+	 *   `<noscript>`) may sit between them (the ~2 "**as a descendant of** X"
+	 *   constraints — `option`/`optgroup`→select/optgroup/datalist).
+	 *
+	 * It is effectively REQUIRED on every `parent-restricted` constraint: the
+	 * schema populates it on all of them and `tests/guides/w3c.test.ts`
+	 * asserts each `parent-restricted` constraint carries an explicit
+	 * `relation` bound to the card's Contexts wording, so the distinction is
+	 * always parity-gated and the `?:` optionality can never silently drift.
+	 * The optionality is type-level ergonomics only; the rule layer treats a
+	 * `parent-restricted` constraint with no `relation` as `'child'`.
+	 */
+	readonly relation?: 'child' | 'descendant'
 	/** The constrained child tag (`single-first-child` — e.g. `summary`). */
 	readonly child?: string
 	/** Which edge the element must occupy (`edge-child`). */

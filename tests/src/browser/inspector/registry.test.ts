@@ -184,6 +184,35 @@ describe('rules — full registry over ordered/prefix parents', () => {
 			mount(el('dl', [el('div', [text('dt', 'T'), text('dd', 'D')])]))
 			expect(findings(container)).toEqual([])
 		})
+
+		// ── parent-restricted DESCENDANT relation (the C4 fix) ────────────────
+		//
+		// `option`/`optgroup` are valid as a *descendant* of select/datalist/
+		// optgroup (the spec sanctions generic `<div>`/`<noscript>` wrappers
+		// inside `<select>`/`<optgroup>` per their inner-content category) —
+		// NOT merely a direct child. The strict direct-flat-parent check
+		// false-positived on the inner `<option>` whose flat-parent is the
+		// `<div>`; the `relation:'descendant'` datum fixes it. These MUST be
+		// `[]` (and were the C4 false positive before the relation branch).
+
+		it('C4: <select><option/><div><option/></div></select> is valid → []', () => {
+			mount(el('select', [text('option', 'a'), el('div', [text('option', 'b')])]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<select><noscript><option/></noscript></select> is valid → []', () => {
+			// The `select` card sanctions `noscript` in its inner-content
+			// category; `option` is valid as a descendant of `select`.
+			mount(el('select', [el('noscript', [text('option', 'a')])]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<select><div><optgroup><option/></optgroup></div></select> → []', () => {
+			// `optgroup` is also `relation:'descendant'` of `select` — a
+			// wrapping `<div>` between them is spec-permitted.
+			mount(el('select', [el('div', [el('optgroup', [text('option', 'a')])])]))
+			expect(findings(container)).toEqual([])
+		})
 	})
 
 	// ── SINGLE violation → EXACTLY ONE finding ────────────────────────────
@@ -253,6 +282,26 @@ describe('rules — full registry over ordered/prefix parents', () => {
 		it('<dl> with a <dt> but no <dd> → exactly one', () => {
 			mount(el('dl', [text('dt', 'Term')]))
 			expect(findings(container)).toEqual(['content/required'])
+		})
+
+		// ── parent-restricted descendant/child still BITE on real violations ──
+
+		it('<div><option/></div> with NO select/optgroup/datalist ancestor → exactly one', () => {
+			// The genuine INVALID descendant case: an `option` with no
+			// select/optgroup/datalist flat-ANCESTOR still violates its
+			// `relation:'descendant'` parent-restriction — the fix relaxes the
+			// check to "any ancestor", it does NOT disable it.
+			mount(el('div', [text('option', 'orphan')]))
+			expect(findings(container)).toEqual(['structure/parent-restricted'])
+		})
+
+		it('<div><td/></div> still fires exactly one structure/parent-restricted (child, no regression)', () => {
+			// `td` is `relation:'child'` — the strict direct-flat-parent check
+			// is UNCHANGED, so the deliberate `<div><td>` detection must still
+			// fire exactly once (the child relation is the no-regression
+			// anchor for the C4 fix).
+			mount(el('div', [el('td')]))
+			expect(findings(container)).toEqual(['structure/parent-restricted'])
 		})
 	})
 
@@ -370,6 +419,37 @@ describe('rules — full registry over ordered/prefix parents', () => {
 				// is owned solely by context/parent-model, content/required
 				// defers — disjoint single source).
 				expect(first).toEqual(valid ? [] : ['context/parent-model'])
+			}
+		})
+
+		it('seeded <option> descendant-relation verdict is reproducible & exactly-one', () => {
+			// Perturbation over a `relation:'descendant'` constraint (the C4
+			// fix). `valid` = an `<option>` wrapped in a spec-permitted
+			// `<div>` UNDER a `<select>` (a descendant, not a direct child —
+			// the exact C4 false-positive shape: MUST be `[]`, and is RED
+			// `['structure/parent-restricted']` without the descendant
+			// branch). `invalid` = the SAME `<div><option>` with NO
+			// select/optgroup/datalist ancestor — the descendant restriction
+			// still BITES (exactly one structure/parent-restricted). Same
+			// seed ⇒ same shape ⇒ same verdict; the discriminator fails in
+			// BOTH directions if the relation branch regresses.
+			for (const seed of [17, 173, 1730, 17007]) {
+				const random = createRandom(seed)
+				const valid = random() < 0.5
+
+				const buildOnce = (): readonly string[] => {
+					const inner = el('div', [text('option', 'x')])
+					const root = valid ? el('select', [inner]) : el('div', [inner])
+					container.appendChild(root)
+					const ids = findings(container)
+					root.remove()
+					return ids
+				}
+
+				const first = buildOnce()
+				const second = buildOnce()
+				expect(first).toEqual(second)
+				expect(first).toEqual(valid ? [] : ['structure/parent-restricted'])
 			}
 		})
 	})

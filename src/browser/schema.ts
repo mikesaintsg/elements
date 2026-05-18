@@ -325,6 +325,9 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['ul', 'ol', 'menu'],
+					// Card Contexts: "Inside ol elements. Inside ul elements.
+					// Inside menu elements." -- the direct-child reading.
+					relation: 'child',
 					note: 'An li element must be a child of an ol, ul, or menu element.',
 				},
 			],
@@ -608,6 +611,8 @@ export const contentModel: readonly ContentModelEntry[] = [
 			{
 				kind: 'parent-restricted',
 				parents: ['ruby'],
+				// Card Contexts: "As a child of a ruby element."
+				relation: 'child',
 				note: 'As a child of a ruby element.',
 			},
 		],
@@ -623,6 +628,9 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['ruby'],
+					// Card Contexts: "As a child of a ruby element, either
+					// immediately before or immediately after an rt element."
+					relation: 'child',
 					note: 'As a child of a ruby element, immediately before or after an rt element.',
 				},
 			],
@@ -814,6 +822,10 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['picture', 'audio', 'video'],
+					// Card Contexts: "As a child of a picture element, before
+					// the img element. As a child of a media element, before
+					// any flow content or track elements."
+					relation: 'child',
 					note: 'As a child of a picture element or a media element.',
 				},
 			],
@@ -900,6 +912,9 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['audio', 'video'],
+					// Card Contexts: "As a child of a media element
+					// (audio/video), before any flow content."
+					relation: 'child',
 					note: 'As a child of a media element (audio/video).',
 				},
 			],
@@ -1020,6 +1035,9 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['table'],
+					// Card Contexts: "As a child of a table element, after any
+					// caption elements and before any thead/tbody/tfoot/tr."
+					relation: 'child',
 					note: 'As a child of a table element.',
 				},
 			],
@@ -1036,6 +1054,9 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['colgroup'],
+					// Card Contexts: "As a child of a colgroup element that
+					// doesn't have a span attribute."
+					relation: 'child',
 					note: 'As a child of a colgroup element without a span attribute.',
 				},
 			],
@@ -1057,6 +1078,9 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['table'],
+					// Card Contexts: "As a child of a table element, after
+					// any caption, colgroup, and thead elements, ..."
+					relation: 'child',
 					note: 'As a child of a table element.',
 				},
 			],
@@ -1078,6 +1102,10 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['table'],
+					// Card Contexts: "As a child of a table element, after
+					// any caption and colgroup elements and before any
+					// tbody, tfoot, and tr elements, ..."
+					relation: 'child',
 					note: 'As a child of a table element.',
 				},
 			],
@@ -1099,6 +1127,10 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['table'],
+					// Card Contexts: "As a child of a table element, after
+					// any caption, colgroup, thead, tbody, and tr
+					// elements, ..."
+					relation: 'child',
 					note: 'As a child of a table element.',
 				},
 			],
@@ -1138,6 +1170,10 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['thead', 'tbody', 'tfoot', 'table'],
+					// Card Contexts: "As a child of thead, tbody, or tfoot; or
+					// as a child of a table element after any caption,
+					// colgroup, and thead elements, ..."
+					relation: 'child',
 					note: 'As a child of a thead, tbody, or tfoot element.',
 				},
 			],
@@ -1149,6 +1185,8 @@ export const contentModel: readonly ContentModelEntry[] = [
 			{
 				kind: 'parent-restricted',
 				parents: ['tr'],
+				// Card Contexts: "As a child of a tr element."
+				relation: 'child',
 				note: 'As a child of a tr element.',
 			},
 		],
@@ -1160,6 +1198,8 @@ export const contentModel: readonly ContentModelEntry[] = [
 			{
 				kind: 'parent-restricted',
 				parents: ['tr'],
+				// Card Contexts: "As a child of a tr element."
+				relation: 'child',
 				note: 'As a child of a tr element.',
 			},
 		],
@@ -1311,6 +1351,8 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['select'],
+					// Card Contexts: "As a descendant of a select element."
+					relation: 'descendant',
 					note: 'As a descendant of a select element.',
 				},
 			],
@@ -1328,6 +1370,10 @@ export const contentModel: readonly ContentModelEntry[] = [
 				{
 					kind: 'parent-restricted',
 					parents: ['select', 'optgroup', 'datalist'],
+					// Card Contexts: "As a descendant of a select element;
+					// as a descendant of a datalist element; as a
+					// descendant of an optgroup element."
+					relation: 'descendant',
 					note: 'As a descendant of a select, datalist, or optgroup element.',
 				},
 			],
@@ -1657,6 +1703,13 @@ const constraintShape = objectShape({
 		'parent-restricted',
 	),
 	parents: optionalShape(arrayShape(stringShape({ min: 1 }))),
+	// `relation` qualifies a `parent-restricted` constraint with the spec's
+	// child-vs-descendant distinction (corpus-derived from the card Contexts
+	// prose). Shape-level optional (mirrors the `ContentConstraint` `?:`
+	// ergonomics); the schema populates it on EVERY `parent-restricted`
+	// constraint and tests/guides/w3c.test.ts asserts that bidirectionally,
+	// so the optionality can never hide drift.
+	relation: optionalShape(literalShape('child', 'descendant')),
 	child: optionalShape(stringShape({ min: 1 })),
 	edge: optionalShape(literalShape('first', 'last', 'first-or-last')),
 	note: optionalShape(stringShape({ min: 1 })),

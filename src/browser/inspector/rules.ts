@@ -809,10 +809,39 @@ const transparentMediaRule: RuleInterface = {
 //  to double-report alongside `content/required` (§1/§2 root cause removed).
 // ============================================================================
 
+// Does any flat-tree ANCESTOR of `element` carry one of `parents` as its
+// tag? Walks the SAME flat parent chain `readSubject` resolves "the parent"
+// from (`flatParent` — slot conduits collapsed, shadow host as parent), so a
+// descendant check never diverges from the walk spine (§3 — never light-tree
+// `closest`/`parentElement`). Bounded by the finite flat-tree depth.
+function hasFlatAncestorTag(element: Element, parents: readonly string[]): boolean {
+	let current = flatParent(element)
+	while (current !== null) {
+		if (parents.includes(current.tagName.toLowerCase())) return true
+		current = flatParent(current)
+	}
+	return false
+}
+
 // `parent-restricted` — the element is only valid inside one of `parents`.
+// The corpus distinguishes two spec readings, encoded as the constraint's
+// `relation` datum (parity-gated, populated on every `parent-restricted`
+// constraint from the card's **Contexts** prose):
+//   - `'child'` (the ~13 "as a child of" / "inside an X element"
+//     constraints, AND the absent default): the element must be a DIRECT
+//     flat-tree child of one of `parents` (the deliberate `<div><td>`
+//     detection — strict direct-parent, unchanged).
+//   - `'descendant'` (the 2 "as a descendant of" constraints — `option` /
+//     `optgroup` → select/optgroup/datalist): the element need only have
+//     one of `parents` as a flat-tree ANCESTOR; spec-permitted generic
+//     wrappers (`<div>`/`<noscript>`) may sit between (the C4 fix —
+//     `<select><div><option>` is valid HTML).
 const violatesParentRestricted = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	const constraint = constraintOf(subject.entry, 'parent-restricted')
 	if (constraint?.parents === undefined) return false
+	if (constraint.relation === 'descendant') {
+		return !hasFlatAncestorTag(subject.element, constraint.parents)
+	}
 	const parentTag = subject.parent?.tagName.toLowerCase() ?? null
 	return parentTag === null || !constraint.parents.includes(parentTag)
 })
@@ -826,17 +855,25 @@ const structureParentRestrictedRule: RuleInterface = {
 		if (!violatesParentRestricted(subject)) return null
 		const constraint = constraintOf(subject.entry, 'parent-restricted')
 		const parents = constraint?.parents ?? []
+		// `expected`/`actual` mirror the constraint's child-vs-descendant
+		// `relation` so the Finding restates the SAME spec reading the rule
+		// enforced (a `descendant` violation is "no … ancestor", not "child
+		// of <wrong-parent>"). `note` is still the verbatim corpus clause.
+		const relationWord = constraint?.relation === 'descendant' ? 'descendant' : 'child'
 		return buildFinding({
 			rule: 'structure/parent-restricted',
 			severity: 'error',
 			element,
 			cite: citeOf(subject.entry, 'dom#content-models'),
-			message: constraint?.note ?? `<${subject.tag}> must be a child of ${parents.join(' / ')}.`,
-			expected: `child of ${parents.join(' / ')}`,
+			message:
+				constraint?.note ?? `<${subject.tag}> must be a ${relationWord} of ${parents.join(' / ')}.`,
+			expected: `${relationWord} of ${parents.join(' / ')}`,
 			actual:
-				subject.parent === null
-					? '(no parent)'
-					: `child of <${subject.parent.tagName.toLowerCase()}>`,
+				relationWord === 'descendant'
+					? `no ${parents.join(' / ')} ancestor`
+					: subject.parent === null
+						? '(no parent)'
+						: `child of <${subject.parent.tagName.toLowerCase()}>`,
 		})
 	},
 }

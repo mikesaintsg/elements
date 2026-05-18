@@ -643,6 +643,82 @@ describe('w3c corpus — card Contexts populate the schema entry', () => {
 	}
 })
 
+// ── card Contexts child-vs-descendant ⇄ schema `parent-restricted` relation ─
+//
+// The `parent-restricted` constraint's `relation` datum encodes the spec's
+// child-vs-descendant distinction (types.ts) — `'child'` ⇒ strict direct
+// flat-parent (the `<div><td>` detection); `'descendant'` ⇒ any flat
+// ancestor (spec-permitted `<div>`/`<noscript>` wrappers, e.g. valid
+// `<select><div><option>`). The corpus card's **Contexts** prose is its
+// single source of truth: a card reading "As a **descendant of** X" is the
+// descendant relation; one reading "As a **child of** X" / "Inside an X
+// element" / "As the first/last element child of X" is the child relation.
+// This binds them BIDIRECTIONALLY and PERTURBATION-fails — flip a schema
+// `relation`, or the prose wording, and the equality breaks. No allowlist,
+// no skip, no relaxation; strengthen-only (a new gate, no prior assertion
+// touched).
+
+// The relation the card **Contexts** prose mandates, decided purely from
+// its child-vs-descendant wording (the same anchored-prose discipline
+// `modelFromProse`/`permitsFromProse` use). `null` ⇒ the prose does not
+// state a parent restriction in either form (a non-`parent-restricted`
+// element — its card legitimately has no such clause).
+function relationFromContextProse(prose: string): 'child' | 'descendant' | null {
+	const value = prose.toLowerCase()
+	const hasDescendant = /as a descendant of\b/.test(value)
+	const hasChild =
+		/as a child of\b/.test(value) ||
+		/as the (?:first|last) element child of\b/.test(value) ||
+		/\binside (?:an? )?`?[a-z]+`? elements?\b/.test(value)
+	// A `parent-restricted` card states exactly ONE reading; if the prose
+	// somehow stated both, that is a genuine corpus ambiguity the binding
+	// must surface (not silently pick) — return null so the bidirectional
+	// equality fails loudly rather than guessing.
+	if (hasDescendant && !hasChild) return 'descendant'
+	if (hasChild && !hasDescendant) return 'child'
+	return null
+}
+
+describe('w3c corpus — card Contexts child-vs-descendant ⇄ schema parent-restricted relation', () => {
+	// 1. Every `parent-restricted` constraint in the schema carries an
+	//    EXPLICIT `relation` (the `?:` optionality is type-level ergonomics
+	//    only — it must never silently default). One whole-set diff: the
+	//    tags whose `parent-restricted` constraint omits `relation` (empty ⇒
+	//    all explicit).
+	it('every parent-restricted constraint carries an explicit relation', () => {
+		const missing = contentModel
+			.filter((e) =>
+				e.constraints.some((c) => c.kind === 'parent-restricted' && c.relation === undefined),
+			)
+			.map((e) => e.tag)
+		expect(missing).toEqual([])
+	})
+
+	// 2. Bidirectional: for every element whose schema carries a
+	//    `parent-restricted` constraint, that constraint's `relation` MUST
+	//    equal the relation its card **Contexts** prose mandates; and an
+	//    element whose card prose mandates a parent restriction MUST carry
+	//    the matching `relation`. One diff per carded element — flipping the
+	//    schema `relation` OR the prose wording breaks the equality.
+	for (const card of parsed) {
+		const entry = SCHEMA_BY_TAG.get(card.tag)
+		if (!entry) continue
+		const constraint = entry.constraints.find((c) => c.kind === 'parent-restricted')
+		if (constraint === undefined) continue
+		it(`<${card.tag}> parent-restricted relation matches the card Contexts prose`, () => {
+			const proseRelation = relationFromContextProse(card.context)
+			// LEFT: what the card prose says (child / descendant — never null
+			// for a genuine parent-restricted element; a null here is itself a
+			// failure surfacing an unparseable Contexts box). RIGHT: the
+			// schema constraint's explicit relation.
+			expect({ tag: card.tag, relation: proseRelation }).toEqual({
+				tag: card.tag,
+				relation: constraint.relation,
+			})
+		})
+	}
+})
+
 // ── 2. SCHEMA → CARD ────────────────────────────────────────────────────────
 
 describe('schema.ts — every entry cites a real corpus card', () => {

@@ -81,6 +81,33 @@ describe('rules — structure family', () => {
 			container.appendChild(div)
 			expect(evaluateOn(parentRestrictedRule, div, td)?.rule).toBe('structure/parent-restricted')
 		})
+
+		it('clean: <option> as a DESCENDANT of <select> through a <div> is allowed (C4)', () => {
+			// `option` is `relation:'descendant'` of select/optgroup/datalist
+			// — a spec-permitted generic `<div>` wrapper between them is
+			// valid HTML. The strict direct-flat-parent check false-positived
+			// here (C4); the descendant branch must NOT flag it.
+			const option = el('option')
+			const div = el('div', [option])
+			const select = el('select', [div])
+			container.appendChild(select)
+			expect(evaluateOn(parentRestrictedRule, select, option)).toBeNull()
+		})
+
+		it('dirty: <option> with NO select/optgroup/datalist ancestor is flagged', () => {
+			// The descendant relation still BITES when no qualifying ancestor
+			// exists anywhere up the flat chain.
+			const option = el('option')
+			const div = el('div', [option])
+			container.appendChild(div)
+			const finding = evaluateOn(parentRestrictedRule, div, option)
+			if (finding === null) throw new Error('expected a parent-restricted finding')
+			expect(finding.rule).toBe('structure/parent-restricted')
+			expect(finding.element).toBe(option)
+			expect(finding.cite).toBe('forms#the-option-element')
+			expect(finding.expected).toBe('descendant of select / optgroup / datalist')
+			expect(finding.actual).toBe('no select / optgroup / datalist ancestor')
+		})
 	})
 
 	// ── single-first-child ────────────────────────────────────────────────
