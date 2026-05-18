@@ -519,23 +519,37 @@ The frozen TS mirror of the corpus, shaped exactly like
 
 ## Phase 3 — Rule engine + rule families
 
-- ⬜ `RuleInterface`: `{ id, severity, lens, evaluate(element, context) }`
+> Split into 3 sequential, independently-reviewable parts. **Part 1 ✅
+> (this slice):** the `RuleInterface`/`Finding`/`FindingSeverity`/`RuleLens`
+> types + the rule engine + the four schema-data-driven families
+> (`context` / `content` / `transparent` / `structure`) + their real-DOM
+> fixture suites. **Parts 2 & 3 ⬜ (pending):** the `attribute` family +
+> `@elements/core` parsers (part 2) and the `interaction` family (part 3),
+> which plug into the same frozen `rules` registry / `RuleInterface`
+> contract unchanged.
+
+- ✅ `RuleInterface`: `{ id, severity, lens, evaluate(element, context) }`
   — pure, side-effect-free, one finding or null. Composite predicates are
   built from [`@elements/core` validators](guides/validators.md)
   compositors (`andOf` / `orOf` / `unionOf` / `whereOf` / `notOf` /
   `enumOf` / `literalOf`) rather than ad-hoc boolean spaghetti — each rule
-  reads as a named guard composition.
-- ⬜ Rule families (each a small set of generic rules driven by the schema
-  data, not per-element hand-code):
-  - **context** — element not allowed in its parent's resolved model
+  reads as a named guard composition. Landed in
+  [`src/browser/inspector/rules.ts`](src/browser/inspector/rules.ts) as a
+  frozen `rules: readonly RuleInterface[]` registry; `Finding` /
+  `FindingSeverity` / `RuleLens` types live in
+  [`types.ts`](src/browser/types.ts) (the shared shape Phase 4 compiles).
+- 🟡 Rule families (each a small set of generic rules driven by the schema
+  data, not per-element hand-code) — **context / content / transparent /
+  structure ✅ (part 1); attribute / interaction ⬜ (parts 2/3)**:
+  - ✅ **context** — element not allowed in its parent's resolved model
     ([dom.html#content-models](https://html.spec.whatwg.org/multipage/dom.html#content-models)).
-  - **content** — required child missing / mis-ordered / wrong cardinality;
+  - ✅ **content** — required child missing / mis-ordered / wrong cardinality;
     forbidden descendant present; child not an allowed category
     ([dom.html#kinds-of-content](https://html.spec.whatwg.org/multipage/dom.html#kinds-of-content)).
-  - **transparent** — interactive / `a` / `tabindex` descendant of `<a>`;
+  - ✅ **transparent** — interactive / `a` / `tabindex` descendant of `<a>`;
     nested-`<audio>`/`<video>`
     ([dom.html#transparent-content-models](https://html.spec.whatwg.org/multipage/dom.html#transparent-content-models)).
-  - **structure** — the discrete named constraints from the schema:
+  - ✅ **structure** — the discrete named constraints from the schema:
     `single-first-child`
     ([summary](https://html.spec.whatwg.org/multipage/interactive-elements.html#the-summary-element),
     [legend](https://html.spec.whatwg.org/multipage/form-elements.html#the-legend-element),
@@ -551,8 +565,13 @@ The frozen TS mirror of the corpus, shaped exactly like
     ([tables.html](https://html.spec.whatwg.org/multipage/tables.html#the-table-element)),
     `picture-order`
     ([picture](https://html.spec.whatwg.org/multipage/embedded-content.html#the-picture-element)),
-    void-has-children.
-  - **attribute** — coupling rules (`a[target|download|ping|rel|hreflang|
+    void-has-children. Implemented GENERIC per `ContentConstraintKind`
+    (one evaluator per kind, driven by the schema constraint DATA), not
+    per-element. `no-interactive-descendant` / `no-tabindex-descendant`
+    constraint kinds are reported by the `transparent` family via
+    `RuleContext.restrictions` (one finding per violation — the structure
+    family deliberately does not re-evaluate those two kinds).
+  - ⬜ **attribute** _(part 2)_ — coupling rules (`a[target|download|ping|rel|hreflang|
 type|referrerpolicy]` ⇒ `href`
     ([links.html](https://html.spec.whatwg.org/multipage/links.html));
     `bdo` ⇒ `dir∈{ltr,rtl}`; `data` ⇒ `value`; `time` w/o `datetime` ⇒
@@ -567,7 +586,7 @@ type|referrerpolicy]` ⇒ `href`
     {row,col,rowgroup,colgroup}, `dir` ∈ {ltr,rtl,auto}, `loading`,
     `crossorigin`, `contenteditable`, `inputmode`), `parseBoolean` —
     coerce-or-`undefined`, never hand-written attribute parsing.
-  - **interaction** — `hidden`/`inert` reference integrity (a non-hidden
+  - ⬜ **interaction** _(part 3)_ — `hidden`/`inert` reference integrity (a non-hidden
     `a[href="#id"]`/`label[for]`/`output[for]` must not target a `hidden`
     element; active `aria-*` IDREF must not point into an `[inert]` /
     modal-inert subtree); `dialog` must not carry `tabindex`
@@ -575,9 +594,12 @@ type|referrerpolicy]` ⇒ `href`
     Reachability/relationship decided with [`traversals`](guides/traversals.md)
     `isDescendantOf` / `findClosest` / `isFocusable` /
     `findFocusableElements` — not bespoke DOM walks.
-- ⬜ Each family gets a fixture-driven unit suite (real DOM, no mocks;
+- 🟡 Each family gets a fixture-driven unit suite (real DOM, no mocks;
   synthetic dirty/clean trees seeded via `compileGenerator()` +
-  `createRandom()` so failures are reproducible).
+  `createRandom()` so failures are reproducible). **Part 1 ✅:**
+  `tests/src/browser/inspector/{context,content,transparent,structure}.test.ts`
+  — clean-pass + dirty-fail + seeded perturbation-verified per family.
+  **Parts 2/3 ⬜:** attribute / interaction suites pending.
 
 ---
 

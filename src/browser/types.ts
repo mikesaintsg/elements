@@ -340,6 +340,128 @@ export interface WalkerInterface {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Inspector rule + finding primitives
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Phase 3 of the semantic HTML inspector: the rule contract + the data
+// record every rule emits. A rule is a PURE, side-effect-free record —
+// `(element, context) => Finding | null` — composed from `@elements/core`
+// validator compositors so each rule reads as a named guard composition,
+// never ad-hoc boolean spaghetti, and driven by the frozen `schema` data so
+// the families stay generic (one rule per content-model concern, never a
+// per-element branch). The structure lens (this phase) produces only
+// `'structure'`-lens findings; the `'presentation'` lens value exists for
+// the Phase-5 computed-style lens. `Finding` is the shared shape every
+// Phase-3 family and the Phase-4 `FindingManager` / `Inspector` consume;
+// Phase 4 later compiles it (minus the live `element` ref) to an
+// `@elements/core` ContractShape — the record declared here stays the one
+// source of truth that compilation derives from, never duplicated.
+
+/**
+ * How severe a {@link Finding} is. `error` — a hard content-model violation
+ * the spec forbids; `warning` — a likely-unintended structure the spec
+ * discourages; `advice` — a non-conformance the spec merely notes.
+ */
+export type FindingSeverity = 'error' | 'warning' | 'advice'
+
+/**
+ * Which inspection lens produced a rule. `structure` — the DOM-shape /
+ * content-model lens (Phase 3, schema-driven, never reads style);
+ * `presentation` — the computed-style lens (Phase 5, load-bearing rendering
+ * overrides). Defining the union member now is types-first; only
+ * `structure`-lens rules exist in this phase.
+ */
+export type RuleLens = 'structure' | 'presentation'
+
+/**
+ * One reported content-model violation — a pure data record (no behavior,
+ * every member `readonly`, single-word per §4.1). Emitted by a
+ * {@link RuleInterface}'s `evaluate`; collected by the Phase-4
+ * `FindingManager`.
+ *
+ * @remarks
+ * - `severity` — see {@link FindingSeverity}.
+ * - `rule` — the emitting rule's {@link RuleInterface.id}.
+ * - `element` — the live offending element (the Phase-4 ContractShape omits
+ *   this non-serializable ref; the record keeps it for in-memory consumers).
+ * - `path` — the stable DOM path to the element, nearest first, via the
+ *   Phase-2 `nodePath` helper (which wraps `getPathToAncestor()`).
+ * - `message` — the human-readable restatement of the violated clause.
+ * - `cite` — the `guides/w3c` anchor carried on the schema entry's `cite`
+ *   (`{file}#{slug}`), so every finding resolves back to the corpus.
+ * - `expected` / `actual` — the spec-expected vs. observed shape, when the
+ *   rule can name them (cardinality / order / category mismatches).
+ */
+export interface Finding {
+	readonly severity: FindingSeverity
+	readonly rule: string
+	readonly element: Element
+	readonly path: readonly Element[]
+	readonly message: string
+	readonly cite: string
+	readonly expected?: string
+	readonly actual?: string
+}
+
+/**
+ * The contract one inspector rule satisfies (the §4.5 behavioral role for a
+ * pure-record rule — the rule *is* this record, there is no rule class, so
+ * `Interface` marks the contract that `rules` entries conform to, mirroring
+ * how `WalkerInterface` contracts the walk spine). `evaluate` is **pure and
+ * total**: it never throws, has no shared mutable state, and returns exactly
+ * one {@link Finding} for a violation or `null` for a clean node.
+ *
+ * @remarks
+ * - `id` — the stable rule identifier (`{family}/{concern}`), copied onto
+ *   every {@link Finding.rule} it emits.
+ * - `severity` — the {@link FindingSeverity} every finding it emits carries.
+ * - `lens` — the {@link RuleLens} this rule belongs to.
+ * - `evaluate` — `(element, context) => Finding | null`, side-effect-free.
+ */
+export interface RuleInterface {
+	readonly id: string
+	readonly severity: FindingSeverity
+	readonly lens: RuleLens
+	readonly evaluate: (element: Element, context: RuleContext) => Finding | null
+}
+
+/**
+ * The per-node projection every rule-family guard composes over — the live
+ * element, its resolved {@link RuleContext}, its lowercased tag, and the
+ * pre-resolved schema entries for it and its parent. Resolving these once
+ * keeps each rule a pure named guard composition over a single value rather
+ * than re-deriving them inside ad-hoc boolean expressions. Inspector
+ * internal — not part of the public inspect surface — but declared here
+ * because `types.ts` is the project's single source of truth for every
+ * type, regardless of visibility (§5).
+ */
+export interface RuleSubject {
+	readonly element: Element
+	readonly context: RuleContext
+	readonly tag: string
+	readonly entry: ContentModelEntry | null
+	readonly parent: Element | null
+	readonly parentEntry: ContentModelEntry | null
+}
+
+/**
+ * The inputs a rule hands the shared finding builder before it attaches the
+ * stable DOM `path` (so a rule never restates the path-derivation). Mirrors
+ * {@link Finding} minus `path` (the builder computes it via the Phase-2
+ * `nodePath` adapter). Inspector internal; see {@link RuleSubject} for why
+ * it lives in `types.ts`.
+ */
+export interface FindingDraft {
+	readonly rule: string
+	readonly severity: FindingSeverity
+	readonly element: Element
+	readonly cite: string
+	readonly message: string
+	readonly expected?: string
+	readonly actual?: string
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Popover placement primitives
 // ─────────────────────────────────────────────────────────────────────────
 
