@@ -172,6 +172,21 @@ export const srcBrowser = (config?: UserConfig): UserConfig =>
 						fileName: () => 'index.js',
 					},
 					outDir: 'dist/src/browser',
+					// `@elements/browser` and `@elements/core` publish as two
+					// subpaths of one package. The browser lib build must
+					// IMPORT the sibling core build rather than INLINE a copy
+					// of `src/core`, so a consumer importing both subpaths
+					// doesn't get core duplicated.
+					rollupOptions: {
+						external: (id: string) =>
+							id === '@elements/core' ||
+							id.startsWith('@elements/core/') ||
+							id === '@vue/reactivity' ||
+							id.startsWith('@vue/'),
+						output: {
+							paths: { '@elements/core': './core/index.js' },
+						},
+					},
 				},
 				test: {
 					name: { label: 'src:browser', color: 'yellow' },

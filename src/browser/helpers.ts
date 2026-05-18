@@ -52,6 +52,7 @@ import type {
 	TaxonomyEntry,
 	ThemeSetting,
 } from './types.js'
+import { isFunction } from '@elements/core'
 import {
 	BODY_LOCKED_ATTR,
 	PLACEMENT_AREAS,
@@ -112,7 +113,7 @@ export function isSetting(value: unknown): value is ThemeSetting {
 
 /** Narrow an unknown value to a CustomEvent handler. */
 export function isEventHandler(value: unknown): value is (event: CustomEvent) => void {
-	return typeof value === 'function'
+	return isFunction(value)
 }
 
 /**
