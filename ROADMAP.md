@@ -1076,10 +1076,15 @@ child`). Added a generic, schema-data-driven `content/cardinality` rule
   `new Inspector().inspect({ root })` (Walker walk + all 27 frozen rules
   per node) via the Inspector's own `InspectionResult.walked/.duration`
   instrumentation, and asserts a median walked-node/ms floor so a Walker
-  OR rule-complexity regression is caught. The floor (3 nodes/ms) is
-  evidence-tuned ~12× below the measured ~37–46 nodes/ms median (AGENTS
-  §16.3 — warmup + median absorb JIT/GC noise; no special runner config;
-  proven non-flaky over repeated runs). It is a normal standing gate.
+  OR rule-complexity regression is caught. The floor (9 nodes/ms) is
+  evidence-derived from the WORST realistic median (33.5 nodes/ms, measured
+  under the full concurrent multi-project suite over 6 runs): ~3.7× below
+  it so chromium/CI variance never trips it, yet high enough that a ~10×
+  per-node regression (median → ~3.3–4.7) — indeed any regression of ≳3.7×
+  — FAILS it. Verified by injecting a deterministic 10× slowdown: median
+  collapsed to 4.5 (< 9), gate failed; injection removed, comfortable PASS
+  (AGENTS §16.3 — warmup + median absorb JIT/GC noise; no special runner
+  config; proven non-flaky over repeated runs). It is a normal standing gate.
 - ✅ Final sweep: `npm run check` 0/0, all targeted suites + full
   regression green (no Phase 1–7 regression), `npm run format`, ROADMAP +
   `guides/README.md` updated, committed (push is the owner's separate

@@ -18,21 +18,30 @@
 //  dogfoods the shipped API rather than re-measuring it externally.
 //
 //  EVIDENCE-TUNED FLOOR (AGENTS §16.3 — tune only with evidence, prefer
-//  defaults, no exploratory runner config): the floor below is NOT arbitrary.
-//  Measured (Edge/chromium, `src:browser` project, default runner — a 1-run
-//  warmup then 5 timed runs over the seeded ~8.7k-element tree, repeated
-//  across 5 independent whole-suite executions): the per-execution MEDIAN
-//  rate sat at ~37–46 nodes/ms; the single worst cold pass observed (a GC/JIT
-//  outlier the median robust statistic absorbs) was ~19.5 nodes/ms, and even
-//  that execution's median was 36.9. The floor of 3 nodes/ms is ~12× below
-//  the worst observed median and ~6× below even the worst single outlier
-//  pass — so normal chromium / CI timing variance (GC, JIT, a busy host)
-//  never trips it, while an inspector regression that turned the per-node
-//  cost ~10× (a Walker or rule-complexity blow-up, dropping the rate to
-//  ~4 nodes/ms) still drives the median through it. The whole pass takes a
-//  fraction of a second, so it is a normal standing gate — no special vitest
-//  timeout / parallelism / launch flag is added (none is needed; §16.3 —
-//  remove exploratory config, prefer the default surface).
+//  defaults, no exploratory runner config): the floor below is NOT arbitrary,
+//  and it is derived from the WORST realistic measurement — the load this
+//  test actually runs under in the default suite, not an isolated best case.
+//  Measured (Edge/chromium, default runner — a 1-run warmup then 5 timed
+//  runs over the seeded ~8.7k-element tree) across the full concurrent
+//  multi-project suite (`src:browser` + `app:browser` + `guides`, 8239
+//  tests — the heaviest realistic host load): the per-execution MEDIAN rate
+//  over 6 independent whole-suite executions was 39.9 / 36.7 / 38.3 / 35.6 /
+//  40.3 / 33.5 nodes/ms, i.e. the WORST realistic median was 33.5 and the
+//  single worst timed pass (a GC/JIT cold outlier the median robust
+//  statistic absorbs) was 30.2. The floor of 9 nodes/ms is ~3.7× below that
+//  worst realistic median (33.5 / 9 ≈ 3.72×) and still ~3.4× below even the
+//  worst single outlier pass — so normal chromium / CI timing variance (GC,
+//  JIT, a busy concurrent host) never trips it. Yet it is high enough to be
+//  a REAL budget: a ~10× per-node complexity regression (a Walker or
+//  rule-complexity blow-up) drops the median to ~3.3–4.7 nodes/ms — well
+//  below 9 — so the gate FAILS loudly; in fact ANY regression of ≳3.7×
+//  (33.5 / 9) trips it. This was verified empirically by injecting a
+//  deterministic 10× per-node slowdown into the measured path: the median
+//  collapsed to ~4.5 nodes/ms and the gate FAILED (4.5 < 9); removing the
+//  injection restored ~46 nodes/ms and a comfortable PASS. The whole pass
+//  takes a fraction of a second, so it is a normal standing gate — no
+//  special vitest timeout / parallelism / launch flag is added (none is
+//  needed; §16.3 — remove exploratory config, prefer the default surface).
 // ============================================================================
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -160,10 +169,14 @@ describe('Inspector — large-tree performance budget', () => {
 		const median = sorted[Math.floor(sorted.length / 2)] ?? 0
 
 		// EVIDENCE-TUNED (see the file header for the measured distribution):
-		// the observed per-execution median is ~37–46 nodes/ms; this floor is
-		// ~12× below it, so it catches a ~10× per-node complexity regression
-		// while never tripping on normal chromium/CI timing variance.
-		const FLOOR = 3 // walked nodes per millisecond
+		// the WORST per-execution median under full concurrent suite load was
+		// 33.5 nodes/ms. This floor is ~3.7× below that (33.5 / 9 ≈ 3.72×) so
+		// normal chromium/CI variance never trips it, yet a ~10× per-node
+		// complexity regression (median → ~3.3–4.7 nodes/ms) — indeed ANY
+		// regression of ≳3.7× — falls below it and FAILS the gate (verified
+		// by injecting a deterministic 10× slowdown: median → 4.5, 4.5 < 9,
+		// gate failed; injection removed → ~46 nodes/ms, comfortable PASS).
+		const FLOOR = 9 // walked nodes per millisecond
 
 		console.log(
 			`[perf] tree=${count} nodes · rates(nodes/ms)=[${rates
