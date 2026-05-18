@@ -299,10 +299,15 @@ const onCommand = (label: string): void => {
 &lt;/menu&gt;</code></pre>
 		</details>
 
-		<h3>Section headers + dividers + disabled items</h3>
+		<h3>Section headers + groups + disabled items</h3>
 		<p>
-			Mailbox-parity composition: an optional <code>&lt;h6&gt;</code> labels a group of commands, an
-			<code>&lt;hr&gt;</code> separates groups (edge-to-edge perimeter rule), and an
+			Mailbox-parity composition, structured to <code>&lt;menu&gt;</code>'s HTML content model (only
+			<code>&lt;li&gt;</code> + script-supporting children — no bare <code>&lt;h6&gt;</code> /
+			<code>&lt;hr&gt;</code>). Each command group is a single <code>&lt;li&gt;</code> holding an
+			optional <code>&lt;h6&gt;</code> label followed by a nested <code>&lt;menu&gt;</code> of that
+			group's command <code>&lt;li&gt;</code>s; adjacent group <code>&lt;li&gt;</code>s carry a top
+			border (the visual separator the old <code>&lt;hr&gt;</code> drew, now CSS chrome on the group
+			rather than a non-conformant DOM child of <code>&lt;menu&gt;</code>). An
 			<code>aria-disabled="true"</code> (or native <code>disabled</code>) row mutes its affordance +
 			suppresses pointer activation. Same opacity multiplier the
 			<code>&lt;button&gt;</code> baseline and pagination disabled state use — disabled controls
@@ -310,28 +315,42 @@ const onCommand = (label: string): void => {
 		</p>
 		<button type="button" class="dropdown" popovertarget="demo-dropdown-full">Document</button>
 		<menu popover id="demo-dropdown-full">
-			<h6>Edit</h6>
-			<li><button type="button" @click="onCommand('Cut')">Cut</button></li>
-			<li><button type="button" @click="onCommand('Copy')">Copy</button></li>
-			<li><button type="button" aria-disabled="true">Paste</button></li>
-			<hr />
-			<h6>History</h6>
-			<li><button type="button" @click="onCommand('Undo')">Undo</button></li>
-			<li><button type="button" aria-disabled="true">Redo</button></li>
-			<hr />
+			<li>
+				<h6>Edit</h6>
+				<menu>
+					<li><button type="button" @click="onCommand('Cut')">Cut</button></li>
+					<li><button type="button" @click="onCommand('Copy')">Copy</button></li>
+					<li><button type="button" aria-disabled="true">Paste</button></li>
+				</menu>
+			</li>
+			<li>
+				<h6>History</h6>
+				<menu>
+					<li><button type="button" @click="onCommand('Undo')">Undo</button></li>
+					<li><button type="button" aria-disabled="true">Redo</button></li>
+				</menu>
+			</li>
 			<li><button type="button" @click="onCommand('Delete')">Delete</button></li>
 		</menu>
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre><code>&lt;menu popover id="document-actions"&gt;
-  &lt;h6&gt;Edit&lt;/h6&gt;
-  &lt;li&gt;&lt;button&gt;Cut&lt;/button&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;button&gt;Copy&lt;/button&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;button aria-disabled="true"&gt;Paste&lt;/button&gt;&lt;/li&gt;
-  &lt;hr /&gt;
-  &lt;h6&gt;History&lt;/h6&gt;
-  &lt;li&gt;&lt;button&gt;Undo&lt;/button&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;button aria-disabled="true"&gt;Redo&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;
+    &lt;h6&gt;Edit&lt;/h6&gt;
+    &lt;menu&gt;
+      &lt;li&gt;&lt;button&gt;Cut&lt;/button&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;button&gt;Copy&lt;/button&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;button aria-disabled="true"&gt;Paste&lt;/button&gt;&lt;/li&gt;
+    &lt;/menu&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;h6&gt;History&lt;/h6&gt;
+    &lt;menu&gt;
+      &lt;li&gt;&lt;button&gt;Undo&lt;/button&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;button aria-disabled="true"&gt;Redo&lt;/button&gt;&lt;/li&gt;
+    &lt;/menu&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;button&gt;Delete&lt;/button&gt;&lt;/li&gt;
 &lt;/menu&gt;</code></pre>
 		</details>
 

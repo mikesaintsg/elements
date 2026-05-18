@@ -262,48 +262,73 @@ describe('menu — `<menu popover>` flips to a vertical column', () => {
 	})
 })
 
-describe('menu — `<menu popover>` section header + divider composition', () => {
-	// Mailbox / Bootstrap parity. `<menu popover>` can host an `<h6>` to label
-	// a group of commands and an `<hr>` to separate command groups. The
-	// framework paints both inside the menu's popover-mode chrome (bare list
-	// items + the header + the divider all read as one panel).
-	function buildPopoverMenu(): { menu: HTMLElement; h6: HTMLElement; hr: HTMLElement } {
+describe('menu — `<menu popover>` conformant command-group composition', () => {
+	// Mailbox / Bootstrap parity, structured to `<menu>`'s HTML content model
+	// (only `<li>` + script-supporting children — no bare `<h6>` / `<hr>`).
+	// A labelled command group is a single `<li>` holding an `<h6>` label
+	// followed by a NESTED command `<menu>`; adjacent group `<li>`s carry a
+	// CSS top-border (the inter-group divider the spec-illegal `<hr>` used to
+	// draw). Builds two groups so the separator-between-groups rule applies.
+	function buildPopoverMenu(): {
+		menu: HTMLElement
+		h6: HTMLElement
+		group1: HTMLElement
+		group2: HTMLElement
+		nestedMenu: HTMLElement
+	} {
 		const menu = build('menu')
 		menu.setAttribute('popover', '')
 		menu.id = 'composition-menu'
-		const h6 = build('h6', '', 'Edit')
-		const hr = build('hr')
-		const li = build('li')
-		const btn = build('button')
-		btn.textContent = 'Cut'
-		li.appendChild(btn)
-		menu.append(h6, li, hr)
+
+		const makeGroup = (label: string, cmd: string): HTMLElement => {
+			const group = build('li')
+			const h6 = build('h6', '', label)
+			const nested = build('menu')
+			const li = build('li')
+			const btn = build('button')
+			btn.textContent = cmd
+			li.appendChild(btn)
+			nested.appendChild(li)
+			group.append(h6, nested)
+			return group
+		}
+
+		const group1 = makeGroup('Edit', 'Cut')
+		const group2 = makeGroup('History', 'Undo')
+		menu.append(group1, group2)
 		mount(menu)
 		menu.showPopover()
-		return { menu, h6, hr }
+		const h6 = group1.querySelector('h6') as HTMLElement
+		const nestedMenu = group1.querySelector('menu') as HTMLElement
+		return { menu, h6, group1, group2, nestedMenu }
 	}
 
-	it('`<h6>` inside `<menu popover>` paints as a quiet section label', () => {
+	it('`<h6>` inside a group `<li>` paints as a quiet section label', () => {
 		const { h6 } = buildPopoverMenu()
 		// muted text color + small / uppercase / tracked
 		expect(style(h6, 'text-transform')).toBe('uppercase')
 		expect(style(h6, 'font-size')).toBe('12px') // --text-xs
 	})
 
-	it('`<hr>` inside `<menu popover>` paints as a thin perimeter rule', () => {
-		const { hr } = buildPopoverMenu()
-		// Border-block-start carries the rule; the hr's own content area
-		// is zero so the visual is exactly the 1 px border line.
-		expect(pixels(hr, 'border-top-width')).toBeGreaterThan(0)
-		expect(hr.getBoundingClientRect().height).toBeLessThanOrEqual(2)
+	it('a group `<li>` is a real flex-column box (not display:contents)', () => {
+		const { group1 } = buildPopoverMenu()
+		expect(style(group1, 'display')).toBe('flex')
+		expect(style(group1, 'flex-direction')).toBe('column')
 	})
 
-	it('`<hr>` divider bleeds inline edges past the panel padding', () => {
-		const { hr } = buildPopoverMenu()
-		// Negative inline margin pulls the divider to the panel's outer
-		// content edges (so it renders as a full-width rule instead of
-		// being inset by the panel's `padding-inline`).
-		expect(pixels(hr, 'margin-left')).toBeLessThan(0)
+	it('the nested command `<menu>` lays out as a vertical column (not the toolbar shape)', () => {
+		const { nestedMenu } = buildPopoverMenu()
+		expect(style(nestedMenu, 'display')).toBe('flex')
+		expect(style(nestedMenu, 'flex-direction')).toBe('column')
+		expect(style(nestedMenu, 'flex-wrap')).toBe('nowrap')
+	})
+
+	it('adjacent group `<li>`s carry the inter-group separator border (replaces the old `<hr>`)', () => {
+		const { group2 } = buildPopoverMenu()
+		// The second group gets a top border — the visual divider the
+		// spec-illegal `<hr>` child of `<menu>` used to draw, now CSS
+		// chrome on the group `<li>` itself.
+		expect(pixels(group2, 'border-top-width')).toBeGreaterThan(0)
 	})
 
 	it('an `aria-disabled="true"` item is opacity-muted + pointer-events: none', () => {

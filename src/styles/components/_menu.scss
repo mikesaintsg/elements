@@ -478,27 +478,100 @@
 		display: flex;
 	}
 
+	// Conformant group structure — `<menu>`'s HTML content model permits
+	// only `<li>` (+ script-supporting) children, so a labelled command
+	// group is a single `<li>` holding an optional `<h6>` label followed
+	// by a NESTED `<menu>` of that group's command `<li>`s:
+	//
+	//   <menu popover>
+	//     <li>                      ← group wrapper (real box; separator)
+	//       <h6>Edit</h6>           ← section label
+	//       <menu>                  ← nested command list
+	//         <li><button>…</button></li>
+	//       </menu>
+	//     </li>
+	//     <li><button>…</button></li>  ← ungrouped command (flat shape)
+	//   </menu>
+	//
+	// The bare-menu element rule sets `& > li { display: contents }` so a
+	// flat dropdown's `<li>` wrappers collapse and the buttons become the
+	// flex rows. A GROUP `<li>` must instead be a real flex-column box: it
+	// carries the inter-group separator border and lays out its `<h6>` +
+	// nested command `<menu>`. `:has(> menu)` distinguishes a group
+	// wrapper from a flat command `<li>` without a marker class, and the
+	// nested `<menu>` reverts to the popover column shape (it is a bare
+	// `<menu>`, so the element rule would otherwise make it a horizontal
+	// wrapping toolbar).
+	//
+	// Same dropdown-vs-drawer scoping as the bare-state rule above —
+	// covers canonical `menu[popover]` AND wrapped `[popover] menu`
+	// patterns, EXCLUDES `:is(aside, nav)[popover]` drawer surfaces.
+	//
+	// List-marker reset for every dropdown `<li>` (group wrappers AND
+	// command rows, at any nesting depth) so neither a group `<li>` box
+	// nor a `display: flex` nested-menu item shows a UA bullet.
+	menu[popover] li,
+	[popover]:not(:where(aside, nav)) menu li {
+		list-style: none;
+		margin: 0;
+	}
+
+	menu[popover] > li:has(> menu),
+	[popover]:not(:where(aside, nav)) menu > li:has(> menu) {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0;
+	}
+
+	// Inter-group separator — the visual rule the removed `<hr>` drew, now
+	// chrome on the group `<li>` itself (group boundaries are conveyed by
+	// the per-group `<li>`, so no DOM separator child of `<menu>` is
+	// needed). Only between adjacent groups: the first group / a leading
+	// flat command needs no rule above it.
+	menu[popover] > li:has(> menu) + li,
+	[popover]:not(:where(aside, nav)) menu > li:has(> menu) + li {
+		margin-block-start: calc(var(--spacing) * 1);
+		padding-block-start: calc(var(--spacing) * 1);
+		// Span the panel's content width edge to edge (mirrors the old
+		// divider's negative-inline bleed past the popover's padding).
+		border-block-start: 1px solid var(--set-popover-border-color);
+	}
+
+	// Nested command `<menu>` — strip the bare-menu toolbar shape
+	// (horizontal flex-wrap) and lay the commands out as the dropdown's
+	// vertical column. No own box chrome: the group `<li>` owns padding
+	// and the separator; the nested menu is purely the command list.
+	menu[popover] > li > menu,
+	[popover]:not(:where(aside, nav)) menu > li > menu {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		flex-wrap: nowrap;
+		justify-content: flex-start;
+		gap: 0;
+		margin: 0;
+		padding: 0;
+		// The OUTER `menu[popover]` owns the scroll container + width
+		// floor; a nested command list must not become its own competing
+		// scroll box (would trap wheel events + double the min-width).
+		min-inline-size: 0;
+		overflow: visible;
+	}
+
 	// Dropdown items — `<li>` wraps each command. The button inside owns
 	// the click target, and the framework's `<button>` baseline already
 	// handles focus + active states; here we just make the inner button
 	// fill the row, left-align text (commands read top-to-bottom, not
 	// centred), and drop the button's own border so each row reads as
 	// a list item rather than a row of separate buttons. Hover paints a
-	// subtle tint matching the active theme.
-	//
-	// Same dropdown-vs-drawer scoping as the bare-state rule above —
-	// covers canonical `menu[popover]` AND wrapped `[popover] menu`
-	// patterns, EXCLUDES `:is(aside, nav)[popover]` drawer surfaces.
-	menu[popover] > li,
-	[popover]:not(:where(aside, nav)) menu > li,
-	[popover]:not(:where(aside, nav)) > menu > li {
-		list-style: none;
-		margin: 0;
-	}
-
-	menu[popover] > li > :where(button, a),
-	[popover]:not(:where(aside, nav)) menu > li > :where(button, a),
-	[popover]:not(:where(aside, nav)) > menu > li > :where(button, a) {
+	// subtle tint matching the active theme. Covers both the flat shape
+	// (`menu[popover] > li > button`) and the grouped shape
+	// (`menu[popover] > li > menu > li > button`) — the descendant
+	// `menu[popover] li > :where(button, a)` reach is dropdown-scoped so
+	// it never leaks to a drawer / nav-rail menu.
+	menu[popover] li > :where(button, a),
+	[popover]:not(:where(aside, nav)) menu li > :where(button, a) {
 		display: flex;
 		align-items: center;
 		// Reset `justify-content` from the bare `<button>` element rule,
@@ -564,22 +637,24 @@
 	}
 
 	// --------------------------------------------------------------------------
-	// Dropdown structural extras — section header + divider.
+	// Dropdown section label — `<h6>` inside a command group `<li>`.
 	//
-	// Mailbox / Bootstrap compose dropdowns out of mixed content: an
-	// optional `.dropdown-header` to label a group of commands, and
-	// `.dropdown-divider` (an `<hr>`) to separate command groups. The
-	// framework uses bare HTML tags — `<h6>` for the section label
-	// (the smallest heading, conventional for sub-section captions)
-	// and `<hr>` for the divider (the semantic separator). Both apply
-	// inside both canonical `menu[popover]` AND wrapped `[popover]:
-	// not(aside):not(nav) menu` patterns; drawer surfaces (`<aside
-	// popover>` / `<nav popover>`) intentionally fall outside the
-	// selector because menus inside those render with nav-rail chrome.
+	// Mailbox / Bootstrap compose dropdowns out of grouped commands with
+	// an optional `.dropdown-header` labelling each group. `<menu>`'s HTML
+	// content model permits only `<li>` (+ script-supporting) children, so
+	// the label is NOT a bare `<h6>` child of `<menu>` — it is the first
+	// child of the group `<li>` (followed by that group's nested command
+	// `<menu>`). The smallest heading (`<h6>`) is conventional for a
+	// sub-section caption. The inter-group divider the old `<hr>` drew is
+	// now the group `<li>` separator border above (group boundaries are
+	// conveyed by the per-group `<li>` itself — no DOM separator child of
+	// `<menu>`, which the spec disallows). Dropdown-scoped (canonical
+	// `menu[popover]` AND wrapped `[popover]:not(aside):not(nav) menu`);
+	// drawer surfaces fall outside because their menus render nav-rail
+	// chrome.
 	// --------------------------------------------------------------------------
-	menu[popover] > h6,
-	[popover]:not(:where(aside, nav)) menu > h6,
-	[popover]:not(:where(aside, nav)) > menu > h6 {
+	menu[popover] > li > h6,
+	[popover]:not(:where(aside, nav)) menu > li > h6 {
 		margin: 0;
 		padding-inline: calc(var(--spacing) * 2.5);
 		padding-block: calc(var(--spacing) * 1.5) calc(var(--spacing) * 1);
@@ -588,21 +663,5 @@
 		font-weight: 600;
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
-	}
-
-	menu[popover] > hr,
-	[popover]:not(:where(aside, nav)) menu > hr,
-	[popover]:not(:where(aside, nav)) > menu > hr {
-		margin-block: calc(var(--spacing) * 1);
-		// Negative inline margin pulls the divider past the menu's own
-		// `padding-inline` (0 inside the popover, but the popover
-		// surface gives the panel `padding-inline: --set-popover-
-		// padding-inline`). The divider spans the panel's content
-		// width edge to edge; pill-shaped items inside still respect
-		// their own padding.
-		margin-inline: calc(var(--set-popover-padding-inline) * -1);
-		border: 0;
-		border-block-start: 1px solid var(--set-popover-border-color);
-		block-size: 0;
 	}
 }

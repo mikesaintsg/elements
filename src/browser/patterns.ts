@@ -1874,25 +1874,25 @@ export const STRUCTURAL_PAIRINGS: readonly StructuralPairing[] = [
 		reason: 'Alert / drawer footer band — trailing-actions row (parallel to aside > header).',
 	},
 	{
-		parent: 'output',
+		parent: 'div',
 		child: 'header',
 		kind: 'slot',
 		reason:
-			'Toast header band — title + trailing dismiss row when `<output popover>` carries a `<header>` (parallel to aside-alert).',
+			'Toast header band — title + trailing dismiss row when the toast root (`<div role="status">`; the toast moved off `<output>` because it renders flow content `<output>`’s phrasing-only content model forbids) carries a `<header>` (parallel to aside-alert).',
 	},
 	{
-		parent: 'output',
+		parent: 'div',
 		child: 'footer',
 		kind: 'slot',
 		reason:
-			'Toast footer band — trailing-actions row when `<output popover>` carries a `<footer>` (parallel to aside-alert).',
+			'Toast footer band — trailing-actions row when the toast root (`<div role="status">`) carries a `<footer>` (parallel to aside-alert).',
 	},
 	{
-		parent: 'output',
+		parent: 'div',
 		child: 'button',
 		kind: 'context',
 		reason:
-			'Trailing dismiss button in the toast body row (`<output popover> > button:last-child`) — variant-context reset paints it as a quiet icon regardless of host variant (parallel to aside-alert).',
+			'Trailing dismiss button in the toast body row (`<div role="status"> > button:last-child`) — variant-context reset paints it as a quiet icon regardless of host variant (parallel to aside-alert).',
 	},
 	{
 		parent: 'nav',
@@ -1970,16 +1970,18 @@ export const STRUCTURAL_PAIRINGS: readonly StructuralPairing[] = [
 		reason: 'TOC-rail eyebrow heading — same h6 + menu pattern as nav rail.',
 	},
 	{
-		parent: 'menu',
+		parent: 'li',
 		child: 'h6',
 		kind: 'slot',
-		reason: 'Dropdown section label inside `menu[popover]` (Bootstrap `.dropdown-header` parity).',
+		reason:
+			'Dropdown command-group label — `<menu>`’s content model permits only `<li>`, so the section `<h6>` is the first child of the group `<li>` (Bootstrap `.dropdown-header` parity).',
 	},
 	{
-		parent: 'menu',
-		child: 'hr',
+		parent: 'li',
+		child: 'menu',
 		kind: 'slot',
-		reason: 'Dropdown section divider inside `menu[popover]`.',
+		reason:
+			'Dropdown command group — a group `<li>` holds an optional `<h6>` label followed by a nested `<menu>` of that group’s command `<li>`s (conformant `<menu>` content model; replaces the spec-illegal bare `<h6>`/`<hr>` children).',
 	},
 	{
 		parent: 'form',

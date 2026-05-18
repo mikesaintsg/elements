@@ -81,13 +81,26 @@ describe('MenuPage — dropdown shape (§7)', () => {
 		}
 	})
 
-	it('demonstrates the grouped dropdown (h6 + hr + [aria-disabled])', () => {
+	it('demonstrates the grouped dropdown (conformant <li> groups: h6 + nested <menu> + [aria-disabled])', () => {
 		const { host, teardown } = mount()
 		try {
 			const full = host.querySelector('#demo-dropdown-full')
 			expect(full).not.toBeNull()
-			expect(full?.querySelector('h6')).not.toBeNull()
-			expect(full?.querySelector('hr')).not.toBeNull()
+			// `<menu>`'s HTML content model permits only `<li>` (+ script-
+			// supporting) children — every direct child must be an `<li>`.
+			const directChildren = Array.from(full?.children ?? [])
+			expect(directChildren.length).toBeGreaterThan(0)
+			expect(directChildren.every((el) => el.tagName === 'LI')).toBe(true)
+			// A labelled command group is an `<li>` holding an `<h6>` label
+			// followed by a nested command `<menu>` (replaces the spec-illegal
+			// bare `<h6>` / `<hr>` children).
+			const group = full?.querySelector('li:has(> h6) > menu')
+			expect(group).not.toBeNull()
+			expect(full?.querySelector('li > h6')).not.toBeNull()
+			// No bare `<hr>` / `<h6>` directly inside the `<menu>` (the old
+			// non-conformant divider/label shape).
+			expect(full?.querySelector(':scope > hr')).toBeNull()
+			expect(full?.querySelector(':scope > h6')).toBeNull()
 			expect(full?.querySelector('button[aria-disabled="true"]')).not.toBeNull()
 		} finally {
 			teardown()

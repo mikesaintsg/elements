@@ -212,11 +212,18 @@ const lifecycleDropdown = useMenu(lifecycleToggle, lifecycleMenu, {
 			<button ref="defaultToggle" type="button" class="dropdown">Open menu</button>
 		</div>
 		<menu ref="defaultMenu" popover>
-			<li><button type="button" @click="onCommand('Profile')">Profile</button></li>
-			<li><button type="button" @click="onCommand('Settings')">Settings</button></li>
-			<li><button type="button" @click="onCommand('Billing')">Billing</button></li>
-			<hr />
-			<li><button type="button" @click="onCommand('Sign out')">Sign out</button></li>
+			<li>
+				<menu>
+					<li><button type="button" @click="onCommand('Profile')">Profile</button></li>
+					<li><button type="button" @click="onCommand('Settings')">Settings</button></li>
+					<li><button type="button" @click="onCommand('Billing')">Billing</button></li>
+				</menu>
+			</li>
+			<li>
+				<menu>
+					<li><button type="button" @click="onCommand('Sign out')">Sign out</button></li>
+				</menu>
+			</li>
 		</menu>
 		<small class="block mt-2">
 			<strong>Last picked:</strong>
@@ -231,10 +238,17 @@ const dropdown = useMenu(toggle, menu, { placement: 'bottom-start' })
 
 &lt;button ref="toggle" type="button" class="dropdown"&gt;Open menu&lt;/button&gt;
 &lt;menu ref="menu" popover&gt;
-  &lt;li&gt;&lt;button&gt;Profile&lt;/button&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;button&gt;Settings&lt;/button&gt;&lt;/li&gt;
-  &lt;hr /&gt;
-  &lt;li&gt;&lt;button&gt;Sign out&lt;/button&gt;&lt;/li&gt;
+  &lt;li&gt;
+    &lt;menu&gt;
+      &lt;li&gt;&lt;button&gt;Profile&lt;/button&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;button&gt;Settings&lt;/button&gt;&lt;/li&gt;
+    &lt;/menu&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;menu&gt;
+      &lt;li&gt;&lt;button&gt;Sign out&lt;/button&gt;&lt;/li&gt;
+    &lt;/menu&gt;
+  &lt;/li&gt;
 &lt;/menu&gt;</code></pre>
 		</details>
 	</section>
@@ -339,39 +353,50 @@ useMenu(toggleRef, menuRef, { placement: 'bottom-start', flip: 8 })
 			</button>
 		</div>
 		<menu ref="stickyMenu" popover>
-			<h6>Confirm action</h6>
 			<li>
-				<button type="button" class="primary" @click="stickyDropdown.hide()">Confirm</button>
-			</li>
-			<li>
-				<button type="button" class="subtle" @click="stickyDropdown.hide()">Cancel</button>
+				<h6>Confirm action</h6>
+				<menu>
+					<li>
+						<button type="button" class="primary" @click="stickyDropdown.hide()">Confirm</button>
+					</li>
+					<li>
+						<button type="button" class="subtle" @click="stickyDropdown.hide()">Cancel</button>
+					</li>
+				</menu>
 			</li>
 		</menu>
 		<menu ref="filterMenu" popover>
-			<h6>Issue types</h6>
 			<li>
-				<label class="showcase-filter-row">
-					<input v-model="filters.bugs" type="checkbox" /> Bugs
-				</label>
+				<h6>Issue types</h6>
+				<menu>
+					<li>
+						<label class="showcase-filter-row">
+							<input v-model="filters.bugs" type="checkbox" /> Bugs
+						</label>
+					</li>
+					<li>
+						<label class="showcase-filter-row">
+							<input v-model="filters.features" type="checkbox" /> Features
+						</label>
+					</li>
+					<li>
+						<label class="showcase-filter-row">
+							<input v-model="filters.docs" type="checkbox" /> Docs
+						</label>
+					</li>
+					<li>
+						<label class="showcase-filter-row">
+							<input v-model="filters.chores" type="checkbox" /> Chores
+						</label>
+					</li>
+				</menu>
 			</li>
 			<li>
-				<label class="showcase-filter-row">
-					<input v-model="filters.features" type="checkbox" /> Features
-				</label>
-			</li>
-			<li>
-				<label class="showcase-filter-row">
-					<input v-model="filters.docs" type="checkbox" /> Docs
-				</label>
-			</li>
-			<li>
-				<label class="showcase-filter-row">
-					<input v-model="filters.chores" type="checkbox" /> Chores
-				</label>
-			</li>
-			<hr />
-			<li>
-				<button type="button" class="subtle" @click="filterDropdown.hide()">Done</button>
+				<menu>
+					<li>
+						<button type="button" class="subtle" @click="filterDropdown.hide()">Done</button>
+					</li>
+				</menu>
 			</li>
 		</menu>
 		<details>
