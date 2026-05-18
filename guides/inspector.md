@@ -46,7 +46,7 @@ Four classes ship through the sole barrel ([src/browser/inspector/index.ts](../s
 `rules` is the frozen `readonly RuleInterface[]` — `Inspector.rules` exposes it read-only (the inspector adds none; it is orchestration only). Each `RuleInterface` is a pure, total `(element, context) => Finding | null`: a stable `id` (`{family}/{concern}`), a `severity`, a `lens`, and `evaluate`. The catalog, by family:
 
 - **context** — `context/parent-model` (a child the parent's content model can never admit).
-- **content** — `content/required` (the parent's ordered child model unsatisfied), `content/forbidden` (a forbidden descendant present), `content/category` (a child whose resolved categories the bare-category parent does not permit).
+- **content** — `content/required` (the parent's ordered child model unsatisfied), `content/cardinality` (a prefix model's required-leading singular child — `<details>`→`<summary>`, `<fieldset>`→`<legend>` — present more than once), `content/forbidden` (a forbidden descendant present), `content/category` (a child whose resolved categories the bare-category parent does not permit).
 - **transparent** — `transparent/interactive-descendant`, `transparent/link-descendant`, `transparent/tabindex-descendant`, `transparent/nested-media` (the descendant restrictions a transparent ancestor propagates — `<a>` / `<button>` / `<canvas>` / `<audio>` / `<video>`).
 - **structure** — `structure/parent-restricted`, `structure/single-first-child`, `structure/edge-child`, `structure/no-self-nest`, `structure/void-has-children`.
 - **attribute** — `attribute/coupling`, `attribute/required`, `attribute/value`, `attribute/coupling-domain`, `attribute/integer`, `attribute/enum` (the parser-coerced attribute checks).

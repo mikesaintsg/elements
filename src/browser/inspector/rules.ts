@@ -74,7 +74,15 @@ import {
 //      `childModel` can NEVER admit anywhere (a pure membership miss).
 //    - content/required     — fires on the PARENT when every child tag IS
 //      admissible but the ordered model (order / cardinality / required
-//      prefix) is not satisfied.
+//      prefix) is not satisfied (incl. a CLOSED model's duplicate, via
+//      closed-exhaustiveness).
+//    - content/cardinality  — fires on the PARENT when a PREFIX
+//      (`closed:false`) model's required-leading SINGULAR child (a leading
+//      `{tag,'1'|'?'}` segment) occurs MORE THAN ONCE — the duplicate the
+//      open trailing arm would otherwise absorb silently. Defers to
+//      content/required (so a closed model's duplicate is single-sourced
+//      there). `structure/single-first-child` defers the cardinality aspect
+//      to it (its lone-mispositioned-child POSITION concern stays its own).
 //  These predicates are mutually exclusive by construction, so one
 //  content-model violation yields exactly one finding (no content↔structure
 //  double-report — `structure/child-order` is GONE; `childModel` is the sole
@@ -423,6 +431,42 @@ function modelRequiresLeading(model: ChildModel, tag: string): boolean {
 	return false
 }
 
+// The tag a model permits AT MOST ONE of as its required-leading SINGULAR
+// child, or `null`. A leading `{kind:'tag', count:'1'|'?'}` `segments[0]`
+// segment is, per the corpus **Content model** prose, a singular slot:
+// `details` "One `summary` element followed by flow content." (`summary`(1)),
+// `fieldset` "Optionally a `legend` element, followed by flow content."
+// (`legend`(?)), `table` "Optionally a `caption`, followed by …"
+// (`caption`(?)). The parent therefore permits at most ONE of that tag; a
+// SECOND occurrence among its flat children is a tree-decidable
+// content-model violation. Encoded GENERICALLY off the `childModel` datum —
+// `'1'` and `'?'` (and only a leading TAG segment; a `choice`/`group`/
+// `category` head is not a singular slot, so `figure`'s figcaption — inside
+// a `choice` — is correctly NOT in scope, its position owned by
+// `structure/edge-child`). The `closed` flag is irrelevant to the upper
+// bound itself; rule ownership (closed → `content/required` exhaustiveness;
+// prefix → `content/cardinality`) is partitioned at the rule site so the
+// violation yields exactly one finding.
+function leadingSingularTag(model: ChildModel): string | null {
+	const first = model.segments[0]
+	if (first === undefined || first.kind !== 'tag') return null
+	if (first.count === '1' || first.count === '?') return first.tag
+	return null
+}
+
+// How many of the parent's flat-tree element children carry `tag` — the
+// SAME flat tree the Walker visits (slot/shadow/template), so the cardinality
+// count never diverges from the walk spine (§3); a nested same-tag element
+// under an intermediate child is NOT counted (only direct flat children),
+// so an inner `<details><summary>` is scoped to the inner `<details>`.
+function countLeadingTag(parent: Element, tag: string): number {
+	let count = 0
+	for (const child of flatChildren(parent)) {
+		if (childTag(child) === tag) count += 1
+	}
+	return count
+}
+
 // Human-readable expectation, derived from the model's verbatim prose
 // (`note`) — the corpus is the single source of the message wording.
 function describeModel(model: ChildModel): string {
@@ -493,7 +537,7 @@ const contextRule: RuleInterface = {
 // ============================================================================
 //  Family: content — the element's OWN child list / descendants are wrong.
 //
-//  Three generic concerns, each schema-data-driven:
+//  Four generic concerns, each schema-data-driven:
 //    1. required/order — `entry.childModel` is the element's ordered child
 //       content model (closed sequence OR structural prefix + open category
 //       arm). The element-children must satisfy it (cardinality + order,
@@ -502,10 +546,18 @@ const contextRule: RuleInterface = {
 //       `figure`, … from ONE datum. Fires ONLY when every child tag is
 //       admissible (else the membership miss is `context/parent-model`'s) —
 //       so a violation yields exactly one finding.
-//    2. forbidden descendant — any flat-tree descendant whose tag/category
+//    2. cardinality — a PREFIX (`closed:false`) model whose required-leading
+//       SINGULAR child (a leading `{kind:'tag', count:'1'|'?'}` segment —
+//       `details`→`summary`, `fieldset`→`legend`) occurs MORE THAN ONCE.
+//       The open trailing arm would otherwise absorb the duplicate
+//       silently. Generic off `leadingSingularTag(childModel)`; defers to
+//       (1) when the ordered model is itself unsatisfied (a CLOSED model's
+//       duplicate — `table`→`caption` — is single-sourced there). One
+//       finding per parent.
+//    3. forbidden descendant — any flat-tree descendant whose tag/category
 //       is named in `entry.forbidden` (e.g. `dt` forbids heading/sectioning,
 //       `header` forbids header/footer).
-//    3. category — a bare-category parent (`entry.permits` non-empty: the
+//    4. category — a bare-category parent (`entry.permits` non-empty: the
 //       corpus-derived "Flow content." / "Phrasing content." child set)
 //       whose non-transparent element child's resolved categories do not
 //       intersect `permits` (e.g. `<p><div>` — flow inside phrasing). The
@@ -539,7 +591,13 @@ function firstForbiddenDescendant(
 // is admissible by it (a non-admissible tag is `context/parent-model`'s — the
 // two predicates are mutually exclusive, so the registry produces exactly one
 // finding for one violation).
-const violatesChildModel = whereOf(isSubject, (subject: RuleSubject): boolean => {
+// The plain predicate: the parent carries a `childModel`, every flat child
+// tag is admissible by it (a non-admissible tag is `context/parent-model`'s),
+// and the ordered model is NOT satisfied. Named so the cardinality rule can
+// reuse the exact same "ordered model unsatisfied" decision WITHOUT a guard
+// re-narrowing `subject` to `never` (a guard's negative branch is not a
+// boolean — it is a type-narrowing site).
+function childModelUnsatisfied(subject: RuleSubject): boolean {
 	const entry = subject.entry
 	if (entry?.childModel === undefined) return false
 	const children = flatChildren(subject.element)
@@ -553,7 +611,9 @@ const violatesChildModel = whereOf(isSubject, (subject: RuleSubject): boolean =>
 		}
 	}
 	return !childModelSatisfied(children, entry.childModel)
-})
+}
+
+const violatesChildModel = whereOf(isSubject, childModelUnsatisfied)
 
 const contentRequiredRule: RuleInterface = {
 	id: 'content/required',
@@ -573,6 +633,56 @@ const contentRequiredRule: RuleInterface = {
 			message: `<${subject.tag}> requires a specific child content model that its children do not satisfy.`,
 			expected: describeModel(entry.childModel),
 			actual: childrenSummary(children),
+		})
+	},
+}
+
+// `content/cardinality` — the parent's `childModel` permits AT MOST ONE of
+// its required-leading SINGULAR child (a leading `{kind:'tag',
+// count:'1'|'?'}` `segments[0]`) yet its flat children carry MORE THAN one.
+// This is the duplicate the open trailing arm of a PREFIX (`closed:false`)
+// model would otherwise absorb silently (the `<details>` with two
+// `<summary>` → zero-findings gap; `<fieldset>` with two `<legend>`). It
+// DEFERS to `content/required` when that already bites — a CLOSED model
+// (`<table>` with two `<caption>`) breaks closed-exhaustiveness, so
+// `content/required` is the single owner there. Parent-keyed, fires EXACTLY
+// ONCE per parent; generic over EVERY entry with a leading-singular tag
+// segment, never per-element. `structure/single-first-child` defers the
+// cardinality aspect (its single-occurrence POSITION concern stays its
+// own), so one violation yields exactly one finding (the §1/§2 disjoint
+// single-source partition, extended to cardinality).
+const violatesLeadingCardinality = whereOf(isSubject, (subject: RuleSubject): boolean => {
+	const entry = subject.entry
+	if (entry?.childModel === undefined) return false
+	// Defer to content/required: when the ordered model itself is
+	// unsatisfied (a CLOSED model's duplicate breaks exhaustiveness) the
+	// violation is reported there — single source, no double-report.
+	if (childModelUnsatisfied(subject)) return false
+	const tag = leadingSingularTag(entry.childModel)
+	if (tag === null) return false
+	return countLeadingTag(subject.element, tag) > 1
+})
+
+const contentCardinalityRule: RuleInterface = {
+	id: 'content/cardinality',
+	severity: 'error',
+	lens: 'structure',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!violatesLeadingCardinality(subject)) return null
+		const entry = subject.entry
+		if (entry?.childModel === undefined) return null
+		const tag = leadingSingularTag(entry.childModel)
+		if (tag === null) return null
+		const count = countLeadingTag(element, tag)
+		return buildFinding({
+			rule: 'content/cardinality',
+			severity: 'error',
+			element,
+			cite: citeOf(entry, 'dom#content-models'),
+			message: `<${subject.tag}> permits at most one <${tag}> child — its content model is "${describeModel(entry.childModel)}".`,
+			expected: `at most one <${tag}>`,
+			actual: `${count} <${tag}> children`,
 		})
 	},
 }
@@ -920,16 +1030,23 @@ const structureParentRestrictedRule: RuleInterface = {
 // of one of its constraint's `parents` (the CHILD-keyed placement rule:
 // `summary`→`details`, `legend`→`fieldset`, `caption`→`table`).
 //
-// SINGLE SOURCE / one-finding-per-violation (§1/§2): when the parent's
-// `childModel` makes this child a REQUIRED leading segment (e.g.
-// `summary`(1) in `details`), an out-of-place/missing child already makes
-// the whole model unsatisfied, so `content/required` (parent-keyed) is the
-// sole reporter and this child-keyed rule DEFERS (no content↔structure
-// double-report — the §1 case). When the child is only OPTIONAL in the
-// model (e.g. `legend`(?) in `fieldset`, `caption`(?) in `table`), the
-// permissive prefix model CANNOT see a late occurrence, so this rule is the
-// sole reporter and must NOT defer — disjoint by what each can structurally
-// detect, exactly one rule per violation.
+// SINGLE SOURCE / one-finding-per-violation (§1/§2): the violation is
+// partitioned by WHAT each rule can structurally detect, so exactly one
+// rule owns each:
+//   - REQUIRED-leading child (e.g. `summary`(1) in `details`): an
+//     out-of-place/missing child makes the whole model unsatisfied, so
+//     `content/required` (parent-keyed) is the sole reporter — this
+//     child-keyed rule DEFERS (the §1 case; do NOT undo).
+//   - CARDINALITY of a leading SINGULAR child (a SECOND `summary`/`legend`/
+//     `caption`): owned by `content/cardinality` (prefix model) or
+//     `content/required` (closed-model exhaustiveness — `table`), both
+//     parent-keyed. This child-keyed rule DEFERS the cardinality aspect
+//     (the >1-occurrence case) so a duplicate yields exactly one finding,
+//     not one-per-duplicate-child.
+//   - POSITION of a lone OPTIONAL-leading child (one `legend`/`caption`
+//     that is NOT first — the permissive prefix model cannot see a late
+//     single occurrence): this rule is the SOLE reporter and must NOT
+//     defer — its genuine, preserved concern.
 const violatesSingleFirstChild = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	const own = constraintOf(subject.entry, 'single-first-child')
 	if (own?.parents === undefined) return false
@@ -937,14 +1054,27 @@ const violatesSingleFirstChild = whereOf(isSubject, (subject: RuleSubject): bool
 	// not-applicable, not a misleading "treat self as parent" fallback, #8).
 	if (subject.parent === null) return false
 	if (!own.parents.includes(subject.parent.tagName.toLowerCase())) return false
-	// Defer ONLY when the parent's childModel REQUIRES this child as its
-	// mandatory leading segment (then content/required is the single
-	// source); an optional-leading child stays this rule's concern.
 	const parentModel = subject.parentEntry?.childModel
+	// Defer when the parent's childModel REQUIRES this child as its
+	// mandatory leading segment (content/required is the single source for
+	// the §1 missing/out-of-place case).
 	if (parentModel !== undefined && modelRequiresLeading(parentModel, subject.tag)) return false
 	const siblings = flatChildren(subject.parent)
 	const occurrences = siblings.filter((s) => childTag(s) === subject.tag)
-	return occurrences.length > 1 || siblings[0] !== subject.element
+	// Defer the CARDINALITY aspect: when the parent's childModel makes this
+	// child a leading SINGULAR slot AND it occurs more than once, the
+	// duplicate is the content family's single concern (content/cardinality
+	// for a prefix model, content/required for a closed one) — not this
+	// rule's, and never one-finding-per-duplicate-child.
+	if (
+		parentModel !== undefined &&
+		leadingSingularTag(parentModel) === subject.tag &&
+		occurrences.length > 1
+	) {
+		return false
+	}
+	// The remaining, preserved concern: a lone child that is not first.
+	return siblings[0] !== subject.element
 })
 
 const structureSingleFirstChildRule: RuleInterface = {
@@ -2390,6 +2520,7 @@ export const rules: readonly RuleInterface[] = [
 	contextRule,
 	// content
 	contentRequiredRule,
+	contentCardinalityRule,
 	contentForbiddenRule,
 	contentCategoryRule,
 	// transparent

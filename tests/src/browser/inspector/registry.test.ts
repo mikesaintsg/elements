@@ -303,6 +303,144 @@ describe('rules — full registry over ordered/prefix parents', () => {
 			mount(el('div', [el('td')]))
 			expect(findings(container)).toEqual(['structure/parent-restricted'])
 		})
+
+		// ── duplicate required-leading SINGULAR child (the Phase-7 dogfood
+		//    gap): a `closed:false` prefix model whose `segments[0]` is a
+		//    `{kind:'tag', count:'1'|'?'}` segment permits AT MOST ONE of that
+		//    tag. A SECOND occurrence is a content-model violation the prefix
+		//    model's open trailing arm previously absorbed silently (the
+		//    `<details>`→ZERO-findings bug). Now exactly ONE
+		//    `content/cardinality` finding (parent-keyed), with
+		//    structure/single-first-child DEFERRING the cardinality aspect
+		//    (its position concern stays its own for the single-occurrence
+		//    case) — the disjoint single-source partition preserved.
+
+		it('<details> with TWO <summary> → exactly one content/cardinality', () => {
+			// The exact reported defect: previously ZERO findings (silently
+			// missed). `summary`(1) is `details`'s required-leading singular
+			// child; a second <summary> is a tree-decidable violation.
+			mount(el('details', [text('summary', 'a'), text('summary', 'b'), text('p', 'x')]))
+			expect(findings(container)).toEqual(['content/cardinality'])
+		})
+
+		it('<fieldset> with TWO <legend> → exactly one content/cardinality', () => {
+			// `legend`(?) is `fieldset`'s optional-leading singular child —
+			// at most one. Previously TWO structure/single-first-child
+			// findings (one per legend); now the cardinality is content's
+			// single concern → exactly one content/cardinality.
+			mount(el('fieldset', [text('legend', 'a'), text('legend', 'b'), text('p', 'x')]))
+			expect(findings(container)).toEqual(['content/cardinality'])
+		})
+
+		it('<table> with TWO <caption> → exactly one content/required (closed model owns it)', () => {
+			// `table` is a CLOSED model: the second <caption> already breaks
+			// the closed-exhaustiveness check, so content/required is the
+			// single owner. structure/single-first-child must DEFER the
+			// cardinality aspect here too (previously fired twice → triple
+			// report). content/cardinality must NOT also fire (it defers to
+			// content/required when that already bites). Exactly one.
+			mount(
+				el('table', [
+					text('caption', 'a'),
+					text('caption', 'b'),
+					el('tbody', [el('tr', [el('td')])]),
+				]),
+			)
+			expect(findings(container)).toEqual(['content/required'])
+		})
+
+		it('<details> with a NESTED <details><summary> — inner summary scoped to inner (no false count)', () => {
+			// Flat-children scoping must be correct: the INNER <summary>
+			// belongs to the INNER <details>; it must NOT be counted against
+			// the OUTER <details>. Both are conformant → ZERO findings.
+			mount(
+				el('details', [
+					text('summary', 'outer'),
+					text('p', 'x'),
+					el('details', [text('summary', 'inner'), text('p', 'y')]),
+				]),
+			)
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<details> with TWO <summary> AND a nested conformant <details> → exactly one (outer only)', () => {
+			// The outer duplicate fires exactly once; the inner conformant
+			// <details> contributes nothing — proves the count is scoped to
+			// each parent's own flat children, not the whole subtree.
+			mount(
+				el('details', [
+					text('summary', 'a'),
+					text('summary', 'b'),
+					el('details', [text('summary', 'inner'), text('p', 'y')]),
+				]),
+			)
+			expect(findings(container)).toEqual(['content/cardinality'])
+		})
+
+		it('<details> with one <summary>, script-supporting intermixed, second <summary> → exactly one', () => {
+			// Script-supporting (<script>/<template>) intermixed must not mask
+			// the duplicate: the cardinality count is over the real same-tag
+			// children, script-supporting freely skipped.
+			const details = el('details', [
+				text('summary', 'a'),
+				el('script'),
+				text('summary', 'b'),
+				el('template'),
+				text('p', 'x'),
+			])
+			mount(details)
+			expect(findings(container)).toEqual(['content/cardinality'])
+		})
+	})
+
+	// ── duplicate required-leading singular child: CONFORMANT cases MUST be
+	//    zero (the recurring critical: NO false-positive on valid markup).
+
+	describe('conformant required-leading-singular trees yield zero findings', () => {
+		it('<details> with exactly one <summary> then flow (one summary + flow)', () => {
+			mount(el('details', [text('summary', 'x'), text('p', 'flow'), text('div', 'more flow')]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<fieldset> with exactly one <legend> then flow', () => {
+			mount(el('fieldset', [text('legend', 'x'), text('p', 'flow')]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<fieldset> with NO legend then flow (legend optional → zero)', () => {
+			mount(el('fieldset', [text('p', 'flow')]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<table> with exactly one <caption> then colgroup/thead/tbody', () => {
+			mount(el('table', [el('caption'), el('colgroup'), el('thead'), el('tbody')]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<figure> with <figcaption> first then flow (figcaption not a leading-tag segment)', () => {
+			mount(el('figure', [text('figcaption', 'c'), el('img')]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<figure> with flow then <figcaption> last', () => {
+			mount(el('figure', [el('img'), text('figcaption', 'c')]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<details> with one <summary> then script-supporting then flow', () => {
+			mount(el('details', [text('summary', 'x'), el('script'), text('p', 'flow')]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<details><summary/> with a nested <details><summary/> (inner scoped, both conformant)', () => {
+			mount(
+				el('details', [
+					text('summary', 'outer'),
+					el('details', [text('summary', 'inner'), text('p', 'y')]),
+				]),
+			)
+			expect(findings(container)).toEqual([])
+		})
 	})
 
 	// ── perturbation: the regression guard bites ──────────────────────────
@@ -419,6 +557,62 @@ describe('rules — full registry over ordered/prefix parents', () => {
 				// is owned solely by context/parent-model, content/required
 				// defers — disjoint single source).
 				expect(first).toEqual(valid ? [] : ['context/parent-model'])
+			}
+		})
+
+		it('seeded duplicate-required-leading <details> verdict is reproducible & exactly-one', () => {
+			// valid = exactly one <summary> then flow → ZERO findings;
+			// invalid = TWO <summary> → EXACTLY ONE content/cardinality. Same
+			// seed ⇒ same shape ⇒ same verdict. The discriminator bites in
+			// BOTH directions: a false-positive on the conformant single
+			// summary would turn `valid` non-empty; a regression that misses
+			// the duplicate would turn `invalid` empty.
+			for (const seed of [19, 191, 1907, 19077]) {
+				const random = createRandom(seed)
+				const valid = random() < 0.5
+
+				const buildOnce = (): readonly string[] => {
+					const kids = valid
+						? [text('summary', 'S'), text('p', 'B')]
+						: [text('summary', 'S1'), text('summary', 'S2'), text('p', 'B')]
+					const details = el('details', kids)
+					container.appendChild(details)
+					const ids = findings(container)
+					details.remove()
+					return ids
+				}
+
+				const first = buildOnce()
+				const second = buildOnce()
+				expect(first).toEqual(second)
+				expect(first).toEqual(valid ? [] : ['content/cardinality'])
+			}
+		})
+
+		it('seeded duplicate-required-leading <fieldset> verdict is reproducible & exactly-one', () => {
+			// `legend`(?) optional-leading singular: valid = zero-or-one
+			// legend → ZERO; invalid = TWO legends → EXACTLY ONE
+			// content/cardinality (single-first-child defers the cardinality;
+			// no double-report). Bites both directions.
+			for (const seed of [23, 233, 2307, 23077]) {
+				const random = createRandom(seed)
+				const valid = random() < 0.5
+
+				const buildOnce = (): readonly string[] => {
+					const kids = valid
+						? [text('legend', 'L'), text('p', 'B')]
+						: [text('legend', 'L1'), text('legend', 'L2'), text('p', 'B')]
+					const fieldset = el('fieldset', kids)
+					container.appendChild(fieldset)
+					const ids = findings(container)
+					fieldset.remove()
+					return ids
+				}
+
+				const first = buildOnce()
+				const second = buildOnce()
+				expect(first).toEqual(second)
+				expect(first).toEqual(valid ? [] : ['content/cardinality'])
 			}
 		})
 

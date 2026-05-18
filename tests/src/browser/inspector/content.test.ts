@@ -27,6 +27,7 @@ function ruleById(id: string): (typeof rules)[number] {
 const requiredRule = ruleById('content/required')
 const forbiddenRule = ruleById('content/forbidden')
 const categoryRule = ruleById('content/category')
+const cardinalityRule = ruleById('content/cardinality')
 
 describe('rules — content family', () => {
 	let container: HTMLDivElement
@@ -281,6 +282,104 @@ describe('rules — content family', () => {
 				}
 			}
 			expect(findings).toEqual(['structure/parent-restricted'])
+		})
+	})
+
+	// ── content/cardinality ───────────────────────────────────────────────
+	//
+	// A `closed:false` prefix model whose `segments[0]` is a
+	// `{kind:'tag', count:'1'|'?'}` segment permits AT MOST ONE of that tag
+	// (`details`→`summary`(1), `fieldset`→`legend`(?)). A SECOND occurrence
+	// among the parent's flat children is a content-model violation the
+	// prefix model's open trailing arm previously absorbed silently. Fires
+	// on the PARENT, exactly once, and DEFERS to `content/required` when
+	// that already bites (a CLOSED model — `table`→`caption` — whose
+	// exhaustiveness check owns the duplicate). Generic, schema-driven —
+	// never per-element.
+
+	describe('content/cardinality — clean (at most one leading singular child)', () => {
+		it('a <details> with exactly one <summary> then flow is clean', () => {
+			const details = el('details', [el('summary'), el('p'), el('div')])
+			container.appendChild(details)
+			expect(evaluateOn(cardinalityRule, details, details)).toBeNull()
+		})
+
+		it('a <fieldset> with exactly one <legend> then flow is clean', () => {
+			const fieldset = el('fieldset', [el('legend'), el('p')])
+			container.appendChild(fieldset)
+			expect(evaluateOn(cardinalityRule, fieldset, fieldset)).toBeNull()
+		})
+
+		it('a <fieldset> with NO legend (optional) is clean', () => {
+			const fieldset = el('fieldset', [el('p')])
+			container.appendChild(fieldset)
+			expect(evaluateOn(cardinalityRule, fieldset, fieldset)).toBeNull()
+		})
+
+		it('a <table> with one <caption> is NOT this rule (closed model — defers)', () => {
+			const table = el('table', [el('caption'), el('tbody')])
+			container.appendChild(table)
+			expect(evaluateOn(cardinalityRule, table, table)).toBeNull()
+		})
+
+		it('an element with no childModel (<p>) is never flagged', () => {
+			const p = el('p', [el('span'), el('span')])
+			container.appendChild(p)
+			expect(evaluateOn(cardinalityRule, p, p)).toBeNull()
+		})
+
+		it('a <figure> with two <figcaption> is NOT this rule (segments[0] is a choice, not a leading tag)', () => {
+			// figcaption position/cardinality is owned by structure/edge-child;
+			// the generic predicate is strictly "segments[0] is a tag segment".
+			const figure = el('figure', [el('figcaption'), el('figcaption')])
+			container.appendChild(figure)
+			expect(evaluateOn(cardinalityRule, figure, figure)).toBeNull()
+		})
+	})
+
+	describe('content/cardinality — dirty (duplicate leading singular child)', () => {
+		it('a <details> with two <summary> is flagged exactly (cite/severity/message)', () => {
+			const details = el('details', [el('summary'), el('summary'), el('p')])
+			container.appendChild(details)
+			const finding = evaluateOn(cardinalityRule, details, details)
+			if (finding == null) throw new Error('expected a content/cardinality finding')
+			expect(finding.rule).toBe('content/cardinality')
+			expect(finding.severity).toBe('error')
+			expect(finding.element).toBe(details)
+			expect(finding.cite).toBe('interactives#the-details-element')
+			expect(finding.message).toContain('<summary>')
+			expect(finding.message).toContain('<details>')
+			expect(finding.actual).toContain('2')
+		})
+
+		it('a <fieldset> with two <legend> is flagged exactly', () => {
+			const fieldset = el('fieldset', [el('legend'), el('legend'), el('p')])
+			container.appendChild(fieldset)
+			const finding = evaluateOn(cardinalityRule, fieldset, fieldset)
+			if (finding == null) throw new Error('expected a content/cardinality finding')
+			expect(finding.rule).toBe('content/cardinality')
+			expect(finding.cite).toBe('forms#the-fieldset-element')
+		})
+
+		it('the duplicate is counted over the parent OWN flat children only (nested scoping)', () => {
+			// The inner <details>'s <summary> must not be counted against the
+			// outer <details>. Outer has exactly one summary → clean.
+			const inner = el('details', [el('summary'), el('p')])
+			const outer = el('details', [el('summary'), el('p'), inner])
+			container.appendChild(outer)
+			expect(evaluateOn(cardinalityRule, outer, outer)).toBeNull()
+		})
+
+		it('script-supporting intermixed does not mask the duplicate', () => {
+			const details = el('details', [
+				el('summary'),
+				el('script'),
+				el('summary'),
+				el('template'),
+				el('p'),
+			])
+			container.appendChild(details)
+			expect(evaluateOn(cardinalityRule, details, details)?.rule).toBe('content/cardinality')
 		})
 	})
 

@@ -175,6 +175,58 @@ describe('rules — structure family', () => {
 			}
 			expect(ids).toEqual(['structure/single-first-child'])
 		})
+
+		it('DUPLICATE <summary> in <details> — single-first-child DEFERS the cardinality', () => {
+			// `summary`(1) is required-leading: single-first-child already
+			// defers the whole concern (modelRequiresLeading). The duplicate
+			// cardinality belongs to content/cardinality — this child-keyed
+			// rule must NOT report (no double-report).
+			const dup = el('summary')
+			const details = el('details', [el('summary'), dup, el('p')])
+			container.appendChild(details)
+			expect(evaluateOn(singleFirstChildRule, details, dup)).toBeNull()
+		})
+
+		it('DUPLICATE <legend> in <fieldset> — single-first-child DEFERS the cardinality (>1)', () => {
+			// `legend`(?) is optional-leading: single-first-child OWNS the
+			// single-occurrence position case, but the cardinality (>1
+			// occurrence) is content/cardinality's single concern, so this
+			// child-keyed rule must DEFER for BOTH legends (no per-child
+			// double-report). The first legend IS first (no position issue);
+			// the second is excused because the duplicate is content's.
+			const first = el('legend')
+			const second = el('legend')
+			const fieldset = el('fieldset', [first, second, el('p')])
+			container.appendChild(fieldset)
+			expect(evaluateOn(singleFirstChildRule, fieldset, first)).toBeNull()
+			expect(evaluateOn(singleFirstChildRule, fieldset, second)).toBeNull()
+		})
+
+		it('DUPLICATE <caption> in <table> — single-first-child DEFERS (content/required owns it)', () => {
+			// `table` is a CLOSED model; the duplicate caption breaks closed
+			// exhaustiveness so content/required is the single owner. Both
+			// captions must be excused by single-first-child (previously it
+			// fired once per caption → triple report).
+			const c1 = el('caption')
+			const c2 = el('caption')
+			const table = el('table', [c1, c2, el('tbody', [el('tr', [el('td')])])])
+			container.appendChild(table)
+			expect(evaluateOn(singleFirstChildRule, table, c1)).toBeNull()
+			expect(evaluateOn(singleFirstChildRule, table, c2)).toBeNull()
+		})
+
+		it('single mispositioned <legend> (ONE occurrence, not first) STILL fires single-first-child', () => {
+			// The genuine position concern single-first-child must KEEP: a
+			// lone <legend> that is not the first child (content/required
+			// cannot see it in the permissive prefix model; content/cardinality
+			// does not fire — only one occurrence). No regression.
+			const legend = el('legend')
+			const fieldset = el('fieldset', [el('p'), legend])
+			container.appendChild(fieldset)
+			expect(evaluateOn(singleFirstChildRule, fieldset, legend)?.rule).toBe(
+				'structure/single-first-child',
+			)
+		})
 	})
 
 	// ── edge-child ────────────────────────────────────────────────────────

@@ -1004,6 +1004,29 @@ display: flex }`, `TablesPage.vue`, no `role="cell"`). The only
   it genuinely bites. Added to the `AGENTS.md` companion-doc list, the
   `guides/README.md` concept + directory maps, and the phase spec-guide
   map below.
+- ✅ Phase-3 rule correction surfaced BY the Phase-7 dogfood (fixed at
+  source, not symptom-hidden): the Phase-7 dirty fixture's `<details>` with
+  two `<summary>` exposed a genuine gap — a PREFIX (`closed:false`)
+  `childModel` whose required-leading SINGULAR child (a leading
+  `{kind:'tag', count:'1'|'?'}` segment — `details`→`summary`(1),
+  `fieldset`→`legend`(?)) occurred more than once was silently absorbed by
+  the open trailing arm (`<details>` 2×`<summary>` → ZERO findings;
+  `<fieldset>` 2×`<legend>` mis-reported as two `structure/single-first-
+child`). Added a generic, schema-data-driven `content/cardinality` rule
+  (parent-keyed, off `leadingSingularTag(childModel)` — never per-element)
+  that fires exactly once and defers to `content/required` when a CLOSED
+  model's duplicate already breaks closed-exhaustiveness (`<table>`
+  2×`<caption>`); `structure/single-first-child` now defers the cardinality
+  aspect (its lone-mispositioned-child POSITION concern preserved
+  unchanged), so one violation still yields exactly one finding (the §1/§2
+  disjoint single-source partition extended). The inspector now CORRECTLY
+  flags the dirty fixture's duplicate `<summary>` (6 findings / 4 families);
+  the dishonest "structural noise without a false positive" framing in
+  `app/browser/constants.ts` + `InspectorPage.vue` was corrected to state
+  accurately that it is a real content-model violation the inspector
+  flags. `guides/inspector.md` rule catalog updated for the new id (doc↔
+  source parity stays green by accuracy). Phase 7 stays ✅ (genuinely
+  complete — gap fixed at source, no gate/parity/inspector-test weakened).
 
 ---
 
