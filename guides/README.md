@@ -201,7 +201,7 @@ The curated WHATWG-spec cache (`guides/w3c/**`) and its frozen TS mirror. The se
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Spec / pointer       | [`guides/w3c.md`](w3c.md)                                                                                                                                                  |
 | Corpus (cache)       | [`guides/w3c/`](w3c/) — `categories.md`, `elements/*.md`, `links.md`, `interactions.md`, `renderings.md`, `aria.md`                                                        |
-| Types (truth)        | [`src/browser/types.ts`](../src/browser/types.ts) — `ContentCategory`, `ContentModel`, `ContentModelEntry`, `ContentConstraint`, `ContentSequenceSegment`, `AttributeRule` |
+| Types (truth)        | [`src/browser/types.ts`](../src/browser/types.ts) — `ContentCategory`, `ContentModel`, `ContentModelEntry`, `ContentConstraint`, `ChildModel`, `ChildSegment`, `AttributeRule` |
 | TS mirror            | [`src/browser/schema.ts`](../src/browser/schema.ts) — frozen `contentModel` + indices + predicates + `contentModelContract`                                                |
 | Bidirectional parity | [`tests/guides/w3c.test.ts`](../tests/guides/w3c.test.ts)                                                                                                                  |
 

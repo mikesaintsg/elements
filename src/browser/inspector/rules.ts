@@ -303,8 +303,16 @@ function matchSegments(
 	for (const segment of segments) {
 		skipScript()
 		if (segment.kind === 'tag') {
+			// Consume a run of same-tag children, but never PAST this
+			// segment's cardinality upper bound: `'1'`/`'?'` admit at most
+			// one, so a trailing same-tag sibling is LEFT for the next
+			// segment / the next iteration of an enclosing repeating
+			// `group` (the spec's `group*( choice([{tag,1}]…) )` idiom —
+			// `tr` td/th, `select` option/optgroup, `optgroup` option).
+			// `'+'`/`'*'` have no finite upper bound, so they stay greedy.
+			const max = segment.count === '1' || segment.count === '?' ? 1 : Infinity
 			let run = 0
-			while (cursor < children.length) {
+			while (cursor < children.length && run < max) {
 				const c = children[cursor]
 				if (c === undefined || childTag(c) !== segment.tag) break
 				run += 1

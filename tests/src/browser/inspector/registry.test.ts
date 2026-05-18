@@ -118,6 +118,41 @@ describe('rules — full registry over ordered/prefix parents', () => {
 			expect(findings(container)).toEqual([])
 		})
 
+		// ── multi-child repeating groups (the blind spot every other
+		//    "valid" fixture missed: exactly ONE element per group never
+		//    exercised the `group*( choice([{tag,1}]…) )` idiom with ≥2
+		//    consecutive matching children — the exact shape the greedy
+		//    `tag`-run over-consumption regression false-positived on).
+		//    A two-cell row / multi-option select are the most common
+		//    HTML structures; these MUST yield ZERO findings. They are
+		//    GREEN only with the bounded-cardinality matcher and RED
+		//    without it (perturbation-verified below).
+
+		it('<tr> with TWO <td> cells (canonical multi-cell row)', () => {
+			mount(el('table', [el('tbody', [el('tr', [el('td'), el('td')])])]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<tr> with mixed <th> then <td> cells', () => {
+			mount(el('table', [el('tbody', [el('tr', [el('th'), el('td'), el('td')])])]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<select> with TWO direct <option> children', () => {
+			mount(el('select', [text('option', 'A'), text('option', 'B')]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<optgroup> with TWO <option> children (nested repeating group)', () => {
+			mount(el('select', [el('optgroup', [text('option', 'A'), text('option', 'B')])]))
+			expect(findings(container)).toEqual([])
+		})
+
+		it('<select> mixing <option> then <hr> (heterogeneous choice arms)', () => {
+			mount(el('select', [text('option', 'A'), el('hr'), text('option', 'B')]))
+			expect(findings(container)).toEqual([])
+		})
+
 		it('<select> with optional button then option/optgroup/hr', () => {
 			mount(
 				el('select', [
@@ -269,6 +304,72 @@ describe('rules — full registry over ordered/prefix parents', () => {
 				// Ordered → zero; out-of-order → EXACTLY ONE (never two: the
 				// §2 content↔structure double-report is structurally gone).
 				expect(first).toEqual(ordered ? [] : ['content/required'])
+			}
+		})
+
+		it('seeded multi-cell <tr> over group*(choice([{tag,1}]…)) — zero vs exactly-one', () => {
+			// The blind-spot guard with TEETH: the `valid` branch is the
+			// canonical TWO-cell row — a repeating group with ≥2 children
+			// satisfying a `count:'1'` choice arm. The greedy-`tag`-run
+			// regression swallowed both <td> into one run, withinCount('1',2)
+			// → false, the enclosing `group*` matched zero iterations, the
+			// `closed` <tr> model was left unconsumed, and a FALSE
+			// `content/required` fired on perfectly valid markup. So the
+			// `valid` branch is `[]` ONLY with the bounded-cardinality
+			// matcher; it is RED (`['content/required']`) without it — this
+			// perturbation bites in BOTH directions. The `invalid` branch
+			// (a non-admitted <span> the closed <tr> model cannot absorb)
+			// is a MEMBERSHIP miss owned solely by context/parent-model
+			// (content/required defers — disjoint single source), so it
+			// stays EXACTLY ONE finding regardless of the matcher.
+			for (const seed of [13, 137, 1370, 13007]) {
+				const random = createRandom(seed)
+				const valid = random() < 0.5
+
+				const buildOnce = (): readonly string[] => {
+					const row = valid
+						? el('tr', [el('td'), el('td')])
+						: el('tr', [el('td'), text('span', 'x'), el('td')])
+					const table = el('table', [el('tbody', [row])])
+					container.appendChild(table)
+					const ids = findings(container)
+					table.remove()
+					return ids
+				}
+
+				const first = buildOnce()
+				const second = buildOnce()
+				expect(first).toEqual(second)
+				expect(first).toEqual(valid ? [] : ['context/parent-model'])
+			}
+		})
+
+		it('seeded multi-option <select> over group*(choice([{tag,1}]…)) — zero vs exactly-one', () => {
+			// Same idiom, the OTHER canonical victim: a multi-option
+			// drop-down. `valid` = two direct <option> (the regression
+			// false-positived `content/required` on the <select>); `invalid`
+			// = an unadmitted <p> sibling the closed select model rejects.
+			for (const seed of [21, 211, 2110, 21007]) {
+				const random = createRandom(seed)
+				const valid = random() < 0.5
+
+				const buildOnce = (): readonly string[] => {
+					const sel = valid
+						? el('select', [text('option', 'A'), text('option', 'B')])
+						: el('select', [text('option', 'A'), text('p', 'bad'), text('option', 'B')])
+					container.appendChild(sel)
+					const ids = findings(container)
+					sel.remove()
+					return ids
+				}
+
+				const first = buildOnce()
+				const second = buildOnce()
+				expect(first).toEqual(second)
+				// valid → []; invalid → exactly one (the <p> membership miss
+				// is owned solely by context/parent-model, content/required
+				// defers — disjoint single source).
+				expect(first).toEqual(valid ? [] : ['context/parent-model'])
 			}
 		})
 	})

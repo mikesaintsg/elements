@@ -1588,12 +1588,14 @@ export function describeElement(tag: string): ContentModelEntry | null {
 //                                    (Phase-3 fixtures)
 //
 // The frozen `contentModel` array above stays the AUTHORING surface; this
-// shape is its compiled contract. The entry tree is finite and acyclic
-// (a `ContentSequenceSegment` is a flat `{ tag, count }` — it does not
-// nest), so no recursion boundary is needed; `lazyShape` would be
-// speculative generality (YAGNI) here. The transparent content model is
-// resolved at WALK time (Phase 2) over live ancestors, not encoded as a
-// self-referential shape — the schema only records `model: 'transparent'`.
+// shape is its compiled contract. The entry tree IS recursive: a
+// `ChildSegment` `group` nests a `ChildSegment[]` and a `choice` nests
+// segment lists, so the contract needs a real recursion boundary —
+// `childSegmentShape` below uses `lazyShape` (the sole sanctioned boundary,
+// shapers.md) for exactly that reason, NOT speculative generality. The
+// transparent content model is the one shape NOT encoded self-referentially:
+// it is resolved at WALK time (Phase 2) over live ancestors, so the schema
+// only records `model: 'transparent'`.
 
 const categoryShape = literalShape(
 	'metadata',

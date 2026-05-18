@@ -445,8 +445,8 @@ The frozen TS mirror of the corpus, shaped exactly like
   guarded), `forbidden` — forbidden descendant categories/tags,
   `transparent`, `void`, `attributes` — coupling rules, `cite` —
   `guides/w3c` anchor). Sub-types `ContentConstraint` / `ChildModel` /
-  `ChildSegment` / `ContentSequenceSegment` / `AttributeRule` land alongside
-  (constraints-as-data + the ordered-model encoding + coupling rules).
+  `ChildSegment` / `AttributeRule` land alongside (constraints-as-data +
+  the recursive ordered-model encoding + coupling rules).
 - ✅ **`schema.ts`**: frozen `contentModel: readonly ContentModelEntry[]`
   via a typed `defineModel(...)` helper (the `entry(...)` analogue — bare
   `entry` is taxonomy's; `defineModel` is the schema's, both in
@@ -479,11 +479,11 @@ The frozen TS mirror of the corpus, shaped exactly like
   of synthetic entries for Phase-3 fixtures. The frozen `taxonomy.ts`-style
   array stays the authoring surface; the shape is its compiled contract —
   derived, not duplicated ([shapers.md](guides/shapers.md) /
-  [compilers.md](guides/compilers.md)). NB: no `lazyShape` arm — the entry
-  tree is finite/acyclic (a `ContentSequenceSegment` is a flat
-  `{ tag, count }`, never nested), so a recursion boundary would be
-  speculative generality (YAGNI); the transparent model is resolved at
-  WALK time (Phase 2) over live ancestors, not as a self-referential shape.
+  [compilers.md](guides/compilers.md)). NB: the `ChildSegment` arm IS
+  recursive (`group` nests `ChildSegment[]`, `choice` nests segment lists),
+  so the contract uses `lazyShape` — the sole sanctioned recursion boundary
+  — for it; the transparent model is the one shape resolved at WALK time
+  (Phase 2) over live ancestors, not encoded as a self-referential shape.
 - ✅ Barrel: `export * from './schema.js'` in
   [`src/browser/index.ts`](src/browser/index.ts).
 - ✅ **`tests/guides/w3c.test.ts`** (bidirectional, mirrors

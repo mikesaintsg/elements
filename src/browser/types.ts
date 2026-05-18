@@ -198,12 +198,6 @@ export interface ContentConstraint {
  */
 export type ContentCount = '?' | '*' | '+' | '1'
 
-/** One tag segment of an ordered child model — a tag run with cardinality. */
-export interface ContentSequenceSegment {
-	readonly tag: string
-	readonly count: ContentCount
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // The ordered child content model (the ONE encoding — replaces the
 // overloaded `required` + the `child-order`/`group-order` constraint
