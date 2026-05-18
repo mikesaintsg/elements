@@ -188,3 +188,32 @@ surfaces. Companion to the plan
   keeping `value is ThemeSetting`/`DropPosition`/`Side`), the drag-detail
   guards (wrapper functions keeping `value is DragTapDetail` etc.). No
   public type widened or weakened; no `as`/`!`/`any` used.
+
+- **createDrag.ts / useDrag.ts (B4): all substitutions behavior-identical
+  (no divergence).** The single converted site —
+  `createDrag.ts:reorder`'s `if (item !== undefined)` (splice-extracted
+  `T | undefined`) → `if (!isUndefined(item))` — is a semantically exact
+  swap: `!isUndefined(item)` has the identical truth table to `item !==
+  undefined` (rejects only `undefined`, still admits `null` and every
+  other `T`), so the reorder/extract path is unchanged and a list
+  containing `null` items still reorders them. No test change (the
+  existing `createDrag.test.ts` suite is the regression gate; it stayed
+  green pre- AND post-change). All other JS-looking sites in both files
+  are DOM-native or typed-param boundary, not core-substitutable (see the
+  B4 note in `## Notes`). `src/browser/types.ts`: NO change (no narrowed
+  return type altered).
+
+## Notes
+
+traversals.ts (B3): no core-substitutable JS-domain sites — file is DOM-native by design (traversal/batch/delegate/keyed all operate on real DOM nodes; matching guards + createMatcher already core-canonicalized in helpers.ts B2). Clean boundary, not a gap.
+
+createDrag.ts / useDrag.ts (B4): exactly one core-substitutable site across both files — `createDrag.ts:reorder`'s splice-result `item !== undefined` → `!isUndefined(item)` (behavior-identical, ledgered above under No-shift / boundary notes). Every other JS-looking construct is the deliberate clean boundary, left native with reason:
+
+- **DOM event/element `instanceof` (createDrag.ts):** `event instanceof MouseEvent/DragEvent/KeyboardEvent/PointerEvent`, `eventTarget/handle/pressed instanceof HTMLElement`, `related/t instanceof Node`, plus `.closest`/`.querySelector`/`.querySelectorAll`/`.contains`/`.dataset`/`.draggable`/`dataTransfer`/`getBoundingClientRect`/`getSelection` — the native DOM boundary; wrapping in core `instanceOf(...)` is forbidden ceremony.
+- **Typed-param literal comparison (createDrag.ts):** `axis === 'vertical'` compares an already-typed `'vertical' | 'horizontal'` option, not a guard on `unknown` — no `literalOf` needed (typed comparison, no shift).
+- **DOM-event shape discrimination (createDrag.ts:select):** `'ctrlKey' in event` / `'shiftKey' in event` and the surrounding `event && …` discriminate a `MouseEvent | KeyboardEvent | PointerEvent | undefined` DOM-event union — native DOM-event interrogation, not a JS-domain value guard.
+- **Vue-reactivity / internal numeric state (createDrag.ts):** `if (!refs)` (typed `scope.run()` result — Vue effect-scope mechanic), `selectionAnchor !== null` / `target.value` / index `.sort`/`.filter`/`Math.max`/`Math.min` (index arithmetic on already-`number` reactive state), `String(startIndex)` (number→string serialization for `dataTransfer.setData`, the inverse of a core parser — not unknown→typed). Native, per "Vue reactivity / index arithmetic stays native".
+- **DOM structural nullness (createDrag.ts):** `row.parentElement === element`, `!!row` on `HTMLElement | null`, `if (!row)` early-returns — DOM-ref structural checks, native (NOT loose-input value guards).
+- **SSR environment probe + Vue reactivity (useDrag.ts):** `typeof window === 'undefined'` is the environment-existence idiom core deliberately does not replace (identical boundary as B2's `typeof CSS/Intl/requestAnimationFrame` and the DOM-less import contract — `isObject(window)` would `ReferenceError` under SSR). `!el` (Vue `Ref<HTMLElement | null>.value`), `options.list?.value ?? []`, `options.items?.value ?? []`, `?? false`/`?? EMPTY_SET`/`?? null` on `computed`/ref reads, `options.list ? … : undefined`, `if (!arr)` on a Vue ref `.value` — all Vue-reactivity mechanics, native. **Net: useDrag.ts has zero core-substitutable JS-domain sites — DOM/Vue-adapter by design, clean boundary, not a gap.**
+
+All six drag-detail object literals in createDrag.ts (`DragEndDetail` L137, `DragStartDetail` ~L165, `DragOverDetail` ~L188, `DragDropDetail` ~L226, `DragTapDetail` ~L371, the `reorder` emit payload ~L216) remain EXACT-shape object literals with only static declared keys — no spreads, no dynamic keys introduced — so helpers.ts's strict `recordOf({...})` drag-detail guards (B2) still accept them unchanged.

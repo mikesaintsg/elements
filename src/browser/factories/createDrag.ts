@@ -8,6 +8,7 @@ import type {
 	DragTapDetail,
 	DropPosition,
 } from '../types.js'
+import { isUndefined } from '@elements/core'
 import { effectScope, readonly, ref } from '@vue/reactivity'
 import { DRAG_EVENTS, DRAG_ROW_CLASSES } from '../constants.js'
 import { emit, extractRow, extractRows, indexOfRow, listen } from '../helpers.js'
@@ -204,7 +205,7 @@ export function createDrag<T = unknown>(
 		const extracted: T[] = []
 		for (const i of [...sorted].reverse()) {
 			const [item] = list.splice(i, 1)
-			if (item !== undefined) extracted.unshift(item)
+			if (!isUndefined(item)) extracted.unshift(item)
 		}
 		const offsetCount = sorted.filter((i) => i < rawInsert).length
 		const insertAt = Math.max(0, Math.min(rawInsert - offsetCount, list.read().length))
