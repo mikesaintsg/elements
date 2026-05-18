@@ -130,6 +130,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'As the second element in an html element.',
 		'children',
 		'sections#the-body-element',
+		{ permits: ['flow'] },
 	),
 	defineModel(
 		'article',
@@ -137,6 +138,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where sectioning content is expected.',
 		'children',
 		'sections#the-article-element',
+		{ permits: ['flow'] },
 	),
 	defineModel(
 		'section',
@@ -144,6 +146,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where sectioning content is expected.',
 		'children',
 		'sections#the-section-element',
+		{ permits: ['flow'] },
 	),
 	defineModel(
 		'nav',
@@ -151,6 +154,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where sectioning content is expected.',
 		'children',
 		'sections#the-nav-element',
+		{ permits: ['flow'] },
 	),
 	defineModel(
 		'aside',
@@ -158,6 +162,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where sectioning content is expected.',
 		'children',
 		'sections#the-aside-element',
+		{ permits: ['flow'] },
 	),
 	...(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const).map((tag) =>
 		defineModel(
@@ -166,6 +171,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 			'As a child of an hgroup element; where heading content is expected.',
 			'children',
 			'sections#the-h1-h2-h3-h4-h5-and-h6-elements',
+			{ permits: ['phrasing'] },
 		),
 	),
 	defineModel(
@@ -199,7 +205,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where flow content is expected.',
 		'children',
 		'sections#the-header-element',
-		{ forbidden: ['header', 'footer'] },
+		{ permits: ['flow'], forbidden: ['header', 'footer'] },
 	),
 	defineModel(
 		'footer',
@@ -207,7 +213,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where flow content is expected.',
 		'children',
 		'sections#the-footer-element',
-		{ forbidden: ['header', 'footer'] },
+		{ permits: ['flow'], forbidden: ['header', 'footer'] },
 	),
 	defineModel(
 		'address',
@@ -215,7 +221,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where flow content is expected.',
 		'children',
 		'sections#the-address-element',
-		{ forbidden: ['heading', 'sectioning', 'header', 'footer', 'address'] },
+		{ permits: ['flow'], forbidden: ['heading', 'sectioning', 'header', 'footer', 'address'] },
 	),
 
 	// §4.4 Grouping content (groupings.md)
@@ -225,6 +231,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where flow content is expected; as a child of an hgroup element.',
 		'children',
 		'groupings#the-p-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'hr',
@@ -239,6 +246,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where flow content is expected.',
 		'children',
 		'groupings#the-pre-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'blockquote',
@@ -246,7 +254,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where flow content is expected.',
 		'children',
 		'groupings#the-blockquote-element',
-		{ attributes: [{ attribute: 'cite' }] },
+		{ permits: ['flow'], attributes: [{ attribute: 'cite' }] },
 	),
 	defineModel(
 		'ol',
@@ -298,6 +306,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'groupings#the-li-element',
 		{
+			permits: ['flow'],
 			constraints: [
 				{
 					kind: 'parent-restricted',
@@ -333,7 +342,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Before dd or dt elements inside dl elements (or inside div children of a dl).',
 		'children',
 		'groupings#the-dt-element',
-		{ forbidden: ['header', 'footer', 'sectioning', 'heading'] },
+		{ permits: ['flow'], forbidden: ['header', 'footer', 'sectioning', 'heading'] },
 	),
 	defineModel(
 		'dd',
@@ -341,6 +350,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'After dt or dd elements inside dl elements (or inside div children of a dl).',
 		'children',
 		'groupings#the-dd-element',
+		{ permits: ['flow'] },
 	),
 	defineModel(
 		'figure',
@@ -365,6 +375,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'groupings#the-figcaption-element',
 		{
+			permits: ['flow'],
 			constraints: [
 				{
 					kind: 'edge-child',
@@ -381,6 +392,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where flow content is expected, but only if it is a hierarchically correct main element.',
 		'children',
 		'groupings#the-main-element',
+		{ permits: ['flow'] },
 	),
 	defineModel(
 		'search',
@@ -388,6 +400,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where flow content is expected.',
 		'children',
 		'groupings#the-search-element',
+		{ permits: ['flow'] },
 	),
 	defineModel(
 		'div',
@@ -395,6 +408,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where flow content is expected; as a child of a dl element.',
 		'children',
 		'groupings#the-div-element',
+		{ permits: ['flow'] },
 	),
 
 	// §4.5 Text-level semantics (texts.md)
@@ -434,6 +448,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-em-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'strong',
@@ -441,6 +456,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-strong-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'small',
@@ -448,6 +464,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-small-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		's',
@@ -455,6 +472,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-s-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'cite',
@@ -462,6 +480,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-cite-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'q',
@@ -469,7 +488,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-q-element',
-		{ attributes: [{ attribute: 'cite' }] },
+		{ permits: ['phrasing'], attributes: [{ attribute: 'cite' }] },
 	),
 	defineModel(
 		'dfn',
@@ -478,6 +497,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'texts#the-dfn-element',
 		{
+			permits: ['phrasing'],
 			forbidden: ['dfn'],
 			constraints: [{ kind: 'no-self-nest', note: 'No dfn element descendants.' }],
 		},
@@ -488,6 +508,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-abbr-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'ruby',
@@ -510,6 +531,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		},
 	),
 	defineModel('rt', [], 'As a child of a ruby element.', 'children', 'texts#the-rt-element', {
+		permits: ['phrasing'],
 		constraints: [
 			{
 				kind: 'parent-restricted',
@@ -540,7 +562,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-data-element',
-		{ attributes: [{ attribute: 'value', required: true }] },
+		{ permits: ['phrasing'], attributes: [{ attribute: 'value', required: true }] },
 	),
 	defineModel(
 		'time',
@@ -563,6 +585,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-code-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'var',
@@ -570,6 +593,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-var-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'samp',
@@ -577,6 +601,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-samp-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'kbd',
@@ -584,6 +609,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-kbd-element',
+		{ permits: ['phrasing'] },
 	),
 	...(['sub', 'sup'] as const).map((tag) =>
 		defineModel(
@@ -592,6 +618,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 			'Where phrasing content is expected.',
 			'children',
 			'texts#the-sub-and-sup-elements',
+			{ permits: ['phrasing'] },
 		),
 	),
 	defineModel(
@@ -600,6 +627,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-i-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'b',
@@ -607,6 +635,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-b-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'u',
@@ -614,6 +643,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-u-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'mark',
@@ -621,6 +651,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-mark-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'bdi',
@@ -628,6 +659,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-bdi-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'bdo',
@@ -635,7 +667,10 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-bdo-element',
-		{ attributes: [{ attribute: 'dir', values: ['ltr', 'rtl'], required: true }] },
+		{
+			permits: ['phrasing'],
+			attributes: [{ attribute: 'dir', values: ['ltr', 'rtl'], required: true }],
+		},
 	),
 	defineModel(
 		'span',
@@ -643,6 +678,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'texts#the-span-element',
+		{ permits: ['phrasing'] },
 	),
 	defineModel(
 		'br',
@@ -900,6 +936,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'tables#the-caption-element',
 		{
+			permits: ['flow'],
 			forbidden: ['table'],
 			constraints: [
 				{
@@ -1032,6 +1069,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		},
 	),
 	defineModel('td', [], 'As a child of a tr element.', 'children', 'tables#the-td-element', {
+		permits: ['flow'],
 		constraints: [
 			{
 				kind: 'parent-restricted',
@@ -1041,6 +1079,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		],
 	}),
 	defineModel('th', [], 'As a child of a tr element.', 'children', 'tables#the-th-element', {
+		permits: ['flow'],
 		forbidden: ['header', 'footer', 'sectioning', 'heading'],
 		constraints: [
 			{
@@ -1060,6 +1099,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'forms#the-form-element',
 		{
+			permits: ['flow'],
 			forbidden: ['form'],
 			constraints: [{ kind: 'no-self-nest', note: 'No form element descendants.' }],
 		},
@@ -1071,6 +1111,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'forms#the-label-element',
 		{
+			permits: ['phrasing'],
 			forbidden: ['label'],
 			attributes: [{ attribute: 'for' }],
 		},
@@ -1090,6 +1131,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'forms#the-button-element',
 		{
+			permits: ['phrasing'],
 			forbidden: ['interactive'],
 			constraints: [
 				{
@@ -1176,7 +1218,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'forms#the-output-element',
-		{ attributes: [{ attribute: 'for' }] },
+		{ permits: ['phrasing'], attributes: [{ attribute: 'for' }] },
 	),
 	defineModel(
 		'progress',
@@ -1185,6 +1227,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'forms#the-progress-element',
 		{
+			permits: ['phrasing'],
 			forbidden: ['progress'],
 			constraints: [{ kind: 'no-self-nest', note: 'No progress element descendants.' }],
 		},
@@ -1196,6 +1239,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'forms#the-meter-element',
 		{
+			permits: ['phrasing'],
 			forbidden: ['meter'],
 			constraints: [{ kind: 'no-self-nest', note: 'No meter element descendants.' }],
 		},
@@ -1223,6 +1267,10 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'forms#the-legend-element',
 		{
+			// No `permits`: the box is "Phrasing content, optionally
+			// intermixed with heading content; or one heading element
+			// (h1–h6)." — heading content widens the child set beyond a single
+			// bare category, so the faithful corpus derivation yields none.
 			constraints: [
 				{
 					kind: 'single-first-child',
@@ -1259,6 +1307,11 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'interactives#the-summary-element',
 		{
+			// No `permits`: the box is "Phrasing content, optionally
+			// intermixed with heading content." — the heading-content arm
+			// widens the child set beyond a single bare category, so a faithful
+			// corpus derivation yields none (claiming bare phrasing would
+			// false-positive on a legal heading child).
 			constraints: [
 				{
 					kind: 'single-first-child',
@@ -1275,6 +1328,7 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'interactives#the-dialog-element',
 		{
+			permits: ['flow'],
 			attributes: [
 				{ attribute: 'closedby', values: ['any', 'closerequest', 'none'] },
 				{ attribute: 'open' },
@@ -1460,6 +1514,7 @@ export const contentModelContract = compileContract(
 		context: stringShape({ min: 1 }),
 		model: modelShape,
 		required: arrayShape(sequenceSegmentShape),
+		permits: optionalShape(arrayShape(categoryShape)),
 		forbidden: arrayShape(stringShape({ min: 1 })),
 		constraints: arrayShape(constraintShape),
 		attributes: arrayShape(attributeRuleShape),

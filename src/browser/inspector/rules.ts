@@ -10,8 +10,8 @@ import type {
 	RuleSubject,
 } from '../types.js'
 import { andOf, literalOf, notOf, whereOf } from '@elements/core'
-import { matchesTag, nodePath } from '../helpers.js'
-import { CATEGORY_MEMBERS, describeElement, isVoid } from '../schema.js'
+import { effectiveCategories, matchesTag, nodePath } from '../helpers.js'
+import { CATEGORY_MEMBERS, describeElement, isTransparent, isVoid } from '../schema.js'
 import { getChildren } from '../traversals.js'
 
 // ============================================================================
@@ -264,7 +264,17 @@ const contextRule: RuleInterface = {
 //    2. forbidden descendant — any descendant whose tag/category is named
 //       in `entry.forbidden` (e.g. `dt` forbids heading/sectioning,
 //       `header` forbids header/footer).
-//  Cite: the element's own corpus anchor, dom.html#kinds-of-content.
+//    3. category — a bare-category parent (`entry.permits` non-empty: the
+//       corpus-derived "Flow content." / "Phrasing content." child set)
+//       whose non-transparent element child's resolved categories do not
+//       intersect `permits` (e.g. `<p><div>` — flow inside phrasing). This
+//       is the general category class the `required`-driven `context`
+//       family structurally CANNOT see (those parents have no `required`),
+//       so the two are disjoint by construction — one finding per
+//       violation.
+//  Cite: the element's own corpus anchor, dom.html#kinds-of-content (the
+//  category sub-rule cites dom.html#content-models — the model boundary it
+//  enforces).
 // ============================================================================
 
 function firstForbiddenDescendant(
@@ -343,6 +353,69 @@ const contentForbiddenRule: RuleInterface = {
 	},
 }
 
+// The first ELEMENT child whose resolved effective content categories
+// (transparent-resolved via the Phase-2 `effectiveCategories` adapter — the
+// SAME resolution `RuleContext.categories` is built from) are NON-EMPTY and
+// share NOTHING with the parent's corpus-derived `permits` set. Transparent
+// children are skipped: their content model IS their parent's (resolved at
+// walk time), so they are permitted wherever their resolved content is —
+// the `transparent` family owns their side-channel, not this one. A child
+// with EMPTY effective categories (a structural element — `td`/`li`/`dd`/
+// `summary`/… all carry `categories: []`) is likewise skipped: its
+// placement is governed by the `structure` family's `parent-restricted` /
+// `edge-child` / `single-first-child` constraints, never a category match
+// — this is exactly the disjoint boundary that keeps `<div><td>` a single
+// `structure/parent-restricted` finding, not a double report.
+function firstMiscategorizedChild(
+	element: Element,
+	permits: readonly ContentCategory[],
+): Element | null {
+	if (permits.length === 0) return null
+	for (const child of getChildren(element)) {
+		if (isTransparent(child.tagName.toLowerCase())) continue
+		const categories = effectiveCategories(child)
+		if (categories.length === 0) continue
+		if (!categories.some((category) => permits.includes(category))) return child
+	}
+	return null
+}
+
+// Engages ONLY for a bare-category parent (`entry.permits` non-empty). The
+// corpus guarantees such a parent has no `required` sequence (its **Content
+// model** box is a bare "Flow/Phrasing content.", never "Zero or more …"),
+// so this never overlaps `context/parent-model` (fires on `required`) — the
+// two families partition the parents disjointly with no shared coverage.
+const permitsCategoryChildren = whereOf(
+	isSubject,
+	(subject: RuleSubject): boolean =>
+		subject.entry !== null && (subject.entry.permits ?? []).length > 0,
+)
+
+const contentCategoryRule: RuleInterface = {
+	id: 'content/category',
+	severity: 'error',
+	lens: 'structure',
+	evaluate: (element, context): Finding | null => {
+		const subject = readSubject(element, context)
+		if (!permitsCategoryChildren(subject)) return null
+		const entry = subject.entry
+		if (entry === null) return null
+		const permits = entry.permits ?? []
+		const offender = firstMiscategorizedChild(element, permits)
+		if (offender === null) return null
+		const offenderTag = offender.tagName.toLowerCase()
+		return buildFinding({
+			rule: 'content/category',
+			severity: 'error',
+			element: offender,
+			cite: citeOf(entry, 'dom#content-models'),
+			message: `<${offenderTag}> is not allowed as a child of <${subject.tag}> — the parent only permits ${permits.join(' / ')} content.`,
+			expected: `${permits.join(' / ')} content`,
+			actual: `<${offenderTag}> (${effectiveCategories(offender).join(', ') || 'no content category'})`,
+		})
+	},
+}
+
 // ============================================================================
 //  Family: transparent — the transparent-content-model side-channel.
 //
@@ -352,8 +425,59 @@ const contentForbiddenRule: RuleInterface = {
 //  restriction when an ancestor set the flag AND the node is the forbidden
 //  kind. The composition is a NAMED guard over the restriction + the node's
 //  effective categories / tag / attributes — not a hand-rolled ancestor
-//  walk (that lives in the Walker). Cite: dom.html#transparent-content-models.
+//  walk (that lives in the Walker).
+//
+//  Cite: the corpus single source of truth for a transparent restriction is
+//  the RESTRICTING ANCESTOR's card (the `<a>` card literally states "no
+//  interactive content descendant, no `a` descendant, no `tabindex`
+//  descendant"; a media card states "no media element descendants") — NOT
+//  the offender's card and NOT a hoisted module string const (§4.6/§5; same
+//  anti-pattern as the Phase-2 `FOREIGN_TAGS` impl-file const dropped in
+//  d02a480). `restrictingCite` resolves it through the SAME `citeOf(...)`
+//  path every other family uses, off the nearest ancestor whose schema
+//  entry carries the constraint that imposes the tripped restriction
+//  (schema-data-driven — never a second hand-kept restricting-tag list, the
+//  Walker already owns that knowledge), with the §3.2.5.1 anchor as the
+//  inline fallback for a detached/uncarded chain.
 // ============================================================================
+
+// The schema constraint kind (or media `forbidden`) that, carried on an
+// ANCESTOR's entry, imposes each transparent restriction. Derived from the
+// parity-gated registry, so it stays in lock-step with the cards (the `a` /
+// `button` / `canvas` entries' constraints, the media entries' `forbidden`)
+// rather than re-stating the Walker's restricting-tag knowledge.
+function imposesRestriction(entry: ContentModelEntry, restriction: string): boolean {
+	if (restriction === 'media') {
+		return entry.forbidden.includes('audio') || entry.forbidden.includes('video')
+	}
+	if (restriction === 'link') {
+		// "no `a` element descendant" is uniquely the transparent-model
+		// element's self-nest ban (`<a>`); `no-self-nest` alone is shared by
+		// non-transparent `dfn`/`form`/`progress`/`meter`, so gate on the
+		// transparent model too — the corpus marks only `a` both transparent
+		// AND self-nest-banned, so this resolves to the `<a>` card with no
+		// per-tag list.
+		return entry.transparent && entry.constraints.some((c) => c.kind === 'no-self-nest')
+	}
+	// `no-interactive-descendant` / `no-tabindex-descendant` are carried ONLY
+	// by the restrictor cards (`a` / `button` / `canvas`) — unambiguous.
+	const kind = restriction === 'tabindex' ? 'no-tabindex-descendant' : 'no-interactive-descendant'
+	return entry.constraints.some((constraint) => constraint.kind === kind)
+}
+
+// The corpus anchor for a tripped transparent restriction: the nearest
+// ancestor whose schema entry imposes it (its card is the source of truth),
+// resolved via the shared `citeOf` path; the §3.2.5.1 transparent anchor is
+// the inline fallback (no module const) when no carded ancestor is found.
+function restrictingCite(subject: RuleSubject, restriction: string): string {
+	for (const ancestor of subject.context.parents) {
+		const entry = describeElement(ancestor.tagName.toLowerCase())
+		if (entry !== null && imposesRestriction(entry, restriction)) {
+			return citeOf(entry, 'dom#transparent-content-models')
+		}
+	}
+	return 'dom#transparent-content-models'
+}
 
 // node is interactive content (its effective categories include
 // `interactive` — schema-resolved by the Walker via effectiveCategories).
@@ -395,8 +519,6 @@ const tripsMedia = andOf(
 	isNestedMediaNode,
 )
 
-const TRANSPARENT_CITE = 'dom#transparent-content-models'
-
 const transparentInteractiveRule: RuleInterface = {
 	id: 'transparent/interactive-descendant',
 	severity: 'error',
@@ -408,7 +530,7 @@ const transparentInteractiveRule: RuleInterface = {
 			rule: 'transparent/interactive-descendant',
 			severity: 'error',
 			element,
-			cite: TRANSPARENT_CITE,
+			cite: restrictingCite(subject, 'interactive'),
 			message: `interactive <${subject.tag}> is not allowed inside an element that forbids interactive descendants (e.g. an ancestor <a> / <button>).`,
 		})
 	},
@@ -425,7 +547,7 @@ const transparentLinkRule: RuleInterface = {
 			rule: 'transparent/link-descendant',
 			severity: 'error',
 			element,
-			cite: TRANSPARENT_CITE,
+			cite: restrictingCite(subject, 'link'),
 			message: `<a> must not have an <a> ancestor (no nested links).`,
 		})
 	},
@@ -442,7 +564,7 @@ const transparentTabindexRule: RuleInterface = {
 			rule: 'transparent/tabindex-descendant',
 			severity: 'error',
 			element,
-			cite: TRANSPARENT_CITE,
+			cite: restrictingCite(subject, 'tabindex'),
 			message: `a [tabindex] descendant is not allowed inside an element that forbids it (e.g. an ancestor <a> / <button>).`,
 		})
 	},
@@ -459,7 +581,7 @@ const transparentMediaRule: RuleInterface = {
 			rule: 'transparent/nested-media',
 			severity: 'error',
 			element,
-			cite: TRANSPARENT_CITE,
+			cite: restrictingCite(subject, 'media'),
 			message: `<${subject.tag}> must not be nested inside another media element (<audio> / <video>).`,
 		})
 	},
@@ -718,6 +840,7 @@ export const rules: readonly RuleInterface[] = [
 	// content
 	contentRequiredRule,
 	contentForbiddenRule,
+	contentCategoryRule,
 	// transparent
 	transparentInteractiveRule,
 	transparentLinkRule,

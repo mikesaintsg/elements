@@ -52,7 +52,15 @@ describe('rules — context/parent-model', () => {
 	}
 
 	describe('clean trees produce no finding', () => {
-		it('a free-flow parent (<div>) does not constrain its children', () => {
+		it('<div> (no `required` sequence) is outside the context family', () => {
+			// `context/parent-model` fires ONLY on a parent with a `required`
+			// sequence; `<div>` has none, so it never produces a context
+			// finding. This is NOT "div does not constrain its children" —
+			// `<div>` permits flow content, which the `content/category`
+			// family enforces (see content.test.ts). This legal tree
+			// (p/span/table are all flow, div permits flow) yields zero from
+			// the context rule because the context family simply does not own
+			// this parent — the disjoint-coverage boundary, not a gap.
 			const root = el('div', [el('p'), el('span'), el('table')])
 			container.appendChild(root)
 			expect(findingsFor(root).every((finding) => finding === null)).toBe(true)

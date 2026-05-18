@@ -83,7 +83,11 @@ describe('rules — transparent family', () => {
 			expect(finding.rule).toBe('transparent/interactive-descendant')
 			expect(finding.severity).toBe('error')
 			expect(finding.element).toBe(button)
-			expect(finding.cite).toBe('dom#transparent-content-models')
+			// The corpus single source of truth for this restriction is the
+			// RESTRICTING ANCESTOR's card — the `<a>` element card states "no
+			// interactive content descendant" — resolved via the shared
+			// `citeOf` path off the parity-gated schema, not a hoisted const.
+			expect(finding.cite).toBe('texts#the-a-element')
 		})
 
 		it('a nested <a> inside an ancestor <a> is flagged by the link rule', () => {

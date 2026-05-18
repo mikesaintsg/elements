@@ -276,6 +276,7 @@ export function defineModel(
 	cite: string,
 	options: {
 		readonly required?: readonly ContentSequenceSegment[]
+		readonly permits?: readonly ContentCategory[]
 		readonly forbidden?: readonly (ContentCategory | string)[]
 		readonly constraints?: readonly ContentConstraint[]
 		readonly attributes?: readonly AttributeRule[]
@@ -287,6 +288,11 @@ export function defineModel(
 		context,
 		model,
 		required: options.required ?? [],
+		// `permits` is the lone optional (`?:`) entry field — mirror the
+		// compiled contract's `optionalShape(permits)` by leaving it
+		// `undefined` when omitted (not an empty array), so a non-bare-category
+		// parent carries no `permits` rather than a noise `[]`.
+		...(options.permits === undefined ? {} : { permits: options.permits }),
 		forbidden: options.forbidden ?? [],
 		constraints: options.constraints ?? [],
 		attributes: options.attributes ?? [],

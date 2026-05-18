@@ -188,6 +188,51 @@ function modelFromProse(card: ParsedCard): ContentModel | null {
 	return 'children'
 }
 
+// Prose "Content model" box → the set of content categories the element
+// permits as ELEMENT children, when (and only when) the box is a *bare
+// content category*: it reads, after trimming, "Flow content…" or "Phrasing
+// content…" (the trailing "but with no … descendants" narrowing is carried
+// by `forbidden`, not here). Every structured parent's box instead opens
+// with "Zero or more…" / "One…" / "Optionally…" / "Either:" / "If…" / a
+// foreign/transparent/void/text phrase, so it derives the EMPTY set — which
+// is exactly why `permits` must be omitted there (the `context`/`structure`
+// families own those). No allowlist: the discriminator is the corpus prose
+// itself, parsed the same anchored way `modelFromProse` parses the box.
+// A bare-content-category box is EXACTLY "<cat> content" terminated either
+// by a full stop OR by a ", but …" descendant-EXCLUSION clause ("but with
+// no …" / "but there must be no …" — every such clause only ever NARROWS,
+// and is carried by the `forbidden` field, never `permits`). Anything
+// appended that WIDENS the child set — ", optionally intermixed with
+// heading content" (`summary`/`legend`), "; or one heading element" —
+// makes the box NOT a single bare category, so it (faithfully) derives no
+// `permits`: claiming bare phrasing there would false-positive on a legal
+// heading child. The terminator class (`.` vs `, but` vs `, optionally`/
+// `; or`) is the sole discriminator; no per-tag allowlist.
+const BARE = String.raw`(?:\.|,\s+but\b)`
+const LEADING_BARE = new RegExp(`^(flow|phrasing) content\\s*${BARE}`)
+const OTHERWISE_BARE = new RegExp(`\\botherwise:\\s*(flow|phrasing) content\\s*${BARE}`)
+
+function permitsFromProse(card: ParsedCard): ReadonlySet<ContentCategory> {
+	const value = card.model.trim().toLowerCase()
+	// Direct bare-category box: "Flow content." / "Phrasing content, but
+	// with no … descendants."
+	const leading = value.match(LEADING_BARE)
+	if (leading?.[1] === 'flow') return new Set<ContentCategory>(['flow'])
+	if (leading?.[1] === 'phrasing') return new Set<ContentCategory>(['phrasing'])
+	// A multi-arm box whose GENERAL-CASE ("Otherwise:") arm is itself a
+	// bare category — `span`'s "If … option …: …. Otherwise: Phrasing
+	// content." IS the §3.2.5 general content model (the conditional arms
+	// are attribute/ancestor-gated). Same dominant-arm reading
+	// `modelFromProse`/`MULTI_ARM_MODEL` already take for `model`, parsed
+	// from the SAME corpus prose: `time`'s "Otherwise: Text…" and
+	// `option`'s no-Otherwise box still correctly derive the empty set, so
+	// this only ever adds the genuine general-case category.
+	const otherwise = value.match(OTHERWISE_BARE)
+	if (otherwise?.[1] === 'flow') return new Set<ContentCategory>(['flow'])
+	if (otherwise?.[1] === 'phrasing') return new Set<ContentCategory>(['phrasing'])
+	return new Set<ContentCategory>()
+}
+
 // Tags whose card prose is a multi-arm content model where the schema picks
 // the dominant arm by design (documented in schema.ts). The model-shape
 // assertion is relaxed for these to "non-null & known", not exact-arm.
@@ -284,6 +329,26 @@ describe('w3c corpus — card Content model matches the schema entry', () => {
 			// On failure the title names the tag; `why` is surfaced as the
 			// asserted value so the diff prints the exact disagreement.
 			expect(result.ok ? '' : result.why).toBe('')
+		})
+	}
+})
+
+describe('w3c corpus — card Content model bare-category ⇄ schema `permits`', () => {
+	for (const card of parsed) {
+		const entry = SCHEMA_BY_TAG.get(card.tag)
+		if (!entry) continue
+		it(`<${card.tag}> permits agrees bidirectionally with the card prose`, () => {
+			// One diff, both directions. LEFT: what the corpus **Content
+			// model** prose says the element permits as element children
+			// (`['flow']` / `['phrasing']` for a bare-category box, else none).
+			// RIGHT: the schema entry's `permits`. Equality fails if the
+			// schema OMITS `permits` on a bare flow/phrasing parent (the very
+			// under-detection this binds against), CLAIMS a `permits` the
+			// prose does not (a structured/transparent parent), or carries the
+			// WRONG category. No relaxation, no allowlist.
+			const prose = [...permitsFromProse(card)].sort()
+			const schema = [...(entry.permits ?? [])].sort()
+			expect(schema).toEqual(prose)
 		})
 	}
 })

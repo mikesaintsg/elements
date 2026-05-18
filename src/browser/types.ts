@@ -229,6 +229,32 @@ export interface ContentModelEntry {
 	/** Ordered / cardinal child spec when `model === 'children'` and the
 	 *  card constrains the child list (empty for free flow/phrasing). */
 	readonly required: readonly ContentSequenceSegment[]
+	/**
+	 * The content category(ies) this element permits as ELEMENT children when
+	 * its content model is a *bare content category* — i.e. the card's
+	 * **Content model** box reads "Flow content." / "Phrasing content."
+	 * (optionally narrowed by "but with no … descendants", which the
+	 * `forbidden` field already carries). Derived verbatim from that prose:
+	 * "Flow content" ⇒ `['flow']`, "Phrasing content" ⇒ `['phrasing']`.
+	 *
+	 * @remarks Deliberately **omitted / empty** for every element whose
+	 * children are governed otherwise, so the rule families stay disjoint
+	 * (one finding per violation):
+	 * - `void` / `nothing` / `text` / `transparent` models (no element
+	 *   children, or resolved at walk time);
+	 * - structured parents whose child list is an ordered/cardinal sequence
+	 *   carried in `required` / `constraints` (`table`, `ul`, `ol`, `menu`,
+	 *   `tr`, `dl`, `picture`, `ruby`, `select`, `optgroup`, `hgroup`,
+	 *   `details`, `fieldset`, `figure`, `colgroup`, `tbody`/`thead`/`tfoot`,
+	 *   media `video`/`audio`, …) — those are owned by the `context` /
+	 *   `structure` families.
+	 *
+	 * The `content` family's "child not an allowed category" sub-rule reads
+	 * this: a parent with non-empty `permits` whose non-transparent element
+	 * child's resolved categories do not intersect it is a content-model
+	 * violation (`dom.html#content-models`).
+	 */
+	readonly permits?: readonly ContentCategory[]
 	/** Forbidden descendant categories / tags the card's prose names
 	 *  (e.g. `dt` forbids `header`/`footer`/sectioning/heading). */
 	readonly forbidden: readonly (ContentCategory | string)[]
