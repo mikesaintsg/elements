@@ -158,6 +158,22 @@ describe('helpers — extractProperty', () => {
 		expect(extractProperty('str', 'length')).toBeUndefined()
 		expect(extractProperty({}, 'toString')).toBeUndefined()
 	})
+
+	it('rejects class instances and arrays (core isRecord canonical: plain records only)', () => {
+		// Core `isRecord` requires prototype === Object.prototype | null, so a
+		// class instance is NOT a plain record even though it owns the key.
+		class Box {
+			value = 1
+		}
+		expect(extractProperty(new Box(), 'value')).toBeUndefined()
+		// Arrays are objects but rejected by isRecord — index/length reads return undefined.
+		expect(extractProperty(['x'], '0')).toBeUndefined()
+		expect(extractProperty([1, 2], 'length')).toBeUndefined()
+		// Object.create(null) IS a plain record (null prototype) — still read.
+		const bare = Object.create(null) as { k: number }
+		bare.k = 7
+		expect(extractProperty(bare, 'k')).toBe(7)
+	})
 })
 
 describe('helpers — isStringArray', () => {
@@ -755,6 +771,10 @@ describe('helpers — isDragTapDetail', () => {
 		expect(isDragTapDetail({ index: 0, pointer: {} })).toBe(false)
 		expect(isDragTapDetail(null)).toBe(false)
 	})
+
+	it('rejects unknown extra keys (core recordOf canonical: strict shape)', () => {
+		expect(isDragTapDetail({ index: 0, pointer, extra: 1 })).toBe(false)
+	})
 })
 
 describe('helpers — isDragStartDetail', () => {
@@ -768,6 +788,10 @@ describe('helpers — isDragStartDetail', () => {
 		expect(isDragStartDetail({ indices: [1], pointer })).toBe(false)
 		expect(isDragStartDetail({ indices: new Set(), pointer: 1 })).toBe(false)
 		expect(isDragStartDetail(undefined)).toBe(false)
+	})
+
+	it('rejects unknown extra keys (core recordOf canonical: strict shape)', () => {
+		expect(isDragStartDetail({ indices: new Set([1]), pointer, extra: true })).toBe(false)
 	})
 })
 
@@ -793,6 +817,19 @@ describe('helpers — isDragOverDetail', () => {
 		).toBe(false)
 		expect(isDragOverDetail(null)).toBe(false)
 	})
+
+	it('rejects unknown extra keys (core recordOf canonical: strict shape)', () => {
+		expect(
+			isDragOverDetail({
+				index: 2,
+				position: 'before',
+				target,
+				pointer,
+				types: ['text/plain'],
+				extra: 'x',
+			}),
+		).toBe(false)
+	})
 })
 
 describe('helpers — isDragDropDetail', () => {
@@ -816,6 +853,19 @@ describe('helpers — isDragDropDetail', () => {
 			isDragDropDetail({ index: 0, position: 'after', target, pointer, types: 'x' }),
 		).toBe(false)
 		expect(isDragDropDetail(null)).toBe(false)
+	})
+
+	it('rejects unknown extra keys (core recordOf canonical: strict shape)', () => {
+		expect(
+			isDragDropDetail({
+				index: null,
+				position: null,
+				target: null,
+				pointer,
+				types: [],
+				extra: 0,
+			}),
+		).toBe(false)
 	})
 })
 
@@ -851,6 +901,11 @@ describe('helpers — extractRow / indexOfRow / extractRows', () => {
 		bad.setAttribute('data-index', 'abc')
 		expect(indexOfRow(bad)).toBe(null)
 		expect(indexOfRow(null)).toBe(null)
+		// Core parseNumber canonical: empty / whitespace-only data-index is
+		// NOT a number (old `Number('')` coerced to 0).
+		const empty = document.createElement('div')
+		empty.setAttribute('data-index', '')
+		expect(indexOfRow(empty)).toBe(null)
 	})
 
 	it('extractRows returns only direct [data-index] HTMLElement children', () => {

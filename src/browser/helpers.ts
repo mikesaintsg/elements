@@ -52,12 +52,27 @@ import type {
 	TaxonomyEntry,
 	ThemeSetting,
 } from './types.js'
-import { isFunction } from '@elements/core'
+import {
+	arrayOf,
+	instanceOf,
+	isFiniteNumber,
+	isFunction,
+	isNull,
+	isNumber,
+	isRecord,
+	isString,
+	isUndefined,
+	literalOf,
+	nullableOf,
+	orOf,
+	parseInteger,
+	parseNumber,
+	recordOf,
+} from '@elements/core'
 import {
 	BODY_LOCKED_ATTR,
 	PLACEMENT_AREAS,
 	PLACEMENT_SELFS,
-	POPOVER_SIDE_SET,
 	TABLE_ARIA_ROWCOUNT,
 	TABLE_ARIA_ROWINDEX,
 	TABLE_EXPANSION_ATTR,
@@ -92,23 +107,28 @@ export function generateId(prefix?: string): string {
 	bytes[6] = (bytes[6] & 0x0f) | 0x40 // version 4
 	bytes[8] = (bytes[8] & 0x3f) | 0x80 // variant 1
 	const id = formatUuid(bytes)
-	return prefix === undefined ? id : `${prefix}-${id}`
+	return isUndefined(prefix) ? id : `${prefix}-${id}`
 }
 
-/** Safely read an own property from an unknown value. */
+/**
+ * Safely read an own property from a plain record value.
+ *
+ * @remarks Delegates the value check to core `isRecord` (canonical): only
+ * plain objects (`Object.prototype` / null prototype) qualify — class
+ * instances, arrays, and DOM objects return `undefined`.
+ */
 export function extractProperty(value: unknown, key: string): unknown {
-	if (typeof value !== 'object' || value === null) return undefined
-	return Object.prototype.hasOwnProperty.call(value, key) ? Reflect.get(value, key) : undefined
+	return isRecord(value) && Object.hasOwn(value, key) ? Reflect.get(value, key) : undefined
 }
 
 /** Narrow an unknown value to a readonly string array. */
-export function isStringArray(value: unknown): value is readonly string[] {
-	return Array.isArray(value) && value.every((item) => typeof item === 'string')
-}
+export const isStringArray: (value: unknown) => value is readonly string[] = arrayOf(isString)
+
+const settingGuard = literalOf('light', 'dark', 'system')
 
 /** Narrow an unknown value to a `ThemeSetting`. */
 export function isSetting(value: unknown): value is ThemeSetting {
-	return value === 'light' || value === 'dark' || value === 'system'
+	return settingGuard(value)
 }
 
 /** Narrow an unknown value to a CustomEvent handler. */
@@ -123,7 +143,7 @@ export function isEventHandler(value: unknown): value is (event: CustomEvent) =>
 export function isMouseEvent(
 	event: MouseEvent | KeyboardEvent | PointerEvent | undefined,
 ): boolean {
-	if (!event) return true
+	if (isUndefined(event)) return true
 	if (event instanceof PointerEvent) return event.pointerType === 'mouse'
 	return true
 }
@@ -225,7 +245,7 @@ export function entry(
 
 /** Minimal CSS.escape polyfill for attribute selector key values. */
 export function cssEscape(value: string): string {
-	if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value)
+	if (typeof CSS !== 'undefined' && isFunction(CSS.escape)) return CSS.escape(value)
 	return value.replace(/(["\\\][])/g, '\\$1')
 }
 
@@ -243,9 +263,9 @@ export const sortCollator =
 export function compareCellValues(a: string, b: string): number {
 	const at = a.trim()
 	const bt = b.trim()
-	const an = Number(at)
-	const bn = Number(bt)
-	if (at !== '' && bt !== '' && Number.isFinite(an) && Number.isFinite(bn)) {
+	const an = parseNumber(at)
+	const bn = parseNumber(bt)
+	if (at !== '' && bt !== '' && an !== undefined && bn !== undefined) {
 		return an - bn
 	}
 	if (sortCollator) return sortCollator.compare(at, bt)
@@ -337,13 +357,13 @@ export function tagsInHead(compound: string): readonly string[] {
 /**
  * Coerce the `value` option into the internal `readonly string[]` form.
  *
- * @remarks Typed → typed reshaping of an already-typed union (sibling of
- * traversals' `toArray`), NOT the `src/core` `coerce*` family which converts
- * `unknown` → typed. The distinct concept is why this keeps the `to*` prefix.
+ * Typed → typed reshaping of an already-typed union (sibling of traversals'
+ * `toArray`); the input-type guards delegate to core (`isUndefined` /
+ * `isString`), the empty-string and clone reshape stays identical.
  */
 export function toStringList(input: string | readonly string[] | undefined): readonly string[] {
-	if (input === undefined) return []
-	if (typeof input === 'string') return input === '' ? [] : [input]
+	if (isUndefined(input)) return []
+	if (isString(input)) return input === '' ? [] : [input]
 	return [...input]
 }
 
@@ -378,7 +398,7 @@ export function assertElement<T extends HTMLElement>(
 		)
 	}
 	const tag = element.tagName.toLowerCase()
-	const list = typeof expected === 'string' ? [expected] : expected
+	const list = isString(expected) ? [expected] : expected
 	if (!list.includes(tag)) {
 		const printed = list.length === 1 ? `<${list[0]}>` : list.map((t) => `<${t}>`).join(' / ')
 		throw new TypeError(
@@ -399,7 +419,7 @@ export function isTagged<T extends HTMLElement>(
 ): element is T {
 	if (!element) return false
 	const tag = element.tagName.toLowerCase()
-	const list = typeof expected === 'string' ? [expected] : expected
+	const list = isString(expected) ? [expected] : expected
 	return list.includes(tag)
 }
 
@@ -459,7 +479,7 @@ export function bindEventMap(
 	events: Readonly<Record<string, string>>,
 	on: object | undefined,
 ): () => void {
-	if (!on) return () => {}
+	if (isUndefined(on)) return () => {}
 	const offs: (() => void)[] = []
 	for (const [key, name] of Object.entries(events)) {
 		const value = extractProperty(on, key)
@@ -566,50 +586,70 @@ export function unlockBodyScroll(): void {
 
 // ── Drag/drop detail guards ─────────────────────────────────────────────────
 
+const positionGuard = literalOf('before', 'after', 'into')
+
 /** Narrow an unknown value to a drag/drop insertion position. */
 export function isDropPosition(value: unknown): value is DropPosition {
-	return value === 'before' || value === 'after' || value === 'into'
+	return positionGuard(value)
 }
+
+// The drag-detail record shapes are composed once at module scope via core
+// `recordOf` (strict: rejects unknown keys, presence via `Object.hasOwn` —
+// every drag detail is constructed internally in `createDrag.ts` with exactly
+// the declared keys, so strictness is canonical) + core `arrayOf`/`literalOf`/
+// `nullableOf` for the JS-domain fields. The DOM-constructor fields stay a
+// bare, native `instanceof` (the clean DOM boundary) wrapped in a closure so
+// the `PointerEvent`/`HTMLElement` references are read lazily at guard-call
+// time — `helpers.ts` must stay import-safe in a DOM-less runtime, exactly as
+// the previous in-body `instanceof` was. `Set` is a JS built-in, so it stays
+// core `instanceOf(Set)`.
+const isPointerEvent = (value: unknown): value is PointerEvent => value instanceof PointerEvent
+const isHtmlElement = (value: unknown): value is HTMLElement => value instanceof HTMLElement
+
+const dragTapGuard = recordOf({
+	index: isNumber,
+	pointer: isPointerEvent,
+})
+
+const dragStartGuard = recordOf({
+	indices: instanceOf(Set),
+	pointer: isPointerEvent,
+})
+
+const dragOverGuard = recordOf({
+	index: isNumber,
+	position: positionGuard,
+	target: isHtmlElement,
+	pointer: isPointerEvent,
+	types: arrayOf(isString),
+})
+
+const dragDropGuard = recordOf({
+	index: nullableOf(isNumber),
+	position: nullableOf(positionGuard),
+	target: orOf(isHtmlElement, isNull),
+	pointer: isPointerEvent,
+	types: arrayOf(isString),
+})
 
 /** Narrow a `CustomEvent.detail` value to drag tap detail. */
 export function isDragTapDetail(value: unknown): value is DragTapDetail {
-	return (
-		typeof extractProperty(value, 'index') === 'number' &&
-		extractProperty(value, 'pointer') instanceof PointerEvent
-	)
+	return dragTapGuard(value)
 }
 
 /** Narrow a `CustomEvent.detail` value to drag start detail. */
 export function isDragStartDetail(value: unknown): value is DragStartDetail {
-	return (
-		extractProperty(value, 'indices') instanceof Set &&
-		extractProperty(value, 'pointer') instanceof PointerEvent
-	)
+	return dragStartGuard(value)
 }
 
 /** Narrow a `CustomEvent.detail` value to drag over detail. */
 export function isDragOverDetail(value: unknown): value is DragOverDetail {
-	return (
-		typeof extractProperty(value, 'index') === 'number' &&
-		isDropPosition(extractProperty(value, 'position')) &&
-		extractProperty(value, 'target') instanceof HTMLElement &&
-		extractProperty(value, 'pointer') instanceof PointerEvent &&
-		isStringArray(extractProperty(value, 'types'))
-	)
+	return dragOverGuard(value)
 }
 
 /** Narrow a `CustomEvent.detail` value to drag drop detail. */
 export function isDragDropDetail(value: unknown): value is DragDropDetail {
-	const index = extractProperty(value, 'index')
-	const position = extractProperty(value, 'position')
-	return (
-		(typeof index === 'number' || index === null) &&
-		(isDropPosition(position) || position === null) &&
-		(extractProperty(value, 'target') instanceof HTMLElement ||
-			extractProperty(value, 'target') === null) &&
-		extractProperty(value, 'pointer') instanceof PointerEvent &&
-		isStringArray(extractProperty(value, 'types'))
-	)
+	return dragDropGuard(value)
 }
 
 /** Find the direct `[data-index]` child of `root` that contains `target`. */
@@ -627,8 +667,8 @@ export function extractRow(
 /** Parse `data-index` of a row, returning `null` if it is not a finite number. */
 export function indexOfRow(row: HTMLElement | null): number | null {
 	if (!row) return null
-	const i = Number(row.dataset.index)
-	return Number.isFinite(i) ? i : null
+	const i = parseNumber(row.dataset.index)
+	return i === undefined ? null : i
 }
 
 /** Return direct `[data-index]` HTMLElement children from `root`. */
@@ -718,7 +758,7 @@ export function fieldName(element: Element): string | null {
 /** Write a primitive or Node value into a native table cell. */
 export function writeTableCell(cell: HTMLTableCellElement, value: TableInput): void {
 	cell.textContent = ''
-	if (value === null || value === undefined) return
+	if (isNull(value) || isUndefined(value)) return
 	if (value instanceof Node) {
 		cell.appendChild(value)
 		return
@@ -748,18 +788,18 @@ export function keyOfTableCell(cell: TableCell): string {
 
 /** Normalize an insertion index against an inclusive upper bound. */
 export function normalizeIndex(index: number, count: number): number | null {
-	if (!Number.isInteger(index) || index < 0 || index > count) return null
-	return index
+	const n = parseInteger(index)
+	return n !== undefined && n >= 0 && n <= count ? n : null
 }
 
 /** Narrow a table target to one cell coordinate. */
 export function isTableCellTarget(target: TableTarget): target is TableCell {
-	return typeof target === 'object' && 'row' in target && 'column' in target
+	return isRecord(target) && 'row' in target && 'column' in target
 }
 
 /** Narrow a table target to one row range. */
 export function isTableRangeTarget(target: TableTarget): target is TableRange {
-	return typeof target === 'object' && 'from' in target && 'to' in target
+	return isRecord(target) && 'from' in target && 'to' in target
 }
 
 /**
@@ -801,7 +841,7 @@ export function findDetailRow(row: HTMLTableRowElement): HTMLTableRowElement | n
  * Indices are 1-based per the ARIA grid spec.
  */
 export function applyRowIndex(rows: readonly HTMLTableRowElement[], offset: number): void {
-	const base = Number.isFinite(offset) && offset >= 1 ? Math.floor(offset) : 1
+	const base = isFiniteNumber(offset) && offset >= 1 ? Math.floor(offset) : 1
 	for (let i = 0; i < rows.length; i++) {
 		rows[i]?.setAttribute(TABLE_ARIA_ROWINDEX, String(base + i))
 	}
@@ -809,7 +849,7 @@ export function applyRowIndex(rows: readonly HTMLTableRowElement[], offset: numb
 
 /** Write `aria-rowcount` on the table element; remove it when `count` is 0. */
 export function applyRowCount(el: HTMLTableElement, count: number): void {
-	if (Number.isFinite(count) && count > 0)
+	if (isFiniteNumber(count) && count > 0)
 		el.setAttribute(TABLE_ARIA_ROWCOUNT, String(Math.floor(count)))
 	else el.removeAttribute(TABLE_ARIA_ROWCOUNT)
 }
@@ -935,9 +975,11 @@ export function readTableColumns(element: HTMLTableElement): readonly TableRow[]
 // Used by usePopover (and any composable that wraps it) to decompose a
 // placement string and feed it into the surface-layer `position-area` token.
 
+const sideGuard = literalOf('top', 'end', 'bottom', 'start')
+
 /** Type guard narrowing a string to `Side`. */
 export function isSide(value: string): value is Side {
-	return POPOVER_SIDE_SET.has(value)
+	return sideGuard(value)
 }
 
 /** Extract the side component of a `Placement`; defaults to `'bottom'`. */
@@ -946,10 +988,12 @@ export function sideOf(placement: Placement): Side {
 	return isSide(head) ? head : 'bottom'
 }
 
+const alignGuard = literalOf('start', 'end')
+
 /** Extract the alignment component of a `Placement`, or `null` if absent. */
 export function alignmentOf(placement: Placement): Alignment | null {
 	const tail = placement.split('-')[1]
-	return tail === 'start' || tail === 'end' ? tail : null
+	return alignGuard(tail) ? tail : null
 }
 
 /** Re-assemble a `Placement` from a `Side` and optional `Alignment`. */

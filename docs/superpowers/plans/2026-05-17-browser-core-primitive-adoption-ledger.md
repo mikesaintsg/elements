@@ -71,3 +71,120 @@ surfaces. Companion to the plan
 
 | Site | Old behavior | Core behavior | Resolution | Test(s) updated |
 | --- | --- | --- | --- | --- |
+| helpers.ts:extractProperty | `typeof v==='object' && v!==null && Object.prototype.hasOwnProperty.call(v,k)` — accepted class instances, arrays, DOM objects | core `isRecord(v)` requires `prototype === Object.prototype \| null` — rejects class instances, arrays, DOM objects | canonical adopted (`isRecord(v) && Object.hasOwn(v,k) ? Reflect.get : undefined` — kept `Object.hasOwn` own-key gate so the inherited-key contract is preserved, only the value-type check moved to core) | helpers.test.ts:"helpers — extractProperty > rejects class instances and arrays (core isRecord canonical: plain records only)" |
+| helpers.ts:isDragTapDetail | presence/type of required keys only; extra/unknown keys ignored (built on `extractProperty`) | core `recordOf({...})` rejects unknown keys (Object.keys scan) + presence via `Object.hasOwn` | canonical adopted (composed via `recordOf` + `isNumber` + native lazy `isPointerEvent` closure for the DOM field); real dispatch path in createDrag.ts constructs the detail with exactly the declared keys | helpers.test.ts:"helpers — isDragTapDetail > rejects unknown extra keys (core recordOf canonical: strict shape)" |
+| helpers.ts:isDragStartDetail | presence/type of required keys only; extra keys ignored | core `recordOf` rejects unknown keys | canonical adopted (composed via `recordOf` + core `instanceOf(Set)` + native lazy `isPointerEvent`) | helpers.test.ts:"helpers — isDragStartDetail > rejects unknown extra keys (core recordOf canonical: strict shape)" |
+| helpers.ts:isDragOverDetail | presence/type of required keys only; extra keys ignored | core `recordOf` rejects unknown keys | canonical adopted (composed via `recordOf` + `isNumber` + `literalOf('before','after','into')` + `arrayOf(isString)` + native lazy DOM closures) | helpers.test.ts:"helpers — isDragOverDetail > rejects unknown extra keys (core recordOf canonical: strict shape)" |
+| helpers.ts:isDragDropDetail | presence/type of required keys only; extra keys ignored | core `recordOf` rejects unknown keys | canonical adopted (composed via `recordOf` + `nullableOf(isNumber)` + `nullableOf(literalOf(...))` + `orOf(isHtmlElement,isNull)` + `arrayOf(isString)` + native lazy `isPointerEvent`) | helpers.test.ts:"helpers — isDragDropDetail > rejects unknown extra keys (core recordOf canonical: strict shape)" |
+| helpers.ts:indexOfRow | `Number(row.dataset.index)` then `Number.isFinite` — empty/whitespace `data-index=""` coerced to `0` (a valid index) | core `parseNumber` returns `undefined` for empty / whitespace-only strings (and for non-numeric, ±Infinity, NaN) | canonical adopted (`const i = parseNumber(row.dataset.index); return i === undefined ? null : i`); the `'7'`/`'abc'`/null cases are behavior-identical, only the degenerate empty-attribute case shifts (now `null`) | helpers.test.ts:"helpers — extractRow / indexOfRow / extractRows > indexOfRow parses data-index, null on missing/non-finite" (added empty-`data-index` assertion) |
+
+### No-shift / boundary notes
+
+- **Behavior-identical substitutions (no test change — the existing 122 tests
+  are the regression gate, all stayed green pre- AND post-change):**
+  `isStringArray` → `arrayOf(isString)`; `isSetting` → wrapper over
+  `literalOf('light','dark','system')`; `isDropPosition` → wrapper over
+  `literalOf('before','after','into')`; `isSide` → wrapper over module-scope
+  `literalOf('top','end','bottom','start')` (was `POPOVER_SIDE_SET.has`,
+  removed the now-unused `POPOVER_SIDE_SET` import); `alignmentOf`'s
+  `tail==='start'||tail==='end'` → module-scope `literalOf('start','end')`
+  guard; `isEventHandler` → `isFunction` (B1, verified intact);
+  `generateId`'s `prefix===undefined` → `isUndefined`; `isMouseEvent`'s
+  `!event` → `isUndefined(event)`; `cssEscape`'s `typeof CSS.escape===
+  'function'` → `isFunction(CSS.escape)`; `compareCellValues`'s
+  `Number()`+`Number.isFinite` → `parseNumber` (the `!== ''` pre-guards make
+  it exactly equivalent for the non-empty trimmed-string domain);
+  `applyRowIndex`/`applyRowCount`'s `Number.isFinite(x)` → `isFiniteNumber(x)`
+  (identical for the `number`-typed param); `isTableCellTarget`/
+  `isTableRangeTarget`'s `typeof target==='object'` → `isRecord(target)`
+  (identical for the typed `TableTarget` union — plain-object members
+  accepted, string/number sentinels rejected, exactly as before; the
+  `'row' in target` / `'from' in target` property-presence operators
+  retained); `toStringList`'s `input===undefined`/`typeof input==='string'`
+  → `isUndefined`/`isString` (typed→typed reshape unchanged; the stale
+  `@remarks` note about the core `coerce*` boundary was deleted as
+  instructed since the function now visibly uses core guards);
+  `bindEventMap`'s `if (!on)` → `isUndefined(on)`; `assertElement`/
+  `isTagged`'s `typeof expected==='string'` → `isString(expected)`;
+  `writeTableCell`'s `value===null||value===undefined` →
+  `isNull(value)||isUndefined(value)`.
+
+- **`normalizeIndex` — NO observable shift (typed `number` param).** The
+  substitution rule maps it to `parseInteger`. Adopted
+  (`const n = parseInteger(index); return n!==undefined && n>=0 && n<=count
+  ? n : null`). `parseInteger` additionally accepts numeric strings, but the
+  public signature is `(index: number, count: number)` and all three call
+  sites in `createTable.ts` pass `number` — the string-acceptance is
+  unreachable via the type. For the `number` domain `parseInteger` rejects
+  non-integers / ±Infinity / NaN exactly as the old `Number.isInteger`
+  did, so there is no observable contract change. No test change (the
+  existing `normalizeIndex` tests stay green; inventing a string-input
+  test would assert an unreachable path).
+
+- **`extractProperty` — divergence is real but the only in-repo callers are
+  internal:** `bindEventMap` (always receives a plain `options.on` object
+  literal across all 15 factory call sites — verified) and the drag-detail
+  guards (rebuilt on `recordOf`, no longer call `extractProperty`). No
+  `src/browser` caller passes a class instance / array to it, so no
+  factory/composable test rippled; the full `src:browser` project (30
+  files, 1224 tests) stayed green.
+
+- **DOM `instanceof` left native (clean boundary, expected outcome — not a
+  gap):** `isFormFieldElement` (7-way HTML element `instanceof` union),
+  `isValidityElement` (3-way union), `isFocusable` (disabled-control
+  `instanceof` union), `isElement`/`isHTMLElement`/`isTextNode`
+  (`node.nodeType` / `node instanceof HTMLElement`), `extractRow`/
+  `findDetailRow`/`extractRows`/`focusableItems` (`instanceof
+  HTMLElement`/`HTMLTableRowElement`, `if (!root)`/`if (!row)`
+  DOM-ref-presence early-returns), `listen` (`event instanceof
+  CustomEvent`), `assertElement`/`isTagged` (`if (!element)`
+  DOM-element-ref nullness — kept native; core `isDefined`'s
+  non-narrowing overload broke the `asserts`/predicate control-flow
+  narrowing, and a DOM-ref presence early-return is the DOM boundary
+  anyway). These are the deliberate environment-agnostic non-scope of
+  `@elements/core`; wrapping them in `instanceOf(...)` would be ceremony
+  with zero correctness gain.
+
+- **Drag-detail DOM fields: native lazy `instanceof` inside the core
+  `recordOf` composition.** The record SHAPE/enum/array/nullable structure
+  is core (`recordOf`/`literalOf`/`arrayOf`/`nullableOf`/`orOf` +
+  `isNumber`/`isString`/`isNull`); the `PointerEvent`/`HTMLElement` fields
+  are bare native `instanceof` wrapped in module-scope typed-predicate
+  closures (`isPointerEvent`/`isHtmlElement`). This is required for
+  correctness, not preference: a module-scope `instanceOf(PointerEvent)`
+  eagerly dereferences the `PointerEvent` global at import time, which
+  threw `ReferenceError: PointerEvent is not defined` under the mandated
+  DOM-less bundle-resolution smoke (`node --input-type=module -e
+  import('./dist/src/browser/index.js')`). The closures defer the DOM
+  global read to guard-call time, exactly matching the original in-body
+  `instanceof` laziness, keeping `helpers.ts` import-safe in a DOM-less
+  runtime. `Set` is a JS built-in (always defined) so it stays core
+  `instanceOf(Set)`.
+
+- **Environment-existence probes left native:** `typeof CSS !== 'undefined'`,
+  `typeof Intl !== 'undefined'`, `typeof requestAnimationFrame ===
+  'function'` — these probe a possibly-undeclared GLOBAL; `typeof` is the
+  only safe form (`isFunction(requestAnimationFrame)` would throw
+  `ReferenceError` when the global is undeclared, e.g. SSR/Node). This is
+  the same environment boundary as the DOM-less import contract, not a
+  JS-domain value guard. Only the value-side `typeof CSS.escape ===
+  'function'` was moved to `isFunction(CSS.escape)`.
+
+- **`MatcherOptions` / `hasAttribute` optional-config `!== undefined`
+  checks left as-is.** `createMatcher`'s `criteria.tag !== undefined` /
+  `criteria.id !== undefined` / … and `hasAttribute`'s `value === undefined`
+  test "was this optional config key supplied" on a typed optional
+  (`string | undefined`) — the idiomatic options-presence boundary, not a
+  JS-domain value-type guard on external input. Converting each to
+  `isUndefined`/`!isUndefined` is pure churn with no behavior or
+  correctness gain and reduces matcher readability (the
+  complexity-philosophy "no ceremony" rule). Recorded as a conscious
+  scoping decision.
+
+- **`src/browser/types.ts`: NO change required.** Every converted guard
+  preserved its exact `value is T` narrowing — `isStringArray`
+  (`arrayOf(isString)` annotated `(value:unknown) => value is readonly
+  string[]`), `isSetting`/`isDropPosition`/`isSide` (wrapper functions
+  keeping `value is ThemeSetting`/`DropPosition`/`Side`), the drag-detail
+  guards (wrapper functions keeping `value is DragTapDetail` etc.). No
+  public type widened or weakened; no `as`/`!`/`any` used.
