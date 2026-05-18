@@ -437,11 +437,16 @@ The frozen TS mirror of the corpus, shaped exactly like
 
 - ✅ **Types first** in `types.ts`: `ContentCategory`, `ContentModel`,
   `ContentModelEntry` (`tag`, `categories`, `context` — allowed
-  parents/ancestor predicate, `model`, `required` — ordered/cardinal child
-  spec, `forbidden` — forbidden descendant categories/tags, `transparent`,
-  `void`, `attributes` — coupling rules, `cite` — `guides/w3c` anchor).
-  Sub-types `ContentConstraint` / `ContentSequenceSegment` / `AttributeRule`
-  land alongside (constraints-as-data + coupling rules).
+  parents/ancestor predicate, `model`, `childModel` — the element's ONE
+  ordered child content model (closed sequence vs. structural prefix + open
+  category arm; replaces the overloaded `required` field + the duplicated
+  `child-order`/`group-order` constraint encoding — Phase-3.1 fix),
+  `permits` — bare-category child set (disjoint from `childModel`, parity-
+  guarded), `forbidden` — forbidden descendant categories/tags,
+  `transparent`, `void`, `attributes` — coupling rules, `cite` —
+  `guides/w3c` anchor). Sub-types `ContentConstraint` / `ChildModel` /
+  `ChildSegment` / `ContentSequenceSegment` / `AttributeRule` land alongside
+  (constraints-as-data + the ordered-model encoding + coupling rules).
 - ✅ **`schema.ts`**: frozen `contentModel: readonly ContentModelEntry[]`
   via a typed `defineModel(...)` helper (the `entry(...)` analogue — bare
   `entry` is taxonomy's; `defineModel` is the schema's, both in
@@ -457,10 +462,13 @@ The frozen TS mirror of the corpus, shaped exactly like
   `no-self-nest` (`a`, `dfn`), `no-interactive-descendant` (`a`,
   `button`), `single-first-child` (`summary`→`details`,
   `legend`→`fieldset`, `caption`→`table`), `edge-child`
-  (`figcaption`→`figure` first|last), `group-order` (`dt`/`dd`,
-  `ruby` rt/rp), `parent-restricted` (`li`→ul/ol/menu, `td`/`th`→tr,
-  `option`→select/optgroup/datalist), the `table` model, `picture` order
-  (`source`\* then one `img`).
+  (`figcaption`→`figure` first|last), `parent-restricted` (`li`→ul/ol/menu,
+  `td`/`th`→tr, `option`→select/optgroup/datalist). The ordered/cardinal
+  child models (`table`, `picture` `source`\*-then-`img`, `dl` `dt`+`dd`+,
+  `ruby`, `hgroup`, list models, `details`/`fieldset` prefix, …) are encoded
+  ONCE in `childModel` — NOT as duplicated `child-order`/`group-order`
+  constraints (the Phase-3.1 single-source fix; those constraint kinds were
+  removed).
 - ✅ **Express the entry as an `@elements/core` `ContractShape`** (an
   `objectShape` of the fields above; `literalShape` for the category /
   model unions) run through `compileContract()` — the inspector gets a
@@ -543,8 +551,10 @@ The frozen TS mirror of the corpus, shaped exactly like
   structure ✅ (part 1); attribute / interaction ⬜ (parts 2/3)**:
   - ✅ **context** — element not allowed in its parent's resolved model
     ([dom.html#content-models](https://html.spec.whatwg.org/multipage/dom.html#content-models)).
-  - ✅ **content** — required child missing / mis-ordered / wrong cardinality;
-    forbidden descendant present; child not an allowed category
+  - ✅ **content** — the parent's `childModel` order/cardinality unsatisfied
+    (the ONE ordered-model reporter — closed sequence or prefix + open
+    category arm); forbidden descendant present; child not an allowed
+    category
     ([dom.html#kinds-of-content](https://html.spec.whatwg.org/multipage/dom.html#kinds-of-content)).
   - ✅ **transparent** — interactive / `a` / `tabindex` descendant of `<a>`;
     nested-`<audio>`/`<video>`
@@ -559,18 +569,19 @@ The frozen TS mirror of the corpus, shaped exactly like
     `parent-restricted`
     ([li](https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element),
     [dt/dd](https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element)),
-    `group-order`
-    ([ruby](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-ruby-element)),
-    `table-model`
-    ([tables.html](https://html.spec.whatwg.org/multipage/tables.html#the-table-element)),
-    `picture-order`
-    ([picture](https://html.spec.whatwg.org/multipage/embedded-content.html#the-picture-element)),
     void-has-children. Implemented GENERIC per `ContentConstraintKind`
     (one evaluator per kind, driven by the schema constraint DATA), not
-    per-element. `no-interactive-descendant` / `no-tabindex-descendant`
-    constraint kinds are reported by the `transparent` family via
-    `RuleContext.restrictions` (one finding per violation — the structure
-    family deliberately does not re-evaluate those two kinds).
+    per-element. The pure-ordering kinds (`child-order` / `group-order`,
+    the `table`/`picture`/`ruby`/… models) are NOT a structure rule — they
+    are folded into `childModel`, owned solely by the `content` family
+    (Phase-3.1 single-source fix: one finding per violation, no
+    content↔structure double-report; `single-first-child` / `edge-child`
+    are the disjoint CHILD-keyed reciprocals, deferring to `content` when
+    the parent's `childModel` already requires that position).
+    `no-interactive-descendant` / `no-tabindex-descendant` constraint kinds
+    are reported by the `transparent` family via `RuleContext.restrictions`
+    (one finding per violation — the structure family deliberately does not
+    re-evaluate those two kinds).
   - ⬜ **attribute** _(part 2)_ — coupling rules (`a[target|download|ping|rel|hreflang|
 type|referrerpolicy]` ⇒ `href`
     ([links.html](https://html.spec.whatwg.org/multipage/links.html));

@@ -23,7 +23,6 @@ const parentRestrictedRule = ruleById('structure/parent-restricted')
 const singleFirstChildRule = ruleById('structure/single-first-child')
 const edgeChildRule = ruleById('structure/edge-child')
 const noSelfNestRule = ruleById('structure/no-self-nest')
-const orderRule = ruleById('structure/child-order')
 const voidRule = ruleById('structure/void-has-children')
 
 describe('rules — structure family', () => {
@@ -86,7 +85,7 @@ describe('rules — structure family', () => {
 
 	// ── single-first-child ────────────────────────────────────────────────
 
-	describe('single-first-child', () => {
+	describe('single-first-child (disjoint single source vs. content/required)', () => {
 		it('clean: <summary> as the first child of <details>', () => {
 			const summary = el('summary')
 			const details = el('details', [summary, el('p')])
@@ -94,22 +93,60 @@ describe('rules — structure family', () => {
 			expect(evaluateOn(singleFirstChildRule, details, summary)).toBeNull()
 		})
 
-		it('dirty: <summary> NOT first in <details> is flagged', () => {
+		it('<summary> NOT first in <details> — single-first-child DEFERS (required-leading)', () => {
+			// `summary` is a REQUIRED leading segment of <details>'s
+			// childModel (`summary`(1) then flow). A misplaced summary makes
+			// the whole model unsatisfied, so `content/required` (parent-
+			// keyed) is the sole reporter; this child-keyed rule defers — no
+			// content↔structure double-report (the §1 case).
 			const summary = el('summary')
 			const details = el('details', [el('p'), summary])
 			container.appendChild(details)
-			expect(evaluateOn(singleFirstChildRule, details, summary)?.rule).toBe(
-				'structure/single-first-child',
-			)
+			expect(evaluateOn(singleFirstChildRule, details, summary)).toBeNull()
 		})
 
-		it('dirty: <legend> not first in <fieldset> is flagged', () => {
+		it('<summary> NOT first — content/required on <details> is the single reporter', () => {
+			const summary = el('summary')
+			const details = el('details', [el('p'), summary])
+			container.appendChild(details)
+			const walker = new Walker(container)
+			const ids: string[] = []
+			for (const node of walker.walk()) {
+				for (const rule of rules) {
+					const f = rule.evaluate(node, walker.context(node))
+					if (f !== null) ids.push(f.rule)
+				}
+			}
+			expect(ids).toEqual(['content/required'])
+		})
+
+		it('<legend> not first in <fieldset> — single-first-child FIRES (optional-leading)', () => {
+			// `legend` is OPTIONAL in <fieldset>'s childModel (`legend`(?)
+			// then flow), so the permissive prefix model CANNOT detect a
+			// late legend — this child-keyed rule is the SOLE reporter (it
+			// does NOT defer). Disjoint by what each rule can structurally
+			// see; still exactly one finding for the one violation.
 			const legend = el('legend')
 			const fieldset = el('fieldset', [el('p'), legend])
 			container.appendChild(fieldset)
 			expect(evaluateOn(singleFirstChildRule, fieldset, legend)?.rule).toBe(
 				'structure/single-first-child',
 			)
+		})
+
+		it('<legend> not first in <fieldset> — exactly one full-registry finding', () => {
+			const legend = el('legend')
+			const fieldset = el('fieldset', [el('p'), legend])
+			container.appendChild(fieldset)
+			const walker = new Walker(container)
+			const ids: string[] = []
+			for (const node of walker.walk()) {
+				for (const rule of rules) {
+					const f = rule.evaluate(node, walker.context(node))
+					if (f !== null) ids.push(f.rule)
+				}
+			}
+			expect(ids).toEqual(['structure/single-first-child'])
 		})
 	})
 
@@ -160,28 +197,32 @@ describe('rules — structure family', () => {
 		})
 	})
 
-	// ── child-order / group-order ─────────────────────────────────────────
+	// ── ordered child model (now SINGLE-SOURCE `content/required`) ─────────
+	//
+	// The pure-ordering kinds (`child-order` / `group-order`) and the
+	// `structure/child-order` rule are GONE — an element's ordered child
+	// model lives ONCE in `entry.childModel`, consumed solely by the
+	// `content/required` rule. Order/cardinality is therefore exercised in
+	// content.test.ts and the full-registry ordered/prefix suite; here we
+	// only assert the structure family no longer carries an order rule (the
+	// §1/§2 double-report source is structurally removed).
 
-	describe('child-order', () => {
-		it('clean: <hgroup> with p* then h1 then p*', () => {
-			const hgroup = el('hgroup', [el('p'), el('h1'), el('p')])
-			container.appendChild(hgroup)
-			expect(evaluateOn(orderRule, hgroup, hgroup)).toBeNull()
-		})
-
-		it('dirty: <hgroup> with h1 before its leading <p> reversed wrongly', () => {
-			// h1 then p then h1 — two h1 breaks the "exactly one h1" segment.
+	describe('ordered model moved to content/required', () => {
+		it('no structure/* rule reports child order (single source = content/required)', () => {
+			expect(rules.some((rule) => rule.id === 'structure/child-order')).toBe(false)
+			// A mis-ordered <hgroup> yields exactly the parent-keyed
+			// content/required finding, never a structure/* order duplicate.
 			const hgroup = el('hgroup', [el('h1'), el('p'), el('h1')])
 			container.appendChild(hgroup)
-			expect(evaluateOn(orderRule, hgroup, hgroup)?.rule).toBe('structure/child-order')
-		})
-
-		it('dirty: <ruby> with rt before any content (group-order) is flagged', () => {
-			// ruby group-order: rp? rt+ rp? — a leading stray <b> then rt is fine,
-			// but an rt with a trailing rp then another bare rt out of group is not.
-			const ruby = el('ruby', [el('rt'), el('rp'), el('rp')])
-			container.appendChild(ruby)
-			expect(evaluateOn(orderRule, ruby, ruby)?.rule).toBe('structure/child-order')
+			const walker = new Walker(container)
+			const ids: string[] = []
+			for (const node of walker.walk()) {
+				for (const rule of rules) {
+					const f = rule.evaluate(node, walker.context(node))
+					if (f !== null) ids.push(f.rule)
+				}
+			}
+			expect(ids).toEqual(['content/required'])
 		})
 	})
 

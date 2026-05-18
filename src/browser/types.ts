@@ -149,9 +149,21 @@ export type ContentModel = 'transparent' | 'void' | 'text' | 'nothing' | 'childr
  * - `parent-restricted` — the element is only valid inside one of `parents`
  *   (`li`→`ul`/`ol`/`menu`, `td`/`th`→`tr`, `option`→`select`/`optgroup`/
  *   `datalist`).
- * - `group-order` — ordered/grouped sibling spec (`dt`/`dd`, `ruby` rt/rp).
- * - `child-order` — an ordered/cardinal child sequence (`picture`:
- *   `source`* then one `img`; the `table` model; `hgroup`; `dl`).
+ *
+ * - `single-first-child` — the element must be the unique first element
+ *   child of its `parents` (`summary`→`details`, `legend`→`fieldset`,
+ *   `caption`→`table`). This is the CHILD-side placement constraint; the
+ *   reciprocal PARENT-side ordered model lives in {@link ChildModel}.
+ * - `edge-child` — the element must be the first / last / first-or-last
+ *   child of one of `parents` (`figcaption`→`figure`).
+ *
+ * @remarks The pure-ordering kinds (`child-order` / `group-order`) have been
+ * folded into the dedicated {@link ChildModel} — an element's ordered child
+ * content model is encoded ONCE there (closed sequence vs. structural prefix
+ * + open category arm), never duplicated across `required` + a constraint.
+ * `single-first-child` / `edge-child` stay: they are the reciprocal
+ * CHILD-keyed placement constraints (evaluated on the child, naming its
+ * `parents`), not the parent's ordered child model.
  */
 export type ContentConstraintKind =
 	| 'no-self-nest'
@@ -160,8 +172,6 @@ export type ContentConstraintKind =
 	| 'single-first-child'
 	| 'edge-child'
 	| 'parent-restricted'
-	| 'group-order'
-	| 'child-order'
 
 /**
  * One discrete named constraint, encoded as data. `kind` selects the rule
@@ -177,20 +187,105 @@ export interface ContentConstraint {
 	readonly child?: string
 	/** Which edge the element must occupy (`edge-child`). */
 	readonly edge?: 'first' | 'last' | 'first-or-last'
-	/** The ordered child-tag sequence spec (`child-order` / `group-order`),
-	 *  each segment naming its tag and cardinality. */
-	readonly sequence?: readonly ContentSequenceSegment[]
 	/** Human-readable restatement of the spec clause, for the Finding
 	 *  message Phase 3/4 emit. */
 	readonly note?: string
 }
 
-/** One segment of an ordered child-sequence (`child-order`/`group-order`). */
+/**
+ * Child-sequence cardinality. `'?'` zero-or-one · `'*'` zero-or-more ·
+ * `'+'` one-or-more · `'1'` exactly one.
+ */
+export type ContentCount = '?' | '*' | '+' | '1'
+
+/** One tag segment of an ordered child model — a tag run with cardinality. */
 export interface ContentSequenceSegment {
 	readonly tag: string
-	/** `'?'` zero-or-one · `'*'` zero-or-more · `'+'` one-or-more ·
-	 *  `'1'` exactly one. */
-	readonly count: '?' | '*' | '+' | '1'
+	readonly count: ContentCount
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// The ordered child content model (the ONE encoding — replaces the
+// overloaded `required` + the `child-order`/`group-order` constraint
+// duplication)
+// ─────────────────────────────────────────────────────────────────────────
+//
+// An element whose **Content model** box constrains the ORDER / CARDINALITY
+// of its element children (the `table` model, `picture`, `ul`/`ol`/`menu`,
+// `hgroup`, `dl`, `ruby`, `select`, `optgroup`, `colgroup`,
+// `tbody`/`thead`/`tfoot`/`tr`, `details`, `fieldset`, `figure`, `html`)
+// carries exactly one {@link ChildModel}. It is the SINGLE source of that
+// element's ordered child shape — no second copy in a constraint, so the
+// content/structure rules consume one datum and emit one finding per
+// violation (the §1/§2 double-report root cause is structurally gone).
+//
+// The model is an ordered list of {@link ChildSegment}s plus a `closed`
+// discriminator:
+//
+//   - `closed: true` — EXHAUSTIVE: the children are EXACTLY the listed
+//     segments, in order; no child outside the segments' tags is permitted
+//     (`table`, `picture`, `ul`/`ol`/`menu`, `hgroup`, `dl`, `select`,
+//     `optgroup`, `colgroup`, `tbody`/`thead`/`tfoot`/`tr`, `html`, `ruby`).
+//   - `closed: false` — PREFIX + open arm: the leading tag segments are a
+//     structural PREFIX, followed by a trailing open content-category arm
+//     that absorbs any number of category-matching children (`details` =
+//     one `summary` then *flow content*; `fieldset` = optional `legend`
+//     then *flow content*; `figure` = `figcaption` first-or-last around
+//     *flow content*). The trailing `category` segment IS the open arm.
+//
+// `script` / `template` (script-supporting, `categories.md` §3.2.5) are
+// always tolerated interleaved where the prose says "optionally intermixed
+// with script-supporting elements" — the rules add them implicitly so the
+// schema stays a faithful transcription of the prose.
+
+/**
+ * One segment of a {@link ChildModel}'s ordered child sequence.
+ *
+ * - `tag` — a run of one tag at a cardinality (`source`*, `img`×1, `li`*).
+ * - `category` — an OPEN content-category arm: any number of children in
+ *   that category, in place (the trailing *flow content* of `details` /
+ *   `fieldset` / `figure`). Only ever appears in a non-`closed` model (or
+ *   inside a `choice` arm that models a prefix/suffix-flow shape).
+ * - `group` — a repeating GROUP: `count` copies of the inner `segments`
+ *   run, in order (`dl` = zero-or-more groups of one-or-more `dt` then
+ *   one-or-more `dd`; `ruby` = one-or-more base-then-annotation groups).
+ * - `choice` — an ALTERNATION: the children here satisfy exactly one of
+ *   `options` (each an ordered segment list). Models the spec's "Either:
+ *   … Or: …" boxes (`table`'s `tbody`* vs. `tr`+; `figure`'s three arms;
+ *   `dl`'s group-form vs. `div`-form; `select`'s drop-down arm).
+ */
+export type ChildSegment =
+	| { readonly kind: 'tag'; readonly tag: string; readonly count: ContentCount }
+	| { readonly kind: 'category'; readonly category: ContentCategory }
+	| {
+			readonly kind: 'group'
+			readonly count: ContentCount
+			readonly segments: readonly ChildSegment[]
+	  }
+	| { readonly kind: 'choice'; readonly options: readonly (readonly ChildSegment[])[] }
+
+/**
+ * An element's ordered child content model — the ONE faithful encoding of a
+ * **Content model** box that constrains child order / cardinality. Replaces
+ * the overloaded `ContentModelEntry.required` field and the redundant
+ * `child-order` / `group-order` constraint `sequence` duplication: an
+ * element's ordered model now lives here and NOWHERE else, so the content
+ * and structure rule families consume a single datum and report exactly one
+ * finding per violation.
+ *
+ * @remarks
+ * - `segments` — the ordered child sequence (see {@link ChildSegment}).
+ * - `closed` — `true` ⇒ EXHAUSTIVE (only the listed segment tags, in order;
+ *   the spec's "Zero or more X, followed by one Y" closed boxes). `false` ⇒
+ *   the segments are a structural PREFIX terminated by an open `category`
+ *   arm (the spec's "One `summary` followed by flow content" prefix boxes).
+ * - `note` — the verbatim **Content model** prose, for the `Finding`
+ *   message (the parity test binds every segment back to this prose).
+ */
+export interface ChildModel {
+	readonly segments: readonly ChildSegment[]
+	readonly closed: boolean
+	readonly note: string
 }
 
 /**
@@ -226,9 +321,19 @@ export interface ContentModelEntry {
 	readonly context: string
 	/** The element's content-model shape (card **Content model**). */
 	readonly model: ContentModel
-	/** Ordered / cardinal child spec when `model === 'children'` and the
-	 *  card constrains the child list (empty for free flow/phrasing). */
-	readonly required: readonly ContentSequenceSegment[]
+	/**
+	 * The element's ORDERED child content model — present iff the card's
+	 * **Content model** box constrains child order / cardinality (the
+	 * `table` model, `picture`, `ul`/`ol`/`menu`, `hgroup`, `dl`, `ruby`,
+	 * `select`, `optgroup`, `colgroup`, `tbody`/`thead`/`tfoot`/`tr`,
+	 * `details`, `fieldset`, `figure`, `html`). The SINGLE source of that
+	 * shape (see {@link ChildModel}); omitted for free flow/phrasing parents
+	 * (those carry `permits`) and for `void`/`nothing`/`text`/`transparent`
+	 * models. A parent never carries BOTH `childModel` and `permits` — that
+	 * disjointness is guarded by the parity test, and is what keeps the
+	 * content/structure rules from double-firing.
+	 */
+	readonly childModel?: ChildModel
 	/**
 	 * The content category(ies) this element permits as ELEMENT children when
 	 * its content model is a *bare content category* — i.e. the card's
@@ -242,17 +347,17 @@ export interface ContentModelEntry {
 	 * (one finding per violation):
 	 * - `void` / `nothing` / `text` / `transparent` models (no element
 	 *   children, or resolved at walk time);
-	 * - structured parents whose child list is an ordered/cardinal sequence
-	 *   carried in `required` / `constraints` (`table`, `ul`, `ol`, `menu`,
-	 *   `tr`, `dl`, `picture`, `ruby`, `select`, `optgroup`, `hgroup`,
-	 *   `details`, `fieldset`, `figure`, `colgroup`, `tbody`/`thead`/`tfoot`,
-	 *   media `video`/`audio`, …) — those are owned by the `context` /
-	 *   `structure` families.
+	 * - structured parents whose child list is an ordered/cardinal model
+	 *   carried in `childModel` (`table`, `ul`, `ol`, `menu`, `tr`, `dl`,
+	 *   `picture`, `ruby`, `select`, `optgroup`, `hgroup`, `details`,
+	 *   `fieldset`, `figure`, `colgroup`, `tbody`/`thead`/`tfoot`, …) —
+	 *   those are owned by the `content`/`structure` `childModel` rule.
 	 *
 	 * The `content` family's "child not an allowed category" sub-rule reads
 	 * this: a parent with non-empty `permits` whose non-transparent element
 	 * child's resolved categories do not intersect it is a content-model
-	 * violation (`dom.html#content-models`).
+	 * violation (`dom.html#content-models`). `childModel` and `permits` are
+	 * mutually exclusive on any entry (parity-guarded).
 	 */
 	readonly permits?: readonly ContentCategory[]
 	/** Forbidden descendant categories / tags the card's prose names
@@ -453,13 +558,21 @@ export interface RuleInterface {
 
 /**
  * The per-node projection every rule-family guard composes over — the live
- * element, its resolved {@link RuleContext}, its lowercased tag, and the
- * pre-resolved schema entries for it and its parent. Resolving these once
- * keeps each rule a pure named guard composition over a single value rather
- * than re-deriving them inside ad-hoc boolean expressions. Inspector
- * internal — not part of the public inspect surface — but declared here
- * because `types.ts` is the project's single source of truth for every
- * type, regardless of visibility (§5).
+ * element, its resolved {@link RuleContext}, its lowercased tag, the
+ * FLAT-tree content parent (slot conduits collapsed — agreeing with the
+ * Walker spine, never light-DOM `parentElement`), and the pre-resolved
+ * schema entries for it and its parent. Resolving these once keeps each rule
+ * a pure named guard composition over a single value rather than re-deriving
+ * them inside ad-hoc boolean expressions.
+ *
+ * @remarks
+ * A PUBLIC seam. `src/browser/index.ts` re-exports `types.ts` wholesale via
+ * `export type *`, so every type declared here is part of the public API by
+ * the project's barrel idiom — there is no "declared-but-not-exported"
+ * carve-out (§5/§6). `RuleSubject` is therefore documented honestly as the
+ * public rule-authoring projection a custom {@link RuleInterface} composes
+ * over; it is not an internal-only type, and claiming otherwise contradicted
+ * the barrel.
  */
 export interface RuleSubject {
 	readonly element: Element
@@ -474,8 +587,14 @@ export interface RuleSubject {
  * The inputs a rule hands the shared finding builder before it attaches the
  * stable DOM `path` (so a rule never restates the path-derivation). Mirrors
  * {@link Finding} minus `path` (the builder computes it via the Phase-2
- * `nodePath` adapter). Inspector internal; see {@link RuleSubject} for why
- * it lives in `types.ts`.
+ * `nodePath` adapter).
+ *
+ * @remarks
+ * A PUBLIC seam, for the same reason as {@link RuleSubject}: `types.ts` is
+ * re-exported wholesale through the sole barrel (`export type *`), so this
+ * is part of the public rule-authoring surface (a custom rule builds a
+ * `FindingDraft` and the shared builder turns it into a {@link Finding}).
+ * Documented honestly as public — no contradictory "internal" claim.
  */
 export interface FindingDraft {
 	readonly rule: string

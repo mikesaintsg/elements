@@ -94,7 +94,9 @@ describe('rules — content family', () => {
 			expect(finding.severity).toBe('error')
 			expect(finding.element).toBe(picture)
 			expect(finding.cite).toBe('embeddeds#the-picture-element')
-			expect(finding.expected).toContain('<img>')
+			// `expected` is the verbatim corpus **Content model** prose
+			// (the single source of the message wording).
+			expect(finding.expected).toContain('one img element')
 		})
 
 		it('a <table> with children out of order (tfoot before tbody) is flagged', () => {
@@ -104,10 +106,19 @@ describe('rules — content family', () => {
 			expect(finding?.rule).toBe('content/required')
 		})
 
-		it('a <ul> containing a non-<li> element child is flagged', () => {
-			const ul = el('ul', [el('li'), el('div')])
+		it('a <ul> with a non-<li> child: content/required DEFERS (membership miss)', () => {
+			// `<div>` is not an admissible <ul> child tag. That is a
+			// MEMBERSHIP miss, owned solely by `context/parent-model` (fires
+			// on the child) — `content/required` (order/cardinality, fires on
+			// the parent) defers so the violation yields exactly one finding
+			// (§1/§2 disjoint single source). The full-registry assertion
+			// below proves the single finding.
+			const div = el('div')
+			const ul = el('ul', [el('li'), div])
 			container.appendChild(ul)
-			expect(evaluateOn(requiredRule, ul, ul)?.rule).toBe('content/required')
+			expect(evaluateOn(requiredRule, ul, ul)).toBeNull()
+			const contextRule = ruleById('context/parent-model')
+			expect(evaluateOn(contextRule, ul, div)?.rule).toBe('context/parent-model')
 		})
 	})
 
@@ -304,28 +315,33 @@ describe('rules — content family', () => {
 	})
 
 	describe('perturbation — content/required bites (seeded)', () => {
-		it('seeded valid/invalid <ul> child lists verdict is reproducible & correct', () => {
+		it('seeded valid/invalid <picture> child models verdict is reproducible & correct', () => {
+			// A true ORDER/CARDINALITY violation that `content/required` owns
+			// (all child tags ARE admissible — `source`/`img` — so this is
+			// NOT a membership miss; it exercises the childModel matcher's
+			// `source* img(1)` cardinality directly). valid = source* + one
+			// img; invalid = source* with the required img MISSING.
 			for (const seed of [7, 88, 2024, 40000]) {
 				const random = createRandom(seed)
 				const valid = random() < 0.5
-				const count = 1 + Math.floor(random() * 4)
+				const sources = Math.floor(random() * 3)
 
 				const buildOnce = (): boolean => {
 					const children: Element[] = []
-					for (let i = 0; i < count; i += 1) {
-						children.push(el(valid ? 'li' : 'div'))
-					}
-					const ul = el('ul', children)
-					container.appendChild(ul)
-					const finding = evaluateOn(requiredRule, ul, ul)
-					ul.remove()
+					for (let i = 0; i < sources; i += 1) children.push(el('source'))
+					if (valid) children.push(el('img'))
+					const picture = el('picture', children)
+					container.appendChild(picture)
+					const finding = evaluateOn(requiredRule, picture, picture)
+					picture.remove()
 					return finding !== null
 				}
 
 				const first = buildOnce()
 				const second = buildOnce()
 				expect(first).toBe(second)
-				// Valid list (all <li>) → no finding; invalid (<div>) → finding.
+				// Valid (source* then one img) → no finding; invalid (img
+				// missing) → exactly the content/required finding.
 				expect(first).toBe(!valid)
 			}
 		})

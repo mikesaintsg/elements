@@ -3,11 +3,14 @@ import {
 	arrayShape,
 	booleanShape,
 	compileContract,
+	lazyShape,
 	literalShape,
 	objectShape,
 	optionalShape,
 	stringShape,
+	unionShape,
 } from '@elements/core'
+import type { ContractShape } from '@elements/core'
 import { defineModel } from './helpers.js'
 
 // ============================================================================
@@ -28,15 +31,19 @@ import { defineModel } from './helpers.js'
 //   - context      a faithful restatement of the card's **Contexts** box
 //   - model        the content-model shape (transparent/void/text/nothing/
 //                   children) read from the card's **Content model** box
-//   - required     the ordered/cardinal child spec when the card constrains
-//                   the child list (the table model, list models, hgroup,
-//                   picture, …); empty for free flow/phrasing content
+//   - childModel   the element's ORDERED child content model when the card
+//                   constrains child order/cardinality (the table model,
+//                   list models, hgroup, picture, details/fieldset/figure,
+//                   …) — the SINGLE source of that shape (closed sequence
+//                   vs. structural prefix + open category arm); omitted for
+//                   free flow/phrasing parents (those carry `permits`)
 //   - forbidden    forbidden descendant categories/tags the card's prose
 //                   names (e.g. dt forbids header/footer/sectioning/heading)
 //   - constraints  the discrete tree-decidable named constraints encoded as
 //                   DATA (no-self-nest, single-first-child, edge-child,
-//                   parent-restricted, group-order, child-order, …) so the
-//                   Phase-3 rules stay generic, never per-element hand-code
+//                   parent-restricted, …) so the Phase-3 rules stay generic,
+//                   never per-element hand-code; the pure-ordering kinds are
+//                   folded into `childModel` (no second copy of the order)
 //   - attributes   the attribute-coupling rules the card states
 //   - transparent  derived: model === 'transparent'
 //   - void         derived: model === 'void'
@@ -72,10 +79,14 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'document#the-html-element',
 		{
-			required: [
-				{ tag: 'head', count: '1' },
-				{ tag: 'body', count: '1' },
-			],
+			childModel: {
+				closed: true,
+				note: 'A head element followed by a body element.',
+				segments: [
+					{ kind: 'tag', tag: 'head', count: '1' },
+					{ kind: 'tag', tag: 'body', count: '1' },
+				],
+			},
 			attributes: [{ attribute: 'manifest', note: 'obsolete' }],
 		},
 	),
@@ -181,22 +192,25 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'sections#the-hgroup-element',
 		{
-			required: [
-				{ tag: 'p', count: '*' },
-				{ tag: 'h1', count: '1' },
-				{ tag: 'p', count: '*' },
-			],
-			constraints: [
-				{
-					kind: 'child-order',
-					sequence: [
-						{ tag: 'p', count: '*' },
-						{ tag: 'h1', count: '1' },
-						{ tag: 'p', count: '*' },
-					],
-					note: 'Zero or more p, then one h1–h6, then zero or more p, optionally intermixed with script-supporting elements.',
-				},
-			],
+			childModel: {
+				closed: true,
+				note: 'Zero or more p elements, followed by one h1, h2, h3, h4, h5, or h6 element, followed by zero or more p elements, optionally intermixed with script-supporting elements.',
+				segments: [
+					{ kind: 'tag', tag: 'p', count: '*' },
+					{
+						kind: 'choice',
+						options: [
+							[{ kind: 'tag', tag: 'h1', count: '1' }],
+							[{ kind: 'tag', tag: 'h2', count: '1' }],
+							[{ kind: 'tag', tag: 'h3', count: '1' }],
+							[{ kind: 'tag', tag: 'h4', count: '1' }],
+							[{ kind: 'tag', tag: 'h5', count: '1' }],
+							[{ kind: 'tag', tag: 'h6', count: '1' }],
+						],
+					},
+					{ kind: 'tag', tag: 'p', count: '*' },
+				],
+			},
 		},
 	),
 	defineModel(
@@ -263,11 +277,11 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'groupings#the-ol-element',
 		{
-			required: [
-				{ tag: 'li', count: '*' },
-				{ tag: 'script', count: '*' },
-				{ tag: 'template', count: '*' },
-			],
+			childModel: {
+				closed: true,
+				note: 'Zero or more li and script-supporting elements.',
+				segments: [{ kind: 'tag', tag: 'li', count: '*' }],
+			},
 			attributes: [{ attribute: 'reversed' }, { attribute: 'start' }, { attribute: 'type' }],
 		},
 	),
@@ -278,11 +292,11 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'groupings#the-ul-element',
 		{
-			required: [
-				{ tag: 'li', count: '*' },
-				{ tag: 'script', count: '*' },
-				{ tag: 'template', count: '*' },
-			],
+			childModel: {
+				closed: true,
+				note: 'Zero or more li and script-supporting elements.',
+				segments: [{ kind: 'tag', tag: 'li', count: '*' }],
+			},
 		},
 	),
 	defineModel(
@@ -292,11 +306,11 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'groupings#the-menu-element',
 		{
-			required: [
-				{ tag: 'li', count: '*' },
-				{ tag: 'script', count: '*' },
-				{ tag: 'template', count: '*' },
-			],
+			childModel: {
+				closed: true,
+				note: 'Zero or more li and script-supporting elements.',
+				segments: [{ kind: 'tag', tag: 'li', count: '*' }],
+			},
 		},
 	),
 	defineModel(
@@ -324,16 +338,28 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'groupings#the-dl-element',
 		{
-			constraints: [
-				{
-					kind: 'group-order',
-					sequence: [
-						{ tag: 'dt', count: '+' },
-						{ tag: 'dd', count: '+' },
-					],
-					note: 'Either: zero or more groups of one or more dt followed by one or more dd, optionally intermixed with script-supporting elements. Or: one or more div elements, optionally intermixed with script-supporting elements.',
-				},
-			],
+			childModel: {
+				closed: true,
+				note: 'Either: Zero or more groups each consisting of one or more dt elements followed by one or more dd elements, optionally intermixed with script-supporting elements. Or: One or more div elements, optionally intermixed with script-supporting elements.',
+				segments: [
+					{
+						kind: 'choice',
+						options: [
+							[
+								{
+									kind: 'group',
+									count: '*',
+									segments: [
+										{ kind: 'tag', tag: 'dt', count: '+' },
+										{ kind: 'tag', tag: 'dd', count: '+' },
+									],
+								},
+							],
+							[{ kind: 'tag', tag: 'div', count: '+' }],
+						],
+					},
+				],
+			},
 		},
 	),
 	defineModel(
@@ -359,13 +385,26 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'groupings#the-figure-element',
 		{
-			constraints: [
-				{
-					kind: 'child-order',
-					child: 'figcaption',
-					note: 'Either one figcaption followed by flow content, or flow content followed by one figcaption, or flow content.',
-				},
-			],
+			childModel: {
+				closed: false,
+				note: 'Either: one figcaption element followed by flow content. Or: flow content followed by one figcaption element. Or: flow content.',
+				segments: [
+					{
+						kind: 'choice',
+						options: [
+							[
+								{ kind: 'tag', tag: 'figcaption', count: '1' },
+								{ kind: 'category', category: 'flow' },
+							],
+							[
+								{ kind: 'category', category: 'flow' },
+								{ kind: 'tag', tag: 'figcaption', count: '1' },
+							],
+							[{ kind: 'category', category: 'flow' }],
+						],
+					},
+				],
+			},
 		},
 	),
 	defineModel(
@@ -517,17 +556,50 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'texts#the-ruby-element',
 		{
-			constraints: [
-				{
-					kind: 'group-order',
-					sequence: [
-						{ tag: 'rp', count: '?' },
-						{ tag: 'rt', count: '+' },
-						{ tag: 'rp', count: '?' },
-					],
-					note: 'Phrasing content interleaved with rt elements, each optionally bracketed by rp elements (see prose).',
-				},
-			],
+			// The card's **Content model** BOX is verbatim "See prose." —
+			// `note` mirrors the box (the parity gate binds it). The detailed
+			// ordered model the box defers to is faithfully transcribed into
+			// `segments` below from the ruby card's prose body ("The content
+			// model of ruby elements consists of one or more of the following
+			// sequences: …").
+			childModel: {
+				closed: true,
+				note: 'See prose.',
+				segments: [
+					{
+						kind: 'group',
+						count: '+',
+						segments: [
+							// base: phrasing content (no ruby) — or a single nested ruby.
+							{
+								kind: 'choice',
+								options: [
+									[{ kind: 'category', category: 'phrasing' }],
+									[{ kind: 'tag', tag: 'ruby', count: '1' }],
+								],
+							},
+							// annotation: rt+ — or rp ( rt rp )+.
+							{
+								kind: 'choice',
+								options: [
+									[{ kind: 'tag', tag: 'rt', count: '+' }],
+									[
+										{ kind: 'tag', tag: 'rp', count: '1' },
+										{
+											kind: 'group',
+											count: '+',
+											segments: [
+												{ kind: 'tag', tag: 'rt', count: '1' },
+												{ kind: 'tag', tag: 'rp', count: '1' },
+											],
+										},
+									],
+								],
+							},
+						],
+					},
+				],
+			},
 		},
 	),
 	defineModel('rt', [], 'As a child of a ruby element.', 'children', 'texts#the-rt-element', {
@@ -721,20 +793,14 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'embeddeds#the-picture-element',
 		{
-			required: [
-				{ tag: 'source', count: '*' },
-				{ tag: 'img', count: '1' },
-			],
-			constraints: [
-				{
-					kind: 'child-order',
-					sequence: [
-						{ tag: 'source', count: '*' },
-						{ tag: 'img', count: '1' },
-					],
-					note: 'Zero or more source elements, followed by one img element, optionally intermixed with script-supporting elements.',
-				},
-			],
+			childModel: {
+				closed: true,
+				note: 'Zero or more source elements, followed by one img element, optionally intermixed with script-supporting elements.',
+				segments: [
+					{ kind: 'tag', tag: 'source', count: '*' },
+					{ kind: 'tag', tag: 'img', count: '1' },
+				],
+			},
 		},
 	),
 	defineModel(
@@ -796,17 +862,16 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'transparent',
 		'embeddeds#the-video-element',
 		{
+			// No `childModel`: the corpus **Content model** box is the
+			// transparent model ("...then transparent, but with no media
+			// element descendants") -- resolved at WALK time over live
+			// ancestors (Phase 2), never a static ordered model; the
+			// prose-bound model classification is `transparent`, and the
+			// parity gate forbids a childModel on a non-`children` box. The
+			// source/track placement is enforced CHILD-side by their
+			// `parent-restricted` constraints (naming `video`/`audio`); the
+			// no-nested-media restriction by `forbidden`.
 			forbidden: ['audio', 'video'],
-			constraints: [
-				{
-					kind: 'child-order',
-					sequence: [
-						{ tag: 'source', count: '*' },
-						{ tag: 'track', count: '*' },
-					],
-					note: 'Zero or more source (if no src) then zero or more track, then transparent, but with no media element descendants.',
-				},
-			],
 		},
 	),
 	defineModel(
@@ -816,17 +881,12 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'transparent',
 		'embeddeds#the-audio-element',
 		{
+			// See <video>: the corpus box is the transparent model
+			// (walk-time resolved), so no `childModel` (the parity gate
+			// forbids one on a non-`children` box). source/track placement
+			// is the child-side `parent-restricted` concern; no-nested-media
+			// is `forbidden`.
 			forbidden: ['audio', 'video'],
-			constraints: [
-				{
-					kind: 'child-order',
-					sequence: [
-						{ tag: 'source', count: '*' },
-						{ tag: 'track', count: '*' },
-					],
-					note: 'Zero or more source (if no src) then zero or more track, then transparent, but with no media element descendants.',
-				},
-			],
 		},
 	),
 	defineModel(
@@ -907,26 +967,23 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'tables#the-table-element',
 		{
-			required: [
-				{ tag: 'caption', count: '?' },
-				{ tag: 'colgroup', count: '*' },
-				{ tag: 'thead', count: '?' },
-				{ tag: 'tbody', count: '*' },
-				{ tag: 'tfoot', count: '?' },
-			],
-			constraints: [
-				{
-					kind: 'child-order',
-					sequence: [
-						{ tag: 'caption', count: '?' },
-						{ tag: 'colgroup', count: '*' },
-						{ tag: 'thead', count: '?' },
-						{ tag: 'tbody', count: '*' },
-						{ tag: 'tfoot', count: '?' },
-					],
-					note: 'Optionally a caption, then zero or more colgroup, then optionally a thead, then zero or more tbody or one or more tr, then optionally a tfoot, optionally intermixed with script-supporting elements.',
-				},
-			],
+			childModel: {
+				closed: true,
+				note: 'Optionally a caption, followed by zero or more colgroup elements, followed optionally by a thead, followed by either zero or more tbody elements or one or more tr elements, followed optionally by a tfoot, optionally intermixed with script-supporting elements.',
+				segments: [
+					{ kind: 'tag', tag: 'caption', count: '?' },
+					{ kind: 'tag', tag: 'colgroup', count: '*' },
+					{ kind: 'tag', tag: 'thead', count: '?' },
+					{
+						kind: 'choice',
+						options: [
+							[{ kind: 'tag', tag: 'tbody', count: '*' }],
+							[{ kind: 'tag', tag: 'tr', count: '+' }],
+						],
+					},
+					{ kind: 'tag', tag: 'tfoot', count: '?' },
+				],
+			},
 		},
 	),
 	defineModel(
@@ -954,10 +1011,11 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'tables#the-colgroup-element',
 		{
-			required: [
-				{ tag: 'col', count: '*' },
-				{ tag: 'template', count: '*' },
-			],
+			childModel: {
+				closed: true,
+				note: 'If span is present: nothing. If absent: zero or more col and template elements.',
+				segments: [{ kind: 'tag', tag: 'col', count: '*' }],
+			},
 			constraints: [
 				{
 					kind: 'parent-restricted',
@@ -990,11 +1048,11 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'tables#the-tbody-element',
 		{
-			required: [
-				{ tag: 'tr', count: '*' },
-				{ tag: 'script', count: '*' },
-				{ tag: 'template', count: '*' },
-			],
+			childModel: {
+				closed: true,
+				note: 'Zero or more tr and script-supporting elements.',
+				segments: [{ kind: 'tag', tag: 'tr', count: '*' }],
+			},
 			constraints: [
 				{
 					kind: 'parent-restricted',
@@ -1011,11 +1069,11 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'tables#the-thead-element',
 		{
-			required: [
-				{ tag: 'tr', count: '*' },
-				{ tag: 'script', count: '*' },
-				{ tag: 'template', count: '*' },
-			],
+			childModel: {
+				closed: true,
+				note: 'Zero or more tr and script-supporting elements.',
+				segments: [{ kind: 'tag', tag: 'tr', count: '*' }],
+			},
 			constraints: [
 				{
 					kind: 'parent-restricted',
@@ -1032,11 +1090,11 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'tables#the-tfoot-element',
 		{
-			required: [
-				{ tag: 'tr', count: '*' },
-				{ tag: 'script', count: '*' },
-				{ tag: 'template', count: '*' },
-			],
+			childModel: {
+				closed: true,
+				note: 'Zero or more tr and script-supporting elements.',
+				segments: [{ kind: 'tag', tag: 'tr', count: '*' }],
+			},
 			constraints: [
 				{
 					kind: 'parent-restricted',
@@ -1053,12 +1111,29 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'tables#the-tr-element',
 		{
-			required: [
-				{ tag: 'td', count: '*' },
-				{ tag: 'th', count: '*' },
-				{ tag: 'script', count: '*' },
-				{ tag: 'template', count: '*' },
-			],
+			// "Zero or more td, th, and script-supporting elements" — td/th in
+			// ANY order: a repeating group of (one td OR one th), so
+			// <tr><th><td><th>… is faithfully clean (a flat [td*, th*]
+			// sequence would wrongly forbid th-before-td).
+			childModel: {
+				closed: true,
+				note: 'Zero or more td, th, and script-supporting elements.',
+				segments: [
+					{
+						kind: 'group',
+						count: '*',
+						segments: [
+							{
+								kind: 'choice',
+								options: [
+									[{ kind: 'tag', tag: 'td', count: '1' }],
+									[{ kind: 'tag', tag: 'th', count: '1' }],
+								],
+							},
+						],
+					},
+				],
+			},
 			constraints: [
 				{
 					kind: 'parent-restricted',
@@ -1153,12 +1228,28 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'forms#the-select-element',
 		{
-			required: [
-				{ tag: 'button', count: '?' },
-				{ tag: 'option', count: '*' },
-				{ tag: 'optgroup', count: '*' },
-				{ tag: 'hr', count: '*' },
-			],
+			childModel: {
+				closed: true,
+				note: 'Zero or one button elements if the select is a drop-down box, followed by zero or more select element inner content elements (option, optgroup, hr, and script-supporting elements; plus div/noscript per the inner-content category).',
+				segments: [
+					{ kind: 'tag', tag: 'button', count: '?' },
+					{
+						kind: 'group',
+						count: '*',
+						segments: [
+							{
+								kind: 'choice',
+								options: [
+									[{ kind: 'tag', tag: 'option', count: '1' }],
+									[{ kind: 'tag', tag: 'optgroup', count: '1' }],
+									[{ kind: 'tag', tag: 'hr', count: '1' }],
+									[{ kind: 'tag', tag: 'div', count: '1' }],
+								],
+							},
+						],
+					},
+				],
+			},
 		},
 	),
 	defineModel(
@@ -1167,6 +1258,27 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'Where phrasing content is expected.',
 		'children',
 		'forms#the-datalist-element',
+		{
+			// Corpus: "Either: phrasing content; or: zero or more option and
+			// script-supporting elements." A choice — the phrasing arm is an
+			// OPEN category arm (closed:false). The schema's single ordered
+			// encoding (no `permits`: the box is not a bare leading category,
+			// so the parity gate keeps `permits` empty and `childModel` is the
+			// one source — disjointness preserved).
+			childModel: {
+				closed: false,
+				note: 'Either: phrasing content; or: zero or more option and script-supporting elements.',
+				segments: [
+					{
+						kind: 'choice',
+						options: [
+							[{ kind: 'category', category: 'phrasing' }],
+							[{ kind: 'tag', tag: 'option', count: '*' }],
+						],
+					},
+				],
+			},
+		},
 	),
 	defineModel(
 		'optgroup',
@@ -1175,10 +1287,26 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'forms#the-optgroup-element',
 		{
-			required: [
-				{ tag: 'legend', count: '?' },
-				{ tag: 'option', count: '*' },
-			],
+			childModel: {
+				closed: true,
+				note: 'Zero or one legend element, followed by zero or more optgroup element inner content elements (option and script-supporting elements; plus div/noscript).',
+				segments: [
+					{ kind: 'tag', tag: 'legend', count: '?' },
+					{
+						kind: 'group',
+						count: '*',
+						segments: [
+							{
+								kind: 'choice',
+								options: [
+									[{ kind: 'tag', tag: 'option', count: '1' }],
+									[{ kind: 'tag', tag: 'div', count: '1' }],
+								],
+							},
+						],
+					},
+				],
+			},
 			constraints: [
 				{
 					kind: 'parent-restricted',
@@ -1251,13 +1379,18 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'forms#the-fieldset-element',
 		{
-			constraints: [
-				{
-					kind: 'single-first-child',
-					child: 'legend',
-					note: 'Optionally a legend element, followed by flow content.',
-				},
-			],
+			// PREFIX model: optional legend, THEN open flow content. The
+			// child-side "legend must be first child of fieldset" placement
+			// lives on the <legend> entry's single-first-child constraint —
+			// the parent's ordered model is here, ONCE.
+			childModel: {
+				closed: false,
+				note: 'Optionally a legend element, followed by flow content.',
+				segments: [
+					{ kind: 'tag', tag: 'legend', count: '?' },
+					{ kind: 'category', category: 'flow' },
+				],
+			},
 		},
 	),
 	defineModel(
@@ -1289,14 +1422,20 @@ export const contentModel: readonly ContentModelEntry[] = [
 		'children',
 		'interactives#the-details-element',
 		{
-			required: [{ tag: 'summary', count: '1' }],
-			constraints: [
-				{
-					kind: 'single-first-child',
-					child: 'summary',
-					note: 'One summary element followed by flow content.',
-				},
-			],
+			// PREFIX model: exactly one summary, THEN open flow content. The
+			// child-side "summary must be first child of details" placement
+			// lives on the <summary> entry's single-first-child constraint —
+			// the parent's ordered model is here, ONCE (so a valid
+			// <details><summary>…</summary><p>…</p></details> no longer
+			// double-false-positives, §1).
+			childModel: {
+				closed: false,
+				note: 'One summary element followed by flow content.',
+				segments: [
+					{ kind: 'tag', tag: 'summary', count: '1' },
+					{ kind: 'category', category: 'flow' },
+				],
+			},
 			attributes: [{ attribute: 'name' }, { attribute: 'open' }],
 		},
 	),
@@ -1471,9 +1610,39 @@ const categoryShape = literalShape(
 
 const modelShape = literalShape('transparent', 'void', 'text', 'nothing', 'children')
 
-const sequenceSegmentShape = objectShape({
-	tag: stringShape({ min: 1 }),
-	count: literalShape('?', '*', '+', '1'),
+const countShape = literalShape('?', '*', '+', '1')
+
+// `ChildSegment` is a recursive discriminated union (a `group` segment
+// nests `ChildSegment`s; a `choice` nests segment lists). `lazyShape` is the
+// ONLY sanctioned recursion boundary (shapers.md) — the `group`/`choice`
+// arms defer to it so the contract compiles (acyclic via the lazy terminal)
+// while staying fully recursive at guard time. The union is tagged by
+// `kind`, mirroring the {@link ChildSegment} type one-for-one.
+const childSegmentShape: ContractShape = unionShape(
+	objectShape({
+		kind: literalShape('tag'),
+		tag: stringShape({ min: 1 }),
+		count: countShape,
+	}),
+	objectShape({
+		kind: literalShape('category'),
+		category: categoryShape,
+	}),
+	objectShape({
+		kind: literalShape('group'),
+		count: countShape,
+		segments: arrayShape(lazyShape((): ContractShape => childSegmentShape)),
+	}),
+	objectShape({
+		kind: literalShape('choice'),
+		options: arrayShape(arrayShape(lazyShape((): ContractShape => childSegmentShape))),
+	}),
+)
+
+const childModelShape = objectShape({
+	segments: arrayShape(childSegmentShape),
+	closed: booleanShape(),
+	note: stringShape({ min: 1 }),
 })
 
 const constraintShape = objectShape({
@@ -1484,13 +1653,10 @@ const constraintShape = objectShape({
 		'single-first-child',
 		'edge-child',
 		'parent-restricted',
-		'group-order',
-		'child-order',
 	),
 	parents: optionalShape(arrayShape(stringShape({ min: 1 }))),
 	child: optionalShape(stringShape({ min: 1 })),
 	edge: optionalShape(literalShape('first', 'last', 'first-or-last')),
-	sequence: optionalShape(arrayShape(sequenceSegmentShape)),
 	note: optionalShape(stringShape({ min: 1 })),
 })
 
@@ -1513,7 +1679,7 @@ export const contentModelContract = compileContract(
 		categories: arrayShape(categoryShape),
 		context: stringShape({ min: 1 }),
 		model: modelShape,
-		required: arrayShape(sequenceSegmentShape),
+		childModel: optionalShape(childModelShape),
 		permits: optionalShape(arrayShape(categoryShape)),
 		forbidden: arrayShape(stringShape({ min: 1 })),
 		constraints: arrayShape(constraintShape),

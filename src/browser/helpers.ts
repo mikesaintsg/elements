@@ -42,11 +42,11 @@
 import type {
 	Alignment,
 	AttributeRule,
+	ChildModel,
 	ContentCategory,
 	ContentConstraint,
 	ContentModel,
 	ContentModelEntry,
-	ContentSequenceSegment,
 	DragDropDetail,
 	DragOverDetail,
 	DragStartDetail,
@@ -275,7 +275,7 @@ export function defineModel(
 	model: ContentModel,
 	cite: string,
 	options: {
-		readonly required?: readonly ContentSequenceSegment[]
+		readonly childModel?: ChildModel
 		readonly permits?: readonly ContentCategory[]
 		readonly forbidden?: readonly (ContentCategory | string)[]
 		readonly constraints?: readonly ContentConstraint[]
@@ -287,11 +287,13 @@ export function defineModel(
 		categories,
 		context,
 		model,
-		required: options.required ?? [],
-		// `permits` is the lone optional (`?:`) entry field — mirror the
-		// compiled contract's `optionalShape(permits)` by leaving it
-		// `undefined` when omitted (not an empty array), so a non-bare-category
-		// parent carries no `permits` rather than a noise `[]`.
+		// `childModel` and `permits` are the optional (`?:`) entry fields —
+		// mirror the compiled contract's `optionalShape(...)` by leaving each
+		// `undefined` when omitted (not an empty placeholder), so an
+		// ordered-model parent carries `childModel`, a bare-category parent
+		// carries `permits`, and never both (the disjointness the rules and
+		// the parity gate depend on).
+		...(options.childModel === undefined ? {} : { childModel: options.childModel }),
 		...(options.permits === undefined ? {} : { permits: options.permits }),
 		forbidden: options.forbidden ?? [],
 		constraints: options.constraints ?? [],
@@ -392,6 +394,69 @@ export function flatChildren(element: Element): readonly Element[] {
 		return toArray(element.content.children)
 	}
 	return toArray(element.children)
+}
+
+/**
+ * The element's flat-tree CONTENT parent — the inverse of
+ * {@link flatChildren} with shadow `<slot>` conduits collapsed (the spec's
+ * flattened tree elides the slot: a distributed node's content-model parent
+ * is the element that hosts the slot, not the `<slot>` element). The rule
+ * layer reads THIS instead of light-DOM `parentElement` so a rule's notion
+ * of "the parent" agrees with the flat tree `Walker.walk()` traverses (the
+ * §3 slotted-`<li>` false-positive root cause — `<li>` distributed into a
+ * shadow `<ul>` resolves its parent to that `<ul>`, never the light host).
+ *
+ * Resolution, mirroring {@link flatChildren} exactly:
+ * - a slotted element (`assignedSlot !== null`) ⇒ the slot's OWN flat
+ *   parent (the slot is collapsed — recurse so nested slots elide too);
+ * - a child of a shadow root ⇒ the shadow host element;
+ * - otherwise the ordinary `parentElement` (a node inside an inert
+ *   `<template>` content fragment has no light parent ⇒ `null`, which is
+ *   the correct "no content-model parent" answer — `<template>` content is
+ *   a separate inert document fragment, not a content-model context).
+ *
+ * @param element - The element whose flat content parent to resolve.
+ * @returns The flat-tree content parent, or `null` at a flat-tree root.
+ */
+export function flatParent(element: Element): Element | null {
+	const slot = element instanceof HTMLElement ? element.assignedSlot : null
+	if (slot !== null && slot !== undefined) return flatParent(slot)
+	const parentNode = element.parentNode
+	if (parentNode instanceof ShadowRoot) return parentNode.host
+	return element.parentElement
+}
+
+/**
+ * Lazily yield every flat-tree element descendant of `element`, depth-first
+ * in document order — the rule layer's descendant traversal, the EXACT
+ * element set `Walker.walk()` visits (driven by {@link flatChildren}: slot
+ * distribution, shadow roots, `<template>` content), so a rule's
+ * forbidden-descendant / self-nest scan never diverges from the walk spine
+ * (the §3 light-vs-flat-tree mismatch root cause). Foreign-content subtrees
+ * are NOT pruned here — that pruning is the Walker's per-node concern;
+ * descendant scans operate on the parent's own subtree, which never starts
+ * inside a foreign host (the Walker never recurses past `<svg>`/`<math>`).
+ *
+ * @param element - The element whose flat descendants to enumerate.
+ * @returns A lazy depth-first generator over the flat-tree descendants.
+ */
+export function* flatDescendants(element: Element): Generator<Element, void, unknown> {
+	const stack: Element[] = []
+	const children = flatChildren(element)
+	for (let index = children.length - 1; index >= 0; index -= 1) {
+		const child = children[index]
+		if (child !== undefined) stack.push(child)
+	}
+	while (stack.length > 0) {
+		const current = stack.pop()
+		if (current === undefined) break
+		yield current
+		const next = flatChildren(current)
+		for (let index = next.length - 1; index >= 0; index -= 1) {
+			const child = next[index]
+			if (child !== undefined) stack.push(child)
+		}
+	}
 }
 
 /**

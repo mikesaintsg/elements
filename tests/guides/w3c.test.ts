@@ -41,6 +41,8 @@ import {
 	isTransparent,
 	isVoid,
 	modelOf,
+	type ChildModel,
+	type ChildSegment,
 	type ContentCategory,
 	type ContentModel,
 } from '@elements/browser'
@@ -63,6 +65,11 @@ interface ParsedCard {
 	readonly context: string
 	readonly model: string
 	readonly omission: string
+	/** The full card block (heading → next card) — for models the
+	 *  **Content model** box defers to its prose body ("See prose.",
+	 *  e.g. `ruby`): the ordered model's child tags are backticked in the
+	 *  body, so the `childModel`-segment binding validates against this. */
+	readonly block: string
 }
 
 // A card heading: `## N.N The ... element(s)` or `### N.N.N The ... element(s)`,
@@ -124,7 +131,7 @@ function parseCards(): readonly ParsedCard[] {
 			// skipped here (no false card).
 			if (categories === '' && context === '' && model === '') continue
 			for (const tag of current.tags) {
-				out.push({ tag, file, categories, context, model, omission })
+				out.push({ tag, file, categories, context, model, omission, block })
 			}
 		}
 	}
@@ -351,6 +358,242 @@ describe('w3c corpus — card Content model bare-category ⇄ schema `permits`',
 			expect(schema).toEqual(prose)
 		})
 	}
+})
+
+// ── card Content model ⇄ schema `childModel` (bidirectional, biting) ────────
+//
+// The ONE source of an element's ordered child model is `entry.childModel`
+// (types.ts). This binding makes the corpus prose its authority in BOTH
+// directions and PERTURBATION-fails:
+//
+//   SCHEMA → PROSE  every concrete `tag` segment of a `childModel` is a
+//                    backticked child tag IN the card's **Content model**
+//                    prose; every `category` arm's category word is named
+//                    in the prose; `closed` agrees with the prose shape;
+//                    `note` is EXACTLY the card's Content-model box text.
+//   PROSE → SCHEMA  every card whose **Content model** box is an ORDERED /
+//                    PREFIX / GROUP model (it names specific child tags in
+//                    a "Zero or more X" / "One X followed by" / "Optionally
+//                    a X" / "Either: … Or:" shape) HAS a `childModel`; a
+//                    bare-category / transparent / void / text / nothing
+//                    box does NOT.
+//
+// A schema edit that drops a real segment tag, flips `closed`, invents a
+// tag the prose never names, or omits/adds a `childModel` against the prose
+// shape fails this gate — exactly the §1/§2 drift that slipped past twice.
+
+// Every concrete tag a ChildModel admits (recursing group/choice) + the
+// set of content-category words its `category` arms name.
+interface ModelShape {
+	readonly tags: ReadonlySet<string>
+	readonly categories: ReadonlySet<string>
+}
+
+function shapeOfChildModel(model: ChildModel): ModelShape {
+	const tags = new Set<string>()
+	const categories = new Set<string>()
+	const walk = (segments: readonly ChildSegment[]): void => {
+		for (const seg of segments) {
+			if (seg.kind === 'tag') tags.add(seg.tag)
+			else if (seg.kind === 'category') {
+				categories.add(seg.category)
+			} else if (seg.kind === 'group') walk(seg.segments)
+			else for (const option of seg.options) walk(option)
+		}
+	}
+	walk(model.segments)
+	return { tags, categories }
+}
+
+// The corpus signal for a NON-`closed` (prefix) model: the **Content
+// model** box carries an OPEN trailing content category — a bare "flow
+// content" / "phrasing content" arm that absorbs unbounded content
+// (`details` "…followed by flow content.", `fieldset`, `figure`'s flow
+// arms, `datalist`'s "Either: phrasing content; …"). A box with no such
+// bare flow/phrasing arm is a fully-bounded EXHAUSTIVE model (`closed:
+// true` — `table`/`picture`/`ul`/`hgroup`/`dl`/`select`/`colgroup`/`tr`/
+// `html`; `ruby`'s "See prose." box has no open arm, its interior phrasing
+// is the bounded base of a required group, not an open tail). "metadata
+// content" / "embedded content" never denote an open child arm here, so
+// only flow/phrasing match. This is the explicit `closed` discriminator
+// the rules switch on — corpus-bound so a flip fails the gate.
+function proseHasOpenCategoryArm(card: ParsedCard): boolean {
+	return /\b(flow|phrasing) content\b/i.test(card.model)
+}
+
+// The backticked child tags a card's **Content model** prose names. The box
+// always backticks element names (`source`, `img`, `dt`, `tr`, …); this is
+// the corpus's own machine-readable signal — no hand-kept per-tag list.
+function bacticktedTags(prose: string): ReadonlySet<string> {
+	return new Set([...prose.matchAll(/`([a-z][a-z0-9]*)`/g)].map((m) => m[1] ?? ''))
+}
+
+// Does the card's **Content model** mandate a `childModel` (an ordered /
+// prefix / group / choice model that names specific child elements)? This
+// COMPOSES the already-prose-bound signals — `modelFromProse` (bound by the
+// "card Content model matches the schema entry" test) and `permitsFromProse`
+// (bound by the bare-category ⇄ `permits` test) — so it stays prose-
+// authoritative and bites without re-deriving a fragile prose regex:
+//
+//   ordered ⟺ the prose model shape is `children`           (element
+//               children, not transparent/void/text/nothing)
+//             AND it is NOT a bare-category parent           (permits empty)
+//             AND it is NOT a documented multi-arm box       (the existing
+//               `MULTI_ARM_MODEL` set — `time`/`option`/`span`/`link`/`meta`
+//               whose dominant arm is text/category, never an ordered model)
+//             AND the card names ≥1 backticked child element  (a real `tag`
+//               segment exists; a "See prose." box names them in its body).
+//
+// A schema edit dropping a `childModel` on a children/non-bare/non-multiarm
+// parent, or inventing one on a bare/transparent/text parent, flips this
+// and fails the presence diff (the §1/§2 under-encoding the gate guards).
+// The spec's ordered-content-model lead-ins (the exact opening phrases of
+// every **Content model** box that constrains child order/cardinality —
+// "Zero or more X, followed by …", "Optionally a X …", "One X followed by
+// …", "Either: … Or: …", `html`'s "A head element followed by …",
+// `colgroup`'s "If span is present: nothing. If absent: zero or more …",
+// and the `ruby` "See prose." deferral). A children-model box that does
+// NOT open this way is a free / category / cardinality-note model
+// (`head`'s "metadata content …", `legend`/`summary`'s "Phrasing content,
+// optionally intermixed …", `math`/`svg`'s "Defined by the … specification
+// …") and carries NO childModel — same anchored-prose discipline
+// `modelFromProse`/`permitsFromProse` use, no per-tag allowlist.
+const ORDERED_LEADIN =
+	/^(zero or more|zero or one|one or more|one\b|optionally a|optionally one|either:|a head element|if span is present|see prose\.)/i
+
+function proseMandatesChildModel(card: ParsedCard): boolean {
+	if (modelFromProse(card) !== 'children') return false
+	if (permitsFromProse(card).size > 0) return false
+	if (MULTI_ARM_MODEL.has(card.tag)) return false
+	// Strip backticks before the lead-in test — the box italicizes element
+	// names ("A `head` element followed by …", "If `span` is present …"),
+	// markup that must not defeat the anchored phrase match.
+	if (!ORDERED_LEADIN.test(card.model.replace(/`/g, '').trim())) return false
+	return bacticktedTags(card.block).size > 0
+}
+
+describe('w3c corpus — card Content model ⇄ schema `childModel` (bidirectional)', () => {
+	for (const card of parsed) {
+		const entry = SCHEMA_BY_TAG.get(card.tag)
+		if (!entry) continue
+
+		it(`<${card.tag}> childModel presence agrees with the card prose shape`, () => {
+			// PROSE → SCHEMA and SCHEMA → PROSE in one diff: a card whose
+			// prose mandates an ordered model MUST have a childModel; one
+			// that does not MUST NOT. Equality fails if the schema omits a
+			// childModel on an ordered parent (the §1/§2 under-encoding) or
+			// invents one on a free / bare-category / text parent.
+			expect(entry.childModel !== undefined).toBe(proseMandatesChildModel(card))
+		})
+
+		const childModel = entry.childModel
+		if (childModel === undefined) continue
+
+		// NOTE on directionality: this gate binds SCHEMA → PROSE (no
+		// invented tag/category), PRESENCE (both ways), `closed`, and `note`
+		// == box. Segment COMPLETENESS (no OMITTED required segment) is
+		// guarded BEHAVIORALLY by the full-registry ordered/prefix suite
+		// (tests/src/browser/inspector/registry.test.ts): a `childModel`
+		// missing a required segment makes a valid fixture (e.g. a canonical
+		// `<table>`) emit a false finding, or a single-violation fixture not
+		// emit exactly one — that suite bites on omission where a strict
+		// reverse prose-equality cannot (the corpus backticks attributes and
+		// self-references irregularly, e.g. `colgroup`'s "If `span` is
+		// present"). Structure here, behavior there — the established
+		// parity-vs-unit division.
+		it(`<${card.tag}> childModel segments are all supported by the card prose`, () => {
+			const shape = shapeOfChildModel(childModel)
+			// Validate against the full card BLOCK: most boxes name the child
+			// tags inline, but a "See prose." box (`ruby`) defers to its body
+			// where the ordered model's `rt`/`rp` are backticked. The block
+			// is the card's own content-model prose either way — no per-tag
+			// allowlist.
+			const proseTags = bacticktedTags(card.block)
+			// Every concrete segment tag MUST be a backticked child tag the
+			// card prose names (a schema-invented tag fails). The headings
+			// choice (`h1`–`h6`) is the corpus's combined "`h1`, `h2`, `h3`,
+			// `h4`, `h5`, or `h6`" — all six are backticked in the hgroup box.
+			const unsupported = [...shape.tags].filter((tag) => !proseTags.has(tag))
+			expect(unsupported).toEqual([])
+			// An open `category` arm ⇒ the card prose names that content
+			// category (the trailing "flow content" / "phrasing content").
+			for (const category of shape.categories) {
+				expect(card.block.toLowerCase()).toContain(`${category} content`)
+			}
+			// `closed` discriminator integrity, corpus-bound: a box with an
+			// OPEN trailing flow/phrasing arm is a structural PREFIX
+			// (`closed: false`); a box with none is EXHAUSTIVE
+			// (`closed: true`). A `closed` flip in the schema flips this
+			// equality and fails the gate.
+			expect(childModel.closed).toBe(!proseHasOpenCategoryArm(card))
+		})
+
+		it(`<${card.tag}> childModel.note is the verbatim card Content-model prose`, () => {
+			// The message wording's single source is the corpus box itself —
+			// `note` MUST equal the card's **Content model** text. Markdown
+			// MARKUP (backticks, `*emphasis*`) is normalized away on BOTH
+			// sides (it is presentation, not content — the corpus italicizes
+			// the "select element inner content elements" term); the WORDS
+			// must be identical, so a wording drift in either still fails.
+			const norm = (s: string): string => s.replace(/[`*]/g, '').replace(/\s+/g, ' ').trim()
+			expect(norm(childModel.note)).toBe(norm(card.model))
+		})
+	}
+})
+
+// ── disjointness invariant guard (§4 — parity-gated, no silent drift) ───────
+//
+// The content/structure rules depend on `permits` and `childModel` being
+// MUTUALLY EXCLUSIVE on every entry (a category parent carries `permits`; an
+// ordered/prefix parent carries `childModel`; never both) — that is what
+// keeps `content/category` and the `childModel`-driven rules from ever
+// double-firing. An UNGUARDED invariant is exactly how §1/§2 slipped past
+// two reviews; this asserts it FAILS LOUDLY on any future schema edit that
+// violates it.
+
+describe('schema.ts — content-model disjointness invariant (guarded)', () => {
+	it('no entry carries BOTH `permits` and `childModel`', () => {
+		const violations = contentModel
+			.filter((e) => (e.permits?.length ?? 0) > 0 && e.childModel !== undefined)
+			.map((e) => e.tag)
+		expect(violations).toEqual([])
+	})
+
+	it('a `childModel` parent has no `permits`, and vice versa (both directions)', () => {
+		// Both directions as ONE unconditional diff (the whole-set
+		// diagnostic idiom — empty ⇒ invariant holds). LEFT: childModel
+		// entries that wrongly also carry permits. RIGHT: permits entries
+		// that wrongly also carry childModel.
+		const childModelWithPermits = contentModel
+			.filter((e) => e.childModel !== undefined && (e.permits?.length ?? 0) > 0)
+			.map((e) => e.tag)
+		const permitsWithChildModel = contentModel
+			.filter((e) => (e.permits?.length ?? 0) > 0 && e.childModel !== undefined)
+			.map((e) => e.tag)
+		expect({ childModelWithPermits, permitsWithChildModel }).toEqual({
+			childModelWithPermits: [],
+			permitsWithChildModel: [],
+		})
+	})
+
+	it('the registry still guards against the removed overloaded `required` field', () => {
+		// `required` and the `child-order`/`group-order` constraint kinds are
+		// GONE — the ordered model lives only in `childModel`. Assert no
+		// entry resurrects them (a regression to the §1/§2 root cause) — as
+		// two unconditional whole-set diffs.
+		const withRequiredField = contentModel.filter((e) => 'required' in e).map((e) => e.tag)
+		// Compare via a widened string so the removed-kind literals do not
+		// have to exist in `ContentConstraintKind` (they are GONE by design;
+		// this asserts no entry resurrects them as raw data).
+		const orderKinds: readonly string[] = ['child-order', 'group-order']
+		const withOrderKind = contentModel
+			.filter((e) => e.constraints.some((c) => orderKinds.includes(c.kind)))
+			.map((e) => e.tag)
+		expect({ withRequiredField, withOrderKind }).toEqual({
+			withRequiredField: [],
+			withOrderKind: [],
+		})
+	})
 })
 
 describe('w3c corpus — void set is exactly the corpus-stated void elements', () => {

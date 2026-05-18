@@ -1,8 +1,11 @@
 import type {
+	ChildModel,
+	ChildSegment,
 	ContentCategory,
 	ContentConstraint,
+	ContentConstraintKind,
+	ContentCount,
 	ContentModelEntry,
-	ContentSequenceSegment,
 	Finding,
 	FindingDraft,
 	RuleContext,
@@ -10,9 +13,21 @@ import type {
 	RuleSubject,
 } from '../types.js'
 import { andOf, literalOf, notOf, whereOf } from '@elements/core'
-import { effectiveCategories, matchesTag, nodePath } from '../helpers.js'
-import { CATEGORY_MEMBERS, describeElement, isTransparent, isVoid } from '../schema.js'
-import { getChildren } from '../traversals.js'
+import {
+	effectiveCategories,
+	flatChildren,
+	flatDescendants,
+	flatParent,
+	matchesTag,
+	nodePath,
+} from '../helpers.js'
+import {
+	CATEGORY_MEMBERS,
+	describeElement,
+	isKnownElement,
+	isTransparent,
+	isVoid,
+} from '../schema.js'
 
 // ============================================================================
 //  Inspector rule engine + the four schema-data-driven rule families.
@@ -24,18 +39,39 @@ import { getChildren } from '../traversals.js'
 //  `schema` entries for it and its parent), so each rule reads as a guard
 //  composition, never ad-hoc boolean spaghetti. The families iterate the
 //  Phase-1 `schema` DATA (`describeElement` → `model` / `categories` /
-//  `required` / `forbidden` / `constraints`, `CATEGORY_MEMBERS`, `isVoid`)
+//  `childModel` / `forbidden` / `constraints`, `CATEGORY_MEMBERS`, `isVoid`)
 //  and the Phase-2 `RuleContext` (resolved `model` / `categories` /
 //  `parents` / `restrictions`) — they are GENERIC, never per-element
 //  hand-code. `evaluate` is TOTAL (AGENTS §13): a non-match yields `null`,
 //  a guard non-match yields `false`, nothing throws.
 //
+//  Flat-tree contract (§3): every child / descendant read goes through the
+//  `flatChildren` / `flatDescendants` adapters — the SAME flat tree
+//  `Walker.walk()` visits (slot distribution, shadow roots, `<template>`
+//  content). The rule layer NEVER reads `element.children` /
+//  `querySelectorAll` raw, so the walk spine and the rules can never
+//  disagree about which elements exist (the slotted-`<li>` false positive).
+//
+//  Single-source ordered model (§1/§2): an element's ordered child content
+//  model lives ONCE in `entry.childModel` (see types.ts) — never duplicated
+//  across `required` + a constraint. The content / context families consume
+//  ONLY that datum and partition the parents disjointly:
+//    - context/parent-model — fires on a CHILD whose tag the parent's
+//      `childModel` can NEVER admit anywhere (a pure membership miss).
+//    - content/required     — fires on the PARENT when every child tag IS
+//      admissible but the ordered model (order / cardinality / required
+//      prefix) is not satisfied.
+//  These predicates are mutually exclusive by construction, so one
+//  content-model violation yields exactly one finding (no content↔structure
+//  double-report — `structure/child-order` is GONE; `childModel` is the sole
+//  order owner).
+//
 //  Families (Phase 3 part 1):
-//    - context      element sits where the parent's constrained child list
-//                    forbids it (dom.html#content-models).
-//    - content      required child missing / mis-ordered / wrong
-//                    cardinality; forbidden descendant present; child not an
-//                    allowed category (dom.html#kinds-of-content).
+//    - context      child tag the parent's `childModel` can never admit
+//                    (dom.html#content-models).
+//    - content      parent's `childModel` order/cardinality unsatisfied;
+//                    forbidden descendant present; child not an allowed
+//                    category (dom.html#kinds-of-content).
 //    - transparent  interactive / `a` / `tabindex` descendant of `<a>` (etc.)
 //                    and nested media — driven by `RuleContext.restrictions`
 //                    (dom.html#transparent-content-models).
@@ -65,7 +101,14 @@ const isSubject = (value: unknown): value is RuleSubject =>
 
 function readSubject(element: Element, context: RuleContext): RuleSubject {
 	const tag = element.tagName.toLowerCase()
-	const parent = context.parents[0] ?? null
+	// The FLAT-tree content parent (slot conduits collapsed) — NOT
+	// `context.parents[0]` (light-DOM `getAncestors()`). This is the §3
+	// fix: the rule's notion of "the parent" must agree with the flat tree
+	// `Walker.walk()` traverses, so a slotted child resolves to its shadow
+	// host's containing element, never the light host (the slotted-`<li>`
+	// false positive). `context.parents` stays the Walker's light ancestor
+	// chain for the transparent family's accumulated restrictions.
+	const parent = flatParent(element)
 	return {
 		element,
 		context,
@@ -114,19 +157,11 @@ function descendantHits(forbidden: ContentCategory | string, descendantTag: stri
 	return isContentCategory(forbidden) && tagInCategory(descendantTag, forbidden)
 }
 
-// The set of tags a constrained-child sequence permits (its segment tags
-// plus the always-intermixable script-supporting elements).
-function sequenceTags(sequence: readonly ContentSequenceSegment[]): ReadonlySet<string> {
-	const tags = new Set<string>(['script', 'template'])
-	for (const segment of sequence) tags.add(segment.tag)
-	return tags
-}
-
 // Find the first constraint of a kind on an entry (constraints are encoded
 // as data so the structure family stays generic per `kind`).
 function constraintOf(
 	entry: ContentModelEntry | null,
-	kind: ContentConstraint['kind'],
+	kind: ContentConstraintKind,
 ): ContentConstraint | null {
 	if (entry === null) return null
 	for (const constraint of entry.constraints) {
@@ -163,72 +198,227 @@ function citeOf(entry: ContentModelEntry | null, fallback: string): string {
 	return entry?.cite ?? fallback
 }
 
-// ── Cardinality ─────────────────────────────────────────────────────────────
+// ── Child-model engine ──────────────────────────────────────────────────────
 //
-// A `ContentSequenceSegment.count` ('?' '*' '+' '1') as a numeric bound the
-// content family checks an observed child count against, generically.
+// The ONE consumer of `entry.childModel` (types.ts `ChildModel` /
+// `ChildSegment`). Generic over EVERY ordered/prefix/group/choice model in
+// the registry — never table-specific or picture-specific code. Two pure
+// answers per parent:
+//
+//   - permittedTags(model)  the closed set of tags the model can EVER admit
+//                            (every `tag`/`group`/`choice` segment's tags,
+//                            plus script-supporting). A `category` arm makes
+//                            the set OPEN (any category-matching child) —
+//                            signalled by `null`.
+//   - matchSegments(...)    does the ordered child run satisfy the segment
+//                            list (cardinality + order, script-supporting
+//                            freely intermixed, `category` arm absorbing any
+//                            run of category-matching children)?
+//
+// `context/parent-model` reads `permittedTags`; `content/required` reads
+// `matchSegments`. They never overlap (membership-miss vs. order-miss).
 
-function withinCount(count: ContentSequenceSegment['count'], observed: number): boolean {
+function childTag(child: Element): string {
+	return child.tagName.toLowerCase()
+}
+
+// True when `child` is in `category` by its EFFECTIVE (transparent-resolved)
+// categories — the same resolution `RuleContext.categories` is built from, so
+// a category arm absorbs exactly the children the spec's content category
+// admits. A transparent child resolves through its ancestors; a structural
+// child (empty categories — `td`/`li`/…) never matches a category arm (its
+// placement is the structure family's concern, keeping the families
+// disjoint).
+function childInCategory(child: Element, category: ContentCategory): boolean {
+	return effectiveCategories(child).includes(category)
+}
+
+// True when any segment in the (recursive) list is an OPEN content-category
+// arm — the model then admits any category-matching child, so a closed-tag
+// membership check cannot apply. Recurses through `group` / `choice`.
+function hasOpenArm(segments: readonly ChildSegment[]): boolean {
+	for (const segment of segments) {
+		if (segment.kind === 'category') return true
+		if (segment.kind === 'group' && hasOpenArm(segment.segments)) return true
+		if (segment.kind === 'choice' && segment.options.some((o) => hasOpenArm(o))) return true
+	}
+	return false
+}
+
+// Collect every concrete tag a (recursive) segment list can admit.
+function collectTags(segments: readonly ChildSegment[], into: Set<string>): void {
+	for (const segment of segments) {
+		if (segment.kind === 'tag') into.add(segment.tag)
+		else if (segment.kind === 'group') collectTags(segment.segments, into)
+		else if (segment.kind === 'choice') {
+			for (const option of segment.options) collectTags(option, into)
+		}
+	}
+}
+
+// The closed tag set a `ChildModel` admits, or `null` when the model has an
+// open `category` arm (any category-matching child is admissible — a
+// membership check cannot reject, so `context/parent-model` must defer to
+// `content/required`). Script-supporting is always in the set.
+function permittedTags(model: ChildModel): ReadonlySet<string> | null {
+	if (hasOpenArm(model.segments)) return null
+	const tags = new Set<string>(['script', 'template'])
+	collectTags(model.segments, tags)
+	return tags
+}
+
+function withinCount(count: ContentCount, observed: number): boolean {
 	if (count === '?') return observed <= 1
 	if (count === '*') return true
 	if (count === '+') return observed >= 1
 	return observed === 1
 }
 
-function expectedCount(count: ContentSequenceSegment['count']): string {
-	if (count === '?') return 'zero or one'
-	if (count === '*') return 'zero or more'
-	if (count === '+') return 'one or more'
-	return 'exactly one'
+// NB: the per-segment cardinality-to-prose formatter the old `required`-era
+// rule used is GONE — the `Finding.expected` message's single source is now
+// the verbatim corpus **Content model** prose (`ChildModel.note`, via
+// `describeModel`), so a hand-rolled re-statement would be a second wording
+// source (the very over­load this refactor removed). Cardinality is decided
+// numerically by `withinCount`; the human wording comes from the corpus.
+
+// Try to consume a contiguous run of `children` starting at `start` that
+// satisfies `segments` in order. Returns the cursor AFTER the matched run, or
+// `null` when the run does not satisfy the segments. Script-supporting
+// elements are skippable anywhere ("optionally intermixed with
+// script-supporting elements"). Pure + total — generic over the recursive
+// `ChildSegment` union (tag / category / group / choice).
+function matchSegments(
+	children: readonly Element[],
+	start: number,
+	segments: readonly ChildSegment[],
+): number | null {
+	let cursor = start
+	const skipScript = (): void => {
+		while (cursor < children.length) {
+			const c = children[cursor]
+			if (c === undefined || !isScriptSupporting(childTag(c))) break
+			cursor += 1
+		}
+	}
+	for (const segment of segments) {
+		skipScript()
+		if (segment.kind === 'tag') {
+			let run = 0
+			while (cursor < children.length) {
+				const c = children[cursor]
+				if (c === undefined || childTag(c) !== segment.tag) break
+				run += 1
+				cursor += 1
+				skipScript()
+			}
+			if (!withinCount(segment.count, run)) return null
+		} else if (segment.kind === 'category') {
+			while (cursor < children.length) {
+				const c = children[cursor]
+				if (c === undefined) break
+				if (isScriptSupporting(childTag(c))) {
+					cursor += 1
+					continue
+				}
+				if (!childInCategory(c, segment.category)) break
+				cursor += 1
+			}
+		} else if (segment.kind === 'group') {
+			let groups = 0
+			for (;;) {
+				const next = matchSegments(children, cursor, segment.segments)
+				if (next === null || next === cursor) break
+				cursor = next
+				groups += 1
+			}
+			if (!withinCount(segment.count, groups)) return null
+		} else {
+			let matched: number | null = null
+			for (const option of segment.options) {
+				const next = matchSegments(children, cursor, option)
+				if (next !== null && (matched === null || next > matched)) matched = next
+			}
+			if (matched === null) return null
+			cursor = matched
+		}
+	}
+	skipScript()
+	return cursor
 }
 
-// Does the element's ordered element-children match the constrained sequence
-// (each segment's run, in order, with script-supporting freely intermixed)?
-// Generic over ANY `child-order` / `required` sequence — never table-specific
-// or picture-specific code.
-function sequenceSatisfied(
-	children: readonly Element[],
-	sequence: readonly ContentSequenceSegment[],
-): boolean {
-	const permitted = sequenceTags(sequence)
-	for (const child of children) {
-		if (!permitted.has(child.tagName.toLowerCase())) return false
-	}
-	let cursor = 0
-	for (const segment of sequence) {
-		let run = 0
-		while (cursor < children.length && children[cursor]?.tagName.toLowerCase() === segment.tag) {
-			run += 1
-			cursor += 1
-		}
-		// Skip script-supporting elements interleaved between segments.
-		while (
-			cursor < children.length &&
-			isScriptSupporting(children[cursor]?.tagName.toLowerCase())
-		) {
-			cursor += 1
-		}
-		if (!withinCount(segment.count, run)) return false
-	}
-	return cursor === children.length
+// Does the parent's flat-tree element children satisfy its whole ordered
+// `ChildModel`? A `closed` model must consume EVERY child (no trailing
+// content outside the segments); a non-`closed` (prefix) model only requires
+// the structural prefix segments to match — the trailing open `category` arm
+// (already a segment) absorbs the rest, and any leftover beyond a fully
+// consumed prefix is governed elsewhere (transparent resolution, etc.).
+function childModelSatisfied(children: readonly Element[], model: ChildModel): boolean {
+	const end = matchSegments(children, 0, model.segments)
+	if (end === null) return false
+	if (model.closed) return end === children.length
+	return true
+}
+
+// Does the parent's `childModel` make `tag` a REQUIRED leading segment —
+// the first tag-bearing segment, with a mandatory count (`'1'`/`'+'`)? When
+// it does, an out-of-place / missing `tag` makes the whole model unsatisfied
+// so `content/required` (parent-keyed) is the SINGLE reporter and the
+// child-keyed `single-first-child` rule must DEFER (no §1/§2 double-report,
+// e.g. `<details><p><summary>`). When `tag` is only an OPTIONAL leading
+// segment (`'?'`, e.g. `legend` in `fieldset`, `caption` in `table`), the
+// permissive prefix model CANNOT detect a late occurrence — `content/
+// required` stays silent, so `single-first-child` is the sole reporter and
+// must NOT defer. This is the disjoint-source partition (structural, not a
+// per-rule special-case): exactly one rule owns each violation.
+function modelRequiresLeading(model: ChildModel, tag: string): boolean {
+	const first = model.segments[0]
+	if (first === undefined) return false
+	if (first.kind === 'tag') return first.tag === tag && (first.count === '1' || first.count === '+')
+	return false
+}
+
+// Human-readable expectation, derived from the model's verbatim prose
+// (`note`) — the corpus is the single source of the message wording.
+function describeModel(model: ChildModel): string {
+	return model.note
+}
+
+// ── Cardinality / sequence reporting helpers (kept for the message body) ────
+
+function childrenSummary(children: readonly Element[]): string {
+	return children.map((c) => `<${childTag(c)}>`).join(', ') || '(no element children)'
 }
 
 // ============================================================================
-//  Family: context — element sits where its parent forbids it.
+//  Family: context — child tag the parent's ordered model can never admit.
 //
-//  Schema-driven: the parent entry's `required` sequence IS its constrained
-//  child list. If the parent constrains its children (non-empty `required`)
-//  and the element's tag is not one of the permitted segment tags (nor
-//  script-supporting), the element is misplaced. Free flow/phrasing parents
-//  carry an empty `required`, so this never false-positives on ordinary
-//  content. Cite: the parent's corpus anchor (the constraint is the
-//  parent's), dom.html#content-models.
+//  Schema-driven: the parent entry's `childModel` IS its constrained child
+//  list. If the parent carries a `childModel` whose `permittedTags` is a
+//  CLOSED set (no open `category` arm) and the element's tag is not in it
+//  (nor script-supporting), the element can NEVER legally sit here — a
+//  membership miss, reported on the CHILD. A parent with no `childModel`, or
+//  one with an open category arm, is NOT this family's concern (the
+//  `content/category` / `content/required` families own those) — disjoint by
+//  construction, one finding per violation. Cite: the parent's corpus anchor
+//  (the constraint is the parent's), dom.html#content-models.
 // ============================================================================
 
 const isMisplacedChild = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	const parentEntry = subject.parentEntry
-	if (parentEntry === null || parentEntry.required.length === 0) return false
-	return !sequenceTags(parentEntry.required).has(subject.tag)
+	if (parentEntry?.childModel === undefined) return false
+	// Only a KNOWN content element can be a content-model membership
+	// violation. A non-schema tag — a custom element, or a flat-tree
+	// conduit the Walker descends THROUGH (`<slot>` / `<template>`) — is
+	// not placeable by the content vocabulary, so the spec cannot reject it
+	// by tag membership (and `<slot>` is the distribution point, not the
+	// distributed content — its assigned elements are walked separately,
+	// §3). Defer rather than false-positive on the conduit.
+	if (!isKnownElement(subject.tag)) return false
+	const allowed = permittedTags(parentEntry.childModel)
+	// Open category arm ⇒ a membership check cannot reject; defer to
+	// content/category + content/required (no double report).
+	if (allowed === null) return false
+	return !allowed.has(subject.tag)
 })
 
 const contextRule: RuleInterface = {
@@ -240,14 +430,15 @@ const contextRule: RuleInterface = {
 		if (!isMisplacedChild(subject)) return null
 		const parentEntry = subject.parentEntry
 		const parentTag = subject.parent?.tagName.toLowerCase() ?? '(root)'
+		const allowed =
+			parentEntry?.childModel === undefined ? null : permittedTags(parentEntry.childModel)
 		return buildFinding({
 			rule: 'context/parent-model',
 			severity: 'error',
 			element,
 			cite: citeOf(parentEntry, 'dom#content-models'),
 			message: `<${subject.tag}> is not allowed as a child of <${parentTag}> — the parent's content model constrains its children.`,
-			expected:
-				parentEntry === null ? undefined : [...sequenceTags(parentEntry.required)].join(', '),
+			expected: allowed === null ? undefined : [...allowed].sort().join(', '),
 			actual: subject.tag,
 		})
 	},
@@ -257,33 +448,40 @@ const contextRule: RuleInterface = {
 //  Family: content — the element's OWN child list / descendants are wrong.
 //
 //  Three generic concerns, each schema-data-driven:
-//    1. required/order — `entry.required` is a constrained sequence the
-//       element's element-children must satisfy (cardinality + order, with
-//       script-supporting intermixed). Drives `ul`/`ol` (li+), `table`,
-//       `picture`, `select`, `hgroup`, etc. from DATA.
-//    2. forbidden descendant — any descendant whose tag/category is named
-//       in `entry.forbidden` (e.g. `dt` forbids heading/sectioning,
+//    1. required/order — `entry.childModel` is the element's ordered child
+//       content model (closed sequence OR structural prefix + open category
+//       arm). The element-children must satisfy it (cardinality + order,
+//       script-supporting intermixed). Drives `ul`/`ol` (li*), `table`,
+//       `picture`, `select`, `hgroup`, `dl`, `ruby`, `details`, `fieldset`,
+//       `figure`, … from ONE datum. Fires ONLY when every child tag is
+//       admissible (else the membership miss is `context/parent-model`'s) —
+//       so a violation yields exactly one finding.
+//    2. forbidden descendant — any flat-tree descendant whose tag/category
+//       is named in `entry.forbidden` (e.g. `dt` forbids heading/sectioning,
 //       `header` forbids header/footer).
 //    3. category — a bare-category parent (`entry.permits` non-empty: the
 //       corpus-derived "Flow content." / "Phrasing content." child set)
 //       whose non-transparent element child's resolved categories do not
-//       intersect `permits` (e.g. `<p><div>` — flow inside phrasing). This
-//       is the general category class the `required`-driven `context`
-//       family structurally CANNOT see (those parents have no `required`),
-//       so the two are disjoint by construction — one finding per
+//       intersect `permits` (e.g. `<p><div>` — flow inside phrasing). The
+//       general category class neither `context` nor the `childModel`-driven
+//       rule can see (those parents carry `permits`, never `childModel`) —
+//       disjoint by construction (parity-guarded), one finding per
 //       violation.
 //  Cite: the element's own corpus anchor, dom.html#kinds-of-content (the
 //  category sub-rule cites dom.html#content-models — the model boundary it
 //  enforces).
 // ============================================================================
 
+// The first flat-tree descendant whose tag/category is forbidden — a SINGLE
+// flat traversal (find-first idiom, mirroring `Walker.walk()`'s flat tree so
+// the rule layer never diverges from the walk spine, §3/§9).
 function firstForbiddenDescendant(
 	element: Element,
 	forbidden: readonly (ContentCategory | string)[],
 ): Element | null {
 	if (forbidden.length === 0) return null
-	for (const descendant of element.querySelectorAll('*')) {
-		const descendantTag = descendant.tagName.toLowerCase()
+	for (const descendant of flatDescendants(element)) {
+		const descendantTag = childTag(descendant)
 		for (const token of forbidden) {
 			if (descendantHits(token, descendantTag)) return descendant
 		}
@@ -291,10 +489,25 @@ function firstForbiddenDescendant(
 	return null
 }
 
-const hasConstrainedChildren = whereOf(
-	isSubject,
-	(subject: RuleSubject): boolean => subject.entry !== null && subject.entry.required.length > 0,
-)
+// Fires only when the parent carries a `childModel` AND every flat child tag
+// is admissible by it (a non-admissible tag is `context/parent-model`'s — the
+// two predicates are mutually exclusive, so the registry produces exactly one
+// finding for one violation).
+const violatesChildModel = whereOf(isSubject, (subject: RuleSubject): boolean => {
+	const entry = subject.entry
+	if (entry?.childModel === undefined) return false
+	const children = flatChildren(subject.element)
+	const allowed = permittedTags(entry.childModel)
+	if (allowed !== null) {
+		// Closed-tag model: a non-admissible child is the context family's
+		// membership miss, not an order miss — defer (one finding per
+		// violation).
+		for (const child of children) {
+			if (!allowed.has(childTag(child))) return false
+		}
+	}
+	return !childModelSatisfied(children, entry.childModel)
+})
 
 const contentRequiredRule: RuleInterface = {
 	id: 'content/required',
@@ -302,24 +515,18 @@ const contentRequiredRule: RuleInterface = {
 	lens: 'structure',
 	evaluate: (element, context): Finding | null => {
 		const subject = readSubject(element, context)
-		if (!hasConstrainedChildren(subject)) return null
+		if (!violatesChildModel(subject)) return null
 		const entry = subject.entry
-		if (entry === null) return null
-		const children = getChildren(element)
-		if (sequenceSatisfied(children, entry.required)) return null
-		const expected = entry.required
-			.map((segment) => `${expectedCount(segment.count)} <${segment.tag}>`)
-			.join(', then ')
+		if (entry?.childModel === undefined) return null
+		const children = flatChildren(element)
 		return buildFinding({
 			rule: 'content/required',
 			severity: 'error',
 			element,
 			cite: citeOf(entry, 'dom#kinds-of-content'),
-			message: `<${subject.tag}> requires a specific child sequence that its children do not satisfy.`,
-			expected,
-			actual:
-				children.map((child) => `<${child.tagName.toLowerCase()}>`).join(', ') ||
-				'(no element children)',
+			message: `<${subject.tag}> requires a specific child content model that its children do not satisfy.`,
+			expected: describeModel(entry.childModel),
+			actual: childrenSummary(children),
 		})
 	},
 }
@@ -340,7 +547,7 @@ const contentForbiddenRule: RuleInterface = {
 		if (entry === null) return null
 		const offender = firstForbiddenDescendant(element, entry.forbidden)
 		if (offender === null) return null
-		const offenderTag = offender.tagName.toLowerCase()
+		const offenderTag = childTag(offender)
 		return buildFinding({
 			rule: 'content/forbidden',
 			severity: 'error',
@@ -353,26 +560,25 @@ const contentForbiddenRule: RuleInterface = {
 	},
 }
 
-// The first ELEMENT child whose resolved effective content categories
-// (transparent-resolved via the Phase-2 `effectiveCategories` adapter — the
-// SAME resolution `RuleContext.categories` is built from) are NON-EMPTY and
-// share NOTHING with the parent's corpus-derived `permits` set. Transparent
-// children are skipped: their content model IS their parent's (resolved at
-// walk time), so they are permitted wherever their resolved content is —
-// the `transparent` family owns their side-channel, not this one. A child
-// with EMPTY effective categories (a structural element — `td`/`li`/`dd`/
-// `summary`/… all carry `categories: []`) is likewise skipped: its
+// The first FLAT-tree element child whose resolved effective content
+// categories (transparent-resolved via the Phase-2 `effectiveCategories`
+// adapter — the SAME resolution `RuleContext.categories` is built from) are
+// NON-EMPTY and share NOTHING with the parent's corpus-derived `permits`
+// set. Transparent children are skipped: their content model IS their
+// parent's (resolved at walk time), so they are permitted wherever their
+// resolved content is — the `transparent` family owns their side-channel.
+// A child with EMPTY effective categories (a structural element — `td`/`li`/
+// `dd`/`summary`/… all carry `categories: []`) is likewise skipped: its
 // placement is governed by the `structure` family's `parent-restricted` /
-// `edge-child` / `single-first-child` constraints, never a category match
-// — this is exactly the disjoint boundary that keeps `<div><td>` a single
-// `structure/parent-restricted` finding, not a double report.
+// `edge-child` / `single-first-child` constraints — the disjoint boundary
+// that keeps `<div><td>` a single `structure/parent-restricted` finding.
 function firstMiscategorizedChild(
 	element: Element,
 	permits: readonly ContentCategory[],
 ): Element | null {
 	if (permits.length === 0) return null
-	for (const child of getChildren(element)) {
-		if (isTransparent(child.tagName.toLowerCase())) continue
+	for (const child of flatChildren(element)) {
+		if (isTransparent(childTag(child))) continue
 		const categories = effectiveCategories(child)
 		if (categories.length === 0) continue
 		if (!categories.some((category) => permits.includes(category))) return child
@@ -381,10 +587,12 @@ function firstMiscategorizedChild(
 }
 
 // Engages ONLY for a bare-category parent (`entry.permits` non-empty). The
-// corpus guarantees such a parent has no `required` sequence (its **Content
-// model** box is a bare "Flow/Phrasing content.", never "Zero or more …"),
-// so this never overlaps `context/parent-model` (fires on `required`) — the
-// two families partition the parents disjointly with no shared coverage.
+// corpus guarantees such a parent has no `childModel` (its **Content model**
+// box is a bare "Flow/Phrasing content.", never an ordered model) — the
+// disjointness is parity-GUARDED (w3c.test.ts: no entry carries both
+// `permits` and `childModel`), so this never overlaps `context/parent-model`
+// or `content/required` (those fire on `childModel`). One finding per
+// violation, structurally.
 const permitsCategoryChildren = whereOf(
 	isSubject,
 	(subject: RuleSubject): boolean =>
@@ -403,7 +611,7 @@ const contentCategoryRule: RuleInterface = {
 		const permits = entry.permits ?? []
 		const offender = firstMiscategorizedChild(element, permits)
 		if (offender === null) return null
-		const offenderTag = offender.tagName.toLowerCase()
+		const offenderTag = childTag(offender)
 		return buildFinding({
 			rule: 'content/category',
 			severity: 'error',
@@ -431,21 +639,16 @@ const contentCategoryRule: RuleInterface = {
 //  the RESTRICTING ANCESTOR's card (the `<a>` card literally states "no
 //  interactive content descendant, no `a` descendant, no `tabindex`
 //  descendant"; a media card states "no media element descendants") — NOT
-//  the offender's card and NOT a hoisted module string const (§4.6/§5; same
-//  anti-pattern as the Phase-2 `FOREIGN_TAGS` impl-file const dropped in
-//  d02a480). `restrictingCite` resolves it through the SAME `citeOf(...)`
-//  path every other family uses, off the nearest ancestor whose schema
-//  entry carries the constraint that imposes the tripped restriction
-//  (schema-data-driven — never a second hand-kept restricting-tag list, the
-//  Walker already owns that knowledge), with the §3.2.5.1 anchor as the
-//  inline fallback for a detached/uncarded chain.
+//  the offender's card and NOT a hoisted module string const (§4.6/§5).
+//  `restrictingCite` resolves it through the SAME `citeOf(...)` path every
+//  other family uses, off the nearest ancestor whose schema entry carries
+//  the constraint that imposes the tripped restriction (schema-data-driven),
+//  with the §3.2.5.1 anchor as the inline fallback for a detached chain.
 // ============================================================================
 
 // The schema constraint kind (or media `forbidden`) that, carried on an
 // ANCESTOR's entry, imposes each transparent restriction. Derived from the
-// parity-gated registry, so it stays in lock-step with the cards (the `a` /
-// `button` / `canvas` entries' constraints, the media entries' `forbidden`)
-// rather than re-stating the Walker's restricting-tag knowledge.
+// parity-gated registry, so it stays in lock-step with the cards.
 function imposesRestriction(entry: ContentModelEntry, restriction: string): boolean {
 	if (restriction === 'media') {
 		return entry.forbidden.includes('audio') || entry.forbidden.includes('video')
@@ -455,12 +658,9 @@ function imposesRestriction(entry: ContentModelEntry, restriction: string): bool
 		// element's self-nest ban (`<a>`); `no-self-nest` alone is shared by
 		// non-transparent `dfn`/`form`/`progress`/`meter`, so gate on the
 		// transparent model too — the corpus marks only `a` both transparent
-		// AND self-nest-banned, so this resolves to the `<a>` card with no
-		// per-tag list.
+		// AND self-nest-banned, so this resolves to the `<a>` card.
 		return entry.transparent && entry.constraints.some((c) => c.kind === 'no-self-nest')
 	}
-	// `no-interactive-descendant` / `no-tabindex-descendant` are carried ONLY
-	// by the restrictor cards (`a` / `button` / `canvas`) — unambiguous.
 	const kind = restriction === 'tabindex' ? 'no-tabindex-descendant' : 'no-interactive-descendant'
 	return entry.constraints.some((constraint) => constraint.kind === kind)
 }
@@ -479,8 +679,6 @@ function restrictingCite(subject: RuleSubject, restriction: string): string {
 	return 'dom#transparent-content-models'
 }
 
-// node is interactive content (its effective categories include
-// `interactive` — schema-resolved by the Walker via effectiveCategories).
 const isInteractiveNode = whereOf(isSubject, (subject: RuleSubject): boolean =>
 	subject.context.categories.includes('interactive'),
 )
@@ -594,8 +792,13 @@ const transparentMediaRule: RuleInterface = {
 //  the constraint DATA on the element's entry (and, for the "is this the
 //  required first/edge child of its parent" direction, the constraint on the
 //  CHILD's entry naming its `parents`). Plus `void-has-children`: an element
-//  `isVoid()` reports per schema must have no element children. Cite: the
-//  schema entry's `cite` / the constraint's `note` carries the spec clause.
+//  `isVoid()` per schema must have no element children. Cite: the schema
+//  entry's `cite` / the constraint's `note` carries the spec clause.
+//
+//  The pure-ordering kinds (`child-order` / `group-order`) are GONE — the
+//  ordered child model lives once in `entry.childModel`, consumed solely by
+//  the content/context families, so there is no `structure/child-order` rule
+//  to double-report alongside `content/required` (§1/§2 root cause removed).
 // ============================================================================
 
 // `parent-restricted` — the element is only valid inside one of `parents`.
@@ -630,24 +833,35 @@ const structureParentRestrictedRule: RuleInterface = {
 	},
 }
 
-// `single-first-child` — when carried on the CHILD entry naming its
-// `parents`, the element must be the first element child of that parent;
-// when carried on the PARENT entry naming a `child`, that child (if present)
-// must be the unique first child.
+// `single-first-child` — the element must be the unique FIRST element child
+// of one of its constraint's `parents` (the CHILD-keyed placement rule:
+// `summary`→`details`, `legend`→`fieldset`, `caption`→`table`).
+//
+// SINGLE SOURCE / one-finding-per-violation (§1/§2): when the parent's
+// `childModel` makes this child a REQUIRED leading segment (e.g.
+// `summary`(1) in `details`), an out-of-place/missing child already makes
+// the whole model unsatisfied, so `content/required` (parent-keyed) is the
+// sole reporter and this child-keyed rule DEFERS (no content↔structure
+// double-report — the §1 case). When the child is only OPTIONAL in the
+// model (e.g. `legend`(?) in `fieldset`, `caption`(?) in `table`), the
+// permissive prefix model CANNOT see a late occurrence, so this rule is the
+// sole reporter and must NOT defer — disjoint by what each can structurally
+// detect, exactly one rule per violation.
 const violatesSingleFirstChild = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	const own = constraintOf(subject.entry, 'single-first-child')
-	if (own?.parents !== undefined) {
-		const parent = subject.parent
-		if (parent === null || !own.parents.includes(parent.tagName.toLowerCase())) return false
-		return getChildren(parent)[0] !== subject.element
-	}
-	const parentSpec = constraintOf(subject.parentEntry, 'single-first-child')
-	if (parentSpec?.child === undefined) return false
-	// Evaluate on the constrained child only.
-	if (subject.tag !== parentSpec.child) return false
-	const siblings = getChildren(subject.parent ?? subject.element)
-	const occurrences = siblings.filter((s) => s.tagName.toLowerCase() === parentSpec.child)
-	return occurrences.length > 1 || siblings[0]?.tagName.toLowerCase() !== parentSpec.child
+	if (own?.parents === undefined) return false
+	// No parent ⇒ the constraint is not applicable (an explicit
+	// not-applicable, not a misleading "treat self as parent" fallback, #8).
+	if (subject.parent === null) return false
+	if (!own.parents.includes(subject.parent.tagName.toLowerCase())) return false
+	// Defer ONLY when the parent's childModel REQUIRES this child as its
+	// mandatory leading segment (then content/required is the single
+	// source); an optional-leading child stays this rule's concern.
+	const parentModel = subject.parentEntry?.childModel
+	if (parentModel !== undefined && modelRequiresLeading(parentModel, subject.tag)) return false
+	const siblings = flatChildren(subject.parent)
+	const occurrences = siblings.filter((s) => childTag(s) === subject.tag)
+	return occurrences.length > 1 || siblings[0] !== subject.element
 })
 
 const structureSingleFirstChildRule: RuleInterface = {
@@ -657,9 +871,7 @@ const structureSingleFirstChildRule: RuleInterface = {
 	evaluate: (element, context): Finding | null => {
 		const subject = readSubject(element, context)
 		if (!violatesSingleFirstChild(subject)) return null
-		const note =
-			constraintOf(subject.entry, 'single-first-child')?.note ??
-			constraintOf(subject.parentEntry, 'single-first-child')?.note
+		const note = constraintOf(subject.entry, 'single-first-child')?.note
 		return buildFinding({
 			rule: 'structure/single-first-child',
 			severity: 'error',
@@ -671,13 +883,19 @@ const structureSingleFirstChildRule: RuleInterface = {
 }
 
 // `edge-child` — the element must be the first / last / first-or-last child
-// of one of `parents`.
+// of one of `parents`. This is the SOLE reporter of the figcaption-edge
+// position: `figure`'s `childModel` is a permissive `closed:false` flow
+// model (its open flow arm legitimately absorbs arbitrary content around an
+// optional figcaption), so `content/required` cannot decide "figcaption in
+// the MIDDLE" — only this child-keyed edge rule can. No double-report: the
+// two are disjoint by what each can structurally see (the model's flow arm
+// vs. the child's edge position), not by a per-rule special-case.
 const violatesEdgeChild = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	const constraint = constraintOf(subject.entry, 'edge-child')
 	if (constraint?.parents === undefined) return false
 	const parent = subject.parent
 	if (parent === null || !constraint.parents.includes(parent.tagName.toLowerCase())) return false
-	const siblings = getChildren(parent)
+	const siblings = flatChildren(parent)
 	const first = siblings[0] === subject.element
 	const last = siblings[siblings.length - 1] === subject.element
 	if (constraint.edge === 'first') return !first
@@ -705,10 +923,15 @@ const structureEdgeChildRule: RuleInterface = {
 	},
 }
 
-// `no-self-nest` — no descendant of the element's own tag.
+// `no-self-nest` — no flat-tree descendant of the element's own tag (flat
+// traversal so it agrees with the Walker spine, §3 — never a raw
+// `querySelector` over the light tree).
 const violatesNoSelfNest = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	if (constraintOf(subject.entry, 'no-self-nest') === null) return false
-	return subject.element.querySelector(subject.tag) !== null
+	for (const descendant of flatDescendants(subject.element)) {
+		if (childTag(descendant) === subject.tag) return true
+	}
+	return false
 })
 
 const structureNoSelfNestRule: RuleInterface = {
@@ -730,48 +953,6 @@ const structureNoSelfNestRule: RuleInterface = {
 	},
 }
 
-// `group-order` / `child-order` — the element's element-children must
-// satisfy the constraint's ordered sequence (generic over ANY sequence).
-const ORDER_KINDS = literalOf('group-order', 'child-order')
-
-const violatesOrder = whereOf(isSubject, (subject: RuleSubject): boolean => {
-	if (subject.entry === null) return false
-	for (const constraint of subject.entry.constraints) {
-		if (!ORDER_KINDS(constraint.kind)) continue
-		if (constraint.sequence === undefined) continue
-		if (!sequenceSatisfied(getChildren(subject.element), constraint.sequence)) return true
-	}
-	return false
-})
-
-const structureOrderRule: RuleInterface = {
-	id: 'structure/child-order',
-	severity: 'error',
-	lens: 'structure',
-	evaluate: (element, context): Finding | null => {
-		const subject = readSubject(element, context)
-		if (!violatesOrder(subject) || subject.entry === null) return null
-		const ordered = subject.entry.constraints.find(
-			(constraint) => ORDER_KINDS(constraint.kind) && constraint.sequence !== undefined,
-		)
-		const sequence = ordered?.sequence ?? []
-		return buildFinding({
-			rule: 'structure/child-order',
-			severity: 'error',
-			element,
-			cite: citeOf(subject.entry, 'dom#content-models'),
-			message: ordered?.note ?? `<${subject.tag}> children must follow the required order.`,
-			expected: sequence
-				.map((segment) => `${expectedCount(segment.count)} <${segment.tag}>`)
-				.join(', then '),
-			actual:
-				getChildren(element)
-					.map((child) => `<${child.tagName.toLowerCase()}>`)
-					.join(', ') || '(no element children)',
-		})
-	},
-}
-
 // `no-interactive-descendant` / `no-tabindex-descendant` on an entry are the
 // schema mirror of the transparent restrictions the Walker accumulates; the
 // transparent family already reports them via `RuleContext.restrictions`, so
@@ -779,11 +960,11 @@ const structureOrderRule: RuleInterface = {
 // violation — no double report).
 
 // `void-has-children` — an element the schema marks `void` must have no
-// element children (not encoded as a `ContentConstraint`, derived from
-// `isVoid`).
+// flat-tree element children (not encoded as a `ContentConstraint`, derived
+// from `isVoid`; flat read so a slotted/shadow child still counts, §3).
 const violatesVoidHasChildren = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	if (!isVoid(subject.tag)) return false
-	return subject.element.children.length > 0
+	return flatChildren(subject.element).length > 0
 })
 
 const structureVoidRule: RuleInterface = {
@@ -793,6 +974,7 @@ const structureVoidRule: RuleInterface = {
 	evaluate: (element, context): Finding | null => {
 		const subject = readSubject(element, context)
 		if (!violatesVoidHasChildren(subject)) return null
+		const count = flatChildren(element).length
 		return buildFinding({
 			rule: 'structure/void-has-children',
 			severity: 'error',
@@ -800,7 +982,7 @@ const structureVoidRule: RuleInterface = {
 			cite: citeOf(subject.entry, 'dom#content-models'),
 			message: `<${subject.tag}> is a void element and must have no children.`,
 			expected: 'no children',
-			actual: `${subject.element.children.length} element child(ren)`,
+			actual: `${count} element child(ren)`,
 		})
 	},
 }
@@ -851,6 +1033,5 @@ export const rules: readonly RuleInterface[] = [
 	structureSingleFirstChildRule,
 	structureEdgeChildRule,
 	structureNoSelfNestRule,
-	structureOrderRule,
 	structureVoidRule,
 ] as const
