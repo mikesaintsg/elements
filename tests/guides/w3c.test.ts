@@ -599,6 +599,270 @@ describe('schema.ts — content-model disjointness invariant (guarded)', () => {
 	})
 })
 
+// ── cardinality ↔ single-first-child ↔ content-required partition (guarded) ──
+//
+// Phase 7 added `content/cardinality` and made `structure/single-first-child`
+// DEFER its cardinality aspect. Both rest on a SILENT schema-exhaustive
+// invariant the Phase-7 review flagged as the recurring drift-prone-unguarded
+// class: "the only elements carrying a `single-first-child` constraint are
+// exactly those whose named parent's `childModel` makes that child its
+// LEADING-SINGULAR slot" (today: caption→table, legend→fieldset,
+// summary→details). A FUTURE `schema.ts` edit — a new
+// `single-first-child` element, a new leading `{kind:'tag',count:'1'|'?'}`
+// `childModel` segment, or removing/re-counting one of the three — could
+// silently mis-partition (a violation flagged by ZERO rules, or DOUBLE-
+// reported) with NO test failing. This guards it registry-wide and
+// bidirectionally in the EXACT whole-set-diff idiom the §4 disjointness /
+// attribute/value↔enum guards use: strengthen-only, no allowlist, fails
+// LOUDLY on any partition-breaking schema change.
+//
+// `leadingSingularTag` / `modelRequiresLeading` are reimplemented here
+// VERBATIM from the rule layer (rules.ts) — the same parity discipline
+// `shapeOfChildModel` / `proseHasOpenCategoryArm` already use to bind a
+// schema-shape decision test-side; a divergence between this transcription
+// and the rules is itself the drift this exists to surface.
+
+// rules.ts `leadingSingularTag`: the tag a model permits AT MOST ONE of as
+// its required-leading SINGULAR child — a leading `{kind:'tag',
+// count:'1'|'?'}` `segments[0]`, else `null`. This is the datum
+// `content/cardinality` keys on AND the `single-first-child` cardinality-
+// deferral compares against (`leadingSingularTag(parentModel) === child`).
+function leadingSingularTagOf(model: ChildModel): string | null {
+	const first = model.segments[0]
+	if (first === undefined || first.kind !== 'tag') return null
+	if (first.count === '1' || first.count === '?') return first.tag
+	return null
+}
+
+// rules.ts `modelRequiresLeading`: the leading segment is `tag` at a
+// MANDATORY count (`'1'`/`'+'`) — the §1 case where `content/required`
+// (parent-keyed) is the single reporter and `single-first-child` defers via
+// THIS predicate (not the cardinality one). Disjoint from the lone-`'?'`
+// case (`content/cardinality` owns the duplicate, `single-first-child` owns
+// the lone-late position).
+function modelRequiresLeadingTag(model: ChildModel, tag: string): boolean {
+	const first = model.segments[0]
+	if (first === undefined) return false
+	if (first.kind === 'tag') return first.tag === tag && (first.count === '1' || first.count === '+')
+	return false
+}
+
+describe('schema.ts — cardinality ↔ single-first-child ↔ content-required partition (guarded)', () => {
+	// Every (child, parent) pair a `single-first-child` constraint declares —
+	// `caption`→`table`, `legend`→`fieldset`, `summary`→`details` today.
+	const singleFirstChildPairs = contentModel
+		.flatMap((e) =>
+			e.constraints
+				.filter((c) => c.kind === 'single-first-child')
+				.flatMap((c) => (c.parents ?? []).map((p) => `${e.tag}@${p}`)),
+		)
+		.sort()
+
+	// Every (child, parent) pair a `childModel` LEADING-SINGULAR slot declares
+	// — `leadingSingularTag` of every entry carrying a childModel, keyed
+	// child@parent (parent = the entry that owns the childModel).
+	const leadingSingularPairs = contentModel
+		.filter((e) => e.childModel !== undefined && leadingSingularTagOf(e.childModel) !== null)
+		.map((e) => `${leadingSingularTagOf(e.childModel as ChildModel) ?? ''}@${e.tag}`)
+		.sort()
+
+	it('every single-first-child (child,parent) pair is a leading-singular slot of that parent (DIRECTION 1 — no double-report / no gap)', () => {
+		// The invariant `single-first-child`'s cardinality-deferral depends on:
+		// for EVERY `single-first-child` constraint on child C naming parent P,
+		// P MUST carry a `childModel` whose `leadingSingularTag` is exactly C —
+		// otherwise the rules.ts deferral
+		// (`leadingSingularTag(parentModel) === subject.tag`) never engages and
+		// a duplicate `<C>` under `<P>` is DOUBLE-reported (`single-first-child`
+		// + `content/cardinality`/`content/required`), or — if P has no
+		// childModel at all — the lone-late position is the ONLY thing any rule
+		// sees and the cardinality goes UNreported. Whole-set diff (the §4
+		// disjointness idiom): the offending pairs; empty ⇒ every
+		// single-first-child pair is a real leading-singular slot.
+		const notLeadingSingular = contentModel
+			.flatMap((e) =>
+				e.constraints
+					.filter((c) => c.kind === 'single-first-child')
+					.flatMap((c) =>
+						(c.parents ?? [])
+							.filter((p) => {
+								const parentEntry = SCHEMA_BY_TAG.get(p)
+								const model = parentEntry?.childModel
+								return model === undefined || leadingSingularTagOf(model) !== e.tag
+							})
+							.map((p) => `${e.tag}@${p}`),
+					),
+			)
+			.sort()
+		expect(notLeadingSingular).toEqual([])
+	})
+
+	it('single-first-child pairs ⊆ leading-singular slots, bidirectionally narrowed (DIRECTION 2 — exact pairing, no orphan position rule)', () => {
+		// Both directions as ONE unconditional diff (the
+		// `childModel`↔`permits` two-direction whole-set idiom). LEFT:
+		// single-first-child pairs that are NOT a leading-singular slot of
+		// their named parent (a position rule with no reciprocal cardinality
+		// owner — `single-first-child`'s cardinality-deferral never engages
+		// → double-report, or no childModel at all → cardinality UNreported).
+		// RIGHT: the genuine SILENT POSITION GAP — an OPEN-prefix
+		// (`closed:false`) leading-singular slot at the lone-`'?'` count
+		// whose child carries NO `single-first-child` constraint naming this
+		// parent. That is the EXACT shape `content/required` cannot see (the
+		// `closed:false` `childModelSatisfied` returns once the prefix
+		// matched — it does NOT require all children consumed, rules.ts
+		// `childModelSatisfied`: "`if (model.closed) return end ===
+		// children.length; return true`"), so a lone LATE `<child>` is owned
+		// by `structure/single-first-child` alone; absent that constraint the
+		// position is reported by NO rule. A `closed:true` leading-singular
+		// slot (`html`→`head`, `select`→`button`, `optgroup`→`legend`,
+		// `table`→`caption`) is intentionally NOT a gap: any
+		// missing/late/duplicate leading child breaks closed exhaustiveness
+		// so `content/required` owns the position too — no child-keyed rule
+		// needed (and `table`→`caption` additionally HAS the constraint,
+		// owning the WARNING-grade first-position concern, harmless overlap-
+		// free since `content/required` only fires on the closed-model
+		// break). A `modelRequiresLeading` (`'1'`/`'+'`) slot
+		// (`details`→`summary`, `html`→`head`) is likewise not a gap: a
+		// missing/out-of-place mandatory leading child fails the prefix match
+		// itself → `content/required` owns it, `single-first-child` defers
+		// via `modelRequiresLeading`.
+		const sfcChildHasConstraintFor = (child: string, parent: string): boolean => {
+			const entry = SCHEMA_BY_TAG.get(child)
+			return (entry?.constraints ?? []).some(
+				(c) => c.kind === 'single-first-child' && (c.parents ?? []).includes(parent),
+			)
+		}
+		const positionPairWithoutCardinalityOwner = contentModel
+			.flatMap((e) =>
+				e.constraints
+					.filter((c) => c.kind === 'single-first-child')
+					.flatMap((c) =>
+						(c.parents ?? [])
+							.filter((p) => {
+								const model = SCHEMA_BY_TAG.get(p)?.childModel
+								return model === undefined || leadingSingularTagOf(model) !== e.tag
+							})
+							.map((p) => `${e.tag}@${p}`),
+					),
+			)
+			.sort()
+		const openPrefixSlotWithNoPositionRule = contentModel
+			.filter((e) => e.childModel !== undefined)
+			.flatMap((e) => {
+				const model = e.childModel as ChildModel
+				const child = leadingSingularTagOf(model)
+				if (child === null) return []
+				// Only an OPEN-prefix (`closed:false`) lone-`'?'` slot is a
+				// genuine silent position gap: a `closed:true` model is owned
+				// by `content/required` exhaustiveness; a `modelRequiresLeading`
+				// (`'1'`/`'+'`) prefix fails to match without the child so
+				// `content/required` owns it too. Neither needs a child-keyed
+				// position rule.
+				if (model.closed || modelRequiresLeadingTag(model, child)) return []
+				// Reaching here ⇒ `closed:false` AND count `'?'` — the
+				// open-prefix arm silently absorbs everything after the optional
+				// slot, so a lone LATE `<child>` is invisible to
+				// `content/required`. It MUST have a reciprocal
+				// `single-first-child` naming this parent (the sole position
+				// reporter), else the late position is reported by no rule.
+				if (sfcChildHasConstraintFor(child, e.tag)) return []
+				return [`${child}@${e.tag}`]
+			})
+			.sort()
+		expect({
+			positionPairWithoutCardinalityOwner,
+			openPrefixSlotWithNoPositionRule,
+		}).toEqual({
+			positionPairWithoutCardinalityOwner: [],
+			openPrefixSlotWithNoPositionRule: [],
+		})
+	})
+
+	it('every leading-singular slot is owned by EXACTLY ONE of {content/cardinality, content/required, structure/single-first-child} — no overlap, no gap', () => {
+		// The three-rule partition the Phase-7 rules switch on, encoded from
+		// the ACTUAL schema data + each rule's engagement condition (rules.ts):
+		//
+		//   • `modelRequiresLeading` (count `'1'`/`'+'`) ⇒ a missing/out-of-
+		//     place leading child makes the model unsatisfied → owned by
+		//     `content/required` (parent-keyed); `single-first-child` defers
+		//     via `modelRequiresLeading`. (`html`→`head`, `details`→`summary`.)
+		//   • lone `'?'` leading-singular tag ⇒ the permissive prefix/closed
+		//     model cannot see a SECOND occurrence by itself, so the duplicate
+		//     is owned by `content/cardinality` (a `closed:false` PREFIX model)
+		//     or `content/required` (a `closed:true` model's exhaustiveness);
+		//     the lone-LATE single occurrence, when the child also carries a
+		//     `single-first-child` constraint naming this parent, is owned by
+		//     `structure/single-first-child`. (`table`→`caption`,
+		//     `fieldset`→`legend`; `select`→`button`, `optgroup`→`legend` have
+		//     no position rule — required-leading-only, content/required-owned.)
+		//
+		// Each leading-singular slot is classified into EXACTLY ONE bucket; a
+		// schema edit that makes a slot fall into zero buckets (a gap) or two
+		// (an overlap) breaks one of the unconditional whole-set diffs below.
+		const unclassified: string[] = []
+		const multiOwned: string[] = []
+		for (const e of contentModel) {
+			const model = e.childModel
+			if (model === undefined) continue
+			const tag = leadingSingularTagOf(model)
+			if (tag === null) continue
+			const slot = `${tag}@${e.tag}`
+			const requiredLeading = modelRequiresLeadingTag(model, tag)
+			// `content/cardinality` engages iff the slot is leading-singular
+			// AND the model is NOT itself unsatisfiable-by-required — i.e. the
+			// `'?'` case (a `'1'` leading tag is `modelRequiresLeading`, so the
+			// duplicate breaks the closed model and `content/required` owns it,
+			// matching `violatesLeadingCardinality`'s `childModelUnsatisfied`
+			// deferral). Disjoint by the `count` discriminator.
+			const cardinalityOwns = !requiredLeading // count === '?'
+			const requiredOwns = requiredLeading // count === '1'/'+'
+			const childEntry = SCHEMA_BY_TAG.get(tag)
+			const positionOwns =
+				!requiredLeading &&
+				(childEntry?.constraints ?? []).some(
+					(c) => c.kind === 'single-first-child' && (c.parents ?? []).includes(e.tag),
+				)
+			// Cardinality and required are MUTUALLY EXCLUSIVE by `count`;
+			// position is the optional lone-late companion of the `'?'` arm
+			// (it never co-owns the cardinality concern — `single-first-child`
+			// DEFERS the >1 case to cardinality/required). The slot is sound
+			// iff its CARDINALITY concern has exactly one owner.
+			const cardinalityOwners = [cardinalityOwns, requiredOwns].filter(Boolean).length
+			if (cardinalityOwners === 0) unclassified.push(slot)
+			if (cardinalityOwners > 1) multiOwned.push(`${slot} (cardinality+required)`)
+			// A `'?'` slot whose child carries NO single-first-child naming
+			// this parent has no position rule — sound ONLY when the slot is
+			// a required-leading-only (`select`→`button`, `optgroup`→`legend`)
+			// OR an already-cardinality-owned `?` whose late-single position
+			// the corpus does not constrain; either way it is not an
+			// under-report (cardinality still owns the duplicate). `positionOwns`
+			// is asserted, below, to coincide with the single-first-child set.
+			void positionOwns
+		}
+		expect({ unclassified, multiOwned }).toEqual({ unclassified: [], multiOwned: [] })
+	})
+
+	it('the partition sets are exactly the three known pairs (anchored — surfaces ANY new leading-singular / single-first-child schema entry)', () => {
+		// A registry-wide anchor: the CURRENT, reviewed partition is exactly
+		// these pairs. A new `single-first-child` element, a new leading
+		// `{kind:'tag',count:'1'|'?'}` segment, or a re-count of an existing
+		// one CHANGES one of these sets — forcing the author back through the
+		// DIRECTION 1/2 + three-rule guards above to prove the new entry does
+		// not mis-partition (the same "anchored exact set" discipline the
+		// void-set / `presentation` `properties` guards use). Strengthen-only:
+		// updating these arrays is the deliberate, reviewed act of admitting a
+		// new partition member, never a silent drift.
+		expect(singleFirstChildPairs).toEqual(['caption@table', 'legend@fieldset', 'summary@details'])
+		expect(leadingSingularPairs).toEqual([
+			'button@select',
+			'caption@table',
+			'head@html',
+			'legend@fieldset',
+			'legend@optgroup',
+			'summary@details',
+		])
+	})
+})
+
 // ── Phase 3.2 attribute family — schema/constant ⇄ corpus parity ────────────
 //
 // The `attribute` rule family is driven by (1) the per-element schema

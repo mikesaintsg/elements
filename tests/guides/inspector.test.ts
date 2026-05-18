@@ -33,6 +33,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve as resolvePath } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { rules } from '@elements/browser'
 import { readGuide, WORKSPACE_ROOT } from '../setupServer'
 
 const doc = readGuide('inspector')
@@ -129,6 +130,48 @@ describe('inspector — every inspector-barrel export is documented in inspector
 		// public export — do not allowlist it here.
 		it(`${name} is documented in guides/inspector.md`, () => {
 			expect(DOCUMENTED.has(name)).toBe(true)
+		})
+	}
+})
+
+// The `{family}/{concern}` rule ids the guide's `### rules` catalog
+// documents (backticked). The catalog is the ONLY place a `family/concern`
+// id appears backticked in the guide, so this match IS the documented-id
+// set — no duplicated parse of the prose. Mirrors `documentedApis` /
+// `documentedNames`: one anchored regex over the guide source, deduped.
+function documentedRuleIds(source: string): ReadonlySet<string> {
+	const out = new Set<string>()
+	const regex = /`([a-z][a-z-]*\/[a-z][a-z-]*)`/g
+	let m: RegExpExecArray | null
+	while ((m = regex.exec(source)) !== null) if (m[1]) out.add(m[1])
+	return out
+}
+
+const REGISTRY_RULE_IDS = new Set(rules.map((r) => r.id))
+const CATALOG_RULE_IDS = documentedRuleIds(doc)
+
+describe('inspector — the rule catalog is bidirectional parity with the shipped `rules` registry', () => {
+	// DOC → SOURCE: every `{family}/{concern}` id the guide's catalog
+	// backticks resolves to a real id in the shipped frozen `rules`
+	// registry. A renamed / removed / typo'd catalog id fails here (the
+	// guide cannot advertise a rule that does not ship) — the same
+	// real-parity bite as "every documented API resolves to an export".
+	for (const id of CATALOG_RULE_IDS) {
+		it(`catalog id \`${id}\` is a real rule in the \`rules\` registry`, () => {
+			expect(REGISTRY_RULE_IDS.has(id)).toBe(true)
+		})
+	}
+
+	// SOURCE → DOC: every id in the shipped `rules` registry is documented
+	// in the guide's catalog. A new/renamed rule (`content/cardinality` was
+	// just added; future rules) that the guide does not list fails here —
+	// makes the catalog's "every rule the inspector evaluates" claim real,
+	// exactly as the barrel SOURCE → DOC guard makes the surface claim real.
+	// No allowlist: an undocumented shipped rule is fixed by documenting it,
+	// never by exempting it.
+	for (const id of REGISTRY_RULE_IDS) {
+		it(`registry rule \`${id}\` is documented in the inspector.md catalog`, () => {
+			expect(CATALOG_RULE_IDS.has(id)).toBe(true)
 		})
 	}
 })

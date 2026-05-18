@@ -1027,6 +1027,28 @@ child`). Added a generic, schema-data-driven `content/cardinality` rule
   flags. `guides/inspector.md` rule catalog updated for the new id (doc↔
   source parity stays green by accuracy). Phase 7 stays ✅ (genuinely
   complete — gap fixed at source, no gate/parity/inspector-test weakened).
+- ✅ Phase-7 code-quality review (the recurring unguarded-invariant /
+  drift-prone-parallel class) closed with two TEST-ONLY parity guards in
+  the established whole-set-diff / real-parity idiom (no rule/schema/type
+  change — the rule fix is settled-correct): (1) a
+  `cardinality ↔ single-first-child ↔ content-required` partition guard in
+  [`tests/guides/w3c.test.ts`](tests/guides/w3c.test.ts) — bidirectional
+  whole-set diffs (mirroring the §4 content-model disjointness / attribute
+  value↔enum guards) that FAIL LOUDLY if a future `schema.ts` edit (a new
+  `single-first-child` element, a new leading `{kind:'tag',count:'1'|'?'}`
+  `childModel` segment, or a re-count of an existing one) silently
+  mis-partitions — every single-first-child (child,parent) pair must be a
+  leading-singular slot of that parent, every open-prefix lone-`'?'` slot
+  must have a reciprocal position rule, every leading-singular slot is
+  owned by exactly one of {`content/cardinality`, `content/required`,
+  `structure/single-first-child`}, plus an anchored exact-set guard; (2) a
+  bidirectional rule-catalog parity in
+  [`tests/guides/inspector.test.ts`](tests/guides/inspector.test.ts)
+  binding every `{family}/{concern}` id in `guides/inspector.md`'s catalog
+  to the shipped frozen `rules` registry and vice versa (the catalog was
+  already accurate — `content/cardinality` + the 6 `presentation/*` listed
+  — so it is green BY accuracy, no prose change needed). Both perturbation-
+  proven to bite; no existing assertion/gate weakened. Phase 7 stays ✅.
 
 ---
 
