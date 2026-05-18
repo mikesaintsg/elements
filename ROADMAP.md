@@ -247,7 +247,7 @@ five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
 | 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant) | ✅     |
 | 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel    | ✅     |
 | 5     | Presentation lens (computed-style: load-bearing rendering overrides)                | ✅     |
-| 6     | Showcase self-audit suite — run Inspector on every page; remediate our findings     | ⬜     |
+| 6     | Showcase self-audit suite — gate SHIPPED (40/43 green) + `_textarea` fixed; 3-page error inventory ESCALATED for owner triage | ⬜     |
 | 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                  | ⬜     |
 | 8     | Public-API parity hardening + large-tree performance budget                         | ⬜     |
 
@@ -880,32 +880,69 @@ display: flex }`, `TablesPage.vue`, no `role="cell"`). The only
 
 ## Phase 6 — Showcase self-audit suite
 
-- ⬜ `tests/app/browser/semantics.test.ts` — mount every one of the 43
-  showcase pages, run `Inspector.inspect()` over the mounted DOM with both
-  lenses, assert **zero `error`-severity findings** (warnings/advice
-  reported, not failed). Mirrors the `parity.test.ts` / `pages.test.ts`
-  standing-driver pattern; makes the showcase a continuously-verified
-  conformance corpus.
+- ✅ `tests/app/browser/semantics.test.ts` — mounts every one of the 43
+  showcase pages in ISOLATION (`createApp(page).mount(host)` onto a fresh
+  body `<div>`, the `ButtonPage.test.ts` idiom), runs
+  `new Inspector().inspect({ root: host })` over the mounted DOM with both
+  lenses (real framework cascade via `setupBrowser.ts`), one `it()` per
+  page, asserts **zero `error`-severity findings** (`counts.error === 0`);
+  warnings/advice are REPORTED (per-page `advisory` collection + a
+  non-failing `afterAll` `console.warn` summary), NOT failed. Mirrors the
+  `parity.test.ts` / `pages.test.ts` standing-driver pattern (barrel
+  `*Page` identity map, no separate registry); a permanent
+  continuously-verified conformance corpus. SHIPPED & green for 40/43
+  pages; the 3 red pages are the genuine inventory escalated below.
 - ⬜ Triage + remediate every real finding the inspector surfaces on our own
-  markup and our own cascade (the whole point — dogfood it against the
-  framework). Each fix follows the established per-item rhythm
-  (check 0/0 → suite → show → format → ROADMAP → commit/push).
-- ⬜ **`_textarea.scss` `wrap=off` non-conformance (a Phase-5-surfaced
-  genuine finding).** `src/styles/elements/_textarea.scss` (line 54) sets
-  `white-space: pre-wrap` UNCONDITIONALLY; per `renderings.md §15.5.17`
-  (corpus line 1735) a `<textarea wrap="off">` is a presentational hint
-  that MUST compute `white-space: pre`. `presentation/preformatted` keys
-  on `white-space` (the genuine corpus-stated semantic of the `wrap`
-  attribute) and CORRECTLY flags this as a genuine framework-cascade
-  non-conformance — a TRUE positive, not a false positive (the rule is
-  corpus-faithful and ships as-is; this is a `_textarea.scss` defect, NOT
-  a Phase-5 rule defect). Phase-6 remediation: add
-  `textarea[wrap="off" i] { white-space: pre }` (or equivalent) to
-  `_textarea.scss`, then FLIP the locked
+  markup and our own cascade. **ESCALATED (NEEDS_CONTEXT) — substantial &
+  judgment-laden, NOT mass-edited unilaterally** (per the ROADMAP
+  escalation bar: documented framework idioms, competing remediation
+  approaches, high blast radius). The COMPLETE actual inventory from the
+  real run (the source of truth — not a prediction):
+  - **`error` · `context/parent-model` · MenuPage (×4) + UseMenuPage (×4)
+    · cite `groupings#the-menu-element`.** `<h6>` and `<hr>` are direct
+    children of `<menu>` (MenuPage `<menu popover id="demo-dropdown-full">`
+    "Section headers + dividers"; UseMenuPage `stickyMenu`/`filterMenu`
+    `<h6>`, `defaultMenu`/`filterMenu` `<hr>`). `<menu>`'s content model
+    is "zero or more `li` and script-supporting elements"
+    (`groupings.md` line 804) — a GENUINE markup non-conformance, but a
+    DELIBERATE JSDoc-documented "Mailbox-parity composition" framework
+    idiom used repeatedly across the canonical `<menu>` reference page +
+    its composable page + embedded `<pre><code>` doc snippets. Remediation
+    is a judgment call (per-group `<li>` wrappers vs. role vs. element
+    restructure) touching ≥2 pages + `_menu.scss` chrome — owner-decided.
+  - **`error` · `content/category` · UseToastPage (×22) · cite
+    `forms#the-output-element`.** `<p>` (×21) and `<header>` (×1) are
+    direct children of `<output popover>` (the toast composable's core
+    chrome — `<output>` + `<p>` body + optional `<header>`/`<footer>`).
+    `<output>`'s content model is "phrasing content" (`forms.md` line
+    881); `<p>`/`<header>` are flow — a GENUINE non-conformance, but it is
+    the FUNDAMENTAL element architecture of the shipped `createToast`
+    composable (highest blast radius: `createToast` + `_toast.scss` +
+    `UseToastPage.vue` + toast tests) — owner-decided.
+  - **`warning` · `presentation/list-style` ×113 across the showcase** —
+    role-less `list-style:none` lists (incl. the first-party `<menu>`).
+    BY-DESIGN per Phase-5 boundary (e); REPORTED by the gate, NOT failed.
+    Expected & non-blocking. No remediation (a conscious design warning).
+  - `advice`: none. No other `error` rules fired over the 27-rule × 43-page
+    matrix.
+- ✅ **`_textarea.scss` `wrap=off` non-conformance (a Phase-5-surfaced
+  genuine finding) — REMEDIATED.** `src/styles/elements/_textarea.scss`
+  set `white-space: pre-wrap` UNCONDITIONALLY; per `renderings.md
+  §15.5.17` a `<textarea wrap="off">` is a presentational hint that MUST
+  compute `white-space: pre`. **Done:** added
+  `&[wrap='off' i] { white-space: pre }` inside the `@layer elements`
+  `textarea` block (higher specificity than the bare rule, same layer →
+  deterministically wins for `wrap=off`/`wrap=OFF` while default/`soft`
+  keep `pre-wrap`). Verified by real computed style on the live showcase
+  dev server (`wrap=off`/`wrap=OFF` → `pre`; default/`soft` → `pre-wrap`,
+  no visual regression) and the inspector. The locked
   `<textarea wrap="off">`→`presentation/preformatted` test in
-  `tests/src/browser/inspector/presentation.test.ts` to expect zero (it is
-  currently a tracked, bites-both-ways lock asserting exactly one
-  `presentation/preformatted` error).
+  `tests/src/browser/inspector/presentation.test.ts` was FLIPPED from
+  "exactly one error" to "ZERO" (kept bites-both-ways: red again if the
+  remediation regresses) + a new default-`<textarea>` regression-guard
+  test; the conformant-sweep gained a `<textarea wrap="off">` case. The
+  corpus-faithful rule was NEVER weakened — the framework was fixed at the
+  source.
 
 ---
 
