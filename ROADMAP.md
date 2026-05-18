@@ -61,14 +61,20 @@ parity tests keep cache ↔ schema ↔ spec in lock-step** (see the
 
 ### Hard constraints (non-negotiable)
 
-- **No new dependencies.** Native `Document` / `Element` / `Node` /
-  `getComputedStyle` / `ShadowRoot` / slot APIs only (AGENTS.md §1).
+- **No new dependencies — and no reinvention.** Native `Document` /
+  `Element` / `Node` / `getComputedStyle` / `ShadowRoot` / slot APIs only
+  (AGENTS.md §1), composed through the **already-shipped first-party
+  packages** `@elements/browser` ([traversals](guides/traversals.md)) and
+  `@elements/core` ([shapers](guides/shapers.md) / [compilers](guides/compilers.md)
+  / [validators](guides/validators.md) / [parsers](guides/parsers.md)).
+  These are not new deps; using them is mandatory (see
+  [Existing tooling we build on](#existing-tooling-we-build-on-no-reinvention)).
 - **No string / regex HTML parsing.** The inspector consumes a *parsed*
-  `ParentNode` (default `document`); it walks `.children` /
-  `.parentElement` / `.attributes` / `assignedElements()` and reads
-  `tagName` / computed style — exactly the idiom every `create*` factory and
-  `helpers.ts` (`extractRows`, `readTableRows`, `findDetailRow`, …) already
-  uses.
+  `ParentNode` (default `document`); it walks via
+  [`traversals`](guides/traversals.md) (`walkDescendantsGenerator()`,
+  `getAncestors()`, the `is*`/`matchesTag` guards) and reads `tagName` /
+  computed style — the same DOM-walk idiom every `create*` factory uses,
+  now centralized in `traversals.ts`.
 - **Types-first (TTTDD).** Every public type lands in
   [`src/browser/types.ts`](src/browser/types.ts) (the single source of
   truth) before implementation. Single-word entity members; split via the
@@ -101,11 +107,17 @@ guides/w3c/**                  ← curated local cache of the spec (prose)
         ▼
 src/browser/schema.ts          ← FROZEN content-model registry (TS mirror)
         │  one ContentModelEntry per element; indices; predicates
+        │  + an @elements/core ContractShape → compiled guard + JSON Schema
+        ▼
+EXISTING FIRST-PARTY TOOLING (shipped, parity-gated — composed, not rebuilt):
+  @elements/browser  traversals.ts  walk / ancestor / relationship / focus
+  @elements/core     shapers+compilers  shape → guard+schema+generator
+                     validators  predicate compositors · parsers  attr coercion
         ▼
 src/browser/inspector/         ← one class per file (Manager pattern)
-   Walker.ts        depth-first native traversal + Context resolution
-   RuleManager.ts   the rule registry  (rule(id) / rules())
-   FindingManager.ts findings collection (finding(id) / findings() / clear())
+   Walker.ts        thin Context layer over traversals.walkDescendantsGenerator
+   RuleManager.ts   rule registry (rule(id)/rules()); predicates = validators
+   FindingManager.ts findings collection (finding(id)/findings()/clear())
    Inspector.ts     root entity: inspect(root) → InspectionResult; Emitter
         ▼
 src/browser/index.ts           ← sole barrel re-exports it (public API)
@@ -139,12 +151,27 @@ tests/                         ← parity (schema↔guides), unit (rule↔fixtur
   - `inspect()` returns a value `InspectionResult` (DOM-walking does not
     "fail"); a non-`Node` argument is a programmer error → `throw Error`
     (§13). Optional fallible sub-operations use `Result<T,E>`.
-- **Helpers** → `src/browser/helpers.ts`, `{verb}{Noun}` per §4.3:
-  `resolveModel` (transparent resolution up the ancestor chain),
-  `effectiveCategories`, `parentChain`, `nodePath` (a stable DOM path for
-  findings), `flatChildren` (slot/shadow-aware child list).
+- **Helpers** → `src/browser/helpers.ts`, `{verb}{Noun}` per §4.3, each a
+  THIN adapter over existing first-party tooling (see [Existing tooling we
+  build on](#existing-tooling-we-build-on-no-reinvention)): `resolveModel`
+  (transparent resolution — walks `getAncestors()` / `findClosest()` from
+  [`traversals`](guides/traversals.md)), `effectiveCategories`,
+  `nodePath` (wraps `getPathToAncestor()` from `traversals`),
+  `flatChildren` (slot/shadow-aware, over the `traversals` child walks).
+  `parentChain` is `getAncestors()` directly.
 - **Constants** → `src/browser/constants.ts`: `VOID_TAGS`,
-  `TRANSPARENT_TAGS`, `INTERACTIVE_TAGS`, category membership sets.
+  `TRANSPARENT_TAGS`, `INTERACTIVE_TAGS`, category membership sets
+  (`CATEGORY_MEMBERS` mirrors [`categories.md`](guides/w3c/categories.md)).
+- **Built on existing first-party tooling, not reinvented.** The Walker is
+  a thin Context layer over [`@elements/browser` `traversals`](guides/traversals.md);
+  the schema's structured constraint data + the `Finding`/`InspectionResult`
+  shapes are [`@elements/core`](guides/shapers.md) `ContractShape`s
+  ([compilers.md](guides/compilers.md) derives their guard + JSON Schema +
+  deterministic generator); rule predicates compose
+  [`@elements/core` validators](guides/validators.md); attribute-value
+  rules use the [`@elements/core` parsers](guides/parsers.md). These are
+  first-party packages already shipped + parity-gated — using them honors
+  "no new dependencies" **and** "no reinvention".
 - **No `errors.ts`** — findings are *data*, not exceptions.
 
 ### The transparent content model (first-class)
@@ -160,7 +187,50 @@ model restrictions are instead based on flow content"*). Ancestor
 *restrictions* propagate through (no interactive / no `<a>` / no `tabindex`
 descendant of [`<a>`](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element);
 no nested `<audio>`/`<video>`). This resolver is the spine of the structure
-lens and gets its own dedicated unit suite.
+lens and gets its own dedicated unit suite. **Implementation:** the
+ancestor walk is [`traversals`](guides/traversals.md) `getAncestors()` /
+`findClosest()` (not a hand-rolled loop); the recursive *guard* form of a
+transparent/recursive content model is expressed with
+[`@elements/core`](guides/validators.md) `lazyOf` (guard) /
+[`lazyShape`](guides/shapers.md) (the only sanctioned recursion boundary —
+its acyclicity + bounded-depth + cycle-safety are already proven and
+tested), so the resolver inherits adversarial-input safety instead of
+re-deriving it.
+
+---
+
+## Existing tooling we build on (no reinvention)
+
+The inspector's two heaviest layers — DOM traversal and
+shape/guard/parse/generate — **already exist as shipped, parity-gated
+first-party packages**. The build composes them; it does not re-implement
+them. Every row's API is exhaustively documented + doc↔source-gated in the
+linked guide.
+
+| Inspector need | Reuse (already shipped) | Source / guide |
+| -------------- | ----------------------- | -------------- |
+| Depth-first element walk (lazy, no recursion limit) | `walkDescendantsGenerator()` (`for…of`), `walkDescendants()`, `walkDescendantsBreadthFirst()` | [`traversals`](guides/traversals.md) · `src/browser/traversals.ts` |
+| Transparent-model ancestor resolution | `getAncestors()`, `findClosest()`, `findAncestor()`, `findCommonAncestor()` | [traversals.md](guides/traversals.md) |
+| Node typing / matching guards | `isElement`, `isHTMLElement`, `isTextNode`, `isTagType`, `matchesTag`, `hasAttribute`, `createMatcher` (`ElementPredicate`) | [traversals.md](guides/traversals.md) · `helpers.ts` |
+| Stable DOM path for a `Finding` | `getPathToAncestor()`, `getTreeDistance()`, `getSiblingIndex()` | [traversals.md](guides/traversals.md) |
+| Relationship checks (interaction lens) | `isDescendantOf`, `isAncestorOf`, `isBefore`, `isAfter`, `contains` | [traversals.md](guides/traversals.md) |
+| Focus/interaction rules | `isFocusable`, `findFocusableElements`, `findFirstFocusable`, `findLastFocusable` | [traversals.md](guides/traversals.md) |
+| Live-vs-static collection safety while walking | `toArray()` to freeze before DOM-sensitive iteration | [traversals.md](guides/traversals.md) §Contract 6 |
+| `ContentModelEntry` constraint data + `Finding` / `InspectionResult` shape → free **guard + JSON Schema** | declare a `ContractShape` once; `compileContract()` derives `is` + `schema` | [shapers.md](guides/shapers.md) · [compilers.md](guides/compilers.md) |
+| Recursive content model (transparent / `ruby` / nested) | `lazyShape()` (shape) · `lazyOf` (guard) — the only sanctioned recursion boundary, cycle-safe + depth-capped | [shapers.md](guides/shapers.md) · [validators.md](guides/validators.md) |
+| Deterministic synthetic DOM/shape fixtures + perf-budget trees | `compileGenerator()` + `createRandom(seed)` (reproducible per seed) | [compilers.md](guides/compilers.md) |
+| Rule predicate composition | `andOf` / `orOf` / `unionOf` / `whereOf` / `notOf` / `enumOf` / `literalOf` / `recordOf` | [validators.md](guides/validators.md) |
+| Attribute-value rules (`tabindex` integer · `colgroup[span]` ≤1000 · `th[scope]` enum · `dir∈{ltr,rtl}` · `loading`/`crossorigin` enums · `data[value]`) | `parseInteger` / `parseEnum` / `parseBoolean` / `parseString` (coerce → typed-or-`undefined`) | [parsers.md](guides/parsers.md) |
+| Machine-consumable findings output (JSON Schema + a guard for consumers) | the `Finding` `ContractShape`'s compiled `schema` + `is` | [compilers.md](guides/compilers.md) |
+
+**Consequence for the phases:** Phase 2's "Walker" shrinks to a Context
+resolver over `traversals`; Phase 1's schema gains a *compiled* guard +
+JSON Schema for free; Phase 3 rule predicates are validator compositions
+and attribute checks are `parsers` calls; Phase 3/8 fixtures + the perf
+budget use the seeded generator. **The doc↔source parity discipline these
+five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
+`tests/guides/{x}.test.ts` ↔ `tests/src/**`) **is the exact contract
+`guides/inspector.md` (Phase 7) must itself satisfy.**
 
 ---
 
@@ -381,6 +451,16 @@ The frozen TS mirror of the corpus, shaped exactly like
   `ruby` rt/rp), `parent-restricted` (`li`→ul/ol/menu, `td`/`th`→tr,
   `option`→select/optgroup/datalist), the `table` model, `picture` order
   (`source`* then one `img`).
+- ⬜ **Express the entry as an `@elements/core` `ContractShape`** (an
+  `objectShape` of the fields above; `literalShape` for the category /
+  model unions; `lazyShape` for the recursive transparent arm) and run it
+  through `compileContract()` — the inspector gets a **runtime guard**
+  (validates the frozen registry at module load, fixture inputs in tests)
+  and a **JSON Schema** of `ContentModelEntry` (machine-readable corpus
+  export) for free, plus a **seeded generator** of synthetic entries for
+  Phase-3 fixtures. The frozen `taxonomy.ts`-style array stays the
+  authoring surface; the shape is its compiled contract — derived, not
+  duplicated ([shapers.md](guides/shapers.md) / [compilers.md](guides/compilers.md)).
 - ⬜ Barrel: `export * from './schema.js'` in
   [`src/browser/index.ts`](src/browser/index.ts).
 - ⬜ **`tests/guides/w3c.test.ts`** (bidirectional, mirrors
@@ -393,29 +473,41 @@ The frozen TS mirror of the corpus, shaped exactly like
 
 ## Phase 2 — Walker + Context
 
-- ⬜ `Walker` class: depth-first traversal of a `ParentNode` via native
-  `.children` (element-only) with **flat-tree awareness** — descend
-  `shadowRoot`, resolve `<slot>` via `assignedElements()`, treat
-  `<template>.content` correctly, skip foreign-content subtrees
-  (`<svg>`/`<math>`) for HTML content-model checks.
+- ⬜ `Walker` class: **thin layer over [`traversals`](guides/traversals.md)** —
+  the spine is `walkDescendantsGenerator()` (lazy `for…of`, O(depth), no
+  recursion limit; `walkDescendantsBreadthFirst()` available where a BFS
+  pass is cheaper). The Walker adds only what `traversals` doesn't: flat-tree
+  awareness (descend `shadowRoot`, resolve `<slot>` via `assignedElements()`,
+  `<template>.content`) and **skipping foreign-content subtrees**
+  (`<svg>`/`<math>`) per [`categories.md`](guides/w3c/categories.md) — node
+  typing via the `isElement` / `isHTMLElement` / `matchesTag` / `isTagType`
+  guards, never hand-rolled `nodeType` checks. Freeze live collections with
+  `toArray()` before any DOM-sensitive pass (traversals.md §Contract 6).
 - ⬜ `RuleContext` per node: resolved effective content model (via
-  `resolveModel` through transparent ancestors), `parentChain`, inherited
-  restrictions (no-interactive / no-`a` / no-`tabindex` flags accumulated
-  from ancestors), and a lazily-computed `getComputedStyle` accessor (only
-  read when the presentation lens asks — keeps the structure lens style-free
-  and fast).
+  `resolveModel`, which walks `getAncestors()` / `findClosest()`),
+  `parentChain` = `getAncestors()`, inherited restrictions
+  (no-interactive / no-`a` / no-`tabindex` flags accumulated from ancestors),
+  and a lazily-computed `getComputedStyle` accessor (only read when the
+  presentation lens asks — keeps the structure lens style-free and fast).
 - ⬜ `resolveModel` / `effectiveCategories` / `flatChildren` / `nodePath`
-  helpers in `helpers.ts`.
+  (the last wraps `getPathToAncestor()`) helpers in `helpers.ts` — adapters,
+  not re-implementations.
 - ⬜ Unit suite (`tests/src/browser/inspector/Walker.test.ts`) — real DOM
-  fixtures per AGENTS §16.2: detached root → flow; nested transparent
-  (`<a><ins>…`) resolution; slotted/shadow descent; `<template>` content.
+  fixtures per AGENTS §16.2 (seeded via `compileGenerator()` +
+  `createRandom()` for synthetic trees): detached root → flow; nested
+  transparent (`<a><ins>…`) resolution; slotted/shadow descent;
+  `<template>` content; foreign-subtree skip.
 
 ---
 
 ## Phase 3 — Rule engine + rule families
 
 - ⬜ `RuleInterface`: `{ id, severity, lens, evaluate(element, context) }`
-  — pure, side-effect-free, one finding or null.
+  — pure, side-effect-free, one finding or null. Composite predicates are
+  built from [`@elements/core` validators](guides/validators.md)
+  compositors (`andOf` / `orOf` / `unionOf` / `whereOf` / `notOf` /
+  `enumOf` / `literalOf`) rather than ad-hoc boolean spaghetti — each rule
+  reads as a named guard composition.
 - ⬜ Rule families (each a small set of generic rules driven by the schema
   data, not per-element hand-code):
   - **context** — element not allowed in its parent's resolved model
@@ -452,20 +544,36 @@ The frozen TS mirror of the corpus, shaped exactly like
     `img[ismap]` ⇒ ancestor `a[href]`; `colgroup[span]` ⇒ no `col`
     children; `th[scope]` domain
     ([tables.html](https://html.spec.whatwg.org/multipage/tables.html#the-th-element))).
+    Attribute-VALUE checks use [`@elements/core` parsers](guides/parsers.md):
+    `parseInteger` (`tabindex`, `colgroup[span]`/`col[span]` 1–1000,
+    `td`/`th` `colspan`/`rowspan`), `parseEnum` (`th[scope]` ∈
+    {row,col,rowgroup,colgroup}, `dir` ∈ {ltr,rtl,auto}, `loading`,
+    `crossorigin`, `contenteditable`, `inputmode`), `parseBoolean` —
+    coerce-or-`undefined`, never hand-written attribute parsing.
   - **interaction** — `hidden`/`inert` reference integrity (a non-hidden
     `a[href="#id"]`/`label[for]`/`output[for]` must not target a `hidden`
     element; active `aria-*` IDREF must not point into an `[inert]` /
     modal-inert subtree); `dialog` must not carry `tabindex`
     ([interaction.html](https://html.spec.whatwg.org/multipage/interaction.html)).
-- ⬜ Each family gets a fixture-driven unit suite (real DOM, no mocks).
+    Reachability/relationship decided with [`traversals`](guides/traversals.md)
+    `isDescendantOf` / `findClosest` / `isFocusable` /
+    `findFocusableElements` — not bespoke DOM walks.
+- ⬜ Each family gets a fixture-driven unit suite (real DOM, no mocks;
+  synthetic dirty/clean trees seeded via `compileGenerator()` +
+  `createRandom()` so failures are reproducible).
 
 ---
 
 ## Phase 4 — Findings + `Inspector` entity
 
 - ⬜ `Finding` (data, `readonly`): `severity`, `rule` (id), `element`,
-  `path` (stable DOM path), `message`, `cite` (guide anchor),
-  `expected`/`actual` where applicable.
+  `path` (stable DOM path from `getPathToAncestor()`), `message`, `cite`
+  (guide anchor), `expected`/`actual` where applicable. Declared **once**
+  as an `@elements/core` `ContractShape` (minus the live `element` ref) so
+  `compileContract()` yields a **JSON Schema for the findings report**
+  (machine-consumable CI output) and a **`Guard<Finding>`** consumers can
+  import — derived from the one declaration, never hand-maintained
+  ([compilers.md](guides/compilers.md)).
 - ⬜ `FindingManager` (§9/§10): `finding(id)` / `findings()`; filter by
   `severity` / `lens` / subtree; `clear()` / `clear(id)` / `clear(ids)`.
 - ⬜ `Inspector` (§7 class order, §14 emitter): `inspect(root = document)`
@@ -543,10 +651,15 @@ fires only when an override **breaks semantics** (corpus:
 
 - ⬜ Treat the inspector as part of the public `src/browser` API: it ships
   through the sole barrel; `tests/src/browser/inspector/**` covers it;
-  schema↔guides parity is permanent (Phase 1).
-- ⬜ Large-tree budget: a perf test (build a deep/wide synthetic DOM)
-  asserting a walked-node-per-ms floor so a regression in the walker or a
-  rule's complexity is caught. Tune only with evidence (AGENTS §16.3).
+  schema↔guides parity is permanent (Phase 1). The inspector's own guide
+  (`guides/inspector.md`, Phase 7) is held to the **same doc↔source
+  contract** the five tooling guides exemplify — `tests/guides/inspector.test.ts`
+  (every backticked API resolves to a real export, bidirectional) ↔
+  `tests/src/browser/inspector/**` (behavior).
+- ⬜ Large-tree budget: a perf test over a **deterministic** deep/wide DOM
+  built from `compileGenerator()` + `createRandom(seed)` (reproducible
+  across runs), asserting a walked-node-per-ms floor so a walker / rule
+  complexity regression is caught. Tune only with evidence (AGENTS §16.3).
 - ⬜ Final sweep: `npm run check` 0/0, targeted suites green, `npm run
   format`, ROADMAP + guides updated, commit/push.
 
@@ -569,6 +682,13 @@ Carried from the framework build; they govern inspector work too.
 - **Walk the DOM, never the string.** Native `Element`/`Node`/slot APIs
   only; the inspector accepts any `ParentNode`. No regex, no `innerHTML`
   round-trips, no new dependency.
+- **Reuse first-party tooling; don't reinvent.** DOM walks/relationships/
+  focus → [`@elements/browser` traversals](guides/traversals.md);
+  shape→guard+schema+generator → [`@elements/core` shapers/compilers](guides/compilers.md);
+  predicate composition → [validators](guides/validators.md);
+  attribute-value coercion → [parsers](guides/parsers.md). New helpers are
+  thin adapters over these, not parallel implementations. See
+  [Existing tooling we build on](#existing-tooling-we-build-on-no-reinvention).
 - **Findings are data.** Structured `Finding` records with a spec
   citation; `Result<T,E>`/`throw` only per AGENTS §13. Severity is a
   closed union (`error`/`warning`/`advice`).
@@ -598,6 +718,21 @@ Carried from the framework build; they govern inspector work too.
 - [guides/w3c/](guides/w3c/) — the curated local cache the schema derives
   from (Phase 0 reconciles it against the canonical spec and closes the
   known gaps; see the reference map for per-file ↔ page mapping).
+- [**Existing tooling we build on**](#existing-tooling-we-build-on-no-reinvention)
+  — the need → reused-API table; read before writing any Walker/rule code.
+- [guides/traversals.md](guides/traversals.md) — `@elements/browser`
+  `src/browser/traversals.ts`: the complete native DOM walk / relationship /
+  focus surface the Walker is a thin layer over.
+- [guides/shapers.md](guides/shapers.md) · [guides/compilers.md](guides/compilers.md)
+  — `@elements/core` shape DSL → JSON Schema + guard + parser + **seeded
+  generator** from one declaration (schema-entry & `Finding` contracts,
+  test/perf fixtures).
+- [guides/validators.md](guides/validators.md) — `@elements/core` runtime
+  guards + compositors (`andOf`/`orOf`/`whereOf`/`lazyOf`/…) — rule
+  predicate composition.
+- [guides/parsers.md](guides/parsers.md) — `@elements/core` coercing
+  parsers (`parseInteger`/`parseEnum`/`parseBoolean`/…) — attribute-value
+  rules.
 - [src/browser/taxonomy.ts](src/browser/taxonomy.ts) /
   [patterns.ts](src/browser/patterns.ts) — the frozen-registry +
   parity-test pattern `schema.ts` is modeled on.
