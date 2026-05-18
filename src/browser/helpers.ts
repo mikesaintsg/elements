@@ -603,6 +603,10 @@ export function isDropPosition(value: unknown): value is DropPosition {
 // time — `helpers.ts` must stay import-safe in a DOM-less runtime, exactly as
 // the previous in-body `instanceof` was. `Set` is a JS built-in, so it stays
 // core `instanceOf(Set)`.
+// Native lazy closures (NOT core `instanceOf(PointerEvent)`/`instanceOf(HTMLElement)`):
+// a module-scope `instanceOf(DOMGlobal)` dereferences the DOM global at import
+// time and `ReferenceError`s under the DOM-less bundle-resolution smoke. The
+// closure defers the global read to call time. Do not "simplify" to instanceOf.
 const isPointerEvent = (value: unknown): value is PointerEvent => value instanceof PointerEvent
 const isHtmlElement = (value: unknown): value is HTMLElement => value instanceof HTMLElement
 
