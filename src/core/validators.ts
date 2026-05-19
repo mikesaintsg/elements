@@ -849,7 +849,10 @@ function isJsonSchemaBody(
 		}
 	}
 
-	if (value['properties'] !== undefined && !isJsonSchemaMapValueInner(value['properties'], seen, depth))
+	if (
+		value['properties'] !== undefined &&
+		!isJsonSchemaMapValueInner(value['properties'], seen, depth)
+	)
 		return false
 	if (
 		value['patternProperties'] !== undefined &&
@@ -882,14 +885,20 @@ function isJsonSchemaBody(
 		if (!isBoolean(unevaluatedProperties) && !isJsonSchemaInner(unevaluatedProperties, seen, depth))
 			return false
 	}
-	if (value['propertyNames'] !== undefined && !isJsonSchemaInner(value['propertyNames'], seen, depth))
+	if (
+		value['propertyNames'] !== undefined &&
+		!isJsonSchemaInner(value['propertyNames'], seen, depth)
+	)
 		return false
 	if (value['items'] !== undefined) {
 		const items = value['items']
 		if (!isJsonSchemaInner(items, seen, depth) && !isJsonSchemaArrayInner(items, seen, depth))
 			return false
 	}
-	if (value['prefixItems'] !== undefined && !isJsonSchemaArrayInner(value['prefixItems'], seen, depth))
+	if (
+		value['prefixItems'] !== undefined &&
+		!isJsonSchemaArrayInner(value['prefixItems'], seen, depth)
+	)
 		return false
 	if (value['contains'] !== undefined && !isJsonSchemaInner(value['contains'], seen, depth))
 		return false
@@ -910,7 +919,8 @@ function isJsonSchemaBody(
 		}
 	}
 	if (value['const'] !== undefined && !isJsonValueInner(value['const'], seen, depth)) return false
-	if (value['default'] !== undefined && !isJsonValueInner(value['default'], seen, depth)) return false
+	if (value['default'] !== undefined && !isJsonValueInner(value['default'], seen, depth))
+		return false
 	if (value['examples'] !== undefined) {
 		if (!Array.isArray(value['examples'])) return false
 		for (const entry of value['examples']) {

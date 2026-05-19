@@ -293,7 +293,7 @@ describe('createRandom', () => {
 
 	it('a very large seed beyond 2^32 is coerced via >>> 0 (wraps deterministically)', () => {
 		const huge = createRandom(2 ** 53)
-		const wrapped = createRandom(2 ** 53 >>> 0)
+		const wrapped = createRandom((2 ** 53) >>> 0)
 		for (let i = 0; i < 10; i += 1) {
 			expect(huge()).toBe(wrapped())
 		}
@@ -854,9 +854,7 @@ describe('validateBounds', () => {
 	})
 
 	it('non-finite check precedes the min>max check (NaN min reported as non-finite)', () => {
-		expect(() => validateBounds('s', Number.NaN, 1, true)).toThrow(
-			's: min must be a finite number',
-		)
+		expect(() => validateBounds('s', Number.NaN, 1, true)).toThrow('s: min must be a finite number')
 	})
 
 	it('the negative-length check precedes the min>max check', () => {

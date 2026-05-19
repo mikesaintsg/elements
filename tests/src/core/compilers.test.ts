@@ -125,13 +125,17 @@ describe('compileSchema', () => {
 	})
 
 	it('tuple — nested element shapes compile recursively', () => {
-		expect(
-			compileSchema(tupleShape(stringShape({ min: 1 }), tupleShape(booleanShape()))),
-		).toEqual({
+		expect(compileSchema(tupleShape(stringShape({ min: 1 }), tupleShape(booleanShape())))).toEqual({
 			type: 'array',
 			prefixItems: [
 				{ type: 'string', minLength: 1 },
-				{ type: 'array', prefixItems: [{ type: 'boolean' }], items: false, minItems: 1, maxItems: 1 },
+				{
+					type: 'array',
+					prefixItems: [{ type: 'boolean' }],
+					items: false,
+					minItems: 1,
+					maxItems: 1,
+				},
 			],
 			items: false,
 			minItems: 2,
@@ -151,10 +155,7 @@ describe('compileSchema', () => {
 	it('intersection — closed object members merge into one closed object (not unsatisfiable allOf)', () => {
 		expect(
 			compileSchema(
-				intersectionShape(
-					objectShape({ a: stringShape() }),
-					objectShape({ b: integerShape() }),
-				),
+				intersectionShape(objectShape({ a: stringShape() }), objectShape({ b: integerShape() })),
 			),
 		).toEqual({
 			type: 'object',
@@ -217,10 +218,7 @@ describe('compileSchema', () => {
 	it('compileSchema — intersection with an overlapping property key merges that key via allOf', () => {
 		expect(
 			compileSchema(
-				intersectionShape(
-					objectShape({ a: stringShape() }),
-					objectShape({ a: integerShape() }),
-				),
+				intersectionShape(objectShape({ a: stringShape() }), objectShape({ a: integerShape() })),
 			),
 		).toEqual({
 			type: 'object',
@@ -429,10 +427,7 @@ describe('compileGuard', () => {
 	// of the intersection contract, not "unknown").
 	it('intersection — value must satisfy every member', () => {
 		const guard = compileGuard(
-			intersectionShape(
-				objectShape({ a: stringShape() }),
-				objectShape({ b: integerShape() }),
-			),
+			intersectionShape(objectShape({ a: stringShape() }), objectShape({ b: integerShape() })),
 		)
 		expect(guard({ a: 'x', b: 1 })).toBe(true) // satisfies both
 		expect(guard({ a: 'x' })).toBe(false) // missing b (2nd member)
@@ -585,10 +580,7 @@ describe('compileParser', () => {
 	// (C). Per-member coercion (e.g. '30' → 30) is preserved.
 	it('intersection — parses through every member and merges', () => {
 		const parse = compileParser(
-			intersectionShape(
-				objectShape({ a: stringShape() }),
-				objectShape({ b: integerShape() }),
-			),
+			intersectionShape(objectShape({ a: stringShape() }), objectShape({ b: integerShape() })),
 		)
 		expect(parse({ a: 'x', b: '2' })).toEqual({ a: 'x', b: 2 }) // b coerced
 		expect(parse({ a: 'x', b: 1 })).toEqual({ a: 'x', b: 1 })
@@ -723,21 +715,13 @@ describe('parse↔guard symmetry', () => {
 		)
 		assertParseGuardSymmetry(
 			tupleShape(tupleShape(stringShape(), integerShape()), booleanShape()),
-			[
-				[['a', 1], true],
-				[['a', 'x'], true],
-				[['a', 1], 'no'],
-				'notarray',
-			],
+			[[['a', 1], true], [['a', 'x'], true], [['a', 1], 'no'], 'notarray'],
 		)
 	})
 
 	it('intersectionShape(objectShape, objectShape) — parse↔guard (A)(B)(C)', () => {
 		assertParseGuardSymmetry(
-			intersectionShape(
-				objectShape({ a: stringShape() }),
-				objectShape({ b: integerShape() }),
-			),
+			intersectionShape(objectShape({ a: stringShape() }), objectShape({ b: integerShape() })),
 			[{ a: 'x', b: 1 }, { a: 'x' }, { b: 1 }, { a: 'x', b: 'no' }, 'notobj', {}],
 		)
 	})
@@ -757,27 +741,25 @@ describe('parse↔guard symmetry', () => {
 				intersectionShape(objectShape({ a: stringShape() }), objectShape({ b: integerShape() })),
 				objectShape({ c: booleanShape() }),
 			),
-			[
-				{ a: 'x', b: 1, c: true },
-				{ a: 'x', b: 1 },
-				{ a: 'x', b: 'no', c: true },
-				'notobj',
-			],
+			[{ a: 'x', b: 1, c: true }, { a: 'x', b: 1 }, { a: 'x', b: 'no', c: true }, 'notobj'],
 		)
 	})
 
 	it('optionalShape(stringShape()) at object level', () => {
-		assertParseGuardSymmetry(
-			objectShape({ s: optionalShape(stringShape()) }),
-			[{ s: '' }, { s: 'x' }, {}],
-		)
+		assertParseGuardSymmetry(objectShape({ s: optionalShape(stringShape()) }), [
+			{ s: '' },
+			{ s: 'x' },
+			{},
+		])
 	})
 
 	it('nullableShape(numberShape()) at object level', () => {
-		assertParseGuardSymmetry(
-			objectShape({ n: nullableShape(numberShape()) }),
-			[{ n: null }, { n: 5 }, { n: '5' }, { n: 'x' }],
-		)
+		assertParseGuardSymmetry(objectShape({ n: nullableShape(numberShape()) }), [
+			{ n: null },
+			{ n: 5 },
+			{ n: '5' },
+			{ n: 'x' },
+		])
 	})
 
 	it('unionShape(stringShape({min:1}), integerShape())', () => {
@@ -1324,7 +1306,10 @@ describe('compileGenerator — non-disjoint oneOf (FU4)', () => {
 		// both branches.
 		const shape = oneOfShape(
 			objectShape({ a: stringShape({ min: 1 }) }, { additionalProperties: true }),
-			objectShape({ a: stringShape({ min: 1 }), b: integerShape({ min: 0 }) }, { additionalProperties: true }),
+			objectShape(
+				{ a: stringShape({ min: 1 }), b: integerShape({ min: 0 }) },
+				{ additionalProperties: true },
+			),
 		)
 		const guard = compileGuard(shape)
 		for (const seed of seeds) {
@@ -1336,7 +1321,9 @@ describe('compileGenerator — non-disjoint oneOf (FU4)', () => {
 	it('disjoint oneOf — no regression: still exactly-one across many seeds', () => {
 		// string{min:1} vs integer{min:0} are disjoint by JS type — the retry
 		// path must not perturb the already-sound disjoint case.
-		assertGeneratorSatisfiesGuard(oneOfShape(stringShape({ min: 1 }), integerShape({ min: 0 })), [...seeds])
+		assertGeneratorSatisfiesGuard(oneOfShape(stringShape({ min: 1 }), integerShape({ min: 0 })), [
+			...seeds,
+		])
 		assertGeneratorSatisfiesGuard(oneOfShape(stringShape(), booleanShape()), [...seeds])
 		assertGeneratorSatisfiesGuard(
 			oneOfShape(
@@ -1543,7 +1530,10 @@ describe('B4 — assertGeneratorSatisfiesGuard across the full shape matrix', ()
 		)
 		assertGeneratorSatisfiesGuard(
 			intersectionShape(
-				intersectionShape(objectShape({ a: stringShape({ min: 1 }) }), objectShape({ b: integerShape() })),
+				intersectionShape(
+					objectShape({ a: stringShape({ min: 1 }) }),
+					objectShape({ b: integerShape() }),
+				),
 				objectShape({ c: booleanShape() }),
 			),
 			seeds,
@@ -1645,23 +1635,23 @@ describe('D3 — lazyShape non-recursive (behaves exactly like its inner)', () =
 	})
 
 	it('parse↔guard symmetry — non-recursive lazy is sound (A)(B)(C)', () => {
-		assertParseGuardSymmetry(lazyShape(() => stringShape({ min: 1 })), [
-			'a',
-			'',
-			1,
-			'abc',
-			null,
-		])
 		assertParseGuardSymmetry(
-			objectShape({ n: lazyShape(() => integerShape({ min: 0 })) }),
-			[{ n: 1 }, { n: -1 }, { n: 'x' }, {}],
+			lazyShape(() => stringShape({ min: 1 })),
+			['a', '', 1, 'abc', null],
 		)
+		assertParseGuardSymmetry(objectShape({ n: lazyShape(() => integerShape({ min: 0 })) }), [
+			{ n: 1 },
+			{ n: -1 },
+			{ n: 'x' },
+			{},
+		])
 	})
 
 	it('generator∘guard — non-recursive lazy holds across seeds', () => {
-		assertGeneratorSatisfiesGuard(lazyShape(() => integerShape({ min: 0, max: 50 })), [
-			1, 2, 3, 4,
-		])
+		assertGeneratorSatisfiesGuard(
+			lazyShape(() => integerShape({ min: 0, max: 50 })),
+			[1, 2, 3, 4],
+		)
 	})
 })
 
@@ -1672,7 +1662,10 @@ describe('D3 — lazyShape non-recursive (behaves exactly like its inner)', () =
 function makeTreeShape(): ContractShape {
 	const treeShape: ContractShape = objectShape({
 		value: integerShape({ min: 0 }),
-		children: arrayShape(lazyShape(() => treeShape), { max: 3 }),
+		children: arrayShape(
+			lazyShape(() => treeShape),
+			{ max: 3 },
+		),
 	})
 	return treeShape
 }
@@ -1982,15 +1975,11 @@ describe('D4 — defaultShape (JSON-Schema default)', () => {
 			type: 'string',
 			default: 'd',
 		})
-		const numSchema = compileSchema(
-			defaultShape(integerShape({ min: 0, max: 9 }), 5),
-		)
+		const numSchema = compileSchema(defaultShape(integerShape({ min: 0, max: 9 }), 5))
 		expect(numSchema).toEqual({ type: 'integer', minimum: 0, maximum: 9, default: 5 })
 		expect(isJsonSchema(numSchema)).toBe(true)
 		// Inner object schema gains `default` at its root.
-		const objSchema = compileSchema(
-			defaultShape(objectShape({ a: stringShape() }), { a: 'z' }),
-		)
+		const objSchema = compileSchema(defaultShape(objectShape({ a: stringShape() }), { a: 'z' }))
 		expect(isJsonSchema(objSchema)).toBe(true)
 		if (typeof objSchema === 'boolean') {
 			throw new Error('expected object schema')
@@ -2021,9 +2010,17 @@ describe('D4 — defaultShape (JSON-Schema default)', () => {
 
 	it('parser — default object is a fresh deep copy (no shared alias)', () => {
 		const dflt = { a: 1, nested: { b: [2] } }
-		const parse = compileParser(defaultShape(objectShape({ a: integerShape() }, {
-			additionalProperties: true,
-		}), dflt))
+		const parse = compileParser(
+			defaultShape(
+				objectShape(
+					{ a: integerShape() },
+					{
+						additionalProperties: true,
+					},
+				),
+				dflt,
+			),
+		)
 		const out = parse(undefined)
 		expect(out).toEqual(dflt)
 		expect(out).not.toBe(dflt) // defensive copy
@@ -2058,10 +2055,13 @@ describe('D4 — defaultShape (JSON-Schema default)', () => {
 			'nope',
 			null,
 		])
-		assertParseGuardSymmetry(
-			defaultShape(stringShape({ min: 1 }), 'fallback'),
-			['a', '', 1, 'abc', null],
-		)
+		assertParseGuardSymmetry(defaultShape(stringShape({ min: 1 }), 'fallback'), [
+			'a',
+			'',
+			1,
+			'abc',
+			null,
+		])
 		// (C) explicitly: parser(undefined) = default, and the default passes
 		// the (inner == this) guard.
 		const shape = defaultShape(integerShape({ min: 0 }), 7)
@@ -2070,10 +2070,7 @@ describe('D4 — defaultShape (JSON-Schema default)', () => {
 	})
 
 	it('generator∘guard (A)(B)(C) — inner-driven generation is sound', () => {
-		assertGeneratorSatisfiesGuard(
-			defaultShape(integerShape({ min: 0, max: 50 }), 7),
-			[1, 2, 3, 4],
-		)
+		assertGeneratorSatisfiesGuard(defaultShape(integerShape({ min: 0, max: 50 }), 7), [1, 2, 3, 4])
 		assertGeneratorSatisfiesGuard(
 			defaultShape(objectShape({ n: integerShape({ min: 0, max: 9 }) }), { n: 0 }),
 			[1, 2, 3, 4],
@@ -2143,9 +2140,7 @@ describe('D4 — const/default × assertAcyclicShape (B5)', () => {
 		expectPreciseCyclicError(() => compileSchema(makeCyclicDefaultShape()))
 		expectPreciseCyclicError(() => compileGuard(makeCyclicDefaultShape()))
 		expectPreciseCyclicError(() => compileParser(makeCyclicDefaultShape()))
-		expectPreciseCyclicError(() =>
-			compileGenerator(makeCyclicDefaultShape(), createRandom(1)),
-		)
+		expectPreciseCyclicError(() => compileGenerator(makeCyclicDefaultShape(), createRandom(1)))
 	})
 
 	it('the SAME recursion but with a lazy boundary inside default compiles', () => {
@@ -2259,9 +2254,7 @@ describe('§13 — cyclic ContractShape fails fast at compile (precise Error, no
 		expectPreciseCyclicError(() => compileSchema(makeCyclicIntersectionShape()))
 		expectPreciseCyclicError(() => compileGuard(makeCyclicIntersectionShape()))
 		expectPreciseCyclicError(() => compileParser(makeCyclicIntersectionShape()))
-		expectPreciseCyclicError(() =>
-			compileGenerator(makeCyclicIntersectionShape(), createRandom(1)),
-		)
+		expectPreciseCyclicError(() => compileGenerator(makeCyclicIntersectionShape(), createRandom(1)))
 	})
 
 	it('a shared-but-acyclic sub-shape reused in two object keys is NOT a cycle', () => {
@@ -2526,7 +2519,10 @@ describe('compileContract — four-operation bundle', () => {
 		// A recursive tree shape via lazyShape (the documented recursion mechanism).
 		const treeShape: ContractShape = objectShape({
 			value: integerShape({ min: 0 }),
-			children: arrayShape(lazyShape(() => treeShape), { max: 3 }),
+			children: arrayShape(
+				lazyShape(() => treeShape),
+				{ max: 3 },
+			),
 		})
 		const contract = compileContract(treeShape)
 
@@ -2586,7 +2582,9 @@ describe('compileSchema — F2 string min-only / max-only edges', () => {
 		// Explicit false behaves the same as the default (omitted), but the
 		// compiled schema must emit the key in either case (the existing tests
 		// confirm the default emits it; here we confirm explicit false does too).
-		const schema = compileSchema(objectShape({ id: stringShape() }, { additionalProperties: false }))
+		const schema = compileSchema(
+			objectShape({ id: stringShape() }, { additionalProperties: false }),
+		)
 		expect(schema).toHaveProperty('additionalProperties', false)
 	})
 })
@@ -2675,14 +2673,13 @@ function makeHostilePayload(): unknown {
  */
 function assertPollutionClean(parsed: unknown): void {
 	expect(
-		(({}) as Record<string, unknown>)['polluted'],
+		({} as Record<string, unknown>)['polluted'],
 		'Object.prototype was polluted: fresh object inherited "polluted"',
 	).toBeUndefined()
 	// When parsed is a record: assert dangerous-key absence unconditionally via a
 	// combined boolean (no conditional `expect` — oxlint vitest/no-conditional-expect).
 	const dangerousKeyPresent =
-		isRecord(parsed) &&
-		POLLUTION_KEYS.some((key) => Object.hasOwn(parsed, key))
+		isRecord(parsed) && POLLUTION_KEYS.some((key) => Object.hasOwn(parsed, key))
 	expect(dangerousKeyPresent, 'parsed result retained a dangerous own key').toBe(false)
 }
 
@@ -2722,17 +2719,35 @@ describe('F3 — assertParseGuardSymmetry sweep — every shape kind + composed/
 	})
 
 	it('array — element kind variety + bounded', () => {
-		assertParseGuardSymmetry(arrayShape(stringShape({ min: 1 })), [['a'], ['a', 'b'], ['', 'b'], [], 'nope', null])
+		assertParseGuardSymmetry(arrayShape(stringShape({ min: 1 })), [
+			['a'],
+			['a', 'b'],
+			['', 'b'],
+			[],
+			'nope',
+			null,
+		])
 		assertParseGuardSymmetry(arrayShape(integerShape()), [[1, 2], [1, 1.5], [], ['1'], 0])
-		assertParseGuardSymmetry(arrayShape(booleanShape(), { min: 1, max: 2 }), [[true], [true, false], [], [true, false, true], 'x'])
+		assertParseGuardSymmetry(arrayShape(booleanShape(), { min: 1, max: 2 }), [
+			[true],
+			[true, false],
+			[],
+			[true, false, true],
+			'x',
+		])
 		assertParseGuardSymmetry(arrayShape(numberShape(), { min: 0, max: 0 }), [[], [1], 'x'])
 	})
 
 	it('object — closed, open (additionalProperties:true), open with shape', () => {
-		assertParseGuardSymmetry(
-			objectShape({ a: stringShape({ min: 1 }), b: integerShape() }),
-			[{ a: 'x', b: 1 }, { a: '', b: 1 }, { a: 'x' }, { a: 'x', b: 1, extra: 1 }, 'nope', null, {}],
-		)
+		assertParseGuardSymmetry(objectShape({ a: stringShape({ min: 1 }), b: integerShape() }), [
+			{ a: 'x', b: 1 },
+			{ a: '', b: 1 },
+			{ a: 'x' },
+			{ a: 'x', b: 1, extra: 1 },
+			'nope',
+			null,
+			{},
+		])
 		assertParseGuardSymmetry(
 			objectShape({ a: stringShape({ min: 1 }) }, { additionalProperties: true }),
 			[{ a: 'x', extra: 1 }, { a: '' }, { a: 'x' }, {}, 'nope'],
@@ -2744,21 +2759,61 @@ describe('F3 — assertParseGuardSymmetry sweep — every shape kind + composed/
 	})
 
 	it('recordShape (open dict with typed values)', () => {
-		assertParseGuardSymmetry(recordShape(numberShape()), [{}, { x: 1, y: 2 }, { x: 'bad' }, 'nope', null])
+		assertParseGuardSymmetry(recordShape(numberShape()), [
+			{},
+			{ x: 1, y: 2 },
+			{ x: 'bad' },
+			'nope',
+			null,
+		])
 		assertParseGuardSymmetry(recordShape(stringShape({ min: 1 })), [{ k: 'v' }, { k: '' }, {}, 0])
 	})
 
 	it('union (anyOf) — primitive + object variants + edge', () => {
-		assertParseGuardSymmetry(unionShape(stringShape({ min: 1 }), integerShape()), ['', 'hi', 0, 5, 5.5, true, null])
-		assertParseGuardSymmetry(unionShape(booleanShape(), nullableShape(integerShape())), [true, false, null, 1, 'x'])
-		assertParseGuardSymmetry(unionShape(stringShape(), integerShape(), booleanShape()), ['x', 1, true, null, {}])
+		assertParseGuardSymmetry(unionShape(stringShape({ min: 1 }), integerShape()), [
+			'',
+			'hi',
+			0,
+			5,
+			5.5,
+			true,
+			null,
+		])
+		assertParseGuardSymmetry(unionShape(booleanShape(), nullableShape(integerShape())), [
+			true,
+			false,
+			null,
+			1,
+			'x',
+		])
+		assertParseGuardSymmetry(unionShape(stringShape(), integerShape(), booleanShape()), [
+			'x',
+			1,
+			true,
+			null,
+			{},
+		])
 	})
 
 	it('oneOf (exactly-one) — disjoint + overlapping', () => {
 		// disjoint variants: symmetry holds same as union
-		assertParseGuardSymmetry(oneOfShape(stringShape({ min: 1 }), integerShape({ min: 0 })), ['', 'hi', -1, 0, 5, true])
+		assertParseGuardSymmetry(oneOfShape(stringShape({ min: 1 }), integerShape({ min: 0 })), [
+			'',
+			'hi',
+			-1,
+			0,
+			5,
+			true,
+		])
 		// overlapping variants: exclusivity pin (guard false iff both match)
-		assertParseGuardSymmetry(oneOfShape(numberShape(), integerShape()), [5, 5.5, -3, -3.25, 'x', null])
+		assertParseGuardSymmetry(oneOfShape(numberShape(), integerShape()), [
+			5,
+			5.5,
+			-3,
+			-3.25,
+			'x',
+			null,
+		])
 	})
 
 	it('optional — wrapping each primitive kind', () => {
@@ -2788,12 +2843,19 @@ describe('F3 — assertParseGuardSymmetry sweep — every shape kind + composed/
 	it('tuple — various arities and element kinds', () => {
 		assertParseGuardSymmetry(tupleShape(), [[], [1], 'x'])
 		assertParseGuardSymmetry(tupleShape(stringShape(), integerShape(), booleanShape()), [
-			['a', 1, true], ['a', 1, false], ['a', 1], ['a', 1, true, 'extra'],
-			['', 1, true], ['a', 1.5, true], 'x', null,
+			['a', 1, true],
+			['a', 1, false],
+			['a', 1],
+			['a', 1, true, 'extra'],
+			['', 1, true],
+			['a', 1.5, true],
+			'x',
+			null,
 		])
-		assertParseGuardSymmetry(tupleShape(nullableShape(stringShape()), optionalShape(integerShape())), [
-			[null, 1], [null, undefined], ['a', 1], ['a', 1.5], ['a'], [null], 'x',
-		])
+		assertParseGuardSymmetry(
+			tupleShape(nullableShape(stringShape()), optionalShape(integerShape())),
+			[[null, 1], [null, undefined], ['a', 1], ['a', 1.5], ['a'], [null], 'x'],
+		)
 	})
 
 	it('intersection — two objects, three objects', () => {
@@ -2808,8 +2870,13 @@ describe('F3 — assertParseGuardSymmetry sweep — every shape kind + composed/
 				objectShape({ c: booleanShape() }),
 			),
 			[
-				{ a: 'x', b: 1, c: true }, { a: 'x', b: 1 }, { a: 'x', b: 1, c: 0 },
-				{ a: 'x' }, {}, 'nope', null,
+				{ a: 'x', b: 1, c: true },
+				{ a: 'x', b: 1 },
+				{ a: 'x', b: 1, c: 0 },
+				{ a: 'x' },
+				{},
+				'nope',
+				null,
 			],
 		)
 	})
@@ -2846,13 +2913,19 @@ describe('F3 — assertParseGuardSymmetry sweep — every shape kind + composed/
 				{ s: 'x', n: 1, i: 1.5, b: true, l: 'a' },
 				{ s: 'x', n: 1, i: 1, b: 1, l: 'a' },
 				{ s: 'x', n: 1, i: 1, b: true, l: 'c' },
-				'notobj', null,
+				'notobj',
+				null,
 			],
 		)
 	})
 
 	it('composed — array-of-each primitive kind', () => {
-		assertParseGuardSymmetry(arrayShape(stringShape({ min: 1 }), { min: 1 }), [['a', 'b'], ['a', ''], [], 'x'])
+		assertParseGuardSymmetry(arrayShape(stringShape({ min: 1 }), { min: 1 }), [
+			['a', 'b'],
+			['a', ''],
+			[],
+			'x',
+		])
 		assertParseGuardSymmetry(arrayShape(integerShape({ min: 0 })), [[0, 1], [0, 0.5], [], 'x'])
 		assertParseGuardSymmetry(arrayShape(booleanShape()), [[true, false], [true, 1], [], 'x'])
 	})
@@ -2861,8 +2934,14 @@ describe('F3 — assertParseGuardSymmetry sweep — every shape kind + composed/
 		assertParseGuardSymmetry(
 			tupleShape(stringShape({ min: 1 }), integerShape({ min: 0 }), booleanShape()),
 			[
-				['x', 0, true], ['', 0, true], ['x', -1, true], ['x', 0, 1],
-				['x', 0], ['x', 0, true, 'extra'], 'x', null,
+				['x', 0, true],
+				['', 0, true],
+				['x', -1, true],
+				['x', 0, 1],
+				['x', 0],
+				['x', 0, true, 'extra'],
+				'x',
+				null,
 			],
 		)
 	})
@@ -2879,25 +2958,35 @@ describe('F3 — assertParseGuardSymmetry sweep — every shape kind + composed/
 				{ kind: 'other', name: 'x' },
 				{ kind: 'user', name: '' },
 				{ kind: 'bot', id: -1 },
-				'nope', null,
+				'nope',
+				null,
 			],
 		)
 	})
 
 	it('composed — optional/nullable wrapping each composite kind', () => {
 		// `undefined` is the parser's sole failure sentinel; exclude as bare sample.
-		assertParseGuardSymmetry(
-			optionalShape(objectShape({ x: integerShape() })),
-			[{ x: 1 }, { x: 1.5 }, {}, null],
-		)
-		assertParseGuardSymmetry(
-			nullableShape(arrayShape(stringShape({ min: 1 }), { min: 1 })),
-			[null, ['a'], [''], [], 'x'],
-		)
-		assertParseGuardSymmetry(
-			optionalShape(unionShape(stringShape({ min: 1 }), integerShape())),
-			['a', '', 0, 1, true, null],
-		)
+		assertParseGuardSymmetry(optionalShape(objectShape({ x: integerShape() })), [
+			{ x: 1 },
+			{ x: 1.5 },
+			{},
+			null,
+		])
+		assertParseGuardSymmetry(nullableShape(arrayShape(stringShape({ min: 1 }), { min: 1 })), [
+			null,
+			['a'],
+			[''],
+			[],
+			'x',
+		])
+		assertParseGuardSymmetry(optionalShape(unionShape(stringShape({ min: 1 }), integerShape())), [
+			'a',
+			'',
+			0,
+			1,
+			true,
+			null,
+		])
 	})
 
 	it('composed — intersection-of-objects (deep merge)', () => {
@@ -2940,7 +3029,10 @@ describe('F3 — assertParseGuardSymmetry sweep — every shape kind + composed/
 	it('composed — recursive lazyShape tree (non-cyclic data)', () => {
 		const treeShape: ContractShape = objectShape({
 			value: integerShape({ min: 0 }),
-			children: arrayShape(lazyShape(() => treeShape), { max: 3 }),
+			children: arrayShape(
+				lazyShape(() => treeShape),
+				{ max: 3 },
+			),
 		})
 		assertParseGuardSymmetry(treeShape, [
 			{ value: 1, children: [] },
@@ -2948,7 +3040,8 @@ describe('F3 — assertParseGuardSymmetry sweep — every shape kind + composed/
 			{ value: 'x', children: [] },
 			{ value: 1 },
 			{ value: 1, children: [{ value: 'bad', children: [] }] },
-			'notree', 42,
+			'notree',
+			42,
 		])
 	})
 })
@@ -2970,7 +3063,10 @@ describe('F3 — assertGeneratorSatisfiesGuard sweep — every shape kind + comp
 
 	it('array — empty, bounded, element variety', () => {
 		assertGeneratorSatisfiesGuard(arrayShape(stringShape({ min: 1 })), F3_SEEDS)
-		assertGeneratorSatisfiesGuard(arrayShape(integerShape({ min: 0 }), { min: 1, max: 3 }), F3_SEEDS)
+		assertGeneratorSatisfiesGuard(
+			arrayShape(integerShape({ min: 0 }), { min: 1, max: 3 }),
+			F3_SEEDS,
+		)
 		assertGeneratorSatisfiesGuard(arrayShape(booleanShape(), { min: 0, max: 0 }), F3_SEEDS)
 		assertGeneratorSatisfiesGuard(arrayShape(numberShape(), { min: 2, max: 4 }), F3_SEEDS)
 		assertGeneratorSatisfiesGuard(arrayShape(literalShape('x', 'y'), { min: 1, max: 2 }), F3_SEEDS)
@@ -2979,24 +3075,48 @@ describe('F3 — assertGeneratorSatisfiesGuard sweep — every shape kind + comp
 	it('tuple — empty, 1-element, mixed, nested', () => {
 		assertGeneratorSatisfiesGuard(tupleShape(), F3_SEEDS)
 		assertGeneratorSatisfiesGuard(tupleShape(stringShape({ min: 1 })), F3_SEEDS)
-		assertGeneratorSatisfiesGuard(tupleShape(stringShape({ min: 1 }), integerShape(), booleanShape()), F3_SEEDS)
-		assertGeneratorSatisfiesGuard(tupleShape(arrayShape(integerShape(), { min: 1 }), stringShape()), F3_SEEDS)
+		assertGeneratorSatisfiesGuard(
+			tupleShape(stringShape({ min: 1 }), integerShape(), booleanShape()),
+			F3_SEEDS,
+		)
+		assertGeneratorSatisfiesGuard(
+			tupleShape(arrayShape(integerShape(), { min: 1 }), stringShape()),
+			F3_SEEDS,
+		)
 	})
 
 	it('object — closed, open, additionalProperties:shape', () => {
-		assertGeneratorSatisfiesGuard(objectShape({ name: stringShape({ min: 1 }), age: integerShape({ min: 0 }) }), F3_SEEDS)
-		assertGeneratorSatisfiesGuard(objectShape({ a: stringShape() }, { additionalProperties: true }), F3_SEEDS)
-		assertGeneratorSatisfiesGuard(objectShape({ a: stringShape() }, { additionalProperties: numberShape({ min: 0 }) }), F3_SEEDS)
+		assertGeneratorSatisfiesGuard(
+			objectShape({ name: stringShape({ min: 1 }), age: integerShape({ min: 0 }) }),
+			F3_SEEDS,
+		)
+		assertGeneratorSatisfiesGuard(
+			objectShape({ a: stringShape() }, { additionalProperties: true }),
+			F3_SEEDS,
+		)
+		assertGeneratorSatisfiesGuard(
+			objectShape({ a: stringShape() }, { additionalProperties: numberShape({ min: 0 }) }),
+			F3_SEEDS,
+		)
 		assertGeneratorSatisfiesGuard(recordShape(numberShape({ min: 0 })), F3_SEEDS)
 		assertGeneratorSatisfiesGuard(recordShape(stringShape({ min: 1 })), F3_SEEDS)
 	})
 
 	it('union (anyOf) and oneOf', () => {
-		assertGeneratorSatisfiesGuard(unionShape(stringShape({ min: 1 }), integerShape({ min: 0 })), F3_SEEDS)
+		assertGeneratorSatisfiesGuard(
+			unionShape(stringShape({ min: 1 }), integerShape({ min: 0 })),
+			F3_SEEDS,
+		)
 		assertGeneratorSatisfiesGuard(unionShape(booleanShape(), numberShape({ min: 0 })), F3_SEEDS)
-		assertGeneratorSatisfiesGuard(unionShape(stringShape({ min: 1 }), integerShape(), booleanShape()), F3_SEEDS)
+		assertGeneratorSatisfiesGuard(
+			unionShape(stringShape({ min: 1 }), integerShape(), booleanShape()),
+			F3_SEEDS,
+		)
 		// oneOf disjoint: exactly-one matches on the first attempt.
-		assertGeneratorSatisfiesGuard(oneOfShape(stringShape({ min: 1 }), integerShape({ min: 0 })), F3_SEEDS)
+		assertGeneratorSatisfiesGuard(
+			oneOfShape(stringShape({ min: 1 }), integerShape({ min: 0 })),
+			F3_SEEDS,
+		)
 		// oneOf NON-disjoint (FU4): number ⊇ integer — the generator retries
 		// under the same seeded PRNG until it lands an exactly-one value.
 		assertGeneratorSatisfiesGuard(oneOfShape(numberShape(), integerShape()), F3_SEEDS)
@@ -3028,7 +3148,10 @@ describe('F3 — assertGeneratorSatisfiesGuard sweep — every shape kind + comp
 
 	it('intersection — two, three, nested', () => {
 		assertGeneratorSatisfiesGuard(
-			intersectionShape(objectShape({ a: stringShape({ min: 1 }) }), objectShape({ b: integerShape() })),
+			intersectionShape(
+				objectShape({ a: stringShape({ min: 1 }) }),
+				objectShape({ b: integerShape() }),
+			),
 			F3_SEEDS,
 		)
 		assertGeneratorSatisfiesGuard(
@@ -3065,7 +3188,10 @@ describe('F3 — assertGeneratorSatisfiesGuard sweep — every shape kind + comp
 	})
 
 	it('composed — tuple-of-mixed + tuple-in-object', () => {
-		assertGeneratorSatisfiesGuard(tupleShape(stringShape({ min: 1 }), integerShape(), booleanShape()), F3_SEEDS)
+		assertGeneratorSatisfiesGuard(
+			tupleShape(stringShape({ min: 1 }), integerShape(), booleanShape()),
+			F3_SEEDS,
+		)
 		assertGeneratorSatisfiesGuard(
 			objectShape({ pair: tupleShape(stringShape({ min: 1 }), integerShape({ min: 0 })) }),
 			F3_SEEDS,
@@ -3128,7 +3254,10 @@ describe('F3 — assertGeneratorSatisfiesGuard sweep — every shape kind + comp
 		// F3 provides an independent regression under the sweep name.
 		const treeShape: ContractShape = objectShape({
 			value: integerShape({ min: 0 }),
-			children: arrayShape(lazyShape(() => treeShape), { max: 3 }),
+			children: arrayShape(
+				lazyShape(() => treeShape),
+				{ max: 3 },
+			),
 		})
 		assertGeneratorSatisfiesGuard(treeShape, F3_SEEDS)
 	})
@@ -3152,7 +3281,9 @@ describe('F3 — prototype-pollution sweep — every object-building compilePars
 
 	it('open object (additionalProperties:true) — drops dangerous keys, keeps safe', () => {
 		assertNoPrototypePollution(() => {
-			const parser = compileParser(objectShape({ safe: stringShape() }, { additionalProperties: true }))
+			const parser = compileParser(
+				objectShape({ safe: stringShape() }, { additionalProperties: true }),
+			)
 			const parsed = parser(makeHostilePayload())
 			expect(parsed).toEqual({ safe: 'ok' })
 			assertPollutionClean(parsed)
@@ -3188,10 +3319,7 @@ describe('F3 — prototype-pollution sweep — every object-building compilePars
 	it('intersection of two objects — drops dangerous keys from both members', () => {
 		assertNoPrototypePollution(() => {
 			const parser = compileParser(
-				intersectionShape(
-					objectShape({ safe: stringShape() }),
-					objectShape({ n: integerShape() }),
-				),
+				intersectionShape(objectShape({ safe: stringShape() }), objectShape({ n: integerShape() })),
 			)
 			const hostile: unknown = JSON.parse(
 				'{"__proto__":{"polluted":true},"constructor":{"x":1},"prototype":{"y":1},"safe":"ok","n":3}',
@@ -3220,9 +3348,7 @@ describe('F3 — prototype-pollution sweep — every object-building compilePars
 	it('object nested in tuple — drops dangerous keys from tuple element', () => {
 		assertNoPrototypePollution(() => {
 			const parser = compileParser(tupleShape(stringShape(), objectShape({ safe: stringShape() })))
-			const hostile: unknown = JSON.parse(
-				'["x",{"__proto__":{"polluted":true},"safe":"ok"}]',
-			)
+			const hostile: unknown = JSON.parse('["x",{"__proto__":{"polluted":true},"safe":"ok"}]')
 			const parsed = parser(hostile)
 			if (Array.isArray(parsed)) {
 				assertPollutionClean(parsed[1])
@@ -3232,12 +3358,8 @@ describe('F3 — prototype-pollution sweep — every object-building compilePars
 
 	it('object nested in union — drops dangerous keys from matched union variant', () => {
 		assertNoPrototypePollution(() => {
-			const parser = compileParser(
-				unionShape(objectShape({ safe: stringShape() }), stringShape()),
-			)
-			const hostile: unknown = JSON.parse(
-				'{"__proto__":{"polluted":true},"safe":"ok"}',
-			)
+			const parser = compileParser(unionShape(objectShape({ safe: stringShape() }), stringShape()))
+			const hostile: unknown = JSON.parse('{"__proto__":{"polluted":true},"safe":"ok"}')
 			const parsed = parser(hostile)
 			assertPollutionClean(parsed)
 		})
@@ -3246,9 +3368,7 @@ describe('F3 — prototype-pollution sweep — every object-building compilePars
 	it('object wrapped in optional — drops dangerous keys through the optional wrapper', () => {
 		assertNoPrototypePollution(() => {
 			const parser = compileParser(optionalShape(objectShape({ safe: stringShape() })))
-			const hostile: unknown = JSON.parse(
-				'{"__proto__":{"polluted":true},"safe":"ok"}',
-			)
+			const hostile: unknown = JSON.parse('{"__proto__":{"polluted":true},"safe":"ok"}')
 			const parsed = parser(hostile)
 			assertPollutionClean(parsed)
 		})
@@ -3259,9 +3379,7 @@ describe('F3 — prototype-pollution sweep — every object-building compilePars
 			const parser = compileParser(
 				defaultShape(objectShape({ safe: stringShape() }), { safe: 'dflt' }),
 			)
-			const hostile: unknown = JSON.parse(
-				'{"__proto__":{"polluted":true},"safe":"ok"}',
-			)
+			const hostile: unknown = JSON.parse('{"__proto__":{"polluted":true},"safe":"ok"}')
 			const parsed = parser(hostile)
 			assertPollutionClean(parsed)
 		})
@@ -3409,7 +3527,9 @@ describe('F3 — cycle-safety sweep — cyclic DATA through every compileGuard k
 
 	it('defaultShape guard returns false on cyclic data', () => {
 		const cycObj = makeCyclicObject()
-		const guard = compileGuard(defaultShape(objectShape({ name: stringShape({ min: 1 }) }), { name: 'x' }))
+		const guard = compileGuard(
+			defaultShape(objectShape({ name: stringShape({ min: 1 }) }), { name: 'x' }),
+		)
 		expect(() => guard(cycObj)).not.toThrow()
 		expect(guard(cycObj)).toBe(false)
 	})
@@ -3434,14 +3554,20 @@ describe('F3 — cycle-safety sweep — cyclic DATA through every compileGuard k
 		// asserted directly.
 		const treeShape: ContractShape = objectShape({
 			value: integerShape({ min: 0 }),
-			children: arrayShape(lazyShape(() => treeShape), { max: 3 }),
+			children: arrayShape(
+				lazyShape(() => treeShape),
+				{ max: 3 },
+			),
 		})
 		const treeGuard = compileGuard(treeShape)
 
 		// Build the canonical pattern independently to compare behavior.
 		const canonical: ContractShape = objectShape({
 			value: integerShape({ min: 0 }),
-			children: arrayShape(lazyShape(() => canonical), { max: 3 }),
+			children: arrayShape(
+				lazyShape(() => canonical),
+				{ max: 3 },
+			),
 		})
 		const canonicalGuard = compileGuard(canonical)
 
@@ -3549,7 +3675,10 @@ describe('FU1 — recursive lazyShape guard+parser are cycle/depth-safe over adv
 		// The other canonical recursive form: children is an array of the tree.
 		const treeShape: ContractShape = objectShape({
 			value: integerShape({ min: 0 }),
-			children: arrayShape(lazyShape(() => treeShape), { max: 8 }),
+			children: arrayShape(
+				lazyShape(() => treeShape),
+				{ max: 8 },
+			),
 		})
 		const guard = compileGuard(treeShape)
 		const parse = compileParser(treeShape)
@@ -3759,12 +3888,7 @@ describe('deepEqual', () => {
 		],
 		['object with NaN value', { a: Number.NaN }, { a: Number.NaN }, true],
 		['object with -0 vs +0 value', { a: -0 }, { a: 0 }, false],
-		[
-			'null-prototype object equal',
-			Object.assign(Object.create(null), { a: 1 }),
-			{ a: 1 },
-			true,
-		],
+		['null-prototype object equal', Object.assign(Object.create(null), { a: 1 }), { a: 1 }, true],
 		['date is not a plain record (Object.is leaf, distinct refs)', new Date(0), new Date(0), false],
 		['same date reference (Object.is leaf, same ref)', SHARED_DATE, SHARED_DATE, true],
 		['regexp is not a plain record (Object.is leaf)', /x/, /x/, false],

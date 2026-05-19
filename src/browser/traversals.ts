@@ -190,10 +190,7 @@ export function getParent(element: Element): Element | null {
  * const form = findAncestor(input, el => matchesTag(el, 'form'))
  * ```
  */
-export function findAncestor(
-	element: Element,
-	predicate: ElementPredicate,
-): Element | null {
+export function findAncestor(element: Element, predicate: ElementPredicate): Element | null {
 	let current = element.parentElement
 	while (current !== null) {
 		if (predicate(current)) {
@@ -310,10 +307,7 @@ export function findCommonAncestor(element1: Element, element2: Element): Elemen
  * const form = findClosest(input, el => el.tagName === 'FORM')
  * ```
  */
-export function findClosest(
-	element: Element,
-	predicate: ElementPredicate,
-): Element | null {
+export function findClosest(element: Element, predicate: ElementPredicate): Element | null {
 	let current: Element | null = element
 	while (current !== null) {
 		if (predicate(current)) {
@@ -628,7 +622,10 @@ export function findDescendantById(element: Element, id: string): Element | null
 /**
  * Find all descendants matching a predicate (depth-first)
  */
-export function findAllDescendants(element: Element, predicate: ElementPredicate): readonly Element[] {
+export function findAllDescendants(
+	element: Element,
+	predicate: ElementPredicate,
+): readonly Element[] {
 	const matches: Element[] = []
 	const stack: Element[] = []
 	let child = element.lastElementChild
@@ -808,7 +805,10 @@ export function getDescendantsByTag<K extends keyof HTMLElementTagNameMap>(
 /**
  * Get descendants by class name using native API
  */
-export function getDescendantsByClass(element: Element, className: string): HTMLCollectionOf<Element> {
+export function getDescendantsByClass(
+	element: Element,
+	className: string,
+): HTMLCollectionOf<Element> {
 	return element.getElementsByClassName(className)
 }
 
@@ -820,7 +820,7 @@ export function getFirstDescendantByTag<K extends keyof HTMLElementTagNameMap>(
 	tagName: K,
 ): HTMLElementTagNameMap[K] | null {
 	const elements = element.getElementsByTagName(tagName)
-	return elements.length > 0 ? elements[0] ?? null : null
+	return elements.length > 0 ? (elements[0] ?? null) : null
 }
 
 /**
@@ -828,7 +828,7 @@ export function getFirstDescendantByTag<K extends keyof HTMLElementTagNameMap>(
  */
 export function getFirstDescendantByClass(element: Element, className: string): Element | null {
 	const elements = element.getElementsByClassName(className)
-	return elements.length > 0 ? elements[0] ?? null : null
+	return elements.length > 0 ? (elements[0] ?? null) : null
 }
 
 // ============================================================================
@@ -1029,7 +1029,9 @@ export function getViewportVisibility(element: Element): number {
  * Useful for safe iteration when you need to modify the DOM during iteration,
  * since live collections update during iteration
  */
-export function toArray<T extends Element>(collection: HTMLCollectionOf<T> | NodeListOf<T>): readonly T[] {
+export function toArray<T extends Element>(
+	collection: HTMLCollectionOf<T> | NodeListOf<T>,
+): readonly T[] {
 	return Array.from(collection)
 }
 
@@ -1164,11 +1166,7 @@ export function insertBefore(
  * insertAfter(container, refNode, node1, node2)
  * ```
  */
-export function insertAfter(
-	parent: Element,
-	referenceNode: Node,
-	...nodes: readonly Node[]
-): void {
+export function insertAfter(parent: Element, referenceNode: Node, ...nodes: readonly Node[]): void {
 	if (nodes.length === 0) return
 
 	const nextSibling = referenceNode.nextSibling
@@ -1371,13 +1369,13 @@ export function delegate<K extends keyof HTMLElementEventMap>(
 	container: Element,
 	eventType: K,
 	selector: string,
-	handler: (target: Element, event: HTMLElementEventMap[K]) => void
+	handler: (target: Element, event: HTMLElementEventMap[K]) => void,
 ): () => void
 export function delegate<K extends keyof HTMLElementEventMap>(
 	container: Element,
 	eventType: K,
 	predicate: ElementPredicate,
-	handler: (target: Element, event: HTMLElementEventMap[K]) => void
+	handler: (target: Element, event: HTMLElementEventMap[K]) => void,
 ): () => void
 export function delegate<K extends keyof HTMLElementEventMap>(
 	container: Element,
@@ -1385,9 +1383,10 @@ export function delegate<K extends keyof HTMLElementEventMap>(
 	selectorOrPredicate: string | ElementPredicate,
 	handler: (target: Element, event: Event) => void,
 ): () => void {
-	const predicate: ElementPredicate = typeof selectorOrPredicate === 'string'
-		? (el: Element) => el.tagName === selectorOrPredicate.toUpperCase()
-		: selectorOrPredicate
+	const predicate: ElementPredicate =
+		typeof selectorOrPredicate === 'string'
+			? (el: Element) => el.tagName === selectorOrPredicate.toUpperCase()
+			: selectorOrPredicate
 
 	const listener = (event: Event): void => {
 		const start = event.target

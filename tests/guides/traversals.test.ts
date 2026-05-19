@@ -20,7 +20,8 @@ const doc = readGuide('traversals')
 function exportedNames(file: string): readonly string[] {
 	const src = readFileSync(resolvePath(WORKSPACE_ROOT, `src/browser/${file}.ts`), 'utf8')
 	const out: string[] = []
-	const regex = /^export\s+(?:async\s+)?function\s*\*?\s+([A-Za-z][A-Za-z0-9]*)|^export\s+const\s+([A-Za-z][A-Za-z0-9]*)/gm
+	const regex =
+		/^export\s+(?:async\s+)?function\s*\*?\s+([A-Za-z][A-Za-z0-9]*)|^export\s+const\s+([A-Za-z][A-Za-z0-9]*)/gm
 	let m: RegExpExecArray | null
 	while ((m = regex.exec(src)) !== null) {
 		const name = m[1] ?? m[2]
@@ -55,9 +56,20 @@ function documentedNames(source: string): ReadonlySet<string> {
 // plumbing the guide rightly does NOT cover, so SOURCE → DOC is scoped to
 // traversals.ts only — mirroring how parsers.test.ts scopes its SOURCE set).
 const TRAVERSAL_GUARDS = [
-	'isElement', 'isHTMLElement', 'isTextNode', 'isTagType', 'matchesTag',
-	'hasClass', 'hasClasses', 'hasId', 'hasAttribute', 'createMatcher',
-	'isFocusable', 'findFocusableElements', 'findFirstFocusable', 'findLastFocusable',
+	'isElement',
+	'isHTMLElement',
+	'isTextNode',
+	'isTagType',
+	'matchesTag',
+	'hasClass',
+	'hasClasses',
+	'hasId',
+	'hasAttribute',
+	'createMatcher',
+	'isFocusable',
+	'findFocusableElements',
+	'findFirstFocusable',
+	'findLastFocusable',
 ] as const
 
 const TRAVERSAL_EXPORTS = new Set(exportedNames('traversals'))

@@ -599,10 +599,7 @@ export function assertNoPrototypePollution(run: () => void): void {
 				// `constructor` legitimately resolves up the chain to
 				// `Object` — assert it is still the native constructor,
 				// not an attacker-supplied replacement.
-				expect(
-					Reflect.get(probe, key),
-					'Object.prototype.constructor was replaced',
-				).toBe(Object)
+				expect(Reflect.get(probe, key), 'Object.prototype.constructor was replaced').toBe(Object)
 				continue
 			}
 			expect(
@@ -656,10 +653,7 @@ export function assertNoPrototypePollution(run: () => void): void {
  * @param samples - Inputs to check the contract against (mix accepted and
  *                   rejected values for full coverage).
  */
-export function assertParseGuardSymmetry(
-	shape: ContractShape,
-	samples: readonly unknown[],
-): void {
+export function assertParseGuardSymmetry(shape: ContractShape, samples: readonly unknown[]): void {
 	const guard = compileGuard(shape)
 	const parser = compileParser(shape)
 	const label = describeShape(shape)
@@ -748,9 +742,7 @@ export function assertGeneratorSatisfiesGuard(
 	// seeds. A shape every seed collapses to one value (single-value
 	// literal, empty object) is constant-output by construction; demanding
 	// distinct outputs there would be a false failure.
-	const varied = outputs.some(
-		(value, index) => index > 0 && !deepEquals(value, outputs[0]),
-	)
+	const varied = outputs.some((value, index) => index > 0 && !deepEquals(value, outputs[0]))
 	if (varied) {
 		const distinct = countDistinct(outputs)
 		expect(
@@ -904,15 +896,17 @@ export function describeShape(shape: ContractShape): string {
 export function printValue(value: unknown): string {
 	try {
 		const seen = new WeakSet<object>()
-		return JSON.stringify(value, (_key, current) => {
-			if (typeof current === 'object' && current !== null) {
-				if (seen.has(current)) {
-					return '[Circular]'
+		return (
+			JSON.stringify(value, (_key, current) => {
+				if (typeof current === 'object' && current !== null) {
+					if (seen.has(current)) {
+						return '[Circular]'
+					}
+					seen.add(current)
 				}
-				seen.add(current)
-			}
-			return current
-		}) ?? String(value)
+				return current
+			}) ?? String(value)
+		)
 	} catch {
 		return String(value)
 	}

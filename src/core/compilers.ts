@@ -629,10 +629,7 @@ function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContex
 			// (round-trip parity oracle). The nested-intersection case is
 			// flattened to its effective leaf objects first, mirroring the
 			// guard's `flattenIntersectionObjects`.
-			const merged = mergeIntersectionObjectSchema(
-				flattenIntersectionObjects(shape),
-				lazyContext,
-			)
+			const merged = mergeIntersectionObjectSchema(flattenIntersectionObjects(shape), lazyContext)
 			if (shape.description !== undefined && typeof merged !== 'boolean') {
 				return { ...merged, description: shape.description }
 			}
@@ -684,9 +681,7 @@ function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContex
 			const innerSchema = compileSchemaInner(shape.inner, lazyContext)
 			const defaultValue = cloneJsonValue(shape.value)
 			if (typeof innerSchema === 'boolean') {
-				return innerSchema
-					? { default: defaultValue }
-					: { not: {}, default: defaultValue }
+				return innerSchema ? { default: defaultValue } : { not: {}, default: defaultValue }
 			}
 			return { ...innerSchema, default: defaultValue }
 		}
@@ -703,8 +698,11 @@ function compileSchemaInner(shape: ContractShape, lazyContext?: LazySchemaContex
 			// present when reached via the public `compileSchema` boundary;
 			// the `?? new` fallback keeps this arm total for any direct inner
 			// call and still yields a valid self-contained ref+defs.
-			const context: LazySchemaContext =
-				lazyContext ?? { defs: {}, names: new Map(), counter: { value: 0 } }
+			const context: LazySchemaContext = lazyContext ?? {
+				defs: {},
+				names: new Map(),
+				counter: { value: 0 },
+			}
 			const existing = context.names.get(shape.thunk)
 			if (existing !== undefined) {
 				return { $ref: `#/$defs/${existing}` }
@@ -777,10 +775,7 @@ function compileGuardInner(
 			// stateless regex reference.
 			const pattern =
 				shape.pattern !== undefined
-					? new RegExp(
-							shape.pattern.source,
-							shape.pattern.flags.replace(/[gy]/g, ''),
-						)
+					? new RegExp(shape.pattern.source, shape.pattern.flags.replace(/[gy]/g, ''))
 					: undefined
 			return (value) => {
 				if (typeof value !== 'string') {
@@ -2033,7 +2028,9 @@ function compileGeneratorInner(
 			throw new Error(
 				`oneOf has no exactly-one-matching value within ${MAX_ONEOF_ATTEMPTS} generation attempts: its variants (${shape.variants
 					.map((variant) => variant.type)
-					.join(', ')}) overlap so heavily that every generated value satisfies two or more of them, which the JSON-Schema oneOf contract (exactly one) rejects. Make the variants disjoint (mutually exclusive) or use anyOf/unionShape if a value is allowed to match more than one.`,
+					.join(
+						', ',
+					)}) overlap so heavily that every generated value satisfies two or more of them, which the JSON-Schema oneOf contract (exactly one) rejects. Make the variants disjoint (mutually exclusive) or use anyOf/unionShape if a value is allowed to match more than one.`,
 			)
 		}
 		case 'intersection': {

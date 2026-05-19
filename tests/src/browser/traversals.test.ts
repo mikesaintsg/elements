@@ -239,19 +239,19 @@ describe('traversal', () => {
 
 		it('findAncestor should find first matching ancestor', () => {
 			const child = query('#child')
-			const result = findAncestor(child, el => el.id === 'parent')
+			const result = findAncestor(child, (el) => el.id === 'parent')
 			expect(result?.id).toBe('parent')
 		})
 
 		it('findAncestor should return null when no match found', () => {
 			const child = query('#child')
-			const result = findAncestor(child, el => el.id === 'non-existent')
+			const result = findAncestor(child, (el) => el.id === 'non-existent')
 			expect(result).toBeNull()
 		})
 
 		it('findAncestor should not match the element itself', () => {
 			const parent = query('#parent')
-			const result = findAncestor(parent, el => el.id === 'parent')
+			const result = findAncestor(parent, (el) => el.id === 'parent')
 			expect(result).toBeNull()
 		})
 
@@ -353,13 +353,13 @@ describe('traversal', () => {
 
 		it('findChild should find first matching child', () => {
 			const parent = query('#parent')
-			const result = findChild(parent, el => el.classList.contains('second'))
+			const result = findChild(parent, (el) => el.classList.contains('second'))
 			expect(result?.classList.contains('second')).toBe(true)
 		})
 
 		it('findChild should return null when no match', () => {
 			const parent = query('#parent')
-			const result = findChild(parent, el => el.classList.contains('non-existent'))
+			const result = findChild(parent, (el) => el.classList.contains('non-existent'))
 			expect(result).toBeNull()
 		})
 
@@ -423,13 +423,13 @@ describe('traversal', () => {
 
 		it('findChildren should find all matching children', () => {
 			const parent = query('#parent')
-			const results = findChildren(parent, el => el.classList.contains('item'))
+			const results = findChildren(parent, (el) => el.classList.contains('item'))
 			expect(results.length).toBe(3)
 		})
 
 		it('findChildren should return empty array when no matches', () => {
 			const parent = query('#parent')
-			const results = findChildren(parent, el => el.classList.contains('non-existent'))
+			const results = findChildren(parent, (el) => el.classList.contains('non-existent'))
 			expect(results.length).toBe(0)
 		})
 
@@ -498,7 +498,7 @@ describe('traversal', () => {
 
 		it('findNextSibling should find next matching sibling', () => {
 			const target = query('.target')
-			const result = findNextSibling(target, el => el.tagName === 'SPAN')
+			const result = findNextSibling(target, (el) => el.tagName === 'SPAN')
 			expect(result?.classList.contains('fifth')).toBe(true)
 		})
 
@@ -516,7 +516,7 @@ describe('traversal', () => {
 
 		it('findPreviousSibling should find previous matching sibling', () => {
 			const target = query('.target')
-			const result = findPreviousSibling(target, el => el.tagName === 'SPAN')
+			const result = findPreviousSibling(target, (el) => el.tagName === 'SPAN')
 			expect(result?.classList.contains('first')).toBe(true)
 		})
 
@@ -536,7 +536,7 @@ describe('traversal', () => {
 			const target = query('.target')
 			const siblings = getSiblings(target)
 			expect(siblings.length).toBe(4)
-			expect(siblings.some(s => s.classList.contains('target'))).toBe(false)
+			expect(siblings.some((s) => s.classList.contains('target'))).toBe(false)
 		})
 
 		it('getNextSiblings should return all following siblings', () => {
@@ -578,26 +578,26 @@ describe('traversal', () => {
 
 		it('findDescendant should find first matching (depth-first)', () => {
 			const root = query('#root')
-			const result = findDescendant(root, el => el.classList.contains('level2'))
+			const result = findDescendant(root, (el) => el.classList.contains('level2'))
 			expect(result?.classList.contains('b')).toBe(true)
 		})
 
 		it('findDescendant should find deeply nested elements', () => {
 			const root = query('#root')
-			const result = findDescendant(root, el => el.classList.contains('level3'))
+			const result = findDescendant(root, (el) => el.classList.contains('level3'))
 			expect(result?.classList.contains('f')).toBe(true)
 		})
 
 		it('findAllDescendants should find all matching', () => {
 			const root = query('#root')
-			const results = findAllDescendants(root, el => el.classList.contains('level2'))
+			const results = findAllDescendants(root, (el) => el.classList.contains('level2'))
 			expect(results.length).toBe(3)
 		})
 
 		it('walkDescendants should call callback for each descendant', () => {
 			const root = query('#root')
 			const visited: string[] = []
-			walkDescendants(root, el => {
+			walkDescendants(root, (el) => {
 				visited.push(el.className)
 			})
 			expect(visited.length).toBe(6)
@@ -606,7 +606,7 @@ describe('traversal', () => {
 		it('walkDescendants should stop when callback returns true', () => {
 			const root = query('#root')
 			const visited: string[] = []
-			walkDescendants(root, el => {
+			walkDescendants(root, (el) => {
 				visited.push(el.className)
 				return el.classList.contains('target')
 			})
@@ -635,9 +635,15 @@ describe('traversal', () => {
 		it('walkDescendantsBreadthFirst should traverse level by level', () => {
 			const root = query('#root')
 			const visited: string[] = []
-			walkDescendantsBreadthFirst(root, el => {
-				if (el.classList.contains('level1') || el.classList.contains('level2') || el.classList.contains('level3')) {
-					visited.push(el.classList.contains('level1') ? 'l1' : el.classList.contains('level2') ? 'l2' : 'l3')
+			walkDescendantsBreadthFirst(root, (el) => {
+				if (
+					el.classList.contains('level1') ||
+					el.classList.contains('level2') ||
+					el.classList.contains('level3')
+				) {
+					visited.push(
+						el.classList.contains('level1') ? 'l1' : el.classList.contains('level2') ? 'l2' : 'l3',
+					)
 				}
 			})
 			// Level 1s should come before level 2s
@@ -870,21 +876,23 @@ describe('traversal', () => {
 		it('findInCollection should find matching element', () => {
 			container.innerHTML = '<span class="a">A</span><span class="b">B</span>'
 			const collection = container.getElementsByTagName('span')
-			const result = findInCollection(collection, el => el.classList.contains('b'))
+			const result = findInCollection(collection, (el) => el.classList.contains('b'))
 			expect(result?.textContent).toBe('B')
 		})
 
 		it('filterCollection should filter elements', () => {
-			container.innerHTML = '<span class="keep">A</span><span class="discard">B</span><span class="keep">C</span>'
+			container.innerHTML =
+				'<span class="keep">A</span><span class="discard">B</span><span class="keep">C</span>'
 			const collection = container.getElementsByTagName('span')
-			const result = filterCollection(collection, el => el.classList.contains('keep'))
+			const result = filterCollection(collection, (el) => el.classList.contains('keep'))
 			expect(result.length).toBe(2)
 		})
 	})
 
 	describe('delegation', () => {
 		it('delegate should handle events on matching children', () => {
-			container.innerHTML = '<div id="buttons"><button class="a">A</button><button class="b">B</button></div>'
+			container.innerHTML =
+				'<div id="buttons"><button class="a">A</button><button class="b">B</button></div>'
 			const buttons = query('#buttons')
 			let clicked: string | null = null
 
@@ -900,13 +908,19 @@ describe('traversal', () => {
 		})
 
 		it('delegate should handle events with custom predicate', () => {
-			container.innerHTML = '<div id="wrapper"><span class="active">Active</span><span>Inactive</span></div>'
+			container.innerHTML =
+				'<div id="wrapper"><span class="active">Active</span><span>Inactive</span></div>'
 			const wrapper = query('#wrapper')
 			let handled = false
 
-			const cleanup = delegate(wrapper, 'click', (el: Element) => el.classList.contains('active'), () => {
-				handled = true
-			})
+			const cleanup = delegate(
+				wrapper,
+				'click',
+				(el: Element) => el.classList.contains('active'),
+				() => {
+					handled = true
+				},
+			)
 
 			const active = queryHTML('.active')
 			active.click()
@@ -944,12 +958,12 @@ describe('traversal', () => {
 
 		it('findFirstFocusable should find first focusable', () => {
 			const first = findFirstFocusable(container)
-			expect((first)?.id).toBe('input1')
+			expect(first?.id).toBe('input1')
 		})
 
 		it('findLastFocusable should find last focusable', () => {
 			const last = findLastFocusable(container)
-			expect((last)?.id).toBe('focusable-div')
+			expect(last?.id).toBe('focusable-div')
 		})
 	})
 
@@ -1032,11 +1046,7 @@ describe('traversal', () => {
 			})
 
 			it('should handle multiple nodes', () => {
-				replace(
-					container,
-					document.createElement('div'),
-					document.createElement('span'),
-				)
+				replace(container, document.createElement('div'), document.createElement('span'))
 				expect(container.childNodes.length).toBe(2)
 			})
 

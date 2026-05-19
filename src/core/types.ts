@@ -81,8 +81,8 @@ export type TupleFromGuards<Ts extends ReadonlyArray<Guard<unknown>>> = Readonly
  * @typeParam U - Union type to intersect
  */
 export type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (
-		k: infer I,
-	) => void
+	k: infer I,
+) => void
 	? I
 	: never
 

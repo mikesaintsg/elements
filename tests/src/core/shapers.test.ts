@@ -78,23 +78,17 @@ describe('stringShape', () => {
 	})
 
 	it('throws when min is non-finite', () => {
-		expect(() => stringShape({ min: Infinity })).toThrow(
-			'stringShape: min must be a finite number',
-		)
+		expect(() => stringShape({ min: Infinity })).toThrow('stringShape: min must be a finite number')
 	})
 
 	it('throws when max is non-finite (NaN)', () => {
-		expect(() => stringShape({ max: NaN })).toThrow(
-			'stringShape: max must be a finite number',
-		)
+		expect(() => stringShape({ max: NaN })).toThrow('stringShape: max must be a finite number')
 	})
 
 	it('throws when length min is negative', () => {
 		// String length can never be negative — a negative `min` is a
 		// programmer error, not a satisfiable-but-vacuous constraint.
-		expect(() => stringShape({ min: -1 })).toThrow(
-			'stringShape: min (-1) must not be negative',
-		)
+		expect(() => stringShape({ min: -1 })).toThrow('stringShape: min (-1) must not be negative')
 	})
 
 	it('does not throw for valid bounds (min <= max, min === max allowed)', () => {
@@ -141,15 +135,11 @@ describe('numberShape', () => {
 	})
 
 	it('throws when min is non-finite', () => {
-		expect(() => numberShape({ min: Infinity })).toThrow(
-			'numberShape: min must be a finite number',
-		)
+		expect(() => numberShape({ min: Infinity })).toThrow('numberShape: min must be a finite number')
 	})
 
 	it('throws when max is non-finite (NaN)', () => {
-		expect(() => numberShape({ max: NaN })).toThrow(
-			'numberShape: max must be a finite number',
-		)
+		expect(() => numberShape({ max: NaN })).toThrow('numberShape: max must be a finite number')
 	})
 
 	it('does not throw for valid numeric bounds incl. negative (numbers may be negative)', () => {
@@ -199,9 +189,7 @@ describe('integerShape', () => {
 		expect(() => integerShape({ min: Infinity })).toThrow(
 			'integerShape: min must be a finite number',
 		)
-		expect(() => integerShape({ max: NaN })).toThrow(
-			'integerShape: max must be a finite number',
-		)
+		expect(() => integerShape({ max: NaN })).toThrow('integerShape: max must be a finite number')
 	})
 
 	it('does not throw for valid bounds incl. negative', () => {
@@ -448,15 +436,15 @@ describe('intersectionShape', () => {
 		expect(() => intersectionShape(stringShape())).toThrow(
 			'intersectionShape members must be object shapes',
 		)
-		expect(() =>
-			intersectionShape(objectShape({ a: stringShape() }), stringShape()),
-		).toThrow('intersectionShape members must be object shapes')
+		expect(() => intersectionShape(objectShape({ a: stringShape() }), stringShape())).toThrow(
+			'intersectionShape members must be object shapes',
+		)
 		expect(() => intersectionShape(tupleShape(stringShape()))).toThrow(
 			'intersectionShape members must be object shapes',
 		)
-		expect(() =>
-			intersectionShape(unionShape(objectShape({ a: stringShape() }))),
-		).toThrow('intersectionShape members must be object shapes')
+		expect(() => intersectionShape(unionShape(objectShape({ a: stringShape() })))).toThrow(
+			'intersectionShape members must be object shapes',
+		)
 	})
 
 	it('accepts recordShape members (open objects are object shapes)', () => {
@@ -581,9 +569,7 @@ describe('defaultShape', () => {
 	it('§13 — accepts a default that DOES satisfy the inner guard', () => {
 		expect(() => defaultShape(integerShape({ min: 0 }), 5)).not.toThrow()
 		expect(() => defaultShape(stringShape({ min: 1 }), 'ok')).not.toThrow()
-		expect(() =>
-			defaultShape(objectShape({ a: stringShape() }), { a: 'x' }),
-		).not.toThrow()
+		expect(() => defaultShape(objectShape({ a: stringShape() }), { a: 'x' })).not.toThrow()
 	})
 
 	it('wraps any inner shape kind (composes like optional/nullable)', () => {
