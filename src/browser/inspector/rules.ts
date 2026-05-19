@@ -1,47 +1,50 @@
 import type {
-	AttributeEnumDomain,
 	AttributeIntegerBound,
-	AttributeRule,
 	ChildModel,
-	ChildSegment,
-	ContentCategory,
-	ContentConstraint,
-	ContentConstraintKind,
-	ContentCount,
 	ContentModelEntry,
 	Finding,
-	FindingDraft,
 	PresentationDefault,
 	RuleContext,
 	RuleInterface,
 	RuleSubject,
 } from '../types.js'
-import { andOf, literalOf, notOf, parseString, whereOf } from '@elements/core'
+import { andOf, notOf, whereOf } from '@elements/core'
 import {
+	buildFinding,
+	citeOf,
 	coerceEnumAttribute,
 	coerceIntegerAttribute,
+	constraintOf,
+	countLeadingTag,
 	effectiveCategories,
+	findAttributeRule,
+	findForbiddenDescendant,
+	findMiscategorizedChild,
+	findOffendingEnumAttribute,
+	findOffendingEnumDomain,
+	findOffendingIntegerBound,
 	flatChildren,
 	flatDescendants,
 	flatParent,
+	hasAttributeRule,
+	hasFlatAncestorTag,
+	isHiddenNode,
+	isPopoverOpen,
 	matchesTag,
-	nodePath,
+	readChildText,
+	readHiddenState,
+	readInlineStyle,
+	readRoleTokens,
+	readStyleValue,
+	requiresLeadingTag,
+	resolveLeadingSingularTag,
+	resolvePermittedTags,
+	resolveReferencedTarget,
+	satisfiesChildModel,
+	tagOf,
 } from '../helpers.js'
-import { getElementById } from '../traversals.js'
-import {
-	ATTRIBUTE_ENUM_DOMAINS,
-	ATTRIBUTE_INTEGER_BOUNDS,
-	FOCUSABLE_TAGS,
-	LIST_CONTAINER_TAGS,
-	PRESENTATION_DEFAULTS,
-} from '../constants.js'
-import {
-	CATEGORY_MEMBERS,
-	describeElement,
-	isKnownElement,
-	isTransparent,
-	isVoid,
-} from '../schema.js'
+import { FOCUSABLE_TAGS, LIST_CONTAINER_TAGS, PRESENTATION_DEFAULTS } from '../constants.js'
+import { describeElement, isKnownElement, isVoid } from '../schema.js'
 
 // ============================================================================
 //  Inspector rule engine + the four schema-data-driven rule families.
@@ -165,307 +168,28 @@ function readSubject(element: Element, context: RuleContext): RuleSubject {
 	}
 }
 
-// ── Shared predicates ───────────────────────────────────────────────────────
+// ── Shared predicates / finding builder ─────────────────────────────────────
 //
-// Tiny `is{Condition}` guards the family guards compose. `script-supporting`
-// (`script` / `template`) is always permitted where a constrained child list
-// says "optionally intermixed" (guides/w3c/categories.md §3.2.5), so the
-// content/context families treat it as universally allowed.
-
-const isScriptSupporting = literalOf('script', 'template')
-
-// The closed content-category vocabulary, as a guard, so a `forbidden` token
-// (typed `ContentCategory | string`) narrows to a real `ContentCategory`
-// without an `as` assertion (AGENTS §1).
-const isContentCategory = literalOf(
-	'metadata',
-	'flow',
-	'sectioning',
-	'heading',
-	'phrasing',
-	'embedded',
-	'interactive',
-	'palpable',
-	'script-supporting',
-	'transparent',
-)
-
-// A tag belongs to a content category iff the inverted `CATEGORY_MEMBERS`
-// index (schema-derived, parity-gated) lists it — never a hand-kept set.
-function tagInCategory(tag: string, category: ContentCategory): boolean {
-	return CATEGORY_MEMBERS.get(category)?.has(tag) === true
-}
-
-// A `forbidden` token is either a content category or a literal tag; resolve
-// it generically against the schema data, never a per-element branch.
-function descendantHits(forbidden: ContentCategory | string, descendantTag: string): boolean {
-	if (descendantTag === forbidden) return true
-	return isContentCategory(forbidden) && tagInCategory(descendantTag, forbidden)
-}
-
-// Find the first constraint of a kind on an entry (constraints are encoded
-// as data so the structure family stays generic per `kind`).
-function constraintOf(
-	entry: ContentModelEntry | null,
-	kind: ContentConstraintKind,
-): ContentConstraint | null {
-	if (entry === null) return null
-	for (const constraint of entry.constraints) {
-		if (constraint.kind === kind) return constraint
-	}
-	return null
-}
-
-// ── Finding builder ─────────────────────────────────────────────────────────
-//
-// `FindingDraft` (types.ts, §5) is `Finding` minus the DOM `path` the
-// builder derives — a rule never restates the path-derivation.
-
-// Assemble the shared `Finding` record — the stable DOM path is the Phase-2
-// `nodePath` adapter (wraps `getPathToAncestor()`); `cite` is the schema
-// entry's corpus anchor verbatim. Pure: builds a frozen record, no I/O.
-function buildFinding(draft: FindingDraft): Finding {
-	return {
-		severity: draft.severity,
-		rule: draft.rule,
-		element: draft.element,
-		path: nodePath(draft.element),
-		message: draft.message,
-		cite: draft.cite,
-		...(draft.expected === undefined ? {} : { expected: draft.expected }),
-		...(draft.actual === undefined ? {} : { actual: draft.actual }),
-	}
-}
-
-// Cite fallback: a generic family rule cites the element's own schema entry
-// when it has one. The corpus anchor is the single source of truth — no rule
-// invents an anchor (AGENTS §"corpus = source of truth").
-function citeOf(entry: ContentModelEntry | null, fallback: string): string {
-	return entry?.cite ?? fallback
-}
+// The generic building blocks — `isScriptSupporting` / `isContentCategory`
+// guards, `matchesTagCategory` / `matchesForbiddenToken`, `constraintOf`,
+// `buildFinding`, `citeOf` — live in the centralized `helpers.ts` (the
+// `{verb}{Noun}` rule-engine-helper section). This registry composes them;
+// it does not own them (AGENTS §4.6/§5).
 
 // ── Child-model engine ──────────────────────────────────────────────────────
 //
 // The ONE consumer of `entry.childModel` (types.ts `ChildModel` /
-// `ChildSegment`). Generic over EVERY ordered/prefix/group/choice model in
-// the registry — never table-specific or picture-specific code. Two pure
-// answers per parent:
-//
-//   - permittedTags(model)  the closed set of tags the model can EVER admit
-//                            (every `tag`/`group`/`choice` segment's tags,
-//                            plus script-supporting). A `category` arm makes
-//                            the set OPEN (any category-matching child) —
-//                            signalled by `null`.
-//   - matchSegments(...)    does the ordered child run satisfy the segment
-//                            list (cardinality + order, script-supporting
-//                            freely intermixed, `category` arm absorbing any
-//                            run of category-matching children)?
-//
-// `context/parent-model` reads `permittedTags`; `content/required` reads
-// `matchSegments`. They never overlap (membership-miss vs. order-miss).
-
-function childTag(child: Element): string {
-	return child.tagName.toLowerCase()
-}
-
-// True when `child` is in `category` by its EFFECTIVE (transparent-resolved)
-// categories — the same resolution `RuleContext.categories` is built from, so
-// a category arm absorbs exactly the children the spec's content category
-// admits. A transparent child resolves through its ancestors; a structural
-// child (empty categories — `td`/`li`/…) never matches a category arm (its
-// placement is the structure family's concern, keeping the families
-// disjoint).
-function childInCategory(child: Element, category: ContentCategory): boolean {
-	return effectiveCategories(child).includes(category)
-}
-
-// True when any segment in the (recursive) list is an OPEN content-category
-// arm — the model then admits any category-matching child, so a closed-tag
-// membership check cannot apply. Recurses through `group` / `choice`.
-function hasOpenArm(segments: readonly ChildSegment[]): boolean {
-	for (const segment of segments) {
-		if (segment.kind === 'category') return true
-		if (segment.kind === 'group' && hasOpenArm(segment.segments)) return true
-		if (segment.kind === 'choice' && segment.options.some((o) => hasOpenArm(o))) return true
-	}
-	return false
-}
-
-// Collect every concrete tag a (recursive) segment list can admit.
-function collectTags(segments: readonly ChildSegment[], into: Set<string>): void {
-	for (const segment of segments) {
-		if (segment.kind === 'tag') into.add(segment.tag)
-		else if (segment.kind === 'group') collectTags(segment.segments, into)
-		else if (segment.kind === 'choice') {
-			for (const option of segment.options) collectTags(option, into)
-		}
-	}
-}
-
-// The closed tag set a `ChildModel` admits, or `null` when the model has an
-// open `category` arm (any category-matching child is admissible — a
-// membership check cannot reject, so `context/parent-model` must defer to
-// `content/required`). Script-supporting is always in the set.
-function permittedTags(model: ChildModel): ReadonlySet<string> | null {
-	if (hasOpenArm(model.segments)) return null
-	const tags = new Set<string>(['script', 'template'])
-	collectTags(model.segments, tags)
-	return tags
-}
-
-function withinCount(count: ContentCount, observed: number): boolean {
-	if (count === '?') return observed <= 1
-	if (count === '*') return true
-	if (count === '+') return observed >= 1
-	return observed === 1
-}
-
-// NB: the per-segment cardinality-to-prose formatter the old `required`-era
-// rule used is GONE — the `Finding.expected` message's single source is now
-// the verbatim corpus **Content model** prose (`ChildModel.note`, via
-// `describeModel`), so a hand-rolled re-statement would be a second wording
-// source (the very over­load this refactor removed). Cardinality is decided
-// numerically by `withinCount`; the human wording comes from the corpus.
-
-// Try to consume a contiguous run of `children` starting at `start` that
-// satisfies `segments` in order. Returns the cursor AFTER the matched run, or
-// `null` when the run does not satisfy the segments. Script-supporting
-// elements are skippable anywhere ("optionally intermixed with
-// script-supporting elements"). Pure + total — generic over the recursive
-// `ChildSegment` union (tag / category / group / choice).
-function matchSegments(
-	children: readonly Element[],
-	start: number,
-	segments: readonly ChildSegment[],
-): number | null {
-	let cursor = start
-	const skipScript = (): void => {
-		while (cursor < children.length) {
-			const c = children[cursor]
-			if (c === undefined || !isScriptSupporting(childTag(c))) break
-			cursor += 1
-		}
-	}
-	for (const segment of segments) {
-		skipScript()
-		if (segment.kind === 'tag') {
-			// Consume a run of same-tag children, but never PAST this
-			// segment's cardinality upper bound: `'1'`/`'?'` admit at most
-			// one, so a trailing same-tag sibling is LEFT for the next
-			// segment / the next iteration of an enclosing repeating
-			// `group` (the spec's `group*( choice([{tag,1}]…) )` idiom —
-			// `tr` td/th, `select` option/optgroup, `optgroup` option).
-			// `'+'`/`'*'` have no finite upper bound, so they stay greedy.
-			const max = segment.count === '1' || segment.count === '?' ? 1 : Infinity
-			let run = 0
-			while (cursor < children.length && run < max) {
-				const c = children[cursor]
-				if (c === undefined || childTag(c) !== segment.tag) break
-				run += 1
-				cursor += 1
-				skipScript()
-			}
-			if (!withinCount(segment.count, run)) return null
-		} else if (segment.kind === 'category') {
-			while (cursor < children.length) {
-				const c = children[cursor]
-				if (c === undefined) break
-				if (isScriptSupporting(childTag(c))) {
-					cursor += 1
-					continue
-				}
-				if (!childInCategory(c, segment.category)) break
-				cursor += 1
-			}
-		} else if (segment.kind === 'group') {
-			let groups = 0
-			for (;;) {
-				const next = matchSegments(children, cursor, segment.segments)
-				if (next === null || next === cursor) break
-				cursor = next
-				groups += 1
-			}
-			if (!withinCount(segment.count, groups)) return null
-		} else {
-			let matched: number | null = null
-			for (const option of segment.options) {
-				const next = matchSegments(children, cursor, option)
-				if (next !== null && (matched === null || next > matched)) matched = next
-			}
-			if (matched === null) return null
-			cursor = matched
-		}
-	}
-	skipScript()
-	return cursor
-}
-
-// Does the parent's flat-tree element children satisfy its whole ordered
-// `ChildModel`? A `closed` model must consume EVERY child (no trailing
-// content outside the segments); a non-`closed` (prefix) model only requires
-// the structural prefix segments to match — the trailing open `category` arm
-// (already a segment) absorbs the rest, and any leftover beyond a fully
-// consumed prefix is governed elsewhere (transparent resolution, etc.).
-function childModelSatisfied(children: readonly Element[], model: ChildModel): boolean {
-	const end = matchSegments(children, 0, model.segments)
-	if (end === null) return false
-	if (model.closed) return end === children.length
-	return true
-}
-
-// Does the parent's `childModel` make `tag` a REQUIRED leading segment —
-// the first tag-bearing segment, with a mandatory count (`'1'`/`'+'`)? When
-// it does, an out-of-place / missing `tag` makes the whole model unsatisfied
-// so `content/required` (parent-keyed) is the SINGLE reporter and the
-// child-keyed `single-first-child` rule must DEFER (no §1/§2 double-report,
-// e.g. `<details><p><summary>`). When `tag` is only an OPTIONAL leading
-// segment (`'?'`, e.g. `legend` in `fieldset`, `caption` in `table`), the
-// permissive prefix model CANNOT detect a late occurrence — `content/
-// required` stays silent, so `single-first-child` is the sole reporter and
-// must NOT defer. This is the disjoint-source partition (structural, not a
-// per-rule special-case): exactly one rule owns each violation.
-function modelRequiresLeading(model: ChildModel, tag: string): boolean {
-	const first = model.segments[0]
-	if (first === undefined) return false
-	if (first.kind === 'tag') return first.tag === tag && (first.count === '1' || first.count === '+')
-	return false
-}
-
-// The tag a model permits AT MOST ONE of as its required-leading SINGULAR
-// child, or `null`. A leading `{kind:'tag', count:'1'|'?'}` `segments[0]`
-// segment is, per the corpus **Content model** prose, a singular slot:
-// `details` "One `summary` element followed by flow content." (`summary`(1)),
-// `fieldset` "Optionally a `legend` element, followed by flow content."
-// (`legend`(?)), `table` "Optionally a `caption`, followed by …"
-// (`caption`(?)). The parent therefore permits at most ONE of that tag; a
-// SECOND occurrence among its flat children is a tree-decidable
-// content-model violation. Encoded GENERICALLY off the `childModel` datum —
-// `'1'` and `'?'` (and only a leading TAG segment; a `choice`/`group`/
-// `category` head is not a singular slot, so `figure`'s figcaption — inside
-// a `choice` — is correctly NOT in scope, its position owned by
-// `structure/edge-child`). The `closed` flag is irrelevant to the upper
-// bound itself; rule ownership (closed → `content/required` exhaustiveness;
-// prefix → `content/cardinality`) is partitioned at the rule site so the
-// violation yields exactly one finding.
-function leadingSingularTag(model: ChildModel): string | null {
-	const first = model.segments[0]
-	if (first === undefined || first.kind !== 'tag') return null
-	if (first.count === '1' || first.count === '?') return first.tag
-	return null
-}
-
-// How many of the parent's flat-tree element children carry `tag` — the
-// SAME flat tree the Walker visits (slot/shadow/template), so the cardinality
-// count never diverges from the walk spine (§3); a nested same-tag element
-// under an intermediate child is NOT counted (only direct flat children),
-// so an inner `<details><summary>` is scoped to the inner `<details>`.
-function countLeadingTag(parent: Element, tag: string): number {
-	let count = 0
-	for (const child of flatChildren(parent)) {
-		if (childTag(child) === tag) count += 1
-	}
-	return count
-}
+// `ChildSegment`) — generic over EVERY ordered/prefix/group/choice model in
+// the registry. The engine itself (`tagOf` / `matchesChildCategory` /
+// `hasOpenCategoryArm` / `collectSegmentTags` / `resolvePermittedTags` /
+// `satisfiesCount` / `matchSegments` / `satisfiesChildModel` /
+// `requiresLeadingTag` / `resolveLeadingSingularTag` / `countLeadingTag`)
+// is centralized in `helpers.ts`; this registry composes it. Two pure
+// answers per parent: `resolvePermittedTags(model)` (the closed set the
+// model can EVER admit, or `null` for an open `category` arm — read by
+// `context/parent-model`) and `matchSegments(...)` (does the ordered child
+// run satisfy the segment list — read by `content/required`). They never
+// overlap (membership-miss vs. order-miss).
 
 // Human-readable expectation, derived from the model's verbatim prose
 // (`note`) — the corpus is the single source of the message wording.
@@ -476,15 +200,15 @@ function describeModel(model: ChildModel): string {
 // ── Cardinality / sequence reporting helpers (kept for the message body) ────
 
 function childrenSummary(children: readonly Element[]): string {
-	return children.map((c) => `<${childTag(c)}>`).join(', ') || '(no element children)'
+	return children.map((c) => `<${tagOf(c)}>`).join(', ') || '(no element children)'
 }
 
 // ============================================================================
 //  Family: context — child tag the parent's ordered model can never admit.
 //
 //  Schema-driven: the parent entry's `childModel` IS its constrained child
-//  list. If the parent carries a `childModel` whose `permittedTags` is a
-//  CLOSED set (no open `category` arm) and the element's tag is not in it
+//  list. If the parent carries a `childModel` whose `resolvePermittedTags`
+//  is a CLOSED set (no open `category` arm) and the element's tag is not in it
 //  (nor script-supporting), the element can NEVER legally sit here — a
 //  membership miss, reported on the CHILD. A parent with no `childModel`, or
 //  one with an open category arm, is NOT this family's concern (the
@@ -504,7 +228,7 @@ const isMisplacedChild = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	// distributed content — its assigned elements are walked separately,
 	// §3). Defer rather than false-positive on the conduit.
 	if (!isKnownElement(subject.tag)) return false
-	const allowed = permittedTags(parentEntry.childModel)
+	const allowed = resolvePermittedTags(parentEntry.childModel)
 	// Open category arm ⇒ a membership check cannot reject; defer to
 	// content/category + content/required (no double report).
 	if (allowed === null) return false
@@ -521,7 +245,7 @@ const contextRule: RuleInterface = {
 		const parentEntry = subject.parentEntry
 		const parentTag = subject.parent?.tagName.toLowerCase() ?? '(root)'
 		const allowed =
-			parentEntry?.childModel === undefined ? null : permittedTags(parentEntry.childModel)
+			parentEntry?.childModel === undefined ? null : resolvePermittedTags(parentEntry.childModel)
 		return buildFinding({
 			rule: 'context/parent-model',
 			severity: 'error',
@@ -550,7 +274,7 @@ const contextRule: RuleInterface = {
 //       SINGULAR child (a leading `{kind:'tag', count:'1'|'?'}` segment —
 //       `details`→`summary`, `fieldset`→`legend`) occurs MORE THAN ONCE.
 //       The open trailing arm would otherwise absorb the duplicate
-//       silently. Generic off `leadingSingularTag(childModel)`; defers to
+//       silently. Generic off `resolveLeadingSingularTag(childModel)`; defers to
 //       (1) when the ordered model is itself unsatisfied (a CLOSED model's
 //       duplicate — `table`→`caption` — is single-sourced there). One
 //       finding per parent.
@@ -570,22 +294,9 @@ const contextRule: RuleInterface = {
 //  enforces).
 // ============================================================================
 
-// The first flat-tree descendant whose tag/category is forbidden — a SINGLE
-// flat traversal (find-first idiom, mirroring `Walker.walk()`'s flat tree so
-// the rule layer never diverges from the walk spine, §3/§9).
-function firstForbiddenDescendant(
-	element: Element,
-	forbidden: readonly (ContentCategory | string)[],
-): Element | null {
-	if (forbidden.length === 0) return null
-	for (const descendant of flatDescendants(element)) {
-		const descendantTag = childTag(descendant)
-		for (const token of forbidden) {
-			if (descendantHits(token, descendantTag)) return descendant
-		}
-	}
-	return null
-}
+// The first forbidden flat-tree descendant is resolved by the centralized
+// `findForbiddenDescendant` helper (helpers.ts) — a single flat traversal
+// mirroring `Walker.walk()`'s flat tree (§3/§9).
 
 // Fires only when the parent carries a `childModel` AND every flat child tag
 // is admissible by it (a non-admissible tag is `context/parent-model`'s — the
@@ -601,16 +312,16 @@ function childModelUnsatisfied(subject: RuleSubject): boolean {
 	const entry = subject.entry
 	if (entry?.childModel === undefined) return false
 	const children = flatChildren(subject.element)
-	const allowed = permittedTags(entry.childModel)
+	const allowed = resolvePermittedTags(entry.childModel)
 	if (allowed !== null) {
 		// Closed-tag model: a non-admissible child is the context family's
 		// membership miss, not an order miss — defer (one finding per
 		// violation).
 		for (const child of children) {
-			if (!allowed.has(childTag(child))) return false
+			if (!allowed.has(tagOf(child))) return false
 		}
 	}
-	return !childModelSatisfied(children, entry.childModel)
+	return !satisfiesChildModel(children, entry.childModel)
 }
 
 const violatesChildModel = whereOf(isSubject, childModelUnsatisfied)
@@ -658,7 +369,7 @@ const violatesLeadingCardinality = whereOf(isSubject, (subject: RuleSubject): bo
 	// unsatisfied (a CLOSED model's duplicate breaks exhaustiveness) the
 	// violation is reported there — single source, no double-report.
 	if (childModelUnsatisfied(subject)) return false
-	const tag = leadingSingularTag(entry.childModel)
+	const tag = resolveLeadingSingularTag(entry.childModel)
 	if (tag === null) return false
 	return countLeadingTag(subject.element, tag) > 1
 })
@@ -672,7 +383,7 @@ const contentCardinalityRule: RuleInterface = {
 		if (!violatesLeadingCardinality(subject)) return null
 		const entry = subject.entry
 		if (entry?.childModel === undefined) return null
-		const tag = leadingSingularTag(entry.childModel)
+		const tag = resolveLeadingSingularTag(entry.childModel)
 		if (tag === null) return null
 		const count = countLeadingTag(element, tag)
 		return buildFinding({
@@ -701,9 +412,9 @@ const contentForbiddenRule: RuleInterface = {
 		if (!hasForbiddenList(subject)) return null
 		const entry = subject.entry
 		if (entry === null) return null
-		const offender = firstForbiddenDescendant(element, entry.forbidden)
+		const offender = findForbiddenDescendant(element, entry.forbidden)
 		if (offender === null) return null
-		const offenderTag = childTag(offender)
+		const offenderTag = tagOf(offender)
 		return buildFinding({
 			rule: 'content/forbidden',
 			severity: 'error',
@@ -716,31 +427,12 @@ const contentForbiddenRule: RuleInterface = {
 	},
 }
 
-// The first FLAT-tree element child whose resolved effective content
-// categories (transparent-resolved via the Phase-2 `effectiveCategories`
-// adapter — the SAME resolution `RuleContext.categories` is built from) are
-// NON-EMPTY and share NOTHING with the parent's corpus-derived `permits`
-// set. Transparent children are skipped: their content model IS their
-// parent's (resolved at walk time), so they are permitted wherever their
-// resolved content is — the `transparent` family owns their side-channel.
-// A child with EMPTY effective categories (a structural element — `td`/`li`/
-// `dd`/`summary`/… all carry `categories: []`) is likewise skipped: its
-// placement is governed by the `structure` family's `parent-restricted` /
-// `edge-child` / `single-first-child` constraints — the disjoint boundary
-// that keeps `<div><td>` a single `structure/parent-restricted` finding.
-function firstMiscategorizedChild(
-	element: Element,
-	permits: readonly ContentCategory[],
-): Element | null {
-	if (permits.length === 0) return null
-	for (const child of flatChildren(element)) {
-		if (isTransparent(childTag(child))) continue
-		const categories = effectiveCategories(child)
-		if (categories.length === 0) continue
-		if (!categories.some((category) => permits.includes(category))) return child
-	}
-	return null
-}
+// The first miscategorized flat-tree child (resolved effective categories
+// NON-EMPTY and disjoint from the parent's corpus-derived `permits`;
+// transparent + structural children skipped) is resolved by the
+// centralized `findMiscategorizedChild` helper (helpers.ts) — the
+// disjoint boundary that keeps `<div><td>` a single
+// `structure/parent-restricted` finding.
 
 // Engages ONLY for a bare-category parent (`entry.permits` non-empty). The
 // corpus guarantees such a parent has no `childModel` (its **Content model**
@@ -765,9 +457,9 @@ const contentCategoryRule: RuleInterface = {
 		const entry = subject.entry
 		if (entry === null) return null
 		const permits = entry.permits ?? []
-		const offender = firstMiscategorizedChild(element, permits)
+		const offender = findMiscategorizedChild(element, permits)
 		if (offender === null) return null
-		const offenderTag = childTag(offender)
+		const offenderTag = tagOf(offender)
 		return buildFinding({
 			rule: 'content/category',
 			severity: 'error',
@@ -957,19 +649,9 @@ const transparentMediaRule: RuleInterface = {
 //  to double-report alongside `content/required` (§1/§2 root cause removed).
 // ============================================================================
 
-// Does any flat-tree ANCESTOR of `element` carry one of `parents` as its
-// tag? Walks the SAME flat parent chain `readSubject` resolves "the parent"
-// from (`flatParent` — slot conduits collapsed, shadow host as parent), so a
-// descendant check never diverges from the walk spine (§3 — never light-tree
-// `closest`/`parentElement`). Bounded by the finite flat-tree depth.
-function hasFlatAncestorTag(element: Element, parents: readonly string[]): boolean {
-	let current = flatParent(element)
-	while (current !== null) {
-		if (parents.includes(current.tagName.toLowerCase())) return true
-		current = flatParent(current)
-	}
-	return false
-}
+// The flat-tree ancestor-tag scan (`hasFlatAncestorTag` — walks the SAME
+// flat parent chain `readSubject` resolves "the parent" from, §3) is
+// centralized in helpers.ts.
 
 // `parent-restricted` — the element is only valid inside one of `parents`.
 // The corpus distinguishes two spec readings, encoded as the constraint's
@@ -1058,9 +740,9 @@ const violatesSingleFirstChild = whereOf(isSubject, (subject: RuleSubject): bool
 	// Defer when the parent's childModel REQUIRES this child as its
 	// mandatory leading segment (content/required is the single source for
 	// the §1 missing/out-of-place case).
-	if (parentModel !== undefined && modelRequiresLeading(parentModel, subject.tag)) return false
+	if (parentModel !== undefined && requiresLeadingTag(parentModel, subject.tag)) return false
 	const siblings = flatChildren(subject.parent)
-	const occurrences = siblings.filter((s) => childTag(s) === subject.tag)
+	const occurrences = siblings.filter((s) => tagOf(s) === subject.tag)
 	// Defer the CARDINALITY aspect: when the parent's childModel makes this
 	// child a leading SINGULAR slot AND it occurs more than once, the
 	// duplicate is the content family's single concern (content/cardinality
@@ -1068,7 +750,7 @@ const violatesSingleFirstChild = whereOf(isSubject, (subject: RuleSubject): bool
 	// rule's, and never one-finding-per-duplicate-child.
 	if (
 		parentModel !== undefined &&
-		leadingSingularTag(parentModel) === subject.tag &&
+		resolveLeadingSingularTag(parentModel) === subject.tag &&
 		occurrences.length > 1
 	) {
 		return false
@@ -1142,7 +824,7 @@ const structureEdgeChildRule: RuleInterface = {
 const violatesNoSelfNest = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	if (constraintOf(subject.entry, 'no-self-nest') === null) return false
 	for (const descendant of flatDescendants(subject.element)) {
-		if (childTag(descendant) === subject.tag) return true
+		if (tagOf(descendant) === subject.tag) return true
 	}
 	return false
 })
@@ -1269,32 +951,10 @@ function hasLinkAncestorWithHref(element: Element): boolean {
 	return false
 }
 
-// The element's child text content, trimmed via the `@elements/core`
-// `parseString` parser (coerce-or-`undefined`: a whitespace-only / empty
-// result is `undefined`) — never a hand-rolled `.trim()` length test. Only
-// the element's OWN text nodes count (the corpus `time` datetime value is the
-// element's child text content).
-function childText(element: Element): string | undefined {
-	let text = ''
-	for (const node of element.childNodes) {
-		if (node.nodeType === Node.TEXT_NODE) text += node.textContent ?? ''
-	}
-	return parseString(text)
-}
-
-// Find the first `AttributeRule` on an entry matching a predicate — the
-// generic accessor every schema-data-driven attribute rule iterates through,
-// so no rule hand-codes a per-element attribute list.
-function attributeRuleWhere(
-	entry: ContentModelEntry | null,
-	match: (rule: AttributeRule) => boolean,
-): AttributeRule | null {
-	if (entry === null) return null
-	for (const rule of entry.attributes) {
-		if (match(rule)) return rule
-	}
-	return null
-}
+// The element's child text content (`readChildText`) and the generic
+// `AttributeRule` accessor (`findAttributeRule`) are centralized in
+// helpers.ts — the schema-data-driven accessors every attribute rule
+// iterates through, so no rule hand-codes a per-element attribute list.
 
 // 1. coupling — an `AttributeRule.requires` sibling attribute is absent while
 // its trigger attribute is present (the spec's "if `target` is present,
@@ -1317,7 +977,7 @@ const attributeCouplingRule: RuleInterface = {
 	evaluate: (element, context): Finding | null => {
 		const subject = readSubject(element, context)
 		if (!violatesCoupling(subject)) return null
-		const rule = attributeRuleWhere(
+		const rule = findAttributeRule(
 			subject.entry,
 			(candidate) =>
 				candidate.requires !== undefined &&
@@ -1354,7 +1014,7 @@ const attributeRequiredRule: RuleInterface = {
 	evaluate: (element, context): Finding | null => {
 		const subject = readSubject(element, context)
 		if (!violatesRequiredAttribute(subject)) return null
-		const rule = attributeRuleWhere(
+		const rule = findAttributeRule(
 			subject.entry,
 			(candidate) => candidate.required === true && !element.hasAttribute(candidate.attribute),
 		)
@@ -1377,23 +1037,13 @@ const attributeRequiredRule: RuleInterface = {
 // corpus cards `scope`/`dir`/etc. as "Enumerated attribute", which is ASCII
 // case-insensitive — then the `@elements/core` `parseEnum`) over the
 // schema-carried `values` — never a hand-written membership test, and the
-// SAME enumerated-value coercion `attribute/enum` uses (one source of truth).
-function offendingEnumAttribute(
-	entry: ContentModelEntry | null,
-	element: Element,
-): AttributeRule | null {
-	return attributeRuleWhere(entry, (rule) => {
-		if (rule.values === undefined) return false
-		const raw = element.getAttribute(rule.attribute)
-		if (raw === null) return false
-		return coerceEnumAttribute(raw, rule.values) === undefined
-	})
-}
+// SAME enumerated-value coercion `attribute/enum` uses (one source of
+// truth). `findOffendingEnumAttribute` is centralized in helpers.ts.
 
 const violatesAttributeValue = whereOf(
 	isSubject,
 	(subject: RuleSubject): boolean =>
-		offendingEnumAttribute(subject.entry, subject.element) !== null,
+		findOffendingEnumAttribute(subject.entry, subject.element) !== null,
 )
 
 const attributeValueRule: RuleInterface = {
@@ -1403,7 +1053,7 @@ const attributeValueRule: RuleInterface = {
 	evaluate: (element, context): Finding | null => {
 		const subject = readSubject(element, context)
 		if (!violatesAttributeValue(subject)) return null
-		const rule = offendingEnumAttribute(subject.entry, element)
+		const rule = findOffendingEnumAttribute(subject.entry, element)
 		if (rule?.values === undefined) return null
 		return buildFinding({
 			rule: 'attribute/value',
@@ -1422,9 +1072,8 @@ const attributeValueRule: RuleInterface = {
 // (the established Phase-1 note-only precedent). Each branch is a NAMED
 // predicate keyed off the SCHEMA datum (the attribute name on the entry's
 // `attributes`), so the rule stays driven by the corpus, not a tag literal.
-function hasAttributeRule(entry: ContentModelEntry | null, attribute: string): boolean {
-	return attributeRuleWhere(entry, (rule) => rule.attribute === attribute) !== null
-}
+// `hasAttributeRule` (the schema-datum accessor) is centralized in
+// helpers.ts.
 
 // The four `coupling-domain` branch predicates are PLAIN `RuleSubject →
 // boolean` checks (not `whereOf` guards): they are dispatched inside ONE
@@ -1439,7 +1088,7 @@ function hasAttributeRule(entry: ContentModelEntry | null, attribute: string): b
 function violatesTimeDatetime(subject: RuleSubject): boolean {
 	if (!hasAttributeRule(subject.entry, 'datetime')) return false
 	if (subject.element.hasAttribute('datetime')) return false
-	return childText(subject.element) === undefined
+	return readChildText(subject.element) === undefined
 }
 
 // `img` whose schema carries the `ismap` note-rule, WITH `ismap` present,
@@ -1472,7 +1121,7 @@ const attributeCouplingDomainRule: RuleInterface = {
 	evaluate: (element, context): Finding | null => {
 		const subject = readSubject(element, context)
 		if (violatesTimeDatetime(subject)) {
-			const rule = attributeRuleWhere(
+			const rule = findAttributeRule(
 				subject.entry,
 				(candidate) => candidate.attribute === 'datetime',
 			)
@@ -1488,7 +1137,7 @@ const attributeCouplingDomainRule: RuleInterface = {
 			})
 		}
 		if (violatesIsmap(subject)) {
-			const rule = attributeRuleWhere(subject.entry, (candidate) => candidate.attribute === 'ismap')
+			const rule = findAttributeRule(subject.entry, (candidate) => candidate.attribute === 'ismap')
 			return buildFinding({
 				rule: 'attribute/coupling-domain',
 				severity: 'error',
@@ -1511,7 +1160,7 @@ const attributeCouplingDomainRule: RuleInterface = {
 			})
 		}
 		if (violatesDialogTabindex(subject)) {
-			const rule = attributeRuleWhere(
+			const rule = findAttributeRule(
 				subject.entry,
 				(candidate) => candidate.attribute === 'tabindex',
 			)
@@ -1542,22 +1191,12 @@ const attributeCouplingDomainRule: RuleInterface = {
 // per-element schema `values` (the `AttributeRule` shape has no range field
 // and `tabindex` is a GLOBAL attribute with no owning entry). Cites the
 // offending element's own entry (its anchor is where the rule fired).
-function offendingIntegerBound(element: Element, tag: string): AttributeIntegerBound | null {
-	for (const bound of ATTRIBUTE_INTEGER_BOUNDS) {
-		if (bound.tags !== undefined && !bound.tags.includes(tag)) continue
-		const raw = element.getAttribute(bound.attribute)
-		if (raw === null) continue
-		const value = coerceIntegerAttribute(raw)
-		if (value === undefined) return bound
-		if (bound.min !== undefined && value < bound.min) return bound
-		if (bound.max !== undefined && value > bound.max) return bound
-	}
-	return null
-}
+// `findOffendingIntegerBound` is centralized in helpers.ts.
 
 const violatesIntegerBound = whereOf(
 	isSubject,
-	(subject: RuleSubject): boolean => offendingIntegerBound(subject.element, subject.tag) !== null,
+	(subject: RuleSubject): boolean =>
+		findOffendingIntegerBound(subject.element, subject.tag) !== null,
 )
 
 function describeBound(bound: AttributeIntegerBound): string {
@@ -1574,7 +1213,7 @@ const attributeIntegerRule: RuleInterface = {
 	evaluate: (element, context): Finding | null => {
 		const subject = readSubject(element, context)
 		if (!violatesIntegerBound(subject)) return null
-		const bound = offendingIntegerBound(element, subject.tag)
+		const bound = findOffendingIntegerBound(element, subject.tag)
 		if (bound === null) return null
 		return buildFinding({
 			rule: 'attribute/integer',
@@ -1616,32 +1255,14 @@ const attributeIntegerRule: RuleInterface = {
 // violation). The two value-domain rules are thus disjoint by construction:
 // `attribute/value` owns every schema-`values`-constrained attribute,
 // `attribute/enum` owns the GLOBAL attributes no element entry constrains.
-function schemaConstrainsValues(entry: ContentModelEntry | null, attribute: string): boolean {
-	return (
-		attributeRuleWhere(
-			entry,
-			(rule) => rule.attribute === attribute && rule.values !== undefined,
-		) !== null
-	)
-}
-
-function offendingEnumDomain(
-	element: Element,
-	entry: ContentModelEntry | null,
-): AttributeEnumDomain | null {
-	for (const domain of ATTRIBUTE_ENUM_DOMAINS) {
-		if (schemaConstrainsValues(entry, domain.attribute)) continue
-		const raw = element.getAttribute(domain.attribute)
-		if (raw === null) continue
-		if (domain.empty === true && raw === '') continue
-		if (coerceEnumAttribute(raw, domain.values) === undefined) return domain
-	}
-	return null
-}
+// `schemaConstrainsValues` (the disjointness gate) and
+// `findOffendingEnumDomain` (the global-domain scan) are centralized in
+// helpers.ts.
 
 const violatesEnumDomain = whereOf(
 	isSubject,
-	(subject: RuleSubject): boolean => offendingEnumDomain(subject.element, subject.entry) !== null,
+	(subject: RuleSubject): boolean =>
+		findOffendingEnumDomain(subject.element, subject.entry) !== null,
 )
 
 const attributeEnumRule: RuleInterface = {
@@ -1651,7 +1272,7 @@ const attributeEnumRule: RuleInterface = {
 	evaluate: (element, context): Finding | null => {
 		const subject = readSubject(element, context)
 		if (!violatesEnumDomain(subject)) return null
-		const domain = offendingEnumDomain(element, subject.entry)
+		const domain = findOffendingEnumDomain(element, subject.entry)
 		if (domain === null) return null
 		return buildFinding({
 			rule: 'attribute/enum',
@@ -1722,57 +1343,12 @@ const attributeEnumRule: RuleInterface = {
 //      assertion + the structure-lens guard below pin this boundary).
 // ============================================================================
 
-// A referencing element points at a target by one of the corpus-carded
-// associations. `a[href="#id"]` is a same-document fragment; `label[for]` /
-// `output[for]` are plain IDREFs carried as a schema `AttributeRule` (so the
-// recognition is schema-data-driven, never a tag literal). Returns the raw
-// referenced id, or `null` when the element is not a corpus referrer / the
-// reference is not a same-document id.
-function referencedId(subject: RuleSubject): string | null {
-	// Fragment hyperlink: only a bare `#id` same-document fragment is a
-	// "link to a section" the corpus §6.1 rule scopes (an absolute / path
-	// URL is a navigation, not an in-document reference).
-	if (matchesTag(subject.element, 'a')) {
-		const href = subject.element.getAttribute('href')
-		if (href !== null && href.startsWith('#') && href.length > 1) return href.slice(1)
-		return null
-	}
-	// `for` IDREF — recognized from the SCHEMA `AttributeRule` the element's
-	// own card carries (`label` / `output`), never a hardcoded tag set.
-	if (hasAttributeRule(subject.entry, 'for')) {
-		const target = subject.element.getAttribute('for')
-		if (target !== null && target.length > 0) return target
-	}
-	return null
-}
-
-// Resolve a corpus referrer's same-document target through `traversals`
-// `getElementById` over the referring element's own document (faithful IDREF
-// resolution — never a bespoke `querySelector`); `null` when unresolved.
-function referencedTarget(subject: RuleSubject): Element | null {
-	const id = referencedId(subject)
-	if (id === null) return null
-	return getElementById(id, subject.element.ownerDocument)
-}
-
-// An element is in the Hidden state, or inside a `[hidden]` subtree — the
-// corpus §6.1 "hidden" state, decided over the SAME flat parent chain the
-// structure family walks (§3 — never light-tree `closest`). `hidden` is an
-// enumerated attribute; `hidden=until-found` is treated as hidden here, a
-// DELIBERATE conservative reading: the corpus (interactions.md §6.1) does
-// not explicitly exempt the `until-found` state for the `href="#id"`
-// fragment-reveal case, so presence alone is the test. Treating it as
-// hidden cannot under-report a genuine §6.1 violation; carving out an
-// until-found exemption would be an unauthorized corpus-judgment change
-// (the spec does not state one). Accepted conservative reading.
-function isHiddenNode(element: Element): boolean {
-	let current: Element | null = element
-	while (current !== null) {
-		if (current.hasAttribute('hidden')) return true
-		current = flatParent(current)
-	}
-	return false
-}
+// The corpus-referrer resolution (`resolveReferencedId` →
+// `resolveReferencedTarget`, schema-data-driven `a[href="#id"]` /
+// `label[for]` / `output[for]` via `traversals` `getElementById`) and the
+// `isHiddenNode` Hidden-state scan (the SAME flat parent chain the
+// structure family walks, §3 — the conservative `until-found`-is-hidden
+// reading documented there) are centralized in helpers.ts.
 
 // The referrer is "active" for the corpus rule iff it is NOT itself in the
 // state it must not reference into: the §6.1 rule scopes to referrers "that
@@ -1780,7 +1356,7 @@ function isHiddenNode(element: Element): boolean {
 // with a hidden target).
 const violatesHiddenReference = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	if (isHiddenNode(subject.element)) return false
-	const target = referencedTarget(subject)
+	const target = resolveReferencedTarget(subject)
 	return target !== null && isHiddenNode(target)
 })
 
@@ -1974,26 +1550,8 @@ const interactionHiddenReferenceRule: RuleInterface = {
 //  throws.
 // ============================================================================
 
-// A computed-style value, normalized: `getComputedStyle` returns canonical
-// lowercase keywords already, but trim defensively. Never parses/regexes —
-// just the trimmed string the CSSOM resolved.
-function styleValue(context: RuleContext, property: string): string {
-	return context.style().getPropertyValue(property).trim().toLowerCase()
-}
-
-// The element's explicit ARIA role tokens (the `role` attribute is a
-// space-separated token list; the first valid token wins per ARIA, but for a
-// compensation test ANY listed token suffices). Lowercased, never parsed
-// beyond a whitespace split (HTML-faithful token list).
-function roleTokens(element: Element): readonly string[] {
-	const raw = element.getAttribute('role')
-	if (raw === null) return []
-	return raw
-		.trim()
-		.toLowerCase()
-		.split(/\s+/)
-		.filter((token) => token.length > 0)
-}
+// The normalized computed-style reader (`readStyleValue`) and the ARIA
+// role-token reader (`readRoleTokens`) are centralized in helpers.ts.
 
 // Does the element carry one of the corpus-sanctioned compensating ARIA
 // roles for this `PRESENTATION_DEFAULTS` entry? (The false-positive guard —
@@ -2001,7 +1559,7 @@ function roleTokens(element: Element): readonly string[] {
 // with no `roles` can never be compensated this way (`bidi`/`pre`).
 function hasCompensatingRole(element: Element, fallback: PresentationDefault): boolean {
 	if (fallback.roles === undefined) return false
-	const tokens = roleTokens(element)
+	const tokens = readRoleTokens(element)
 	return fallback.roles.some((role) => tokens.includes(role))
 }
 
@@ -2014,7 +1572,7 @@ function hasCompensatingRole(element: Element, fallback: PresentationDefault): b
 function offendingPresentationDefault(subject: RuleSubject): PresentationDefault | null {
 	for (const fallback of PRESENTATION_DEFAULTS) {
 		if (!fallback.tags.includes(subject.tag)) continue
-		const actual = styleValue(subject.context, fallback.property)
+		const actual = readStyleValue(subject.context, fallback.property)
 		// An empty computed value (detached / `display:none` ancestor in a
 		// non-rendered subtree) is NOT a semantic-break signal — the override
 		// rule needs a RESOLVED value to contradict. Skip (conservative: a
@@ -2056,8 +1614,8 @@ function offendingPresentationDefault(subject: RuleSubject): PresentationDefault
 // (§4.6/§5 — no module-level const collection lives in rules.ts).
 const violatesListStyle = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	if (!LIST_CONTAINER_TAGS.has(subject.tag)) return false
-	if (roleTokens(subject.element).includes('list')) return false
-	const value = styleValue(subject.context, 'list-style-type')
+	if (readRoleTokens(subject.element).includes('list')) return false
+	const value = readStyleValue(subject.context, 'list-style-type')
 	return value === 'none'
 })
 
@@ -2117,7 +1675,7 @@ const presentationBidiRule: RuleInterface = {
 			cite: fallback.cite,
 			message: `<${subject.tag}> must keep 'unicode-bidi: ${fallback.expected.join(' | ')}' — its directional ${subject.tag === 'bdo' ? 'override' : 'isolation'} semantic is otherwise stripped.`,
 			expected: `unicode-bidi: ${fallback.expected.join(' | ')}`,
-			actual: `unicode-bidi: ${styleValue(context, 'unicode-bidi')}`,
+			actual: `unicode-bidi: ${readStyleValue(context, 'unicode-bidi')}`,
 		})
 	},
 }
@@ -2167,7 +1725,7 @@ const violatesPre = whereOf(isSubject, (subject: RuleSubject): boolean => {
 		return fallback !== null && fallback.property === 'white-space'
 	}
 	if (subject.tag === 'textarea') {
-		const actual = styleValue(subject.context, 'white-space')
+		const actual = readStyleValue(subject.context, 'white-space')
 		if (actual === '') return false
 		return !textareaExpectedWhiteSpace(subject.element).includes(actual)
 	}
@@ -2191,7 +1749,7 @@ const presentationPreRule: RuleInterface = {
 				cite: fallback.cite,
 				message: `<pre> must keep 'white-space: ${fallback.expected.join(' | ')}' — its preformatted-whitespace semantic is otherwise collapsed.`,
 				expected: `white-space: ${fallback.expected.join(' | ')}`,
-				actual: `white-space: ${styleValue(context, 'white-space')}`,
+				actual: `white-space: ${readStyleValue(context, 'white-space')}`,
 			})
 		}
 		const expected = textareaExpectedWhiteSpace(element)
@@ -2205,7 +1763,7 @@ const presentationPreRule: RuleInterface = {
 			cite: 'renderings#the-textarea-element',
 			message: `<textarea> must keep 'white-space: ${expected.join(' | ')}' — its multiline raw-value semantic is otherwise collapsed.`,
 			expected: `white-space: ${expected.join(' | ')}`,
-			actual: `white-space: ${styleValue(context, 'white-space')}`,
+			actual: `white-space: ${readStyleValue(context, 'white-space')}`,
 		})
 	},
 }
@@ -2222,29 +1780,22 @@ const presentationPreRule: RuleInterface = {
 // `content-visibility:hidden` instead of `display:none` is load-bearing for
 // the find-in-page reveal — §15.5.5's analogous note). A plain `[hidden]`
 // (not `until-found`, not `embed`) must compute `display: none`.
-function hiddenState(element: Element): 'plain' | 'until-found' | null {
-	const raw = element.getAttribute('hidden')
-	if (raw === null) return null
-	// `hidden` is an enumerated attribute; `until-found` is its only non-
-	// default keyword (ASCII case-insensitive). `coerceEnumAttribute` is the
-	// SAME ASCII-case-insensitive coercion the attribute family uses.
-	if (coerceEnumAttribute(raw, ['until-found']) === 'until-found') return 'until-found'
-	return 'plain'
-}
+// `readHiddenState` (the enumerated `[hidden]` keyword reader) is
+// centralized in helpers.ts.
 
 const violatesHidden = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	if (subject.tag === 'embed') return false // the §15.3.1 :not(embed) carve-out
-	const state = hiddenState(subject.element)
+	const state = readHiddenState(subject.element)
 	if (state === null) return false
 	if (state === 'plain') {
-		const display = styleValue(subject.context, 'display')
+		const display = readStyleValue(subject.context, 'display')
 		return display !== '' && display !== 'none'
 	}
 	// until-found: content-visibility MUST be hidden, and the box must not be
 	// forced display:none/contents/inline (those defeat the find-in-page
 	// reveal the corpus mandates content-visibility:hidden specifically for).
-	const cv = styleValue(subject.context, 'content-visibility')
-	const display = styleValue(subject.context, 'display')
+	const cv = readStyleValue(subject.context, 'content-visibility')
+	const display = readStyleValue(subject.context, 'display')
 	if (cv === '' && display === '') return false
 	if (cv !== 'hidden') return true
 	return display === 'none' || display === 'contents' || display === 'inline'
@@ -2257,7 +1808,7 @@ const presentationHiddenRule: RuleInterface = {
 	evaluate: (element, context): Finding | null => {
 		const subject = readSubject(element, context)
 		if (!violatesHidden(subject)) return null
-		const state = hiddenState(element)
+		const state = readHiddenState(element)
 		if (state === 'plain') {
 			return buildFinding({
 				rule: 'presentation/hidden',
@@ -2266,7 +1817,7 @@ const presentationHiddenRule: RuleInterface = {
 				cite: 'renderings#hidden-elements',
 				message: `<${subject.tag}> with [hidden] must compute 'display: none' — an override re-reveals content the author hid.`,
 				expected: 'display: none',
-				actual: `display: ${styleValue(context, 'display')}`,
+				actual: `display: ${readStyleValue(context, 'display')}`,
 			})
 		}
 		return buildFinding({
@@ -2276,7 +1827,7 @@ const presentationHiddenRule: RuleInterface = {
 			cite: 'renderings#hidden-elements',
 			message: `<${subject.tag}> with [hidden=until-found] must compute 'content-visibility: hidden' and must not be forced display:none/contents/inline (find-in-page reveal).`,
 			expected: 'content-visibility: hidden',
-			actual: `content-visibility: ${styleValue(context, 'content-visibility')}, display: ${styleValue(context, 'display')}`,
+			actual: `content-visibility: ${readStyleValue(context, 'content-visibility')}, display: ${readStyleValue(context, 'display')}`,
 		})
 	},
 }
@@ -2330,20 +1881,17 @@ function isFocusableElement(element: Element, tag: string): boolean {
 	return tabindex !== null && coerceIntegerAttribute(tabindex) !== undefined
 }
 
-// The element's INLINE style declaration (decidable author intent — the
-// `style` attribute, NOT computed style; this is the documented-boundary
-// signal, deliberately distinct from `context.style()` which is the
-// ambiguous base computed value for this dynamic-pseudo rule).
-function inlineStyle(element: Element): CSSStyleDeclaration | null {
-	return element instanceof HTMLElement ? element.style : null
-}
+// The element's INLINE style declaration reader (`readInlineStyle` —
+// decidable author intent, the `style` attribute, NOT computed style; the
+// documented-boundary signal deliberately distinct from `context.style()`)
+// is centralized in helpers.ts.
 
 // The author painted a replacement focus affordance inline — a non-`none`
 // box-shadow, a real border (style + non-zero width), or an explicit
 // non-interactive role (the corpus aria.md `presentation`/`none` decorative
 // carve-out — the element opted OUT of the interactive focus contract).
 function hasReplacementAffordance(element: Element): boolean {
-	const style = inlineStyle(element)
+	const style = readInlineStyle(element)
 	if (style === null) return false
 	const shadow = style.boxShadow.trim().toLowerCase()
 	if (shadow !== '' && shadow !== 'none') return true
@@ -2359,13 +1907,13 @@ function hasReplacementAffordance(element: Element): boolean {
 	) {
 		return true
 	}
-	const roles = roleTokens(element)
+	const roles = readRoleTokens(element)
 	return roles.includes('presentation') || roles.includes('none')
 }
 
 const violatesFocus = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	if (!isFocusableElement(subject.element, subject.tag)) return false
-	const style = inlineStyle(subject.element)
+	const style = readInlineStyle(subject.element)
 	if (style === null) return false
 	// The inline outline removal that provably defeats `:focus-visible{
 	// outline:auto}` in every state by inline specificity.
@@ -2432,27 +1980,20 @@ const presentationFocusRule: RuleInterface = {
 //     from a tree-walk; deliberately OUT OF SCOPE (the corpus says the
 //     mechanism is shadow-internal; inventing a light-child check would
 //     contradict it).
-function isPopoverOpen(element: Element): boolean {
-	try {
-		return element.matches(':popover-open')
-	} catch {
-		// `:popover-open` unsupported ⇒ cannot decide ⇒ conservatively treat
-		// as open (do NOT false-positive on an undecidable engine). Total.
-		return true
-	}
-}
+// `isPopoverOpen` (the `:popover-open` match, conservatively-open on an
+// undecidable engine) is centralized in helpers.ts.
 
 const violatesVisibility = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	const { tag, element, context } = subject
 	if (tag === 'dialog' && !element.hasAttribute('open') && !element.hasAttribute('popover')) {
-		const display = styleValue(context, 'display')
+		const display = readStyleValue(context, 'display')
 		return display !== '' && display !== 'none'
 	}
 	if (element.hasAttribute('popover') && !isPopoverOpen(element)) {
 		// `dialog[open]` popovers are exempt (the §15.3.3 selector's
 		// `:not(dialog[open])` arm).
 		if (tag === 'dialog' && element.hasAttribute('open')) return false
-		const display = styleValue(context, 'display')
+		const display = readStyleValue(context, 'display')
 		return display !== '' && display !== 'none'
 	}
 	return false
@@ -2476,7 +2017,7 @@ const presentationVisibilityRule: RuleInterface = {
 			cite: 'renderings#flow-content',
 			message: `${kind} must compute 'display: none' — an override renders a closed ${tag === 'dialog' ? 'dialog' : 'popover'} visibly.`,
 			expected: 'display: none',
-			actual: `display: ${styleValue(context, 'display')}`,
+			actual: `display: ${readStyleValue(context, 'display')}`,
 		})
 	},
 }

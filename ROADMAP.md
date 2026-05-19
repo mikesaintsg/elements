@@ -1093,6 +1093,28 @@ child`). Added a generic, schema-data-driven `content/cardinality` rule
 **Phase 8 complete — the Semantic HTML Inspector initiative (Phases 0–8) is
 fully shipped and green.**
 
+### Post-initiative refactor — inspector rule-engine helper extraction
+
+- ✅ **Batch 1 (verbatim, behavior-preserving).** The genuinely-generic
+  `{verb}{Noun}` rule-engine helpers + the two module guards were extracted
+  from [`src/browser/inspector/rules.ts`](src/browser/inspector/rules.ts)
+  into the centralized [`src/browser/helpers.ts`](src/browser/helpers.ts)
+  (the new "Inspector rule-engine helpers" section, after the inspector
+  adapters), so `rules.ts` is now purely the rule **registry** (the
+  `RuleInterface` records + the rule-specific `whereOf(isSubject,…)` guard
+  compositions + `isSubject` + the frozen `rules` array + the rule-local
+  message formatters / inline coupling-domain predicates) per AGENTS
+  §4.6/§5 — the same registry shape as `schema.ts` / `taxonomy.ts`. Names
+  were brought to AGENTS §4.3 `{verb}{Noun}` form; the move is
+  byte-identical behavior (the full suite — 173 files / 10069 tests — stays
+  green with **zero** test modifications). The extracted helpers become
+  public `@elements/browser` API (re-exported via the barrel); the
+  `tests/guides/inspector.test.ts` doc↔source parity stays green by
+  correctness (the inspector barrel exports are unchanged; `inspector.md`
+  backticks none of the relocated helpers, so DOC→SOURCE still resolves).
+  Semantic-only ROADMAP note — no reflow, Phases 0–8 ✅ unchanged. Batch 2
+  (consolidation/dedupe) + Batch 3 (helper tests) are deferred follow-ups.
+
 ---
 
 ## Conventions to keep applying
