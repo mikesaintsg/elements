@@ -318,42 +318,40 @@ function findingKey(finding: Finding): string {
 					<small>· {{ group.findings.length }} finding(s)</small>
 				</dt>
 				<dd>
-					<ul>
-						<li
+					<div class="stack">
+						<article
 							v-for="finding in group.findings"
 							:key="findingKey(finding)"
 							:class="severityVariant(finding.severity)"
 						>
-							<article class="frame">
-								<header>
-									<code>{{ finding.rule }}</code>
-									<small class="badge" :class="severityVariant(finding.severity)">
-										{{ finding.severity }}
-									</small>
-									<small v-if="finding.lens" class="tag">{{ finding.lens }}</small>
-								</header>
-								<p>{{ finding.message }}</p>
-								<p>
-									<small>
-										Path: <code>{{ pathOf(finding) }}</code>
-									</small>
-								</p>
-								<footer>
-									<a
-										v-if="citeHref(finding.cite)"
-										:href="citeHref(finding.cite) ?? '#'"
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										{{ finding.cite }}
-									</a>
-									<small v-else
-										><code>{{ finding.cite }}</code></small
-									>
-								</footer>
-							</article>
-						</li>
-					</ul>
+							<header>
+								<code>{{ finding.rule }}</code>
+								<small class="badge" :class="severityVariant(finding.severity)">
+									{{ finding.severity }}
+								</small>
+								<small v-if="finding.lens" class="tag">{{ finding.lens }}</small>
+							</header>
+							<p>{{ finding.message }}</p>
+							<p>
+								<small>
+									Path: <code>{{ pathOf(finding) }}</code>
+								</small>
+							</p>
+							<footer>
+								<a
+									v-if="citeHref(finding.cite)"
+									:href="citeHref(finding.cite) ?? '#'"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									{{ finding.cite }}
+								</a>
+								<small v-else
+									><code>{{ finding.cite }}</code></small
+								>
+							</footer>
+						</article>
+					</div>
 				</dd>
 			</template>
 		</dl>
@@ -413,52 +411,50 @@ function findingKey(finding: Finding): string {
 					<small>· {{ group.findings.length }} finding(s)</small>
 				</dt>
 				<dd>
-					<ul>
-						<li
+					<div class="stack">
+						<article
 							v-for="finding in group.findings"
 							:key="findingKey(finding)"
 							:class="severityVariant(finding.severity)"
 						>
-							<article class="frame">
-								<header>
-									<code>{{ finding.rule }}</code>
-									<small class="badge" :class="severityVariant(finding.severity)">
-										{{ finding.severity }}
-									</small>
-									<small v-if="finding.lens" class="tag">{{ finding.lens }}</small>
-								</header>
-								<p>{{ finding.message }}</p>
-								<p v-if="finding.expected || finding.actual">
-									<small>
-										<span v-if="finding.expected">
-											Expected: <code>{{ finding.expected }}</code>
-										</span>
-										<span v-if="finding.actual">
-											· Actual: <code>{{ finding.actual }}</code>
-										</span>
-									</small>
-								</p>
-								<p>
-									<small>
-										Path: <code>{{ pathOf(finding) }}</code>
-									</small>
-								</p>
-								<footer>
-									<a
-										v-if="citeHref(finding.cite)"
-										:href="citeHref(finding.cite) ?? '#'"
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										{{ finding.cite }}
-									</a>
-									<small v-else
-										><code>{{ finding.cite }}</code></small
-									>
-								</footer>
-							</article>
-						</li>
-					</ul>
+							<header>
+								<code>{{ finding.rule }}</code>
+								<small class="badge" :class="severityVariant(finding.severity)">
+									{{ finding.severity }}
+								</small>
+								<small v-if="finding.lens" class="tag">{{ finding.lens }}</small>
+							</header>
+							<p>{{ finding.message }}</p>
+							<p v-if="finding.expected || finding.actual">
+								<small>
+									<span v-if="finding.expected">
+										Expected: <code>{{ finding.expected }}</code>
+									</span>
+									<span v-if="finding.actual">
+										· Actual: <code>{{ finding.actual }}</code>
+									</span>
+								</small>
+							</p>
+							<p>
+								<small>
+									Path: <code>{{ pathOf(finding) }}</code>
+								</small>
+							</p>
+							<footer>
+								<a
+									v-if="citeHref(finding.cite)"
+									:href="citeHref(finding.cite) ?? '#'"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									{{ finding.cite }}
+								</a>
+								<small v-else
+									><code>{{ finding.cite }}</code></small
+								>
+							</footer>
+						</article>
+					</div>
 				</dd>
 			</template>
 		</dl>
@@ -513,52 +509,50 @@ function findingKey(finding: Finding): string {
 					<small>· {{ group.findings.length }} finding(s)</small>
 				</dt>
 				<dd>
-					<ul>
-						<li
+					<div class="stack">
+						<article
 							v-for="finding in group.findings"
 							:key="findingKey(finding)"
 							:class="severityVariant(finding.severity)"
 						>
-							<article class="frame">
-								<header>
-									<code>{{ finding.rule }}</code>
-									<small class="badge" :class="severityVariant(finding.severity)">
-										{{ finding.severity }}
-									</small>
-									<small v-if="finding.lens" class="tag">{{ finding.lens }}</small>
-								</header>
-								<p>{{ finding.message }}</p>
-								<p v-if="finding.expected || finding.actual">
-									<small>
-										<span v-if="finding.expected">
-											Expected: <code>{{ finding.expected }}</code>
-										</span>
-										<span v-if="finding.actual">
-											· Actual: <code>{{ finding.actual }}</code>
-										</span>
-									</small>
-								</p>
-								<p>
-									<small>
-										Path: <code>{{ pathOf(finding) }}</code>
-									</small>
-								</p>
-								<footer>
-									<a
-										v-if="citeHref(finding.cite)"
-										:href="citeHref(finding.cite) ?? '#'"
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										{{ finding.cite }}
-									</a>
-									<small v-else
-										><code>{{ finding.cite }}</code></small
-									>
-								</footer>
-							</article>
-						</li>
-					</ul>
+							<header>
+								<code>{{ finding.rule }}</code>
+								<small class="badge" :class="severityVariant(finding.severity)">
+									{{ finding.severity }}
+								</small>
+								<small v-if="finding.lens" class="tag">{{ finding.lens }}</small>
+							</header>
+							<p>{{ finding.message }}</p>
+							<p v-if="finding.expected || finding.actual">
+								<small>
+									<span v-if="finding.expected">
+										Expected: <code>{{ finding.expected }}</code>
+									</span>
+									<span v-if="finding.actual">
+										· Actual: <code>{{ finding.actual }}</code>
+									</span>
+								</small>
+							</p>
+							<p>
+								<small>
+									Path: <code>{{ pathOf(finding) }}</code>
+								</small>
+							</p>
+							<footer>
+								<a
+									v-if="citeHref(finding.cite)"
+									:href="citeHref(finding.cite) ?? '#'"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									{{ finding.cite }}
+								</a>
+								<small v-else
+									><code>{{ finding.cite }}</code></small
+								>
+							</footer>
+						</article>
+					</div>
 				</dd>
 			</template>
 		</dl>

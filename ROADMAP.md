@@ -1081,6 +1081,30 @@ child`). Added a generic, schema-data-driven `content/cardinality` rule
   warning `<menu>` was — zero `error`). Showcase rebuilt
   (`npm run show` → `demo/showcase.html`). Semantic-only ROADMAP note —
   Phases 0–8 ✅ unchanged.
+- ✅ **Phase-7 finding-card chrome correction (showcase-only).** Mobile
+  review surfaced two more pre-existing defects: (1) the `<ul>` finding
+  list painted UA disc bullets + a 2rem indent (bare `<ul>` keeps
+  `list-style: disc` by framework design — `_ul.scss`), and (2)
+  `<article class="frame">` zeros the card's own padding + gap (it is the
+  edge-to-edge-content modifier for `.flush` children / `ul.group` /
+  images — `modifiers/_local.scss`), so the text body had no inset. Both
+  fixed by adopting the framework's CANONICAL card-list idiom
+  (`ArticleCardPage.vue`): a `<div class="stack">` (flex column, vertical
+  rhythm — `components/_div.scss`) wrapping BARE `<article>` cards, the
+  `severityVariant` class moved onto the `<article>` so its border tints
+  per severity through the variant cascade. No `<ul>`/`<li>` → no list
+  markers AND no role-less `list-style:none`, so the finding list now
+  emits ZERO `presentation/list-style` warnings on the inspector's own
+  page (a strictly cleaner dogfood). Bare `<article>` restores the
+  header/footer band chrome + body padding + inter-block gap. Applied to
+  all three panels (page / fixture / sandbox); driver selectors updated
+  (`dd .stack > article`); visually verified on a mobile viewport from
+  `file://` (no bullets, correct inset, page renders — composes with the
+  blank-screen build fix). Showcase-only, framework-faithful, no
+  inspector/schema/rule/type change; the Phase-6 `semantics.test.ts` gate
+  stays GREEN (zero `error`). Showcase rebuilt
+  (`npm run show` → `demo/showcase.html`). Semantic-only ROADMAP note —
+  Phases 0–8 ✅ unchanged.
 
 ---
 
