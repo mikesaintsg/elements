@@ -1113,7 +1113,7 @@ fully shipped and green.**
   correctness (the inspector barrel exports are unchanged; `inspector.md`
   backticks none of the relocated helpers, so DOC→SOURCE still resolves).
   Semantic-only ROADMAP note — no reflow, Phases 0–8 ✅ unchanged. Batch 3
-  (helper tests) is the remaining deferred follow-up.
+  (helper tests) lands the characterization coverage (see below).
 
 - ✅ **Batch 2 (consolidation / dedupe, behavior-preserving).** The
   rigorous same-or-similar sweep over [`helpers.ts`](src/browser/helpers.ts)
@@ -1134,6 +1134,27 @@ fully shipped and green.**
   `hasLinkAncestorWithHref` + the self-nest loop now composed onto
   `findFlatDescendant`). Semantic-only ROADMAP note — no reflow,
   Phases 0–8 ✅ unchanged.
+
+- ✅ **Batch 3 (tests-only, characterization).** Real-DOM characterization
+  coverage for the **39** now-public extracted/consolidated inspector
+  rule-engine helpers (the Batch-1 extracted set + the Batch-2 generic
+  flat-traversal bases), added to the existing
+  [`tests/src/browser/helpers.test.ts`](tests/src/browser/helpers.test.ts)
+  (the canonical per-module behavior-test file the
+  [`guides/README.md`](guides/README.md) file map already binds to
+  `helpers.ts`) as a new "inspector rule-engine" `describe` section — one
+  `describe` per helper, 97 new `it` cases over the REAL Chromium DOM (real
+  shadow roots / `<slot>` / `<template>.content` for the flat-tree helpers,
+  real computed/inline style + real `:popover-open` for the presentation
+  readers, the REAL frozen corpus schema for the data-driven ones), no
+  mocks, mirroring the inspector suites' `el()` + seeded `createRandom`
+  idiom. The module-private `isScriptSupporting` is covered transitively via
+  `matchSegments` (not exported, not tested directly). Characterizes the
+  already-shipped behavior — every new test green BY the settled
+  implementation; **zero** production (`src/**`) change and **zero**
+  pre-existing test modified (the full `src:browser ∪ app:browser ∪ guides`
+  suite goes 8239 → 8336, the delta being exactly the 97 new tests).
+  Semantic-only ROADMAP note — no reflow, Phases 0–8 ✅ unchanged.
 
 ---
 
