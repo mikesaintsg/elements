@@ -468,7 +468,9 @@ const theme = useTheme()
 				color: 'var(--color-inverted-text)',
 			}"
 		>
-			<h3 class="mb-2">Sample text on the inverted surface</h3>
+			<h3 class="mb-2" :style="{ color: 'var(--color-inverted-text)' }">
+				Sample text on the inverted surface
+			</h3>
 			<p class="opacity-85">
 				Background uses <code>--color-inverted</code>; this text uses
 				<code>--color-inverted-text</code>. Both tokens resolve to:
