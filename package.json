@@ -31,7 +31,7 @@
 	"scripts": {
 		"dev": "vite --config configs/app/vite.browser.config.ts",
 		"clean": "node -e \"try{require('node:fs').rmSync('dist',{recursive:true,force:true})}catch{}\"",
-		"copy": "node -e \"try{require('node:fs').cpSync(process.argv[1],process.argv[2],{force:true});console.log(`Copied: ${process.argv[1]} to ${process.argv[2]}`)}catch(e){throw e}\"",
+		"copy": "node -e \"const fs=require('node:fs'),a=process.argv[1],b=process.argv[2];fs.cpSync(a,b,{force:true});console.log('Copied: '+a+' to '+b)\"",
 		"tmp:txt": "node -e \"const fs=require('node:fs'),p=require('node:path');function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=p.join(d,e.name);if(e.isDirectory()){walk(f)}else if(!e.name.endsWith('.md')&&!e.name.endsWith('.txt')){const t=f+'.txt';if(!fs.existsSync(t)){fs.renameSync(f,t)}else{console.warn('Skipping '+f+' — target exists: '+t)}}}}try{walk('tmp')}catch(e){if(e.code!=='ENOENT')throw e}\"",
 		"check": "oxlint --config .oxlintrc.json --fix . && vue-tsc --noEmit --project tsconfig.json",
 		"format": "oxfmt --config .oxfmtrc.json --write src tests app",

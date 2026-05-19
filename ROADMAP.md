@@ -1050,6 +1050,37 @@ child`). Added a generic, schema-data-driven `content/cardinality` rule
   already accurate — `content/cardinality` + the 6 `presentation/*` listed
   — so it is green BY accuracy, no prose change needed). Both perturbation-
   proven to bite; no existing assertion/gate weakened. Phase 7 stays ✅.
+- ✅ **Phase-7 sandbox extension (showcase-only; live "test it out").** The
+  `/inspector` page gained a third dogfood panel — an editable
+  `<textarea>` (seeded via the new showcase-side `INSPECTOR_SANDBOX_SEED`
+  in [`app/browser/constants.ts`](app/browser/constants.ts)) whose value is
+  parsed into the SAME detached off-document `<div>` the fixture panel uses
+  (never inserted — arbitrary pasted HTML can't affect the page's own
+  conformance / the Phase-6 `semantics.test.ts` gate) and re-inspected on
+  demand, rendering findings through the existing severity-group / conform
+  machinery (no inspector / schema / rule / type change — pure public-API
+  composition; framework-faithful authoring per `guides/showcase.md`
+  §Contract — bare elements + the modifier cascade + Tailwind only, no
+  inline style / custom CSS / `<style>` block). The page's own
+  `tests/app/browser/pages/InspectorPage.test.ts` bespoke driver gained a
+  `inspector-sandbox` section assertion + a seed→real-findings→reset
+  interaction test; `guides/inspector.md`'s `/inspector` description was
+  extended to state the sandbox accurately (doc↔source parity stays green
+  by accuracy — no backticked API added). The interactive Chromium
+  verification surfaced a PRE-EXISTING showcase rendering bug fixed in the
+  same pass: the findings list mis-used `<menu>` (the framework paints
+  `<menu>` as a horizontal flex command-toolbar for `<button>` children —
+  `components/_menu.scss`), collapsing every `<article class="frame">`
+  finding card to ~2 px wide. The three findings lists (page / fixture /
+  sandbox panels) were changed to the semantically-correct `<ul>` (a
+  plain content list, not a command toolbar; the inspect-button rows
+  stay correctly `<menu>`); cards now render full-width. Showcase-only,
+  framework-faithful, no inspector/schema/rule/type change; the Phase-6
+  `semantics.test.ts` gate stays GREEN (`<ul>` with role-less
+  `list-style:none` is the same by-design `presentation/list-style`
+  warning `<menu>` was — zero `error`). Showcase rebuilt
+  (`npm run show` → `demo/showcase.html`). Semantic-only ROADMAP note —
+  Phases 0–8 ✅ unchanged.
 
 ---
 

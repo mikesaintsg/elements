@@ -115,7 +115,7 @@ inspector.findings.finding(id) // one by its `{rule}@{path}` id
 inspector.findings.clear() // reset the held collection (never the DOM)
 ```
 
-The `/inspector` showcase page runs exactly this on the live document (the conform state) and on a deliberately-broken detached fixture (real findings), grouped by severity, each citing the spec.
+The `/inspector` showcase page runs exactly this on the live document (the conform state), on a deliberately-broken detached fixture (real findings), and in an editable **sandbox** (paste arbitrary HTML into a `<textarea>`, parsed into the same detached off-document `<div>` and re-inspected on demand) — every result grouped by severity, each citing the spec.
 
 ## Tests
 

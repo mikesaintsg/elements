@@ -40,19 +40,25 @@ describe('InspectorPage — render smoke', () => {
 		}
 	})
 
-	it('renders the core panel sections (filters, live, fixture, api)', () => {
+	it('renders the core panel sections (filters, live, fixture, sandbox, api)', () => {
 		const { host, teardown } = mount()
 		try {
 			for (const id of [
 				'inspector-filters',
 				'inspector-live',
 				'inspector-fixture',
+				'inspector-sandbox',
 				'inspector-api',
 			]) {
 				expect(host.querySelector(`section#${id}`), `section#${id}`).not.toBeNull()
 			}
-			// The two inspect controls exist before any pass has run.
+			// The inspect controls exist before any pass has run (page +
+			// fixture + sandbox inspect, plus the sandbox reset).
 			expect(host.querySelectorAll('button[type="button"]').length).toBeGreaterThanOrEqual(2)
+			// The sandbox ships an editable <textarea> seeded with markup.
+			const editor = host.querySelector<HTMLTextAreaElement>('section#inspector-sandbox textarea')
+			expect(editor, 'the sandbox <textarea>').not.toBeNull()
+			expect((editor?.value ?? '').length, 'seeded with starting markup').toBeGreaterThan(0)
 		} finally {
 			teardown()
 		}
@@ -80,7 +86,7 @@ describe('InspectorPage — the inspect controls actually inspect (§7 dogfood)'
 			// rule id + a spec-cited link.
 			const dl = fixtureSection?.querySelector('dl')
 			expect(dl, 'rendered findings <dl> after the pass').not.toBeNull()
-			const cards = fixtureSection?.querySelectorAll('dd menu > li')
+			const cards = fixtureSection?.querySelectorAll('dd ul > li')
 			expect((cards?.length ?? 0) > 0, 'at least one finding card').toBe(true)
 			const firstCard = cards?.[0]
 			expect(firstCard?.querySelector('code')?.textContent ?? '').toMatch(/\//) // {family}/{concern}
@@ -109,6 +115,44 @@ describe('InspectorPage — the inspect controls actually inspect (§7 dogfood)'
 				conform !== null || grouped !== null,
 				'a result region (conform or grouped) is rendered after the pass',
 			).toBe(true)
+		} finally {
+			teardown()
+		}
+	})
+
+	it('the sandbox inspects the edited markup (seed → real findings; reset clears)', async () => {
+		const { host, teardown } = mount()
+		try {
+			const sandbox = host.querySelector('section#inspector-sandbox')
+			expect(sandbox).not.toBeNull()
+			// No result list before the pass.
+			expect(sandbox?.querySelector('dl')).toBeNull()
+
+			const run = [...host.querySelectorAll('button')].find((b) =>
+				/inspect this markup/i.test(b.textContent ?? ''),
+			)
+			expect(run, 'the sandbox inspect button').toBeDefined()
+			run?.click()
+			await nextTick()
+
+			// The seed mixes conformant markup with tree-decidable breaks, so a
+			// rendered <dl> with at least one rule-id + spec-cited finding card
+			// must appear — the inspector ran against the PARSED textarea value.
+			const dl = sandbox?.querySelector('dl')
+			expect(dl, 'rendered findings <dl> after the sandbox pass').not.toBeNull()
+			const cards = sandbox?.querySelectorAll('dd ul > li')
+			expect((cards?.length ?? 0) > 0, 'at least one finding card').toBe(true)
+			expect(cards?.[0]?.querySelector('code')?.textContent ?? '').toMatch(/\//) // {family}/{concern}
+			expect(cards?.[0]?.querySelector('footer')?.textContent ?? '').toMatch(/#/) // a cite
+
+			// Reset restores the seed and drops the rendered result.
+			const reset = [...host.querySelectorAll('button')].find((b) =>
+				/reset to seed/i.test(b.textContent ?? ''),
+			)
+			expect(reset, 'the sandbox reset button').toBeDefined()
+			reset?.click()
+			await nextTick()
+			expect(sandbox?.querySelector('dl'), 'result cleared after reset').toBeNull()
 		} finally {
 			teardown()
 		}

@@ -1480,6 +1480,39 @@ export const INSPECTOR_DIRTY_FIXTURE = `<section>
   </figure>
 </section>`
 
+/**
+ * The editable SANDBOX seed. Unlike `INSPECTOR_DIRTY_FIXTURE` (a fixed,
+ * prose-explained demonstration), this is the STARTING markup of the live
+ * try-it editor: the user edits it freely and re-runs the inspector against
+ * the parsed result. Like the fixture, the sandbox parses the textarea value
+ * into a DETACHED `<div>` (never inserted into the live document), so neither
+ * the seed nor any edit can make the InspectorPage itself non-conformant —
+ * the Phase-6 `semantics.test.ts` gate auto-audits this page and requires
+ * ZERO `error` findings. The seed deliberately mixes conformant markup with
+ * a few tree-decidable violations so the editor demonstrates real findings
+ * the moment the page loads, while inviting the user to edit toward (or
+ * away from) conformance:
+ *   - `<ul><span>` — `context/parent-model` (`<ul>` admits only `<li>` +
+ *     script-supporting; `groupings#the-ul-element`).
+ *   - `<a href>…<button>` — both `content/forbidden` and
+ *     `transparent/interactive-descendant` (`texts#the-a-element`).
+ * The surrounding `<article>`/`<h2>`/`<p>`/`<li>` markup is conformant —
+ * editing the two breaks above to valid markup drives the sandbox to the
+ * "this subtree conforms" empty state.
+ */
+export const INSPECTOR_SANDBOX_SEED = `<article>
+  <h2>Try editing this markup</h2>
+  <p>Edit the HTML below, then re-run the inspector — the findings update live.</p>
+  <ul>
+    <li>A conformant list item.</li>
+    <span>A bare span is not a permitted child of &lt;ul&gt;.</span>
+  </ul>
+  <p>
+    A link must not wrap interactive content:
+    <a href="#demo">open <button type="button">a button</button></a>.
+  </p>
+</article>`
+
 export const INSPECTOR_SNIPPET_RUN = `import { Inspector } from '@elements/browser'
 
 const inspector = new Inspector()
