@@ -1389,28 +1389,26 @@ describe('helpers — rove', () => {
 	})
 })
 
-// ════════════════════════════════════════════════════════════════════════════
-//  9. Inspector rule-engine helpers — the 39 generic `{verb}{Noun}` building
-//     blocks `inspector/rules.ts` composes its registry from (the
-//     "Inspector rule-engine helpers" section of `src/browser/helpers.ts`,
-//     extracted verbatim in Batch 1 + the generic flat-traversal bases added
-//     in Batch 2). CHARACTERIZATION tests: each helper is exercised on REAL
-//     Chromium DOM (real shadow roots / `<slot>` + `assignedElements` /
-//     `<template>.content` for the flat-tree traversal helpers; real computed
-//     styles via the `src:browser` SCSS cascade; real `:popover-open`),
-//     against the REAL frozen corpus schema (`describeElement` / the
-//     `ATTRIBUTE_*` constants) — never a mock. The module-private
-//     `isScriptSupporting` is deliberately NOT tested directly (not exported);
-//     it is covered transitively through `matchSegments` (the
-//     script-supporting-intermixed cases below).
+// ── 9. Inspector rule-engine helpers ────────────────────────────────────────
+// The 39 generic `{verb}{Noun}` building blocks `inspector/rules.ts` composes
+// its registry from (the "Inspector rule-engine helpers" section of
+// `src/browser/helpers.ts`, extracted verbatim in Batch 1 + the generic
+// flat-traversal bases added in Batch 2). CHARACTERIZATION tests: each helper
+// is exercised on REAL Chromium DOM (real shadow roots / `<slot>` +
+// `assignedElements` / `<template>.content` for the flat-tree traversal
+// helpers; real computed styles via the `src:browser` SCSS cascade; real
+// `:popover-open`), against the REAL frozen corpus schema (`describeElement` /
+// the `ATTRIBUTE_*` constants) — never a mock. The module-private
+// `isScriptSupporting` is deliberately NOT tested directly (not exported); it
+// is covered transitively through `matchSegments` (the
+// script-supporting-intermixed cases below).
 //
-//     `el()` mirrors the inspector suites' builder idiom
-//     (`tests/src/browser/inspector/*.test.ts`); the `container` lifecycle
-//     mirrors theirs (a fresh detached `<div>` appended to / removed from the
-//     body each test, so `flatParent` / computed style resolve in a real
-//     connected tree). Seeded synthetic cases use `@elements/core`
-//     `createRandom` so a failing tree is reproducible from its seed.
-// ════════════════════════════════════════════════════════════════════════════
+// `el()` mirrors the inspector suites' builder idiom
+// (`tests/src/browser/inspector/*.test.ts`); the `container` lifecycle mirrors
+// theirs (a fresh detached `<div>` appended to / removed from the body each
+// test, so `flatParent` / computed style resolve in a real connected tree).
+// Seeded synthetic cases use `@elements/core` `createRandom` so a failing tree
+// is reproducible from its seed.
 
 describe('helpers — inspector rule-engine', () => {
 	let container: HTMLDivElement

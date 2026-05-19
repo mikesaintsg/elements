@@ -1152,8 +1152,11 @@ fully shipped and green.**
   `matchSegments` (not exported, not tested directly). Characterizes the
   already-shipped behavior — every new test green BY the settled
   implementation; **zero** production (`src/**`) change and **zero**
-  pre-existing test modified (the full `src:browser ∪ app:browser ∪ guides`
-  suite goes 8239 → 8336, the delta being exactly the 97 new tests).
+  pre-existing test **logic** modified — 5 pre-existing test regions were
+  formatter-reflowed (byte-identical logic, no assertion/input/matcher change)
+  by the mandatory `npm run format` because the parent file predated current
+  `oxfmt` conformance (the full `src:browser ∪ app:browser ∪ guides` suite
+  goes 8239 → 8336, the delta being exactly the 97 new tests).
   Semantic-only ROADMAP note — no reflow, Phases 0–8 ✅ unchanged.
 
 ---
