@@ -32,8 +32,8 @@
 	// --------------------------------------------------------------------------
 	// Focus ring sub-tokens — no Tailwind equivalent
 	// --------------------------------------------------------------------------
-	--set-focus-box-shadow-width: 0.25rem;
-	--set-focus-box-shadow-opacity: 0.35;
+	--set-focus-box-shadow-width: 0.1875rem;
+	--set-focus-box-shadow-opacity: 0.45;
 
 	// --------------------------------------------------------------------------
 	// Variant context tokens — neutral fallback when no .{variant} is active.
@@ -228,13 +228,15 @@
 	// Consumer override at `:root` (eg sharper monochrome shadows on a
 	// brutalist theme) retunes every floating surface at once.
 	// --------------------------------------------------------------------------
-	--set-box-shadow-small: 0 0.125rem 0.25rem color-mix(in srgb, black 7.5%, transparent);
+	--set-box-shadow-small:
+		0 0.0625rem 0.125rem color-mix(in srgb, black 5%, transparent),
+		0 0.0625rem 0.1875rem color-mix(in srgb, black 9%, transparent);
 	--set-box-shadow:
-		0 0.25rem 0.75rem color-mix(in srgb, black 8%, transparent),
-		0 0.0625rem 0.1875rem color-mix(in srgb, black 6%, transparent);
+		0 0.125rem 0.25rem color-mix(in srgb, black 6%, transparent),
+		0 0.5rem 1rem -0.25rem color-mix(in srgb, black 12%, transparent);
 	--set-box-shadow-large:
-		0 0.5rem 2rem color-mix(in srgb, black 18%, transparent),
-		0 0.125rem 0.375rem color-mix(in srgb, black 10%, transparent);
+		0 0.25rem 0.5rem color-mix(in srgb, black 7%, transparent),
+		0 1.5rem 2.75rem -0.5rem color-mix(in srgb, black 22%, transparent);
 
 	// --------------------------------------------------------------------------
 	// Icon tokens — single overridable inline-SVG library for every chrome

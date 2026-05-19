@@ -96,7 +96,7 @@
 		--set-toast-background-color: var(--color-surface);
 		--set-toast-border-color: var(--color-border);
 		--set-toast-border-width: 1px;
-		--set-toast-border-radius: 0.5rem;
+		--set-toast-border-radius: var(--radius-lg);
 		--set-toast-padding-inline: calc(var(--spacing) * 4);
 		--set-toast-padding-block: calc(var(--spacing) * 3);
 		--set-toast-gap: calc(var(--spacing) * 3);

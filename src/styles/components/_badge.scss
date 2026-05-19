@@ -30,7 +30,7 @@
 	.badge {
 		--set-badge-color: var(--set-variant-color, var(--color-text-emphasis, var(--color-text)));
 		--set-badge-background-color: var(--set-variant-background-color, var(--color-border-subtle));
-		--set-badge-border-radius: 0.375rem;
+		--set-badge-border-radius: var(--radius-md);
 		--set-badge-padding-inline: 0.5em;
 		--set-badge-padding-block: 0.25em;
 		--set-badge-font-size: 0.75em;
