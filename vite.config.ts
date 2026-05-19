@@ -190,18 +190,16 @@ export const srcBrowser = (config?: UserConfig): UserConfig =>
 						fileName: () => 'index.js',
 					},
 					outDir: 'dist/src/browser',
-					// `@elements/browser` and `@elements/core` publish as two
-					// subpaths of one package. Externalize ONLY `@elements/core`
-					// so the browser lib imports the sibling core build rather
-					// than inlining a copy of `src/core`. Vue stays inlined
-					// exactly as in the parent build — the predicate is
-					// deliberately minimal.
-					rollupOptions: {
-						external: (id: string) => id === '@elements/core',
-						output: {
-							paths: { '@elements/core': '../core/index.js' },
-						},
-					},
+					// NOTE: the `@elements/core` externalization is DELIBERATELY
+					// NOT here. It is a LIBRARY-publish concern only (the
+					// published `dist/src/browser` lib importing the sibling
+					// `dist/src/core` build, two subpaths of one package) and
+					// lives in `configs/src/vite.browser.config.ts` — the sole
+					// library-build consumer. Keeping it out of this shared base
+					// is what lets `appBrowser` (an APPLICATION) bundle core into
+					// a genuinely self-contained single-file showcase that opens
+					// from `file://` (origin `null`) without a CORS-blocked
+					// sibling-module fetch.
 				},
 				test: {
 					name: { label: 'src:browser', color: 'yellow' },
