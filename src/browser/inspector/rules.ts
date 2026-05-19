@@ -170,8 +170,8 @@ function readSubject(element: Element, context: RuleContext): RuleSubject {
 
 // ── Shared predicates / finding builder ─────────────────────────────────────
 //
-// The generic building blocks — `isScriptSupporting` / `isContentCategory`
-// guards, `matchesTagCategory` / `matchesForbiddenToken`, `constraintOf`,
+// The generic building blocks — `isContentCategory` guards,
+// `matchesTagCategory` / `matchesForbiddenToken`, `constraintOf`,
 // `buildFinding`, `citeOf` — live in the centralized `helpers.ts` (the
 // `{verb}{Noun}` rule-engine-helper section). This registry composes them;
 // it does not own them (AGENTS §4.6/§5).
