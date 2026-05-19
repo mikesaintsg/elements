@@ -1112,8 +1112,27 @@ fully shipped and green.**
   `tests/guides/inspector.test.ts` doc↔source parity stays green by
   correctness (the inspector barrel exports are unchanged; `inspector.md`
   backticks none of the relocated helpers, so DOC→SOURCE still resolves).
-  Semantic-only ROADMAP note — no reflow, Phases 0–8 ✅ unchanged. Batch 2
-  (consolidation/dedupe) + Batch 3 (helper tests) are deferred follow-ups.
+  Semantic-only ROADMAP note — no reflow, Phases 0–8 ✅ unchanged. Batch 3
+  (helper tests) is the remaining deferred follow-up.
+
+- ✅ **Batch 2 (consolidation / dedupe, behavior-preserving).** The
+  rigorous same-or-similar sweep over [`helpers.ts`](src/browser/helpers.ts)
+  ∪ the [`rules.ts`](src/browser/inspector/rules.ts) residue. Two genuine
+  shared bases were introduced (the rest of the candidate set was reasoned
+  out as legitimately distinct — different traversal scope, return type,
+  data source, or decidability boundary — and kept, not force-merged):
+  `findFlatAncestor(el, predicate)` + its boolean projection
+  `hasFlatAncestor(el, predicate)` (the find-first flat-ancestor walk
+  `hasFlatAncestorTag` AND the Batch-1-deferred `hasLinkAncestorWithHref`
+  now compose — the latter's extra `href` predicate was exactly why Batch 1
+  could not collapse it, so it MOVES `rules.ts`→`helpers.ts`, closing the
+  deferral); and `findFlatDescendant(el, predicate)` (the find-first
+  flat-descendant walk `findForbiddenDescendant` AND the rule-specific
+  `violatesNoSelfNest` guard compose). All compositions are byte-identical
+  to the originals (the full suite stays green with **zero** test
+  modifications); `rules.ts` is left strictly smaller (the relocated guard +
+  the inlined self-nest loop). Semantic-only ROADMAP note — no reflow,
+  Phases 0–8 ✅ unchanged.
 
 ---
 

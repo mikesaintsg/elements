@@ -927,6 +927,24 @@ export function countLeadingTag(parent: Element, tag: string): number {
 }
 
 /**
+ * The first flat-tree descendant of `element` satisfying `predicate`
+ * (depth-first, document order — driven by {@link flatDescendants}, the EXACT
+ * element set `Walker.walk()` visits), or `null`. The generic find-first flat
+ * traversal both {@link findForbiddenDescendant} and the rule layer's
+ * self-nest scan compose so a descendant check never diverges from the walk
+ * spine (§3/§9). Bounded by the finite flat-tree depth.
+ */
+export function findFlatDescendant(
+	element: Element,
+	predicate: (descendant: Element) => boolean,
+): Element | null {
+	for (const descendant of flatDescendants(element)) {
+		if (predicate(descendant)) return descendant
+	}
+	return null
+}
+
+/**
  * The first flat-tree descendant whose tag/category is forbidden — a SINGLE
  * flat traversal (find-first idiom, mirroring `Walker.walk()`'s flat tree
  * so the rule layer never diverges from the walk spine, §3/§9).
@@ -936,13 +954,13 @@ export function findForbiddenDescendant(
 	forbidden: readonly (ContentCategory | string)[],
 ): Element | null {
 	if (forbidden.length === 0) return null
-	for (const descendant of flatDescendants(element)) {
+	return findFlatDescendant(element, (descendant) => {
 		const descendantTag = tagOf(descendant)
 		for (const token of forbidden) {
-			if (matchesForbiddenToken(token, descendantTag)) return descendant
+			if (matchesForbiddenToken(token, descendantTag)) return true
 		}
-	}
-	return null
+		return false
+	})
 }
 
 /**
@@ -974,6 +992,42 @@ export function findMiscategorizedChild(
 }
 
 /**
+ * The first flat-tree ANCESTOR of `element` satisfying `predicate`, or
+ * `null`. Walks the SAME flat parent chain `readSubject` resolves "the
+ * parent" from ({@link flatParent} — slot conduits collapsed, shadow host as
+ * parent), STARTING at `flatParent(element)` (ancestor-only — `element`
+ * itself is never tested; the self-inclusive Hidden-state scan
+ * {@link isHiddenNode} deliberately does NOT compose this), so a descendant
+ * check never diverges from the walk spine (§3 — never light-tree
+ * `closest`/`parentElement`). Bounded by the finite flat-tree depth. The
+ * generic find-first flat-ancestor traversal both {@link hasFlatAncestorTag}
+ * and {@link hasLinkAncestorWithHref} compose.
+ */
+export function findFlatAncestor(
+	element: Element,
+	predicate: (ancestor: Element) => boolean,
+): Element | null {
+	let current = flatParent(element)
+	while (current !== null) {
+		if (predicate(current)) return current
+		current = flatParent(current)
+	}
+	return null
+}
+
+/**
+ * Does any flat-tree ancestor of `element` satisfy `predicate`? The boolean
+ * projection of {@link findFlatAncestor} (the shared find-first flat-ancestor
+ * walk) every ancestor-presence check composes.
+ */
+export function hasFlatAncestor(
+	element: Element,
+	predicate: (ancestor: Element) => boolean,
+): boolean {
+	return findFlatAncestor(element, predicate) !== null
+}
+
+/**
  * Does any flat-tree ANCESTOR of `element` carry one of `parents` as its
  * tag? Walks the SAME flat parent chain `readSubject` resolves "the parent"
  * from ({@link flatParent} — slot conduits collapsed, shadow host as
@@ -982,12 +1036,30 @@ export function findMiscategorizedChild(
  * flat-tree depth.
  */
 export function hasFlatAncestorTag(element: Element, parents: readonly string[]): boolean {
-	let current = flatParent(element)
-	while (current !== null) {
-		if (parents.includes(current.tagName.toLowerCase())) return true
-		current = flatParent(current)
-	}
-	return false
+	return hasFlatAncestor(element, (ancestor) => parents.includes(ancestor.tagName.toLowerCase()))
+}
+
+/**
+ * The element's flat-tree ancestor chain carries an `a` with a non-empty
+ * `href` — the `img[ismap]` corpus check, over the SAME flat parent chain
+ * `readSubject` resolves "the parent" from ({@link flatParent} — slot
+ * conduits collapsed), never light-tree `closest`. Bounded by the finite
+ * flat depth.
+ *
+ * @remarks Generic via {@link hasFlatAncestor} (predicate = `a` + `href`):
+ * the Batch-1-deferred `rules.ts` resident bakes in an extra
+ * `hasAttribute('href')` predicate beyond a bare tag match, so it could not
+ * be reduced to `hasFlatAncestorTag(el, ['a'])`. The Batch-2 generic
+ * predicate-taking base ({@link hasFlatAncestor}) closes that deferral — the
+ * walk is byte-identical, the helper is now a centralized `helpers.ts`
+ * export (AGENTS §4.6/§5: `rules.ts` keeps only registry + rule-specific
+ * content).
+ */
+export function hasLinkAncestorWithHref(element: Element): boolean {
+	return hasFlatAncestor(
+		element,
+		(ancestor) => ancestor.tagName.toLowerCase() === 'a' && ancestor.hasAttribute('href'),
+	)
 }
 
 /**

@@ -18,16 +18,17 @@ import {
 	countLeadingTag,
 	effectiveCategories,
 	findAttributeRule,
+	findFlatDescendant,
 	findForbiddenDescendant,
 	findMiscategorizedChild,
 	findOffendingEnumAttribute,
 	findOffendingEnumDomain,
 	findOffendingIntegerBound,
 	flatChildren,
-	flatDescendants,
 	flatParent,
 	hasAttributeRule,
 	hasFlatAncestorTag,
+	hasLinkAncestorWithHref,
 	isHiddenNode,
 	isPopoverOpen,
 	matchesTag,
@@ -823,10 +824,9 @@ const structureEdgeChildRule: RuleInterface = {
 // `querySelector` over the light tree).
 const violatesNoSelfNest = whereOf(isSubject, (subject: RuleSubject): boolean => {
 	if (constraintOf(subject.entry, 'no-self-nest') === null) return false
-	for (const descendant of flatDescendants(subject.element)) {
-		if (tagOf(descendant) === subject.tag) return true
-	}
-	return false
+	return (
+		findFlatDescendant(subject.element, (descendant) => tagOf(descendant) === subject.tag) !== null
+	)
 })
 
 const structureNoSelfNestRule: RuleInterface = {
@@ -938,18 +938,12 @@ const structureVoidRule: RuleInterface = {
 //                          encoding a domain would invent one.
 // ============================================================================
 
-// The element's flat-tree ancestor chain carries an `a` with a non-empty
-// `href` — the `img[ismap]` corpus check, over the SAME flat parent chain
-// `readSubject` resolves "the parent" from (`flatParent` — slot conduits
-// collapsed), never light-tree `closest`. Bounded by the finite flat depth.
-function hasLinkAncestorWithHref(element: Element): boolean {
-	let current = flatParent(element)
-	while (current !== null) {
-		if (current.tagName.toLowerCase() === 'a' && current.hasAttribute('href')) return true
-		current = flatParent(current)
-	}
-	return false
-}
+// The `img[ismap]` flat-tree ancestor `a[href]` check (`hasLinkAncestorWithHref`)
+// is centralized in helpers.ts — it composes the shared `hasFlatAncestor`
+// base (predicate = `a` + `href`) the structure family's `hasFlatAncestorTag`
+// also composes, the SAME flat parent chain (`flatParent` — slot conduits
+// collapsed) `readSubject` resolves "the parent" from, never light-tree
+// `closest` (§3). Bounded by the finite flat depth.
 
 // The element's child text content (`readChildText`) and the generic
 // `AttributeRule` accessor (`findAttributeRule`) are centralized in
