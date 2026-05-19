@@ -249,10 +249,11 @@ The showcase at `app/browser/` is the dogfooding consumer and the canonical refe
 
 ## Tests
 
-The architecture is enforced across three test projects:
+The architecture is enforced across four test projects:
 
 - **`src:browser`** ([`tests/src/browser/`](../tests/src/browser/)) — TS↔SCSS bidirectional parity in real Chromium. Every `--set-*` token resolves at runtime; every modifier in `modifiers.ts` has a matching CSS rule.
 - **`src:styles`** ([`tests/src/styles/`](../tests/src/styles/)) — per-partial behavioural tests against the rendered cascade + folder-level contract enforcers (`{folder}/_index.test.ts`).
+- **`app:styles`** ([`tests/app/styles/`](../tests/app/styles/)) — the style-combination self-audit gate: every `STRUCTURAL_PAIRINGS` cascade pair and every `elements.ts` tag × applicable modifier is built under the real compiled cascade and run through the `Inspector` (a self-validating scaffold makes a harness gap fail loudly, never a false positive); fails only on an `error`-severity finding, the page-gate doctrine. The style-matrix sibling of the page gate ([`tests/app/browser/semantics.test.ts`](../tests/app/browser/semantics.test.ts)).
 - **`guides`** ([`tests/guides/`](../tests/guides/)) — node-env guide-doc ↔ code parity drivers; one test driver per spec guide plus the meta `README.test.ts` for structural uniformity across guides.
 
 Cross-cutting drivers worth knowing:

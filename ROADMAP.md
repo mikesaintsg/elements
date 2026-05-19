@@ -1214,6 +1214,33 @@ fully shipped and green.**
   goes 8239 → 8336, the delta being exactly the 97 new tests).
   Semantic-only ROADMAP note — no reflow, Phases 0–8 ✅ unchanged.
 
+- ✅ **app:styles self-audit gate — the Inspector dogfooded against the
+  STYLE-COMBINATION matrix.** The Phase-6 page gate audits the 44 showcase
+  PAGES; this new sibling audits the raw combinations the framework's own
+  SCSS purports to style, derived ONLY from the machine-readable
+  registries (never invented data): every `STRUCTURAL_PAIRINGS` bare-tag
+  `parent > child` cascade pair, and every `elements.ts` styled tag ×
+  every applicable cross-cutting modifier (variant ∪ size ∪ style ∪ state)
+  + the documented element-local modifiers. Each subject is built in a
+  minimal, spec-grounded valid-ancestor scaffold + `conform()`ed so the
+  inspector evaluates the COMBINATION, not a harness artifact; the gate is
+  SELF-VALIDATING (a §0 describe proves every scaffold is itself
+  zero-error, so a harness gap fails loudly as `[HARNESS]` and can never
+  false-positive nor mask a real framework finding). Gate behavior mirrors
+  the page gate EXACTLY — fail only on an `error`-severity finding;
+  warnings/advice reported (non-failing `afterAll`), the by-design
+  `presentation/list-style` warning expected. New
+  [`tests/app/styles/semantics.test.ts`](tests/app/styles/semantics.test.ts)
+  + a new browser-enabled `app:styles` vitest project (extends `srcStyles`
+  so the real compiled cascade is loaded; `vite.config.ts` + the
+  `test:app:styles` script + `test:app`), registered in
+  [`guides/styles.md`](guides/styles.md) § Tests (three → four projects).
+  Result: **213/213 green — the framework's entire style matrix is
+  content-model-conformant**; zero genuine non-conformance surfaced (the
+  value is the permanent standing gate + the proven-sound harness). No
+  inspector/schema/rule/type/framework-source change. Semantic-only
+  ROADMAP note — Phases 0–8 ✅ unchanged.
+
 ---
 
 ## Conventions to keep applying

@@ -289,9 +289,33 @@ export const appBrowser = (config?: UserConfig): UserConfig =>
 		),
 	)
 
+// Extends srcStyles: the real compiled cascade in Chromium, but the
+// app-level STYLE-COMBINATION self-audit (tests/app/styles/**) instead of
+// the per-partial src tests. `include` concatenates under mergeConfig, so —
+// exactly like appBrowser — `exclude` drops the inherited src globs, leaving
+// only the app:styles gate. Setup is reused verbatim (setupStyles loads
+// `src/styles/index.scss`, so the Inspector's presentation lens sees the
+// real cascade).
+export const appStyles = (config?: UserConfig): UserConfig =>
+	srcStyles(
+		mergeConfig(
+			{
+				test: {
+					name: { label: 'app:styles', color: 'magenta' },
+					root: resolveWorkspacePath('.'),
+					dir: resolveWorkspacePath('.'),
+					include: ['tests/app/styles/**/*.test.ts'],
+					exclude: ['tests/src/styles/**/*.test.ts'],
+					setupFiles: ['./tests/setup.ts', './tests/setupStyles.ts'],
+				},
+			},
+			config ?? {},
+		),
+	)
+
 export default defineConfig({
 	resolve,
 	test: {
-		projects: [srcCore, srcBrowser, srcStyles, guides, appCore, appBrowser],
+		projects: [srcCore, srcBrowser, srcStyles, guides, appCore, appBrowser, appStyles],
 	},
 })
