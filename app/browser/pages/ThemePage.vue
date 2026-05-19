@@ -454,24 +454,25 @@ const theme = useTheme()
 	<section id="theme-inverted">
 		<h2>Inverted tier — contrast accent</h2>
 		<p>
-			A single high-contrast surface for "always stands out" affordances — tooltip backgrounds,
-			snackbar shells, focus highlights on subtle inputs. The two tokens are designed as a
-			<strong>pair</strong>: <code>--color-inverted</code> is the surface fill,
-			<code>--color-inverted-text</code> is the foreground for text + icons on top of it. In light
-			mode the surface is near-black and the text is white; in dark mode the surface flips to
-			near-white with dark text. Switch themes to see it pivot.
+			A high-contrast surface for "always stands out" affordances. The accent is a
+			<strong>two-token pair</strong>: <code>--color-inverted</code> (surface fill) +
+			<code>--color-inverted-text</code> (foreground). Both flip per-theme so the surface stays
+			distinct in light AND dark. To paint a region with it, add <code>data-theme="invert"</code> —
+			the framework's reusable inverted-surface hook. It sets the pair AND resets the self-coloring
+			descendants that would otherwise re-resolve their own canvas-tier color (headings,
+			<code>&lt;strong&gt;</code>, <code>&lt;dd&gt;</code>, <code>&lt;mark&gt;</code>, …) to follow
+			the foreground — the same proven recipe the tooltip (<code>[popover='hint']</code>) uses,
+			generalized so any callout / promo / demo surface gets correct descendants with no per-element
+			overrides. Switch themes to see it pivot.
 		</p>
-		<article
-			:style="{
-				padding: 'calc(var(--spacing) * 4)',
-				backgroundColor: 'var(--color-inverted)',
-				color: 'var(--color-inverted-text)',
-			}"
-		>
-			<h3 class="mb-2">Sample text on the inverted surface</h3>
+		<article data-theme="invert">
+			<h3>Sample text on the inverted surface</h3>
 			<p class="opacity-85">
-				Background uses <code>--color-inverted</code>; this text uses
-				<code>--color-inverted-text</code>. Both tokens resolve to:
+				This <code>&lt;article data-theme="invert"&gt;</code> paints
+				<code>--color-inverted</code> as the fill and <code>--color-inverted-text</code> as the
+				foreground. The heading re-resolves its own color from <code>--set-heading-color</code>, so
+				the hook resets it (and the other self-coloring canvas-tier elements) to
+				<code>inherit</code> — no <code>color</code> pin in the markup. The accent pair resolves to:
 			</p>
 			<dl class="showcase-inverted-key-value mt-2">
 				<dt><code>--color-inverted</code></dt>
@@ -485,11 +486,12 @@ const theme = useTheme()
 			</dl>
 		</article>
 		<p class="mt-3">
-			The two tokens are NOT meant to be used independently — using
+			The accent pair is NOT meant to be used independently — using
 			<code>--color-inverted-text</code> as a foreground over any other background (including the
 			page canvas) will fail WCAG contrast in one of the two themes. Reach for
-			<code>--color-text-strong</code> for "always-contrasted text" instead; reach for the pair only
-			when you want the entire surface to invert.
+			<code>--color-text-strong</code> for "always-contrasted text", the accent pair for a minimal
+			two-token surface (tooltip), and the <code>data-theme="invert"</code> island when a whole
+			region should read as the opposite theme.
 		</p>
 	</section>
 

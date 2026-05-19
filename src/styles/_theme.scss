@@ -513,3 +513,52 @@
 		var(--color-surface)
 	);
 }
+
+// ── Inverted region — `data-theme="invert"` ──────────────────────────────
+// The framework's reusable "always-distinct-from-canvas" surface hook.
+//
+// `--color-inverted` / `--color-inverted-text` are a two-token accent pair
+// (the surface fill + its safe foreground). They flip per-theme in the
+// blocks above so the surface stays distinct in BOTH light and dark. The
+// catch: a bare `color: var(--color-inverted-text)` does NOT reach an
+// element whose own baseline re-resolves `color` from its own
+// `--set-{tag}-*` chain — headings (`_h1-h6.scss` deliberately bottoms
+// out at `--color-text`, never `inherit`/`currentColor`, for a documented
+// Chromium nested-`var()` reason), `<strong>`, `<dd>`/`<dt>`,
+// `<address>`, `<figcaption>`, `<mark>`, `<hgroup> p`. Each paints its
+// own canvas-tier color and would read as a low-contrast smudge on the
+// inverted fill.
+//
+// `surfaces/_popover.scss` already solves exactly this for the tooltip
+// (`[popover='hint']` / `[role='tooltip']`) by resetting those self-
+// coloring descendants to `color: inherit` so they follow the surface
+// foreground. That recipe is proven across every theme + forced-colors
+// combination. `[data-theme='invert']` generalizes the SAME recipe into
+// one documented hook so any consumer-authored inverted region (callout,
+// promo bar, demo surface) gets correct descendants for free — no per-
+// element `color` pin, no maintenance fork. The tooltip keeps its own
+// (unchanged) rule; this is purely additive.
+//
+// Declared unlayered (alongside the token blocks above) so the deliberate
+// `data-theme="invert"` consumer opt-in wins over element / component
+// baselines the same way the tooltip surface does — the consumer asked
+// for an inverted surface, so it should beat the element's default fill.
+// `data-theme` already namespaces light / dark; `invert` is a third
+// value `useTheme` never writes, so there's no collision with the
+// page-level pins. Single-level inversion is the supported contract.
+
+[data-theme='invert'] {
+	background-color: var(--color-inverted);
+	color: var(--color-inverted-text);
+}
+
+// Self-coloring canvas-tier descendants follow the inverted foreground.
+// List mirrors the `[popover='hint']` reset in `surfaces/_popover.scss`
+// exactly so the two inverted surfaces stay in lockstep. Variant-tinted
+// children (`.primary`, `.danger`, …) override at higher specificity and
+// still paint their intended hue.
+[data-theme='invert'] :is(strong, small, dt, dd, address, figcaption, mark),
+[data-theme='invert'] :is(h1, h2, h3, h4, h5, h6),
+[data-theme='invert'] hgroup p {
+	color: inherit;
+}
