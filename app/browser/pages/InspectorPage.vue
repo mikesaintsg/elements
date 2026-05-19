@@ -318,7 +318,7 @@ function findingKey(finding: Finding): string {
 					<small>· {{ group.findings.length }} finding(s)</small>
 				</dt>
 				<dd>
-					<menu>
+					<ul>
 						<li
 							v-for="finding in group.findings"
 							:key="findingKey(finding)"
@@ -353,7 +353,7 @@ function findingKey(finding: Finding): string {
 								</footer>
 							</article>
 						</li>
-					</menu>
+					</ul>
 				</dd>
 			</template>
 		</dl>
@@ -413,7 +413,7 @@ function findingKey(finding: Finding): string {
 					<small>· {{ group.findings.length }} finding(s)</small>
 				</dt>
 				<dd>
-					<menu>
+					<ul>
 						<li
 							v-for="finding in group.findings"
 							:key="findingKey(finding)"
@@ -458,7 +458,7 @@ function findingKey(finding: Finding): string {
 								</footer>
 							</article>
 						</li>
-					</menu>
+					</ul>
 				</dd>
 			</template>
 		</dl>
@@ -513,7 +513,7 @@ function findingKey(finding: Finding): string {
 					<small>· {{ group.findings.length }} finding(s)</small>
 				</dt>
 				<dd>
-					<menu>
+					<ul>
 						<li
 							v-for="finding in group.findings"
 							:key="findingKey(finding)"
@@ -558,7 +558,7 @@ function findingKey(finding: Finding): string {
 								</footer>
 							</article>
 						</li>
-					</menu>
+					</ul>
 				</dd>
 			</template>
 		</dl>

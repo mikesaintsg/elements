@@ -86,7 +86,7 @@ describe('InspectorPage — the inspect controls actually inspect (§7 dogfood)'
 			// rule id + a spec-cited link.
 			const dl = fixtureSection?.querySelector('dl')
 			expect(dl, 'rendered findings <dl> after the pass').not.toBeNull()
-			const cards = fixtureSection?.querySelectorAll('dd menu > li')
+			const cards = fixtureSection?.querySelectorAll('dd ul > li')
 			expect((cards?.length ?? 0) > 0, 'at least one finding card').toBe(true)
 			const firstCard = cards?.[0]
 			expect(firstCard?.querySelector('code')?.textContent ?? '').toMatch(/\//) // {family}/{concern}
@@ -140,7 +140,7 @@ describe('InspectorPage — the inspect controls actually inspect (§7 dogfood)'
 			// must appear — the inspector ran against the PARSED textarea value.
 			const dl = sandbox?.querySelector('dl')
 			expect(dl, 'rendered findings <dl> after the sandbox pass').not.toBeNull()
-			const cards = sandbox?.querySelectorAll('dd menu > li')
+			const cards = sandbox?.querySelectorAll('dd ul > li')
 			expect((cards?.length ?? 0) > 0, 'at least one finding card').toBe(true)
 			expect(cards?.[0]?.querySelector('code')?.textContent ?? '').toMatch(/\//) // {family}/{concern}
 			expect(cards?.[0]?.querySelector('footer')?.textContent ?? '').toMatch(/#/) // a cite
