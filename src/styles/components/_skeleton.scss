@@ -40,7 +40,7 @@
 			var(--color-text) 6%,
 			var(--set-skeleton-background-color)
 		);
-		--set-skeleton-border-radius: 0.375rem;
+		--set-skeleton-border-radius: var(--radius-md);
 		--set-skeleton-duration: 1.5s;
 		--set-skeleton-line-block-size: 0.75em;
 		--set-skeleton-line-gap: 0.5em;

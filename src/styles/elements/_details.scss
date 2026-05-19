@@ -35,7 +35,7 @@
 			var(--set-variant-background-color, var(--color-border))
 		);
 		--set-details-border-width: var(--set-style-border-width, 1px);
-		--set-details-border-radius: var(--set-size-border-radius, 0.5rem);
+		--set-details-border-radius: var(--set-size-border-radius, var(--radius-lg));
 		--set-details-padding-inline: var(--set-size-padding-inline, 0.875rem);
 		--set-details-padding-block: var(--set-size-padding-block, 0.625rem);
 		--set-details-transition-duration: var(--set-transition-duration);

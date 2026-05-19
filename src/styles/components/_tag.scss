@@ -94,7 +94,7 @@
 
 	// Square corners — opt out of pill shape.
 	.tag.square {
-		--set-tag-border-radius: 0.25rem;
+		--set-tag-border-radius: var(--radius-sm);
 	}
 
 	// Interactive chip — `<button class="tag">` already inherits button reset
