@@ -14,9 +14,9 @@
  * schema-driven, never reads style) and `presentation` (computed-style
  * overrides that break the rendered semantics).
  *
- * This page DOGFOODS that API two ways (ROADMAP Phase 7 — "dogfood,
- * live"), composing only the existing public surface (no inspector /
- * schema / rule change):
+ * This page DOGFOODS that API three ways (ROADMAP Phase 7 — "dogfood,
+ * live" — extended with the live sandbox), composing only the existing
+ * public surface (no inspector / schema / rule change):
  *
  *   1. Audit THIS rendered page. `new Inspector().inspect({ root })`
  *      over the page's own subtree. The page is authored content-model-
@@ -28,6 +28,12 @@
  *      off-document `<div>` — never inserted, so it can't affect the
  *      page's own conformance) surfaces real, varied violations across
  *      several rule families, rendered as scannable cards.
+ *   3. Sandbox — inspect YOUR OWN markup. An editable `<textarea>`
+ *      (seeded with `INSPECTOR_SANDBOX_SEED`) parsed into the same kind
+ *      of DETACHED off-document `<div>` and re-inspected on demand, so a
+ *      visitor can paste arbitrary HTML and watch the findings update
+ *      live — the interactive way to "test it out" without touching the
+ *      live document or the page's own conformance.
  *
  * Findings are grouped by severity (with counts), filterable by lens +
  * severity, each citing the spec as a real anchor link. An explicit
@@ -51,6 +57,7 @@ import { Inspector, describePath } from '@elements/browser'
 import {
 	INSPECTOR_CITE_PAGES,
 	INSPECTOR_DIRTY_FIXTURE,
+	INSPECTOR_SANDBOX_SEED,
 	INSPECTOR_SEVERITY_ORDER,
 	INSPECTOR_SEVERITY_VARIANT,
 	INSPECTOR_SNIPPET_EVENTS,
@@ -118,6 +125,29 @@ function inspectFixture(): void {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Panel 3 — the SANDBOX. The visitor's own markup, edited live in a
+// <textarea>, parsed into the SAME kind of detached off-document <div>
+// the fixture uses (never inserted into the live page — arbitrary pasted
+// HTML can't affect this page's conformance / the Phase-6 gate), then
+// inspected on demand. Reset restores the seed. The inspector consumes
+// the PARSED nodes; the page never regex-parses the HTML itself.
+// ─────────────────────────────────────────────────────────────────────
+const sandboxHtml = ref<string>(INSPECTOR_SANDBOX_SEED)
+const sandboxPass = shallowRef<PassResult>(EMPTY)
+
+function inspectSandbox(): void {
+	const host = document.createElement('div')
+	host.innerHTML = sandboxHtml.value
+	const result = inspector.inspect({ root: host })
+	sandboxPass.value = { ...result, ran: true }
+}
+
+function resetSandbox(): void {
+	sandboxHtml.value = INSPECTOR_SANDBOX_SEED
+	sandboxPass.value = EMPTY
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Shared view model — group a pass's findings by severity, honoring the
 // lens + severity filters. An empty group set ⇒ the conform state.
 // ─────────────────────────────────────────────────────────────────────
@@ -146,6 +176,7 @@ function groups(pass: PassResult): readonly SeverityGroup[] {
 
 const pageGroups = computed(() => groups(pagePass.value))
 const fixtureGroups = computed(() => groups(fixturePass.value))
+const sandboxGroups = computed(() => groups(sandboxPass.value))
 
 // A pass conforms when it ran and no finding survives the active filter.
 function conforms(pass: PassResult): boolean {
@@ -437,8 +468,108 @@ function findingKey(finding: Finding): string {
 		</p>
 	</section>
 
+	<section id="inspector-sandbox">
+		<h2>4. Sandbox — inspect your own markup</h2>
+		<p>
+			Edit the HTML below and run the inspector against it. The markup is parsed into a
+			<strong>detached, off-document <code>&lt;div&gt;</code></strong> — exactly like the fixture
+			above, so whatever you paste can never affect this page's own conformance — and the
+			<code>Inspector</code> walks the parsed nodes (the page never regex-parses the string). The
+			seed mixes conformant markup with two tree-decidable breaks so findings show immediately; edit
+			the breaks away and the sandbox reaches the conform empty state.
+		</p>
+		<label>
+			HTML to inspect
+			<textarea v-model="sandboxHtml" class="font-mono" rows="10" spellcheck="false"></textarea>
+		</label>
+		<menu>
+			<li>
+				<button type="button" class="primary" @click="inspectSandbox()">Inspect this markup</button>
+			</li>
+			<li>
+				<button type="button" class="subtle" @click="resetSandbox()">Reset to seed</button>
+			</li>
+		</menu>
+
+		<aside
+			v-if="conforms(sandboxPass)"
+			role="status"
+			class="success"
+			data-alert-open
+			aria-live="polite"
+		>
+			<p>
+				<strong>This subtree conforms.</strong> The inspector walked
+				<code>{{ sandboxPass.walked }}</code> elements in
+				<code>{{ sandboxPass.duration.toFixed(1) }}</code> ms and found nothing matching the active
+				filter. Your markup is content-model-conformant.
+			</p>
+		</aside>
+
+		<dl v-else-if="sandboxPass.ran && sandboxGroups.length > 0">
+			<template v-for="group in sandboxGroups" :key="group.severity">
+				<dt>
+					<strong :class="severityVariant(group.severity)">{{ group.severity }}</strong>
+					<small>· {{ group.findings.length }} finding(s)</small>
+				</dt>
+				<dd>
+					<menu>
+						<li
+							v-for="finding in group.findings"
+							:key="findingKey(finding)"
+							:class="severityVariant(finding.severity)"
+						>
+							<article class="frame">
+								<header>
+									<code>{{ finding.rule }}</code>
+									<small class="badge" :class="severityVariant(finding.severity)">
+										{{ finding.severity }}
+									</small>
+									<small v-if="finding.lens" class="tag">{{ finding.lens }}</small>
+								</header>
+								<p>{{ finding.message }}</p>
+								<p v-if="finding.expected || finding.actual">
+									<small>
+										<span v-if="finding.expected">
+											Expected: <code>{{ finding.expected }}</code>
+										</span>
+										<span v-if="finding.actual">
+											· Actual: <code>{{ finding.actual }}</code>
+										</span>
+									</small>
+								</p>
+								<p>
+									<small>
+										Path: <code>{{ pathOf(finding) }}</code>
+									</small>
+								</p>
+								<footer>
+									<a
+										v-if="citeHref(finding.cite)"
+										:href="citeHref(finding.cite) ?? '#'"
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										{{ finding.cite }}
+									</a>
+									<small v-else
+										><code>{{ finding.cite }}</code></small
+									>
+								</footer>
+							</article>
+						</li>
+					</menu>
+				</dd>
+			</template>
+		</dl>
+
+		<p v-else>
+			<small>Not yet inspected — edit the markup above, then click "Inspect this markup".</small>
+		</p>
+	</section>
+
 	<section id="inspector-api">
-		<h2>4. API reference</h2>
+		<h2>5. API reference</h2>
 		<dl>
 			<dt><code>new Inspector()</code></dt>
 			<dd>

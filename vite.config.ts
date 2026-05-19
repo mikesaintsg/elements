@@ -18,13 +18,17 @@ export function resolveWorkspacePath(relativePath: string): string {
 //      running browser instance (remote debugging, browser-tools MCP, etc.).
 //   3. PLAYWRIGHT_CHANNEL         — explicit channel (`chrome`, `msedge`,
 //      `chromium`, etc.) for local dev loops.
-//   4. Claude Code sandbox        — auto-detect the bundled Playwright
-//      chromium under `/opt/pw-browsers/chromium-{rev}/chrome-linux64/chrome`.
-//      The Linux sandbox ships chromium under a revisioned directory; the
-//      revision number changes per Playwright version, so we glob the
-//      parent directory and pick the first chromium-* dir whose binary
-//      exists. Probes used to hard-code one revision; this auto-detect
-//      survives revision bumps.
+//   4. Claude Code / Claude Cloud — auto-detect the bundled Playwright
+//      chromium under `/opt/pw-browsers/`. The remote-execution environment
+//      ships chromium under a revisioned directory whose revision number AND
+//      inner layout BOTH drift across Playwright versions
+//      (`chromium-{rev}/chrome-linux64/chrome` on some builds,
+//      `chromium-{rev}/chrome-linux/chrome` on others), plus a top-level
+//      `/opt/pw-browsers/chromium` symlink that points straight at whichever
+//      binary the environment installed. The probe checks the symlink first,
+//      then globs every `chromium-*` revision dir against every known inner
+//      layout, so neither a revision bump nor a layout change can strand the
+//      auto-detect.
 //   5. Platform default — pre-installed system browser by OS:
 //        Windows  → `msedge`   ships with the OS and never collides with a
 //                              foreground Chrome instance. System Chrome
@@ -42,27 +46,41 @@ export function resolveWorkspacePath(relativePath: string): string {
 //      `npx playwright install chromium`).
 
 /**
- * Find a Playwright-bundled chromium installed under the Claude Code Linux
- * sandbox path. The sandbox installs revisions as
- * `/opt/pw-browsers/chromium-{rev}/chrome-linux64/chrome`; the `{rev}`
- * directory name changes with every Playwright upgrade, so we glob the
- * parent directory rather than pin a specific revision. Returns the
- * absolute binary path if found, `undefined` otherwise.
+ * Find a Playwright-bundled chromium installed under the Claude Code /
+ * Claude Cloud remote-execution path `/opt/pw-browsers/`. Both the revision
+ * directory name (`chromium-{rev}`) AND its inner layout drift across
+ * Playwright builds — the binary has shipped as both
+ * `chrome-linux64/chrome` and `chrome-linux/chrome` — and the environment
+ * also maintains a top-level `chromium` symlink that resolves straight to
+ * whichever binary it installed. The probe is therefore deliberately broad:
+ * the symlink first (the environment's own canonical pointer, layout-proof),
+ * then every `chromium-*` revision dir crossed with every known inner
+ * layout. Returns the absolute binary path if found, `undefined` otherwise.
  */
 function findClaudeCodeChromium(): string | undefined {
 	if (process.platform !== 'linux') return undefined
 	const root = '/opt/pw-browsers'
 	if (!existsSync(root)) return undefined
+	// The environment-maintained `chromium` symlink points straight at the
+	// installed binary regardless of revision / inner-layout drift.
+	const linked = `${root}/chromium`
+	if (existsSync(linked)) return linked
 	let entries: string[]
 	try {
 		entries = readdirSync(root)
 	} catch {
 		return undefined
 	}
+	// `chrome-linux64/chrome` (newer builds) and `chrome-linux/chrome`
+	// (older / current Cloud builds) are both probed so a layout change
+	// can't strand the auto-detect.
+	const layouts = ['chrome-linux64/chrome', 'chrome-linux/chrome']
 	for (const entry of entries.sort().reverse()) {
 		if (!entry.startsWith('chromium-')) continue
-		const candidate = `${root}/${entry}/chrome-linux64/chrome`
-		if (existsSync(candidate)) return candidate
+		for (const layout of layouts) {
+			const candidate = `${root}/${entry}/${layout}`
+			if (existsSync(candidate)) return candidate
+		}
 	}
 	return undefined
 }
