@@ -1130,8 +1130,9 @@ fully shipped and green.**
   flat-descendant walk `findForbiddenDescendant` AND the rule-specific
   `violatesNoSelfNest` guard compose). All compositions are byte-identical
   to the originals (the full suite stays green with **zero** test
-  modifications); `rules.ts` is left strictly smaller (the relocated guard +
-  the inlined self-nest loop). Semantic-only ROADMAP note — no reflow,
+  modifications); `rules.ts` is left strictly smaller (the relocated
+  `hasLinkAncestorWithHref` + the self-nest loop now composed onto
+  `findFlatDescendant`). Semantic-only ROADMAP note — no reflow,
   Phases 0–8 ✅ unchanged.
 
 ---

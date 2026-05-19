@@ -933,6 +933,12 @@ export function countLeadingTag(parent: Element, tag: string): number {
  * traversal both {@link findForbiddenDescendant} and the rule layer's
  * self-nest scan compose so a descendant check never diverges from the walk
  * spine (§3/§9). Bounded by the finite flat-tree depth.
+ *
+ * Distinct from {@link findDescendant} (traversals.ts), which walks the LIGHT
+ * tree (stack-based `lastElementChild`/`previousElementSibling` iteration over
+ * the DOM's own child links); this walks the FLAT tree ({@link flatDescendants}
+ * — slot conduits and shadow roots collapsed) so the inspector never diverges
+ * from the Walker spine.
  */
 export function findFlatDescendant(
 	element: Element,
@@ -1002,6 +1008,11 @@ export function findMiscategorizedChild(
  * `closest`/`parentElement`). Bounded by the finite flat-tree depth. The
  * generic find-first flat-ancestor traversal both {@link hasFlatAncestorTag}
  * and {@link hasLinkAncestorWithHref} compose.
+ *
+ * Distinct from {@link findAncestor} (traversals.ts), which walks the LIGHT
+ * tree (`parentElement` chain); this walks the FLAT tree ({@link flatParent}
+ * — slot conduits collapsed, shadow host as parent) so the inspector never
+ * diverges from the Walker spine.
  */
 export function findFlatAncestor(
 	element: Element,
@@ -1230,6 +1241,12 @@ export function resolveReferencedTarget(subject: RuleSubject): Element | null {
  * hidden cannot under-report a genuine §6.1 violation; carving out an
  * until-found exemption would be an unauthorized corpus-judgment change
  * (the spec does not state one). Accepted conservative reading.
+ *
+ * @remarks Self-INCLUSIVE: tests `element` itself first, then walks
+ * `flatParent` up the chain — deliberately NOT a {@link findFlatAncestor}
+ * composition (which starts at `flatParent(element)` and never tests the
+ * element itself). Do not dedupe this onto the ancestor-only base; the
+ * self-inclusive start is the semantic.
  */
 export function isHiddenNode(element: Element): boolean {
 	let current: Element | null = element
