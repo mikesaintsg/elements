@@ -64,6 +64,9 @@ import UseDragDropPage from './pages/UseDragDropPage.vue'
 import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
 import InspectorPage from './pages/InspectorPage.vue'
 
+// Examples — fullscreen layout templates rendered without the docs chrome.
+import DashboardExamplePage from './examples/DashboardExamplePage.vue'
+
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
  * URL fragment `#/{id}`) with a `title`, a `group` from `ROUTE_GROUPS`,
@@ -339,6 +342,15 @@ const INSPECTOR: Route = {
 	page: InspectorPage,
 }
 
+// ── Examples ───────────────────────────────────────────────────────────────
+
+const EXAMPLE_DASHBOARD: Route = {
+	id: 'example-dashboard',
+	title: 'Dashboard',
+	group: 'Examples',
+	page: DashboardExamplePage,
+}
+
 export const routes: readonly Route[] = [
 	HOME,
 	TOKENS,
@@ -384,6 +396,7 @@ export const routes: readonly Route[] = [
 	USE_DRAG_DROP,
 	USE_THEME_BUTTON,
 	INSPECTOR,
+	EXAMPLE_DASHBOARD,
 ]
 
 const parse = (fallback: string): RouteLocation => {
