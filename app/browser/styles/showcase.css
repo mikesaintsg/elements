@@ -244,6 +244,22 @@
 	--set-summary-margin-block-end: calc(var(--spacing) * 0.5);
 }
 
+/* Mobile drawer — reduce the rail-internal gutters. On desktop the
+ * docs sidebar has a generous 14px `<details>` padding + 8px summary
+ * padding = 22px gutter on each side. That's fine when the rail is
+ * 16rem (256px) wide, but in the mobile drawer (popover) the rail
+ * fills almost the full viewport and the deep indent steals readable
+ * width from the link rows. Halve the gutters below the framework's
+ * mobile breakpoint so the disclosure + nav items get more space. */
+@media (max-width: 960px) {
+	.showcase-sidebar-scroll > details.flush {
+		padding-inline: calc(var(--spacing) * 2);
+	}
+	.showcase-sidebar-scroll > details.flush > summary {
+		padding-inline: calc(var(--spacing) * 1);
+	}
+}
+
 /* H6 inside summary — the framework's nav-rail h6 rhythm
  * (margin-block-start * 3, margin-block-end * 1) was authored for h6
  * as a DIRECT child of the rail. Inside `<summary>` the summary

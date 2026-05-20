@@ -312,12 +312,13 @@ onUnmounted(() => {
 				</menu>
 			</header>
 
-			<!-- Bottom padding is generous on mobile so the floating
-			     ExamplesShell toolbar (bottom-center on narrow viewports)
-			     never permanently obscures the tail of the scroll content.
-			     Above sm the toolbar moves to bottom-end and a normal
-			     padding suffices. -->
-			<main class="flex-1 overflow-y-auto p-6 pb-28 sm:pb-6 flex flex-col gap-6">
+			<!-- Page-content padding: tight on mobile so the dashboard
+			     reads like a normal app screen (edge-to-edge cards, less
+			     wasted gutter), comfortable from sm up. Bottom padding
+			     stays generous on mobile so the floating ExamplesShell
+			     toolbar (bottom-center on narrow viewports) never
+			     permanently obscures the tail of the scroll content. -->
+			<main class="flex-1 overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-6 flex flex-col gap-4 sm:gap-6">
 				<!-- Page header — flex row wrapping, space between hgroup and range
 				     toolbar. Tailwind utilities handle the layout. -->
 				<header class="flex flex-wrap justify-between items-end gap-4">
@@ -565,7 +566,16 @@ onUnmounted(() => {
 
 /* Sidebar rail — framework aside chrome is body-level only; manual chrome
  * here. .start class already on the aside flips the border edge (handled
- * by framework's aside[popover].start rule for drawer mode). */
+ * by framework's aside[popover].start rule for drawer mode).
+ *
+ * Drawer-mode padding override: the framework's <aside popover> chrome
+ * adds `--set-aside-drawer-padding-inline: calc(spacing * 4) = 16px` to
+ * the drawer container, designed for content drawers (forms, callouts)
+ * where a body gutter helps. For a sidebar-style drawer the inner items
+ * already own their own padding-inline; the extra 16px just steals
+ * width from the link rows on mobile. Reset to 0 so the nav rail can
+ * use the drawer's full width. Same trick on `.showcase-sidebar` in
+ * showcase.css for the docs shell. */
 .dashboard-sidebar {
 	inline-size: 16rem;
 	display: flex;
@@ -573,6 +583,7 @@ onUnmounted(() => {
 	border-inline-end: 1px solid var(--color-border);
 	background: var(--color-surface);
 	overflow: hidden;
+	--set-aside-drawer-padding-inline: 0;
 }
 
 /* Brand strip — framework header chrome is body-level only; manual flex
@@ -679,10 +690,18 @@ onUnmounted(() => {
 }
 
 /* Account footer — framework footer chrome is body-level only; manual
- * flex band pinned to the sidebar bottom. */
+ * flex band pinned to the sidebar bottom.
+ *
+ * `justify-content: flex-start` overrides the framework's drawer footer
+ * rule (`:is(aside, nav)[popover] > footer:last-child` in
+ * components/_aside.scss) which sets `justify-content: flex-end` — that
+ * default is intended for trailing-action rows (Cancel | Save). This
+ * footer is an account info display where content should sit at the
+ * inline-start edge alongside the mark. */
 .dashboard-sidebar-account {
 	display: flex;
 	align-items: center;
+	justify-content: flex-start;
 	gap: 0.5rem;
 	padding: 0.75rem 1rem;
 	border-block-start: 1px solid var(--color-border);

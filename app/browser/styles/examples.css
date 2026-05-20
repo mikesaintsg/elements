@@ -82,6 +82,23 @@
 	}
 }
 
+/* Toolbar button chrome — round every button so they sit consistently
+ * inside the pill wrapper. Icon-only buttons become circles; the
+ * Source CTA becomes a pill. Framework buttons default to a 6px
+ * border-radius which reads as a rectangle inside the 999px pill
+ * toolbar — the override harmonises the toolbar into one shape
+ * family without touching framework button chrome anywhere else. */
+.examples-toolbar > li > button {
+	border-radius: 999px;
+}
+
+/* Source CTA — comfortable inline-padding so the pill doesn't look
+ * cramped next to the round icon buttons; uniform vertical padding
+ * keeps the toolbar's row height stable. */
+.examples-toolbar > li > button.primary {
+	padding-inline: 0.875rem;
+}
+
 .examples-toolbar-label > button > .examples-toolbar-label-text {
 	display: inline-block;
 	overflow: hidden;
