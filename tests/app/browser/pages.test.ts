@@ -127,11 +127,12 @@ function firstH1Text(markup: string): string | null {
 const topLevelSectionTags = (template: string): readonly string[] =>
 	[...template.matchAll(/\n\t<section\b[^>]*>/g)].map((m) => m[0])
 
-// `.showcase-` is the docs-app chrome namespace; `.examples-` is the
-// fullscreen-layout-templates chrome namespace (also app-glue, lives
-// next to `.showcase-` in `app/browser/styles/showcase.css`). Both
-// are sanctioned authored prefixes; framework class roots aren't.
-function nonNamespacedSelectors(css: string): readonly string[] {
+// `.showcase-` is the docs-app chrome namespace (`showcase.css`);
+// `.examples-` is the fullscreen-layout-templates chrome namespace
+// (`examples.css`). Each file enforces its own single-prefix policy via
+// `nonNamespacedSelectors(css, [prefix])`. Page `<style>` blocks may use
+// either prefix and call with the default `['showcase-', 'examples-']`.
+function nonNamespacedSelectors(css: string, prefixes: readonly string[] = ['showcase-', 'examples-']): readonly string[] {
 	const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '')
 	const out: string[] = []
 	for (const m of stripped.matchAll(/([^{}]+)\{/g)) {
@@ -140,7 +141,7 @@ function nonNamespacedSelectors(css: string): readonly string[] {
 		for (const sel of selectorList.split(',')) {
 			const s = sel.trim()
 			if (!/\.[A-Za-z_-]/.test(s)) continue
-			if (!/\.showcase-/.test(s) && !/\.examples-/.test(s)) out.push(s)
+			if (!prefixes.some((p) => new RegExp(`\\.${p}`).test(s))) out.push(s)
 		}
 	}
 	return out
@@ -396,12 +397,27 @@ const showcaseCss = import.meta.glob('../../../app/browser/styles/showcase.css',
 	eager: true,
 }) as Record<string, string>
 
-describe('pages — showcase.css authors only `.showcase-` / `.examples-` classes', () => {
+const examplesCss = import.meta.glob('../../../app/browser/styles/examples.css', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+}) as Record<string, string>
+
+describe('pages — showcase.css authors only `.showcase-` classes', () => {
 	// On failure: a class-bearing selector in `styles/showcase.css` has no
 	// `.showcase-` class (showcase.md §Contract 4).
 	it('styles/showcase.css — all class selectors namespaced', () => {
 		const css = Object.values(showcaseCss)[0] ?? ''
-		expect(nonNamespacedSelectors(css)).toEqual([])
+		expect(nonNamespacedSelectors(css, ['showcase-'])).toEqual([])
+	})
+})
+
+describe('pages — examples.css authors only `.examples-` classes', () => {
+	// On failure: a class-bearing selector in `styles/examples.css` has no
+	// `.examples-` class (showcase.md §Contract 4).
+	it('styles/examples.css — all class selectors namespaced', () => {
+		const css = Object.values(examplesCss)[0] ?? ''
+		expect(nonNamespacedSelectors(css, ['examples-'])).toEqual([])
 	})
 })
 

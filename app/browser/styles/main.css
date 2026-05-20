@@ -24,6 +24,7 @@
 @import 'tailwindcss';
 @import '../../../src/styles/index.scss';
 @import './showcase.css';
+@import './examples.css';
 
 @source '../../../src/styles';
 @source '../../../app';
