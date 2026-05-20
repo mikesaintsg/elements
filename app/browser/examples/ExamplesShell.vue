@@ -11,7 +11,7 @@
  *   - `useTheme` mirrors the docs shell's singleton theme refs so
  *     toggling here propagates to the rest of the showcase.
  */
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, onUnmounted, ref, useTemplateRef } from 'vue'
 import { useDialog, useMenu, useTheme } from '@elements/browser'
 import { navigate } from '../router.js'
 import { examples } from './examples.js'
@@ -75,6 +75,10 @@ const next = computed(() => {
 	return idx >= 0 && idx < examples.length - 1 ? (examples[idx + 1] ?? null) : null
 })
 
+onUnmounted(() => {
+	if (copyTimer) clearTimeout(copyTimer)
+})
+
 const goDocs = (): void => navigate('home')
 const goPrev = (): void => {
 	if (previous.value) navigate(previous.value.id)
@@ -95,13 +99,13 @@ const goNext = (): void => {
 			role="toolbar"
 			:aria-label="`${title} example navigation`"
 		>
-			<li>
+			<li role="none">
 				<button type="button" class="subtle compact" aria-label="Back to docs" @click="goDocs">
 					<!-- TODO icon swap: --set-icon-arrow-left not in token set; using chevron-left -->
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-left)"></i>
 				</button>
 			</li>
-			<li>
+			<li role="none">
 				<button
 					type="button"
 					class="subtle compact"
@@ -112,7 +116,7 @@ const goNext = (): void => {
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-left)"></i>
 				</button>
 			</li>
-			<li class="examples-toolbar-label">
+			<li role="none" class="examples-toolbar-label">
 				<button
 					ref="pickerRef"
 					type="button"
@@ -146,7 +150,7 @@ const goNext = (): void => {
 					</li>
 				</menu>
 			</li>
-			<li>
+			<li role="none">
 				<button
 					type="button"
 					class="subtle compact"
@@ -157,7 +161,7 @@ const goNext = (): void => {
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-right)"></i>
 				</button>
 			</li>
-			<li>
+			<li role="none">
 				<button
 					type="button"
 					class="subtle compact"
@@ -171,7 +175,7 @@ const goNext = (): void => {
 					></i>
 				</button>
 			</li>
-			<li>
+			<li role="none">
 				<!-- TODO icon swap: --set-icon-code-slash not in token set; using external -->
 				<button type="button" class="primary" aria-label="View source" @click="source.show()">
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
@@ -201,7 +205,7 @@ const goNext = (): void => {
 						:class="{ primary: copied }"
 						@click="copy"
 					>
-						<!-- TODO icon swap: --set-icon-clipboard not in token set; using sort -->
+						<!-- TODO icon swap — sort stands in for missing 'clipboard'; no closer token exists (copy/duplicate/file/paste/link all absent from _tokens.scss) -->
 						<i
 							class="icon"
 							aria-hidden="true"
