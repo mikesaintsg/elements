@@ -260,10 +260,12 @@ onUnmounted(() => {
 				>
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
 				</button>
-				<!-- Search — <form role="search"> + <input type="search"> get framework
-				     chrome from _search.scss / _input.scss. Max-width cap is the only
-				     scoped touch needed. -->
-				<form class="dashboard-search" role="search" @submit.prevent>
+				<!-- Search — hidden below md (mobile: hamburger + actions only,
+				     to keep the topbar uncrowded). On md+, <form role="search">
+				     + <input type="search"> get framework chrome from
+				     _search.scss / _input.scss; the scoped class adds a
+				     max-width cap. -->
+				<form class="dashboard-search hidden md:flex" role="search" @submit.prevent>
 					<label>
 						<span class="sr-only">Search</span>
 						<input
@@ -275,23 +277,27 @@ onUnmounted(() => {
 				</form>
 				<menu role="toolbar" aria-label="Dashboard actions" class="dashboard-actions">
 					<li role="none">
+						<!-- Primary CTA — label hides below md, icon-only on mobile. -->
 						<button type="button" class="primary">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
-							New invoice
+							<span class="hidden md:inline">New invoice</span>
 						</button>
 					</li>
-					<li role="none">
+					<!-- Secondary actions — hidden below md. Below that breakpoint the
+					     drawer carries primary navigation; the topbar action rail
+					     keeps only New invoice + Notifications so the row breathes. -->
+					<li role="none" class="hidden md:contents">
 						<!-- TODO icon swap — sort stands in for missing 'refresh' (reload/sync) -->
 						<button type="button" class="subtle compact" aria-label="Refresh">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
 						</button>
 					</li>
-					<li role="none">
+					<li role="none" class="hidden md:contents">
 						<button type="button" class="subtle compact" aria-label="Filter">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
 						</button>
 					</li>
-					<li role="none">
+					<li role="none" class="hidden md:contents">
 						<!-- TODO icon swap — chevron-down stands in for missing 'download' -->
 						<button type="button" class="subtle compact" aria-label="Export">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-down)"></i>
@@ -306,7 +312,12 @@ onUnmounted(() => {
 				</menu>
 			</header>
 
-			<main class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+			<!-- Bottom padding is generous on mobile so the floating
+			     ExamplesShell toolbar (bottom-center on narrow viewports)
+			     never permanently obscures the tail of the scroll content.
+			     Above sm the toolbar moves to bottom-end and a normal
+			     padding suffices. -->
+			<main class="flex-1 overflow-y-auto p-6 pb-28 sm:pb-6 flex flex-col gap-6">
 				<!-- Page header — flex row wrapping, space between hgroup and range
 				     toolbar. Tailwind utilities handle the layout. -->
 				<header class="flex flex-wrap justify-between items-end gap-4">
