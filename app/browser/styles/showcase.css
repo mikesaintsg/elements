@@ -1019,3 +1019,83 @@
 .showcase-sidebar-scroll a[href='#/use-theme-button'] .showcase-nav-icon {
 	--icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='5' width='12' height='6' rx='3'/%3E%3Ccircle cx='10.5' cy='8' r='2'/%3E%3Cpath d='M3.5 8h3'/%3E%3C/svg%3E");
 }
+
+/* ============================================================================
+ * Examples — fullscreen layout templates rendered with the docs chrome
+ * gated off. Three concerns:
+ *
+ *   1. `.examples-stage` claims the viewport. It's a direct child of
+ *      `<main>` inside an examples route; the example's own layout
+ *      (sidebar drawer, topbar, scrolling content) composes inside.
+ *
+ *   2. `.examples-toolbar` is the floating prev/next/picker/theme/source
+ *      bar. Pinned bottom-end on desktop, bottom-center on mobile so the
+ *      thumb zone is honoured. Uses the framework's `<menu role="toolbar">`
+ *      pattern + `.subtle` / `.primary` modifier buttons — no Bootstrap
+ *      btn-group chrome.
+ *
+ *   3. `.examples-source` is the scrollable code surface inside the
+ *      view-source `<dialog>`. Monospace, line-wrapped, body-tertiary
+ *      background so syntax (when added later) reads against the chrome.
+ *
+ * Placement rationale: this file already owns `.showcase-*` (sidebar,
+ * filter, TOC heading) — `.examples-*` is the same flavor (app-glue, not
+ * framework chrome), so it co-locates.
+ * ============================================================================ */
+
+.examples-stage {
+	display: contents;
+}
+
+.examples-toolbar {
+	position: fixed;
+	inset-block-end: max(1rem, env(safe-area-inset-bottom));
+	inset-inline-start: 50%;
+	transform: translateX(-50%);
+	z-index: 1080;
+	display: inline-flex;
+	margin: 0;
+	padding: 0;
+	gap: 0.25rem;
+	list-style: none;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
+}
+
+.examples-toolbar > li {
+	display: contents;
+}
+
+@media (min-width: 600px) {
+	.examples-toolbar {
+		inset-inline-start: auto;
+		inset-inline-end: max(1rem, env(safe-area-inset-right));
+		transform: none;
+	}
+}
+
+.examples-toolbar-label {
+	min-inline-size: 9rem;
+	max-inline-size: 14rem;
+}
+
+.examples-toolbar-label > button > .examples-toolbar-label-text {
+	display: inline-block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	vertical-align: middle;
+}
+
+.examples-source {
+	margin: 0;
+	padding: 1rem 1.25rem;
+	max-block-size: 70dvh;
+	overflow: auto;
+	background: var(--color-surface-tertiary, var(--color-surface));
+	white-space: pre;
+	font-size: 0.8125rem;
+	line-height: 1.45;
+}
