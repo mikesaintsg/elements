@@ -474,9 +474,19 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		</div>
 	</nav>
 
-	<main ref="scrollerRef">
+	<!-- Examples render their OWN body-shell siblings (<nav>, <header>,
+	     <main>, <footer>) as effective grandchildren of <body> via the
+	     #app `display: contents` wrapper. That lets the framework's
+	     body-shell selectors (`body:has(main) > * > nav`, `> aside`,
+	     `> header`, `> main`) paint the chrome — sidebar drawer geom,
+	     header bands, main padding, nav-rail link styling. Wrapping the
+	     example in a docs <main> would push it one DOM level deeper and
+	     none of those selectors would match. Docs routes get the docs
+	     <main> scroller; example routes render the page component bare. -->
+	<main v-if="!isExample" ref="scrollerRef">
 		<component :is="page" />
 	</main>
+	<component v-else :is="page" />
 
 	<!-- RIGHT rail — `<aside>` mirrors the left `<nav>`: same conditional
 	     popover binding, same framework offcanvas chrome on mobile, same

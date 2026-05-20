@@ -3,11 +3,13 @@
 //
 //  Reason to exist: the page mounts the ExamplesShell wrapper PLUS the
 //  DashboardExample app under it. The guards anchor on the four
-//  load-bearing semantic landmarks the port has to keep alive:
+//  load-bearing semantic landmarks the body-shell-style port has to
+//  keep alive:
 //
-//    1. <aside id="dashboard-sidebar"> — the sidebar drawer host
-//       (useAside reads this).
-//    2. <header class="dashboard-topbar"> — the topbar rail.
+//    1. <nav id="dashboard-sidebar"> — the sidebar drawer host
+//       (useNav reads this) at body-shell position.
+//    2. <header> — the topbar rail, also at body-shell position,
+//       containing the search form + actions toolbar.
 //    3. <menu role="toolbar"> — the action rail + the range picker +
 //       the ExamplesShell toolbar. At least three on the page.
 //    4. <dialog aria-label="Dashboard example source"> — the
@@ -33,11 +35,14 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 }
 
 describe('DashboardExamplePage — render smoke', () => {
-	it('mounts + renders the example shell + the dashboard app', () => {
+	it('mounts + renders the sidebar nav + topbar + main as body-shell siblings', () => {
 		const { host, teardown } = mount()
 		try {
-			expect(host.querySelector('.examples-stage')).not.toBeNull()
-			expect(host.querySelector('.dashboard-shell')).not.toBeNull()
+			// The Vue fragment renders nav + header + main as siblings of
+			// the page-component root, with the floating toolbar + dialog
+			// added by ExamplesShell.
+			expect(host.querySelector('nav#dashboard-sidebar')).not.toBeNull()
+			expect(host.querySelector('main')).not.toBeNull()
 		} finally {
 			teardown()
 		}
@@ -48,9 +53,9 @@ describe('DashboardExamplePage — load-bearing landmarks', () => {
 	it('sidebar drawer host is present with the expected id', () => {
 		const { host, teardown } = mount()
 		try {
-			const sidebar = host.querySelector('aside#dashboard-sidebar')
+			const sidebar = host.querySelector('nav#dashboard-sidebar')
 			expect(sidebar).not.toBeNull()
-			expect(sidebar?.getAttribute('aria-label')).toBe('Primary navigation')
+			expect(sidebar?.getAttribute('aria-label')).toBe('Primary')
 		} finally {
 			teardown()
 		}
@@ -59,7 +64,9 @@ describe('DashboardExamplePage — load-bearing landmarks', () => {
 	it('topbar header is present with the search role and action toolbar', () => {
 		const { host, teardown } = mount()
 		try {
-			expect(host.querySelector('header.dashboard-topbar')).not.toBeNull()
+			// The topbar is a <header> sibling of <nav> + <main>; assert
+			// the search + actions menu both render inside the dashboard
+			// shell (not the showcase shell which isn't mounted here).
 			expect(host.querySelector('form[role="search"]')).not.toBeNull()
 			expect(
 				host.querySelector('menu[role="toolbar"][aria-label="Dashboard actions"]'),

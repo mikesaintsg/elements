@@ -120,12 +120,14 @@ export const PAGE_SURFACE_BUNDLES: Readonly<Record<PageName, readonly string[]>>
 	ScrollAndTransitionPage: ['scrollbar', 'view-transition'],
 	UseThemeButtonPage: ['useTheme', 'useButton'],
 	UseDragDropPage: ['useDrag', 'useDrop'],
-	// Layout-template page. Composes useAside (sidebar drawer), useDialog
-	// (view-source modal in ExamplesShell), useMenu (example picker), and
-	// useTheme (toolbar light/dark toggle). The toolbar exercises the
-	// `<menu role="toolbar">` pattern recognized by ATTR_ROOTED in
-	// parity.test.ts §3.
-	DashboardExamplePage: ['useAside', 'useDialog', 'useMenu', 'useTheme'],
+	// Layout-template page. The dashboard's sidebar is a native
+	// `<nav popover>` drawer (no JS composable; the framework's CSS
+	// drawer chrome + native popovertarget handle it). The wrapping
+	// ExamplesShell composes useDialog (view-source modal), useMenu
+	// (example picker), and useTheme (toolbar light/dark toggle). The
+	// page also exercises the `<menu role="toolbar">` pattern
+	// recognized by ATTR_ROOTED in parity.test.ts §3.
+	DashboardExamplePage: ['useDialog', 'useMenu', 'useTheme'],
 }
 
 /**

@@ -89,127 +89,132 @@ const goNext = (): void => {
 </script>
 
 <template>
-	<div class="examples-stage">
-		<slot />
+	<!-- Multi-root template (Vue fragment) — no wrapping element so the
+	     slotted example's body-shell siblings (<nav>, <header>, <main>,
+	     <footer>) sit at the same DOM level as #app. That lets the
+	     framework's `body:has(main) > * > nav` / `> aside` / `> header`
+	     selectors match through the single `display: contents` hop
+	     (#app), painting the chrome the example would otherwise have
+	     to replicate in scoped CSS. -->
+	<slot />
 
-		<!-- Floating toolbar — `<menu role="toolbar">` is the canonical
+	<!-- Floating toolbar — `<menu role="toolbar">` is the canonical
 		     elements pattern (parity test recognizes it via ATTR_ROOTED). -->
-		<menu class="examples-toolbar" role="toolbar" :aria-label="`${title} example navigation`">
-			<li role="none">
-				<button type="button" class="subtle compact" aria-label="Back to docs" @click="goDocs">
-					<!-- TODO icon swap: --set-icon-arrow-left not in token set; using chevron-left -->
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-left)"></i>
-				</button>
-			</li>
-			<li role="none">
-				<button
-					type="button"
-					class="subtle compact"
-					aria-label="Previous example"
-					:disabled="!previous"
-					@click="goPrev"
-				>
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-left)"></i>
-				</button>
-			</li>
-			<li role="none" class="examples-toolbar-label">
-				<button
-					ref="pickerRef"
-					type="button"
-					class="subtle"
-					aria-haspopup="menu"
-					:aria-label="`Choose example: currently ${title}`"
-				>
-					<!-- TODO icon swap: --set-icon-window-stack not in token set; using menu -->
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
-					<span class="examples-toolbar-label-text">{{ title }}</span>
-				</button>
-				<menu ref="pickerMenuRef" popover="auto" class="dropdown-menu" role="menu">
-					<li v-for="example in examples" :key="example.id" role="none">
-						<button
-							type="button"
-							role="menuitem"
-							:aria-current="example.id === id ? 'true' : undefined"
-							@click="chooseExample(example.id)"
-						>
-							<i
-								class="icon"
-								aria-hidden="true"
-								:style="`--icon: var(--set-icon-${example.icon})`"
-							></i>
-							{{ example.title }}
-						</button>
-					</li>
-				</menu>
-			</li>
-			<li role="none">
-				<button
-					type="button"
-					class="subtle compact"
-					aria-label="Next example"
-					:disabled="!next"
-					@click="goNext"
-				>
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-right)"></i>
-				</button>
-			</li>
-			<li role="none">
-				<button
-					type="button"
-					class="subtle compact"
-					:aria-label="`Switch theme (currently ${theme.mode.value})`"
-					@click="theme.toggle()"
-				>
-					<i class="icon" aria-hidden="true" :style="`--icon: var(--set-icon-${themeIcon})`"></i>
-				</button>
-			</li>
-			<li role="none">
-				<!-- TODO icon swap: --set-icon-code-slash not in token set; using external -->
-				<button type="button" class="primary" aria-label="View source" @click="source.show()">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
-					Source
-				</button>
-			</li>
-		</menu>
-
-		<!-- View-source dialog. <dialog> + useDialog → modal + focus trap +
-		     ::backdrop, all native. Teleported to body so it escapes the
-		     example's potentially-transform-clipped containers. -->
-		<Teleport to="body">
-			<dialog ref="sourceRef" :aria-label="`${title} example source`">
-				<header>
-					<h2>
-						<!-- TODO icon swap: --set-icon-code-slash not in token set; using external -->
-						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
-						{{ title }} — source
-						<small class="font-mono">{{ lineCount }} lines</small>
-					</h2>
-					<button type="button" class="subtle compact" :class="{ primary: copied }" @click="copy">
-						<!-- TODO icon swap — sort stands in for missing 'clipboard'; no closer token exists (copy/duplicate/file/paste/link all absent from _tokens.scss) -->
+	<menu class="examples-toolbar" role="toolbar" :aria-label="`${title} example navigation`">
+		<li role="none">
+			<button type="button" class="subtle compact" aria-label="Back to docs" @click="goDocs">
+				<!-- TODO icon swap: --set-icon-arrow-left not in token set; using chevron-left -->
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-left)"></i>
+			</button>
+		</li>
+		<li role="none">
+			<button
+				type="button"
+				class="subtle compact"
+				aria-label="Previous example"
+				:disabled="!previous"
+				@click="goPrev"
+			>
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-left)"></i>
+			</button>
+		</li>
+		<li role="none" class="examples-toolbar-label">
+			<button
+				ref="pickerRef"
+				type="button"
+				class="subtle"
+				aria-haspopup="menu"
+				:aria-label="`Choose example: currently ${title}`"
+			>
+				<!-- TODO icon swap: --set-icon-window-stack not in token set; using menu -->
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
+				<span class="examples-toolbar-label-text">{{ title }}</span>
+			</button>
+			<menu ref="pickerMenuRef" popover="auto" class="dropdown-menu" role="menu">
+				<li v-for="example in examples" :key="example.id" role="none">
+					<button
+						type="button"
+						role="menuitem"
+						:aria-current="example.id === id ? 'true' : undefined"
+						@click="chooseExample(example.id)"
+					>
 						<i
 							class="icon"
 							aria-hidden="true"
-							:style="`--icon: var(--set-icon-${copied ? 'check' : 'sort'})`"
+							:style="`--icon: var(--set-icon-${example.icon})`"
 						></i>
-						{{ copied ? 'Copied' : 'Copy' }}
+						{{ example.title }}
 					</button>
-					<button
-						type="button"
-						class="subtle compact"
-						aria-label="Close source"
-						@click="source.hide()"
-					>
-						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
-					</button>
-				</header>
-				<pre class="examples-source font-mono"><code>{{ displaySource }}</code></pre>
-				<footer>
-					<small>
-						Imports rewritten to <code>@elements/browser</code> so the snippet compiles unchanged in
-						any project that installs elements.
-					</small>
-				</footer>
-			</dialog>
-		</Teleport>
-	</div>
+				</li>
+			</menu>
+		</li>
+		<li role="none">
+			<button
+				type="button"
+				class="subtle compact"
+				aria-label="Next example"
+				:disabled="!next"
+				@click="goNext"
+			>
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-right)"></i>
+			</button>
+		</li>
+		<li role="none">
+			<button
+				type="button"
+				class="subtle compact"
+				:aria-label="`Switch theme (currently ${theme.mode.value})`"
+				@click="theme.toggle()"
+			>
+				<i class="icon" aria-hidden="true" :style="`--icon: var(--set-icon-${themeIcon})`"></i>
+			</button>
+		</li>
+		<li role="none">
+			<!-- TODO icon swap: --set-icon-code-slash not in token set; using external -->
+			<button type="button" class="primary" aria-label="View source" @click="source.show()">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+				Source
+			</button>
+		</li>
+	</menu>
+
+	<!-- View-source dialog. <dialog> + useDialog → modal + focus trap +
+		     ::backdrop, all native. Teleported to body so it escapes the
+		     example's potentially-transform-clipped containers. -->
+	<Teleport to="body">
+		<dialog ref="sourceRef" :aria-label="`${title} example source`">
+			<header>
+				<h2>
+					<!-- TODO icon swap: --set-icon-code-slash not in token set; using external -->
+					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+					{{ title }} — source
+					<small class="font-mono">{{ lineCount }} lines</small>
+				</h2>
+				<button type="button" class="subtle compact" :class="{ primary: copied }" @click="copy">
+					<!-- TODO icon swap — sort stands in for missing 'clipboard'; no closer token exists (copy/duplicate/file/paste/link all absent from _tokens.scss) -->
+					<i
+						class="icon"
+						aria-hidden="true"
+						:style="`--icon: var(--set-icon-${copied ? 'check' : 'sort'})`"
+					></i>
+					{{ copied ? 'Copied' : 'Copy' }}
+				</button>
+				<button
+					type="button"
+					class="subtle compact"
+					aria-label="Close source"
+					@click="source.hide()"
+				>
+					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				</button>
+			</header>
+			<pre class="examples-source font-mono"><code>{{ displaySource }}</code></pre>
+			<footer>
+				<small>
+					Imports rewritten to <code>@elements/browser</code> so the snippet compiles unchanged in
+					any project that installs elements.
+				</small>
+			</footer>
+		</dialog>
+	</Teleport>
 </template>

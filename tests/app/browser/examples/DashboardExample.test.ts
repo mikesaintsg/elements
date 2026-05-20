@@ -26,10 +26,10 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 }
 
 describe('DashboardExample — framework idioms', () => {
-	it('sidebar uses semantic <aside> with the expected id (useAside host)', () => {
+	it('sidebar uses semantic <nav> with the expected id (useNav host)', () => {
 		const { host, teardown } = mount()
 		try {
-			const sidebar = host.querySelector('aside#dashboard-sidebar')
+			const sidebar = host.querySelector('nav#dashboard-sidebar')
 			expect(sidebar).not.toBeNull()
 			// The popover binding is conditional on viewport — desktop = no
 			// attribute, mobile = "auto". In the jsdom/headless browser the
