@@ -81,6 +81,9 @@ const syncMobile = (): void => {
 // Sidebar drawer — `useAside` upgrades the <aside popover> into a
 // slide-from-edge drawer when the popover attribute is set (mobile).
 const sidebarRef = useTemplateRef<HTMLElement>('sidebarRef')
+// useAside attaches the beforetoggle/toggle bridge and onCleanup-driven
+// destroy(); the return value isn't referenced here because the popover
+// is driven by native popovertarget buttons and the :popover binding.
 const sidebar = useAside(sidebarRef, { popover: false })
 
 // Compute a chart-bar height for the demo SVG. Deterministic (no rng)
@@ -221,33 +224,33 @@ onUnmounted(() => {
 					aria-label="Dashboard actions"
 					class="dashboard-actions"
 				>
-					<li>
+					<li role="none">
 						<button type="button" class="primary">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
 							New invoice
 						</button>
 					</li>
-					<li>
+					<li role="none">
 						<!-- TODO icon swap — sort stands in for missing 'refresh' (reload/sync) -->
 						<button type="button" class="subtle compact" aria-label="Refresh">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
 						</button>
 					</li>
-					<li>
+					<li role="none">
 						<button type="button" class="subtle compact" aria-label="Filter">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
 						</button>
 					</li>
-					<li>
+					<li role="none">
 						<!-- TODO icon swap — chevron-down stands in for missing 'download' -->
 						<button type="button" class="subtle compact" aria-label="Export">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-down)"></i>
 						</button>
 					</li>
-					<li>
-						<!-- TODO icon swap — warning stands in for missing 'bell' (notifications) -->
+					<li role="none">
+						<!-- TODO icon swap — information stands in for missing 'bell' (notifications) -->
 						<button type="button" class="subtle compact" aria-label="Notifications">
-							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-warning)"></i>
+							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-information)"></i>
 						</button>
 					</li>
 				</menu>
@@ -261,7 +264,7 @@ onUnmounted(() => {
 						<p>Here's what's happened across your workspace this {{ range }}.</p>
 					</hgroup>
 					<menu role="toolbar" aria-label="Date range" class="dashboard-range">
-						<li v-for="r in (['7d','30d','90d'] as const)" :key="r">
+						<li v-for="r in (['7d','30d','90d'] as const)" :key="r" role="none">
 							<button
 								type="button"
 								class="subtle"
@@ -314,8 +317,8 @@ onUnmounted(() => {
 								</li>
 							</ul>
 						</header>
-						<figure aria-label="Revenue chart, illustrative">
-							<svg viewBox="0 0 300 100" preserveAspectRatio="none" class="dashboard-chart">
+						<figure>
+							<svg viewBox="0 0 300 100" preserveAspectRatio="none" class="dashboard-chart" role="img" aria-label="Revenue chart, illustrative">
 								<rect
 									v-for="bar in chartBars"
 									:key="bar.x"
