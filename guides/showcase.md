@@ -4,7 +4,7 @@
 
 ## Surface
 
-The showcase is the framework's mirror — a consumer-side app that uses _only_ the framework's public API to build a 43-page documentation experience. It lives under [`app/browser/`](../app/browser/) as a self-contained SPA:
+The showcase is the framework's mirror — a consumer-side app that uses _only_ the framework's public API to build a 44-page documentation experience. It lives under [`app/browser/`](../app/browser/) as a self-contained SPA:
 
 | Path                                                                    | Role                                                                                                     |
 | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
