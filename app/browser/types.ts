@@ -28,6 +28,9 @@ import type { Component } from 'vue'
  *                                       building blocks (`useFocus`,
  *                                       `useDrag` + `useDrop`,
  *                                       `usePointer`, `useTheme`).
+ *  10. `Examples`                     — Full-page layout templates. Rendered
+ *                                       without the docs chrome so the
+ *                                       example claims the viewport.
  *
  * The array IS the declared display order. `App.vue`'s `grouped` computed
  * iterates `ROUTE_GROUPS` so routes can be declared in any order inside
@@ -43,6 +46,7 @@ export const ROUTE_GROUPS = [
 	'Composables — Element-bound',
 	'Composables — Attribute-bound',
 	'Composables — Primitives',
+	'Examples',
 ] as const
 
 export type RouteGroup = (typeof ROUTE_GROUPS)[number]
