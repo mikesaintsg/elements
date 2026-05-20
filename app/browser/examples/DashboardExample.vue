@@ -111,11 +111,17 @@ onUnmounted(() => {
 		     <aside> as a body-shell-style rail. Above 768px it's an
 		     in-flow grid column; below 768px the `:popover` binding
 		     promotes it to a drawer via the framework's
-		     `aside[popover]` chrome. -->
+		     `aside[popover]` chrome. The `.start` placement modifier
+		     is load-bearing in two contexts: in the drawer (mobile)
+		     it slides in from the inline-start edge (left in LTR) —
+		     conventional sidebar position. In-flow (desktop) it flips
+		     the aside's default border from inline-start to inline-end
+		     (correct, since this aside sits to the LEFT of main, so
+		     the divider belongs on its right). -->
 		<aside
 			id="dashboard-sidebar"
 			ref="sidebarRef"
-			class="dashboard-sidebar"
+			class="dashboard-sidebar start"
 			:popover="isMobile ? 'auto' : undefined"
 			aria-label="Primary navigation"
 		>
