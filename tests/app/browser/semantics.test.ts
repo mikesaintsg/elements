@@ -1,6 +1,6 @@
 // ============================================================================
 //  Phase 6 — showcase SELF-AUDIT gate. The Inspector dogfooded against the
-//  framework's OWN 44 showcase pages + the real CSS cascade.
+//  framework's OWN 44 showcase pages + example pages + the real CSS cascade.
 //
 //  A permanent standing driver (the `parity.test.ts` / `pages.test.ts`
 //  analogue, run in the `app:browser` chromium project so the real

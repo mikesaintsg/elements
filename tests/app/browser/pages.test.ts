@@ -396,7 +396,7 @@ const showcaseCss = import.meta.glob('../../../app/browser/styles/showcase.css',
 	eager: true,
 }) as Record<string, string>
 
-describe('pages — showcase.css authors only `.showcase-` classes', () => {
+describe('pages — showcase.css authors only `.showcase-` / `.examples-` classes', () => {
 	// On failure: a class-bearing selector in `styles/showcase.css` has no
 	// `.showcase-` class (showcase.md §Contract 4).
 	it('styles/showcase.css — all class selectors namespaced', () => {
@@ -405,12 +405,13 @@ describe('pages — showcase.css authors only `.showcase-` classes', () => {
 	})
 })
 
-describe('pages — page `<style>` blocks author only `.showcase-` classes', () => {
+describe('pages — page `<style>` blocks author only `.showcase-` / `.examples-` classes', () => {
 	for (const name of pageNames) {
 		// On failure: a `<style>` block in `${name}.vue` has a class-bearing
-		// selector with no `.showcase-` class. Page-authored CSS is
-		// showcase-only — namespace it (showcase.md §4) or move to
-		// showcase.css.
+		// selector with no `.showcase-` / `.examples-` class. Page-authored
+		// CSS is app-glue-only — namespace it (showcase.md §4) or move to
+		// showcase.css. Examples pages may use `.examples-` (shared chrome)
+		// or their own example-scoped namespace under <style scoped>.
 		it(`${name}.vue — scoped styles namespaced`, () => {
 			const styles = [...(pages[name] ?? '').matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)]
 				.map((m) => m[1] ?? '')
