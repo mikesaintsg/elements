@@ -64,6 +64,11 @@ const grouped = computed<Group[]>(() =>
 )
 
 const page = computed(() => current.value.page)
+// Examples route group renders without the docs chrome — header / rails
+// / footer drop out so the example claims the full viewport. The body
+// grid's `grid-template-areas` collapse the auto-sized tracks for the
+// missing slots, so the `main` cell expands to fill.
+const isExample = computed(() => current.value.group === 'Examples')
 const scrollerRef = ref<HTMLElement | null>(null)
 
 const scrollToTarget = async (target: string | null): Promise<void> => {
@@ -318,7 +323,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 </script>
 
 <template>
-	<header>
+	<header v-if="!isExample">
 		<!-- `popovertarget` is set only when the rail IS a popover (mobile).
 		     On desktop the rail has no popover attribute and these toggles
 		     are hidden via `showcase.css` anyway, so the attribute is a
@@ -375,6 +380,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 	     trigger; regions are styled by their wrapper, not their
 	     content. -->
 	<nav
+		v-if="!isExample"
 		id="primary-rail"
 		aria-label="Primary"
 		class="showcase-sidebar"
@@ -475,7 +481,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 	<!-- RIGHT rail — `<aside>` mirrors the left `<nav>`: same conditional
 	     popover binding, same framework offcanvas chrome on mobile, same
 	     close-button + popovertarget contract. -->
-	<aside id="toc-rail" aria-label="On this page" :popover="isMobile ? 'auto' : undefined">
+	<aside v-if="!isExample" id="toc-rail" aria-label="On this page" :popover="isMobile ? 'auto' : undefined">
 		<header class="showcase-drawer-header">
 			<strong>On this page</strong>
 			<button
@@ -518,7 +524,7 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		</p>
 	</aside>
 
-	<footer>
+	<footer v-if="!isExample">
 		<small>Elements framework</small>
 		<small class="font-mono text-xs">build {{ buildId }}</small>
 	</footer>
