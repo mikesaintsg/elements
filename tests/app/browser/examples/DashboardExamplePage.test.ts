@@ -69,7 +69,7 @@ describe('DashboardExamplePage — load-bearing landmarks', () => {
 	})
 
 	it('renders at least three <menu role="toolbar"> regions (actions, range, examples-shell)', () => {
-		const { host, teardown } = mount()
+		const { host: _host, teardown } = mount()
 		try {
 			// Teleported elements (ExamplesShell's <dialog>) land on body, so
 			// query both roots to catch the shell toolbar that's a sibling of
@@ -82,7 +82,7 @@ describe('DashboardExamplePage — load-bearing landmarks', () => {
 	})
 
 	it('view-source <dialog> is in the DOM (closed by default)', () => {
-		const { host, teardown } = mount()
+		const { host: _host, teardown } = mount()
 		try {
 			const dialog = document.querySelector('dialog[aria-label="Dashboard example source"]')
 			expect(dialog).not.toBeNull()
