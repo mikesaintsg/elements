@@ -14,7 +14,7 @@ The showcase is the framework's mirror — a consumer-side app that uses _only_ 
 | [`app/browser/router.ts`](../app/browser/router.ts)                     | Hash-based router + route catalog (one entry per page, grouped per `ROUTE_GROUPS`).                      |
 | [`app/browser/types.ts`](../app/browser/types.ts)                       | `Route` / `RouteLocation` / `RouteGroup` / `Group` / `Section` types + `ROUTE_GROUPS` canonical order.   |
 | [`app/browser/env.d.ts`](../app/browser/env.d.ts)                       | `__BUILD_ID__` declaration + `*.vue` module shim for IDEs.                                               |
-| [`app/browser/pages/`](../app/browser/pages/)                           | 43 `*.vue` page files. One per surface area; bundled where the surface naturally groups.                 |
+| [`app/browser/pages/`](../app/browser/pages/)                           | 44 `*.vue` page files. One per surface area; bundled where the surface naturally groups.                 |
 | [`app/browser/styles/main.css`](../app/browser/styles/main.css)         | Single CSS entry — declares `@layer`, imports Tailwind, imports the framework SCSS, sets `@source`.      |
 | [`app/browser/styles/showcase.css`](../app/browser/styles/showcase.css) | Showcase-specific chrome. The only file in the showcase that authors CSS classes.                        |
 
@@ -33,6 +33,7 @@ The showcase is the framework's mirror — a consumer-side app that uses _only_ 
 | `Composables — Element-bound`   | [composables.md § Naming bucket 1](composables.md).                                            |
 | `Composables — Attribute-bound` | [composables.md § Naming bucket 2](composables.md).                                            |
 | `Composables — Primitives`      | [composables.md § Naming bucket 3](composables.md).                                            |
+| `Examples`                      | Full-page layout templates rendered without the docs chrome (sidebar/header/TOC/footer drop out so the example claims the viewport). |
 
 ---
 
