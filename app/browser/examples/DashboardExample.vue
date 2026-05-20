@@ -106,6 +106,9 @@ onUnmounted(() => {
 </script>
 
 <template>
+	<!-- Outer shell — two-column grid (sidebar | main) on desktop,
+	     single column on mobile once the aside promotes to a popover drawer.
+	     Tailwind grid with an arbitrary sidebar-column value. -->
 	<div class="dashboard-shell">
 		<!-- ── Sidebar ────────────────────────────────────────────────
 		     <aside> as a body-shell-style rail. Above 768px it's an
@@ -125,10 +128,13 @@ onUnmounted(() => {
 			:popover="isMobile ? 'auto' : undefined"
 			aria-label="Primary navigation"
 		>
+			<!-- Brand strip — flex row, pinned top. Not a body-level header so
+			     framework header chrome doesn't auto-apply; manual classes carry
+			     the chrome. -->
 			<header class="dashboard-sidebar-brand">
 				<!-- TODO icon swap — external stands in for missing 'box' (app/brand icon) -->
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
-				<strong>Acme Console</strong>
+				<strong class="flex-1">Acme Console</strong>
 				<button
 					v-if="isMobile"
 					type="button"
@@ -140,7 +146,8 @@ onUnmounted(() => {
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
 				</button>
 			</header>
-			<nav aria-label="Workspace">
+			<!-- Nav takes remaining space, scrolls if content overflows. -->
+			<nav class="flex-1 overflow-y-auto p-2" aria-label="Workspace">
 				<menu>
 					<li>
 						<a href="#" aria-current="page">
@@ -178,25 +185,31 @@ onUnmounted(() => {
 						</a>
 					</li>
 				</menu>
-				<h6>Workspaces</h6>
+				<!-- Section label — eyebrow caps, tight margin below per _menu.scss guide -->
+				<h6 class="dashboard-nav-section-label">Workspaces</h6>
 				<menu>
 					<li>
 						<a href="#" class="dashboard-workspace">
-							<span class="dashboard-workspace-mark" aria-hidden="true">A</span>
+							<!-- Circular initials badge — no framework <badge> for circle shape;
+							     scoped .mark class is the minimal custom primitive. -->
+							<span class="mark" aria-hidden="true">A</span>
 							Acme Inc
 						</a>
 					</li>
 					<li>
 						<a href="#" class="dashboard-workspace">
-							<span class="dashboard-workspace-mark" aria-hidden="true">B</span>
+							<span class="mark" aria-hidden="true">B</span>
 							Buena Vista
 						</a>
 					</li>
 				</menu>
 			</nav>
+			<!-- Account footer — pinned bottom of sidebar. Not a body-level aside
+			     footer so framework footer chrome doesn't auto-apply. -->
 			<footer class="dashboard-sidebar-account">
-				<span class="dashboard-account-mark" aria-hidden="true">MS</span>
-				<span class="dashboard-account-meta">
+				<!-- Larger initials mark for the account row. -->
+				<span class="mark account-mark" aria-hidden="true">MS</span>
+				<span class="flex flex-col leading-tight">
 					<strong>Mike Saint</strong>
 					<small>mike@acme.dev</small>
 				</span>
@@ -204,7 +217,9 @@ onUnmounted(() => {
 		</aside>
 
 		<!-- ── Main column ─────────────────────────────────────────── -->
-		<div class="dashboard-main">
+		<div class="flex flex-col min-w-0 overflow-hidden">
+			<!-- Topbar — not a body-level header so framework header chrome
+			     doesn't auto-apply; manual flex chrome via scoped class. -->
 			<header class="dashboard-topbar">
 				<button
 					v-if="isMobile"
@@ -215,6 +230,9 @@ onUnmounted(() => {
 				>
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
 				</button>
+				<!-- Search — <form role="search"> + <input type="search"> get framework
+				     chrome from _search.scss / _input.scss. Max-width cap is the only
+				     scoped touch needed. -->
 				<form class="dashboard-search" role="search" @submit.prevent>
 					<label>
 						<span class="sr-only">Search</span>
@@ -262,13 +280,20 @@ onUnmounted(() => {
 				</menu>
 			</header>
 
-			<main class="dashboard-content">
-				<header class="dashboard-page-header">
+			<main class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+				<!-- Page header — flex row wrapping, space between hgroup and range
+				     toolbar. Tailwind utilities handle the layout. -->
+				<header class="flex flex-wrap justify-between items-end gap-4">
 					<hgroup>
-						<p class="dashboard-eyebrow">Overview</p>
-						<h1>Welcome back, Mike</h1>
+						<!-- Eyebrow — small caps label above the page title. Tailwind for
+						     typography; var(--color-text-subtle) via a CSS var inline. -->
+						<p class="m-0 text-xs uppercase tracking-wide" style="color: var(--color-text-subtle)">Overview</p>
+						<h1 class="my-1 text-2xl">Welcome back, Mike</h1>
 						<p>Here's what's happened across your workspace this {{ range }}.</p>
 					</hgroup>
+					<!-- Range toolbar — gap: 0 so buttons butt up with no gap between them.
+					     <menu> baseline already strips list-style/margin/padding/flex; only
+					     the gap override is needed (scoped .dashboard-range). -->
 					<menu role="toolbar" aria-label="Date range" class="dashboard-range">
 						<li v-for="r in (['7d','30d','90d'] as const)" :key="r" role="none">
 							<button
@@ -284,12 +309,14 @@ onUnmounted(() => {
 					</menu>
 				</header>
 
-				<!-- Stat cards. <article> is the canonical card; <dl> carries
-				     label/value/delta. -->
+				<!-- Stat cards — auto-fit grid so cards wrap to new rows on narrow
+				     viewports. <article> provides card chrome (border, radius, shadow,
+				     flex-col, padding, gap). The padding override (.small modifier or
+				     inline token) tightens the card for dense stat data. -->
 				<section aria-label="Key metrics" class="dashboard-stats">
-					<article v-for="stat in stats" :key="stat.label">
-						<dl>
-							<dt>{{ stat.label }}</dt>
+					<article v-for="stat in stats" :key="stat.label" class="small">
+						<dl class="m-0 flex flex-col gap-1">
+							<dt class="text-sm" style="color: var(--color-text-subtle)">{{ stat.label }}</dt>
 							<dd class="dashboard-stat-value">{{ stat.value }}</dd>
 							<dd class="dashboard-stat-delta" :data-trend="stat.trend">
 								<i
@@ -298,33 +325,39 @@ onUnmounted(() => {
 									:style="`--icon: var(--set-icon-${trendIconToken[stat.trend]})`"
 								></i>
 								{{ stat.delta }}
-								<small>vs last period</small>
+								<small style="color: var(--color-text-subtle); margin-inline-start: 0.25rem">vs last period</small>
 							</dd>
 						</dl>
 					</article>
 				</section>
 
-				<!-- Chart + Quick actions row. -->
+				<!-- Chart + Quick actions row — 2:1 grid on ≥1024px, stacked below.
+				     Responsive breakpoint needs arbitrary column values so a scoped
+				     class is the cleanest option. -->
 				<section class="dashboard-chart-row" aria-label="Revenue and quick actions">
-					<article class="dashboard-chart-card">
+					<!-- Revenue chart card — <article> gives border/radius/shadow/flex-col.
+					     The scoped .dashboard-chart-card / .dashboard-actions-card classes
+					     are removed; article baseline is sufficient. -->
+					<article>
 						<header>
 							<hgroup>
 								<h2>Revenue trajectory</h2>
 								<p>Daily gross, cohort-adjusted</p>
 							</hgroup>
-							<ul class="dashboard-legend">
-								<li>
-									<span class="dashboard-legend-dot" data-series="revenue" aria-hidden="true"></span>
+							<!-- Legend — inline-flex list. .dot primitive for the color swatch. -->
+							<ul class="inline-flex gap-4 m-0 p-0 list-none text-sm ms-auto">
+								<li class="inline-flex items-center gap-1">
+									<span class="dot" style="--set-dot-background-color: var(--color-primary)" aria-hidden="true"></span>
 									Revenue
 								</li>
-								<li>
-									<span class="dashboard-legend-dot" data-series="forecast" aria-hidden="true"></span>
+								<li class="inline-flex items-center gap-1">
+									<span class="dot" style="--set-dot-background-color: var(--color-information)" aria-hidden="true"></span>
 									Forecast
 								</li>
 							</ul>
 						</header>
-						<figure>
-							<svg viewBox="0 0 300 100" preserveAspectRatio="none" class="dashboard-chart" role="img" aria-label="Revenue chart, illustrative">
+						<figure class="m-0">
+							<svg viewBox="0 0 300 100" preserveAspectRatio="none" class="dashboard-chart w-full block" role="img" aria-label="Revenue chart, illustrative">
 								<rect
 									v-for="bar in chartBars"
 									:key="bar.x"
@@ -341,42 +374,46 @@ onUnmounted(() => {
 						</figure>
 					</article>
 
-					<article class="dashboard-actions-card">
+					<!-- Quick actions card — <article> gives card chrome. The <menu> inside
+					     article gets flex-direction: row + justify-end from the framework's
+					     article menu rule, but we need column layout here. Scoped override
+					     on .dashboard-actions-menu. -->
+					<article>
 						<header>
 							<h2>Quick actions</h2>
 						</header>
-						<menu>
+						<menu class="dashboard-actions-menu">
 							<li>
 								<!-- TODO icon swap — plus stands in for missing 'person-plus' (invite teammate) -->
-								<button type="button" class="subtle">
+								<button type="button" class="subtle w-full justify-start text-start">
 									<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
 									Invite a teammate
 								</button>
 							</li>
 							<li>
 								<!-- TODO icon swap — minus stands in for missing 'receipt' (draft invoice) -->
-								<button type="button" class="subtle">
+								<button type="button" class="subtle w-full justify-start text-start">
 									<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-minus)"></i>
 									Draft an invoice
 								</button>
 							</li>
 							<li>
 								<!-- TODO icon swap — external stands in for missing 'cloud-upload' (import) -->
-								<button type="button" class="subtle">
+								<button type="button" class="subtle w-full justify-start text-start">
 									<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
 									Import customers
 								</button>
 							</li>
 							<li>
 								<!-- TODO icon swap — success stands in for missing 'shield-check' (security audit) -->
-								<button type="button" class="subtle">
+								<button type="button" class="subtle w-full justify-start text-start">
 									<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-success)"></i>
 									Run a security audit
 								</button>
 							</li>
 							<li>
 								<!-- TODO icon swap — information stands in for missing 'life-preserver' (support) -->
-								<button type="button" class="subtle">
+								<button type="button" class="subtle w-full justify-start text-start">
 									<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-information)"></i>
 									Contact support
 								</button>
@@ -387,8 +424,8 @@ onUnmounted(() => {
 
 				<!-- Activity timeline. <ol> for ordered events; <time> for
 				     the timestamp; <small class="tag X"> for status. -->
-				<section aria-label="Recent activity" class="dashboard-activity">
-					<header>
+				<section aria-label="Recent activity">
+					<header class="flex justify-between items-end gap-4 mb-3">
 						<hgroup>
 							<h2>Recent activity</h2>
 							<p>Last 24 hours across all workspaces</p>
@@ -399,17 +436,21 @@ onUnmounted(() => {
 						<li
 							v-for="row in activity"
 							:key="row.target"
+							class="relative py-2"
 							:data-status="row.status"
 						>
-							<span class="dashboard-timeline-marker" aria-hidden="true"></span>
-							<div class="dashboard-timeline-content">
-								<p>
+							<!-- Timeline marker — .dot primitive positions on the rail line.
+							     The absolute placement + rail offset is geometry the framework
+							     doesn't own; kept as scoped selectors on .dashboard-timeline. -->
+							<span class="dashboard-timeline-marker dot" aria-hidden="true"></span>
+							<div class="flex flex-wrap items-baseline gap-2 ml-4">
+								<p class="m-0 flex flex-wrap items-baseline gap-2">
 									<strong>{{ row.who }}</strong>
 									<span>{{ row.action }}</span>
-									<code>{{ row.target }}</code>
-									<small class="tag" :class="statusVariant[row.status]">{{ row.status }}</small>
+									<code class="text-sm">{{ row.target }}</code>
+									<small class="tag ms-auto" :class="statusVariant[row.status]">{{ row.status }}</small>
 								</p>
-								<time class="dashboard-when">{{ row.when }}</time>
+								<time class="block text-xs" style="color: var(--color-text-subtle); margin-block-start: 0.125rem">{{ row.when }}</time>
 							</div>
 						</li>
 					</ol>
@@ -420,10 +461,25 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Layout glue — `.dashboard-*` classes are scoped to this example.
- * Framework SCSS owns nothing dashboard-specific; this file is the
- * full local presentation surface. */
+/* ── Layout glue that the framework can't own ─────────────────────────────
+ *
+ * The framework's aside/header chrome selectors are scoped to the body-
+ * layout-shell context (`body:has(main) > aside`, etc.). The dashboard's
+ * <aside> and <header> elements are nested inside a scoped <div>, not
+ * directly under <body>, so none of that chrome auto-applies here. These
+ * scoped rules supply the missing chrome while staying minimal — only the
+ * properties that Tailwind utilities or framework baselines don't already
+ * provide.
+ *
+ * Scoped rules are grouped by concern. Each rule carries a one-line
+ * rationale so future readers know whether it can be removed once the
+ * framework adds the corresponding primitive.
+ * ──────────────────────────────────────────────────────────────────────── */
 
+/* Outer shell grid — two-column (sidebar | main) on ≥768px.
+ * Tailwind `grid-cols-[auto_minmax(0,1fr)]` is an arbitrary value that
+ * isn't in the default Tailwind scale; scoped rule avoids a JIT
+ * arbitrary token on the root element. */
 .dashboard-shell {
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr);
@@ -433,11 +489,18 @@ onUnmounted(() => {
 }
 
 @media (max-width: 767.98px) {
+	/* On mobile the aside is a popover drawer (out of flow), so the grid
+	 * collapses to a single full-width column. */
 	.dashboard-shell {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
 
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+
+/* Sidebar rail — framework aside chrome is body-level only; manual chrome
+ * here. .start class already on the aside flips the border edge (handled
+ * by framework's aside[popover].start rule for drawer mode). */
 .dashboard-sidebar {
 	inline-size: 16rem;
 	display: flex;
@@ -447,6 +510,9 @@ onUnmounted(() => {
 	overflow: hidden;
 }
 
+/* Brand strip — framework header chrome is body-level only; manual flex
+ * band. min-block-size matches the topbar so both rows align horizontally
+ * across the layout on desktop. */
 .dashboard-sidebar-brand {
 	display: flex;
 	align-items: center;
@@ -454,19 +520,13 @@ onUnmounted(() => {
 	padding: 0 1rem;
 	min-block-size: 3.5rem;
 	border-block-end: 1px solid var(--color-border);
+	flex-shrink: 0;
 }
 
-.dashboard-sidebar-brand > strong {
-	flex: 1;
-}
-
-.dashboard-sidebar > nav {
-	flex: 1;
-	overflow-y: auto;
-	padding: 0.5rem;
-}
-
-.dashboard-sidebar nav h6 {
+/* Section heading in the nav — small caps label above a menu group.
+ * Not a framework token; kept scoped because nav-section labels are
+ * presentation chrome specific to this example's sidebar shape. */
+.dashboard-nav-section-label {
 	margin: 1.5rem 0 0.25rem;
 	padding-inline: 0.75rem;
 	font-size: 0.6875rem;
@@ -475,53 +535,50 @@ onUnmounted(() => {
 	color: var(--color-text-subtle);
 }
 
+/* Workspace link — needs inline-flex for the mark + label pair. */
 .dashboard-workspace {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5rem;
 }
 
-.dashboard-workspace-mark,
-.dashboard-account-mark {
+/* Circular initials badge — no framework element maps to "filled circle
+ * with initials text." Shared between workspace links and the account
+ * footer. Kept as one scoped class. */
+.mark {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	inline-size: 1.5rem;
 	block-size: 1.5rem;
 	border-radius: 999px;
-	background: var(--color-surface-tertiary, var(--color-surface));
+	background: var(--color-surface-raised, var(--color-surface));
 	font-size: 0.75rem;
 	font-weight: 600;
+	flex-shrink: 0;
 }
 
+/* Account mark is slightly larger than workspace marks. */
+.account-mark {
+	inline-size: 2rem;
+	block-size: 2rem;
+}
+
+/* Account footer — framework footer chrome is body-level only; manual
+ * flex band pinned to the sidebar bottom. */
 .dashboard-sidebar-account {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
 	padding: 0.75rem 1rem;
 	border-block-start: 1px solid var(--color-border);
+	flex-shrink: 0;
 }
 
-.dashboard-account-mark {
-	inline-size: 2rem;
-	block-size: 2rem;
-}
+/* ── Topbar ──────────────────────────────────────────────────────────── */
 
-.dashboard-account-meta {
-	display: flex;
-	flex-direction: column;
-	line-height: 1.2;
-}
-
-/* Main column ─ */
-
-.dashboard-main {
-	display: flex;
-	flex-direction: column;
-	min-inline-size: 0;
-	overflow: hidden;
-}
-
+/* Topbar — framework header chrome is body-level only; manual flex band.
+ * min-block-size aligns with the sidebar brand strip. */
 .dashboard-topbar {
 	display: flex;
 	align-items: center;
@@ -530,8 +587,13 @@ onUnmounted(() => {
 	min-block-size: 3.5rem;
 	border-block-end: 1px solid var(--color-border);
 	background: var(--color-surface);
+	flex-shrink: 0;
 }
 
+/* Search form — flex-grow to fill available space; max-width cap keeps
+ * it readable; margin-inline-end: auto pushes the actions menu right.
+ * <form role="search"> + <input type="search"> get framework chrome from
+ * _search.scss / _input.scss; only the layout sizing is scoped here. */
 .dashboard-search {
 	flex: 1;
 	min-inline-size: 0;
@@ -543,62 +605,18 @@ onUnmounted(() => {
 	inline-size: 100%;
 }
 
+/* Actions toolbar — <menu> baseline has gap: var(--spacing)*2 = 0.5rem.
+ * Dashboard uses tighter 0.25rem gap for icon-only button clusters. */
 .dashboard-actions {
-	display: inline-flex;
 	gap: 0.25rem;
-	margin: 0;
-	padding: 0;
-	list-style: none;
 }
 
-.dashboard-actions > li {
-	display: contents;
-}
+/* ── Content area controls ───────────────────────────────────────────── */
 
-.dashboard-content {
-	flex: 1;
-	overflow-y: auto;
-	padding: 1.5rem;
-	display: flex;
-	flex-direction: column;
-	gap: 1.5rem;
-}
-
-.dashboard-page-header {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-between;
-	align-items: flex-end;
-	gap: 1rem;
-}
-
-.dashboard-page-header hgroup {
-	margin: 0;
-}
-
-.dashboard-page-header h1 {
-	margin: 0.25rem 0 0.5rem;
-	font-size: 1.5rem;
-}
-
-.dashboard-eyebrow {
-	margin: 0;
-	font-size: 0.6875rem;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	color: var(--color-text-subtle);
-}
-
+/* Range toolbar — gap: 0 so buttons butt up; active state weight.
+ * <menu> baseline already strips list-style/margin/padding/flex. */
 .dashboard-range {
-	display: inline-flex;
 	gap: 0;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.dashboard-range > li {
-	display: contents;
 }
 
 .dashboard-range button.active {
@@ -606,36 +624,28 @@ onUnmounted(() => {
 	color: var(--color-text);
 }
 
-/* Stat cards ─ */
+/* ── Stat cards ──────────────────────────────────────────────────────── */
 
+/* Stats grid — auto-fit with minmax so cards wrap naturally on narrow
+ * viewports. Tailwind can't express auto-fit + minmax without an
+ * arbitrary value on the element; scoped rule is cleaner. */
 .dashboard-stats {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 	gap: 1rem;
 }
 
-.dashboard-stats article {
-	padding: 1rem 1.25rem;
-}
-
-.dashboard-stats dl {
-	margin: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 0.25rem;
-}
-
-.dashboard-stats dt {
-	font-size: 0.8125rem;
-	color: var(--color-text-subtle);
-}
-
+/* Stat value — headline number. Large + bold; no framework typography
+ * token maps to this specific size. */
 .dashboard-stat-value {
 	margin: 0;
 	font-size: 1.75rem;
 	font-weight: 700;
 }
 
+/* Stat delta — trend indicator row. Color driven by data-trend attribute
+ * so the three states (up/down/flat) share one rule set instead of three
+ * classes. Uses semantic color tokens from _theme.scss. */
 .dashboard-stat-delta {
 	margin: 0;
 	display: inline-flex;
@@ -644,13 +654,15 @@ onUnmounted(() => {
 	font-size: 0.8125rem;
 }
 
-.dashboard-stat-delta[data-trend='up'] { color: var(--color-success, oklch(60% 0.15 145)); }
-.dashboard-stat-delta[data-trend='down'] { color: var(--color-danger, oklch(60% 0.18 25)); }
+.dashboard-stat-delta[data-trend='up']   { color: var(--color-success-text-emphasis); }
+.dashboard-stat-delta[data-trend='down'] { color: var(--color-danger-text-emphasis); }
 .dashboard-stat-delta[data-trend='flat'] { color: var(--color-text-subtle); }
-.dashboard-stat-delta small { color: var(--color-text-subtle); margin-inline-start: 0.25rem; }
 
-/* Chart + Quick actions row ─ */
+/* ── Chart + Quick-actions row ───────────────────────────────────────── */
 
+/* Chart/actions row — 2:1 ratio grid on ≥1024px, stacked below. The
+ * arbitrary column sizes can't be expressed in Tailwind without the JIT
+ * arbitrary-value syntax on every breakpoint; scoped rule is cleaner. */
 .dashboard-chart-row {
 	display: grid;
 	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
@@ -663,127 +675,66 @@ onUnmounted(() => {
 	}
 }
 
-.dashboard-chart-card,
-.dashboard-actions-card {
-	display: flex;
-	flex-direction: column;
-}
-
-.dashboard-chart-card figure,
-.dashboard-chart-card svg {
-	margin: 0;
-}
-
+/* SVG chart — block + w-full are Tailwind utilities applied inline;
+ * block-size is an arbitrary value that doesn't map to a Tailwind
+ * default scale step, so it stays scoped. */
 .dashboard-chart {
-	inline-size: 100%;
 	block-size: 14rem;
-	display: block;
 }
 
+/* SVG rect fill — SVG presentation attributes can't be set via Tailwind
+ * utility classes; scoped CSS is the only clean option here. */
 .dashboard-chart rect {
 	fill: var(--color-primary, oklch(60% 0.15 250));
 	opacity: 0.45;
 }
 
 .dashboard-chart rect[data-highlight] {
-	fill: var(--color-info, oklch(70% 0.15 220));
+	fill: var(--color-information, oklch(70% 0.15 220));
 	opacity: 0.85;
 }
 
-.dashboard-legend {
-	display: inline-flex;
-	gap: 1rem;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	font-size: 0.8125rem;
-}
-
-.dashboard-legend-dot {
-	display: inline-block;
-	inline-size: 0.625rem;
-	block-size: 0.625rem;
-	border-radius: 999px;
-	margin-inline-end: 0.375rem;
-	vertical-align: middle;
-}
-
-.dashboard-legend-dot[data-series='revenue'] { background: var(--color-primary); }
-.dashboard-legend-dot[data-series='forecast'] { background: var(--color-info); }
-
-.dashboard-actions-card menu {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	display: flex;
+/* Quick-actions menu — framework's `article menu` rule sets justify-end
+ * (horizontal row trailing-edge layout). The actions panel needs a
+ * vertical column instead; this single override corrects the direction. */
+.dashboard-actions-menu {
 	flex-direction: column;
+	align-items: stretch;
 }
 
-.dashboard-actions-card menu > li > button {
-	inline-size: 100%;
-	justify-content: flex-start;
-	text-align: start;
-}
+/* ── Activity timeline ───────────────────────────────────────────────── */
 
-/* Activity timeline ─ */
-
-.dashboard-activity > header {
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-end;
-	gap: 1rem;
-	margin-block-end: 0.75rem;
-}
-
+/* Timeline rail — vertical list with a left border as the rail line.
+ * The framework doesn't ship a timeline primitive; this is genuinely
+ * custom layout glue. */
 .dashboard-timeline {
 	margin: 0;
 	padding: 0;
 	list-style: none;
 	border-inline-start: 2px solid var(--color-border);
-	padding-inline-start: 1rem;
+	padding-inline-start: 1.5rem;
 }
 
-.dashboard-timeline > li {
-	position: relative;
-	padding-block: 0.5rem;
-}
-
+/* Timeline marker — uses the .dot framework primitive for the circle
+ * shape (framework provides size, border-radius, bg-color, flex-shrink).
+ * Absolute positioning onto the rail line is geometry the framework
+ * doesn't own; kept as scoped rules on .dashboard-timeline-marker. */
 .dashboard-timeline-marker {
 	position: absolute;
-	inset-inline-start: calc(-1rem - 0.4rem - 1px);
+	inset-inline-start: calc(-1.5rem - 0.4rem - 1px);
 	inset-block-start: 0.875rem;
-	inline-size: 0.8rem;
-	block-size: 0.8rem;
-	border-radius: 999px;
+	/* Override .dot's default 0.5rem with a slightly larger dot that reads
+	 * clearly against the rail line. */
+	--set-dot-size: 0.8rem;
 	background: var(--color-surface);
 	box-shadow: 0 0 0 2px currentColor;
 	color: var(--color-text-subtle);
 }
 
-.dashboard-timeline > li[data-status='paid'] .dashboard-timeline-marker { color: var(--color-success); }
+/* Status-based dot color — drives both currentColor (the outline ring
+ * via box-shadow) and the .dot background-color via --set-dot-background-
+ * color override. Uses framework semantic color tokens. */
+.dashboard-timeline > li[data-status='paid']    .dashboard-timeline-marker { color: var(--color-success); }
 .dashboard-timeline > li[data-status='pending'] .dashboard-timeline-marker { color: var(--color-warning); }
-.dashboard-timeline > li[data-status='failed'] .dashboard-timeline-marker { color: var(--color-danger); }
-
-.dashboard-timeline-content p {
-	margin: 0;
-	display: flex;
-	flex-wrap: wrap;
-	align-items: baseline;
-	gap: 0.5rem;
-}
-
-.dashboard-timeline-content code {
-	font-size: 0.8125rem;
-}
-
-.dashboard-timeline-content .tag {
-	margin-inline-start: auto;
-}
-
-.dashboard-when {
-	display: block;
-	margin-block-start: 0.125rem;
-	font-size: 0.75rem;
-	color: var(--color-text-subtle);
-}
+.dashboard-timeline > li[data-status='failed']  .dashboard-timeline-marker { color: var(--color-danger); }
 </style>
