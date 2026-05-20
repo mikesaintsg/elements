@@ -120,6 +120,12 @@ export const PAGE_SURFACE_BUNDLES: Readonly<Record<PageName, readonly string[]>>
 	ScrollAndTransitionPage: ['scrollbar', 'view-transition'],
 	UseThemeButtonPage: ['useTheme', 'useButton'],
 	UseDragDropPage: ['useDrag', 'useDrop'],
+	// Layout-template page. Composes useAside (sidebar drawer), useDialog
+	// (view-source modal in ExamplesShell), useMenu (example picker), and
+	// useTheme (toolbar light/dark toggle). The toolbar exercises the
+	// `<menu role="toolbar">` pattern recognized by ATTR_ROOTED in
+	// parity.test.ts §3.
+	DashboardExamplePage: ['useAside', 'useDialog', 'useMenu', 'useTheme'],
 }
 
 /**
