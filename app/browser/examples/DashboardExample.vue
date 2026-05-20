@@ -588,12 +588,61 @@ onUnmounted(() => {
 	flex-shrink: 0;
 }
 
+/* Sidebar nav menu — framework's nav-rail column chrome
+ * (`body:has(main) > nav menu { flex-direction: column }`) only matches
+ * body-level nav rails. The dashboard's <nav> is nested inside <aside>
+ * inside the dashboard shell, so the selector misses and the menu
+ * inherits the bare `<menu>` baseline (`display: flex; flex-wrap: wrap`
+ * — a horizontal toolbar). Force the column layout here so links stack
+ * vertically as a sidebar should.
+ *
+ * The <li> children get `display: contents` from the framework menu
+ * baseline, so the immediate flex children are the <a>/<button>s — they
+ * lay out directly in the menu's flex column. */
+.dashboard-sidebar nav menu {
+	flex-direction: column;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	gap: 0.125rem;
+}
+
+/* Nav-rail link/button chrome — same reasoning: the framework's
+ * `body:has(main) > nav menu > li > :where(a, button)` rules only apply
+ * to body-level nav rails. Replicate the essential nav-command look
+ * here so links read as quiet, full-width, start-aligned commands with
+ * a hover affordance and an active-page state. */
+.dashboard-sidebar nav menu > li > :where(a, button) {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	inline-size: 100%;
+	padding: 0.4rem 0.625rem;
+	border: 0;
+	border-radius: 0.375rem;
+	background-color: transparent;
+	color: var(--color-text);
+	text-align: start;
+	text-decoration: none;
+	font-size: inherit;
+	font-weight: 400;
+	cursor: pointer;
+}
+
+.dashboard-sidebar nav menu > li > :where(a, button):hover {
+	background-color: var(--color-surface-tertiary, var(--color-surface));
+}
+
+.dashboard-sidebar nav menu > li > a[aria-current='page'] {
+	background-color: var(--color-surface-tertiary, var(--color-surface));
+	font-weight: 600;
+}
+
 /* Section heading in the nav — small caps label above a menu group.
  * Not a framework token; kept scoped because nav-section labels are
  * presentation chrome specific to this example's sidebar shape. */
 .dashboard-nav-section-label {
 	margin: 1.5rem 0 0.25rem;
-	padding-inline: 0.75rem;
+	padding-inline: 0.625rem;
 	font-size: 0.6875rem;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;

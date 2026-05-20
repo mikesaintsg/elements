@@ -34,14 +34,26 @@
 	transform: translateX(-50%);
 	z-index: 1080;
 	display: inline-flex;
+	/* The framework's `<menu>` baseline is `flex-wrap: wrap`. That's the
+	 * right default for content menus, but the floating toolbar must
+	 * stay on a single row at every viewport — `nowrap` overrides the
+	 * baseline so the picker label can't push the trailing buttons to
+	 * a second row on mobile. */
+	flex-wrap: nowrap;
+	align-items: center;
 	margin: 0;
-	padding: 0;
-	gap: 0.25rem;
+	padding: 0.25rem;
+	gap: 0.125rem;
 	list-style: none;
 	background: var(--color-surface);
 	border: 1px solid var(--color-border);
 	border-radius: 999px;
 	box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
+	/* Cap inline-size on mobile so the bar can't overflow the viewport
+	 * even if the picker label grows. Below the 600px breakpoint the
+	 * toolbar is centered (bottom-center, thumb zone); above it floats
+	 * to bottom-end and the cap relaxes. */
+	max-inline-size: calc(100vw - 2rem);
 }
 
 .examples-toolbar > li {
@@ -53,12 +65,21 @@
 		inset-inline-start: auto;
 		inset-inline-end: max(1rem, env(safe-area-inset-right));
 		transform: none;
+		max-inline-size: none;
 	}
 }
 
 .examples-toolbar-label {
-	min-inline-size: 9rem;
+	/* Shrinkable on mobile (label can ellipsis if the bar is tight);
+	 * comfortable target inline-size from the sm breakpoint up. */
+	min-inline-size: 0;
 	max-inline-size: 14rem;
+}
+
+@media (min-width: 600px) {
+	.examples-toolbar-label {
+		min-inline-size: 9rem;
+	}
 }
 
 .examples-toolbar-label > button > .examples-toolbar-label-text {
