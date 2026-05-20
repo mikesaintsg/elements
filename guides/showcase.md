@@ -4,7 +4,7 @@
 
 ## Surface
 
-The showcase is the framework's mirror — a consumer-side app that uses _only_ the framework's public API to build a 44-page documentation experience. It lives under [`app/browser/`](../app/browser/) as a self-contained SPA:
+The showcase is the framework's mirror — a consumer-side app that uses _only_ the framework's public API to build a 45-page documentation experience (44 surface-area pages + 1 fullscreen layout-template example). It lives under [`app/browser/`](../app/browser/) as a self-contained SPA:
 
 | Path                                                                    | Role                                                                                                     |
 | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -15,6 +15,7 @@ The showcase is the framework's mirror — a consumer-side app that uses _only_ 
 | [`app/browser/types.ts`](../app/browser/types.ts)                       | `Route` / `RouteLocation` / `RouteGroup` / `Group` / `Section` types + `ROUTE_GROUPS` canonical order.   |
 | [`app/browser/env.d.ts`](../app/browser/env.d.ts)                       | `__BUILD_ID__` declaration + `*.vue` module shim for IDEs.                                               |
 | [`app/browser/pages/`](../app/browser/pages/)                           | 44 `*.vue` page files. One per surface area; bundled where the surface naturally groups.                 |
+| [`app/browser/examples/`](../app/browser/examples/)                     | Fullscreen layout-template examples (`ExamplesShell` + per-example body + `*ExamplePage` wrapper). Rendered without the docs chrome so the example claims the viewport.                              |
 | [`app/browser/styles/main.css`](../app/browser/styles/main.css)         | Single CSS entry — declares `@layer`, imports Tailwind, imports the framework SCSS, sets `@source`.      |
 | [`app/browser/styles/showcase.css`](../app/browser/styles/showcase.css) | Showcase-specific chrome. The only file in the showcase that authors CSS classes.                        |
 
