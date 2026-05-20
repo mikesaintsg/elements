@@ -481,7 +481,12 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 	<!-- RIGHT rail — `<aside>` mirrors the left `<nav>`: same conditional
 	     popover binding, same framework offcanvas chrome on mobile, same
 	     close-button + popovertarget contract. -->
-	<aside v-if="!isExample" id="toc-rail" aria-label="On this page" :popover="isMobile ? 'auto' : undefined">
+	<aside
+		v-if="!isExample"
+		id="toc-rail"
+		aria-label="On this page"
+		:popover="isMobile ? 'auto' : undefined"
+	>
 		<header class="showcase-drawer-header">
 			<strong>On this page</strong>
 			<button

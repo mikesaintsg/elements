@@ -132,7 +132,10 @@ const topLevelSectionTags = (template: string): readonly string[] =>
 // (`examples.css`). Each file enforces its own single-prefix policy via
 // `nonNamespacedSelectors(css, [prefix])`. Page `<style>` blocks may use
 // either prefix and call with the default `['showcase-', 'examples-']`.
-function nonNamespacedSelectors(css: string, prefixes: readonly string[] = ['showcase-', 'examples-']): readonly string[] {
+function nonNamespacedSelectors(
+	css: string,
+	prefixes: readonly string[] = ['showcase-', 'examples-'],
+): readonly string[] {
 	const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '')
 	const out: string[] = []
 	for (const m of stripped.matchAll(/([^{}]+)\{/g)) {

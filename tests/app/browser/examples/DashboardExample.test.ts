@@ -77,8 +77,12 @@ describe('DashboardExample — framework idioms', () => {
 		try {
 			// The data has 2 paid, 2 pending, 1 failed.
 			expect(host.querySelectorAll('ol.dashboard-timeline > li[data-status="paid"]').length).toBe(2)
-			expect(host.querySelectorAll('ol.dashboard-timeline > li[data-status="pending"]').length).toBe(2)
-			expect(host.querySelectorAll('ol.dashboard-timeline > li[data-status="failed"]').length).toBe(1)
+			expect(
+				host.querySelectorAll('ol.dashboard-timeline > li[data-status="pending"]').length,
+			).toBe(2)
+			expect(host.querySelectorAll('ol.dashboard-timeline > li[data-status="failed"]').length).toBe(
+				1,
+			)
 			expect(host.querySelector('ol.dashboard-timeline .tag.success')).not.toBeNull()
 			expect(host.querySelector('ol.dashboard-timeline .tag.warning')).not.toBeNull()
 			expect(host.querySelector('ol.dashboard-timeline .tag.danger')).not.toBeNull()

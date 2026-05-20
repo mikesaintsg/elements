@@ -46,11 +46,41 @@ const stats: readonly Stat[] = [
 ]
 
 const activity: readonly ActivityRow[] = [
-	{ when: '2m ago', who: 'Ada Lovelace', action: 'paid invoice', target: 'INV-1042', status: 'paid' },
-	{ when: '14m ago', who: 'Grace Hopper', action: 'submitted form', target: 'Onboarding · Step 3', status: 'pending' },
-	{ when: '38m ago', who: 'Linus Torvalds', action: 'updated billing', target: 'Visa •• 4012', status: 'paid' },
-	{ when: '1h ago', who: 'Margaret Hamilton', action: 'failed checkout', target: 'Cart 8721', status: 'failed' },
-	{ when: '3h ago', who: 'Hedy Lamarr', action: 'cancelled trial', target: 'Pro plan', status: 'pending' },
+	{
+		when: '2m ago',
+		who: 'Ada Lovelace',
+		action: 'paid invoice',
+		target: 'INV-1042',
+		status: 'paid',
+	},
+	{
+		when: '14m ago',
+		who: 'Grace Hopper',
+		action: 'submitted form',
+		target: 'Onboarding · Step 3',
+		status: 'pending',
+	},
+	{
+		when: '38m ago',
+		who: 'Linus Torvalds',
+		action: 'updated billing',
+		target: 'Visa •• 4012',
+		status: 'paid',
+	},
+	{
+		when: '1h ago',
+		who: 'Margaret Hamilton',
+		action: 'failed checkout',
+		target: 'Cart 8721',
+		status: 'failed',
+	},
+	{
+		when: '3h ago',
+		who: 'Hedy Lamarr',
+		action: 'cancelled trial',
+		target: 'Pro plan',
+		status: 'pending',
+	},
 ]
 
 const statusVariant: Record<ActivityRow['status'], string> = {
@@ -60,9 +90,9 @@ const statusVariant: Record<ActivityRow['status'], string> = {
 }
 
 const trendIconToken: Record<Stat['trend'], string> = {
-	up: 'caret-up', /* TODO icon swap — caret-up stands in for missing 'arrow-up-right' */
-	down: 'caret-down', /* TODO icon swap — caret-down stands in for missing 'arrow-down-right' */
-	flat: 'dash', /* TODO icon swap — dash stands in for missing 'arrow-right' */
+	up: 'caret-up' /* TODO icon swap — caret-up stands in for missing 'arrow-up-right' */,
+	down: 'caret-down' /* TODO icon swap — caret-down stands in for missing 'arrow-down-right' */,
+	flat: 'dash' /* TODO icon swap — dash stands in for missing 'arrow-right' */,
 }
 
 const range = ref<'7d' | '30d' | '90d'>('30d')
@@ -243,11 +273,7 @@ onUnmounted(() => {
 						/>
 					</label>
 				</form>
-				<menu
-					role="toolbar"
-					aria-label="Dashboard actions"
-					class="dashboard-actions"
-				>
+				<menu role="toolbar" aria-label="Dashboard actions" class="dashboard-actions">
 					<li role="none">
 						<button type="button" class="primary">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
@@ -287,7 +313,9 @@ onUnmounted(() => {
 					<hgroup>
 						<!-- Eyebrow — small caps label above the page title. Tailwind for
 						     typography; var(--color-text-subtle) via a CSS var inline. -->
-						<p class="m-0 text-xs uppercase tracking-wide" style="color: var(--color-text-subtle)">Overview</p>
+						<p class="m-0 text-xs uppercase tracking-wide" style="color: var(--color-text-subtle)">
+							Overview
+						</p>
 						<h1 class="my-1 text-2xl">Welcome back, Mike</h1>
 						<p>Here's what's happened across your workspace this {{ range }}.</p>
 					</hgroup>
@@ -295,7 +323,7 @@ onUnmounted(() => {
 					     <menu> baseline already strips list-style/margin/padding/flex; only
 					     the gap override is needed (scoped .dashboard-range). -->
 					<menu role="toolbar" aria-label="Date range" class="dashboard-range">
-						<li v-for="r in (['7d','30d','90d'] as const)" :key="r" role="none">
+						<li v-for="r in ['7d', '30d', '90d'] as const" :key="r" role="none">
 							<button
 								type="button"
 								class="subtle"
@@ -325,7 +353,9 @@ onUnmounted(() => {
 									:style="`--icon: var(--set-icon-${trendIconToken[stat.trend]})`"
 								></i>
 								{{ stat.delta }}
-								<small style="color: var(--color-text-subtle); margin-inline-start: 0.25rem">vs last period</small>
+								<small style="color: var(--color-text-subtle); margin-inline-start: 0.25rem"
+									>vs last period</small
+								>
 							</dd>
 						</dl>
 					</article>
@@ -347,17 +377,31 @@ onUnmounted(() => {
 							<!-- Legend — inline-flex list. .dot primitive for the color swatch. -->
 							<ul class="inline-flex gap-4 m-0 p-0 list-none text-sm ms-auto">
 								<li class="inline-flex items-center gap-1">
-									<span class="dot" style="--set-dot-background-color: var(--color-primary)" aria-hidden="true"></span>
+									<span
+										class="dot"
+										style="--set-dot-background-color: var(--color-primary)"
+										aria-hidden="true"
+									></span>
 									Revenue
 								</li>
 								<li class="inline-flex items-center gap-1">
-									<span class="dot" style="--set-dot-background-color: var(--color-information)" aria-hidden="true"></span>
+									<span
+										class="dot"
+										style="--set-dot-background-color: var(--color-information)"
+										aria-hidden="true"
+									></span>
 									Forecast
 								</li>
 							</ul>
 						</header>
 						<figure class="m-0">
-							<svg viewBox="0 0 300 100" preserveAspectRatio="none" class="dashboard-chart w-full block" role="img" aria-label="Revenue chart, illustrative">
+							<svg
+								viewBox="0 0 300 100"
+								preserveAspectRatio="none"
+								class="dashboard-chart w-full block"
+								role="img"
+								aria-label="Revenue chart, illustrative"
+							>
 								<rect
 									v-for="bar in chartBars"
 									:key="bar.x"
@@ -414,7 +458,11 @@ onUnmounted(() => {
 							<li>
 								<!-- TODO icon swap — information stands in for missing 'life-preserver' (support) -->
 								<button type="button" class="subtle w-full justify-start text-start">
-									<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-information)"></i>
+									<i
+										class="icon"
+										aria-hidden="true"
+										style="--icon: var(--set-icon-information)"
+									></i>
 									Contact support
 								</button>
 							</li>
@@ -448,9 +496,15 @@ onUnmounted(() => {
 									<strong>{{ row.who }}</strong>
 									<span>{{ row.action }}</span>
 									<code class="text-sm">{{ row.target }}</code>
-									<small class="tag ms-auto" :class="statusVariant[row.status]">{{ row.status }}</small>
+									<small class="tag ms-auto" :class="statusVariant[row.status]">{{
+										row.status
+									}}</small>
 								</p>
-								<time class="block text-xs" style="color: var(--color-text-subtle); margin-block-start: 0.125rem">{{ row.when }}</time>
+								<time
+									class="block text-xs"
+									style="color: var(--color-text-subtle); margin-block-start: 0.125rem"
+									>{{ row.when }}</time
+								>
 							</div>
 						</li>
 					</ol>
@@ -654,9 +708,15 @@ onUnmounted(() => {
 	font-size: 0.8125rem;
 }
 
-.dashboard-stat-delta[data-trend='up']   { color: var(--color-success-text-emphasis); }
-.dashboard-stat-delta[data-trend='down'] { color: var(--color-danger-text-emphasis); }
-.dashboard-stat-delta[data-trend='flat'] { color: var(--color-text-subtle); }
+.dashboard-stat-delta[data-trend='up'] {
+	color: var(--color-success-text-emphasis);
+}
+.dashboard-stat-delta[data-trend='down'] {
+	color: var(--color-danger-text-emphasis);
+}
+.dashboard-stat-delta[data-trend='flat'] {
+	color: var(--color-text-subtle);
+}
 
 /* ── Chart + Quick-actions row ───────────────────────────────────────── */
 
@@ -734,7 +794,13 @@ onUnmounted(() => {
 /* Status-based dot color — drives both currentColor (the outline ring
  * via box-shadow) and the .dot background-color via --set-dot-background-
  * color override. Uses framework semantic color tokens. */
-.dashboard-timeline > li[data-status='paid']    .dashboard-timeline-marker { color: var(--color-success); }
-.dashboard-timeline > li[data-status='pending'] .dashboard-timeline-marker { color: var(--color-warning); }
-.dashboard-timeline > li[data-status='failed']  .dashboard-timeline-marker { color: var(--color-danger); }
+.dashboard-timeline > li[data-status='paid'] .dashboard-timeline-marker {
+	color: var(--color-success);
+}
+.dashboard-timeline > li[data-status='pending'] .dashboard-timeline-marker {
+	color: var(--color-warning);
+}
+.dashboard-timeline > li[data-status='failed'] .dashboard-timeline-marker {
+	color: var(--color-danger);
+}
 </style>

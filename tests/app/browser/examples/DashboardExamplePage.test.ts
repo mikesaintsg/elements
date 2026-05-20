@@ -61,8 +61,9 @@ describe('DashboardExamplePage — load-bearing landmarks', () => {
 		try {
 			expect(host.querySelector('header.dashboard-topbar')).not.toBeNull()
 			expect(host.querySelector('form[role="search"]')).not.toBeNull()
-			expect(host.querySelector('menu[role="toolbar"][aria-label="Dashboard actions"]'))
-				.not.toBeNull()
+			expect(
+				host.querySelector('menu[role="toolbar"][aria-label="Dashboard actions"]'),
+			).not.toBeNull()
 		} finally {
 			teardown()
 		}
