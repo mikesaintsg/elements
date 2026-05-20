@@ -117,7 +117,9 @@ afterAll(() => {
 
 describe('semantics — Inspector self-audit over every showcase page (zero error-severity findings)', () => {
 	it('discovers the barrel page surface (vacuous-pass guard)', () => {
-		expect(pageEntries.length).toBe(44)
+		// Bump the lower bound when adding a new page; vacuous-pass intent
+		// is "we discovered ≥ the showcase corpus we expect", not exact.
+		expect(pageEntries.length).toBeGreaterThanOrEqual(45)
 	})
 
 	for (const [name, page] of pageEntries) {

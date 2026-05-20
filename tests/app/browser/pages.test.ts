@@ -32,8 +32,25 @@ import { INTRO_ID_EXCEPTIONS, PAGE_H1_DEMO, REMOVED_FRAMEWORK_MODIFIERS } from '
 import { classNameIsSanctioned, componentNamespacesFromPaths } from '../../setup'
 
 // ── Raw page sources (browser ?raw glob — no node:fs) ───────────────────────
+//
+// Two source sets are kept separate throughout this file:
+//
+//   showcaseRawSources  — `pages/*.vue`       — the classic showcase corpus;
+//                         structural/skeleton/uniformity/test-bijection checks
+//                         apply to these.
+//   examplesRawSources  — `examples/*Page.vue` — fullscreen example wrappers;
+//                         they follow a different convention (no JSDoc intro,
+//                         no <h1>/<section> skeleton, no per-page test in
+//                         pages/*.test.ts). Route- and barrel-bijection checks
+//                         apply to BOTH sets combined (`pageNames`).
 
-const rawSources = import.meta.glob('../../../app/browser/pages/*.vue', {
+const showcaseRawSources = import.meta.glob('../../../app/browser/pages/*.vue', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+}) as Record<string, string>
+
+const examplesRawSources = import.meta.glob('../../../app/browser/examples/*Page.vue', {
 	query: '?raw',
 	import: 'default',
 	eager: true,
@@ -43,8 +60,15 @@ function baseName(path: string): string {
 	return path.match(/([^/\\]+)\.vue$/)?.[1] ?? ''
 }
 
+// `pages` — combined source map (used for namespace/style checks on all pages)
 const pages: Record<string, string> = {}
-for (const [path, source] of Object.entries(rawSources)) pages[baseName(path)] = source
+for (const [path, source] of Object.entries({ ...showcaseRawSources, ...examplesRawSources }))
+	pages[baseName(path)] = source
+
+// `showcasePageNames` — structural/skeleton/bijection-with-tests checks only
+const showcasePageNames = Object.keys(showcaseRawSources).map(baseName).sort()
+
+// `pageNames` — all routed pages (showcase + examples); route + barrel checks
 const pageNames = Object.keys(pages).sort()
 
 // ── Per-page test files (browser-safe directory listing) ────────────────────
@@ -103,6 +127,10 @@ function firstH1Text(markup: string): string | null {
 const topLevelSectionTags = (template: string): readonly string[] =>
 	[...template.matchAll(/\n\t<section\b[^>]*>/g)].map((m) => m[0])
 
+// `.showcase-` is the docs-app chrome namespace; `.examples-` is the
+// fullscreen-layout-templates chrome namespace (also app-glue, lives
+// next to `.showcase-` in `app/browser/styles/showcase.css`). Both
+// are sanctioned authored prefixes; framework class roots aren't.
 function nonNamespacedSelectors(css: string): readonly string[] {
 	const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '')
 	const out: string[] = []
@@ -112,7 +140,7 @@ function nonNamespacedSelectors(css: string): readonly string[] {
 		for (const sel of selectorList.split(',')) {
 			const s = sel.trim()
 			if (!/\.[A-Za-z_-]/.test(s)) continue
-			if (!/\.showcase-/.test(s)) out.push(s)
+			if (!/\.showcase-/.test(s) && !/\.examples-/.test(s)) out.push(s)
 		}
 	}
 	return out
@@ -178,9 +206,12 @@ function inlineStyleViolations(name: string): readonly string[] {
 }
 
 // ── 1. UNIFORMITY ───────────────────────────────────────────────────────────
+//    Structural conventions apply to showcase pages only (pages/*.vue).
+//    Example pages (examples/*Page.vue) follow a different layout convention
+//    and are verified by the examples-specific test suite (Task 12).
 
 describe('pages — every page ships one `<script lang="ts" setup>` + one `<template>`', () => {
-	for (const name of pageNames) {
+	for (const name of showcasePageNames) {
 		// On failure: `app/browser/pages/${name}.vue` must contain exactly
 		// one `<script lang="ts" setup>` and one `<template>` block.
 		it(`${name}.vue — exactly one setup script + one template`, () => {
@@ -193,7 +224,7 @@ describe('pages — every page ships one `<script lang="ts" setup>` + one `<temp
 })
 
 describe('pages — every script opens with a `{Page} — …` JSDoc', () => {
-	for (const name of pageNames) {
+	for (const name of showcasePageNames) {
 		// On failure: the first JSDoc content line in
 		// `app/browser/pages/${name}.vue` is not `${name} — {summary}`.
 		// Open `/**` flush to column 0; start the first `* ` line with
@@ -207,7 +238,7 @@ describe('pages — every script opens with a `{Page} — …` JSDoc', () => {
 // ── 2. SKELETON ─────────────────────────────────────────────────────────────
 
 describe('pages — template opens with the intro `<section>` skeleton', () => {
-	for (const name of pageNames) {
+	for (const name of showcasePageNames) {
 		const route = routeByPage.get(name)
 		it(`${name}.vue — first element is <section id="…-intro"> with one <hgroup><h1><p>`, () => {
 			// On failure: the `<template>`'s first element child is not
@@ -228,7 +259,7 @@ describe('pages — template opens with the intro `<section>` skeleton', () => {
 })
 
 describe('pages — intro `<h1>` text equals the route title', () => {
-	for (const name of pageNames) {
+	for (const name of showcasePageNames) {
 		const route = routeByPage.get(name)
 		// On failure: the intro `<h1>` text (entity-decoded) ≠ the route
 		// `title`. The page hero and the sidebar label must agree.
@@ -240,7 +271,7 @@ describe('pages — intro `<h1>` text equals the route title', () => {
 })
 
 describe('pages — exactly one page-level `<h1>` (PAGE_H1_DEMO may render demo H1s)', () => {
-	for (const name of pageNames) {
+	for (const name of showcasePageNames) {
 		// On failure: >1 `<h1>` but the page is not in PAGE_H1_DEMO
 		// (tests/app/browser/pages/_contract.ts). Allow-list it there with
 		// a one-line rationale — never a blanket skip.
@@ -256,7 +287,7 @@ describe('pages — exactly one page-level `<h1>` (PAGE_H1_DEMO may render demo 
 })
 
 describe('pages — every `<section>` carries a unique id (the TOC contract)', () => {
-	for (const name of pageNames) {
+	for (const name of showcasePageNames) {
 		// On failure: a top-level `<section>` has no `id`, or two share one.
 		// `App.vue` builds the right-rail TOC from `section[id]`.
 		it(`${name}.vue — top-level section ids present + unique`, () => {
@@ -307,11 +338,13 @@ describe('pages — every route resolves to a real, barrel-exported page', () =>
 	}
 })
 
-describe('pages — every page has a dedicated test driver', () => {
-	for (const name of pageNames) {
+describe('pages — every showcase page has a dedicated test driver', () => {
+	for (const name of showcasePageNames) {
 		// On failure: `${name}.vue` has no
 		// `tests/app/browser/pages/${name}.test.ts`. Phase 2 fills the
 		// bespoke body; the file must exist now (total bijection).
+		// Example pages (examples/*Page.vue) have their own test suite
+		// added in a later task — they are not checked here.
 		it(`${name}.vue → tests/app/browser/pages/${name}.test.ts exists`, () => {
 			expect(testFiles.has(name)).toBe(true)
 		})
@@ -331,9 +364,13 @@ describe('pages — every per-page test maps to a real page + route', () => {
 
 describe('pages — counts are equal (total bijection)', () => {
 	it('pages === routes === barrel exports === per-page tests', () => {
+		// `pageNames` covers all routed pages (showcase + examples).
+		// `showcasePageNames` is the subset with per-page test files in
+		// tests/app/browser/pages/; example pages carry their tests
+		// separately (examples/*.test.ts, added in a later task).
 		expect(pageNames.length).toBe(routeTable.length)
 		expect(barrelPageNames.size).toBe(pageNames.length)
-		expect(testFiles.size).toBe(pageNames.length)
+		expect(testFiles.size).toBe(showcasePageNames.length)
 	})
 })
 
