@@ -85,17 +85,15 @@ interface Order {
 	readonly amount: string
 	readonly date: string
 }
-// Amounts are bare numbers so the column sorts numerically: useTable
-// compares cell text via parseNumber, which rejects "$1,200.00" (the
-// symbol + separator) and would otherwise fall back to a lexicographic
-// sort ($1,200 before $24). The header carries the "(USD)" unit instead.
+// Amounts display formatted ($1,200.00) but carry a numeric `data-sort-value`
+// on the cell so useTable sorts them by magnitude, not lexically.
 const orders: readonly Order[] = [
 	{
 		id: 'INV-1042',
 		customer: 'Ada Lovelace',
 		plan: 'Pro annual',
 		status: 'paid',
-		amount: '480.00',
+		amount: '$480.00',
 		date: '2026-05-21',
 	},
 	{
@@ -103,7 +101,7 @@ const orders: readonly Order[] = [
 		customer: 'Grace Hopper',
 		plan: 'Team monthly',
 		status: 'pending',
-		amount: '96.00',
+		amount: '$96.00',
 		date: '2026-05-21',
 	},
 	{
@@ -111,7 +109,7 @@ const orders: readonly Order[] = [
 		customer: 'Linus Torvalds',
 		plan: 'Pro monthly',
 		status: 'paid',
-		amount: '24.00',
+		amount: '$24.00',
 		date: '2026-05-20',
 	},
 	{
@@ -119,7 +117,7 @@ const orders: readonly Order[] = [
 		customer: 'Margaret Hamilton',
 		plan: 'Enterprise',
 		status: 'failed',
-		amount: '1200.00',
+		amount: '$1,200.00',
 		date: '2026-05-20',
 	},
 	{
@@ -127,7 +125,7 @@ const orders: readonly Order[] = [
 		customer: 'Hedy Lamarr',
 		plan: 'Pro annual',
 		status: 'paid',
-		amount: '480.00',
+		amount: '$480.00',
 		date: '2026-05-19',
 	},
 	{
@@ -135,7 +133,7 @@ const orders: readonly Order[] = [
 		customer: 'Katherine Johnson',
 		plan: 'Team monthly',
 		status: 'paid',
-		amount: '96.00',
+		amount: '$96.00',
 		date: '2026-05-19',
 	},
 ]
@@ -147,7 +145,7 @@ const statusVariant: Record<Order['status'], string> = {
 
 const ordersRef = useTemplateRef<HTMLTableElement>('ordersRef')
 useTable(ordersRef, {
-	headers: ['Invoice', 'Customer', 'Plan', 'Status', 'Amount (USD)', 'Date'],
+	headers: ['Invoice', 'Customer', 'Plan', 'Status', 'Amount', 'Date'],
 	columns: [
 		{ key: 'id', sortable: true },
 		{ key: 'customer', sortable: true },
@@ -312,22 +310,24 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 			</div>
 		</header>
 
-		<section aria-label="Key metrics" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-			<article v-for="stat in stats" :key="stat.label" class="small">
-				<p class="text-sm m-0" style="color: var(--color-text-subtle)">{{ stat.label }}</p>
-				<strong class="text-3xl">{{ stat.value }}</strong>
-				<div class="cluster items-center">
-					<span class="badge" :class="stat.variant">{{ stat.delta }}</span>
-					<small style="color: var(--color-text-subtle)">{{ stat.goal }}</small>
-				</div>
-				<meter
-					class="w-full"
-					:value="stat.meter"
-					min="0"
-					max="100"
-					:aria-label="`${stat.label}: ${stat.goal}`"
-				></meter>
-			</article>
+		<section aria-label="Key metrics">
+			<div class="tiles" style="--set-tiles-min: 12rem">
+				<article v-for="stat in stats" :key="stat.label" class="small">
+					<p class="text-sm m-0" style="color: var(--color-text-subtle)">{{ stat.label }}</p>
+					<strong class="text-3xl">{{ stat.value }}</strong>
+					<div class="cluster items-center">
+						<span class="badge" :class="stat.variant">{{ stat.delta }}</span>
+						<small style="color: var(--color-text-subtle)">{{ stat.goal }}</small>
+					</div>
+					<meter
+						class="w-full"
+						:value="stat.meter"
+						min="0"
+						max="100"
+						:aria-label="`${stat.label}: ${stat.goal}`"
+					></meter>
+				</article>
+			</div>
 		</section>
 
 		<article aria-label="Recent orders">
@@ -350,7 +350,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 							<td>
 								<span class="badge" :class="statusVariant[order.status]">{{ order.status }}</span>
 							</td>
-							<td>{{ order.amount }}</td>
+							<td :data-sort-value="order.amount.replace(/[$,]/g, '')">{{ order.amount }}</td>
 							<td>
 								<time :datetime="order.date">{{ order.date }}</time>
 							</td>

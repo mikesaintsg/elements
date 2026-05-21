@@ -27,7 +27,7 @@ Twenty composables ship today. Each has a paired showcase page under [`app/brows
 | `useDetails`          | element-bound         | `createDetails`             | `[open]` toggle + accordion grouping.                        |
 | `useMenu`             | element-bound         | `createMenu`                | Dropdown lifecycle + roving focus + anchor positioning.      |
 | `useSelect`           | element-bound         | `createSelect`              | Listbox + combobox + multi-select + autocomplete.            |
-| `useToast`            | element-bound         | `createToast`               | `<output popover>` with auto-hide + deck stacking.           |
+| `useToast`            | element-bound         | `createToast`               | Toast surface with auto-hide + deck stacking. Host is `<div role="status" popover>` (NOT `<output>` — its phrasing-only content model can't hold a toast's flow content); surface chrome matches `[popover][role="status"]`. `<output>` proper stays the in-flow calculation / status element. |
 | `useTabs`             | element-bound         | `createTabs`                | `[role=tablist]` keyboard roving + lazy panel mount.         |
 | `useNav`              | element-bound         | `createNav`                 | `IntersectionObserver` scroll-spy + `aria-current=location`. |
 | `useForm`             | element-bound         | `createForm`                | Constraint validation + `[data-form-validated]` + a11y.      |

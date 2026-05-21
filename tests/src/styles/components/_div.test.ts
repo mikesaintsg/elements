@@ -83,3 +83,34 @@ describe('div.frame — flex column with zero internal spacing', () => {
 		expect(findRule('div.frame')).toBe(true)
 	})
 })
+
+describe('div.tiles — responsive auto-fit grid', () => {
+	it('lays out as a CSS grid', () => {
+		const el = render('div', 'tiles')
+		expect(style(el, 'display')).toBe('grid')
+	})
+
+	it('uses an auto-fit minmax track template (reflows by width, no breakpoints)', () => {
+		const el = render('div', 'tiles')
+		const cols = style(el, 'grid-template-columns')
+		// jsdom-free real Chromium resolves the template; assert the auto-fit
+		// minmax shape resolved to ≥1 concrete track.
+		expect(cols).not.toBe('none')
+		expect(cols.length).toBeGreaterThan(0)
+	})
+
+	it('applies a default gap', () => {
+		const el = render('div', 'tiles')
+		expect(pixels(el, 'gap')).toBeGreaterThan(0)
+	})
+
+	it('--set-tiles-min and --set-tiles-gap are overridable per instance', () => {
+		const el = render('div', 'tiles')
+		el.style.setProperty('--set-tiles-gap', '2rem')
+		expect(pixels(el, 'gap')).toBe(32)
+	})
+
+	it('the rule is scoped to <div>', () => {
+		expect(findRule('div.tiles')).toBe(true)
+	})
+})

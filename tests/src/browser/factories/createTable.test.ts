@@ -78,6 +78,37 @@ describe('createTable', () => {
 		expect(sortRecorder.count).toBe(3)
 	})
 
+	it('sorts by `data-sort-value` when present, falling back to cell text', () => {
+		// A formatted currency column ("$1,200.00") sorts lexicographically by
+		// text ($1,200 before $24); a numeric `data-sort-value` makes it sort
+		// by magnitude instead.
+		const table = buildTable()
+		const [api] = createFactoryFixture(() =>
+			createTable(table, {
+				headers: ['Item', 'Amount'],
+				rows: [
+					['A', '$1,200.00'],
+					['B', '$24.00'],
+					['C', '$480.00'],
+				],
+				columns: [{ key: 'item' }, { key: 'amount', sortable: true }],
+				sort: { auto: true },
+			}),
+		)
+		const rows = Array.from(table.tBodies[0]?.rows ?? [])
+		const values = ['1200', '24', '480']
+		const ids = ['a', 'b', 'c']
+		rows.forEach((row, i) => {
+			row.dataset.id = ids[i] ?? ''
+			const amount = row.cells[1]
+			if (amount) amount.dataset.sortValue = values[i] ?? ''
+		})
+		api.sort.toggle('amount') // ascending
+		const order = Array.from(table.tBodies[0]?.rows ?? []).map((r) => r.dataset.id)
+		// Numeric order (24 → 480 → 1200), NOT lexicographic ($1,200 first).
+		expect(order).toEqual(['b', 'c', 'a'])
+	})
+
 	it('sortable headers seed `aria-sort="none"` and `tabindex="0"` so AT users see them as sortable', () => {
 		const table = buildTable()
 		createFactoryFixture(() =>

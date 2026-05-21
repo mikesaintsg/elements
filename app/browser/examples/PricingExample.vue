@@ -139,7 +139,7 @@ const features: readonly Feature[] = [
 				<h2>Everything you need, nothing you don't</h2>
 				<p>Three ideas do all the work.</p>
 			</hgroup>
-			<div class="grid sm:grid-cols-3 gap-4 max-w-5xl mx-auto w-full">
+			<div class="tiles max-w-5xl mx-auto w-full" style="--set-tiles-min: 14rem">
 				<article v-for="feature in features" :key="feature.title">
 					<span class="avatar square" :class="feature.variant" aria-hidden="true">
 						<i class="icon" :style="`--icon: var(--set-icon-${feature.icon})`"></i>
@@ -156,7 +156,7 @@ const features: readonly Feature[] = [
 				<h2>Simple, honest pricing</h2>
 				<p>Start free. Upgrade when you're ready.</p>
 			</hgroup>
-			<div class="grid lg:grid-cols-3 gap-4 max-w-5xl mx-auto w-full">
+			<div class="tiles max-w-5xl mx-auto w-full" style="--set-tiles-min: 18rem">
 				<article v-for="plan in plans" :key="plan.name" :class="plan.featured ? 'primary' : ''">
 					<header>
 						<div class="cluster items-center justify-between">

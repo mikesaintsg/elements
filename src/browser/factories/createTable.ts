@@ -791,8 +791,13 @@ export function createTable(
 				if (isUndefined(direction)) continue
 				const cellIndex = indexByKey.get(key)
 				if (isUndefined(cellIndex)) continue
-				const av = a.row.cells[cellIndex]?.textContent ?? ''
-				const bv = b.row.cells[cellIndex]?.textContent ?? ''
+				// Sort by an explicit `data-sort-value` when present (so a
+				// formatted cell like "$1,200.00" can sort by its numeric
+				// 1200), falling back to the visible text otherwise.
+				const ac = a.row.cells[cellIndex]
+				const bc = b.row.cells[cellIndex]
+				const av = ac?.dataset.sortValue ?? ac?.textContent ?? ''
+				const bv = bc?.dataset.sortValue ?? bc?.textContent ?? ''
 				const cmp = compareCellValues(av, bv)
 				if (cmp !== 0) return direction === 'asc' ? cmp : -cmp
 			}

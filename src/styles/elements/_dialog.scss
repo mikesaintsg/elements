@@ -418,7 +418,13 @@
 	// and the body's `shrink: 1` lets it absorb the overflow as
 	// internal scroll. Same outcome as `1 1 0` in fixed-height parents
 	// (drawers); strictly more correct for max-height-only parents.
-	dialog:where(:has(> :is(header, footer))) > :not(:where(header, footer)),
+	// A direct-child `<form>` that itself wraps a header / footer is the
+	// passthrough below (flex-column, no scroll) — NOT a body slot. Excluding
+	// it here keeps it from becoming a second scroll container on top of its
+	// own inner body slot (which produced a stray scrollbar on a short form in
+	// a `header` + `form`-with-`footer` hybrid).
+	dialog:where(:has(> :is(header, footer)))
+		> :not(:where(header, footer, form:has(> :is(header, footer)))),
 	dialog:where(:has(> form > :is(header, footer))) > form > :not(:where(header, footer)) {
 		flex: 1 1 auto;
 		min-block-size: 0;

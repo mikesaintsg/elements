@@ -110,6 +110,30 @@
 	}
 
 	// --------------------------------------------------------------------------
+	// .tiles — responsive auto-fit grid. The fourth spacing-shape primitive:
+	// where `.stack` / `.cluster` flow on one axis, `.tiles` lays children out
+	// in equal columns that reflow by available width — no per-breakpoint
+	// column counts. Stat-card rows, feature grids, pricing tables, gallery
+	// tiles. Distinct from Tailwind's low-level `.grid` (which only sets
+	// `display: grid`): `.tiles` ships the opinionated auto-fit track sizing.
+	//
+	//   --set-tiles-min — the minimum comfortable column width before wrap
+	//                     (default 16rem). The `min(…, 100%)` guard keeps a
+	//                     single tile from overflowing a viewport narrower
+	//                     than `--set-tiles-min`.
+	//   --set-tiles-gap — gutter between tiles (defaults to the cluster rhythm
+	//                     so chip rows and tile grids share spacing).
+	// --------------------------------------------------------------------------
+	div.tiles {
+		--set-tiles-min: 16rem;
+		--set-tiles-gap: var(--set-cluster-spacing, calc(var(--spacing) * 4));
+
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(var(--set-tiles-min), 100%), 1fr));
+		gap: var(--set-tiles-gap);
+	}
+
+	// --------------------------------------------------------------------------
 	// .scrollable — generic horizontal-scroll wrapper.
 	//
 	// Element-agnostic wrapper for content too wide for the viewport.
