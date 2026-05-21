@@ -157,6 +157,26 @@
 			);
 		}
 
+		// Toggle / segmented SELECTED state — `aria-pressed="true"`.
+		//
+		// A toggle button (segmented control, toolbar toggle, view switcher)
+		// needs a clear SELECTED affordance — without it the chosen segment
+		// falls back to the faint generic `.active` press tint, which doesn't
+		// read as "this is chosen." Paints the variant FILLED tier (saturated
+		// fill + on-fill text) so the selected segment lifts ABOVE its quiet
+		// neighbours: pair `aria-pressed` with `.subtle` (or bare) buttons in a
+		// `[role="group"]` and the chosen segment fills its variant while the
+		// rest stay tinted/quiet — the canonical bordered segmented-control
+		// shape (Bootstrap `.btn-group .active`). Bare (variant-less) toggles
+		// fall back to a neutral raised surface + strong text so a lone toggle
+		// still reads as pressed. Placed after `:active` / `.active` so the
+		// persistent selected state wins over the transient press tint.
+		&[aria-pressed='true'] {
+			color: var(--set-variant-color, var(--color-text-strong, currentColor));
+			background-color: var(--set-variant-background-color, var(--color-surface-raised));
+			border-color: var(--set-variant-border-color, var(--color-border));
+		}
+
 		&:focus-visible {
 			outline: none;
 			box-shadow: var(--set-button-focus-box-shadow);

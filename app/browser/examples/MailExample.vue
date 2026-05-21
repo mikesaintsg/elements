@@ -522,6 +522,9 @@ onUnmounted(() => {
  * layout primitive.
  * ──────────────────────────────────────────────────────────────────── */
 .mail-main {
+	/* Shared top-band height for both inner panes' headers so their bottom
+	 * dividers line up across the two-pane grid. */
+	--mail-pane-header-height: 4.25rem;
 	display: grid;
 	grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
 	grid-template-rows: minmax(0, 1fr);
@@ -554,12 +557,16 @@ onUnmounted(() => {
 	}
 }
 
-/* Thread list header — folder name + count + toolbar. Tight band height. */
+/* Thread list header — folder name + count + toolbar. Shares the
+ * `--mail-pane-header-height` band height with the reading-pane header so
+ * the two main-pane top bands (and their bottom dividers) line up across
+ * the inner two-pane grid. */
 .mail-list-header {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	padding: 0.75rem 1rem;
+	min-block-size: var(--mail-pane-header-height, 4rem);
+	padding: 0.5rem 1rem;
 	border-block-end: 1px solid var(--color-border);
 	background-color: var(--color-surface);
 	flex-shrink: 0;
@@ -727,12 +734,22 @@ onUnmounted(() => {
 	}
 }
 
-/* Reading pane header — subject, sender, date, tag. */
+/* Reading pane header — subject, sender, date, tag. Same band height as
+ * the thread-list header (see `--mail-pane-header-height`) so the two
+ * main-pane top bands align; content vertically centered. */
 .mail-reading-header {
-	padding: 1.25rem 1.5rem;
+	display: flex;
+	align-items: center;
+	min-block-size: var(--mail-pane-header-height, 4rem);
+	padding: 0.5rem 1.5rem;
 	border-block-end: 1px solid var(--color-border);
 	background-color: var(--color-surface);
 	flex-shrink: 0;
+}
+
+.mail-reading-header > .mail-reading-hgroup {
+	flex: 1;
+	min-inline-size: 0;
 }
 
 .mail-reading-hgroup {

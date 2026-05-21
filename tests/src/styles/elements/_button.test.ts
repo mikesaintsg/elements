@@ -121,6 +121,28 @@ describe('button — variant modifiers', () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  Toggle / segmented selected state — `aria-pressed="true"` fills with the
+//  variant so a segmented control's chosen segment lifts above its quiet
+//  `.subtle` neighbours out of the box (no per-consumer selected styling).
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('button — toggle (aria-pressed) selected state', () => {
+	it('aria-pressed="true" on a .secondary.subtle button fills with the variant color', () => {
+		const btn = render('button', 'secondary subtle')
+		btn.setAttribute('aria-pressed', 'true')
+		const filled = style(document.documentElement, '--color-secondary').trim()
+		expect(colorEqual(filled, style(btn, 'background-color'), 4)).toBe(true)
+	})
+
+	it('aria-pressed="false" leaves the .subtle button unfilled (quiet)', () => {
+		const btn = render('button', 'secondary subtle')
+		btn.setAttribute('aria-pressed', 'false')
+		const filled = style(document.documentElement, '--color-secondary').trim()
+		expect(colorEqual(filled, style(btn, 'background-color'), 4)).toBe(false)
+	})
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  Size cascade — .small / .large change padding + font-size + radius.
 // ─────────────────────────────────────────────────────────────────────────────
 

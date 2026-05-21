@@ -203,8 +203,10 @@ const handleSubmit = (): void => {
 							<span>Keep me signed in for 30 days</span>
 						</label>
 
-						<!-- Submit button with loading state -->
-						<button type="submit" class="primary w-full" :disabled="loading">
+						<!-- Submit button — the framework `.loading` state auto-shrinks the
+						     child `.spinner` to 1em + contrast color (button.loading > .spinner),
+						     so the inline spinner is proportioned to the label out of the box. -->
+						<button type="submit" class="primary w-full" :class="{ loading }" :disabled="loading">
 							<template v-if="!loading">
 								<!-- TODO icon swap — chevron-right stands in for missing 'box-arrow-in-right' -->
 								<i

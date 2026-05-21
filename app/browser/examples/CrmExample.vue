@@ -678,15 +678,14 @@ const noteText = ref('')
 							<div class="crm-form-field">
 								<label>{{ turn.form.toneLabel }}</label>
 								<!-- Segmented control via the framework `[role="group"]` chrome —
-								     `.secondary` paints the outline + border the overlap needs;
-								     the chosen tone lifts via the framework `.active` state. -->
+								     `.secondary subtle` paints quiet tinted segments; the chosen
+								     tone fills via the framework `aria-pressed` toggle state. -->
 								<div role="group" :aria-label="turn.form.toneLabel">
 									<button
 										v-for="opt in turn.form.toneOptions"
 										:key="opt"
 										type="button"
-										class="secondary small"
-										:class="{ active: opt === turn.form.toneActive }"
+										class="secondary subtle small"
 										:aria-pressed="opt === turn.form.toneActive"
 									>
 										{{ opt }}

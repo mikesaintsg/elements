@@ -372,17 +372,16 @@ onUnmounted(() => {
 				<p>Here's what's happened across your workspace this {{ range }}.</p>
 			</hgroup>
 			<!-- Segmented control — `<div role="group">` gives the framework's
-			     overlapping-border button-group chrome; `.secondary` paints the
-			     outline + supplies the `--set-variant-border-width: 1px` the
-			     overlap needs, and the active segment lifts via the framework
-			     `.active` button state. No scoped CSS. -->
+			     overlapping-border button-group chrome; `.secondary subtle`
+			     paints quiet tinted segments (and the border-width the overlap
+			     needs), and `aria-pressed` fills the chosen segment via the
+			     framework's toggle-selected state. No scoped CSS. -->
 			<div role="group" aria-label="Date range">
 				<button
 					v-for="r in ['7d', '30d', '90d'] as const"
 					:key="r"
 					type="button"
-					class="secondary small"
-					:class="{ active: range === r }"
+					class="secondary subtle small"
 					:aria-pressed="range === r"
 					@click="range = r"
 				>
