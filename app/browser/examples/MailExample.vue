@@ -244,9 +244,12 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 				class="flex flex-col lg:overflow-hidden lg:h-full lg:border-e"
 				style="border-color: var(--color-border)"
 			>
+				<!-- Fixed-height header band; same min-block-size as the reading
+				     pane's header so the two bottom dividers line up into one
+				     continuous rule across the panes. -->
 				<header
-					class="flex flex-wrap items-center justify-between gap-4 px-4 py-3 border-b"
-					style="border-color: var(--color-border)"
+					class="flex items-center px-4 border-b"
+					style="border-color: var(--color-border); min-block-size: 4.5rem"
 				>
 					<hgroup>
 						<h2 class="text-base m-0">Inbox</h2>
@@ -290,29 +293,30 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 				aria-label="Conversation"
 				class="flex flex-col lg:overflow-hidden lg:h-full"
 			>
+				<!-- Compact header band, same min-block-size as the list header so
+				     the bottom dividers align across the panes. Subject + a
+				     one-line sender · time · tag meta (no avatar) keeps it to two
+				     lines, matching the list header's height. -->
 				<header
-					class="flex flex-col gap-3 px-6 py-4 border-b"
-					style="border-color: var(--color-border)"
+					class="flex items-center gap-2 px-6 border-b"
+					style="border-color: var(--color-border); min-block-size: 4.5rem"
 				>
-					<div class="cluster">
-						<button
-							v-if="isMobile"
-							type="button"
-							class="subtle compact"
-							aria-label="Back to list"
-							@click="mobileView = 'list'"
-						>
-							<i class="icon chevron-left" aria-hidden="true"></i>
-						</button>
-						<h2 class="fluid m-0">{{ selected.subject }}</h2>
-						<span class="badge" :class="selected.variant">{{ selected.tag }}</span>
-					</div>
-					<div class="cluster">
-						<span class="avatar" aria-hidden="true">{{ selected.initials }}</span>
-						<span class="flex flex-col leading-tight">
+					<button
+						v-if="isMobile"
+						type="button"
+						class="subtle compact"
+						aria-label="Back to list"
+						@click="mobileView = 'list'"
+					>
+						<i class="icon chevron-left" aria-hidden="true"></i>
+					</button>
+					<div class="flex flex-col gap-1 fluid min-w-0">
+						<h2 class="text-lg m-0 truncate">{{ selected.subject }}</h2>
+						<div class="flex flex-wrap items-center gap-2">
 							<strong>{{ selected.from }}</strong>
-							<small class="muted">to me · {{ selected.time }}</small>
-						</span>
+							<small class="muted">· {{ selected.time }}</small>
+							<span class="badge" :class="selected.variant">{{ selected.tag }}</span>
+						</div>
 					</div>
 				</header>
 
