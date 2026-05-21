@@ -225,15 +225,14 @@ onUnmounted(() => {
 		</menu>
 
 		<!-- Account band — <footer> inside body-shell <nav> picks up the
-		     framework's drawer/rail footer chrome (divider, top border).
-		     `mt-0` overrides the framework's `margin-block-start: auto`
-		     drawer-footer default so the account info flows naturally
-		     below the workspaces instead of being pushed to the bottom
-		     of the drawer (which leaves a large dead gap when the nav
-		     has few items). For a desktop-only persistent rail you'd
-		     leave the auto-margin in place; the dashboard's drawer is
-		     mostly used on mobile where compact reads better. -->
-		<footer class="mt-0">
+		     framework's drawer/rail footer chrome (divider, top border,
+		     pinned bottom via `margin-block-start: auto`). The menus +
+		     h6 above use `flex: 0 0 auto` (scoped CSS below) so they
+		     flow at natural height; the footer's auto-margin takes the
+		     remaining vertical space and pushes the account row to the
+		     bottom of the drawer (conventional sidebar shape — Slack /
+		     Discord / Linear). -->
+		<footer>
 			<span class="mark account-mark" aria-hidden="true">MS</span>
 			<span class="flex flex-col leading-tight">
 				<strong>Mike Saint</strong>
