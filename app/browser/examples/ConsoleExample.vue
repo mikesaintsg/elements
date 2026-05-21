@@ -219,7 +219,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 	>
 		<header>
 			<span class="avatar square primary" aria-hidden="true">E</span>
-			<strong class="flex-1">Elements</strong>
+			<strong class="fluid">Elements</strong>
 			<button
 				v-if="isMobile"
 				type="button"
@@ -228,7 +228,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 				popovertarget="console-rail"
 				popovertargetaction="hide"
 			>
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				<i class="icon close" aria-hidden="true"></i>
 			</button>
 		</header>
 
@@ -255,10 +255,10 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 			<span class="avatar" aria-hidden="true">MS</span>
 			<span class="flex flex-col flex-1 leading-tight">
 				<strong>Mike Saint</strong>
-				<small style="color: var(--color-text-subtle)">mike@acme.dev</small>
+				<small class="muted">mike@acme.dev</small>
 			</span>
 			<button type="button" class="subtle compact" aria-label="Account settings">
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-system)"></i>
+				<i class="icon system" aria-hidden="true"></i>
 			</button>
 		</footer>
 	</nav>
@@ -272,7 +272,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 			aria-label="Open menu"
 			popovertarget="console-rail"
 		>
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
+			<i class="icon menu" aria-hidden="true"></i>
 		</button>
 		<search class="flex-1 max-w-md">
 			<label>
@@ -283,19 +283,19 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 		<menu role="toolbar" aria-label="Console actions" class="hidden sm:flex">
 			<li>
 				<button type="button" class="subtle">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+					<i class="icon filter" aria-hidden="true"></i>
 					Filter
 				</button>
 			</li>
 			<li>
 				<button type="button" class="subtle">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
+					<i class="icon sort" aria-hidden="true"></i>
 					Sort
 				</button>
 			</li>
 		</menu>
 		<button type="button" class="primary">
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+			<i class="icon plus" aria-hidden="true"></i>
 			<span class="hidden sm:inline">New invoice</span>
 		</button>
 		<button
@@ -305,7 +305,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 			aria-label="Open activity"
 			popovertarget="console-activity"
 		>
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
+			<i class="icon more" aria-hidden="true"></i>
 		</button>
 	</header>
 
@@ -313,9 +313,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 	<main>
 		<header class="flex flex-wrap items-end justify-between gap-4">
 			<hgroup>
-				<p class="text-xs uppercase tracking-wide m-0" style="color: var(--color-text-subtle)">
-					Dashboard
-				</p>
+				<p class="text-xs uppercase tracking-wide m-0 muted">Dashboard</p>
 				<h1>Overview</h1>
 				<p>{{ subtitle }}</p>
 			</hgroup>
@@ -341,16 +339,16 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 			     width. -->
 			<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 				<article v-for="stat in stats" :key="stat.label" class="small">
-					<p class="text-sm m-0" style="color: var(--color-text-subtle)">{{ stat.label }}</p>
+					<p class="text-sm m-0 muted">{{ stat.label }}</p>
 					<strong class="text-3xl">{{ stat.value }}</strong>
-					<div class="cluster items-center">
+					<div class="cluster">
 						<span class="badge" :class="stat.variant"
 							><span aria-hidden="true">{{ stat.arrow }}</span> {{ stat.delta }}</span
 						>
-						<small style="color: var(--color-text-subtle)">{{ stat.goal }}</small>
+						<small class="muted">{{ stat.goal }}</small>
 					</div>
 					<meter
-						class="w-full"
+						class="fill"
 						:value="stat.meter"
 						min="0"
 						max="100"
@@ -366,7 +364,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 					<h2>Revenue trajectory</h2>
 					<p>Daily gross, cohort-adjusted.</p>
 				</hgroup>
-				<div class="cluster items-center ms-auto">
+				<div class="cluster ms-auto">
 					<span class="flex items-center gap-2 flex-nowrap">
 						<span class="dot primary" aria-hidden="true"></span>
 						<small>Revenue</small>
@@ -390,7 +388,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 					<div
 						v-for="(bar, i) in chart"
 						:key="i"
-						class="flex-1 rounded-t-sm"
+						class="fluid rounded-t-sm"
 						:style="`height: ${bar.value}%; background-color: var(--color-${
 							bar.forecast ? 'information' : 'primary'
 						}); opacity: ${bar.forecast ? 0.55 : 1}`"
@@ -439,7 +437,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 		aria-label="Activity"
 	>
 		<header>
-			<strong class="flex-1">Activity</strong>
+			<strong class="fluid">Activity</strong>
 			<button
 				v-if="isMobile"
 				type="button"
@@ -448,7 +446,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 				popovertarget="console-activity"
 				popovertargetaction="hide"
 			>
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				<i class="icon close" aria-hidden="true"></i>
 			</button>
 		</header>
 
@@ -464,7 +462,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 					<span
 						><strong>{{ entry.who }}</strong> {{ entry.action }}</span
 					>
-					<small style="color: var(--color-text-subtle)">{{ entry.when }}</small>
+					<small class="muted">{{ entry.when }}</small>
 				</span>
 			</div>
 		</div>
@@ -472,13 +470,13 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 		<article class="small information subtle">
 			<p class="text-sm m-0">Storage</p>
 			<strong>61.4 GB of 100 GB</strong>
-			<meter class="w-full" value="61" min="0" max="100" aria-label="Storage: 61% used"></meter>
+			<meter class="fill" value="61" min="0" max="100" aria-label="Storage: 61% used"></meter>
 		</article>
 	</aside>
 
 	<!-- Status bar. -->
 	<footer>
-		<small style="color: var(--color-text-subtle)">All systems operational</small>
+		<small class="muted">All systems operational</small>
 		<span class="badge success ms-auto">v2.4.0</span>
 		<a href="#">Docs</a>
 		<a href="#">Support</a>

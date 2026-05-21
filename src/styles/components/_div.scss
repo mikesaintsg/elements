@@ -228,6 +228,10 @@
 	div.split.flip > :last-child {
 		flex-grow: 1;
 		flex-basis: var(--set-split-size);
+		// Reset the base `:last-child` content-min — in `.flip` the last child
+		// is the SIDEBAR, which must size to its basis, not demand 60%. Without
+		// this both panes would claim the content-min and never sit side-by-side.
+		min-inline-size: 0;
 	}
 
 	// --------------------------------------------------------------------------

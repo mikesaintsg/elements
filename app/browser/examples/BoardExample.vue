@@ -210,11 +210,11 @@ const setHost =
 		<span class="avatar square primary" aria-hidden="true">B</span>
 		<strong class="flex-1">Sprint 24 board</strong>
 		<button type="button" class="subtle">
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+			<i class="icon filter" aria-hidden="true"></i>
 			Filter
 		</button>
 		<button type="button" class="primary">
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+			<i class="icon plus" aria-hidden="true"></i>
 			New card
 		</button>
 	</header>
@@ -243,12 +243,12 @@ const setHost =
 				>
 					<li v-for="(card, index) in column.list.value" :key="card.id" :data-index="index">
 						<article class="small" style="cursor: grab">
-							<div class="cluster items-center justify-between flex-nowrap">
+							<div class="cluster between flex-nowrap">
 								<span class="badge" :class="card.variant">{{ card.tag }}</span>
-								<small style="color: var(--color-text-subtle)">{{ card.id.toUpperCase() }}</small>
+								<small class="muted">{{ card.id.toUpperCase() }}</small>
 							</div>
 							<p class="m-0">{{ card.title }}</p>
-							<div class="cluster items-center justify-between flex-nowrap">
+							<div class="cluster between flex-nowrap">
 								<span class="avatar small" aria-hidden="true">{{ card.assignee }}</span>
 								<span class="badge secondary subtle">{{ card.points }} pts</span>
 							</div>
@@ -256,8 +256,8 @@ const setHost =
 					</li>
 				</ul>
 
-				<button type="button" class="subtle compact w-full">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+				<button type="button" class="subtle compact fill">
+					<i class="icon plus" aria-hidden="true"></i>
 					Add card
 				</button>
 			</section>

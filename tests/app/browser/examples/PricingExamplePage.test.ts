@@ -46,7 +46,7 @@ describe('PricingExamplePage — composition vocabulary', () => {
 		try {
 			const planCards = host.querySelectorAll('#pricing article')
 			expect(planCards.length).toBe(3)
-			expect(host.querySelector('#pricing article footer a.w-full')).not.toBeNull()
+			expect(host.querySelector('#pricing article footer a.fill')).not.toBeNull()
 		} finally {
 			teardown()
 		}

@@ -35,13 +35,11 @@ const related = [
 
 <template>
 	<main>
-		<div class="grid lg:grid-cols-[minmax(0,1fr)_18rem] gap-x-12 gap-y-10 w-full">
+		<div class="split flip" style="--set-split-gap: 3rem">
 			<!-- ── Article column ──────────────────────────────────────────── -->
 			<article class="flush">
 				<hgroup>
-					<p class="text-xs uppercase tracking-wide m-0" style="color: var(--color-text-subtle)">
-						Engineering · 6 min read
-					</p>
+					<p class="text-xs uppercase tracking-wide m-0 muted">Engineering · 6 min read</p>
 					<h1>Designing with the grain</h1>
 					<p>
 						Why the most maintainable component is the one you never wrote — and how semantic HTML
@@ -49,12 +47,12 @@ const related = [
 					</p>
 				</hgroup>
 
-				<div class="cluster items-center justify-between">
-					<div class="cluster items-center">
+				<div class="cluster between">
+					<div class="cluster">
 						<span class="avatar" aria-hidden="true">AL</span>
 						<span class="flex flex-col leading-tight">
 							<strong>Ada Lovelace</strong>
-							<small style="color: var(--color-text-subtle)">
+							<small class="muted">
 								Published <time datetime="2026-05-21">May 21, 2026</time>
 							</small>
 						</span>
@@ -216,17 +214,17 @@ const related = [
 				class="flex flex-col gap-4 lg:sticky lg:top-0 lg:self-start lg:max-h-[calc(100dvh-4rem)] lg:overflow-y-auto"
 			>
 				<article class="small">
-					<div class="cluster items-center">
+					<div class="cluster">
 						<span class="avatar large" aria-hidden="true">AL</span>
 						<span class="flex flex-col leading-tight">
 							<strong>Ada Lovelace</strong>
-							<small style="color: var(--color-text-subtle)">Compiler poet</small>
+							<small class="muted">Compiler poet</small>
 						</span>
 					</div>
 					<p class="text-sm">
 						Writes about language design, type systems, and the craft of restraint.
 					</p>
-					<a href="#" class="primary subtle small w-full">Follow</a>
+					<a href="#" class="primary subtle small fill">Follow</a>
 				</article>
 
 				<article class="small">
@@ -271,7 +269,7 @@ const related = [
 							<span class="sr-only">Email</span>
 							<input type="email" placeholder="you@example.com" required />
 						</label>
-						<button type="submit" class="primary small w-full">Subscribe</button>
+						<button type="submit" class="primary small fill">Subscribe</button>
 					</form>
 				</article>
 			</aside>

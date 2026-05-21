@@ -163,19 +163,19 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 				popovertarget="mail-rail"
 				popovertargetaction="hide"
 			>
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				<i class="icon close" aria-hidden="true"></i>
 			</button>
 		</header>
 
-		<button type="button" class="primary w-full">
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+		<button type="button" class="primary fill">
+			<i class="icon plus" aria-hidden="true"></i>
 			Compose
 		</button>
 
 		<menu>
 			<li v-for="folder in folders" :key="folder.label">
 				<a href="#" :aria-current="folder.current ? 'page' : undefined">
-					<i class="icon" aria-hidden="true" :style="`--icon: var(--set-icon-${folder.icon})`"></i>
+					<i class="icon" :class="folder.icon" aria-hidden="true"></i>
 					{{ folder.label }}
 					<span v-if="folder.count" class="badge ms-auto">{{ folder.count }}</span>
 				</a>
@@ -186,7 +186,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 			<span class="avatar" aria-hidden="true">MS</span>
 			<span class="flex flex-col flex-1 leading-tight">
 				<strong>Mike Saint</strong>
-				<small style="color: var(--color-text-subtle)">5.2 GB of 15 GB</small>
+				<small class="muted">5.2 GB of 15 GB</small>
 			</span>
 		</footer>
 	</nav>
@@ -200,7 +200,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 			aria-label="Open folders"
 			popovertarget="mail-rail"
 		>
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
+			<i class="icon menu" aria-hidden="true"></i>
 		</button>
 		<search class="flex-1 max-w-md">
 			<label>
@@ -211,13 +211,13 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 		<menu role="toolbar" aria-label="Mailbox actions" class="hidden sm:flex">
 			<li>
 				<button type="button" class="subtle">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+					<i class="icon filter" aria-hidden="true"></i>
 					Filter
 				</button>
 			</li>
 			<li>
 				<button type="button" class="subtle">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
+					<i class="icon sort" aria-hidden="true"></i>
 					Sort
 				</button>
 			</li>
@@ -226,7 +226,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 
 	<!-- Two panes: message list + reading pane. -->
 	<main>
-		<div class="grid lg:grid-cols-[22rem_minmax(0,1fr)] gap-4 w-full lg:h-full lg:overflow-hidden">
+		<div class="split lg:h-full lg:overflow-hidden" style="--set-split-size: 22rem">
 			<!-- Message list -->
 			<section
 				v-show="showList"
@@ -243,21 +243,19 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 					<li v-for="message in messages" :key="message.id">
 						<button
 							type="button"
-							class="flat w-full text-start"
+							class="flat fill text-start"
 							:aria-current="message.id === selectedId ? 'true' : undefined"
 							@click="open(message.id)"
 						>
-							<span class="flex gap-3 items-start w-full">
+							<span class="flex gap-3 items-start fill">
 								<span class="avatar" aria-hidden="true">{{ message.initials }}</span>
 								<span class="flex flex-col flex-1 leading-tight min-w-0">
 									<span class="flex gap-2 items-baseline justify-between flex-nowrap">
 										<strong class="truncate">{{ message.from }}</strong>
-										<small style="color: var(--color-text-subtle)">{{ message.time }}</small>
+										<small class="muted">{{ message.time }}</small>
 									</span>
 									<span class="truncate">{{ message.subject }}</span>
-									<small class="truncate" style="color: var(--color-text-subtle)">{{
-										message.preview
-									}}</small>
+									<small class="truncate muted">{{ message.preview }}</small>
 									<span class="flex flex-wrap gap-2 items-center">
 										<span class="badge" :class="message.variant">{{ message.tag }}</span>
 										<span v-if="message.unread" class="dot primary" aria-hidden="true"></span>
@@ -272,7 +270,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 			<!-- Reading pane -->
 			<article v-show="showMessage" aria-label="Conversation" class="lg:overflow-y-auto lg:h-full">
 				<header class="flex flex-col gap-2">
-					<div class="cluster items-center">
+					<div class="cluster">
 						<button
 							v-if="isMobile"
 							type="button"
@@ -280,16 +278,16 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 							aria-label="Back to list"
 							@click="mobileView = 'list'"
 						>
-							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-left)"></i>
+							<i class="icon chevron-left" aria-hidden="true"></i>
 						</button>
 						<h2 class="flex-1 m-0">{{ selected.subject }}</h2>
 						<span class="badge" :class="selected.variant">{{ selected.tag }}</span>
 					</div>
-					<div class="cluster items-center">
+					<div class="cluster">
 						<span class="avatar" aria-hidden="true">{{ selected.initials }}</span>
 						<span class="flex flex-col leading-tight">
 							<strong>{{ selected.from }}</strong>
-							<small style="color: var(--color-text-subtle)">to me · {{ selected.time }}</small>
+							<small class="muted">to me · {{ selected.time }}</small>
 						</span>
 					</div>
 				</header>
@@ -298,12 +296,12 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 
 				<footer class="flex flex-wrap gap-2">
 					<button type="button" class="primary">
-						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-left)"></i>
+						<i class="icon chevron-left" aria-hidden="true"></i>
 						Reply
 					</button>
 					<button type="button" class="subtle">Reply all</button>
 					<button type="button" class="subtle">
-						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+						<i class="icon external" aria-hidden="true"></i>
 						Forward
 					</button>
 				</footer>

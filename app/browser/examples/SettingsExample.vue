@@ -95,9 +95,9 @@ const sessions: readonly Session[] = [
 			aria-label="Open sections"
 			popovertarget="settings-rail"
 		>
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
+			<i class="icon menu" aria-hidden="true"></i>
 		</button>
-		<strong class="flex-1">Settings</strong>
+		<strong class="fluid">Settings</strong>
 		<button type="button" class="subtle" @click="form.reset()">Reset</button>
 		<button type="button" class="primary" @click="save">Save changes</button>
 	</header>
@@ -112,7 +112,7 @@ const sessions: readonly Session[] = [
 		aria-label="Settings sections"
 	>
 		<header v-if="isMobile">
-			<strong class="flex-1">Sections</strong>
+			<strong class="fluid">Sections</strong>
 			<button
 				type="button"
 				class="subtle compact"
@@ -120,7 +120,7 @@ const sessions: readonly Session[] = [
 				popovertarget="settings-rail"
 				popovertargetaction="hide"
 			>
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				<i class="icon close" aria-hidden="true"></i>
 			</button>
 		</header>
 		<menu>
@@ -131,11 +131,9 @@ const sessions: readonly Session[] = [
 	</nav>
 
 	<main>
-		<div class="stack w-full">
+		<div class="stack fill">
 			<hgroup>
-				<p class="text-xs uppercase tracking-wide m-0" style="color: var(--color-text-subtle)">
-					Account
-				</p>
+				<p class="text-xs uppercase tracking-wide m-0 muted">Account</p>
 				<h1>Settings</h1>
 				<p>Manage your profile, sign-in, and notification preferences.</p>
 			</hgroup>
@@ -154,7 +152,7 @@ const sessions: readonly Session[] = [
 						</hgroup>
 					</header>
 
-					<div class="cluster items-center">
+					<div class="cluster">
 						<span class="avatar large" aria-hidden="true">MS</span>
 						<label>
 							<span class="sr-only">Profile photo</span>
@@ -203,9 +201,7 @@ Designer, builder, occasional typographer.</textarea
 					<label>
 						Email
 						<input type="email" name="email" value="mike@acme.dev" required autocomplete="email" />
-						<small style="color: var(--color-text-subtle)"
-							>We'll send a confirmation if this changes.</small
-						>
+						<small class="muted">We'll send a confirmation if this changes.</small>
 					</label>
 
 					<div class="grid sm:grid-cols-2 gap-4">
@@ -220,9 +216,7 @@ Designer, builder, occasional typographer.</textarea
 								pattern="[a-z0-9_]+"
 								autocomplete="username"
 							/>
-							<small style="color: var(--color-text-subtle)"
-								>Lowercase letters, numbers, underscore.</small
-							>
+							<small class="muted">Lowercase letters, numbers, underscore.</small>
 						</label>
 						<label>
 							Language
@@ -260,15 +254,15 @@ Designer, builder, occasional typographer.</textarea
 					<fieldset>
 						<legend>Channels</legend>
 						<div class="stack">
-							<div class="cluster items-center justify-between flex-nowrap">
+							<div class="cluster between flex-nowrap">
 								<label for="sw-news">Product news &amp; tips</label>
 								<input id="sw-news" type="checkbox" role="switch" name="news" checked />
 							</div>
-							<div class="cluster items-center justify-between flex-nowrap">
+							<div class="cluster between flex-nowrap">
 								<label for="sw-digest">Weekly activity digest</label>
 								<input id="sw-digest" type="checkbox" role="switch" name="digest" checked />
 							</div>
-							<div class="cluster items-center justify-between flex-nowrap">
+							<div class="cluster between flex-nowrap">
 								<label for="sw-security">Security alerts</label>
 								<input
 									id="sw-security"
@@ -285,15 +279,15 @@ Designer, builder, occasional typographer.</textarea
 					<fieldset>
 						<legend>Digest frequency</legend>
 						<div class="cluster">
-							<div class="cluster items-center">
+							<div class="cluster">
 								<input id="freq-daily" type="radio" name="freq" value="daily" />
 								<label for="freq-daily">Daily</label>
 							</div>
-							<div class="cluster items-center">
+							<div class="cluster">
 								<input id="freq-weekly" type="radio" name="freq" value="weekly" checked />
 								<label for="freq-weekly">Weekly</label>
 							</div>
-							<div class="cluster items-center">
+							<div class="cluster">
 								<input id="freq-never" type="radio" name="freq" value="never" />
 								<label for="freq-never">Never</label>
 							</div>
@@ -313,15 +307,15 @@ Designer, builder, occasional typographer.</textarea
 					<fieldset>
 						<legend>Theme</legend>
 						<div class="cluster">
-							<div class="cluster items-center">
+							<div class="cluster">
 								<input id="theme-system" type="radio" name="theme" value="system" checked />
 								<label for="theme-system">System</label>
 							</div>
-							<div class="cluster items-center">
+							<div class="cluster">
 								<input id="theme-light" type="radio" name="theme" value="light" />
 								<label for="theme-light">Light</label>
 							</div>
-							<div class="cluster items-center">
+							<div class="cluster">
 								<input id="theme-dark" type="radio" name="theme" value="dark" />
 								<label for="theme-dark">Dark</label>
 							</div>
@@ -337,10 +331,10 @@ Designer, builder, occasional typographer.</textarea
 						max="2"
 						step="1"
 						value="1"
-						class="w-full"
+						class="fill"
 					/>
 
-					<div class="cluster items-center justify-between flex-nowrap">
+					<div class="cluster between flex-nowrap">
 						<label for="accent">Accent color</label>
 						<input id="accent" type="color" name="accent" value="#4f46e5" />
 					</div>
@@ -355,7 +349,7 @@ Designer, builder, occasional typographer.</textarea
 						</hgroup>
 					</header>
 
-					<div class="cluster items-center justify-between flex-nowrap">
+					<div class="cluster between flex-nowrap">
 						<label for="sw-2fa">Two-factor authentication</label>
 						<input id="sw-2fa" type="checkbox" role="switch" name="twofa" checked />
 					</div>

@@ -133,12 +133,12 @@ const docs: readonly Doc[] = [
 				popovertarget="crm-rail"
 				popovertargetaction="hide"
 			>
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				<i class="icon close" aria-hidden="true"></i>
 			</button>
 		</header>
 
-		<button type="button" class="primary w-full">
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+		<button type="button" class="primary fill">
+			<i class="icon plus" aria-hidden="true"></i>
 			New chat
 		</button>
 
@@ -146,10 +146,10 @@ const docs: readonly Doc[] = [
 		<menu>
 			<li v-for="item in pinned" :key="item.label">
 				<a href="#">
-					<i class="icon" aria-hidden="true" :style="`--icon: var(--set-icon-${item.icon})`"></i>
+					<i class="icon" :class="item.icon" aria-hidden="true"></i>
 					<span class="flex flex-col leading-tight">
 						<strong>{{ item.label }}</strong>
-						<small style="color: var(--color-text-subtle)">{{ item.meta }}</small>
+						<small class="muted">{{ item.meta }}</small>
 					</span>
 				</a>
 			</li>
@@ -159,7 +159,7 @@ const docs: readonly Doc[] = [
 		<menu>
 			<li v-for="item in recent" :key="item.label">
 				<a href="#" :aria-current="item.current ? 'page' : undefined">
-					<i class="icon" aria-hidden="true" :style="`--icon: var(--set-icon-${item.icon})`"></i>
+					<i class="icon" :class="item.icon" aria-hidden="true"></i>
 					{{ item.label }}
 					<span v-if="item.count" class="badge ms-auto">{{ item.count }}</span>
 				</a>
@@ -176,7 +176,7 @@ const docs: readonly Doc[] = [
 			aria-label="Open context"
 			popovertarget="crm-rail"
 		>
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
+			<i class="icon menu" aria-hidden="true"></i>
 		</button>
 		<search class="flex-1 max-w-lg">
 			<label>
@@ -185,7 +185,7 @@ const docs: readonly Doc[] = [
 			</label>
 		</search>
 		<button type="button" class="primary">
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-system)"></i>
+			<i class="icon system" aria-hidden="true"></i>
 			Ask
 		</button>
 		<button
@@ -195,7 +195,7 @@ const docs: readonly Doc[] = [
 			aria-label="Open documents"
 			popovertarget="crm-docs"
 		>
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
+			<i class="icon more" aria-hidden="true"></i>
 		</button>
 	</header>
 
@@ -203,7 +203,7 @@ const docs: readonly Doc[] = [
 	<main>
 		<header class="flex flex-wrap items-center justify-between gap-4">
 			<hgroup>
-				<p class="text-xs uppercase tracking-wide m-0" style="color: var(--color-text-subtle)">
+				<p class="text-xs uppercase tracking-wide m-0 muted">
 					Conversation · 7 turns · linked to Acme Corp
 				</p>
 				<h1 class="text-xl">Why is Acme stalling?</h1>
@@ -217,10 +217,8 @@ const docs: readonly Doc[] = [
 					<span class="flex gap-2 items-center flex-nowrap w-full">
 						<span class="dot" :class="turn.variant" aria-hidden="true"></span>
 						<strong>{{ turn.label }}</strong>
-						<small style="color: var(--color-text-subtle)">{{ turn.time }}</small>
-						<small class="truncate flex-1" style="color: var(--color-text-subtle)">{{
-							turn.summary
-						}}</small>
+						<small class="muted">{{ turn.time }}</small>
+						<small class="truncate fluid muted">{{ turn.summary }}</small>
 					</span>
 				</summary>
 				<p class="m-0">{{ turn.body }}</p>
@@ -228,13 +226,11 @@ const docs: readonly Doc[] = [
 
 			<!-- Inline confirm card — the agent paused for a decision. -->
 			<article class="warning subtle small">
-				<div class="cluster items-center flex-nowrap">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-warning)"></i>
+				<div class="cluster flex-nowrap">
+					<i class="icon warning" aria-hidden="true"></i>
 					<span class="flex flex-col flex-1 leading-tight">
 						<strong>Confirm next step</strong>
-						<small style="color: var(--color-text-subtle)"
-							>Draft the TCO email to the CFO and a nudge to the champion?</small
-						>
+						<small class="muted">Draft the TCO email to the CFO and a nudge to the champion?</small>
 					</span>
 				</div>
 				<div class="cluster">
@@ -254,12 +250,10 @@ const docs: readonly Doc[] = [
 					placeholder="Reply to the agent — ⌘/Ctrl + Enter to send"
 				></textarea>
 			</label>
-			<div class="cluster items-center justify-between">
-				<small style="color: var(--color-text-subtle)"
-					>Replies stream into the same chat entry.</small
-				>
+			<div class="cluster between">
+				<small class="muted">Replies stream into the same chat entry.</small>
 				<button type="submit" class="primary">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+					<i class="icon external" aria-hidden="true"></i>
 					Send
 				</button>
 			</div>
@@ -278,30 +272,30 @@ const docs: readonly Doc[] = [
 				popovertarget="crm-docs"
 				popovertargetaction="hide"
 			>
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				<i class="icon close" aria-hidden="true"></i>
 			</button>
 		</header>
-		<p class="text-sm m-0" style="color: var(--color-text-subtle)">Acme Corp · Q2 expansion</p>
+		<p class="text-sm m-0 muted">Acme Corp · Q2 expansion</p>
 
 		<menu class="flex flex-col gap-1 list-none">
 			<li v-for="doc in docs" :key="doc.name">
-				<div class="cluster items-center flex-nowrap">
+				<div class="cluster flex-nowrap">
 					<span class="avatar square information subtle" aria-hidden="true">
-						<i class="icon" style="--icon: var(--set-icon-information)"></i>
+						<i class="icon information"></i>
 					</span>
 					<span class="flex flex-col flex-1 leading-tight min-w-0">
 						<strong class="truncate">{{ doc.name }}</strong>
-						<small class="truncate" style="color: var(--color-text-subtle)">{{ doc.meta }}</small>
+						<small class="truncate muted">{{ doc.meta }}</small>
 					</span>
 					<button type="button" class="subtle compact" :aria-label="`Download ${doc.name}`">
-						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+						<i class="icon external" aria-hidden="true"></i>
 					</button>
 				</div>
 			</li>
 		</menu>
 
-		<button type="button" class="secondary subtle w-full">
-			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+		<button type="button" class="secondary subtle fill">
+			<i class="icon plus" aria-hidden="true"></i>
 			Attach a document
 		</button>
 	</aside>

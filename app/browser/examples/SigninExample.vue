@@ -60,30 +60,30 @@ const sendReset = (): void => {
 				<p>The semantic-first framework where the HTML element is the component.</p>
 				<ul class="list-none flex flex-col gap-2">
 					<li class="flex items-center gap-2">
-						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-check)"></i>
+						<i class="icon check" aria-hidden="true"></i>
 						Zero config, all semantics
 					</li>
 					<li class="flex items-center gap-2">
-						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-check)"></i>
+						<i class="icon check" aria-hidden="true"></i>
 						Themed in a single knob
 					</li>
 					<li class="flex items-center gap-2">
-						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-check)"></i>
+						<i class="icon check" aria-hidden="true"></i>
 						Accessible by default
 					</li>
 				</ul>
 				<footer class="stack gap-3">
 					<div class="cluster gap-4">
 						<span class="flex items-center gap-2 flex-nowrap">
-							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-success)"></i>
+							<i class="icon success" aria-hidden="true"></i>
 							<small>SOC 2 Type II</small>
 						</span>
 						<span class="flex items-center gap-2 flex-nowrap">
-							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-success)"></i>
+							<i class="icon success" aria-hidden="true"></i>
 							<small>WCAG 2.2 AA</small>
 						</span>
 						<span class="flex items-center gap-2 flex-nowrap">
-							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-success)"></i>
+							<i class="icon success" aria-hidden="true"></i>
 							<small>Encrypted at rest</small>
 						</span>
 					</div>
@@ -92,25 +92,25 @@ const sendReset = (): void => {
 			</article>
 
 			<!-- Sign-in card. -->
-			<div class="w-full flex flex-col gap-6">
+			<div class="fill flex flex-col gap-6">
 				<hgroup>
 					<h1>Welcome back</h1>
 					<p>Sign in to your Elements account.</p>
 				</hgroup>
 
 				<div class="flex flex-col gap-2">
-					<button type="button" class="secondary subtle w-full">
+					<button type="button" class="secondary subtle fill">
 						<i class="icon examples-icon-github" aria-hidden="true"></i>
 						Continue with GitHub
 					</button>
-					<button type="button" class="secondary subtle w-full">
+					<button type="button" class="secondary subtle fill">
 						<i class="icon examples-icon-google" aria-hidden="true"></i>
 						Continue with Google
 					</button>
 				</div>
 
 				<p class="text-center m-0">
-					<small style="color: var(--color-text-subtle)">or sign in with email</small>
+					<small class="muted">or sign in with email</small>
 				</p>
 
 				<form ref="formRef" class="stack">
@@ -144,16 +144,14 @@ const sendReset = (): void => {
 						<a href="#" @click.prevent="reset.show()">Forgot password?</a>
 					</div>
 
-					<button type="submit" class="primary w-full" :class="{ loading }" :disabled="loading">
+					<button type="submit" class="primary fill" :class="{ loading }" :disabled="loading">
 						<span v-if="loading" class="spinner" aria-hidden="true"></span>
 						{{ loading ? 'Signing in…' : 'Sign in' }}
 					</button>
 				</form>
 
 				<p class="text-center m-0">
-					<small style="color: var(--color-text-subtle)">
-						Don't have an account? <a href="#">Sign up</a>
-					</small>
+					<small class="muted"> Don't have an account? <a href="#">Sign up</a> </small>
 				</p>
 			</div>
 		</div>
@@ -164,7 +162,7 @@ const sendReset = (): void => {
 		<header>
 			<h2 id="reset-title">Reset password</h2>
 			<button type="button" class="subtle compact" aria-label="Close" @click="reset.hide()">
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				<i class="icon close" aria-hidden="true"></i>
 			</button>
 		</header>
 		<form class="stack" @submit.prevent="sendReset">
