@@ -21,6 +21,14 @@ export const examples: readonly ExampleMeta[] = [
 			'Exercises useAside, <menu role="toolbar">, and the modifier-cascade button vocabulary.',
 		icon: 'speedometer',
 	},
+	{
+		id: 'example-marketing',
+		title: 'Marketing',
+		tagline:
+			'Long-scroll landing page: hero + logos + feature grid + stats + pricing + CTA + footer. ' +
+			'Renders just <main> + body-shell <footer> — no sidebar, no topbar app shell.',
+		icon: 'external',
+	},
 ]
 
 export const isExampleId = (id: string): boolean => examples.some((e) => e.id === id)

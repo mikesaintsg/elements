@@ -128,6 +128,15 @@ export const PAGE_SURFACE_BUNDLES: Readonly<Record<PageName, readonly string[]>>
 	// page also exercises the `<menu role="toolbar">` pattern
 	// recognized by ATTR_ROOTED in parity.test.ts §3.
 	DashboardExamplePage: ['useDialog', 'useMenu', 'useTheme'],
+	// Long-scroll marketing landing page. Renders just <main> — no sidebar nav,
+	// no topbar app shell. The site footer lives inside <main> as the last
+	// section (body-shell footer row auto-sizing crushes the 1fr main track on
+	// mobile when the footer is tall — framework-gap noted in commit message).
+	// Exercises: <article> (feature + pricing cards), <small class="tag
+	// information"> (eyebrow + badges), <a class="primary filled"> / <a
+	// class="subtle filled"> CTA anchors. ExamplesShell adds useDialog,
+	// useMenu, useTheme as with all examples.
+	MarketingExamplePage: ['useDialog', 'useMenu', 'useTheme'],
 }
 
 /**
