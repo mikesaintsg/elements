@@ -144,6 +144,14 @@ export const PAGE_SURFACE_BUNDLES: Readonly<Record<PageName, readonly string[]>>
 	// The labelled "or" divider is scoped CSS (no framework .divider primitive
 	// — framework-gap flagged). ExamplesShell adds useDialog, useMenu, useTheme.
 	AuthExamplePage: ['useDialog', 'useMenu', 'useTheme', 'useForm'],
+	// Three-pane mail client. Folders rail is a body-shell <nav> popover drawer
+	// (native popovertarget, no composable). <main> contains an inner two-pane
+	// grid (thread list + reading pane) via scoped CSS. Framework gaps flagged:
+	// circular avatar/initials badge (4th example to need it — strongest signal
+	// for a framework .avatar component), inner multi-pane grid (Mail + upcoming
+	// CRM → potential .panes primitive), folder count badge trailing placement.
+	// ExamplesShell adds useDialog, useMenu, useTheme.
+	MailExamplePage: ['useDialog', 'useMenu', 'useTheme'],
 }
 
 /**

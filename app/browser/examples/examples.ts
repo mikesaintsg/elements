@@ -38,6 +38,15 @@ export const examples: readonly ExampleMeta[] = [
 			'Renders just <main> with a CSS grid split; brand panel hidden on mobile.',
 		icon: 'information',
 	},
+	{
+		id: 'example-mail',
+		title: 'Mail',
+		tagline:
+			'Three-pane email client: folders rail drawer + thread list + reading pane. ' +
+			'Folder rail is a body-shell <nav>; thread list + reading pane are an inner two-pane ' +
+			'grid inside <main>. Mobile: folders popover drawer, single-column stack.',
+		icon: 'external',
+	},
 ]
 
 export const isExampleId = (id: string): boolean => examples.some((e) => e.id === id)
