@@ -309,8 +309,8 @@ const chartBars = computed(() =>
 				<!-- Feature card grid — 1-up → 2-up → 3-up -->
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 					<article v-for="feature in features" :key="feature.title">
-						<!-- Icon badge — scoped CSS for the tinted circle; no framework
-						     "filled circle" primitive yet (same as DashboardExample .mark). -->
+						<!-- Feature icon badge — scoped .marketing-feature-icon (square icon
+						     container, not an identity chip; does not use .avatar). -->
 						<span class="marketing-feature-icon" aria-hidden="true">
 							<i class="icon" :style="`--icon: var(--set-icon-${feature.icon})`"></i>
 						</span>
@@ -714,8 +714,9 @@ const chartBars = computed(() =>
 	padding-block: clamp(3rem, 8vw, 5rem);
 }
 
-/* Feature icon badge — tinted circle with icon. No framework "filled-circle"
- * primitive; same situation as DashboardExample's .mark. */
+/* Feature icon badge — tinted square-rounded icon container (border-radius 0.5rem).
+ * Deliberately not using .avatar (which is a circular identity chip for initials/
+ * photos). The icon container shape differs both semantically and visually. */
 .marketing-feature-icon {
 	display: inline-flex;
 	align-items: center;

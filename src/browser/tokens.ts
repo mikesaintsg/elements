@@ -500,6 +500,17 @@ export const tokens = {
 		fontWeight: '--set-strong-font-weight',
 	},
 
+	// Component tokens declared on `.avatar` (class-based — no semantic root for
+	// "circular identity chip"). Lives in components/_avatar.scss.
+	avatar: {
+		size: '--set-avatar-size',
+		color: '--set-avatar-color',
+		backgroundColor: '--set-avatar-background-color',
+		borderRadius: '--set-avatar-border-radius',
+		fontSize: '--set-avatar-font-size',
+		fontWeight: '--set-avatar-font-weight',
+	},
+
 	// Component tokens declared on `.badge` (class-based — no semantic root for
 	// "inline pill"). Lives in components/_badge.scss.
 	badge: {

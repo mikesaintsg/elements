@@ -120,12 +120,13 @@ describe('CrmExample — context rail', () => {
 		}
 	})
 
-	it('account footer is present in the context nav with .crm-avatar-account', () => {
+	it('account footer is present in the context nav with framework .avatar', () => {
 		const { host, teardown } = mount()
 		try {
 			const footer = host.querySelector('nav#crm-context > footer')
 			expect(footer).not.toBeNull()
-			expect(footer?.querySelector('.crm-avatar-account')).not.toBeNull()
+			// Migrated from scoped .crm-avatar-account to framework .avatar.primary
+			expect(footer?.querySelector('.avatar.primary')).not.toBeNull()
 		} finally {
 			teardown()
 		}

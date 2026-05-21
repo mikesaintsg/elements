@@ -132,8 +132,8 @@ describe('MailExample — framework idioms', () => {
 		try {
 			const footer = host.querySelector('nav#mail-folders > footer')
 			expect(footer).not.toBeNull()
-			// The account mark initials
-			expect(footer?.querySelector('.mail-avatar-account')).not.toBeNull()
+			// The account avatar — migrated to framework .avatar.primary
+			expect(footer?.querySelector('.avatar.primary')).not.toBeNull()
 		} finally {
 			teardown()
 		}

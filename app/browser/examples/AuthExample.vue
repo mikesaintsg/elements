@@ -25,16 +25,14 @@
  *   - `<button class="btn btn-primary w-100">` → <button class="primary w-full">
  *   - `.spinner-border` → <span class="spinner"> (framework spinner primitive)
  *   - `.divider` → scoped .auth-divider (framework-gap: see below)
- *   - Rounded-circle avatar → scoped .auth-mark circular badge
+ *   - Rounded-circle avatar → <span class="avatar"> (framework .avatar component)
  *
  * Framework gaps flagged:
  *   1. .auth-divider (labelled "or" separator) — high-value universal auth
  *      pattern; no framework .divider primitive. Scoped only for now.
  *   2. Gradient panel backgrounds — scoped; Marketing also needed this.
  *      Two examples → stronger signal for a framework gradient utility/token.
- *   3. Circular avatar/initials badge (.auth-mark) — Dashboard + Marketing
- *      + Auth all use it. THREE examples → strong signal for .avatar / .mark.
- *   4. OAuth button rows — provider icons (Google/GitHub) have no framework
+ *   3. OAuth button rows — provider icons (Google/GitHub) have no framework
  *      tokens. Using external as stand-in + TODO comments below.
  */
 import { ref, useTemplateRef } from 'vue'
@@ -92,11 +90,7 @@ const handleSubmit = (): void => {
 						like the platform's own docs — because that's what it is."
 					</p>
 					<footer class="auth-blockquote-footer">
-						<!-- Circular initials badge — scoped .auth-mark.
-						     Framework-gap: Dashboard + Marketing + Auth all use this pattern.
-						     THREE examples → strong signal for a framework .avatar / .mark
-						     component. Scoped only for now. -->
-						<span class="auth-mark" aria-hidden="true">ML</span>
+						<span class="avatar" aria-hidden="true">ML</span>
 						<div class="auth-blockquote-attribution">
 							<strong>Margaret Liang</strong>
 							<small>VP Engineering, Stratus</small>
@@ -340,24 +334,6 @@ const handleSubmit = (): void => {
 	display: flex;
 	align-items: center;
 	gap: 0.875rem;
-}
-
-/* Circular initials badge — scoped .auth-mark.
- * Framework-gap: Dashboard + Marketing + Auth all use this pattern.
- * THREE examples → strong signal for a framework .avatar / .mark component.
- * Keep scoped; flag in report. */
-.auth-mark {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	inline-size: 2.5rem;
-	block-size: 2.5rem;
-	border-radius: 999px;
-	background-color: color-mix(in oklab, #fff 20%, transparent);
-	font-weight: 600;
-	font-size: 0.875rem;
-	flex-shrink: 0;
-	color: inherit;
 }
 
 .auth-blockquote-attribution {

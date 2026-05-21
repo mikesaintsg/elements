@@ -56,8 +56,8 @@ describe('AuthExample — framework idioms', () => {
 		try {
 			const brand = host.querySelector('aside.auth-brand')
 			expect(brand?.querySelector('blockquote')).not.toBeNull()
-			// Author mark (circular badge)
-			expect(brand?.querySelector('.auth-mark')).not.toBeNull()
+			// Author avatar (migrated to framework .avatar)
+			expect(brand?.querySelector('.avatar')).not.toBeNull()
 		} finally {
 			teardown()
 		}

@@ -212,13 +212,13 @@ onUnmounted(() => {
 		<menu>
 			<li>
 				<a href="#">
-					<span class="mark" aria-hidden="true">A</span>
+					<span class="avatar small" aria-hidden="true">A</span>
 					Acme Inc
 				</a>
 			</li>
 			<li>
 				<a href="#">
-					<span class="mark" aria-hidden="true">B</span>
+					<span class="avatar small" aria-hidden="true">B</span>
 					Buena Vista
 				</a>
 			</li>
@@ -233,7 +233,7 @@ onUnmounted(() => {
 		     bottom of the drawer (conventional sidebar shape — Slack /
 		     Discord / Linear). -->
 		<footer>
-			<span class="mark account-mark" aria-hidden="true">MS</span>
+			<span class="avatar" aria-hidden="true">MS</span>
 			<span class="flex flex-col leading-tight">
 				<strong>Mike Saint</strong>
 				<small>mike@acme.dev</small>
@@ -579,26 +579,6 @@ onUnmounted(() => {
  * width, drawer popover mode, nav-rail menu styling, header band,
  * main padding). Only the truly app-specific bits remain here.
  * ──────────────────────────────────────────────────────────────────── */
-
-/* Circular initials badge — no framework "filled circle with text"
- * primitive. Shared between the workspace links and the account row. */
-.mark {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	inline-size: 1.5rem;
-	block-size: 1.5rem;
-	border-radius: 999px;
-	background: var(--color-surface-raised, var(--color-surface));
-	font-size: 0.75rem;
-	font-weight: 600;
-	flex-shrink: 0;
-}
-
-.account-mark {
-	inline-size: 2rem;
-	block-size: 2rem;
-}
 
 /* Search form — flex-grow to fill available row space, max-width cap
  * so the input stops growing on wide topbars. The framework's

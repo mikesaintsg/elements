@@ -1,0 +1,72 @@
+// ============================================================================
+// avatar — circular identity chip (initials or image).
+//
+// Markup contract: `<span class="avatar">MS</span>` (initials) or
+// `<span class="avatar"><img src="…" alt="…"></span>` (photo). The class
+// is the fallback root — no HTML element means "circular identity badge"
+// (same reasoning as .badge / .dot).
+//
+// Architecture mirrors .badge: --set-avatar-* tokens, variant cascade via
+// palette-each, size modifiers via .small / .large.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer components {
+	.avatar {
+		--set-avatar-size: 2.5rem;
+		--set-avatar-color: var(--set-variant-color, var(--color-text-emphasis, var(--color-text)));
+		--set-avatar-background-color: var(--set-variant-background-color, var(--color-border-subtle));
+		--set-avatar-border-radius: 9999px;
+		--set-avatar-font-size: 0.875rem;
+		--set-avatar-font-weight: 600;
+
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		inline-size: var(--set-avatar-size);
+		block-size: var(--set-avatar-size);
+		border-radius: var(--set-avatar-border-radius);
+		background-color: var(--set-avatar-background-color);
+		color: var(--set-avatar-color);
+		font-size: var(--set-avatar-font-size);
+		font-weight: var(--set-avatar-font-weight);
+		line-height: 1;
+		overflow: clip;
+		text-transform: uppercase;
+		user-select: none;
+	}
+
+	// A photo avatar — the <img> fills the circle.
+	.avatar > img {
+		inline-size: 100%;
+		block-size: 100%;
+		object-fit: cover;
+		border-radius: inherit;
+	}
+
+	// Variant tint — same palette-each iteration as .badge.
+	@include palette-each using ($variant) {
+		.avatar.#{$variant} {
+			--set-avatar-background-color: var(--color-#{$variant}-bg-subtle);
+			--set-avatar-color: var(--color-#{$variant}-text-emphasis);
+		}
+	}
+
+	// Size modifiers via the size cascade.
+	.avatar.small {
+		--set-avatar-size: 1.75rem;
+		--set-avatar-font-size: 0.75rem;
+	}
+
+	.avatar.large {
+		--set-avatar-size: 3.5rem;
+		--set-avatar-font-size: 1.25rem;
+	}
+
+	// Square shape opt-out (rounded-rect instead of circle).
+	.avatar.square {
+		--set-avatar-border-radius: var(--radius-md);
+	}
+}

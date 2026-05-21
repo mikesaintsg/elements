@@ -47,7 +47,7 @@ export const PAGE_EXEMPTIONS: ReadonlySet<PageName> = new Set([
  */
 export const PAGE_SURFACE_BUNDLES: Readonly<Record<PageName, readonly string[]>> = {
 	HeadingsPage: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hgroup'],
-	InlineAtomsPage: ['badge', 'dot', 'tag', 'spinner', 'skeleton'],
+	InlineAtomsPage: ['avatar', 'badge', 'dot', 'tag', 'spinner', 'skeleton'],
 	MediaPage: [
 		'img',
 		'picture',

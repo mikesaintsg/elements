@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 /**
- * InlineAtomsPage — the five class-root inline atoms the framework
- * ships for patterns with no semantic HTML home: `.badge`, `.dot`,
- * `.tag`, `.spinner`, `.skeleton`. Each is a `<span>` / `<div>` with
- * a class root and a `--set-{atom}-*` token surface; variants flow
- * through the framework's variant cascade so a `.badge.primary` reads
- * as primary, a `.tag.success` reads as success, etc.
+ * InlineAtomsPage — the six class-root inline atoms the framework
+ * ships for patterns with no semantic HTML home: `.avatar`, `.badge`,
+ * `.dot`, `.tag`, `.spinner`, `.skeleton`. Each is a `<span>` / `<div>`
+ * with a class root and a `--set-{atom}-*` token surface; variants flow
+ * through the framework's variant cascade so a `.avatar.primary` renders
+ * in the primary tint, a `.badge.primary` reads as primary, etc.
  *
  * API surface coverage (from Phase 1 audit of
  * `src/styles/components/{_badge,_dot,_tag,_spinner,_skeleton}.scss`
@@ -66,11 +66,12 @@ const submit = async (): Promise<void> => {
 		<hgroup>
 			<h1>Inline atoms</h1>
 			<p>
-				Five class-root primitives for patterns with no semantic HTML home —
-				<code>.badge</code>, <code>.dot</code>, <code>.tag</code>, <code>.spinner</code>, and
-				<code>.skeleton</code>. Each owns a <code>--set-{atom}-*</code> token surface and reads from
-				the framework's seven-variant cascade, so a chip / count / status indicator / loader paints
-				consistently with the surrounding chrome without per-instance overrides.
+				Six class-root primitives for patterns with no semantic HTML home —
+				<code>.avatar</code>, <code>.badge</code>, <code>.dot</code>, <code>.tag</code>,
+				<code>.spinner</code>, and <code>.skeleton</code>. Each owns a
+				<code>--set-{atom}-*</code> token surface and reads from the framework's seven-variant
+				cascade, so a circular identity chip / count / status indicator / loader paints consistently
+				with the surrounding chrome without per-instance overrides.
 			</p>
 		</hgroup>
 		<p>
@@ -84,8 +85,76 @@ const submit = async (): Promise<void> => {
 		</p>
 	</section>
 
+	<section id="atoms-avatar">
+		<h2>1. Avatar — circular identity chip</h2>
+		<p>
+			Circular badge for initials or a photo. Defaults to a neutral subtle tint; the seven variants
+			paint with the <code>--color-{variant}-{bg-subtle, text-emphasis}</code> pair — same recipe
+			badges and tags use. Use <code>&lt;span class="avatar"&gt;MS&lt;/span&gt;</code> for initials,
+			or <code>&lt;span class="avatar"&gt;&lt;img src="…" alt="…"&gt;&lt;/span&gt;</code> for a
+			photo.
+		</p>
+		<h3>Bare + seven variants</h3>
+		<div class="cluster gap-2">
+			<span class="avatar">?</span>
+			<span v-for="v in variants" :key="v" :class="['avatar', v]">{{
+				v.slice(0, 2).toUpperCase()
+			}}</span>
+		</div>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>&lt;span class="avatar"&gt;MS&lt;/span&gt;
+&lt;span class="avatar primary"&gt;PR&lt;/span&gt;
+&lt;span class="avatar success"&gt;SU&lt;/span&gt;</code></pre>
+		</details>
+
+		<h3>Sizes</h3>
+		<p>
+			<code>.small</code> / <code>.large</code> retune the <code>--set-avatar-size</code> token
+			(1.75 rem / 2.5 rem / 3.5 rem). Use <code>.small</code> in tight rows (nav links, chat turns)
+			and <code>.large</code> for profile headers.
+		</p>
+		<div class="cluster gap-3 items-center">
+			<span class="avatar small primary">MS</span>
+			<span class="avatar primary">MS</span>
+			<span class="avatar large primary">MS</span>
+		</div>
+
+		<h3>Square shape</h3>
+		<p>
+			<code>.square</code> swaps the pill radius for <code>--radius-md</code> — a rounded rectangle
+			instead of a circle. Useful for brand / workspace avatars where a square crop is conventional.
+		</p>
+		<div class="cluster gap-2">
+			<span class="avatar square">AC</span>
+			<span class="avatar square primary">AC</span>
+			<span class="avatar square success">GH</span>
+		</div>
+
+		<h3>Photo avatar — child <code>&lt;img&gt;</code></h3>
+		<p>
+			Drop an <code>&lt;img&gt;</code> child inside <code>.avatar</code>: it fills the circle via
+			<code>object-fit: cover</code>. Add meaningful <code>alt</code> text; the parent can stay
+			<code>aria-hidden</code> when the surrounding context already names the person.
+		</p>
+		<div class="cluster gap-2">
+			<span class="avatar">
+				<img src="https://i.pravatar.cc/80?img=1" alt="Avatar placeholder" />
+			</span>
+			<span class="avatar large">
+				<img src="https://i.pravatar.cc/80?img=5" alt="Avatar placeholder" />
+			</span>
+		</div>
+		<details>
+			<summary><small>Markup — photo avatar</small></summary>
+			<pre><code>&lt;span class="avatar"&gt;
+  &lt;img src="photo.jpg" alt="Ada Lovelace" /&gt;
+&lt;/span&gt;</code></pre>
+		</details>
+	</section>
+
 	<section id="atoms-badge">
-		<h2>1. Badge — count / label / status keyword</h2>
+		<h2>2. Badge — count / label / status keyword</h2>
 		<p>
 			Small inline pill for counts, status keywords, or short labels. Defaults to a neutral subtle
 			tint; the seven variants paint with the
@@ -151,7 +220,7 @@ const submit = async (): Promise<void> => {
 	</section>
 
 	<section id="atoms-dot">
-		<h2>2. Dot — circular status indicator</h2>
+		<h2>3. Dot — circular status indicator</h2>
 		<p>
 			Tiny colored circle. Mailbox / GitHub / Slack all reach for one when the signal is "this thing
 			has state, glance to know which kind." Default size is <code>0.5rem</code>;
@@ -204,7 +273,7 @@ const submit = async (): Promise<void> => {
 	</section>
 
 	<section id="atoms-tag">
-		<h2>3. Tag — chip-shape inline label</h2>
+		<h2>4. Tag — chip-shape inline label</h2>
 		<p>
 			Pill-shaped chip for keywords, filter values, or short labels — distinct from
 			<code>.badge</code> in three ways: <code>.tag</code> is pill-shaped by default,
@@ -278,7 +347,7 @@ const submit = async (): Promise<void> => {
 	</section>
 
 	<section id="atoms-spinner">
-		<h2>4. Spinner — rotating ring loader</h2>
+		<h2>5. Spinner — rotating ring loader</h2>
 		<p>
 			Three-quarter ring with one side transparent, rotating at <code>0.75 s</code>. Color cascades
 			through <code>--set-style-color</code> → <code>--set-variant-background-color</code> →
@@ -331,7 +400,7 @@ const submit = async (): Promise<void> => {
 	</section>
 
 	<section id="atoms-skeleton">
-		<h2>5. Skeleton — shimmering loading placeholder</h2>
+		<h2>6. Skeleton — shimmering loading placeholder</h2>
 		<p>
 			A block-level placeholder masking content during loading. A 200 %-wide gradient highlight
 			slides across a tinted base color (the highlight derives from
@@ -420,11 +489,11 @@ const submit = async (): Promise<void> => {
 		<h2>Forced colors</h2>
 		<p>
 			In Windows High Contrast (or any <code>forced-colors: active</code> environment) the browser
-			overrides custom colors with system tokens. The five atoms degrade gracefully: tinted variant
-			backgrounds collapse to <code>Canvas</code> + <code>CanvasText</code>; the spinner's
-			three-quarter ring still reads because <code>CanvasText</code> paints the visible arcs; the
-			skeleton's gradient drops out and the base bg becomes <code>ButtonFace</code>, producing a
-			flat solid block.
+			overrides custom colors with system tokens. The six atoms degrade gracefully: tinted variant
+			backgrounds (avatar, badge, dot, tag) collapse to <code>Canvas</code> +
+			<code>CanvasText</code>; the spinner's three-quarter ring still reads because
+			<code>CanvasText</code> paints the visible arcs; the skeleton's gradient drops out and the
+			base bg becomes <code>ButtonFace</code>, producing a flat solid block.
 		</p>
 	</section>
 
@@ -434,6 +503,29 @@ const submit = async (): Promise<void> => {
 			Each atom's tokens live on its class root. Override globally at <code>:root</code>, or
 			per-instance via inline <code>style="..."</code>.
 		</p>
+
+		<h3><code>.avatar</code></h3>
+		<dl>
+			<dt><code>--set-avatar-size</code></dt>
+			<dd>
+				Diameter (both inline and block). Default <code>2.5 rem</code>; <code>.small</code> =
+				<code>1.75 rem</code>; <code>.large</code> = <code>3.5 rem</code>.
+			</dd>
+			<dt><code>--set-avatar-color</code></dt>
+			<dd>Text colour. Falls through variant → emphasis tier → body text.</dd>
+			<dt><code>--set-avatar-background-color</code></dt>
+			<dd>Surface colour. Falls through variant → bg-subtle tier → border-subtle neutral.</dd>
+			<dt><code>--set-avatar-border-radius</code></dt>
+			<dd>
+				Default <code>9999 px</code> (circle); <code>.square</code> drops to
+				<code>--radius-md</code>.
+			</dd>
+			<dt><code>--set-avatar-font-size</code> / <code>--set-avatar-font-weight</code></dt>
+			<dd>
+				Default <code>0.875 rem</code> / <code>600</code>. Sizes retune font-size alongside the
+				diameter token.
+			</dd>
+		</dl>
 
 		<h3><code>.badge</code></h3>
 		<dl>

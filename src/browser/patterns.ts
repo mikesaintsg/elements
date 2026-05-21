@@ -1086,6 +1086,14 @@ export const COMPONENT_CONTRACTS: Readonly<Record<string, ComponentContract>> = 
 	},
 
 	// ── Class-component primitives ─────────────────────────────────────────
+	avatar: {
+		name: 'avatar',
+		tokens: {
+			required: ['size', 'color', 'background-color', 'border-radius', 'font-size', 'font-weight'],
+		},
+		animated: false,
+		notes: '.avatar — circular identity chip (initials or image).',
+	},
 	badge: {
 		name: 'badge',
 		tokens: {

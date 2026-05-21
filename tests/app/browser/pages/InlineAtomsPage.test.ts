@@ -49,7 +49,7 @@ describe('InlineAtomsPage — render smoke', () => {
 
 describe('InlineAtomsPage — every bundled atom class is demonstrated (§7)', () => {
 	it('discovers the bundle (vacuous-pass guard)', () => {
-		expect(BUNDLE.length).toBe(5)
+		expect(BUNDLE.length).toBe(6)
 	})
 
 	for (const atom of BUNDLE) {

@@ -27,12 +27,10 @@
  *   - `<div class="input-group">` (search) → <form role="search"> + <input type="search">
  *   - `<div role="group" aria-label="List actions">` → <menu role="toolbar">
  *   - reading-pane action row → <menu role="toolbar">
- *   - avatar circles → scoped .mail-avatar (same pattern as Dashboard's .mark)
+ *   - avatar circles → <span class="avatar"> / <span class="avatar primary"> (framework .avatar)
  *
  * Framework gaps flagged:
- *   1. Circular avatar/initials badge (.mail-avatar) — Dashboard + Marketing + Auth + Mail
- *      all need this scoped pattern. FOUR examples → strongest signal yet for a framework
- *      .avatar component (circular, sized, initials or img).
+ *   1. (resolved) Circular avatar/initials badge — now the framework .avatar component.
  *   2. Inner multi-pane grid — Mail's inner two-pane grid inside <main> uses scoped CSS
  *      (`grid-template-columns: minmax(0, 24rem) minmax(0, 1fr)`). The upcoming CRM
  *      example needs the same inner-pane pattern. If near-identical, consider a .panes
@@ -288,11 +286,7 @@ onUnmounted(() => {
 		     height; the footer's auto-margin pushes the account row to
 		     the drawer bottom (Slack / Discord / Linear shape). -->
 		<footer>
-			<!-- Circular initials badge — scoped .mail-avatar.
-			     Framework-gap: Dashboard + Marketing + Auth + Mail all use this pattern.
-			     FOUR examples → strongest signal yet for a framework .avatar / .mark
-			     component. Scoped only for now. -->
-			<span class="mail-avatar mail-avatar-account" aria-hidden="true">MS</span>
+			<span class="avatar primary" aria-hidden="true">MS</span>
 			<span class="flex flex-col leading-tight min-w-0">
 				<strong class="truncate">Mike Saint</strong>
 				<small style="color: var(--color-text-subtle)" class="truncate">Used 5.2 / 15 GB</small>
@@ -383,11 +377,9 @@ onUnmounted(() => {
 						:aria-pressed="activeMessageId === message.id"
 						@click="activeMessageId = message.id"
 					>
-						<!-- Avatar — scoped .mail-avatar circular initials badge.
-						     Framework-gap: fourth example to need this; see note above. -->
 						<span
-							class="mail-avatar"
-							:class="message.unread ? 'mail-avatar--unread' : 'mail-avatar--read'"
+							class="avatar small"
+							:class="message.unread ? 'primary' : ''"
 							aria-hidden="true"
 							>{{ message.initials }}</span
 						><!-- mail-row-body uses <span> (phrasing content, not <div>) so
@@ -534,7 +526,7 @@ nav#mail-folders > :where(menu, h6, .mail-compose-row) {
 }
 
 /* Folder label — grows to fill the link row (same flex pattern as Dashboard
- * workspace names with their .mark badges). */
+ * workspace nav links with their .avatar.small badges). */
 .mail-folder-label {
 	flex: 1;
 }
@@ -546,41 +538,6 @@ nav#mail-folders > :where(menu, h6, .mail-compose-row) {
  * is a row-count indicator, not a standalone chip. */
 .mail-folder-count {
 	margin-inline-start: auto;
-}
-
-/* Circular initials badge — no framework "filled circle with text"
- * primitive. Shared between thread-list avatars and the account footer.
- * Framework-gap: Dashboard + Marketing + Auth + Mail all use this.
- * FOUR examples → strongest signal for a framework .avatar / .mark component.
- * Scoped only for now. */
-.mail-avatar {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	inline-size: 2rem;
-	block-size: 2rem;
-	border-radius: 999px;
-	font-size: 0.6875rem;
-	font-weight: 600;
-	flex-shrink: 0;
-}
-
-.mail-avatar--unread {
-	background-color: var(--color-primary);
-	color: var(--color-primary-contrast, #fff);
-}
-
-.mail-avatar--read {
-	background-color: var(--color-surface-raised, var(--color-border-subtle));
-	color: var(--color-text-subtle);
-}
-
-.mail-avatar-account {
-	inline-size: 2.25rem;
-	block-size: 2.25rem;
-	background-color: var(--color-primary-bg-subtle);
-	color: var(--color-primary-text-emphasis);
-	font-size: 0.75rem;
 }
 
 /* ── Inner two-pane grid ────────────────────────────────────────────────

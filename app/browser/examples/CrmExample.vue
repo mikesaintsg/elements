@@ -35,12 +35,10 @@
  *   - Chat turns → scoped .crm-turn message rows (no framework primitive)
  *   - Reply composer → <form> with <textarea> + send <button>, sticky bottom
  *   - "Add note" modal → <dialog> + useDialog
- *   - Avatars → scoped .crm-avatar (fifth example using this pattern)
+ *   - Avatars → <span class="avatar primary"> (framework .avatar component)
  *
  * Framework gaps flagged:
- *   1. Circular avatar/initials badge (.crm-avatar) — Dashboard + Marketing +
- *      Auth + Mail + CRM = FIVE examples. Overwhelming signal for a framework
- *      .avatar component. Scoped only here; flag for framework addition.
+ *   1. (resolved) Circular avatar/initials badge — now the framework .avatar component.
  *   2. Chat message bubbles — universal pattern. No framework <article
  *      class="message"> or <dl class="conversation"> primitive. If Mail's
  *      thread-row layout overlaps, consider a shared .bubble / .message modifier.
@@ -556,10 +554,7 @@ const noteText = ref('')
 		     framework's drawer/rail footer chrome (border-block-start, pinned
 		     bottom via `margin-block-start: auto`). -->
 		<footer>
-			<!-- Circular initials badge — scoped .crm-avatar.
-			     Framework-gap: Dashboard + Marketing + Auth + Mail + CRM = FIVE examples.
-			     Overwhelming signal for a framework .avatar / .mark component. -->
-			<span class="crm-avatar crm-avatar-account" aria-hidden="true">MS</span>
+			<span class="avatar primary" aria-hidden="true">MS</span>
 			<span class="flex flex-col leading-tight min-w-0">
 				<strong class="truncate">Mike Saint</strong>
 				<small style="color: var(--color-text-subtle)" class="truncate">Acme · West region</small>
@@ -1041,26 +1036,6 @@ nav#crm-context > :where(.crm-new-row, h6, .crm-context-list, form) {
 	color: var(--color-text-subtle);
 	font-style: italic;
 	cursor: default;
-}
-
-/* Circular initials badge — no framework "filled circle with text" primitive.
- * Framework-gap: Dashboard + Marketing + Auth + Mail + CRM = FIVE examples.
- * Overwhelming signal for a framework .avatar / .mark component. */
-.crm-avatar {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: 999px;
-	font-weight: 600;
-	flex-shrink: 0;
-}
-
-.crm-avatar-account {
-	inline-size: 2.25rem;
-	block-size: 2.25rem;
-	font-size: 0.75rem;
-	background-color: var(--color-primary-bg-subtle, var(--color-surface-raised));
-	color: var(--color-primary-text-emphasis, var(--color-primary));
 }
 
 /* ── Chat pane (main) ─────────────────────────────────────────────────── */
