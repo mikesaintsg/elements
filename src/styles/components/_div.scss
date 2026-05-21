@@ -161,4 +161,19 @@
 		-webkit-overflow-scrolling: touch;
 		overscroll-behavior-inline: contain;
 	}
+
+	// --------------------------------------------------------------------------
+	// .muted — secondary / de-emphasised text tone.
+	//
+	// Element-agnostic text-colour utility for metadata, captions, timestamps,
+	// helper copy, and other supporting text that should recede against body
+	// copy. Paints `--color-text-muted` (the framework's WCAG-AA muted tier,
+	// theme-aware in light + dark), so authors stop reaching for an inline
+	// `style="color: var(--color-text-subtle)"`. Works on any text-bearing
+	// element (`<small>`, `<p>`, `<span>`, `<strong>`, `<a>`, …); the colour
+	// cascades to descendants until a more specific rule re-tints.
+	// --------------------------------------------------------------------------
+	.muted {
+		color: var(--color-text-muted);
+	}
 }

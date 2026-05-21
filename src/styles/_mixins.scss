@@ -29,6 +29,40 @@ $sizes: (small, large) !default;
 $styles: (subtle, filled) !default;
 $states: (disabled, active, loading) !default;
 
+// Closed icon-glyph set — names match the `--set-icon-*` token suffixes in
+// `_tokens.scss` (and the `icon` tree in `tokens.ts`). Drives the named
+// `<i class="icon {glyph}">` classes generated in `elements/_i.scss`, so a
+// consumer can select a glyph without writing the `--icon` token inline.
+$icons: (
+	chevron-down,
+	chevron-up,
+	chevron-left,
+	chevron-right,
+	caret-down,
+	caret-up,
+	check,
+	dash,
+	radio,
+	switch-off,
+	switch-on,
+	close,
+	menu,
+	more,
+	search,
+	filter,
+	sort,
+	external,
+	sun,
+	moon,
+	system,
+	information,
+	success,
+	warning,
+	danger,
+	plus,
+	minus
+) !default;
+
 // ── Motion + transitions ────────────────────────────────────────────────────
 
 /// `prefers-reduced-motion: reduce` guard. Wrap any motion declaration that

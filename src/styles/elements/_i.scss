@@ -17,7 +17,18 @@
 // Authors who want an inline SVG instead of the mask pattern just drop
 // the class and use `<svg>` directly — the framework doesn't force the
 // icon-primitive on `<i>`.
+//
+// Named glyphs: rather than wiring `--icon` inline, point the primitive at
+// a glyph by name — `<i class="icon close">`, `<i class="icon chevron-down">`.
+// One compound `i.icon.{glyph}` rule is generated per `--set-icon-*` token
+// (the closed `$icons` set in `_mixins.scss`), so the glyph is selectable
+// with framework vocabulary alone. The classes are element-scoped to
+// `i.icon` so glyph names that coincide with variant words (success /
+// warning / danger / information) never collide with the bare variant
+// modifier classes. `--icon` stays overridable inline for custom assets.
 // ============================================================================
+
+@use '../mixins' as *;
 
 @layer elements {
 	i.icon {
@@ -28,5 +39,11 @@
 		background-color: currentColor;
 		font-style: normal;
 		mask: var(--icon) no-repeat center / contain;
+
+		@each $glyph in $icons {
+			&.#{$glyph} {
+				--icon: var(--set-icon-#{$glyph});
+			}
+		}
 	}
 }
