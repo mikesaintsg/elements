@@ -225,10 +225,15 @@ onUnmounted(() => {
 		</menu>
 
 		<!-- Account band — <footer> inside body-shell <nav> picks up the
-		     framework's drawer/rail footer chrome (divider, pinned
-		     bottom). Default justify-content is flex-start (info row);
-		     action-row drawers opt in to `justify-end` via Tailwind. -->
-		<footer>
+		     framework's drawer/rail footer chrome (divider, top border).
+		     `mt-0` overrides the framework's `margin-block-start: auto`
+		     drawer-footer default so the account info flows naturally
+		     below the workspaces instead of being pushed to the bottom
+		     of the drawer (which leaves a large dead gap when the nav
+		     has few items). For a desktop-only persistent rail you'd
+		     leave the auto-margin in place; the dashboard's drawer is
+		     mostly used on mobile where compact reads better. -->
+		<footer class="mt-0">
 			<span class="mark account-mark" aria-hidden="true">MS</span>
 			<span class="flex flex-col leading-tight">
 				<strong>Mike Saint</strong>
@@ -239,7 +244,13 @@ onUnmounted(() => {
 
 	<!-- Topbar — <header> at body-shell position. Framework's
 	     `body:has(main) > header` paints the band chrome (height,
-	     border-block-end, background). -->
+	     border-block-end, background).
+	     Above md the action menu shows inline. Below md the inline
+	     menu is hidden and a single "Actions" trigger button opens
+	     the right-side <aside popover class="end"> drawer below
+	     (same offcanvas-end pattern mailbox uses). The drawer mirrors
+	     the framework's docs-shell TOC rail on the right edge — same
+	     chrome contract as the primary <nav> on the left. -->
 	<header>
 		<button
 			v-if="isMobile"
@@ -260,25 +271,23 @@ onUnmounted(() => {
 				/>
 			</label>
 		</form>
-		<menu role="toolbar" aria-label="Dashboard actions" class="dashboard-actions">
+		<button type="button" class="primary ms-auto md:ms-0">
+			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+			<span class="hidden md:inline">New invoice</span>
+		</button>
+		<menu role="toolbar" aria-label="Dashboard actions" class="dashboard-actions hidden md:flex">
 			<li role="none">
-				<button type="button" class="primary">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
-					<span class="hidden md:inline">New invoice</span>
-				</button>
-			</li>
-			<li role="none" class="hidden md:contents">
 				<!-- TODO icon swap — sort stands in for missing 'refresh' -->
 				<button type="button" class="subtle compact" aria-label="Refresh">
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
 				</button>
 			</li>
-			<li role="none" class="hidden md:contents">
+			<li role="none">
 				<button type="button" class="subtle compact" aria-label="Filter">
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
 				</button>
 			</li>
-			<li role="none" class="hidden md:contents">
+			<li role="none">
 				<!-- TODO icon swap — chevron-down stands in for missing 'download' -->
 				<button type="button" class="subtle compact" aria-label="Export">
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-down)"></i>
@@ -291,7 +300,80 @@ onUnmounted(() => {
 				</button>
 			</li>
 		</menu>
+		<button
+			v-if="isMobile"
+			type="button"
+			class="subtle compact"
+			aria-label="Open actions"
+			popovertarget="dashboard-actions"
+		>
+			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
+		</button>
 	</header>
+
+	<!-- Right-side action drawer — mobile only (`v-if="isMobile"`).
+	     `<aside popover class="end">` slides in from the inline-end
+	     edge with the framework's drawer chrome (top-layer, native
+	     ::backdrop scrim, Esc + click-out dismiss). The same shape the
+	     docs shell uses for its right-rail TOC, repurposed as the
+	     dashboard's actions panel. -->
+	<aside v-if="isMobile" id="dashboard-actions" popover class="end" aria-label="Dashboard actions">
+		<header>
+			<strong>Actions</strong>
+			<button
+				type="button"
+				class="subtle compact"
+				aria-label="Close actions"
+				popovertarget="dashboard-actions"
+				popovertargetaction="hide"
+			>
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+			</button>
+		</header>
+		<menu>
+			<li>
+				<button type="button">
+					<!-- TODO icon swap — sort stands in for missing 'refresh' -->
+					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
+					Refresh
+				</button>
+			</li>
+			<li>
+				<button type="button">
+					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+					Filter
+				</button>
+			</li>
+			<li>
+				<button type="button">
+					<!-- TODO icon swap — chevron-down stands in for missing 'download' -->
+					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-down)"></i>
+					Export
+				</button>
+			</li>
+			<li>
+				<button type="button">
+					<!-- TODO icon swap — information stands in for missing 'bell' -->
+					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-information)"></i>
+					Notifications
+				</button>
+			</li>
+			<li>
+				<button type="button">
+					<!-- TODO icon swap — information stands in for missing 'help' -->
+					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-information)"></i>
+					Help
+				</button>
+			</li>
+			<li>
+				<button type="button">
+					<!-- TODO icon swap — system stands in for missing 'gear' (settings) -->
+					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-system)"></i>
+					Settings
+				</button>
+			</li>
+		</menu>
+	</aside>
 
 	<!-- Page content — <main> at body-shell position. Framework's
 	     `body:has(main) > main` paints scroll + overflow + the gap +
@@ -450,13 +532,18 @@ onUnmounted(() => {
 			</article>
 		</section>
 
-		<section aria-label="Recent activity">
-			<header class="flex justify-between items-end gap-4 mb-3">
+		<!-- Recent activity — <article> card with the framework's auto-
+		     banded <header> chrome (subtle tinted band, separator, inner
+		     radius matched to outer). The timeline <ol> sits in the card
+		     body with article padding. Matches the chart + quick-actions
+		     cards above so the page reads as a uniform set of cards. -->
+		<article aria-label="Recent activity">
+			<header>
 				<hgroup>
 					<h2>Recent activity</h2>
 					<p>Last 24 hours across all workspaces</p>
 				</hgroup>
-				<a href="#">View all</a>
+				<a href="#" class="ms-auto">View all</a>
 			</header>
 			<ol class="dashboard-timeline">
 				<li
@@ -481,7 +568,7 @@ onUnmounted(() => {
 					</div>
 				</li>
 			</ol>
-		</section>
+		</article>
 	</main>
 </template>
 
@@ -612,6 +699,20 @@ onUnmounted(() => {
 .dashboard-actions-menu {
 	flex-direction: column;
 	align-items: stretch;
+}
+
+/* Sidebar nav drawer body — the framework's drawer rule
+ * (`:is(aside, nav)[popover] > :not(:where(header, footer)) { flex: 1 1
+ * auto }`) tries to grow every body child to fill the drawer's
+ * available height. That's right for a single-section drawer (a form,
+ * a tabset, a paragraph) — wrong for a multi-section nav where the
+ * menus and group h6 should flow naturally and the footer should
+ * sit right after (already overridden to `mt-0` on the footer
+ * markup). Pin every body child to its natural height; the drawer
+ * has trailing whitespace below the footer, which reads as
+ * intentional sidebar density (Slack, Discord, Linear). */
+nav#dashboard-sidebar > :where(menu, h6) {
+	flex: 0 0 auto;
 }
 
 /* Timeline rail + markers — no framework timeline primitive; this is
