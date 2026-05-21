@@ -211,24 +211,32 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 			</button>
 		</header>
 
-		<menu>
-			<li v-for="item in nav" :key="item.label">
-				<a href="#" :aria-current="item.current ? 'page' : undefined">
-					{{ item.label }}
-					<span v-if="item.badge" class="badge ms-auto">{{ item.badge }}</span>
-				</a>
-			</li>
-		</menu>
+		<!-- Single scrollable middle region. The body-shell rail pins <header>
+		     and <footer> and treats every OTHER direct child as a flex-grow
+		     middle slot; with multiple bare children (two menus + an h6) each
+		     would grow and the content would spread with voids in the mobile
+		     drawer. Wrapping them in one container makes it the single middle
+		     slot — content packs at the top, footer stays pinned. -->
+		<div class="flex flex-col gap-2 min-h-0">
+			<menu>
+				<li v-for="item in nav" :key="item.label">
+					<a href="#" :aria-current="item.current ? 'page' : undefined">
+						{{ item.label }}
+						<span v-if="item.badge" class="badge ms-auto">{{ item.badge }}</span>
+					</a>
+				</li>
+			</menu>
 
-		<h6>Workspaces</h6>
-		<menu>
-			<li>
-				<a href="#"><span class="avatar small" aria-hidden="true">AC</span> Acme Inc</a>
-			</li>
-			<li>
-				<a href="#"><span class="avatar small" aria-hidden="true">BV</span> Buena Vista</a>
-			</li>
-		</menu>
+			<h6>Workspaces</h6>
+			<menu>
+				<li>
+					<a href="#"><span class="avatar small" aria-hidden="true">AC</span> Acme Inc</a>
+				</li>
+				<li>
+					<a href="#"><span class="avatar small" aria-hidden="true">BV</span> Buena Vista</a>
+				</li>
+			</menu>
+		</div>
 
 		<footer>
 			<span class="avatar" aria-hidden="true">MS</span>
@@ -387,28 +395,34 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 			</button>
 		</header>
 
-		<div class="stack">
-			<div v-for="entry in activity" :key="entry.action" class="cluster flex-nowrap items-start">
-				<span
-					class="dot"
-					:class="entry.variant"
-					aria-hidden="true"
-					style="margin-block-start: 0.4rem"
-				></span>
-				<span class="flex flex-col flex-1 leading-tight">
+		<!-- Single middle region (see the primary rail for why): the activity
+		     feed and the Storage summary share one growable/scrollable slot, so
+		     the summary packs directly under the feed instead of each child
+		     growing and stranding the card with a void above it in the drawer. -->
+		<div class="flex flex-col gap-4 min-h-0">
+			<div class="stack">
+				<div v-for="entry in activity" :key="entry.action" class="cluster flex-nowrap items-start">
 					<span
-						><strong>{{ entry.who }}</strong> {{ entry.action }}</span
-					>
-					<small style="color: var(--color-text-subtle)">{{ entry.when }}</small>
-				</span>
+						class="dot"
+						:class="entry.variant"
+						aria-hidden="true"
+						style="margin-block-start: 0.4rem"
+					></span>
+					<span class="flex flex-col flex-1 leading-tight">
+						<span
+							><strong>{{ entry.who }}</strong> {{ entry.action }}</span
+						>
+						<small style="color: var(--color-text-subtle)">{{ entry.when }}</small>
+					</span>
+				</div>
 			</div>
-		</div>
 
-		<article class="small information subtle">
-			<p class="text-sm m-0">Storage</p>
-			<strong>61.4 GB of 100 GB</strong>
-			<meter class="w-full" value="61" min="0" max="100" aria-label="Storage: 61% used"></meter>
-		</article>
+			<article class="small information subtle">
+				<p class="text-sm m-0">Storage</p>
+				<strong>61.4 GB of 100 GB</strong>
+				<meter class="w-full" value="61" min="0" max="100" aria-label="Storage: 61% used"></meter>
+			</article>
+		</div>
 	</aside>
 
 	<!-- Status bar. -->
