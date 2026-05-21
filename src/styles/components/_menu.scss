@@ -220,8 +220,15 @@
 
 	body:has(main) > nav menu > li > :where(a, button):hover,
 	body:has(main) > * > nav menu > li > :where(a, button):hover {
-		background-color: color-mix(in oklab, currentColor 6%, transparent);
+		background-color: color-mix(in oklab, currentColor var(--set-state-hover-tint), transparent);
 		color: var(--color-text-strong, var(--color-text));
+	}
+
+	// Press feedback — a stronger tint on active so the row reads as
+	// "pressed" before navigation commits (matches the button press family).
+	body:has(main) > nav menu > li > :where(a, button):active,
+	body:has(main) > * > nav menu > li > :where(a, button):active {
+		background-color: color-mix(in oklab, currentColor var(--set-state-active-tint), transparent);
 	}
 
 	// Active-page affordance for the primary nav rail. WAI-ARIA APG: the

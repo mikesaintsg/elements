@@ -273,6 +273,10 @@ export const tokens = {
 			opacity: '--set-state-disabled-opacity',
 			cursor: '--set-state-disabled-cursor',
 		},
+		hoverMix: '--set-state-hover-mix',
+		activeMix: '--set-state-active-mix',
+		hoverTint: '--set-state-hover-tint',
+		activeTint: '--set-state-active-tint',
 	},
 
 	// Element-scoped tokens declared on `button` itself.

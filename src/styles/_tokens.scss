@@ -63,6 +63,30 @@
 	--set-state-disabled-cursor: not-allowed;
 
 	// --------------------------------------------------------------------------
+	// Interactive feedback — hover / active (press) intensity, token-driven so
+	// a consumer retunes the whole library's "click feel" at `:root`. Two
+	// families, because the framework has two kinds of interactive surface:
+	//
+	//   FILLED surfaces (buttons) carry a saturated variant fill. Hover/active
+	//   shift that fill toward `--color-text-strong` (slate-950 in light, white
+	//   in dark) so the surface reads "depressed" in both modes. The `-mix`
+	//   tokens are the % of the ORIGINAL fill retained — lower = darker press.
+	//
+	//   QUIET surfaces (nav rows, TOC rows, list / dropdown rows) are
+	//   transparent until touched. Hover/active lay a `currentColor` tint over
+	//   the canvas. The `-tint` tokens are the tint opacity — higher = stronger.
+	//
+	// Mailbox ships per-palette `hover-bg`/`active-bg` (a darker palette step
+	// per color). The framework reaches the same richer feedback with a single
+	// generic rule per surface family (no per-variant token sprawl — adding a
+	// variant adds zero hover code), driven by these four amounts.
+	// --------------------------------------------------------------------------
+	--set-state-hover-mix: 88%;
+	--set-state-active-mix: 78%;
+	--set-state-hover-tint: 8%;
+	--set-state-active-tint: 14%;
+
+	// --------------------------------------------------------------------------
 	// Default transition duration (Tailwind v4 doesn't ship a single duration).
 	// --------------------------------------------------------------------------
 	--set-transition-duration: 150ms;

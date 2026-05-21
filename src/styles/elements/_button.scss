@@ -143,7 +143,7 @@
 		&:hover {
 			background-color: color-mix(
 				in srgb,
-				var(--set-button-background-color) 88%,
+				var(--set-button-background-color) var(--set-state-hover-mix),
 				var(--color-text-strong)
 			);
 		}
@@ -152,7 +152,7 @@
 		&.active {
 			background-color: color-mix(
 				in srgb,
-				var(--set-button-background-color) 78%,
+				var(--set-button-background-color) var(--set-state-active-mix),
 				var(--color-text-strong)
 			);
 		}
