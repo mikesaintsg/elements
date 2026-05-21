@@ -237,12 +237,17 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 			class="split lg:h-full lg:overflow-hidden"
 			style="--set-split-size: 22rem; --set-split-gap: 0"
 		>
-			<!-- Message list -->
+			<!-- Message list. The bare <section> baseline ships content
+			     padding-block + a flex gap for prose rhythm; this section is a
+			     structured pane (header band + scrolling list with their own
+			     spacing), so both are zeroed (gap-0 + the section-padding token)
+			     — the framework only auto-collapses them under main/section/
+			     article/nav/aside, not inside a .split. -->
 			<section
 				v-show="showList"
 				aria-label="Messages"
-				class="flex flex-col lg:overflow-hidden lg:h-full lg:border-e"
-				style="border-color: var(--color-border)"
+				class="flex flex-col gap-0 lg:overflow-hidden lg:h-full lg:border-e"
+				style="border-color: var(--color-border); --set-section-padding-block: 0"
 			>
 				<!-- Fixed-height header band; same min-block-size as the reading
 				     pane's header so the two bottom dividers line up into one
@@ -291,7 +296,8 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 			<section
 				v-show="showMessage"
 				aria-label="Conversation"
-				class="flex flex-col lg:overflow-hidden lg:h-full"
+				class="flex flex-col gap-0 lg:overflow-hidden lg:h-full"
+				style="--set-section-padding-block: 0"
 			>
 				<!-- Compact header band, same min-block-size as the list header so
 				     the bottom dividers align across the panes. Subject + a
