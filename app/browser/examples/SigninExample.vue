@@ -74,15 +74,15 @@ const sendReset = (): void => {
 				</ul>
 				<footer class="stack gap-3">
 					<div class="cluster gap-4">
-						<span class="cluster items-center gap-2 flex-nowrap">
+						<span class="flex items-center gap-2 flex-nowrap">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-success)"></i>
 							<small>SOC 2 Type II</small>
 						</span>
-						<span class="cluster items-center gap-2 flex-nowrap">
+						<span class="flex items-center gap-2 flex-nowrap">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-success)"></i>
 							<small>WCAG 2.2 AA</small>
 						</span>
-						<span class="cluster items-center gap-2 flex-nowrap">
+						<span class="flex items-center gap-2 flex-nowrap">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-success)"></i>
 							<small>Encrypted at rest</small>
 						</span>

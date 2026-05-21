@@ -310,11 +310,6 @@
 	border-block-end-color: var(--set-popover-border-color);
 }
 
-.showcase-sidebar[popover] .showcase-sidebar-scroll {
-	padding-inline: var(--set-aside-drawer-padding-inline);
-	padding-block: var(--set-aside-drawer-padding-block);
-}
-
 /* Drawer-header bleed cancellation — the framework's `:is(aside,
  * nav)[popover] > header:first-child` rule in `_aside.scss` paints
  * the drawer band with `margin-inline: calc(-1 * --set-aside-drawer-

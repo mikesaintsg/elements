@@ -282,13 +282,15 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 		</search>
 		<menu role="toolbar" aria-label="Console actions" class="hidden sm:flex">
 			<li>
-				<button type="button" class="subtle compact" aria-label="Filter">
+				<button type="button" class="subtle">
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+					Filter
 				</button>
 			</li>
 			<li>
-				<button type="button" class="subtle compact" aria-label="Sort">
+				<button type="button" class="subtle">
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
+					Sort
 				</button>
 			</li>
 		</menu>
@@ -365,11 +367,11 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 					<p>Daily gross, cohort-adjusted.</p>
 				</hgroup>
 				<div class="cluster items-center ms-auto">
-					<span class="cluster items-center gap-2 flex-nowrap">
+					<span class="flex items-center gap-2 flex-nowrap">
 						<span class="dot primary" aria-hidden="true"></span>
 						<small>Revenue</small>
 					</span>
-					<span class="cluster items-center gap-2 flex-nowrap">
+					<span class="flex items-center gap-2 flex-nowrap">
 						<span class="dot information" aria-hidden="true"></span>
 						<small>Forecast</small>
 					</span>

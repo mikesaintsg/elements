@@ -70,6 +70,9 @@ import SettingsExamplePage from './examples/SettingsExamplePage.vue'
 import EditorialExamplePage from './examples/EditorialExamplePage.vue'
 import PricingExamplePage from './examples/PricingExamplePage.vue'
 import SigninExamplePage from './examples/SigninExamplePage.vue'
+import MailExamplePage from './examples/MailExamplePage.vue'
+import CrmExamplePage from './examples/CrmExamplePage.vue'
+import BoardExamplePage from './examples/BoardExamplePage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -383,6 +386,27 @@ const EXAMPLE_SIGNIN: Route = {
 	page: SigninExamplePage,
 }
 
+const EXAMPLE_MAIL: Route = {
+	id: 'example-mail',
+	title: 'Mail',
+	group: 'Examples',
+	page: MailExamplePage,
+}
+
+const EXAMPLE_CRM: Route = {
+	id: 'example-crm',
+	title: 'CRM',
+	group: 'Examples',
+	page: CrmExamplePage,
+}
+
+const EXAMPLE_BOARD: Route = {
+	id: 'example-board',
+	title: 'Board',
+	group: 'Examples',
+	page: BoardExamplePage,
+}
+
 export const routes: readonly Route[] = [
 	HOME,
 	TOKENS,
@@ -433,6 +457,9 @@ export const routes: readonly Route[] = [
 	EXAMPLE_EDITORIAL,
 	EXAMPLE_PRICING,
 	EXAMPLE_SIGNIN,
+	EXAMPLE_MAIL,
+	EXAMPLE_CRM,
+	EXAMPLE_BOARD,
 ]
 
 const parse = (fallback: string): RouteLocation => {

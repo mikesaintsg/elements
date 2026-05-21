@@ -1,1321 +1,347 @@
-# Plan — Semantic HTML Inspector
+# Roadmap — the `reveal` modifier
 
-> Living blueprint for the next initiative: a dependency-free, DOM-walking
-> **semantic HTML inspector**. Read this to know **where to pick up**; read
-> [`AGENTS.md`](AGENTS.md) for the non-negotiable coding rules and
-> [`guides/contribute.md`](guides/contribute.md) for the workflow.
+> A phased, implementation-ready plan for adding a **reveal-on-hover** button
+> modifier to the framework: an icon button whose text label is collapsed at
+> rest and expands on `:hover` / `:focus-visible` (and an opt-in always-shown
+> state). Modelled on the mailbox reference's `.btn-reveal` family, re-expressed
+> through this framework's element-local-modifier + token + mixin vocabulary,
+> and hardened for **both desktop and touch**.
 
-**Framework baseline (done — not the subject of this roadmap):** every
-framework layer (tokens, theme, mixins, modifiers, elements, components,
-surfaces, composables) and all 43 showcase pages ship green — `npm run
-check` 0/0, all 11 build phases complete. The framework is the _substrate_
-the inspector validates; it is not re-planned here. With the inspector
-initiative now complete (Phases 0–8), the full repo suite stands at
-**173 files / 10069 tests**, all green.
-
----
-
-## The idea
-
-A **semantic HTML inspector**: a TypeScript analyzer that **walks a live DOM
-subtree node-by-node** (never parses HTML strings) and reports where the tree
-— or the CSS painted on it — violates the HTML content-model, contextual,
-interaction, and spec-rendering rules.
-
-Two lenses, one walk:
-
-1. **Structure lens** — for every element, decide: _is this element allowed
-   where it sits_ (its parent's / ancestor context), and _does its own
-   subtree satisfy its content model_ (required children present and ordered,
-   no forbidden descendants, every child an allowed category). Plus the
-   discrete spec constraints a tree-walker can decide: no `<a>` inside `<a>`,
-   no interactive content inside `<a>`/`<button>`, exactly one `<summary>` as
-   the first child of `<details>`, `<figcaption>` first-or-last in `<figure>`,
-   `<li>` only under `ul`/`ol`/`menu`, `<dt>`/`<dd>` grouping, the full
-   `<table>` model, the **transparent** content model resolved through
-   ancestors, void elements with no children, attribute-coupling
-   (`a[target]` requires `href`, `bdo` requires `dir`, `data` requires
-   `value`, …). Every constraint cites the canonical spec — see the
-   [W3C spec reference map](#w3c-spec-reference-map) below.
-
-2. **Presentation lens** — for elements whose **default rendering is
-   semantically load-bearing**, read `getComputedStyle` and flag framework
-   CSS that strips the semantics: `<bdo>` not
-   `unicode-bidi: isolate-override`, focus outline removed with no
-   replacement affordance, `[hidden]` overridden visible, `<pre>` losing
-   `white-space: pre`, `<textarea>` losing `pre-wrap`, list-marker semantics
-   stripped with no compensating ARIA, etc. (neither a `<li>`'s nor a
-   table element's `display` is **load-bearing** — each keeps its a11y role
-   (`listitem` / `table`/`row`/`cell`/…) at any `display`; those two
-   inherently-stylistic checks were removed, see Phase 5 boundary (e)). This
-   turns the inspector into a **self-audit of
-   our own cascade** — the same instrumented-audit muscle the theme-retune /
-   reduced-motion / forced-colors passes used, made permanent and codified.
-
-**Why from scratch:** no off-the-shelf tool does _DOM-tree_ semantic
-conformance with a citeable rule corpus and zero dependencies. The HTML
-validator parses source strings; linters are AST/source based; AT-focused
-tools check ARIA, not HTML content models. We already own a mirrored W3C
-corpus (`guides/w3c/**`), a frozen-registry + parity-test discipline, and a
-DOM-walking idiom across every factory. The inspector is the natural apex of
-that doctrine: **the WHATWG spec is the source of truth, the `guides/w3c/**`
-cache + a frozen schema mirror it, the inspector enforces it on real DOM,
-parity tests keep cache ↔ schema ↔ spec in lock-step\*\* (see the
-[W3C spec reference map](#w3c-spec-reference-map)).
-
-### Hard constraints (non-negotiable)
-
-- **No new dependencies — and no reinvention.** Native `Document` /
-  `Element` / `Node` / `getComputedStyle` / `ShadowRoot` / slot APIs only
-  (AGENTS.md §1), composed through the **already-shipped first-party
-  packages** `@elements/browser` ([traversals](guides/traversals.md)) and
-  `@elements/core` ([shapers](guides/shapers.md) / [compilers](guides/compilers.md)
-  / [validators](guides/validators.md) / [parsers](guides/parsers.md)).
-  These are not new deps; using them is mandatory (see
-  [Existing tooling we build on](#existing-tooling-we-build-on-no-reinvention)).
-- **No string / regex HTML parsing.** The inspector consumes a _parsed_
-  `ParentNode` (default `document`); it walks via
-  [`traversals`](guides/traversals.md) (`walkDescendantsGenerator()`,
-  `getAncestors()`, the `is*`/`matchesTag` guards) and reads `tagName` /
-  computed style — the same DOM-walk idiom every `create*` factory uses,
-  now centralized in `traversals.ts`.
-- **Types-first (TTTDD).** Every public type lands in
-  [`src/browser/types.ts`](src/browser/types.ts) (the single source of
-  truth) before implementation. Single-word entity members; split via the
-  Manager pattern (§4.2.2) when a verb family grows.
-- **Operates on the post-parse DOM.** Tag-omission and implicit-element
-  insertion (`<tbody>`, `<head>`) are already resolved by the parser, so
-  omission rules are out of scope _by construction_ — but the engine must
-  know the DOM can differ from source (implicit `<tbody>`; `<table>` model).
-- **Deterministic, offline, fast.** Same DOM → same findings. A budget for
-  large trees (Phase 8). Runs inside the existing Chromium test harness.
-
-### Non-goals
-
-- Not an accessibility/ARIA auditor (axe-core's domain) — implicit-role data
-  is used only where the _HTML_ spec makes it content-model-relevant.
-- Not a CSS linter — the presentation lens only flags overrides that
-  contradict an element's **semantics**, nothing stylistic.
-- Not a source/string validator — the DOM is the input, always.
+This document is the single source of truth for the feature until it ships. It
+exists because the mechanism is subtle: mailbox's implementation took several
+iterations, still has rough edges (group hand-off flicker, label measurement),
+and leans on a `0fr → 1fr` grid-track animation that is easy to get wrong. We
+plan it fully before writing a line of shipping CSS.
 
 ---
 
-## Architecture (AGENTS.md-faithful)
+## 1. Motivation
 
-```
-https://html.spec.whatwg.org/ ← CANONICAL SOURCE OF TRUTH (live WHATWG spec)
-        │  (Phase 0 reconciles the local mirror against it)
-        ▼
-guides/w3c/**                  ← curated local cache of the spec (prose)
-        │  (Phase 0 completes it from canonical; parity test binds it)
-        ▼
-src/browser/schema.ts          ← FROZEN content-model registry (TS mirror)
-        │  one ContentModelEntry per element; indices; predicates
-        │  + an @elements/core ContractShape → compiled guard + JSON Schema
-        ▼
-EXISTING FIRST-PARTY TOOLING (shipped, parity-gated — composed, not rebuilt):
-  @elements/browser  traversals.ts  walk / ancestor / relationship / focus
-  @elements/core     shapers+compilers  shape → guard+schema+generator
-                     validators  predicate compositors · parsers  attr coercion
-        ▼
-src/browser/inspector/         ← one class per file (Manager pattern)
-   Walker.ts        thin Context layer over traversals.walkDescendantsGenerator
-   RuleManager.ts   rule registry (rule(id)/rules()); predicates = validators
-   FindingManager.ts findings collection (finding(id)/findings()/clear())
-   Inspector.ts     root entity: inspect(root) → InspectionResult; Emitter
-        ▼
-src/browser/index.ts           ← sole barrel re-exports it (public API)
-        ▼
-tests/                         ← parity (schema↔guides), unit (rule↔fixture),
-                                  self-audit (Inspector↔every showcase page)
+A collapsed navigation rail or a dense toolbar wants buttons that read as a
+single glyph but announce their meaning on hover/focus — the icon is always
+visible, the label slides out when the pointer (or keyboard focus) lands. Today
+a consumer can only choose between **icon-only** (`<button aria-label>` — no
+visible text, looks unlabelled at rest) or **icon + permanent label** (always
+wide). `reveal` fills the gap: icon at rest, icon + label on engagement, with
+the width animating smoothly so neighbouring layout settles.
+
+Until this ships, examples must use **permanently-labelled** buttons (icon +
+visible text) or genuinely-iconographic buttons (`×` close, `☰` menu) with
+`aria-label`. Do **not** fake reveal by hiding text with `hidden`/`sr-only` —
+that produces an unlabelled-looking button with none of the hover affordance,
+which is the exact anti-pattern this modifier replaces.
+
+---
+
+## 2. How mailbox does it (reference analysis)
+
+Source: `mailbox/src/styles/_buttons.scss` (`.btn-reveal*`),
+`_nav.scss` (`.nav-button.btn-reveal*` re-emission), `_mixins.scss`
+(`reveal`, `reveal-revealed`, `reveal-label`, `reveal-revealed-label`).
+
+**Markup contract**
+
+```html
+<button class="btn btn-primary btn-reveal">
+  <i class="bi bi-plus-lg" aria-hidden="true"></i>
+  <span class="btn-label">Add new</span>
+</button>
 ```
 
-- **Types** → `src/browser/types.ts` only. Suffix discipline per §4.5:
-  `InspectorInterface`, `InspectorOptions`, `InspectionResult`, `Finding`,
-  `FindingSeverity` (`'error' | 'warning' | 'advice'`), `RuleInterface`,
-  `RuleContext`, `ContentModelEntry`, `ContentCategory`,
-  `ContentModel` (`'transparent' | 'void' | 'text' | 'nothing' | 'children'`),
-  `InspectorEventMap`.
-- **Schema registry** → `src/browser/schema.ts`, modeled exactly on
-  [`taxonomy.ts`](src/browser/taxonomy.ts) / [`patterns.ts`](src/browser/patterns.ts):
-  a frozen `contentModel` array of typed `entry(...)` records, pre-computed
-  `ReadonlyMap`/`ReadonlySet` indices, single-word predicates (`isVoid`,
-  `isTransparent`, `modelOf`, `categoriesOf`, `contextOf`). Each entry cites
-  its `guides/w3c/**` anchor so the parity test is bidirectional.
-- **Inspector entity** (Manager pattern, §4.2.2 / §9 / §14):
-  - `Inspector` owns `#walker`, `#rules`, `#findings`, `#emitter`.
-  - Single-word public surface: `inspect(root)`, `findings`, `rules`,
-    `emitter`. Options grouped per §4.2.1: `{ on?, severity?, lens?, root? }`.
-  - `RuleManager`: `rule(id)` / `rules()`; rules are pure predicates
-    `(element, context) => Finding | null` — no shared mutable state.
-  - `FindingManager`: `finding(id)` / `findings()`; batch `clear()` /
-    `clear(id)` / `clear(ids)` per §10.
-  - `Emitter<InspectorEventMap>` (§14) so a large-tree walk streams:
-    events `start`, `finding`, `done` (≤4, single-word).
-  - `inspect()` returns a value `InspectionResult` (DOM-walking does not
-    "fail"); a non-`Node` argument is a programmer error → `throw Error`
-    (§13). Optional fallible sub-operations use `Result<T,E>`.
-- **Helpers** → `src/browser/helpers.ts`, `{verb}{Noun}` per §4.3, each a
-  THIN adapter over existing first-party tooling (see [Existing tooling we
-  build on](#existing-tooling-we-build-on-no-reinvention)): `resolveModel`
-  (transparent resolution — walks `getAncestors()` / `findClosest()` from
-  [`traversals`](guides/traversals.md)), `effectiveCategories`,
-  `nodePath` (wraps `getPathToAncestor()` from `traversals`),
-  `flatChildren` (slot/shadow-aware, over the `traversals` child walks).
-  `parentChain` is `getAncestors()` directly.
-- **Constants** → `src/browser/constants.ts`: `VOID_TAGS`,
-  `TRANSPARENT_TAGS`, `INTERACTIVE_TAGS`, category membership sets
-  (`CATEGORY_MEMBERS` mirrors [`categories.md`](guides/w3c/categories.md)).
-- **Built on existing first-party tooling, not reinvented.** The Walker is
-  a thin Context layer over [`@elements/browser` `traversals`](guides/traversals.md);
-  the schema's structured constraint data + the `Finding`/`InspectionResult`
-  shapes are [`@elements/core`](guides/shapers.md) `ContractShape`s
-  ([compilers.md](guides/compilers.md) derives their guard + JSON Schema +
-  deterministic generator); rule predicates compose
-  [`@elements/core` validators](guides/validators.md); attribute-value
-  rules use the [`@elements/core` parsers](guides/parsers.md). These are
-  first-party packages already shipped + parity-gated — using them honors
-  "no new dependencies" **and** "no reinvention".
-- **No `errors.ts`** — findings are _data_, not exceptions.
+**Layout mechanism** — the button becomes a two-track grid:
 
-### The transparent content model (first-class)
+- Idle (`reveal` mixin): `display: inline-grid; grid-template-columns: auto 0fr;
+  column-gap: 0`. The icon sits in the `auto` track; the label sits in the
+  collapsed `0fr` track.
+- Label slot (`reveal-label` mixin): `min-inline-size: 0; overflow: hidden;
+  white-space: nowrap; opacity: 0`. The `min-inline-size: 0` is **load-bearing**
+  — without it the label's `min-content` width fights the `0fr` track and the
+  column never collapses.
+- Revealed (`reveal-revealed`, on `:hover, :focus-visible, .show`):
+  `grid-template-columns: auto 1fr; column-gap: var(--bs-btn-reveal-gap)`.
+- Revealed label (`reveal-revealed-label`): `opacity: 1`.
 
-`<a>`, `<ins>`, `<del>`, `<object>`, `<video>`, `<audio>`, `<canvas>`,
-`<map>`, `<slot>` are "transparent" ([spec:
-`dom.html#transparent-content-models`](https://html.spec.whatwg.org/multipage/dom.html#transparent-content-models)).
-`resolveModel(node)` walks ancestors: if the parent is itself transparent,
-recurse; otherwise the effective model is the one the nearest
-**non-transparent** ancestor imposes; a detached root resolves to **flow**
-(verbatim spec rule: _"when a transparent element has no parent, its content
-model restrictions are instead based on flow content"_). Ancestor
-_restrictions_ propagate through (no interactive / no `<a>` / no `tabindex`
-descendant of [`<a>`](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element);
-no nested `<audio>`/`<video>`). This resolver is the spine of the structure
-lens and gets its own dedicated unit suite. **Implementation:** the
-ancestor walk is [`traversals`](guides/traversals.md) `getAncestors()` /
-`findClosest()` (not a hand-rolled loop); the recursive _guard_ form of a
-transparent/recursive content model is expressed with
-[`@elements/core`](guides/validators.md) `lazyOf` (guard) /
-[`lazyShape`](guides/shapers.md) (the only sanctioned recursion boundary —
-its acyclicity + bounded-depth + cycle-safety are already proven and
-tested), so the resolver inherits adversarial-input safety instead of
-re-deriving it.
+**Asymmetric timing** — entry is fast with no delay (decelerate easing); exit is
+slower with a delay (so a mouse drifting across the button doesn't blank the
+label instantly). Tunables: `--bs-btn-reveal-{in,out}-duration`,
+`--bs-btn-reveal-out-delay`, `--bs-btn-reveal-gap`.
+
+**Variants mailbox ships (and our verdict):**
+
+| mailbox feature | what it does | our plan |
+| --- | --- | --- |
+| `.btn-reveal` | always reveal-on-hover | **Phase 1** — base `button.reveal` |
+| `.btn-reveal-end` | label reveals to the inline-start (icon on the right) | **Phase 2** — `button.reveal-end` |
+| `.btn-reveal-{sm,md,lg,xl}` | reveal only ≥ breakpoint; below, icon+label both shown | **Reframed** — see §5 (we defer responsive to Tailwind / container queries, not baked breakpoint classes) |
+| `.btn-reveal-group` exclusive hand-off | one-revealed-at-a-time with `:is(:hover,:focus-within)` + 220ms out-delay to prevent flicker | **Phase 3** — opt-in, the hardest part |
+
+**Known mailbox rough edges to design around:**
+
+1. **Group hand-off flicker.** mailbox switched from `:has(.btn-reveal:hover)`
+   to `.btn-reveal-group:is(:hover, :focus-within)` because `:has` went false in
+   the gap between siblings and the `.show` button re-revealed mid-traversal.
+   We adopt the `:is(:hover, :focus-within)` solution from the start.
+2. **Source-order / specificity tie with `.nav-button`.** mailbox re-emits the
+   whole reveal contract under `.nav-button.btn-reveal*` at higher specificity
+   because `_buttons.scss` loads before `_nav.scss`. We avoid this entirely:
+   our modifier lives in `@layer modifiers`, which beats `@layer elements` and
+   `@layer components` by cascade-layer order regardless of source order. **No
+   re-emission needed** — this is a concrete win from our layer architecture.
+3. **Label measurement.** The `0fr → 1fr` animation animates the *track*, not a
+   pixel width, so it works without JS measuring the label. Keep that — never
+   reach for a JS width measurement.
 
 ---
 
-## Existing tooling we build on (no reinvention)
+## 3. How it maps onto THIS framework
 
-The inspector's two heaviest layers — DOM traversal and
-shape/guard/parse/generate — **already exist as shipped, parity-gated
-first-party packages**. The build composes them; it does not re-implement
-them. Every row's API is exhaustively documented + doc↔source-gated in the
-linked guide.
+### 3.1 Classification — element-local modifier
 
-| Inspector need                                                                                                                                           | Reuse (already shipped)                                                                                                     | Source / guide                                                          |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Depth-first element walk (lazy, no recursion limit)                                                                                                      | `walkDescendantsGenerator()` (`for…of`), `walkDescendants()`, `walkDescendantsBreadthFirst()`                               | [`traversals`](guides/traversals.md) · `src/browser/traversals.ts`      |
-| Transparent-model ancestor resolution                                                                                                                    | `getAncestors()`, `findClosest()`, `findAncestor()`, `findCommonAncestor()`                                                 | [traversals.md](guides/traversals.md)                                   |
-| Node typing / matching guards                                                                                                                            | `isElement`, `isHTMLElement`, `isTextNode`, `isTagType`, `matchesTag`, `hasAttribute`, `createMatcher` (`ElementPredicate`) | [traversals.md](guides/traversals.md) · `helpers.ts`                    |
-| Stable DOM path for a `Finding`                                                                                                                          | `getPathToAncestor()`, `getTreeDistance()`, `getSiblingIndex()`                                                             | [traversals.md](guides/traversals.md)                                   |
-| Relationship checks (interaction lens)                                                                                                                   | `isDescendantOf`, `isAncestorOf`, `isBefore`, `isAfter`, `contains`                                                         | [traversals.md](guides/traversals.md)                                   |
-| Focus/interaction rules                                                                                                                                  | `isFocusable`, `findFocusableElements`, `findFirstFocusable`, `findLastFocusable`                                           | [traversals.md](guides/traversals.md)                                   |
-| Live-vs-static collection safety while walking                                                                                                           | `toArray()` to freeze before DOM-sensitive iteration                                                                        | [traversals.md](guides/traversals.md) §Contract 6                       |
-| `ContentModelEntry` constraint data + `Finding` / `InspectionResult` shape → free **guard + JSON Schema**                                                | declare a `ContractShape` once; `compileContract()` derives `is` + `schema`                                                 | [shapers.md](guides/shapers.md) · [compilers.md](guides/compilers.md)   |
-| Recursive content model (transparent / `ruby` / nested)                                                                                                  | `lazyShape()` (shape) · `lazyOf` (guard) — the only sanctioned recursion boundary, cycle-safe + depth-capped                | [shapers.md](guides/shapers.md) · [validators.md](guides/validators.md) |
-| Deterministic synthetic DOM/shape fixtures + perf-budget trees                                                                                           | `compileGenerator()` + `createRandom(seed)` (reproducible per seed)                                                         | [compilers.md](guides/compilers.md)                                     |
-| Rule predicate composition                                                                                                                               | `andOf` / `orOf` / `unionOf` / `whereOf` / `notOf` / `enumOf` / `literalOf` / `recordOf`                                    | [validators.md](guides/validators.md)                                   |
-| Attribute-value rules (`tabindex` integer · `colgroup[span]` ≤1000 · `th[scope]` enum · `dir∈{ltr,rtl}` · `loading`/`crossorigin` enums · `data[value]`) | `parseInteger` / `parseEnum` / `parseBoolean` / `parseString` (coerce → typed-or-`undefined`)                               | [parsers.md](guides/parsers.md)                                         |
-| Machine-consumable findings output (JSON Schema + a guard for consumers)                                                                                 | the `Finding` `ContractShape`'s compiled `schema` + `is`                                                                    | [compilers.md](guides/compilers.md)                                     |
+`reveal` only makes sense on a `<button>` (and possibly `<a>` styled as a
+button). It is **not** one of the five cross-cutting dimensions (variant / size
+/ style / state / placement), so per `guides/modifiers.md` §Contract.7 and
+`AGENTS.md` §21.4 it is an **element-local modifier** living in
+[`src/styles/modifiers/_local.scss`](src/styles/modifiers/_local.scss) as the
+compound selector `button.reveal`. It is **not** registered in
+`src/browser/modifiers.ts` (that file is the five frozen dimensions only); it is
+governed instead by `tests/src/styles/modifiers/_local.test.ts`.
 
-**Consequence for the phases:** Phase 2's "Walker" shrinks to a Context
-resolver over `traversals`; Phase 1's schema gains a _compiled_ guard +
-JSON Schema for free; Phase 3 rule predicates are validator compositions
-and attribute checks are `parsers` calls; Phase 3/8 fixtures + the perf
-budget use the seeded generator. **The doc↔source parity discipline these
-five guides exemplify** (DOC→SOURCE + SOURCE→DOC + TYPES-ARE-TRUTH +
-`tests/guides/{x}.test.ts` ↔ `tests/src/**`) **is the exact contract
-`guides/inspector.md` (Phase 7) must itself satisfy.**
+Precedent in `_local.scss` confirms the shapes we need are already permitted:
+`form.row > label` (descendant combinator), `button.dropdown::after`
+(pseudo-element), `:has()` sibling rules, and documented charter exceptions for
+selectors that don't match the bare `{tag}.{name}` regex.
 
----
+### 3.2 The label-slot — no bespoke class
 
-## At a glance
+mailbox uses `.btn-label`. This framework forbids bespoke component classes, so
+the label slot is the button's **plain child `<span>`** and the icon is the
+existing `<i class="icon">`. The collapse targets `button.reveal > span`:
 
-| Phase | Description                                                                                                                                                                                                                                       | Status |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| 0     | Reconcile the `guides/w3c/**` cache against the canonical WHATWG spec                                                                                                                                                                             | ✅     |
-| 1     | Schema registry `src/browser/schema.ts` + bidirectional parity test                                                                                                                                                                               | ✅     |
-| 2     | Walker + Context (native traversal, transparent resolver, shadow/slot)                                                                                                                                                                            | ✅     |
-| 3     | Rule engine + rule families (structure / content-model / attribute / ARIA-relevant)                                                                                                                                                               | ✅     |
-| 4     | Findings + `Inspector` entity (Manager + Emitter + severity + DOM path) + barrel                                                                                                                                                                  | ✅     |
-| 5     | Presentation lens (computed-style: load-bearing rendering overrides)                                                                                                                                                                              | ✅     |
-| 6     | Showcase self-audit suite — gate SHIPPED + GREEN on all 43 pages (0 errors); `_textarea`/`<menu>`-group/`createToast`-root remediated at source; 30 TRUE-positive errors → 0; 113→120 list-style warnings remain by-design (reported, not failed) | ✅     |
-| 7     | `/inspector` showcase page (dogfood, live) + `guides/inspector.md`                                                                                                                                                                                | ✅     |
-| 8     | Public-API parity hardening + large-tree performance budget                                                                                                                                                                                       | ✅     |
+```html
+<button type="button" class="reveal primary">
+  <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+  <span>New invoice</span>
+</button>
+```
 
----
+The label is always in the DOM (so it is always in the accessibility tree — the
+button is **never** unlabelled, even collapsed). Only its visual track collapses.
+Open question O-1 (§9): if a button has more than one non-icon child, scope the
+collapse to the last child or require exactly one `<span>`. Decision for Phase 1:
+**require exactly one `<span>` label child**; document it; the rule targets
+`button.reveal > span`.
 
-## W3C spec reference map
+### 3.3 Token surface
 
-The canonical authority for every rule. Base:
-`https://html.spec.whatwg.org/multipage/`. Each corpus area below maps to
-its **local cache file** (what the schema mirrors today) and its
-**canonical multipage page** (what Phase 0 reconciles against — fetch with a
-tightly-scoped, subsection-named prompt). Every phase, rule family, and
-Phase-0 gap links back to the matching row here.
+Declared on the `<button>` token surface in
+[`src/styles/elements/_button.scss`](src/styles/elements/_button.scss) (the
+element that owns them), consumed from `_local.scss`, mirrored 1:1 in
+[`src/browser/tokens.ts`](src/browser/tokens.ts) (`button.reveal*` leaves) so the
+`tests/src/browser/tokens.test.ts` parity gate stays green:
 
-| Corpus area                                                                                                             | Local cache                                                             | Canonical multipage page                                                                      |
-| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Content categories · content models · **transparent** · palpable · inter-element whitespace                             | _(none — Phase 0 adds `categories.md`)_                                 | [dom.html](https://html.spec.whatwg.org/multipage/dom.html#content-models)                    |
-| Sectioning — `article` `section` `nav` `aside` `h1`–`h6` `hgroup` `header` `footer` `address`                           | [`elements/sections.md`](guides/w3c/elements/sections.md) _(truncated)_ | [sections.html](https://html.spec.whatwg.org/multipage/sections.html)                         |
-| Grouping — `p` `hr` `pre` `blockquote` `ol` `ul` `menu` `li` `dl` `dt` `dd` `figure` `figcaption` `main` `search` `div` | [`elements/groupings.md`](guides/w3c/elements/groupings.md)             | [grouping-content.html](https://html.spec.whatwg.org/multipage/grouping-content.html)         |
-| Text-level (incl. `a`, `bdo`, `data`, `time`, `ruby`, `br`/`wbr`)                                                       | [`elements/texts.md`](guides/w3c/elements/texts.md)                     | [text-level-semantics.html](https://html.spec.whatwg.org/multipage/text-level-semantics.html) |
-| Link mechanics — `href` `rel` `ping` `hreflang` keyword tables                                                          | [`elements/links.md`](guides/w3c/elements/links.md)                     | [links.html](https://html.spec.whatwg.org/multipage/links.html)                               |
-| Edits — `ins` `del` (transparent)                                                                                       | [`elements/edits.md`](guides/w3c/elements/edits.md)                     | [edits.html](https://html.spec.whatwg.org/multipage/edits.html)                               |
-| Embedded — `picture` `source` `img` `iframe` `embed` `object`                                                           | [`elements/embeddeds.md`](guides/w3c/elements/embeddeds.md) _(partial)_ | [embedded-content.html](https://html.spec.whatwg.org/multipage/embedded-content.html)         |
-| Media — `video` `audio` `track` (transparent media)                                                                     | _(none — Phase 0)_                                                      | [media.html](https://html.spec.whatwg.org/multipage/media.html)                               |
-| Image maps — `map` `area`                                                                                               | _(none — Phase 0)_                                                      | [image-maps.html](https://html.spec.whatwg.org/multipage/image-maps.html)                     |
-| Tabular — `table` `caption` `colgroup` `col` `thead` `tbody` `tfoot` `tr` `td` `th`                                     | [`elements/tables.md`](guides/w3c/elements/tables.md)                   | [tables.html](https://html.spec.whatwg.org/multipage/tables.html)                             |
-| Forms — `form`, `label`                                                                                                 | [`elements/forms.md`](guides/w3c/elements/forms.md) _(form/label only)_ | [forms.html](https://html.spec.whatwg.org/multipage/forms.html#the-form-element)              |
-| Forms — `input`                                                                                                         | _(none — Phase 0)_                                                      | [input.html](https://html.spec.whatwg.org/multipage/input.html#the-input-element)             |
-| Forms — `button` `select` `optgroup` `option` `textarea` `fieldset` `legend` `output` `datalist` `meter` `progress`     | _(none — Phase 0)_                                                      | [form-elements.html](https://html.spec.whatwg.org/multipage/form-elements.html)               |
-| Interactive — `details` `summary` `dialog`                                                                              | [`elements/interactives.md`](guides/w3c/elements/interactives.md)       | [interactive-elements.html](https://html.spec.whatwg.org/multipage/interactive-elements.html) |
-| Interaction — `hidden` `inert` focus/`tabindex` `contenteditable` popover, page visibility, user activation             | [`interactions.md`](guides/w3c/interactions.md) _(§6.1–6.4 only)_       | [interaction.html](https://html.spec.whatwg.org/multipage/interaction.html)                   |
-| Rendering — UA default CSS / semantically load-bearing presentation                                                     | [`renderings.md`](guides/w3c/renderings.md)                             | [rendering.html](https://html.spec.whatwg.org/multipage/rendering.html)                       |
+```scss
+--set-button-reveal-gap: calc(var(--spacing) * 1.5);          // 0.375rem-ish, factor-aware
+--set-button-reveal-transition-duration-in: var(--set-transition-duration);
+--set-button-reveal-transition-duration-out: calc(var(--set-transition-duration) * 1.4);
+--set-button-reveal-transition-delay-out: 120ms;
+```
 
-**Stable anchor conventions** (verified live): per-element anchors are
-`#the-{tag}-element` (headings are the combined
-`sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements`); content-category
-anchors are `dom.html#{flow,phrasing,sectioning,heading,embedded,
-interactive,metadata}-content[-2]`, plus
-[`#transparent-content-models`](https://html.spec.whatwg.org/multipage/dom.html#transparent-content-models),
-[`#palpable-content`](https://html.spec.whatwg.org/multipage/dom.html#palpable-content),
-and
-[`#inter-element-whitespace`](https://html.spec.whatwg.org/multipage/dom.html#inter-element-whitespace).
-The schema's `cite` field stores both the canonical URL and the local
-cache anchor; the Phase-1 parity test resolves each.
+Naming follows §21.3: last segment is a real CSS property key
+(`transition-duration`, `transition-delay`) with an `in` / `out` modifier. **No
+new easing tokens** — we reuse the framework's existing transition timing
+function; mailbox's three-easing system is out of scope.
 
----
+### 3.4 Mixins
 
-## Phase 0 — Complete the W3C corpus (source of truth)
+Add to [`src/styles/_mixins.scss`](src/styles/_mixins.scss) so the contract is
+single-sourced and reusable if `a.reveal` (Phase 2) is added:
 
-**Canonical source:** the **live WHATWG spec at
-<https://html.spec.whatwg.org/>** is the authority. `guides/w3c/**` is a
-curated _local cache_ of it — convenient and citeable, but it has drifted /
-truncated. Phase 0 **reconciles the cache against the canonical spec** and
-the schema (Phase 1) mirrors the reconciled cache; parity tests bind all
-three. Where the cache and the spec disagree, **the spec wins** and the
-cache is corrected.
+- `reveal($end: false)` — idle grid (`auto 0fr`, gap 0, the out transition).
+- `reveal-revealed($end: false)` — revealed grid (`auto 1fr`, gap restored, the
+  in transition).
+- `reveal-label` — idle label slot (`min-inline-size: 0; overflow: hidden;
+  white-space: nowrap; opacity: 0`).
+- `reveal-revealed-label` — revealed label (`opacity: 1`).
 
-**Fetch strategy (proven, twice):** use the **multipage** spec
-(`https://html.spec.whatwg.org/multipage/{section}.html`) with a
-**tightly-scoped prompt naming the exact subsection(s)** to extract. A
-broad prompt against a large page (or the single-page spec) gets
-summarized/truncated; a narrow "extract only §X.Y" prompt extracts cleanly
-even from large pages. Canonical section URLs (from the multipage TOC):
-`dom.html` (content models / kinds of content / transparent),
-`sections.html`, `grouping-content.html`, `text-level-semantics.html`,
-`edits.html`, `embedded-content.html`, `media.html`, `image-maps.html`,
-`tables.html`, `forms.html`, `interactive-elements.html`,
-`interaction.html`. Two live validations:
+Each transition goes through the existing `transition()` mixin so the
+`prefers-reduced-motion: reduce` opt-out is emitted automatically (§21.8).
 
-- _Sections gap_ → `multipage/sections.html`: `header`/`footer` (flow, **no
-  `header`/`footer` descendants**), `hgroup` (`p* · one h1–h6 · p*`,
-  intermixed script-supporting), `address` (flow, **no heading /
-  sectioning / `header` / `footer` / `address` descendants**), `nav`/`aside`
-  (flow, sectioning, palpable).
-- _Category linchpin_ (absent from the cache entirely) →
-  `multipage/dom.html` §3.2.5.2–3.2.5.3: full element-membership lists for
-  all eight categories + palpable rule + the transparent rule verbatim
-  ("content model derived from the parent's content model; **when a
-  transparent element has no parent, its restrictions are based on flow
-  content**"). The same path closes every gap below.
+### 3.5 Phase-1 SCSS (target shape)
 
-**Status — corpus reconciled & complete (✅):** every gap below is closed.
-`sections.md` / `forms.md` / `embeddeds.md` / `interactions.md` completed
-from the canonical spec; `categories.md`, `aria.md`, and `elements/
-document.md` added; `math`/`svg` carded; verbatim/illustrative spec
-examples added throughout. **All 93 `taxonomy.ts` elements have a carded
-entry under `guides/w3c/**`** (verified). The only Phase-0-adjacent item
-left is the `tests/guides/w3c.test.ts` parity gate, which is **Phase 1**
-work (it mechanizes this now-satisfied invariant). The gap list below is
-retained as the rationale record.
+```scss
+@layer modifiers {
+  button.reveal {
+    @include reveal;
+  }
+  button.reveal > span {
+    @include reveal-label;
+  }
+  button.reveal:hover,
+  button.reveal:focus-visible {
+    @include reveal-revealed;
+  }
+  button.reveal:hover > span,
+  button.reveal:focus-visible > span {
+    @include reveal-revealed-label;
+  }
+}
+```
 
-**Why first:** the schema (Phase 1) cannot be trusted unless the corpus it
-derives from is complete and spec-accurate. Deep reading of `guides/w3c/**`
-surfaced concrete, load-bearing gaps (now closed via the fetch strategy
-above):
-
-- [`elements/sections.md`](guides/w3c/elements/sections.md) — **truncated**
-  after `section`; `nav`, `aside`, `h1`–`h6`, `hgroup`, `header`, `footer`,
-  `address` have only ToC stubs. → reconcile from
-  [sections.html](https://html.spec.whatwg.org/multipage/sections.html).
-- [`elements/forms.md`](guides/w3c/elements/forms.md) — only `form` /
-  `label` carded; `button`, `input`, `select`, `textarea`, `fieldset`,
-  `legend`, `option`, `optgroup`, `datalist`, `meter`, `output`,
-  `progress` unmodeled. → `input` from
-  [input.html](https://html.spec.whatwg.org/multipage/input.html#the-input-element),
-  the rest from
-  [form-elements.html](https://html.spec.whatwg.org/multipage/form-elements.html),
-  `form`/`label` from
-  [forms.html](https://html.spec.whatwg.org/multipage/forms.html#the-form-element).
-- [`elements/links.md`](guides/w3c/elements/links.md) — link _mechanics_
-  only; **no element cards** for `a` / `area` / `map`. → `a` from
-  [text-level-semantics.html#the-a-element](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element);
-  `map`/`area` from
-  [image-maps.html](https://html.spec.whatwg.org/multipage/image-maps.html);
-  rel/href keyword tables from
-  [links.html](https://html.spec.whatwg.org/multipage/links.html).
-- [`elements/embeddeds.md`](guides/w3c/elements/embeddeds.md) — only
-  `picture` / `source` / `img`; `object`, `embed`, `iframe`, `canvas`,
-  `param` absent and `video`/`audio`/`track` not modeled. → static embeds
-  from
-  [embedded-content.html](https://html.spec.whatwg.org/multipage/embedded-content.html);
-  media from
-  [media.html](https://html.spec.whatwg.org/multipage/media.html).
-- [`interactions.md`](guides/w3c/interactions.md) — only §6.1–§6.4
-  (`hidden`, page-visibility, `inert`, user-activation); §6.5+ (activation
-  behavior, focus / `tabindex` / `autofocus`, `contenteditable`, popover &
-  dialog activation, close watchers) are ToC-only. → complete from
-  [interaction.html](https://html.spec.whatwg.org/multipage/interaction.html).
-- **No verbatim content-category definitions** anywhere ("flow",
-  "phrasing", "embedded", "interactive", "palpable", "sectioning",
-  "heading", "metadata", "script-supporting", "form-associated" …). →
-  source from
-  [dom.html#kinds-of-content](https://html.spec.whatwg.org/multipage/dom.html#kinds-of-content).
-- **No implicit-ARIA role table** (needed only where the _HTML_ spec makes
-  a role content-model-relevant, e.g. `main`'s "hierarchically correct").
-
-**Work:**
-
-- ✅ **Element mirror reconciled from the canonical multipage spec** —
-  `sections.md` completed (`nav`/`aside`/`h1`–`h6`/`hgroup`/`header`/
-  `footer`/`address` + §4.3.11–4.3.12); `forms.md` completed (all 12
-  form-control cards §4.10.5–4.10.16 from `input.html` /
-  `form-elements.html`); `embeddeds.md` extended (`iframe`/`embed`/
-  `object`/`video`/`audio`/`track`/`map`/`area`/`canvas` from
-  `iframe-embed-object.html` / `media.html` / `image-maps.html` /
-  `canvas.html`). `a` was already carded in `texts.md`; `links.md` is the
-  faithful §4.6 link-mechanics chapter (no element cards by spec design).
-  Every card carries its canonical spec URL; ToCs regenerated; transparent
-  models captured precisely.
-- ✅ **`guides/w3c/categories.md` added** — the §3.2.5 content-model
-  vocabulary (transparent model, the eight content categories with full
-  element membership, palpable rule, paragraphs, inter-element whitespace),
-  the linchpin every content-model rule resolves against.
-- ✅ **`interactions.md` §6.5–§6.10 completed** — activation behavior,
-  focus / `tabindex` / `autofocus`, `accesskey`, editing
-  (`contenteditable` / `spellcheck` / `autocapitalize` / `inputmode` /
-  `enterkeyhint` / `draggable`), find-in-page, close watchers — oriented to
-  the DOM/attribute-checkable rules Phase 3 / Phase 5 cite.
-- ✅ **`guides/w3c/aria.md` added** — the scoped implicit-role appendix:
-  faithful implicit ARIA role per element from ARIA-in-HTML / HTML-AAM,
-  with the content-model-relevant cases pinned (`main` hierarchical
-  correctness, `li`/list & table-model roles, `a`/`area` href flip, `img`
-  alt polarity, interactive-content lookup).
-- ✅ **`document.md` added + `math`/`svg` carded** — cross-checking the
-  corpus against [`taxonomy.ts`](src/browser/taxonomy.ts) surfaced `html`
-  (root) and `math`/`svg` (foreign embedded) as uncarded. Added
-  `elements/document.md` (§4.1 `html` + §4.2 `head`/`title`/`base`/`link`/
-  `meta`/`style` from `semantics.html`) and `math`/`svg` cards to
-  `embeddeds.md` (foreign content — HTML checking stops at the boundary).
-  **All 93 `taxonomy.ts` elements now have a carded entry** (verified).
-- ✅ **Spec examples added** — verbatim canonical code examples inserted
-  into every newly-carded element where the multipage page was reachable
-  (sections ×7, button/select/datalist/optgroup/input, iframe/object/
-  video/audio/track/map/canvas, html/head/title/base/link/meta/style);
-  the deep-in-long-page elements the fetch tool structurally truncates got
-  concise clearly-labeled _illustrative_ examples (never misattributed —
-  the canonical spec URL is on every card).
-- ✅ **`tests/guides/w3c.test.ts` gate** — landed with **Phase 1** (not
-  Phase 0): asserts every carded element under `guides/w3c/**` has a
-  `contentModel` entry whose categories/context/model match the prose, and
-  every schema `cite` resolves bidirectionally. The corpus content was
-  done; this test mechanizes the invariant.
+`.show` (always-revealed, controlled) is added in Phase 3 alongside the group
+behavior; Phase 1 ships hover/focus only.
 
 ---
 
-## Phase 1 — Schema registry (`src/browser/schema.ts`)
+## 4. Accessibility
 
-The frozen TS mirror of the corpus, shaped exactly like
-[`taxonomy.ts`](src/browser/taxonomy.ts).
-
-- ✅ **Types first** in `types.ts`: `ContentCategory`, `ContentModel`,
-  `ContentModelEntry` (`tag`, `categories`, `context` — allowed
-  parents/ancestor predicate, `model`, `childModel` — the element's ONE
-  ordered child content model (closed sequence vs. structural prefix + open
-  category arm; replaces the overloaded `required` field + the duplicated
-  `child-order`/`group-order` constraint encoding — Phase-3.1 fix),
-  `permits` — bare-category child set (disjoint from `childModel`, parity-
-  guarded), `forbidden` — forbidden descendant categories/tags,
-  `transparent`, `void`, `attributes` — coupling rules, `cite` —
-  `guides/w3c` anchor). Sub-types `ContentConstraint` / `ChildModel` /
-  `ChildSegment` / `AttributeRule` land alongside (constraints-as-data +
-  the recursive ordered-model encoding + coupling rules).
-- ✅ **`schema.ts`**: frozen `contentModel: readonly ContentModelEntry[]`
-  via a typed `defineModel(...)` helper (the `entry(...)` analogue — bare
-  `entry` is taxonomy's; `defineModel` is the schema's, both in
-  `helpers.ts`); pre-computed `SCHEMA_BY_TAG`, `VOID_TAGS`,
-  `TRANSPARENT_TAGS`, `CATEGORY_MEMBERS`; single-word predicates `isVoid`,
-  `isTransparent`, `modelOf`, `categoriesOf`, `contextOf`,
-  `isKnownElement`. 110 entries (the 93 taxonomy tags with the single
-  `h1`–`h6` taxonomy entry expanded to six real elements, plus the 12
-  metadata / media / image-map elements the corpus additionally cards:
-  `area`, `base`, `br`, `head`, `link`, `map`, `meta`, `source`, `style`,
-  `title`, `track`, `wbr`).
-- ✅ Encode the discrete named constraints as data (so rules stay generic):
-  `no-self-nest` (`a`, `dfn`), `no-interactive-descendant` (`a`,
-  `button`), `single-first-child` (`summary`→`details`,
-  `legend`→`fieldset`, `caption`→`table`), `edge-child`
-  (`figcaption`→`figure` first|last), `parent-restricted` (`li`→ul/ol/menu,
-  `td`/`th`→tr, `option`→select/optgroup/datalist). The ordered/cardinal
-  child models (`table`, `picture` `source`\*-then-`img`, `dl` `dt`+`dd`+,
-  `ruby`, `hgroup`, list models, `details`/`fieldset` prefix, …) are encoded
-  ONCE in `childModel` — NOT as duplicated `child-order`/`group-order`
-  constraints (the Phase-3.1 single-source fix; those constraint kinds were
-  removed).
-- ✅ **Express the entry as an `@elements/core` `ContractShape`** (an
-  `objectShape` of the fields above; `literalShape` for the category /
-  model unions) run through `compileContract()` — the inspector gets a
-  **runtime guard** (`contentModelContract.is`; the frozen registry is
-  validated against it at module load via `CONTRACT_GUARDED`, fixture
-  inputs in tests) and a **JSON Schema** of `ContentModelEntry`
-  (machine-readable corpus export) for free, plus a **seeded generator**
-  of synthetic entries for Phase-3 fixtures. The frozen `taxonomy.ts`-style
-  array stays the authoring surface; the shape is its compiled contract —
-  derived, not duplicated ([shapers.md](guides/shapers.md) /
-  [compilers.md](guides/compilers.md)). NB: the `ChildSegment` arm IS
-  recursive (`group` nests `ChildSegment[]`, `choice` nests segment lists),
-  so the contract uses `lazyShape` — the sole sanctioned recursion boundary
-  — for it; the transparent model is the one shape resolved at WALK time
-  (Phase 2) over live ancestors, not encoded as a self-referential shape.
-- ✅ Barrel: `export * from './schema.js'` in
-  [`src/browser/index.ts`](src/browser/index.ts).
-- ✅ **`tests/guides/w3c.test.ts`** (bidirectional, mirrors
-  `tests/guides/elements.test.ts`): every `guides/w3c/**` carded element
-  has a `contentModel` entry whose categories/context/model match the
-  prose; every schema entry's `cite` resolves to a real guide anchor; no
-  schema entry without a card; no card without a schema entry. Paired 1:1
-  with the new pointer guide [`guides/w3c.md`](guides/w3c.md) (the total
-  test↔guide bijection `README.test.ts` enforces).
+- **Never unlabelled.** The `<span>` label stays in the DOM and the a11y tree at
+  all times; collapse is purely visual. No `aria-label` needed, though a
+  redundant one is harmless.
+- **Keyboard parity.** `:focus-visible` reveals exactly like `:hover`, so
+  keyboard and switch users get the label on focus. Tab order is unaffected.
+- **Reduced motion.** Via the `transition()` mixin, `prefers-reduced-motion:
+  reduce` collapses the animation to an instant state change — the label still
+  appears on hover/focus, just without the slide.
+- **Forced colors.** No special handling needed (the modifier paints no color);
+  the button's own `forced-colors` chrome from `_button.scss` is untouched.
+- **Hit area.** The collapsed button must keep a ≥ 24×24 (ideally 44×44 on
+  touch) target. Because touch shows the full label (§5), the collapsed target
+  size only matters on pointer-fine devices where it is already a comfortable
+  icon button.
 
 ---
 
-## Phase 2 — Walker + Context
+## 5. Desktop vs mobile / touch — the critical reconciliation
 
-- ✅ `Walker` class: **thin layer over [`traversals`](guides/traversals.md)** —
-  the spine is `walkDescendantsGenerator()` (lazy `for…of`, O(depth), no
-  recursion limit; `walkDescendantsBreadthFirst()` available where a BFS
-  pass is cheaper). The Walker adds only what `traversals` doesn't: flat-tree
-  awareness (descend `shadowRoot`, resolve `<slot>` via `assignedElements()`,
-  `<template>.content`) and **skipping foreign-content subtrees**
-  (`<svg>`/`<math>`) per [`categories.md`](guides/w3c/categories.md) — node
-  typing via the `isElement` / `isHTMLElement` / `matchesTag` / `isTagType`
-  guards, never hand-rolled `nodeType` checks. Freeze live collections with
-  `toArray()` before any DOM-sensitive pass (traversals.md §Contract 6).
-- ✅ `RuleContext` per node: resolved effective content model (via
-  `resolveModel`, which walks `getAncestors()` / `findClosest()`),
-  `parentChain` = `getAncestors()`, inherited restrictions
-  (no-interactive / no-`a` / no-`tabindex` flags accumulated from ancestors),
-  and a lazily-computed `getComputedStyle` accessor (only read when the
-  presentation lens asks — keeps the structure lens style-free and fast).
-- ✅ `resolveModel` / `effectiveCategories` / `flatChildren` / `nodePath`
-  (the last wraps `getPathToAncestor()`) helpers in `helpers.ts` — adapters,
-  not re-implementations.
-- ✅ Unit suite (`tests/src/browser/inspector/Walker.test.ts`) — real DOM
-  fixtures per AGENTS §16.2 (seeded via `compileGenerator()` +
-  `createRandom()` for synthetic trees): detached root → flow; nested
-  transparent (`<a><ins>…`) resolution; slotted/shadow descent;
-  `<template>` content; foreign-subtree skip.
+Reveal-on-hover is meaningless on touch (no hover; the first tap would have to
+both reveal AND activate). mailbox solved this by gating reveal behind
+min-width **breakpoint** classes (`.btn-reveal-md`), so below the breakpoint the
+label is always shown. We take a cleaner, capability-based route that fits this
+framework's "defer responsive to the consumer" philosophy:
 
----
+**Gate the collapse behind pointer/hover capability, not viewport width:**
 
-## Phase 3 — Rule engine + rule families
+```scss
+@layer modifiers {
+  // Always-expanded baseline: on touch / coarse pointers the label is shown
+  // permanently (icon + label), so the button is never a mystery glyph.
+  button.reveal {
+    display: inline-grid;
+    grid-template-columns: auto auto;   // both tracks intrinsic == expanded
+    column-gap: var(--set-button-reveal-gap);
+    align-items: center;
+  }
+  button.reveal > span { min-inline-size: 0; }
 
-> Split into 3 sequential, independently-reviewable parts. **Part 1 ✅:**
-> the `RuleInterface`/`Finding`/`FindingSeverity`/`RuleLens` types + the
-> rule engine + the four schema-data-driven families (`context` /
-> `content` / `transparent` / `structure`) + their real-DOM fixture
-> suites. **Part 2 ✅:** the `attribute` family (coupling +
-> parser-coerced value rules) over the same frozen `rules` registry,
-> driven by the Phase-1 `AttributeRule` data + two corpus-bound
-> attribute-bound/domain constants. **Part 3 ✅:** the `interaction`
-> family (hidden reference integrity — the invented inert-reference rule
-> was removed as non-corpus; spec is source of truth), plugged into the
-> same `rules` registry / `RuleInterface` contract unchanged. **Phase 3
-> is COMPLETE.**
+  // Collapse-on-rest only where a fine pointer can hover to reveal.
+  @media (hover: hover) and (pointer: fine) {
+    button.reveal { @include reveal; }            // auto 0fr at rest
+    button.reveal > span { @include reveal-label; }
+    button.reveal:hover,
+    button.reveal:focus-visible { @include reveal-revealed; }
+    button.reveal:hover > span,
+    button.reveal:focus-visible > span { @include reveal-revealed-label; }
+  }
+}
+```
 
-- ✅ `RuleInterface`: `{ id, severity, lens, evaluate(element, context) }`
-  — pure, side-effect-free, one finding or null. Composite predicates are
-  built from [`@elements/core` validators](guides/validators.md)
-  compositors (`andOf` / `orOf` / `unionOf` / `whereOf` / `notOf` /
-  `enumOf` / `literalOf`) rather than ad-hoc boolean spaghetti — each rule
-  reads as a named guard composition. Landed in
-  [`src/browser/inspector/rules.ts`](src/browser/inspector/rules.ts) as a
-  frozen `rules: readonly RuleInterface[]` registry; `Finding` /
-  `FindingSeverity` / `RuleLens` types live in
-  [`types.ts`](src/browser/types.ts) (the shared shape Phase 4 compiles).
-- ✅ Rule families (each a small set of generic rules driven by the schema
-  data, not per-element hand-code) — **context / content / transparent /
-  structure ✅ (part 1); attribute ✅ (part 2); interaction ✅ (part 3)**:
-  - ✅ **context** — element not allowed in its parent's resolved model
-    ([dom.html#content-models](https://html.spec.whatwg.org/multipage/dom.html#content-models)).
-  - ✅ **content** — the parent's `childModel` order/cardinality unsatisfied
-    (the ONE ordered-model reporter — closed sequence or prefix + open
-    category arm); forbidden descendant present; child not an allowed
-    category
-    ([dom.html#kinds-of-content](https://html.spec.whatwg.org/multipage/dom.html#kinds-of-content)).
-  - ✅ **transparent** — interactive / `a` / `tabindex` descendant of `<a>`;
-    nested-`<audio>`/`<video>`
-    ([dom.html#transparent-content-models](https://html.spec.whatwg.org/multipage/dom.html#transparent-content-models)).
-  - ✅ **structure** — the discrete named constraints from the schema:
-    `single-first-child`
-    ([summary](https://html.spec.whatwg.org/multipage/interactive-elements.html#the-summary-element),
-    [legend](https://html.spec.whatwg.org/multipage/form-elements.html#the-legend-element),
-    [caption](https://html.spec.whatwg.org/multipage/tables.html#the-caption-element)),
-    `edge-child`
-    ([figcaption](https://html.spec.whatwg.org/multipage/grouping-content.html#the-figcaption-element)),
-    `parent-restricted`
-    ([li](https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element),
-    [dt/dd](https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element)),
-    void-has-children. Implemented GENERIC per `ContentConstraintKind`
-    (one evaluator per kind, driven by the schema constraint DATA), not
-    per-element. The pure-ordering kinds (`child-order` / `group-order`,
-    the `table`/`picture`/`ruby`/… models) are NOT a structure rule — they
-    are folded into `childModel`, owned solely by the `content` family
-    (Phase-3.1 single-source fix: one finding per violation, no
-    content↔structure double-report; `single-first-child` / `edge-child`
-    are the disjoint CHILD-keyed reciprocals, deferring to `content` when
-    the parent's `childModel` already requires that position).
-    `no-interactive-descendant` / `no-tabindex-descendant` constraint kinds
-    are reported by the `transparent` family via `RuleContext.restrictions`
-    (one finding per violation — the structure family deliberately does not
-    re-evaluate those two kinds).
-  - ✅ **attribute** _(part 2)_ — six generic schema-data-driven rules over
-    the Phase-1 `entry.attributes` (`AttributeRule`) data + two
-    corpus-bound module constants (`ATTRIBUTE_INTEGER_BOUNDS` /
-    `ATTRIBUTE_ENUM_DOMAINS`): `attribute/coupling`
-    (`a`/`area[target|download|ping|rel|hreflang|type|referrerpolicy]` ⇒
-    `href`, [links.html](https://html.spec.whatwg.org/multipage/links.html)),
-    `attribute/required` (`bdo` ⇒ `dir`, `data` ⇒ `value`, `map` ⇒
-    `name`), `attribute/value` (`AttributeRule.values` via `parseEnum` —
-    `bdo` `dir∈{ltr,rtl}`, `th` `scope` domain
-    ([tables.html](https://html.spec.whatwg.org/multipage/tables.html#the-th-element)),
-    `dialog` `closedby`), `attribute/coupling-domain` (the note-keyed
-    corpus DOM checks a tree-walker can decide — `time` w/o `datetime` ⇒
-    non-empty child text
-    ([text-level-semantics.html](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-time-element)),
-    `img[ismap]` ⇒ flat ancestor `a[href]`, `colgroup[span]` ⇒ no `col`
-    children, `dialog[tabindex]` ⇒ must not be specified),
-    `attribute/integer` (`parseInteger` over the corpus bounds —
-    `tabindex` valid integer, `colgroup`/`col` `span` 1–1000, `td`/`th`
-    `colspan` 1–1000 / `rowspan` 0–65534), `attribute/enum` (`parseEnum`
-    over the corpus-stated global domains — `dir∈{ltr,rtl,auto}`,
-    `contenteditable`, `inputmode`). All attribute-VALUE checks coerce via
-    the inspector's HTML-faithful coercion helpers (`coerceEnumAttribute` —
-    ASCII case-insensitive enumerated-keyword match — / `coerceIntegerAttribute`
-    — HTML `-?[0-9]+` valid-integer grammar) composing the
-    [`@elements/core` parsers](guides/parsers.md) (coerce-or-`undefined`,
-    never hand-written attribute parsing); attribute-only ⇒ disjoint from
-    the other families (one finding per violation). `loading`/`crossorigin`
-    deliberately NOT encoded — the corpus prose states only "limited to
-    only known values", never the keyword set (faithfulness: no invented
-    domain). One faithful schema addition: `img`'s `ismap` and `colgroup`'s
-    `span` note-only `AttributeRule` (the established `time`/`datetime`,
-    `dialog`/`tabindex` precedent), bidirectionally parity-bound in
-    `tests/guides/w3c.test.ts` (strengthen-only).
-  - ✅ **interaction** _(part 3)_ — `hidden` reference integrity: a
-    non-hidden `a[href="#id"]`/`label[for]`/`output[for]` must not target a
-    `hidden` element (`interaction/hidden-reference`)
-    ([interaction.html](https://html.spec.whatwg.org/multipage/interaction.html)
-    §6.1, corpus-faithful per interactions.md §6.1). Generic over the
-    corpus associations (the `for` IDREF read via the schema
-    `AttributeRule`, never a tag literal); reference resolution composed
-    from [`traversals`](guides/traversals.md) `getElementById` — not
-    bespoke DOM walks. **No inert reference-integrity rule ships.** An
-    `interaction/inert-reference` rule was specified here and built, then
-    **removed**: the WHATWG spec (interaction.html §6.3 "Inert subtrees",
-    incl. §6.3.1 / §6.3.2) states only what inertness _does_ and _how_ a
-    node becomes inert — it states **no** inert reference-integrity
-    conformance rule, and its only near-prose (§6.3 "an inert subtree
-    should not contain content or controls which are critical to
-    understanding…") is explicitly non-normative AND not
-    tree-walker-decidable. Encoding it would have **invented a rule the
-    spec does not state**, citing a section that does not state it. Per
-    this ROADMAP's own governing doctrine (the WHATWG spec is the source of
-    truth; code never invents a rule the spec doesn't state; **when cache
-    and spec disagree, the spec wins and the cache — here the plan's
-    rule-list text — is corrected**), the rule was removed and this
-    spec-text corrected to match what ships. `dialog` must not carry
-    `tabindex` is **owned by the `attribute` family**
-    (`attribute/coupling-domain`, interactives.md:552) — the interaction
-    family deliberately defers it (no double-report); `aria-*` IDREFs are
-    deliberately NOT a reference kind (the corpus never cards an `aria-*`
-    domain — the only `aria-*` it mentions, `aria-describedby`, is the
-    hidden-rule EXEMPTION — so encoding one would invent it; the Phase-3.2
-    `loading`/`crossorigin` faithfulness precedent).
-- ✅ Each family gets a fixture-driven unit suite (real DOM, no mocks;
-  seeded `createRandom()` perturbation so failures are reproducible).
-  **Part 1 ✅:**
-  `tests/src/browser/inspector/{context,content,transparent,structure}.test.ts`.
-  **Part 2 ✅:** `tests/src/browser/inspector/attribute.test.ts` —
-  clean-pass + dirty-fail + seeded perturbation per rule, plus
-  whole-`rules`-registry one-finding-per-violation / disjointness
-  assertions. **Part 3 ✅:**
-  `tests/src/browser/inspector/interaction.test.ts` — clean-pass +
-  dirty-fail + seeded perturbation per rule, plus whole-`rules`-registry
-  one-finding-per-violation / disjointness assertions (incl. the
-  `dialog[tabindex]`-stays-one-`attribute/coupling-domain` boundary).
+Result:
+
+- **Desktop (mouse / trackpad):** icon at rest, label slides out on hover/focus.
+- **Touch (phone / tablet):** icon + label always shown — no broken hover, no
+  unlabelled glyph, full target size. This is the correct degradation and is
+  superior to mailbox's width-breakpoint approach (which mislabels a small
+  desktop window as "mobile" and a large touch screen as "desktop").
+- **Keyboard on desktop:** focus reveals (covered by the `hover: hover` block,
+  since such machines report `pointer: fine`). Keyboard-only on a touch device
+  shows the always-expanded baseline — also fine.
+
+Consumers who still want viewport-conditional reveal can wrap with their own
+Tailwind responsive utilities or a container query around the rail; we do **not**
+bake `-sm/-md/-lg` modifier variants (Tailwind owns responsive — `AGENTS.md`
+§21.4 "No `.huge` size" reasoning).
 
 ---
 
-## Phase 4 — Findings + `Inspector` entity
+## 6. Showcase / examples integration
 
-> **§14 amended (governing-doc correction, owner-authorized).** AGENTS.md
-> §14 described a class-based `Emitter<TMap>` / `EmitterInterface` /
-> `EmitterHooks` primitive that **did not exist anywhere in the repo** (the
-> tokens appeared only in ROADMAP/AGENTS prose; no `src/**` implementation).
-> The repo's real observable-events idiom is the DOM `CustomEvent` model —
-> `emit` / `dispatch` / `listen` / `bindEventMap` (`helpers.ts`), the
-> `elements:{source}:{verb}` name constants (`constants.ts`, mirrored into
-> the composable/component CSS-parity tree in `events.ts`), and
-> `{Entity}Options.on?: Partial<{Entity}EventMap>` wired via `bindEventMap`
-> — used by every `create*` factory. §14 was rewritten to describe that real
-> contract faithfully (only §14; house style kept; nothing invented; the
-> unimplemented `Emitter` primitive description removed). Same doctrine as
-> the corpus rule: spec/reality is source of truth — correct the
-> aspirational doc to match established code. The Inspector uses this
-> established idiom; it invents no `Emitter` class. The inspector is a
-> dev-tool ENTITY, not a composable, so its `INSPECTOR_EVENTS` constant
-> lives in `constants.ts` only and is deliberately NOT registered into the
-> `events.ts` composable tree (whose `composables.test.ts` vocabulary gate
-> governs composables/components, not the inspector) — keeping that Phase-1
-> gate green and semantically honest with zero escape-hatch.
+Once Phase 1 ships, adopt `reveal` in:
 
-- ✅ `Finding` (data, `readonly`): `severity`, `rule` (id), `element`,
-  `path` (stable DOM `Element[]` from `getPathToAncestor()`), `message`,
-  `cite`, `expected`/`actual`. The **serializable** projection
-  `FindingRecord` (live `element` dropped, `path` the serializable
-  `describePath` string) is declared **once** in `types.ts` and expressed
-  as an `@elements/core` `ContractShape` run through `compileContract()` in
-  `schema.ts` (`findingContract`, beside the Phase-1 `contentModelContract`,
-  with a module-load `FINDING_CONTRACT_GUARDED` `generate∘is` soundness IIFE
-  mirroring `CONTRACT_GUARDED`) — yields the JSON Schema findings-report
-  contract + a `Guard` consumers import, DERIVED from the one declaration.
-  The in-memory `Finding` is reconciled ADDITIVELY (`extends
-Omit<FindingRecord,'path'>` + the runtime `element` / `Element[]` path):
-  zero duplication, no hand-maintained parallel interface, the Phase-3
-  `Finding` / `RuleInterface` / rules.ts untouched (structurally identical).
-- ✅ `FindingManager` (§9/§10, `src/browser/inspector/FindingManager.ts`):
-  `finding(id)` / `findings()` (overloaded by argument TYPE — `severity` /
-  `lens` / subtree `ParentNode`); `clear()` / `clear(id)` / `clear(ids)` the
-  §10 three-overload single verb (`clear(id)`/`clear(ids)` → `boolean`).
-  Modeled on the in-repo `createTable` `TableSelectionManagerInterface` +
-  `selectionClear`/`selectionSelect` function-overload precedent.
-- ✅ `Inspector` (§7 class order, the §14-amended CustomEvent emitter,
-  `src/browser/inspector/Inspector.ts`): `inspect(options? = { root:
-document })` → `InspectionResult` (`findings`, `counts` by severity,
-  `walked`, `duration`). `InspectorOptions` per §4.2.1
-  `{ on?, severity?, lens?, root? }`. Emits `start` → `finding` (×N) →
-  `done` via `emit` on the resolved root element (the events bubble);
-  `options.on` wired via `bindEventMap`, scoped to the pass. `inspect()`
-  composes the Phase-2 `Walker` + the frozen Phase-3 `rules` registry with
-  ZERO re-implementation of walking / rule-eval / dedup; a non-Element /
-  rootless `ParentNode` throws per §13.
-- ✅ `export * from './Inspector.js'` (+ `./FindingManager.js'`) through the
-  inspector barrel → the sole `src/browser/index.ts`; full TSDoc + an
-  `@example` on `Inspector` and `FindingManager`.
-- ✅ Suite `tests/src/browser/inspector/Inspector.test.ts` — real-DOM
-  (§16.2, no mocks): clean tree → zero findings; the registry-proven dirty
-  tree → exact `['content/required']` + `InspectionResult`
-  counts/walked/duration≥0; emitter order EXACTLY `['start','finding',
-'finding','done']` via the real `listen` helper AND `options.on`;
-  pass-scoped `on` (no stale accumulation); `severity` filter bites
-  (`'warning'` drops the real `error`); `lens` filter
-  (`'presentation'`→none); `FindingManager` singular/plural + the §10
-  three-overload `clear`; `inspect()` determinism + `inspector.rules === rules`;
-  §13 rootless-`ParentNode` throw; `findingContract` validates the
-  serializable projection (and bites on an empty `rule`).
+- A **collapsed navigation rail** variant (a new or existing app-shell example):
+  the rail sits at icon width and each `<menu>` row's button reveals its label on
+  hover — the canonical use case. On touch the rail shows full labels.
+- The Console toolbar's secondary actions, if a denser default is wanted (Filter
+  / Sort collapse to glyphs on desktop, full labels on touch).
+
+A dedicated **ButtonPage** showcase section demonstrates: base reveal, reveal in
+a vertical rail, reveal-end (Phase 2), and the reduced-motion + touch fallbacks.
 
 ---
 
-## Phase 5 — Presentation lens (computed-style)
+## 7. Phasing
 
-The "inspect our CSS" half. Each rule reads `context.style` (lazily) and
-fires only when an override **breaks semantics** (corpus:
-[`renderings.md`](guides/w3c/renderings.md) §15, canonical
-[rendering.html](https://html.spec.whatwg.org/multipage/rendering.html)):
+**Phase 1 — base `button.reveal` (ship first).**
+Tokens (§3.3) + mixins (§3.4) + the capability-gated SCSS (§5) + `tokens.ts`
+parity + `guides/modifiers.md` element-local section + ButtonPage demo +
+`_local.test.ts` / `tokens.test.ts` green. Adopt in one collapsed-rail example.
 
-> **Phase 5 COMPLETE.** Six `lens:'presentation'` rules
-> (`presentation/{list-style,bidi,preformatted,hidden,focus,visibility}`)
-> appended to the frozen `rules` registry, the tabular core
-> driven by the parity-gated `PRESENTATION_DEFAULTS` corpus DATA
-> (`constants.ts`, `PresentationDefault` in `types.ts`, STRENGTHENED
-> bidirectional binding in `tests/guides/w3c.test.ts`), unit suite
-> `tests/src/browser/inspector/presentation.test.ts` (real DOM + real
-> framework CSS; valid-default + valid-with-compensation → 0,
-> genuine-violation → 1, seeded perturbation, whole-registry
-> disjointness). Scope boundaries are corpus-faithfully documented +
-> tested (the Phase-3.3 "correct the plan to what faithfully ships"
-> precedent — spec/decidability/non-goal is the source of truth):
-> **(a)** the `summary:first-of-type ⇒ display:list-item` MARKER is
-> presentational, not the summary's semantic (it stays the disclosure
-> control at any `display`; the genuine "summary first child" rule is the
-> STRUCTURE lens) — per the ROADMAP non-goal ("nothing stylistic") +
-> the false-positive doctrine (virtually every design system / this
-> framework restyles it), it is deliberately OUT OF SCOPE;
-> **(b)** the closed-`<details>` body-hiding is shadow-`::details-content`
-> internal and (per the §15.5.5 corpus prose itself) "not directly
-> visible to author code", so a light-child computed-style check would
-> false-positive on every conformant closed `<details>` — NOT statically
-> decidable, deliberately OUT OF SCOPE; **(c)** `presentation/focus` is
-> scoped to the INLINE `outline` removal (the one false-positive-free
-> decidable signal — a conformant `<button>`'s BASE computed
-> `outline-style` is `none`, the ring being `:focus-visible`-only), the
-> dynamic-pseudo synthesis deliberately not invented;
-> **(d)** the former `display: contents` box-vs-semantic CARVE-OUT in
-> `offendingPresentationDefault` is now **OBSOLETE and REMOVED**. It
-> existed solely to keep `presentation/list-item` + `presentation/table`
-> from firing on a box-eliding `display:contents` (the element keeps its
-> a11y role per CSS Display 3 / HTML-AAM). With BOTH those rules removed
-> (boundary (e)), NO `PRESENTATION_DEFAULTS` entry has
-> `property === 'display'` (only the bidi `unicode-bidi` + preformatted
-> `white-space` rows remain), so the
-> `if (property==='display' && actual==='contents') continue` branch was
-> dead code; per the philosophy "reduce root complexity, do not leave
-> vestigial exceptions / dead carve-outs" it is DELETED, not retained. The
-> surviving `unicode-bidi`/`white-space` rules are a different semantic
-> axis a `display:contents` never preserved, so bidi/pre behavior is
-> byte-equivalent and the verbatim `w3c.test.ts` parity binding stays
-> un-weakened (the data was never the carve-out's mechanism — it was rule
-> logic, now gone with its sole consumers); **(e)** `presentation/list-item`
-> (the `li ⇒ display:list-item` rule) **AND** `presentation/table` (the
-> `table`/`caption`/`thead`/`tbody`/`tfoot`/`tr`/`td`/`th ⇒ display:table-*`
-> rule) are **BOTH DELIBERATELY REMOVED — neither ships.** Per WHATWG HTML
-> / CSS Display Module Level 3 / HTML-AAM an element's a11y-tree role does
-> NOT depend on its `display` value: a `<li>` styled
-> `flex`/`grid`/`inline-flex`/`contents`/`block` is STILL a list item, and
-> a `<td>`/`<tr>` so styled is STILL a cell/row (each loses only the
-> purely-visual generated marker/table box). Keying an `error` on
-> `display ∉ ['list-item']` / `display ∉ ['table-*']` is therefore the
-> exact STYLISTIC CSS-linting the ROADMAP non-goal forbids ("only flags
-> overrides that contradict an element's SEMANTICS, nothing stylistic") —
-> list-item `error`-false-positived on the framework's OWN
-> documented-conformant breadcrumb (`_nav.scss`
-> `nav[aria-label] > :is(ol,ul) > li { display: inline-flex }`,
-> `NavPage.vue` §Breadcrumb, no `role=listitem`) and pagination row, and
-> table `error`-false-positived on the framework's OWN documented
-> expandable-table idiom (`_table.scss` `table > tbody >
-tr:has(+ tr[data-table-expansion]) > td:first-child { display: flex }`,
-> `TablesPage.vue`, no `role="cell"`). An a11y-OUTCOME-correct version of
-> either would fire only on `display:none` (already owned by
-> `presentation/hidden`) or a `role` reassignment (the "not an ARIA
-> auditor" non-goal) — redundant or disclaimed either way. The
-> genuinely-semantic, corpus-stated, tree-decidable list concern
-> (`list-style:none` stripping the list role without `role=list`) ALREADY
-> ships as the surviving `presentation/list-style` `warning`; there is no
-> analogous tree-decidable table concern beyond `display:none` (owned by
-> `presentation/hidden`). Phase-3.3 doctrine: when the spec / non-goal
-> wins, CORRECT THE PLAN and reduce root complexity — do not pile
-> carve-outs onto an inherently-stylistic rule. The `li` row **and** the 8
-> table-model rows are removed from `PRESENTATION_DEFAULTS` alongside the
-> rules (they existed ONLY for these rules); parity is un-weakened (the
-> binding is the forall "every entry corpus-supported" — removing
-> corpus-supported entries cannot weaken it). Conscious related decision:
-> `presentation/list-style` will
-> (correctly, BY DESIGN) surface as a `warning` on a `list-style:none`
-> list lacking `role="list"` INCLUDING the first-party `<menu>`
-> (`_menu.scss` strips `list-style`) — corpus-grounded (`aria.md`
-> §58-59/§165-168 + `renderings.md` §15 marker) as a genuine degraded AT
-> list affordance; kept a `warning` (NOT downgraded — that would be
-> symptom-hiding), and Phase 6 triages warnings (only FAILS on `error`),
-> so it is expected & non-blocking.
+**Phase 2 — `button.reveal-end`.**
+The `$end: true` mixin branch (label reveals to the inline-start). Small,
+additive; one extra token-free rule + a demo.
 
-- ✅ `ul`/`ol`/`menu` computed `list-style-type:none` ⇒ list semantics
-  stripped with no compensating `role=list` (`presentation/list-style`,
-  `warning` — a degraded affordance). The `li ⇒ display:list-item` rule
-  was **REMOVED** (not shipped): a `display` change does NOT strip the
-  `<li>`'s a11y `listitem` role (WHATWG / CSS Display 3 / HTML-AAM), so it
-  was the inherently-stylistic CSS-linting the non-goal forbids and
-  `error`-false-positived on the framework's own conformant breadcrumb /
-  pagination — spec/non-goal wins, plan corrected (boundary (e) above;
-  Phase-3.3 doctrine). `[dir]`-generic deliberately scoped out
-  (ARIA-roleless, stylistic-adjacent — documented boundary).
-- ✅ `bdo` ⇒ `unicode-bidi: isolate-override`; `bdi` ⇒ `isolate`
-  (`presentation/bidi`, scoped to the bidi elements themselves).
-- The `table`/`caption`/`thead`/`tbody`/`tfoot`/`tr`/`td`/`th ⇒
-display:table-*` rule (`presentation/table`) was **REMOVED** (not
-  shipped): a `display` change does NOT strip a table element's a11y
-  `table`/`row`/`cell`/`rowgroup`/`columnheader` role (WHATWG / CSS Display
-  3 / HTML-AAM), so it was the inherently-stylistic CSS-linting the non-goal
-  forbids and `error`-false-positived on the framework's own
-  documented-conformant expandable-table idiom (`_table.scss` `table >
-tbody > tr:has(+ tr[data-table-expansion]) > td:first-child {
-display: flex }`, `TablesPage.vue`, no `role="cell"`). The only
-  tree-decidable table concern (`display:none`) is owned by
-  `presentation/hidden`; a `role` reassignment is the "not an ARIA auditor"
-  non-goal — redundant or disclaimed either way. The 8 table-model
-  `PRESENTATION_DEFAULTS` rows are removed with it — spec/non-goal wins,
-  plan corrected (boundary (e) above; Phase-3.3 doctrine; same root cause
-  as the removed `presentation/list-item`).
-- ✅ `[hidden]:not([until-found]):not(embed)` ⇒ `display:none`;
-  `[hidden=until-found]:not(embed)` ⇒ `content-visibility:hidden` (not
-  `display:none/contents/inline`). The `:not(embed)` carve-out honored.
-- ✅ `pre` ⇒ `white-space: pre|pre-wrap`; `textarea` ⇒ `pre-wrap`
-  (or `pre` when `wrap` is an ASCII-case-insensitive `off`).
-- ✅ Focusable/interactive elements: an INLINE `outline:none`/`0`
-  (provably defeats `:focus-visible{outline:auto}` by inline specificity
-  in every state) **without** a replacement affordance (box-shadow /
-  border / non-interactive role). `:focus-visible` synthesis is not
-  decidable in a tree-walk and is deliberately not invented (boundary
-  documented above + in `rules.ts`).
-- ✅ `dialog:not([open])` / `[popover]:not(:popover-open)` ⇒ not visibly
-  rendered (`presentation/visibility`). The `summary:first-of-type` marker
-  and closed-`details` body checks are documented OUT OF SCOPE (above) —
-  presentational / shadow-internal-undecidable per the corpus.
-- ✅ Reuses the running `src:browser` (chromium) `getComputedStyle`
-  harness (`setupBrowser.ts` loads `src/styles/index.scss`) — same
-  instrumented-audit muscle as the theme-retune / reduced-motion /
-  forced-colors passes.
+**Phase 3 — controlled `.show` + exclusive group.**
+`button.reveal.show` (always revealed, JS/state-controlled) and the
+`div.reveal-group` exclusive hand-off (`:is(:hover, :focus-within)` +
+extended out-delay). This is the hardest part and the one mailbox still has not
+perfected — treat as research-grade, gate behind its own design note before
+implementation, and only build it if a concrete consumer needs it.
 
 ---
 
-## Phase 6 — Showcase self-audit suite
+## 8. Test & parity plan
 
-- ✅ `tests/app/browser/semantics.test.ts` — mounts every one of the 43
-  showcase pages in ISOLATION (`createApp(page).mount(host)` onto a fresh
-  body `<div>`, the `ButtonPage.test.ts` idiom), runs
-  `new Inspector().inspect({ root: host })` over the mounted DOM with both
-  lenses (real framework cascade via `setupBrowser.ts`), one `it()` per
-  page, asserts **zero `error`-severity findings** (`counts.error === 0`);
-  warnings/advice are REPORTED (per-page `advisory` collection + a
-  non-failing `afterAll` `console.warn` summary), NOT failed. Mirrors the
-  `parity.test.ts` / `pages.test.ts` standing-driver pattern (barrel
-  `*Page` identity map, no separate registry); a permanent
-  continuously-verified conformance corpus. SHIPPED & GREEN on all 43
-  pages (zero `error`-severity findings) after the source remediations
-  below.
-- ✅ Triage + remediate every real finding the inspector surfaced on our
-  own markup and our own cascade — **all 30 TRUE-positive errors fixed at
-  the SOURCE** (markup / factory / SCSS made genuinely spec-conformant; the
-  inspector, the `semantics.test.ts` gate, and `tests/guides/w3c.test.ts`
-  were NEVER weakened — only framework code + matching test expectations
-  changed). The COMPLETE inventory from the real run, now resolved:
-  - **`error` · `context/parent-model` · MenuPage (×4) + UseMenuPage (×4)
-    · cite `groupings#the-menu-element` — REMEDIATED.** `<h6>` and `<hr>`
-    were direct children of `<menu>`; `<menu>`'s content model is "Zero or
-    more `li` and script-supporting elements" (`groupings.md` §4.4.7).
-    **Fix:** every grouped `<menu>` now wraps each command group in an
-    `<li>` holding an optional `<h6>` label + a nested command `<menu>`
-    (`<menu><li><h6>…</h6><menu><li>…cmd…</li></menu></li>…</menu>`);
-    bare `<hr>` separators removed — the inter-group divider is now a CSS
-    top-border on adjacent group `<li>`s (`_menu.scss`), not a spec-illegal
-    DOM child of `<menu>`. Applied to `MenuPage.vue`, `UseMenuPage.vue`
-    (live demos + every embedded `<pre><code>` doc snippet — the docs now
-    show the conformant pattern), `_menu.scss` (dropdown chrome retargeted
-    to the nested structure; `menu>hr` rule deleted), and
-    `STRUCTURAL_PAIRINGS` (`menu>h6`/`menu>hr` → `li>h6`/`li>menu` slot
-    pairings). `<menu>` kept (command-list semantic preserved);
-    `useMenu` arrow-key roving + item-dismiss verified intact (focusable
-    walk is depth-agnostic). Visually verified: grouped dropdowns render
-    identically (eyebrow labels + separator rule), no regression.
-  - **`error` · `content/category` · UseToastPage (×22) · cite
-    `forms#the-output-element` — REMEDIATED.** `<p>`/`<header>` (flow
-    content) were direct children of `<output popover>`; `<output>`'s
-    content model is "Phrasing content" (`forms.md` §4.10.12). **Fix:**
-    the toast root changed from `<output>` to `<div role="status">`.
-    `role="status"` IS `<output>`'s implicit ARIA role (an atomic, polite
-    live region) — the screen-reader announcement semantic is preserved
-    EXACTLY while the element's content model now accepts the flow content
-    a toast renders. Applied to `createToast.ts` (root gate `div` +
-    sets `role="status"` if absent + sibling-stack predicate), `useToast.ts`
-    / `types.ts` (`HTMLDivElement`), `_output.scss` + `_toast.scss` (every
-    `output[popover]` → `[popover][role="status"]`, the non-broadening
-    toast signature — no other framework popover carries that role; in-flow
-    flavour → `div[role="status"]:not([popover])`, `div`-scoped so it never
-    collides with `<aside role="status">` alerts / `<span role="status">`
-    spinners), `_anchor-position.scss` (exclusion `output` →
-    `[role="status"]`), `_tokens.scss` comment, `UseToastPage.vue` (all
-    toast elements + doc snippets + prose), and the toast tests
-    (`createToast.test.ts`, `_output.test.ts`, `_anchor-position.test.ts`,
-    `_backdrop.test.ts` — updated to assert the conformant
-    `<div role="status">` root; this is a CORRECT test update to a
-    conformant source fix, NOT symptom-hiding). Visually verified on the
-    live dev server: single / linear-stack / banded-header (the headline
-    `<header>`+`<p>` flow case) / variant / dark-mode toasts all render +
-    behave + announce (`role="status"` live region) identically, no
-    regression.
-  - **`warning` · `presentation/list-style` ×120 across the showcase** —
-    role-less `list-style:none` lists (incl. the first-party `<menu>`;
-    113→120 because the conformant nested command `<menu>`s add a few more
-    such lists). BY-DESIGN per Phase-5 boundary (e); REPORTED by the gate
-    (non-failing `afterAll` `console.warn`), NOT failed. Expected &
-    non-blocking. No remediation (a conscious design warning).
-  - `advice`: none. No other `error` rules fired over the 27-rule × 43-page
-    matrix; the gate is now GREEN on all 43 pages.
-- ✅ **`_textarea.scss` `wrap=off` non-conformance (a Phase-5-surfaced
-  genuine finding) — REMEDIATED.** `src/styles/elements/_textarea.scss`
-  set `white-space: pre-wrap` UNCONDITIONALLY; per `renderings.md
-§15.5.17` a `<textarea wrap="off">` is a presentational hint that MUST
-  compute `white-space: pre`. **Done:** added
-  `&[wrap='off' i] { white-space: pre }` inside the `@layer elements`
-  `textarea` block (higher specificity than the bare rule, same layer →
-  deterministically wins for `wrap=off`/`wrap=OFF` while default/`soft`
-  keep `pre-wrap`). Verified by real computed style on the live showcase
-  dev server (`wrap=off`/`wrap=OFF` → `pre`; default/`soft` → `pre-wrap`,
-  no visual regression) and the inspector. The locked
-  `<textarea wrap="off">`→`presentation/preformatted` test in
-  `tests/src/browser/inspector/presentation.test.ts` was FLIPPED from
-  "exactly one error" to "ZERO" (kept bites-both-ways: red again if the
-  remediation regresses) + a new default-`<textarea>` regression-guard
-  test; the conformant-sweep gained a `<textarea wrap="off">` case. The
-  corpus-faithful rule was NEVER weakened — the framework was fixed at the
-  source.
+- `tests/src/browser/tokens.test.ts` — every new `--set-button-reveal-*` leaf
+  resolves at runtime and appears in `tokens.ts` (bidirectional).
+- `tests/src/styles/modifiers/_local.test.ts` — `button.reveal` matches the
+  element-local charter; the `> span` descendant rule is a documented exception
+  like `form.row > label`.
+- `tests/guides/tokens.test.ts` — new token segments pass the kebab-case +
+  no-abbreviation gate (`transition-duration`, not `dur`).
+- New behavioral browser test (`tests/src/styles/modifiers/_reveal.test.ts`):
+  - At rest under `(hover: hover)`, the label track computes to `0fr` /
+    label `opacity: 0`.
+  - On `:focus-visible`, the label track expands and `opacity: 1`.
+  - Under an emulated coarse pointer, the label is shown at rest (baseline).
+  - `prefers-reduced-motion: reduce` removes the transition.
+- `npm run check` + `npm run format` + `npm run show` clean before commit.
 
 ---
 
-## Phase 7 — `/inspector` showcase page + guide
+## 9. Open questions
 
-- ✅ `app/browser/pages/InspectorPage.vue` + route (`id:'inspector'`,
-  `Composables — Primitives`) + barrel export +
-  `tests/app/browser/pages/InspectorPage.test.ts` (the standard page
-  bijection + the inspect-control interaction smoke) — a live, in-page
-  panel that runs `new Inspector().inspect({ root })` on the current
-  document (the conform / dogfood proof) AND on a deliberately-broken
-  detached fixture (real findings), rendering findings grouped by severity
-  with rule id, severity, stable element path, message, and the spec
-  citation as a real WHATWG anchor link, with lens + severity filtering and
-  an explicit conform empty state. Authored framework-faithfully (framework
-  elements → the modifier cascade → Tailwind utilities only; NO inline
-  styles, NO custom CSS, NO `<style>` block), app logic out of framework
-  code (demo constants in `app/browser/constants.ts`). The page is itself
-  content-model-conformant: the Phase-6 `semantics.test.ts` gate
-  auto-audits it → ZERO `error` findings (the dogfood property holds).
-- ✅ `guides/inspector.md` — the spec for the inspector: the public Surface
-  (`Inspector` / `FindingManager` / `Walker` / `rules`), the full rule
-  catalog per family (incl. the 6 `presentation/*` rules), the
-  content-model schema shape, the transparent-content-model algorithm, the
-  two lenses, how to add a rule (corpus-first → types → schema/rule →
-  fixture suite → parity), citing `guides/w3c/**`; numbered `## Contract`
-  binding doc↔source + types-are-truth + corpus-is-source-of-truth + the
-  Phase-6 self-audit gate. The REAL bidirectional doc↔source parity test
-  `tests/guides/inspector.test.ts` ships now (NOT a Phase-8 stub) — every
-  backticked call-form API resolves to a real `@elements/browser` export
-  (DOC→SOURCE), every inspector-barrel export is documented (SOURCE→DOC),
-  the public types are bound to `src/browser/types.ts` (TYPES-ARE-TRUTH);
-  it genuinely bites. Added to the `AGENTS.md` companion-doc list, the
-  `guides/README.md` concept + directory maps, and the phase spec-guide
-  map below.
-- ✅ Phase-3 rule correction surfaced BY the Phase-7 dogfood (fixed at
-  source, not symptom-hidden): the Phase-7 dirty fixture's `<details>` with
-  two `<summary>` exposed a genuine gap — a PREFIX (`closed:false`)
-  `childModel` whose required-leading SINGULAR child (a leading
-  `{kind:'tag', count:'1'|'?'}` segment — `details`→`summary`(1),
-  `fieldset`→`legend`(?)) occurred more than once was silently absorbed by
-  the open trailing arm (`<details>` 2×`<summary>` → ZERO findings;
-  `<fieldset>` 2×`<legend>` mis-reported as two `structure/single-first-
-child`). Added a generic, schema-data-driven `content/cardinality` rule
-  (parent-keyed, off `leadingSingularTag(childModel)` — never per-element)
-  that fires exactly once and defers to `content/required` when a CLOSED
-  model's duplicate already breaks closed-exhaustiveness (`<table>`
-  2×`<caption>`); `structure/single-first-child` now defers the cardinality
-  aspect (its lone-mispositioned-child POSITION concern preserved
-  unchanged), so one violation still yields exactly one finding (the §1/§2
-  disjoint single-source partition extended). The inspector now CORRECTLY
-  flags the dirty fixture's duplicate `<summary>` (6 findings / 4 families);
-  the dishonest "structural noise without a false positive" framing in
-  `app/browser/constants.ts` + `InspectorPage.vue` was corrected to state
-  accurately that it is a real content-model violation the inspector
-  flags. `guides/inspector.md` rule catalog updated for the new id (doc↔
-  source parity stays green by accuracy). Phase 7 stays ✅ (genuinely
-  complete — gap fixed at source, no gate/parity/inspector-test weakened).
-- ✅ Phase-7 code-quality review (the recurring unguarded-invariant /
-  drift-prone-parallel class) closed with two TEST-ONLY parity guards in
-  the established whole-set-diff / real-parity idiom (no rule/schema/type
-  change — the rule fix is settled-correct): (1) a
-  `cardinality ↔ single-first-child ↔ content-required` partition guard in
-  [`tests/guides/w3c.test.ts`](tests/guides/w3c.test.ts) — bidirectional
-  whole-set diffs (mirroring the §4 content-model disjointness / attribute
-  value↔enum guards) that FAIL LOUDLY if a future `schema.ts` edit (a new
-  `single-first-child` element, a new leading `{kind:'tag',count:'1'|'?'}`
-  `childModel` segment, or a re-count of an existing one) silently
-  mis-partitions — every single-first-child (child,parent) pair must be a
-  leading-singular slot of that parent, every open-prefix lone-`'?'` slot
-  must have a reciprocal position rule, every leading-singular slot is
-  owned by exactly one of {`content/cardinality`, `content/required`,
-  `structure/single-first-child`}, plus an anchored exact-set guard; (2) a
-  bidirectional rule-catalog parity in
-  [`tests/guides/inspector.test.ts`](tests/guides/inspector.test.ts)
-  binding every `{family}/{concern}` id in `guides/inspector.md`'s catalog
-  to the shipped frozen `rules` registry and vice versa (the catalog was
-  already accurate — `content/cardinality` + the 6 `presentation/*` listed
-  — so it is green BY accuracy, no prose change needed). Both perturbation-
-  proven to bite; no existing assertion/gate weakened. Phase 7 stays ✅.
-- ✅ **Phase-7 sandbox extension (showcase-only; live "test it out").** The
-  `/inspector` page gained a third dogfood panel — an editable
-  `<textarea>` (seeded via the new showcase-side `INSPECTOR_SANDBOX_SEED`
-  in [`app/browser/constants.ts`](app/browser/constants.ts)) whose value is
-  parsed into the SAME detached off-document `<div>` the fixture panel uses
-  (never inserted — arbitrary pasted HTML can't affect the page's own
-  conformance / the Phase-6 `semantics.test.ts` gate) and re-inspected on
-  demand, rendering findings through the existing severity-group / conform
-  machinery (no inspector / schema / rule / type change — pure public-API
-  composition; framework-faithful authoring per `guides/showcase.md`
-  §Contract — bare elements + the modifier cascade + Tailwind only, no
-  inline style / custom CSS / `<style>` block). The page's own
-  `tests/app/browser/pages/InspectorPage.test.ts` bespoke driver gained a
-  `inspector-sandbox` section assertion + a seed→real-findings→reset
-  interaction test; `guides/inspector.md`'s `/inspector` description was
-  extended to state the sandbox accurately (doc↔source parity stays green
-  by accuracy — no backticked API added). The interactive Chromium
-  verification surfaced a PRE-EXISTING showcase rendering bug fixed in the
-  same pass: the findings list mis-used `<menu>` (the framework paints
-  `<menu>` as a horizontal flex command-toolbar for `<button>` children —
-  `components/_menu.scss`), collapsing every `<article class="frame">`
-  finding card to ~2 px wide. The three findings lists (page / fixture /
-  sandbox panels) were changed to the semantically-correct `<ul>` (a
-  plain content list, not a command toolbar; the inspect-button rows
-  stay correctly `<menu>`); cards now render full-width. Showcase-only,
-  framework-faithful, no inspector/schema/rule/type change; the Phase-6
-  `semantics.test.ts` gate stays GREEN (`<ul>` with role-less
-  `list-style:none` is the same by-design `presentation/list-style`
-  warning `<menu>` was — zero `error`). Showcase rebuilt
-  (`npm run show` → `demo/showcase.html`). Semantic-only ROADMAP note —
-  Phases 0–8 ✅ unchanged.
-- ✅ **Phase-7 finding-card chrome correction (showcase-only).** Mobile
-  review surfaced two more pre-existing defects: (1) the `<ul>` finding
-  list painted UA disc bullets + a 2rem indent (bare `<ul>` keeps
-  `list-style: disc` by framework design — `_ul.scss`), and (2)
-  `<article class="frame">` zeros the card's own padding + gap (it is the
-  edge-to-edge-content modifier for `.flush` children / `ul.group` /
-  images — `modifiers/_local.scss`), so the text body had no inset. Both
-  fixed by adopting the framework's CANONICAL card-list idiom
-  (`ArticleCardPage.vue`): a `<div class="stack">` (flex column, vertical
-  rhythm — `components/_div.scss`) wrapping BARE `<article>` cards, the
-  `severityVariant` class moved onto the `<article>` so its border tints
-  per severity through the variant cascade. No `<ul>`/`<li>` → no list
-  markers AND no role-less `list-style:none`, so the finding list now
-  emits ZERO `presentation/list-style` warnings on the inspector's own
-  page (a strictly cleaner dogfood). Bare `<article>` restores the
-  header/footer band chrome + body padding + inter-block gap. Applied to
-  all three panels (page / fixture / sandbox); driver selectors updated
-  (`dd .stack > article`); visually verified on a mobile viewport from
-  `file://` (no bullets, correct inset, page renders — composes with the
-  blank-screen build fix). Showcase-only, framework-faithful, no
-  inspector/schema/rule/type change; the Phase-6 `semantics.test.ts` gate
-  stays GREEN (zero `error`). Showcase rebuilt
-  (`npm run show` → `demo/showcase.html`). Semantic-only ROADMAP note —
-  Phases 0–8 ✅ unchanged.
+- **O-1 label slot:** require exactly one `<span>` label child (Phase 1 decision)
+  vs. collapse the last child generically. Chosen: require one `<span>`; revisit
+  if a real consumer needs an icon-on-both-sides shape.
+- **O-2 `<a class="reveal">`:** anchors styled as buttons may want reveal too. The
+  mixins are already element-agnostic; add `a.reveal` in Phase 2 only if a
+  consumer appears (YAGNI until then).
+- **O-3 group primitive:** `div.reveal-group` vs a `[data-reveal-group]` host.
+  Prefer the bare element-local-style class to stay class-driven; settle in the
+  Phase 3 design note.
+- **O-4 size interplay:** confirm `reveal` composes with `.small` / `.large`
+  (the grid + gap should ride the size tokens). Add a parity demo.
 
 ---
 
-## Phase 8 — Public-API parity hardening + performance
+## 10. Risks
 
-- ✅ The inspector is part of the public `src/browser` API: it ships
-  through the sole barrel; `tests/src/browser/inspector/**` covers it;
-  schema↔guides parity is permanent (Phase 1). The inspector's own guide
-  ([`guides/inspector.md`](guides/inspector.md), shipped Phase 7) is held
-  to the **same doc↔source contract** the five tooling guides exemplify —
-  [`tests/guides/inspector.test.ts`](tests/guides/inspector.test.ts) is a
-  strict SUPERSET of the exemplar contract (DOC→SOURCE + SOURCE→DOC like
-  `traversals.test.ts`, PLUS bidirectional rule-catalog parity + a
-  bidirectional TYPES-ARE-TRUTH binding). Phase-8 verification confirmed it
-  standing GREEN and complete versus the five exemplars — no clause was
-  missing, so nothing was added (the parity was already real in Phase 7;
-  Phase 8 added the perf budget + the final sweep ONLY).
-- ✅ Large-tree budget: [`tests/src/browser/inspector/perf.test.ts`](tests/src/browser/inspector/perf.test.ts)
-  builds a **deterministic** deep/wide DOM (depth 7 × breadth ~5 ⇒ ~8.7k
-  valid elements) from `createRandom(seed)` via the established seeded
-  `el()` synthetic-DOM idiom (the same `createRandom`-driven builder
-  `Walker.test.ts` / `registry.test.ts` use — no parallel reinvention;
-  byte-reproducibility asserted), measures the full public
-  `new Inspector().inspect({ root })` (Walker walk + all 27 frozen rules
-  per node) via the Inspector's own `InspectionResult.walked/.duration`
-  instrumentation, and asserts a median walked-node/ms floor so a Walker
-  OR rule-complexity regression is caught. The floor (9 nodes/ms) is
-  evidence-derived from the WORST realistic median (33.5 nodes/ms, measured
-  under the full concurrent multi-project suite over 6 runs): ~3.7× below
-  it so chromium/CI variance never trips it, yet high enough that a ~10×
-  per-node regression (median → ~3.3–4.7) — indeed any regression of ≳3.7×
-  — FAILS it. Verified by injecting a deterministic 10× slowdown: median
-  collapsed to 4.5 (< 9), gate failed; injection removed, comfortable PASS
-  (AGENTS §16.3 — warmup + median absorb JIT/GC noise; no special runner
-  config; proven non-flaky over repeated runs). It is a normal standing gate.
-- ✅ Final sweep: `npm run check` 0/0, all targeted suites + full
-  regression green (no Phase 1–7 regression), `npm run format`, ROADMAP +
-  `guides/README.md` updated, committed (push is the owner's separate
-  per-push decision — this initiative works locally on `main`).
-
-**Phase 8 complete — the Semantic HTML Inspector initiative (Phases 0–8) is
-fully shipped and green.**
-
-### Post-initiative refactor — inspector rule-engine helper extraction
-
-- ✅ **Batch 1 (verbatim, behavior-preserving).** The genuinely-generic
-  `{verb}{Noun}` rule-engine helpers + the two module guards were extracted
-  from [`src/browser/inspector/rules.ts`](src/browser/inspector/rules.ts)
-  into the centralized [`src/browser/helpers.ts`](src/browser/helpers.ts)
-  (the new "Inspector rule-engine helpers" section, after the inspector
-  adapters), so `rules.ts` is now purely the rule **registry** (the
-  `RuleInterface` records + the rule-specific `whereOf(isSubject,…)` guard
-  compositions + `isSubject` + the frozen `rules` array + the rule-local
-  message formatters / inline coupling-domain predicates) per AGENTS
-  §4.6/§5 — the same registry shape as `schema.ts` / `taxonomy.ts`. Names
-  were brought to AGENTS §4.3 `{verb}{Noun}` form; the move is
-  byte-identical behavior (the full suite — 173 files / 10069 tests — stays
-  green with **zero** test modifications). The extracted helpers become
-  public `@elements/browser` API (re-exported via the barrel); the
-  `tests/guides/inspector.test.ts` doc↔source parity stays green by
-  correctness (the inspector barrel exports are unchanged; `inspector.md`
-  backticks none of the relocated helpers, so DOC→SOURCE still resolves).
-  Semantic-only ROADMAP note — no reflow, Phases 0–8 ✅ unchanged. Batch 3
-  (helper tests) lands the characterization coverage (see below).
-
-- ✅ **Batch 2 (consolidation / dedupe, behavior-preserving).** The
-  rigorous same-or-similar sweep over [`helpers.ts`](src/browser/helpers.ts)
-  ∪ the [`rules.ts`](src/browser/inspector/rules.ts) residue. Two genuine
-  shared bases were introduced (the rest of the candidate set was reasoned
-  out as legitimately distinct — different traversal scope, return type,
-  data source, or decidability boundary — and kept, not force-merged):
-  `findFlatAncestor(el, predicate)` + its boolean projection
-  `hasFlatAncestor(el, predicate)` (the find-first flat-ancestor walk
-  `hasFlatAncestorTag` AND the Batch-1-deferred `hasLinkAncestorWithHref`
-  now compose — the latter's extra `href` predicate was exactly why Batch 1
-  could not collapse it, so it MOVES `rules.ts`→`helpers.ts`, closing the
-  deferral); and `findFlatDescendant(el, predicate)` (the find-first
-  flat-descendant walk `findForbiddenDescendant` AND the rule-specific
-  `violatesNoSelfNest` guard compose). All compositions are byte-identical
-  to the originals (the full suite stays green with **zero** test
-  modifications); `rules.ts` is left strictly smaller (the relocated
-  `hasLinkAncestorWithHref` + the self-nest loop now composed onto
-  `findFlatDescendant`). Semantic-only ROADMAP note — no reflow,
-  Phases 0–8 ✅ unchanged.
-
-- ✅ **Batch 3 (tests-only, characterization).** Real-DOM characterization
-  coverage for the **39** now-public extracted/consolidated inspector
-  rule-engine helpers (the Batch-1 extracted set + the Batch-2 generic
-  flat-traversal bases), added to the existing
-  [`tests/src/browser/helpers.test.ts`](tests/src/browser/helpers.test.ts)
-  (the canonical per-module behavior-test file the
-  [`guides/README.md`](guides/README.md) file map already binds to
-  `helpers.ts`) as a new "inspector rule-engine" `describe` section — one
-  `describe` per helper, 97 new `it` cases over the REAL Chromium DOM (real
-  shadow roots / `<slot>` / `<template>.content` for the flat-tree helpers,
-  real computed/inline style + real `:popover-open` for the presentation
-  readers, the REAL frozen corpus schema for the data-driven ones), no
-  mocks, mirroring the inspector suites' `el()` + seeded `createRandom`
-  idiom. The module-private `isScriptSupporting` is covered transitively via
-  `matchSegments` (not exported, not tested directly). Characterizes the
-  already-shipped behavior — every new test green BY the settled
-  implementation; **zero** production (`src/**`) change and **zero**
-  pre-existing test **logic** modified — 5 pre-existing test regions were
-  formatter-reflowed (byte-identical logic, no assertion/input/matcher change)
-  by the mandatory `npm run format` because the parent file predated current
-  `oxfmt` conformance (the full `src:browser ∪ app:browser ∪ guides` suite
-  goes 8239 → 8336, the delta being exactly the 97 new tests).
-  Semantic-only ROADMAP note — no reflow, Phases 0–8 ✅ unchanged.
-
-- ✅ **app:styles self-audit gate — the Inspector dogfooded against the
-  STYLE-COMBINATION matrix.** The Phase-6 page gate audits the 44 showcase
-  PAGES; this new sibling audits the raw combinations the framework's own
-  SCSS purports to style, derived ONLY from the machine-readable
-  registries (never invented data): every `STRUCTURAL_PAIRINGS` bare-tag
-  `parent > child` cascade pair, and every `elements.ts` styled tag ×
-  every applicable cross-cutting modifier (variant ∪ size ∪ style ∪ state)
-  + the documented element-local modifiers. Each subject is built in a
-  minimal, spec-grounded valid-ancestor scaffold + `conform()`ed so the
-  inspector evaluates the COMBINATION, not a harness artifact; the gate is
-  SELF-VALIDATING (a §0 describe proves every scaffold is itself
-  zero-error, so a harness gap fails loudly as `[HARNESS]` and can never
-  false-positive nor mask a real framework finding). Gate behavior mirrors
-  the page gate EXACTLY — fail only on an `error`-severity finding;
-  warnings/advice reported (non-failing `afterAll`), the by-design
-  `presentation/list-style` warning expected. New
-  [`tests/app/styles/semantics.test.ts`](tests/app/styles/semantics.test.ts)
-  + a new browser-enabled `app:styles` vitest project (extends `srcStyles`
-  so the real compiled cascade is loaded; `vite.config.ts` + the
-  `test:app:styles` script + `test:app`), registered in
-  [`guides/styles.md`](guides/styles.md) § Tests (three → four projects).
-  Result: **213/213 green — the framework's entire style matrix is
-  content-model-conformant**; zero genuine non-conformance surfaced (the
-  value is the permanent standing gate + the proven-sound harness). No
-  inspector/schema/rule/type/framework-source change. Semantic-only
-  ROADMAP note — Phases 0–8 ✅ unchanged.
-
----
-
-## Conventions to keep applying
-
-Carried from the framework build; they govern inspector work too.
-
-- **The WHATWG spec is the source of truth.** `guides/w3c/**` is a curated
-  local cache of <https://html.spec.whatwg.org/>; the schema mirrors the
-  cache; code never invents a rule the spec doesn't state. When cache and
-  spec disagree, the spec wins and the cache is corrected. A bidirectional
-  parity test binds cache↔schema (Phase 1); Phase 0 reconciles cache↔spec
-  via targeted multipage fetches.
-- **Types-first, single-word, Manager-split.** Public types in
-  `src/browser/types.ts` before code; entity members one word; verb
-  families become Manager sub-entities (AGENTS §4). Helpers in
-  `helpers.ts` are `{verb}{Noun}`.
-- **Walk the DOM, never the string.** Native `Element`/`Node`/slot APIs
-  only; the inspector accepts any `ParentNode`. No regex, no `innerHTML`
-  round-trips, no new dependency.
-- **Reuse first-party tooling; don't reinvent.** DOM walks/relationships/
-  focus → [`@elements/browser` traversals](guides/traversals.md);
-  shape→guard+schema+generator → [`@elements/core` shapers/compilers](guides/compilers.md);
-  predicate composition → [validators](guides/validators.md);
-  attribute-value coercion → [parsers](guides/parsers.md). New helpers are
-  thin adapters over these, not parallel implementations. See
-  [Existing tooling we build on](#existing-tooling-we-build-on-no-reinvention).
-- **Findings are data.** Structured `Finding` records with a spec
-  citation; `Result<T,E>`/`throw` only per AGENTS §13. Severity is a
-  closed union (`error`/`warning`/`advice`).
-- **Rules are pure.** `(element, context) → Finding | null`, no shared
-  mutable state, fixture-tested with real DOM nodes (AGENTS §16.2).
-- **Self-audit is permanent.** The showcase is the living conformance
-  corpus; the semantics suite is a standing gate, not a one-off pass —
-  same philosophy as the instrumented theme/motion/forced-colors audits.
-- **Per-item rhythm.** Each ⬜ ships its own slice: check 0/0 → targeted
-  suite → `npm run show` (if showcase touched) → `npm run format` →
-  ROADMAP/guides update → commit + push.
-
----
-
-## Reference
-
-- [AGENTS.md](AGENTS.md) — non-negotiable coding rules (read first).
-- [guides/contribute.md](guides/contribute.md) — workflow + parity-gate
-  commands for each shape of change.
-- [**W3C spec reference map**](#w3c-spec-reference-map) — the master table:
-  every corpus area → its local cache file → its canonical multipage page +
-  stable anchor conventions. The single place to look up the spec link for
-  any element/category while implementing a rule.
-- <https://html.spec.whatwg.org/multipage/> — the **canonical** source of
-  truth. Fetch targeted subsections with a prompt that names the exact §;
-  broad/whole-page prompts summarize and must be avoided.
-- [guides/w3c/](guides/w3c/) — the curated local cache the schema derives
-  from (Phase 0 reconciles it against the canonical spec and closes the
-  known gaps; see the reference map for per-file ↔ page mapping).
-- [**Existing tooling we build on**](#existing-tooling-we-build-on-no-reinvention)
-  — the need → reused-API table; read before writing any Walker/rule code.
-- [guides/traversals.md](guides/traversals.md) — `@elements/browser`
-  `src/browser/traversals.ts`: the complete native DOM walk / relationship /
-  focus surface the Walker is a thin layer over.
-- [guides/shapers.md](guides/shapers.md) · [guides/compilers.md](guides/compilers.md)
-  — `@elements/core` shape DSL → JSON Schema + guard + parser + **seeded
-  generator** from one declaration (schema-entry & `Finding` contracts,
-  test/perf fixtures).
-- [guides/validators.md](guides/validators.md) — `@elements/core` runtime
-  guards + compositors (`andOf`/`orOf`/`whereOf`/`lazyOf`/…) — rule
-  predicate composition.
-- [guides/parsers.md](guides/parsers.md) — `@elements/core` coercing
-  parsers (`parseInteger`/`parseEnum`/`parseBoolean`/…) — attribute-value
-  rules.
-- [src/browser/taxonomy.ts](src/browser/taxonomy.ts) /
-  [patterns.ts](src/browser/patterns.ts) — the frozen-registry +
-  parity-test pattern `schema.ts` is modeled on.
-- [src/browser/helpers.ts](src/browser/helpers.ts) — the existing
-  DOM-walking idiom (`extractRows`, `readTableRows`, `findDetailRow`, …)
-  the Walker extends.
-- [guides/patterns.md](guides/patterns.md) — codified-contract prose,
-  parallel to how the rule catalog will be documented.
+- **Track-collapse fragility.** The `min-inline-size: 0` on the label is
+  essential; omitting it silently breaks the collapse. Covered by a behavioral
+  test asserting the `0fr` computed track.
+- **Layout jank in flex/grid parents.** A reveal button inside a `flex` rail
+  changes intrinsic width on hover, nudging siblings. Mitigate by recommending
+  the button live in a fixed-width rail track (the collapsed-rail example
+  demonstrates the correct host) and documenting the caveat.
+- **Scope creep into Phase 3.** The exclusive-group behavior is where mailbox
+  still struggles. Keep Phases 1–2 shippable on their own; do not block them on
+  the group work.

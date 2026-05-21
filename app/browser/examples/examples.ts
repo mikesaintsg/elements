@@ -58,6 +58,33 @@ export const examples: readonly ExampleMeta[] = [
 			'a useToast confirmation, and the .loading button spinner state.',
 		icon: 'check',
 	},
+	{
+		id: 'example-mail',
+		title: 'Mail',
+		tagline:
+			'Three-pane pillar: a folder <nav> rail beside a message list and a ' +
+			'reading pane laid out as a grid inside <main>. Selecting a message ' +
+			'swaps the mobile view list → reading; the rail flips to a drawer.',
+		icon: 'information',
+	},
+	{
+		id: 'example-crm',
+		title: 'CRM',
+		tagline:
+			'Agent-workspace pillar: a dual-rail agent chat — context <nav>, a ' +
+			'thread of collapsible <details> turns with a useForm composer, and a ' +
+			'documents <aside>. Both rails flip to popover drawers on mobile.',
+		icon: 'system',
+	},
+	{
+		id: 'example-board',
+		title: 'Board',
+		tagline:
+			'Drag-and-drop pillar: a Kanban board of column <section>s whose card ' +
+			'rows reorder via the useDrag composable (list splice on drop). Columns ' +
+			'scroll horizontally on narrow viewports.',
+		icon: 'sort',
+	},
 ]
 
 export const isExampleId = (id: string): boolean => examples.some((e) => e.id === id)
