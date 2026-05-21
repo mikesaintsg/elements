@@ -65,11 +65,11 @@ import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
 import InspectorPage from './pages/InspectorPage.vue'
 
 // Examples — fullscreen layout templates rendered without the docs chrome.
-import DashboardExamplePage from './examples/DashboardExamplePage.vue'
-import MarketingExamplePage from './examples/MarketingExamplePage.vue'
-import AuthExamplePage from './examples/AuthExamplePage.vue'
-import MailExamplePage from './examples/MailExamplePage.vue'
-import CrmExamplePage from './examples/CrmExamplePage.vue'
+import ConsoleExamplePage from './examples/ConsoleExamplePage.vue'
+import SettingsExamplePage from './examples/SettingsExamplePage.vue'
+import EditorialExamplePage from './examples/EditorialExamplePage.vue'
+import PricingExamplePage from './examples/PricingExamplePage.vue'
+import SigninExamplePage from './examples/SigninExamplePage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -348,39 +348,39 @@ const INSPECTOR: Route = {
 
 // ── Examples ───────────────────────────────────────────────────────────────
 
-const EXAMPLE_DASHBOARD: Route = {
-	id: 'example-dashboard',
-	title: 'Dashboard',
+const EXAMPLE_CONSOLE: Route = {
+	id: 'example-console',
+	title: 'Console',
 	group: 'Examples',
-	page: DashboardExamplePage,
+	page: ConsoleExamplePage,
 }
 
-const EXAMPLE_MARKETING: Route = {
-	id: 'example-marketing',
-	title: 'Marketing',
+const EXAMPLE_SETTINGS: Route = {
+	id: 'example-settings',
+	title: 'Settings',
 	group: 'Examples',
-	page: MarketingExamplePage,
+	page: SettingsExamplePage,
 }
 
-const EXAMPLE_AUTH: Route = {
-	id: 'example-auth',
-	title: 'Auth',
+const EXAMPLE_EDITORIAL: Route = {
+	id: 'example-editorial',
+	title: 'Editorial',
 	group: 'Examples',
-	page: AuthExamplePage,
+	page: EditorialExamplePage,
 }
 
-const EXAMPLE_MAIL: Route = {
-	id: 'example-mail',
-	title: 'Mail',
+const EXAMPLE_PRICING: Route = {
+	id: 'example-pricing',
+	title: 'Pricing',
 	group: 'Examples',
-	page: MailExamplePage,
+	page: PricingExamplePage,
 }
 
-const EXAMPLE_CRM: Route = {
-	id: 'example-crm',
-	title: 'CRM',
+const EXAMPLE_SIGNIN: Route = {
+	id: 'example-signin',
+	title: 'Sign in',
 	group: 'Examples',
-	page: CrmExamplePage,
+	page: SigninExamplePage,
 }
 
 export const routes: readonly Route[] = [
@@ -428,11 +428,11 @@ export const routes: readonly Route[] = [
 	USE_DRAG_DROP,
 	USE_THEME_BUTTON,
 	INSPECTOR,
-	EXAMPLE_DASHBOARD,
-	EXAMPLE_MARKETING,
-	EXAMPLE_AUTH,
-	EXAMPLE_MAIL,
-	EXAMPLE_CRM,
+	EXAMPLE_CONSOLE,
+	EXAMPLE_SETTINGS,
+	EXAMPLE_EDITORIAL,
+	EXAMPLE_PRICING,
+	EXAMPLE_SIGNIN,
 ]
 
 const parse = (fallback: string): RouteLocation => {

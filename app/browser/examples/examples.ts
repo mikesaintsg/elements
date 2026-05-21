@@ -14,47 +14,49 @@ export interface ExampleMeta {
 
 export const examples: readonly ExampleMeta[] = [
 	{
-		id: 'example-dashboard',
-		title: 'Dashboard',
+		id: 'example-console',
+		title: 'Console',
 		tagline:
-			'Sidebar drawer + topbar action rail + stat cards + activity timeline. ' +
-			'Exercises useAside, <menu role="toolbar">, and the modifier-cascade button vocabulary.',
-		icon: 'speedometer',
+			'App-shell pillar: every body-grid slot at once — nav rail, app bar, ' +
+			'stat cards with <meter> gauges, a sortable <table> (useTable), context ' +
+			'rail, and status footer. Rails flip to popover drawers on mobile.',
+		icon: 'system',
 	},
 	{
-		id: 'example-marketing',
-		title: 'Marketing',
+		id: 'example-settings',
+		title: 'Settings',
 		tagline:
-			'Long-scroll landing page: hero + logos + feature grid + stats + pricing + CTA + footer. ' +
-			'Renders just <main> + body-shell <footer> — no sidebar, no topbar app shell.',
-		icon: 'external',
+			'Forms pillar: one useForm wraps a stack of section cards — fieldsets, ' +
+			'switches, radios, range, color, select, file. Submit-gated validation ' +
+			'chrome (danger/valid borders, label re-tint) is pure framework CSS.',
+		icon: 'system',
 	},
 	{
-		id: 'example-auth',
-		title: 'Auth',
+		id: 'example-editorial',
+		title: 'Editorial',
 		tagline:
-			'Split-screen sign-in: brand panel (gradient, testimonial, trust badges) left + ' +
-			'form panel (OAuth buttons, email/password, remember-me) right. ' +
-			'Renders just <main> with a CSS grid split; brand panel hidden on mobile.',
+			'Content & typography pillar: a long-form article from bare content ' +
+			'elements with ZERO custom CSS — heading scale, prose rhythm, figure, ' +
+			'blockquote, table, code/kbd chips, details FAQ, dl, hr, callouts.',
 		icon: 'information',
 	},
 	{
-		id: 'example-mail',
-		title: 'Mail',
+		id: 'example-pricing',
+		title: 'Pricing',
 		tagline:
-			'Three-pane email client: folders rail drawer + thread list + reading pane. ' +
-			'Folder rail is a body-shell <nav>; thread list + reading pane are an inner two-pane ' +
-			'grid inside <main>. Mobile: folders popover drawer, single-column stack.',
+			'Composition pillar: a marketing landing page from <article> cards, ' +
+			'.badge / .tag atoms, anchors-as-buttons, and .cluster / .stack layout ' +
+			'primitives. Renders just <main> with a trailing in-flow footer.',
 		icon: 'external',
 	},
 	{
-		id: 'example-crm',
-		title: 'CRM',
+		id: 'example-signin',
+		title: 'Sign in',
 		tagline:
-			'Four-pane agent workspace: command bar (header) + draggable context rail (nav) + ' +
-			'chat thread with inline form + tool-call accordion (main) + docs panel with Add note ' +
-			'dialog (aside). Exercises useDrag/useDrop, useDialog, and both left + right popover drawers.',
-		icon: 'more',
+			'Focused-form + overlay pillar: split-screen sign-in with a brand panel, ' +
+			'OAuth buttons, useForm validation, a useDialog reset-password modal, ' +
+			'a useToast confirmation, and the .loading button spinner state.',
+		icon: 'check',
 	},
 ]
 

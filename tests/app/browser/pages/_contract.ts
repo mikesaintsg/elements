@@ -120,51 +120,32 @@ export const PAGE_SURFACE_BUNDLES: Readonly<Record<PageName, readonly string[]>>
 	ScrollAndTransitionPage: ['scrollbar', 'view-transition'],
 	UseThemeButtonPage: ['useTheme', 'useButton'],
 	UseDragDropPage: ['useDrag', 'useDrop'],
-	// Layout-template page. The dashboard's sidebar is a native
-	// `<nav popover>` drawer (no JS composable; the framework's CSS
-	// drawer chrome + native popovertarget handle it). The wrapping
-	// ExamplesShell composes useDialog (view-source modal), useMenu
-	// (example picker), and useTheme (toolbar light/dark toggle). The
-	// page also exercises the `<menu role="toolbar">` pattern
-	// recognized by ATTR_ROOTED in parity.test.ts §3.
-	DashboardExamplePage: ['useDialog', 'useMenu', 'useTheme'],
-	// Long-scroll marketing landing page. Renders just <main> — no sidebar nav,
-	// no topbar app shell. The site footer lives inside <main> as the last
-	// section (body-shell footer row auto-sizing crushes the 1fr main track on
-	// mobile when the footer is tall — framework-gap noted in commit message).
-	// Exercises: <article> (feature + pricing cards), <small class="tag
-	// information"> (eyebrow + badges), <a class="primary filled"> / <a
-	// class="subtle filled"> CTA anchors. ExamplesShell adds useDialog,
-	// useMenu, useTheme as with all examples.
-	MarketingExamplePage: ['useDialog', 'useMenu', 'useTheme'],
-	// Split-screen auth page. Renders just <main> with a CSS grid split
-	// (brand panel left | form panel right). Brand panel hidden on mobile
-	// (<1024px). Exercises useForm for email + password constraint validation
-	// with submit-gated chrome. OAuth buttons use <button class="secondary">.
-	// The labelled "or" divider is scoped CSS (no framework .divider primitive
-	// — framework-gap flagged). ExamplesShell adds useDialog, useMenu, useTheme.
-	AuthExamplePage: ['useDialog', 'useMenu', 'useTheme', 'useForm'],
-	// Three-pane mail client. Folders rail is a body-shell <nav> popover drawer
-	// (native popovertarget, no composable). <main> contains an inner two-pane
-	// grid (thread list + reading pane) via scoped CSS. Framework gaps flagged:
-	// circular avatar/initials badge (4th example to need it — strongest signal
-	// for a framework .avatar component), inner multi-pane grid (Mail + upcoming
-	// CRM → potential .panes primitive), folder count badge trailing placement.
+	// Console — app-shell pillar. Every body-grid slot at once (nav rail, app
+	// bar, main, context aside, footer); rails flip to popover drawers ≤960px.
+	// Exercises useTable (the sortable orders table) plus the ExamplesShell
+	// trio (useDialog view-source, useMenu picker, useTheme toggle) and the
+	// `<menu role="toolbar">` pattern recognized by ATTR_ROOTED in parity §3.
+	ConsoleExamplePage: ['useTable', 'useDialog', 'useMenu', 'useTheme'],
+	// Settings — forms pillar. One useForm wraps a stack of section cards
+	// (fieldsets, switches, radios, range, color, select, file); submit-gated
+	// validation chrome is pure framework CSS. ExamplesShell adds useDialog,
+	// useMenu, useTheme.
+	SettingsExamplePage: ['useForm', 'useDialog', 'useMenu', 'useTheme'],
+	// Editorial — content & typography pillar. A long-form article from bare
+	// content elements with zero custom CSS. Demonstrates no example-specific
+	// composable; the bundle covers the ExamplesShell trio so the page is not
+	// an orphan in parity.
+	EditorialExamplePage: ['useDialog', 'useMenu', 'useTheme'],
+	// Pricing — composition pillar. A marketing landing page from <article>
+	// cards, .badge / .tag atoms, anchors-as-buttons, and .cluster / .stack
+	// primitives. Renders just <main> with a trailing in-flow footer.
 	// ExamplesShell adds useDialog, useMenu, useTheme.
-	MailExamplePage: ['useDialog', 'useMenu', 'useTheme'],
-	// Four-pane agent workspace. All four body-shell areas used simultaneously:
-	// command bar <header>, draggable context rail <nav class="start"> (popover
-	// drawer on mobile), chat thread <main>, docs panel <aside class="end">
-	// (popover drawer on mobile). First example to exercise useDrag (context list
-	// drag-to-reorder) and useDialog (Add note modal). Chat thread includes 7
-	// turns: rep messages, thinking, tool-call <details> accordion, agent replies,
-	// and an inline form turn. Framework gaps flagged: circular avatar/initials
-	// badge (FIFTH example — overwhelming signal for framework .avatar component),
-	// chat message bubbles (no framework primitive), sticky-bottom composer,
-	// drag-over highlight states (styled with scoped CSS via useDrag's class
-	// names), dual popover drawers (left nav + right aside simultaneously).
-	// ExamplesShell adds useDialog, useMenu, useTheme.
-	CrmExamplePage: ['useDialog', 'useMenu', 'useTheme', 'useDrag', 'useDrop'],
+	PricingExamplePage: ['useDialog', 'useMenu', 'useTheme'],
+	// Sign in — focused-form + overlay pillar. Split-screen sign-in exercising
+	// useForm (validation), useDialog (reset-password modal), and useToast (the
+	// confirmation <div role="status" popover>). ExamplesShell adds useMenu +
+	// useTheme; useDialog is shared with the reset modal.
+	SigninExamplePage: ['useForm', 'useToast', 'useDialog', 'useMenu', 'useTheme'],
 }
 
 /**
