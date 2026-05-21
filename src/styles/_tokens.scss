@@ -151,6 +151,32 @@
 	--set-border-radius: var(--radius-md);
 	--set-border-width: 1px;
 
+	// --------------------------------------------------------------------------
+	// Base typography — the framework's default text size, rhythm, and family.
+	// Tailwind preflight only zeroes margins and supplies a font-family on
+	// <body>; it leaves the UA 16px size in place. App UIs read denser at 14px
+	// (the SaaS-desktop convention — Linear, GitHub, Notion, mailbox all sit
+	// here), so the framework ships 14px as its default body size.
+	//
+	// CRITICAL: this is a `<body>` font-size, NOT an `<html>` one. `rem` stays
+	// anchored to the UA 16px root, so spacing / radius / heading scales
+	// (all rem-based) keep their absolute sizes — only inherited TEXT (body
+	// copy, labels, inputs, table cells, small) drops to 14px. Headings use
+	// absolute rem and are unaffected, landing at the same px as mailbox's
+	// `calc(base + Nrem)` scale. Consumers who want the looser 16px feel set
+	// `:root { --set-font-size-base: 1rem }`.
+	//
+	// `--set-font-family-base` mirrors mailbox's system stack; override at
+	// `:root` to brand the type. `--set-line-height-base` is the body rhythm
+	// (1.5 — comfortable for paragraph copy; headings pin their own tighter
+	// 1.2 in `_h1-h6.scss`).
+	// --------------------------------------------------------------------------
+	--set-font-size-base: 0.875rem;
+	--set-line-height-base: 1.5;
+	--set-font-family-base:
+		system-ui, -apple-system, 'Segoe UI', roboto, 'Helvetica Neue', arial, sans-serif,
+		'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+
 	// Default flex / grid gap for layout primitives (`.stack`, `.cluster`,
 	// `<form>` control list, `<menu>` toolbar). Per-component gap tokens
 	// (`--set-form-row-gap`, `--set-menu-gap`) consume this as their

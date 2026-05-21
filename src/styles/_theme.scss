@@ -91,7 +91,16 @@
 	//     red of `-600`. Still unmistakable as "danger" in semantic
 	//     context, just less alarmingly loud against body copy.
 
-	--color-primary: var(--color-blue-600);
+	// Primary is a tuned royal cobalt rather than a bare Tailwind step.
+	// Tailwind's blue-600 (`oklch 0.546 0.245 262`) read as a generic,
+	// slightly washed mid-blue; mailbox's primary is a deeper, more saturated
+	// cobalt (`hsl 235 85% 50%` ≈ `oklch 0.48 0.255 264`) that reads premium
+	// against white. We pin the literal oklch so the identity is stable
+	// regardless of Tailwind palette customisation; consumers rebrand by
+	// overriding `--color-primary` at `:root`. Dark mode lifts this to a
+	// brighter sky (see the dark blocks) so the accent keeps its pop against
+	// a charcoal canvas instead of sinking into it.
+	--color-primary: oklch(48% 0.255 264);
 	--color-secondary: var(--color-slate-600);
 	--color-tertiary: var(--color-violet-600);
 	--color-success: var(--color-green-700);
@@ -137,10 +146,18 @@
 	--color-text-subtle: var(--color-slate-400);
 
 	// Border scale — default → strong (input focus boundaries) → subtle
-	// (low-contrast separators)
-	--color-border: var(--color-slate-200);
-	--color-border-strong: var(--color-slate-300);
-	--color-border-subtle: var(--color-slate-100);
+	// (low-contrast separators).
+	//
+	// Pitched one Tailwind step darker than the obvious slate-100/200 choice
+	// (→ slate-300 default, slate-400 strong, slate-200 subtle). slate-200 as
+	// the default border read so faint against white that cards, inputs, and
+	// table rules lost their edges — the UI looked soft / unaligned. slate-300
+	// (~rgb 203 213 225) is the lightest step that still draws a crisp, visible
+	// rule on a white canvas, matching the defined-edge feel of mailbox's
+	// `hsl(216 20% 80%)` border without going so dark it reads as a divider.
+	--color-border: var(--color-slate-300);
+	--color-border-strong: var(--color-slate-400);
+	--color-border-subtle: var(--color-slate-200);
 
 	// Inverted surface — the canvas-opposite tier. Always painted as the
 	// theme-flipped surface so a tooltip / hint / inverted callout reads as
@@ -268,9 +285,10 @@
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme]) {
 		// Surfaces — slate-950 canvas, slate-900/800 for tiers
-		--color-canvas: var(--color-slate-950);
-		--color-surface: var(--color-slate-900);
-		--color-surface-raised: var(--color-slate-800);
+		--color-canvas: oklch(21% 0.013 256);
+		--color-surface: oklch(23.5% 0.013 256);
+		--color-surface-raised: oklch(26.5% 0.014 256);
+		--color-primary: oklch(70% 0.15 233);
 
 		// Text — slate-200 body reads gentler than pure white; strong climbs
 		// to white for headings; muted/subtle stepping mirrors the light scale
@@ -282,9 +300,9 @@
 
 		// Borders — slate-700 default; strong climbs to slate-600; subtle
 		// stays just above the surface for low-contrast dividers
-		--color-border: var(--color-slate-700);
-		--color-border-strong: var(--color-slate-600);
-		--color-border-subtle: var(--color-slate-800);
+		--color-border: oklch(40% 0.022 256);
+		--color-border-strong: oklch(46% 0.026 256);
+		--color-border-subtle: oklch(34% 0.018 256);
 
 		// Inverted surface flips with the theme so the inversion stays
 		// visually distinct against the dark canvas — see the light-mode
@@ -411,18 +429,22 @@
 [data-theme='dark'] {
 	color-scheme: dark;
 
-	--color-canvas: var(--color-slate-950);
-	--color-surface: var(--color-slate-900);
-	--color-surface-raised: var(--color-slate-800);
+	// Lifted charcoal ramp + accent pop — see the `prefers-color-scheme: dark`
+	// block above for the full rationale (mailbox #161b22/#1b2028/#1f252e ramp,
+	// navy→sky primary remap).
+	--color-canvas: oklch(21% 0.013 256);
+	--color-surface: oklch(23.5% 0.013 256);
+	--color-surface-raised: oklch(26.5% 0.014 256);
+	--color-primary: oklch(70% 0.15 233);
 
 	--color-text: var(--color-slate-200);
 	--color-text-strong: var(--color-white);
 	--color-text-muted: var(--color-slate-400);
 	--color-text-subtle: var(--color-slate-500);
 
-	--color-border: var(--color-slate-700);
-	--color-border-strong: var(--color-slate-600);
-	--color-border-subtle: var(--color-slate-800);
+	--color-border: oklch(40% 0.022 256);
+	--color-border-strong: oklch(46% 0.026 256);
+	--color-border-subtle: oklch(34% 0.018 256);
 
 	// Inverted surface flips with the theme — see the light-mode declaration
 	// for rationale.

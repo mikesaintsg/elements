@@ -14,6 +14,15 @@
 	body {
 		background-color: var(--color-canvas);
 		color: var(--color-text);
+
+		// Base type — see `_tokens.scss` § Base typography. 14px body size +
+		// 1.5 rhythm + system stack, all token-driven so a consumer retunes
+		// at `:root`. `rem` stays anchored to the UA 16px <html>, so this
+		// only shifts inherited text, not the rem-based spacing/radius scales.
+		font-family: var(--set-font-family-base);
+		font-size: var(--set-font-size-base);
+		line-height: var(--set-line-height-base);
+
 		-webkit-tap-highlight-color: transparent;
 	}
 }

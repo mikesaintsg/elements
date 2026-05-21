@@ -124,6 +124,9 @@ export const tokens = {
 	// design rationale.
 	borderRadius: '--set-border-radius',
 	borderWidth: '--set-border-width',
+	fontSizeBase: '--set-font-size-base',
+	lineHeightBase: '--set-line-height-base',
+	fontFamilyBase: '--set-font-family-base',
 	gap: '--set-gap',
 	stackSpacing: '--set-stack-spacing',
 	clusterSpacing: '--set-cluster-spacing',

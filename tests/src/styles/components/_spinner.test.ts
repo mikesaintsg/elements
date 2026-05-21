@@ -58,8 +58,8 @@ describe('.spinner — token surface + animation', () => {
 		expect(primaryIdentity).not.toBe('')
 		expect(borderTop).not.toBe('rgba(0, 0, 0, 0)')
 		// Hue match — both primary identity and the resolved border use
-		// the same `262.881` blue chroma value (Tailwind v4 oklch).
-		expect(borderTop).toContain('262.881')
+		// the same `264` hue (the framework's tuned royal-cobalt primary).
+		expect(borderTop).toContain('264')
 	})
 
 	it('spinner inside a `.loading` button uses `currentColor` (contrast on filled bg)', () => {
