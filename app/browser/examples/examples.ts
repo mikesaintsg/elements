@@ -29,6 +29,15 @@ export const examples: readonly ExampleMeta[] = [
 			'Renders just <main> + body-shell <footer> — no sidebar, no topbar app shell.',
 		icon: 'external',
 	},
+	{
+		id: 'example-auth',
+		title: 'Auth',
+		tagline:
+			'Split-screen sign-in: brand panel (gradient, testimonial, trust badges) left + ' +
+			'form panel (OAuth buttons, email/password, remember-me) right. ' +
+			'Renders just <main> with a CSS grid split; brand panel hidden on mobile.',
+		icon: 'information',
+	},
 ]
 
 export const isExampleId = (id: string): boolean => examples.some((e) => e.id === id)

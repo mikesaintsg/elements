@@ -67,6 +67,7 @@ import InspectorPage from './pages/InspectorPage.vue'
 // Examples — fullscreen layout templates rendered without the docs chrome.
 import DashboardExamplePage from './examples/DashboardExamplePage.vue'
 import MarketingExamplePage from './examples/MarketingExamplePage.vue'
+import AuthExamplePage from './examples/AuthExamplePage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -359,6 +360,13 @@ const EXAMPLE_MARKETING: Route = {
 	page: MarketingExamplePage,
 }
 
+const EXAMPLE_AUTH: Route = {
+	id: 'example-auth',
+	title: 'Auth',
+	group: 'Examples',
+	page: AuthExamplePage,
+}
+
 export const routes: readonly Route[] = [
 	HOME,
 	TOKENS,
@@ -406,6 +414,7 @@ export const routes: readonly Route[] = [
 	INSPECTOR,
 	EXAMPLE_DASHBOARD,
 	EXAMPLE_MARKETING,
+	EXAMPLE_AUTH,
 ]
 
 const parse = (fallback: string): RouteLocation => {

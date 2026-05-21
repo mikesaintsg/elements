@@ -137,6 +137,13 @@ export const PAGE_SURFACE_BUNDLES: Readonly<Record<PageName, readonly string[]>>
 	// class="subtle filled"> CTA anchors. ExamplesShell adds useDialog,
 	// useMenu, useTheme as with all examples.
 	MarketingExamplePage: ['useDialog', 'useMenu', 'useTheme'],
+	// Split-screen auth page. Renders just <main> with a CSS grid split
+	// (brand panel left | form panel right). Brand panel hidden on mobile
+	// (<1024px). Exercises useForm for email + password constraint validation
+	// with submit-gated chrome. OAuth buttons use <button class="secondary">.
+	// The labelled "or" divider is scoped CSS (no framework .divider primitive
+	// — framework-gap flagged). ExamplesShell adds useDialog, useMenu, useTheme.
+	AuthExamplePage: ['useDialog', 'useMenu', 'useTheme', 'useForm'],
 }
 
 /**
