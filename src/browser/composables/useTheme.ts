@@ -21,8 +21,10 @@ import { createTheme } from '../factories/createTheme.js'
  * Returns:
  *   `setting`  — user choice (`'light' | 'dark' | 'system'`), reactive.
  *   `mode`     — resolved mode (`'light' | 'dark'`) currently rendered.
+ *   `name`     — active theme name/core (`'default'` = base theme), reactive.
  *   `set(next)` — pick light, dark, or system.
  *   `toggle()` — binary flip between light and dark (anchors the choice).
+ *   `select(name)` — pull in a named theme core (or `'default'`).
  *
  * Every option is optional, so the no-arg form works:
  *
@@ -46,7 +48,9 @@ export function useTheme(options: UseThemeOptions = {}): UseThemeReturn {
 	return {
 		setting: factory.setting,
 		mode: factory.mode,
+		name: factory.name,
 		set: factory.set,
 		toggle: factory.toggle,
+		select: factory.select,
 	}
 }

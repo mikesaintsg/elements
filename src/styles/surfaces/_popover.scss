@@ -29,7 +29,7 @@
 		// Popover surface tracks the active theme — `--color-surface` flips
 		// from white in light to slate-900 in dark, so popovers / menus /
 		// dropdowns no longer paint white-on-dark when the user pins
-		// `data-theme="dark"`. The hint variant below uses inverted
+		// `data-mode="dark"`. The hint variant below uses inverted
 		// (always-dark) chrome so it reads as a transient label regardless.
 		--set-popover-color: var(--color-text);
 		--set-popover-background-color: var(--color-surface);

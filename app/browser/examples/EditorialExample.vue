@@ -193,7 +193,7 @@ const related = [
 						<p>
 							It follows
 							<abbr title="the prefers-color-scheme media feature">the OS preference</abbr> by
-							default and can be pinned per-document via <code>data-theme</code>.
+							default and can be pinned per-document via <code>data-mode</code>.
 						</p>
 					</details>
 				</section>

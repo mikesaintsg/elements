@@ -2,24 +2,24 @@
 // Theme cores — opt-in named themes.
 //
 // A "core" is a palette/identity theme a consumer pulls in by setting
-// `<html data-theme-name="auroramoon">` (orthogonal to the `data-theme`
+// `<html data-theme="auroramoon">` (orthogonal to the `data-mode`
 // light/dark MODE axis). Each core re-tunes the same base `--color-*` tokens
 // + the `--set-{radius,density}-factor` knobs the default theme exposes; the
 // `color-mix` derivations in `_theme.scss` (bg-subtle / text-emphasis /
 // on-canvas) re-derive automatically, so a core only declares the small set
 // of base tokens — never the full derived surface.
 //
-// `data-theme-name="default"` is NOT a core: it's the absence of the
+// `data-theme="default"` is NOT a core: it's the absence of the
 // attribute (the base `_theme.scss` applies). `createTheme().select('default')`
 // removes the attribute.
 //
 // ── Mode handling ──────────────────────────────────────────────────────────
 // The framework's mode axis lets CSS own OS-follow: when the user hasn't
-// pinned a mode, `<html>` carries NO `data-theme` and the stylesheet's
+// pinned a mode, `<html>` carries NO `data-mode` and the stylesheet's
 // `@media (prefers-color-scheme: dark)` decides. A pinned mode writes
-// `data-theme="light|dark"`. So a core's DARK overrides must reach BOTH:
-//   1. an explicit pin — `[data-theme-name=X][data-theme='dark']`
-//   2. OS-follow — `@media (dark) { [data-theme-name=X]:not([data-theme]) }`
+// `data-mode="light|dark"`. So a core's DARK overrides must reach BOTH:
+//   1. an explicit pin — `[data-theme=X][data-mode='dark']`
+//   2. OS-follow — `@media (dark) { [data-theme=X]:not([data-mode]) }`
 // `core-dark()` emits both from one `@content` block so a core file declares
 // its dark surface once. `core-light()` is the bare attribute selector (light
 // is the default mode). Cores are imported AFTER `_theme.scss`, so equal-
@@ -28,18 +28,18 @@
 // ============================================================================
 
 @mixin core-light($name) {
-	[data-theme-name='#{$name}'] {
+	[data-theme='#{$name}'] {
 		@content;
 	}
 }
 
 @mixin core-dark($name) {
-	[data-theme-name='#{$name}'][data-theme='dark'] {
+	[data-theme='#{$name}'][data-mode='dark'] {
 		@content;
 	}
 
 	@media (prefers-color-scheme: dark) {
-		[data-theme-name='#{$name}']:not([data-theme]) {
+		[data-theme='#{$name}']:not([data-mode]) {
 			@content;
 		}
 	}

@@ -352,6 +352,7 @@ afterEach(() => {
 	document.body.innerHTML = ''
 	document.body.className = ''
 	document.body.style.cssText = ''
+	document.documentElement.removeAttribute('data-mode')
 	document.documentElement.removeAttribute('data-theme')
 	window.localStorage.removeItem(STORAGE_KEY_THEME)
 	resetTheme()

@@ -11,13 +11,13 @@
  *
  * `useTheme` design notes:
  *   - **CSS owns OS follow.** When `setting === 'system'` (the default),
- *     the composable removes `<html data-theme="…">` and the framework
+ *     the composable removes `<html data-mode="…">` and the framework
  *     stylesheet's `@media (prefers-color-scheme: dark)` rule does the
  *     light→dark flip on its own. No JS rewrite on OS-preference changes.
  *   - **Reactivity is reserved for UI.** The matchMedia listener feeds a
  *     `mode` ref so a sun/moon icon can swap when the OS preference
  *     changes; it does NOT rewrite the DOM. Single source of truth: the
- *     `data-theme` attribute when set, the media query otherwise.
+ *     `data-mode` attribute when set, the media query otherwise.
  *   - **One singleton per page.** Every `useTheme()` call returns refs
  *     pointing at the same shared state, so multiple consumers stay in
  *     sync without explicit plumbing.
@@ -81,7 +81,7 @@ const mute = useButton(muteButton, {
 			<p>
 				Two tiny composables on one page. <code>useTheme()</code> reflects a single user choice
 				(<code>light</code> / <code>dark</code> / <code>system</code>) onto
-				<code>&lt;html data-theme="…"&gt;</code> — and crucially, when the user picks
+				<code>&lt;html data-mode="…"&gt;</code> — and crucially, when the user picks
 				<code>system</code> the attribute is REMOVED so the framework stylesheet's
 				<code>@media (prefers-color-scheme: dark)</code> rule handles the OS-follow without per-
 				update JS. <code>useButton()</code> is the canonical <code>aria-pressed</code> toggle button
@@ -110,7 +110,7 @@ const mute = useButton(muteButton, {
 			click.
 		</p>
 		<p>
-			Picking <strong>System</strong> removes the <code>data-theme</code> attribute from
+			Picking <strong>System</strong> removes the <code>data-mode</code> attribute from
 			<code>&lt;html&gt;</code> entirely so CSS owns the flip. Open your OS appearance settings and
 			toggle dark mode while this page is on <strong>System</strong> — the colors update without a
 			page reload, and the framework's matchMedia listener updates the resolved
@@ -136,7 +136,7 @@ const mute = useButton(muteButton, {
 
 // theme.setting — Ref&lt;'light' | 'dark' | 'system'&gt;
 // theme.set(value) — pick one of the three
-// theme.set('system') removes data-theme; CSS handles prefers-color-scheme</code></pre>
+// theme.set('system') removes data-mode; CSS handles prefers-color-scheme</code></pre>
 		</details>
 	</section>
 
@@ -165,7 +165,7 @@ const mute = useButton(muteButton, {
 					</p>
 					<p v-else>
 						<small
-							>explicit pin via <code>data-theme="{{ theme.setting.value }}"</code></small
+							>explicit pin via <code>data-mode="{{ theme.setting.value }}"</code></small
 						>
 					</p>
 				</div>

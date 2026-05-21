@@ -269,6 +269,11 @@ const ATTR_NAMING_ALLOW: Readonly<Record<string, string>> = {
 	'data-key': 'Consumer content key (e.g. table sort column), not composable state.',
 	'data-level': 'Consumer structural depth (e.g. TOC heading level), not composable state.',
 	'data-value': 'Consumer content value, not composable state.',
+	// Theme MODE axis written by createTheme — the palette/core axis uses
+	// `data-theme` (matches the `theme` factory stem); the light/dark mode
+	// axis is named `data-mode` for a clean two-attribute API, so it needs an
+	// explicit allow-list entry rather than the stem match.
+	'data-mode': 'Theme light/dark mode axis (createTheme); paired with the data-theme core axis.',
 }
 
 function dataAttrSurface(): ReadonlySet<string> {

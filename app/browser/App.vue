@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { ThemeName } from '@elements/browser'
 import type { Group, Route, Section } from './types.js'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useTheme } from '@elements/browser'
@@ -6,6 +7,18 @@ import { current, navigate, route, routes, section } from './router.js'
 import { ROUTE_GROUPS } from './types.js'
 import { hasModifierKey } from './helpers.js'
 import { FILTER_SELECTOR, MOBILE_QUERY, OBSERVER_ROOT_MARGIN, RAIL_IDS } from './constants.js'
+
+// Theme cores selectable from the header picker. `default` is the base theme
+// (no `data-theme` attribute); the rest activate the matching opt-in core in
+// `src/styles/themes/`. Each renders correctly in BOTH light and dark via the
+// independent `data-mode` axis (the sun/moon toggle).
+const THEME_NAMES: readonly { value: ThemeName; label: string }[] = [
+	{ value: 'default', label: 'Default' },
+	{ value: 'auroramoon', label: 'Auroramoon' },
+	{ value: 'eclipse', label: 'Eclipse' },
+	{ value: 'honeymoon', label: 'Honeymoon' },
+	{ value: 'lagunamoon', label: 'Lagunamoon' },
+]
 
 /**
  * Showcase shell. The framework's `body:has(> main)` rule turns <body>
@@ -339,6 +352,20 @@ const buildId = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'
 		</button>
 
 		<a href="#/home" class="flex-1" @click="goHome"><strong>Elements</strong></a>
+
+		<!-- Theme-core picker — selects the palette/identity axis (data-theme),
+		     orthogonal to the light/dark toggle below (data-mode). Bare
+		     <select>, framework-styled; `select()` writes <html data-theme>. -->
+		<label class="showcase-theme-picker">
+			<span class="sr-only">Theme</span>
+			<select
+				:value="themeCtl.name.value"
+				aria-label="Theme"
+				@change="themeCtl.select(($event.target as HTMLSelectElement).value as ThemeName)"
+			>
+				<option v-for="t in THEME_NAMES" :key="t.value" :value="t.value">{{ t.label }}</option>
+			</select>
+		</label>
 
 		<button
 			type="button"

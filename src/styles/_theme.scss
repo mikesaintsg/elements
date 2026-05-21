@@ -14,7 +14,7 @@
 //      OUTSIDE `@theme` because Tailwind doesn't need utility classes for
 //      these (consumers reach for them via `var(--color-canvas)` directly
 //      or via per-element framework rules). Dark-mode overrides ride the
-//      `[data-theme='dark']` attribute selector below.
+//      `[data-mode='dark']` attribute selector below.
 //
 //   Why attribute selectors instead of `light-dark()`? Chromium has a
 //   long-standing bug where `light-dark()` stored in custom properties
@@ -42,11 +42,11 @@
 //     surfaces to read as primary action — no per-mode swap needed.
 //   - `color-scheme: light dark` on `:root` advertises both modes so UA
 //     chrome (form controls, scrollbars) follows `prefers-color-scheme`
-//     until a consumer pins via `data-theme`.
+//     until a consumer pins via `data-mode`.
 //
 // Authoring rule for downstream partials: read these tokens
 // (`var(--color-canvas)`, `var(--color-text)`) instead of inlining
-// palette swatches. Flipping `data-theme` retunes the whole UI without
+// palette swatches. Flipping `data-mode` retunes the whole UI without
 // re-rendering.
 // ============================================================================
 
@@ -278,12 +278,12 @@
 }
 
 // ── prefers-color-scheme follow ─────────────────────────────────────────
-// When the user hasn't pinned a theme via `data-theme`, follow the OS
-// preference. The `:not([data-theme])` guard makes the explicit attribute
+// When the user hasn't pinned a theme via `data-mode`, follow the OS
+// preference. The `:not([data-mode])` guard makes the explicit attribute
 // selectors below win when set.
 
 @media (prefers-color-scheme: dark) {
-	:root:not([data-theme]) {
+	:root:not([data-mode]) {
 		// Surfaces — slate-950 canvas, slate-900/800 for tiers
 		--color-canvas: oklch(21% 0.013 256);
 		--color-surface: oklch(23.5% 0.013 256);
@@ -417,16 +417,16 @@
 }
 
 // ── Explicit theme attribute pins ────────────────────────────────────────
-// `useTheme` writes `data-theme="light"` or `data-theme="dark"` on
+// `useTheme` writes `data-mode="light"` or `data-mode="dark"` on
 // `<html>` based on user choice. The explicit pins below override the
 // `prefers-color-scheme` defaults so a user who toggles to a non-system
 // theme stays put across reloads.
 
-[data-theme='light'] {
+[data-mode='light'] {
 	color-scheme: light;
 }
 
-[data-theme='dark'] {
+[data-mode='dark'] {
 	color-scheme: dark;
 
 	// Lifted charcoal ramp + accent pop — see the `prefers-color-scheme: dark`
@@ -536,7 +536,7 @@
 	);
 }
 
-// ── Inverted region — `data-theme="invert"` ──────────────────────────────
+// ── Inverted region — `data-mode="invert"` ──────────────────────────────
 // The framework's reusable "always-distinct-from-canvas" surface hook.
 //
 // `--color-inverted` / `--color-inverted-text` are a two-token accent pair
@@ -555,21 +555,21 @@
 // (`[popover='hint']` / `[role='tooltip']`) by resetting those self-
 // coloring descendants to `color: inherit` so they follow the surface
 // foreground. That recipe is proven across every theme + forced-colors
-// combination. `[data-theme='invert']` generalizes the SAME recipe into
+// combination. `[data-mode='invert']` generalizes the SAME recipe into
 // one documented hook so any consumer-authored inverted region (callout,
 // promo bar, demo surface) gets correct descendants for free — no per-
 // element `color` pin, no maintenance fork. The tooltip keeps its own
 // (unchanged) rule; this is purely additive.
 //
 // Declared unlayered (alongside the token blocks above) so the deliberate
-// `data-theme="invert"` consumer opt-in wins over element / component
+// `data-mode="invert"` consumer opt-in wins over element / component
 // baselines the same way the tooltip surface does — the consumer asked
 // for an inverted surface, so it should beat the element's default fill.
-// `data-theme` already namespaces light / dark; `invert` is a third
+// `data-mode` already namespaces light / dark; `invert` is a third
 // value `useTheme` never writes, so there's no collision with the
 // page-level pins. Single-level inversion is the supported contract.
 
-[data-theme='invert'] {
+[data-mode='invert'] {
 	background-color: var(--color-inverted);
 	color: var(--color-inverted-text);
 }
@@ -579,8 +579,8 @@
 // exactly so the two inverted surfaces stay in lockstep. Variant-tinted
 // children (`.primary`, `.danger`, …) override at higher specificity and
 // still paint their intended hue.
-[data-theme='invert'] :is(strong, small, dt, dd, address, figcaption, mark),
-[data-theme='invert'] :is(h1, h2, h3, h4, h5, h6),
-[data-theme='invert'] hgroup p {
+[data-mode='invert'] :is(strong, small, dt, dd, address, figcaption, mark),
+[data-mode='invert'] :is(h1, h2, h3, h4, h5, h6),
+[data-mode='invert'] hgroup p {
 	color: inherit;
 }

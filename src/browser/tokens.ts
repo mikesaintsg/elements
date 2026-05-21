@@ -18,7 +18,7 @@
 export const tokens = {
 	// Semantic variants (registered in @theme; Tailwind generates utilities).
 	// Surface / text / border tokens declared in `:root` next to the variants
-	// (outside `@theme` so we can dual-resolve them via the `[data-theme]`
+	// (outside `@theme` so we can dual-resolve them via the `[data-mode]`
 	// attribute selector — see _theme.scss for why).
 	color: {
 		primary: '--color-primary',
@@ -40,7 +40,7 @@ export const tokens = {
 		borderSubtle: '--color-border-subtle',
 		// Inverted surface tier — canvas-opposite color used by always-distinct
 		// chrome (tooltips, hint popovers, inverted callouts). Flips with
-		// `data-theme` so the inversion stays visually distinct against the
+		// `data-mode` so the inversion stays visually distinct against the
 		// active canvas in both light and dark modes.
 		inverted: '--color-inverted',
 		invertedText: '--color-inverted-text',

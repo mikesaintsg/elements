@@ -11,11 +11,11 @@ describe('createTheme', () => {
 		// `initial` defaults to `'system'`. Under jsdom there is no
 		// `matchMedia` implementation, so `systemDark` stays `false` and the
 		// resolved mode reads `'light'`. With `'system'` the factory
-		// removes `data-theme` from `<html>` so the CSS media query owns
+		// removes `data-mode` from `<html>` so the CSS media query owns
 		// the OS-follow.
 		expect(theme.setting.value).toBe('system')
 		expect(theme.mode.value).toBe('light')
-		expect(document.documentElement.hasAttribute('data-theme')).toBe(false)
+		expect(document.documentElement.hasAttribute('data-mode')).toBe(false)
 		theme.destroy()
 	})
 
@@ -30,15 +30,15 @@ describe('createTheme', () => {
 		const theme = createTheme({ initial: 'dark' })
 		expect(theme.setting.value).toBe('dark')
 		expect(theme.mode.value).toBe('dark')
-		expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+		expect(document.documentElement.getAttribute('data-mode')).toBe('dark')
 		theme.destroy()
 	})
 
-	it('removes data-theme when setting reverts to system', () => {
+	it('removes data-mode when setting reverts to system', () => {
 		const theme = createTheme({ initial: 'dark' })
-		expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+		expect(document.documentElement.getAttribute('data-mode')).toBe('dark')
 		theme.set('system')
-		expect(document.documentElement.hasAttribute('data-theme')).toBe(false)
+		expect(document.documentElement.hasAttribute('data-mode')).toBe(false)
 		theme.destroy()
 	})
 

@@ -57,7 +57,7 @@
 		// ----------------------------------------------------------------------
 		--set-input-color: var(--set-style-color, currentColor);
 		// Theme-first bg fallback chain — `--color-canvas` flips between light
-		// (white) and dark (slate-950) via `[data-theme]`, while the trailing
+		// (white) and dark (slate-950) via `[data-mode]`, while the trailing
 		// `Canvas` system-color keeps things sane on engines where the theme
 		// hasn't engaged (no `:root` overrides loaded yet).
 		--set-input-background-color: var(--set-style-background-color, var(--color-canvas, Canvas));

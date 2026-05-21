@@ -6,7 +6,7 @@ import { mountSetup, waitForBootstrap } from '../../../setupBrowser'
 
 beforeEach(() => {
 	resetTheme()
-	document.documentElement.removeAttribute('data-theme')
+	document.documentElement.removeAttribute('data-mode')
 	window.localStorage.removeItem(STORAGE_KEY_THEME)
 })
 
@@ -18,10 +18,10 @@ describe('useTheme', () => {
 		// `initial` defaults to `'system'`. Under jsdom there is no
 		// `matchMedia`, so `systemDark` stays `false` and the resolved
 		// mode reads `'light'`. With `'system'` the factory removes
-		// `data-theme` from `<html>` so CSS owns the flip.
+		// `data-mode` from `<html>` so CSS owns the flip.
 		expect(api.setting.value).toBe('system')
 		expect(api.mode.value).toBe('light')
-		expect(document.documentElement.hasAttribute('data-theme')).toBe(false)
+		expect(document.documentElement.hasAttribute('data-mode')).toBe(false)
 		unmount()
 	})
 
@@ -40,7 +40,7 @@ describe('useTheme', () => {
 
 		expect(api.setting.value).toBe('dark')
 		expect(api.mode.value).toBe('dark')
-		expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+		expect(document.documentElement.getAttribute('data-mode')).toBe('dark')
 		unmount()
 	})
 
@@ -70,20 +70,21 @@ describe('useTheme', () => {
 		api.set('dark')
 		await nextTick()
 
-		expect(window.localStorage.getItem(STORAGE_KEY_THEME)).toBe('dark')
+		// Storage round-trips a `setting:name` pair.
+		expect(window.localStorage.getItem(STORAGE_KEY_THEME)).toBe('dark:default')
 		unmount()
 	})
 
-	it('writes the system value back as a remove on the data-theme attribute', async () => {
+	it('writes the system value back as a remove on the data-mode attribute', async () => {
 		const [api, unmount] = mountSetup(() => useTheme({ initial: 'dark' }))
 		await waitForBootstrap()
 
-		expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+		expect(document.documentElement.getAttribute('data-mode')).toBe('dark')
 		api.set('system')
 		await nextTick()
-		expect(document.documentElement.hasAttribute('data-theme')).toBe(false)
+		expect(document.documentElement.hasAttribute('data-mode')).toBe(false)
 		// Persistence still records the choice so reload restores it.
-		expect(window.localStorage.getItem(STORAGE_KEY_THEME)).toBe('system')
+		expect(window.localStorage.getItem(STORAGE_KEY_THEME)).toBe('system:default')
 		unmount()
 	})
 
@@ -162,10 +163,10 @@ describe('useTheme', () => {
 		const [api, unmount] = mountSetup(() => useTheme({ initial: 'dark', storage: { key: custom } }))
 		await waitForBootstrap()
 
-		expect(window.localStorage.getItem(custom)).toBe('dark')
+		expect(window.localStorage.getItem(custom)).toBe('dark:default')
 		api.set('light')
 		await nextTick()
-		expect(window.localStorage.getItem(custom)).toBe('light')
+		expect(window.localStorage.getItem(custom)).toBe('light:default')
 
 		window.localStorage.removeItem(custom)
 		unmount()

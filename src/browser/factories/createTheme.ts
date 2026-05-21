@@ -1,4 +1,4 @@
-import type { CreateThemeInstance, CreateThemeOptions, ThemeSetting } from '../types.js'
+import type { CreateThemeInstance, CreateThemeOptions, ThemeName, ThemeSetting } from '../types.js'
 import { readonly } from '@vue/reactivity'
 import { THEME_EVENTS } from '../constants.js'
 import { isSetting, listen } from '../helpers.js'
@@ -24,7 +24,7 @@ import { bootstrapTheme, themeState } from '../theme.js'
  */
 export function createTheme(options: CreateThemeOptions = {}): CreateThemeInstance {
 	bootstrapTheme(options)
-	const { setting, mode } = themeState()
+	const { setting, mode, name } = themeState()
 
 	let offChange: (() => void) | null = null
 	if (typeof document !== 'undefined' && options.on?.change) {
@@ -44,6 +44,15 @@ export function createTheme(options: CreateThemeOptions = {}): CreateThemeInstan
 		set(mode.value === 'dark' ? 'light' : 'dark')
 	}
 
+	const select = (next: ThemeName): void => {
+		// Lenient — any non-empty string can name a consumer-registered core;
+		// the built-in cores are the typed `ThemeName` union. The runtime
+		// guard catches untyped JS callers passing `''`/non-strings.
+		if (typeof next !== 'string' || (next as string) === '') return
+		if (name.value === next) return
+		name.value = next
+	}
+
 	let destroyed = false
 	const destroy = (): void => {
 		if (destroyed) return
@@ -55,8 +64,10 @@ export function createTheme(options: CreateThemeOptions = {}): CreateThemeInstan
 	return {
 		setting: readonly(setting),
 		mode: readonly(mode),
+		name: readonly(name),
 		set,
 		toggle,
+		select,
 		destroy,
 	}
 }

@@ -22,7 +22,7 @@
 // Theme primitives
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Theme color mode currently rendered. Written to `<html data-theme="…">`
+/** Theme color mode currently rendered. Written to `<html data-mode="…">`
  *  ONLY when the user has pinned an explicit choice — when the user is on
  *  `'system'` the attribute is removed and CSS handles the OS-follow via
  *  `@media (prefers-color-scheme: dark)`. */
@@ -31,29 +31,41 @@ export type ThemeMode = 'light' | 'dark'
 /**
  * User-facing theme setting. `'system'` is the default and defers entirely
  * to the OS `prefers-color-scheme` media query at the CSS layer — the
- * composable removes `<html data-theme="…">` so the framework stylesheet
+ * composable removes `<html data-mode="…">` so the framework stylesheet
  * owns the flip. `'light'` and `'dark'` are explicit pins that write the
  * attribute and override the media query.
  */
 export type ThemeSetting = ThemeMode | 'system'
+
+/**
+ * Theme NAME — the palette/identity "core" axis, orthogonal to the light/dark
+ * MODE axis. `'default'` is the base theme (no `data-theme` attribute); the
+ * named cores ship in `src/styles/themes/` and activate via
+ * `<html data-theme="…">`. Typed as a union of the built-in cores for DX;
+ * a consumer who registers a custom core in CSS can pass its name through too.
+ */
+export type ThemeName = 'default' | 'auroramoon' | 'eclipse' | 'honeymoon' | 'lagunamoon'
 
 export interface ThemeChangeDetail {
 	/** Resolved mode (`'light' | 'dark'`) currently rendered. */
 	readonly mode: ThemeMode
 	/** Raw user setting (`'light' | 'dark' | 'system'`) before resolution. */
 	readonly setting: ThemeSetting
+	/** Active theme name/core (`'default'` = base theme). */
+	readonly name: ThemeName
 }
 
 /**
  * Live shared refs handed by `themeState()` to every `createTheme` wrapper.
- * `setting` is the WRITABLE singleton ref — the wrapper assigns
- * `setting.value` in `set()` — so it is intentionally NOT wrapped in
+ * `setting` and `name` are the WRITABLE singleton refs — the wrapper assigns
+ * them in `set()` / `select()` — so they are intentionally NOT wrapped in
  * `Readonly<>`. `mode` is the derived `ComputedRef` (read-only by nature).
  * Identity is stable across calls (one singleton per page).
  */
 export interface ThemeStateRefs {
 	readonly setting: Ref<ThemeSetting>
 	readonly mode: ComputedRef<ThemeMode>
+	readonly name: Ref<ThemeName>
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1265,6 +1277,9 @@ export interface CreateThemeOptions {
 	 * its own. Pick `'light'` or `'dark'` for an explicit pin.
 	 */
 	readonly initial?: ThemeSetting
+	/** Initial theme name/core when nothing is stored. Defaults to
+	 *  `'default'` (base theme, no `data-theme` attribute). */
+	readonly name?: ThemeName
 	/** Persistence. Defaults to `localStorage` under the framework's
 	 *  `STORAGE_KEY_THEME`. `false` disables it; an object with `key`
 	 *  overrides the storage key. */
@@ -1281,6 +1296,9 @@ export interface CreateThemeInstance {
 	 *  `setting === 'system'`. Use this for binary UI affordances (sun /
 	 *  moon icon swap). */
 	readonly mode: Readonly<Ref<ThemeMode>>
+	/** Active theme name/core (`'default'` = base theme). Use this to drive
+	 *  a theme picker. */
+	readonly name: Readonly<Ref<ThemeName>>
 	/** Pick light, dark, or system. No-op when the value matches the
 	 *  current setting. */
 	readonly set: (next: ThemeSetting) => void
@@ -1288,6 +1306,9 @@ export interface CreateThemeInstance {
 	 *  away from `'system'`. Call `set('system')` to opt back into OS
 	 *  follow. */
 	readonly toggle: () => void
+	/** Pull in a named theme core (or `'default'` for the base theme).
+	 *  No-op when the value matches the current name. */
+	readonly select: (next: ThemeName) => void
 	readonly destroy: () => void
 }
 
@@ -1296,8 +1317,10 @@ export interface UseThemeOptions extends CreateThemeOptions {}
 export interface UseThemeReturn {
 	readonly setting: Readonly<Ref<ThemeSetting>>
 	readonly mode: Readonly<Ref<ThemeMode>>
+	readonly name: Readonly<Ref<ThemeName>>
 	readonly set: (next: ThemeSetting) => void
 	readonly toggle: () => void
+	readonly select: (next: ThemeName) => void
 }
 
 // `ComputedRef` is re-exported here so per-composable blocks below can use

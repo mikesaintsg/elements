@@ -35,8 +35,8 @@ export function useLog<T = string>(
 /**
  * Live reader/writer for `:root` custom properties. Samples computed
  * styles on mount and re-samples whenever the theme flips (a
- * `MutationObserver` on the documentElement's `data-theme` / inline
- * `style`). `read()` is reactive: call it inside a `computed` and it
+ * `MutationObserver` on the documentElement's `data-mode` (light/dark) /
+ * `data-theme` (named core) / inline `style`). `read()` is reactive: call it inside a `computed` and it
  * re-runs on `refresh()`, `write()`, `clear()`, or a theme change.
  * Returns `'…'` until mounted / when a token is unset. `write()` pins an
  * inline `:root` override (the consumer-retune playgrounds); `clear()`
@@ -62,7 +62,7 @@ export function useRootCssVars(): {
 		observer = new MutationObserver(refresh)
 		observer.observe(document.documentElement, {
 			attributes: true,
-			attributeFilter: ['data-theme', 'style'],
+			attributeFilter: ['data-mode', 'data-theme', 'style'],
 		})
 	})
 	onUnmounted(() => {

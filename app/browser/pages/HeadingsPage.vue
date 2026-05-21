@@ -238,7 +238,7 @@ import {
 			<code>color</code> property resolves against the cascaded value's origin element, not the
 			consuming element, which breaks scoped theme switching. <code>--color-text</code> always
 			resolves to a concrete oklch (set on <code>:root</code> for light, overridden under
-			<code>[data-theme="dark"]</code>), so the chain has no circular issue.
+			<code>[data-mode="dark"]</code>), so the chain has no circular issue.
 		</p>
 	</section>
 

@@ -7,7 +7,13 @@
 // ============================================================================
 
 import type { ComputedRef, WatchHandle } from '@vue/reactivity'
-import type { CreateThemeOptions, ThemeMode, ThemeSetting, ThemeStateRefs } from './types.js'
+import type {
+	CreateThemeOptions,
+	ThemeMode,
+	ThemeName,
+	ThemeSetting,
+	ThemeStateRefs,
+} from './types.js'
 import { attempt } from '@elements/core'
 import { computed, ref, watch } from '@vue/reactivity'
 import { STORAGE_KEY_THEME, THEME_EVENTS } from './constants.js'
@@ -34,36 +40,56 @@ const mode: ComputedRef<ThemeMode> = computed(() =>
 	setting.value === 'system' ? (systemDark.value ? 'dark' : 'light') : setting.value,
 )
 
+// Theme NAME (palette/core) axis — orthogonal to the light/dark MODE axis.
+// `'default'` is the base `_theme.scss` (no attribute); any other value pulls
+// in a named core via `<html data-theme="…">`. Persisted alongside `setting`
+// as `setting:name`.
+const name = ref<ThemeName>('default')
+
 let bootstrapped = false
 let mediaQuery: MediaQueryList | null = null
 let mediaListener: ((event: MediaQueryListEvent) => void) | null = null
 let stopApply: WatchHandle | null = null
 let storageKey: string | null = STORAGE_KEY_THEME
 
-const loadStored = (key: string): ThemeSetting | null => {
+// Storage round-trips a `setting:name` pair (e.g. `dark:auroramoon`,
+// `system:default`). A bare legacy `setting` (no colon) is tolerated — the
+// name falls back to `'default'`.
+const isThemeName = (value: string): value is ThemeName => value !== ''
+
+const loadStored = (key: string): { setting: ThemeSetting; name: ThemeName } | null => {
 	const result = attempt(() => {
 		const raw = localStorage.getItem(key)
 		if (!raw) return null
-		// Tolerate the legacy `'mode:core'` storage format from the earlier
-		// API — take the first segment, validate it. Anything else returns
-		// null so the caller can fall back to options / 'system'.
-		const head = raw.split(':')[0] ?? ''
-		return isSetting(head) ? head : null
+		const [head = '', tail = ''] = raw.split(':')
+		if (!isSetting(head)) return null
+		return { setting: head, name: isThemeName(tail) ? tail : 'default' }
 	})
 	return result.success ? result.value : null
 }
 
-const writeAttribute = (next: ThemeSetting): void => {
+// MODE → `data-mode` (light/dark). `'system'` removes the attribute so the
+// stylesheet's `@media (prefers-color-scheme: dark)` owns the flip.
+const writeMode = (next: ThemeSetting): void => {
 	if (typeof document === 'undefined') return
 	const root = document.documentElement
-	if (next === 'system') root.removeAttribute('data-theme')
+	if (next === 'system') root.removeAttribute('data-mode')
+	else root.setAttribute('data-mode', next)
+}
+
+// NAME → `data-theme` (palette core). `'default'` removes the attribute so the
+// base `_theme.scss` applies; any other value pulls in a named core.
+const writeName = (next: ThemeName): void => {
+	if (typeof document === 'undefined') return
+	const root = document.documentElement
+	if (next === 'default') root.removeAttribute('data-theme')
 	else root.setAttribute('data-theme', next)
 }
 
-const writeStorage = (key: string | null, next: ThemeSetting): void => {
+const writeStorage = (key: string | null): void => {
 	if (!key) return
 	// Storage unavailable (quota, privacy mode, file:// origin) — silent no-op.
-	attempt(() => localStorage.setItem(key, next))
+	attempt(() => localStorage.setItem(key, `${setting.value}:${name.value}`))
 }
 
 const fireChange = (): void => {
@@ -71,6 +97,7 @@ const fireChange = (): void => {
 	emit(document.documentElement, THEME_EVENTS.change, {
 		mode: mode.value,
 		setting: setting.value,
+		name: name.value,
 	})
 }
 
@@ -82,14 +109,16 @@ export function bootstrapTheme(options: CreateThemeOptions): void {
 	const key = options.storage === false ? null : (options.storage?.key ?? STORAGE_KEY_THEME)
 	storageKey = key
 
-	// Resolve initial: stored > options.initial > 'system'.
+	// Resolve initial: stored > options > defaults. `setting` and `name`
+	// round-trip together in storage; options provide the first-run defaults.
 	const stored = key && typeof window !== 'undefined' ? loadStored(key) : null
-	setting.value = stored ?? options.initial ?? 'system'
+	setting.value = stored?.setting ?? options.initial ?? 'system'
+	name.value = stored?.name ?? options.name ?? 'default'
 
 	// Wire `prefers-color-scheme` ONCE. Updates feed only `systemDark` —
-	// the DOM `data-theme` attribute is intentionally NOT rewritten on
+	// the DOM `data-mode` attribute is intentionally NOT rewritten on
 	// OS-preference changes because we WANT the CSS media query to handle
-	// that automatically (no `data-theme` attribute = CSS owns the flip).
+	// that automatically (no `data-mode` attribute = CSS owns the flip).
 	if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
 		mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
 		systemDark.value = mediaQuery.matches
@@ -99,15 +128,15 @@ export function bootstrapTheme(options: CreateThemeOptions): void {
 		mediaQuery.addEventListener('change', mediaListener)
 	}
 
-	// Apply current setting to the DOM + persist + emit. One watcher,
-	// `immediate: true` so the initial setting is applied on first
-	// bootstrap. `@vue/reactivity`'s `watch` fires synchronously on signal
-	// change by default — no scheduler needed.
+	// Apply current setting + name to the DOM + persist + emit. One watcher
+	// over both refs, `immediate: true` so the initial state is applied on
+	// first bootstrap. `@vue/reactivity`'s `watch` fires synchronously.
 	stopApply = watch(
-		() => setting.value,
-		(next) => {
-			writeAttribute(next)
-			writeStorage(storageKey, next)
+		() => [setting.value, name.value] as const,
+		([nextSetting, nextName]) => {
+			writeMode(nextSetting)
+			writeName(nextName)
+			writeStorage(storageKey)
 			fireChange()
 		},
 		{ immediate: true },
@@ -116,7 +145,7 @@ export function bootstrapTheme(options: CreateThemeOptions): void {
 
 /** Shared reactive theme state for `createTheme` wrappers. */
 export function themeState(): ThemeStateRefs {
-	return { setting, mode }
+	return { setting, mode, name }
 }
 
 /** Reset all singleton state. Intended for tests only. */
@@ -130,4 +159,5 @@ export function resetTheme(): void {
 	bootstrapped = false
 	setting.value = 'system'
 	systemDark.value = false
+	name.value = 'default'
 }

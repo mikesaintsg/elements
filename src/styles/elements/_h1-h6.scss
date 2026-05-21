@@ -53,7 +53,7 @@
 		// cascaded value's origin element, not the consuming element —
 		// that breaks scoped theme switching. `--color-text` always
 		// resolves to a concrete color (set on `:root` for light,
-		// overridden under `[data-theme="dark"]`), so the chain has no
+		// overridden under `[data-mode="dark"]`), so the chain has no
 		// circular issue.
 		--set-heading-color: var(
 			--set-style-color,
