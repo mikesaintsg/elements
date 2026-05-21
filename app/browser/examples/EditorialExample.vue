@@ -205,7 +205,16 @@ const related = [
 			</article>
 
 			<!-- ── Sticky sidebar rail ─────────────────────────────────────── -->
-			<aside class="flex flex-col gap-4 lg:sticky lg:top-0 lg:self-start">
+			<!-- `lg:max-h-[calc(100dvh-4rem)]` + `overflow-y-auto` give the rail
+			     its OWN scroll: it pins to the top and, when its cards are taller
+			     than the viewport, scrolls independently of the article instead
+			     of only revealing its tail at the bottom of the page. The 4rem
+			     subtracts <main>'s 2rem top + 2rem bottom padding so the pinned
+			     rail sits flush within the viewport rather than bleeding past
+			     its bottom edge. -->
+			<aside
+				class="flex flex-col gap-4 lg:sticky lg:top-0 lg:self-start lg:max-h-[calc(100dvh-4rem)] lg:overflow-y-auto"
+			>
 				<article class="small">
 					<div class="cluster items-center">
 						<span class="avatar large" aria-hidden="true">AL</span>
