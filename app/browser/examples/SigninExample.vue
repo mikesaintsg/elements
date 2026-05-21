@@ -87,11 +87,11 @@ const sendReset = (event: Event): void => {
 
 				<div class="flex flex-col gap-2">
 					<button type="button" class="secondary subtle w-full">
-						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+						<i class="icon examples-icon-github" aria-hidden="true"></i>
 						Continue with GitHub
 					</button>
 					<button type="button" class="secondary subtle w-full">
-						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+						<i class="icon examples-icon-google" aria-hidden="true"></i>
 						Continue with Google
 					</button>
 				</div>

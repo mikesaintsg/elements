@@ -103,8 +103,7 @@ const goNext = (): void => {
 	<menu class="examples-toolbar" role="toolbar" :aria-label="`${title} example navigation`">
 		<li role="none">
 			<button type="button" class="subtle compact" aria-label="Back to docs" @click="goDocs">
-				<!-- TODO icon swap: --set-icon-arrow-left not in token set; using chevron-left -->
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-left)"></i>
+				<i class="icon examples-icon-arrow-left" aria-hidden="true"></i>
 			</button>
 		</li>
 		<li role="none">
@@ -126,8 +125,7 @@ const goNext = (): void => {
 				aria-haspopup="menu"
 				:aria-label="`Choose example: currently ${title}`"
 			>
-				<!-- TODO icon swap: --set-icon-window-stack not in token set; using menu -->
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
+				<i class="icon examples-icon-window-stack" aria-hidden="true"></i>
 				<span class="examples-toolbar-label-text">{{ title }}</span>
 			</button>
 			<menu ref="pickerMenuRef" popover="auto" class="dropdown-menu" role="menu">
@@ -170,9 +168,8 @@ const goNext = (): void => {
 			</button>
 		</li>
 		<li role="none">
-			<!-- TODO icon swap: --set-icon-code-slash not in token set; using external -->
 			<button type="button" class="primary" aria-label="View source" @click="source.show()">
-				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+				<i class="icon examples-icon-code-slash" aria-hidden="true"></i>
 				Source
 			</button>
 		</li>
@@ -185,17 +182,15 @@ const goNext = (): void => {
 		<dialog ref="sourceRef" :aria-label="`${title} example source`">
 			<header>
 				<h2>
-					<!-- TODO icon swap: --set-icon-code-slash not in token set; using external -->
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-external)"></i>
+					<i class="icon examples-icon-code-slash" aria-hidden="true"></i>
 					{{ title }} — source
 					<small class="font-mono">{{ lineCount }} lines</small>
 				</h2>
 				<button type="button" class="subtle compact" :class="{ primary: copied }" @click="copy">
-					<!-- TODO icon swap — sort stands in for missing 'clipboard'; no closer token exists (copy/duplicate/file/paste/link all absent from _tokens.scss) -->
 					<i
 						class="icon"
 						aria-hidden="true"
-						:style="`--icon: var(--set-icon-${copied ? 'check' : 'sort'})`"
+						:style="`--icon: var(--set-icon-${copied ? 'check' : 'copy'})`"
 					></i>
 					{{ copied ? 'Copied' : 'Copy' }}
 				</button>
