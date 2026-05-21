@@ -264,6 +264,24 @@
 	--set-density-factor: 1;
 	--set-radius-factor: 1;
 
+	// Make the radius scale factor-aware at the root. Tailwind's `@theme`
+	// emits these `--radius-*` tokens in the (lower-priority) `theme` layer;
+	// re-declaring them here UNLAYERED wins the cascade, so multiplying each
+	// by `--set-radius-factor` retunes EVERY radius at once — framework
+	// element/component corners AND consumer `rounded-*` utilities — from the
+	// single factor knob a theme core sets. At factor `1` the `calc()` is a
+	// no-op (identical to Tailwind's defaults), so the base theme + every
+	// pixel test are unchanged; a core like `lagunamoon` (1.5) rounds the
+	// whole UI, `honeymoon` (0) squares it. `--radius-full` / pill values stay
+	// untouched (they're `9999px` / `50%`, not on this scale).
+	--radius-xs: calc(0.125rem * var(--set-radius-factor));
+	--radius-sm: calc(0.25rem * var(--set-radius-factor));
+	--radius-md: calc(0.375rem * var(--set-radius-factor));
+	--radius-lg: calc(0.5rem * var(--set-radius-factor));
+	--radius-xl: calc(0.75rem * var(--set-radius-factor));
+	--radius-2xl: calc(1rem * var(--set-radius-factor));
+	--radius-3xl: calc(1.5rem * var(--set-radius-factor));
+
 	// --------------------------------------------------------------------------
 	// Elevation scale — three distinct "lift" levels for floating surfaces.
 	// Mirrors mailbox's `--bs-box-shadow-{sm,base,lg}` and the curated
