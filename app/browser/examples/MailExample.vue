@@ -2,18 +2,22 @@
 /**
  * MailExample — the framework's three-pane app pillar.
  *
- * A mail client built from body-shell landmarks plus a grid inside <main>:
+ * A mail client built from body-shell landmarks plus a flush, divided
+ * three-pane inside <main>:
  *
  *   <nav>    folder rail   — labels + counts, drawer ≤960px
  *   <header> app bar       — Compose + search
- *   <main>   two panes      — a message LIST column beside a READING pane,
- *                             expressed as a Tailwind grid that collapses to
- *                             a single column on mobile. Selecting a message
- *                             swaps the mobile view from list → reading.
+ *   <main>   two panes      — a message LIST beside a READING pane via the
+ *                             `.split` primitive, gap-0 with 1px dividers so
+ *                             the panes butt flush (the mail <main>'s padding
+ *                             is zeroed). Each pane scrolls independently;
+ *                             below the split's breakpoint they stack and the
+ *                             mobile view swaps list → reading on selection.
  *
  * Everything visual — list rows, the reading pane, badges, avatars, the
- * reply toolbar — is a bare element + framework modifier. The only "JS" is
- * the matchMedia breakpoint ref and a selected-message ref.
+ * reply toolbar — is a bare element + framework modifier (the pane dividers
+ * + flush padding are app-specific layout). The only "JS" is the matchMedia
+ * breakpoint ref and a selected-message ref.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
