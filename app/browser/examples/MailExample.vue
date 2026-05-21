@@ -220,10 +220,8 @@ onUnmounted(() => {
 			</button>
 		</header>
 
-		<!-- Compose button — between the brand header and folder menu. The
-		     framework's drawer rule would grow this to fill remaining space;
-		     `flex: 0 0 auto` via the scoped nav#mail-folders rule below
-		     keeps it at natural height. -->
+		<!-- Compose button — between the brand header and folder menu. Rail
+		     children flow at their natural height, so no flex override needed. -->
 		<div class="mail-compose-row">
 			<button type="button" class="primary w-full">
 				<!-- TODO icon swap — plus stands in for missing 'pencil-square' (compose icon) -->
@@ -243,13 +241,10 @@ onUnmounted(() => {
 				>
 					<!-- TODO icon swap — using generic icon tokens as stand-ins for mail folder icons -->
 					<i class="icon" aria-hidden="true" :style="`--icon: var(--set-icon-${folder.icon})`"></i>
-					<span class="mail-folder-label">{{ folder.label }}</span>
-					<!-- Framework-gap note: <small class="badge pill"> works here but needs
-					     margin-inline-start: auto (scoped) to push the count to the row end.
-					     The nav-rail chrome doesn't provide trailing-element auto-push. -->
-					<small v-if="folder.count > 0" class="badge pill mail-folder-count">
-						{{ folder.count }}
-					</small>
+					<!-- `flex-1` label grows to fill the row, pushing the count
+					     badge to the trailing edge — no scoped CSS needed. -->
+					<span class="flex-1">{{ folder.label }}</span>
+					<small v-if="folder.count > 0" class="badge pill">{{ folder.count }}</small>
 				</a>
 			</li>
 		</menu>
@@ -280,11 +275,11 @@ onUnmounted(() => {
 		</menu>
 
 		<!-- Account band — <footer> inside body-shell <nav> picks up the
-		     framework's drawer/rail footer chrome (divider, pinned bottom
-		     via `margin-block-start: auto`). The menus + h6 above use
-		     `flex: 0 0 auto` (scoped CSS below) so they flow at natural
-		     height; the footer's auto-margin pushes the account row to
-		     the drawer bottom (Slack / Discord / Linear shape). -->
+		     framework's rail footer chrome (flex band, divider) and pins to
+		     the bottom via the framework's `margin-block-start: auto` rule in
+		     both the in-flow rail and the popover drawer. Rail children flow
+		     at natural height, so the auto-margin pushes the account row to
+		     the bottom (Slack / Discord / Linear shape). -->
 		<footer>
 			<span class="avatar primary" aria-hidden="true">MS</span>
 			<span class="flex flex-col leading-tight min-w-0">
@@ -422,10 +417,10 @@ onUnmounted(() => {
 					</hgroup>
 				</header>
 
-				<!-- Message body — scrollable within the reading pane.
-				     `pb-28 sm:pb-0` keeps the floating ExamplesShell toolbar
-				     from overlapping the last paragraph on mobile. -->
-				<div class="mail-reading-body pb-28 sm:pb-0">
+				<!-- Message body — scrollable within the reading pane. The
+				     ExamplesShell toolbar can't overlap it: the example shell
+				     reserves a bottom safe-area (see `styles/examples.css`). -->
+				<div class="mail-reading-body">
 					<p class="mail-reading-lead">Hi Mike,</p>
 					<p>
 						Thanks for circulating the draft. {{ activeMessage.preview }} The shorter window gives
@@ -509,35 +504,10 @@ onUnmounted(() => {
  * Only the truly app-specific bits remain here.
  * ──────────────────────────────────────────────────────────────────── */
 
-/* Sidebar nav drawer body — the framework's drawer rule
- * (`:is(aside, nav)[popover] > :not(:where(header, footer)) { flex: 1 1 auto }`)
- * tries to grow every body child. Pin each child to natural height so the
- * menus and h6 flow naturally; the footer's `margin-block-start: auto`
- * pushes the account row to the bottom (Slack / Discord / Linear shape).
- * The .mail-compose-row div also needs pinning so it stays compact. */
-nav#mail-folders > :where(menu, h6, .mail-compose-row) {
-	flex: 0 0 auto;
-}
-
 /* Compose row — a compact band between the brand header and folder menu.
  * Padding matches the nav-rail link padding so the button sits flush. */
 .mail-compose-row {
 	padding: 0.5rem 0.75rem;
-}
-
-/* Folder label — grows to fill the link row (same flex pattern as Dashboard
- * workspace nav links with their .avatar.small badges). */
-.mail-folder-label {
-	flex: 1;
-}
-
-/* Folder count badge — pushed to the row's trailing edge.
- * Framework-gap: the nav-rail chrome doesn't provide trailing auto-push.
- * A single margin-inline-start: auto rule handles it (same trick as
- * `ms-auto` in Tailwind). Scoped because the badge's visual role here
- * is a row-count indicator, not a standalone chip. */
-.mail-folder-count {
-	margin-inline-start: auto;
 }
 
 /* ── Inner two-pane grid ────────────────────────────────────────────────

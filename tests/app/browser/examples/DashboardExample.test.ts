@@ -55,7 +55,7 @@ describe('DashboardExample — framework idioms', () => {
 	it('renders one <article> per stat (4 stats)', () => {
 		const { host, teardown } = mount()
 		try {
-			const cards = host.querySelectorAll('section.dashboard-stats > article')
+			const cards = host.querySelectorAll('section[aria-label="Key metrics"] > article')
 			expect(cards.length).toBe(4)
 		} finally {
 			teardown()
@@ -91,12 +91,15 @@ describe('DashboardExample — framework idioms', () => {
 		}
 	})
 
-	it('range picker is a <menu role="toolbar"> with three .subtle buttons', () => {
+	it('range picker is a segmented <div role="group"> with three .secondary buttons', () => {
 		const { host, teardown } = mount()
 		try {
-			const range = host.querySelector('menu[role="toolbar"][aria-label="Date range"]')
+			// The framework `[role="group"]` chrome paints the segmented control
+			// (overlapping borders, shared radii); `.secondary` supplies the
+			// outline + border-width the overlap consumes.
+			const range = host.querySelector('div[role="group"][aria-label="Date range"]')
 			expect(range).not.toBeNull()
-			expect(range?.querySelectorAll('button.subtle').length).toBe(3)
+			expect(range?.querySelectorAll('button.secondary').length).toBe(3)
 			// The default selection is 30d (per `range = ref('30d')`).
 			const pressed = range?.querySelector('button[aria-pressed="true"]')
 			expect(pressed?.textContent?.trim()).toBe('30d')

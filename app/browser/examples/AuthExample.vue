@@ -64,10 +64,11 @@ const handleSubmit = (): void => {
 <template>
 	<!-- Auth shell — <main> only (no body-shell nav/header/aside/footer).
 	     Token overrides collapse the framework's default main padding to zero
-	     so the auth-shell grid owns all layout. `pb-28 sm:pb-0` keeps the
-	     ExamplesShell toolbar from overlapping content on mobile. -->
+	     so the auth-shell grid owns all layout. The ExamplesShell toolbar
+	     can't overlap content: `body:has(.examples-toolbar)` reserves a bottom
+	     safe-area (see `styles/examples.css`). -->
 	<main
-		class="auth-shell pb-28 sm:pb-0"
+		class="auth-shell"
 		style="--set-main-padding-inline: 0; --set-main-padding-block: 0; --set-main-gap: 0"
 	>
 		<!-- ── Brand panel ──────────────────────────────────────────────── -->
@@ -260,7 +261,12 @@ const handleSubmit = (): void => {
 .auth-shell {
 	display: grid;
 	grid-template-columns: 28rem minmax(0, 1fr);
-	min-block-size: 100dvh;
+	/* Fill the body-shell main cell (`100%`), not the raw viewport
+	 * (`100dvh`): the example shell reserves a bottom safe-area for the
+	 * floating toolbar (see `styles/examples.css`), so the main cell is
+	 * shorter than the viewport. `100dvh` would overflow that reserve and
+	 * push the form footer under the toolbar. */
+	min-block-size: 100%;
 }
 
 /* ── Brand panel ────────────────────────────────────────────────────────────

@@ -480,6 +480,19 @@
 
 	dialog > header,
 	dialog > form > header {
+		// Flex row so a title + trailing controls (a close button, or a
+		// Copy / Close action pair) sit on one line with the title at the
+		// inline-start edge — the canonical modal-header shape (Bootstrap's
+		// `.modal-header`). Mirrors the dialog FOOTER rule below and the
+		// drawer-header band in `_aside.scss`; without it the close button
+		// drops onto its own line under the title (block flow). A header
+		// with only a heading is unaffected — a single flex child lays out
+		// identically to block flow.
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: calc(var(--spacing) * 3);
+
 		// Extend edge-to-edge of the dialog's border-box, then re-pad.
 		margin-inline: calc(var(--set-dialog-padding-inline) * -1);
 		margin-block-start: calc(var(--set-dialog-padding-block) * -1);
@@ -495,6 +508,15 @@
 		// designer's spec. `<p>` is included so subtitle copy stacks cleanly.
 		> :where(h1, h2, h3, h4, h5, h6, p) {
 			margin-block: 0;
+		}
+
+		// Leading heading / hgroup pushes any trailing controls (close
+		// button, action pair) to the inline-end edge as a group. Same
+		// "title left, controls right" result the aside drawer header gets
+		// from `> button:last-child { margin-inline-start: auto }`, but
+		// grouping on the title handles multi-button headers too.
+		> :where(h1, h2, h3, h4, h5, h6, hgroup):first-child {
+			margin-inline-end: auto;
 		}
 	}
 

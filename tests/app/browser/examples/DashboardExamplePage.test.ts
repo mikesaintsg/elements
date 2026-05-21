@@ -76,14 +76,16 @@ describe('DashboardExamplePage — load-bearing landmarks', () => {
 		}
 	})
 
-	it('renders at least three <menu role="toolbar"> regions (actions, range, examples-shell)', () => {
+	it('renders at least two <menu role="toolbar"> regions (actions, examples-shell)', () => {
 		const { host: _host, teardown } = mount()
 		try {
 			// Teleported elements (ExamplesShell's <dialog>) land on body, so
 			// query both roots to catch the shell toolbar that's a sibling of
-			// the example, not a descendant of the dashboard.
+			// the example, not a descendant of the dashboard. The date-range
+			// picker is a `<div role="group">` segmented control (not a
+			// toolbar), so the toolbar count is actions + examples-shell.
 			const docToolbars = document.querySelectorAll('menu[role="toolbar"]')
-			expect(docToolbars.length).toBeGreaterThanOrEqual(3)
+			expect(docToolbars.length).toBeGreaterThanOrEqual(2)
 		} finally {
 			teardown()
 		}

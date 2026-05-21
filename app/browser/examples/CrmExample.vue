@@ -403,6 +403,7 @@ const noteText = ref('')
 	     the search/ask command input, and right docs-drawer trigger on mobile. -->
 	<header>
 		<button
+			v-if="isMobile"
 			type="button"
 			class="subtle compact"
 			aria-label="Open context"
@@ -435,6 +436,7 @@ const noteText = ref('')
 		</form>
 
 		<button
+			v-if="isMobile"
 			type="button"
 			class="subtle compact"
 			aria-label="Open documents"
@@ -455,9 +457,9 @@ const noteText = ref('')
 	     `--set-aside-drawer-padding-inline: 0` removes the framework's 16px
 	     gutter so menus own their own padding.
 
-	     `nav#crm-context > :where(menu, h6, .crm-new-row, form)` get
-	     `flex: 0 0 auto` in scoped CSS so multi-section body children don't
-	     stretch (framework drawer rule grows body children by default). -->
+	     Multi-section body children flow at their natural height (rail
+	     children don't grow), and the footer pins to the bottom via the
+	     framework's rail-footer rule. -->
 	<nav
 		id="crm-context"
 		class="start"
@@ -572,7 +574,7 @@ const noteText = ref('')
 	     `pb-28 sm:pb-0` keeps the floating ExamplesShell toolbar from overlapping
 	     the reply composer on mobile. -->
 	<main
-		class="crm-main pb-28 sm:pb-0"
+		class="crm-main"
 		style="--set-main-padding-inline: 0; --set-main-padding-block: 0; --set-main-gap: 0"
 	>
 		<!-- Chat header — subject + metadata band above the thread. -->
@@ -675,18 +677,21 @@ const noteText = ref('')
 							</div>
 							<div class="crm-form-field">
 								<label>{{ turn.form.toneLabel }}</label>
-								<menu role="group" :aria-label="turn.form.toneLabel" class="crm-tone-group">
-									<li v-for="opt in turn.form.toneOptions" :key="opt" role="none">
-										<button
-											type="button"
-											class="subtle"
-											:class="{ active: opt === turn.form.toneActive }"
-											:aria-pressed="opt === turn.form.toneActive"
-										>
-											{{ opt }}
-										</button>
-									</li>
-								</menu>
+								<!-- Segmented control via the framework `[role="group"]` chrome —
+								     `.secondary` paints the outline + border the overlap needs;
+								     the chosen tone lifts via the framework `.active` state. -->
+								<div role="group" :aria-label="turn.form.toneLabel">
+									<button
+										v-for="opt in turn.form.toneOptions"
+										:key="opt"
+										type="button"
+										class="secondary small"
+										:class="{ active: opt === turn.form.toneActive }"
+										:aria-pressed="opt === turn.form.toneActive"
+									>
+										{{ opt }}
+									</button>
+								</div>
 							</div>
 							<div class="crm-form-actions">
 								<button type="button" class="subtle">{{ turn.form.cancel }}</button>
@@ -775,9 +780,12 @@ const noteText = ref('')
 			</button>
 		</header>
 
-		<!-- Docs list. -->
+		<!-- Docs list — a content list of document rows (not a command/nav
+		     menu), so `<ul>`: a body-shell `aside menu` would inherit the
+		     framework's in-aside TOC chrome (full-width block link/button
+		     rows), which fights the custom doc-row flex layout. -->
 		<div class="crm-docs-body">
-			<menu class="crm-docs-list">
+			<ul class="crm-docs-list" role="list">
 				<li v-for="doc in docs" :key="doc.id" class="crm-doc-row">
 					<i
 						class="icon crm-doc-icon"
@@ -797,7 +805,7 @@ const noteText = ref('')
 						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-down)"></i>
 					</button>
 				</li>
-			</menu>
+			</ul>
 		</div>
 
 		<!-- Add note trigger + dialog. -->
@@ -884,6 +892,10 @@ const noteText = ref('')
 	min-inline-size: 0;
 	max-inline-size: 36rem;
 	display: flex;
+	/* The framework's bare `<form>` stacks fields in a column; the command
+	 * bar is a single inline row (search input + Ask button), so override
+	 * to row so the input and button sit side by side instead of stacking. */
+	flex-direction: row;
 	align-items: center;
 	gap: 0.5rem;
 }
@@ -898,13 +910,6 @@ const noteText = ref('')
 }
 
 /* ── Context rail (nav) ───────────────────────────────────────────────── */
-
-/* Sidebar nav drawer body — pin each child to natural height (framework's
- * drawer rule would grow them). Footer's margin-block-start: auto then
- * pushes the account row to the bottom (Slack / Discord / Linear shape). */
-nav#crm-context > :where(.crm-new-row, h6, .crm-context-list, form) {
-	flex: 0 0 auto;
-}
 
 /* Search row — compact band between header and pinned list. */
 .crm-new-row {
@@ -1248,12 +1253,6 @@ nav#crm-context > :where(.crm-new-row, h6, .crm-context-list, form) {
 	font-weight: 600;
 }
 
-.crm-tone-group {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.375rem;
-}
-
 .crm-form-actions {
 	display: flex;
 	justify-content: flex-end;
@@ -1297,12 +1296,6 @@ nav#crm-context > :where(.crm-new-row, h6, .crm-context-list, form) {
 
 /* ── Documents panel (aside) ──────────────────────────────────────────── */
 
-/* Sidebar aside drawer body — pin children to natural height (same pattern
- * as the nav above). */
-aside#crm-docs > :where(.crm-docs-body, menu, form) {
-	flex: 0 0 auto;
-}
-
 .crm-docs-title {
 	font-size: 0.9375rem;
 	font-weight: 700;
@@ -1327,6 +1320,11 @@ aside#crm-docs > :where(.crm-docs-body, menu, form) {
 	padding: 0;
 	display: flex;
 	flex-direction: column;
+	/* Reset the bare-`<menu>` `flex-wrap: wrap` baseline — with a column
+	 * direction inside the height-constrained docs panel, wrap would break
+	 * the rows into stretched columns (the framework does the same reset for
+	 * its column dropdowns; see components/_menu.scss). */
+	flex-wrap: nowrap;
 }
 
 .crm-doc-row {

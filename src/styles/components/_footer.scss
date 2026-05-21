@@ -42,8 +42,20 @@
 		--set-footer-transition-duration: var(--set-transition-duration);
 	}
 
+	// Page-level footer (body grid bottom row) AND body-shell rail footers
+	// (the account / status band at the bottom of a sidebar). Listed together
+	// — mirror of the header band rule in `_header.scss` — so the SAME
+	// `<footer>` element gets one consistent flex-band contract whether it's
+	// the in-flow rail footer on desktop or the popover drawer footer on
+	// mobile (the popover-specific bleed lives in `_aside.scss`). Without the
+	// rail variants here, an in-flow rail footer fell back to `display: block`
+	// and its avatar + identity column stacked instead of sitting in a row.
 	body:has(main) > footer,
-	body:has(main) > * > footer {
+	body:has(main) > * > footer,
+	body:has(main) > nav > footer,
+	body:has(main) > * > nav > footer,
+	body:has(main) > aside > footer,
+	body:has(main) > * > aside > footer {
 		display: flex;
 		align-items: center;
 		gap: calc(var(--spacing) * 3);
@@ -81,5 +93,33 @@
 			// the on-canvas tier clears WCAG AA against both surface tones.
 			color: var(--color-primary-on-canvas);
 		}
+	}
+
+	// In-flow rail footer — pin to the rail's bottom edge.
+	//
+	// Mirror of the in-flow header rule in `_header.scss`: the rail's own
+	// padding would inset the footer from the rail edges, so negative inline
+	// + block-end margins bleed the band out to the outer edges (the band's
+	// own re-padding keeps the inner gutter), making the top border run edge-
+	// to-edge exactly as it does in the popover drawer footer. The header
+	// pins to the TOP (sticky); the footer pins to the BOTTOM via
+	// `margin-block-start: auto`, which consumes the free space above it when
+	// the rail content is shorter than the rail — the account-row-at-bottom
+	// sidebar shape (Slack / Discord / Linear). `:not([popover])` scopes this
+	// to desktop in-flow rails; the popover drawer footer gets its own bleed
+	// in `_aside.scss`. Rails with no footer (the docs primary-rail + TOC
+	// aside) are unaffected.
+	body:has(main) > nav:not([popover]) > footer,
+	body:has(main) > * > nav:not([popover]) > footer {
+		margin-inline: calc(var(--set-nav-padding-inline) * -1);
+		margin-block-start: auto;
+		margin-block-end: calc(var(--set-nav-padding-block) * -1);
+	}
+
+	body:has(main) > aside:not([popover]) > footer,
+	body:has(main) > * > aside:not([popover]) > footer {
+		margin-inline: calc(var(--set-aside-padding-inline) * -1);
+		margin-block-start: auto;
+		margin-block-end: calc(var(--set-aside-padding-block) * -1);
 	}
 }

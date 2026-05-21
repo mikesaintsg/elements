@@ -101,6 +101,31 @@ const trendIconToken: Record<Stat['trend'], string> = {
 	flat: 'dash' /* TODO icon swap — dash stands in for missing 'arrow-right' */,
 }
 
+// Delta foreground keyed on trend — framework theme tokens, bound inline so
+// the stat card needs no per-trend scoped rule.
+const trendDeltaColor: Record<Stat['trend'], string> = {
+	up: 'var(--color-success-text-emphasis)',
+	down: 'var(--color-danger-text-emphasis)',
+	flat: 'var(--color-text-subtle)',
+}
+
+// Topbar secondary actions — ONE source of truth. The desktop header
+// renders these as an inline icon toolbar; the mobile drawer renders the
+// same list as labelled rows. Single array so the two viewport surfaces
+// can never drift apart (no hand-cloned markup per viewport).
+interface TopbarAction {
+	readonly label: string
+	readonly icon: string
+}
+const actions: readonly TopbarAction[] = [
+	{ label: 'Refresh', icon: 'sort' } /* TODO icon swap — sort stands in for 'refresh' */,
+	{ label: 'Filter', icon: 'filter' },
+	{ label: 'Export', icon: 'chevron-down' } /* TODO icon swap — for 'download' */,
+	{ label: 'Notifications', icon: 'information' } /* TODO icon swap — for 'bell' */,
+	{ label: 'Help', icon: 'information' } /* TODO icon swap — for 'help' */,
+	{ label: 'Settings', icon: 'system' },
+]
+
 const range = ref<'7d' | '30d' | '90d'>('30d')
 
 // Mobile drawer breakpoint — same 960px the docs shell uses (see
@@ -225,13 +250,14 @@ onUnmounted(() => {
 		</menu>
 
 		<!-- Account band — <footer> inside body-shell <nav> picks up the
-		     framework's drawer/rail footer chrome (divider, top border,
-		     pinned bottom via `margin-block-start: auto`). The menus +
-		     h6 above use `flex: 0 0 auto` (scoped CSS below) so they
-		     flow at natural height; the footer's auto-margin takes the
-		     remaining vertical space and pushes the account row to the
-		     bottom of the drawer (conventional sidebar shape — Slack /
-		     Discord / Linear). -->
+		     framework's rail footer chrome (flex band, divider, top border)
+		     and pins to the bottom via the framework's `margin-block-start:
+		     auto` rule (`_footer.scss`) in BOTH the in-flow desktop rail and
+		     the mobile popover drawer — same element, no per-viewport CSS.
+		     The menus + h6 above flow at their natural height (rail children
+		     don't grow), so the footer's auto-margin takes the remaining
+		     space and pushes the account row to the bottom (conventional
+		     sidebar shape — Slack / Discord / Linear). -->
 		<footer>
 			<span class="avatar" aria-hidden="true">MS</span>
 			<span class="flex flex-col leading-tight">
@@ -260,10 +286,11 @@ onUnmounted(() => {
 		>
 			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-menu)"></i>
 		</button>
-		<form class="dashboard-search hidden md:flex" role="search" @submit.prevent>
+		<form class="hidden md:flex flex-1 min-w-0 max-w-sm me-auto" role="search" @submit.prevent>
 			<label>
 				<span class="sr-only">Search</span>
 				<input
+					class="w-full"
 					type="search"
 					placeholder="Search customers, invoices, settings…"
 					autocomplete="off"
@@ -274,28 +301,10 @@ onUnmounted(() => {
 			<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
 			<span class="hidden md:inline">New invoice</span>
 		</button>
-		<menu role="toolbar" aria-label="Dashboard actions" class="dashboard-actions hidden md:flex">
-			<li role="none">
-				<!-- TODO icon swap — sort stands in for missing 'refresh' -->
-				<button type="button" class="subtle compact" aria-label="Refresh">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
-				</button>
-			</li>
-			<li role="none">
-				<button type="button" class="subtle compact" aria-label="Filter">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
-				</button>
-			</li>
-			<li role="none">
-				<!-- TODO icon swap — chevron-down stands in for missing 'download' -->
-				<button type="button" class="subtle compact" aria-label="Export">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-down)"></i>
-				</button>
-			</li>
-			<li role="none">
-				<!-- TODO icon swap — information stands in for missing 'bell' -->
-				<button type="button" class="subtle compact" aria-label="Notifications">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-information)"></i>
+		<menu role="toolbar" aria-label="Dashboard actions" class="hidden md:flex gap-1">
+			<li v-for="action in actions" :key="action.label" role="none">
+				<button type="button" class="subtle compact" :aria-label="action.label">
+					<i class="icon" aria-hidden="true" :style="`--icon: var(--set-icon-${action.icon})`"></i>
 				</button>
 			</li>
 		</menu>
@@ -330,45 +339,10 @@ onUnmounted(() => {
 			</button>
 		</header>
 		<menu>
-			<li>
+			<li v-for="action in actions" :key="action.label">
 				<button type="button">
-					<!-- TODO icon swap — sort stands in for missing 'refresh' -->
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
-					Refresh
-				</button>
-			</li>
-			<li>
-				<button type="button">
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
-					Filter
-				</button>
-			</li>
-			<li>
-				<button type="button">
-					<!-- TODO icon swap — chevron-down stands in for missing 'download' -->
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-chevron-down)"></i>
-					Export
-				</button>
-			</li>
-			<li>
-				<button type="button">
-					<!-- TODO icon swap — information stands in for missing 'bell' -->
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-information)"></i>
-					Notifications
-				</button>
-			</li>
-			<li>
-				<button type="button">
-					<!-- TODO icon swap — information stands in for missing 'help' -->
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-information)"></i>
-					Help
-				</button>
-			</li>
-			<li>
-				<button type="button">
-					<!-- TODO icon swap — system stands in for missing 'gear' (settings) -->
-					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-system)"></i>
-					Settings
+					<i class="icon" aria-hidden="true" :style="`--icon: var(--set-icon-${action.icon})`"></i>
+					{{ action.label }}
 				</button>
 			</li>
 		</menu>
@@ -383,10 +357,10 @@ onUnmounted(() => {
 	     reading gutter (`clamp(1rem, 5vw, 2.5rem)`). The framework's
 	     page-shell token group exposes these for exactly this kind of
 	     per-shell theming — see `taxonomy.ts § TOKEN_GROUPS.page-shell`.
-	     `pb-28` keeps the floating ExamplesShell toolbar from sitting
-	     on top of the last row on mobile. -->
+	     The floating ExamplesShell toolbar can't overlap the last row:
+	     `body:has(.examples-toolbar)` reserves a bottom safe-area (see
+	     `styles/examples.css`), so no per-page bottom padding is needed. -->
 	<main
-		class="pb-28 sm:pb-0"
 		style="--set-main-padding-inline: 1rem; --set-main-padding-block: 1rem; --set-main-gap: 1rem"
 	>
 		<header class="flex flex-wrap justify-between items-end gap-4">
@@ -397,39 +371,48 @@ onUnmounted(() => {
 				<h1 class="my-1 text-2xl">Welcome back, Mike</h1>
 				<p>Here's what's happened across your workspace this {{ range }}.</p>
 			</hgroup>
-			<menu role="toolbar" aria-label="Date range" class="dashboard-range">
-				<li v-for="r in ['7d', '30d', '90d'] as const" :key="r" role="none">
-					<button
-						type="button"
-						class="subtle"
-						:class="{ active: range === r }"
-						:aria-pressed="range === r"
-						@click="range = r"
-					>
-						{{ r }}
-					</button>
-				</li>
-			</menu>
+			<!-- Segmented control — `<div role="group">` gives the framework's
+			     overlapping-border button-group chrome; `.secondary` paints the
+			     outline + supplies the `--set-variant-border-width: 1px` the
+			     overlap needs, and the active segment lifts via the framework
+			     `.active` button state. No scoped CSS. -->
+			<div role="group" aria-label="Date range">
+				<button
+					v-for="r in ['7d', '30d', '90d'] as const"
+					:key="r"
+					type="button"
+					class="secondary small"
+					:class="{ active: range === r }"
+					:aria-pressed="range === r"
+					@click="range = r"
+				>
+					{{ r }}
+				</button>
+			</div>
 		</header>
 
 		<!-- Stat cards — auto-fit grid so cards wrap on narrow viewports.
 		     <article class="small"> gives card chrome from the framework
 		     (border, radius, shadow, flex-col, tight padding). -->
-		<section aria-label="Key metrics" class="dashboard-stats">
+		<section
+			aria-label="Key metrics"
+			class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(13.75rem,1fr))]"
+		>
 			<article v-for="stat in stats" :key="stat.label" class="small">
 				<dl class="m-0 flex flex-col gap-1">
 					<dt class="text-sm" style="color: var(--color-text-subtle)">{{ stat.label }}</dt>
-					<dd class="dashboard-stat-value">{{ stat.value }}</dd>
-					<dd class="dashboard-stat-delta" :data-trend="stat.trend">
+					<dd class="m-0 text-[1.75rem] font-bold">{{ stat.value }}</dd>
+					<dd
+						class="m-0 inline-flex items-center gap-1.5 text-[0.8125rem]"
+						:style="{ color: trendDeltaColor[stat.trend] }"
+					>
 						<i
 							class="icon"
 							aria-hidden="true"
 							:style="`--icon: var(--set-icon-${trendIconToken[stat.trend]})`"
 						></i>
 						{{ stat.delta }}
-						<small style="color: var(--color-text-subtle); margin-inline-start: 0.25rem"
-							>vs last period</small
-						>
+						<small class="ms-1" style="color: var(--color-text-subtle)">vs last period</small>
 					</dd>
 				</dl>
 			</article>
@@ -437,7 +420,10 @@ onUnmounted(() => {
 
 		<!-- Chart + Quick-actions row — 2:1 grid above 1024px, stacked
 		     below. <article> handles the card chrome. -->
-		<section class="dashboard-chart-row" aria-label="Revenue and quick actions">
+		<section
+			class="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
+			aria-label="Revenue and quick actions"
+		>
 			<article>
 				<header>
 					<hgroup>
@@ -491,7 +477,7 @@ onUnmounted(() => {
 				<header>
 					<h2>Quick actions</h2>
 				</header>
-				<menu class="dashboard-actions-menu">
+				<menu class="flex-col flex-nowrap items-stretch">
 					<li>
 						<!-- TODO icon swap — plus stands in for missing 'person-plus' -->
 						<button type="button" class="subtle w-full justify-start text-start">
@@ -580,82 +566,6 @@ onUnmounted(() => {
  * main padding). Only the truly app-specific bits remain here.
  * ──────────────────────────────────────────────────────────────────── */
 
-/* Search form — flex-grow to fill available row space, max-width cap
- * so the input stops growing on wide topbars. The framework's
- * `<form role="search">` + `<input type="search">` chrome paints the
- * rest from _search.scss / _input.scss. */
-.dashboard-search {
-	flex: 1;
-	min-inline-size: 0;
-	max-inline-size: 22rem;
-	margin-inline-end: auto;
-}
-
-.dashboard-search input {
-	inline-size: 100%;
-}
-
-/* Topbar action toolbar — tighter gap than <menu> default (0.5rem) for
- * an icon-button cluster. */
-.dashboard-actions {
-	gap: 0.25rem;
-}
-
-/* Range toolbar — buttons butt up with zero gap; active state weight. */
-.dashboard-range {
-	gap: 0;
-}
-
-.dashboard-range button.active {
-	font-weight: 600;
-	color: var(--color-text);
-}
-
-/* Stats grid — auto-fit with minmax for natural wrap on narrow
- * viewports. Tailwind needs an arbitrary value to express this. */
-.dashboard-stats {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-	gap: 1rem;
-}
-
-.dashboard-stat-value {
-	margin: 0;
-	font-size: 1.75rem;
-	font-weight: 700;
-}
-
-.dashboard-stat-delta {
-	margin: 0;
-	display: inline-flex;
-	align-items: center;
-	gap: 0.375rem;
-	font-size: 0.8125rem;
-}
-
-.dashboard-stat-delta[data-trend='up'] {
-	color: var(--color-success-text-emphasis);
-}
-.dashboard-stat-delta[data-trend='down'] {
-	color: var(--color-danger-text-emphasis);
-}
-.dashboard-stat-delta[data-trend='flat'] {
-	color: var(--color-text-subtle);
-}
-
-/* Chart/Quick-actions row — 2:1 above 1024px, stacked below. */
-.dashboard-chart-row {
-	display: grid;
-	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-	gap: 1rem;
-}
-
-@media (max-width: 1024px) {
-	.dashboard-chart-row {
-		grid-template-columns: minmax(0, 1fr);
-	}
-}
-
 /* SVG chart — fixed block-size + framework color tokens for the bars.
  * SVG presentation attributes can't be set via Tailwind utilities. */
 .dashboard-chart {
@@ -677,21 +587,8 @@ onUnmounted(() => {
  * wants a vertical column instead. */
 .dashboard-actions-menu {
 	flex-direction: column;
+	flex-wrap: nowrap;
 	align-items: stretch;
-}
-
-/* Sidebar nav drawer body — the framework's drawer rule
- * (`:is(aside, nav)[popover] > :not(:where(header, footer)) { flex: 1 1
- * auto }`) tries to grow every body child to fill the drawer's
- * available height. That's right for a single-section drawer (a form,
- * a tabset, a paragraph) — wrong for a multi-section nav where the
- * menus and group h6 should flow naturally and the footer should
- * sit right after (already overridden to `mt-0` on the footer
- * markup). Pin every body child to its natural height; the drawer
- * has trailing whitespace below the footer, which reads as
- * intentional sidebar density (Slack, Discord, Linear). */
-nav#dashboard-sidebar > :where(menu, h6) {
-	flex: 0 0 auto;
 }
 
 /* Timeline rail + markers — no framework timeline primitive; this is
