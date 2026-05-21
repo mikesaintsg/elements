@@ -176,4 +176,92 @@
 	.muted {
 		color: var(--color-text-muted);
 	}
+
+	// --------------------------------------------------------------------------
+	// .split — two-pane sidebar + content layout, intrinsically responsive.
+	//
+	// The fifth spacing-shape primitive. A sidebar pane and a content pane sit
+	// side-by-side on wide containers and stack on narrow ones — with NO media
+	// query and NO per-breakpoint classes (the framework defers viewport
+	// utilities to Tailwind, but a self-contained layout owns its own reflow).
+	// This is the flexbox "sidebar" pattern: the sidebar takes its natural
+	// width, the content takes the rest, and the content's `min-inline-size`
+	// triggers the wrap when there is no longer room for both.
+	//
+	//   <div class="split">
+	//     <nav>…</nav>      ← sidebar (first child) — sized to --set-split-size
+	//     <main>…</main>    ← content (last child)  — fills remaining space
+	//   </div>
+	//
+	// `.flip` swaps the roles so the CONTENT is the first child (natural
+	// reading / source order) and the sidebar is last — for article-then-rail
+	// layouts where the prose should precede the aside in the DOM.
+	//
+	//   --set-split-size        — the sidebar pane's basis width (default 18rem)
+	//   --set-split-content-min — content's min width before the panes wrap
+	//   --set-split-gap         — gutter between the panes
+	// --------------------------------------------------------------------------
+	div.split {
+		--set-split-size: 18rem;
+		--set-split-content-min: 60%;
+		--set-split-gap: var(--set-cluster-spacing, calc(var(--spacing) * 4));
+
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--set-split-gap);
+		align-items: start;
+	}
+	div.split > :first-child {
+		flex-grow: 1;
+		flex-basis: var(--set-split-size);
+	}
+	div.split > :last-child {
+		flex-grow: 999;
+		flex-basis: 0;
+		min-inline-size: var(--set-split-content-min);
+	}
+	div.split.flip > :first-child {
+		flex-grow: 999;
+		flex-basis: 0;
+		min-inline-size: var(--set-split-content-min);
+	}
+	div.split.flip > :last-child {
+		flex-grow: 1;
+		flex-basis: var(--set-split-size);
+	}
+
+	// --------------------------------------------------------------------------
+	// .between — space-between justification for a `.cluster` row. The cluster
+	// default packs items to the start with a gap; `.between` pushes the first
+	// and last items to the row's edges (title + action, label + value). Other
+	// justify values are rare enough to stay one-off Tailwind; space-between is
+	// the repeated one, so it earns a name.
+	// --------------------------------------------------------------------------
+	div.cluster.between {
+		justify-content: space-between;
+	}
+
+	// --------------------------------------------------------------------------
+	// .fill — occupy the full inline (width) axis. Element-agnostic: a button,
+	// input, anchor, or any block that should span its container. Replaces the
+	// repeated `width: 100%` utility for framework-vocabulary markup. (Children
+	// of a `.stack` already stretch to full width by default — reach for
+	// `.fill` only where the parent is NOT a stretch container.)
+	// --------------------------------------------------------------------------
+	.fill {
+		inline-size: 100%;
+	}
+
+	// --------------------------------------------------------------------------
+	// .fluid — take up the remaining space along a flex row/column. The flex-
+	// child companion to `.fill`: `flex: 1 1 0` makes the element grow to fill
+	// leftover space and shrink past its content (`min-inline-size: 0` lets it
+	// shrink below content width so long text truncates instead of overflowing).
+	// Replaces the repeated `flex: 1` utility. (`grow` is a Tailwind utility
+	// name, so the framework uses `.fluid`.)
+	// --------------------------------------------------------------------------
+	.fluid {
+		flex: 1 1 0;
+		min-inline-size: 0;
+	}
 }

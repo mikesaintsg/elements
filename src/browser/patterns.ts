@@ -316,8 +316,8 @@ export const FILE_EXCEPTIONS: Readonly<Record<string, FileException>> = {
 	// share <div> as their carrier. Tokens flow under their class names, not
 	// "div".
 	'components/_div.scss': {
-		tokens: { extras: ['stack', 'cluster', 'tiles'] },
-		note: '.stack, .cluster, and .tiles class-component primitives carried by <div>',
+		tokens: { extras: ['stack', 'cluster', 'tiles', 'split'] },
+		note: '.stack, .cluster, .tiles, and .split class-component primitives carried by <div>',
 	},
 
 	// modifiers/_local.scss — element-local modifier classes (article.frame,
