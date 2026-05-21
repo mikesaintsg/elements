@@ -270,6 +270,33 @@
 	}
 
 	// --------------------------------------------------------------------------
+	// .kicker — eyebrow / overline label above a heading: small, uppercase,
+	// letter-spaced, muted, margin-free. Replaces the repeated
+	// `text-xs uppercase tracking-wide m-0 muted` cluster on a section kicker.
+	// --------------------------------------------------------------------------
+	.kicker {
+		margin: 0;
+		font-size: var(--text-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--color-text-muted);
+	}
+
+	// --------------------------------------------------------------------------
+	// .lines — a tight vertical text stack (title + subtitle): the text column
+	// of a media object (avatar/icon beside a name + meta), a sender + time, a
+	// name + email. Flex column, tight line-height, no gap; element-agnostic so
+	// it works on the `<span>` inside a `.cluster` media row. Compose with
+	// `.fluid` to grow + truncate within the row. Replaces the repeated
+	// `flex flex-col leading-tight` cluster.
+	// --------------------------------------------------------------------------
+	.lines {
+		display: flex;
+		flex-direction: column;
+		line-height: var(--leading-tight);
+	}
+
+	// --------------------------------------------------------------------------
 	// .panes — app two-pane layout (sidebar + content): the workhorse behind a
 	// mailbox-style flush three-pane. Unlike `.split` (intrinsic wrap), `.panes`
 	// switches at a BAKED breakpoint, so it pairs cleanly with a JS single-pane

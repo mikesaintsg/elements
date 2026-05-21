@@ -133,7 +133,7 @@ const sessions: readonly Session[] = [
 	<main>
 		<div class="stack fill">
 			<hgroup>
-				<p class="text-xs uppercase tracking-wide m-0 muted">Account</p>
+				<p class="kicker">Account</p>
 				<h1>Settings</h1>
 				<p>Manage your profile, sign-in, and notification preferences.</p>
 			</hgroup>

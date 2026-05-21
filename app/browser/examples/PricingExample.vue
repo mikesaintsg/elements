@@ -129,7 +129,7 @@ const features: readonly Feature[] = [
 
 		<!-- Logos -->
 		<section class="stack items-center text-center">
-			<small class="uppercase tracking-wide muted"> Trusted by teams at </small>
+			<small class="kicker"> Trusted by teams at </small>
 			<div class="cluster justify-center">
 				<strong>Acme</strong>
 				<strong>Buena Vista</strong>
@@ -147,7 +147,7 @@ const features: readonly Feature[] = [
 				<div class="grid grid-cols-2 lg:grid-cols-4 gap-8 fill text-center">
 					<div v-for="metric in metrics" :key="metric.label" class="stack items-center gap-1">
 						<strong class="text-5xl" style="color: var(--color-primary)">{{ metric.value }}</strong>
-						<small class="uppercase tracking-wide muted">{{ metric.label }}</small>
+						<small class="kicker">{{ metric.label }}</small>
 					</div>
 				</div>
 			</article>
@@ -222,7 +222,7 @@ const features: readonly Feature[] = [
 					</p>
 					<footer class="flex items-center gap-3">
 						<span class="avatar" aria-hidden="true">GH</span>
-						<span class="flex flex-col leading-tight">
+						<span class="lines">
 							<cite><strong>Grace Hopper</strong></cite>
 							<small class="muted">Staff Engineer, Globex</small>
 						</span>

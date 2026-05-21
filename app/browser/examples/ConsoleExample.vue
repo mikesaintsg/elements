@@ -253,7 +253,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 
 		<footer>
 			<span class="avatar" aria-hidden="true">MS</span>
-			<span class="flex flex-col flex-1 leading-tight">
+			<span class="lines fluid">
 				<strong>Mike Saint</strong>
 				<small class="muted">mike@acme.dev</small>
 			</span>
@@ -313,7 +313,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 	<main>
 		<header class="flex flex-wrap items-end justify-between gap-4">
 			<hgroup>
-				<p class="text-xs uppercase tracking-wide m-0 muted">Dashboard</p>
+				<p class="kicker">Dashboard</p>
 				<h1>Overview</h1>
 				<p>{{ subtitle }}</p>
 			</hgroup>
@@ -458,7 +458,7 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 					aria-hidden="true"
 					style="margin-block-start: 0.4rem"
 				></span>
-				<span class="flex flex-col flex-1 leading-tight">
+				<span class="lines fluid">
 					<span
 						><strong>{{ entry.who }}</strong> {{ entry.action }}</span
 					>

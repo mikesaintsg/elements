@@ -147,7 +147,7 @@ const docs: readonly Doc[] = [
 			<li v-for="item in pinned" :key="item.label">
 				<a href="#">
 					<i class="icon" :class="item.icon" aria-hidden="true"></i>
-					<span class="flex flex-col leading-tight">
+					<span class="lines">
 						<strong>{{ item.label }}</strong>
 						<small class="muted">{{ item.meta }}</small>
 					</span>
@@ -203,9 +203,7 @@ const docs: readonly Doc[] = [
 	<main>
 		<header class="flex flex-wrap items-center justify-between gap-4">
 			<hgroup>
-				<p class="text-xs uppercase tracking-wide m-0 muted">
-					Conversation · 7 turns · linked to Acme Corp
-				</p>
+				<p class="kicker">Conversation · 7 turns · linked to Acme Corp</p>
 				<h1 class="text-xl">Why is Acme stalling?</h1>
 			</hgroup>
 			<span class="badge information subtle pill">Agent</span>
@@ -228,7 +226,7 @@ const docs: readonly Doc[] = [
 			<article class="warning subtle small">
 				<div class="cluster flex-nowrap">
 					<i class="icon warning" aria-hidden="true"></i>
-					<span class="flex flex-col flex-1 leading-tight">
+					<span class="lines fluid">
 						<strong>Confirm next step</strong>
 						<small class="muted">Draft the TCO email to the CFO and a nudge to the champion?</small>
 					</span>
@@ -283,7 +281,7 @@ const docs: readonly Doc[] = [
 					<span class="avatar square information subtle" aria-hidden="true">
 						<i class="icon information"></i>
 					</span>
-					<span class="flex flex-col flex-1 leading-tight min-w-0">
+					<span class="lines fluid">
 						<strong class="truncate">{{ doc.name }}</strong>
 						<small class="truncate muted">{{ doc.meta }}</small>
 					</span>

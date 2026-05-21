@@ -205,7 +205,7 @@ const rowStyle = (message: Message): Record<string, string | undefined> => ({
 
 		<footer>
 			<span class="avatar" aria-hidden="true">MS</span>
-			<span class="flex flex-col flex-1 leading-tight">
+			<span class="lines fluid">
 				<strong>Mike Saint</strong>
 				<small class="muted">5.2 GB of 15 GB</small>
 			</span>
@@ -272,7 +272,7 @@ const rowStyle = (message: Message): Record<string, string | undefined> => ({
 						>
 							<span class="flex gap-3 items-start fill">
 								<span class="avatar" aria-hidden="true">{{ message.initials }}</span>
-								<span class="flex flex-col flex-1 leading-tight min-w-0">
+								<span class="lines fluid">
 									<span class="flex gap-2 items-baseline justify-between flex-nowrap">
 										<strong class="truncate">{{ message.from }}</strong>
 										<small class="muted">{{ message.time }}</small>

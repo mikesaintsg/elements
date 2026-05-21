@@ -39,7 +39,7 @@ const related = [
 			<!-- ── Article column ──────────────────────────────────────────── -->
 			<article class="flush">
 				<hgroup>
-					<p class="text-xs uppercase tracking-wide m-0 muted">Engineering · 6 min read</p>
+					<p class="kicker">Engineering · 6 min read</p>
 					<h1>Designing with the grain</h1>
 					<p>
 						Why the most maintainable component is the one you never wrote — and how semantic HTML
@@ -50,7 +50,7 @@ const related = [
 				<div class="cluster between">
 					<div class="cluster">
 						<span class="avatar" aria-hidden="true">AL</span>
-						<span class="flex flex-col leading-tight">
+						<span class="lines">
 							<strong>Ada Lovelace</strong>
 							<small class="muted">
 								Published <time datetime="2026-05-21">May 21, 2026</time>
@@ -216,7 +216,7 @@ const related = [
 				<article class="small">
 					<div class="cluster">
 						<span class="avatar large" aria-hidden="true">AL</span>
-						<span class="flex flex-col leading-tight">
+						<span class="lines">
 							<strong>Ada Lovelace</strong>
 							<small class="muted">Compiler poet</small>
 						</span>
