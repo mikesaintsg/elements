@@ -26,12 +26,14 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 }
 
 describe('PricingExamplePage — render smoke', () => {
-	it('mounts a single <main> with no body-shell rails', () => {
+	it('mounts a single <main> marketing page (top nav + content, no aside rail)', () => {
 		const { host, teardown } = mount()
 		try {
 			expect(host.querySelector('main')).not.toBeNull()
-			expect(host.querySelector('main > nav')).toBeNull()
-			expect(host.querySelector('main > aside')).toBeNull()
+			// A content top-nav lives inside <main>; the page has no body-shell
+			// <aside> rail (it's a marketing page, not an app shell).
+			expect(host.querySelector('main > nav')).not.toBeNull()
+			expect(host.querySelector('aside')).toBeNull()
 		} finally {
 			teardown()
 		}

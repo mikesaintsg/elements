@@ -12,6 +12,13 @@
  */
 import { ARTICLE_CARD_HERO_URI as heroImage } from '../constants.js'
 
+// <main> is the scroll container in the app shell, so native `#id`
+// hash-scrolling (which targets the document) doesn't move an in-main
+// section into view. Scroll within the scroll ancestor explicitly.
+const scrollToSection = (id: string): void => {
+	document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 const toc = [
 	{ id: 'editorial-grain', label: 'Designing with the grain' },
 	{ id: 'editorial-rule', label: 'The shape of a rule' },
@@ -218,7 +225,9 @@ const related = [
 					<nav aria-label="On this page">
 						<menu class="flex flex-col">
 							<li v-for="item in toc" :key="item.id">
-								<a :href="`#${item.id}`">{{ item.label }}</a>
+								<a :href="`#${item.id}`" @click.prevent="scrollToSection(item.id)">{{
+									item.label
+								}}</a>
 							</li>
 						</menu>
 					</nav>

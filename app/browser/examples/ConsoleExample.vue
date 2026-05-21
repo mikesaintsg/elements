@@ -85,13 +85,17 @@ interface Order {
 	readonly amount: string
 	readonly date: string
 }
+// Amounts are bare numbers so the column sorts numerically: useTable
+// compares cell text via parseNumber, which rejects "$1,200.00" (the
+// symbol + separator) and would otherwise fall back to a lexicographic
+// sort ($1,200 before $24). The header carries the "(USD)" unit instead.
 const orders: readonly Order[] = [
 	{
 		id: 'INV-1042',
 		customer: 'Ada Lovelace',
 		plan: 'Pro annual',
 		status: 'paid',
-		amount: '$480.00',
+		amount: '480.00',
 		date: '2026-05-21',
 	},
 	{
@@ -99,7 +103,7 @@ const orders: readonly Order[] = [
 		customer: 'Grace Hopper',
 		plan: 'Team monthly',
 		status: 'pending',
-		amount: '$96.00',
+		amount: '96.00',
 		date: '2026-05-21',
 	},
 	{
@@ -107,7 +111,7 @@ const orders: readonly Order[] = [
 		customer: 'Linus Torvalds',
 		plan: 'Pro monthly',
 		status: 'paid',
-		amount: '$24.00',
+		amount: '24.00',
 		date: '2026-05-20',
 	},
 	{
@@ -115,7 +119,7 @@ const orders: readonly Order[] = [
 		customer: 'Margaret Hamilton',
 		plan: 'Enterprise',
 		status: 'failed',
-		amount: '$1,200.00',
+		amount: '1200.00',
 		date: '2026-05-20',
 	},
 	{
@@ -123,7 +127,7 @@ const orders: readonly Order[] = [
 		customer: 'Hedy Lamarr',
 		plan: 'Pro annual',
 		status: 'paid',
-		amount: '$480.00',
+		amount: '480.00',
 		date: '2026-05-19',
 	},
 	{
@@ -131,7 +135,7 @@ const orders: readonly Order[] = [
 		customer: 'Katherine Johnson',
 		plan: 'Team monthly',
 		status: 'paid',
-		amount: '$96.00',
+		amount: '96.00',
 		date: '2026-05-19',
 	},
 ]
@@ -143,7 +147,7 @@ const statusVariant: Record<Order['status'], string> = {
 
 const ordersRef = useTemplateRef<HTMLTableElement>('ordersRef')
 useTable(ordersRef, {
-	headers: ['Invoice', 'Customer', 'Plan', 'Status', 'Amount', 'Date'],
+	headers: ['Invoice', 'Customer', 'Plan', 'Status', 'Amount (USD)', 'Date'],
 	columns: [
 		{ key: 'id', sortable: true },
 		{ key: 'customer', sortable: true },

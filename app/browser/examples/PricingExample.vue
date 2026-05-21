@@ -84,6 +84,26 @@ const features: readonly Feature[] = [
 
 <template>
 	<main>
+		<!-- Top nav -->
+		<nav
+			aria-label="Primary"
+			class="flex items-center justify-between gap-4 max-w-6xl mx-auto w-full"
+		>
+			<a href="#" class="flex items-center gap-2 no-underline">
+				<span class="avatar square primary" aria-hidden="true">E</span>
+				<strong>Elements</strong>
+			</a>
+			<div class="hidden md:flex items-center gap-6">
+				<a href="#" class="no-underline">Features</a>
+				<a href="#pricing" class="no-underline">Pricing</a>
+				<a href="#" class="no-underline">Docs</a>
+			</div>
+			<div class="flex items-center gap-3">
+				<a href="#" class="hidden sm:inline no-underline">Sign in</a>
+				<a href="#" class="primary filled">Get started</a>
+			</div>
+		</nav>
+
 		<!-- Hero -->
 		<section class="stack items-center text-center max-w-3xl mx-auto w-full">
 			<span class="badge information pill">New · v2.4</span>

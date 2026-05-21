@@ -29,6 +29,14 @@ const save = (): void => {
 	form.submit()
 }
 
+// In the app shell, <main> is the scroll container (body is
+// overflow:hidden), so native `#id` hash-scrolling — which targets the
+// document — doesn't move the in-main section into view. Scroll it
+// explicitly within its scroll ancestor instead.
+const scrollToSection = (id: string): void => {
+	document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 const sections = [
 	{ id: 'settings-profile', label: 'Profile' },
 	{ id: 'settings-account', label: 'Account' },
@@ -79,7 +87,7 @@ const sessions: readonly Session[] = [
 			>
 				<menu class="flex flex-col items-start">
 					<li v-for="s in sections" :key="s.id">
-						<a :href="`#${s.id}`">{{ s.label }}</a>
+						<a :href="`#${s.id}`" @click.prevent="scrollToSection(s.id)">{{ s.label }}</a>
 					</li>
 				</menu>
 			</nav>

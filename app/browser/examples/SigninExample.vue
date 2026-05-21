@@ -42,8 +42,7 @@ useForm(formRef, {
 
 const resetRef = useTemplateRef<HTMLDialogElement>('resetRef')
 const reset = useDialog(resetRef, { modal: true })
-const sendReset = (event: Event): void => {
-	event.preventDefault()
+const sendReset = (): void => {
 	reset.hide()
 	notify('Reset link sent — check your inbox.')
 }
@@ -154,17 +153,15 @@ const sendReset = (event: Event): void => {
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
 			</button>
 		</header>
-		<form class="stack" @submit="sendReset">
-			<p>Enter your email and we'll send a reset link.</p>
-			<label>
-				Email
-				<input type="email" name="reset-email" placeholder="you@example.com" required />
-			</label>
-			<footer class="flex justify-end gap-2">
-				<button type="button" class="subtle" @click="reset.hide()">Cancel</button>
-				<button type="submit" class="primary">Send reset link</button>
-			</footer>
-		</form>
+		<p>Enter your email and we'll send a reset link.</p>
+		<label>
+			Email
+			<input type="email" name="reset-email" placeholder="you@example.com" />
+		</label>
+		<footer class="flex justify-end gap-2">
+			<button type="button" class="subtle" @click="reset.hide()">Cancel</button>
+			<button type="button" class="primary" @click="sendReset">Send reset link</button>
+		</footer>
 	</dialog>
 
 	<!-- Confirmation toast — the framework's <div role="status" popover>
