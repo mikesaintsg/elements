@@ -224,22 +224,34 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 		</menu>
 	</header>
 
-	<!-- Two panes: message list + reading pane. -->
-	<main>
-		<div class="split lg:h-full lg:overflow-hidden" style="--set-split-size: 22rem">
+	<!-- Two panes: message list + reading pane. The mail app is full-bleed
+	     (main padding zeroed) so the panes butt flush against the folder rail
+	     and each other, divided by 1px borders — the classic flush three-pane,
+	     each pane scrolling independently. -->
+	<main style="--set-main-padding-inline: 0; --set-main-padding-block: 0">
+		<div
+			class="split lg:h-full lg:overflow-hidden"
+			style="--set-split-size: 22rem; --set-split-gap: 0"
+		>
 			<!-- Message list -->
 			<section
 				v-show="showList"
 				aria-label="Messages"
-				class="flex flex-col lg:overflow-y-auto lg:h-full"
+				class="flex flex-col lg:overflow-hidden lg:h-full lg:border-e"
+				style="border-color: var(--color-border)"
 			>
-				<header class="flex flex-wrap items-center justify-between gap-4">
+				<header
+					class="flex flex-wrap items-center justify-between gap-4 px-4 py-3 border-b"
+					style="border-color: var(--color-border)"
+				>
 					<hgroup>
 						<h2 class="text-base m-0">Inbox</h2>
-						<p>{{ messages.length }} messages</p>
+						<p class="muted">{{ messages.length }} messages</p>
 					</hgroup>
 				</header>
-				<menu class="flex flex-col gap-1 list-none">
+				<menu
+					class="flex flex-col gap-1 list-none p-2 fluid lg:overflow-y-auto lg:overflow-x-hidden"
+				>
 					<li v-for="message in messages" :key="message.id">
 						<button
 							type="button"
@@ -267,9 +279,17 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 				</menu>
 			</section>
 
-			<!-- Reading pane -->
-			<article v-show="showMessage" aria-label="Conversation" class="lg:overflow-y-auto lg:h-full">
-				<header class="flex flex-col gap-2">
+			<!-- Reading pane — a plain region (not a card): pinned header + reply
+			     bar with a scrolling body between them. -->
+			<section
+				v-show="showMessage"
+				aria-label="Conversation"
+				class="flex flex-col lg:overflow-hidden lg:h-full"
+			>
+				<header
+					class="flex flex-col gap-3 px-6 py-4 border-b"
+					style="border-color: var(--color-border)"
+				>
 					<div class="cluster">
 						<button
 							v-if="isMobile"
@@ -280,7 +300,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 						>
 							<i class="icon chevron-left" aria-hidden="true"></i>
 						</button>
-						<h2 class="flex-1 m-0">{{ selected.subject }}</h2>
+						<h2 class="fluid m-0">{{ selected.subject }}</h2>
 						<span class="badge" :class="selected.variant">{{ selected.tag }}</span>
 					</div>
 					<div class="cluster">
@@ -292,9 +312,14 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 					</div>
 				</header>
 
-				<p v-for="(para, i) in selected.body" :key="i">{{ para }}</p>
+				<div class="stack fluid px-6 py-5 lg:overflow-y-auto">
+					<p v-for="(para, i) in selected.body" :key="i" class="m-0">{{ para }}</p>
+				</div>
 
-				<footer class="flex flex-wrap gap-2">
+				<footer
+					class="flex flex-wrap gap-2 px-6 py-4 border-t"
+					style="border-color: var(--color-border)"
+				>
 					<button type="button" class="primary">
 						<i class="icon chevron-left" aria-hidden="true"></i>
 						Reply
@@ -305,7 +330,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 						Forward
 					</button>
 				</footer>
-			</article>
+			</section>
 		</div>
 	</main>
 </template>

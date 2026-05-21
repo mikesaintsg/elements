@@ -33,7 +33,7 @@ describe('MailExamplePage — render smoke', () => {
 			expect(host.querySelector('header')).not.toBeNull()
 			expect(host.querySelector('main')).not.toBeNull()
 			expect(host.querySelector('main section[aria-label="Messages"]')).not.toBeNull()
-			expect(host.querySelector('main article[aria-label="Conversation"]')).not.toBeNull()
+			expect(host.querySelector('main section[aria-label="Conversation"]')).not.toBeNull()
 		} finally {
 			teardown()
 		}
@@ -47,7 +47,7 @@ describe('MailExamplePage — load-bearing landmarks', () => {
 			expect(
 				host.querySelectorAll('section[aria-label="Messages"] menu li').length,
 			).toBeGreaterThan(0)
-			expect(host.querySelectorAll('article[aria-label="Conversation"] p').length).toBeGreaterThan(
+			expect(host.querySelectorAll('section[aria-label="Conversation"] p').length).toBeGreaterThan(
 				0,
 			)
 		} finally {
