@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { ThemeName } from '@elements/browser'
 import { computed, ref } from 'vue'
 import { useTheme } from '@elements/browser'
 import { useRootCssVars } from '../composables.js'
@@ -13,7 +14,7 @@ import { useRootCssVars } from '../composables.js'
  *
  *   Theme controller — `useTheme()` exposes `setting` (user
  *     preference: 'light' / 'dark' / 'system'), `mode` (resolved
- *     'light' / 'dark'), `set()`, `toggle()`. Pins via `data-theme=
+ *     'light' / 'dark'), `set()`, `toggle()`. Pins via `data-mode=
  *     {light|dark}` on `<html>`; falls through to
  *     `@media (prefers-color-scheme: dark)` when setting === 'system'.
  *
@@ -37,7 +38,7 @@ import { useRootCssVars } from '../composables.js'
  *       inverted     --color-inverted / --color-inverted-text
  *
  *   Light / dark cascade — `:root` declares the light palette;
- *     `[data-theme='dark']` and `@media (prefers-color-scheme: dark)`
+ *     `[data-mode='dark']` and `@media (prefers-color-scheme: dark)`
  *     in `_theme.scss` re-declare the same tokens with dark values.
  *     `color-scheme: light dark` on `:root` opts UA chrome into the
  *     same transition.
@@ -160,7 +161,7 @@ const borderTier = computed<readonly ThemePaletteEntry[]>(() => [
 			(<code>--color-primary</code>) automatically retunes its four downstream tiers.
 		</p>
 		<p>
-			Light + dark switch via <code>data-theme</code> on <code>&lt;html&gt;</code>. The
+			Light + dark switch via <code>data-mode</code> on <code>&lt;html&gt;</code>. The
 			<code>useTheme</code> composable handles user-pinned + OS-follow modes; the page sidebar's sun
 			/ moon button is one usage. <strong>Tokens vs theme:</strong> structural tokens
 			(<code>--set-*</code>) live on TokensPage; this page covers the COLOR surface.
@@ -170,17 +171,25 @@ const borderTier = computed<readonly ThemePaletteEntry[]>(() => [
 	<section id="theme-switcher">
 		<h2>Theme switcher — <code>useTheme()</code></h2>
 		<p>
+			Theming has TWO independent axes. The <strong>mode</strong> axis (light / dark) writes
+			<code>data-mode</code>; the <strong>name</strong> axis (palette core) writes
+			<code>data-theme</code>. They compose freely — e.g.
+			<code>&lt;html data-mode="dark" data-theme="auroramoon"&gt;</code>.
+		</p>
+		<p>
 			<code>useTheme()</code> exposes <code>setting</code> (user preference:
 			<code>'light' / 'dark' / 'system'</code>), <code>mode</code> (resolved
-			<code>'light' / 'dark'</code>), <code>set()</code>, and <code>toggle()</code>. When
+			<code>'light' / 'dark'</code>), <code>name</code> (active core, <code>'default'</code> = base
+			theme), <code>set()</code>, <code>toggle()</code>, and <code>select(name)</code>. When
 			<code>setting === 'system'</code> (the default), <code>&lt;html&gt;</code> carries no
-			<code>data-theme</code> attribute and the framework's
+			<code>data-mode</code> attribute and the framework's
 			<code>@media (prefers-color-scheme: dark)</code> rule in <code>_theme.scss</code> handles the
-			OS-follow on its own — no JS rewrite when the OS preference flips.
+			OS-follow on its own — no JS rewrite when the OS preference flips. State persists as a
+			<code>setting:name</code> pair in <code>localStorage</code>.
 		</p>
 		<form class="row" @submit.prevent>
 			<label>
-				<span>Setting</span>
+				<span>Mode</span>
 				<select
 					:value="themeCtl.setting.value"
 					@change="
@@ -193,13 +202,26 @@ const borderTier = computed<readonly ThemePaletteEntry[]>(() => [
 					<option value="dark">dark (pinned)</option>
 				</select>
 			</label>
+			<label>
+				<span>Theme core</span>
+				<select
+					:value="themeCtl.name.value"
+					@change="(e) => themeCtl.select((e.target as HTMLSelectElement).value as ThemeName)"
+				>
+					<option value="default">default (base)</option>
+					<option value="auroramoon">auroramoon</option>
+					<option value="eclipse">eclipse</option>
+					<option value="honeymoon">honeymoon</option>
+					<option value="lagunamoon">lagunamoon</option>
+				</select>
+			</label>
 			<button type="button" class="primary" @click="themeCtl.toggle()">Toggle light ↔ dark</button>
 		</form>
 		<dl>
 			<dt><code>setting</code></dt>
 			<dd>
 				Live: <code>{{ themeCtl.setting.value }}</code
-				>. User's preference. Persists in <code>localStorage</code> by default; opt out via
+				>. User's mode preference. Persists in <code>localStorage</code> by default; opt out via
 				<code>useTheme({ storage: false })</code>.
 			</dd>
 			<dt><code>mode</code></dt>
@@ -208,6 +230,12 @@ const borderTier = computed<readonly ThemePaletteEntry[]>(() => [
 				>. The resolved mode currently rendering. Updates reactively when the OS preference flips (a
 				<code>matchMedia</code> listener inside the factory keeps it in sync), so a sun / moon icon
 				stays accurate even when <code>setting === 'system'</code>.
+			</dd>
+			<dt><code>name</code></dt>
+			<dd>
+				Live: <code>{{ themeCtl.name.value }}</code
+				>. The active theme core. <code>select('auroramoon')</code> writes <code>data-theme</code>;
+				<code>select('default')</code> removes it so the base theme applies.
 			</dd>
 		</dl>
 		<details>
@@ -226,14 +254,70 @@ const theme = useTheme()
 		</details>
 	</section>
 
+	<section id="theme-cores">
+		<h2>Theme cores — the <code>data-theme</code> axis</h2>
+		<p>
+			A <strong>core</strong> is an opt-in palette/identity theme that re-tunes the base
+			<code>--color-*</code> tokens plus the <code>--set-radius-factor</code> /
+			<code>--set-density-factor</code> knobs. Set
+			<code>&lt;html data-theme="auroramoon"&gt;</code> (or call
+			<code>useTheme().select('auroramoon')</code>) to pull one in. Because every core only
+			overrides the small base-token set, the four-tier <code>color-mix</code> derivations recompute
+			automatically — the same contract the brand-retune playground below demonstrates. Cores ship
+			in <code>src/styles/themes/</code>; <code>'default'</code> is the absence of the attribute
+			(the base theme). Each renders correctly in BOTH light and dark via the independent
+			<code>data-mode</code> axis.
+		</p>
+		<dl>
+			<dt><code>auroramoon</code></dt>
+			<dd>
+				Dark-first technical — cool-zinc neutrals, fuchsia primary, cyan info, compact radius.
+			</dd>
+			<dt><code>eclipse</code></dt>
+			<dd>
+				WCAG-AAA monochrome — near-zero-saturation neutrals, high-contrast navy primary, no
+				chromatic accents, borders-only elevation, squared corners.
+			</dd>
+			<dt><code>honeymoon</code></dt>
+			<dd>
+				Warm editorial — stone-warm neutrals, sienna primary, amber info, cream paper, sharp
+				corners.
+			</dd>
+			<dt><code>lagunamoon</code></dt>
+			<dd>
+				Soft and sandy — warm-sand neutrals, turquoise primary, coral info, generous rounding.
+			</dd>
+		</dl>
+		<p>
+			The two axes are orthogonal: <code>data-mode</code> (light / dark) and
+			<code>data-theme</code> (core) compose into any combination. Author a custom core the same way
+			— a CSS block scoped to your <code>[data-theme="…"]</code> selector overriding the base tokens
+			(see <code>src/styles/themes/_core.scss</code> for the light/dark mixin pair).
+		</p>
+		<pre v-pre><code>// src/styles/themes/_brand.scss
+@use 'core' as *;
+
+@include core-light('brand') {
+  --set-radius-factor: 1;
+  --color-primary: hsl(330 80% 50%);
+  --color-canvas: hsl(0 0% 100%);
+  /* …surface / text / border neutrals… */
+}
+@include core-dark('brand') {
+  --color-canvas: hsl(330 12% 10%);
+  --color-primary: hsl(330 85% 62%);
+  /* …dark neutrals… */
+}</code></pre>
+	</section>
+
 	<section id="theme-variants">
 		<h2>Variant palette — <code>--color-{`{variant}`}</code></h2>
 		<p>
-			Seven semantic identities. Each base is a saturated Tailwind palette color: primary →
-			<code>blue-600</code>, success → <code>green-700</code>, danger → <code>red-700</code>, etc.
-			(declared in <code>_theme.scss</code> § <code>@theme</code>). Retune any base at
-			<code>:root</code> (or via a <code>@theme</code> block) and its four downstream tiers
-			re-derive automatically.
+			Seven semantic identities. Primary is a tuned royal cobalt (<code>oklch(48% 0.255 264)</code
+			>); the rest reference saturated Tailwind palette steps: success → <code>green-700</code>,
+			danger → <code>red-700</code>, etc. (declared in <code>_theme.scss</code> §
+			<code>@theme</code>). Retune any base at <code>:root</code> (or via a
+			<code>@theme</code> block) and its four downstream tiers re-derive automatically.
 		</p>
 		<div
 			class="showcase-tile-grid"
@@ -457,7 +541,7 @@ const theme = useTheme()
 			A high-contrast surface for "always stands out" affordances. The accent is a
 			<strong>two-token pair</strong>: <code>--color-inverted</code> (surface fill) +
 			<code>--color-inverted-text</code> (foreground). Both flip per-theme so the surface stays
-			distinct in light AND dark. To paint a region with it, add <code>data-theme="invert"</code> —
+			distinct in light AND dark. To paint a region with it, add <code>data-mode="invert"</code> —
 			the framework's reusable inverted-surface hook. It sets the pair AND resets the self-coloring
 			descendants that would otherwise re-resolve their own canvas-tier color (headings,
 			<code>&lt;strong&gt;</code>, <code>&lt;dd&gt;</code>, <code>&lt;mark&gt;</code>, …) to follow
@@ -465,14 +549,14 @@ const theme = useTheme()
 			generalized so any callout / promo / demo surface gets correct descendants with no per-element
 			overrides. Switch themes to see it pivot.
 		</p>
-		<article data-theme="invert">
+		<article data-mode="invert">
 			<h3>Sample text on the inverted surface</h3>
 			<p class="opacity-85">
-				This <code>&lt;article data-theme="invert"&gt;</code> paints
-				<code>--color-inverted</code> as the fill and <code>--color-inverted-text</code> as the
-				foreground. The heading re-resolves its own color from <code>--set-heading-color</code>, so
-				the hook resets it (and the other self-coloring canvas-tier elements) to
-				<code>inherit</code> — no <code>color</code> pin in the markup. The accent pair resolves to:
+				This <code>&lt;article data-mode="invert"&gt;</code> paints <code>--color-inverted</code> as
+				the fill and <code>--color-inverted-text</code> as the foreground. The heading re-resolves
+				its own color from <code>--set-heading-color</code>, so the hook resets it (and the other
+				self-coloring canvas-tier elements) to <code>inherit</code> — no <code>color</code> pin in
+				the markup. The accent pair resolves to:
 			</p>
 			<dl class="showcase-inverted-key-value mt-2">
 				<dt><code>--color-inverted</code></dt>
@@ -490,7 +574,7 @@ const theme = useTheme()
 			<code>--color-inverted-text</code> as a foreground over any other background (including the
 			page canvas) will fail WCAG contrast in one of the two themes. Reach for
 			<code>--color-text-strong</code> for "always-contrasted text", the accent pair for a minimal
-			two-token surface (tooltip), and the <code>data-theme="invert"</code> island when a whole
+			two-token surface (tooltip), and the <code>data-mode="invert"</code> island when a whole
 			region should read as the opposite theme.
 		</p>
 	</section>
@@ -500,24 +584,24 @@ const theme = useTheme()
 		<p>
 			Three states; one CSS source of truth. The framework's <code>_theme.scss</code> declares the
 			light palette on <code>:root</code>, then re-declares the dark palette under TWO selectors:
-			<code>[data-theme='dark']</code> AND
-			<code>@media (prefers-color-scheme: dark) :root:not([data-theme='light'])</code>. The
+			<code>[data-mode='dark']</code> AND
+			<code>@media (prefers-color-scheme: dark) :root:not([data-mode='light'])</code>. The
 			media-query rule is the OS-follow path; the attribute rules are the user-pinned path.
 		</p>
 		<dl>
-			<dt><code>html</code> with no <code>data-theme</code></dt>
+			<dt><code>html</code> with no <code>data-mode</code></dt>
 			<dd>
 				<strong>OS follow.</strong> The media query resolves to whichever the OS reports. JS leaves
 				the attribute alone — when the OS preference flips, the page repaints automatically with no
 				code path involved.
 			</dd>
-			<dt><code>&lt;html data-theme="light"&gt;</code></dt>
+			<dt><code>&lt;html data-mode="light"&gt;</code></dt>
 			<dd>
-				<strong>Pinned light.</strong> The <code>:not([data-theme='light'])</code> guard on the
-				media query keeps the dark palette from leaking in when the user explicitly chose light.
+				<strong>Pinned light.</strong> The <code>:not([data-mode='light'])</code> guard on the media
+				query keeps the dark palette from leaking in when the user explicitly chose light.
 			</dd>
-			<dt><code>&lt;html data-theme="dark"&gt;</code></dt>
-			<dd><strong>Pinned dark.</strong> The <code>[data-theme='dark']</code> selector wins.</dd>
+			<dt><code>&lt;html data-mode="dark"&gt;</code></dt>
+			<dd><strong>Pinned dark.</strong> The <code>[data-mode='dark']</code> selector wins.</dd>
 		</dl>
 		<p>
 			<code>color-scheme: light dark</code> on <code>:root</code> opts UA chrome (scrollbars, form
@@ -566,7 +650,7 @@ const theme = useTheme()
   --color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 18%, var(--color-canvas));
 }
 
-[data-theme='dark'] {
+[data-mode='dark'] {
   /* Per-mode tweak — the dark palette gets a deeper canvas. */
   --color-canvas: oklch(0.12 0.01 250);
 }</code></pre>
