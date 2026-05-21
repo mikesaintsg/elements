@@ -60,6 +60,17 @@ interface Feature {
 	readonly title: string
 	readonly body: string
 }
+interface Metric {
+	readonly value: string
+	readonly label: string
+}
+const metrics: readonly Metric[] = [
+	{ value: '93', label: 'Elements' },
+	{ value: '5', label: 'Modifiers' },
+	{ value: '4', label: 'Themes' },
+	{ value: '0', label: 'Runtime deps' },
+]
+
 const features: readonly Feature[] = [
 	{
 		icon: 'check',
@@ -128,6 +139,22 @@ const features: readonly Feature[] = [
 				<strong>Globex</strong>
 				<strong>Hooli</strong>
 			</div>
+		</section>
+
+		<!-- Stat band — four headline numbers on a tinted full-width surface.
+		     Bare elements only: a grid of <strong>/<small> pairs inside an
+		     <article> variant card. Numbers tell the framework's own story. -->
+		<section class="w-full">
+			<article class="information subtle items-center">
+				<div class="grid grid-cols-2 lg:grid-cols-4 gap-8 w-full text-center">
+					<div v-for="metric in metrics" :key="metric.label" class="stack items-center gap-1">
+						<strong class="text-5xl" style="color: var(--color-primary)">{{ metric.value }}</strong>
+						<small class="uppercase tracking-wide" style="color: var(--color-text-subtle)">{{
+							metric.label
+						}}</small>
+					</div>
+				</div>
+			</article>
 		</section>
 
 		<!-- Features -->

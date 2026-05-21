@@ -38,6 +38,9 @@ interface Stat {
 	readonly label: string
 	readonly value: string
 	readonly delta: string
+	// Directional glyph drawn before the delta — content, not a framework
+	// icon (the icon set is closed). ↗ rising · ↘ falling · → flat.
+	readonly arrow: '↗' | '↘' | '→'
 	readonly variant: 'success' | 'danger' | 'information'
 	readonly meter: number
 	readonly goal: string
@@ -47,6 +50,7 @@ const stats: readonly Stat[] = [
 		label: 'Revenue',
 		value: '$48,290',
 		delta: '+12.4%',
+		arrow: '↗',
 		variant: 'success',
 		meter: 82,
 		goal: '82% to goal',
@@ -55,6 +59,7 @@ const stats: readonly Stat[] = [
 		label: 'New customers',
 		value: '1,204',
 		delta: '+8.1%',
+		arrow: '↗',
 		variant: 'success',
 		meter: 64,
 		goal: '64% to goal',
@@ -63,6 +68,7 @@ const stats: readonly Stat[] = [
 		label: 'Refund rate',
 		value: '2.4%',
 		delta: '+0.3pt',
+		arrow: '↘',
 		variant: 'danger',
 		meter: 24,
 		goal: 'ceiling 5%',
@@ -71,11 +77,26 @@ const stats: readonly Stat[] = [
 		label: 'Open tickets',
 		value: '27',
 		delta: 'steady',
+		arrow: '→',
 		variant: 'information',
 		meter: 41,
 		goal: '41% of SLA',
 	},
 ]
+
+// Revenue-trajectory chart series. Each bar carries a height percentage and
+// a flag marking the trailing days as forecast (painted in the information
+// hue rather than primary). Pure data — the bars themselves are bare <div>s
+// whose height + token-driven fill come from inline style, the same idiom
+// the icon glyphs use. Built as a labelled <figure> so the dataviz stays
+// accessible without a charting dependency.
+interface Bar {
+	readonly value: number
+	readonly forecast: boolean
+}
+const chart: readonly Bar[] = [
+	38, 44, 41, 52, 48, 60, 55, 58, 67, 62, 71, 64, 73, 78, 70, 82, 76, 85, 88, 81, 90, 84, 93, 96,
+].map((value, index, all) => ({ value, forecast: index >= all.length - 5 }))
 
 interface Order {
 	readonly id: string
@@ -321,7 +342,9 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 					<p class="text-sm m-0" style="color: var(--color-text-subtle)">{{ stat.label }}</p>
 					<strong class="text-3xl">{{ stat.value }}</strong>
 					<div class="cluster items-center">
-						<span class="badge" :class="stat.variant">{{ stat.delta }}</span>
+						<span class="badge" :class="stat.variant"
+							><span aria-hidden="true">{{ stat.arrow }}</span> {{ stat.delta }}</span
+						>
 						<small style="color: var(--color-text-subtle)">{{ stat.goal }}</small>
 					</div>
 					<meter
@@ -334,6 +357,46 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 				</article>
 			</div>
 		</section>
+
+		<article aria-label="Revenue trajectory">
+			<header class="flex flex-wrap items-center gap-4">
+				<hgroup>
+					<h2>Revenue trajectory</h2>
+					<p>Daily gross, cohort-adjusted.</p>
+				</hgroup>
+				<div class="cluster items-center ms-auto">
+					<span class="cluster items-center gap-2 flex-nowrap">
+						<span class="dot primary" aria-hidden="true"></span>
+						<small>Revenue</small>
+					</span>
+					<span class="cluster items-center gap-2 flex-nowrap">
+						<span class="dot information" aria-hidden="true"></span>
+						<small>Forecast</small>
+					</span>
+				</div>
+			</header>
+			<!-- Token-driven CSS bar chart. Each bar is a bare <div> whose
+			     height + fill come from inline style (the same data-driven
+			     idiom the icon glyphs use) — no charting dependency, no
+			     bespoke class. Forecast bars paint in the information hue. -->
+			<figure class="m-0">
+				<div
+					class="flex items-end gap-1 h-40"
+					role="img"
+					aria-label="Daily revenue trending upward over the period, with the final five days forecast"
+				>
+					<div
+						v-for="(bar, i) in chart"
+						:key="i"
+						class="flex-1 rounded-t-sm"
+						:style="`height: ${bar.value}%; background-color: var(--color-${
+							bar.forecast ? 'information' : 'primary'
+						}); opacity: ${bar.forecast ? 0.55 : 1}`"
+					></div>
+				</div>
+				<figcaption>Figures auto-adjust for refunds. The last five days are forecast.</figcaption>
+			</figure>
+		</article>
 
 		<article aria-label="Recent orders">
 			<header class="flex flex-wrap items-center gap-4">

@@ -72,7 +72,21 @@ const sendReset = (): void => {
 						Accessible by default
 					</li>
 				</ul>
-				<footer>
+				<footer class="stack gap-3">
+					<div class="cluster gap-4">
+						<span class="cluster items-center gap-2 flex-nowrap">
+							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-success)"></i>
+							<small>SOC 2 Type II</small>
+						</span>
+						<span class="cluster items-center gap-2 flex-nowrap">
+							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-success)"></i>
+							<small>WCAG 2.2 AA</small>
+						</span>
+						<span class="cluster items-center gap-2 flex-nowrap">
+							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-success)"></i>
+							<small>Encrypted at rest</small>
+						</span>
+					</div>
 					<small>Trusted by teams at Acme, Globex, and Initech.</small>
 				</footer>
 			</article>
