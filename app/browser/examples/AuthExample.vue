@@ -453,8 +453,12 @@ const handleSubmit = (): void => {
 	padding: 0;
 }
 
+/* Each <li> is a full-width flex item (the menu is align-items: stretch) so
+ * the `w-full` button fills it. NOT `display: contents` — that would collapse
+ * the <li> boxes and Chromium then drops the flex `gap` between the buttons,
+ * leaving them touching. */
 .auth-oauth-buttons li {
-	display: contents;
+	display: flex;
 }
 
 /* ── Labelled "or" divider ──────────────────────────────────────────────────

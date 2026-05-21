@@ -141,6 +141,14 @@ describe('a — style modifiers', () => {
 		expect(style(a, 'text-decoration-line')).toBe('none')
 	})
 
+	it('.filled / .subtle anchors are inline-flex button-links (icon gap + w-full work)', () => {
+		// Chrome-shaped anchors lay out like buttons so an icon + label pair
+		// gaps + centers, and a `w-full` CTA actually fills its container
+		// instead of shrinking to its text (a bare inline anchor ignores width).
+		expect(style(render('a', 'primary filled'), 'display')).toBe('inline-flex')
+		expect(style(render('a', 'primary subtle'), 'display')).toBe('inline-flex')
+	})
+
 	it('.ghost keeps the underline and stays transparent', () => {
 		const a = render('a', 'primary ghost')
 		expect(style(a, 'text-decoration-line')).toContain('underline')

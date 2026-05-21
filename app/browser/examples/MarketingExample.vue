@@ -364,7 +364,7 @@ const chartBars = computed(() =>
 					</p>
 				</div>
 				<!-- Pricing card grid -->
-				<div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
 					<article
 						v-for="plan in plans"
 						:key="plan.name"
@@ -539,6 +539,14 @@ const chartBars = computed(() =>
  * while content is comfortably centered.
  * ────────────────────────────────────────────────────────────────────────── */
 .marketing-container {
+	/* `inline-size: 100%` is required because the parent `<section>` is a
+	 * flex column (framework `<section>` baseline): a flex item with
+	 * `margin-inline: auto` and no explicit size shrink-wraps to its content
+	 * instead of filling the band, which would cramp every section to its
+	 * widest intrinsic content (~720px) rather than the 72rem max. With an
+	 * explicit width the item fills the band, the max caps it, and the auto
+	 * margins center it. */
+	inline-size: 100%;
 	max-inline-size: 72rem;
 	margin-inline: auto;
 	padding-inline: clamp(1rem, 5vw, 2.5rem);

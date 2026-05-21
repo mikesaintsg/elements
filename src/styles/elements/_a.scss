@@ -136,6 +136,19 @@
 			--set-a-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
 			--set-a-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
 			--set-a-border-radius: var(--set-size-border-radius, var(--radius-md));
+
+			// Chrome-shaped anchors are button-LINKS, so they lay out like the
+			// `<button>` baseline: inline-flex with centered, gapped content.
+			// This makes an icon + label pair align with a gap (matching
+			// buttons), and lets a full-width CTA (`class="w-full"`) actually
+			// fill its container with centered text — a bare inline anchor
+			// ignores `width` / `justify-content`, so `<a class="primary filled
+			// w-full">` would otherwise shrink to its text and wrap. Bare
+			// (un-chromed) anchors stay inline so in-prose links flow with text.
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: calc(var(--spacing) * 2);
 		}
 
 		&.filled {

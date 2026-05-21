@@ -88,6 +88,26 @@ describe('article — descendant <header>/<footer> get card slot chrome', () => 
 		expect(pixels(footer, 'border-top-width')).toBe(1)
 	})
 
+	it('article > footer pins to the bottom when the card has spare height', () => {
+		// The article is a flex column with `margin-block-start: auto` on the
+		// footer, so when the card is taller than its content (an equal-height
+		// card grid: pricing tables, stat cards) the footer / CTA aligns along
+		// the bottom instead of floating up after short body content.
+		const article = build('article')
+		article.style.blockSize = '320px'
+		const body = build('p', '', 'Short body')
+		const footer = build('footer', '', 'Actions')
+		article.append(body, footer)
+		mount(article)
+		const ab = article.getBoundingClientRect()
+		const fb = footer.getBoundingClientRect()
+		const bb = body.getBoundingClientRect()
+		// Footer sits at the card's bottom edge (within the band padding), far
+		// below the short body — proving the auto margin consumed the gap.
+		expect(ab.bottom - fb.bottom).toBeLessThan(24)
+		expect(fb.top - bb.bottom).toBeGreaterThan(100)
+	})
+
 	it('article > header bleeds to the inner edge: inline negative margin + zeroed top padding', () => {
 		const article = build('article')
 		const header = build('header', '', 'Title')

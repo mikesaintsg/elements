@@ -248,6 +248,15 @@
 			var(--set-article-border-radius) - var(--set-article-border-width)
 		);
 		border-end-end-radius: calc(var(--set-article-border-radius) - var(--set-article-border-width));
+
+		// Pin the footer (action row / CTA band) to the card's bottom edge.
+		// `<article>` is a flex column, so `margin-block-start: auto` consumes
+		// any free space above the footer — in an equal-height card grid (a
+		// pricing table, a dashboard of stat cards) every card's footer / CTA
+		// lines up along the bottom regardless of how much body content sits
+		// above it. When the card sizes to its content (no free space) the
+		// auto margin collapses to 0, so a standalone card is unchanged.
+		margin-block-start: auto;
 	}
 
 	// The article is a flex column with its own `--set-article-gap`, so any

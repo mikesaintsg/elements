@@ -424,7 +424,10 @@ onUnmounted(() => {
 			aria-label="Revenue and quick actions"
 		>
 			<article>
-				<header>
+				<!-- Card header as a title-left / legend-right row: `article >
+				     header` is a block band by default (title + subtitle cards),
+				     so a trailing-action header opts into flex via utilities. -->
+				<header class="flex items-center gap-4">
 					<hgroup>
 						<h2>Revenue trajectory</h2>
 						<p>Daily gross, cohort-adjusted</p>
@@ -522,7 +525,7 @@ onUnmounted(() => {
 		     body with article padding. Matches the chart + quick-actions
 		     cards above so the page reads as a uniform set of cards. -->
 		<article aria-label="Recent activity">
-			<header>
+			<header class="flex items-center gap-4">
 				<hgroup>
 					<h2>Recent activity</h2>
 					<p>Last 24 hours across all workspaces</p>
