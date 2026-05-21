@@ -190,16 +190,14 @@ onUnmounted(() => {
 	     is a popover drawer opened by the topbar toggle button.
 
 	     The `class="start"` tells the framework this is a left-side rail
-	     (matches Dashboard's sidebar and the docs primary nav).
-
-	     `--set-aside-drawer-padding-inline: 0` override removes the
-	     framework's 16px gutter so the menus own their own padding. -->
+	     (matches Dashboard's sidebar and the docs primary nav). The drawer
+	     keeps the framework's default 16px gutter so the mobile rows align
+	     at the same content inset as the in-flow desktop rail. -->
 	<nav
 		id="mail-folders"
 		class="start"
 		:popover="isMobile ? 'auto' : undefined"
 		aria-label="Folders"
-		style="--set-aside-drawer-padding-inline: 0"
 	>
 		<!-- Brand band — <header> inside body-shell <nav> picks up the
 		     framework's drawer/rail header chrome (chunky band, divider,
@@ -505,9 +503,13 @@ onUnmounted(() => {
  * ──────────────────────────────────────────────────────────────────── */
 
 /* Compose row — a compact band between the brand header and folder menu.
- * Padding matches the nav-rail link padding so the button sits flush. */
+ * Zero inline padding so the full-width Compose button spans the rail's
+ * content box edge-to-edge, exactly like the folder-menu rows below it
+ * (the nav `<a>` rows fill the menu width). Keeps every rail row the same
+ * width. */
 .mail-compose-row {
-	padding: 0.5rem 0.75rem;
+	padding-block: 0.5rem;
+	padding-inline: 0;
 }
 
 /* ── Inner two-pane grid ────────────────────────────────────────────────

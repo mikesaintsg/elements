@@ -454,19 +454,13 @@ const noteText = ref('')
 	     is a popover drawer opened by the command bar left trigger.
 
 	     The `class="start"` tells the framework this is a left-side rail.
-	     `--set-aside-drawer-padding-inline: 0` removes the framework's 16px
-	     gutter so menus own their own padding.
+	     The drawer keeps the framework's default 16px gutter so mobile rows
+	     align at the same content inset as the in-flow desktop rail.
 
 	     Multi-section body children flow at their natural height (rail
 	     children don't grow), and the footer pins to the bottom via the
 	     framework's rail-footer rule. -->
-	<nav
-		id="crm-context"
-		class="start"
-		:popover="isMobile ? 'auto' : undefined"
-		aria-label="Context"
-		style="--set-aside-drawer-padding-inline: 0"
-	>
+	<nav id="crm-context" class="start" :popover="isMobile ? 'auto' : undefined" aria-label="Context">
 		<!-- Brand band — <header> inside body-shell <nav> picks up the
 		     framework's drawer/rail header chrome (chunky band, divider,
 		     pinned top). -->
@@ -910,9 +904,12 @@ const noteText = ref('')
 
 /* ── Context rail (nav) ───────────────────────────────────────────────── */
 
-/* Search row — compact band between header and pinned list. */
+/* Search row — compact band between header and pinned list. Zero inline
+ * padding so the search field spans the rail's content box edge-to-edge,
+ * matching the entry rows and the nav-rail rows in the sibling sidebars. */
 .crm-new-row {
-	padding: 0.5rem 0.75rem;
+	padding-block: 0.5rem;
+	padding-inline: 0;
 }
 
 .crm-context-search {
@@ -928,7 +925,11 @@ const noteText = ref('')
 .crm-context-list {
 	list-style: none;
 	margin: 0;
-	padding: 0 0.375rem;
+	/* No inline padding — entries span the rail content box; the per-entry
+	 * inline padding (below) provides the same 10px content inset the
+	 * framework nav-rail links use, so CRM rows align with the Dashboard /
+	 * Mail sidebar rows. */
+	padding: 0;
 	display: grid;
 	gap: 0.125rem;
 	min-block-size: 2.5rem;
@@ -952,12 +953,15 @@ const noteText = ref('')
 	opacity: 0.85;
 }
 
-/* Context entry row — flex layout for grip / icon / label+hint / badge. */
+/* Context entry row — flex layout for grip / icon / label+hint / badge.
+ * Inline padding matches the framework nav-rail link inset (--spacing * 2.5
+ * = 10px) so the entry content aligns at the same x as the nav rows in the
+ * Dashboard / Mail sidebars. */
 .crm-entry {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	padding: 0.5rem 0.5rem;
+	padding: 0.5rem calc(var(--spacing) * 2.5);
 	border-radius: 0.375rem;
 	cursor: grab;
 	user-select: none;
