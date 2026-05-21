@@ -311,7 +311,12 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 		</header>
 
 		<section aria-label="Key metrics">
-			<div class="tiles" style="--set-tiles-min: 12rem">
+			<!-- Explicit responsive columns (not auto-fit `.tiles`) — there are
+			     exactly four KPIs, so a fixed 1→2→4 ramp keeps them balanced
+			     (2×2 on tablet, a single 4-up row on desktop) instead of the
+			     3-up + 1-orphan that auto-fit lands at the rail-narrowed main
+			     width. -->
+			<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 				<article v-for="stat in stats" :key="stat.label" class="small">
 					<p class="text-sm m-0" style="color: var(--color-text-subtle)">{{ stat.label }}</p>
 					<strong class="text-3xl">{{ stat.value }}</strong>
