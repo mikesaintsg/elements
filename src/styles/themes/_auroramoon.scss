@@ -1,0 +1,61 @@
+// ============================================================================
+// auroramoon — dark-first technical surface.
+//
+// Cool zinc-neutral grayscale (hue 240) carries the room; a deep fuchsia
+// primary plus a cyan information accent supply the chromatic vocabulary.
+// Compact radius, restrained elevation — separation comes from borders and
+// spacing, the way it does in professional engineering tools (Linear,
+// Raycast, GitHub dark). Ported from the mailbox theme of the same name.
+// ============================================================================
+
+@use 'core' as *;
+
+@include core-light('auroramoon') {
+	--set-radius-factor: 0.5;
+	--set-density-factor: 1;
+
+	// Cool zinc surfaces — light mode is the secondary surface; borders lead.
+	--color-canvas: hsl(0 0% 100%);
+	--color-surface: hsl(240 4% 98%);
+	--color-surface-raised: hsl(240 4% 96%);
+
+	--color-text: hsl(240 5% 12%);
+	--color-text-strong: hsl(240 6% 5%);
+	--color-text-muted: hsl(240 4% 38%);
+	--color-text-subtle: hsl(240 4% 56%);
+
+	// Heavier borders — they carry separation when elevation is dialled back.
+	--color-border: hsl(240 5% 80%);
+	--color-border-strong: hsl(240 5% 68%);
+	--color-border-subtle: hsl(240 5% 90%);
+
+	--color-inverted: hsl(240 6% 12%);
+	--color-inverted-text: hsl(0 0% 100%);
+
+	// Fuchsia primary + cyan info — 270° apart, maximum cool-on-cool separation.
+	--color-primary: hsl(292 84% 52%);
+	--color-information: hsl(192 88% 40%);
+}
+
+@include core-dark('auroramoon') {
+	// Deeper than the default dark so fuchsia primary lights up against it.
+	--color-canvas: hsl(240 8% 8%);
+	--color-surface: hsl(240 8% 11%);
+	--color-surface-raised: hsl(240 8% 14%);
+
+	--color-text: hsl(240 4% 92%);
+	--color-text-strong: hsl(0 0% 100%);
+	--color-text-muted: hsl(240 4% 65%);
+	--color-text-subtle: hsl(240 4% 42%);
+
+	--color-border: hsl(240 8% 22%);
+	--color-border-strong: hsl(240 8% 30%);
+	--color-border-subtle: hsl(240 8% 16%);
+
+	--color-inverted: hsl(240 4% 90%);
+	--color-inverted-text: hsl(240 6% 10%);
+
+	// Promote primary to a brighter fuchsia — keeps chroma at dark tints.
+	--color-primary: hsl(292 88% 62%);
+	--color-information: hsl(192 90% 55%);
+}

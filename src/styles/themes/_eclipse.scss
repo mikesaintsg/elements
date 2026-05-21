@@ -1,0 +1,58 @@
+// ============================================================================
+// eclipse — WCAG-AAA monochrome, high-contrast, accessibility-first.
+//
+// No chromatic accents: every neutral resolves to a near-zero-saturation
+// step (hue 220) and the information role collapses to neutral (differentiated
+// by position + labeling, not hue — WCAG §1.4.1). A single high-contrast navy
+// primary. Squared corners, borders-only elevation. Useful as an a11y audit
+// baseline and for compliance UIs. Ported from the mailbox theme.
+// ============================================================================
+
+@use 'core' as *;
+
+@include core-light('eclipse') {
+	--set-radius-factor: 0.25;
+	--set-density-factor: 1.1;
+
+	--color-canvas: hsl(0 0% 100%);
+	--color-surface: hsl(220 2% 97%);
+	--color-surface-raised: hsl(220 2% 94%);
+
+	--color-text: hsl(0 0% 4%);
+	--color-text-strong: hsl(0 0% 0%);
+	--color-text-muted: hsl(0 0% 24%);
+	--color-text-subtle: hsl(0 0% 42%);
+
+	// Maximum-contrast borders — they do all the separation work.
+	--color-border: hsl(0 0% 12%);
+	--color-border-strong: hsl(0 0% 0%);
+	--color-border-subtle: hsl(0 0% 32%);
+
+	--color-inverted: hsl(0 0% 8%);
+	--color-inverted-text: hsl(0 0% 100%);
+
+	// Navy primary; information collapses to a neutral step.
+	--color-primary: hsl(225 72% 32%);
+	--color-information: hsl(220 4% 28%);
+}
+
+@include core-dark('eclipse') {
+	--color-canvas: hsl(0 0% 6%);
+	--color-surface: hsl(220 2% 10%);
+	--color-surface-raised: hsl(220 2% 14%);
+
+	--color-text: hsl(0 0% 98%);
+	--color-text-strong: hsl(0 0% 100%);
+	--color-text-muted: hsl(0 0% 78%);
+	--color-text-subtle: hsl(0 0% 56%);
+
+	--color-border: hsl(0 0% 90%);
+	--color-border-strong: hsl(0 0% 100%);
+	--color-border-subtle: hsl(0 0% 64%);
+
+	--color-inverted: hsl(0 0% 96%);
+	--color-inverted-text: hsl(0 0% 4%);
+
+	--color-primary: hsl(222 84% 66%);
+	--color-information: hsl(220 6% 72%);
+}

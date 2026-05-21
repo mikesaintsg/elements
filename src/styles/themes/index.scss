@@ -1,0 +1,14 @@
+// ============================================================================
+// Theme cores barrel — opt-in named themes.
+//
+// Each core re-tunes the base `--color-*` tokens + `--set-{radius,density}-
+// factor` knobs for a `data-theme-name="…"` scope (see `_core.scss`). Cores
+// are imported AFTER `_theme.scss` so their attribute-scoped overrides win
+// over the default `:root` theme when active. `default` is the absence of a
+// core (base `_theme.scss`), so it has no file here.
+// ============================================================================
+
+@use 'auroramoon';
+@use 'eclipse';
+@use 'honeymoon';
+@use 'lagunamoon';

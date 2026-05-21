@@ -1,0 +1,59 @@
+// ============================================================================
+// honeymoon — warm editorial.
+//
+// Stone-warm grayscale (hue 28) throughout; sienna as the primary chromatic
+// signal (warm, distinctive, reads in both modes without inversion) and amber
+// as the information/advisory accent. Sharp corners, near-flat surfaces —
+// separation comes from spacing, border, and warm value contrast. A cream-
+// paper light mode. Ported from the mailbox theme.
+// ============================================================================
+
+@use 'core' as *;
+
+@include core-light('honeymoon') {
+	--set-radius-factor: 0;
+	--set-density-factor: 1;
+
+	// Cream paper.
+	--color-canvas: hsl(28 25% 98%);
+	--color-surface: hsl(28 22% 95%);
+	--color-surface-raised: hsl(28 20% 92%);
+
+	--color-text: hsl(28 6% 14%);
+	--color-text-strong: hsl(28 8% 6%);
+	--color-text-muted: hsl(28 6% 36%);
+	--color-text-subtle: hsl(28 6% 56%);
+
+	--color-border: hsl(28 14% 84%);
+	--color-border-strong: hsl(28 14% 70%);
+	--color-border-subtle: hsl(28 18% 90%);
+
+	--color-inverted: hsl(28 8% 14%);
+	--color-inverted-text: hsl(28 25% 98%);
+
+	// Sienna primary + amber info — warm red-orange against a golden advisory.
+	--color-primary: hsl(14 64% 45%);
+	--color-information: hsl(38 92% 44%);
+}
+
+@include core-dark('honeymoon') {
+	// Warm sable — stone hue so sienna primary glows against it.
+	--color-canvas: hsl(28 8% 13%);
+	--color-surface: hsl(28 8% 16%);
+	--color-surface-raised: hsl(28 8% 19%);
+
+	--color-text: hsl(28 6% 92%);
+	--color-text-strong: hsl(0 0% 100%);
+	--color-text-muted: hsl(28 6% 66%);
+	--color-text-subtle: hsl(28 6% 42%);
+
+	--color-border: hsl(28 8% 25%);
+	--color-border-strong: hsl(28 8% 33%);
+	--color-border-subtle: hsl(28 8% 20%);
+
+	--color-inverted: hsl(28 18% 92%);
+	--color-inverted-text: hsl(28 10% 12%);
+
+	--color-primary: hsl(16 70% 56%);
+	--color-information: hsl(40 90% 58%);
+}

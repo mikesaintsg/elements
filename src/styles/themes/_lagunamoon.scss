@@ -1,0 +1,59 @@
+// ============================================================================
+// lagunamoon — soft, sand-warm, touch-comfortable.
+//
+// A cove where warm sandy shore meets calm turquoise water — that warm/cool
+// tension defines the theme. Sand-warm grayscale (hue 45) carries the surface;
+// a turquoise primary and coral information accent bring the cool/warm
+// counterpoint. Generous corners, soft diffuse elevation. Ported from the
+// mailbox theme.
+// ============================================================================
+
+@use 'core' as *;
+
+@include core-light('lagunamoon') {
+	--set-radius-factor: 1.5;
+	--set-density-factor: 1;
+
+	// Warm sand paper.
+	--color-canvas: hsl(45 25% 97%);
+	--color-surface: hsl(45 22% 94%);
+	--color-surface-raised: hsl(45 20% 91%);
+
+	--color-text: hsl(45 12% 18%);
+	--color-text-strong: hsl(45 14% 8%);
+	--color-text-muted: hsl(45 12% 38%);
+	--color-text-subtle: hsl(45 12% 58%);
+
+	--color-border: hsl(45 16% 83%);
+	--color-border-strong: hsl(45 16% 70%);
+	--color-border-subtle: hsl(45 18% 90%);
+
+	--color-inverted: hsl(45 10% 14%);
+	--color-inverted-text: hsl(45 25% 97%);
+
+	// Turquoise primary + coral info — cool/warm split-complement tension.
+	--color-primary: hsl(174 68% 36%);
+	--color-information: hsl(12 80% 56%);
+}
+
+@include core-dark('lagunamoon') {
+	// Warm sable leaning into sand hue so turquoise glows like ocean light.
+	--color-canvas: hsl(45 10% 12%);
+	--color-surface: hsl(45 10% 15%);
+	--color-surface-raised: hsl(45 10% 18%);
+
+	--color-text: hsl(45 12% 92%);
+	--color-text-strong: hsl(0 0% 100%);
+	--color-text-muted: hsl(45 12% 66%);
+	--color-text-subtle: hsl(45 12% 42%);
+
+	--color-border: hsl(45 10% 24%);
+	--color-border-strong: hsl(45 10% 32%);
+	--color-border-subtle: hsl(45 10% 19%);
+
+	--color-inverted: hsl(45 18% 92%);
+	--color-inverted-text: hsl(45 12% 11%);
+
+	--color-primary: hsl(174 64% 50%);
+	--color-information: hsl(14 85% 64%);
+}
