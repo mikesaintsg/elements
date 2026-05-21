@@ -170,7 +170,7 @@ console.log(fibonacci(10)) // 55</code></pre>
 							<code>--color-border</code>
 						</td>
 						<td>
-							<code>slate-200</code>
+							<code>slate-300</code>
 						</td>
 						<td>
 							<code>slate-800</code>

@@ -438,6 +438,14 @@ const reset = (): void => {
 			<code>sort.auto: false</code> when the consumer is driving a server-paged refetch on the
 			<code>elements:table:sort</code> event.
 		</p>
+		<p>
+			<strong>Custom sort keys.</strong> Sorting compares each cell's <code>textContent</code> by
+			default. To sort by a value that differs from what's displayed — a formatted currency cell, a
+			relative date, a status rank — put the comparison value in a
+			<code>data-sort-value</code> attribute on the <code>&lt;td&gt;</code> and it wins over the
+			text. So <code>&lt;td data-sort-value="1200"&gt;$1,200.00&lt;/td&gt;</code> sorts by magnitude
+			instead of lexically (where <code>"$1,200.00"</code> would fall before <code>"$24.00"</code>).
+		</p>
 		<table ref="sortRef" class="striped max-w-xl">
 			<tbody>
 				<tr data-id="s1">

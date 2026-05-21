@@ -309,7 +309,7 @@ const toggleExclusive = (id: string): void => {
 				</tr>
 				<tr>
 					<td><code>--color-border</code></td>
-					<td><code>slate-200</code></td>
+					<td><code>slate-300</code></td>
 					<td><code>slate-800</code></td>
 				</tr>
 			</tbody>

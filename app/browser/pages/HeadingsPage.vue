@@ -83,7 +83,10 @@ import {
 			<dt><code>&lt;h5&gt;</code></dt>
 			<dd><code>1.125rem</code> (18px) — small group title.</dd>
 			<dt><code>&lt;h6&gt;</code></dt>
-			<dd><code>1rem</code> (16px) — body-sized smallest heading; useful for sidebar labels.</dd>
+			<dd>
+				<code>1rem</code> (16px) — the smallest heading, one notch above the 14px body base; useful
+				for sidebar labels.
+			</dd>
 		</dl>
 		<div class="stack">
 			<h1>Heading level 1 — page title</h1>

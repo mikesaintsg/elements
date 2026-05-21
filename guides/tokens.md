@@ -300,7 +300,7 @@ Seven variants registered via `@theme` in [`_theme.scss`](../src/styles/_theme.s
 
 ```scss
 @theme {
-	--color-primary: var(--color-blue-600);
+	--color-primary: oklch(48% 0.255 264); // tuned royal cobalt
 	--color-secondary: var(--color-slate-600);
 	--color-tertiary: var(--color-violet-600);
 	--color-success: var(--color-green-700);
@@ -310,16 +310,16 @@ Seven variants registered via `@theme` in [`_theme.scss`](../src/styles/_theme.s
 }
 ```
 
-Every variant references Tailwind's own oklch palette via `var(--color-{hue}-{step})`. This is the framework's zero-gap with Tailwind: consumers who customise Tailwind's palette automatically retune the framework variants, and there is no HSL or hand-tuned color value anywhere in the framework outside the `@theme` block.
+`primary` is a hand-tuned royal cobalt (`oklch(48% 0.255 264)`) — Tailwind's `blue-600` read as a washed, generic mid-blue, so the framework pins a deeper, more saturated identity directly. The other six variants reference Tailwind's own oklch palette via `var(--color-{hue}-{step})`, keeping the zero-gap-with-Tailwind story for those: customise Tailwind's palette and they retune automatically. Consumers rebrand `primary` by overriding `--color-primary` at `:root`.
 
-**Variant step selection — the all-variants-take-white-text contract.** Four variants sit on the `-700` step (`success`, `warning`, `danger`, `information`) and three on `-600` (`primary`, `secondary`, `tertiary`). Every variant clears WCAG AA contrast for **white text** on its fill — that's the single rule that picks the step:
+**Variant step selection — the all-variants-take-white-text contract.** Four variants sit on the `-700` step (`success`, `warning`, `danger`, `information`), two on `-600` (`secondary`, `tertiary`), and `primary` on its tuned cobalt. Every variant clears WCAG AA contrast for **white text** on its fill — that's the single rule that picks the value:
 
-- `primary` blue-600, `secondary` slate-600, `tertiary` violet-600 — `-600` already clears AA with white text (the hue's natural luminance + chroma stays low enough).
+- `primary` cobalt (`oklch 0.48`), `secondary` slate-600, `tertiary` violet-600 — already clear AA with white text (low enough luminance + chroma).
 - `success` green-700, `warning` amber-700, `danger` red-700, `information` sky-700 — bumped one step because their `-600` siblings are too bright (white-on-green-600 = 3.30, white-on-amber-500 = 1.80, white-on-red-600 = 4.6 but flagged as "fire-engine intense", white-on-sky-600 = 4.02). The `-700` step keeps the hue + identity but pulls luminance + chroma into the "comfortable, calm" range (M3 error-40 / Atlassian danger-bold / Polaris critical all sit in the same territory).
 
 Tailwind v4 tree-shakes palette tokens not referenced by an emitted utility class — the four `-700` steps are re-pinned explicitly in `@theme` so they survive the bundle.
 
-For each variant, a `{bg-subtle, text-emphasis, border-subtle}` triplet is declared on `:root` (outside `@theme` so they can re-resolve under `[data-theme="dark"]`):
+For each variant, a `{bg-subtle, text-emphasis, border-subtle}` triplet is declared on `:root` (outside `@theme` so they can re-resolve under `[data-mode="dark"]`):
 
 ```scss
 --color-primary-bg-subtle: color-mix(in oklab, var(--color-primary) 12%, var(--color-canvas));
@@ -343,9 +343,47 @@ Naming follows Material Design's `on-X` convention — the suffix names the SURF
 
 `text-emphasis` and `on-canvas` are decoupled by name even though their formulas match today: `text-emphasis` is "text emphasized on `bg-subtle`" (variant-tinted bg), `on-canvas` is "text safe on `--color-canvas`" (no bg tint). Canvas-context can retune independently of bg-subtle-context if a future theme needs divergent shades. Bare variant anchors (`elements/_a.scss`), bare variant labels (`elements/_label.scss`), header/footer/menu-current foreground hover states, and any inline variant text consume the `on-canvas` tier through `--set-variant-on-canvas-color`.
 
-**Dark-mode tunes** live under `[data-theme="dark"]` in `_theme.scss`. Surface, text, and border tokens flip from the slate `50`/`100` light scale to the slate `900`/`950` dark scale; variant identities stay constant (Tailwind's `-600` step contrasts well against both extremes); subtle triplets re-derive in dark mode (bg-subtle against `--color-canvas`, border-subtle against `--color-surface`) with bumped mix percentages so the tint reads cleanly against the deep canvas.
+**Dark-mode tunes** live under `[data-mode="dark"]` in `_theme.scss`. Surfaces flip from white/slate-50 to a lifted low-chroma **charcoal** ramp (`oklch ~0.21 / 0.235 / 0.265` for canvas / surface / surface-raised — a softer GitHub-style `#161b22` rather than near-black slate-950, with a tight per-tier lift); borders become visible cool-charcoal rules; and `primary` remaps to a brighter sky (`oklch(70% 0.15 233)`) so the accent pops against the dark canvas instead of sinking into it (the other variant identities stay constant). Subtle triplets re-derive in dark mode (bg-subtle against `--color-canvas`, border-subtle against `--color-surface`) with bumped mix percentages so the tint reads cleanly against the deep canvas.
 
-The framework uses explicit `[data-theme]` attribute overrides rather than `light-dark()` because Chromium currently fails to re-resolve `light-dark()` values stored in custom properties against a child element's `color-scheme`.
+The light/dark MODE axis is the `data-mode` attribute; the orthogonal palette/core axis is `data-theme` (see [Theme cores](#theme-cores)). The framework uses explicit `[data-mode]` attribute overrides rather than `light-dark()` because Chromium currently fails to re-resolve `light-dark()` values stored in custom properties against a child element's `color-scheme`.
+
+### Theme cores
+
+The `data-mode` light/dark axis is paired with an orthogonal palette/identity axis: **theme cores**, set via `data-theme="…"` on `<html>`. Each core ships in [`src/styles/themes/`](../src/styles/themes/) and re-tunes the base `--color-*` tokens plus the `--set-radius-factor` / `--set-density-factor` knobs for its scope; the `color-mix` derivations recompute automatically. `data-theme` absent ⇒ the base theme. Built-in cores:
+
+| Core         | Identity                                                                        |
+| ------------ | ------------------------------------------------------------------------------- |
+| `auroramoon` | Dark-first technical — cool-zinc neutrals, fuchsia primary, cyan info           |
+| `eclipse`    | WCAG-AAA monochrome — high-contrast navy, no chromatic accents, squared corners |
+| `honeymoon`  | Warm editorial — stone neutrals, sienna primary, amber info, sharp corners      |
+| `lagunamoon` | Soft & sandy — warm-sand neutrals, turquoise primary, coral info, rounded       |
+
+Author a custom core with the `core-light()` / `core-dark()` mixins in [`themes/_core.scss`](../src/styles/themes/_core.scss). The `useTheme()` composable drives the axis via `name` + `select(name)`; see [composables](./composables.md#usetheme).
+
+### Base typography
+
+Tailwind preflight leaves the UA 16 px on `<body>`; the framework ships a denser default and exposes it as overridable tokens (applied in `elements/_body.scss`). Note the size is a **`<body>`** size — `rem` stays anchored to the 16 px `<html>` root, so spacing / radius / heading scales keep their absolute sizes; only inherited text shifts.
+
+```scss
+--set-font-size-base: 0.875rem; // 14px — the dense SaaS-desktop default
+--set-line-height-base: 1.5;
+--set-font-family-base: system-ui, -apple-system, 'Segoe UI', roboto, …;
+```
+
+A consumer who wants the looser 16 px feel sets `:root { --set-font-size-base: 1rem }`.
+
+### Interaction states
+
+Hover / active (press) feedback is token-driven so a consumer retunes the whole library's "click feel" at `:root`. Two families: FILLED surfaces (buttons) shift their fill toward `--color-text-strong`; QUIET surfaces (nav rows, TOC rows, list / dropdown rows) lay a `currentColor` tint.
+
+```scss
+--set-state-hover-mix: 88%; // filled: % of original fill kept on hover (lower = darker press)
+--set-state-active-mix: 78%; // filled: on press
+--set-state-hover-tint: 8%; // quiet: currentColor tint opacity on hover
+--set-state-active-tint: 14%; // quiet: on press
+```
+
+A single generic rule per surface family consumes these (no per-variant hover code), and the radius scale (`--radius-{sm…3xl}`) is multiplied by `--set-radius-factor` at the root so a theme core's roundness retunes every corner at once.
 
 ### Element-scoped tokens
 

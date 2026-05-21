@@ -50,6 +50,15 @@
 			framework's default size + line-height. Drop any of these elements into a fresh document and
 			they'll render with the same rhythm — that's the baseline hydration contract.
 		</p>
+		<p>
+			<strong>Base size.</strong> The framework ships a <code>0.875rem</code> (14px) body size — the
+			dense SaaS-desktop default — via <code>--set-font-size-base</code> (with
+			<code>--set-line-height-base</code> 1.5 and <code>--set-font-family-base</code>, applied on
+			<code>&lt;body&gt;</code>). Crucially this is a <em>body</em> size:
+			<code>&lt;html&gt;</code> stays at the UA 16px, so <code>rem</code>-based spacing, radius, and
+			the heading scale keep their absolute sizes — only inherited text drops to 14px. Set
+			<code>:root {{ '{' }} --set-font-size-base: 1rem {{ '}' }}</code> for the looser 16px feel.
+		</p>
 	</section>
 
 	<section id="typography-paragraph">
