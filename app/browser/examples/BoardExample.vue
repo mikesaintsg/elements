@@ -9,12 +9,15 @@
  * no manual DOM moves. Cards are bare <article>s with .badge / .avatar
  * atoms. Columns scroll horizontally on narrow viewports (mobile swipe).
  *
- * Each column is its own drag list (intra-column reordering), so the four
- * useDrag instances stay independent — the cleanest demonstration of the
- * composable's list contract.
+ * Each column is its own useDrag list, so intra-column reordering is
+ * automatic. Cross-column moves are coordinated through the public drag
+ * events (start / drop / end): the dragged cards are captured on start and,
+ * on a drop in a different column, spliced out of the source list and into
+ * the target — the framework's documented cross-list recipe.
  */
 import { ref } from 'vue'
-import { useDrag } from '../../../src/browser'
+import type { UseDragReturn } from '../../../src/browser'
+import { isDragDropDetail, isDragStartDetail, useDrag } from '../../../src/browser'
 
 interface Card {
 	readonly id: string
@@ -111,11 +114,6 @@ const progressHost = ref<HTMLElement | null>(null)
 const reviewHost = ref<HTMLElement | null>(null)
 const doneHost = ref<HTMLElement | null>(null)
 
-useDrag<Card>(backlogHost, { list: backlog, axis: 'vertical' })
-useDrag<Card>(progressHost, { list: progress, axis: 'vertical' })
-useDrag<Card>(reviewHost, { list: review, axis: 'vertical' })
-useDrag<Card>(doneHost, { list: done, axis: 'vertical' })
-
 interface Column {
 	readonly title: string
 	readonly variant: string
@@ -128,6 +126,82 @@ const columns: readonly Column[] = [
 	{ title: 'Review', variant: 'warning', list: review, host: reviewHost },
 	{ title: 'Done', variant: 'success', list: done, host: doneHost },
 ]
+
+// Each column is its own useDrag list, so intra-column reordering is
+// automatic (the composable splices the column's list on drop). Moves
+// BETWEEN columns are coordinated through the public drag events: capture
+// the dragged cards on `start`, and on `drop` in a *different* column
+// splice them out of the source list and into the target at the drop
+// position. This is the framework's documented cross-list recipe.
+const drags: (UseDragReturn | null)[] = columns.map(() => null)
+
+interface Move {
+	readonly column: number
+	readonly indices: readonly number[]
+	readonly cards: readonly Card[]
+}
+let pending: Move | null = null
+
+const onStart = (column: number, event: CustomEvent): void => {
+	if (!isDragStartDetail(event.detail)) return
+	const indices = [...event.detail.indices].sort((a, b) => a - b)
+	const list = columns[column]?.list
+	if (!list) return
+	const cards = indices.map((i) => list.value[i]).filter((card): card is Card => Boolean(card))
+	pending = { column, indices, cards }
+}
+
+const onDrop = (column: number, event: CustomEvent): void => {
+	const move = pending
+	if (!move || column === move.column) return // same column → useDrag already reordered
+	if (!isDragDropDetail(event.detail)) return
+	const sourceList = columns[move.column]?.list
+	const destList = columns[column]?.list
+	if (!sourceList || !destList) return
+	// Remove from source high-index-first so earlier indices stay valid.
+	for (const i of [...move.indices].sort((a, b) => b - a)) sourceList.value.splice(i, 1)
+	const { index, position } = event.detail
+	const insertAt =
+		index !== null && position !== null && position !== 'into'
+			? position === 'after'
+				? index + 1
+				: index
+			: destList.value.length
+	destList.value.splice(insertAt, 0, ...move.cards)
+	const sourceDrag = drags[move.column]
+	const targetDrag = drags[column]
+	window.setTimeout(() => {
+		sourceDrag?.clear()
+		targetDrag?.clear()
+	}, 0)
+	pending = null
+}
+
+const onEnd = (): void => {
+	pending = null
+}
+
+columns.forEach((col, index) => {
+	drags[index] = useDrag<Card>(col.host, {
+		list: col.list,
+		axis: 'vertical',
+		on: {
+			start: (event) => onStart(index, event),
+			drop: (event) => onDrop(index, event),
+			end: onEnd,
+		},
+	})
+})
+
+// Function-ref setter: inside a v-for, binding `:ref` to a ref object does
+// not populate it — Vue needs a function ref per iteration. Each column's
+// <ul> writes its element into the column's own host ref, which is what
+// useDrag watches.
+const setHost =
+	(column: Column) =>
+	(el: unknown): void => {
+		column.host.value = el instanceof HTMLElement ? el : null
+	}
 </script>
 
 <template>
@@ -163,7 +237,7 @@ const columns: readonly Column[] = [
 				</header>
 
 				<ul
-					:ref="column.host"
+					:ref="setHost(column)"
 					class="flex flex-col gap-2 list-none lg:overflow-y-auto"
 					:aria-label="`${column.title} cards`"
 				>
