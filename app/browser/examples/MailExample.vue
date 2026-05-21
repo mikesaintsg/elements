@@ -502,14 +502,13 @@ onUnmounted(() => {
  * Only the truly app-specific bits remain here.
  * ──────────────────────────────────────────────────────────────────── */
 
-/* Compose row — a compact band between the brand header and folder menu.
- * Zero inline padding so the full-width Compose button spans the rail's
- * content box edge-to-edge, exactly like the folder-menu rows below it
- * (the nav `<a>` rows fill the menu width). Keeps every rail row the same
- * width. */
+/* Compose row — a transparent wrapper between the brand header and folder
+ * menu. No padding: the full-width Compose button spans the rail content box
+ * edge-to-edge (like the folder-menu rows) and the rail's own `gap` provides
+ * the vertical spacing — adding padding-block here would double the rail
+ * rhythm. */
 .mail-compose-row {
-	padding-block: 0.5rem;
-	padding-inline: 0;
+	padding: 0;
 }
 
 /* ── Inner two-pane grid ────────────────────────────────────────────────

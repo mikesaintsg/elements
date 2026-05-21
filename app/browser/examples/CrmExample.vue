@@ -904,12 +904,12 @@ const noteText = ref('')
 
 /* ── Context rail (nav) ───────────────────────────────────────────────── */
 
-/* Search row — compact band between header and pinned list. Zero inline
- * padding so the search field spans the rail's content box edge-to-edge,
- * matching the entry rows and the nav-rail rows in the sibling sidebars. */
+/* Search row — a transparent wrapper between header and pinned list. No
+ * padding: the search field spans the rail content box edge-to-edge and the
+ * rail's own `gap` provides the vertical spacing (padding-block here would
+ * double the rail rhythm). */
 .crm-new-row {
-	padding-block: 0.5rem;
-	padding-inline: 0;
+	padding: 0;
 }
 
 .crm-context-search {
