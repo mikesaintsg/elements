@@ -85,10 +85,7 @@ const features: readonly Feature[] = [
 <template>
 	<main>
 		<!-- Top nav -->
-		<nav
-			aria-label="Primary"
-			class="flex items-center justify-between gap-4 max-w-6xl mx-auto w-full"
-		>
+		<nav aria-label="Primary" class="flex items-center justify-between gap-4 w-full">
 			<a href="#" class="flex items-center gap-2 no-underline">
 				<span class="avatar square primary" aria-hidden="true">E</span>
 				<strong>Elements</strong>
@@ -105,7 +102,7 @@ const features: readonly Feature[] = [
 		</nav>
 
 		<!-- Hero -->
-		<section class="stack items-center text-center max-w-3xl mx-auto w-full">
+		<section class="stack items-center text-center w-full">
 			<span class="badge information pill">New · v2.4</span>
 			<h1 class="text-balance">Build interfaces with the grain of the web</h1>
 			<p class="text-lg" style="color: var(--color-text-subtle)">
@@ -139,7 +136,7 @@ const features: readonly Feature[] = [
 				<h2>Everything you need, nothing you don't</h2>
 				<p>Three ideas do all the work.</p>
 			</hgroup>
-			<div class="tiles max-w-5xl mx-auto w-full" style="--set-tiles-min: 14rem">
+			<div class="tiles w-full" style="--set-tiles-min: 14rem">
 				<article v-for="feature in features" :key="feature.title">
 					<span class="avatar square" :class="feature.variant" aria-hidden="true">
 						<i class="icon" :style="`--icon: var(--set-icon-${feature.icon})`"></i>
@@ -156,7 +153,7 @@ const features: readonly Feature[] = [
 				<h2>Simple, honest pricing</h2>
 				<p>Start free. Upgrade when you're ready.</p>
 			</hgroup>
-			<div class="tiles max-w-5xl mx-auto w-full" style="--set-tiles-min: 18rem">
+			<div class="tiles w-full" style="--set-tiles-min: 18rem">
 				<article v-for="plan in plans" :key="plan.name" :class="plan.featured ? 'primary' : ''">
 					<header>
 						<div class="cluster items-center justify-between">
@@ -197,7 +194,7 @@ const features: readonly Feature[] = [
 		</section>
 
 		<!-- Testimonial -->
-		<section class="max-w-3xl mx-auto w-full">
+		<section class="w-full">
 			<article class="information subtle">
 				<blockquote class="m-0">
 					<p>
@@ -218,7 +215,7 @@ const features: readonly Feature[] = [
 		<!-- Final CTA. Neutral (non-variant) card so the two explicitly-styled
 		     CTAs don't inherit stray variant border/colour tokens. -->
 		<section class="stack items-center text-center">
-			<article class="max-w-3xl w-full items-center text-center">
+			<article class="w-full items-center text-center">
 				<h2>Ready to ship faster?</h2>
 				<p>Join thousands of teams building with semantic HTML.</p>
 				<div class="cluster justify-center items-center">
@@ -230,7 +227,7 @@ const features: readonly Feature[] = [
 
 		<!-- In-flow site footer (NOT a body-shell footer). -->
 		<footer class="flex flex-col gap-6">
-			<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-5xl mx-auto w-full">
+			<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
 				<div class="stack leading-tight">
 					<span class="avatar square primary" aria-hidden="true">E</span>
 					<small style="color: var(--color-text-subtle)">Designed with the grain of the web.</small>
@@ -255,7 +252,7 @@ const features: readonly Feature[] = [
 				</div>
 			</div>
 			<hr />
-			<div class="cluster items-center justify-between max-w-5xl mx-auto w-full">
+			<div class="cluster items-center justify-between w-full">
 				<small style="color: var(--color-text-subtle)">© 2026 Elements. All rights reserved.</small>
 				<div class="cluster">
 					<span class="tag">v2.4.0</span>

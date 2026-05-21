@@ -35,7 +35,7 @@ const related = [
 
 <template>
 	<main>
-		<div class="grid lg:grid-cols-[minmax(0,1fr)_18rem] gap-x-12 gap-y-10 max-w-6xl mx-auto w-full">
+		<div class="grid lg:grid-cols-[minmax(0,1fr)_18rem] gap-x-12 gap-y-10 w-full">
 			<!-- ── Article column ──────────────────────────────────────────── -->
 			<article class="flush">
 				<hgroup>

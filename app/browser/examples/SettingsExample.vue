@@ -131,7 +131,7 @@ const sessions: readonly Session[] = [
 	</nav>
 
 	<main>
-		<div class="stack w-full max-w-3xl mx-auto">
+		<div class="stack w-full">
 			<hgroup>
 				<p class="text-xs uppercase tracking-wide m-0" style="color: var(--color-text-subtle)">
 					Account

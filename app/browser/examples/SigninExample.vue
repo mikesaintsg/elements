@@ -50,7 +50,7 @@ const sendReset = (): void => {
 
 <template>
 	<main>
-		<div class="grid lg:grid-cols-2 gap-8 w-full max-w-5xl mx-auto my-auto items-center">
+		<div class="grid lg:grid-cols-2 gap-8 w-full my-auto items-center">
 			<!-- Brand panel — solid identity surface, hidden on mobile. -->
 			<article class="primary filled hidden lg:flex">
 				<header>
@@ -78,7 +78,7 @@ const sendReset = (): void => {
 			</article>
 
 			<!-- Sign-in card. -->
-			<div class="w-full max-w-sm mx-auto flex flex-col gap-6">
+			<div class="w-full flex flex-col gap-6">
 				<hgroup>
 					<h1>Welcome back</h1>
 					<p>Sign in to your Elements account.</p>
