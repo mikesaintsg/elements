@@ -195,14 +195,15 @@ const features: readonly Feature[] = [
 			</article>
 		</section>
 
-		<!-- Final CTA -->
+		<!-- Final CTA. Neutral (non-variant) card so the two explicitly-styled
+		     CTAs don't inherit stray variant border/colour tokens. -->
 		<section class="stack items-center text-center">
-			<article class="primary subtle max-w-3xl w-full items-center text-center">
+			<article class="max-w-3xl w-full items-center text-center">
 				<h2>Ready to ship faster?</h2>
 				<p>Join thousands of teams building with semantic HTML.</p>
 				<div class="cluster justify-center items-center">
 					<a href="#" class="primary filled large">Get started free</a>
-					<a href="#">Read the docs →</a>
+					<a href="#" class="primary subtle large">Read the docs</a>
 				</div>
 			</article>
 		</section>

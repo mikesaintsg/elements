@@ -1035,3 +1035,20 @@
 .showcase-sidebar-scroll a[href='#/use-theme-button'] .showcase-nav-icon {
 	--icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='5' width='12' height='6' rx='3'/%3E%3Ccircle cx='10.5' cy='8' r='2'/%3E%3Cpath d='M3.5 8h3'/%3E%3C/svg%3E");
 }
+
+/* Examples group — one glyph per layout pillar. */
+.showcase-sidebar-scroll a[href='#/example-console'] .showcase-nav-icon {
+	--icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2.5' width='12' height='11' rx='1.5'/%3E%3Cpath d='M6 2.5v11'/%3E%3Cpath d='M8.5 6h3.5M8.5 9h3.5'/%3E%3C/svg%3E");
+}
+.showcase-sidebar-scroll a[href='#/example-settings'] .showcase-nav-icon {
+	--icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 4.5h5M11 4.5h3'/%3E%3Ccircle cx='9' cy='4.5' r='1.6'/%3E%3Cpath d='M2 11.5h3M9 11.5h5'/%3E%3Ccircle cx='7' cy='11.5' r='1.6'/%3E%3C/svg%3E");
+}
+.showcase-sidebar-scroll a[href='#/example-editorial'] .showcase-nav-icon {
+	--icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 2h5l3 3v9H4z'/%3E%3Cpath d='M9 2v3h3'/%3E%3Cpath d='M6 8.5h4M6 11h4'/%3E%3C/svg%3E");
+}
+.showcase-sidebar-scroll a[href='#/example-pricing'] .showcase-nav-icon {
+	--icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2H3v5l7 7 4-4-7-7z'/%3E%3Ccircle cx='5.5' cy='4.5' r='.9'/%3E%3C/svg%3E");
+}
+.showcase-sidebar-scroll a[href='#/example-signin'] .showcase-nav-icon {
+	--icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='5.5' cy='8' r='2.8'/%3E%3Cpath d='M8 8h6M12 8v2.5M14 8v2'/%3E%3C/svg%3E");
+}

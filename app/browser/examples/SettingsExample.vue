@@ -2,21 +2,14 @@
 /**
  * SettingsExample — the framework's forms pillar.
  *
- * One <form> (useForm) wraps a stack of <article> section cards. The
- * app-bar "Save" triggers `report()`; submit-gated validation chrome
- * (danger borders on invalid, success tint on valid, label re-tint)
- * comes entirely from `form[data-form-validated]` — no per-field error
- * wiring. Every control is a bare element + modifier:
- *
- *   <fieldset>/<legend>   grouped controls
- *   <input>               text / email / url / range / color / file
- *   role="switch"         toggle checkboxes
- *   <input type=radio>    segmented choices
- *   <select>              language / timezone
- *   <textarea>            bio
- *
- * Renders just <header> + <main> (no rails) so the form is the whole
- * stage. On submit a success <aside role="status"> banner shifts in.
+ * A width-filling settings screen: a sticky section-nav beside one
+ * useForm-validated <form> of <article> section cards. The app-bar
+ * "Save" triggers requestSubmit; submit-gated validation chrome
+ * (danger/valid borders, label re-tint) is pure framework CSS. Every
+ * control is a bare element + modifier — fieldset/legend, text/email/
+ * url/range/color/file inputs, role="switch" toggles, radios, selects,
+ * textarea — plus a sessions <table> in the Security card. The grid
+ * collapses to a single column on mobile (the nav hides).
  */
 import { ref, useTemplateRef } from 'vue'
 import { useForm } from '../../../src/browser'
@@ -33,10 +26,39 @@ const form = useForm(formRef, {
 })
 const save = (): void => {
 	saved.value = false
-	// requestSubmit() runs interactive validation first: invalid → blocked +
-	// chrome lights up; valid → fires the `submit` handler above.
 	form.submit()
 }
+
+const sections = [
+	{ id: 'settings-profile', label: 'Profile' },
+	{ id: 'settings-account', label: 'Account' },
+	{ id: 'settings-notifications', label: 'Notifications' },
+	{ id: 'settings-appearance', label: 'Appearance' },
+	{ id: 'settings-security', label: 'Security' },
+	{ id: 'settings-danger', label: 'Danger zone' },
+]
+
+interface Session {
+	readonly device: string
+	readonly location: string
+	readonly active: string
+	readonly current: boolean
+}
+const sessions: readonly Session[] = [
+	{
+		device: 'MacBook Pro · Chrome',
+		location: 'San Francisco, US',
+		active: 'Active now',
+		current: true,
+	},
+	{
+		device: 'iPhone 15 · Safari',
+		location: 'San Francisco, US',
+		active: '2 hours ago',
+		current: false,
+	},
+	{ device: 'Windows · Edge', location: 'Austin, US', active: '3 days ago', current: false },
+]
 </script>
 
 <template>
@@ -49,226 +71,296 @@ const save = (): void => {
 	</header>
 
 	<main>
-		<div class="stack w-full max-w-2xl mx-auto">
-			<hgroup>
-				<p class="text-xs uppercase tracking-wide m-0" style="color: var(--color-text-subtle)">
-					Account
-				</p>
-				<h1>Settings</h1>
-				<p>Manage your profile, sign-in, and notification preferences.</p>
-			</hgroup>
+		<div class="grid lg:grid-cols-[13rem_minmax(0,1fr)] gap-8 max-w-5xl mx-auto w-full">
+			<!-- ── Section nav (sticky, desktop only) ──────────────────────── -->
+			<nav
+				aria-label="Settings sections"
+				class="hidden lg:flex flex-col lg:sticky lg:top-0 lg:self-start"
+			>
+				<menu class="flex flex-col">
+					<li v-for="s in sections" :key="s.id">
+						<a :href="`#${s.id}`">{{ s.label }}</a>
+					</li>
+				</menu>
+			</nav>
 
-			<aside v-if="saved" role="status" class="success">
-				<p><strong>Saved.</strong> Your preferences have been updated.</p>
-			</aside>
+			<!-- ── Form column ─────────────────────────────────────────────── -->
+			<div class="stack w-full">
+				<hgroup>
+					<p class="text-xs uppercase tracking-wide m-0" style="color: var(--color-text-subtle)">
+						Account
+					</p>
+					<h1>Settings</h1>
+					<p>Manage your profile, sign-in, and notification preferences.</p>
+				</hgroup>
 
-			<form ref="formRef" class="stack">
-				<!-- Profile -->
-				<article>
-					<header>
-						<hgroup>
-							<h2>Profile</h2>
-							<p>This is how others will see you.</p>
-						</hgroup>
-					</header>
+				<aside v-if="saved" role="status" class="success">
+					<p><strong>Saved.</strong> Your preferences have been updated.</p>
+				</aside>
 
-					<div class="cluster items-center">
-						<span class="avatar large" aria-hidden="true">MS</span>
+				<form ref="formRef" class="stack">
+					<!-- Profile -->
+					<article id="settings-profile">
+						<header>
+							<hgroup>
+								<h2>Profile</h2>
+								<p>This is how others will see you.</p>
+							</hgroup>
+						</header>
+
+						<div class="cluster items-center">
+							<span class="avatar large" aria-hidden="true">MS</span>
+							<label>
+								<span class="sr-only">Profile photo</span>
+								<input type="file" accept="image/*" />
+							</label>
+						</div>
+
+						<div class="grid sm:grid-cols-2 gap-4">
+							<label>
+								Display name
+								<input type="text" name="name" value="Mike Saint" required autocomplete="name" />
+							</label>
+							<label>
+								Pronouns
+								<input type="text" name="pronouns" value="he/him" />
+							</label>
+						</div>
+
 						<label>
-							<span class="sr-only">Profile photo</span>
-							<input type="file" accept="image/*" />
-						</label>
-					</div>
-
-					<label>
-						Display name
-						<input type="text" name="name" value="Mike Saint" required autocomplete="name" />
-					</label>
-
-					<label>
-						Bio
-						<textarea name="bio" rows="3" maxlength="160" placeholder="A short line about you">
+							Bio
+							<textarea name="bio" rows="3" maxlength="160" placeholder="A short line about you">
 Designer, builder, occasional typographer.</textarea
-						>
-					</label>
-
-					<label>
-						Website
-						<input
-							type="url"
-							name="website"
-							placeholder="https://example.com"
-							value="https://acme.dev"
-						/>
-					</label>
-				</article>
-
-				<!-- Account — the validated section. -->
-				<article>
-					<header>
-						<hgroup>
-							<h2>Account</h2>
-							<p>Used to sign in and for account recovery.</p>
-						</hgroup>
-					</header>
-
-					<label>
-						Email
-						<input type="email" name="email" value="mike@acme.dev" required autocomplete="email" />
-						<small style="color: var(--color-text-subtle)"
-							>We'll send a confirmation if this changes.</small
-						>
-					</label>
-
-					<div class="grid sm:grid-cols-2 gap-4">
-						<label>
-							Username
-							<input
-								type="text"
-								name="username"
-								value="mikesaint"
-								required
-								minlength="3"
-								pattern="[a-z0-9_]+"
-								autocomplete="username"
-							/>
-							<small style="color: var(--color-text-subtle)"
-								>Lowercase letters, numbers, underscore.</small
 							>
 						</label>
+
 						<label>
-							Language
-							<select name="language">
-								<option>English</option>
-								<option>Español</option>
-								<option>Français</option>
-								<option>Deutsch</option>
-								<option>日本語</option>
+							Website
+							<input
+								type="url"
+								name="website"
+								placeholder="https://example.com"
+								value="https://acme.dev"
+							/>
+						</label>
+					</article>
+
+					<!-- Account — the validated section. -->
+					<article id="settings-account">
+						<header>
+							<hgroup>
+								<h2>Account</h2>
+								<p>Used to sign in and for account recovery.</p>
+							</hgroup>
+						</header>
+
+						<label>
+							Email
+							<input
+								type="email"
+								name="email"
+								value="mike@acme.dev"
+								required
+								autocomplete="email"
+							/>
+							<small style="color: var(--color-text-subtle)"
+								>We'll send a confirmation if this changes.</small
+							>
+						</label>
+
+						<div class="grid sm:grid-cols-2 gap-4">
+							<label>
+								Username
+								<input
+									type="text"
+									name="username"
+									value="mikesaint"
+									required
+									minlength="3"
+									pattern="[a-z0-9_]+"
+									autocomplete="username"
+								/>
+								<small style="color: var(--color-text-subtle)"
+									>Lowercase letters, numbers, underscore.</small
+								>
+							</label>
+							<label>
+								Language
+								<select name="language">
+									<option>English</option>
+									<option>Español</option>
+									<option>Français</option>
+									<option>Deutsch</option>
+									<option>日本語</option>
+								</select>
+							</label>
+						</div>
+
+						<label>
+							Timezone
+							<select name="timezone">
+								<option>UTC</option>
+								<option>America/New_York</option>
+								<option selected>America/Los_Angeles</option>
+								<option>Europe/London</option>
+								<option>Asia/Tokyo</option>
 							</select>
 						</label>
-					</div>
+					</article>
 
-					<label>
-						Timezone
-						<select name="timezone">
-							<option>UTC</option>
-							<option>America/New_York</option>
-							<option selected>America/Los_Angeles</option>
-							<option>Europe/London</option>
-							<option>Asia/Tokyo</option>
-						</select>
-					</label>
-				</article>
+					<!-- Notifications — switches + a radio group inside a fieldset. -->
+					<article id="settings-notifications">
+						<header>
+							<hgroup>
+								<h2>Notifications</h2>
+								<p>Choose what reaches your inbox.</p>
+							</hgroup>
+						</header>
 
-				<!-- Notifications — switches + a radio group inside a fieldset. -->
-				<article>
-					<header>
+						<fieldset>
+							<legend>Channels</legend>
+							<div class="stack">
+								<div class="cluster items-center justify-between flex-nowrap">
+									<label for="sw-news">Product news &amp; tips</label>
+									<input id="sw-news" type="checkbox" role="switch" name="news" checked />
+								</div>
+								<div class="cluster items-center justify-between flex-nowrap">
+									<label for="sw-digest">Weekly activity digest</label>
+									<input id="sw-digest" type="checkbox" role="switch" name="digest" checked />
+								</div>
+								<div class="cluster items-center justify-between flex-nowrap">
+									<label for="sw-security">Security alerts</label>
+									<input
+										id="sw-security"
+										type="checkbox"
+										role="switch"
+										name="securityAlerts"
+										checked
+										disabled
+									/>
+								</div>
+							</div>
+						</fieldset>
+
+						<fieldset>
+							<legend>Digest frequency</legend>
+							<div class="cluster">
+								<div class="cluster items-center">
+									<input id="freq-daily" type="radio" name="freq" value="daily" />
+									<label for="freq-daily">Daily</label>
+								</div>
+								<div class="cluster items-center">
+									<input id="freq-weekly" type="radio" name="freq" value="weekly" checked />
+									<label for="freq-weekly">Weekly</label>
+								</div>
+								<div class="cluster items-center">
+									<input id="freq-never" type="radio" name="freq" value="never" />
+									<label for="freq-never">Never</label>
+								</div>
+							</div>
+						</fieldset>
+					</article>
+
+					<!-- Appearance — radios + range + color. -->
+					<article id="settings-appearance">
+						<header>
+							<hgroup>
+								<h2>Appearance</h2>
+								<p>Tune the interface to taste.</p>
+							</hgroup>
+						</header>
+
+						<fieldset>
+							<legend>Theme</legend>
+							<div class="cluster">
+								<div class="cluster items-center">
+									<input id="theme-system" type="radio" name="theme" value="system" checked />
+									<label for="theme-system">System</label>
+								</div>
+								<div class="cluster items-center">
+									<input id="theme-light" type="radio" name="theme" value="light" />
+									<label for="theme-light">Light</label>
+								</div>
+								<div class="cluster items-center">
+									<input id="theme-dark" type="radio" name="theme" value="dark" />
+									<label for="theme-dark">Dark</label>
+								</div>
+							</div>
+						</fieldset>
+
+						<label for="density">Density</label>
+						<input
+							id="density"
+							type="range"
+							name="density"
+							min="0"
+							max="2"
+							step="1"
+							value="1"
+							class="w-full"
+						/>
+
+						<div class="cluster items-center justify-between flex-nowrap">
+							<label for="accent">Accent color</label>
+							<input id="accent" type="color" name="accent" value="#4f46e5" />
+						</div>
+					</article>
+
+					<!-- Security — sessions table + 2FA. -->
+					<article id="settings-security">
+						<header>
+							<hgroup>
+								<h2>Security</h2>
+								<p>Where you're signed in and how you're protected.</p>
+							</hgroup>
+						</header>
+
+						<div class="cluster items-center justify-between flex-nowrap">
+							<label for="sw-2fa">Two-factor authentication</label>
+							<input id="sw-2fa" type="checkbox" role="switch" name="twofa" checked />
+						</div>
+
+						<div class="scrollable">
+							<table class="striped">
+								<thead>
+									<tr>
+										<th>Device</th>
+										<th>Location</th>
+										<th>Last active</th>
+										<th><span class="sr-only">Action</span></th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="session in sessions" :key="session.device">
+										<td>
+											{{ session.device }}
+											<span v-if="session.current" class="badge success">This device</span>
+										</td>
+										<td>{{ session.location }}</td>
+										<td>{{ session.active }}</td>
+										<td>
+											<button type="button" class="danger subtle small" :disabled="session.current">
+												Revoke
+											</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</article>
+
+					<!-- Danger zone — in-flow alert banner, not a toast. -->
+					<aside id="settings-danger" role="alert" class="danger">
 						<hgroup>
-							<h2>Notifications</h2>
-							<p>Choose what reaches your inbox.</p>
+							<h3>Delete account</h3>
+							<p>This permanently removes your workspace and all data. This cannot be undone.</p>
 						</hgroup>
-					</header>
-
-					<fieldset>
-						<legend>Channels</legend>
-						<div class="stack">
-							<div class="cluster items-center justify-between flex-nowrap">
-								<label for="sw-news">Product news &amp; tips</label>
-								<input id="sw-news" type="checkbox" role="switch" name="news" checked />
-							</div>
-							<div class="cluster items-center justify-between flex-nowrap">
-								<label for="sw-digest">Weekly activity digest</label>
-								<input id="sw-digest" type="checkbox" role="switch" name="digest" checked />
-							</div>
-							<div class="cluster items-center justify-between flex-nowrap">
-								<label for="sw-security">Security alerts</label>
-								<input
-									id="sw-security"
-									type="checkbox"
-									role="switch"
-									name="security"
-									checked
-									disabled
-								/>
-							</div>
-						</div>
-					</fieldset>
-
-					<fieldset>
-						<legend>Digest frequency</legend>
 						<div class="cluster">
-							<div class="cluster items-center">
-								<input id="freq-daily" type="radio" name="freq" value="daily" />
-								<label for="freq-daily">Daily</label>
-							</div>
-							<div class="cluster items-center">
-								<input id="freq-weekly" type="radio" name="freq" value="weekly" checked />
-								<label for="freq-weekly">Weekly</label>
-							</div>
-							<div class="cluster items-center">
-								<input id="freq-never" type="radio" name="freq" value="never" />
-								<label for="freq-never">Never</label>
-							</div>
+							<button type="button" class="danger">Delete account</button>
 						</div>
-					</fieldset>
-				</article>
-
-				<!-- Appearance — radios + range + color. -->
-				<article>
-					<header>
-						<hgroup>
-							<h2>Appearance</h2>
-							<p>Tune the interface to taste.</p>
-						</hgroup>
-					</header>
-
-					<fieldset>
-						<legend>Theme</legend>
-						<div class="cluster">
-							<div class="cluster items-center">
-								<input id="theme-system" type="radio" name="theme" value="system" checked />
-								<label for="theme-system">System</label>
-							</div>
-							<div class="cluster items-center">
-								<input id="theme-light" type="radio" name="theme" value="light" />
-								<label for="theme-light">Light</label>
-							</div>
-							<div class="cluster items-center">
-								<input id="theme-dark" type="radio" name="theme" value="dark" />
-								<label for="theme-dark">Dark</label>
-							</div>
-						</div>
-					</fieldset>
-
-					<label for="density">Density</label>
-					<input
-						id="density"
-						type="range"
-						name="density"
-						min="0"
-						max="2"
-						step="1"
-						value="1"
-						class="w-full"
-					/>
-
-					<div class="cluster items-center justify-between flex-nowrap">
-						<label for="accent">Accent color</label>
-						<input id="accent" type="color" name="accent" value="#4f46e5" />
-					</div>
-				</article>
-
-				<!-- Danger zone — in-flow alert banner, not a toast. -->
-				<aside role="alert" class="danger">
-					<hgroup>
-						<h3>Delete account</h3>
-						<p>This permanently removes your workspace and all data. This cannot be undone.</p>
-					</hgroup>
-					<div class="cluster">
-						<button type="button" class="danger">Delete account</button>
-					</div>
-				</aside>
-			</form>
+					</aside>
+				</form>
+			</div>
 		</div>
 	</main>
 </template>
