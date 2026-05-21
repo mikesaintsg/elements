@@ -472,9 +472,9 @@ describe('patterns — allowedTokenPrefixes resolves per folder + filename + exc
 		expect(prefixes).toEqual(['popover', 'popover-hint', 'anchor'])
 	})
 
-	it('components/_div.scss → [div, stack, cluster, tiles, split] (exception adds stack, cluster, tiles, split)', () => {
+	it('components/_div.scss → [div, stack, cluster, tiles, split, panes] (exception adds stack, cluster, tiles, split, panes)', () => {
 		const prefixes = allowedTokenPrefixes('src/styles/components/_div.scss')
-		expect(prefixes).toEqual(['div', 'stack', 'cluster', 'tiles', 'split'])
+		expect(prefixes).toEqual(['div', 'stack', 'cluster', 'tiles', 'split', 'panes'])
 	})
 
 	it('composables/_dialog.scss → wildcard (composables are free namespace)', () => {

@@ -268,4 +268,126 @@
 		flex: 1 1 0;
 		min-inline-size: 0;
 	}
+
+	// --------------------------------------------------------------------------
+	// .panes — app two-pane layout (sidebar + content): the workhorse behind a
+	// mailbox-style flush three-pane. Unlike `.split` (intrinsic wrap), `.panes`
+	// switches at a BAKED breakpoint, so it pairs cleanly with a JS single-pane
+	// toggle without the dead zone an intrinsic wrap creates:
+	//
+	//   • Below the breakpoint — a single column. The consumer `v-show`s one
+	//     `.pane` (list OR reading), so a tapped row reads as a full view.
+	//   • At/above the breakpoint — a row: a fixed-width sidebar pane + a
+	//     flexible content pane, each scrolling independently, divided by a 1px
+	//     rule. The whole layout fills its container and clips, so the panes —
+	//     not the page — own the scroll.
+	//
+	// `.pane` is a structured region, not flowing content: its `<section>`
+	// content padding is zeroed, and its direct `<header>` / `<footer>` become
+	// fixed-height bands (the body-shell header banding in `_header.scss` only
+	// reaches `body > {header,nav,aside}`, never a pane nested in `<main>`, so
+	// `.panes` paints the band itself). Both bands share `--set-panes-band-size`
+	// so the sidebar header and content header dividers line up across the
+	// panes. A `.fluid` child of a pane is the scroll region; a `<div class=
+	// "fluid">` additionally gets content padding (a `<menu class="fluid">`
+	// list stays flush so its rows can carry their own dividers).
+	//
+	//   <div class="panes">
+	//     <section class="pane">…sidebar (first child) — --set-panes-aside-size…
+	//       <header>…band…</header>
+	//       <menu class="fluid">…rows…</menu>
+	//     </section>
+	//     <section class="pane">…content (last child) — fills the rest…
+	//       <header>…band…</header>
+	//       <div class="fluid">…scrolling body…</div>
+	//       <footer>…pinned band…</footer>
+	//     </section>
+	//   </div>
+	//
+	//   --set-panes-aside-size           sidebar pane width at the breakpoint
+	//   --set-panes-gap                  gutter between panes (0 = flush + rule)
+	//   --set-panes-divider-color        the 1px rule between panes + bands
+	//   --set-panes-band-size            fixed height of pane header/footer bands
+	//   --set-panes-band-padding-inline  band inline padding
+	//   --set-panes-content-padding      padding for a `<div class="fluid">` body
+	// --------------------------------------------------------------------------
+	div.panes {
+		--set-panes-aside-size: 22rem;
+		--set-panes-gap: 0;
+		--set-panes-divider-color: var(--color-border);
+		--set-panes-band-size: 4.5rem;
+		--set-panes-band-padding-inline: calc(var(--spacing) * 4);
+		--set-panes-content-padding: calc(var(--spacing) * 5);
+
+		display: flex;
+		flex-direction: column;
+		gap: var(--set-panes-gap);
+		min-block-size: 0;
+	}
+
+	div.panes > .pane {
+		display: flex;
+		flex-direction: column;
+		min-block-size: 0;
+		// A pane is a structured region, not flowing content: drop the
+		// `<section>` baseline's content padding-block + prose gap directly
+		// (setting the foreign `--set-section-*` token here would violate the
+		// folder's token-namespace contract).
+		padding-block: 0;
+		gap: 0;
+	}
+
+	div.panes > .pane > header,
+	div.panes > .pane > footer {
+		flex: none;
+		display: flex;
+		align-items: center;
+		gap: calc(var(--spacing) * 3);
+		min-block-size: var(--set-panes-band-size);
+		padding-inline: var(--set-panes-band-padding-inline);
+	}
+	div.panes > .pane > header {
+		border-block-end: 1px solid var(--set-panes-divider-color);
+	}
+	div.panes > .pane > footer {
+		margin-block-start: auto;
+		border-block-start: 1px solid var(--set-panes-divider-color);
+	}
+
+	div.panes > .pane > .fluid {
+		min-block-size: 0;
+	}
+	div.panes > .pane > div.fluid {
+		padding: var(--set-panes-content-padding);
+	}
+
+	// Two-pane breakpoint — baked (media queries can't read a token). Below it
+	// the layout is the single column declared above; at/above it the panes
+	// sit side-by-side and each scrolls.
+	@media (min-width: 64rem) {
+		div.panes {
+			flex-direction: row;
+			block-size: 100%;
+			overflow: hidden;
+		}
+		div.panes > .pane {
+			block-size: 100%;
+			overflow: hidden;
+		}
+		div.panes > .pane:first-child {
+			flex: 0 0 var(--set-panes-aside-size);
+			border-inline-end: 1px solid var(--set-panes-divider-color);
+		}
+		div.panes > .pane:last-child {
+			flex: 1 1 0;
+			min-inline-size: 0;
+		}
+		div.panes > .pane > .fluid {
+			overflow-y: auto;
+			// `overflow-y: auto` promotes `overflow-x` to `auto` too, which
+			// spawns a spurious horizontal scrollbar on sub-pixel rounding —
+			// clip the inline axis so only the block axis scrolls.
+			overflow-x: hidden;
+		}
+	}
 }

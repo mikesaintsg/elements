@@ -5,14 +5,15 @@
  * A mail client built from body-shell landmarks plus a flush, divided
  * three-pane inside <main>:
  *
- *   <nav>    folder rail   — labels + counts, drawer ≤960px
+ *   <nav>    folder rail   — labels + counts, drawer <1024px
  *   <header> app bar       — Compose + search
  *   <main>   two panes      — a message LIST beside a READING pane via the
- *                             `.split` primitive, gap-0 with 1px dividers so
- *                             the panes butt flush (the mail <main>'s padding
- *                             is zeroed). Each pane scrolls independently;
- *                             below the split's breakpoint they stack and the
- *                             mobile view swaps list → reading on selection.
+ *                             `.panes` primitive: at/above 1024px a fixed
+ *                             sidebar + flexible content row with 1px dividers,
+ *                             each pane scrolling independently; below 1024px a
+ *                             single column where the mobile view swaps list →
+ *                             reading on selection. The mail <main>'s padding
+ *                             is zeroed so the panes butt flush.
  *
  * Everything visual — list rows, the reading pane, badges, avatars, the
  * reply toolbar — is a bare element + framework modifier (the pane dividers
@@ -244,37 +245,23 @@ const rowStyle = (message: Message): Record<string, string | undefined> => ({
 		</menu>
 	</header>
 
-	<!-- Two panes: message list + reading pane. The mail app is full-bleed
-	     (main padding zeroed) so the panes butt flush against the folder rail
-	     and each other, divided by 1px borders — the classic flush three-pane,
-	     each pane scrolling independently. -->
+	<!-- Two panes via the framework's `.panes` primitive: a fixed-width list
+	     (sidebar) + a flexible reading pane, divided by 1px rules, each scrolling
+	     independently above the breakpoint and collapsing to a single-pane swap
+	     below it. The mail app is full-bleed (main padding zeroed). -->
 	<main style="--set-main-padding-inline: 0; --set-main-padding-block: 0">
-		<div class="lg:flex lg:h-full lg:overflow-hidden">
-			<!-- Message list. The bare <section> baseline ships content
-			     padding-block + a flex gap for prose rhythm; this section is a
-			     structured pane (header band + scrolling list with their own
-			     spacing), so both are zeroed (gap-0 + the section-padding token)
-			     — the framework only auto-collapses them under main/section/
-			     article/nav/aside, not inside a .split. -->
-			<section
-				v-show="showList"
-				aria-label="Messages"
-				class="flex flex-col gap-0 lg:w-[24rem] lg:shrink-0 lg:overflow-hidden lg:h-full lg:border-e"
-				style="border-color: var(--color-border); --set-section-padding-block: 0"
-			>
-				<!-- Fixed-height header band; same min-block-size as the reading
-				     pane's header so the two bottom dividers line up into one
-				     continuous rule across the panes. -->
-				<header
-					class="flex items-center px-4 border-b"
-					style="border-color: var(--color-border); min-block-size: 4.5rem"
-				>
+		<div class="panes" style="--set-panes-aside-size: 24rem">
+			<!-- Message list pane. `.pane` zeroes the section's content padding,
+			     scrolls, and bands its <header>; the .fluid <menu> is the scroll
+			     region (flush, so its rows carry their own dividers). -->
+			<section class="pane" v-show="showList" aria-label="Messages">
+				<header>
 					<hgroup>
 						<h2 class="text-base m-0">Inbox</h2>
 						<p class="muted">{{ messages.length }} messages</p>
 					</hgroup>
 				</header>
-				<menu class="flex flex-col list-none fluid lg:overflow-y-auto lg:overflow-x-hidden">
+				<menu class="flex flex-col list-none fluid">
 					<li v-for="message in messages" :key="message.id">
 						<button
 							type="button"
@@ -303,22 +290,12 @@ const rowStyle = (message: Message): Record<string, string | undefined> => ({
 				</menu>
 			</section>
 
-			<!-- Reading pane — a plain region (not a card): pinned header + reply
-			     bar with a scrolling body between them. -->
-			<section
-				v-show="showMessage"
-				aria-label="Conversation"
-				class="flex flex-col gap-0 lg:flex-1 lg:overflow-hidden lg:h-full"
-				style="--set-section-padding-block: 0"
-			>
-				<!-- Compact header band, same min-block-size as the list header so
-				     the bottom dividers align across the panes. Subject + a
-				     one-line sender · time · tag meta (no avatar) keeps it to two
-				     lines, matching the list header's height. -->
-				<header
-					class="flex items-center gap-2 px-6 border-b"
-					style="border-color: var(--color-border); min-block-size: 4.5rem"
-				>
+			<!-- Reading pane. `.pane` bands the <header> (compact: subject + a
+			     one-line sender · time · tag meta, no avatar) and the reply
+			     <footer>; the .fluid <div> is the padded, scrolling body. The
+			     band heights match the list header so the dividers align. -->
+			<section class="pane" v-show="showMessage" aria-label="Conversation">
+				<header>
 					<button
 						v-if="isMobile"
 						type="button"
@@ -338,14 +315,11 @@ const rowStyle = (message: Message): Record<string, string | undefined> => ({
 					</div>
 				</header>
 
-				<div class="stack fluid px-6 py-5 lg:overflow-y-auto">
+				<div class="stack fluid">
 					<p v-for="(para, i) in selected.body" :key="i" class="m-0">{{ para }}</p>
 				</div>
 
-				<footer
-					class="flex flex-wrap gap-2 px-6 py-4 border-t"
-					style="border-color: var(--color-border)"
-				>
+				<footer>
 					<button type="button" class="primary">
 						<i class="icon chevron-left" aria-hidden="true"></i>
 						Reply
