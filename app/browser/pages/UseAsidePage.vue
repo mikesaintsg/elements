@@ -161,7 +161,7 @@ const eventsDrawer = useAside(eventsRef, {
 				Sliding from the inline-start edge — left in LTR, right in RTL. Backdrop click or Escape
 				closes (native light-dismiss).
 			</p>
-			<footer>
+			<footer class="justify-end">
 				<button type="button" class="primary" @click="startDrawer.hide()">Close</button>
 			</footer>
 		</aside>
@@ -173,7 +173,7 @@ const eventsDrawer = useAside(eventsRef, {
 				Sliding from the inline-end edge — right in LTR, left in RTL. The default for notification /
 				settings drawers.
 			</p>
-			<footer>
+			<footer class="justify-end">
 				<button type="button" class="primary" @click="endDrawer.hide()">Close</button>
 			</footer>
 		</aside>
@@ -182,7 +182,7 @@ const eventsDrawer = useAside(eventsRef, {
 				<h3>Top drawer</h3>
 			</header>
 			<p>Sliding from the block-start edge — common for global search / command palettes.</p>
-			<footer>
+			<footer class="justify-end">
 				<button type="button" class="primary" @click="topDrawer.hide()">Close</button>
 			</footer>
 		</aside>
@@ -194,7 +194,7 @@ const eventsDrawer = useAside(eventsRef, {
 				Sliding from the block-end edge — mobile-shaped sheet for action menus and quick-reply
 				panels.
 			</p>
-			<footer>
+			<footer class="justify-end">
 				<button type="button" class="primary" @click="bottomDrawer.hide()">Close</button>
 			</footer>
 		</aside>
@@ -236,7 +236,7 @@ const eventsDrawer = useAside(eventsRef, {
 				<code>popover="manual"</code>. Try clicking the backdrop or pressing Escape — neither closes
 				the panel. Only the buttons below (or a programmatic <code>hide()</code>) do.
 			</p>
-			<footer>
+			<footer class="justify-end">
 				<button type="button" class="subtle" @click="stickyDrawer.hide()">Dismiss</button>
 				<button type="button" class="primary" @click="stickyDrawer.hide()">Confirm</button>
 			</footer>
@@ -274,7 +274,7 @@ const eventsDrawer = useAside(eventsRef, {
 				<code>show</code> then <code>open</code>; close fires <code>hide</code> then
 				<code>close</code>.
 			</p>
-			<footer>
+			<footer class="justify-end">
 				<button type="button" class="primary" @click="eventsDrawer.hide()">Close</button>
 			</footer>
 		</aside>

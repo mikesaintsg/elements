@@ -939,8 +939,14 @@
 		// already puts the footer flush at the outer bottom edge — no
 		// negative-margin bleed needed.
 		margin-block-start: auto;
-		// Trailing-action row — buttons pile up on the inline-end edge.
-		justify-content: flex-end;
+		// Inline alignment defaults to flex-start: the common drawer
+		// footer carries info (account row, status line) which reads
+		// at the inline-start edge alongside its content. Action-row
+		// drawers (Cancel | Save) opt in with `class="justify-end"`
+		// (Tailwind utility) on the <footer>. The previous default
+		// (flex-end) silently pushed every footer's content right,
+		// which only made sense for the action-row subset and quietly
+		// broke any info-row footer.
 		flex-wrap: wrap;
 		border-block-start: 1px solid var(--set-popover-border-color);
 	}

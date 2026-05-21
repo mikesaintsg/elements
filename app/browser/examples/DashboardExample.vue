@@ -225,11 +225,10 @@ onUnmounted(() => {
 		</menu>
 
 		<!-- Account band — <footer> inside body-shell <nav> picks up the
-		     framework's drawer/rail footer chrome (divider, pinned bottom).
-		     A scoped justify-content override below shifts content to the
-		     inline-start edge (the framework's drawer footer defaults to
-		     flex-end for action rows; this is an info row). -->
-		<footer class="dashboard-account">
+		     framework's drawer/rail footer chrome (divider, pinned
+		     bottom). Default justify-content is flex-start (info row);
+		     action-row drawers opt in to `justify-end` via Tailwind. -->
+		<footer>
 			<span class="mark account-mark" aria-hidden="true">MS</span>
 			<span class="flex flex-col leading-tight">
 				<strong>Mike Saint</strong>
@@ -494,14 +493,6 @@ onUnmounted(() => {
  * width, drawer popover mode, nav-rail menu styling, header band,
  * main padding). Only the truly app-specific bits remain here.
  * ──────────────────────────────────────────────────────────────────── */
-
-/* Account row in the nav footer — framework drawer footer defaults to
- * `justify-content: flex-end` (for trailing-action rows like Cancel |
- * Save). The dashboard's footer is an info row; shift content to the
- * inline-start edge alongside the mark. */
-.dashboard-account {
-	justify-content: flex-start;
-}
 
 /* Circular initials badge — no framework "filled circle with text"
  * primitive. Shared between the workspace links and the account row. */
