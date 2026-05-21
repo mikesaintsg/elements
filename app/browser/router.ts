@@ -69,6 +69,7 @@ import DashboardExamplePage from './examples/DashboardExamplePage.vue'
 import MarketingExamplePage from './examples/MarketingExamplePage.vue'
 import AuthExamplePage from './examples/AuthExamplePage.vue'
 import MailExamplePage from './examples/MailExamplePage.vue'
+import CrmExamplePage from './examples/CrmExamplePage.vue'
 
 /**
  * Minimal hash-based router. Each entry pairs a stable `id` (becomes the
@@ -375,6 +376,13 @@ const EXAMPLE_MAIL: Route = {
 	page: MailExamplePage,
 }
 
+const EXAMPLE_CRM: Route = {
+	id: 'example-crm',
+	title: 'CRM',
+	group: 'Examples',
+	page: CrmExamplePage,
+}
+
 export const routes: readonly Route[] = [
 	HOME,
 	TOKENS,
@@ -424,6 +432,7 @@ export const routes: readonly Route[] = [
 	EXAMPLE_MARKETING,
 	EXAMPLE_AUTH,
 	EXAMPLE_MAIL,
+	EXAMPLE_CRM,
 ]
 
 const parse = (fallback: string): RouteLocation => {

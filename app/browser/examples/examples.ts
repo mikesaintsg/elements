@@ -47,6 +47,15 @@ export const examples: readonly ExampleMeta[] = [
 			'grid inside <main>. Mobile: folders popover drawer, single-column stack.',
 		icon: 'external',
 	},
+	{
+		id: 'example-crm',
+		title: 'CRM',
+		tagline:
+			'Four-pane agent workspace: command bar (header) + draggable context rail (nav) + ' +
+			'chat thread with inline form + tool-call accordion (main) + docs panel with Add note ' +
+			'dialog (aside). Exercises useDrag/useDrop, useDialog, and both left + right popover drawers.',
+		icon: 'more',
+	},
 ]
 
 export const isExampleId = (id: string): boolean => examples.some((e) => e.id === id)

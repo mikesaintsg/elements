@@ -152,6 +152,19 @@ export const PAGE_SURFACE_BUNDLES: Readonly<Record<PageName, readonly string[]>>
 	// CRM → potential .panes primitive), folder count badge trailing placement.
 	// ExamplesShell adds useDialog, useMenu, useTheme.
 	MailExamplePage: ['useDialog', 'useMenu', 'useTheme'],
+	// Four-pane agent workspace. All four body-shell areas used simultaneously:
+	// command bar <header>, draggable context rail <nav class="start"> (popover
+	// drawer on mobile), chat thread <main>, docs panel <aside class="end">
+	// (popover drawer on mobile). First example to exercise useDrag (context list
+	// drag-to-reorder) and useDialog (Add note modal). Chat thread includes 7
+	// turns: rep messages, thinking, tool-call <details> accordion, agent replies,
+	// and an inline form turn. Framework gaps flagged: circular avatar/initials
+	// badge (FIFTH example — overwhelming signal for framework .avatar component),
+	// chat message bubbles (no framework primitive), sticky-bottom composer,
+	// drag-over highlight states (styled with scoped CSS via useDrag's class
+	// names), dual popover drawers (left nav + right aside simultaneously).
+	// ExamplesShell adds useDialog, useMenu, useTheme.
+	CrmExamplePage: ['useDialog', 'useMenu', 'useTheme', 'useDrag', 'useDrop'],
 }
 
 /**
