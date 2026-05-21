@@ -584,3 +584,24 @@
 [data-mode='invert'] hgroup p {
 	color: inherit;
 }
+
+// ── Dark-mode select chevron ──────────────────────────────────────────────
+// `<select>`'s chevron is a `background-image` data URL, and `currentColor`
+// does NOT resolve inside one (it falls back to black), so the baked-neutral
+// default (slate-500, set in `elements/_select.scss`) reads dark on a dark
+// canvas. Swap it to a lighter neutral (slate-400) under dark — both the
+// explicit pin AND the OS-follow path. Lives here (not the element file)
+// because the element-folder contract forbids descendant rule heads, and a
+// per-mode swap is exactly the kind of theme override this file owns. Scoped
+// with `:not([multiple])` so it doesn't re-show the chevron on list-box
+// selects (which suppress it). Mode-only — every core shares light/dark
+// polarity, so one neutral pair covers them all.
+[data-mode='dark'] select:not([multiple]) {
+	--set-select-background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-mode]) select:not([multiple]) {
+		--set-select-background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+	}
+}
