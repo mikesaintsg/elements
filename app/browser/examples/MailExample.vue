@@ -21,7 +21,11 @@
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-const MOBILE_QUERY = '(max-width: 960px)'
+// One breakpoint drives BOTH the layout and the single-pane toggle (matching
+// the `lg:` utilities below) so there is no dead zone where the reading pane
+// is wrapped-and-clipped with no way to reach it. ≥1024px: persistent two-pane
+// + rail. <1024px: rail → drawer, panes → single-pane list/reading swap.
+const MOBILE_QUERY = '(max-width: 1023px)'
 const isMobile = ref(false)
 const mq = typeof window !== 'undefined' ? window.matchMedia(MOBILE_QUERY) : null
 const syncMobile = (): void => {
@@ -151,6 +155,18 @@ const open = (id: number): void => {
 }
 const showList = computed(() => !isMobile.value || mobileView.value === 'list')
 const showMessage = computed(() => !isMobile.value || mobileView.value === 'message')
+
+// Mailbox-style list rows: a 1px bottom divider between rows + a leading
+// accent bar that turns primary on the open message (transparent otherwise),
+// with a subtle persistent tint on that row. The hover tint comes from the
+// framework's `.flat` button state. App-specific list chrome.
+const rowStyle = (message: Message): Record<string, string | undefined> => ({
+	borderBlockEnd: '1px solid var(--color-border)',
+	borderInlineStart: `0.1875rem solid ${
+		message.id === selectedId.value ? 'var(--color-primary)' : 'transparent'
+	}`,
+	backgroundColor: message.id === selectedId.value ? 'var(--color-primary-bg-subtle)' : undefined,
+})
 </script>
 
 <template>
@@ -233,10 +249,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 	     and each other, divided by 1px borders — the classic flush three-pane,
 	     each pane scrolling independently. -->
 	<main style="--set-main-padding-inline: 0; --set-main-padding-block: 0">
-		<div
-			class="split lg:h-full lg:overflow-hidden"
-			style="--set-split-size: 22rem; --set-split-gap: 0"
-		>
+		<div class="lg:flex lg:h-full lg:overflow-hidden">
 			<!-- Message list. The bare <section> baseline ships content
 			     padding-block + a flex gap for prose rhythm; this section is a
 			     structured pane (header band + scrolling list with their own
@@ -246,7 +259,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 			<section
 				v-show="showList"
 				aria-label="Messages"
-				class="flex flex-col gap-0 lg:overflow-hidden lg:h-full lg:border-e"
+				class="flex flex-col gap-0 lg:w-[24rem] lg:shrink-0 lg:overflow-hidden lg:h-full lg:border-e"
 				style="border-color: var(--color-border); --set-section-padding-block: 0"
 			>
 				<!-- Fixed-height header band; same min-block-size as the reading
@@ -261,13 +274,12 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 						<p class="muted">{{ messages.length }} messages</p>
 					</hgroup>
 				</header>
-				<menu
-					class="flex flex-col gap-1 list-none p-2 fluid lg:overflow-y-auto lg:overflow-x-hidden"
-				>
+				<menu class="flex flex-col list-none fluid lg:overflow-y-auto lg:overflow-x-hidden">
 					<li v-for="message in messages" :key="message.id">
 						<button
 							type="button"
-							class="flat fill text-start"
+							class="flat fill text-start rounded-none"
+							:style="rowStyle(message)"
 							:aria-current="message.id === selectedId ? 'true' : undefined"
 							@click="open(message.id)"
 						>
@@ -296,7 +308,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 			<section
 				v-show="showMessage"
 				aria-label="Conversation"
-				class="flex flex-col gap-0 lg:overflow-hidden lg:h-full"
+				class="flex flex-col gap-0 lg:flex-1 lg:overflow-hidden lg:h-full"
 				style="--set-section-padding-block: 0"
 			>
 				<!-- Compact header band, same min-block-size as the list header so
