@@ -713,27 +713,37 @@
 	//
 	// Selector targets BOTH `:is(aside, nav)[popover] > header` and
 	// `:is(aside, nav)[popover] > footer` — the framework's banded
-	// chrome convention. Anything else inside is a "middle" sibling
-	// and takes `flex: 1 1 0; min-block-size: 0; overflow-y: auto`, so
-	// it absorbs the remaining space and scrolls if its intrinsic size
-	// exceeds the slot. Multiple middle siblings share remaining space
-	// (each `flex: 1 1 0`); consumers who want a single scroll region
-	// wrap their middle content in one container.
+	// chrome convention. Anything else inside is a "middle" sibling.
 	:is(aside, nav)[popover] > :is(header, footer) {
 		flex: 0 0 auto;
 	}
-	// `flex: 1 1 auto` (not `1 1 0`) so the body slot's preferred size
-	// equals its content's natural height. Same outcome inside a
-	// fixed-height drawer parent (body grows to fill remaining space
-	// when content is short, shrinks to fit when content overflows),
-	// AND a universally-correct shape for max-height-only parents
-	// (matches `dialog[open]:where(:has(> :is(header, footer)))` in
-	// `elements/_dialog.scss`).
+
+	// Middle slots pack at their natural height, top-aligned. `flex-grow: 0`
+	// (not 1) is the key: a rail's middle is frequently MULTIPLE bare siblings
+	// — a primary menu + an `<h6>` group label + a workspace menu, or an
+	// activity feed + a summary card. With `flex-grow: 1` each sibling grew
+	// and split the leftover height, stranding content with large voids in the
+	// drawer. `flex-grow: 0` stacks them snugly below the header instead. A
+	// SINGLE wrapped scroll region behaves the same (natural height when short;
+	// `flex-shrink: 1` + `min-block-size: 0` + `overflow-y: auto` let a tall
+	// region shrink and scroll within the drawer either way), so wrapping is
+	// now an optimization for one-scroll-region rails, not a correctness
+	// requirement.
 	:is(aside, nav)[popover] > :not(:where(header, footer)) {
-		flex: 1 1 auto;
+		flex: 0 1 auto;
 		min-block-size: 0;
 		overflow-y: auto;
 		overscroll-behavior: contain;
+	}
+
+	// Pin the action footer to the drawer's bottom edge. Now that the middle
+	// slots no longer grow to fill, the footer needs an auto top margin to
+	// stay anchored at the bottom — mirroring the desktop in-flow rail footer
+	// rule in `_footer.scss`. `flex: 0 0 auto` (above) keeps it from
+	// shrinking; the auto margin absorbs the leftover height between the last
+	// middle slot and the footer.
+	:is(aside, nav)[popover] > footer {
+		margin-block-start: auto;
 	}
 
 	// ── .start — slide from the inline-start (leading) edge ──────────
