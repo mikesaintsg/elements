@@ -34,21 +34,6 @@
  * shell when an example was rendered) is gone — App.vue no longer
  * wraps example pages in its <main>; the example renders its own. */
 
-/* Reserve a bottom safe-area for the floating toolbar so it never overlaps
- * the example's content — neither scrolling content (Dashboard, Marketing,
- * Auth) nor bottom-pinned app chrome (Mail's reading-pane action footer,
- * CRM's reply composer, the sidebar account footers). The body-shell grid is
- * `height: 100dvh; box-sizing: border-box`, so padding-block-end shrinks the
- * grid's content box: every body-shell cell (header / nav / main / aside /
- * footer) lays out above the reserved strip while the `position: fixed`
- * toolbar floats inside it. Scoped to `:has(.examples-toolbar)` so only
- * example routes (which render the toolbar) reserve the strip — the docs
- * shell is untouched. This makes the per-page `pb-28` clearance hacks
- * unnecessary. */
-body:has(.examples-toolbar) {
-	padding-block-end: max(4rem, calc(env(safe-area-inset-bottom) + 3.25rem));
-}
-
 .examples-toolbar {
 	position: fixed;
 	inset-block-end: max(1rem, env(safe-area-inset-bottom));
