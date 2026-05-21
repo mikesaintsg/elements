@@ -77,7 +77,7 @@ const sessions: readonly Session[] = [
 				aria-label="Settings sections"
 				class="hidden lg:flex flex-col lg:sticky lg:top-0 lg:self-start"
 			>
-				<menu class="flex flex-col">
+				<menu class="flex flex-col items-start">
 					<li v-for="s in sections" :key="s.id">
 						<a :href="`#${s.id}`">{{ s.label }}</a>
 					</li>
