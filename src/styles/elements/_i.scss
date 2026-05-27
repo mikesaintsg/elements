@@ -9,10 +9,10 @@
 //
 //        <i class="icon" style="--icon: var(--set-icon-menu)" aria-hidden="true"></i>
 //
-//      The icon renders as a 1em mask painted with the icon's `color`
-//      (which the mask consumes via the `background-color: currentColor`
-//      trick). `font-style: normal` overrides the UA italic since the
-//      icon's glyph isn't typographic — italic doesn't apply to a mask.
+//      The icon renders as a 1em mask painted with `currentColor`, so it
+//      tracks the surrounding text colour automatically. `font-style:
+//      normal` overrides the UA italic since the icon's glyph isn't
+//      typographic — italic doesn't apply to a mask.
 //
 // Authors who want an inline SVG instead of the mask pattern just drop
 // the class and use `<svg>` directly — the framework doesn't force the
@@ -27,38 +27,25 @@
 // warning / danger / information) never collide with the bare variant
 // modifier classes. `--icon` stays overridable inline for custom assets.
 //
-// Variant-color cascade — the icon consumes the variant ON-CANVAS color
-// token (the same token `<a>` and `<label>` read), so a `.primary` /
-// `.success` / `.danger` / `.warning` / `.information` class on the
-// icon's ANCESTOR cascades into the icon's paint color. CSS custom
-// properties inherit, but `color` defaults to `inherit` on ancestors —
-// so the variant token cascades silently to the icon WITHOUT tinting
-// sibling text. To colorize the icon GLYPH from a parent:
-//
-//     <span class="success">
-//         <i class="icon check" aria-hidden="true"></i>
-//     </span>
-//
-// (a wrapper span carrying the variant class). The variant class on the
-// icon itself collides with the glyph-name slot — `.success` on
-// `<i class="icon">` swaps the MASK to the success glyph, not just the
-// tint. Use the wrapper pattern when the goal is a specific glyph
-// tinted with a variant; use the bare `<i class="icon success">` when
-// the goal is the framework's success-named badge glyph.
+// Colour discipline — the icon inherits `currentColor` from its parent.
+// This is the right default because the icon is an intra-text affordance
+// (it lives inside buttons, links, labels, headings) and should match
+// whatever text colour those carriers paint. The framework's prose-colour
+// discipline applies — same reasoning as `<strong>` (see
+// `elements/_strong.scss`): inline phrasing tracks the carrier's colour,
+// not a variant token. To tint an icon a specific variant (a green
+// check-mark on canvas, a danger-tinted info badge) put the variant on
+// the parent's `color` directly (a per-element class, the carrier's
+// `color: var(--color-success)` rule, or a `.text-{variant}` utility
+// when one exists) — NOT a variant-token cascade on the icon itself,
+// which would also fire inside filled-surface buttons and render the
+// icon in the on-canvas colour rather than the button's white text.
 // ============================================================================
 
 @use '../mixins' as *;
 
 @layer elements {
 	i.icon {
-		// The icon's `color` reads the variant ON-CANVAS token first (so
-		// an ancestor `.primary` / `.success` / … cascades into the icon
-		// paint), falling through to `currentColor` (the inherited body
-		// text colour) when no variant scope is active. The mask is then
-		// painted via `background-color: currentColor`, which after the
-		// `color` resolves above becomes the variant tint.
-		color: var(--set-variant-on-canvas-color, currentColor);
-
 		display: inline-block;
 		inline-size: 1em;
 		block-size: 1em;

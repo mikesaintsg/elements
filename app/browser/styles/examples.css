@@ -367,18 +367,19 @@
  * across at 14rem each) and a wider one for the pricing tiers (3 cards
  * across at 18rem each).
  *
- * The metric-value primary tint stays — the framework's `<strong>`
- * baseline deliberately doesn't pick up variant text color (`<strong>`
- * is prose-color discipline, per `elements/_strong.scss`); display
- * numbers are a per-app design choice and land here as a single
- * `.examples-pricing-metric` color override.
- *
- * The per-tier check icons no longer need a per-example class — the
- * framework's `<i class="icon">` now consumes
- * `--set-variant-on-canvas-color` (see `elements/_i.scss`), so wrapping
- * the icon in `<span class="success">` is the framework-native
- * "this glyph reads as a success affordance" pattern.
- */
+ * Two text-colour overrides: the metric value reads in primary tint
+ * (display-number eye-catcher); the per-tier check icons read in
+ * success green (the "yes, this is included" affordance). Both stay
+ * here as per-example classes — the framework's `<strong>` baseline
+ * deliberately doesn't pick up variant text colour
+ * (`elements/_strong.scss` § prose-colour discipline), and the icon
+ * primitive inherits `currentColor` from its carrier rather than
+ * consuming `--set-variant-on-canvas-color` (a variant-token cascade
+ * on `<i class="icon">` would also fire inside filled-surface buttons
+ * like `<button class="primary"><i class="icon source">`, painting
+ * the icon dark-on-blue instead of inheriting the button's white).
+ * Both colours flow through normally because `<i class="icon">`'s
+ * mask paints with `currentColor`. */
 .examples-pricing-metrics {
 	--set-tiles-min: 14rem;
 }
@@ -387,6 +388,9 @@
 }
 .examples-pricing-metric {
 	color: var(--color-primary);
+}
+.examples-pricing-check {
+	color: var(--color-success);
 }
 
 /* ── Console example ───────────────────────────────────────────────────

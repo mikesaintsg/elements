@@ -131,32 +131,42 @@ acceptance criteria when each framework feature lands.
 
 Round 2 of this audit landed all four gaps. Per-fix notes:
 
-### 1. Icon variant-color cascade — `src/styles/elements/_i.scss`
+### 1. Icon variant-color cascade — REVERTED (filled-surface regression)
 
-`<i class="icon">` now consumes `--set-variant-on-canvas-color` for
-its `color` (falling through to the inherited `currentColor` when no
-variant token is in scope). The mask still paints with
-`background-color: currentColor`, so the color cascade flows through
-in one step.
+The original round-2 fix added
+`color: var(--set-variant-on-canvas-color, currentColor)` to the
+`i.icon` rule. The intent was: `<span class="success"><i class="icon
+check"></i></span>` cascades the success on-canvas token into the
+icon's paint colour so the per-example `.examples-pricing-check`
+class can go away.
 
-Authoring shape (idiomatic):
+**Why it was reverted.** Every variant modifier (`.primary` /
+`.success` / `.danger` / …) sets BOTH `--set-variant-color` (the
+filled white text) AND `--set-variant-on-canvas-color` (the dark-blue
+on-canvas text). When `<i class="icon">` sits INSIDE a
+`<button class="primary">`, the button's variant tokens cascade to
+the icon. The icon's new `color` rule reads
+`--set-variant-on-canvas-color` (dark blue) — but the button itself
+reads `--set-variant-color` (white) for its text. Result: the icon
+paints dark-blue inside a white-text button, breaking every
+icon-in-filled-button surface across the framework (Pricing's "Start
+free" CTA, CRM's "Ask", ExamplesShell's "Source" toolbar button,
+etc. — the most common icon usage there is).
 
-```html
-<span class="success">
-    <i class="icon check" aria-hidden="true"></i>
-</span>
-```
+The cleanest fix that doesn't break filled-button surfaces would be
+a NEW opt-in modifier (e.g. `.icon.tint` or `.icon.on-canvas`) that
+explicitly enables the variant-token cascade only on icons that need
+it. The current revert leaves the icon at the framework's
+prose-colour discipline (matches `<strong>`, per
+`elements/_strong.scss`): it inherits `currentColor` from its
+carrier and tracks whatever text colour the carrier paints.
 
-The wrapper carries the variant class so the variant token cascades
-into the icon without colliding with the framework's variant-named
-glyph slot (`.success` on `<i class="icon">` would swap the GLYPH to
-the success badge — that's by design and still works for "show the
-framework's success badge" usage). The wrapper's text content stays
-at the inherited body color because `.success` doesn't set `color`
-directly — only token cascades.
-
-`.examples-pricing-check` removed (was `color: var(--color-success)`
-on the icon).
+`.examples-pricing-check` restored in `examples.css`; PricingExample
+drops the `<span class="success">` wrapper and goes back to
+`<i class="icon check examples-pricing-check">`. This is the same
+per-example escape hatch the audit doc's "Recommendations" section
+listed as item #1 — closing it cleanly remains future framework work
+(see "Outstanding" below).
 
 ### 2. Drag cursor + drop-indicator chrome — `src/styles/composables/_drag.scss`
 
@@ -228,5 +238,19 @@ directly — same visual, framework-idiomatic.
   (`<strong class="text-5xl examples-pricing-metric">$24</strong>`)
   is therefore staying on the `.examples-pricing-metric` class — a
   per-example display-number color decision rather than a general
-  framework gap. The original recommendation (#1) is partially
-  resolved (icon side closed; strong side left intentional).
+  framework gap.
+
+- **Icon variant-tint cascade** — the round-2 attempt to make
+  `<i class="icon">` consume `--set-variant-on-canvas-color`
+  collided with the filled-surface case (icon inside
+  `<button class="primary">` resolved to dark-blue on the button's
+  white-text fill — see § 1 above for the reverted fix). The clean
+  shape is likely a new opt-in MODIFIER on the icon itself
+  (`.icon.tint` / `.icon.on-canvas` / similar) that enables the
+  variant-token cascade only where requested, leaving the bare
+  icon's prose-colour discipline intact. The four glyph-name
+  variants in `$icons` (`success` / `warning` / `danger` /
+  `information`) make a naive `.icon.{variant}` opt-in a
+  non-starter — the modifier name must NOT collide with the
+  glyph-name slot. Naming + selector design is the open question.
+  Until then, `.examples-pricing-check` is the escape hatch.
