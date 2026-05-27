@@ -336,6 +336,100 @@ export function assertCleanDispose<T extends FactoryFixtureInstance>(
 	}
 }
 
+// ── Reusable DOM fixtures ───────────────────────────────────────────────────
+//
+// Per-element fixture builders centralized here once they're consumed by
+// more than one test file (the statechart describe block + the existing
+// one-off describe block in the same test, plus potential future
+// composable / integration tests). Each builder returns a small record
+// with single-word keys naming the structural slots, ready to feed into
+// the matching `create{Name}` factory.
+
+/**
+ * Build a `<button>` anchor + `<div popover>` panel + arrow trio that
+ * the popover factory operates on. The factory itself sets
+ * `popover="manual"`; the fixture provides the baseline DOM structure.
+ */
+export function createPopoverElements(): {
+	readonly anchor: HTMLButtonElement
+	readonly panel: HTMLDivElement
+	readonly arrow: HTMLDivElement
+} {
+	const anchor = buildElement('button')
+	anchor.type = 'button'
+	const panel = buildElement('div', { attrs: { popover: '' } })
+	const arrow = document.createElement('div')
+	panel.appendChild(arrow)
+	return { anchor, panel, arrow }
+}
+
+/**
+ * Build a `<button>` toggle + `<menu popover>` panel with `<li><a>` items
+ * the menu factory operates on. The default of three items matches the
+ * roving-focus tests' expectation of a meaningful first / middle / last
+ * triple.
+ */
+export function createMenuElements(itemCount = 3): {
+	readonly toggle: HTMLButtonElement
+	readonly menu: HTMLMenuElement
+} {
+	const toggle = buildElement('button')
+	toggle.type = 'button'
+	const menu = buildElement('menu', { attrs: { popover: '' } })
+	for (let i = 0; i < itemCount; i += 1) {
+		const li = document.createElement('li')
+		const item = document.createElement('a')
+		item.href = '#'
+		item.textContent = `Item ${i + 1}`
+		li.appendChild(item)
+		menu.appendChild(li)
+	}
+	return { toggle, menu }
+}
+
+/**
+ * Build a `<form>` with two named inputs — `username` (required text) +
+ * `email` (typed). The required-text field gives form-state tests a
+ * predictable native-validity flip when the value is emptied.
+ */
+export function createFormElements(): {
+	readonly form: HTMLFormElement
+	readonly username: HTMLInputElement
+	readonly email: HTMLInputElement
+} {
+	const form = buildElement('form')
+	const username = document.createElement('input')
+	username.name = 'username'
+	username.required = true
+	username.type = 'text'
+	const email = document.createElement('input')
+	email.name = 'email'
+	email.type = 'email'
+	form.append(username, email)
+	return { form, username, email }
+}
+
+/**
+ * Set a form field's value and dispatch a bubbling `input` event so any
+ * listeners attached to the form root (e.g. `createForm`'s input bridge)
+ * fire as if the user typed. Pair with {@link createFormElements} for
+ * form-state tests.
+ */
+export function inputField(field: HTMLInputElement, value: string): void {
+	field.value = value
+	field.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
+/**
+ * Build a `<div popover>` toast root, optionally with the given ARIA
+ * role. Empty `role` skips the attribute (the factory will fall back to
+ * `role="status"`). Default `'status'` matches the common live-region
+ * semantic toasts ship with.
+ */
+export function createToastElement(role: string = 'status'): HTMLDivElement {
+	return buildElement('div', { attrs: role ? { popover: '', role } : { popover: '' } })
+}
+
 // ── Statechart scenario runner ──────────────────────────────────────────────
 //
 // `runScenario` drives a single transition row through its arrange → act →

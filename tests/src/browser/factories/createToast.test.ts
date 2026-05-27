@@ -1,25 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CreateToastInstance, CreateToastOptions } from '@elements/browser'
 import { createToast, TOAST_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
-import type { StateScenario } from '../../../setup'
+import type { EventRecorder, StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
 import {
 	assertCleanDispose,
 	buildElement,
 	createFactoryFixture,
+	createToastElement,
 	runScenario,
 } from '../../../setupBrowser'
-
-// The toast root is a `<div role="status">`: a toast renders flow content
-// (`<header>` bands + paragraphs) that `<output>`'s phrasing-only HTML
-// content model forbids. `role="status"` IS `<output>`'s implicit ARIA role
-// (an atomic, polite live region), so the screen-reader announcement
-// semantic is preserved exactly while the element accepts the flow content
-// the toast actually renders. The factory sets `role="status"` if the
-// consumer omitted it, so the live-region contract holds regardless of
-// markup discipline.
-const toastRoot = (role = 'status') =>
-	buildElement('div', { attrs: role ? { popover: '', role } : { popover: '' } })
 
 describe('createToast', () => {
 	beforeEach(() => {
@@ -35,7 +25,7 @@ describe('createToast', () => {
 	})
 
 	it('sets role="status" when the consumer omitted it (preserves the live-region semantic)', () => {
-		const toast = toastRoot('') // <div popover> with NO role
+		const toast = createToastElement('') // <div popover> with NO role
 		createFactoryFixture(() => createToast(toast))
 		expect(toast.getAttribute('role')).toBe('status')
 	})
@@ -47,7 +37,7 @@ describe('createToast', () => {
 	})
 
 	it('starts hidden; show opens the popover', () => {
-		const toast = toastRoot()
+		const toast = createToastElement()
 		const [api] = createFactoryFixture(() => createToast(toast))
 		expect(api.visible.value).toBe(false)
 		api.show()
@@ -56,7 +46,7 @@ describe('createToast', () => {
 	})
 
 	it('autohide closes the toast after the delay', () => {
-		const toast = toastRoot()
+		const toast = createToastElement()
 		const [api] = createFactoryFixture(() => createToast(toast, { autohide: { delay: 1000 } }))
 		api.show()
 		// runTransition fallback fires + then autohide timer kicks in.
@@ -66,7 +56,7 @@ describe('createToast', () => {
 	})
 
 	it('autohide:false keeps the toast sticky', () => {
-		const toast = toastRoot()
+		const toast = createToastElement()
 		const [api] = createFactoryFixture(() => createToast(toast, { autohide: false }))
 		api.show()
 		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
@@ -75,7 +65,7 @@ describe('createToast', () => {
 	})
 
 	it('pause stops the autohide timer; resume restarts it', () => {
-		const toast = toastRoot()
+		const toast = createToastElement()
 		const [api] = createFactoryFixture(() => createToast(toast, { autohide: { delay: 1000 } }))
 		api.show()
 		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
@@ -88,7 +78,7 @@ describe('createToast', () => {
 	})
 
 	it('hover pauses, mouseleave resumes', () => {
-		const toast = toastRoot()
+		const toast = createToastElement()
 		const [api] = createFactoryFixture(() => createToast(toast, { autohide: { delay: 500 } }))
 		api.show()
 		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
@@ -101,7 +91,7 @@ describe('createToast', () => {
 	})
 
 	it('uses namespaced event names', () => {
-		const toast = toastRoot()
+		const toast = createToastElement()
 		const open = createRecorder<[Event]>()
 		toast.addEventListener(TOAST_EVENTS.open, open.handler)
 		const [api] = createFactoryFixture(() => createToast(toast, { autohide: false }))
@@ -145,16 +135,11 @@ type ToastEvent =
 
 const TOAST_DELAY_MS = 1000
 
-interface ToastEventRecorder {
-	readonly count: number
-	clear(): void
-}
-
 interface ToastContext {
 	readonly api: CreateToastInstance
 	readonly element: HTMLDivElement
-	readonly opens: ToastEventRecorder
-	readonly closes: ToastEventRecorder
+	readonly opens: EventRecorder
+	readonly closes: EventRecorder
 }
 
 function buildToastContext(options: CreateToastOptions = {}): ToastContext {

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CreateDialogInstance, CreateDialogOptions } from '@elements/browser'
 import { createDialog, DIALOG_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
-import type { StateScenario } from '../../../setup'
+import type { EventRecorder, StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
 import {
 	assertCleanDispose,
@@ -151,11 +151,6 @@ describe('createDialog', () => {
 
 type DialogState = 'closed' | 'open' | 'open-nonmodal'
 type DialogEvent = 'show' | 'hide' | 'nativeclose' | 'destroy'
-
-interface EventRecorder {
-	readonly count: number
-	clear(): void
-}
 
 interface DialogContext {
 	readonly api: CreateDialogInstance

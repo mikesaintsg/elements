@@ -484,6 +484,19 @@ export interface StateScenario<TState extends string, TEvent extends string, TCo
 	readonly assert: (context: TContext, state: TState) => Promise<void> | void
 }
 
+/**
+ * Narrowed structural view of {@link createRecorder}'s return type for
+ * use inside statechart context interfaces. Exposes only `count` (the
+ * assertion target) and `clear()` (between-state reset between
+ * `arrange` and `act`), hiding `handler` / `calls` that the context's
+ * consumers don't need. Any `TestRecorderInterface<TArgs>` satisfies it
+ * structurally.
+ */
+export interface EventRecorder {
+	readonly count: number
+	clear(): void
+}
+
 afterEach(() => {
 	vi.restoreAllMocks()
 })

@@ -7,25 +7,10 @@ import {
 	assertCleanDispose,
 	buildElement,
 	createFactoryFixture,
+	createFormElements,
+	inputField,
 	runScenario,
 } from '../../../setupBrowser'
-
-function createFormFixture(): {
-	readonly form: HTMLFormElement
-	readonly username: HTMLInputElement
-	readonly email: HTMLInputElement
-} {
-	const form = buildElement('form')
-	const username = document.createElement('input')
-	username.name = 'username'
-	username.required = true
-	username.type = 'text'
-	const email = document.createElement('input')
-	email.name = 'email'
-	email.type = 'email'
-	form.append(username, email)
-	return { form, username, email }
-}
 
 describe('createForm', () => {
 	it('rejects non-<form> hosts', () => {
@@ -34,7 +19,7 @@ describe('createForm', () => {
 	})
 
 	it('snapshots field names + data + initial validity', () => {
-		const { form, username, email } = createFormFixture()
+		const { form, username, email } = createFormElements()
 		username.value = 'alice'
 		email.value = 'alice@example.com'
 		const [api] = createFactoryFixture(() => createForm(form))
@@ -44,7 +29,7 @@ describe('createForm', () => {
 	})
 
 	it('check() sets data-form-validated and emits validate', () => {
-		const { form } = createFormFixture()
+		const { form } = createFormElements()
 		const validate = createRecorder<[Event]>()
 		form.addEventListener(FORM_EVENTS.validate, validate.handler)
 		const [api] = createFactoryFixture(() => createForm(form))
@@ -54,7 +39,7 @@ describe('createForm', () => {
 	})
 
 	it('reports invalid fields with aria-invalid', () => {
-		const { form, username } = createFormFixture()
+		const { form, username } = createFormElements()
 		username.value = ''
 		const [api] = createFactoryFixture(() => createForm(form))
 		api.check()
@@ -64,7 +49,7 @@ describe('createForm', () => {
 	})
 
 	it('clear() resets dirty / touched / validated state', () => {
-		const { form, username } = createFormFixture()
+		const { form, username } = createFormElements()
 		const [api] = createFactoryFixture(() => createForm(form))
 		username.value = 'alice'
 		username.dispatchEvent(new Event('input', { bubbles: true }))
@@ -78,7 +63,7 @@ describe('createForm', () => {
 	})
 
 	it('uses namespaced event names', () => {
-		const { form, username } = createFormFixture()
+		const { form, username } = createFormElements()
 		const input = createRecorder<[Event]>()
 		form.addEventListener(FORM_EVENTS.input, input.handler)
 		createFactoryFixture(() => createForm(form))
@@ -88,7 +73,7 @@ describe('createForm', () => {
 
 	it('destroy reverses every listener', () => {
 		assertCleanDispose(() => {
-			const { form } = createFormFixture()
+			const { form } = createFormElements()
 			return createForm(form)
 		})
 	})
@@ -120,18 +105,13 @@ interface FormContext {
 }
 
 function buildFormContext(options: CreateFormOptions = {}): FormContext {
-	const { form, username, email } = createFormFixture()
+	const { form, username, email } = createFormElements()
 	// Pre-fill the required `username` field so the initial native
 	// validity is `valid: true` — the statechart's `pristine` state
 	// models "form satisfies constraints, no user input has fired yet".
 	username.value = 'alice'
 	const [api] = createFactoryFixture(() => createForm(form, options))
 	return { api, form, username, email }
-}
-
-function inputField(field: HTMLInputElement, value: string): void {
-	field.value = value
-	field.dispatchEvent(new Event('input', { bubbles: true }))
 }
 
 function driveToFormState(context: FormContext, state: FormState): void {

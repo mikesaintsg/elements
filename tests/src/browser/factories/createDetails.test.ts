@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CreateDetailsInstance, CreateDetailsOptions } from '@elements/browser'
 import { createDetails, DETAILS_EVENTS } from '@elements/browser'
-import type { StateScenario } from '../../../setup'
+import type { EventRecorder, StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
 import {
 	assertCleanDispose,
@@ -97,16 +97,11 @@ describe('createDetails', () => {
 type DetailsState = 'closed' | 'open'
 type DetailsEvent = 'show' | 'hide' | 'nativetoggle' | 'deactivate' | 'destroy'
 
-interface DetailsEventRecorder {
-	readonly count: number
-	clear(): void
-}
-
 interface DetailsContext {
 	readonly api: CreateDetailsInstance
 	readonly element: HTMLDetailsElement
-	readonly opens: DetailsEventRecorder
-	readonly closes: DetailsEventRecorder
+	readonly opens: EventRecorder
+	readonly closes: EventRecorder
 }
 
 function buildDetailsContext(options: CreateDetailsOptions = {}): DetailsContext {

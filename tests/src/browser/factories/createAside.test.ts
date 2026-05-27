@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CreateAsideInstance, CreateAsideOptions } from '@elements/browser'
 import { ASIDE_EVENTS, createAside } from '@elements/browser'
-import type { StateScenario } from '../../../setup'
+import type { EventRecorder, StateScenario } from '../../../setup'
 import { createRecorder, waitForDelay } from '../../../setup'
 import {
 	assertCleanDispose,
@@ -105,16 +105,11 @@ describe('createAside', () => {
 type AsideState = 'closed' | 'open'
 type AsideEvent = 'show' | 'hide' | 'toggle' | 'hidepopover' | 'destroy'
 
-interface AsideEventRecorder {
-	readonly count: number
-	clear(): void
-}
-
 interface AsideContext {
 	readonly api: CreateAsideInstance
 	readonly element: HTMLElement
-	readonly opens: AsideEventRecorder
-	readonly closes: AsideEventRecorder
+	readonly opens: EventRecorder
+	readonly closes: EventRecorder
 }
 
 function buildAsideContext(options: CreateAsideOptions = {}): AsideContext {

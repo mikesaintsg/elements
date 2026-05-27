@@ -1,32 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CreateMenuInstance, CreateMenuOptions } from '@elements/browser'
 import { createMenu, MENU_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
-import type { StateScenario } from '../../../setup'
+import type { EventRecorder, StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
 import {
 	assertCleanDispose,
 	buildElement,
 	createFactoryFixture,
+	createMenuElements,
 	runScenario,
 } from '../../../setupBrowser'
-
-function createMenuElements(): {
-	readonly toggle: HTMLButtonElement
-	readonly menu: HTMLMenuElement
-} {
-	const toggle = buildElement('button')
-	toggle.type = 'button'
-	const menu = buildElement('menu', { attrs: { popover: '' } })
-	for (let i = 0; i < 3; i++) {
-		const li = document.createElement('li')
-		const item = document.createElement('a')
-		item.href = '#'
-		item.textContent = `Item ${i + 1}`
-		li.appendChild(item)
-		menu.appendChild(li)
-	}
-	return { toggle, menu }
-}
 
 describe('createMenu', () => {
 	it('rejects non-<menu> panels', () => {
@@ -141,18 +124,13 @@ describe('createMenu', () => {
 type MenuState = 'closed' | 'open'
 type MenuEvent = 'show' | 'hide' | 'toggleclick' | 'itemclick' | 'escape' | 'outside' | 'destroy'
 
-interface MenuEventRecorder {
-	readonly count: number
-	clear(): void
-}
-
 interface MenuContext {
 	readonly api: CreateMenuInstance
 	readonly toggle: HTMLButtonElement
 	readonly menu: HTMLMenuElement
 	readonly items: readonly HTMLAnchorElement[]
-	readonly opens: MenuEventRecorder
-	readonly closes: MenuEventRecorder
+	readonly opens: EventRecorder
+	readonly closes: EventRecorder
 }
 
 function buildMenuContext(options: CreateMenuOptions = {}): MenuContext {

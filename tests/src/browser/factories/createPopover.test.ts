@@ -1,32 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CreatePopoverInstance, CreatePopoverOptions } from '@elements/browser'
 import { createPopover, POPOVER_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
-import type { StateScenario } from '../../../setup'
+import type { EventRecorder, StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
 import {
 	assertCleanDispose,
-	buildElement,
 	createFactoryFixture,
+	createPopoverElements,
 	runScenario,
 } from '../../../setupBrowser'
-
-/**
- * Build a `<button>` anchor + `<div popover>` panel pair that the popover
- * factory operates on. The factory itself sets `popover="manual"`; the
- * fixture only provides a baseline DOM structure.
- */
-function createPopoverElements(): {
-	readonly anchor: HTMLButtonElement
-	readonly panel: HTMLDivElement
-	readonly arrow: HTMLDivElement
-} {
-	const anchor = buildElement('button')
-	anchor.type = 'button'
-	const panel = buildElement('div', { attrs: { popover: '' } })
-	const arrow = document.createElement('div')
-	panel.appendChild(arrow)
-	return { anchor, panel, arrow }
-}
 
 describe('createPopover', () => {
 	beforeEach(() => {
@@ -204,17 +186,12 @@ type PopoverEvent =
 	| 'hoverout'
 	| 'destroy'
 
-interface PopoverEventRecorder {
-	readonly count: number
-	clear(): void
-}
-
 interface PopoverContext {
 	readonly api: CreatePopoverInstance
 	readonly anchor: HTMLButtonElement
 	readonly panel: HTMLDivElement
-	readonly opens: PopoverEventRecorder
-	readonly closes: PopoverEventRecorder
+	readonly opens: EventRecorder
+	readonly closes: EventRecorder
 }
 
 function buildPopoverContext(options: CreatePopoverOptions = {}): PopoverContext {
