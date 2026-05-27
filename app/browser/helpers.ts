@@ -1,6 +1,19 @@
 import type { MotionTiming } from './types.js'
 
 /**
+ * Wait for `ms` milliseconds — the showcase analogue of the test-side
+ * helper of the same name. Used by the statechart playgrounds to space
+ * scenario steps with real wall-time so the user can perceive each
+ * transition in the live browser (the unit tests use fake timers; the
+ * playground can't).
+ */
+export function waitForDelay(ms = 0): Promise<void> {
+	return new Promise((resolve) => {
+		window.setTimeout(resolve, ms)
+	})
+}
+
+/**
  * True when a mouse event carries a modifier key (Cmd / Ctrl / Shift /
  * Alt). The showcase rails use this to bow out of `preventDefault()` so
  * the browser's native modifier-click affordances (open-in-new-tab,

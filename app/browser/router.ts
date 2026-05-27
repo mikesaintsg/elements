@@ -64,6 +64,23 @@ import UseDragDropPage from './pages/UseDragDropPage.vue'
 import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
 import InspectorPage from './pages/InspectorPage.vue'
 
+// Statechart playgrounds — visual harness over the unit-test transition
+// tables (one page per factory under tests/src/browser/factories/).
+import AlertPlaygroundPage from './playgrounds/AlertPlaygroundPage.vue'
+import AsidePlaygroundPage from './playgrounds/AsidePlaygroundPage.vue'
+import ButtonPlaygroundPage from './playgrounds/ButtonPlaygroundPage.vue'
+import CarouselPlaygroundPage from './playgrounds/CarouselPlaygroundPage.vue'
+import DetailsPlaygroundPage from './playgrounds/DetailsPlaygroundPage.vue'
+import DialogPlaygroundPage from './playgrounds/DialogPlaygroundPage.vue'
+import FormPlaygroundPage from './playgrounds/FormPlaygroundPage.vue'
+import MenuPlaygroundPage from './playgrounds/MenuPlaygroundPage.vue'
+import PopoverPlaygroundPage from './playgrounds/PopoverPlaygroundPage.vue'
+import SelectPlaygroundPage from './playgrounds/SelectPlaygroundPage.vue'
+import TabsPlaygroundPage from './playgrounds/TabsPlaygroundPage.vue'
+import ThemePlaygroundPage from './playgrounds/ThemePlaygroundPage.vue'
+import ToastPlaygroundPage from './playgrounds/ToastPlaygroundPage.vue'
+import TooltipPlaygroundPage from './playgrounds/TooltipPlaygroundPage.vue'
+
 // Examples — fullscreen layout templates rendered without the docs chrome.
 import ConsoleExamplePage from './examples/ConsoleExamplePage.vue'
 import SettingsExamplePage from './examples/SettingsExamplePage.vue'
@@ -349,6 +366,101 @@ const INSPECTOR: Route = {
 	page: InspectorPage,
 }
 
+// ── Statechart playgrounds ─────────────────────────────────────────────────
+//
+// Each playground mirrors a factory's statechart transition table from
+// `tests/src/browser/factories/`. The unit tests run those tables
+// against synthetic timers; the playground drives the same tables
+// against a real mounted entity with real-time delays so each transition
+// is observable in the live browser. State badge + scenario list +
+// emitted-event log make the cascade-side effect of every transition
+// visible.
+
+const PLAYGROUND_DIALOG: Route = {
+	id: 'playground-dialog',
+	title: 'Dialog',
+	group: 'Statechart playgrounds',
+	page: DialogPlaygroundPage,
+}
+const PLAYGROUND_DETAILS: Route = {
+	id: 'playground-details',
+	title: 'Details',
+	group: 'Statechart playgrounds',
+	page: DetailsPlaygroundPage,
+}
+const PLAYGROUND_MENU: Route = {
+	id: 'playground-menu',
+	title: 'Menu',
+	group: 'Statechart playgrounds',
+	page: MenuPlaygroundPage,
+}
+const PLAYGROUND_POPOVER: Route = {
+	id: 'playground-popover',
+	title: 'Popover',
+	group: 'Statechart playgrounds',
+	page: PopoverPlaygroundPage,
+}
+const PLAYGROUND_ASIDE: Route = {
+	id: 'playground-aside',
+	title: 'Aside',
+	group: 'Statechart playgrounds',
+	page: AsidePlaygroundPage,
+}
+const PLAYGROUND_TOAST: Route = {
+	id: 'playground-toast',
+	title: 'Toast',
+	group: 'Statechart playgrounds',
+	page: ToastPlaygroundPage,
+}
+const PLAYGROUND_FORM: Route = {
+	id: 'playground-form',
+	title: 'Form',
+	group: 'Statechart playgrounds',
+	page: FormPlaygroundPage,
+}
+const PLAYGROUND_TABS: Route = {
+	id: 'playground-tabs',
+	title: 'Tabs',
+	group: 'Statechart playgrounds',
+	page: TabsPlaygroundPage,
+}
+const PLAYGROUND_TOOLTIP: Route = {
+	id: 'playground-tooltip',
+	title: 'Tooltip',
+	group: 'Statechart playgrounds',
+	page: TooltipPlaygroundPage,
+}
+const PLAYGROUND_SELECT: Route = {
+	id: 'playground-select',
+	title: 'Select',
+	group: 'Statechart playgrounds',
+	page: SelectPlaygroundPage,
+}
+const PLAYGROUND_CAROUSEL: Route = {
+	id: 'playground-carousel',
+	title: 'Carousel',
+	group: 'Statechart playgrounds',
+	page: CarouselPlaygroundPage,
+}
+const PLAYGROUND_ALERT: Route = {
+	id: 'playground-alert',
+	title: 'Alert',
+	group: 'Statechart playgrounds',
+	page: AlertPlaygroundPage,
+}
+const PLAYGROUND_BUTTON: Route = {
+	id: 'playground-button',
+	title: 'Button',
+	group: 'Statechart playgrounds',
+	page: ButtonPlaygroundPage,
+}
+const PLAYGROUND_THEME: Route = {
+	id: 'playground-theme',
+	title: 'Theme',
+	group: 'Statechart playgrounds',
+	page: ThemePlaygroundPage,
+}
+
 // ── Examples ───────────────────────────────────────────────────────────────
 
 const EXAMPLE_CONSOLE: Route = {
@@ -452,6 +564,20 @@ export const routes: readonly Route[] = [
 	USE_DRAG_DROP,
 	USE_THEME_BUTTON,
 	INSPECTOR,
+	PLAYGROUND_DIALOG,
+	PLAYGROUND_DETAILS,
+	PLAYGROUND_MENU,
+	PLAYGROUND_POPOVER,
+	PLAYGROUND_ASIDE,
+	PLAYGROUND_TOAST,
+	PLAYGROUND_FORM,
+	PLAYGROUND_TABS,
+	PLAYGROUND_TOOLTIP,
+	PLAYGROUND_SELECT,
+	PLAYGROUND_CAROUSEL,
+	PLAYGROUND_ALERT,
+	PLAYGROUND_BUTTON,
+	PLAYGROUND_THEME,
 	EXAMPLE_CONSOLE,
 	EXAMPLE_SETTINGS,
 	EXAMPLE_EDITORIAL,
