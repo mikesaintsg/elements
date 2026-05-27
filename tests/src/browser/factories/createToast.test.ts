@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { CreateToastInstance, CreateToastOptions } from '@elements/browser'
 import { createToast, TOAST_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
+import type { StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
-import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
+import {
+	assertCleanDispose,
+	buildElement,
+	createFactoryFixture,
+	runScenario,
+} from '../../../setupBrowser'
 
 // The toast root is a `<div role="status">`: a toast renders flow content
 // (`<header>` bands + paragraphs) that `<output>`'s phrasing-only HTML
@@ -109,5 +116,262 @@ describe('createToast', () => {
 				autohide: false,
 			}),
 		)
+	})
+})
+
+// ── Statechart transition coverage ─────────────────────────────────────────
+//
+// Toast has two orthogonal regions:
+//   - Visibility: 'closed' | 'open'
+//   - Autohide timer (only meaningful when open): 'playing' | 'paused'
+//
+// Composite states are 'closed', 'open-playing', 'open-paused'. Events
+// cover the visibility lifecycle plus the autohide pause/resume verbs
+// and the hover pause/mouseleave-resume bridge.
+//
+//   Events   : 'show' | 'hide' | 'pause' | 'resume' | 'mouseenter'
+//              | 'mouseleave' | 'autohide' | 'destroy'
+
+type ToastState = 'closed' | 'open-playing' | 'open-paused'
+type ToastEvent =
+	| 'show'
+	| 'hide'
+	| 'pause'
+	| 'resume'
+	| 'mouseenter'
+	| 'mouseleave'
+	| 'autohide'
+	| 'destroy'
+
+const TOAST_DELAY_MS = 1000
+
+interface ToastEventRecorder {
+	readonly count: number
+	clear(): void
+}
+
+interface ToastContext {
+	readonly api: CreateToastInstance
+	readonly element: HTMLDivElement
+	readonly opens: ToastEventRecorder
+	readonly closes: ToastEventRecorder
+}
+
+function buildToastContext(options: CreateToastOptions = {}): ToastContext {
+	const element = buildElement('div', { attrs: { popover: '', role: 'status' } })
+	const opens = createRecorder<[CustomEvent]>()
+	const closes = createRecorder<[CustomEvent]>()
+	const merged: CreateToastOptions = {
+		autohide: { delay: TOAST_DELAY_MS },
+		...options,
+		on: {
+			...options.on,
+			open: (event) => {
+				opens.handler(event)
+				options.on?.open?.(event)
+			},
+			close: (event) => {
+				closes.handler(event)
+				options.on?.close?.(event)
+			},
+		},
+	}
+	const [api] = createFactoryFixture(() => createToast(element, merged))
+	return { api, element, opens, closes }
+}
+
+function driveToToastState(context: ToastContext, state: ToastState): void {
+	if (state === 'closed') return
+	context.api.show()
+	vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+	context.opens.clear()
+	if (state === 'open-paused') context.api.pause()
+}
+
+function fireToastEvent(context: ToastContext, event: ToastEvent): void {
+	if (event === 'show') {
+		context.api.show()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'hide') {
+		context.api.hide()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'pause') {
+		context.api.pause()
+		return
+	}
+	if (event === 'resume') {
+		context.api.resume()
+		return
+	}
+	if (event === 'mouseenter') {
+		context.element.dispatchEvent(new Event('mouseenter'))
+		return
+	}
+	if (event === 'mouseleave') {
+		context.element.dispatchEvent(new Event('mouseleave'))
+		return
+	}
+	if (event === 'autohide') {
+		vi.advanceTimersByTime(TOAST_DELAY_MS)
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	context.api.destroy()
+}
+
+function assertToastVisible(context: ToastContext, state: ToastState): void {
+	const expectedOpen = state !== 'closed'
+	expect(context.api.visible.value).toBe(expectedOpen)
+	expect(context.element.matches(':popover-open')).toBe(expectedOpen)
+}
+
+const TOAST_SCENARIOS: readonly StateScenario<ToastState, ToastEvent, ToastContext>[] = [
+	{
+		transition: {
+			name: 'closed × show → open-playing',
+			from: 'closed',
+			event: 'show',
+			to: 'open-playing',
+		},
+		arrange: driveToToastState,
+		act: fireToastEvent,
+		assert: (context, state) => {
+			assertToastVisible(context, state)
+			expect(context.opens.count).toBe(1)
+		},
+	},
+	{
+		transition: {
+			name: 'open-playing × hide → closed',
+			from: 'open-playing',
+			event: 'hide',
+			to: 'closed',
+		},
+		arrange: driveToToastState,
+		act: fireToastEvent,
+		assert: (context, state) => {
+			assertToastVisible(context, state)
+			expect(context.closes.count).toBe(1)
+		},
+	},
+	{
+		transition: {
+			name: 'open-playing × autohide → closed (delay elapses)',
+			from: 'open-playing',
+			event: 'autohide',
+			to: 'closed',
+		},
+		arrange: driveToToastState,
+		act: fireToastEvent,
+		assert: (context, state) => {
+			assertToastVisible(context, state)
+			expect(context.closes.count).toBe(1)
+		},
+	},
+	{
+		transition: {
+			name: 'open-playing × pause → open-paused (timer suspended)',
+			from: 'open-playing',
+			event: 'pause',
+			to: 'open-paused',
+		},
+		arrange: driveToToastState,
+		act: fireToastEvent,
+		assert: (context, state) => {
+			assertToastVisible(context, state)
+			// Advance well past the autohide delay — the toast must stay
+			// open because the timer is paused.
+			vi.advanceTimersByTime(TOAST_DELAY_MS * 2)
+			expect(context.api.visible.value).toBe(true)
+			expect(context.closes.count).toBe(0)
+		},
+	},
+	{
+		transition: {
+			name: 'open-paused × resume → open-playing (timer restarts)',
+			from: 'open-paused',
+			event: 'resume',
+			to: 'open-playing',
+		},
+		arrange: driveToToastState,
+		act: fireToastEvent,
+		assert: (context, state) => {
+			assertToastVisible(context, state)
+			vi.advanceTimersByTime(TOAST_DELAY_MS + TRANSITION_FALLBACK_MS)
+			expect(context.api.visible.value).toBe(false)
+			expect(context.closes.count).toBe(1)
+		},
+	},
+	{
+		transition: {
+			name: 'open-playing × mouseenter → open-paused (hover bridge)',
+			from: 'open-playing',
+			event: 'mouseenter',
+			to: 'open-paused',
+		},
+		arrange: driveToToastState,
+		act: fireToastEvent,
+		assert: (context, state) => {
+			assertToastVisible(context, state)
+			vi.advanceTimersByTime(TOAST_DELAY_MS * 2)
+			expect(context.api.visible.value).toBe(true)
+		},
+	},
+	{
+		transition: {
+			name: 'open-paused × mouseleave → open-playing (hover bridge)',
+			from: 'open-paused',
+			event: 'mouseleave',
+			to: 'open-playing',
+		},
+		arrange: driveToToastState,
+		act: fireToastEvent,
+		assert: (context, state) => {
+			assertToastVisible(context, state)
+			vi.advanceTimersByTime(TOAST_DELAY_MS + TRANSITION_FALLBACK_MS)
+			expect(context.api.visible.value).toBe(false)
+		},
+	},
+	{
+		transition: {
+			name: 'closed × hide → closed (no-op, no emit)',
+			from: 'closed',
+			event: 'hide',
+			to: 'closed',
+		},
+		arrange: driveToToastState,
+		act: fireToastEvent,
+		assert: (context, state) => {
+			assertToastVisible(context, state)
+			expect(context.opens.count).toBe(0)
+			expect(context.closes.count).toBe(0)
+		},
+	},
+]
+
+describe('createToast (statechart)', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+	})
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it.each(TOAST_SCENARIOS)('$transition.name', async (scenario) => {
+		const context = buildToastContext()
+		expect(context.api.visible.value).toBe(false)
+		await runScenario(scenario, context)
+	})
+
+	it('autohide:false keeps the toast in open-playing indefinitely', () => {
+		const context = buildToastContext({ autohide: false })
+		fireToastEvent(context, 'show')
+		assertToastVisible(context, 'open-playing')
+		vi.advanceTimersByTime(60_000)
+		expect(context.api.visible.value).toBe(true)
 	})
 })
