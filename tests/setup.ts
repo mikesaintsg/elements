@@ -450,6 +450,40 @@ export const TAILWIND_SINGLE_TOKEN_UTILITIES: readonly string[] = [
 	'stroke-current',
 ] as const
 
+// ============================================================================
+// === Statechart-driven test contract ===
+//
+//  Type-only contract shared by every statechart-style transition test under
+//  `tests/src/browser/**`. Browser tests model a stateful entity (factory /
+//  composable) as a finite-state machine, declare a transition table, and
+//  iterate it via `it.each(...)` — asserting source state × event → target
+//  state + observable result per row.
+//
+//  Lives in `setup.ts` (not `setupBrowser.ts`) because the types are
+//  environment-agnostic — no `Element`, no `Event`, no Vue. The DOM-driven
+//  iteration helpers (`runScenario`, `runScenarios`) that consume these
+//  types live in `setupBrowser.ts`.
+//
+//  Field names follow AGENTS.md §4.1 — single-word entity-scoped names
+//  (`from`, `event`, `to`, `arrange`, `act`, `assert`). `TState` and `TEvent`
+//  are string-literal unions per file (`'closed' | 'open'`, `'show' | 'hide'`,
+//  …) so the table is exhaustively typed against the entity's vocabulary.
+// ============================================================================
+
+export interface StateTransition<TState extends string, TEvent extends string> {
+	readonly name: string
+	readonly from: TState
+	readonly event: TEvent
+	readonly to: TState
+}
+
+export interface StateScenario<TState extends string, TEvent extends string, TContext> {
+	readonly transition: StateTransition<TState, TEvent>
+	readonly arrange: (context: TContext, state: TState) => Promise<void> | void
+	readonly act: (context: TContext, event: TEvent) => Promise<void> | void
+	readonly assert: (context: TContext, state: TState) => Promise<void> | void
+}
+
 afterEach(() => {
 	vi.restoreAllMocks()
 })

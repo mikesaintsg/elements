@@ -37,6 +37,7 @@ import type { App, Ref } from 'vue'
 import { afterEach, expect, vi } from 'vitest'
 import { createApp, nextTick, ref } from 'vue'
 import { STORAGE_KEY_THEME, resetTheme } from '@elements/browser'
+import type { StateScenario } from './setup'
 import { waitForDelay } from './setup'
 
 // ── Factory fixtures ────────────────────────────────────────────────────────
@@ -332,6 +333,37 @@ export function assertCleanDispose<T extends FactoryFixtureInstance>(
 		if (fakeTimers) expect(vi.getTimerCount() - baseTimers).toBe(0)
 	} finally {
 		harness.restore()
+	}
+}
+
+// ── Statechart scenario runner ──────────────────────────────────────────────
+//
+// `runScenario` drives a single transition row through its arrange → act →
+// assert phases against a freshly-built context. `runScenarios` is the
+// `for-await`-of convenience that walks an entire table — typically called
+// from `it.each(table)` so per-row failures point at the failing transition.
+//
+// The runner is intentionally tiny — it owns no fixture lifecycle (callers
+// produce the context inside `arrange` or via a closure-captured `build`),
+// no event dispatch, and no observable assertion. Every transition's
+// arrange / act / assert closures speak DOM directly, so the same harness
+// fits factories, composables, and pure-DOM scenarios without abstraction.
+
+export async function runScenario<TState extends string, TEvent extends string, TContext>(
+	scenario: StateScenario<TState, TEvent, TContext>,
+	context: TContext,
+): Promise<void> {
+	await scenario.arrange(context, scenario.transition.from)
+	await scenario.act(context, scenario.transition.event)
+	await scenario.assert(context, scenario.transition.to)
+}
+
+export async function runScenarios<TState extends string, TEvent extends string, TContext>(
+	scenarios: readonly StateScenario<TState, TEvent, TContext>[],
+	build: (scenario: StateScenario<TState, TEvent, TContext>) => TContext,
+): Promise<void> {
+	for (const scenario of scenarios) {
+		await runScenario(scenario, build(scenario))
 	}
 }
 
