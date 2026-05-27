@@ -95,6 +95,13 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see alert mid-life instead of reset to baseline.
+	factory.value?.show()
+	await waitForDelay(200)
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -107,6 +114,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<aside ref="alertRef" role="alert" class="warning">
 			<p>Heads up — this is the alert body.</p>

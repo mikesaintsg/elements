@@ -122,6 +122,13 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	factoryA.value?.show()
+	await waitForDelay(300)
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -134,6 +141,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<div ref="groupRef" role="tablist">
 			<button ref="triggerARef" type="button" role="tab" aria-controls="playground-tabs-pane-a">

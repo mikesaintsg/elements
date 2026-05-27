@@ -124,6 +124,13 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	factory.value?.show()
+	await waitForDelay(200)
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -136,6 +143,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<details ref="detailsRef">
 			<summary>Disclosure summary</summary>

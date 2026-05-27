@@ -79,6 +79,15 @@ interface Props {
 	readonly events: readonly PlaygroundEvent[]
 	readonly scenarios: readonly PlaygroundScenario[]
 	readonly step?: () => Promise<void> | void
+	/**
+	 * Optional "showpiece" callback. After the auto-walk passes the page
+	 * may run a `demo()` that leaves the widget in its most
+	 * visually-meaningful state (a dialog OPEN, a carousel cycling,
+	 * a toast visible) so vision-model / human reviewers see the entity
+	 * mid-life rather than reset to its closed baseline. State
+	 * assertions are NOT applied to this final frame.
+	 */
+	readonly demo?: () => Promise<void> | void
 }
 
 const props = defineProps<Props>()
@@ -168,19 +177,42 @@ async function playAll(): Promise<void> {
 	announcement.value = `running ${props.scenarios.length} scenarios.`
 	results.value = {}
 	try {
-		for (const scenario of props.scenarios) {
+		// `step` runs BETWEEN scenarios (to reset to a clean baseline
+		// before the next arrange + act) — but NOT after the last one.
+		// Leaving the final scenario's terminal state in place lets a
+		// visual reviewer (or vision-model capture) inspect the widget
+		// in a meaningful "after the show" frame instead of having
+		// everything snap back to the closed/idle baseline.
+		for (let i = 0; i < props.scenarios.length; i += 1) {
+			const scenario = props.scenarios[i]
+			if (!scenario) break
 			if (cancelled) break
 			await play(scenario)
 			if (cancelled) break
-			await props.step?.()
-			await waitForDelay(PLAY_BETWEEN_SCENARIOS_MS)
+			if (i < props.scenarios.length - 1) {
+				await props.step?.()
+				await waitForDelay(PLAY_BETWEEN_SCENARIOS_MS)
+			}
 		}
 		if (!cancelled) {
-			const finalStatus = harnessStatus.value
-			announcement.value =
-				finalStatus === 'passed'
-					? `all ${props.scenarios.length} scenarios passed.`
-					: `${failedCount.value} of ${props.scenarios.length} scenarios failed.`
+			// `harnessStatus` returns `'running'` while `playingAll` is
+			// still true (we're inside the `try` block); resolve the
+			// verdict from the result counters directly so the
+			// announcement + demo gate read the real outcome.
+			const finalPassed = passedCount.value === props.scenarios.length && failedCount.value === 0
+			announcement.value = finalPassed
+				? `all ${props.scenarios.length} scenarios passed.`
+				: `${failedCount.value} of ${props.scenarios.length} scenarios failed.`
+			// Drive the optional showpiece AFTER the assertion verdict so
+			// the harness's pass/fail attrs are stable for external
+			// automation polling; the demo state is purely decorative.
+			if (finalPassed && props.demo) {
+				try {
+					await props.demo()
+				} catch {
+					/* swallow — demo is best-effort, not a gate */
+				}
+			}
 		} else {
 			announcement.value = 'stopped.'
 		}
@@ -388,7 +420,7 @@ function rowClassFor(scenario: PlaygroundScenario): Record<string, boolean> {
 .statechart-stage {
 	min-block-size: 12rem;
 	padding: calc(var(--spacing) * 4);
-	border: 1px dashed var(--set-border-color);
+	border: 1px dashed var(--color-border);
 	border-radius: var(--radius-lg);
 	display: flex;
 	align-items: center;

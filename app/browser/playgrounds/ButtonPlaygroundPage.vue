@@ -119,6 +119,13 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	if (factory.value?.active.value === false) factory.value?.toggle()
+	await waitForDelay(200)
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -131,6 +138,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<button ref="buttonRef" type="button" class="primary large">Toggle me</button>
 	</StatechartHarness>

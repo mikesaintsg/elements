@@ -116,6 +116,13 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	factory.value?.set('dark')
+	await waitForDelay(300)
+}
+
 onUnmounted(() => {
 	cleanup?.()
 	resetTheme()
@@ -129,6 +136,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<dl>
 			<dt>Setting</dt>

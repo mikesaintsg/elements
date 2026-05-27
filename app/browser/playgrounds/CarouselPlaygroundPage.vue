@@ -123,6 +123,13 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	factory.value?.start()
+	await waitForDelay(300)
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -135,8 +142,15 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
-		<section ref="carouselRef" class="carousel" role="region">
+		<section
+			ref="carouselRef"
+			class="carousel showcase-carousel-playground"
+			role="region"
+			aria-roledescription="carousel"
+			tabindex="0"
+		>
 			<ol role="list">
 				<li role="listitem" class="active primary">Slide one</li>
 				<li role="listitem" class="success">Slide two</li>
@@ -145,3 +159,14 @@ onUnmounted(() => {
 		</section>
 	</StatechartHarness>
 </template>
+
+<style scoped>
+/* The framework's `.carousel` rule sizes by `block-size` but doesn't
+ * pin `inline-size`; inside the harness's flex stage the container
+ * would otherwise collapse to the absolutely-positioned items' 0-width
+ * intrinsic size. Pin a sensible playground width so the slide actually
+ * fills the visible track. */
+.showcase-carousel-playground {
+	inline-size: min(28rem, 100%);
+}
+</style>

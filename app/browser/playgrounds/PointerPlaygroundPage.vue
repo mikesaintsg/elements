@@ -135,6 +135,23 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	padRef.value?.dispatchEvent(
+		new PointerEvent('pointerdown', {
+			bubbles: true,
+			cancelable: true,
+			pointerId: 1,
+			pointerType: 'mouse',
+			button: 0,
+			buttons: 1,
+		}),
+	)
+	await waitForDelay(200)
+	sync()
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -147,6 +164,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<div ref="padRef" class="showcase-pointer-playground-pad" tabindex="0">
 			<p>Pointer capture pad</p>
@@ -160,7 +178,7 @@ onUnmounted(() => {
 	min-block-size: 8rem;
 	min-inline-size: 16rem;
 	padding: calc(var(--spacing) * 4);
-	border: 2px solid var(--set-border-color);
+	border: 2px solid var(--color-border);
 	border-radius: var(--radius-md);
 	display: flex;
 	flex-direction: column;

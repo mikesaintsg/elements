@@ -109,6 +109,14 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	factory.value?.activate()
+	await waitForDelay(200)
+	sync()
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -121,6 +129,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<div ref="trapRef">
 			<header>

@@ -157,6 +157,14 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see toast mid-life instead of reset to baseline.
+	factory.value?.show()
+	factory.value?.pause()
+	await waitForDelay(300)
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -169,6 +177,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<div ref="toastRef" popover role="status">
 			<header>

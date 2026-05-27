@@ -194,6 +194,16 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	factory.value?.sort.toggle('name')
+	factory.value?.selection.select('row-1')
+	factory.value?.expansion.expand('row-0')
+	await waitForDelay(300)
+	sync()
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -206,6 +216,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<table ref="tableRef" class="showcase-table-playground"></table>
 	</StatechartHarness>
@@ -220,6 +231,6 @@ onUnmounted(() => {
 .showcase-table-playground :deep(td) {
 	padding: calc(var(--spacing) * 2) calc(var(--spacing) * 3);
 	text-align: start;
-	border-block-end: 1px solid var(--set-border-color);
+	border-block-end: 1px solid var(--color-border);
 }
 </style>

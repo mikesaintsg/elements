@@ -112,6 +112,15 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	factory.value?.select(1)
+	factory.value?.select(3, new MouseEvent('mousedown', { shiftKey: true }))
+	await waitForDelay(200)
+	sync()
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -124,6 +133,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<ol ref="listRef" role="list" class="showcase-drag-playground-list">
 			<li data-index="0">Item one</li>

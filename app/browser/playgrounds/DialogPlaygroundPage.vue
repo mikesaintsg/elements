@@ -147,6 +147,15 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see dialog mid-life instead of reset to baseline.
+	rebuild(true)
+	await waitForDelay(150)
+	factory.value?.show()
+	await waitForDelay(300)
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -159,6 +168,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<dialog ref="dialogRef">
 			<header>

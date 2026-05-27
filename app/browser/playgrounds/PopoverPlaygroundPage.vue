@@ -149,6 +149,13 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see popover mid-life instead of reset to baseline.
+	factory.value?.show()
+	await waitForDelay(300)
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -161,6 +168,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<div>
 			<button ref="anchorRef" type="button" class="primary">Open popover</button>

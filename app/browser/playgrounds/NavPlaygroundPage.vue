@@ -104,6 +104,12 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	await scrollToSection('section-c')
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -116,6 +122,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<div>
 			<nav ref="navRef" aria-label="Section nav">
@@ -147,7 +154,7 @@ onUnmounted(() => {
 .showcase-nav-playground-scroll {
 	max-block-size: 14rem;
 	overflow-y: auto;
-	border: 1px solid var(--set-border-color);
+	border: 1px solid var(--color-border);
 	border-radius: var(--radius-md);
 	padding: calc(var(--spacing) * 2);
 }

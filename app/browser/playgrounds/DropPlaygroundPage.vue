@@ -137,6 +137,18 @@ const scenarios = [
 	},
 ] as const
 
+async function demo(): Promise<void> {
+	// Leave the widget in its showcase-friendly state so visual
+	// reviewers see the entity mid-life instead of reset to baseline.
+	const t = new DataTransfer()
+	t.setData('text/plain', 'demo')
+	zoneRef.value?.dispatchEvent(
+		new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: t }),
+	)
+	await waitForDelay(200)
+	sync()
+}
+
 onUnmounted(() => {
 	cleanup?.()
 })
@@ -149,6 +161,7 @@ onUnmounted(() => {
 		:events="events"
 		:scenarios="scenarios"
 		:step="reset"
+		:demo="demo"
 	>
 		<div ref="zoneRef" class="showcase-drop-playground-zone">
 			<p>Drop zone — accepts <code>text/plain</code>.</p>
@@ -161,7 +174,7 @@ onUnmounted(() => {
 .showcase-drop-playground-zone {
 	min-block-size: 8rem;
 	padding: calc(var(--spacing) * 4);
-	border: 2px dashed var(--set-border-color);
+	border: 2px dashed var(--color-border);
 	border-radius: var(--radius-md);
 	display: flex;
 	flex-direction: column;
