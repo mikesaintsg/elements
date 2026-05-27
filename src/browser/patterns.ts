@@ -1267,6 +1267,26 @@ export const COMPOSABLE_CONTRACTS: Readonly<Record<string, ComposableContract>> 
 		notes:
 			'Sizing extensions for dialog.scrollable[open] and dialog:modal. Motion lives on the element layer + popover surface.',
 	},
+	drag: {
+		name: 'drag',
+		// The drag composable layer paints cursor + drop indicators via
+		// element-agnostic selectors (`[draggable="true"]` + the
+		// `DRAG_ROW_CLASSES`). No per-instance --set-drag-* tokens are
+		// required today — the cursor / indicator chrome reads global
+		// framework tokens (`--color-primary` for the indicator bar,
+		// `--color-primary` mixed to 12% for the drop-target tint).
+		tokens: { required: [] },
+		// `[draggable='true']` is an `attribute` selector kind; the
+		// `[data-index]` row hooks are `data-attribute`; the class
+		// state selectors (`.dragging`, `.drop-target`, etc.) are
+		// `class`. The factory writes all three contracts onto the
+		// host's `[data-index]` children.
+		state: { selectors: ['attribute', 'data-attribute', 'class'] },
+		animated: false,
+		factory: 'createDrag',
+		notes:
+			'Element-agnostic drag affordance — paints the grab cursor on every `[draggable="true"]` row, dims the source mid-drag, tints the drop-target row, and paints before/after insertion bars from the DRAG_ROW_CLASSES the factory writes.',
+	},
 	select: {
 		name: 'select',
 		tokens: {

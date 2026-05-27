@@ -43,6 +43,13 @@ import { classNameIsSanctioned, componentNamespacesFromPaths } from '../../setup
 //                         no <h1>/<section> skeleton, no per-page test in
 //                         pages/*.test.ts). Route- and barrel-bijection checks
 //                         apply to BOTH sets combined (`pageNames`).
+//   playgroundRawSources — `playgrounds/*PlaygroundPage.vue` — statechart
+//                         visual harnesses (one per factory). Each renders
+//                         into the shared `StatechartHarness.vue` and drives
+//                         a scenario table; they follow the same exemption
+//                         shape as examples — no JSDoc intro / skeleton /
+//                         bespoke per-page test required (the bijection
+//                         covers them via the route + barrel only).
 
 const showcaseRawSources = import.meta.glob('../../../app/browser/pages/*.vue', {
 	query: '?raw',
@@ -56,19 +63,58 @@ const examplesRawSources = import.meta.glob('../../../app/browser/examples/*Page
 	eager: true,
 }) as Record<string, string>
 
+// Example BODY files (`examples/{Name}Example.vue`, NOT the `*Page.vue`
+// wrappers). The body files are where the actual full-page example
+// markup lives — the inline-style + `<style>`-block gates run over
+// these too so app-logic inline declarations / scoped style blocks
+// can't slip into an example without being caught.
+const exampleBodyRawSources = import.meta.glob('../../../app/browser/examples/*Example.vue', {
+	query: '?raw',
+	import: 'default',
+	eager: true,
+}) as Record<string, string>
+
+const playgroundRawSources = import.meta.glob(
+	'../../../app/browser/playgrounds/*PlaygroundPage.vue',
+	{
+		query: '?raw',
+		import: 'default',
+		eager: true,
+	},
+) as Record<string, string>
+
 function baseName(path: string): string {
 	return path.match(/([^/\\]+)\.vue$/)?.[1] ?? ''
 }
 
-// `pages` — combined source map (used for namespace/style checks on all pages)
+// `pages` — combined source map (used for namespace/style checks on
+// all routed pages: showcase pages + example wrappers + playground
+// pages). Per-example BODY files (the `{Name}Example.vue` companions)
+// have their own gate names below since they don't correspond to a
+// route entry directly.
 const pages: Record<string, string> = {}
-for (const [path, source] of Object.entries({ ...showcaseRawSources, ...examplesRawSources }))
+for (const [path, source] of Object.entries({
+	...showcaseRawSources,
+	...examplesRawSources,
+	...playgroundRawSources,
+}))
 	pages[baseName(path)] = source
+
+// `exampleBodies` — name → raw source for `{Name}Example.vue` files
+// only. The inline-style + scoped-style-block gates iterate these
+// separately so they're held to the same authoring contract as the
+// page wrappers without polluting the route↔barrel↔test bijection.
+const exampleBodies: Record<string, string> = {}
+for (const [path, source] of Object.entries(exampleBodyRawSources)) {
+	exampleBodies[baseName(path)] = source
+}
+const exampleBodyNames = Object.keys(exampleBodies).sort()
 
 // `showcasePageNames` — structural/skeleton/bijection-with-tests checks only
 const showcasePageNames = Object.keys(showcaseRawSources).map(baseName).sort()
 
-// `pageNames` — all routed pages (showcase + examples); route + barrel checks
+// `pageNames` — all routed pages (showcase + examples + playgrounds);
+// route + barrel checks
 const pageNames = Object.keys(pages).sort()
 
 // ── Per-page test files (browser-safe directory listing) ────────────────────
@@ -197,9 +243,12 @@ function splitDeclarations(value: string): string[] {
 const START_TAG = /<[a-zA-Z][a-zA-Z0-9-]*\b[^>]*>/g
 const TAG_STYLE_ATTR = /(?:^|[^:\w-])style="([^"]*)"/
 
-function inlineStyleViolations(name: string): readonly string[] {
+function inlineStyleViolations(
+	name: string,
+	sources: Record<string, string> = pages,
+): readonly string[] {
 	const out: string[] = []
-	for (const tag of templateBlock(pages[name] ?? '').match(START_TAG) ?? []) {
+	for (const tag of templateBlock(sources[name] ?? '').match(START_TAG) ?? []) {
 		const value = tag.match(TAG_STYLE_ATTR)?.[1]?.trim()
 		if (value === undefined) continue
 		const decls = splitDeclarations(value)
@@ -388,6 +437,35 @@ describe('pages — no inline `style="…"` beyond the showcase.md §2 exemption
 		// or a `.showcase-*` class.
 		it(`${name}.vue — inline styles are exempt-only`, () => {
 			expect(inlineStyleViolations(name)).toEqual([])
+		})
+	}
+})
+
+// Same gate, applied to per-example body files (`{Name}Example.vue`).
+// Bodies aren't routed directly (the wrappers are) so they don't sit
+// in `pageNames`; iterate `exampleBodyNames` separately. The example
+// body is where the actual full-page app markup lives — if an inline
+// non-dynamic `style="…"` slips in there, the framework is failing to
+// provide an essential and we promote to a `.examples-*` class in
+// `app/browser/styles/examples.css` (or a framework modifier).
+describe('example bodies — no inline `style="…"` beyond the §2 exemptions', () => {
+	for (const name of exampleBodyNames) {
+		it(`${name}.vue — inline styles are exempt-only`, () => {
+			expect(inlineStyleViolations(name, exampleBodies)).toEqual([])
+		})
+	}
+})
+
+describe('example bodies — no `<style>` blocks (app logic belongs in examples.css)', () => {
+	for (const name of exampleBodyNames) {
+		// Examples are zero-CSS authoring surfaces by convention. Any
+		// rule that paints chrome (layout fix, per-row aria-current
+		// accent, mobile-mode tweak) belongs in
+		// `app/browser/styles/examples.css` under a `.examples-{name}-*`
+		// namespace, not inside the example's `<style scoped>` block.
+		it(`${name}.vue — no <style> blocks`, () => {
+			const src = exampleBodies[name] ?? ''
+			expect(/<style\b/.test(src)).toBe(false)
 		})
 	}
 })

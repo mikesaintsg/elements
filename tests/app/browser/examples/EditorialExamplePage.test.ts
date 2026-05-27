@@ -63,3 +63,34 @@ describe('EditorialExamplePage — content vocabulary', () => {
 		}
 	})
 })
+
+// ── Interactive drives ─────────────────────────────────────────────────────
+
+describe('EditorialExamplePage — FAQ disclosure interaction', () => {
+	function waitFor(ms: number): Promise<void> {
+		return new Promise((resolve) => {
+			setTimeout(resolve, ms)
+		})
+	}
+
+	it('clicking a closed FAQ <summary> opens its <details>', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(50)
+			const closed = [...host.querySelectorAll<HTMLDetailsElement>('details')].find((d) => !d.open)
+			if (!closed) throw new Error('expected at least one closed FAQ disclosure')
+			const summary = closed.querySelector<HTMLElement>('summary')
+			if (!summary) throw new Error('disclosure missing <summary>')
+			summary.click()
+			await waitFor(50)
+			expect(closed.open).toBe(true)
+
+			// Clicking again toggles back to closed.
+			summary.click()
+			await waitFor(50)
+			expect(closed.open).toBe(false)
+		} finally {
+			teardown()
+		}
+	})
+})

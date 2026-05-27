@@ -26,6 +26,20 @@
 // `i.icon` so glyph names that coincide with variant words (success /
 // warning / danger / information) never collide with the bare variant
 // modifier classes. `--icon` stays overridable inline for custom assets.
+//
+// Colour discipline — the icon inherits `currentColor` from its parent.
+// This is the right default because the icon is an intra-text affordance
+// (it lives inside buttons, links, labels, headings) and should match
+// whatever text colour those carriers paint. The framework's prose-colour
+// discipline applies — same reasoning as `<strong>` (see
+// `elements/_strong.scss`): inline phrasing tracks the carrier's colour,
+// not a variant token. To tint an icon a specific variant (a green
+// check-mark on canvas, a danger-tinted info badge) put the variant on
+// the parent's `color` directly (a per-element class, the carrier's
+// `color: var(--color-success)` rule, or a `.text-{variant}` utility
+// when one exists) — NOT a variant-token cascade on the icon itself,
+// which would also fire inside filled-surface buttons and render the
+// icon in the on-canvas colour rather than the button's white text.
 // ============================================================================
 
 @use '../mixins' as *;

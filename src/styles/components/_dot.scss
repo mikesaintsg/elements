@@ -13,6 +13,15 @@
 //   2. `.dot.small` / `.dot.large` retune the diameter via the size cascade.
 //   3. `.dot.pulse` adds a halo animation via an `::after` overlay; honors
 //      `prefers-reduced-motion` (animation removed, halo hidden).
+//   4. `--set-dot-baseline-offset` lets a caller nudge the dot's block-axis
+//      position to align with the optical center of a multi-line text
+//      block next to it. In an inline flow the dot sits on the text
+//      baseline (UA `vertical-align: baseline`); in a `display: flex`
+//      row paired with multi-line text (`align-items: flex-start`) the
+//      dot anchors to the cap-height of the FIRST line and reads as too
+//      high. Set the token to a positive rem value (~ half the
+//      line-height) to drop the dot to the visual center of the first
+//      line. Default is `0` — no nudge.
 //
 // Quirks:
 //   - `display: inline-block` so the dot sits on the text baseline; pair it
@@ -28,6 +37,7 @@
 		--set-dot-background-color: var(--set-variant-background-color, var(--color-text-muted));
 		--set-dot-pulse-duration: 1.6s;
 		--set-dot-pulse-easing: ease-out;
+		--set-dot-baseline-offset: 0;
 
 		display: inline-block;
 		flex-shrink: 0;
@@ -36,6 +46,7 @@
 		border-radius: 50%;
 		background-color: var(--set-dot-background-color);
 		vertical-align: baseline;
+		margin-block-start: var(--set-dot-baseline-offset);
 	}
 
 	.dot.small {

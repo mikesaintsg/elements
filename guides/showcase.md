@@ -35,6 +35,7 @@ The showcase is the framework's mirror — a consumer-side app that uses _only_ 
 | `Composables — Attribute-bound` | [composables.md § Naming bucket 2](composables.md).                                            |
 | `Composables — Primitives`      | [composables.md § Naming bucket 3](composables.md).                                            |
 | `Examples`                      | Full-page layout templates rendered without the docs chrome (sidebar/header/TOC/footer drop out so the example claims the viewport). |
+| `Statechart playgrounds`        | Per-factory visual harness — drives the statechart transition tables defined under `tests/src/browser/factories/` against a live entity. Each page renders into the shared `StatechartHarness.vue` (scenario list, inline pass/fail, `data-statechart-status` for automation, deep-link autoplay via `?scenario=…` / `?autoplay=all`). Used for live-browser review (Claude in Chrome / Preview) and as the E2E surface in `tests/app/browser/playgrounds.test.ts`. |
 
 ---
 

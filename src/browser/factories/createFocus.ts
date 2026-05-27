@@ -1,7 +1,7 @@
 import type { CreateFocusInstance, CreateFocusOptions } from '../types.js'
 import { effectScope, readonly, ref } from '@vue/reactivity'
-import { FOCUSABLE_SELECTOR } from '../constants.js'
-import { attachListeners } from '../helpers.js'
+import { FOCUS_EVENTS, FOCUSABLE_SELECTOR } from '../constants.js'
+import { attachListeners, emit } from '../helpers.js'
 
 /**
  * Framework-agnostic focus management factory. Confines `Tab` navigation
@@ -73,6 +73,7 @@ export function createFocus(
 		const target =
 			(typeof initialOpt === 'function' ? initialOpt(element) : initialOpt) ?? items[0] ?? null
 		target?.focus()
+		emit(element, FOCUS_EVENTS.activate)
 	}
 
 	const deactivate = (): void => {
@@ -80,6 +81,7 @@ export function createFocus(
 		active.value = false
 		if (restore && previousFocus instanceof HTMLElement) previousFocus.focus()
 		previousFocus = null
+		emit(element, FOCUS_EVENTS.deactivate)
 	}
 
 	let destroyed = false

@@ -453,10 +453,9 @@ const subtitle = computed(() => `Here's how the store is doing ${rangeLabel[rang
 		<div class="stack">
 			<div v-for="entry in activity" :key="entry.action" class="cluster flex-nowrap items-start">
 				<span
-					class="dot"
+					class="dot examples-console-activity-dot"
 					:class="entry.variant"
 					aria-hidden="true"
-					style="margin-block-start: 0.4rem"
 				></span>
 				<span class="lines fluid">
 					<span

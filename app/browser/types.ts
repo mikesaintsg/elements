@@ -31,6 +31,15 @@ import type { Component } from 'vue'
  *  10. `Examples`                     — Full-page layout templates. Rendered
  *                                       without the docs chrome so the
  *                                       example claims the viewport.
+ *  11. `Statechart playgrounds`       — Per-factory visual harness — drives
+ *                                       the statechart transition tables
+ *                                       defined under `tests/src/browser/
+ *                                       factories/` against a live entity
+ *                                       so the cascade + reactive state +
+ *                                       emitted events are observable in a
+ *                                       real browser. Developer tool, kept
+ *                                       at the end so the docs taxonomy
+ *                                       above stays intact.
  *
  * The array IS the declared display order. `App.vue`'s `grouped` computed
  * iterates `ROUTE_GROUPS` so routes can be declared in any order inside
@@ -47,6 +56,7 @@ export const ROUTE_GROUPS = [
 	'Composables — Attribute-bound',
 	'Composables — Primitives',
 	'Examples',
+	'Statechart playgrounds',
 ] as const
 
 export type RouteGroup = (typeof ROUTE_GROUPS)[number]

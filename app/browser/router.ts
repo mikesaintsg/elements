@@ -64,6 +64,29 @@ import UseDragDropPage from './pages/UseDragDropPage.vue'
 import UseThemeButtonPage from './pages/UseThemeButtonPage.vue'
 import InspectorPage from './pages/InspectorPage.vue'
 
+// Statechart playgrounds — visual harness over the unit-test transition
+// tables (one page per factory under tests/src/browser/factories/).
+import AlertPlaygroundPage from './playgrounds/AlertPlaygroundPage.vue'
+import AsidePlaygroundPage from './playgrounds/AsidePlaygroundPage.vue'
+import ButtonPlaygroundPage from './playgrounds/ButtonPlaygroundPage.vue'
+import CarouselPlaygroundPage from './playgrounds/CarouselPlaygroundPage.vue'
+import DetailsPlaygroundPage from './playgrounds/DetailsPlaygroundPage.vue'
+import DialogPlaygroundPage from './playgrounds/DialogPlaygroundPage.vue'
+import DragPlaygroundPage from './playgrounds/DragPlaygroundPage.vue'
+import DropPlaygroundPage from './playgrounds/DropPlaygroundPage.vue'
+import FocusPlaygroundPage from './playgrounds/FocusPlaygroundPage.vue'
+import FormPlaygroundPage from './playgrounds/FormPlaygroundPage.vue'
+import MenuPlaygroundPage from './playgrounds/MenuPlaygroundPage.vue'
+import NavPlaygroundPage from './playgrounds/NavPlaygroundPage.vue'
+import PointerPlaygroundPage from './playgrounds/PointerPlaygroundPage.vue'
+import PopoverPlaygroundPage from './playgrounds/PopoverPlaygroundPage.vue'
+import SelectPlaygroundPage from './playgrounds/SelectPlaygroundPage.vue'
+import TablePlaygroundPage from './playgrounds/TablePlaygroundPage.vue'
+import TabsPlaygroundPage from './playgrounds/TabsPlaygroundPage.vue'
+import ThemePlaygroundPage from './playgrounds/ThemePlaygroundPage.vue'
+import ToastPlaygroundPage from './playgrounds/ToastPlaygroundPage.vue'
+import TooltipPlaygroundPage from './playgrounds/TooltipPlaygroundPage.vue'
+
 // Examples — fullscreen layout templates rendered without the docs chrome.
 import ConsoleExamplePage from './examples/ConsoleExamplePage.vue'
 import SettingsExamplePage from './examples/SettingsExamplePage.vue'
@@ -331,7 +354,7 @@ const USE_POINTER: Route = {
 	page: UsePointerPage,
 }
 const USE_DRAG_DROP: Route = {
-	id: 'use-drag-drop',
+	id: 'use-drag',
 	title: 'useDrag / useDrop',
 	group: 'Composables — Primitives',
 	page: UseDragDropPage,
@@ -347,6 +370,137 @@ const INSPECTOR: Route = {
 	title: 'Inspector',
 	group: 'Composables — Primitives',
 	page: InspectorPage,
+}
+
+// ── Statechart playgrounds ─────────────────────────────────────────────────
+//
+// Each playground mirrors a factory's statechart transition table from
+// `tests/src/browser/factories/`. The unit tests run those tables
+// against synthetic timers; the playground drives the same tables
+// against a real mounted entity with real-time delays so each transition
+// is observable in the live browser. State badge + scenario list +
+// emitted-event log make the cascade-side effect of every transition
+// visible.
+
+const PLAYGROUND_DIALOG: Route = {
+	id: 'playground-dialog',
+	title: 'createDialog',
+	group: 'Statechart playgrounds',
+	page: DialogPlaygroundPage,
+}
+const PLAYGROUND_DETAILS: Route = {
+	id: 'playground-details',
+	title: 'createDetails',
+	group: 'Statechart playgrounds',
+	page: DetailsPlaygroundPage,
+}
+const PLAYGROUND_MENU: Route = {
+	id: 'playground-menu',
+	title: 'createMenu',
+	group: 'Statechart playgrounds',
+	page: MenuPlaygroundPage,
+}
+const PLAYGROUND_POPOVER: Route = {
+	id: 'playground-popover',
+	title: 'createPopover',
+	group: 'Statechart playgrounds',
+	page: PopoverPlaygroundPage,
+}
+const PLAYGROUND_ASIDE: Route = {
+	id: 'playground-aside',
+	title: 'createAside',
+	group: 'Statechart playgrounds',
+	page: AsidePlaygroundPage,
+}
+const PLAYGROUND_TOAST: Route = {
+	id: 'playground-toast',
+	title: 'createToast',
+	group: 'Statechart playgrounds',
+	page: ToastPlaygroundPage,
+}
+const PLAYGROUND_FORM: Route = {
+	id: 'playground-form',
+	title: 'createForm',
+	group: 'Statechart playgrounds',
+	page: FormPlaygroundPage,
+}
+const PLAYGROUND_TABS: Route = {
+	id: 'playground-tabs',
+	title: 'createTabs',
+	group: 'Statechart playgrounds',
+	page: TabsPlaygroundPage,
+}
+const PLAYGROUND_TOOLTIP: Route = {
+	id: 'playground-tooltip',
+	title: 'createTooltip',
+	group: 'Statechart playgrounds',
+	page: TooltipPlaygroundPage,
+}
+const PLAYGROUND_SELECT: Route = {
+	id: 'playground-select',
+	title: 'createSelect',
+	group: 'Statechart playgrounds',
+	page: SelectPlaygroundPage,
+}
+const PLAYGROUND_CAROUSEL: Route = {
+	id: 'playground-carousel',
+	title: 'createCarousel',
+	group: 'Statechart playgrounds',
+	page: CarouselPlaygroundPage,
+}
+const PLAYGROUND_ALERT: Route = {
+	id: 'playground-alert',
+	title: 'createAlert',
+	group: 'Statechart playgrounds',
+	page: AlertPlaygroundPage,
+}
+const PLAYGROUND_BUTTON: Route = {
+	id: 'playground-button',
+	title: 'createButton',
+	group: 'Statechart playgrounds',
+	page: ButtonPlaygroundPage,
+}
+const PLAYGROUND_THEME: Route = {
+	id: 'playground-theme',
+	title: 'createTheme',
+	group: 'Statechart playgrounds',
+	page: ThemePlaygroundPage,
+}
+const PLAYGROUND_FOCUS: Route = {
+	id: 'playground-focus',
+	title: 'createFocus',
+	group: 'Statechart playgrounds',
+	page: FocusPlaygroundPage,
+}
+const PLAYGROUND_NAV: Route = {
+	id: 'playground-nav',
+	title: 'createNav',
+	group: 'Statechart playgrounds',
+	page: NavPlaygroundPage,
+}
+const PLAYGROUND_DRAG: Route = {
+	id: 'playground-drag',
+	title: 'createDrag',
+	group: 'Statechart playgrounds',
+	page: DragPlaygroundPage,
+}
+const PLAYGROUND_DROP: Route = {
+	id: 'playground-drop',
+	title: 'createDrop',
+	group: 'Statechart playgrounds',
+	page: DropPlaygroundPage,
+}
+const PLAYGROUND_POINTER: Route = {
+	id: 'playground-pointer',
+	title: 'createPointer',
+	group: 'Statechart playgrounds',
+	page: PointerPlaygroundPage,
+}
+const PLAYGROUND_TABLE: Route = {
+	id: 'playground-table',
+	title: 'createTable',
+	group: 'Statechart playgrounds',
+	page: TablePlaygroundPage,
 }
 
 // ── Examples ───────────────────────────────────────────────────────────────
@@ -452,6 +606,26 @@ export const routes: readonly Route[] = [
 	USE_DRAG_DROP,
 	USE_THEME_BUTTON,
 	INSPECTOR,
+	PLAYGROUND_DIALOG,
+	PLAYGROUND_DETAILS,
+	PLAYGROUND_MENU,
+	PLAYGROUND_POPOVER,
+	PLAYGROUND_ASIDE,
+	PLAYGROUND_TOAST,
+	PLAYGROUND_FORM,
+	PLAYGROUND_TABS,
+	PLAYGROUND_TOOLTIP,
+	PLAYGROUND_SELECT,
+	PLAYGROUND_CAROUSEL,
+	PLAYGROUND_ALERT,
+	PLAYGROUND_BUTTON,
+	PLAYGROUND_THEME,
+	PLAYGROUND_FOCUS,
+	PLAYGROUND_NAV,
+	PLAYGROUND_DRAG,
+	PLAYGROUND_DROP,
+	PLAYGROUND_POINTER,
+	PLAYGROUND_TABLE,
 	EXAMPLE_CONSOLE,
 	EXAMPLE_SETTINGS,
 	EXAMPLE_EDITORIAL,
@@ -465,7 +639,12 @@ export const routes: readonly Route[] = [
 const parse = (fallback: string): RouteLocation => {
 	const hash = window.location.hash
 	if (!hash.startsWith('#/')) return { id: fallback, section: null }
-	const parts = hash.slice(2).split('/')
+	// Strip the query string (`?autoplay=all&scenario=…`) before parsing
+	// path segments. The Statechart playgrounds use query params for
+	// URL-driven autoplay; the router itself only cares about the path
+	// portion of the hash.
+	const withoutHash = hash.slice(2).split('?')[0] ?? ''
+	const parts = withoutHash.split('/')
 	const raw = parts[0] ?? ''
 	const id = routes.some((r) => r.id === raw) ? raw : 'home'
 	const section = parts.slice(1).filter(Boolean).join('/') || null

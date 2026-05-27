@@ -18,17 +18,22 @@ import { bootstrapTheme, themeState } from '../theme.js'
  * being rendered (for sun/moon icon swaps), but it does NOT rewrite the
  * DOM on OS-preference changes — CSS handles that for free.
  *
- * `destroy()` removes the per-instance `on.change` listener. The singleton
- * matchMedia listener and DOM-apply watcher survive — they're owned by the
- * page, not by any one caller. Use `resetTheme()` (test-only) to nuke them.
+ * `destroy()` removes per-instance event listeners (`on.light` / `on.dark`
+ * / `on.system` / `on.name`). The singleton matchMedia listener and
+ * DOM-apply watcher survive — they're owned by the page, not by any one
+ * caller. Use `resetTheme()` (test-only) to nuke them.
  */
 export function createTheme(options: CreateThemeOptions = {}): CreateThemeInstance {
 	bootstrapTheme(options)
 	const { setting, mode, name } = themeState()
 
-	let offChange: (() => void) | null = null
-	if (typeof document !== 'undefined' && options.on?.change) {
-		offChange = listen(document.documentElement, THEME_EVENTS.change, options.on.change)
+	const offHandlers: Array<() => void> = []
+	if (typeof document !== 'undefined' && options.on) {
+		const root = document.documentElement
+		if (options.on.light) offHandlers.push(listen(root, THEME_EVENTS.light, options.on.light))
+		if (options.on.dark) offHandlers.push(listen(root, THEME_EVENTS.dark, options.on.dark))
+		if (options.on.system) offHandlers.push(listen(root, THEME_EVENTS.system, options.on.system))
+		if (options.on.name) offHandlers.push(listen(root, THEME_EVENTS.name, options.on.name))
 	}
 
 	const set = (next: ThemeSetting): void => {
@@ -57,8 +62,8 @@ export function createTheme(options: CreateThemeOptions = {}): CreateThemeInstan
 	const destroy = (): void => {
 		if (destroyed) return
 		destroyed = true
-		offChange?.()
-		offChange = null
+		for (const off of offHandlers) off()
+		offHandlers.length = 0
 	}
 
 	return {

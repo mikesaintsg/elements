@@ -1,10 +1,18 @@
 // ============================================================================
-//  SigninExamplePage — focused-form + overlay pillar smoke.
+//  SigninExamplePage — focused-form + overlay pillar smoke + interactive drives.
 //
 //  The page mounts ExamplesShell + SigninExample. Guards anchor on the
 //  split-screen brand panel, the useForm sign-in form, the useDialog
 //  reset-password modal, and the useToast confirmation surface
 //  (<div role="status" popover>).
+//
+//  Two layers:
+//
+//    1. Render smoke — landmarks + surfaces are wired into the DOM.
+//    2. Interactive drives — click "Forgot password?", verify the reset
+//       dialog opens; click Cancel, verify it closes; submit the reset
+//       form, verify the dialog closes AND the toast surfaces (the
+//       end-to-end "user requested a reset link" loop).
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
@@ -23,6 +31,12 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 			host.remove()
 		},
 	}
+}
+
+function waitFor(ms: number): Promise<void> {
+	return new Promise((resolve) => {
+		setTimeout(resolve, ms)
+	})
 }
 
 describe('SigninExamplePage — render smoke', () => {
@@ -58,6 +72,137 @@ describe('SigninExamplePage — overlay surfaces', () => {
 			const oauth = [...host.querySelectorAll('button.secondary')]
 			expect(oauth.length).toBeGreaterThanOrEqual(2)
 			expect(oauth.every((b) => b.getAttribute('type') === 'button')).toBe(true)
+		} finally {
+			teardown()
+		}
+	})
+})
+
+// ── Interactive drives ─────────────────────────────────────────────────────
+//
+// The pages-test suite already proves the static markup is wired; these
+// tests drive the actual user paths the example sells (forgot-password
+// dialog, reset confirmation toast). Each test mounts a fresh app,
+// fires DOM events / API calls the example wires to, asserts the
+// observable side-effects, and tears down — leaks would poison other
+// pages mounted later in the same chromium project.
+
+describe('SigninExamplePage — forgot-password dialog interaction', () => {
+	it('"Forgot password?" link opens the reset dialog', async () => {
+		const { host, teardown } = mount()
+		try {
+			const dialog = host.querySelector<HTMLDialogElement>('dialog[aria-labelledby="reset-title"]')
+			if (!dialog) throw new Error('reset dialog not in DOM')
+			// useDialog wires its listeners inside the composable's
+			// onMounted hook, which runs AFTER createApp.mount() returns.
+			// Wait for the Vue scheduler to flush before driving any
+			// click — otherwise the link's `@click.prevent="reset.show()"`
+			// fires before the composable has captured the dialog ref.
+			await waitFor(50)
+			expect(dialog.open).toBe(false)
+
+			const link = [...host.querySelectorAll<HTMLAnchorElement>('a[href="#"]')].find((a) =>
+				/forgot password/i.test(a.textContent ?? ''),
+			)
+			if (!link) throw new Error('"Forgot password?" link not in DOM')
+			link.click()
+			await waitFor(150)
+
+			expect(dialog.open).toBe(true)
+		} finally {
+			teardown()
+		}
+	})
+
+	it('Cancel button in the reset dialog closes it', async () => {
+		const { host, teardown } = mount()
+		try {
+			const dialog = host.querySelector<HTMLDialogElement>('dialog[aria-labelledby="reset-title"]')
+			if (!dialog) throw new Error('reset dialog not in DOM')
+			await waitFor(50)
+			const link = [...host.querySelectorAll<HTMLAnchorElement>('a[href="#"]')].find((a) =>
+				/forgot password/i.test(a.textContent ?? ''),
+			)
+			link?.click()
+			await waitFor(150)
+			expect(dialog.open).toBe(true)
+
+			const cancel = [...dialog.querySelectorAll<HTMLButtonElement>('button.subtle')].find(
+				(b) => b.textContent?.trim() === 'Cancel',
+			)
+			if (!cancel) throw new Error('Cancel button not in dialog')
+			cancel.click()
+			await waitFor(150)
+
+			expect(dialog.open).toBe(false)
+		} finally {
+			teardown()
+		}
+	})
+
+	it('Submitting the main sign-in form flips the button into a loading state', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(50)
+			const form = host.querySelector<HTMLFormElement>('main form')
+			const submit = host.querySelector<HTMLButtonElement>('main form button[type="submit"]')
+			if (!form || !submit) throw new Error('sign-in form / submit button missing')
+			expect(submit.disabled).toBe(false)
+			expect(submit.classList.contains('loading')).toBe(false)
+			// Fill the required fields so checkValidity passes — the form's
+			// `useForm` `on.submit` handler flips `loading.value = true` for
+			// 1.1s then calls `notify()`, which the toast surface picks up.
+			const email = host.querySelector<HTMLInputElement>('input[type="email"]')
+			const password = host.querySelector<HTMLInputElement>('input[type="password"]')
+			if (!email || !password) throw new Error('sign-in email/password input missing')
+			email.value = 'a@b.test'
+			email.dispatchEvent(new Event('input', { bubbles: true }))
+			password.value = 'supersecret'
+			password.dispatchEvent(new Event('input', { bubbles: true }))
+			await waitFor(50)
+			form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+			await waitFor(100)
+			// Within the 1.1s setTimeout, loading is true: button disabled +
+			// `.loading` class set + label is "Signing in…".
+			expect(submit.disabled).toBe(true)
+			expect(submit.classList.contains('loading')).toBe(true)
+			expect((submit.textContent ?? '').trim()).toMatch(/signing in/i)
+		} finally {
+			teardown()
+		}
+	})
+
+	it('Submitting the reset form closes the dialog AND surfaces the confirmation toast', async () => {
+		const { host, teardown } = mount()
+		try {
+			const dialog = host.querySelector<HTMLDialogElement>('dialog[aria-labelledby="reset-title"]')
+			const toast = host.querySelector<HTMLElement>('[role="status"][popover]')
+			if (!dialog || !toast) throw new Error('reset dialog or toast not in DOM')
+			await waitFor(50)
+
+			// Open the dialog via the link.
+			const link = [...host.querySelectorAll<HTMLAnchorElement>('a[href="#"]')].find((a) =>
+				/forgot password/i.test(a.textContent ?? ''),
+			)
+			link?.click()
+			await waitFor(150)
+			expect(dialog.open).toBe(true)
+
+			// Submit the reset form (`@submit.prevent="sendReset"` calls
+			// `reset.hide()` + `notify(…)` which surfaces the toast).
+			const form = dialog.querySelector<HTMLFormElement>('form')
+			if (!form) throw new Error('reset form not in dialog')
+			form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+			await waitFor(150)
+
+			expect(dialog.open).toBe(false)
+			expect(toast.matches(':popover-open')).toBe(true)
+			expect(toast.textContent ?? '').toMatch(/reset link/i)
+
+			// Tidy up the popover so subsequent suite-level mounts don't
+			// inherit an open top-layer surface.
+			if (typeof toast.hidePopover === 'function') toast.hidePopover()
+			await waitFor(50)
 		} finally {
 			teardown()
 		}

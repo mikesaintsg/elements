@@ -62,3 +62,40 @@ describe('PricingExamplePage — composition vocabulary', () => {
 		}
 	})
 })
+
+// ── Interactive drives ─────────────────────────────────────────────────────
+//
+// PricingExample is a marketing page — its only interactive surface is
+// anchor navigation. We assert each CTA anchor is a real `<a>` with a
+// usable `href` so a screen reader / keyboard user can reach the next
+// hop, and that the in-page `#pricing` anchor resolves to a real
+// section. The richer interactive guards live with the app-shell
+// pillars (Console / Crm / Settings / Signin).
+
+describe('PricingExamplePage — CTA navigation', () => {
+	it('every plan CTA exposes a non-empty href so it is keyboard-reachable', () => {
+		const { host, teardown } = mount()
+		try {
+			const ctas = [...host.querySelectorAll<HTMLAnchorElement>('#pricing article footer a.fill')]
+			expect(ctas.length).toBeGreaterThan(0)
+			for (const cta of ctas) {
+				const href = cta.getAttribute('href') ?? ''
+				expect(href.length).toBeGreaterThan(0)
+			}
+		} finally {
+			teardown()
+		}
+	})
+
+	it('the top-nav #pricing link points at the rendered <section id="pricing">', () => {
+		const { host, teardown } = mount()
+		try {
+			const link = host.querySelector<HTMLAnchorElement>('main > nav a[href="#pricing"]')
+			const target = host.querySelector<HTMLElement>('#pricing')
+			expect(link).not.toBeNull()
+			expect(target).not.toBeNull()
+		} finally {
+			teardown()
+		}
+	})
+})

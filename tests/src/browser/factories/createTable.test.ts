@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import type { CreateTableInstance } from '@elements/browser'
 import { createTable, TABLE_EVENTS } from '@elements/browser'
+import type { StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
-import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
+import {
+	assertCleanDispose,
+	buildElement,
+	createFactoryFixture,
+	runScenario,
+} from '../../../setupBrowser'
 
 function buildTable(): HTMLTableElement {
 	return buildElement('table')
@@ -418,5 +425,325 @@ describe('createTable', () => {
 				instance.selection.select('r-y')
 			},
 		)
+	})
+})
+
+// ── Statechart transition coverage ─────────────────────────────────────────
+//
+// Table is a compound state machine with six orthogonal sub-domains
+// (sort, selection, expansion, resize, focus, pagination). Each domain
+// has its own statechart; this file covers the three with the cleanest
+// finite-state shape (sort cycle, selection toggle, expansion toggle).
+//
+// Resize, focus, and pagination involve pointer-pixel arithmetic /
+// keyboard direction vectors that resist tabular coverage; the existing
+// one-off tests above already cover those flows.
+
+// === Sort sub-machine ======================================================
+// Per-column sort direction cycles: 'none' → 'asc' → 'desc' → 'none' on
+// each `sort.toggle(key)`. `[aria-sort]` on the header mirrors direction.
+
+type TableSortState = 'none' | 'asc' | 'desc'
+type TableSortEvent = 'toggle'
+
+interface TableSortContext {
+	readonly api: CreateTableInstance
+	readonly head: HTMLTableCellElement
+}
+
+function buildSortableTable(): TableSortContext {
+	const table = buildElement('table')
+	const [api] = createFactoryFixture(() =>
+		createTable(table, {
+			headers: ['Name'],
+			rows: [['a']],
+			columns: [{ key: 'name', sortable: true }],
+		}),
+	)
+	const head = table.querySelector<HTMLTableCellElement>('thead th[data-key="name"]')
+	if (!head) throw new Error('Expected sortable name column header')
+	return { api, head }
+}
+
+function driveToSortState(context: TableSortContext, state: TableSortState): void {
+	if (state === 'asc') context.api.sort.toggle('name')
+	if (state === 'desc') {
+		context.api.sort.toggle('name')
+		context.api.sort.toggle('name')
+	}
+}
+
+function fireSortEvent(context: TableSortContext, _event: TableSortEvent): void {
+	context.api.sort.toggle('name')
+}
+
+const TABLE_SORT_OBSERVABLES: Readonly<Record<TableSortState, string | null>> = {
+	none: null,
+	asc: 'ascending',
+	desc: 'descending',
+}
+
+function assertSortState(context: TableSortContext, state: TableSortState): void {
+	expect(context.api.sort.direction('name')).toBe(state)
+	expect(context.head.getAttribute('aria-sort')).toBe(TABLE_SORT_OBSERVABLES[state])
+}
+
+const TABLE_SORT_SCENARIOS: readonly StateScenario<
+	TableSortState,
+	TableSortEvent,
+	TableSortContext
+>[] = [
+	{
+		transition: { name: 'none × toggle → asc', from: 'none', event: 'toggle', to: 'asc' },
+		arrange: driveToSortState,
+		act: fireSortEvent,
+		assert: assertSortState,
+	},
+	{
+		transition: { name: 'asc × toggle → desc', from: 'asc', event: 'toggle', to: 'desc' },
+		arrange: driveToSortState,
+		act: fireSortEvent,
+		assert: assertSortState,
+	},
+	{
+		transition: { name: 'desc × toggle → none', from: 'desc', event: 'toggle', to: 'none' },
+		arrange: driveToSortState,
+		act: fireSortEvent,
+		assert: assertSortState,
+	},
+]
+
+describe('createTable (statechart) — sort direction cycle', () => {
+	it.each(TABLE_SORT_SCENARIOS)('$transition.name', async (scenario) => {
+		const context = buildSortableTable()
+		expect(context.api.sort.direction('name')).toBe('none')
+		await runScenario(scenario, context)
+	})
+})
+
+// === Selection sub-machine =================================================
+// Per-row selection: 'unselected' → 'selected' on `selection.select(id)`,
+// flipped by `selection.toggle(id)`. `[aria-selected]` on the row mirrors.
+
+type TableSelectionState = 'unselected' | 'selected'
+type TableSelectionEvent = 'select' | 'toggle' | 'clear'
+
+interface TableSelectionContext {
+	readonly api: CreateTableInstance
+}
+
+function buildSelectableTable(): TableSelectionContext {
+	const table = buildElement('table')
+	const [api] = createFactoryFixture(() => {
+		const instance = createTable(table, { rows: [['a'], ['b'], ['c']] })
+		const rows = instance.rows.rows()
+		for (let i = 0; i < rows.length; i += 1) {
+			const row = rows[i]
+			if (row) row.dataset.id = `r${i}`
+		}
+		instance.refresh()
+		return instance
+	})
+	return { api }
+}
+
+function driveToSelectionState(context: TableSelectionContext, state: TableSelectionState): void {
+	if (state === 'selected') context.api.selection.select('r0')
+}
+
+function fireSelectionEvent(context: TableSelectionContext, event: TableSelectionEvent): void {
+	if (event === 'select') {
+		context.api.selection.select('r0')
+		return
+	}
+	if (event === 'toggle') {
+		context.api.selection.toggle('r0')
+		return
+	}
+	context.api.selection.clear()
+}
+
+function assertSelectionState(context: TableSelectionContext, state: TableSelectionState): void {
+	const expectedSelected = state === 'selected'
+	expect(context.api.selection.ids.has('r0')).toBe(expectedSelected)
+	// `aria-selected="true"` when selected; the factory removes the
+	// attribute entirely on clear/toggle-off rather than writing 'false'.
+	const ariaSelected = context.api.rows.row(0)?.getAttribute('aria-selected')
+	expect(ariaSelected).toBe(expectedSelected ? 'true' : null)
+}
+
+const TABLE_SELECTION_SCENARIOS: readonly StateScenario<
+	TableSelectionState,
+	TableSelectionEvent,
+	TableSelectionContext
+>[] = [
+	{
+		transition: {
+			name: 'unselected × select → selected',
+			from: 'unselected',
+			event: 'select',
+			to: 'selected',
+		},
+		arrange: driveToSelectionState,
+		act: fireSelectionEvent,
+		assert: assertSelectionState,
+	},
+	{
+		transition: {
+			name: 'selected × toggle → unselected',
+			from: 'selected',
+			event: 'toggle',
+			to: 'unselected',
+		},
+		arrange: driveToSelectionState,
+		act: fireSelectionEvent,
+		assert: assertSelectionState,
+	},
+	{
+		transition: {
+			name: 'selected × clear → unselected',
+			from: 'selected',
+			event: 'clear',
+			to: 'unselected',
+		},
+		arrange: driveToSelectionState,
+		act: fireSelectionEvent,
+		assert: assertSelectionState,
+	},
+	{
+		transition: {
+			name: 'unselected × toggle → selected',
+			from: 'unselected',
+			event: 'toggle',
+			to: 'selected',
+		},
+		arrange: driveToSelectionState,
+		act: fireSelectionEvent,
+		assert: assertSelectionState,
+	},
+]
+
+describe('createTable (statechart) — row selection toggle', () => {
+	it.each(TABLE_SELECTION_SCENARIOS)('$transition.name', async (scenario) => {
+		const context = buildSelectableTable()
+		expect(context.api.selection.ids.size).toBe(0)
+		await runScenario(scenario, context)
+	})
+})
+
+// === Expansion sub-machine =================================================
+// Per-row expansion: 'collapsed' → 'expanded' on `expansion.expand(id)`,
+// flipped by `expansion.toggle(id)` / `expansion.collapse(id)`.
+// `[data-table-expanded]` on the row + `[inert]` on the panel mirror.
+
+type TableExpansionState = 'collapsed' | 'expanded'
+type TableExpansionEvent = 'expand' | 'collapse' | 'toggle'
+
+interface TableExpansionContext {
+	readonly api: CreateTableInstance
+}
+
+function buildExpandableTable(): TableExpansionContext {
+	const table = buildElement('table')
+	const [api] = createFactoryFixture(() => {
+		const instance = createTable(table, { rows: [['a']] })
+		const row = instance.rows.row(0)
+		if (row) {
+			row.dataset.id = 'r0'
+			const detail = document.createElement('tr')
+			detail.setAttribute('data-table-expansion', '')
+			const cell = document.createElement('td')
+			const panel = document.createElement('div')
+			panel.setAttribute('data-table-expansion-panel', '')
+			panel.setAttribute('inert', '')
+			cell.appendChild(panel)
+			detail.appendChild(cell)
+			row.parentElement?.insertBefore(detail, row.nextSibling)
+		}
+		instance.refresh()
+		return instance
+	})
+	return { api }
+}
+
+function driveToExpansionState(context: TableExpansionContext, state: TableExpansionState): void {
+	if (state === 'expanded') context.api.expansion.expand('r0')
+}
+
+function fireExpansionEvent(context: TableExpansionContext, event: TableExpansionEvent): void {
+	if (event === 'expand') {
+		context.api.expansion.expand('r0')
+		return
+	}
+	if (event === 'collapse') {
+		context.api.expansion.collapse('r0')
+		return
+	}
+	context.api.expansion.toggle('r0')
+}
+
+function assertExpansionState(context: TableExpansionContext, state: TableExpansionState): void {
+	const expectedExpanded = state === 'expanded'
+	expect(context.api.expansion.expanded.has('r0')).toBe(expectedExpanded)
+	const row = context.api.rows.row(0)
+	expect(row?.hasAttribute('data-table-expanded')).toBe(expectedExpanded)
+}
+
+const TABLE_EXPANSION_SCENARIOS: readonly StateScenario<
+	TableExpansionState,
+	TableExpansionEvent,
+	TableExpansionContext
+>[] = [
+	{
+		transition: {
+			name: 'collapsed × expand → expanded',
+			from: 'collapsed',
+			event: 'expand',
+			to: 'expanded',
+		},
+		arrange: driveToExpansionState,
+		act: fireExpansionEvent,
+		assert: assertExpansionState,
+	},
+	{
+		transition: {
+			name: 'expanded × collapse → collapsed',
+			from: 'expanded',
+			event: 'collapse',
+			to: 'collapsed',
+		},
+		arrange: driveToExpansionState,
+		act: fireExpansionEvent,
+		assert: assertExpansionState,
+	},
+	{
+		transition: {
+			name: 'collapsed × toggle → expanded',
+			from: 'collapsed',
+			event: 'toggle',
+			to: 'expanded',
+		},
+		arrange: driveToExpansionState,
+		act: fireExpansionEvent,
+		assert: assertExpansionState,
+	},
+	{
+		transition: {
+			name: 'expanded × toggle → collapsed',
+			from: 'expanded',
+			event: 'toggle',
+			to: 'collapsed',
+		},
+		arrange: driveToExpansionState,
+		act: fireExpansionEvent,
+		assert: assertExpansionState,
+	},
+]
+
+describe('createTable (statechart) — row expansion toggle', () => {
+	it.each(TABLE_EXPANSION_SCENARIOS)('$transition.name', async (scenario) => {
+		const context = buildExpandableTable()
+		expect(context.api.expansion.expanded.size).toBe(0)
+		await runScenario(scenario, context)
 	})
 })

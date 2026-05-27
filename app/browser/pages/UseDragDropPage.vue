@@ -182,7 +182,7 @@ const clearOutbox = (): void => {
 </script>
 
 <template>
-	<section id="use-drag-drop-intro">
+	<section id="use-drag-intro">
 		<hgroup>
 			<h1>useDrag / useDrop</h1>
 			<p>
@@ -218,7 +218,7 @@ const clearOutbox = (): void => {
 		</aside>
 	</section>
 
-	<section id="use-drag-drop-reorder">
+	<section id="use-drag-reorder">
 		<h2>1. Reorderable list — default contract</h2>
 		<p>
 			Drag any row up or down. The hit-test class painting is doing the work: the row under the
@@ -272,7 +272,7 @@ useDrag&lt;Track&gt;(host, {
 		</details>
 	</section>
 
-	<section id="use-drag-drop-handle">
+	<section id="use-drag-handle">
 		<h2>2. <code>.drag-handle</code> — narrow the grab area</h2>
 		<p>
 			Add <code>.drag-handle</code> to a descendant of a row and <code>useDrag</code> flips the row
@@ -327,7 +327,7 @@ useDrag&lt;Track&gt;(host, {
 		</details>
 	</section>
 
-	<section id="use-drag-drop-multiselect">
+	<section id="use-drag-multiselect">
 		<h2>3. Multi-select drag — drag the entire selection</h2>
 		<p>
 			Plain click replaces the selection; Ctrl/Cmd-click toggles a row in or out; Shift-click
@@ -377,7 +377,7 @@ useDrag&lt;Track&gt;(host, {
 		</details>
 	</section>
 
-	<section id="use-drag-drop-zone">
+	<section id="use-drag-zone">
 		<h2>4. Cross-zone drag — <code>useDrag</code> source + <code>useDrop</code> target</h2>
 		<p>
 			The two composables compose: a <code>useDrag</code> source on one container and a
@@ -474,7 +474,7 @@ useDrop(zoneRef, {
 		</details>
 	</section>
 
-	<section id="use-drag-drop-api">
+	<section id="use-drag-api">
 		<h2>API reference</h2>
 		<dl>
 			<dt><code>useDrag&lt;T&gt;(elementRef, options?): UseDragReturn</code></dt>

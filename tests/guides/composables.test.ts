@@ -64,12 +64,18 @@ const LIFECYCLE_VERBS = new Set([
 	'reset',
 	'submit',
 	'validate',
+	// Form bookkeeping (touched / cleared state distinct from `change`/`reset`).
+	'dirty',
 	// Positional / animated
 	'slide',
 	'place',
-	// Drag pipeline
+	// Drag-and-drop pipeline (source + target sides). `enter`/`leave` are
+	// the drop-target ingress/egress verbs (mirror native dragenter /
+	// dragleave); `drop` is shared with the source side.
 	'tap',
 	'over',
+	'enter',
+	'leave',
 	'drop',
 	'end',
 	'reorder',
@@ -79,6 +85,13 @@ const LIFECYCLE_VERBS = new Set([
 	'move',
 	'sort',
 	'paginate',
+	// Theme statechart — per AGENTS.md §14 each transition is its own
+	// named event; the verbs name the post-transition state on the
+	// `setting` axis (light/dark/system) and the orthogonal `name` axis.
+	'light',
+	'dark',
+	'system',
+	'name',
 ])
 
 const EVENT_PATTERN = /^elements:[a-z][a-z-]*:[a-z]+$/
@@ -269,6 +282,8 @@ const ATTR_NAMING_ALLOW: Readonly<Record<string, string>> = {
 	'data-key': 'Consumer content key (e.g. table sort column), not composable state.',
 	'data-level': 'Consumer structural depth (e.g. TOC heading level), not composable state.',
 	'data-value': 'Consumer content value, not composable state.',
+	'data-index':
+		'Consumer row identity in createDrag source lists (`<li data-index="0">`); not composable-written state.',
 	// Theme MODE axis written by createTheme — the palette/core axis uses
 	// `data-theme` (matches the `theme` factory stem); the light/dark mode
 	// axis is named `data-mode` for a clean two-attribute API, so it needs an

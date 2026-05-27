@@ -157,17 +157,11 @@ const open = (id: number): void => {
 const showList = computed(() => !isMobile.value || mobileView.value === 'list')
 const showMessage = computed(() => !isMobile.value || mobileView.value === 'message')
 
-// Mailbox-style list rows: a 1px bottom divider between rows + a leading
-// accent bar that turns primary on the open message (transparent otherwise),
-// with a subtle persistent tint on that row. The hover tint comes from the
-// framework's `.flat` button state. App-specific list chrome.
-const rowStyle = (message: Message): Record<string, string | undefined> => ({
-	borderBlockEnd: '1px solid var(--color-border)',
-	borderInlineStart: `0.1875rem solid ${
-		message.id === selectedId.value ? 'var(--color-primary)' : 'transparent'
-	}`,
-	backgroundColor: message.id === selectedId.value ? 'var(--color-primary-bg-subtle)' : undefined,
-})
+// Mailbox-style list row chrome (1px bottom divider + leading accent
+// bar + selected-row tint) lives in `app/browser/styles/examples.css`
+// under `.examples-mail-row`. The selected-row state is keyed off the
+// `aria-current="true"` attribute that Vue already binds on the row's
+// button — no per-row computed `:style` binding required.
 </script>
 
 <template>
@@ -249,8 +243,8 @@ const rowStyle = (message: Message): Record<string, string | undefined> => ({
 	     (sidebar) + a flexible reading pane, divided by 1px rules, each scrolling
 	     independently above the breakpoint and collapsing to a single-pane swap
 	     below it. The mail app is full-bleed (main padding zeroed). -->
-	<main style="--set-main-padding-inline: 0; --set-main-padding-block: 0">
-		<div class="panes" style="--set-panes-aside-size: 24rem">
+	<main class="examples-mail-main">
+		<div class="panes fill">
 			<!-- Message list pane. `.pane` zeroes the section's content padding,
 			     scrolls, and bands its <header>; the .fluid <menu> is the scroll
 			     region (flush, so its rows carry their own dividers). -->
@@ -261,12 +255,18 @@ const rowStyle = (message: Message): Record<string, string | undefined> => ({
 						<p class="muted">{{ messages.length }} messages</p>
 					</hgroup>
 				</header>
-				<menu class="flex flex-col list-none fluid">
-					<li v-for="message in messages" :key="message.id">
+				<!--
+				     `flex-nowrap` cancels the framework's default `menu { flex-wrap:
+				     wrap }` — without it, combined with `flex-col` on the menu, list
+				     rows wrap into new COLUMNS once the pane's height collapses
+				     (visible as "only the first message renders" on mobile, where
+				     the pane is shrink-to-fit).
+				-->
+				<menu class="examples-mail-list flex flex-col flex-nowrap list-none fluid">
+					<li v-for="message in messages" :key="message.id" class="examples-mail-row">
 						<button
 							type="button"
 							class="flat fill text-start rounded-none"
-							:style="rowStyle(message)"
 							:aria-current="message.id === selectedId ? 'true' : undefined"
 							@click="open(message.id)"
 						>

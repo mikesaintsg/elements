@@ -261,9 +261,23 @@ export function createToast(
 		})
 	}
 
-	const pause = (): void => clearTimer()
+	// Track timer-suspension state separately from `popover.visible` so
+	// repeated `pause()` / `resume()` calls (or hover bridges that fire
+	// mouseenter twice without a leave in between) don't double-emit. The
+	// timer's null-ness is the source of truth for "is the autohide
+	// suspended right now", but we de-dupe events explicitly.
+	let paused = false
+	const pause = (): void => {
+		if (paused) return
+		paused = true
+		clearTimer()
+		emit(element, TOAST_EVENTS.pause)
+	}
 	const resume = (): void => {
+		if (!paused) return
+		paused = false
 		if (popover.visible.value) startTimer()
+		emit(element, TOAST_EVENTS.resume)
 	}
 
 	const offBound = bindEventMap(element, TOAST_EVENTS, options.on)

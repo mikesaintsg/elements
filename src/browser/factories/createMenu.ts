@@ -122,9 +122,16 @@ export function createMenu(
 
 	const onMenuClick = (event: Event): void => {
 		if (!popover.visible.value) return
-		if (!dismissInside) return
 		if (!(event.target instanceof HTMLElement)) return
-		if (event.target.closest(MENU_ITEM_SELECTOR)) popover.hide()
+		const item = event.target.closest(MENU_ITEM_SELECTOR)
+		if (!(item instanceof HTMLElement)) return
+		// Fire `select` BEFORE the dismiss-on-inside pipeline so consumers
+		// can identify which item was activated even when `dismiss.inside`
+		// is true (the default). Detail carries the item element + its
+		// resolved value (`[data-value]` if set, else `textContent`).
+		const value = item.dataset.value ?? item.textContent?.trim() ?? null
+		emit(toggleEl, MENU_EVENTS.select, { item, value })
+		if (dismissInside) popover.hide()
 	}
 
 	const onKeydown = (event: Event): void => {

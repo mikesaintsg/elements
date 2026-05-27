@@ -146,7 +146,7 @@ const features: readonly Feature[] = [
 			<article class="information subtle items-center">
 				<div class="grid grid-cols-2 lg:grid-cols-4 gap-8 fill text-center">
 					<div v-for="metric in metrics" :key="metric.label" class="stack items-center gap-1">
-						<strong class="text-5xl" style="color: var(--color-primary)">{{ metric.value }}</strong>
+						<strong class="text-5xl examples-pricing-metric">{{ metric.value }}</strong>
 						<small class="kicker">{{ metric.label }}</small>
 					</div>
 				</div>
@@ -159,7 +159,7 @@ const features: readonly Feature[] = [
 				<h2>Everything you need, nothing you don't</h2>
 				<p>Three ideas do all the work.</p>
 			</hgroup>
-			<div class="tiles fill" style="--set-tiles-min: 14rem">
+			<div class="tiles fill examples-pricing-metrics">
 				<article v-for="feature in features" :key="feature.title">
 					<span class="avatar square" :class="feature.variant" aria-hidden="true">
 						<i class="icon" :class="feature.icon" aria-hidden="true"></i>
@@ -176,7 +176,7 @@ const features: readonly Feature[] = [
 				<h2>Simple, honest pricing</h2>
 				<p>Start free. Upgrade when you're ready.</p>
 			</hgroup>
-			<div class="tiles fill" style="--set-tiles-min: 18rem">
+			<div class="tiles fill examples-pricing-plans">
 				<article v-for="plan in plans" :key="plan.name" :class="plan.featured ? 'primary' : ''">
 					<header>
 						<div class="cluster between">
@@ -191,7 +191,7 @@ const features: readonly Feature[] = [
 					</p>
 					<ul class="list-none flex flex-col gap-2">
 						<li v-for="f in plan.features" :key="f" class="flex items-center gap-2">
-							<i class="icon check" aria-hidden="true" style="color: var(--color-success)"></i>
+							<i class="icon check examples-pricing-check" aria-hidden="true"></i>
 							{{ f }}
 						</li>
 					</ul>

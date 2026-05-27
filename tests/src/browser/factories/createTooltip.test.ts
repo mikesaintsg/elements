@@ -1,17 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { CreateTooltipInstance, CreateTooltipOptions } from '@elements/browser'
 import { createTooltip, TOOLTIP_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
+import type { EventRecorder, StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
-import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
-
-function createTooltipElements(): {
-	readonly anchor: HTMLButtonElement
-	readonly panel: HTMLDivElement
-} {
-	const anchor = buildElement('button')
-	anchor.type = 'button'
-	const panel = buildElement('div', { attrs: { popover: '' } })
-	return { anchor, panel }
-}
+import {
+	assertCleanDispose,
+	createFactoryFixture,
+	createTooltipElements,
+	runScenario,
+} from '../../../setupBrowser'
 
 describe('createTooltip', () => {
 	beforeEach(() => {
@@ -120,5 +117,221 @@ describe('createTooltip', () => {
 				api.hide()
 			},
 		)
+	})
+})
+
+// ── Statechart transition coverage ─────────────────────────────────────────
+//
+// Tooltip is a hover/focus-triggered popover. Observable state is the
+// panel's `:popover-open` flag plus the reactive `visible` ref. Hover
+// (`mouseenter`/`mouseleave`) and focus (`focusin`/`focusout`) are
+// trigger bridges; Escape is the dismiss path. Post-transition events
+// fire via the popover pipeline's `runTransition`.
+//
+//   States   : 'closed' | 'open'
+//   Events   : 'show' | 'hide' | 'mouseenter' | 'mouseleave' | 'focusin'
+//              | 'focusout' | 'escape' | 'destroy'
+
+type TooltipState = 'closed' | 'open'
+type TooltipEvent =
+	| 'show'
+	| 'hide'
+	| 'mouseenter'
+	| 'mouseleave'
+	| 'focusin'
+	| 'focusout'
+	| 'escape'
+	| 'destroy'
+
+interface TooltipContext {
+	readonly api: CreateTooltipInstance
+	readonly anchor: HTMLButtonElement
+	readonly panel: HTMLDivElement
+	readonly opens: EventRecorder
+	readonly closes: EventRecorder
+}
+
+function buildTooltipContext(options: CreateTooltipOptions = {}): TooltipContext {
+	const { anchor, panel } = createTooltipElements()
+	const opens = createRecorder<[CustomEvent]>()
+	const closes = createRecorder<[CustomEvent]>()
+	const [api] = createFactoryFixture(() =>
+		createTooltip(
+			{ anchor, panel },
+			{
+				...options,
+				on: {
+					...options.on,
+					open: (event) => {
+						opens.handler(event)
+						options.on?.open?.(event)
+					},
+					close: (event) => {
+						closes.handler(event)
+						options.on?.close?.(event)
+					},
+				},
+			},
+		),
+	)
+	return { api, anchor, panel, opens, closes }
+}
+
+function driveToTooltipState(context: TooltipContext, state: TooltipState): void {
+	if (state === 'open') {
+		context.api.show()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		context.opens.clear()
+	}
+}
+
+function fireTooltipEvent(context: TooltipContext, event: TooltipEvent): void {
+	if (event === 'show') {
+		context.api.show()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'hide') {
+		context.api.hide()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'mouseenter') {
+		context.anchor.dispatchEvent(new Event('mouseenter'))
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'mouseleave') {
+		context.anchor.dispatchEvent(new Event('mouseleave'))
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'focusin') {
+		context.anchor.dispatchEvent(new Event('focusin'))
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'focusout') {
+		context.anchor.dispatchEvent(new Event('focusout'))
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'escape') {
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	context.api.destroy()
+}
+
+function assertTooltipState(context: TooltipContext, state: TooltipState): void {
+	const expectedOpen = state === 'open'
+	expect(context.api.visible.value).toBe(expectedOpen)
+	expect(context.panel.matches(':popover-open')).toBe(expectedOpen)
+}
+
+const TOOLTIP_SCENARIOS: readonly StateScenario<TooltipState, TooltipEvent, TooltipContext>[] = [
+	{
+		transition: { name: 'closed × show → open', from: 'closed', event: 'show', to: 'open' },
+		arrange: driveToTooltipState,
+		act: fireTooltipEvent,
+		assert: (context, state) => {
+			assertTooltipState(context, state)
+			expect(context.opens.count).toBe(1)
+		},
+	},
+	{
+		transition: { name: 'open × hide → closed', from: 'open', event: 'hide', to: 'closed' },
+		arrange: driveToTooltipState,
+		act: fireTooltipEvent,
+		assert: (context, state) => {
+			assertTooltipState(context, state)
+			expect(context.closes.count).toBe(1)
+		},
+	},
+	{
+		transition: {
+			name: 'closed × mouseenter → open (hover trigger)',
+			from: 'closed',
+			event: 'mouseenter',
+			to: 'open',
+		},
+		arrange: driveToTooltipState,
+		act: fireTooltipEvent,
+		assert: assertTooltipState,
+	},
+	{
+		transition: {
+			name: 'open × mouseleave → closed (hover trigger)',
+			from: 'open',
+			event: 'mouseleave',
+			to: 'closed',
+		},
+		arrange: driveToTooltipState,
+		act: fireTooltipEvent,
+		assert: assertTooltipState,
+	},
+	{
+		transition: {
+			name: 'closed × focusin → open (focus trigger)',
+			from: 'closed',
+			event: 'focusin',
+			to: 'open',
+		},
+		arrange: driveToTooltipState,
+		act: fireTooltipEvent,
+		assert: assertTooltipState,
+	},
+	{
+		transition: {
+			name: 'open × focusout → closed (focus trigger)',
+			from: 'open',
+			event: 'focusout',
+			to: 'closed',
+		},
+		arrange: driveToTooltipState,
+		act: fireTooltipEvent,
+		assert: assertTooltipState,
+	},
+	{
+		transition: {
+			name: 'open × escape → closed (dismiss.escape default)',
+			from: 'open',
+			event: 'escape',
+			to: 'closed',
+		},
+		arrange: driveToTooltipState,
+		act: fireTooltipEvent,
+		assert: assertTooltipState,
+	},
+	{
+		transition: {
+			name: 'closed × hide → closed (no-op, no emit)',
+			from: 'closed',
+			event: 'hide',
+			to: 'closed',
+		},
+		arrange: driveToTooltipState,
+		act: fireTooltipEvent,
+		assert: (context, state) => {
+			assertTooltipState(context, state)
+			expect(context.opens.count).toBe(0)
+			expect(context.closes.count).toBe(0)
+		},
+	},
+]
+
+describe('createTooltip (statechart)', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+	})
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it.each(TOOLTIP_SCENARIOS)('$transition.name', async (scenario) => {
+		const context = buildTooltipContext()
+		expect(context.api.visible.value).toBe(false)
+		await runScenario(scenario, context)
 	})
 })

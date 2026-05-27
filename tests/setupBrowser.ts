@@ -37,6 +37,7 @@ import type { App, Ref } from 'vue'
 import { afterEach, expect, vi } from 'vitest'
 import { createApp, nextTick, ref } from 'vue'
 import { STORAGE_KEY_THEME, resetTheme } from '@elements/browser'
+import type { StateScenario } from './setup'
 import { waitForDelay } from './setup'
 
 // ── Factory fixtures ────────────────────────────────────────────────────────
@@ -332,6 +333,174 @@ export function assertCleanDispose<T extends FactoryFixtureInstance>(
 		if (fakeTimers) expect(vi.getTimerCount() - baseTimers).toBe(0)
 	} finally {
 		harness.restore()
+	}
+}
+
+// ── Reusable DOM fixtures ───────────────────────────────────────────────────
+//
+// Per-element fixture builders centralized here once they're consumed by
+// more than one test file (the statechart describe block + the existing
+// one-off describe block in the same test, plus potential future
+// composable / integration tests). Each builder returns a small record
+// with single-word keys naming the structural slots, ready to feed into
+// the matching `create{Name}` factory.
+
+/**
+ * Build a `<button>` anchor + `<div popover>` panel + arrow trio that
+ * the popover factory operates on. The factory itself sets
+ * `popover="manual"`; the fixture provides the baseline DOM structure.
+ */
+export function createPopoverElements(): {
+	readonly anchor: HTMLButtonElement
+	readonly panel: HTMLDivElement
+	readonly arrow: HTMLDivElement
+} {
+	const anchor = buildElement('button')
+	anchor.type = 'button'
+	const panel = buildElement('div', { attrs: { popover: '' } })
+	const arrow = document.createElement('div')
+	panel.appendChild(arrow)
+	return { anchor, panel, arrow }
+}
+
+/**
+ * Build a `<button>` toggle + `<menu popover>` panel with `<li><a>` items
+ * the menu factory operates on. The default of three items matches the
+ * roving-focus tests' expectation of a meaningful first / middle / last
+ * triple.
+ */
+export function createMenuElements(itemCount = 3): {
+	readonly toggle: HTMLButtonElement
+	readonly menu: HTMLMenuElement
+} {
+	const toggle = buildElement('button')
+	toggle.type = 'button'
+	const menu = buildElement('menu', { attrs: { popover: '' } })
+	for (let i = 0; i < itemCount; i += 1) {
+		const li = document.createElement('li')
+		const item = document.createElement('a')
+		item.href = '#'
+		item.textContent = `Item ${i + 1}`
+		li.appendChild(item)
+		menu.appendChild(li)
+	}
+	return { toggle, menu }
+}
+
+/**
+ * Build a `<button>` anchor + `<div popover>` panel pair — the minimum
+ * fixture for tooltip tests. No arrow element (tooltips don't ship one
+ * by default; see {@link createPopoverElements} for the popover variant).
+ */
+export function createTooltipElements(): {
+	readonly anchor: HTMLButtonElement
+	readonly panel: HTMLDivElement
+} {
+	const anchor = buildElement('button')
+	anchor.type = 'button'
+	const panel = buildElement('div', { attrs: { popover: '' } })
+	return { anchor, panel }
+}
+
+/**
+ * Build a `<div>` tablist group + two `<button role="tab">` triggers and
+ * matching `<div>` panes. The sibling trigger / pane start with the
+ * `aria-selected="true"` + revealed-pane configuration so a `show()` on
+ * the inactive trigger is observable as the sibling flipping closed.
+ */
+export function createTabsElements(): {
+	readonly group: HTMLDivElement
+	readonly trigger: HTMLButtonElement
+	readonly pane: HTMLDivElement
+	readonly siblingTrigger: HTMLButtonElement
+	readonly siblingPane: HTMLDivElement
+} {
+	const group = buildElement('div')
+	const trigger = document.createElement('button')
+	trigger.type = 'button'
+	trigger.setAttribute('role', 'tab')
+	const siblingTrigger = document.createElement('button')
+	siblingTrigger.type = 'button'
+	siblingTrigger.setAttribute('role', 'tab')
+	siblingTrigger.setAttribute('aria-selected', 'true')
+	siblingTrigger.setAttribute('aria-controls', 'pane-sibling')
+	group.append(siblingTrigger, trigger)
+	const pane = buildElement('div')
+	const siblingPane = buildElement('div', { attrs: { id: 'pane-sibling' } })
+	return { group, trigger, pane, siblingTrigger, siblingPane }
+}
+
+/**
+ * Build a `<form>` with two named inputs — `username` (required text) +
+ * `email` (typed). The required-text field gives form-state tests a
+ * predictable native-validity flip when the value is emptied.
+ */
+export function createFormElements(): {
+	readonly form: HTMLFormElement
+	readonly username: HTMLInputElement
+	readonly email: HTMLInputElement
+} {
+	const form = buildElement('form')
+	const username = document.createElement('input')
+	username.name = 'username'
+	username.required = true
+	username.type = 'text'
+	const email = document.createElement('input')
+	email.name = 'email'
+	email.type = 'email'
+	form.append(username, email)
+	return { form, username, email }
+}
+
+/**
+ * Set a form field's value and dispatch a bubbling `input` event so any
+ * listeners attached to the form root (e.g. `createForm`'s input bridge)
+ * fire as if the user typed. Pair with {@link createFormElements} for
+ * form-state tests.
+ */
+export function inputField(field: HTMLInputElement, value: string): void {
+	field.value = value
+	field.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
+/**
+ * Build a `<div popover>` toast root, optionally with the given ARIA
+ * role. Empty `role` skips the attribute (the factory will fall back to
+ * `role="status"`). Default `'status'` matches the common live-region
+ * semantic toasts ship with.
+ */
+export function createToastElement(role: string = 'status'): HTMLDivElement {
+	return buildElement('div', { attrs: role ? { popover: '', role } : { popover: '' } })
+}
+
+// ── Statechart scenario runner ──────────────────────────────────────────────
+//
+// `runScenario` drives a single transition row through its arrange → act →
+// assert phases against a freshly-built context. `runScenarios` is the
+// `for-await`-of convenience that walks an entire table — typically called
+// from `it.each(table)` so per-row failures point at the failing transition.
+//
+// The runner is intentionally tiny — it owns no fixture lifecycle (callers
+// produce the context inside `arrange` or via a closure-captured `build`),
+// no event dispatch, and no observable assertion. Every transition's
+// arrange / act / assert closures speak DOM directly, so the same harness
+// fits factories, composables, and pure-DOM scenarios without abstraction.
+
+export async function runScenario<TState extends string, TEvent extends string, TContext>(
+	scenario: StateScenario<TState, TEvent, TContext>,
+	context: TContext,
+): Promise<void> {
+	await scenario.arrange(context, scenario.transition.from)
+	await scenario.act(context, scenario.transition.event)
+	await scenario.assert(context, scenario.transition.to)
+}
+
+export async function runScenarios<TState extends string, TEvent extends string, TContext>(
+	scenarios: readonly StateScenario<TState, TEvent, TContext>[],
+	build: (scenario: StateScenario<TState, TEvent, TContext>) => TContext,
+): Promise<void> {
+	for (const scenario of scenarios) {
+		await runScenario(scenario, build(scenario))
 	}
 }
 

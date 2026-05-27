@@ -58,9 +58,13 @@ function parseRoutes(source: string): readonly ParsedRoute[] {
 const routes = parseRoutes(routerSource)
 
 // Route id `use-foo` → composable `useFoo`; the two compound demos fan
-// out to the pair they showcase.
+// out to the pair they showcase. `use-drag` demos BOTH useDrag and
+// useDrop in one page (the framework's drag composable layer is named
+// `_drag.scss`, matching the source side and the route id; the page
+// component (`UseDragDropPage`) still combines drag + drop because the
+// two are inherently paired).
 const COMPOUND: Readonly<Record<string, readonly string[]>> = {
-	'use-drag-drop': ['useDrag', 'useDrop'],
+	'use-drag': ['useDrag', 'useDrop'],
 	'use-theme-button': ['useTheme', 'useButton'],
 }
 

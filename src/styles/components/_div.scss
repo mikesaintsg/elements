@@ -417,4 +417,40 @@
 			overflow-x: hidden;
 		}
 	}
+
+	// `.panes.fill` — opt-in fill-and-scroll at every breakpoint.
+	//
+	// Below 64rem the bare `.panes` is a shrink-to-fit single column
+	// (the `<header>` band stays banded, but the `.fluid` body flows
+	// into the surrounding scroll context rather than scrolling
+	// inside the pane). That's the right default for content panes
+	// the page surrounds with prose — the user expects the page to
+	// scroll as one. App-shell layouts (mail clients, IDEs, three-
+	// pane consoles) want the OPPOSITE shape on mobile too: the
+	// `<header>` band stays anchored at the top, the body scrolls
+	// inside a fixed-height pane, and the `<footer>` stays anchored
+	// at the bottom (toolbar / reply composer / submit row). The
+	// `.fill` modifier opts into that shape across every breakpoint.
+	//
+	// Single-pane mobile + multi-pane desktop is the typical
+	// progressive-enhancement story when consumers pair `.fill` with
+	// `v-show="…"` (or `[hidden]`) on the panes to swap between
+	// list-mode and reading-mode on mobile.
+	div.panes.fill {
+		block-size: 100%;
+	}
+	@media (max-width: 63.99rem) {
+		div.panes.fill > .pane {
+			block-size: 100%;
+			overflow: hidden;
+		}
+		div.panes.fill > .pane > .fluid {
+			overflow-y: auto;
+			// Match the ≥ 64rem `overflow-x: hidden` reasoning above —
+			// `auto` on the block axis would promote the inline axis to
+			// `auto` too and spawn a spurious horizontal scrollbar on
+			// sub-pixel rounding.
+			overflow-x: hidden;
+		}
+	}
 }

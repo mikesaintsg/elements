@@ -132,6 +132,84 @@
 	vertical-align: middle;
 }
 
+/* ── Drag handle + snap zones ───────────────────────────────────────────────
+ *
+ * The leading grip button is the toolbar's drag affordance. The
+ * cursor flips to `grab` at rest so the user knows where to grab
+ * (`createPointer` flips it to `grabbing` mid-drag — that's the
+ * framework's existing `[draggable="true"]` rule from
+ * composables/_drag.scss; the grip isn't a native HTML draggable so
+ * we set the rest-state cursor explicitly here).
+ *
+ * Snap zones — six viewport-corner positions named after the
+ * framework's modifier-vocabulary placements (`.top-start`, `.top`,
+ * `.top-end`, `.bottom-start`, `.bottom`, `.bottom-end`). When the
+ * toolbar carries a `.snap-{zone}` class, the inset properties below
+ * pin it to that corner; while a drag is in flight, the JS sets an
+ * inline `top` / `left` style (via `:style="dragStyle"`) which beats
+ * any snap class so the toolbar tracks the cursor. The
+ * `.dragging` class drops the transition during the drag so the
+ * toolbar doesn't smear behind the pointer.
+ *
+ * Insets resolve from the toolbar's existing `1rem` baseline +
+ * `env(safe-area-inset-*)` so a notched display + a thumb-zone-safe
+ * gutter stay honoured at every corner.
+ */
+.examples-toolbar-grip {
+	cursor: grab;
+	touch-action: none; /* let pointer events through across touch contexts */
+}
+.examples-toolbar-grip:active {
+	cursor: grabbing;
+}
+
+.examples-toolbar.dragging {
+	/* Inline `top`/`left` from the drag state — drop the centred
+	 * default transform so coords are read from the toolbar's
+	 * top-left, not its centre. Also kill the responsive overrides
+	 * via explicit `auto` on the unset edges. */
+	transform: none;
+	transition: none;
+	inset-block-end: auto;
+	inset-inline-start: auto;
+	inset-inline-end: auto;
+	max-inline-size: none;
+}
+
+/* Six snap zones — each pins the toolbar to a viewport edge / corner
+ * with the existing 1rem gutter + safe-area fold. Logical-axis insets
+ * keep RTL working without per-direction reasoning. */
+.examples-toolbar.snap-top-start,
+.examples-toolbar.snap-top,
+.examples-toolbar.snap-top-end {
+	inset-block-start: max(1rem, env(safe-area-inset-top));
+	inset-block-end: auto;
+}
+.examples-toolbar.snap-bottom-start,
+.examples-toolbar.snap-bottom,
+.examples-toolbar.snap-bottom-end {
+	inset-block-end: max(1rem, env(safe-area-inset-bottom));
+	inset-block-start: auto;
+}
+.examples-toolbar.snap-top-start,
+.examples-toolbar.snap-bottom-start {
+	inset-inline-start: max(1rem, env(safe-area-inset-left));
+	inset-inline-end: auto;
+	transform: none;
+}
+.examples-toolbar.snap-top-end,
+.examples-toolbar.snap-bottom-end {
+	inset-inline-end: max(1rem, env(safe-area-inset-right));
+	inset-inline-start: auto;
+	transform: none;
+}
+.examples-toolbar.snap-top,
+.examples-toolbar.snap-bottom {
+	inset-inline-start: 50%;
+	inset-inline-end: auto;
+	transform: translateX(-50%);
+}
+
 .examples-source {
 	margin: 0;
 	padding: 1rem 1.25rem;
@@ -170,6 +248,10 @@
 	--set-icon-window-stack: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='5' width='9' height='9' rx='1'/%3E%3Cpath d='M5 5V3a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-2'/%3E%3C/svg%3E");
 	--set-icon-code-slash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 5-3 3 3 3'/%3E%3Cpath d='m11 5 3 3-3 3'/%3E%3Cpath d='M9 3 7 13'/%3E%3C/svg%3E");
 	--set-icon-copy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='5' width='9' height='9' rx='1.5'/%3E%3Cpath d='M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5'/%3E%3C/svg%3E");
+	/* Drag-handle grip (six-dot vertical) — the canonical "grab here to
+	 * move this element" affordance. Used on the toolbar's leading
+	 * grip button + any future drag-handle inside an example. */
+	--set-icon-grip: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='currentColor'%3E%3Ccircle cx='5.5' cy='3' r='1.25'/%3E%3Ccircle cx='10.5' cy='3' r='1.25'/%3E%3Ccircle cx='5.5' cy='8' r='1.25'/%3E%3Ccircle cx='10.5' cy='8' r='1.25'/%3E%3Ccircle cx='5.5' cy='13' r='1.25'/%3E%3Ccircle cx='10.5' cy='13' r='1.25'/%3E%3C/svg%3E");
 }
 
 .examples-icon-github {
@@ -189,4 +271,138 @@
 }
 .examples-icon-copy {
 	--icon: var(--set-icon-copy);
+}
+.examples-icon-grip {
+	--icon: var(--set-icon-grip);
+}
+
+/* ============================================================================
+ *  Per-example app-logic classes.
+ *
+ *  Each example template assembles framework elements + modifiers and
+ *  sometimes needs ONE per-example knob the framework can't reasonably
+ *  preempt (a specific tile width, a brand-tinted metric, the cursor on
+ *  a draggable card, etc.). The rule:
+ *
+ *    - If the example needs an inline `style="..."` to set a framework
+ *      token, that's a smell — promote it to a `.examples-{name}-*`
+ *      class here. Inline styles are then reserved for the genuinely
+ *      DYNAMIC cases (data-bound bar height, per-row aria-current bg,
+ *      icon glyph swap) that classes can't express.
+ *    - If the example needs a behaviour the framework should provide
+ *      (cursor:grab on every draggable item is one case), file the
+ *      framework fix and use a `.examples-*` class as the interim home.
+ *    - Anything that paints chrome BEYOND a token tune (e.g. a scoped
+ *      layout fix) ALWAYS lives here, not inside the `.vue` file's
+ *      `<style scoped>` block — examples are zero-CSS authoring
+ *      surfaces by convention.
+ *
+ *  Class naming: `.examples-{example-name}-{role}`. The page-test
+ *  namespace gate (tests/app/browser/pages.test.ts) accepts the
+ *  `.examples-` prefix exclusively, so this stays the single permitted
+ *  shape.
+ * ========================================================================== */
+
+/* ── Mail example ──────────────────────────────────────────────────────
+ *
+ * Two per-example knobs left after the EXAMPLES_AUDIT framework gaps
+ * landed:
+ *
+ *   1. Zero <main>'s default padding (full-bleed mail layout) — the
+ *      framework's `--set-main-padding-*` tokens are the right knob
+ *      and reach exactly the right scope.
+ *   2. Widen the list pane to 24rem (mail rows carry an avatar + two
+ *      lines of text + meta, so the framework default of 22rem
+ *      truncates too aggressively).
+ *
+ * The fill-and-scroll-on-mobile layout that previously lived here
+ * moved to the framework's `.panes.fill` modifier (see
+ * components/_div.scss); the row selected-state chrome stays here
+ * because it's keyed off the example's `aria-current` Vue binding.
+ */
+.examples-mail-main {
+	--set-main-padding-inline: 0;
+	--set-main-padding-block: 0;
+}
+.examples-mail-main > div.panes {
+	--set-panes-aside-size: 24rem;
+}
+
+/* Mail message-list rows. The selected row carries
+ * `aria-current="true"` (set by Vue) and the unselected rows omit it;
+ * use that A11Y signal as the selection-state hook so a class on the
+ * row isn't needed and the inline `:style="rowStyle(message)"` Vue
+ * binding falls away. `flat` + `fill` + `text-start` + `rounded-none`
+ * stay on the button as framework modifiers.
+ *
+ * The list `<menu>` itself zeros the framework default `--set-menu-gap`
+ * (`calc(var(--spacing) * 2)` = 8px). Mailbox-style lists want rows
+ * sitting FLUSH against each other so the 1px `border-block-end` on
+ * each row reads as the sole inter-row divider; the 8px gap is what
+ * makes the selected row's tinted bg look "floating in extra space"
+ * relative to unselected siblings. */
+.examples-mail-list {
+	--set-menu-gap: 0;
+}
+.examples-mail-row > button {
+	border-block-end: 1px solid var(--color-border);
+	border-inline-start: 0.1875rem solid transparent;
+}
+.examples-mail-row > button[aria-current='true'] {
+	border-inline-start-color: var(--color-primary);
+	background-color: var(--color-primary-bg-subtle);
+}
+
+/* ── Editorial example ─────────────────────────────────────────────────
+ *
+ * The hero split (intro + meta block) wants a more generous gap than
+ * the framework's `.split` default — single per-example knob. */
+.examples-editorial-hero {
+	--set-split-gap: 3rem;
+}
+
+/* ── Pricing example ───────────────────────────────────────────────────
+ *
+ * Two tile-grid widths: a narrower one for the metrics row (4 cards
+ * across at 14rem each) and a wider one for the pricing tiers (3 cards
+ * across at 18rem each).
+ *
+ * Two text-colour overrides: the metric value reads in primary tint
+ * (display-number eye-catcher); the per-tier check icons read in
+ * success green (the "yes, this is included" affordance). Both stay
+ * here as per-example classes — the framework's `<strong>` baseline
+ * deliberately doesn't pick up variant text colour
+ * (`elements/_strong.scss` § prose-colour discipline), and the icon
+ * primitive inherits `currentColor` from its carrier rather than
+ * consuming `--set-variant-on-canvas-color` (a variant-token cascade
+ * on `<i class="icon">` would also fire inside filled-surface buttons
+ * like `<button class="primary"><i class="icon source">`, painting
+ * the icon dark-on-blue instead of inheriting the button's white).
+ * Both colours flow through normally because `<i class="icon">`'s
+ * mask paints with `currentColor`. */
+.examples-pricing-metrics {
+	--set-tiles-min: 14rem;
+}
+.examples-pricing-plans {
+	--set-tiles-min: 18rem;
+}
+.examples-pricing-metric {
+	color: var(--color-primary);
+}
+.examples-pricing-check {
+	color: var(--color-success);
+}
+
+/* ── Console example ───────────────────────────────────────────────────
+ *
+ * Activity-row marker dot. The dot is `aria-hidden="true"` and lives
+ * next to a two-line text block (`<strong>who</strong> action` +
+ * `<small>when</small>`); without an explicit nudge it baselines on
+ * the first line's cap-height and reads as too high. 0.4rem aligns it
+ * with the visual centre of the first line at the framework's default
+ * line-height. The framework now exposes `--set-dot-baseline-offset`
+ * for exactly this case (see `components/_dot.scss`), so the
+ * per-example class just sets the token. */
+.examples-console-activity-dot {
+	--set-dot-baseline-offset: 0.4rem;
 }
