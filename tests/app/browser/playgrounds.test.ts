@@ -149,9 +149,11 @@ afterAll(() => {
 
 describe('playgrounds — E2E statechart parity (every scenario passes in a real browser)', () => {
 	it('discovers the playground barrel surface (vacuous-pass guard)', () => {
-		// Bump when a new playground lands. The audit inventory marks 14
-		// factories as visual — this lower bound holds the audit shape.
-		expect(playgrounds.length).toBeGreaterThanOrEqual(14)
+		// Bump when a new playground lands. Initial inventory was 14
+		// visual factories; second pass added 6 primitive / stateful
+		// factories (Drag, Drop, Focus, Nav, Pointer, Table) for a total
+		// of 20.
+		expect(playgrounds.length).toBeGreaterThanOrEqual(20)
 	})
 
 	for (const [name, page] of playgrounds) {

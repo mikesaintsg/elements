@@ -66,3 +66,36 @@ describe('MailExamplePage — load-bearing landmarks', () => {
 		}
 	})
 })
+
+// ── Interactive drives ─────────────────────────────────────────────────────
+
+describe('MailExamplePage — message selection', () => {
+	function waitFor(ms: number): Promise<void> {
+		return new Promise((resolve) => {
+			setTimeout(resolve, ms)
+		})
+	}
+
+	it('clicking a different message row flips [aria-current] from the previous row to the new one', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(50)
+			const buttons = [
+				...host.querySelectorAll<HTMLButtonElement>(
+					'section[aria-label="Messages"] menu li button',
+				),
+			]
+			expect(buttons.length).toBeGreaterThan(1)
+			const current = buttons.find((b) => b.getAttribute('aria-current') === 'true')
+			const other = buttons.find((b) => b.getAttribute('aria-current') !== 'true')
+			if (!current || !other) throw new Error('expected one selected + one unselected message row')
+
+			other.click()
+			await waitFor(80)
+			expect(other.getAttribute('aria-current')).toBe('true')
+			expect(current.getAttribute('aria-current')).not.toBe('true')
+		} finally {
+			teardown()
+		}
+	})
+})

@@ -60,3 +60,37 @@ describe('BoardExamplePage — load-bearing landmarks', () => {
 		}
 	})
 })
+
+// ── Interactive drives ─────────────────────────────────────────────────────
+//
+// HTML5 DragEvent synthesis in headless chromium is brittle (the drag
+// gesture requires real OS-level pointer capture). The useDrag selection
+// sub-machine is mouse-click driven though — clicking a row toggles its
+// `.selected` class via the factory's `select()` API. We drive that
+// surface (which is what visual reviewers see) rather than the full
+// drag/drop pipeline (which the unit tests cover with mocked
+// DragEvents).
+
+describe('BoardExamplePage — useDrag selection drives', () => {
+	function waitFor(ms: number): Promise<void> {
+		return new Promise((resolve) => {
+			setTimeout(resolve, ms)
+		})
+	}
+
+	it('clicking a card row marks it `.selected` (useDrag select)', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(100)
+			const card = host.querySelector<HTMLElement>('main ul li[data-index]')
+			if (!card) throw new Error('no draggable card row in DOM')
+			card.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+			card.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }))
+			await waitFor(100)
+			// `.selected` class is set by useDrag on the active row.
+			expect(card.classList.contains('selected')).toBe(true)
+		} finally {
+			teardown()
+		}
+	})
+})

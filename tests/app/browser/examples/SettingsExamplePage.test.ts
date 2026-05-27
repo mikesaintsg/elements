@@ -25,6 +25,18 @@ function mount(): { host: HTMLElement; teardown: () => void } {
 	}
 }
 
+function waitFor(ms: number): Promise<void> {
+	return new Promise((resolve) => {
+		setTimeout(resolve, ms)
+	})
+}
+
+function findButton(host: HTMLElement, label: string): HTMLButtonElement | undefined {
+	return [...host.querySelectorAll<HTMLButtonElement>('button')].find(
+		(b) => b.textContent?.trim().toLowerCase() === label.toLowerCase(),
+	)
+}
+
 describe('SettingsExamplePage — render smoke', () => {
 	it('mounts the app bar + a single form with section cards', () => {
 		const { host, teardown } = mount()
@@ -58,6 +70,60 @@ describe('SettingsExamplePage — forms vocabulary', () => {
 			const dialog = document.querySelector('dialog[aria-label="Settings example source"]')
 			expect(dialog).not.toBeNull()
 			expect((dialog as HTMLDialogElement | null)?.open).toBe(false)
+		} finally {
+			teardown()
+		}
+	})
+})
+
+// ── Interactive drives ─────────────────────────────────────────────────────
+
+describe('SettingsExamplePage — useForm interactive drives', () => {
+	it('Save button submits the form (useForm `api.submit()` routes through the same handler)', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(50)
+			const form = host.querySelector<HTMLFormElement>('main form')
+			if (!form) throw new Error('settings form missing')
+
+			let submitted = 0
+			form.addEventListener('submit', (event) => {
+				event.preventDefault()
+				submitted += 1
+			})
+			const save = findButton(host, 'Save changes')
+			if (!save) throw new Error('"Save changes" button missing')
+
+			save.click()
+			await waitFor(80)
+			expect(submitted).toBe(1)
+		} finally {
+			teardown()
+		}
+	})
+
+	it('Reset button clears a typed input back to its default', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(50)
+			const inputs = [
+				...host.querySelectorAll<HTMLInputElement>(
+					'main form input[type="text"], main form input[type="email"]',
+				),
+			]
+			const target = inputs[0]
+			if (!target) throw new Error('expected at least one text/email input in the form')
+			const original = target.value
+			target.value = 'edited-by-test'
+			target.dispatchEvent(new Event('input', { bubbles: true }))
+			await waitFor(50)
+			expect(target.value).toBe('edited-by-test')
+
+			const reset = findButton(host, 'Reset')
+			if (!reset) throw new Error('"Reset" button missing')
+			reset.click()
+			await waitFor(80)
+			expect(target.value).toBe(original)
 		} finally {
 			teardown()
 		}

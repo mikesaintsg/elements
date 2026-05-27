@@ -72,10 +72,16 @@ import ButtonPlaygroundPage from './playgrounds/ButtonPlaygroundPage.vue'
 import CarouselPlaygroundPage from './playgrounds/CarouselPlaygroundPage.vue'
 import DetailsPlaygroundPage from './playgrounds/DetailsPlaygroundPage.vue'
 import DialogPlaygroundPage from './playgrounds/DialogPlaygroundPage.vue'
+import DragPlaygroundPage from './playgrounds/DragPlaygroundPage.vue'
+import DropPlaygroundPage from './playgrounds/DropPlaygroundPage.vue'
+import FocusPlaygroundPage from './playgrounds/FocusPlaygroundPage.vue'
 import FormPlaygroundPage from './playgrounds/FormPlaygroundPage.vue'
 import MenuPlaygroundPage from './playgrounds/MenuPlaygroundPage.vue'
+import NavPlaygroundPage from './playgrounds/NavPlaygroundPage.vue'
+import PointerPlaygroundPage from './playgrounds/PointerPlaygroundPage.vue'
 import PopoverPlaygroundPage from './playgrounds/PopoverPlaygroundPage.vue'
 import SelectPlaygroundPage from './playgrounds/SelectPlaygroundPage.vue'
+import TablePlaygroundPage from './playgrounds/TablePlaygroundPage.vue'
 import TabsPlaygroundPage from './playgrounds/TabsPlaygroundPage.vue'
 import ThemePlaygroundPage from './playgrounds/ThemePlaygroundPage.vue'
 import ToastPlaygroundPage from './playgrounds/ToastPlaygroundPage.vue'
@@ -460,6 +466,42 @@ const PLAYGROUND_THEME: Route = {
 	group: 'Statechart playgrounds',
 	page: ThemePlaygroundPage,
 }
+const PLAYGROUND_FOCUS: Route = {
+	id: 'playground-focus',
+	title: 'createFocus',
+	group: 'Statechart playgrounds',
+	page: FocusPlaygroundPage,
+}
+const PLAYGROUND_NAV: Route = {
+	id: 'playground-nav',
+	title: 'createNav',
+	group: 'Statechart playgrounds',
+	page: NavPlaygroundPage,
+}
+const PLAYGROUND_DRAG: Route = {
+	id: 'playground-drag',
+	title: 'createDrag',
+	group: 'Statechart playgrounds',
+	page: DragPlaygroundPage,
+}
+const PLAYGROUND_DROP: Route = {
+	id: 'playground-drop',
+	title: 'createDrop',
+	group: 'Statechart playgrounds',
+	page: DropPlaygroundPage,
+}
+const PLAYGROUND_POINTER: Route = {
+	id: 'playground-pointer',
+	title: 'createPointer',
+	group: 'Statechart playgrounds',
+	page: PointerPlaygroundPage,
+}
+const PLAYGROUND_TABLE: Route = {
+	id: 'playground-table',
+	title: 'createTable',
+	group: 'Statechart playgrounds',
+	page: TablePlaygroundPage,
+}
 
 // ── Examples ───────────────────────────────────────────────────────────────
 
@@ -578,6 +620,12 @@ export const routes: readonly Route[] = [
 	PLAYGROUND_ALERT,
 	PLAYGROUND_BUTTON,
 	PLAYGROUND_THEME,
+	PLAYGROUND_FOCUS,
+	PLAYGROUND_NAV,
+	PLAYGROUND_DRAG,
+	PLAYGROUND_DROP,
+	PLAYGROUND_POINTER,
+	PLAYGROUND_TABLE,
 	EXAMPLE_CONSOLE,
 	EXAMPLE_SETTINGS,
 	EXAMPLE_EDITORIAL,
