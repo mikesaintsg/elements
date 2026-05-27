@@ -102,6 +102,51 @@ describe('MailExamplePage — message selection', () => {
 		}
 	})
 
+	it('renders every message row stacked vertically (no flex-wrap collapse)', async () => {
+		// Regression guard for the framework `menu { flex-wrap: wrap }` ×
+		// `flex-direction: column` interaction: without `flex-nowrap` on
+		// the message-list menu, rows wrap into horizontal COLUMNS once
+		// the .pane height collapses (mobile shrink-to-fit), so only the
+		// first message ends up in the viewport. Anchor: every row's
+		// `top` is a distinct integer.
+		const { host, teardown } = mount()
+		try {
+			await waitFor(80)
+			const rowButtons = [
+				...host.querySelectorAll<HTMLButtonElement>(
+					'section[aria-label="Messages"] menu li button',
+				),
+			]
+			expect(rowButtons.length).toBe(5)
+			const tops = new Set(rowButtons.map((b) => Math.round(b.getBoundingClientRect().top)))
+			expect(tops.size).toBe(rowButtons.length)
+		} finally {
+			teardown()
+		}
+	})
+
+	it('reading-pane body and footer do not overlap (mobile layout fix)', async () => {
+		// Regression guard for the mobile `.panes` layout: without the
+		// per-example overrides, the body `.fluid` collapses to its
+		// min-content and the `<footer>` reply toolbar overlaps the
+		// paragraph text. Anchor: the footer's `top` is greater than the
+		// body's `bottom`.
+		const { host, teardown } = mount()
+		try {
+			await waitFor(80)
+			const pane = host.querySelector('section[aria-label="Conversation"]')
+			if (!pane) throw new Error('conversation pane missing')
+			const body = pane.querySelector<HTMLElement>(':scope > div.fluid')
+			const footer = pane.querySelector<HTMLElement>(':scope > footer')
+			if (!body || !footer) throw new Error('reading-pane body / footer missing')
+			const bodyRect = body.getBoundingClientRect()
+			const footerRect = footer.getBoundingClientRect()
+			expect(footerRect.top).toBeGreaterThanOrEqual(bodyRect.bottom)
+		} finally {
+			teardown()
+		}
+	})
+
 	it('clicking a different message row flips [aria-current] from the previous row to the new one', async () => {
 		const { host, teardown } = mount()
 		try {

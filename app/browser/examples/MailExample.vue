@@ -249,7 +249,10 @@ const rowStyle = (message: Message): Record<string, string | undefined> => ({
 	     (sidebar) + a flexible reading pane, divided by 1px rules, each scrolling
 	     independently above the breakpoint and collapsing to a single-pane swap
 	     below it. The mail app is full-bleed (main padding zeroed). -->
-	<main style="--set-main-padding-inline: 0; --set-main-padding-block: 0">
+	<main
+		class="examples-mail-main"
+		style="--set-main-padding-inline: 0; --set-main-padding-block: 0"
+	>
 		<div class="panes" style="--set-panes-aside-size: 24rem">
 			<!-- Message list pane. `.pane` zeroes the section's content padding,
 			     scrolls, and bands its <header>; the .fluid <menu> is the scroll
@@ -261,7 +264,14 @@ const rowStyle = (message: Message): Record<string, string | undefined> => ({
 						<p class="muted">{{ messages.length }} messages</p>
 					</hgroup>
 				</header>
-				<menu class="flex flex-col list-none fluid">
+				<!--
+				     `flex-nowrap` cancels the framework's default `menu { flex-wrap:
+				     wrap }` — without it, combined with `flex-col` on the menu, list
+				     rows wrap into new COLUMNS once the pane's height collapses
+				     (visible as "only the first message renders" on mobile, where
+				     the pane is shrink-to-fit).
+				-->
+				<menu class="flex flex-col flex-nowrap list-none fluid">
 					<li v-for="message in messages" :key="message.id">
 						<button
 							type="button"
@@ -334,3 +344,35 @@ const rowStyle = (message: Message): Record<string, string | undefined> => ({
 		</div>
 	</main>
 </template>
+
+<style scoped>
+/* Mobile-mode `.panes` layout fix.
+ *
+ * The framework's `div.panes` primitive paints a desktop two-pane layout
+ * at ≥ 64rem (block-size: 100%, overflow: hidden, body .fluid: overflow-y:
+ * auto) and a single-column shrink-to-fit layout below it. The mobile
+ * shrink-to-fit collapses the reading pane's `.fluid` body to its
+ * min-content, leaving paragraphs to overflow visibly under the sticky
+ * `<footer>` reply toolbar — the "everything overlaps and is jumbled"
+ * symptom. Mirror the desktop fill-and-scroll layout below the breakpoint
+ * too so the body scrolls inside a fixed-height pane and the footer
+ * stays anchored below it. Scoped to the mail example via
+ * `.examples-mail-main` (the per-example namespace prefix the showcase
+ * gate accepts). */
+.examples-mail-main {
+	block-size: 100%;
+}
+.examples-mail-main > div.panes {
+	block-size: 100%;
+}
+@media (max-width: 63.99rem) {
+	.examples-mail-main > div.panes > .pane {
+		block-size: 100%;
+		overflow: hidden;
+	}
+	.examples-mail-main > div.panes > .pane > .fluid {
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
+}
+</style>
