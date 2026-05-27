@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import type { CreateThemeInstance, CreateThemeOptions } from '@elements/browser'
 import { createTheme, resetTheme, THEME_EVENTS } from '@elements/browser'
+import type { StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
-import { assertCleanDispose } from '../../../setupBrowser'
+import { assertCleanDispose, runScenario } from '../../../setupBrowser'
 
 afterEach(() => resetTheme())
 
@@ -100,5 +102,140 @@ describe('createTheme', () => {
 		// must be installed *outside* the window `assertCleanDispose` measures.
 		createTheme({}).destroy()
 		assertCleanDispose(() => createTheme({ initial: 'light', on: { change: () => {} } }))
+	})
+})
+
+// ── Statechart transition coverage ─────────────────────────────────────────
+//
+// Theme has a single primary state `setting` ∈ {'light', 'dark', 'system'}
+// with deterministic transitions via `set()` and `toggle()`. The resolved
+// `mode` follows from setting plus OS preference (always `'light'` in
+// jsdom since `matchMedia` is unimplemented). `[data-mode]` on `<html>`
+// mirrors setting when not in system mode.
+//
+//   States   : 'light' | 'dark' | 'system'
+//   Events   : 'set-light' | 'set-dark' | 'set-system' | 'toggle' | 'destroy'
+
+type ThemeState = 'light' | 'dark' | 'system'
+type ThemeEvent = 'set-light' | 'set-dark' | 'set-system' | 'toggle' | 'destroy'
+
+interface ThemeContext {
+	readonly api: CreateThemeInstance
+}
+
+function buildThemeContext(initial: ThemeState): ThemeContext {
+	const options: CreateThemeOptions = { initial }
+	const api = createTheme(options)
+	return { api }
+}
+
+function driveToThemeState(context: ThemeContext, state: ThemeState): void {
+	context.api.set(state)
+}
+
+function fireThemeEvent(context: ThemeContext, event: ThemeEvent): void {
+	if (event === 'set-light') {
+		context.api.set('light')
+		return
+	}
+	if (event === 'set-dark') {
+		context.api.set('dark')
+		return
+	}
+	if (event === 'set-system') {
+		context.api.set('system')
+		return
+	}
+	if (event === 'toggle') {
+		context.api.toggle()
+		return
+	}
+	context.api.destroy()
+}
+
+function assertThemeState(context: ThemeContext, state: ThemeState): void {
+	expect(context.api.setting.value).toBe(state)
+	if (state === 'system') {
+		expect(document.documentElement.hasAttribute('data-mode')).toBe(false)
+	} else {
+		expect(document.documentElement.getAttribute('data-mode')).toBe(state)
+	}
+}
+
+const THEME_SCENARIOS: readonly StateScenario<ThemeState, ThemeEvent, ThemeContext>[] = [
+	{
+		transition: {
+			name: 'light × set-dark → dark',
+			from: 'light',
+			event: 'set-dark',
+			to: 'dark',
+		},
+		arrange: driveToThemeState,
+		act: fireThemeEvent,
+		assert: assertThemeState,
+	},
+	{
+		transition: {
+			name: 'dark × set-light → light',
+			from: 'dark',
+			event: 'set-light',
+			to: 'light',
+		},
+		arrange: driveToThemeState,
+		act: fireThemeEvent,
+		assert: assertThemeState,
+	},
+	{
+		transition: {
+			name: 'light × toggle → dark',
+			from: 'light',
+			event: 'toggle',
+			to: 'dark',
+		},
+		arrange: driveToThemeState,
+		act: fireThemeEvent,
+		assert: assertThemeState,
+	},
+	{
+		transition: {
+			name: 'dark × toggle → light',
+			from: 'dark',
+			event: 'toggle',
+			to: 'light',
+		},
+		arrange: driveToThemeState,
+		act: fireThemeEvent,
+		assert: assertThemeState,
+	},
+	{
+		transition: {
+			name: 'dark × set-system → system (data-mode removed)',
+			from: 'dark',
+			event: 'set-system',
+			to: 'system',
+		},
+		arrange: driveToThemeState,
+		act: fireThemeEvent,
+		assert: assertThemeState,
+	},
+	{
+		transition: {
+			name: 'system × set-dark → dark',
+			from: 'system',
+			event: 'set-dark',
+			to: 'dark',
+		},
+		arrange: driveToThemeState,
+		act: fireThemeEvent,
+		assert: assertThemeState,
+	},
+]
+
+describe('createTheme (statechart)', () => {
+	it.each(THEME_SCENARIOS)('$transition.name', async (scenario) => {
+		const context = buildThemeContext('system')
+		expect(context.api.setting.value).toBe('system')
+		await runScenario(scenario, context)
+		context.api.destroy()
 	})
 })

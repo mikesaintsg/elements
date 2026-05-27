@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { CreateCarouselInstance, CreateCarouselOptions } from '@elements/browser'
 import { CAROUSEL_EVENTS, createCarousel, TRANSITION_FALLBACK_MS } from '@elements/browser'
+import type { EventRecorder, StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
-import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
+import {
+	assertCleanDispose,
+	buildElement,
+	createFactoryFixture,
+	runScenario,
+} from '../../../setupBrowser'
 
 function createCarouselFixture(
 	count: number,
@@ -164,5 +171,284 @@ describe('createCarousel', () => {
 		expect(indicators[0]?.getAttribute('aria-selected')).toBeNull()
 		expect(indicators[1]?.getAttribute('aria-selected')).toBeNull()
 		expect(indicators[2]?.getAttribute('aria-selected')).toBeNull()
+	})
+})
+
+// ── Statechart transition coverage ─────────────────────────────────────────
+//
+// Carousel has two orthogonal regions:
+//   - Slide position: 'first' | 'middle' | 'last'  (concretely: index 0..N-1)
+//   - Autoplay timer: 'idle' | 'cycling'  (only meaningful with autoplay)
+//
+// The slide region transitions via next() / prev() / to(index) and wraps
+// at both ends (with `{wrap: true}`). The cycling region toggles via
+// start() / stop() / pause() / resume(); mouseenter / mouseleave bridge
+// to pause / resume when autoplay is enabled.
+//
+//   Events   : 'next' | 'prev' | 'to-last' | 'start' | 'stop' | 'pause'
+//              | 'resume' | 'mouseenter' | 'mouseleave' | 'destroy'
+
+type CarouselState = 'first' | 'middle' | 'last' | 'first-cycling' | 'first-paused'
+type CarouselEvent =
+	| 'next'
+	| 'prev'
+	| 'to-last'
+	| 'start'
+	| 'stop'
+	| 'pause'
+	| 'resume'
+	| 'mouseenter'
+	| 'mouseleave'
+	| 'destroy'
+
+const CAROUSEL_AUTOPLAY_INTERVAL_MS = 1000
+
+interface CarouselContext {
+	readonly api: CreateCarouselInstance
+	readonly carousel: HTMLElement
+	readonly items: readonly HTMLLIElement[]
+	readonly slides: EventRecorder
+}
+
+function buildCarouselContext(
+	count: number,
+	options: CreateCarouselOptions = {},
+): CarouselContext {
+	const { carousel, items } = createCarouselFixture(count)
+	const slides = createRecorder<[Event]>()
+	carousel.addEventListener(CAROUSEL_EVENTS.slide, slides.handler)
+	const [api] = createFactoryFixture(() => createCarousel(carousel, options))
+	return { api, carousel, items, slides }
+}
+
+function driveToCarouselState(context: CarouselContext, state: CarouselState): void {
+	if (state === 'first') return
+	if (state === 'middle') {
+		context.api.to(1)
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		context.slides.clear()
+		return
+	}
+	if (state === 'last') {
+		context.api.to(context.items.length - 1)
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		context.slides.clear()
+		return
+	}
+	if (state === 'first-cycling') {
+		context.api.start()
+		return
+	}
+	if (state === 'first-paused') {
+		context.api.start()
+		context.api.pause()
+	}
+}
+
+function fireCarouselEvent(context: CarouselContext, event: CarouselEvent): void {
+	if (event === 'next') {
+		context.api.next()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'prev') {
+		context.api.prev()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'to-last') {
+		context.api.to(context.items.length - 1)
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'start') {
+		context.api.start()
+		return
+	}
+	if (event === 'stop') {
+		context.api.stop()
+		return
+	}
+	if (event === 'pause') {
+		context.api.pause()
+		return
+	}
+	if (event === 'resume') {
+		context.api.resume()
+		return
+	}
+	if (event === 'mouseenter') {
+		context.carousel.dispatchEvent(new Event('mouseenter'))
+		return
+	}
+	if (event === 'mouseleave') {
+		context.carousel.dispatchEvent(new Event('mouseleave'))
+		return
+	}
+	context.api.destroy()
+}
+
+interface CarouselObservables {
+	readonly index: number
+	readonly cycling: boolean
+}
+
+function assertCarouselState(context: CarouselContext, state: CarouselState): void {
+	const last = context.items.length - 1
+	const expected: CarouselObservables =
+		state === 'first'
+			? { index: 0, cycling: false }
+			: state === 'middle'
+				? { index: 1, cycling: false }
+				: state === 'last'
+					? { index: last, cycling: false }
+					: state === 'first-cycling'
+						? { index: 0, cycling: true }
+						: { index: 0, cycling: false } // first-paused
+	expect(context.api.index.value).toBe(expected.index)
+	expect(context.api.cycling.value).toBe(expected.cycling)
+}
+
+const CAROUSEL_SLIDE_SCENARIOS: readonly StateScenario<
+	CarouselState,
+	CarouselEvent,
+	CarouselContext
+>[] = [
+	{
+		transition: { name: 'first × next → middle', from: 'first', event: 'next', to: 'middle' },
+		arrange: driveToCarouselState,
+		act: fireCarouselEvent,
+		assert: (context, state) => {
+			assertCarouselState(context, state)
+			expect(context.slides.count).toBeGreaterThanOrEqual(1)
+		},
+	},
+	{
+		transition: { name: 'middle × prev → first', from: 'middle', event: 'prev', to: 'first' },
+		arrange: driveToCarouselState,
+		act: fireCarouselEvent,
+		assert: assertCarouselState,
+	},
+	{
+		transition: {
+			name: 'first × to-last → last',
+			from: 'first',
+			event: 'to-last',
+			to: 'last',
+		},
+		arrange: driveToCarouselState,
+		act: fireCarouselEvent,
+		assert: assertCarouselState,
+	},
+	{
+		transition: {
+			name: 'last × next → first (wrap forward)',
+			from: 'last',
+			event: 'next',
+			to: 'first',
+		},
+		arrange: driveToCarouselState,
+		act: fireCarouselEvent,
+		assert: assertCarouselState,
+	},
+	{
+		transition: {
+			name: 'first × prev → last (wrap backward)',
+			from: 'first',
+			event: 'prev',
+			to: 'last',
+		},
+		arrange: driveToCarouselState,
+		act: fireCarouselEvent,
+		assert: assertCarouselState,
+	},
+]
+
+const CAROUSEL_AUTOPLAY_SCENARIOS: readonly StateScenario<
+	CarouselState,
+	CarouselEvent,
+	CarouselContext
+>[] = [
+	{
+		transition: {
+			name: 'first × start → first-cycling',
+			from: 'first',
+			event: 'start',
+			to: 'first-cycling',
+		},
+		arrange: driveToCarouselState,
+		act: fireCarouselEvent,
+		assert: assertCarouselState,
+	},
+	{
+		transition: {
+			name: 'first-cycling × stop → first',
+			from: 'first-cycling',
+			event: 'stop',
+			to: 'first',
+		},
+		arrange: driveToCarouselState,
+		act: fireCarouselEvent,
+		assert: assertCarouselState,
+	},
+	{
+		transition: {
+			name: 'first-cycling × pause → first-paused (timer suspended)',
+			from: 'first-cycling',
+			event: 'pause',
+			to: 'first-paused',
+		},
+		arrange: driveToCarouselState,
+		act: fireCarouselEvent,
+		assert: (context, state) => {
+			assertCarouselState(context, state)
+			// Advance past the autoplay interval — index must stay at 0
+			// because the cycling timer is paused.
+			vi.advanceTimersByTime(CAROUSEL_AUTOPLAY_INTERVAL_MS * 2)
+			expect(context.api.index.value).toBe(0)
+		},
+	},
+	{
+		transition: {
+			name: 'first-paused × resume → first-cycling',
+			from: 'first-paused',
+			event: 'resume',
+			to: 'first-cycling',
+		},
+		arrange: driveToCarouselState,
+		act: fireCarouselEvent,
+		assert: assertCarouselState,
+	},
+]
+
+describe('createCarousel (statechart) — slide position', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+	})
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it.each(CAROUSEL_SLIDE_SCENARIOS)('$transition.name', async (scenario) => {
+		const context = buildCarouselContext(3)
+		expect(context.api.index.value).toBe(0)
+		await runScenario(scenario, context)
+	})
+})
+
+describe('createCarousel (statechart) — autoplay region', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+	})
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it.each(CAROUSEL_AUTOPLAY_SCENARIOS)('$transition.name', async (scenario) => {
+		const context = buildCarouselContext(3, {
+			autoplay: { interval: CAROUSEL_AUTOPLAY_INTERVAL_MS },
+		})
+		expect(context.api.cycling.value).toBe(false)
+		await runScenario(scenario, context)
 	})
 })

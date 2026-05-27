@@ -388,6 +388,49 @@ export function createMenuElements(itemCount = 3): {
 }
 
 /**
+ * Build a `<button>` anchor + `<div popover>` panel pair — the minimum
+ * fixture for tooltip tests. No arrow element (tooltips don't ship one
+ * by default; see {@link createPopoverElements} for the popover variant).
+ */
+export function createTooltipElements(): {
+	readonly anchor: HTMLButtonElement
+	readonly panel: HTMLDivElement
+} {
+	const anchor = buildElement('button')
+	anchor.type = 'button'
+	const panel = buildElement('div', { attrs: { popover: '' } })
+	return { anchor, panel }
+}
+
+/**
+ * Build a `<div>` tablist group + two `<button role="tab">` triggers and
+ * matching `<div>` panes. The sibling trigger / pane start with the
+ * `aria-selected="true"` + revealed-pane configuration so a `show()` on
+ * the inactive trigger is observable as the sibling flipping closed.
+ */
+export function createTabsElements(): {
+	readonly group: HTMLDivElement
+	readonly trigger: HTMLButtonElement
+	readonly pane: HTMLDivElement
+	readonly siblingTrigger: HTMLButtonElement
+	readonly siblingPane: HTMLDivElement
+} {
+	const group = buildElement('div')
+	const trigger = document.createElement('button')
+	trigger.type = 'button'
+	trigger.setAttribute('role', 'tab')
+	const siblingTrigger = document.createElement('button')
+	siblingTrigger.type = 'button'
+	siblingTrigger.setAttribute('role', 'tab')
+	siblingTrigger.setAttribute('aria-selected', 'true')
+	siblingTrigger.setAttribute('aria-controls', 'pane-sibling')
+	group.append(siblingTrigger, trigger)
+	const pane = buildElement('div')
+	const siblingPane = buildElement('div', { attrs: { id: 'pane-sibling' } })
+	return { group, trigger, pane, siblingTrigger, siblingPane }
+}
+
+/**
  * Build a `<form>` with two named inputs — `username` (required text) +
  * `email` (typed). The required-text field gives form-state tests a
  * predictable native-validity flip when the value is emptied.

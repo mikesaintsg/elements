@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { CreateAlertInstance, CreateAlertOptions } from '@elements/browser'
 import { ALERT_EVENTS, createAlert, TRANSITION_FALLBACK_MS } from '@elements/browser'
+import type { EventRecorder, StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
-import { assertCleanDispose, buildElement, createFactoryFixture } from '../../../setupBrowser'
+import {
+	assertCleanDispose,
+	buildElement,
+	createFactoryFixture,
+	runScenario,
+} from '../../../setupBrowser'
 
 describe('createAlert', () => {
 	beforeEach(() => {
@@ -82,5 +89,157 @@ describe('createAlert', () => {
 
 	it('destroy reverses every listener', () => {
 		assertCleanDispose(() => createAlert(buildElement('aside', { attrs: { role: 'alert' } })))
+	})
+})
+
+// ── Statechart transition coverage ─────────────────────────────────────────
+//
+// Alert is a binary open / closed lifecycle. The host is `<aside
+// role="alert">` (the factory assigns the role if missing). `[data-
+// alert-open]` mirrors `visible.value`; `[aria-hidden]` is set when the
+// alert is dismissed. The `initial: false` option mounts dismissed
+// (otherwise alerts default to open per createAlert.ts:14–23 rationale).
+//
+//   States   : 'closed' | 'open'
+//   Events   : 'show' | 'hide' | 'dismissclick' | 'destroy'
+
+type AlertState = 'closed' | 'open'
+type AlertEvent = 'show' | 'hide' | 'dismissclick' | 'destroy'
+
+interface AlertContext {
+	readonly api: CreateAlertInstance
+	readonly element: HTMLElement
+	readonly dismiss: HTMLButtonElement
+	readonly opens: EventRecorder
+	readonly closes: EventRecorder
+}
+
+function buildAlertContext(options: CreateAlertOptions = {}): AlertContext {
+	const element = buildElement('aside', { attrs: { role: 'alert' } })
+	const dismiss = document.createElement('button')
+	dismiss.type = 'button'
+	dismiss.dataset.alertDismiss = ''
+	element.appendChild(dismiss)
+	const opens = createRecorder<[Event]>()
+	const closes = createRecorder<[Event]>()
+	element.addEventListener(ALERT_EVENTS.open, opens.handler)
+	element.addEventListener(ALERT_EVENTS.close, closes.handler)
+	// Default `initial: false` so the statechart starts in `closed`. Tests
+	// that need the default-open behavior pass `{ initial: true }` explicitly.
+	const [api] = createFactoryFixture(() => createAlert(element, { initial: false, ...options }))
+	return { api, element, dismiss, opens, closes }
+}
+
+function driveToAlertState(context: AlertContext, state: AlertState): void {
+	if (state === 'open') {
+		context.api.show()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		context.opens.clear()
+	}
+}
+
+function fireAlertEvent(context: AlertContext, event: AlertEvent): void {
+	if (event === 'show') {
+		context.api.show()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'hide') {
+		context.api.hide()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	if (event === 'dismissclick') {
+		context.dismiss.click()
+		vi.advanceTimersByTime(TRANSITION_FALLBACK_MS)
+		return
+	}
+	context.api.destroy()
+}
+
+function assertAlertState(context: AlertContext, state: AlertState): void {
+	const expectedOpen = state === 'open'
+	expect(context.api.visible.value).toBe(expectedOpen)
+	expect(context.element.hasAttribute('data-alert-open')).toBe(expectedOpen)
+}
+
+const ALERT_SCENARIOS: readonly StateScenario<AlertState, AlertEvent, AlertContext>[] = [
+	{
+		transition: { name: 'closed × show → open', from: 'closed', event: 'show', to: 'open' },
+		arrange: driveToAlertState,
+		act: fireAlertEvent,
+		assert: (context, state) => {
+			assertAlertState(context, state)
+			expect(context.opens.count).toBe(1)
+			expect(context.element.hasAttribute('aria-hidden')).toBe(false)
+		},
+	},
+	{
+		transition: { name: 'open × hide → closed', from: 'open', event: 'hide', to: 'closed' },
+		arrange: driveToAlertState,
+		act: fireAlertEvent,
+		assert: (context, state) => {
+			assertAlertState(context, state)
+			expect(context.closes.count).toBe(1)
+			expect(context.element.getAttribute('aria-hidden')).toBe('true')
+		},
+	},
+	{
+		transition: {
+			name: 'open × dismissclick → closed (clicks on [data-alert-dismiss] hide)',
+			from: 'open',
+			event: 'dismissclick',
+			to: 'closed',
+		},
+		arrange: driveToAlertState,
+		act: fireAlertEvent,
+		assert: (context, state) => {
+			assertAlertState(context, state)
+			expect(context.closes.count).toBe(1)
+		},
+	},
+	{
+		transition: {
+			name: 'closed × hide → closed (no-op, no emit)',
+			from: 'closed',
+			event: 'hide',
+			to: 'closed',
+		},
+		arrange: driveToAlertState,
+		act: fireAlertEvent,
+		assert: (context, state) => {
+			assertAlertState(context, state)
+			expect(context.opens.count).toBe(0)
+			expect(context.closes.count).toBe(0)
+		},
+	},
+	{
+		transition: {
+			name: 'open × show → open (idempotent, no double emit)',
+			from: 'open',
+			event: 'show',
+			to: 'open',
+		},
+		arrange: driveToAlertState,
+		act: fireAlertEvent,
+		assert: (context, state) => {
+			assertAlertState(context, state)
+			expect(context.opens.count).toBe(0)
+		},
+	},
+]
+
+describe('createAlert (statechart)', () => {
+	beforeEach(() => {
+		vi.useFakeTimers()
+	})
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it.each(ALERT_SCENARIOS)('$transition.name', async (scenario) => {
+		const context = buildAlertContext()
+		expect(context.api.visible.value).toBe(false)
+		await runScenario(scenario, context)
 	})
 })
