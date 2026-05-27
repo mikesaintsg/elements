@@ -76,6 +76,32 @@ describe('MailExamplePage — message selection', () => {
 		})
 	}
 
+	it('clicking a message row updates the reading-pane subject', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(50)
+			const buttons = [
+				...host.querySelectorAll<HTMLButtonElement>(
+					'section[aria-label="Messages"] menu li button',
+				),
+			]
+			const subjectHeading = host.querySelector<HTMLElement>(
+				'section[aria-label="Conversation"] header h2',
+			)
+			if (buttons.length < 2 || !subjectHeading) throw new Error('mail list / heading missing')
+			const initialSubject = subjectHeading.textContent?.trim() ?? ''
+			const other = buttons.find((b) => b.getAttribute('aria-current') !== 'true')
+			if (!other) throw new Error('expected an unselected message row')
+			other.click()
+			await waitFor(80)
+			const updated = subjectHeading.textContent?.trim() ?? ''
+			expect(updated.length).toBeGreaterThan(0)
+			expect(updated).not.toBe(initialSubject)
+		} finally {
+			teardown()
+		}
+	})
+
 	it('clicking a different message row flips [aria-current] from the previous row to the new one', async () => {
 		const { host, teardown } = mount()
 		try {

@@ -140,6 +140,38 @@ describe('SigninExamplePage — forgot-password dialog interaction', () => {
 		}
 	})
 
+	it('Submitting the main sign-in form flips the button into a loading state', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(50)
+			const form = host.querySelector<HTMLFormElement>('main form')
+			const submit = host.querySelector<HTMLButtonElement>('main form button[type="submit"]')
+			if (!form || !submit) throw new Error('sign-in form / submit button missing')
+			expect(submit.disabled).toBe(false)
+			expect(submit.classList.contains('loading')).toBe(false)
+			// Fill the required fields so checkValidity passes — the form's
+			// `useForm` `on.submit` handler flips `loading.value = true` for
+			// 1.1s then calls `notify()`, which the toast surface picks up.
+			const email = host.querySelector<HTMLInputElement>('input[type="email"]')
+			const password = host.querySelector<HTMLInputElement>('input[type="password"]')
+			if (!email || !password) throw new Error('sign-in email/password input missing')
+			email.value = 'a@b.test'
+			email.dispatchEvent(new Event('input', { bubbles: true }))
+			password.value = 'supersecret'
+			password.dispatchEvent(new Event('input', { bubbles: true }))
+			await waitFor(50)
+			form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+			await waitFor(100)
+			// Within the 1.1s setTimeout, loading is true: button disabled +
+			// `.loading` class set + label is "Signing in…".
+			expect(submit.disabled).toBe(true)
+			expect(submit.classList.contains('loading')).toBe(true)
+			expect((submit.textContent ?? '').trim()).toMatch(/signing in/i)
+		} finally {
+			teardown()
+		}
+	})
+
 	it('Submitting the reset form closes the dialog AND surfaces the confirmation toast', async () => {
 		const { host, teardown } = mount()
 		try {

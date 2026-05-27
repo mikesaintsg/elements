@@ -102,6 +102,42 @@ describe('SettingsExamplePage — useForm interactive drives', () => {
 		}
 	})
 
+	it('role="switch" toggle inputs flip checked state on click', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(50)
+			const sw = host.querySelector<HTMLInputElement>('input[role="switch"]')
+			if (!sw) throw new Error('switch input missing')
+			const initial = sw.checked
+			sw.click()
+			await waitFor(50)
+			expect(sw.checked).toBe(!initial)
+			sw.click()
+			await waitFor(50)
+			expect(sw.checked).toBe(initial)
+		} finally {
+			teardown()
+		}
+	})
+
+	it('theme radio group: picking "dark" updates the form field value', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(50)
+			const dark = host.querySelector<HTMLInputElement>('input[type="radio"][value="dark"]')
+			const system = host.querySelector<HTMLInputElement>('input[type="radio"][value="system"]')
+			if (!dark || !system) throw new Error('theme radio inputs missing')
+			expect(system.checked).toBe(true)
+			expect(dark.checked).toBe(false)
+			dark.click()
+			await waitFor(50)
+			expect(dark.checked).toBe(true)
+			expect(system.checked).toBe(false)
+		} finally {
+			teardown()
+		}
+	})
+
 	it('Reset button clears a typed input back to its default', async () => {
 		const { host, teardown } = mount()
 		try {

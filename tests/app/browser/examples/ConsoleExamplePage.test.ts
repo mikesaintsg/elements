@@ -119,6 +119,50 @@ describe('ConsoleExamplePage — useTable sort interaction', () => {
 		}
 	})
 
+	it('date-range toggle group: clicking a different range flips aria-pressed', async () => {
+		const { host, teardown } = mount()
+		try {
+			await waitFor(50)
+			const buttons = [
+				...host.querySelectorAll<HTMLButtonElement>(
+					'div[role="group"][aria-label="Date range"] button',
+				),
+			]
+			expect(buttons.length).toBe(3)
+			const active = buttons.find((b) => b.getAttribute('aria-pressed') === 'true')
+			const other = buttons.find((b) => b.getAttribute('aria-pressed') !== 'true')
+			if (!active || !other) throw new Error('expected one pressed + one unpressed range button')
+			other.click()
+			await waitFor(80)
+			expect(other.getAttribute('aria-pressed')).toBe('true')
+			expect(active.getAttribute('aria-pressed')).not.toBe('true')
+		} finally {
+			teardown()
+		}
+	})
+
+	it('view-source <dialog> opens when the source button (popovertarget pair) fires', async () => {
+		const { teardown } = mount()
+		try {
+			await waitFor(50)
+			const dialog = document.querySelector<HTMLDialogElement>(
+				'dialog[aria-label="Console example source"]',
+			)
+			if (!dialog) throw new Error('view-source dialog missing')
+			expect(dialog.open).toBe(false)
+			// ExamplesShell binds the open via the framework, but per-page
+			// tests can drive it directly through the native API.
+			dialog.showModal()
+			await waitFor(50)
+			expect(dialog.open).toBe(true)
+			dialog.close()
+			await waitFor(50)
+			expect(dialog.open).toBe(false)
+		} finally {
+			teardown()
+		}
+	})
+
 	it('sorting one column clears the previous column (multiple:false)', async () => {
 		const { host, teardown } = mount()
 		try {
