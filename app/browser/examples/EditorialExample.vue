@@ -35,7 +35,7 @@ const related = [
 
 <template>
 	<main>
-		<div class="split flip" style="--set-split-gap: 3rem">
+		<div class="split flip examples-editorial-hero">
 			<!-- ── Article column ──────────────────────────────────────────── -->
 			<article class="flush">
 				<hgroup>

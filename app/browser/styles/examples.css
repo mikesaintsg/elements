@@ -190,3 +190,143 @@
 .examples-icon-copy {
 	--icon: var(--set-icon-copy);
 }
+
+/* ============================================================================
+ *  Per-example app-logic classes.
+ *
+ *  Each example template assembles framework elements + modifiers and
+ *  sometimes needs ONE per-example knob the framework can't reasonably
+ *  preempt (a specific tile width, a brand-tinted metric, the cursor on
+ *  a draggable card, etc.). The rule:
+ *
+ *    - If the example needs an inline `style="..."` to set a framework
+ *      token, that's a smell — promote it to a `.examples-{name}-*`
+ *      class here. Inline styles are then reserved for the genuinely
+ *      DYNAMIC cases (data-bound bar height, per-row aria-current bg,
+ *      icon glyph swap) that classes can't express.
+ *    - If the example needs a behaviour the framework should provide
+ *      (cursor:grab on every draggable item is one case), file the
+ *      framework fix and use a `.examples-*` class as the interim home.
+ *    - Anything that paints chrome BEYOND a token tune (e.g. a scoped
+ *      layout fix) ALWAYS lives here, not inside the `.vue` file's
+ *      `<style scoped>` block — examples are zero-CSS authoring
+ *      surfaces by convention.
+ *
+ *  Class naming: `.examples-{example-name}-{role}`. The page-test
+ *  namespace gate (tests/app/browser/pages.test.ts) accepts the
+ *  `.examples-` prefix exclusively, so this stays the single permitted
+ *  shape.
+ * ========================================================================== */
+
+/* ── Mail example ──────────────────────────────────────────────────────
+ *
+ * The framework's `.panes` primitive ships with a desktop ≥ 64rem
+ * `block-size: 100%` + `overflow: hidden` + `overflow-y: auto` block
+ * that makes panes fill the parent and content scroll independently.
+ * Below the breakpoint, those rules drop and `.panes` is shrink-to-fit;
+ * the mail UI needs the same vertical-fill below the breakpoint too so
+ * the reading-pane body scrolls inside a fixed-height pane and the
+ * Reply / Reply all / Forward `<footer>` stays anchored at the bottom
+ * (instead of overlapping the body's overflow). Mirror the desktop
+ * rules below the breakpoint for the mail example only.
+ */
+.examples-mail-main {
+	/* Zero <main>'s default padding so the panes butt flush to the
+	 * body-shell edge — the mail app is a full-bleed UI. */
+	--set-main-padding-inline: 0;
+	--set-main-padding-block: 0;
+	block-size: 100%;
+}
+.examples-mail-main > div.panes {
+	/* Wider list pane than the framework default (22rem) — mail rows
+	 * carry an avatar, two lines of text, and a meta row, so 24rem
+	 * keeps the subject + preview from truncating too aggressively. */
+	--set-panes-aside-size: 24rem;
+	block-size: 100%;
+}
+@media (max-width: 63.99rem) {
+	.examples-mail-main > div.panes > .pane {
+		block-size: 100%;
+		overflow: hidden;
+	}
+	.examples-mail-main > div.panes > .pane > .fluid {
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
+}
+
+/* Mail message-list rows. The selected row carries
+ * `aria-current="true"` (set by Vue) and the unselected rows omit it;
+ * use that A11Y signal as the selection-state hook so a class on the
+ * row isn't needed and the inline `:style="rowStyle(message)"` Vue
+ * binding falls away. `flat` + `fill` + `text-start` + `rounded-none`
+ * stay on the button as framework modifiers. */
+.examples-mail-row > button {
+	border-block-end: 1px solid var(--color-border);
+	border-inline-start: 0.1875rem solid transparent;
+}
+.examples-mail-row > button[aria-current='true'] {
+	border-inline-start-color: var(--color-primary);
+	background-color: var(--color-primary-bg-subtle);
+}
+
+/* ── Editorial example ─────────────────────────────────────────────────
+ *
+ * The hero split (intro + meta block) wants a more generous gap than
+ * the framework's `.split` default — single per-example knob. */
+.examples-editorial-hero {
+	--set-split-gap: 3rem;
+}
+
+/* ── Pricing example ───────────────────────────────────────────────────
+ *
+ * Two tile-grid widths: a narrower one for the metrics row (4 cards
+ * across at 14rem each) and a wider one for the pricing tiers (3 cards
+ * across at 18rem each). */
+.examples-pricing-metrics {
+	--set-tiles-min: 14rem;
+}
+.examples-pricing-plans {
+	--set-tiles-min: 18rem;
+}
+
+/* Pricing accents — the big metric value reads in the brand primary
+ * tint to draw the eye; the check icons inside the per-tier feature
+ * list read in success-green so the "yes" affordance is immediate. The
+ * framework's variant modifiers (`.primary` / `.success`) tune surface
+ * tokens (background + border), not raw text/icon color — these
+ * `.examples-pricing-*` classes own the per-example "use this token as
+ * the element's color" decision so the inline `style="color: ..."`
+ * isn't required.
+ *
+ * The icon primitive paints with `currentColor`, so setting `color`
+ * here cascades correctly into `<i class="icon check">`. */
+.examples-pricing-metric {
+	color: var(--color-primary);
+}
+.examples-pricing-check {
+	color: var(--color-success);
+}
+
+/* ── Console example ───────────────────────────────────────────────────
+ *
+ * Activity-row marker dot. The dot is `aria-hidden="true"` and lives
+ * next to a two-line text block (`<strong>who</strong> action` +
+ * `<small>when</small>`); without an explicit nudge it baselines on
+ * the first line's cap-height and reads as too high. 0.4rem aligns it
+ * with the visual centre of the first line at the framework's default
+ * line-height. */
+.examples-console-activity-dot {
+	margin-block-start: 0.4rem;
+}
+
+/* ── Board example ─────────────────────────────────────────────────────
+ *
+ * Cursor hint on draggable card articles. The framework's drag
+ * composable (createDrag) doesn't paint a cursor today — that's a
+ * known framework gap (a future `src/styles/composables/_drag.scss`
+ * partial should own the visual feedback for every draggable host).
+ * Until then, the example sets the hint at the card level. */
+.examples-board-card {
+	cursor: grab;
+}
