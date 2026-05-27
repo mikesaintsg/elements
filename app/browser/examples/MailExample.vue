@@ -262,7 +262,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 				     (visible as "only the first message renders" on mobile, where
 				     the pane is shrink-to-fit).
 				-->
-				<menu class="flex flex-col flex-nowrap list-none fluid">
+				<menu class="examples-mail-list flex flex-col flex-nowrap list-none fluid">
 					<li v-for="message in messages" :key="message.id" class="examples-mail-row">
 						<button
 							type="button"
