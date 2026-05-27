@@ -220,39 +220,27 @@
 
 /* ── Mail example ──────────────────────────────────────────────────────
  *
- * The framework's `.panes` primitive ships with a desktop ≥ 64rem
- * `block-size: 100%` + `overflow: hidden` + `overflow-y: auto` block
- * that makes panes fill the parent and content scroll independently.
- * Below the breakpoint, those rules drop and `.panes` is shrink-to-fit;
- * the mail UI needs the same vertical-fill below the breakpoint too so
- * the reading-pane body scrolls inside a fixed-height pane and the
- * Reply / Reply all / Forward `<footer>` stays anchored at the bottom
- * (instead of overlapping the body's overflow). Mirror the desktop
- * rules below the breakpoint for the mail example only.
+ * Two per-example knobs left after the EXAMPLES_AUDIT framework gaps
+ * landed:
+ *
+ *   1. Zero <main>'s default padding (full-bleed mail layout) — the
+ *      framework's `--set-main-padding-*` tokens are the right knob
+ *      and reach exactly the right scope.
+ *   2. Widen the list pane to 24rem (mail rows carry an avatar + two
+ *      lines of text + meta, so the framework default of 22rem
+ *      truncates too aggressively).
+ *
+ * The fill-and-scroll-on-mobile layout that previously lived here
+ * moved to the framework's `.panes.fill` modifier (see
+ * components/_div.scss); the row selected-state chrome stays here
+ * because it's keyed off the example's `aria-current` Vue binding.
  */
 .examples-mail-main {
-	/* Zero <main>'s default padding so the panes butt flush to the
-	 * body-shell edge — the mail app is a full-bleed UI. */
 	--set-main-padding-inline: 0;
 	--set-main-padding-block: 0;
-	block-size: 100%;
 }
 .examples-mail-main > div.panes {
-	/* Wider list pane than the framework default (22rem) — mail rows
-	 * carry an avatar, two lines of text, and a meta row, so 24rem
-	 * keeps the subject + preview from truncating too aggressively. */
 	--set-panes-aside-size: 24rem;
-	block-size: 100%;
-}
-@media (max-width: 63.99rem) {
-	.examples-mail-main > div.panes > .pane {
-		block-size: 100%;
-		overflow: hidden;
-	}
-	.examples-mail-main > div.panes > .pane > .fluid {
-		overflow-y: auto;
-		overflow-x: hidden;
-	}
 }
 
 /* Mail message-list rows. The selected row carries
@@ -282,30 +270,28 @@
  *
  * Two tile-grid widths: a narrower one for the metrics row (4 cards
  * across at 14rem each) and a wider one for the pricing tiers (3 cards
- * across at 18rem each). */
+ * across at 18rem each).
+ *
+ * The metric-value primary tint stays — the framework's `<strong>`
+ * baseline deliberately doesn't pick up variant text color (`<strong>`
+ * is prose-color discipline, per `elements/_strong.scss`); display
+ * numbers are a per-app design choice and land here as a single
+ * `.examples-pricing-metric` color override.
+ *
+ * The per-tier check icons no longer need a per-example class — the
+ * framework's `<i class="icon">` now consumes
+ * `--set-variant-on-canvas-color` (see `elements/_i.scss`), so wrapping
+ * the icon in `<span class="success">` is the framework-native
+ * "this glyph reads as a success affordance" pattern.
+ */
 .examples-pricing-metrics {
 	--set-tiles-min: 14rem;
 }
 .examples-pricing-plans {
 	--set-tiles-min: 18rem;
 }
-
-/* Pricing accents — the big metric value reads in the brand primary
- * tint to draw the eye; the check icons inside the per-tier feature
- * list read in success-green so the "yes" affordance is immediate. The
- * framework's variant modifiers (`.primary` / `.success`) tune surface
- * tokens (background + border), not raw text/icon color — these
- * `.examples-pricing-*` classes own the per-example "use this token as
- * the element's color" decision so the inline `style="color: ..."`
- * isn't required.
- *
- * The icon primitive paints with `currentColor`, so setting `color`
- * here cascades correctly into `<i class="icon check">`. */
 .examples-pricing-metric {
 	color: var(--color-primary);
-}
-.examples-pricing-check {
-	color: var(--color-success);
 }
 
 /* ── Console example ───────────────────────────────────────────────────
@@ -315,18 +301,9 @@
  * `<small>when</small>`); without an explicit nudge it baselines on
  * the first line's cap-height and reads as too high. 0.4rem aligns it
  * with the visual centre of the first line at the framework's default
- * line-height. */
+ * line-height. The framework now exposes `--set-dot-baseline-offset`
+ * for exactly this case (see `components/_dot.scss`), so the
+ * per-example class just sets the token. */
 .examples-console-activity-dot {
-	margin-block-start: 0.4rem;
-}
-
-/* ── Board example ─────────────────────────────────────────────────────
- *
- * Cursor hint on draggable card articles. The framework's drag
- * composable (createDrag) doesn't paint a cursor today — that's a
- * known framework gap (a future `src/styles/composables/_drag.scss`
- * partial should own the visual feedback for every draggable host).
- * Until then, the example sets the hint at the card level. */
-.examples-board-card {
-	cursor: grab;
+	--set-dot-baseline-offset: 0.4rem;
 }

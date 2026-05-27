@@ -538,6 +538,7 @@ export const tokens = {
 		backgroundColor: '--set-dot-background-color',
 		pulseDuration: '--set-dot-pulse-duration',
 		pulseEasing: '--set-dot-pulse-easing',
+		baselineOffset: '--set-dot-baseline-offset',
 	},
 
 	// Component tokens declared on `.tag` (class-based — chip-shape inline

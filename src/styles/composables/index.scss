@@ -15,6 +15,15 @@
 //                          slide-in transform). The bare `<aside>`
 //                          shapes (sidebar, callout, alert) live in
 //                          `components/_aside.scss`.
+//   • `_drag.scss`      → cursor + drop-indicator chrome for any
+//                          `[data-index]` row inside a `createDrag` /
+//                          `useDrag` host. The factory writes
+//                          `draggable="true"` + the `DRAG_ROW_CLASSES`
+//                          (`.dragging` / `.drop-target` /
+//                          `.drop-indicator-before` /
+//                          `.drop-indicator-after`); the partial paints
+//                          the grab cursor, the mid-drag dim, the
+//                          drop-target tint, and the insertion bars.
 //   • `_select.scss`    → `.select` listbox / combobox chrome used
 //                          by `useSelect`. The bare `<select>` element
 //                          rules live in `elements/_select.scss`.
@@ -41,6 +50,7 @@
 @use 'aside';
 @use 'carousel';
 @use 'dialog';
+@use 'drag';
 @use 'select';
 @use 'tabs';
 @use 'toast';

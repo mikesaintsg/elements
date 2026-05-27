@@ -1,0 +1,103 @@
+// ============================================================================
+// useDrag — drag-and-drop source/target composable layer.
+//
+// `createDrag` (factory) drives every interactive concern — pointer +
+// keyboard selection, native HTML5 DragEvent lifecycle, drop-target hit
+// testing, reorder splicing. Each `[data-index]` row inside the bound
+// host gets `row.draggable = true` (so the platform's drag gesture
+// fires) plus the `DRAG_ROW_CLASSES` state classes as the interaction
+// progresses:
+//
+//   • `.dragging`              — applied to the source row mid-drag
+//   • `.selected`              — multi-select selection-state mirror
+//   • `.drop-target`           — the row the pointer is currently over
+//   • `.drop-indicator-before` — insertion indicator (above the row)
+//   • `.drop-indicator-after`  — insertion indicator (below the row)
+//
+// This partial paints the framework's BASELINE visual feedback so
+// consumers don't have to wire `cursor: grab` / dim-during-drag / drop
+// indicators per app. The factory's class writes are the contract;
+// authors retune via the `--set-drag-*` tokens or override individual
+// rules in their own stylesheet.
+//
+// Markup contract:
+//
+//   <ul class="some-list">
+//     <li data-index="0">…</li>
+//     <li data-index="1">…</li>
+//     …
+//   </ul>
+//
+// + a `createDrag(ul, { … })` (or `useDrag(...)` for Vue) call. The
+// factory writes `draggable="true"` on each `[data-index]` row; the
+// `[draggable="true"]` selector below paints the grab cursor on
+// every framework-driven draggable host across the codebase.
+// ============================================================================
+
+@use '../mixins' as *;
+
+@layer composables {
+	// `cursor: grab` is the universal HTML5 drag-and-drop affordance —
+	// the OS uses it for native drag handles, design systems all
+	// converge on it for reorderable list rows. Element-agnostic: any
+	// element the factory makes draggable picks it up.
+	//
+	// The framework's `createDrag` factory writes
+	// `row.draggable = true` (translating to the `draggable="true"`
+	// HTML attribute) on each `[data-index]` child of the host; the
+	// `[draggable="true"]` selector below paints the grab cursor on
+	// every such row without needing a framework-supplied class.
+	[draggable='true'] {
+		cursor: grab;
+	}
+
+	// Switch to `grabbing` while the pointer is held down on the row
+	// (covers the brief pre-`dragstart` window) AND for the full
+	// duration of the drag gesture (the factory sets `.dragging` on
+	// the source row from `dragstart` → `dragend`).
+	[draggable='true']:active,
+	[draggable='true'].dragging {
+		cursor: grabbing;
+	}
+
+	// While a row is being dragged, dim it so the reorder destination
+	// reads clearly against the source's vacated slot. The opacity is
+	// modest (0.5) — fully transparent loses the source as a visual
+	// anchor.
+	[draggable='true'].dragging {
+		opacity: 0.5;
+	}
+
+	// Drop-target hover state — the row currently under the pointer
+	// (sub-row geometry decides whether the indicator paints
+	// before/after via the createDrag factory's `position` ref). The
+	// baseline is a subtle tinted bg so the target reads as the
+	// "I'm about to receive a drop" surface.
+	[data-index].drop-target {
+		background-color: color-mix(in oklab, var(--color-primary) 12%, transparent);
+	}
+
+	// Insertion-line indicators — a 2px primary bar pinned to the
+	// leading (before) or trailing (after) edge of the drop-target row.
+	// Position the row relative so the `::before` / `::after` can pin
+	// to the row's geometry.
+	[data-index].drop-indicator-before,
+	[data-index].drop-indicator-after {
+		position: relative;
+	}
+	[data-index].drop-indicator-before::before,
+	[data-index].drop-indicator-after::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		block-size: 2px;
+		background-color: var(--color-primary);
+		pointer-events: none;
+	}
+	[data-index].drop-indicator-before::before {
+		inset-block-start: 0;
+	}
+	[data-index].drop-indicator-after::after {
+		inset-block-end: 0;
+	}
+}

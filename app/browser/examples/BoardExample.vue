@@ -242,7 +242,7 @@ const setHost =
 					:aria-label="`${column.title} cards`"
 				>
 					<li v-for="(card, index) in column.list.value" :key="card.id" :data-index="index">
-						<article class="small examples-board-card">
+						<article class="small">
 							<div class="cluster between flex-nowrap">
 								<span class="badge" :class="card.variant">{{ card.tag }}</span>
 								<small class="muted">{{ card.id.toUpperCase() }}</small>

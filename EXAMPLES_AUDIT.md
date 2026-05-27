@@ -3,6 +3,10 @@
 > Companion to `STATECHART_EVENT_AUDIT.md`. That doc audits the JS-side
 > statechart event vocabulary; this one audits the CSS-side authoring
 > contract across `app/browser/examples/*.vue`.
+>
+> **Status (round 2):** the four framework-gap recommendations at the
+> end of this doc have landed. See `## Framework gaps — resolved` near
+> the bottom for the per-fix landing notes.
 
 ## Scope
 
@@ -122,3 +126,107 @@ Items 1–4 are all *additive* — no breaking changes, just framework
 features that would shrink the per-example chrome surface. The
 existing `.examples-{name}-*` classes documented above can be the
 acceptance criteria when each framework feature lands.
+
+## Framework gaps — resolved
+
+Round 2 of this audit landed all four gaps. Per-fix notes:
+
+### 1. Icon variant-color cascade — `src/styles/elements/_i.scss`
+
+`<i class="icon">` now consumes `--set-variant-on-canvas-color` for
+its `color` (falling through to the inherited `currentColor` when no
+variant token is in scope). The mask still paints with
+`background-color: currentColor`, so the color cascade flows through
+in one step.
+
+Authoring shape (idiomatic):
+
+```html
+<span class="success">
+    <i class="icon check" aria-hidden="true"></i>
+</span>
+```
+
+The wrapper carries the variant class so the variant token cascades
+into the icon without colliding with the framework's variant-named
+glyph slot (`.success` on `<i class="icon">` would swap the GLYPH to
+the success badge — that's by design and still works for "show the
+framework's success badge" usage). The wrapper's text content stays
+at the inherited body color because `.success` doesn't set `color`
+directly — only token cascades.
+
+`.examples-pricing-check` removed (was `color: var(--color-success)`
+on the icon).
+
+### 2. Drag cursor + drop-indicator chrome — `src/styles/composables/_drag.scss`
+
+New composable partial paints:
+
+- `cursor: grab` on every `[draggable="true"]` row the framework
+  produces (the `createDrag` factory writes `row.draggable = true`).
+- `cursor: grabbing` while the pointer is held + while the source
+  row is mid-drag (`.dragging` class).
+- A 50% opacity dim on the source row mid-drag (visual anchor for
+  the destination).
+- A subtle `--color-primary` tint on the `[data-index].drop-target`
+  row currently under the pointer.
+- 2px primary-color insertion bars on
+  `[data-index].drop-indicator-before::before` and
+  `[data-index].drop-indicator-after::after`.
+
+The new `COMPOSABLE_CONTRACTS.drag` entry in `src/browser/patterns.ts`
+records the contract — no required tokens, factory `createDrag`,
+class-state selectors. The pages-test gate for `_{name}.scss ↔
+use-{name}` was satisfied by renaming the existing combined route
+`use-drag-drop` to `use-drag` (the page itself still demos both
+useDrag + useDrop because the two are inherently paired — the
+`COMPOUND` map in `tests/app/core/router.test.ts` reflects this).
+
+`.examples-board-card` removed (was `cursor: grab` on the article).
+
+### 3. `.panes.fill` modifier — `src/styles/components/_div.scss`
+
+The framework's `.panes` primitive already applied a desktop ≥ 64rem
+`block-size: 100%` + `overflow: hidden` + `overflow-y: auto on the
+body` block. The `.fill` opt-in modifier extends those rules to every
+breakpoint:
+
+- `.panes.fill` itself takes `block-size: 100%` at all widths.
+- At < 64rem, `.panes.fill > .pane` takes `block-size: 100%` +
+  `overflow: hidden`, and `.panes.fill > .pane > .fluid` takes
+  `overflow-y: auto` + `overflow-x: hidden`.
+
+The shape matches what mail / IDE / three-pane consoles want on
+mobile (sticky header + sticky footer + scrolling body inside a
+fixed-height pane), without imposing it on every `.panes` consumer.
+
+`MailExample.vue` uses `<div class="panes fill">`; the previous
+example-side `.examples-mail-main > div.panes` mobile-mode override
+in `examples.css` is gone.
+
+### 4. `--set-dot-baseline-offset` token — `src/styles/components/_dot.scss`
+
+`.dot` now exposes `--set-dot-baseline-offset` (default `0`), consumed
+as `margin-block-start`. Lets a caller nudge the dot vertically to
+align with the optical centre of a multi-line text block in a flex
+row (the default `align-items: flex-start` puts the dot at the
+cap-height of the first line, which reads as too high).
+
+`tokens.dot.baselineOffset` mirrors the token in the TS surface
+(`src/browser/tokens.ts`).
+
+`.examples-console-activity-dot` now sets the framework token
+(`--set-dot-baseline-offset: 0.4rem`) instead of `margin-block-start`
+directly — same visual, framework-idiomatic.
+
+### Outstanding (not closed by this round)
+
+- **Text-color variant on `<strong>`** — the framework's `<strong>`
+  baseline deliberately doesn't take a variant fallback (per
+  `elements/_strong.scss` § "strong is part of the prose and should
+  respect prose color discipline"). The PricingExample metric value
+  (`<strong class="text-5xl examples-pricing-metric">$24</strong>`)
+  is therefore staying on the `.examples-pricing-metric` class — a
+  per-example display-number color decision rather than a general
+  framework gap. The original recommendation (#1) is partially
+  resolved (icon side closed; strong side left intentional).

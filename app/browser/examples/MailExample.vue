@@ -244,7 +244,7 @@ const showMessage = computed(() => !isMobile.value || mobileView.value === 'mess
 	     independently above the breakpoint and collapsing to a single-pane swap
 	     below it. The mail app is full-bleed (main padding zeroed). -->
 	<main class="examples-mail-main">
-		<div class="panes">
+		<div class="panes fill">
 			<!-- Message list pane. `.pane` zeroes the section's content padding,
 			     scrolls, and bands its <header>; the .fluid <menu> is the scroll
 			     region (flush, so its rows carry their own dividers). -->

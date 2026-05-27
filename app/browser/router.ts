@@ -354,7 +354,7 @@ const USE_POINTER: Route = {
 	page: UsePointerPage,
 }
 const USE_DRAG_DROP: Route = {
-	id: 'use-drag-drop',
+	id: 'use-drag',
 	title: 'useDrag / useDrop',
 	group: 'Composables — Primitives',
 	page: UseDragDropPage,

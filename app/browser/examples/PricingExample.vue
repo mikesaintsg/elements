@@ -191,7 +191,9 @@ const features: readonly Feature[] = [
 					</p>
 					<ul class="list-none flex flex-col gap-2">
 						<li v-for="f in plan.features" :key="f" class="flex items-center gap-2">
-							<i class="icon check examples-pricing-check" aria-hidden="true"></i>
+							<span class="success">
+								<i class="icon check" aria-hidden="true"></i>
+							</span>
 							{{ f }}
 						</li>
 					</ul>
