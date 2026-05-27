@@ -7,7 +7,7 @@
  * `destroy`. Observable: `:popover-open` on panel, `[aria-expanded]` on
  * anchor, `POPOVER_EVENTS.open` / `close`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { createPopover, POPOVER_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import type { CreatePopoverInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -20,7 +20,8 @@ const factory = shallowRef<CreatePopoverInstance | null>(null)
 const tick = ref(0)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const anchor = anchorRef.value
 	const panel = panelRef.value
 	if (!anchor || !panel) return
@@ -36,12 +37,12 @@ watchEffect((onCleanup) => {
 	}
 	anchor.addEventListener(POPOVER_EVENTS.open, onOpen)
 	anchor.addEventListener(POPOVER_EVENTS.close, onClose)
-	onCleanup(() => {
+	cleanup = () => {
 		anchor.removeEventListener(POPOVER_EVENTS.open, onOpen)
 		anchor.removeEventListener(POPOVER_EVENTS.close, onClose)
 		instance.destroy()
 		factory.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -149,7 +150,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

@@ -1,6 +1,7 @@
 import type { CreateDropInstance, CreateDropOptions } from '../types.js'
 import { effectScope, readonly, ref } from '@vue/reactivity'
-import { extractTypes } from '../helpers.js'
+import { DROP_EVENTS } from '../constants.js'
+import { emit, extractTypes } from '../helpers.js'
 
 /**
  * Framework-agnostic drop-target factory supporting native HTML5 drag-and-drop.
@@ -44,8 +45,10 @@ export function createDrop(
 		if (!accepts(event)) return
 		event.preventDefault()
 		write(event)
+		const wasOver = over.value
 		over.value = true
 		on?.dragenter?.(event)
+		if (!wasOver) emit(element, DROP_EVENTS.enter, { originalEvent: event })
 	}
 
 	const onDragOver = (event: Event): void => {
@@ -59,10 +62,12 @@ export function createDrop(
 	const onDragLeave = (event: Event): void => {
 		if (!(event instanceof DragEvent)) return
 		const target = event.relatedTarget
+		const wasOver = over.value
 		if (!element.contains(target instanceof Node ? target : null)) {
 			over.value = false
 		}
 		on?.dragleave?.(event)
+		if (wasOver && !over.value) emit(element, DROP_EVENTS.leave, { originalEvent: event })
 	}
 
 	const onDrop = (event: Event): void => {
@@ -71,6 +76,7 @@ export function createDrop(
 		if (!accepts(event)) return
 		event.preventDefault()
 		on?.drop?.(event)
+		emit(element, DROP_EVENTS.drop, { originalEvent: event })
 	}
 
 	element.addEventListener('dragenter', onDragEnter)

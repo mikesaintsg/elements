@@ -110,7 +110,15 @@ export function createForm(
 	}
 
 	const touch = (name: string | null): void => {
+		// Fire `dirty` exactly once per pristine → dirty transition. The
+		// statechart's `dirty` region is binary; consumers tracking
+		// unsaved-changes guards only care about the first edge.
+		const wasPristine = !dirty.value
 		dirty.value = true
+		if (wasPristine) {
+			const el = current()
+			if (el) emit(el, FORM_EVENTS.dirty, detail(name))
+		}
 		if (!name) return
 		const next = new Set(touched.value)
 		next.add(name)
@@ -163,6 +171,7 @@ export function createForm(
 			clearAria()
 		}
 		refresh()
+		if (el) emit(el, FORM_EVENTS.clear, detail(null))
 	}
 
 	const destroy = (): void => {

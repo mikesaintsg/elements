@@ -105,13 +105,18 @@ describe('useTheme', () => {
 		const [api, unmount] = mountSetup(() => useTheme({ initial: 'light' }))
 		await waitForBootstrap()
 		const change = createRecorder<[Event]>()
-		document.documentElement.addEventListener(THEME_EVENTS.change, change.handler)
+		const root = document.documentElement
+		root.addEventListener(THEME_EVENTS.light, change.handler)
+		root.addEventListener(THEME_EVENTS.dark, change.handler)
+		root.addEventListener(THEME_EVENTS.system, change.handler)
 
 		api.set('light')
 		await nextTick()
 
 		expect(change.count).toBe(0)
-		document.documentElement.removeEventListener(THEME_EVENTS.change, change.handler)
+		root.removeEventListener(THEME_EVENTS.light, change.handler)
+		root.removeEventListener(THEME_EVENTS.dark, change.handler)
+		root.removeEventListener(THEME_EVENTS.system, change.handler)
 		unmount()
 	})
 
@@ -125,16 +130,20 @@ describe('useTheme', () => {
 		unmount()
 	})
 
-	it('emits change event with the resolved mode and setting on every transition', async () => {
+	it('emits per-setting events with the resolved mode and setting on every transition', async () => {
 		const events: string[] = []
-		document.documentElement.addEventListener(THEME_EVENTS.change, (event) => {
+		const record = (event: Event): void => {
 			const detail = event instanceof CustomEvent ? event.detail : undefined
 			const mode = detail ? extractProperty(detail, 'mode') : undefined
 			const setting = detail ? extractProperty(detail, 'setting') : undefined
 			if (typeof mode === 'string' && typeof setting === 'string') {
 				events.push(`${setting}→${mode}`)
 			}
-		})
+		}
+		const root = document.documentElement
+		root.addEventListener(THEME_EVENTS.light, record)
+		root.addEventListener(THEME_EVENTS.dark, record)
+		root.addEventListener(THEME_EVENTS.system, record)
 		const [api, unmount] = mountSetup(() => useTheme({ initial: 'light' }))
 		await waitForBootstrap()
 
@@ -143,7 +152,12 @@ describe('useTheme', () => {
 		api.set('system')
 		await nextTick()
 
-		expect(events).toEqual(['light→light', 'dark→dark', 'system→light'])
+		// `initial: 'light'` matches the singleton's default seed when the
+		// test harness boots, so the first transition observed is dark.
+		expect(events).toEqual(['dark→dark', 'system→light'])
+		root.removeEventListener(THEME_EVENTS.light, record)
+		root.removeEventListener(THEME_EVENTS.dark, record)
+		root.removeEventListener(THEME_EVENTS.system, record)
 		unmount()
 	})
 
@@ -196,30 +210,28 @@ describe('useTheme', () => {
 		unmount()
 	})
 
-	it('on.change handler receives the latest detail', async () => {
-		const change = createRecorder<[CustomEvent]>()
+	it('on.dark handler receives the latest detail', async () => {
+		const dark = createRecorder<[CustomEvent]>()
 		const [api, unmount] = mountSetup(() =>
-			useTheme({ initial: 'light', on: { change: change.handler } }),
+			useTheme({ initial: 'light', on: { dark: dark.handler } }),
 		)
 		await waitForBootstrap()
 
 		api.set('dark')
 		await nextTick()
 
-		const last = change.calls.at(-1)?.[0]
-		if (!last) throw new Error('Expected change event')
+		const last = dark.calls.at(-1)?.[0]
+		if (!last) throw new Error('Expected dark event')
 		expect(extractProperty(last.detail, 'mode')).toBe('dark')
 		expect(extractProperty(last.detail, 'setting')).toBe('dark')
 		unmount()
 	})
 
-	it('on.change is removed on unmount', async () => {
-		const change = createRecorder<[CustomEvent]>()
-		const [, unmount] = mountSetup(() =>
-			useTheme({ initial: 'light', on: { change: change.handler } }),
-		)
+	it('on.dark is removed on unmount', async () => {
+		const dark = createRecorder<[CustomEvent]>()
+		const [, unmount] = mountSetup(() => useTheme({ initial: 'light', on: { dark: dark.handler } }))
 		await waitForBootstrap()
-		change.clear()
+		dark.clear()
 		unmount()
 
 		const [api2, unmount2] = mountSetup(() => useTheme({ initial: 'light' }))
@@ -227,7 +239,7 @@ describe('useTheme', () => {
 		api2.set('dark')
 		await nextTick()
 
-		expect(change.count).toBe(0)
+		expect(dark.count).toBe(0)
 		unmount2()
 	})
 })

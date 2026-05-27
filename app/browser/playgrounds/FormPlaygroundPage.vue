@@ -7,7 +7,7 @@
  * `destroy`. Observable: `[data-form-validated]`, `[aria-invalid]` on
  * fields, `FORM_EVENTS.validate` on submit / check.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { createForm, FORM_EVENTS } from '@elements/browser'
 import type { CreateFormInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -20,7 +20,8 @@ const factory = shallowRef<CreateFormInstance | null>(null)
 const tick = ref(0)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const form = formRef.value
 	const username = usernameRef.value
 	if (!form || !username) return
@@ -37,12 +38,12 @@ watchEffect((onCleanup) => {
 	}
 	form.addEventListener(FORM_EVENTS.validate, onValidate)
 	form.addEventListener(FORM_EVENTS.input, onInput)
-	onCleanup(() => {
+	cleanup = () => {
 		form.removeEventListener(FORM_EVENTS.validate, onValidate)
 		form.removeEventListener(FORM_EVENTS.input, onInput)
 		instance.destroy()
 		factory.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -122,7 +123,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

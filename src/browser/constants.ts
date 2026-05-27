@@ -380,6 +380,8 @@ export const BUTTON_EVENTS = { toggle: 'elements:button:toggle' } as const
 export const CAROUSEL_EVENTS = {
 	slide: 'elements:carousel:slide',
 	change: 'elements:carousel:change',
+	start: 'elements:carousel:start',
+	stop: 'elements:carousel:stop',
 	pause: 'elements:carousel:pause',
 	resume: 'elements:carousel:resume',
 } as const
@@ -409,6 +411,34 @@ export const DRAG_EVENTS = {
 	drop: 'elements:drag:drop',
 	end: 'elements:drag:end',
 	reorder: 'elements:drag:reorder',
+	select: 'elements:drag:select',
+	clear: 'elements:drag:clear',
+} as const
+
+/**
+ * Drag-and-drop target ("drop zone") events. Paired with `DRAG_EVENTS` —
+ * `DRAG_*` is the SOURCE side of a drag interaction, `DROP_*` is the
+ * TARGET side. `enter` / `leave` mirror `dragenter` / `dragleave`; `drop`
+ * fires when a payload is released over the host. Added so consumers can
+ * subscribe via `addEventListener` (matching every other stateful
+ * factory) instead of relying only on the constructor-time
+ * `on.{dragenter,dragover,dragleave,drop}` callbacks.
+ */
+export const DROP_EVENTS = {
+	enter: 'elements:drop:enter',
+	leave: 'elements:drop:leave',
+	drop: 'elements:drop:drop',
+} as const
+
+/**
+ * Focus-trap lifecycle events. Paired with `createFocus`. `activate`
+ * fires when the trap engages, `deactivate` when it releases. Added so
+ * late subscribers can observe trap state without holding a reference to
+ * the factory's reactive `active` ref.
+ */
+export const FOCUS_EVENTS = {
+	activate: 'elements:focus:activate',
+	deactivate: 'elements:focus:deactivate',
 } as const
 
 /** Renamed from `DROPDOWN_EVENTS`. Bound to the native `<menu>` element. */
@@ -417,6 +447,7 @@ export const MENU_EVENTS = {
 	open: 'elements:menu:open',
 	hide: 'elements:menu:hide',
 	close: 'elements:menu:close',
+	select: 'elements:menu:select',
 } as const
 
 export const FORM_EVENTS = {
@@ -427,6 +458,8 @@ export const FORM_EVENTS = {
 	reset: 'elements:form:reset',
 	submit: 'elements:form:submit',
 	validate: 'elements:form:validate',
+	dirty: 'elements:form:dirty',
+	clear: 'elements:form:clear',
 } as const
 
 /** Renamed from `MODAL_EVENTS`. Bound to the native `<dialog>` element. */
@@ -486,13 +519,35 @@ export const TABLE_EVENTS = {
 	paginate: 'elements:table:paginate',
 } as const
 
-export const THEME_EVENTS = { change: 'elements:theme:change' } as const
+/**
+ * Theme statechart events. Per AGENTS.md §14 ("never use a generic
+ * `status` event") the previous single `change` verb was a misfit — it
+ * carried `{ setting, mode, name }` in detail and forced every consumer
+ * to inspect detail to learn which transition fired. Replaced by:
+ *
+ *   - `light` / `dark` / `system` — fire when the SETTING transitions to
+ *      that value (the user-controlled state). Detail carries the
+ *      resolved `mode` so consumers know what's rendered when
+ *      `setting === 'system'`.
+ *   - `name` — fires when the palette NAME flips (orthogonal to setting).
+ *
+ * Breaking change: consumers wiring `addEventListener('elements:theme:change', …)`
+ * must migrate to one of the four new verbs.
+ */
+export const THEME_EVENTS = {
+	light: 'elements:theme:light',
+	dark: 'elements:theme:dark',
+	system: 'elements:theme:system',
+	name: 'elements:theme:name',
+} as const
 
 export const TOAST_EVENTS = {
 	show: 'elements:toast:show',
 	open: 'elements:toast:open',
 	hide: 'elements:toast:hide',
 	close: 'elements:toast:close',
+	pause: 'elements:toast:pause',
+	resume: 'elements:toast:resume',
 } as const
 
 export const TOOLTIP_EVENTS = {
@@ -508,6 +563,21 @@ export const TREE_EVENTS = {
 	collapse: 'elements:tree:collapse',
 	select: 'elements:tree:select',
 	move: 'elements:tree:move',
+} as const
+
+/**
+ * Pointer-capture lifecycle events. Paired with `createPointer`. `start`
+ * fires when the pointer threshold is crossed and capture begins; `move`
+ * during the capture (throttled to animation frames upstream); `end`
+ * when the pointer releases or is cancelled. Added so late subscribers
+ * can observe drag-like interactions without holding a reference to the
+ * factory's constructor-time `on.start` / `on.move` / `on.end`
+ * callbacks.
+ */
+export const POINTER_EVENTS = {
+	start: 'elements:pointer:start',
+	move: 'elements:pointer:move',
+	end: 'elements:pointer:end',
 } as const
 
 // The semantic Inspector (ROADMAP Phase 4) is a dev-tool analyzer ENTITY,

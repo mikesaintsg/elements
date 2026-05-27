@@ -210,10 +210,7 @@ interface CarouselContext {
 	readonly slides: EventRecorder
 }
 
-function buildCarouselContext(
-	count: number,
-	options: CreateCarouselOptions = {},
-): CarouselContext {
+function buildCarouselContext(count: number, options: CreateCarouselOptions = {}): CarouselContext {
 	const { carousel, items } = createCarouselFixture(count)
 	const slides = createRecorder<[Event]>()
 	carousel.addEventListener(CAROUSEL_EVENTS.slide, slides.handler)

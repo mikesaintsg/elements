@@ -160,13 +160,17 @@ export function createCarousel(
 		transition(from, clamped, direction)
 	}
 
-	const start = (): void => {
+	// Internal cycling-region writers — adjust `cycling.value` + timer
+	// without emitting. The public `start` / `stop` and the hover-bridge
+	// `pause` / `resume` layer their own events on top so we never
+	// double-emit (pause must not also fire stop, etc.).
+	const startInternal = (): void => {
 		if (cycling.value) return
 		cycling.value = true
 		timer = setInterval(next, interval)
 	}
 
-	const stop = (): void => {
+	const stopInternal = (): void => {
 		if (!cycling.value) return
 		cycling.value = false
 		if (timer) {
@@ -175,15 +179,27 @@ export function createCarousel(
 		}
 	}
 
+	const start = (): void => {
+		if (cycling.value) return
+		startInternal()
+		emit(element, CAROUSEL_EVENTS.start)
+	}
+
+	const stop = (): void => {
+		if (!cycling.value) return
+		stopInternal()
+		emit(element, CAROUSEL_EVENTS.stop)
+	}
+
 	const pause = (): void => {
 		if (!cycling.value) return
-		stop()
+		stopInternal()
 		emit(element, CAROUSEL_EVENTS.pause)
 	}
 
 	const resume = (): void => {
 		if (cycling.value) return
-		start()
+		startInternal()
 		emit(element, CAROUSEL_EVENTS.resume)
 	}
 
@@ -251,6 +267,8 @@ export function createCarousel(
 	const offs: (() => void)[] = []
 	if (on?.slide) offs.push(listen(element, CAROUSEL_EVENTS.slide, on.slide))
 	if (on?.change) offs.push(listen(element, CAROUSEL_EVENTS.change, on.change))
+	if (on?.start) offs.push(listen(element, CAROUSEL_EVENTS.start, on.start))
+	if (on?.stop) offs.push(listen(element, CAROUSEL_EVENTS.stop, on.stop))
 	if (on?.pause) offs.push(listen(element, CAROUSEL_EVENTS.pause, on.pause))
 	if (on?.resume) offs.push(listen(element, CAROUSEL_EVENTS.resume, on.resume))
 

@@ -7,7 +7,7 @@
  * `[aria-expanded]`, `[aria-selected]`, `value.value`,
  * `SELECT_EVENTS.select` / `clear`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { createSelect, SELECT_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import type { CreateSelectInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -20,7 +20,8 @@ const factory = shallowRef<CreateSelectInstance | null>(null)
 const tick = ref(0)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const toggle = toggleRef.value
 	const menu = menuRef.value
 	if (!toggle || !menu) return
@@ -46,14 +47,14 @@ watchEffect((onCleanup) => {
 	toggle.addEventListener(SELECT_EVENTS.clear, onClear)
 	toggle.addEventListener(SELECT_EVENTS.open, onOpen)
 	toggle.addEventListener(SELECT_EVENTS.close, onClose)
-	onCleanup(() => {
+	cleanup = () => {
 		toggle.removeEventListener(SELECT_EVENTS.select, onSelect)
 		toggle.removeEventListener(SELECT_EVENTS.clear, onClear)
 		toggle.removeEventListener(SELECT_EVENTS.open, onOpen)
 		toggle.removeEventListener(SELECT_EVENTS.close, onClose)
 		instance.destroy()
 		factory.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -141,7 +142,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

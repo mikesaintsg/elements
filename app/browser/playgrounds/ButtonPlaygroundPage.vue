@@ -6,7 +6,7 @@
  * `click` / `destroy`. Observable: `[aria-pressed]`, `.active` class,
  * emitted `BUTTON_EVENTS.toggle`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { onMounted, onUnmounted, ref, shallowRef, useTemplateRef } from 'vue'
 import { BUTTON_EVENTS, createButton } from '@elements/browser'
 import type { CreateButtonInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -15,10 +15,15 @@ import StatechartHarness from './StatechartHarness.vue'
 
 const buttonRef = useTemplateRef<HTMLButtonElement>('buttonRef')
 const factory = shallowRef<CreateButtonInstance | null>(null)
-const tick = ref(0)
+const state = ref<'inactive' | 'active'>('inactive')
 const { entries: events, push } = useLog<{ name: string; time: number }>(12)
 
-watchEffect((onCleanup) => {
+function sync(): void {
+	state.value = factory.value?.active.value === true ? 'active' : 'inactive'
+}
+
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const element = buttonRef.value
 	if (!element) return
 	const instance = createButton(element)
@@ -32,19 +37,14 @@ watchEffect((onCleanup) => {
 				time: performance.now(),
 			})
 		}
-		tick.value += 1
+		sync()
 	}
 	element.addEventListener(BUTTON_EVENTS.toggle, onToggle)
-	onCleanup(() => {
+	cleanup = () => {
 		element.removeEventListener(BUTTON_EVENTS.toggle, onToggle)
 		instance.destroy()
 		factory.value = null
-	})
-})
-
-const state = computed(() => {
-	void tick.value
-	return factory.value?.active.value === true ? 'active' : 'inactive'
+	}
 })
 
 async function reset(): Promise<void> {
@@ -52,6 +52,7 @@ async function reset(): Promise<void> {
 		factory.value.toggle()
 		await waitForDelay(200)
 	}
+	sync()
 }
 
 async function driveTo(state_: 'inactive' | 'active'): Promise<void> {
@@ -60,16 +61,19 @@ async function driveTo(state_: 'inactive' | 'active'): Promise<void> {
 		factory.value?.toggle()
 		await waitForDelay(300)
 	}
+	sync()
 }
 
 async function fireToggle(): Promise<void> {
 	factory.value?.toggle()
 	await waitForDelay(300)
+	sync()
 }
 
 async function fireClick(): Promise<void> {
 	buttonRef.value?.click()
 	await waitForDelay(300)
+	sync()
 }
 
 const scenarios = [
@@ -116,7 +120,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

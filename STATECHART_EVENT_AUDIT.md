@@ -1,8 +1,8 @@
 # Statechart-driven event-map audit
 
-Cross-checks every factory's `{SOURCE}_EVENTS` constant (in `src/browser/constants.ts`) and the public mirror in `src/browser/events.ts` against the state × event tables we landed under `tests/src/browser/factories/`. The goal is to surface where the public event surface drifts from the actual statechart vocabulary — places we already emit something but never declared it, places consumers can't observe a transition we model, and naming inconsistencies relative to the AGENTS.md §11 lifecycle verb table.
+> **Status:** All findings below have been implemented. See `## Implementation summary` at the end for the per-finding landing notes + commit reference. Kept here as the design rationale for the new event surface.
 
-This is an audit, not a refactor. Each finding lists the gap + the recommended change but leaves the implementation decision to the next pass.
+Cross-checks every factory's `{SOURCE}_EVENTS` constant (in `src/browser/constants.ts`) and the public mirror in `src/browser/events.ts` against the state × event tables we landed under `tests/src/browser/factories/`. The goal is to surface where the public event surface drifts from the actual statechart vocabulary — places we already emit something but never declared it, places consumers can't observe a transition we model, and naming inconsistencies relative to the AGENTS.md §11 lifecycle verb table.
 
 ## Format
 
@@ -308,3 +308,27 @@ If applied in full, the audit yields these new / changed events:
 Items 6, 7, and 8 also require wiring the matching factories (`createDrop`, `createFocus`, `createPointer`) to `dispatchEvent` on their host element so late subscribers can attach — today these factories rely on constructor-time `on.*` callbacks only.
 
 Item 1 is the only breaking change in the list. Items 2 – 9 are purely additive — the test mirror in `events.ts` grows, the constants gain new keys, and the parity tests (`tests/guides/composables.test.ts` for the vocabulary gate; `tests/guides/elements.test.ts` for the events-tree mirror) will need their expectations updated in the same change.
+
+---
+
+## Implementation summary
+
+All nine findings shipped together. Per-factory landing notes:
+
+| # | Finding | Result |
+|---|---------|--------|
+| 1 | THEME: `change` → `light` / `dark` / `system` + `name` | **Breaking change applied.** `THEME_EVENTS.change` is gone. `src/browser/theme.ts` fires `fireSettingChange(next, previous)` on each setting flip (selecting `light` / `dark` / `system` based on the new value) and `fireNameChange(next, previous)` on each palette-name flip. `UseThemeEventMap` (in `types.ts`) now declares four `on.*` slots; `createTheme` wires each via `listen`. Migrated `tests/src/browser/composables/useTheme.test.ts` + `tests/src/browser/factories/createTheme.test.ts` to the new vocabulary. |
+| 2 | TOAST: add `pause` / `resume` | `createToast` now tracks a private `paused` flag so the hover/focus bridge and `api.pause()` / `api.resume()` no longer double-emit. `TOAST_EVENTS.pause` / `.resume` added. `UseToastEventMap` updated. |
+| 3 | MENU: add `select` | `createMenu`'s `onMenuClick` fires `MENU_EVENTS.select` with `detail: { item, value }` BEFORE the `dismiss.inside` pipeline, so consumers always see which item was activated even when the menu auto-dismisses. `UseMenuEventMap` updated. |
+| 4 | FORM: add `dirty` / `clear` | `createForm.touch()` emits `FORM_EVENTS.dirty` once on the first `pristine → dirty` edge (de-duped via a `wasPristine` check). `createForm.clear()` emits `FORM_EVENTS.clear` after resetting the bookkeeping. Both verbs added to `FormEventMap`. The native `reset` event remains separate (fires on the underlying form's `reset()`). |
+| 5 | CAROUSEL: add `start` / `stop` | `createCarousel` now splits cycling-region mutators into private `startInternal` / `stopInternal` (no-emit) + public `start` / `stop` (emit). `pause` / `resume` use the private writers so a hover-bridge `pause` no longer also emits `stop`. `UseCarouselEventMap` updated. |
+| 6 | DRAG: add `select` / `clear` | `createDrag.select()` emits `DRAG_EVENTS.select` with `detail: { added, removed, anchor, selection }` (added/removed computed via a tiny `diffIndices` helper). `createDrag.clear()` emits `DRAG_EVENTS.clear` (skipped when the selection was already empty). `UseDragEventMap` updated. |
+| 7 | NEW `DROP_EVENTS.{enter, leave, drop}` | `createDrop` (previously emit-less) now dispatches `enter` / `leave` on the `over` edges (so duplicate `dragenter` doesn't double-fire) and `drop` on every accepted release. Constant + `events.drop` mirror added. |
+| 8 | NEW `FOCUS_EVENTS.{activate, deactivate}` | `createFocus.activate()` / `.deactivate()` now emit on the host. Constant + `events.focus` mirror added. |
+| 9 | NEW `POINTER_EVENTS.{start, move, end}` | `createPointer` now dispatches `start` / `move` / `end` on the host alongside the existing constructor-time `on.*` callbacks. `detail.originalEvent` carries the raw `PointerEvent` so consumers needing geometry can still reach it. Constant + `events.pointer` mirror added. |
+
+Cross-cutting:
+
+- **Vocabulary gate.** `tests/guides/composables.test.ts` and `guides/composables.md` both grew the `dirty` / `enter` / `leave` / `light` / `dark` / `system` / `name` verbs. The four THEME verbs are value-shaped per AGENTS.md §14 (each transition is its own named event); composables.md explains the rationale inline next to the registry.
+- **Showcase docs.** `guides/showcase.md` documents the new `Statechart playgrounds` `ROUTE_GROUP`.
+- **Test counts.** `npm test` passes `189` test files / `10841` tests after the change. The unit-test transition tables in `tests/src/browser/factories/createTheme.test.ts` (and friends) drive every renamed event so the existing statechart coverage continues to verify the new wire vocabulary.

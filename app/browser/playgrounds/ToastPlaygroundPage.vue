@@ -7,7 +7,7 @@
  * `autohide` / `destroy`. Observable: `:popover-open`,
  * `TOAST_EVENTS.open` / `close`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { createToast, TOAST_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import type { CreateToastInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -21,7 +21,8 @@ const paused = ref(false)
 const TOAST_DELAY_MS = 2000
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const element = toastRef.value
 	if (!element) return
 	const instance = createToast(element, { autohide: { delay: TOAST_DELAY_MS } })
@@ -36,12 +37,12 @@ watchEffect((onCleanup) => {
 	}
 	element.addEventListener(TOAST_EVENTS.open, onOpen)
 	element.addEventListener(TOAST_EVENTS.close, onClose)
-	onCleanup(() => {
+	cleanup = () => {
 		element.removeEventListener(TOAST_EVENTS.open, onOpen)
 		element.removeEventListener(TOAST_EVENTS.close, onClose)
 		instance.destroy()
 		factory.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -157,7 +158,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

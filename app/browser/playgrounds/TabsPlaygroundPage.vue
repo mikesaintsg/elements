@@ -7,7 +7,7 @@
  * `[aria-selected]` on trigger, `[hidden]` on pane, `TABS_EVENTS.open`
  * / `close`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { createTabs, TABS_EVENTS } from '@elements/browser'
 import type { CreateTabsInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -25,7 +25,8 @@ const factoryB = shallowRef<CreateTabsInstance | null>(null)
 const tick = ref(0)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const group = groupRef.value
 	const triggerA = triggerARef.value
 	const paneA = paneARef.value
@@ -48,7 +49,7 @@ watchEffect((onCleanup) => {
 	triggerA.addEventListener(TABS_EVENTS.close, onAClose)
 	triggerB.addEventListener(TABS_EVENTS.open, onBOpen)
 	triggerB.addEventListener(TABS_EVENTS.close, onBClose)
-	onCleanup(() => {
+	cleanup = () => {
 		triggerA.removeEventListener(TABS_EVENTS.open, onAOpen)
 		triggerA.removeEventListener(TABS_EVENTS.close, onAClose)
 		triggerB.removeEventListener(TABS_EVENTS.open, onBOpen)
@@ -57,7 +58,7 @@ watchEffect((onCleanup) => {
 		b.destroy()
 		factoryA.value = null
 		factoryB.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -122,8 +123,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factoryA.value?.destroy()
-	factoryB.value?.destroy()
+	cleanup?.()
 })
 </script>
 
@@ -136,12 +136,7 @@ onUnmounted(() => {
 		:step="reset"
 	>
 		<div ref="groupRef" role="tablist">
-			<button
-				ref="triggerARef"
-				type="button"
-				role="tab"
-				aria-controls="playground-tabs-pane-a"
-			>
+			<button ref="triggerARef" type="button" role="tab" aria-controls="playground-tabs-pane-a">
 				A
 			</button>
 			<button

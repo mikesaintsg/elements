@@ -1,5 +1,7 @@
 import type { CreatePointerInstance, CreatePointerOptions } from '../types.js'
 import { effectScope, readonly, ref } from '@vue/reactivity'
+import { POINTER_EVENTS } from '../constants.js'
+import { emit } from '../helpers.js'
 
 /**
  * Framework-agnostic factory wrapping the
@@ -8,10 +10,14 @@ import { effectScope, readonly, ref } from '@vue/reactivity'
  * duration, and disables text selection. Use `accept` to veto specific
  * `pointerdown` events; `on.start/move/end` are pure notification hooks.
  *
- * @remarks Unlike most factories, `createPointer` does not dispatch
- * synthetic `CustomEvent`s — `start/move/end` callbacks receive the raw
+ * @remarks Constructor-time `on.start/move/end` callbacks receive the raw
  * `PointerEvent` directly because consumers (splitters, sliders) need
- * pointer geometry that wouldn't survive boxing into `event.detail`.
+ * pointer geometry that wouldn't survive boxing into `event.detail`. The
+ * factory ALSO dispatches `POINTER_EVENTS.start/move/end` namespaced
+ * CustomEvents on the host so late subscribers can `addEventListener`
+ * without holding a reference to the constructor's `on` shape — the
+ * `detail` carries `{ originalEvent }` so consumers that need geometry
+ * can reach through.
  *
  * @remarks Element-agnostic — accepts any `HTMLElement`. Composables
  * built on top of `createPointer` (sliders, splitters) impose their own
@@ -48,6 +54,7 @@ export function createPointer(
 		if (!(event instanceof PointerEvent)) return
 		if (event.pointerId !== activePointer) return
 		on?.move?.(event)
+		emit(element, POINTER_EVENTS.move, { originalEvent: event })
 	}
 
 	const onEnd = (event: Event): void => {
@@ -61,6 +68,7 @@ export function createPointer(
 		activePointer = null
 		dragging.value = false
 		on?.end?.(event)
+		emit(element, POINTER_EVENTS.end, { originalEvent: event })
 	}
 
 	const onDown = (event: Event): void => {
@@ -81,6 +89,7 @@ export function createPointer(
 		element.addEventListener('pointercancel', onEnd)
 		dragging.value = true
 		on?.start?.(event)
+		emit(element, POINTER_EVENTS.start, { originalEvent: event })
 	}
 
 	element.addEventListener('pointerdown', onDown)

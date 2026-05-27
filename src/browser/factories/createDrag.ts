@@ -14,6 +14,17 @@ import { DRAG_EVENTS, DRAG_ROW_CLASSES } from '../constants.js'
 import { emit, extractRow, extractRows, indexOfRow, listen } from '../helpers.js'
 
 /**
+ * `a \ b` for integer-index sets — values in `a` that are NOT in `b`,
+ * sorted ascending. Used by the `select` event detail to describe what
+ * the latest selection mutation added vs. removed.
+ */
+const diffIndices = (a: ReadonlySet<number>, b: ReadonlySet<number>): readonly number[] => {
+	const out: number[] = []
+	for (const value of a) if (!b.has(value)) out.push(value)
+	return out.sort((x, y) => x - y)
+}
+
+/**
  * Framework-agnostic native drag-source / drop-target factory — wraps the
  * HTML5 Drag and Drop API. Operates on direct `[data-index]` children of
  * the host element.
@@ -267,6 +278,8 @@ export function createDrag<T = unknown>(
 
 		if (ctrl || shift) event?.preventDefault()
 
+		const previous = selected.value
+
 		if (shift && selectionAnchor !== null) {
 			const lo = Math.min(selectionAnchor, index)
 			const hi = Math.max(selectionAnchor, index)
@@ -286,12 +299,20 @@ export function createDrag<T = unknown>(
 
 		window.getSelection()?.removeAllRanges()
 		queueSync()
+		emit(element, DRAG_EVENTS.select, {
+			added: diffIndices(selected.value, previous),
+			removed: diffIndices(previous, selected.value),
+			anchor: selectionAnchor,
+			selection: [...selected.value],
+		})
 	}
 
 	const clear = (): void => {
+		const hadSelection = selected.value.size > 0
 		selected.value = new Set()
 		selectionAnchor = null
 		resetState(false, false)
+		if (hadSelection) emit(element, DRAG_EVENTS.clear)
 	}
 
 	const onMouseDown = (event: Event): void => {

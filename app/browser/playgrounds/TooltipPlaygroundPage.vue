@@ -7,7 +7,7 @@
  * `destroy`. Observable: `:popover-open`, `TOOLTIP_EVENTS.open` /
  * `close`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { createTooltip, TOOLTIP_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import type { CreateTooltipInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -20,7 +20,8 @@ const factory = shallowRef<CreateTooltipInstance | null>(null)
 const tick = ref(0)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const anchor = anchorRef.value
 	const panel = panelRef.value
 	if (!anchor || !panel) return
@@ -36,12 +37,12 @@ watchEffect((onCleanup) => {
 	}
 	anchor.addEventListener(TOOLTIP_EVENTS.open, onOpen)
 	anchor.addEventListener(TOOLTIP_EVENTS.close, onClose)
-	onCleanup(() => {
+	cleanup = () => {
 		anchor.removeEventListener(TOOLTIP_EVENTS.open, onOpen)
 		anchor.removeEventListener(TOOLTIP_EVENTS.close, onClose)
 		instance.destroy()
 		factory.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -154,7 +155,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

@@ -57,10 +57,15 @@ describe('createTheme', () => {
 	it('set is a no-op when value matches current setting', () => {
 		const theme = createTheme({ initial: 'light' })
 		const change = createRecorder<[Event]>()
-		document.documentElement.addEventListener(THEME_EVENTS.change, change.handler)
+		const root = document.documentElement
+		root.addEventListener(THEME_EVENTS.light, change.handler)
+		root.addEventListener(THEME_EVENTS.dark, change.handler)
+		root.addEventListener(THEME_EVENTS.system, change.handler)
 		theme.set('light')
 		expect(change.count).toBe(0)
-		document.documentElement.removeEventListener(THEME_EVENTS.change, change.handler)
+		root.removeEventListener(THEME_EVENTS.light, change.handler)
+		root.removeEventListener(THEME_EVENTS.dark, change.handler)
+		root.removeEventListener(THEME_EVENTS.system, change.handler)
 		theme.destroy()
 	})
 
@@ -82,15 +87,15 @@ describe('createTheme', () => {
 		b.destroy()
 	})
 
-	it('on.change listener fires per instance and is removed by destroy', () => {
-		const change = createRecorder<[Event]>()
-		const theme = createTheme({ initial: 'light', on: { change: change.handler } })
+	it('per-setting listeners fire per instance and are removed by destroy', () => {
+		const dark = createRecorder<[Event]>()
+		const theme = createTheme({ initial: 'light', on: { dark: dark.handler } })
 		theme.toggle()
-		const before = change.count
-		expect(before).toBeGreaterThan(0)
+		expect(dark.count).toBeGreaterThan(0)
+		const before = dark.count
 		theme.destroy()
-		document.documentElement.dispatchEvent(new CustomEvent(THEME_EVENTS.change, { detail: {} }))
-		expect(change.count).toBe(before)
+		document.documentElement.dispatchEvent(new CustomEvent(THEME_EVENTS.dark, { detail: {} }))
+		expect(dark.count).toBe(before)
 	})
 
 	it('destroy reverses every listener it installed', () => {
@@ -101,7 +106,12 @@ describe('createTheme', () => {
 		// `resetTheme()` (test-only), not by per-instance disposal — so they
 		// must be installed *outside* the window `assertCleanDispose` measures.
 		createTheme({}).destroy()
-		assertCleanDispose(() => createTheme({ initial: 'light', on: { change: () => {} } }))
+		assertCleanDispose(() =>
+			createTheme({
+				initial: 'light',
+				on: { light: () => {}, dark: () => {}, system: () => {}, name: () => {} },
+			}),
+		)
 	})
 })
 

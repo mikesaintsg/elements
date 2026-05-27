@@ -6,7 +6,7 @@
  * Observable: `[data-alert-open]`, `[aria-hidden]`,
  * `ALERT_EVENTS.open` / `close`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { ALERT_EVENTS, createAlert, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import type { CreateAlertInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -19,7 +19,8 @@ const factory = shallowRef<CreateAlertInstance | null>(null)
 const tick = ref(0)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const element = alertRef.value
 	if (!element) return
 	const instance = createAlert(element, { initial: false })
@@ -34,12 +35,12 @@ watchEffect((onCleanup) => {
 	}
 	element.addEventListener(ALERT_EVENTS.open, onOpen)
 	element.addEventListener(ALERT_EVENTS.close, onClose)
-	onCleanup(() => {
+	cleanup = () => {
 		element.removeEventListener(ALERT_EVENTS.open, onOpen)
 		element.removeEventListener(ALERT_EVENTS.close, onClose)
 		instance.destroy()
 		factory.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -95,7 +96,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

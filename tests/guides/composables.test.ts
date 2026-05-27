@@ -64,12 +64,18 @@ const LIFECYCLE_VERBS = new Set([
 	'reset',
 	'submit',
 	'validate',
+	// Form bookkeeping (touched / cleared state distinct from `change`/`reset`).
+	'dirty',
 	// Positional / animated
 	'slide',
 	'place',
-	// Drag pipeline
+	// Drag-and-drop pipeline (source + target sides). `enter`/`leave` are
+	// the drop-target ingress/egress verbs (mirror native dragenter /
+	// dragleave); `drop` is shared with the source side.
 	'tap',
 	'over',
+	'enter',
+	'leave',
 	'drop',
 	'end',
 	'reorder',
@@ -79,6 +85,13 @@ const LIFECYCLE_VERBS = new Set([
 	'move',
 	'sort',
 	'paginate',
+	// Theme statechart — per AGENTS.md §14 each transition is its own
+	// named event; the verbs name the post-transition state on the
+	// `setting` axis (light/dark/system) and the orthogonal `name` axis.
+	'light',
+	'dark',
+	'system',
+	'name',
 ])
 
 const EVENT_PATTERN = /^elements:[a-z][a-z-]*:[a-z]+$/

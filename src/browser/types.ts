@@ -1265,8 +1265,14 @@ export interface UsePointerReturn {
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface UseThemeEventMap {
-	/** `event.detail` is `ThemeChangeDetail`. */
-	readonly change: (event: CustomEvent) => void
+	/** `event.detail` is `ThemeChangeDetail`. Fires when `setting` transitions to `'light'`. */
+	readonly light: (event: CustomEvent) => void
+	/** `event.detail` is `ThemeChangeDetail`. Fires when `setting` transitions to `'dark'`. */
+	readonly dark: (event: CustomEvent) => void
+	/** `event.detail` is `ThemeChangeDetail`. Fires when `setting` transitions to `'system'`. */
+	readonly system: (event: CustomEvent) => void
+	/** `event.detail` is `ThemeChangeDetail`. Fires when the palette `name` changes. */
+	readonly name: (event: CustomEvent) => void
 }
 
 export interface CreateThemeOptions {
@@ -1614,6 +1620,8 @@ export interface UseMenuEventMap {
 	readonly open: (event: CustomEvent) => void
 	readonly hide: (event: CustomEvent) => void
 	readonly close: (event: CustomEvent) => void
+	/** Fired when a menu item is activated. `detail: { item, value }`. */
+	readonly select: (event: CustomEvent) => void
 }
 
 export interface CreateMenuElements {
@@ -1800,6 +1808,10 @@ export interface UseToastEventMap {
 	readonly open: (event: CustomEvent) => void
 	readonly hide: (event: CustomEvent) => void
 	readonly close: (event: CustomEvent) => void
+	/** Fired when the autohide timer is suspended (hover, focus, or `api.pause()`). */
+	readonly pause: (event: CustomEvent) => void
+	/** Fired when the autohide timer restarts after a `pause`. */
+	readonly resume: (event: CustomEvent) => void
 }
 
 export interface CreateToastOptions {
@@ -1849,6 +1861,11 @@ export interface UseDragEventMap {
 	readonly drop: (event: CustomEvent) => void
 	readonly end: (event: CustomEvent) => void
 	readonly reorder: (event: CustomEvent) => void
+	/** Fired when the selection set changes (click / Ctrl-click / Shift-extend).
+	 *  `detail: { added, removed, anchor, selection }`. */
+	readonly select: (event: CustomEvent) => void
+	/** Fired when `api.clear()` empties the selection. */
+	readonly clear: (event: CustomEvent) => void
 }
 
 /** Mutable list accessor used by the factory in place of a Vue ref. */
@@ -2152,6 +2169,8 @@ export interface UseNavReturn {
 export interface UseCarouselEventMap {
 	readonly slide: (event: CustomEvent) => void
 	readonly change: (event: CustomEvent) => void
+	readonly start: (event: CustomEvent) => void
+	readonly stop: (event: CustomEvent) => void
 	readonly pause: (event: CustomEvent) => void
 	readonly resume: (event: CustomEvent) => void
 }
@@ -2219,6 +2238,13 @@ export interface FormEventMap {
 	readonly reset: (event: CustomEvent) => void
 	readonly submit: (event: CustomEvent) => void
 	readonly validate: (event: CustomEvent) => void
+	/** Fired on the first pristine → dirty transition (consumer-tracked
+	 *  "user has touched this form" signal). */
+	readonly dirty: (event: CustomEvent) => void
+	/** Fired when `api.clear()` resets the bookkeeping (dirty / touched /
+	 *  validated → pristine). Distinct from the native `reset` event,
+	 *  which fires when the underlying form's `reset()` is invoked. */
+	readonly clear: (event: CustomEvent) => void
 }
 
 export interface CreateFormOptions {

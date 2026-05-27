@@ -378,85 +378,85 @@ const INSPECTOR: Route = {
 
 const PLAYGROUND_DIALOG: Route = {
 	id: 'playground-dialog',
-	title: 'Dialog',
+	title: 'createDialog',
 	group: 'Statechart playgrounds',
 	page: DialogPlaygroundPage,
 }
 const PLAYGROUND_DETAILS: Route = {
 	id: 'playground-details',
-	title: 'Details',
+	title: 'createDetails',
 	group: 'Statechart playgrounds',
 	page: DetailsPlaygroundPage,
 }
 const PLAYGROUND_MENU: Route = {
 	id: 'playground-menu',
-	title: 'Menu',
+	title: 'createMenu',
 	group: 'Statechart playgrounds',
 	page: MenuPlaygroundPage,
 }
 const PLAYGROUND_POPOVER: Route = {
 	id: 'playground-popover',
-	title: 'Popover',
+	title: 'createPopover',
 	group: 'Statechart playgrounds',
 	page: PopoverPlaygroundPage,
 }
 const PLAYGROUND_ASIDE: Route = {
 	id: 'playground-aside',
-	title: 'Aside',
+	title: 'createAside',
 	group: 'Statechart playgrounds',
 	page: AsidePlaygroundPage,
 }
 const PLAYGROUND_TOAST: Route = {
 	id: 'playground-toast',
-	title: 'Toast',
+	title: 'createToast',
 	group: 'Statechart playgrounds',
 	page: ToastPlaygroundPage,
 }
 const PLAYGROUND_FORM: Route = {
 	id: 'playground-form',
-	title: 'Form',
+	title: 'createForm',
 	group: 'Statechart playgrounds',
 	page: FormPlaygroundPage,
 }
 const PLAYGROUND_TABS: Route = {
 	id: 'playground-tabs',
-	title: 'Tabs',
+	title: 'createTabs',
 	group: 'Statechart playgrounds',
 	page: TabsPlaygroundPage,
 }
 const PLAYGROUND_TOOLTIP: Route = {
 	id: 'playground-tooltip',
-	title: 'Tooltip',
+	title: 'createTooltip',
 	group: 'Statechart playgrounds',
 	page: TooltipPlaygroundPage,
 }
 const PLAYGROUND_SELECT: Route = {
 	id: 'playground-select',
-	title: 'Select',
+	title: 'createSelect',
 	group: 'Statechart playgrounds',
 	page: SelectPlaygroundPage,
 }
 const PLAYGROUND_CAROUSEL: Route = {
 	id: 'playground-carousel',
-	title: 'Carousel',
+	title: 'createCarousel',
 	group: 'Statechart playgrounds',
 	page: CarouselPlaygroundPage,
 }
 const PLAYGROUND_ALERT: Route = {
 	id: 'playground-alert',
-	title: 'Alert',
+	title: 'createAlert',
 	group: 'Statechart playgrounds',
 	page: AlertPlaygroundPage,
 }
 const PLAYGROUND_BUTTON: Route = {
 	id: 'playground-button',
-	title: 'Button',
+	title: 'createButton',
 	group: 'Statechart playgrounds',
 	page: ButtonPlaygroundPage,
 }
 const PLAYGROUND_THEME: Route = {
 	id: 'playground-theme',
-	title: 'Theme',
+	title: 'createTheme',
 	group: 'Statechart playgrounds',
 	page: ThemePlaygroundPage,
 }
@@ -591,7 +591,12 @@ export const routes: readonly Route[] = [
 const parse = (fallback: string): RouteLocation => {
 	const hash = window.location.hash
 	if (!hash.startsWith('#/')) return { id: fallback, section: null }
-	const parts = hash.slice(2).split('/')
+	// Strip the query string (`?autoplay=all&scenario=…`) before parsing
+	// path segments. The Statechart playgrounds use query params for
+	// URL-driven autoplay; the router itself only cares about the path
+	// portion of the hash.
+	const withoutHash = hash.slice(2).split('?')[0] ?? ''
+	const parts = withoutHash.split('/')
 	const raw = parts[0] ?? ''
 	const id = routes.some((r) => r.id === raw) ? raw : 'home'
 	const section = parts.slice(1).filter(Boolean).join('/') || null

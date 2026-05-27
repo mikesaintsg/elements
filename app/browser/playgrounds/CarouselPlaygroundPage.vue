@@ -7,7 +7,7 @@
  * `.active` class flip on items, `CAROUSEL_EVENTS.slide` / `change` /
  * `pause` / `resume`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { CAROUSEL_EVENTS, createCarousel, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import type { CreateCarouselInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -19,7 +19,8 @@ const factory = shallowRef<CreateCarouselInstance | null>(null)
 const tick = ref(0)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const element = carouselRef.value
 	if (!element) return
 	const instance = createCarousel(element, { autoplay: { interval: 2000 } })
@@ -36,14 +37,14 @@ watchEffect((onCleanup) => {
 	element.addEventListener(CAROUSEL_EVENTS.change, onChange)
 	element.addEventListener(CAROUSEL_EVENTS.pause, onPause)
 	element.addEventListener(CAROUSEL_EVENTS.resume, onResume)
-	onCleanup(() => {
+	cleanup = () => {
 		element.removeEventListener(CAROUSEL_EVENTS.slide, onSlide)
 		element.removeEventListener(CAROUSEL_EVENTS.change, onChange)
 		element.removeEventListener(CAROUSEL_EVENTS.pause, onPause)
 		element.removeEventListener(CAROUSEL_EVENTS.resume, onResume)
 		instance.destroy()
 		factory.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -123,7 +124,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

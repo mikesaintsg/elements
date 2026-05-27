@@ -6,7 +6,7 @@
  * `show` / `hide` / `toggle` / `hidepopover` / `destroy`. Observable:
  * `:popover-open`, `ASIDE_EVENTS.open` / `close`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { ASIDE_EVENTS, createAside } from '@elements/browser'
 import type { CreateAsideInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -18,7 +18,8 @@ const factory = shallowRef<CreateAsideInstance | null>(null)
 const tick = ref(0)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const element = asideRef.value
 	if (!element) return
 	const instance = createAside(element)
@@ -33,12 +34,12 @@ watchEffect((onCleanup) => {
 	}
 	element.addEventListener(ASIDE_EVENTS.open, onOpen)
 	element.addEventListener(ASIDE_EVENTS.close, onClose)
-	onCleanup(() => {
+	cleanup = () => {
 		element.removeEventListener(ASIDE_EVENTS.open, onOpen)
 		element.removeEventListener(ASIDE_EVENTS.close, onClose)
 		instance.destroy()
 		factory.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -119,7 +120,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

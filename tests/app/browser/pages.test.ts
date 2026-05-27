@@ -43,6 +43,13 @@ import { classNameIsSanctioned, componentNamespacesFromPaths } from '../../setup
 //                         no <h1>/<section> skeleton, no per-page test in
 //                         pages/*.test.ts). Route- and barrel-bijection checks
 //                         apply to BOTH sets combined (`pageNames`).
+//   playgroundRawSources — `playgrounds/*PlaygroundPage.vue` — statechart
+//                         visual harnesses (one per factory). Each renders
+//                         into the shared `StatechartHarness.vue` and drives
+//                         a scenario table; they follow the same exemption
+//                         shape as examples — no JSDoc intro / skeleton /
+//                         bespoke per-page test required (the bijection
+//                         covers them via the route + barrel only).
 
 const showcaseRawSources = import.meta.glob('../../../app/browser/pages/*.vue', {
 	query: '?raw',
@@ -56,19 +63,33 @@ const examplesRawSources = import.meta.glob('../../../app/browser/examples/*Page
 	eager: true,
 }) as Record<string, string>
 
+const playgroundRawSources = import.meta.glob(
+	'../../../app/browser/playgrounds/*PlaygroundPage.vue',
+	{
+		query: '?raw',
+		import: 'default',
+		eager: true,
+	},
+) as Record<string, string>
+
 function baseName(path: string): string {
 	return path.match(/([^/\\]+)\.vue$/)?.[1] ?? ''
 }
 
 // `pages` — combined source map (used for namespace/style checks on all pages)
 const pages: Record<string, string> = {}
-for (const [path, source] of Object.entries({ ...showcaseRawSources, ...examplesRawSources }))
+for (const [path, source] of Object.entries({
+	...showcaseRawSources,
+	...examplesRawSources,
+	...playgroundRawSources,
+}))
 	pages[baseName(path)] = source
 
 // `showcasePageNames` — structural/skeleton/bijection-with-tests checks only
 const showcasePageNames = Object.keys(showcaseRawSources).map(baseName).sort()
 
-// `pageNames` — all routed pages (showcase + examples); route + barrel checks
+// `pageNames` — all routed pages (showcase + examples + playgrounds);
+// route + barrel checks
 const pageNames = Object.keys(pages).sort()
 
 // ── Per-page test files (browser-safe directory listing) ────────────────────

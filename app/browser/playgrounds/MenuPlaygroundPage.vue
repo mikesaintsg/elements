@@ -7,7 +7,7 @@
  * / `destroy`. Observable: `:popover-open` on menu, `[aria-expanded]` on
  * toggle, `MENU_EVENTS.open` / `close`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { createMenu, MENU_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import type { CreateMenuInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -20,7 +20,8 @@ const factory = shallowRef<CreateMenuInstance | null>(null)
 const tick = ref(0)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const toggle = toggleRef.value
 	const menu = menuRef.value
 	if (!toggle || !menu) return
@@ -36,12 +37,12 @@ watchEffect((onCleanup) => {
 	}
 	toggle.addEventListener(MENU_EVENTS.open, onOpen)
 	toggle.addEventListener(MENU_EVENTS.close, onClose)
-	onCleanup(() => {
+	cleanup = () => {
 		toggle.removeEventListener(MENU_EVENTS.open, onOpen)
 		toggle.removeEventListener(MENU_EVENTS.close, onClose)
 		instance.destroy()
 		factory.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -154,7 +155,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

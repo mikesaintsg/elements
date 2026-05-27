@@ -71,12 +71,7 @@ describe('createPointer', () => {
 //   Events   : 'pointerdown' | 'pointerup' | 'clear' | 'pointerdown-rejected' | 'destroy'
 
 type PointerState = 'idle' | 'dragging'
-type PointerEvent_ =
-	| 'pointerdown'
-	| 'pointerup'
-	| 'clear'
-	| 'pointerdown-rejected'
-	| 'destroy'
+type PointerEvent_ = 'pointerdown' | 'pointerup' | 'clear' | 'pointerdown-rejected' | 'destroy'
 
 interface PointerContext {
 	readonly api: CreatePointerInstance

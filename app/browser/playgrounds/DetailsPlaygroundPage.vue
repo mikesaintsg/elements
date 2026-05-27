@@ -6,7 +6,7 @@
  * `nativetoggle` / `deactivate` / `destroy`. Observable: native
  * `[open]` + `DETAILS_EVENTS.open` / `close`.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { createDetails, DETAILS_EVENTS } from '@elements/browser'
 import type { CreateDetailsInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -18,7 +18,8 @@ const factory = shallowRef<CreateDetailsInstance | null>(null)
 const tick = ref(0)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+onMounted(() => {
 	const element = detailsRef.value
 	if (!element) return
 	const instance = createDetails(element)
@@ -33,12 +34,12 @@ watchEffect((onCleanup) => {
 	}
 	element.addEventListener(DETAILS_EVENTS.open, onOpen)
 	element.addEventListener(DETAILS_EVENTS.close, onClose)
-	onCleanup(() => {
+	cleanup = () => {
 		element.removeEventListener(DETAILS_EVENTS.open, onOpen)
 		element.removeEventListener(DETAILS_EVENTS.close, onClose)
 		instance.destroy()
 		factory.value = null
-	})
+	}
 })
 
 const state = computed(() => {
@@ -124,7 +125,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

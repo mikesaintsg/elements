@@ -92,12 +92,36 @@ const writeStorage = (key: string | null): void => {
 	attempt(() => localStorage.setItem(key, `${setting.value}:${name.value}`))
 }
 
-const fireChange = (): void => {
+// Per AGENTS.md §14 ("never use a generic status event") the theme
+// service fires a SETTING-specific verb each time `setting` flips, plus
+// a separate `name` verb when the palette name changes. Consumers can
+// subscribe to just the transition they care about
+// (`addEventListener('elements:theme:dark', …)`) without inspecting
+// detail. The detail keeps `mode` so consumers know what's rendered
+// when `setting === 'system'`.
+const fireSettingChange = (next: ThemeSetting, previous: ThemeSetting): void => {
 	if (typeof document === 'undefined') return
-	emit(document.documentElement, THEME_EVENTS.change, {
+	if (next === previous) return
+	const verb =
+		next === 'light'
+			? THEME_EVENTS.light
+			: next === 'dark'
+				? THEME_EVENTS.dark
+				: THEME_EVENTS.system
+	emit(document.documentElement, verb, {
+		mode: mode.value,
+		setting: next,
+		name: name.value,
+	})
+}
+
+const fireNameChange = (next: ThemeName, previous: ThemeName): void => {
+	if (typeof document === 'undefined') return
+	if (next === previous) return
+	emit(document.documentElement, THEME_EVENTS.name, {
 		mode: mode.value,
 		setting: setting.value,
-		name: name.value,
+		name: next,
 	})
 }
 
@@ -129,17 +153,25 @@ export function bootstrapTheme(options: CreateThemeOptions): void {
 	}
 
 	// Apply current setting + name to the DOM + persist + emit. One watcher
-	// over both refs, `immediate: true` so the initial state is applied on
-	// first bootstrap. `@vue/reactivity`'s `watch` fires synchronously.
+	// over both refs. The initial bootstrap pass writes the DOM + persists
+	// without firing events (there is no "previous" state to transition
+	// FROM); subsequent flips emit setting- and name-specific events.
+	let previousSetting: ThemeSetting = setting.value
+	let previousName: ThemeName = name.value
+	writeMode(previousSetting)
+	writeName(previousName)
+	writeStorage(storageKey)
 	stopApply = watch(
 		() => [setting.value, name.value] as const,
 		([nextSetting, nextName]) => {
 			writeMode(nextSetting)
 			writeName(nextName)
 			writeStorage(storageKey)
-			fireChange()
+			fireSettingChange(nextSetting, previousSetting)
+			fireNameChange(nextName, previousName)
+			previousSetting = nextSetting
+			previousName = nextName
 		},
-		{ immediate: true },
 	)
 }
 

@@ -563,10 +563,7 @@ function fireSelectionEvent(context: TableSelectionContext, event: TableSelectio
 	context.api.selection.clear()
 }
 
-function assertSelectionState(
-	context: TableSelectionContext,
-	state: TableSelectionState,
-): void {
+function assertSelectionState(context: TableSelectionContext, state: TableSelectionState): void {
 	const expectedSelected = state === 'selected'
 	expect(context.api.selection.ids.has('r0')).toBe(expectedSelected)
 	// `aria-selected="true"` when selected; the factory removes the
@@ -673,10 +670,7 @@ function driveToExpansionState(context: TableExpansionContext, state: TableExpan
 	if (state === 'expanded') context.api.expansion.expand('r0')
 }
 
-function fireExpansionEvent(
-	context: TableExpansionContext,
-	event: TableExpansionEvent,
-): void {
+function fireExpansionEvent(context: TableExpansionContext, event: TableExpansionEvent): void {
 	if (event === 'expand') {
 		context.api.expansion.expand('r0')
 		return
@@ -688,10 +682,7 @@ function fireExpansionEvent(
 	context.api.expansion.toggle('r0')
 }
 
-function assertExpansionState(
-	context: TableExpansionContext,
-	state: TableExpansionState,
-): void {
+function assertExpansionState(context: TableExpansionContext, state: TableExpansionState): void {
 	const expectedExpanded = state === 'expanded'
 	expect(context.api.expansion.expanded.has('r0')).toBe(expectedExpanded)
 	const row = context.api.rows.row(0)

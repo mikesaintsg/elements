@@ -7,7 +7,7 @@
  * `[open]`, `:modal`, body `[data-elements-scroll-locked]`, plus
  * `DIALOG_EVENTS.open` / `close` post-transition emissions.
  */
-import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, useTemplateRef, onMounted } from 'vue'
 import { createDialog, DIALOG_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import type { CreateDialogInstance } from '@elements/browser'
 import { useLog } from '../composables.js'
@@ -17,13 +17,20 @@ import StatechartHarness from './StatechartHarness.vue'
 const dialogRef = useTemplateRef<HTMLDialogElement>('dialogRef')
 const factory = shallowRef<CreateDialogInstance | null>(null)
 const tick = ref(0)
-const modal = ref(true)
 const { entries: events, push } = useLog<{ name: string; time: number }>(16)
 
-watchEffect((onCleanup) => {
+let cleanup: (() => void) | null = null
+
+// createDialog locks modal mode at construction time, so switching
+// between modal / non-modal scenarios in the playground requires
+// rebuilding the factory. `rebuild(modal)` tears down the current
+// instance and constructs a fresh one bound to the same `<dialog>`.
+function rebuild(modal: boolean): void {
+	cleanup?.()
+	cleanup = null
 	const element = dialogRef.value
 	if (!element) return
-	const instance = createDialog(element, { modal: modal.value })
+	const instance = createDialog(element, { modal })
 	factory.value = instance
 	const onOpen = (): void => {
 		push({ name: DIALOG_EVENTS.open, time: performance.now() })
@@ -35,12 +42,16 @@ watchEffect((onCleanup) => {
 	}
 	element.addEventListener(DIALOG_EVENTS.open, onOpen)
 	element.addEventListener(DIALOG_EVENTS.close, onClose)
-	onCleanup(() => {
+	cleanup = () => {
 		element.removeEventListener(DIALOG_EVENTS.open, onOpen)
 		element.removeEventListener(DIALOG_EVENTS.close, onClose)
 		instance.destroy()
 		factory.value = null
-	})
+	}
+}
+
+onMounted(() => {
+	rebuild(true)
 })
 
 const state = computed(() => {
@@ -79,7 +90,7 @@ const scenarios = [
 		event: 'show',
 		to: 'open',
 		run: async () => {
-			modal.value = true
+			rebuild(true)
 			await reset()
 			await fireShow()
 		},
@@ -90,7 +101,7 @@ const scenarios = [
 		event: 'hide',
 		to: 'closed',
 		run: async () => {
-			modal.value = true
+			rebuild(true)
 			await reset()
 			await fireShow()
 			await fireHide()
@@ -102,7 +113,7 @@ const scenarios = [
 		event: 'nativeclose',
 		to: 'closed',
 		run: async () => {
-			modal.value = true
+			rebuild(true)
 			await reset()
 			await fireShow()
 			await fireNativeClose()
@@ -114,7 +125,7 @@ const scenarios = [
 		event: 'show',
 		to: 'open-nonmodal',
 		run: async () => {
-			modal.value = false
+			rebuild(false)
 			await reset()
 			// Re-mount with modal=false via the watchEffect rebuild.
 			await waitForDelay(150)
@@ -127,7 +138,7 @@ const scenarios = [
 		event: 'hide',
 		to: 'closed',
 		run: async () => {
-			modal.value = false
+			rebuild(false)
 			await reset()
 			await waitForDelay(150)
 			await fireShow()
@@ -137,7 +148,7 @@ const scenarios = [
 ] as const
 
 onUnmounted(() => {
-	factory.value?.destroy()
+	cleanup?.()
 })
 </script>
 

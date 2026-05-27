@@ -3,7 +3,12 @@ import type { CreateSelectInstance, CreateSelectOptions } from '@elements/browse
 import { createSelect, SELECT_EVENTS, TRANSITION_FALLBACK_MS } from '@elements/browser'
 import type { EventRecorder, StateScenario } from '../../../setup'
 import { createRecorder } from '../../../setup'
-import { assertCleanDispose, buildElement, createFactoryFixture, runScenario } from '../../../setupBrowser'
+import {
+	assertCleanDispose,
+	buildElement,
+	createFactoryFixture,
+	runScenario,
+} from '../../../setupBrowser'
 
 function createSelectFixture(values: readonly string[]): {
 	readonly toggle: HTMLButtonElement
