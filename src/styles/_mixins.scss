@@ -284,3 +284,93 @@ $icons: (
 		}
 	}
 }
+
+// ── Reveal (collapse-on-rest button label) ───────────────────────────────────
+//
+// The reveal-on-hover contract: a two-track grid whose label track is collapsed
+// to `0fr` at rest and expands to `1fr` on engagement. Single-sourced here so
+// the `button.reveal` (label trails the icon) and `button.reveal.end` (label
+// leads, `$end: true`) variants in `modifiers/_local.scss` share one definition
+// of the load-bearing grid + asymmetric-timing math — and so a future
+// `a.reveal` can reuse it without re-deriving the mechanism.
+//
+// The `0fr → 1fr` track animation works WITHOUT measuring the label in JS: the
+// engine interpolates the `fr` track between the collapsed and revealed rules.
+// The matching `reveal-label` mixin's `min-inline-size: 0` is load-bearing — a
+// label's `min-content` width otherwise fights the `0fr` track and the column
+// never collapses. Every transition routes through `transition()` so the
+// `prefers-reduced-motion: reduce` opt-out is emitted automatically.
+
+/// Idle (collapsed) reveal grid — the label track is `0fr`, the gap is zero,
+/// and the EXIT transition (slower + delayed, so the label lingers as the
+/// pointer leaves) is applied. Apply to the `button.reveal` host inside the
+/// hover-capable media query.
+///
+/// @param {Boolean} $end [false] — `true` puts the collapsed label track on the
+///   inline-start (icon trailing); `false` trails the label after the icon.
+///
+/// Usage:
+///   @media (hover: hover) and (pointer: fine) {
+///     button.reveal { @include reveal; }
+///   }
+@mixin reveal($end: false) {
+	@if $end {
+		grid-template-columns: 0fr auto;
+	} @else {
+		grid-template-columns: auto 0fr;
+	}
+	column-gap: 0;
+
+	@include transition(
+		(
+			grid-template-columns var(--set-button-reveal-transition-duration-out)
+				var(--set-button-reveal-transition-delay-out),
+			column-gap var(--set-button-reveal-transition-duration-out)
+				var(--set-button-reveal-transition-delay-out)
+		)
+	);
+}
+
+/// Revealed (expanded) reveal grid — the label track is `1fr`, the gap is
+/// restored, and the ENTRY transition (fast, no delay) is applied. Apply to the
+/// `:hover, :focus-visible` host.
+///
+/// @param {Boolean} $end [false] — mirror of `reveal($end)`'s track order.
+@mixin reveal-revealed($end: false) {
+	@if $end {
+		grid-template-columns: 1fr auto;
+	} @else {
+		grid-template-columns: auto 1fr;
+	}
+	column-gap: var(--set-button-reveal-gap);
+
+	@include transition(
+		(
+			grid-template-columns var(--set-button-reveal-transition-duration-in),
+			column-gap var(--set-button-reveal-transition-duration-in)
+		)
+	);
+}
+
+/// Idle label slot — collapses inside the `0fr` track and fades out. The
+/// `min-inline-size: 0` is load-bearing (see the section note). Apply to the
+/// label child (`button.reveal > span`).
+@mixin reveal-label {
+	min-inline-size: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	opacity: 0;
+
+	@include transition(
+		opacity var(--set-button-reveal-transition-duration-out)
+			var(--set-button-reveal-transition-delay-out)
+	);
+}
+
+/// Revealed label slot — fades the collapsed label back in. Apply to the label
+/// child on the `:hover, :focus-visible` host.
+@mixin reveal-revealed-label {
+	opacity: 1;
+
+	@include transition(opacity var(--set-button-reveal-transition-duration-in));
+}

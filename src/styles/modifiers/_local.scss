@@ -799,4 +799,146 @@
 	button.dropdown[aria-expanded='true']::after {
 		rotate: var(--set-button-dropdown-caret-open-rotate);
 	}
+
+	// ── button.reveal / button.reveal.end ───────────────────────────────────
+	// Reveal-on-hover: an icon button whose text label is collapsed at rest and
+	// expands on `:hover` / `:focus-visible`. The button reads as a single glyph
+	// but announces its meaning on engagement, the inline track animating from
+	// `0fr` to `1fr`. Modelled on mailbox's `.btn-reveal` family, re-expressed
+	// through this framework's grid + token + mixin vocabulary.
+	//
+	// CONTAINER AXIS — reveal expands in flow along the INLINE axis, so it
+	// composes differently with each container direction. In a vertical column
+	// (`flex-direction: column`, `.stack`) the expansion is PERPENDICULAR to the
+	// stack: growing one item never moves the rows above or below it — the
+	// reflow-free ideal (the canonical navigation-rail use). In a HORIZONTAL row
+	// the expansion is PARALLEL to the flow: a growing button nudges the siblings
+	// after it, and the asymmetric out-delay lets the one you just left linger so
+	// a left-to-right pass stays smooth — fine for a short action row. (That
+	// neighbour shift is inherent to any in-flow inline-size animation, not a bug
+	// in this rule.) When a dense horizontal bar must not shift at all, keep the
+	// buttons icon-only and label them with a tooltip (`[popover=hint]` /
+	// `useTooltip`) — an overlay label has no flow footprint. See
+	// `guides/modifiers.md` § Element-local modifiers.
+	//
+	// ICON ANCHOR — the icon never moves between collapsed and revealed because
+	// the button's padding is CONSTANT across both states (only the label track
+	// + column-gap animate). Changing padding on reveal is exactly what makes an
+	// icon "bounce", so the modifier deliberately leaves padding to the element
+	// baseline. Compose `.compact` for a square collapsed glyph: it sets
+	// `--set-button-padding-inline: var(--set-button-padding-block)` as a
+	// CONSTANT (equal padding all round in both states), so the icon stays
+	// anchored — square glyph, no bounce.
+	//
+	// The label slot is the button's plain child `<span>` (no bespoke
+	// `.btn-label` class — the framework forbids them) and the icon is the
+	// existing `<i class="icon">`:
+	//
+	//   <button type="button" class="reveal primary">
+	//     <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+	//     <span>New invoice</span>
+	//   </button>
+	//
+	// The `<span>` is ALWAYS in the DOM (so always in the accessibility tree —
+	// the button is NEVER unlabelled, even collapsed); only its visual track
+	// collapses. The collapse targets `button.reveal > span`; the contract is
+	// exactly one `<span>` label child (revisit if a real icon-on-both-sides
+	// consumer appears). `:focus-visible` reveals exactly like `:hover`, so
+	// keyboard / switch users get the label on focus.
+	//
+	// Desktop vs touch — the critical reconciliation. Reveal-on-hover is
+	// meaningless on touch (no hover; the first tap would have to both reveal
+	// AND activate). Rather than mailbox's viewport-WIDTH breakpoint classes
+	// (`.btn-reveal-md`), the collapse is gated behind pointer/hover CAPABILITY:
+	//
+	//   • Always-expanded baseline (below) — on touch / coarse pointers the
+	//     label is shown permanently (icon + label), never a mystery glyph,
+	//     full target size.
+	//   • Collapse-on-rest (the media block) — only where a fine pointer can
+	//     hover to reveal. Keyboard focus on such machines reveals too.
+	//
+	// This degrades correctly on a large touch screen AND a small desktop
+	// window, which a viewport-width breakpoint mislabels. Consumers wanting
+	// viewport-conditional reveal wrap with their own responsive utilities or a
+	// container query around the rail — the framework defers responsive to the
+	// consumer (no baked `-sm/-md/-lg` variants; see AGENTS.md §21.4).
+	//
+	// No re-emission / specificity gymnastics: the modifier lives in the
+	// modifiers layer, which beats the elements + components layers by
+	// cascade-layer order regardless of source order — a concrete win over
+	// mailbox's `.nav-button.btn-reveal*` higher-specificity re-emission.
+	//
+	// The grid mechanism + asymmetric timing live in `_mixins.scss` (`reveal`,
+	// `reveal-revealed`, `reveal-label`, `reveal-revealed-label`); the
+	// `--set-button-reveal-*` token defaults live on the `<button>` token
+	// surface in `elements/_button.scss`; both are consumed here. The
+	// `button.reveal > span` descendant rule is a documented charter exception
+	// (the `_local.test.ts` regex matches only bare `{tag}.{name}` openers) —
+	// same shape as `form.row > label`; the `(button, span)` pairing is
+	// allowlisted in `patterns.ts § STRUCTURAL_PAIRINGS`.
+
+	// Always-expanded baseline — both tracks intrinsic == expanded. Stands on
+	// touch / coarse pointers (no hover capability) so the label is permanent.
+	// Covers BOTH `button.reveal` (icon leads) and `button.reveal.end` (icon
+	// trails) — `.end` IS a `.reveal`, so it inherits this baseline + the label
+	// slot below and only overrides the track ORDER (see the `.end` rules).
+	button.reveal {
+		display: inline-grid;
+		grid-template-columns: auto auto;
+		column-gap: var(--set-button-reveal-gap);
+		align-items: center;
+	}
+	button.reveal > span {
+		min-inline-size: 0;
+	}
+
+	// Direction via the shared placement vocabulary, not a hyphenated name.
+	// `button.reveal.end` composes the SAME single-word `.end` modifier that
+	// `<aside>` / `<nav>` drawers and `<output>` toasts already reuse for their
+	// own directional semantics (`_placements.scss` § Scope). On a non-popover
+	// `<button>` the placement `position-area` rule is a no-op, so reusing
+	// `.end` here doesn't collide — it just reads as "the icon anchors at the
+	// inline-END". (Bare `button.reveal` = icon at the inline-start, the
+	// reading-order default; `.end` flips it.) The label then reveals toward
+	// the inline-start: pin the `<span>` to a DEFINITE cell (row 1, column 1)
+	// so it is placed in the grid's first pass — the `<i>` (first DOM child,
+	// otherwise auto-placed into column 1 before a column-only-locked span
+	// could claim it) auto-trails into column 2. Only the `<span>` is selected,
+	// so the variant adds no `(button, i)` pairing.
+	button.reveal.end > span {
+		grid-row: 1;
+		grid-column: 1;
+	}
+
+	// Collapse-on-rest only where a fine pointer can hover to reveal.
+	@media (hover: hover) and (pointer: fine) {
+		button.reveal {
+			@include reveal;
+		}
+		button.reveal > span {
+			@include reveal-label;
+		}
+		button.reveal:hover,
+		button.reveal:focus-visible {
+			@include reveal-revealed;
+		}
+		button.reveal:hover > span,
+		button.reveal:focus-visible > span {
+			@include reveal-revealed-label;
+		}
+
+		// `.end` overrides ONLY the track ORDER ($end: true → the collapsed /
+		// expanded track sits on the inline-start). The label slot + the
+		// revealed-label opacity are direction-agnostic, so the
+		// `button.reveal {…} > span` rules above already cover `.end`; the
+		// higher specificity of `.reveal.end` (0,2,1) over `.reveal` (0,1,1)
+		// lets these win the track-order override.
+		button.reveal.end {
+			@include reveal($end: true);
+		}
+		button.reveal.end:hover,
+		button.reveal.end:focus-visible {
+			@include reveal-revealed($end: true);
+		}
+	}
 }

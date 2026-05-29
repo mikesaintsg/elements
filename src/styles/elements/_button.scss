@@ -261,6 +261,31 @@
 			// Same scope-pattern + same default-value contract as
 			// `--set-summary-marker-open-rotate`.
 			--set-button-dropdown-caret-open-rotate: 180deg;
+
+			// Reveal-on-hover modifier token surface — opt-in via
+			// `<button class="reveal">`. The collapse/expand rules live in
+			// `modifiers/_local.scss § button.reveal` (the modifiers layer beats
+			// the element baseline so no re-emission is needed); these defaults
+			// are the `<button>` element's token surface that those rules
+			// consume, declared on `:root` so a consumer can retune the reveal
+			// feel at any cascade scope — same scope pattern as the caret tokens.
+			//
+			//   gap                       column-gap when the label is revealed
+			//                             (factor-aware via `--spacing`).
+			//   transition-duration-in    entry tween — fast, no delay
+			//                             (decelerate feel; reuses the framework
+			//                             150ms register, not the 250ms motion
+			//                             contract — reveal is a small-UI tint).
+			//   transition-duration-out   exit tween — slower than entry so the
+			//                             label lingers as the pointer leaves.
+			//   transition-delay-out      exit delay — a pointer drifting across
+			//                             the button doesn't blank the label
+			//                             instantly (mailbox's `.btn-reveal`
+			//                             asymmetric-timing contract).
+			--set-button-reveal-gap: calc(var(--spacing) * 1.5);
+			--set-button-reveal-transition-duration-in: var(--set-transition-duration);
+			--set-button-reveal-transition-duration-out: calc(var(--set-transition-duration) * 1.4);
+			--set-button-reveal-transition-delay-out: 120ms;
 		}
 
 		// The `button.dropdown::after` caret PAINT rules are an

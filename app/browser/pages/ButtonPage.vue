@@ -9,6 +9,7 @@
  *   - 3 styles — bare (transparent), .subtle (Bootstrap tinted-bg pattern), .filled
  *   - 5 interactive states — :hover, :active/.active, :focus-visible, [disabled]/.disabled, .loading
  *   - .compact modifier (equal block + inline padding)
+ *   - .reveal (+ .end direction) reveal-on-hover modifier (capability-gated label collapse)
  *   - Icon registry consumption (--set-icon-* via <i class="icon">)
  *   - Link-as-button via <a class="primary"> per §6.1 anchor-context contract
  *   - [role="group"] and [role="toolbar"] composition (components/_role-group.scss)
@@ -32,6 +33,7 @@ import {
 	BUTTON_SNIPPET_GROUPS as snippetGroups,
 	BUTTON_SNIPPET_ICON as snippetIcon,
 	BUTTON_SNIPPET_LINK as snippetLink,
+	BUTTON_SNIPPET_REVEAL as snippetReveal,
 	BUTTON_SNIPPET_SIZES as snippetSizes,
 	BUTTON_SNIPPET_STATES as snippetStates,
 	BUTTON_SNIPPET_STYLES as snippetStyles,
@@ -440,6 +442,161 @@ const logToggle = (e: Event): void => {
 		<details>
 			<summary><small>Markup</small></summary>
 			<pre><code>{{ snippetDropdown }}</code></pre>
+		</details>
+	</section>
+
+	<section id="button-reveal">
+		<h2>Reveal on hover — <code>.reveal</code></h2>
+		<p>
+			An icon button whose text label is collapsed at rest and slides out on
+			<code>:hover</code> / <code>:focus-visible</code>. The label is the button's plain child
+			<code>&lt;span&gt;</code> (no bespoke label class); it is <strong>always</strong> in the DOM
+			and the accessibility tree, so the button is never an unlabelled glyph — only its inline grid
+			track collapses, animating <code>0fr → 1fr</code> with no JS measuring the label.
+		</p>
+		<p>
+			The icon is a fixed anchor: padding stays constant between states, so the glyph never jumps
+			(changing padding on reveal is what makes icons bounce). <code>.reveal</code> expands
+			<em>in flow</em> along the inline axis, so it composes with whatever layout it sits in — shown
+			below in a horizontal row, a vertical rail, and an end-aligned rail.
+		</p>
+
+		<h3>In a row</h3>
+		<p>
+			A horizontal action row. Because the expansion runs <em>along</em> the row, a growing button
+			nudges the buttons after it; the out-delay lets the one you just left linger so a
+			left-to-right pass stays smooth. Good for a short row — for a dense bar that must not shift at
+			all, the vertical rail (next) is reflow-free, or label icon-only buttons with a tooltip
+			(further below). Hover the buttons:
+		</p>
+		<div class="cluster">
+			<button type="button" class="reveal primary">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+				<span>New invoice</span>
+			</button>
+			<button type="button" class="reveal success">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-check)"></i>
+				<span>Approve</span>
+			</button>
+			<button type="button" class="reveal danger">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				<span>Delete</span>
+			</button>
+			<button type="button" class="reveal subtle">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+				<span>Filter</span>
+			</button>
+		</div>
+
+		<h3 class="mt-6">Collapsed rail — reflow-free</h3>
+		<p>
+			A vertical rail reads as a glyph stack at rest and announces each label on hover / focus.
+			Because the expansion is <em>perpendicular</em> to the stack, growing one item never moves the
+			rows above or below it — the canonical, reflow-free navigation-rail use. <code>.stack</code> +
+			the <code>items-start</code> utility keep each button intrinsic-width so it grows rightward
+			into the content gutter. Hover or tab through the rail:
+		</p>
+		<div class="stack items-start">
+			<button type="button" class="reveal subtle">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-system)"></i>
+				<span>Dashboard</span>
+			</button>
+			<button type="button" class="reveal subtle">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-search)"></i>
+				<span>Explore</span>
+			</button>
+			<button type="button" class="reveal subtle">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
+				<span>Activity</span>
+			</button>
+			<button type="button" class="reveal subtle">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
+				<span>More</span>
+			</button>
+		</div>
+
+		<h3 class="mt-6">Square glyphs — <code>.compact</code></h3>
+		<p>
+			Compose <code>.compact</code> for a perfectly square collapsed glyph: it equalises inline and
+			block padding as a <em>constant</em>, so the icon stays anchored in both states — square at
+			rest, no bounce on reveal.
+		</p>
+		<div class="stack items-start">
+			<button type="button" class="reveal compact primary">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+				<span>New invoice</span>
+			</button>
+			<button type="button" class="reveal compact success">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-check)"></i>
+				<span>Approve</span>
+			</button>
+			<button type="button" class="reveal compact danger">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				<span>Delete</span>
+			</button>
+		</div>
+
+		<h3 class="mt-6">Icon at the end — <code>.reveal.end</code></h3>
+		<p>
+			Direction is the single-word <code>.end</code> placement modifier — the same one
+			<code>&lt;aside&gt;</code> / <code>&lt;nav&gt;</code> drawers and
+			<code>&lt;output&gt;</code> toasts reuse — composed onto the reveal button (no hyphenated
+			<code>.reveal-end</code> name). Bare <code>.reveal</code> anchors the icon at the inline-start
+			(reading order); add <code>.end</code> and the icon trails on the inline-end while the label
+			reveals to the inline-start — an end-aligned rail. (<code>position-area</code> is a no-op on a
+			non-popover button, so the placement word is free to read as "which side the icon anchors to"
+			here.)
+		</p>
+		<div class="stack items-end">
+			<button type="button" class="reveal end subtle">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-search)"></i>
+				<span>Search</span>
+			</button>
+			<button type="button" class="reveal end subtle">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+				<span>Filter</span>
+			</button>
+			<button type="button" class="reveal end subtle">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
+				<span>Sort</span>
+			</button>
+		</div>
+
+		<h3 class="mt-6">Zero-reflow alternative — tooltips</h3>
+		<p>
+			When a dense horizontal bar must not shift at all, skip reveal and keep the buttons icon-only,
+			labelling them with a tooltip — an overlay label has no flow footprint, so the row never
+			reflows. The framework's <code>[popover=hint]</code> surface and <code>useTooltip</code> own
+			that pattern; the native <code>title</code> below is the zero-dependency version. Hover the
+			glyphs:
+		</p>
+		<div role="toolbar" aria-label="Demo actions" class="cluster">
+			<button type="button" class="compact subtle" title="Search" aria-label="Search">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-search)"></i>
+			</button>
+			<button type="button" class="compact subtle" title="Filter" aria-label="Filter">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+			</button>
+			<button type="button" class="compact subtle" title="Sort" aria-label="Sort">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-sort)"></i>
+			</button>
+			<button type="button" class="compact subtle" title="More" aria-label="More">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-more)"></i>
+			</button>
+		</div>
+
+		<p>
+			<strong>Touch &amp; reduced motion.</strong> The collapse is gated behind
+			<code>@media (hover: hover) and (pointer: fine)</code> — on touch / coarse pointers every
+			label is shown permanently (icon + label), so the rail is never a row of mystery glyphs and
+			the degradation is correct on both a large touch screen and a small desktop window (a
+			capability gate, not a viewport-width breakpoint). The slide routes through the framework's
+			<code>transition()</code> mixin, so <code>prefers-reduced-motion: reduce</code> switches the
+			label in instantly with no animation while still revealing it on hover / focus.
+		</p>
+		<details>
+			<summary><small>Markup</small></summary>
+			<pre><code>{{ snippetReveal }}</code></pre>
 		</details>
 	</section>
 

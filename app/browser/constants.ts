@@ -1343,6 +1343,67 @@ export const BUTTON_SNIPPET_DROPDOWN = `<!-- .dropdown paints a chevron-down car
   Details
 </button>`
 
+export const BUTTON_SNIPPET_REVEAL = `<!-- .reveal: icon at rest, label slides out on hover / focus. The
+     <span> label is ALWAYS in the DOM (always in the a11y tree); only
+     its inline track collapses (0fr -> 1fr), no JS measuring. The icon
+     is a fixed anchor — padding stays constant, so it never bounces. On
+     touch / coarse pointers every label is shown (capability gate).
+     .reveal expands in flow along the inline axis, so it composes with
+     whatever layout it sits in: -->
+
+<!-- In a row: the expansion runs ALONG the row, so a growing button
+     nudges the ones after it (the out-delay smooths a left-to-right
+     pass). Good for a short action row. -->
+<div class="cluster">
+  <button type="button" class="reveal primary">
+    <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+    <span>New invoice</span>
+  </button>
+  <button type="button" class="reveal subtle">
+    <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+    <span>Filter</span>
+  </button>
+</div>
+
+<!-- Vertical rail: the expansion is PERPENDICULAR to the stack, so
+     neighbours never move — the reflow-free navigation-rail use. -->
+<div class="stack items-start">
+  <button type="button" class="reveal subtle">
+    <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-system)"></i>
+    <span>Dashboard</span>
+  </button>
+  <button type="button" class="reveal subtle">
+    <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-search)"></i>
+    <span>Explore</span>
+  </button>
+</div>
+
+<!-- .compact -> a square collapsed glyph (equal padding, still constant
+     across states, so the icon stays anchored). -->
+<button type="button" class="reveal compact primary">
+  <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+  <span>New invoice</span>
+</button>
+
+<!-- .reveal.end: compose the single-word .end placement modifier (the
+     same one drawers/toasts reuse) — the icon trails, the label reveals
+     to the inline-start. An end-aligned rail. -->
+<div class="stack items-end">
+  <button type="button" class="reveal end subtle">
+    <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+    <span>Filter</span>
+  </button>
+</div>
+
+<!-- Dense bar that must not shift at all? Keep it icon-only and label
+     with a tooltip (overlay label, no reflow): [popover=hint] /
+     useTooltip, or a native title. -->
+<div role="toolbar" aria-label="Demo actions" class="cluster">
+  <button type="button" class="compact subtle" title="Search" aria-label="Search">
+    <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-search)"></i>
+  </button>
+</div>`
+
 export const BUTTON_SNIPPET_GROUPS = `<!-- Connected button group: a [role="group"] wrapping buttons
      produces a single bonded control. -->
 <div role="group" aria-label="Text alignment">

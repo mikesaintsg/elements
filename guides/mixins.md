@@ -30,6 +30,10 @@
 | `floater-edge($edge)`                           | Anchor a fixed-position element to a single viewport edge.                        |
 | `floater-fullscreen`                            | Fill the viewport on both axes with `inset: 0` + dynamic viewport units.          |
 | `palette-each($exclude: ())`                    | `@each` over `$variants` yielding the variant name to a content block.            |
+| `reveal($end: false)`                           | Idle (collapsed) reveal-on-hover grid — label track `0fr`, gap zero, exit timing. |
+| `reveal-revealed($end: false)`                  | Revealed (expanded) reveal grid — label track `1fr`, gap restored, entry timing.  |
+| `reveal-label`                                  | Idle reveal label slot — `min-inline-size: 0`, clip, fade out.                    |
+| `reveal-revealed-label`                         | Revealed reveal label slot — fade the collapsed label back in.                    |
 
 ---
 
@@ -206,6 +210,46 @@ dialog.fullscreen[open] {
 ```
 
 Saves repeating seven near-identical rules by hand and guarantees every consumer iterates the same list in the same order.
+
+### Reveal (collapse-on-rest button label)
+
+The reveal-on-hover contract for the `button.reveal` (+ `.end` direction) element-local modifier (in [modifiers/\_local.scss](../src/styles/modifiers/_local.scss)). An icon button whose text label is collapsed at rest and expands on `:hover` / `:focus-visible`. Single-sourced here so the default (label trails the icon) and the `.end` direction (label leads, `$end: true`) share one definition of the load-bearing two-track grid + asymmetric-timing math — and so a future `a.reveal` can reuse it without re-deriving the mechanism.
+
+Four mixins compose the contract — two for the host grid, two for the label slot:
+
+#### `reveal($end: false)` / `reveal-revealed($end: false)`
+
+The host grid. `reveal($end)` is the idle (collapsed) state — the label track is `0fr`, the column gap is zero, and the EXIT transition (slower, delayed, so the label lingers as the pointer leaves) is applied. `reveal-revealed($end)` is the engaged state — the label track is `1fr`, the gap is restored from the reveal token surface, and the ENTRY transition (fast, no delay) is applied. The `0fr` → `1fr` track animation works without measuring the label in JS: the engine interpolates the `fr` track between the two rules. Pass `$end: true` to put the collapsed track on the inline-start (icon trailing).
+
+```scss
+@media (hover: hover) and (pointer: fine) {
+	button.reveal {
+		@include reveal;
+	}
+	button.reveal:hover,
+	button.reveal:focus-visible {
+		@include reveal-revealed;
+	}
+}
+```
+
+#### `reveal-label` / `reveal-revealed-label`
+
+The label slot, applied to the button's child `<span>`. `reveal-label` is the idle slot — `min-inline-size: 0` (load-bearing: a label's min-content width otherwise fights the `0fr` track and the column never collapses), clipped overflow, and a fade-out on the exit timing. `reveal-revealed-label` fades the label back in on the entry timing.
+
+```scss
+@media (hover: hover) and (pointer: fine) {
+	button.reveal > span {
+		@include reveal-label;
+	}
+	button.reveal:hover > span,
+	button.reveal:focus-visible > span {
+		@include reveal-revealed-label;
+	}
+}
+```
+
+Every transition routes through `transition()`, so each mixin emits the paired `prefers-reduced-motion: reduce` opt-out automatically. The asymmetric durations + the revealed gap are tunable through the `--set-button-reveal-*` token surface (declared on the `<button>` element — see [tokens.md](tokens.md)).
 
 ### List-constant overrides
 

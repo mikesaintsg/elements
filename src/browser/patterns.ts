@@ -2345,6 +2345,13 @@ export const STRUCTURAL_PAIRINGS: readonly StructuralPairing[] = [
 		reason:
 			'Menu / nav-list items are <a> link rows by default (the other valid menu-command shape per HTML spec).',
 	},
+	{
+		parent: 'button',
+		child: 'span',
+		kind: 'context',
+		reason:
+			'Reveal-on-hover label slot: the collapsing label of `button.reveal` / `button.reveal.end` is its plain child `<span>` (the documented single-<span> contract — no bespoke `.btn-label` class); the `> span` rule sizes the label 0fr grid track. Parallel to `form.row > label`.',
+	},
 ]
 
 /** Index for O(1) `parent > child` allowlist lookup. */

@@ -303,6 +303,19 @@ export const tokens = {
 		dropdownCaretSize: '--set-button-dropdown-caret-size',
 		dropdownCaretOpacity: '--set-button-dropdown-caret-opacity',
 		dropdownCaretOpenRotate: '--set-button-dropdown-caret-open-rotate',
+		// Reveal-on-hover modifier — opt-in via `<button class="reveal">`. The
+		// label track collapses at rest and expands on hover / focus where a
+		// fine pointer can engage (chrome in `modifiers/_local.scss § reveal`,
+		// gated behind `@media (hover: hover) and (pointer: fine)`; on touch the
+		// label is shown permanently). Asymmetric timing — entry is fast with no
+		// delay (`-in`), exit is slower with a delay (`-out`) so a pointer
+		// drifting across the button doesn't blank the label instantly.
+		reveal: {
+			gap: '--set-button-reveal-gap',
+			transitionDurationIn: '--set-button-reveal-transition-duration-in',
+			transitionDurationOut: '--set-button-reveal-transition-duration-out',
+			transitionDelayOut: '--set-button-reveal-transition-delay-out',
+		},
 	},
 
 	// Element-scoped tokens declared on `a` itself.

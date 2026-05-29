@@ -71,7 +71,7 @@ label instantly). Tunables: `--bs-btn-reveal-{in,out}-duration`,
 | mailbox feature | what it does | our plan |
 | --- | --- | --- |
 | `.btn-reveal` | always reveal-on-hover | **Phase 1** — base `button.reveal` |
-| `.btn-reveal-end` | label reveals to the inline-start (icon on the right) | **Phase 2** — `button.reveal-end` |
+| `.btn-reveal-end` | label reveals to the inline-start (icon on the right) | **Phase 2** — `button.reveal.end` (compose the single-word `.end` placement modifier, not a hyphenated name) |
 | `.btn-reveal-{sm,md,lg,xl}` | reveal only ≥ breakpoint; below, icon+label both shown | **Reframed** — see §5 (we defer responsive to Tailwind / container queries, not baked breakpoint classes) |
 | `.btn-reveal-group` exclusive hand-off | one-revealed-at-a-time with `:is(:hover,:focus-within)` + 220ms out-delay to prevent flicker | **Phase 3** — opt-in, the hardest part |
 
@@ -274,22 +274,52 @@ Once Phase 1 ships, adopt `reveal` in:
   / Sort collapse to glyphs on desktop, full labels on touch).
 
 A dedicated **ButtonPage** showcase section demonstrates: base reveal, reveal in
-a vertical rail, reveal-end (Phase 2), and the reduced-motion + touch fallbacks.
+a vertical rail, reveal.end (Phase 2), and the reduced-motion + touch fallbacks.
 
 ---
 
 ## 7. Phasing
 
-**Phase 1 — base `button.reveal` (ship first).**
+> **Status (shipped):** Phase 1 ✅ and Phase 2 ✅ are implemented and green.
+> Phase 3 is intentionally **deferred** per its own gating rule below (no
+> concrete consumer yet; building it now would expand the public API without
+> multi-site need — `AGENTS.md` §20). The `$end` parameter already threads
+> through the mixins, so Phase 3's `.show` / group work composes on top without
+> reshaping the contract.
+
+**Phase 1 — base `button.reveal` (ship first). ✅ Shipped.**
 Tokens (§3.3) + mixins (§3.4) + the capability-gated SCSS (§5) + `tokens.ts`
 parity + `guides/modifiers.md` element-local section + ButtonPage demo +
 `_local.test.ts` / `tokens.test.ts` green. Adopt in one collapsed-rail example.
+Landed as:
 
-**Phase 2 — `button.reveal-end`.**
-The `$end: true` mixin branch (label reveals to the inline-start). Small,
-additive; one extra token-free rule + a demo.
+- Tokens: `--set-button-reveal-{gap, transition-duration-in, transition-duration-out, transition-delay-out}`
+  on `:root` in [`elements/_button.scss`](src/styles/elements/_button.scss),
+  mirrored at `tokens.button.reveal.*` in [`tokens.ts`](src/browser/tokens.ts).
+- Mixins: `reveal` / `reveal-revealed` / `reveal-label` / `reveal-revealed-label`
+  in [`_mixins.scss`](src/styles/_mixins.scss) (documented in `guides/mixins.md`).
+- SCSS: `button.reveal` in [`modifiers/_local.scss`](src/styles/modifiers/_local.scss),
+  always-expanded baseline + collapse gated behind
+  `@media (hover: hover) and (pointer: fine)`.
+- Parity: `(button, span)` pairing added to `STRUCTURAL_PAIRINGS`
+  ([`patterns.ts`](src/browser/patterns.ts)); behavioural test
+  [`_reveal.test.ts`](tests/src/styles/modifiers/_reveal.test.ts).
+- Showcase: the `#button-reveal` section in
+  [`ButtonPage.vue`](app/browser/pages/ButtonPage.vue) (base reveal, collapsed
+  rail, reduced-motion + touch note).
 
-**Phase 3 — controlled `.show` + exclusive group.**
+**Phase 2 — `button.reveal.end`. ✅ Shipped.**
+Direction reuses the single-word `.end` placement modifier (the same
+`.start` / `.end` / `.top` / `.bottom` vocabulary `<aside>` / `<nav>` drawers
+and `<output>` toasts compose) rather than a hyphenated `.reveal-end` — so the
+framework keeps zero multi-word element-local modifiers. `button.reveal.end`
+drives the `$end: true` mixin branch (label reveals to the inline-start) and
+pins the label `<span>` to a definite leading cell so the icon auto-trails — no
+`(button, i)` pairing needed. `position-area` is a no-op on the non-popover
+button, so composing `.end` doesn't collide with the popover-placement rule.
+Demoed in the same ButtonPage section.
+
+**Phase 3 — controlled `.show` + exclusive group. ⏸ Deferred (by design).**
 `button.reveal.show` (always revealed, JS/state-controlled) and the
 `div.reveal-group` exclusive hand-off (`:is(:hover, :focus-within)` +
 extended out-delay). This is the hardest part and the one mailbox still has not
