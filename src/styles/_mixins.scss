@@ -342,7 +342,7 @@ $icons: (
 	} @else {
 		grid-template-columns: auto 1fr;
 	}
-	column-gap: var(--set-button-reveal-gap);
+	column-gap: var(--set-button-gap);
 
 	@include transition(
 		(
@@ -355,22 +355,46 @@ $icons: (
 /// Idle label slot — collapses inside the `0fr` track and fades out. The
 /// `min-inline-size: 0` is load-bearing (see the section note). Apply to the
 /// label child (`button.reveal > span`).
-@mixin reveal-label {
+///
+/// Slide-from-behind: the label starts tucked under the icon (which the host
+/// raises above it via `z-index`) and slides out as the track opens, so the
+/// glyph appears to emit its own label rather than the text just fading in
+/// place. `$end: true` mirrors the slide direction for the icon-trailing
+/// variant — the label hides behind the icon on the inline-END side.
+///
+/// @param {Boolean} $end [false] — mirror of `reveal($end)`'s direction.
+@mixin reveal-label($end: false) {
 	min-inline-size: 0;
 	overflow: hidden;
 	white-space: nowrap;
 	opacity: 0;
+	@if $end {
+		transform: translateX(80%);
+	} @else {
+		transform: translateX(-80%);
+	}
 
 	@include transition(
-		opacity var(--set-button-reveal-transition-duration-out)
-			var(--set-button-reveal-transition-delay-out)
+		(
+			opacity var(--set-button-reveal-transition-duration-out)
+				var(--set-button-reveal-transition-delay-out),
+			transform var(--set-button-reveal-transition-duration-out)
+				var(--set-button-reveal-transition-delay-out)
+		)
 	);
 }
 
-/// Revealed label slot — fades the collapsed label back in. Apply to the label
-/// child on the `:hover, :focus-visible` host.
+/// Revealed label slot — fades the collapsed label back in and slides it home
+/// (`translateX(0)`, direction-agnostic). Apply to the label child on the
+/// `:hover, :focus-visible` host.
 @mixin reveal-revealed-label {
 	opacity: 1;
+	transform: translateX(0);
 
-	@include transition(opacity var(--set-button-reveal-transition-duration-in));
+	@include transition(
+		(
+			opacity var(--set-button-reveal-transition-duration-in),
+			transform var(--set-button-reveal-transition-duration-in)
+		)
+	);
 }

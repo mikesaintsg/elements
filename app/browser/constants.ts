@@ -1343,7 +1343,7 @@ export const BUTTON_SNIPPET_DROPDOWN = `<!-- .dropdown paints a chevron-down car
   Details
 </button>`
 
-export const BUTTON_SNIPPET_REVEAL = `<!-- .reveal: icon at rest, label slides out on hover / focus. The
+export const BUTTON_SNIPPET_REVEAL = `<!-- .reveal: icon at rest, label slides out from behind the icon on hover / focus. The
      <span> label is ALWAYS in the DOM (always in the a11y tree); only
      its inline track collapses (0fr -> 1fr), no JS measuring. The icon
      is a fixed anchor — padding stays constant, so it never bounces. On
@@ -1360,6 +1360,21 @@ export const BUTTON_SNIPPET_REVEAL = `<!-- .reveal: icon at rest, label slides o
     <span>New invoice</span>
   </button>
   <button type="button" class="reveal subtle">
+    <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+    <span>Filter</span>
+  </button>
+</div>
+
+<!-- Group reveal: mark the bar [role="toolbar"] and every label opens
+     TOGETHER on hover / focus-within (a pure-CSS latch). All are open as
+     you traverse, so nothing shifts — the skip is gone, no overlay, no JS.
+     A true one-at-a-time latch would need JS to remember the last hover. -->
+<div role="toolbar" aria-label="Invoice actions" class="cluster">
+  <button type="button" class="reveal compact primary">
+    <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+    <span>New invoice</span>
+  </button>
+  <button type="button" class="reveal compact subtle">
     <i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
     <span>Filter</span>
   </button>

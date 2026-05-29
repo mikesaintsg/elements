@@ -9,7 +9,7 @@
  *   - 3 styles — bare (transparent), .subtle (Bootstrap tinted-bg pattern), .filled
  *   - 5 interactive states — :hover, :active/.active, :focus-visible, [disabled]/.disabled, .loading
  *   - .compact modifier (equal block + inline padding)
- *   - .reveal (+ .end direction) reveal-on-hover modifier (capability-gated label collapse)
+ *   - .reveal (+ .end direction, [role=toolbar] group reveal, slide-from-behind) reveal-on-hover modifier
  *   - Icon registry consumption (--set-icon-* via <i class="icon">)
  *   - Link-as-button via <a class="primary"> per §6.1 anchor-context contract
  *   - [role="group"] and [role="toolbar"] composition (components/_role-group.scss)
@@ -448,7 +448,7 @@ const logToggle = (e: Event): void => {
 	<section id="button-reveal">
 		<h2>Reveal on hover — <code>.reveal</code></h2>
 		<p>
-			An icon button whose text label is collapsed at rest and slides out on
+			An icon button whose text label is collapsed at rest and slides out from behind the icon on
 			<code>:hover</code> / <code>:focus-visible</code>. The label is the button's plain child
 			<code>&lt;span&gt;</code> (no bespoke label class); it is <strong>always</strong> in the DOM
 			and the accessibility tree, so the button is never an unlabelled glyph — only its inline grid
@@ -463,11 +463,12 @@ const logToggle = (e: Event): void => {
 
 		<h3>In a row</h3>
 		<p>
-			A horizontal action row. Because the expansion runs <em>along</em> the row, a growing button
-			nudges the buttons after it; the out-delay lets the one you just left linger so a
-			left-to-right pass stays smooth. Good for a short row — for a dense bar that must not shift at
-			all, the vertical rail (next) is reflow-free, or label icon-only buttons with a tooltip
-			(further below). Hover the buttons:
+			A horizontal action row. Because the expansion runs <em>along</em> the row, a single growing
+			button nudges the buttons after it — fine for a short row, but a left-to-right pass can feel
+			like it chases the next button away. To make a horizontal row <strong>shift-free</strong>,
+			mark the container <code>[role="toolbar"]</code> so the labels open <em>together</em> (next);
+			a vertical rail is also reflow-free, or label icon-only buttons with a tooltip. Hover the
+			buttons:
 		</p>
 		<div class="cluster">
 			<button type="button" class="reveal primary">
@@ -483,6 +484,35 @@ const logToggle = (e: Event): void => {
 				<span>Delete</span>
 			</button>
 			<button type="button" class="reveal subtle">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
+				<span>Filter</span>
+			</button>
+		</div>
+
+		<h3 class="mt-6">Group reveal — a <code>[role="toolbar"]</code> opens together</h3>
+		<p>
+			Mark the bar with the semantic <code>[role="toolbar"]</code> role and every reveal opens
+			<em>together</em> on hover — and on <code>:focus-within</code>, a pure-CSS latch that holds
+			the labels open while you tab through. Because all the buttons are already open as you move
+			across them, nothing shifts: the in-flow skip is gone with
+			<strong>no overlay and no JS</strong>. The trade is breadth — the whole bar widens while
+			engaged. (A true one-at-a-time latch would have to remember the last-hovered button, which
+			pure CSS can't do.) Hover anywhere in the bar:
+		</p>
+		<div role="toolbar" aria-label="Invoice actions" class="cluster">
+			<button type="button" class="reveal compact primary">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
+				<span>New invoice</span>
+			</button>
+			<button type="button" class="reveal compact success">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-check)"></i>
+				<span>Approve</span>
+			</button>
+			<button type="button" class="reveal compact danger">
+				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-close)"></i>
+				<span>Delete</span>
+			</button>
+			<button type="button" class="reveal compact subtle">
 				<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-filter)"></i>
 				<span>Filter</span>
 			</button>

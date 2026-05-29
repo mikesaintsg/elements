@@ -813,13 +813,13 @@
 	// stack: growing one item never moves the rows above or below it — the
 	// reflow-free ideal (the canonical navigation-rail use). In a HORIZONTAL row
 	// the expansion is PARALLEL to the flow: a growing button nudges the siblings
-	// after it, and the asymmetric out-delay lets the one you just left linger so
-	// a left-to-right pass stays smooth — fine for a short action row. (That
-	// neighbour shift is inherent to any in-flow inline-size animation, not a bug
-	// in this rule.) When a dense horizontal bar must not shift at all, keep the
-	// buttons icon-only and label them with a tooltip (`[popover=hint]` /
-	// `useTooltip`) — an overlay label has no flow footprint. See
-	// `guides/modifiers.md` § Element-local modifiers.
+	// after it. (That neighbour shift is inherent to any in-flow inline-size
+	// animation, not a bug in this rule.) For a horizontal action row, mark the
+	// container `[role="toolbar"]` so the labels open TOGETHER on hover / focus
+	// (the GROUP REVEAL below): once all are open, traversing between them shifts
+	// nothing — the skip is gone, with no overlay and no JS. Or keep the buttons
+	// icon-only and label them with a tooltip (`[popover=hint]` / `useTooltip`)
+	// for zero footprint. See `guides/modifiers.md` § Element-local modifiers.
 	//
 	// ICON ANCHOR — the icon never moves between collapsed and revealed because
 	// the button's padding is CONSTANT across both states (only the label track
@@ -829,6 +829,13 @@
 	// `--set-button-padding-inline: var(--set-button-padding-block)` as a
 	// CONSTANT (equal padding all round in both states), so the icon stays
 	// anchored — square glyph, no bounce.
+	//
+	// SLIDE-FROM-BEHIND — the label does not merely fade in: it starts tucked
+	// under the icon and slides out as the track opens (`reveal-label`'s
+	// `transform`), so the glyph appears to emit its own label. The icon is
+	// raised above the label (`button.reveal i { z-index }`) to mask the tucked
+	// start; `.end` mirrors the slide direction. Reduced-motion collapses this to
+	// the plain fade (the `transition()` mixin drops the animation).
 	//
 	// The label slot is the button's plain child `<span>` (no bespoke
 	// `.btn-label` class — the framework forbids them) and the icon is the
@@ -885,7 +892,7 @@
 	button.reveal {
 		display: inline-grid;
 		grid-template-columns: auto auto;
-		column-gap: var(--set-button-reveal-gap);
+		column-gap: var(--set-button-gap);
 		align-items: center;
 	}
 	button.reveal > span {
@@ -918,6 +925,14 @@
 		button.reveal > span {
 			@include reveal-label;
 		}
+		// Raise the icon above the label so the label can slide out from BEHIND
+		// the glyph (see `reveal-label`'s slide). Descendant selector, not `> i`
+		// — pure stacking, no structural `(button, i)` coupling to allow-list;
+		// the lone `<i class="icon">` child is the only match.
+		button.reveal i {
+			position: relative;
+			z-index: 1;
+		}
 		button.reveal:hover,
 		button.reveal:focus-visible {
 			@include reveal-revealed;
@@ -927,18 +942,56 @@
 			@include reveal-revealed-label;
 		}
 
-		// `.end` overrides ONLY the track ORDER ($end: true → the collapsed /
-		// expanded track sits on the inline-start). The label slot + the
-		// revealed-label opacity are direction-agnostic, so the
-		// `button.reveal {…} > span` rules above already cover `.end`; the
-		// higher specificity of `.reveal.end` (0,2,1) over `.reveal` (0,1,1)
-		// lets these win the track-order override.
+		// `.end` mirrors the track ORDER ($end: true → the collapsed / expanded
+		// track sits on the inline-start) AND the slide DIRECTION (its label
+		// hides behind the icon on the inline-END side, so it slides the other
+		// way). Opacity stays direction-agnostic. The higher specificity of
+		// `.reveal.end` over `.reveal` lets these win the overrides.
 		button.reveal.end {
 			@include reveal($end: true);
+		}
+		button.reveal.end > span {
+			@include reveal-label($end: true);
 		}
 		button.reveal.end:hover,
 		button.reveal.end:focus-visible {
 			@include reveal-revealed($end: true);
+		}
+		button.reveal.end:hover > span,
+		button.reveal.end:focus-visible > span {
+			@include reveal-revealed-label;
+		}
+
+		// ── Group reveal — a toolbar of reveals opens together ───────────────
+		// Hovering ANYWHERE in a reveal toolbar opens every label at once, and
+		// `:focus-within` does the same for the keyboard (a pure-CSS latch — the
+		// labels stay open while focus is inside the bar). Every button is
+		// already open as you traverse, so moving between them never shifts a
+		// sibling: the in-flow horizontal SKIP is gone with no overlay and no JS.
+		// The cost is breadth — the whole bar widens while engaged. A true
+		// one-at-a-time roving latch ("stay open until another is hovered") would
+		// have to REMEMBER the last-hovered button, which pure CSS cannot do; that
+		// needs a JS composable, deliberately out of scope.
+		//
+		// The toolbar is the semantic `[role="toolbar"]`, tag-anchored
+		// (`:is(div, menu, nav)`) so the rule HEAD stays a tag: this must live in
+		// the modifiers layer to override the collapse above by specificity, and
+		// that layer's charter disallows a bare role-attribute rule head. On touch
+		// (outside this media block) every label is simply shown permanently.
+		:is(div, menu, nav)[role='toolbar']:hover,
+		:is(div, menu, nav)[role='toolbar']:focus-within {
+			button.reveal {
+				@include reveal-revealed;
+			}
+			button.reveal > span {
+				@include reveal-revealed-label;
+			}
+			button.reveal.end {
+				@include reveal-revealed($end: true);
+			}
+			button.reveal.end > span {
+				@include reveal-revealed-label;
+			}
 		}
 	}
 }

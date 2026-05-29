@@ -13,9 +13,12 @@
 //  Contract under test:
 //    • Two-track inline-grid; the LABEL track collapses to 0fr at rest
 //      (`reveal` trails the label, `reveal.end` leads it) and the column-gap
-//      zeroes. The label `<span>` fades + clips.
+//      zeroes. The label `<span>` fades, clips, and slides out from behind the
+//      icon (which is raised above it via z-index).
 //    • `.compact` composes: padding stays equal inline/block AND constant
 //      across states, so the icon is a stable anchor (no bounce).
+//    • A `[role="toolbar"]` of reveals opens them together on hover /
+//      focus-within (pure-CSS group reveal — no JS latch).
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
@@ -82,6 +85,40 @@ describe('button.reveal.compact — square glyph, stable icon anchor', () => {
 	it('equalises inline and block padding (square; constant across states → no bounce)', () => {
 		const button = revealButton('reveal compact')
 		expect(style(button, 'padding-inline-start')).toBe(style(button, 'padding-block-start'))
+	})
+})
+
+// ── Slide-from-behind motion ────────────────────────────────────────────────
+//
+// The label does not merely fade: it transitions `transform` (slides out from
+// behind the icon, which is raised above it via z-index). Mirrored for `.end`.
+
+describe('button.reveal — slide-from-behind motion', () => {
+	it('transitions the label transform (slides, not just fades)', () => {
+		const label = labelOf(revealButton('reveal'))
+		expect(style(label, 'transition-property')).toContain('transform')
+		expect(style(label, 'transition-property')).toContain('opacity')
+	})
+
+	it('raises the icon above the label so the label slides out from behind it', () => {
+		const icon = revealButton('reveal').querySelector('i')
+		if (!icon) throw new Error('reveal button has no icon')
+		expect(style(icon, 'position')).toBe('relative')
+		expect(style(icon, 'z-index')).toBe('1')
+	})
+})
+
+// ── Group reveal — a toolbar opens its reveals together ──────────────────────
+//
+// `:hover` / `:focus-within` on a `[role="toolbar"]` reveal every child at
+// once (the pure-CSS group reveal — no JS latch). Declared-in-cascade
+// assertion: a real `:hover` can't be synthesised from a non-interactive
+// render, so the rules are asserted as present via `findRule`.
+
+describe('button.reveal — group reveal in a [role="toolbar"]', () => {
+	it('declares the toolbar group-reveal rules (hover + focus-within)', () => {
+		expect(findRule('[role="toolbar"]:hover button.reveal')).toBe(true)
+		expect(findRule('[role="toolbar"]:focus-within button.reveal')).toBe(true)
 	})
 })
 

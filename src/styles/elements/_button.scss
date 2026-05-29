@@ -42,6 +42,11 @@
 		--set-button-border-radius: var(--set-size-border-radius, var(--radius-md));
 		--set-button-padding-inline: var(--set-size-padding-inline, calc(var(--spacing) * 3));
 		--set-button-padding-block: var(--set-size-padding-block, calc(var(--spacing) * 1.5));
+		// Icon ↔ label gap — tokenised like every other element's gap and made
+		// size-aware via the size fallback (so `.small` / `.large` scale it
+		// alongside padding). `.reveal` reuses this for its revealed column-gap,
+		// so a revealed reveal button is identical to a static icon+text button.
+		--set-button-gap: var(--set-size-gap, calc(var(--spacing) * 2));
 		--set-button-font-size: var(--set-size-font-size, var(--text-sm));
 		--set-button-font-weight: var(--font-weight-normal);
 		--set-button-line-height: var(--leading-normal);
@@ -62,7 +67,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: calc(var(--spacing) * 2);
+		gap: var(--set-button-gap);
 		padding-inline: var(--set-button-padding-inline);
 		padding-block: var(--set-button-padding-block);
 		vertical-align: middle;
@@ -270,8 +275,9 @@
 			// consume, declared on `:root` so a consumer can retune the reveal
 			// feel at any cascade scope — same scope pattern as the caret tokens.
 			//
-			//   gap                       column-gap when the label is revealed
-			//                             (factor-aware via `--spacing`).
+			//   (The revealed column-gap is NOT a reveal-specific token — it reuses
+			//   `--set-button-gap` so a revealed reveal equals a static icon+text
+			//   button at every size. Only the timing below is reveal-specific:)
 			//   transition-duration-in    entry tween — fast, no delay
 			//                             (decelerate feel; reuses the framework
 			//                             150ms register, not the 250ms motion
@@ -282,7 +288,6 @@
 			//                             the button doesn't blank the label
 			//                             instantly (mailbox's `.btn-reveal`
 			//                             asymmetric-timing contract).
-			--set-button-reveal-gap: calc(var(--spacing) * 1.5);
 			--set-button-reveal-transition-duration-in: var(--set-transition-duration);
 			--set-button-reveal-transition-duration-out: calc(var(--set-transition-duration) * 1.4);
 			--set-button-reveal-transition-delay-out: 120ms;

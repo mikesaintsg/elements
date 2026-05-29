@@ -32,8 +32,8 @@
 | `palette-each($exclude: ())`                    | `@each` over `$variants` yielding the variant name to a content block.            |
 | `reveal($end: false)`                           | Idle (collapsed) reveal-on-hover grid — label track `0fr`, gap zero, exit timing. |
 | `reveal-revealed($end: false)`                  | Revealed (expanded) reveal grid — label track `1fr`, gap restored, entry timing.  |
-| `reveal-label`                                  | Idle reveal label slot — `min-inline-size: 0`, clip, fade out.                    |
-| `reveal-revealed-label`                         | Revealed reveal label slot — fade the collapsed label back in.                    |
+| `reveal-label($end: false)`                     | Idle reveal label slot — `min-inline-size: 0`, clip, fade + slide out from behind the icon (`.end` mirrors). |
+| `reveal-revealed-label`                         | Revealed reveal label slot — fade + slide the label home (`translateX(0)`).       |
 
 ---
 
@@ -219,7 +219,7 @@ Four mixins compose the contract — two for the host grid, two for the label sl
 
 #### `reveal($end: false)` / `reveal-revealed($end: false)`
 
-The host grid. `reveal($end)` is the idle (collapsed) state — the label track is `0fr`, the column gap is zero, and the EXIT transition (slower, delayed, so the label lingers as the pointer leaves) is applied. `reveal-revealed($end)` is the engaged state — the label track is `1fr`, the gap is restored from the reveal token surface, and the ENTRY transition (fast, no delay) is applied. The `0fr` → `1fr` track animation works without measuring the label in JS: the engine interpolates the `fr` track between the two rules. Pass `$end: true` to put the collapsed track on the inline-start (icon trailing).
+The host grid. `reveal($end)` is the idle (collapsed) state — the label track is `0fr`, the column gap is zero, and the EXIT transition (slower, delayed, so the label lingers as the pointer leaves) is applied. `reveal-revealed($end)` is the engaged state — the label track is `1fr`, the column gap is restored to the button's own icon↔label gap (`--set-button-gap`), and the ENTRY transition (fast, no delay) is applied. The `0fr` → `1fr` track animation works without measuring the label in JS: the engine interpolates the `fr` track between the two rules. Pass `$end: true` to put the collapsed track on the inline-start (icon trailing).
 
 ```scss
 @media (hover: hover) and (pointer: fine) {
@@ -233,9 +233,9 @@ The host grid. `reveal($end)` is the idle (collapsed) state — the label track 
 }
 ```
 
-#### `reveal-label` / `reveal-revealed-label`
+#### `reveal-label($end: false)` / `reveal-revealed-label`
 
-The label slot, applied to the button's child `<span>`. `reveal-label` is the idle slot — `min-inline-size: 0` (load-bearing: a label's min-content width otherwise fights the `0fr` track and the column never collapses), clipped overflow, and a fade-out on the exit timing. `reveal-revealed-label` fades the label back in on the entry timing.
+The label slot, applied to the button's child `<span>`. `reveal-label` is the idle slot — `min-inline-size: 0` (load-bearing: a label's min-content width otherwise fights the `0fr` track and the column never collapses), clipped overflow, and a fade **+ slide out from behind the icon** on the exit timing: the label starts tucked under the glyph (which the host raises above it in the stacking order) and slides into place, so `$end: true` mirrors the slide direction for the icon-trailing variant. `reveal-revealed-label` fades + slides the label home (`translateX(0)`) on the entry timing.
 
 ```scss
 @media (hover: hover) and (pointer: fine) {
@@ -249,7 +249,7 @@ The label slot, applied to the button's child `<span>`. `reveal-label` is the id
 }
 ```
 
-Every transition routes through `transition()`, so each mixin emits the paired `prefers-reduced-motion: reduce` opt-out automatically. The asymmetric durations + the revealed gap are tunable through the `--set-button-reveal-*` token surface (declared on the `<button>` element — see [tokens.md](tokens.md)).
+Every transition routes through `transition()`, so each mixin emits the paired `prefers-reduced-motion: reduce` opt-out automatically. The asymmetric durations are tunable through the `--set-button-reveal-*` token surface (declared on `<button>` — see [tokens.md](tokens.md)); the revealed column-gap reuses the button's own `--set-button-gap`, so a revealed reveal matches a static icon+text button at every size.
 
 ### List-constant overrides
 

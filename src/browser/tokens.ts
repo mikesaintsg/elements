@@ -254,6 +254,7 @@ export const tokens = {
 	size: {
 		paddingInline: '--set-size-padding-inline',
 		paddingBlock: '--set-size-padding-block',
+		gap: '--set-size-gap',
 		fontSize: '--set-size-font-size',
 		borderRadius: '--set-size-border-radius',
 	},
@@ -288,6 +289,7 @@ export const tokens = {
 		borderRadius: '--set-button-border-radius',
 		paddingInline: '--set-button-padding-inline',
 		paddingBlock: '--set-button-padding-block',
+		gap: '--set-button-gap',
 		fontSize: '--set-button-font-size',
 		fontWeight: '--set-button-font-weight',
 		lineHeight: '--set-button-line-height',
@@ -311,7 +313,6 @@ export const tokens = {
 		// delay (`-in`), exit is slower with a delay (`-out`) so a pointer
 		// drifting across the button doesn't blank the label instantly.
 		reveal: {
-			gap: '--set-button-reveal-gap',
 			transitionDurationIn: '--set-button-reveal-transition-duration-in',
 			transitionDurationOut: '--set-button-reveal-transition-duration-out',
 			transitionDelayOut: '--set-button-reveal-transition-delay-out',
