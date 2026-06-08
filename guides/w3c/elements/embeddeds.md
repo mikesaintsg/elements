@@ -841,34 +841,45 @@ Here a forum uses sandboxed `srcdoc` iframes to safely render untrusted user com
 
 ```html
 <article>
- <h1>I got my own magazine!</h1>
- <p>After much effort, I've finally found a publisher, and so now I
- have my own magazine! Isn't that awesome?! The first issue will come
- out in September, and we have articles about getting food, and about
- getting in boxes, it's going to be great!</p>
- <footer>
-  <p>Written by <a href="/users/cap">cap</a>, 1 hour ago.
- </footer>
- <article>
-  <footer> Thirteen minutes ago, <a href="/users/ch">ch</a> wrote: </footer>
-  <iframe sandbox srcdoc="<p>did you get a cover picture yet?"></iframe>
- </article>
- <article>
-  <footer> Nine minutes ago, <a href="/users/cap">cap</a> wrote: </footer>
-  <iframe sandbox srcdoc="<p>Yeah, you can see it <a href=&quot;/gallery?mode=cover&amp;amp;page=1&quot;>in my gallery</a>."></iframe>
- </article>
- <article>
-  <footer> Five minutes ago, <a href="/users/ch">ch</a> wrote: </footer>
-  <iframe sandbox srcdoc="<p>hey that's earl's table.
-<p>you should get earl&amp;amp;me on the next cover."></iframe>
- </article>
+	<h1>I got my own magazine!</h1>
+	<p>
+		After much effort, I've finally found a publisher, and so now I have my own magazine! Isn't that
+		awesome?! The first issue will come out in September, and we have articles about getting food,
+		and about getting in boxes, it's going to be great!
+	</p>
+	<footer>
+		<p>Written by <a href="/users/cap">cap</a>, 1 hour ago.</p>
+	</footer>
+	<article>
+		<footer>Thirteen minutes ago, <a href="/users/ch">ch</a> wrote:</footer>
+		<iframe sandbox srcdoc="<p>did you get a cover picture yet?"></iframe>
+	</article>
+	<article>
+		<footer>Nine minutes ago, <a href="/users/cap">cap</a> wrote:</footer>
+		<iframe
+			sandbox
+			srcdoc='<p>Yeah, you can see it <a href="/gallery?mode=cover&amp;amp;page=1">in my gallery</a>.'
+		></iframe>
+	</article>
+	<article>
+		<footer>Five minutes ago, <a href="/users/ch">ch</a> wrote:</footer>
+		<iframe
+			sandbox
+			srcdoc="<p>hey that's earl's table.
+<p>you should get earl&amp;amp;me on the next cover."
+		></iframe>
+	</article>
+</article>
 ```
 
 A simple third-party embed, a permission-scoped embed, a video embed, and a sandboxed user-content embed:
 
 ```html
-<iframe src="https://ads.example.com/?customerid=923513721&amp;format=banner"
-        width="468" height="60"></iframe>
+<iframe
+	src="https://ads.example.com/?customerid=923513721&amp;format=banner"
+	width="468"
+	height="60"
+></iframe>
 ```
 
 ```html
@@ -877,12 +888,15 @@ A simple third-party embed, a permission-scoped embed, a video embed, and a sand
 
 ```html
 <article>
- <header>
-  <p><img src="/usericons/1627591962735"> <b>Fred Flintstone</b></p>
-  <p><a href="/posts/3095182851" rel=bookmark>12:44</a> — <a href="#acl-3095182851">Private Post</a></p>
- </header>
- <p>Check out my new ride!</p>
- <iframe src="https://video.example.com/embed?id=92469812" allowfullscreen></iframe>
+	<header>
+		<p><img src="/usericons/1627591962735" /> <b>Fred Flintstone</b></p>
+		<p>
+			<a href="/posts/3095182851" rel="bookmark">12:44</a> —
+			<a href="#acl-3095182851">Private Post</a>
+		</p>
+	</header>
+	<p>Check out my new ride!</p>
+	<iframe src="https://video.example.com/embed?id=92469812" allowfullscreen></iframe>
 </article>
 ```
 
@@ -892,8 +906,10 @@ A simple third-party embed, a permission-scoped embed, a video embed, and a sand
 ```
 
 ```html
-<iframe sandbox="allow-same-origin allow-forms allow-scripts"
-        src="https://maps.example.com/embedded.html"></iframe>
+<iframe
+	sandbox="allow-same-origin allow-forms allow-scripts"
+	src="https://maps.example.com/embedded.html"
+></iframe>
 ```
 
 ### 4.8.6 The `embed` element
@@ -923,7 +939,7 @@ The `embed` element provides an integration point for an external application or
 Illustrative (canonical example at the spec link above):
 
 ```html
-<embed src="catgame.swf" quality="high">
+<embed src="catgame.swf" quality="high" />
 ```
 
 ### 4.8.7 The `object` element
@@ -952,8 +968,8 @@ The `object` element represents an external resource that, depending on its type
 
 ```html
 <figure>
- <object data="clock.html"></object>
- <figcaption>My HTML Clock</figcaption>
+	<object data="clock.html"></object>
+	<figcaption>My HTML Clock</figcaption>
 </figure>
 ```
 
@@ -983,16 +999,23 @@ The `video` element is used for playing videos or movies, and audio files with c
 
 ```html
 <video src="1.mp4" poster="1.jpg" type="video/mp4">
-<video src="2.mp4" type="video/mp4" loading="eager">
-<video src="3.mp4" type="video/mp4" loading="lazy">
+	<video src="2.mp4" type="video/mp4" loading="eager">
+		<video src="3.mp4" type="video/mp4" loading="lazy"></video>
+	</video>
+</video>
 ```
 
 ```html
 <video src="brave.webm">
- <track kind=subtitles src=brave.en.vtt srclang=en label="English">
- <track kind=captions src=brave.en.hoh.vtt srclang=en label="English for the Hard of Hearing">
- <track kind=subtitles src=brave.fr.vtt srclang=fr lang=fr label="Français">
- <track kind=subtitles src=brave.de.vtt srclang=de lang=de label="Deutsch">
+	<track kind="subtitles" src="brave.en.vtt" srclang="en" label="English" />
+	<track
+		kind="captions"
+		src="brave.en.hoh.vtt"
+		srclang="en"
+		label="English for the Hard of Hearing"
+	/>
+	<track kind="subtitles" src="brave.fr.vtt" srclang="fr" lang="fr" label="Français" />
+	<track kind="subtitles" src="brave.de.vtt" srclang="de" lang="de" label="Deutsch" />
 </video>
 ```
 
@@ -1022,8 +1045,10 @@ The `audio` element represents a sound or audio stream. It is a media element wh
 
 ```html
 <audio src="1.mp3" type="audio/mpeg" controls>
-<audio src="2.mp3" type="audio/mpeg" controls loading="eager">
-<audio src="3.mp3" type="audio/mpeg" controls loading="lazy">
+	<audio src="2.mp3" type="audio/mpeg" controls loading="eager">
+		<audio src="3.mp3" type="audio/mpeg" controls loading="lazy"></audio>
+	</audio>
+</audio>
 ```
 
 ### 4.8.10 The `track` element
@@ -1051,9 +1076,14 @@ The `audio` element represents a sound or audio stream. It is a media element wh
 The `track` element allows authors to specify explicit external timed text tracks for media elements (subtitles, captions, descriptions, chapters, metadata). It represents nothing on its own and must have no children; it must precede any flow content within its media-element parent.
 
 ```html
-<track kind=subtitles src=brave.en.vtt srclang=en label="English">
-<track kind=captions src=brave.en.hoh.vtt srclang=en label="English for the Hard of Hearing">
-<track kind=subtitles src=brave.fr.vtt srclang=fr lang=fr label="Français">
+<track kind="subtitles" src="brave.en.vtt" srclang="en" label="English" />
+<track
+	kind="captions"
+	src="brave.en.hoh.vtt"
+	srclang="en"
+	label="English for the Hard of Hearing"
+/>
+<track kind="subtitles" src="brave.fr.vtt" srclang="fr" lang="fr" label="Français" />
 ```
 
 ### 4.8.13 The `map` element
@@ -1082,12 +1112,17 @@ The `map` element, in conjunction with an `img` element and any `area` elements 
 
 ```html
 <map name="shapes">
- <area shape=rect coords="50,50,100,100"> <!-- the hole in the red box -->
- <area shape=rect coords="25,25,125,125" href="red.html" alt="Red box.">
- <area shape=circle coords="200,75,50" href="green.html" alt="Green circle.">
- <area shape=poly coords="325,25,262,125,388,125" href="blue.html" alt="Blue triangle.">
- <area shape=poly coords="450,25,435,60,400,75,435,90,450,125,465,90,500,75,465,60"
-       href="yellow.html" alt="Yellow star.">
+	<area shape="rect" coords="50,50,100,100" />
+	<!-- the hole in the red box -->
+	<area shape="rect" coords="25,25,125,125" href="red.html" alt="Red box." />
+	<area shape="circle" coords="200,75,50" href="green.html" alt="Green circle." />
+	<area shape="poly" coords="325,25,262,125,388,125" href="blue.html" alt="Blue triangle." />
+	<area
+		shape="poly"
+		coords="450,25,435,60,400,75,435,90,450,125,465,90,500,75,465,60"
+		href="yellow.html"
+		alt="Yellow star."
+	/>
 </map>
 ```
 
@@ -1118,10 +1153,10 @@ The `area` element represents either a hyperlink with some text and a correspond
 The canonical `area` examples appear inside the `map` example above; a complete image map wires the `map` to an image via `usemap`:
 
 ```html
-<img src="shapes.png" usemap="#shapes" alt="Pick a shape">
+<img src="shapes.png" usemap="#shapes" alt="Pick a shape" />
 <map name="shapes">
- <area shape=circle coords="200,75,50" href="green.html" alt="Green circle.">
- <area shape=rect coords="25,25,125,125" href="red.html" alt="Red box.">
+	<area shape="circle" coords="200,75,50" href="green.html" alt="Green circle." />
+	<area shape="rect" coords="25,25,125,125" href="red.html" alt="Red box." />
 </map>
 ```
 
@@ -1152,27 +1187,29 @@ The `canvas` element provides a resolution-dependent bitmap canvas, which can be
 A bitmap with an intrinsic size scaled down via CSS:
 
 ```html
-<canvas width=200 height=200 style=width:100px;height:100px>
+<canvas width="200" height="200" style="width:100px;height:100px"></canvas>
 ```
 
 Resetting the canvas bitmap by assigning its `width` (each reset clears the surface):
 
 ```javascript
 // canvas is a reference to a <canvas> element
-var context = canvas.getContext('2d');
-context.fillRect(0,0,50,50);
-canvas.setAttribute('width', '300'); // clears the canvas
-context.fillRect(0,100,50,50);
-canvas.width = canvas.width; // clears the canvas
-context.fillRect(100,0,50,50); // only this square remains
+var context = canvas.getContext('2d')
+context.fillRect(0, 0, 50, 50)
+canvas.setAttribute('width', '300') // clears the canvas
+context.fillRect(0, 100, 50, 50)
+canvas.width = canvas.width // clears the canvas
+context.fillRect(100, 0, 50, 50) // only this square remains
 ```
 
 Illustrative — the transparent fallback content (rendered when scripting/canvas is unsupported):
 
 ```html
 <canvas width="150" height="150">
- <p>Your browser does not support the canvas element.
- Here is a <a href="chart.png">static chart</a> instead.</p>
+	<p>
+		Your browser does not support the canvas element. Here is a
+		<a href="chart.png">static chart</a> instead.
+	</p>
 </canvas>
 ```
 
@@ -1201,7 +1238,12 @@ Illustrative — the transparent fallback content (rendered when scripting/canva
 HTML allows the MathML `math` element to be embedded directly in documents wherever embedded content is permitted. "The semantics of MathML elements are defined by MathML and other applicable specifications." A DOM-walking inspector treats `math` as embedded content and does **not** descend into the foreign subtree for HTML content-model checks.
 
 ```html
-<p>The energy is <math><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></math>.</p>
+<p>
+	The energy is
+	<math
+		><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></math
+	>.
+</p>
 ```
 
 ### 4.8.17 SVG — the `svg` element
@@ -1230,6 +1272,6 @@ HTML permits direct embedding of the SVG `svg` element wherever embedded content
 
 ```html
 <svg width="100" height="100" viewBox="0 0 100 100">
- <circle cx="50" cy="50" r="40" fill="currentColor"></circle>
+	<circle cx="50" cy="50" r="40" fill="currentColor"></circle>
 </svg>
 ```

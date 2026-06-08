@@ -388,44 +388,44 @@ In the following example, the page has several places where links are present, b
 
 ```html
 <body>
- <h1>The Wiki Center Of Exampland</h1>
- <nav>
-  <ul>
-   <li><a href="/">Home</a></li>
-   <li><a href="/events">Current Events</a></li>
-   ...more...
-  </ul>
- </nav>
- <article>
-  <header>
-   <h2>Demos in Exampland</h2>
-   <p>Written by A. N. Other.</p>
-  </header>
-  <nav>
-   <ul>
-    <li><a href="#public">Public demonstrations</a></li>
-    <li><a href="#destroy">Demolitions</a></li>
-    ...more...
-   </ul>
-  </nav>
-  <div>
-   <section id="public">
-    <h2>Public demonstrations</h2>
-    <p>...more...</p>
-   </section>
-   <section id="destroy">
-    <h2>Demolitions</h2>
-    <p>...more...</p>
-   </section>
-   ...more...
-  </div>
-  <footer>
-   <p><a href="?edit">Edit</a> | <a href="?delete">Delete</a> | <a href="?Rename">Rename</a></p>
-  </footer>
- </article>
- <footer>
-  <p><small>© copyright 1998 Exampland Emperor</small></p>
- </footer>
+	<h1>The Wiki Center Of Exampland</h1>
+	<nav>
+		<ul>
+			<li><a href="/">Home</a></li>
+			<li><a href="/events">Current Events</a></li>
+			...more...
+		</ul>
+	</nav>
+	<article>
+		<header>
+			<h2>Demos in Exampland</h2>
+			<p>Written by A. N. Other.</p>
+		</header>
+		<nav>
+			<ul>
+				<li><a href="#public">Public demonstrations</a></li>
+				<li><a href="#destroy">Demolitions</a></li>
+				...more...
+			</ul>
+		</nav>
+		<div>
+			<section id="public">
+				<h2>Public demonstrations</h2>
+				<p>...more...</p>
+			</section>
+			<section id="destroy">
+				<h2>Demolitions</h2>
+				<p>...more...</p>
+			</section>
+			...more...
+		</div>
+		<footer>
+			<p><a href="?edit">Edit</a> | <a href="?delete">Delete</a> | <a href="?Rename">Rename</a></p>
+		</footer>
+	</article>
+	<footer>
+		<p><small>© copyright 1998 Exampland Emperor</small></p>
+	</footer>
 </body>
 ```
 
@@ -433,45 +433,47 @@ In the following example, there are two `nav` elements, one for primary navigati
 
 ```html
 <body itemscope itemtype="http://schema.org/Blog">
- <header>
-  <h1>Wake up sheeple!</h1>
-  <p><a href="news.html">News</a> -
-     <a href="blog.html">Blog</a> -
-     <a href="forums.html">Forums</a></p>
-  <p>Last Modified: <span itemprop="dateModified">2009-04-01</span></p>
-  <nav>
-   <h2>Navigation</h2>
-   <ul>
-    <li><a href="articles.html">Index of all articles</a></li>
-    <li><a href="today.html">Things sheeple need to wake up for today</a></li>
-    <li><a href="successes.html">Sheeple we have managed to wake</a></li>
-   </ul>
-  </nav>
- </header>
- <main>
-  <article itemprop="blogPosts" itemscope itemtype="http://schema.org/BlogPosting">
-   <header>
-    <h2 itemprop="headline">My Day at the Beach</h2>
-   </header>
-   <div itemprop="articleBody">
-    <p>Today I went to the beach and had a lot of fun.</p>
-    ...more content...
-   </div>
-   <footer>
-    <p>Posted <time itemprop="datePublished" datetime="2009-10-10">Thursday</time>.</p>
-   </footer>
-  </article>
-  ...more blog posts...
- </main>
- <footer>
-  <p>Copyright ©
-   <span itemprop="copyrightYear">2010</span>
-   <span itemprop="copyrightHolder">The Example Company</span>
-  </p>
-  <p><a href="about.html">About</a> -
-     <a href="policy.html">Privacy Policy</a> -
-     <a href="contact.html">Contact Us</a></p>
- </footer>
+	<header>
+		<h1>Wake up sheeple!</h1>
+		<p>
+			<a href="news.html">News</a> - <a href="blog.html">Blog</a> - <a href="forums.html">Forums</a>
+		</p>
+		<p>Last Modified: <span itemprop="dateModified">2009-04-01</span></p>
+		<nav>
+			<h2>Navigation</h2>
+			<ul>
+				<li><a href="articles.html">Index of all articles</a></li>
+				<li><a href="today.html">Things sheeple need to wake up for today</a></li>
+				<li><a href="successes.html">Sheeple we have managed to wake</a></li>
+			</ul>
+		</nav>
+	</header>
+	<main>
+		<article itemprop="blogPosts" itemscope itemtype="http://schema.org/BlogPosting">
+			<header>
+				<h2 itemprop="headline">My Day at the Beach</h2>
+			</header>
+			<div itemprop="articleBody">
+				<p>Today I went to the beach and had a lot of fun.</p>
+				...more content...
+			</div>
+			<footer>
+				<p>Posted <time itemprop="datePublished" datetime="2009-10-10">Thursday</time>.</p>
+			</footer>
+		</article>
+		...more blog posts...
+	</main>
+	<footer>
+		<p>
+			Copyright ©
+			<span itemprop="copyrightYear">2010</span>
+			<span itemprop="copyrightHolder">The Example Company</span>
+		</p>
+		<p>
+			<a href="about.html">About</a> - <a href="policy.html">Privacy Policy</a> -
+			<a href="contact.html">Contact Us</a>
+		</p>
+	</footer>
 </body>
 ```
 
@@ -479,36 +481,40 @@ The `nav` element need not contain a list; it can contain other kinds of content
 
 ```html
 <nav>
- <h1>Navigation</h1>
- <p>You are on my home page. To the north lies <a href="/blog">my
- blog</a>, from whence the sounds of battle can be heard. To the east
- you can see a large mountain, upon which many <a
- href="/school">school papers</a> are littered. Far up thus mountain
- you can spy a little figure who appears to be me, desperately
- scribbling a <a href="/school/thesis">thesis</a>.</p>
- <p>To the west are several exits. One fun-looking exit is labeled <a
- href="https://games.example.com/">"games"</a>. Another more
- boring-looking exit is labeled <a
- href="https://isp.example.net/">ISP™</a>.</p>
- <p>To the south lies a dark and dank <a href="/about">contacts
- page</a>. Cobwebs cover its disused entrance, and at one point you
- see a rat run quickly out of the page.</p>
+	<h1>Navigation</h1>
+	<p>
+		You are on my home page. To the north lies <a href="/blog">my blog</a>, from whence the sounds
+		of battle can be heard. To the east you can see a large mountain, upon which many
+		<a href="/school">school papers</a> are littered. Far up thus mountain you can spy a little
+		figure who appears to be me, desperately scribbling a <a href="/school/thesis">thesis</a>.
+	</p>
+	<p>
+		To the west are several exits. One fun-looking exit is labeled
+		<a href="https://games.example.com/">"games"</a>. Another more boring-looking exit is labeled
+		<a href="https://isp.example.net/">ISP™</a>.
+	</p>
+	<p>
+		To the south lies a dark and dank <a href="/about">contacts page</a>. Cobwebs cover its disused
+		entrance, and at one point you see a rat run quickly out of the page.
+	</p>
 </nav>
 ```
 
 In the following example, the `nav` is used in an email application, to let the user switch folders:
 
 ```html
-<p><input type=button value="Compose" onclick="compose()"></p>
+<p><input type="button" value="Compose" onclick="compose()" /></p>
 <nav>
- <h1>Folders</h1>
- <ul>
-  <li> <a href="/inbox" onclick="return openFolder(this.href)">Inbox</a> <span class=count></span>
-  <li> <a href="/sent" onclick="return openFolder(this.href)">Sent</a>
-  <li> <a href="/drafts" onclick="return openFolder(this.href)">Drafts</a>
-  <li> <a href="/trash" onclick="return openFolder(this.href)">Trash</a>
-  <li> <a href="/customers" onclick="return openFolder(this.href)">Customers</a>
- </ul>
+	<h1>Folders</h1>
+	<ul>
+		<li>
+			<a href="/inbox" onclick="return openFolder(this.href)">Inbox</a> <span class="count"></span>
+		</li>
+		<li><a href="/sent" onclick="return openFolder(this.href)">Sent</a></li>
+		<li><a href="/drafts" onclick="return openFolder(this.href)">Drafts</a></li>
+		<li><a href="/trash" onclick="return openFolder(this.href)">Trash</a></li>
+		<li><a href="/customers" onclick="return openFolder(this.href)">Customers</a></li>
+	</ul>
 </nav>
 ```
 
@@ -540,99 +546,107 @@ The following example shows how an aside is used to mark up background material 
 
 ```html
 <aside>
- <h2>Switzerland</h2>
- <p>Switzerland, a land-locked country in the middle of geographic
- Europe, has not joined the geopolitical European Union, though it is
- a signatory to a number of European treaties.</p>
+	<h2>Switzerland</h2>
+	<p>
+		Switzerland, a land-locked country in the middle of geographic Europe, has not joined the
+		geopolitical European Union, though it is a signatory to a number of European treaties.
+	</p>
 </aside>
 ```
 
 The following example shows how an aside is used to mark up a pull quote in a longer article.
 
 ```html
-<p>He later joined a large company, continuing on the same work.
-<q>I love my job. People ask me what I do for fun when I'm not at
-work. But I'm paid to do my hobby, so I never know what to
-answer. Some people wonder what they would do if they didn't have to
-work... but I know what I would do, because I was unemployed for a
-year, and I filled that time doing exactly what I do now.</q></p>
+<p>
+	He later joined a large company, continuing on the same work.
+	<q
+		>I love my job. People ask me what I do for fun when I'm not at work. But I'm paid to do my
+		hobby, so I never know what to answer. Some people wonder what they would do if they didn't have
+		to work... but I know what I would do, because I was unemployed for a year, and I filled that
+		time doing exactly what I do now.</q
+	>
+</p>
 
 <aside>
- <q>People ask me what I do for fun when I'm not at work. But I'm
- paid to do my hobby, so I never know what to answer.</q>
+	<q
+		>People ask me what I do for fun when I'm not at work. But I'm paid to do my hobby, so I never
+		know what to answer.</q
+	>
 </aside>
 
-<p>Of course his work — or should that be hobby? —
-isn't his only passion. He also enjoys other pleasures.</p>
+<p>
+	Of course his work — or should that be hobby? — isn't his only passion. He also enjoys other
+	pleasures.
+</p>
 ```
 
 The following extract shows how `aside` can be used for blogrolls and other side content on a blog:
 
 ```html
 <body>
- <header>
-  <h1>My wonderful blog</h1>
-  <p>My tagline</p>
- </header>
- <aside>
-  <!-- this aside contains two sections that are tangentially related
+	<header>
+		<h1>My wonderful blog</h1>
+		<p>My tagline</p>
+	</header>
+	<aside>
+		<!-- this aside contains two sections that are tangentially related
   to the page, namely, links to other blogs, and links to blog posts
   from this blog -->
-  <nav>
-   <h2>My blogroll</h2>
-   <ul>
-    <li><a href="https://blog.example.com/">Example Blog</a>
-   </ul>
-  </nav>
-  <nav>
-   <h2>Archives</h2>
-   <ol reversed>
-    <li><a href="/last-post">My last post</a>
-    <li><a href="/first-post">My first post</a>
-   </ol>
-  </nav>
- </aside>
- <aside>
-  <!-- this aside is tangentially related to the page also, it
+		<nav>
+			<h2>My blogroll</h2>
+			<ul>
+				<li><a href="https://blog.example.com/">Example Blog</a></li>
+			</ul>
+		</nav>
+		<nav>
+			<h2>Archives</h2>
+			<ol reversed>
+				<li><a href="/last-post">My last post</a></li>
+				<li><a href="/first-post">My first post</a></li>
+			</ol>
+		</nav>
+	</aside>
+	<aside>
+		<!-- this aside is tangentially related to the page also, it
   contains twitter messages from the blog author -->
-  <h1>Twitter Feed</h1>
-  <blockquote cite="https://twitter.example.net/t31351234">
-   I'm on vacation, writing my blog.
-  </blockquote>
-  <blockquote cite="https://twitter.example.net/t31219752">
-   I'm going to go on vacation soon.
-  </blockquote>
- </aside>
- <article>
-  <!-- this is a blog post -->
-  <h2>My last post</h2>
-  <p>This is my last post.</p>
-  <footer>
-   <p><a href="/last-post" rel=bookmark>Permalink</a>
-  </footer>
- </article>
- <article>
-  <!-- this is also a blog post -->
-  <h2>My first post</h2>
-  <p>This is my first post.</p>
-  <aside>
-   <!-- this aside is about the blog post, since it's inside the
+		<h1>Twitter Feed</h1>
+		<blockquote cite="https://twitter.example.net/t31351234">
+			I'm on vacation, writing my blog.
+		</blockquote>
+		<blockquote cite="https://twitter.example.net/t31219752">
+			I'm going to go on vacation soon.
+		</blockquote>
+	</aside>
+	<article>
+		<!-- this is a blog post -->
+		<h2>My last post</h2>
+		<p>This is my last post.</p>
+		<footer>
+			<p><a href="/last-post" rel="bookmark">Permalink</a></p>
+		</footer>
+	</article>
+	<article>
+		<!-- this is also a blog post -->
+		<h2>My first post</h2>
+		<p>This is my first post.</p>
+		<aside>
+			<!-- this aside is about the blog post, since it's inside the
    <article> element; it would be wrong, for instance, to put the
    blogroll here, since the blogroll isn't really related to this post
    specifically, only to the page as a whole -->
-   <h2>Posting</h2>
-   <p>While I'm thinking about it, I wanted to say something about
-   posting. Posting is fun!</p>
-  </aside>
-  <footer>
-   <p><a href="/first-post" rel=bookmark>Permalink</a>
-  </footer>
- </article>
- <footer>
-  <p><a href="/archives">Archives</a> -
-   <a href="/about">About me</a> -
-   <a href="/copyright">Copyright</a></p>
- </footer>
+			<h2>Posting</h2>
+			<p>While I'm thinking about it, I wanted to say something about posting. Posting is fun!</p>
+		</aside>
+		<footer>
+			<p><a href="/first-post" rel="bookmark">Permalink</a></p>
+		</footer>
+	</article>
+	<footer>
+		<p>
+			<a href="/archives">Archives</a> - <a href="/about">About me</a> -
+			<a href="/copyright">Copyright</a>
+		</p>
+	</footer>
 </body>
 ```
 
@@ -697,8 +711,8 @@ Here the `hgroup` element is used to group a heading and a tagline:
 
 ```html
 <hgroup>
- <h1>The reality dysfunction</h1>
- <p>Space is not the only void</p>
+	<h1>The reality dysfunction</h1>
+	<p>Space is not the only void</p>
 </hgroup>
 ```
 
@@ -706,8 +720,8 @@ Here the `hgroup` element is used to group a heading and an alternative title:
 
 ```html
 <hgroup>
- <h1>Dr. Strangelove</h1>
- <p>Or: How I Learned to Stop Worrying and Love the Bomb</p>
+	<h1>Dr. Strangelove</h1>
+	<p>Or: How I Learned to Stop Worrying and Love the Bomb</p>
 </hgroup>
 ```
 
@@ -739,8 +753,8 @@ Here is a simple page, with a header containing a logo-style introduction and th
 
 ```html
 <header>
- <p>Welcome to...</p>
- <h1>Voidwars!</h1>
+	<p>Welcome to...</p>
+	<h1>Voidwars!</h1>
 </header>
 ```
 
@@ -748,16 +762,19 @@ The `header` element is not limited to the page header; it can be the header of 
 
 ```html
 <header>
- <hgroup>
-  <h1>Fullscreen API</h1>
-  <p>Living Standard — Last Updated 19 October 2015<p>
- </hgroup>
- <dl>
-  <dt>Participate:</dt>
-  <dd><a href="https://github.com/whatwg/fullscreen">GitHub whatwg/fullscreen</a></dd>
-  <dt>Commits:</dt>
-  <dd><a href="https://github.com/whatwg/fullscreen/commits">GitHub whatwg/fullscreen/commits</a></dd>
- </dl>
+	<hgroup>
+		<h1>Fullscreen API</h1>
+		<p>Living Standard — Last Updated 19 October 2015</p>
+		<p></p>
+	</hgroup>
+	<dl>
+		<dt>Participate:</dt>
+		<dd><a href="https://github.com/whatwg/fullscreen">GitHub whatwg/fullscreen</a></dd>
+		<dt>Commits:</dt>
+		<dd>
+			<a href="https://github.com/whatwg/fullscreen/commits">GitHub whatwg/fullscreen/commits</a>
+		</dd>
+	</dl>
 </header>
 ```
 
@@ -765,20 +782,20 @@ In this example the page header carries the site heading, navigation, and some i
 
 ```html
 <body>
- <header>
-  <h1>Little Green Guys With Guns</h1>
-  <nav>
-   <ul>
-    <li><a href="/games">Games</a>
-    <li><a href="/forum">Forum</a>
-    <li><a href="/download">Download</a>
-   </ul>
-  </nav>
-  <h2>Important News</h2>
-  <p>To play today's games you will need to update your client.</p>
-  <h2>Games</h2>
- </header>
- <p>You have three active games:</p>
+	<header>
+		<h1>Little Green Guys With Guns</h1>
+		<nav>
+			<ul>
+				<li><a href="/games">Games</a></li>
+				<li><a href="/forum">Forum</a></li>
+				<li><a href="/download">Download</a></li>
+			</ul>
+		</nav>
+		<h2>Important News</h2>
+		<p>To play today's games you will need to update your client.</p>
+		<h2>Games</h2>
+	</header>
+	<p>You have three active games:</p>
 </body>
 ```
 
@@ -811,16 +828,16 @@ Here is a page with two footers, one at the top and one at the bottom, with the 
 ```html
 <footer><a href="../">Back to index...</a></footer>
 <hgroup>
- <h1>Lorem ipsum</h1>
- <p>The ipsum of all lorems</p>
+	<h1>Lorem ipsum</h1>
+	<p>The ipsum of all lorems</p>
 </hgroup>
-<p>A dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex
-ea commodo consequat. Duis aute irure dolor in reprehenderit in
-voluptate velit esse cillum dolore eu fugiat nulla
-pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-culpa qui officia deserunt mollit anim id est laborum.</p>
+<p>
+	A dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
+	dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+	aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+	cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+	culpa qui officia deserunt mollit anim id est laborum.
+</p>
 <footer><a href="../">Back to index...</a></footer>
 ```
 
@@ -866,29 +883,33 @@ Some site designs have what is sometimes referred to as a "fat footer" — a foo
 
 ```html
 <footer>
- <nav>
-  <section>
-   <h1>Articles</h1>
-   <p><img src="images/somersaults.jpeg" alt=""> Go to the gym with
-   our somersaults class! Our teacher Jim takes you through the paces
-   in this two-part article. <a href="articles/somersaults/1">Part
-   1</a> · <a href="articles/somersaults/2">Part 2</a></p>
-   <p><img src="images/kindplus.jpeg"> Tired of walking on the edge of
-   a clif<!-- sic -->? Our guest writer Lara shows you how to bumble
-   your way through the bars. <a href="articles/kindplus/1">Read
-   more...</a></p>
-   <p><img src="images/crisps.jpeg"> The chips are down, now all
-   that's left is a potato. What can you do with it? <a
-   href="articles/crisps/1">Read more...</a></p>
-  </section>
-  <ul>
-   <li> <a href="/about">About us...</a>
-   <li> <a href="/feedback">Send feedback!</a>
-   <li> <a href="/sitemap">Sitemap</a>
-  </ul>
- </nav>
- <p><small>Copyright © 2015 The Snacker —
- <a href="/tos">Terms of Service</a></small></p>
+	<nav>
+		<section>
+			<h1>Articles</h1>
+			<p>
+				<img src="images/somersaults.jpeg" alt="" /> Go to the gym with our somersaults class! Our
+				teacher Jim takes you through the paces in this two-part article.
+				<a href="articles/somersaults/1">Part 1</a> · <a href="articles/somersaults/2">Part 2</a>
+			</p>
+			<p>
+				<img src="images/kindplus.jpeg" /> Tired of walking on the edge of a clif<!-- sic -->? Our
+				guest writer Lara shows you how to bumble your way through the bars.
+				<a href="articles/kindplus/1">Read more...</a>
+			</p>
+			<p>
+				<img src="images/crisps.jpeg" /> The chips are down, now all that's left is a potato. What
+				can you do with it? <a href="articles/crisps/1">Read more...</a>
+			</p>
+		</section>
+		<ul>
+			<li><a href="/about">About us...</a></li>
+			<li><a href="/feedback">Send feedback!</a></li>
+			<li><a href="/sitemap">Sitemap</a></li>
+		</ul>
+	</nav>
+	<p>
+		<small>Copyright © 2015 The Snacker — <a href="/tos">Terms of Service</a></small>
+	</p>
 </footer>
 ```
 
@@ -919,20 +940,19 @@ The `address` element represents the contact information for its nearest `articl
 The contact information for a document's author does not need to be limited to email addresses; it could also include other contact information, such as a postal address or telephone number. The following shows two typical uses:
 
 ```html
-<ADDRESS>
- <A href="../People/Raggett/">Dave Raggett</A>,
- <A href="../People/Arnaud/">Arnaud Le Hors</A>,
- contact persons for the <A href="Activity">W3C HTML Activity</A>
-</ADDRESS>
+<address>
+	<a href="../People/Raggett/">Dave Raggett</a>, <a href="../People/Arnaud/">Arnaud Le Hors</a>,
+	contact persons for the <a href="Activity">W3C HTML Activity</a>
+</address>
 ```
 
 ```html
 <footer>
- <address>
-  For more details, contact
-  <a href="mailto:js@example.com">John Smith</a>.
- </address>
- <p><small>© copyright 2038 Example Corp.</small></p>
+	<address>
+		For more details, contact
+		<a href="mailto:js@example.com">John Smith</a>.
+	</address>
+	<p><small>© copyright 2038 Example Corp.</small></p>
 </footer>
 ```
 
@@ -944,18 +964,18 @@ Authors should use heading rank to convey document structure, not presentation, 
 
 ### 4.3.12 Usage summary
 
-| Element   | Purpose |
-| --------- | ------- |
-| `body`    | The document's contents. |
+| Element   | Purpose                                                              |
+| --------- | -------------------------------------------------------------------- |
+| `body`    | The document's contents.                                             |
 | `article` | A complete, self-contained, independently distributable composition. |
-| `section` | A generic thematic grouping of content, typically with a heading. |
-| `nav`     | A major block of navigation links. |
-| `aside`   | Content tangentially related to the surrounding content. |
-| `h1`–`h6` | A section heading, with rank given by the digit. |
-| `hgroup`  | A heading grouped with related subheading/tagline `p` content. |
-| `header`  | Introductory or navigational aids for its section. |
-| `footer`  | A footer (authorship, copyright, related links) for its section. |
-| `address` | Contact information for the nearest `article`/`body` ancestor. |
+| `section` | A generic thematic grouping of content, typically with a heading.    |
+| `nav`     | A major block of navigation links.                                   |
+| `aside`   | Content tangentially related to the surrounding content.             |
+| `h1`–`h6` | A section heading, with rank given by the digit.                     |
+| `hgroup`  | A heading grouped with related subheading/tagline `p` content.       |
+| `header`  | Introductory or navigational aids for its section.                   |
+| `footer`  | A footer (authorship, copyright, related links) for its section.     |
+| `address` | Contact information for the nearest `article`/`body` ancestor.       |
 
 #### 4.3.12.1 Article or section?
 

@@ -44,9 +44,9 @@ tests/app/browser/examples/
 
 ```vue
 <template>
-  <slot />
-  <menu class="examples-toolbar" role="toolbar">…</menu>
-  <Teleport to="body"><dialog>…</dialog></Teleport>
+	<slot />
+	<menu class="examples-toolbar" role="toolbar">…</menu>
+	<Teleport to="body"><dialog>…</dialog></Teleport>
 </template>
 ```
 
@@ -54,21 +54,31 @@ tests/app/browser/examples/
 
 ```vue
 <template>
-  <nav id="<example>-sidebar" :popover="isMobile ? 'auto' : undefined" class="start" aria-label="Primary">
-    <header>…brand band…</header>
-    <menu>…nav items…</menu>
-    <footer>…account row…</footer>
-  </nav>
+	<nav
+		id="<example>-sidebar"
+		:popover="isMobile ? 'auto' : undefined"
+		class="start"
+		aria-label="Primary"
+	>
+		<header>…brand band…</header>
+		<menu>…nav items…</menu>
+		<footer>…account row…</footer>
+	</nav>
 
-  <header>…topbar…</header>
+	<header>…topbar…</header>
 
-  <main style="--set-main-padding-inline: 1rem; --set-main-padding-block: 1rem; --set-main-gap: 1rem">…content…</main>
+	<main
+		style="--set-main-padding-inline: 1rem; --set-main-padding-block: 1rem; --set-main-gap: 1rem"
+	>
+		…content…
+	</main>
 
-  <aside v-if="isMobile" id="<example>-actions" popover class="end" aria-label="Actions">…</aside>
+	<aside v-if="isMobile" id="<example>-actions" popover class="end" aria-label="Actions">…</aside>
 </template>
 ```
 
 The framework's `body:has(main) > * > nav` / `> header` / `> main` / `> aside` selectors match through the single `#app` `display: contents` hop and paint:
+
 - `<nav>` sidebar inline-size, border, popover drawer chrome
 - `<nav> > <header>` drawer/rail brand band
 - `<nav> > <footer>` drawer/rail account band (pinned to bottom via `margin-block-start: auto`)
@@ -86,8 +96,8 @@ The framework's `body:has(main) > * > nav` / `> header` / `> main` / `> aside` s
 - **`--set-aside-drawer-padding-inline: 0`** on a sidebar-style `<nav>` overrides the framework's 16px drawer gutter when the nav items already own their own padding-inline.
 - **Sidebar drawer body — override the flex-grow.** The framework rule `:is(aside, nav)[popover] > :not(:where(header, footer)) { flex: 1 1 auto }` stretches body children, which scatters items in a multi-section nav. Pin them to natural height:
   ```css
-  nav#<example>-sidebar > :where(menu, h6) {
-    flex: 0 0 auto;
+  nav#<example > -sidebar > :where(menu, h6) {
+  	flex: 0 0 auto;
   }
   ```
   Footer's `margin-block-start: auto` then pushes the account row to the bottom (Slack/Discord/Linear shape).
@@ -99,21 +109,21 @@ The framework's `body:has(main) > * > nav` / `> header` / `> main` / `> aside` s
 
 ### Translation table (unchanged from original spec)
 
-| Mailbox idiom | Elements port |
-|---|---|
-| `.btn`, `.btn-primary` | `<button class="primary">` |
-| `.btn-group[role=toolbar]` | `<menu role="toolbar">` |
-| `.dropdown` + `.dropdown-menu` | `useMenu` + `<button popovertarget>` + `<menu popover>` |
-| `.modal` | `<dialog>` + `useDialog` |
-| `.offcanvas-md offcanvas-start` | `<nav :popover>` at body-shell position |
-| `.offcanvas-md offcanvas-end` | `<aside v-if="isMobile" popover class="end">` |
-| `.navbar-row`, `.navbar-expand-md` | `<header>` at body-shell position |
-| `.bi bi-*` | `<i class="icon" style="--icon: var(--set-icon-X)">` |
-| `.btn-close` | `<button class="subtle compact" aria-label="Close">` |
-| `.card` | `<article>` |
+| Mailbox idiom                              | Elements port                                                            |
+| ------------------------------------------ | ------------------------------------------------------------------------ |
+| `.btn`, `.btn-primary`                     | `<button class="primary">`                                               |
+| `.btn-group[role=toolbar]`                 | `<menu role="toolbar">`                                                  |
+| `.dropdown` + `.dropdown-menu`             | `useMenu` + `<button popovertarget>` + `<menu popover>`                  |
+| `.modal`                                   | `<dialog>` + `useDialog`                                                 |
+| `.offcanvas-md offcanvas-start`            | `<nav :popover>` at body-shell position                                  |
+| `.offcanvas-md offcanvas-end`              | `<aside v-if="isMobile" popover class="end">`                            |
+| `.navbar-row`, `.navbar-expand-md`         | `<header>` at body-shell position                                        |
+| `.bi bi-*`                                 | `<i class="icon" style="--icon: var(--set-icon-X)">`                     |
+| `.btn-close`                               | `<button class="subtle compact" aria-label="Close">`                     |
+| `.card`                                    | `<article>`                                                              |
 | `.card-header / .card-body / .card-footer` | `<article> > <header>`, `<article> body content`, `<article> > <footer>` |
-| `.list-group` | `<menu>` inside `<article>` |
-| `.fade .show` | drop — native `<dialog>` / `<aside popover>` lifecycle |
+| `.list-group`                              | `<menu>` inside `<article>`                                              |
+| `.fade .show`                              | drop — native `<dialog>` / `<aside popover>` lifecycle                   |
 
 ### What's NOT in the framework (and stays as scoped CSS in each example)
 
@@ -131,6 +141,7 @@ The framework's `body:has(main) > * > nav` / `> header` / `> main` / `> aside` s
 ## Toolbar button uniformity (`examples.css`)
 
 All `.examples-toolbar > li > button` get:
+
 - `border-radius: 999px` (pill / circle)
 - `min-block-size: 1.75rem` (28px uniform height)
 - `font-size: 0.8125rem`
@@ -142,11 +153,13 @@ Primary CTA: `padding-block: 0.25rem; padding-inline: 0.875rem; gap: 0.375rem` (
 ## Test infrastructure (already in place from Dashboard slice)
 
 Modifications to `tests/app/browser/pages.test.ts` (commit `8f98efd`):
+
 - `rawSources` glob extended to also pick up `app/browser/examples/*Page.vue` (only Page wrappers; the shell + bare example components are not routes).
 - `nonNamespacedSelectors(css, prefixes?)` is parameterized; `pages.test.ts` enforces `.showcase-` only in `showcase.css` and `.examples-` only in `examples.css`.
 - `pageNames` is the combined set; `showcasePageNames` is the bare-element set (used for structural/style checks that don't apply to example pages).
 
 Modifications to `tests/app/browser/semantics.test.ts`:
+
 - Vacuous-pass page-count guard switched from `.toBe(44)` to `.toBeGreaterThanOrEqual(45)` so adding pages doesn't require a constant bump.
 
 Both `parity.test.ts` and `semantics.test.ts` auto-discover new `*Page` barrel exports and Inspector-audit them — no per-example wiring needed.
@@ -159,6 +172,7 @@ Both `parity.test.ts` and `semantics.test.ts` auto-discover new `*Page` barrel e
 - Re-modifying `pages.test.ts` / `semantics.test.ts` / `guides/showcase.md` (test infra knows about examples).
 
 Each new example just needs:
+
 1. `<Name>Example.vue` + `<Name>ExamplePage.vue` (two new files)
 2. Entry in `examples.ts` metadata
 3. Entry in `router.ts` (one new const + array append)

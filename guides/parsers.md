@@ -6,66 +6,66 @@
 
 The parsers module is a flat library of pure, single-purpose functions that take an `unknown` (or a `Record`, or a raw `string`) and return a typed value — or `undefined` when the input doesn't fit. There is no state, no buffering, no lifecycle: every call is a fresh, total function of its argument.
 
-Guards narrow, parsers coerce, contracts derive — see [validators.md](validators.md) for the full three-surface framing. This module is the *flat* counterpart to the shape-driven DSL: hand-reachable primitives for the everyday "I have an `unknown` field, give me a `string` or `undefined`" job, with no shape declaration. The contract compilers reuse these primitives internally for coercion, but they are an independent, directly-importable surface. Reach for a contract when one shape feeds schema + guard + parser + generator; reach for these when you just need to pull a typed value out of request bodies, query strings, or JSON blobs.
+Guards narrow, parsers coerce, contracts derive — see [validators.md](validators.md) for the full three-surface framing. This module is the _flat_ counterpart to the shape-driven DSL: hand-reachable primitives for the everyday "I have an `unknown` field, give me a `string` or `undefined`" job, with no shape declaration. The contract compilers reuse these primitives internally for coercion, but they are an independent, directly-importable surface. Reach for a contract when one shape feeds schema + guard + parser + generator; reach for these when you just need to pull a typed value out of request bodies, query strings, or JSON blobs.
 
 ### Primitive parsers
 
 `unknown` in, narrowed primitive (or `undefined`) out.
 
-| Parser            | Input → Output         | Behavior                                                                                                  |
-| ----------------- | ---------------------- | --------------------------------------------------------------------------------------------------------- |
-| `parseString()`   | `unknown` → `string?`  | Strings only; trims; an empty / whitespace-only result is `undefined`.                                     |
-| `parseNumber()`   | `unknown` → `number?`  | Numbers or numeric strings; rejects `NaN` / `±Infinity` and empty / whitespace strings.                    |
-| `parseInteger()`  | `unknown` → `number?`  | `parseNumber()` then `Number.isInteger`; floats and non-finite values are `undefined`.                     |
-| `parseBoolean()`  | `unknown` → `boolean?` | Actual booleans, the strings `"true"` / `"false"`, the strings `"1"` / `"0"`, or the numbers `1` / `0`.    |
+| Parser           | Input → Output         | Behavior                                                                                                |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------------- |
+| `parseString()`  | `unknown` → `string?`  | Strings only; trims; an empty / whitespace-only result is `undefined`.                                  |
+| `parseNumber()`  | `unknown` → `number?`  | Numbers or numeric strings; rejects `NaN` / `±Infinity` and empty / whitespace strings.                 |
+| `parseInteger()` | `unknown` → `number?`  | `parseNumber()` then `Number.isInteger`; floats and non-finite values are `undefined`.                  |
+| `parseBoolean()` | `unknown` → `boolean?` | Actual booleans, the strings `"true"` / `"false"`, the strings `"1"` / `"0"`, or the numbers `1` / `0`. |
 
 ### Structural parsers
 
-| Parser                    | Input → Output                          | Behavior                                                                                              |
-| ------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `parseRecord()`           | `unknown` → `Record<string, unknown>?`  | Plain objects only (arrays / `null` / primitives → `undefined`); returns the same reference.           |
+| Parser                    | Input → Output                           | Behavior                                                                                                                            |
+| ------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `parseRecord()`           | `unknown` → `Record<string, unknown>?`   | Plain objects only (arrays / `null` / primitives → `undefined`); returns the same reference.                                        |
 | `parseArray()`            | `unknown`, `Guard<T>?` → `readonly T[]?` | Non-arrays → `undefined`. No guard: shallow copy. With a guard: returns the input array iff every element passes, else `undefined`. |
-| `parseJsonSchema()`       | `unknown` → `JsonSchema?`               | Validates an arbitrary JSON Schema node; invalid → `undefined`.                                        |
-| `parseJsonSchemaObject()` | `unknown` → `JsonSchemaObject?`         | Validates an object-root JSON Schema; non-object schemas → `undefined`.                                |
-| `matchesShape()`          | `unknown`, `ContractShape` → type guard | Narrows a value against a compiled shape guard (`value is T`).                                         |
-| `parseShape()`            | `unknown`, `ContractShape` → `T?`       | Runs the shape's compiled parser, then re-validates; returns the parsed value or `undefined`.          |
+| `parseJsonSchema()`       | `unknown` → `JsonSchema?`                | Validates an arbitrary JSON Schema node; invalid → `undefined`.                                                                     |
+| `parseJsonSchemaObject()` | `unknown` → `JsonSchemaObject?`          | Validates an object-root JSON Schema; non-object schemas → `undefined`.                                                             |
+| `matchesShape()`          | `unknown`, `ContractShape` → type guard  | Narrows a value against a compiled shape guard (`value is T`).                                                                      |
+| `parseShape()`            | `unknown`, `ContractShape` → `T?`        | Runs the shape's compiled parser, then re-validates; returns the parsed value or `undefined`.                                       |
 
 ### Record field parsers
 
 Each reads `record[key]` and delegates to the matching primitive/structural parser — same coercion, same `undefined`-on-miss-or-mismatch semantics.
 
-| Parser                | Input → Output                                   | Delegates to                                |
-| --------------------- | ------------------------------------------------ | ------------------------------------------- |
-| `parseStringField()`  | `Record`, `key` → `string?`                      | `parseString(record[key])`                  |
-| `parseNumberField()`  | `Record`, `key` → `number?`                      | `parseNumber(record[key])`                  |
-| `parseIntegerField()` | `Record`, `key` → `number?`                      | `parseInteger(record[key])`                 |
-| `parseBooleanField()` | `Record`, `key` → `boolean?`                     | `parseBoolean(record[key])`                 |
-| `parseRecordField()`  | `Record`, `key` → `Record<string, unknown>?`     | `parseRecord(record[key])`                  |
-| `parseArrayField()`   | `Record`, `key`, `Guard<T>?` → `readonly T[]?`   | `parseArray(record[key], guard)`            |
+| Parser                | Input → Output                                 | Delegates to                     |
+| --------------------- | ---------------------------------------------- | -------------------------------- |
+| `parseStringField()`  | `Record`, `key` → `string?`                    | `parseString(record[key])`       |
+| `parseNumberField()`  | `Record`, `key` → `number?`                    | `parseNumber(record[key])`       |
+| `parseIntegerField()` | `Record`, `key` → `number?`                    | `parseInteger(record[key])`      |
+| `parseBooleanField()` | `Record`, `key` → `boolean?`                   | `parseBoolean(record[key])`      |
+| `parseRecordField()`  | `Record`, `key` → `Record<string, unknown>?`   | `parseRecord(record[key])`       |
+| `parseArrayField()`   | `Record`, `key`, `Guard<T>?` → `readonly T[]?` | `parseArray(record[key], guard)` |
 
 ### Enum parsers
 
-| Parser              | Input → Output                                   | Behavior                                                                          |
-| ------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------- |
-| `parseEnum()`       | `unknown`, `readonly T[]` → `T?`                 | String only; **trims** then matches exactly. **Case-sensitive** — `"Admin"` ≠ `"admin"`. Non-match / non-string → `undefined`. |
-| `parseEnumField()`  | `Record`, `key`, `readonly T[]` → `T?`           | `parseEnum(record[key], allowed)`.                                                |
+| Parser             | Input → Output                         | Behavior                                                                                                                       |
+| ------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `parseEnum()`      | `unknown`, `readonly T[]` → `T?`       | String only; **trims** then matches exactly. **Case-sensitive** — `"Admin"` ≠ `"admin"`. Non-match / non-string → `undefined`. |
+| `parseEnumField()` | `Record`, `key`, `readonly T[]` → `T?` | `parseEnum(record[key], allowed)`.                                                                                             |
 
 ### JSON parsers
 
-| Parser           | Input → Output                       | Behavior                                                                              |
-| ---------------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
-| `parseJson()`    | `string` → `unknown`                 | `JSON.parse` wrapped in try/catch; any parse error → `undefined` (never throws). **Ambiguity:** `undefined` is returned both for invalid JSON and for a parse that legitimately yields no value — but JSON has no `undefined`, so `'null'`→`null` is distinguishable while `'undefined'` (invalid JSON) is not. |
-| `parseJsonAs()`  | `string`, `Guard<T>` → `T?`          | `parseJson()` then applies the guard; invalid JSON or failed guard → `undefined`.      |
+| Parser          | Input → Output              | Behavior                                                                                                                                                                                                                                                                                                        |
+| --------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parseJson()`   | `string` → `unknown`        | `JSON.parse` wrapped in try/catch; any parse error → `undefined` (never throws). **Ambiguity:** `undefined` is returned both for invalid JSON and for a parse that legitimately yields no value — but JSON has no `undefined`, so `'null'`→`null` is distinguishable while `'undefined'` (invalid JSON) is not. |
+| `parseJsonAs()` | `string`, `Guard<T>` → `T?` | `parseJson()` then applies the guard; invalid JSON or failed guard → `undefined`.                                                                                                                                                                                                                               |
 
 ### Coercion parsers
 
 Looser than the strict primitive parsers — they accept cross-type input where it's unambiguous.
 
-| Parser            | Input → Output                          | Behavior                                                                                            |
-| ----------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `coerceString()`  | `unknown` → `string?`                   | Strings pass through; **finite** numbers become `String(value)`; everything else → `undefined`.     |
-| `coerceNumber()`  | `unknown` → `number?`                   | Numbers pass through **as-is — including `±Infinity` and `NaN`** (all numeric inputs are returned directly); strings go through `parseFloat` (leading-numeric ok: `'12px'`→12, `'1e3'`→1000, `'Infinity'`→Infinity); `undefined` only when `parseFloat` itself yields NaN (e.g. `''`, `'abc'`). Non-string/non-number → `undefined`. Stricter `parseNumber()` rejects `±Infinity`, `NaN`, and trailing junk — `coerceNumber()` is the lenient sibling. |
-| `coerceRecord()`  | `unknown` → `Record<string, unknown>`   | Plain objects pass through; **anything else returns `{}`** (never `undefined` — the one always-defined parser). |
+| Parser           | Input → Output                        | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `coerceString()` | `unknown` → `string?`                 | Strings pass through; **finite** numbers become `String(value)`; everything else → `undefined`.                                                                                                                                                                                                                                                                                                                                                        |
+| `coerceNumber()` | `unknown` → `number?`                 | Numbers pass through **as-is — including `±Infinity` and `NaN`** (all numeric inputs are returned directly); strings go through `parseFloat` (leading-numeric ok: `'12px'`→12, `'1e3'`→1000, `'Infinity'`→Infinity); `undefined` only when `parseFloat` itself yields NaN (e.g. `''`, `'abc'`). Non-string/non-number → `undefined`. Stricter `parseNumber()` rejects `±Infinity`, `NaN`, and trailing junk — `coerceNumber()` is the lenient sibling. |
+| `coerceRecord()` | `unknown` → `Record<string, unknown>` | Plain objects pass through; **anything else returns `{}`** (never `undefined` — the one always-defined parser).                                                                                                                                                                                                                                                                                                                                        |
 
 ---
 
@@ -83,14 +83,14 @@ These invariants hold across `src/core/parsers.ts` ↔ `parsers.md`:
 
 Callers mutating a returned value should know whether they hold the original reference or a copy:
 
-| Function | On success: alias or copy? | On failure |
-| --- | --- | --- |
-| `parseRecord()` | **input BY REFERENCE** — type-narrowing only, no clone | `undefined` |
-| `parseRecordField()` | **input BY REFERENCE** (delegates to `parseRecord`) | `undefined` |
-| `coerceRecord()` | **input BY REFERENCE** when valid; `{}` fresh object when not | never `undefined` |
-| `parseArray()` — no guard | **fresh shallow copy** (`[...value]`) | `undefined` |
-| `parseArray()` — with guard (all pass) | **input array BY REFERENCE** | `undefined` |
-| `parseArrayField()` | mirrors `parseArray` aliasing rules | `undefined` |
+| Function                               | On success: alias or copy?                                    | On failure        |
+| -------------------------------------- | ------------------------------------------------------------- | ----------------- |
+| `parseRecord()`                        | **input BY REFERENCE** — type-narrowing only, no clone        | `undefined`       |
+| `parseRecordField()`                   | **input BY REFERENCE** (delegates to `parseRecord`)           | `undefined`       |
+| `coerceRecord()`                       | **input BY REFERENCE** when valid; `{}` fresh object when not | never `undefined` |
+| `parseArray()` — no guard              | **fresh shallow copy** (`[...value]`)                         | `undefined`       |
+| `parseArray()` — with guard (all pass) | **input array BY REFERENCE**                                  | `undefined`       |
+| `parseArrayField()`                    | mirrors `parseArray` aliasing rules                           | `undefined`       |
 
 Enforced by:
 

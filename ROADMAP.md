@@ -1,495 +1,442 @@
-# ROADMAP — Building the Styling System
+# ROADMAP — Refactor to Strict Semantic Scope
 
-> A sequenced, layer-by-layer build plan for a CSS architecture grounded in semantic HTML, cascade layers, and design tokens. Each phase is a self-contained, shippable unit with its own checklist and exit criteria. Build them in order; land one green before starting the next.
-
-This file is the **plan of record** — what to build and in what sequence. The accompanying architecture write-up explains *why* each idea exists; this file says *how* and *when* to build it. Where the two disagree, the architecture write-up owns the concepts and this file owns the sequence.
-
-### The phases
-
-| # | Phase | Builds | Depends on |
-| --- | --- | --- | --- |
-| 0 | [Foundation](#phase-0--foundation-the-layer-contract-and-the-build-skeleton) | the layer order, entry file, minimal reset | — |
-| 1 | [Tokens](#phase-1--tokens-the-value-layer) | the tiered token/value system | 0 |
-| 2 | [Elements](#phase-2--elements-the-semantic-baselines) | bare semantic-tag baselines | 1 |
-| 3 | [Components](#phase-3--components-named-product-patterns) | named, class-based product patterns | 1, 2 |
-| 4 | [Modifiers + Behavior](#phase-4--variation-and-state-modifiers-and-behavior) | variation (tokens) and runtime state | 2, 3 |
-| 5 | [Surfaces](#phase-5--surfaces-the-browser-owned-seams) | focus, selection, backdrop, popover, anchoring | 1, 3 |
-| 6 | [Accessibility + Motion](#phase-6--accessibility-and-motion-hardening-cross-cutting) | reduced-motion, forced-colors, contrast (sweep) | 4, 5 |
-| 7 | [Utilities](#phase-7--utilities-the-escape-hatch) | single-concern escape-hatch classes | all paint layers |
-| 8 | [Theming](#phase-8--theming-variation-as-data) | mode + theme as token redeclarations | 1–7 |
-| 9 | [Verification](#phase-9--verification-prove-the-contracts-hold) | automated contract checks + proof surface | all |
-
-Jump also to the [master checklist](#the-master-checklist-at-a-glance) and the [sequencing rationale](#sequencing-rationale-why-this-order-briefly).
+> The plan of record for re-drawing the element ↔ component boundary. The framework keeps its semantic-HTML soul, but tightens one rule: **a bare HTML tag earns styling only for behaviour that is true of _every_ instance of that tag. Everything contextual — a card, a sidebar, a modal band, an app shell — opts in through a platform signal or a named class.** Each phase is a self-contained, shippable unit with its own checklist and exit criteria. Build them in order; land one green before starting the next.
+>
+> This file says _what_ we are changing and _in what sequence_. The architecture guides under [`guides/`](guides/) own the _why_ of each concept and are updated as phases land. Where the two disagree during the refactor, this file owns the target and the guide is the work item.
 
 ---
 
-## How to read this plan
+## The decision
 
-- **Phases are ordered by dependency.** A later phase assumes everything before it is in place. The riskiest, most-depended-on work (the layer order and the token contract) comes first, deliberately.
-- **Each phase has:** a goal, the work broken into checkable items, the constraints it must honor, and explicit **exit criteria** that must all be true before moving on.
-- **A checkbox is a contract.** `[ ]` is not done; `[x]` means it shipped *and* its exit criteria passed. Don't check a box to mean "mostly."
-- **Nothing here is tied to a toolchain.** The plan works with plain CSS, a preprocessor, or a utility framework. Where a choice is open, it says so and names the trade-off rather than deciding for you.
+Three choices set the direction (resolved 2026-06-08):
 
-### The browser baseline this plan assumes (verified current)
+1. **Strict everywhere.** Bare-tag combination selectors (`parent > child` where both sides are plain tags) are limited to the ~30 HTML-mandated `spec` pairings, in **every** layer — not just `elements/`. The ~45 author-invented `slot` / `reset` / `context` pairings are no longer allowed as bare-tag rules.
+2. **Strip baselines to universal-only.** A bare tag with no class gets only styling that is true for every instance of it (UA repair, platform-stripped affordances, the element's single fixed meaning, and `spec` pairings). Product chrome that _promotes_ a tag into a contextual role (`<article>`→card, `<aside>`→sidebar, `<nav>`→rail, `<output>`→toast) is removed from the bare tag.
+3. **Signal first, class fallback.** A promoted composition opts in through an **unambiguous platform signal** where one exists and means the behaviour is always intended (`[role="tablist"]`, `[popover]`, `aside[role="alert"]`, `dialog:modal`, `[open]`), and through a **named class** only where no natural signal exists (`.card`, `.shell`).
 
-Every feature below is **Baseline / widely available** as of 2026 and is used without a polyfill. Where a feature has a known sharp edge, the relevant phase calls it out.
+### The one-line rule
 
-| Feature | Status | Used for |
-| --- | --- | --- |
-| Cascade layers (`@layer`) | Baseline since 2022 | the entire layering model (Phase 0) |
-| Custom properties (`--var`, `var()`) | Baseline | every token (Phase 1) |
-| `oklch()` color | Baseline (~95% of users, early 2026) | the color palette (Phase 1) |
-| `color-mix()` | Baseline · widely available | deriving tints/shades and states (Phase 1) |
-| Relative color syntax (`from`) | Baseline (CSS Color 5) | deriving variant states from one base (Phase 1) |
-| `:focus-visible` | Baseline | the focus surface (Phase 5) |
-| Popover API + `:popover-open` | Baseline (2025) | overlay surfaces (Phase 5) |
-| `<dialog>` + `::backdrop` | Baseline since 2022 | modal surfaces (Phase 5) |
-| CSS anchor positioning | Baseline (late 2025) | positioning overlays (Phase 5) |
-| `@starting-style` + `interpolate-size` | Baseline | entry/exit animation (Phase 6) |
-| `@scope` | Baseline (end 2025) | optional component scoping (Phase 3) |
+> **Style the tag for what it _always_ is. Style a class or a signal for what it _sometimes_ becomes. Combine two bare tags only when HTML itself mandates the pairing.**
 
-> Provide an sRGB hex fallback immediately before any `oklch()` declaration only if a non-evergreen browser is in scope; otherwise rely on the baseline.
+### What this reverses
+
+This deliberately rolls back [styles.md](guides/styles.md) principle #6's clause _"descendant context disambiguates dual-role tags"_ (`article > header` = card header, `body > aside` = sidebar). Ancestry will no longer silently disambiguate a tag's role. The role is declared — by a class or a platform signal — never inferred from where the tag happens to sit. The semantic ergonomics that survive are the ones where the signal _is_ the platform's own (`[popover]`, `[role]`, `[open]`, `:modal`).
+
+### The payoff (why decisions #1 and #2 reinforce each other)
+
+Most of the non-spec pairings are `reset` rules that exist **only to clean up after product chrome the bare-tag baseline adds** — `article > h1..h6 { margin: 0 }` exists because the bare `<article>` baseline introduced a `gap`; `main > section { padding-block: 0 }` exists because the bare `<section>` baseline added padding. Strip the baseline (decision #2) and the cleanup combination (decision #1's casualty) **evaporates** — there is nothing left to reset. The bulk of the work is _deletion_, not migration.
 
 ---
 
-## The principles this plan is built on
+## The two rules this refactor enforces
 
-These are the non-negotiables every phase serves. They are stated in full in the architecture write-up; here they are in one breath, because every checklist item traces back to one of them.
+### Rule 1 — Element baselines are universal-only
 
-1. **The platform owns native semantics and surfaces.** Style what HTML and the browser already define; never re-invent it.
-2. **Name product patterns explicitly.** A class, not a guessed structural selector, owns any pattern specific to the product.
-3. **Every value flows through a token.** No literals where a token exists; a theme is just a different set of token values.
-4. **Layer order makes "who wins" predictable.** Every shipped rule lives in a declared layer, so an un-layered consumer rule always wins without `!important`.
-5. **CSS owns appearance; code owns timing.** They meet only at a state-class name and a transition token.
+An `elements/_{tag}.scss` rule is justified only if it passes the **universality test**: _is this true for every instance of this tag, in every document, regardless of context?_ Four things pass; one thing no longer does.
 
-### The target layer order (locked in Phase 0, used by everything after)
+| Justification                                         | Passes?  | Examples                                                                                                                                                                                                           |
+| ----------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **UA-quirk repair**                                   | ✅ keep  | `<fieldset>` `min-inline-size: 0`; `<mark>` system colors; `<address>` italic reset; `<hr>` token rule; `<img>` `display: block`                                                                                   |
+| **Platform-stripped affordance**                      | ✅ keep  | `<a>` underline; `<abbr>` `cursor: help`; `<p> + <p>` rhythm; heading scale; list/`<dl>` margins                                                                                                                   |
+| **The element's single fixed meaning**                | ✅ keep  | form controls (`button`, `input`, `select`, `textarea`, `label`, `fieldset`, `legend`) and their modifier cascade; inline chips (`code`, `kbd`, `samp`, `var`); media `max-inline-size`; `progress`/`meter` gauges |
+| **`spec` strict pairing**                             | ✅ keep  | `details > summary`, `table` internals, `dl > dt/dd`, `select > option`, `ul/ol/menu > li`                                                                                                                         |
+| **Contextual promotion** (tag → role it isn't always) | 🚫 strip | `<article>`→card, `<aside>`→sidebar/callout, `<nav>`→rail, `<menu>`→toolbar, `<output>`→toast, `<header>`/`<footer>`→bands, `<section>`→padded region, `<main>`→content well, `<body>`→app grid                    |
+
+> The test is "_always_," not "_usually_." An `<article>` is _usually_ card-like, but not _always_ (it may be a bare blog post in a feed). "Usually" is exactly the presumption this refactor removes — it becomes `.card`.
+
+### Rule 2 — Bare-tag combinations are spec-only; compositions opt in
+
+A combination selector is **allowed** when any of these holds:
+
+- **(a)** it is a `spec` pairing (HTML mandates the nesting — `tr > td`, `details > summary`); or
+- **(b)** the parent or child compound is **scoped by a class** (`.card > header`, `button.reveal > span`); or
+- **(c)** the parent or child compound is **scoped by an unambiguous platform signal** (`[role="tablist"] > [role="tab"]`, `dialog:modal > header`, `[popover] > menu`, `nav[aria-label] > ol`).
+
+A combination selector is **forbidden** when it is a non-spec `parent > child` with **both sides bare tags** (`article > header`, `nav > ol`, `main > section`, `body > aside`). These are the refactor targets.
+
+> Why the scoping exemption is sound: a class is a deliberate author opt-in, and a platform signal (`[popover]`, `:modal`, `[role]`, `[open]`) means the role is _already declared on the element_ — so the combination only fires when the behaviour is genuinely intended. That satisfies "the default is for when they're always meant to behave a certain way."
+
+**Signal vs. class, decided per composition:** prefer a signal when the platform gives one that _means_ the role (a `<dialog>` that is `:modal` always wants modal band chrome; an element with `[popover]` always wants top-layer chrome). Fall back to a class when the role has no platform marker (a "card" is not an HTML concept; `<article class="card">` is the honest opt-in).
+
+---
+
+## How the layers change
+
+The layer order itself is **unchanged** — it already encodes the right precedence:
 
 ```css
-@layer reset, elements, components, surfaces, behavior, modifiers, utilities;
+@layer theme, base, elements, components, surfaces, composables, modifiers, utilities;
+@import 'tailwindcss';
 ```
 
-| Layer | Built in | Owns |
-| --- | --- | --- |
-| `reset` | Phase 0 | minimal normalization; yields to everything above it |
-| `elements` | Phase 2 | bare semantic-tag baselines |
-| `components` | Phase 3 | named, class-based product patterns |
-| `surfaces` | Phase 5 | browser-rendered seams (focus, selection, backdrop, popover) |
-| `behavior` | Phase 4 | state-driven rules toggled at runtime |
-| `modifiers` | Phase 4 | variation axes that set tokens (variant, size, …) |
-| `utilities` | Phase 7 | single-purpose, last-word one-offs |
+What changes is the _content discipline_ of three of them, and the contracts that police them.
 
-> Tokens (Phase 1) are not a paint layer — they declare custom properties consumed by every layer. They live at the root (and under theme selectors), outside the painting layers.
+| Layer                                                 | Before                                                                                                                                                                         | After                                                                                                                            |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `elements`                                            | bare-tag baselines **including contextual promotions** (`article` card surface, `nav` rail tokens) and non-spec combos (`dialog` `:has()` bands, list-group, section-collapse) | universal-only baselines + `spec` pairings. No promotions, no non-spec combos.                                                   |
+| `components`                                          | element compositions via **bare-tag ancestry** (`article > header`, `body > aside`, `nav > ol`)                                                                                | compositions via **class root** (`.card`, `.shell`) or **platform signal** (`[role]`, `[popover]`). No bare-tag non-spec combos. |
+| `composables`                                         | state-gated chrome (already signal-driven)                                                                                                                                     | unchanged in spirit; absorbs signal-gated chrome relocated out of `elements`/`components`.                                       |
+| `surfaces`, `modifiers`, `theme`, `base`, `utilities` | —                                                                                                                                                                              | unchanged.                                                                                                                       |
 
-> **Why this order:** layer precedence is resolved *before* specificity, so a `utilities` rule beats a `components` rule no matter how the selectors compare. `modifiers` sits just below `utilities` so a chosen variant re-colors a component, but a deliberate one-off utility still has the final say. `behavior` sits below `modifiers` because a runtime state changes the look but shouldn't outrank an explicit variant choice. Adjust names if you like — but lock the order before writing any rule, because changing it later silently re-shuffles every conflict.
+### The contract changes that make it stick
+
+This project enforces its architecture with machine-checked contracts in [`src/browser/patterns.ts`](src/browser/patterns.ts) + [`tests/guides/patterns.test.ts`](tests/guides/patterns.test.ts). The refactor is **contract-first**: tighten the contract so every violation lights up red, then make the tree green.
+
+- **`STRUCTURAL_PAIRINGS`** — remove every `slot` / `reset` / `context` entry; keep only `spec`. The `StructuralPairingKind` enum narrows to `'spec'` (the other kinds become illegal to author).
+- **The pairing test** (`extractTagPairs` + driver) — confirm and, if needed, adjust so a `parent > child` pair is flagged **only when neither side carries a scoping class/role/attribute**. (Class- and signal-headed compounds already produce no tag-pair; verify tag-headed-but-qualified compounds like `dialog:modal > header` are treated as scoped, mirroring the existing scope-discipline exemption.)
+- **`FOLDER_CONTRACTS['elements']`** — already forbids `class` and `data-attribute` heads. Add a note (and, where testable, a check) that element partials carry no contextual-promotion chrome — the universality test from Rule 1.
+- **`taxonomy.ts`** — tags that lose their bare-tag promotion (`article`, `aside`, `nav`, `menu`, `output`, `header`, `footer`, `main`, `section`, `search`) move from `substantive` toward `reset`/`passthrough`; their product tokens migrate to class-component contracts. `SUBSTANTIVE_TAGS` / `RESET_TAGS` / `PASSTHROUGH_TAGS` indices and `TOKEN_GROUPS` (`page-shell`, `card-region`) re-home accordingly.
+- **`COMPONENT_CONTRACTS`** — gains the new class-component roots (`.card`, `.shell`, …) with their required-token sets.
 
 ---
 
-## Phase 0 — Foundation: the layer contract and the build skeleton
+## Current state (where we start)
 
-**Goal.** Stand up the empty skeleton: the declared layer order, the entry file every consumer imports, and the reset layer. After this phase, nothing is styled yet — but the *structure* that every later phase plugs into exists and is proven to work.
+From the pre-refactor audit (all of `elements/`, `components/`, `composables/`, `surfaces/`, `modifiers/`):
 
-**Why first.** The layer order is the one decision every other rule depends on. Declaring it once, up front, in a single place, is what makes the rest of the system predictable. Build it first and in isolation.
+- **`composables/`, `surfaces/`, `modifiers/` are already at target.** Zero bare-tag non-spec combinations, zero cross-layer leakage, zero token-literal issues across all 25 files. Every combination is scoped by a class, role, attribute, or platform signal. They need no structural change — only two forward-coordination notes (the `surfaces/_popover.scss` `body:has(main) > :is(nav, aside)` scrollbar-gutter rule and the `composables/_dialog.scss` flex rules follow the `.shell` / dialog-band relocations).
+- **`elements/` is ~95% already clean.** Most overlapping tags (`article`, `aside`, `nav`, `header`, `footer`, `form`, `menu`, `output`, `search`, `div`) are no-op stubs in `elements/` that defer to `components/`. The real in-`elements/` violations are concentrated in a handful of files.
+- **`components/` is where the work is** — two large ancestry-inference clusters (app-shell, card) plus minor combos. See the table below.
+- **Token discipline is clean** — no raw hex anywhere; `px` usage is idiomatic (hairlines, forced-colors outlines, pill radii). This is **not** a token refactor.
+- **The conflicts the user flagged are real but few** — a harmless `body` canvas/text duplication, and a `form` vs `fieldset` `inline-size: 100%` rule duplicated across layers.
+
+### In-`elements/` violations (Phase 2 targets)
+
+| File                                                                 | Violation                                                                              | Disposition                                                                                                                                                              |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `elements/_dialog.scss`                                              | extensive `:has()`-gated `dialog > header/footer/form/section/h*/p` modal-band chrome  | signal-gate on `dialog:modal` / `[open]` → relocate to `composables/` or `components/`                                                                                   |
+| `elements/_table.scss`                                               | `.striped`/`.bordered`/`.sticky`/`.{variant}` + `[data-table-*]` expansion/resize grid | class/composable component (`useTable`) → relocate; keep only bare `table` + spec internals                                                                              |
+| `elements/_li.scss`, `elements/_ul.scss`                             | `ul.group`/`ol.group` list-group: `:has(> a)`, `> a/button`, `+ li`, `[aria-*]` rows   | class-component (`.group` is already a class — relocate the block to `components/`)                                                                                      |
+| `elements/_section.scss`                                             | `main/article/nav/aside/dialog > section` nesting-collapse                             | **delete** — section baseline padding is stripped, nothing to collapse                                                                                                   |
+| `elements/_fieldset.scss`                                            | `fieldset > label > input` form-layout chrome (dup of `components/_form.scss`)         | consolidate into the form composition                                                                                                                                    |
+| `elements/_details.scss`, `elements/_p.scss`, `elements/_label.scss` | `details + details`, `p + p`, `fieldset:disabled label`                                | `p + p` keeps (universal rhythm); `details + details` → accordion class/signal; `fieldset:disabled label` keeps (single-element state, `:disabled` is a platform signal) |
+
+> Note: single-element attribute-state selectors that don't cross elements — `button[aria-pressed]`, `a[aria-disabled]`, `input[role="switch"]` — are **not** violations of Rule 2 (they refine one tag, not a combination). They stay unless a later cleanup pass wants them gone.
+
+### In-`components/` violations (Phase 3/4 targets)
+
+Four clusters. The signal-gated and class-based rules in `components/` are **already compliant and stay** (see the migration triage); these are the ones that move.
+
+| Cluster                       | Files                                                             | What violates                                                                                                                                                                         | Disposition                                                                                                   |
+| ----------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **A — app-shell ancestry**    | `_body`, `_main`, `_header`, `_footer`, `_nav`, `_aside`, `_menu` | `body:has(main)` grid + `body:has(main) > {header,nav,aside,footer,main}` placement + descendants (`> nav menu`, `> aside menu`, `> :where(nav,aside) h6`, drawer-header sticky pins) | → `.shell` class-gated grid (Phase 4)                                                                         |
+| **B — card/article ancestry** | `_article`, `_aside`, `_menu`                                     | bare `article` card surface; `article > header/footer/img/picture/ul.group`; `article aside` (callout); `article menu` (card actions); `article > h*/p` resets                        | → `.card` class-gated, element slots (Phase 4)                                                                |
+| **C — plain bare-tag combos** | `_nav`                                                            | `nav > ol`, `nav > ul` (marker strip)                                                                                                                                                 | → fold into the `nav[aria-label]` opt-in, or drop                                                             |
+| **D — form/search layout**    | `_form`, `_search`                                                | `form > label`, `form > label > input`, `form > input/textarea/select`, `search > input/label`                                                                                        | → strip; compose via element-agnostic `.stack`/`.cluster` (combos removed; `useForm` validation chrome stays) |
+
+**Already compliant in `components/` (stay as-is):** signal-gated — `aside[role="alert"]`, `:is(aside,nav)[popover]`, `[role="tablist"]`, `nav[aria-label="…"] > ol`, `menu[popover]`, `[role="status"][popover]`/`div[role="status"]`, `[role="group"]`/`[role="toolbar"]`; class-based — all of `_div.scss` (the `.stack`/`.cluster`/`.frame`/`.tiles`/`.split`/`.panes` family — the _model_ for new class components) and the atoms `.badge`/`.tag`/`.dot`/`.avatar`/`.skeleton`/`.spinner`.
+
+### Class vocabulary (decided)
+
+The governing principle from the mailbox comparison: **adopt mailbox's root class NAMES; keep elements' MECHANICS** (element slots, signal-gating, modifier-composition) wherever they're already compliant — and wire everything to `--set-*`, never `--bs-*`. The "must support `--set-*` tokens" constraint forces this for variants: mailbox bakes color into the class (`.tag-solid-primary`), elements composes orthogonal modifiers (`.tag.primary.filled`) that set `--set-*` tokens; keeping elements' composition preserves the token system.
+
+Confirmed decisions:
+
+| Area                                              | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Card**                                          | `.card` root with **element slots** — `.card > header`, `.card > footer`; content flows directly (no `.card-body`). Class-scoped combos (compliant); tokens in `--set-card-*`.                                                                                                                                                                                                                                                                                      |
+| **App-shell**                                     | `.shell` **element-slot grid** on `<body class="shell">` — `.shell > header/nav/main/aside/footer` placed by grid-area (keeps `display:contents` mount-wrapper support). Consistent with the `.panes`/`.split` family; lighter than mailbox's `.sidebar`. Not adopting `.container-shell`/`.sidebar`. Tokens in `--set-shell-*`.                                                                                                                                    |
+| **List-group**                                    | Keep `ul.group` + bare `li` (the `.group` class scopes the parent; `ul > li` is a spec pairing). No `.list-group-item` per-row class.                                                                                                                                                                                                                                                                                                                               |
+| **Layout primitives**                             | **Un-scope** `.stack`/`.cluster`/`.frame`/`.tiles`/`.split` from `div` → element-agnostic (like `.fill`/`.fluid`/`.muted` already are), so any stripped semantic element opts back into layout: `<form class="stack">`, `<fieldset class="stack">`, `<label class="stack">`. The old `div`-scoping rationale (don't shadow an element's own gap) dies with the stripped baselines.                                                                                  |
+| **Form / search (cluster D)**                     | **Strip** — bare `<form>`/`<search>` get no flex layout; compose via the primitives (`<form class="stack">`, `<search class="cluster">`). Control-fill comes free from the stack's stretch (or `.fill`); label-on-top is `<label class="stack">`. All `form > label` / `form > input` / `search > input` combos removed. `useForm` validation chrome (`form[data-form-validated] …`) stays (signal-gated).                                                          |
+| **Atoms** (badge/tag/dot/avatar/skeleton/spinner) | Keep the mailbox-aligned root names; keep elements modifiers (`.primary`/`.small`/`.filled`). Optional additions wired to new tokens: `.avatar-group` → `--set-avatar-group-*`; `.dot.ring` → `--set-dot-ring`; `.spinner` grow variant.                                                                                                                                                                                                                            |
+| **Nav / breadcrumb / pagination**                 | Keep elements' **signal-driven** approach (`nav[aria-label]`, `[role="tab"]`) — already mailbox-parity mechanics; matches the signal-first decision. Not adopting `.nav-link`/`.breadcrumb-item`/`.page-link`/`.navbar*`. The blanket `nav > ol`/`nav > ul` marker-strip (cluster C) is dropped — recognized nav patterns strip markers via the `nav[aria-label]` opt-in; a generic unlabeled `<nav><ul>` keeps UA markers. Only the rail chrome moves to `.shell`. |
+| **Token namespace**                               | Each new class root declares its own `--set-{class}-*` (`.card` → `--set-card-*`, `.shell` → `--set-shell-*`, `.callout` → `--set-callout-*`), per the namespace contract (prefix = selector basename). De-promoted element token sets (`--set-article-*` etc.) shrink to whatever the minimal bare-tag baseline still needs (often none).                                                                                                                          |
+| **In-article aside**                              | `.callout` (replaces `article aside`); **card action row** → `.card menu`.                                                                                                                                                                                                                                                                                                                                                                                          |
+
+---
+
+## The phases
+
+| #   | Phase                                                                              | Builds                                                             | Depends on |
+| --- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------- |
+| 0   | [Lock the contract](#phase-0--lock-the-contract-red-first)                         | tightened `STRUCTURAL_PAIRINGS` + pairing/universality tests (RED) | —          |
+| 1   | [Triage every composition](#phase-1--triage-every-composition)                     | the per-pairing migration table (signal vs class)                  | 0          |
+| 2   | [Purify element baselines](#phase-2--purify-element-baselines)                     | universal-only `elements/`; in-layer violations gone               | 0, 1       |
+| 3   | [Re-home signal-gated compositions](#phase-3--re-home-signal-gated-compositions)   | promotions with a platform signal                                  | 1, 2       |
+| 4   | [Introduce class-gated compositions](#phase-4--introduce-class-gated-compositions) | `.card`, `.shell`, … for the no-signal cases                       | 1, 2       |
+| 5   | [De-conflict & prove the cascade](#phase-5--de-conflict--prove-the-cascade)        | zero element↔composition conflicts; precedence proofs              | 2, 3, 4    |
+| 6   | [Sync registries, mirrors & guides](#phase-6--sync-registries-mirrors--guides)     | `taxonomy.ts`/`elements.ts`/`tokens.ts` + guide parity             | 2–5        |
+| 7   | [Verify & refresh the map](#phase-7--verify--refresh-the-map)                      | full suite green; showcase + inspector self-audit; MAP.md          | all        |
+
+Jump to the [migration triage](#appendix--migration-triage), the [preserved invariants](#invariants-we-preserve-not-rebuilding), the [master checklist](#the-master-checklist), and the [sequencing rationale](#sequencing-rationale).
+
+### How to read this plan
+
+- **Phases are ordered by dependency.** The riskiest, most-depended-on decision (the contract) goes first, deliberately and in isolation.
+- **A checkbox is a contract.** `[ ]` is not done; `[x]` means it shipped _and_ its exit criteria passed. Don't check a box to mean "mostly."
+- **Contract-first, then green.** Phase 0 makes the tests reject the old shape. Every later phase is "make the tree green again under the new rule."
+
+---
+
+## Phase 0 — Lock the contract (RED first)
+
+**Goal.** Encode the new rule in the test suite so every violation is visible before a single partial moves. After this phase the suite is **red on purpose** — the red set _is_ the work list for Phases 2–4.
+
+**Why first.** The contract is the one decision every later phase depends on. Writing it once, up front, turns the refactor from a judgment call into a checklist: a partial is done when its contract test passes.
 
 ### Work
 
-- [ ] **Declare the layer order in exactly one place** — the entry stylesheet, as the very first statement, before any rule or import: `@layer reset, elements, components, surfaces, behavior, modifiers, utilities;`
-- [ ] **Create the single entry file** every consumer (app, docs, tests) imports. It declares the layer order, then pulls in each layer's source. No consumer composes the layers themselves.
-- [ ] **Decide how third-party CSS enters a layer** (if any is used) — e.g. `@import url(vendor.css) layer(reset)` — so vendor styles never escape the order.
-- [ ] **Build the `reset` layer** as a *minimal* normalization, wrapped in `@layer reset { … }`. Modern guidance is "intelligent baseline, not a nuke": keep the browser's useful defaults and only bridge gaps. Include at most:
-  - `box-sizing: border-box` on all elements
-  - remove default `margin` (then restore intentional rhythm in `elements`)
-  - `img, picture, video, canvas, svg { display: block; max-width: 100% }`
-  - `input, button, textarea, select { font: inherit }`
-  - `h1–h6, p { overflow-wrap: break-word }`, `p { text-wrap: pretty }`, `h1–h6 { text-wrap: balance }`
-  - a root stacking context if the app mounts into a known root node
-- [ ] **Do not** put colors, component chrome, or design decisions in the reset. It is structure only; everything visual comes later through tokens.
-- [ ] **Set up a way to see the output** — any page that imports the entry file and renders a spread of raw semantic HTML (headings, lists, a table, a form, links). This becomes the living proof surface for every later phase.
+- [ ] **Narrow `STRUCTURAL_PAIRINGS`** in [`src/browser/patterns.ts`](src/browser/patterns.ts): delete every `slot`, `reset`, and `context` entry, leaving only `spec`. Update the `StructuralPairingKind` docstring to state that non-spec bare-tag pairings are no longer authorable.
+- [ ] **Confirm the pairing detector's scoping exemption.** Read `extractTagPairs` and the pairings driver. Verify a `parent > child` pair is emitted **only** when neither compound carries a class / role / attribute / pseudo scope. If a tag-headed-but-qualified compound (`dialog:modal > header`, `article.card > header`) currently emits a pair, extend the exemption so a scoping qualifier on either side suppresses it — aligning with the existing scope-discipline treatment of `nav[aria-label] > ol > li.active`.
+- [ ] **Add a universality assertion for `elements/`** (Rule 1) where mechanically checkable: an `elements/_{tag}.scss` rule body must not declare the contextual-promotion property cluster that belongs to a class-component (e.g. grid-template-areas on `body`, card band padding on `article`). At minimum, encode the keep/strip disposition per tag as data the test reads, so a stripped tag re-growing chrome fails.
+- [ ] **Write the red baseline.** Run `npm run test:guides` (the `patterns` driver) and capture the failing set. Record it as the Phase 1 input. A failure here is expected and good.
+- [ ] **Do not fix anything yet.** Phase 0 only changes contracts and tests.
 
 ### Constraints
 
-- Every rule the system will ever ship must live inside one of the declared layers. This phase establishes that discipline; never break it later.
-- The reset is the lowest layer on purpose: it must yield to everything. If a reset rule ever needs `!important` to hold, the architecture is wrong.
+- The layer order and token namespace are **not** touched — this refactor is about selector scope, not values.
+- No `spec` pairing is removed. The HTML-mandated set is sacrosanct.
 
 ### Exit criteria
 
-- [ ] The entry file imports cleanly and the proof page renders raw HTML readably (if plainly).
-- [ ] A throwaway test proves the order works: a rule placed in `utilities` overrides a conflicting rule in `reset` **with lower specificity**, and an **un-layered** rule overrides both. If either fails, the order is mis-declared — stop and fix it.
-- [ ] No rule outside a layer ships from the system itself.
+- [ ] `STRUCTURAL_PAIRINGS` contains only `spec` entries; the TS compiles and the registry shape test passes.
+- [ ] The pairings test **fails** on exactly the known non-spec bare-tag combinations (the audit list), and **passes** class/signal-scoped compounds.
+- [ ] The red set is captured and triaged into Phase 1.
 
 ---
 
-## Phase 1 — Tokens: the value layer
+## Phase 1 — Triage every composition
 
-**Goal.** Define every value the system uses as a custom property, in a tiered structure, so that appearance is data. After this phase, no later rule ever writes a literal color, space, radius, or duration — it references a token.
+**Goal.** Turn the red set into an explicit per-pairing decision table: for each non-spec composition, does it **evaporate** (was only cleaning up stripped chrome), become **signal-gated**, or become **class-gated**? After this phase, every later edit is mechanical.
 
-**Why second.** Tokens are referenced by every painting layer. Defining them before any element or component is styled means those layers are built correctly (token-referencing) from their first line, instead of being retrofitted.
-
-### The three tiers (the standard model)
-
-Adopt the widely-used **primitive → semantic → component** structure. Two tiers (primitive + semantic) are enough for a simple system; add the third (component) only where a component genuinely needs to diverge.
-
-| Tier | Holds | References | Example |
-| --- | --- | --- | --- |
-| **primitive** | raw values, context-free | nothing | `--blue-500: oklch(0.6 0.15 250)` · `--space-4: 1rem` |
-| **semantic** | design *intent* | primitives | `--color-accent: var(--blue-500)` · `--color-text`, `--color-surface`, `--color-border` |
-| **component** *(optional)* | one component's needs | semantics | `--card-padding: var(--space-4)` — lives on the component, see Phase 3 |
-
-> Applications consume **semantic** tokens, not primitives. Primitives are the palette; semantics are the vocabulary the rest of the system speaks. The one sanctioned exception is a context that genuinely has no semantic meaning (e.g. data-visualization colors).
+**Why now.** Phases 2–4 each consume one column of this table. Deciding the disposition once, in one place, prevents per-file improvisation and keeps the showcase coverage honest.
 
 ### Work
 
-- [ ] **Build the primitive palette in `oklch`.** Curate a small set of named hue ramps (each hue at several lightness steps) plus a neutral/gray ramp. oklch is chosen because equal lightness steps *look* equally bright across hues — ramps stay consistent without manual tuning (the HSL problem this avoids).
-- [ ] **Define the semantic color tokens** that the system actually speaks in: at minimum `--color-text`, `--color-surface`, `--color-canvas`, `--color-border`, and a set of roles (`--color-primary`, `--color-success`, `--color-warning`, `--color-danger`, plus any others the product needs). Each is an alias onto a primitive.
-- [ ] **Derive state and treatment colors with `color-mix()` / relative color syntax**, not by hand-picking. From one role base, derive its hover, active, subtle-background, and disabled forms. This is what lets one base-color change ripple through every state automatically.
-  - Example pattern: `--color-primary-hover: oklch(from var(--color-primary) calc(l - 0.05) c h)`
-  - Mix *in oklab/oklch* so the blend is perceptually even: `color-mix(in oklab, var(--color-primary), var(--color-surface) 85%)`
-- [ ] **Define the non-color scales** as primitives + semantics: spacing, radius, font-size/line-height, border-width, shadow/elevation, z-index, and motion durations.
-- [ ] **Define the global "factor" knobs** (optional but recommended): a single multiplier each for density (spacing), radius (roundness), and motion. Other tokens multiply through them, so one value retunes the whole system. If the factors should *animate* across a theme change, register them with `@property` so they interpolate.
-- [ ] **Decide token naming and write it down.** Pick one convention (`--{category}-{role}-{state}`, e.g. `--color-text-muted`) and apply it everywhere. The name set is a public API from this point on.
+- [ ] **Classify each entry** removed from `STRUCTURAL_PAIRINGS` into one of: `evaporate`, `signal`, `class`. Seed from the [migration triage appendix](#appendix--migration-triage) below; reconcile against the actual compiled selectors.
+- [ ] **Name the class-gated roots.** Confirm `.card`, `.shell`, and any others against the existing collision guards — Tailwind single-token utilities (`TAILWIND_SINGLE_TOKEN_UTILITIES` in [`tests/setup.ts`](tests/setup.ts)), the modifier vocabulary, and `classNameIsSanctioned`. Single-word roots only, per the class-root naming convention.
+- [ ] **Pick the signal per signal-gated composition** and confirm it is unambiguous (a real `[role]`/`[popover]`/`:modal`/`[open]`, not a freeform string the consumer might not set — flag `nav[aria-label='Breadcrumb']` for a keep-aria-label-vs-`.breadcrumb` decision).
+- [ ] **Record the showcase impact.** Each disposition that changes consumer markup (a card now needs `class="card"`) gets a showcase-page edit noted, so Phase 7's self-audit has a target.
+
+### Exit criteria
+
+- [ ] Every non-spec pairing has a recorded disposition (`evaporate` / `signal` / `class`) with a one-line reason.
+- [ ] Every proposed class root passes the collision guards.
+- [ ] The table is committed (replacing the scratch notes) as the source of truth for Phases 2–4.
+
+---
+
+## Phase 2 — Purify element baselines
+
+**Goal.** Make every `elements/_{tag}.scss` pass the universality test and carry no non-spec combination. After this phase, a classless document is styled only by what is universally true of its tags + HTML-mandated pairings.
+
+### Work
+
+- [ ] **Strip contextual promotions to minimal.** For `article`, `aside`, `nav`, `menu`, `output`, `header`, `footer`, `main`, `section`, `search`, `body`: remove the product chrome from the bare-tag rule, leaving only universal repair/affordance styling (often: nothing, i.e. a passthrough stub). Their tokens move to the class/signal component in Phase 3/4.
+- [ ] **Delete the evaporating combinations.** Remove the nesting-collapse and zero-margin-in-container rules whose reason was cleaning up now-stripped chrome (`elements/_section.scss` collapse block; `article/header/footer/dialog/form > h*`/`p` resets that no longer have a baseline to fight).
+- [ ] **Relocate the concentrated violations** named in the [current-state table](#in-elements-violations-phase-2-targets): the `_dialog.scss` band chrome, the `_table.scss` grid, the `_li.scss`/`_ul.scss` list-group, the `_fieldset.scss` form-layout dup. Move each to its Phase-3/4 home (don't just delete — these carry real chrome).
+- [ ] **Keep the universal baselines untouched** — form controls, inline chips, media, gauges, UA repairs, `spec` pairings, `p + p`, `fieldset:disabled label`.
+- [ ] **Update `elements/index.scss`** if any partial becomes a pure stub.
 
 ### Constraints
 
-- **No literal values anywhere a token exists.** This rule starts here and holds for the whole rest of the build.
-- **Adding a token is safe; renaming or removing one is a breaking change.** Treat the names with interface-level care.
-- **Global tokens are for shared values only.** A value private to one component does not go in the global set — it lives on that component's own root (Phase 3).
-- **Keep the primitive tier hidden from consumers by convention.** They reference semantics; primitives can change underneath without breaking intent.
+- A stripped baseline becomes a documented passthrough stub (the `elements/` contract allows comment-only partials) — record _why_ the framework now has no bare-tag opinion.
+- No chrome is silently lost: every removed promotion is accounted for by a Phase 3/4 destination in the triage table.
 
 ### Exit criteria
 
-- [ ] Every semantic color resolves to a visible swatch on the proof page, in a palette/token gallery.
-- [ ] Changing a single primitive (e.g. the accent hue) visibly re-colors everything that references it, with **zero** rule edits.
-- [ ] Flipping a factor knob (e.g. density) visibly retunes spacing across the proof page, with zero rule edits.
-- [ ] A grep/scan of the token file finds no raw color literals in the semantic tier (only primitive references), and no later phase will introduce literals.
+- [ ] No `elements/_*.scss` rule fails the universality test.
+- [ ] The pairings test passes for every `elements/` selector (only `spec` combinations remain).
+- [ ] A classless render of the showcase's raw-HTML page still reads cleanly (universal baselines intact); promoted patterns now render plain (expected — they get their chrome back in 3/4).
 
 ---
 
-## Phase 2 — Elements: the semantic baselines
+## Phase 3 — Re-home signal-gated compositions
 
-**Goal.** Make raw, classless semantic HTML look good on its own. After this phase, a document with no classes is already readable and well-proportioned, painted entirely from tokens.
-
-**Why now.** Elements are the floor that components build on. They depend on tokens (Phase 1) and nothing else. Getting them right means the proof page — and any consumer's plain content — looks finished before a single component exists.
-
-### Assign every element a treatment
-
-Go through the elements you actually use and give each **exactly one** treatment. Track the assignment in a simple table or registry so it can be reviewed and so nothing is missed.
-
-| Treatment | Meaning | What the partial does |
-| --- | --- | --- |
-| **styled** | real visual/interactive presence | declares its own tokens, paints a full baseline from tokens |
-| **repair** | browser default needs a small fix | one or two normalizing declarations |
-| **passthrough** | browser default is fine | nothing — recorded as intentionally bare |
-| **non-visual** | never renders | nothing, ever |
+**Goal.** Restore every promotion that has an unambiguous platform signal, gated on that signal, in `components/` or `composables/`. After this phase, drawers, tabs, alerts, modals, toolbars, toasts, breadcrumbs render correctly — triggered by the platform marker, not by ancestry.
 
 ### Work
 
-- [ ] **List the elements in scope** and assign each a treatment. Don't style elements the product never uses.
-- [ ] **Style the text and document elements** (`styled`/`repair`): headings with a real scale, paragraphs with rhythm, lists, `blockquote`, `code`/`pre`, `hr`, links with a clear non-color affordance (not color alone — an underline or similar), `table` and its parts.
-- [ ] **Style the form controls** (`styled`): `button`, `input`, `select`, `textarea`, `label`, `fieldset`/`legend`. These carry the most native behavior — lean on it; don't rebuild it.
-- [ ] **Style the native interactive/disclosure elements** (`styled`): `details`/`summary`, and the base look of `dialog`.
-- [ ] **Style only the platform-defined relationships directly** (see constraint below): `details > summary`, `figure > figcaption`, `fieldset > legend`, `table` internals, `dl > dt/dd`, list `> li`, `select > option`.
-- [ ] **Wrap every rule in `@layer elements`.**
-- [ ] **Render every styled element on the proof page** so each baseline is visible and reviewable.
+- [ ] **Drawer / off-canvas** — `:is(aside, nav)[popover]` chrome + bands (`> header`/`> footer` become scoped under the `[popover]` parent). Verify against `composables/_aside.scss` + `components/_aside.scss`.
+- [ ] **Tabs / toolbars / groups** — `[role="tablist"]`/`[role="tab"]`/`[role="tabpanel"]`, `[role="toolbar"]`/`[role="group"]` (already in `components/_role-group.scss` + `_nav.scss`; confirm no bare-tag combos remain).
+- [ ] **In-flow banners** — `aside[role="alert"]` / `[role="status"]`.
+- [ ] **Modal bands** — `dialog:modal` / `dialog[open]` scoped header/footer/section/heading rhythm (relocated from `elements/_dialog.scss`).
+- [ ] **Dropdown / menu panels** — `[popover] > menu`, `li > menu`, `li > h6` dropdown groups (the `li`-scoped child rows are spec-or-signal-gated).
+- [ ] **Toast** — the `[role="status"][popover]` deck + its band/dismiss rows.
+- [ ] **Breadcrumb / pagination** — `nav[aria-label] > ol/ul` (parent attr-scoped ⇒ exempt), pending the Phase-1 aria-label-vs-class decision.
+- [ ] **Each relocation re-uses `@include transition()` / `@include forced-colors`** and keeps its required-token set per `COMPONENT_CONTRACTS` / `COMPOSABLE_CONTRACTS`.
 
 ### Constraints
 
-- **A baseline gives a good default; it never installs product chrome.** The moment a rule starts adding the named parts of a pattern (a "header bar," a "card edge"), it has become a component — move it to Phase 3.
-- **Style a parent→child relationship only when HTML defines it.** `details > summary` is fine (the platform owns that pairing). `article > header` is *not* — that grouping is your invention and belongs to a component class.
-- **Never style by ARIA.** A `[role]` or `aria-*` may be recommended on markup, but visual rules don't target it.
-- **Every element that earns the `styled` treatment declares at least one of its own tokens.** This is the lightweight check that a baseline is genuinely token-driven, not hard-coded. A `styled` partial with no element-scoped token is mis-classified.
+- Open/closed gating discipline holds: any `display`/`position: fixed`/large `transform` gates on the open-state signal.
+- A signal-gated rule must reference a signal the platform sets natively (or a composable provably toggles) — never a freeform value a consumer might omit.
 
 ### Exit criteria
 
-- [ ] The proof page, with **no classes anywhere**, reads as a finished, well-proportioned document.
-- [ ] Every element's assigned treatment is recorded and matches what shipped.
-- [ ] Flipping mode or theme (the tokens from Phase 1) re-themes every baseline correctly, with no element rule edited.
-- [ ] No element baseline installs a product pattern; no rule targets ARIA; no relationship is styled that HTML doesn't define.
+- [ ] Every signal-gated composition renders correctly when its signal is present and is inert when absent.
+- [ ] No signal-gated rule reaches its chrome through a bare-tag ancestry path.
+- [ ] The relevant `composables/`/`components/` contract tests pass (required tokens, animated-mixin discipline).
 
 ---
 
-## Phase 3 — Components: named product patterns
+## Phase 4 — Introduce class-gated compositions
 
-**Goal.** Build the application's specific, reusable UI patterns as explicit classes — the things that are *not* native HTML. After this phase, the product's recurring chrome (cards, alerts, badges, and so on) exists as named, composable classes.
-
-**Why now.** Components sit on top of element baselines and consume tokens. They are the first layer that expresses *product* identity rather than platform defaults, so they come after the platform layers are solid.
-
-### Decide what is a component
-
-A pattern earns a component when it has any of: named sub-parts ("slots"), product-specific chrome, an ambiguous or interchangeable host element, reuse across the app, or structure a bare element wouldn't imply. If it's none of those, it's probably an element baseline or a modifier instead.
+**Goal.** Restore the promotions that have **no** natural platform signal as explicit named classes. After this phase, `<article class="card">`, the app shell, and any other class roots from Phase 1 render their full chrome.
 
 ### Work
 
-- [ ] **Inventory the patterns** the product needs and confirm each one truly is a component (not an element baseline, not a one-off utility). Resist inventing patterns the product doesn't use yet.
-- [ ] **Choose one part-naming convention and lock it** — e.g. `.card` / `.card-header` / `.card-body`, or a BEM-style `.card__header`, or a data-attribute scheme. Pick once; never mix dialects for the same concept.
-- [ ] **Build each component as a class root plus its parts**, wrapped in `@layer components`. The root declares the component's *own* tokens (its private values), referencing semantic tokens.
-- [ ] **Recommend a semantic host, but style by the class.** An alert is naturally `<aside role="alert" class="alert">` — the role is good for accessibility, but the `.alert` class is what paints it.
-- [ ] **Make components degrade gracefully.** A missing optional part (no footer, no icon) must not break the component. Don't require a rigid nesting structure as a precondition.
-- [ ] **Consider `@scope`** for components whose descendant rules risk leaking, to bound them without raising specificity. Optional; use only where it earns its keep.
-- [ ] **Render each component on the proof page**, including the graceful-degradation cases (with and without optional parts).
+- [ ] **`.card`** (`--set-card-*`) — the former bare-`<article>` card: surface + `.card > header`/`.card > footer` bands + `.card > img`/`picture` hero + `.card menu` action row + embedded `ul.group` list. Class head ⇒ exempt from the pairing rule.
+- [ ] **`.shell`** (`--set-shell-*`) — the former `body:has(main)` app grid, on `<body class="shell">`: `.shell > header`/`nav`/`main`/`aside`/`footer` grid-area placement (keep the `display:contents` mount-wrapper match `.shell > * > nav` etc.).
+- [ ] **`.callout`** (`--set-callout-*`) — the former `article aside`.
+- [ ] **Un-scope the layout primitives** — `.stack`/`.cluster`/`.frame`/`.tiles`/`.split` become element-agnostic in `components/_div.scss` (drop the `div` qualifier), so semantic elements compose layout.
+- [ ] **Strip form/search to primitives** — remove the `form`/`search` flex defaults and all `form > label`/`form > input`/`search > input` combos; the idiom becomes `<form class="stack">` / `<search class="cluster">` / `<label class="stack">`, control-fill via stack-stretch or `.fill`. Keep the signal-gated `form[data-form-validated] …` validation chrome.
+- [ ] **Register each** root in `COMPONENT_CONTRACTS` with its `--set-{class}-*` required tokens; mirror tokens in [`src/browser/tokens.ts`](src/browser/tokens.ts); add the class to the sanctioned set.
+- [ ] **Keep slots as elements, not slot-classes** — `.card > header` (element slot under a class root), per the "element-driven slot" convention; no `.card-header` class unless an element slot can't express it.
 
 ### Constraints
 
-- **The class owns the contract — never substitute a guessed selector** (`article > header`) for it.
-- **Component-private values are component tokens on the component root**, not new entries in the global token set.
-- **Lean on the browser's natural groupings.** Where a component wraps native structure (a table, a disclosure), style that structure as it exists; don't force the consumer to re-nest markup.
-- **No literals; tokens only** — including the component's own tokens, which reference semantics.
+- Single-word class roots; no collision with Tailwind or the modifier vocabulary.
+- A class root carries _composition_ chrome only — variant/size/style still come from the modifier cascade via the `--set-*` fallback chain, never hand-rolled `.card.primary`.
 
 ### Exit criteria
 
-- [ ] Every component renders correctly on the proof page, including its degraded (missing-optional-part) forms.
-- [ ] Theme and mode flips re-skin every component with no component rule edited (because everything reads tokens).
-- [ ] No component is painted via a structural-ancestry selector or an ARIA selector.
-- [ ] Each component's private values live on its own root, not in the global token set.
+- [ ] Every class-gated composition renders its full former chrome with the class applied, and renders as a plain element without it.
+- [ ] Each new root passes its `COMPONENT_CONTRACTS` required-token check and TS token parity.
+- [ ] No class-gated rule reintroduces a bare-tag non-spec combination.
 
 ---
 
-## Phase 4 — Variation and state: modifiers and behavior
+## Phase 5 — De-conflict & prove the cascade
 
-This phase has two halves that share a boundary: **modifiers** (static variation, set by class) and **behavior** (dynamic state, toggled by code). Build modifiers first — behavior reuses their state vocabulary.
-
-### Phase 4a — Modifiers: variation as tokens
-
-**Goal.** Let one element or component take on variants, sizes, and treatments through classes that *only set tokens*. After this, `.primary`, `.large`, `.subtle` work on anything whose token chain reads them — with no per-combination rules.
-
-#### Work
-
-- [ ] **Wire the fallback chain into elements and components first** (this is the mechanism modifiers depend on). Each styleable property reads a chain, most-specific token first: `color: var(--btn-style-color, var(--btn-variant-color, var(--color-text)))`. A bare element is neutral; a modifier that merely *sets* a chain token re-routes it.
-- [ ] **Build the variant axis** — `.primary`, `.success`, `.danger`, … — each setting `--…-variant-*` context tokens (color, on-color, border) and nothing else.
-- [ ] **Build the emphasis axis** — e.g. `.solid` / `.subtle` / `.outline` — each setting style-treatment tokens that sit *above* variant tokens in the chain.
-- [ ] **Build the size axis** — `.small` / `.large` — setting padding/gap/font-size/radius tokens.
-- [ ] **Build any portable state look** — `.disabled` / `.loading` — as token setters too, where the look is purely visual.
-- [ ] **Wrap modifiers in `@layer modifiers`** (just below utilities, so a variant re-colors a component but a utility still wins).
-- [ ] **Render the matrix on the proof page**: a bare element vs. the same element with combinations (`.primary.large.subtle`), and the same variant applied across different components to prove it composes.
-
-#### Constraints
-
-- **A modifier sets context tokens and does not know who reads them.** Never write `button.primary { background: … }` — that couples the modifier to one host and forces a rule per component. Set `--variant-*`; let the host's chain consume it.
-- **A genuinely host-specific tweak is scoped to that host's root** (`table.fixed`) and kept local — never given a global modifier name that only works in one place.
-- **No literals; modifiers set token values, which reference semantics.**
-
-#### Exit criteria
-
-- [ ] A bare element is neutral; adding `.primary` (etc.) re-colors it purely through the token chain, with no rule that names both the modifier and the host.
-- [ ] The same variant class works, unmodified, across several different components.
-- [ ] Combinations stack correctly (variant + size + emphasis) with no per-combination rule.
-
-### Phase 4b — Behavior: state that changes at runtime
-
-**Goal.** Define how dynamic states *look* in CSS, and let driving code toggle them — meeting only at a class name and a transition token. After this, panels open, items drag, controls disable, with appearance and timing cleanly separated.
-
-#### Work
-
-- [ ] **Settle the state-class vocabulary** — a small fixed set: `open`, `active`, `disabled`, `selected`, `dragging`, `loading`, … — and document what each means. Reuse the names across the whole system.
-- [ ] **Write the look of each state in CSS**, wrapped in `@layer behavior`: e.g. `.panel:not(.open) { opacity: 0 }`, plus the transition that animates between states, timed by a motion token: `.panel { transition: opacity var(--motion) }`.
-- [ ] **Define the CSS↔code handshake explicitly**: CSS owns the look of `.open`; code owns *when* `.open` is present. Nothing else crosses.
-- [ ] **Write the driving code (in whatever language/framework)** to toggle classes and set attributes on existing elements only. It decides *when*, never *how it looks*.
-- [ ] **Give every state class exactly one owner.** Document which piece of code writes each class.
-- [ ] **Make teardown complete and idempotent.** Whatever a behavior turns on (listeners, timers, classes, attributes) it can turn off, and doing so twice is harmless.
-
-#### Constraints
-
-- **CSS owns appearance; code owns timing.** No colors/spacing/layout decisions in the driving code; no "when is this true" logic baked into CSS beyond reading the state class.
-- **The code creates no markup the styles don't expect** — it toggles state on elements that already exist; it doesn't invent DOM for styles to chase.
-- **One writer per state class.** Two independent pieces of code writing the same class is a race.
-- **Always pair a transition with a reduced-motion path** (formalized in Phase 6, but honor it here): no animation without a `prefers-reduced-motion` opt-out.
-
-#### Exit criteria
-
-- [ ] A state change (open/close, enable/disable) animates correctly, driven by toggling a class — with appearance defined entirely in CSS.
-- [ ] Restyling a transition requires no code change; changing *when* a state flips requires no CSS change.
-- [ ] Tearing a behavior down removes every class, listener, timer, and attribute it added, and running teardown twice is harmless.
-- [ ] Every state class has a single, documented writer.
-
----
-
-## Phase 5 — Surfaces: the browser-owned seams
-
-**Goal.** Tune the parts of the UI the *browser itself* renders — focus rings, selection, the modal backdrop, popovers — rather than rebuilding them. After this, native overlays and indicators look like the system, while keeping all the accessibility the platform gives for free.
-
-**Why now.** Surfaces are orthogonal to components but should override generic chrome, which is why the layer sits above `components`. They depend on tokens and benefit from the components being in place to style against.
+**Goal.** Guarantee the user's "no conflicting styles" requirement: a bare-tag baseline and an opt-in composition never set the same property to fighting values, and precedence is proven, not assumed.
 
 ### Work
 
-- [ ] **Focus** — style `:focus-visible` with a token-driven ring (color, width, offset). Use `:focus-visible`, not `:focus`, so the ring shows for keyboard users without firing on every mouse click. This is an accessibility surface — make it clearly visible.
-- [ ] **Selection** — style `::selection` (background and text color from tokens).
-- [ ] **Placeholders and markers** — style `::placeholder` and `::marker` where the defaults need tuning.
-- [ ] **Scrollbars** — style scrollbars from tokens where the product wants it, with sensible cross-engine fallbacks.
-- [ ] **Modal backdrop** — style `<dialog>`'s native `::backdrop`. Use the native backdrop; do not stack a hand-made overlay behind the dialog.
-- [ ] **Popovers / overlays** — adopt the Popover API for non-modal overlays (menus, tooltips-as-content): `popover` + `popovertarget` give show/hide, light-dismiss, Escape, and top-layer rendering for free. Style `:popover-open` for the shown state and `::backdrop` if a backdrop is wanted.
-- [ ] **Positioning** — position overlays with CSS anchor positioning (`anchor-name` / `position-anchor` / `anchor()`), with `@position-try` fallbacks so an overlay flips when it would overflow the viewport. A popover and its invoker get an implicit anchor reference — use it.
-- [ ] **Wrap everything in `@layer surfaces`.**
-- [ ] **Demonstrate each surface on the proof page**: a focusable control, selectable text, an open dialog with a styled backdrop, an anchored popover that flips near an edge.
-
-### Constraints
-
-- **Style the seam, not "the seam of a component."** A focus ring rule styles focus, not "the focus ring of a card."
-- **Use the native seam; don't rebuild it.** The platform's backdrop, top layer, and focus management come with accessibility built in — replacing them with hand-rolled DOM throws that away.
-- **Don't fight the platform's visibility model.** A closed popover/dialog is hidden by the UA; never add a rule that forces it visible. Keep show/hide in the platform's hands.
-- **Known sharp edge — backdrop exit animation.** A `::backdrop` cannot animate on *close*: the element is removed immediately, so there is nothing left to animate out. Plan entry animation only, or animate the dialog content rather than the backdrop on exit.
+- [ ] **Resolve the known duplications** — the `body` canvas/text pair (drop the redundant copy), the `form` vs `fieldset` `inline-size: 100%` rule (single owner in the form composition).
+- [ ] **Sweep element↔composition overlaps** — for every tag that has both a universal baseline and a class/signal composition, confirm the composition only _adds_ or cleanly _overrides_ (later layer wins); no property is set to conflicting values within the same layer.
+- [ ] **Prove precedence** — keep/extend the layer-order proofs: a `utilities` rule beats a composition without `!important`; a composition (later layer) beats the element baseline; an un-layered consumer rule beats everything.
+- [ ] **Confirm the modifier cascade still reaches** the relocated chrome (a `.primary` still tints `.card`, a `dialog:modal`, an `[role="tablist"]`).
 
 ### Exit criteria
 
-- [ ] Keyboard focus shows a clear, token-styled ring via `:focus-visible`; mouse clicks don't trigger it spuriously.
-- [ ] A native dialog opens with a styled backdrop and full focus-trapping/Escape behavior, with no JS reimplementing those.
-- [ ] A popover opens, light-dismisses, and is positioned by anchor positioning, flipping correctly near a viewport edge.
-- [ ] No surface rule infers product identity from its host, and no closed overlay is forced visible.
+- [ ] No two framework rules set the same property to different values for the same element within one layer.
+- [ ] The precedence proofs pass (utility > composition > element baseline; consumer un-layered > all).
+- [ ] Variant/size/style modifiers compose correctly over every relocated composition.
 
 ---
 
-## Phase 6 — Accessibility and motion hardening (cross-cutting)
+## Phase 6 — Sync registries, mirrors & guides
 
-**Goal.** Make every animated or custom-painted thing respect user preferences, and add the modern niceties that need a guard. This phase sweeps *across* the layers already built rather than adding a new one.
-
-**Why now.** It needs the animated surfaces and behaviors (Phases 4–5) to exist before it can harden them. Doing it as a dedicated pass ensures nothing is missed.
+**Goal.** Bring the TypeScript mirrors, taxonomy, and prose guides back into parity with the new shape, so the dual-distribution contract and the doc-parity tests hold.
 
 ### Work
 
-- [ ] **Reduced motion** — for every transition/animation in the system, provide a `@media (prefers-reduced-motion: reduce)` path that removes or tames it. Standardize this (a mixin/helper if the toolchain has one) so authors can't forget it. Note: `(prefers-reduced-motion)` alone evaluates as the reduce case — be explicit with `reduce`.
-- [ ] **Entry/exit animation done right** — where elements animate in from `display: none` or the top layer (popovers, dialogs), use `@starting-style` for the entry state and a `transition-behavior: allow-discrete` where a discrete property (like `display`) is involved.
-- [ ] **Animate to/from intrinsic sizes** where wanted (e.g. a disclosure expanding to `height: auto`) using `interpolate-size: allow-keywords`, gated under `prefers-reduced-motion: no-preference`.
-- [ ] **Forced colors / high contrast** — for any surface or component that paints its own colors (especially focus rings, borders that carry meaning, custom controls), provide a `forced-colors` fallback that maps to system colors so meaning survives in high-contrast mode.
-- [ ] **Color contrast** — verify text/background pairings from the token palette meet the contrast target. oklch's perceptually-uniform lightness makes this checkable by keeping a sufficient lightness gap between paired tokens.
-- [ ] **Non-color affordances** — confirm meaning is never carried by color alone (links, states, variants all have a second cue).
-
-### Constraints
-
-- **No animation ships without a reduced-motion opt-out.** Make this structurally hard to skip.
-- **No meaning carried by color alone**, anywhere.
-- **Forced-colors fallbacks are required** for self-painted color, not optional polish.
+- [ ] **`taxonomy.ts`** — re-treat the de-promoted tags (`substantive` → `reset`/`passthrough`); move `TOKEN_GROUPS` `page-shell`/`card-region` membership to the class components; refresh `SUBSTANTIVE_TAGS`/`RESET_TAGS`/`PASSTHROUGH_TAGS`/`MODIFIABLE_TAGS`.
+- [ ] **`elements.ts`** — drop tags that no longer declare bare-tag `--set-{tag}-*` tokens; keep universal baselines.
+- [ ] **`tokens.ts`** — re-home moved `--set-*` tokens; maintain bidirectional SCSS↔TS parity.
+- [ ] **Guides** — update [styles.md](guides/styles.md) (principle #6 rewrite), [components.md](guides/components.md) (element-driven → class/signal-driven compositions), [elements.md](guides/elements.md) (treatment table), [patterns.md](guides/patterns.md) (`STRUCTURAL_PAIRINGS` spec-only + scoping-exemption), [modifiers.md](guides/modifiers.md) if any modifier moves. The guide-parity tests are the checklist.
 
 ### Exit criteria
 
-- [ ] Enabling "reduce motion" at the OS level tames or removes every animation in the system.
-- [ ] Popovers/dialogs animate in cleanly via `@starting-style` and don't break on exit.
-- [ ] In forced-colors mode, focus rings, meaningful borders, and custom controls remain perceivable.
-- [ ] Every text/background token pairing meets the contrast target, and no state/variant is distinguished by color alone.
+- [ ] `npm run test:src:browser` (TS↔SCSS parity) is green.
+- [ ] Every guide-parity driver under `tests/guides/` is green.
+- [ ] No guide still documents bare-tag ancestry disambiguation as the mechanism.
 
 ---
 
-## Phase 7 — Utilities: the escape hatch
+## Phase 7 — Verify & refresh the map
 
-**Goal.** Provide (or adopt) the small, single-purpose, highest-priority classes for genuine one-offs. After this, an author has a clean way to make a last-mile adjustment without writing a component or reaching for `!important`.
-
-**Why last among the painting layers.** Utilities win over everything in the system, so they are built once the things they might need to override exist. They are deliberately the final word *inside* the system (an un-layered consumer rule still beats them).
+**Goal.** Prove the whole system end-to-end and update the living comparison.
 
 ### Work
 
-- [ ] **Decide: adopt an existing utility framework, or ship a minimal in-house set.** If adopting one, let it own the `utilities` layer entirely (import it into that layer) and don't duplicate its classes with framework classes.
-- [ ] **If in-house, keep utilities single-concern**: layout (`flex`, `grid`, `gap-*`), spacing one-offs, display (`hidden`), text alignment — each doing exactly one thing.
-- [ ] **Wrap utilities in `@layer utilities`** so they sit at the top of the order.
-- [ ] **Route utility values through tokens** where a token exists (a `gap-*` reads a spacing token), so utilities theme along with everything else.
-
-### Constraints
-
-- **One concern per utility.** A growing cluster of related declarations is a component, not a utility.
-- **No baked-in values that should be tokens.** A one-off margin is fine; a brand color frozen into a utility is a theming leak.
-- **Utilities are the escape hatch, not the default.** Reach for element/component/modifier first.
-- **Don't re-create framework utilities** with your own classes if you've adopted a framework for this layer.
+- [ ] **Full suite green** — `npm test` across all projects.
+- [ ] **Inspector self-audit** — every showcase page mounts and `Inspector.inspect()` reports zero `error` findings (the semantics page-gate), and the style-matrix gate over `STRUCTURAL_PAIRINGS` × modifiers passes under the new pairing set.
+- [ ] **Showcase render check** — pages updated for the new opt-in markup (cards carry `.card`, shells carry `.shell`) render correctly in the browser; verify the proof surface visually.
+- [ ] **Refresh [MAP.md](MAP.md)** — the elements column now reflects class/signal-driven compositions where it previously implied bare-tag ancestry. Update affected rows as the work lands ("MAP.md as we go").
 
 ### Exit criteria
 
-- [ ] A utility overrides a component's property without `!important` (proving the layer order).
-- [ ] An un-layered consumer rule overrides a utility (proving the consumer-wins contract still holds at the top of the stack).
-- [ ] No utility bakes in a value that should be a token.
+- [ ] Every test project passes.
+- [ ] The inspector finds zero `error`-severity issues across all showcase pages.
+- [ ] MAP.md accurately reflects the post-refactor elements model.
 
 ---
 
-## Phase 8 — Theming: variation as data
+## Appendix — migration triage
 
-**Goal.** Prove the payoff of the token discipline: switch the whole system's look by changing token *values* under a selector — no painting rule touched. After this, mode (light/dark) and theme (palette identity) are independent, attribute-driven, and complete.
+The non-spec pairings removed from `STRUCTURAL_PAIRINGS`, grouped by disposition. Phase 1 turns this into the committed per-pairing table; this is the starting classification.
 
-**Why now.** Theming is the validation that Phases 1–7 were built correctly. If a theme flip needs per-component rules, a token was missed — this phase surfaces that.
+### Keep as bare-tag (spec — unchanged, ~30)
 
-### The two independent axes
+`details>summary` · `fieldset>legend` · `picture>source` · `picture>img` · `select>option` · `select>optgroup` · `optgroup>option` · `table>{thead,tbody,tfoot,caption,colgroup,tr}` · `{thead,tbody,tfoot}>tr` · `tr>td` · `tr>th` · `colgroup>col` · `ol>li` · `ul>li` · `menu>li` · `dl>dt` · `dl>dd`
 
-| Axis | Question | Hook | Default |
-| --- | --- | --- | --- |
-| **mode** | light or dark? | `data-mode` on the root | absent = follow the OS |
-| **theme** | which palette/identity? | `data-theme` on the root | absent = base palette |
+### Evaporate (delete — was only cleaning up stripped chrome)
 
-### Work
+- **Nesting-collapse:** `main>section`, `section>section`, `article>section`, `nav>section`, `aside>section`, `dialog>section`, `form>section` — section adds no default padding-block, so nothing collapses.
+- **Zero-margin-in-container:** `article>{h1..h6,p}`, `header>{h1..h6,p}`, `footer>{h1..h6,p}`, `dialog>{h1..h6,p}`, `form>{h1..h6,p}` — rhythm is owned by `gap` on the (now class/signal-gated) container; any residual reset becomes a scoped descendant of `.card` / `dialog:modal` (non-bare-tag head ⇒ exempt) or is unneeded.
 
-- [ ] **Build the mode axis by redeclaring tokens only.** A `[data-mode="dark"]` block (and a `@media (prefers-color-scheme: dark)` block scoped to *no explicit mode*, so OS-follow works by default) override **semantic token values** — never add component rules. Derive cross-mode values with `color-mix`/relative syntax where it helps.
-- [ ] **Build the theme axis as alternative palettes**, each a `[data-theme="…"]` block that remaps semantic roles onto different primitives (and optionally dials the factor knobs). A theme is *just* a different set of token values.
-- [ ] **Keep the two axes orthogonal** — any theme must work in both light and dark, because mode and theme touch different tokens.
-- [ ] **Build the switch UI in driving code** (a control that sets/removes `data-mode` and `data-theme` on the root). Setting mode to "system" *removes* the attribute so CSS owns OS-follow. Persist the choice if wanted; keep persistence in code, defaults in CSS.
-- [ ] **Animate factor changes** across a theme switch if desired — the `@property`-registered factors (Phase 1) interpolate.
-- [ ] **Demonstrate live switching on the proof page** across every element, component, surface, and state.
+### Signal-gated (platform marker means "always this")
 
-### Constraints
+| Composition                    | Signal                                                                                                                                |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Drawer / off-canvas + bands    | `:is(aside, nav)[popover]`                                                                                                            |
+| In-flow alert / status banner  | `aside[role="alert"]` / `[role="status"]`                                                                                             |
+| Tabs                           | `[role="tablist"]` / `[role="tab"]` / `[role="tabpanel"]`                                                                             |
+| Toolbar / group                | `[role="toolbar"]` / `[role="group"]`                                                                                                 |
+| Modal bands + body rhythm      | `dialog:modal` / `dialog[open]`                                                                                                       |
+| Dropdown / menu panel + groups | `[popover] > menu`, `li > menu`, `li > h6`                                                                                            |
+| Toast deck + bands             | `[role="status"][popover]`                                                                                                            |
+| Breadcrumb / pagination        | `nav[aria-label="Breadcrumb"]` / `nav[aria-label="Pagination"] > ol/ul` — **stays signal-driven** (decided); not converted to a class |
+| Reveal label slot              | `button.reveal > span` (class-scoped)                                                                                                 |
+| Menu / nav command rows        | `li > a`, `li > button` under a nav/menu signal                                                                                       |
 
-- **Themes and modes redeclare tokens only — never add painting rules.** If a mode/theme needs a component rule, the value wasn't fully tokenized; fix the token, not the component.
-- **Default by absence.** No attribute means the sensible default (OS mode, base theme), so the default path needs no script.
+### Class-gated (no natural signal — new named root, element slots)
 
-### Exit criteria
+Root names follow mailbox; slots and modifiers follow elements' mechanics (element slots + `--set-*` modifier composition).
 
-- [ ] Toggling `data-mode` re-themes the entire proof page (every layer) with no painting rule edited.
-- [ ] Switching `data-theme` re-skins everything, and every theme works correctly in both light and dark.
-- [ ] Removing both attributes falls back to OS mode + base theme with no scripting required.
-- [ ] No theme/mode block contains a painting rule — only token redeclarations.
+| Composition                | Class                                                              | Replaces                                                             |
+| -------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| Card + bands + hero + list | `.card` (slots: `.card > header`, `.card > footer`, `.card > img`) | bare `article` surface + `article > header/footer/img/picture/ul/ol` |
+| App shell grid             | `.shell` (slots: `.shell > header/nav/main/aside/footer`)          | `body:has(main)` + `body > header/nav/main/aside/footer`             |
+| Callout (in-article aside) | `.callout`                                                         | `article aside`                                                      |
+| Card action row            | `.card menu` (under `.card`)                                       | `article menu`                                                       |
 
----
-
-## Phase 9 — Verification: prove the contracts hold
-
-**Goal.** Lock in the invariants so they can't silently rot. After this, the architecture's promises are checked, not just asserted.
-
-**Why last.** It verifies the whole system end to end. Some checks can be stood up earlier (the layer-order proof belongs in Phase 0); this phase ensures the full set exists.
-
-### Work
-
-- [ ] **Layer-order checks** — automated or scripted: a `utilities` rule beats a `components` rule at lower specificity; an un-layered rule beats everything; no shipped rule lives outside a layer.
-- [ ] **Token checks** — no raw color literals in semantic/component tiers; changing a primitive ripples without rule edits; every documented token name resolves.
-- [ ] **Element-treatment checks** — every `styled` element declares ≥1 of its own tokens; the treatment registry matches what shipped.
-- [ ] **Boundary checks** — no painting rule targets ARIA; no product pattern is painted via a structural-ancestry selector; no `modifier.host`-coupled rules.
-- [ ] **Behavior checks** — every state class has one writer; teardown is idempotent and complete.
-- [ ] **Theming checks** — a mode flip and a theme flip both leave painting rules untouched; every text/background pairing meets contrast.
-- [ ] **Motion/contrast checks** — every transition has a reduced-motion path; self-painted color has a forced-colors fallback.
-- [ ] **A living proof surface** — keep the proof page (grown across every phase) as the canonical demonstration, and treat a missing demo for a shipped feature as a defect.
-
-### Exit criteria
-
-- [ ] Every check above runs and passes.
-- [ ] The proof page demonstrates every layer, in both modes, across at least one alternate theme.
-- [ ] The invariants are enforced by a check, not by reviewer memory.
+Atoms keep their mailbox-aligned names and elements modifiers (no new root); optional opt-in features that need a token: `.avatar-group` → `--set-avatar-group-*`, `.dot.ring` → `--set-dot-ring`.
 
 ---
 
-## The master checklist (at a glance)
+## Invariants we preserve (not rebuilding)
 
-A condensed pass/fail view of the whole build. Each line is "done" only when its phase's exit criteria all pass.
+These are already correct and must stay green throughout — the refactor must not regress them:
 
-- [ ] **Phase 0 — Foundation.** Layer order declared once; entry file; minimal reset; order proven (utility > reset, un-layered > all).
-- [ ] **Phase 1 — Tokens.** Primitive/semantic (+ optional component) tiers; oklch palette; states derived via color-mix/relative syntax; non-color scales; factor knobs; naming locked; no literals.
-- [ ] **Phase 2 — Elements.** Every element assigned a treatment; classless HTML reads as finished; styled elements declare own tokens; only platform relationships styled directly; no ARIA targeting.
-- [ ] **Phase 3 — Components.** Real product patterns as classes; one part-naming convention; component-private tokens on the root; graceful degradation; class owns the contract.
-- [ ] **Phase 4a — Modifiers.** Fallback chains wired; variant/emphasis/size/state axes set tokens only; compose across components; no `modifier.host` coupling.
-- [ ] **Phase 4b — Behavior.** State vocabulary settled; CSS owns look, code owns timing; one writer per class; idempotent teardown.
-- [ ] **Phase 5 — Surfaces.** `:focus-visible` ring; native dialog/`::backdrop`; Popover API; anchor positioning with flip fallbacks; seam-not-host; visibility left to the platform.
-- [ ] **Phase 6 — Accessibility & motion.** Reduced-motion path everywhere; `@starting-style` entry; forced-colors fallbacks; contrast met; no color-only meaning.
-- [ ] **Phase 7 — Utilities.** Single-concern escape-hatch classes (or adopted framework) in the top layer; values via tokens; consumer-wins still holds above them.
-- [ ] **Phase 8 — Theming.** Mode and theme as independent, attribute-driven token redeclarations; default by absence; live switch; no painting rules in theme blocks.
-- [ ] **Phase 9 — Verification.** Every contract checked automatically; living proof surface; invariants enforced, not remembered.
+- **Token discipline.** Primitive → semantic → component tiers; `--set-*` namespace; no literals where a token exists; `oklch` palette + `color-mix`/relative-color derivations. (Clean today.)
+- **Accessibility & motion.** Every transition pairs with a `prefers-reduced-motion` path via `@include transition()`; every `INTERACTIVE_ELEMENTS` member ships `:focus-visible` + `@include forced-colors`; no bare `:focus`; no color-only meaning.
+- **Theming.** `data-mode` / `data-theme` redeclare tokens only; default by absence (OS-follow). No painting rules in theme blocks.
+- **Dual-distribution parity.** Every CSS identifier mirrors a TS leaf; bidirectional parity tests stay green.
+- **Surfaces stay native.** `:focus-visible`, `::backdrop`, Popover API, anchor positioning — styled, never reimplemented.
 
 ---
 
-## Sequencing rationale (why this order, briefly)
+## The master checklist
 
-The build climbs from the most foundational and most-depended-on to the most dependent:
+- [ ] **Phase 0 — Lock the contract.** `STRUCTURAL_PAIRINGS` spec-only; pairing test enforces the scoping exemption; universality data encoded; red baseline captured.
+- [ ] **Phase 1 — Triage.** Every non-spec pairing classified `evaporate`/`signal`/`class`; class roots pass collision guards; table committed.
+- [ ] **Phase 2 — Purify elements.** Universal-only baselines; evaporating combos deleted; concentrated violations relocated; classless render still reads.
+- [ ] **Phase 3 — Signal-gated.** Drawers/tabs/alerts/modals/toolbars/toasts/breadcrumbs render off their platform signal; no bare-tag ancestry path.
+- [ ] **Phase 4 — Class-gated.** `.card`/`.shell`/… render full chrome with the class, plain without; registered + token-mirrored.
+- [ ] **Phase 5 — De-conflict.** Zero same-layer property conflicts; precedence proven; modifiers still compose.
+- [ ] **Phase 6 — Sync.** Taxonomy/`elements.ts`/`tokens.ts` re-homed; all guide-parity drivers green.
+- [ ] **Phase 7 — Verify.** `npm test` green; inspector zero errors; showcase renders; MAP.md refreshed.
+
+---
+
+## Sequencing rationale
+
+The build climbs from the one decision everything depends on to the validation that it held:
 
 ```
-0 Foundation ──▶ 1 Tokens ──▶ 2 Elements ──▶ 3 Components ──▶ 4 Modifiers+Behavior
-                                                                      │
-                                  ┌───────────────────────────────────┘
-                                  ▼
-                            5 Surfaces ──▶ 6 A11y+Motion ──▶ 7 Utilities ──▶ 8 Theming ──▶ 9 Verify
+0 Contract ─▶ 1 Triage ─▶ 2 Purify elements ─┬▶ 3 Signal-gated ─┐
+                                              └▶ 4 Class-gated  ─┴▶ 5 De-conflict ─▶ 6 Sync ─▶ 7 Verify
 ```
 
-- **0 and 1 are the contracts** everything else assumes (the layer order, the token values). They go first, in isolation, because changing either one later re-shuffles everything.
-- **2 → 3** is platform-then-product: bare elements look good first, then product patterns build on them.
-- **4** adds variation and state once there's something to vary.
-- **5** tunes the browser's own surfaces, sitting above components in the cascade.
-- **6** is a hardening sweep that needs the animated things (4–5) to already exist.
-- **7** is the escape hatch, built once the things it might override exist.
-- **8** is the validation of the token discipline; **9** locks every contract so it can't rot.
+- **0 is the contract** — tighten the test first so the work list is generated, not guessed. Changing it later would re-shuffle every later decision.
+- **1 decides dispositions once** so Phases 2–4 are mechanical, not improvised per file.
+- **2 strips before 3/4 restore** — deleting the bare-tag promotions first means most cleanup combinations evaporate, shrinking what 3/4 must rebuild.
+- **3 and 4 are parallel** — signal-gated and class-gated migrations are independent; either can land first.
+- **5 proves no-conflict** once everything is in its final home and precedence can be measured end-to-end.
+- **6 re-establishes parity** (TS, taxonomy, guides) after the selectors settle.
+- **7 validates** with the suite, the inspector self-audit, and the refreshed map.
 
-Build one phase, pass its exit criteria, then start the next. The proof surface grows with every phase and is the single best signal that the system is coherent.
+Build one phase, pass its exit criteria, then start the next. The contract test and the inspector self-audit are the two signals that the system is coherent at every step.

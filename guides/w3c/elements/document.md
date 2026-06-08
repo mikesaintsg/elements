@@ -46,12 +46,12 @@ The `html` element represents the root of an HTML document. Authors are strongly
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<title>Swapping Songs</title>
-</head>
-<body>
-<h1>Swapping Songs</h1>
-</body>
+	<head>
+		<title>Swapping Songs</title>
+	</head>
+	<body>
+		<h1>Swapping Songs</h1>
+	</body>
 </html>
 ```
 
@@ -81,12 +81,14 @@ The `head` element represents a collection of metadata for the `Document`. **DOM
 
 ```html
 <!doctype html>
-<html lang=en>
- <head>
-  <title>A document with a short head</title>
- </head>
- <body>
- ...
+<html lang="en">
+	<head>
+		<title>A document with a short head</title>
+	</head>
+	<body>
+		...
+	</body>
+</html>
 ```
 
 ### 4.2.2 The `title` element
@@ -142,7 +144,7 @@ The `title` element represents the document's title or name. It must contain onl
 The `base` element allows authors to specify the document base URL for URL parsing and the default navigable for following hyperlinks. There must be no more than one `base` element per document; it must have an `href` and/or a `target`. It is a void element (no children).
 
 ```html
-<base href="https://www.example.com/news/index.html">
+<base href="https://www.example.com/news/index.html" />
 ```
 
 ### 4.2.4 The `link` element
@@ -170,7 +172,7 @@ The `base` element allows authors to specify the document base URL for URL parsi
 The `link` element allows authors to link their document to other resources. The destination is given by `href`; the relationship by `rel`. A `link` may appear in the body **only** if its `rel` carries a body-ok keyword (see [`links.md`](links.md)); otherwise it must be in the `head`. It is a void element.
 
 ```html
-<link rel="stylesheet" href="default.css">
+<link rel="stylesheet" href="default.css" />
 ```
 
 ### 4.2.5 The `meta` element
@@ -198,7 +200,7 @@ The `link` element allows authors to link their document to other resources. The
 The `meta` element represents metadata that cannot be expressed using `title`/`base`/`link`/`style`/`script`. Exactly one of `name`, `http-equiv`, `charset`, or `itemprop` must be present (and `content` is required unless `charset` is present). It is a void element.
 
 ```html
-<meta name="keywords" content="british,typeface,font,highway">
+<meta name="keywords" content="british,typeface,font,highway" />
 ```
 
 ### 4.2.6 The `style` element
@@ -227,6 +229,9 @@ The `style` element allows authors to embed CSS style sheets in their documents.
 
 ```html
 <style>
- body { color: black; background: white; }
+	body {
+		color: black;
+		background: white;
+	}
 </style>
 ```

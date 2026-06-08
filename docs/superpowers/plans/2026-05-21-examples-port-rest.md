@@ -9,6 +9,7 @@
 **Tech stack:** Vue 3 `<script setup>`, TypeScript, Tailwind v4 utilities, framework's `@elements/browser` composables where the example needs JS (`useDialog`, `useMenu`, `useDrag`, `useDrop`, `useDetails`, etc.).
 
 **Specs:**
+
 - [2026-05-20-examples-port-design.md](../specs/2026-05-20-examples-port-design.md) — original spec (file structure, route registration, test contracts).
 - [2026-05-21-examples-port-design-revised.md](../specs/2026-05-21-examples-port-design-revised.md) — revised pattern (body-shell siblings, framework chrome reliance, conventions).
 
@@ -52,6 +53,7 @@ Every example follows the same 10-step flow. Spelled out for Mail; subsequent se
 ### Layout
 
 Three-pane inbox (mailbox-canonical):
+
 - **Folders rail** (left) — list of folders/labels (Inbox, Starred, Sent, Drafts, Spam, Trash + custom labels). On desktop, an in-flow `<nav>` column. On mobile, a popover drawer.
 - **Thread list** (middle) — list of email threads in the selected folder. Each row: sender, subject, snippet, timestamp, unread dot.
 - **Reading pane** (right) — selected thread's body. Header (subject, from, to, date), message body, action toolbar (Reply, Forward, Archive, Delete).
@@ -59,12 +61,14 @@ Three-pane inbox (mailbox-canonical):
 ### Body-shell mapping
 
 The framework's body grid has 5 named areas (`header`, `nav`, `main`, `aside`, `footer`). For a three-pane layout we have to choose:
+
 - **Option A: outer `<nav>` + outer `<main>` containing an inner two-pane grid.** Cleanest. The outer `<nav>` is the folder rail (framework chrome). The outer `<main>` contains thread list + reading pane via a scoped CSS grid (e.g., `grid-template-columns: minmax(0, 22rem) minmax(0, 1fr)`). The inner panes get scoped CSS (no framework body-shell chrome on them — they're not at body-shell position).
 - **Option B: outer `<nav>` + outer `<aside>` + outer `<main>` as three siblings.** Tries to use both the `nav` and `aside` body-grid areas. But the framework's `<aside>` chrome is paint-side-rail-like (right border, ~16rem wide); the reading pane is the bigger surface and `<main>` is supposed to be the dominant content. Worse semantics.
 
 **Pick Option A.** Reading pane is the dominant content (it's where the user reads); `<main>` is correct for it. Thread list is a secondary panel inside `<main>` — author it as `<section aria-label="Threads">` with scoped grid CSS.
 
 Inner-pane behavior on mobile:
+
 - Thread list and reading pane should NOT show side-by-side on a 375px viewport.
 - Convention: thread list visible by default; tapping a thread opens the reading pane (replacing the thread list).
 - Implementation: a ref `selectedThread: Ref<number | null>`. On mobile, the reading pane is a separate route or a popover or absolute-positioned overlay. For simplicity in this example: a scoped CSS rule that hides the thread list when a thread is selected on mobile, OR show thread list above reading pane stacked. Pick stacked-on-mobile (simpler, no JS gymnastics — `display: block` mobile, `display: grid` desktop).
@@ -76,11 +80,13 @@ Inner-pane behavior on mobile:
 - Plus the standard ExamplesShell composables (useDialog, useMenu, useTheme)
 
 Optionally:
+
 - `useDetails` for collapsing/expanding a thread quote (not in mailbox's version, but a nice elements addition)
 
 ### Scoped CSS budget (estimate)
 
 ~80-120 lines:
+
 - Inner grid for thread list + reading pane (1 rule, responsive)
 - Folder badge counts (small numbers next to folder names — `.folder-count`)
 - Thread row layout (sender / subject / snippet / time — flex layout with truncation)
@@ -111,8 +117,9 @@ Optionally:
 ### Layout
 
 Long-scroll landing page:
+
 - **Hero** — big headline, subhead, CTA buttons (Get started / Watch demo), optional product screenshot
-- **Trust strip** — logo cloud or "Used by ___ companies" line
+- **Trust strip** — logo cloud or "Used by \_\_\_ companies" line
 - **Feature grid** — 3-6 feature cards (icon, title, description)
 - **Showcase** — larger feature highlight (image + text, or split layout)
 - **Pricing tiers** — 3 plan cards (free / pro / enterprise)
@@ -125,10 +132,12 @@ Long-scroll landing page:
 Marketing pages **don't** have a sidebar / topbar / app shell. The right shape is just `<main>` with `<section>` blocks inside. No `<nav>` at body-shell position; the marketing site's top nav (if any) goes inside the hero `<section>` as an inline `<nav>`.
 
 Skip:
+
 - The mobile drawer (no sidebar)
 - The right-drawer actions (no actions)
 
 Use:
+
 - `<main>` token override for narrow padding (`--set-main-padding-inline: 0; --set-main-padding-block: 0; --set-main-gap: 0`) so each `<section>` controls its own padding edge-to-edge
 - `<section>` for each major block
 - `<article>` for feature cards and pricing tiers
@@ -143,6 +152,7 @@ Use:
 ### Scoped CSS budget (estimate)
 
 ~150-200 lines (heaviest of the four — marketing needs lots of presentation chrome):
+
 - Hero block (gradient background, large typography, CTA layout)
 - Trust strip (logo grid, muted)
 - Feature grid (3-up on desktop, 1-up on mobile)
@@ -176,6 +186,7 @@ Use:
 ### Layout
 
 Split-screen sign-in:
+
 - **Left half** — sign-in form: logo, headline, email + password, primary CTA, OAuth buttons (Google, GitHub), forgot-password / sign-up links
 - **Right half** — brand panel: gradient background, marketing copy or illustration
 
@@ -184,6 +195,7 @@ On mobile: form fills viewport; brand panel hidden (or above the form as a small
 ### Body-shell mapping
 
 The simplest possible body shape:
+
 - Just `<main>` (no nav, no header, no aside, no footer)
 - Inside `<main>`, a CSS grid with two columns (`50% 50%` or `minmax(0, 32rem) 1fr`) — form on the left, brand on the right
 - On mobile, the grid collapses to single column and the brand panel hides
@@ -196,6 +208,7 @@ The simplest possible body shape:
 ### Scoped CSS budget (estimate)
 
 ~80-120 lines:
+
 - Outer grid (50/50 split, responsive to single column)
 - Form column padding + centering
 - Brand column gradient + illustration container
@@ -222,6 +235,7 @@ The simplest possible body shape:
 ### Layout
 
 Three-pane agent workspace (most complex):
+
 - **Left pane: Context** — search bar + draggable list of context items (customer cards, recent conversations, saved searches). Drag-reorder via `useDrag` / `useDrop`.
 - **Middle pane: Chat** — message thread with the current contact. Accordion of past conversations (`<details>`). Reply form pinned at bottom (textarea + send button).
 - **Right pane: Documents** — list of files associated with the contact. Inline forms for adding notes (`<dialog>` for "Add note" modal).
@@ -231,16 +245,19 @@ Topbar above everything: command bar (`<form role="search">` with a search input
 ### Body-shell mapping
 
 Same dilemma as Mail — three panes don't fit the body grid's single-`<main>` model. Options:
+
 - **A:** `<header>` (command bar) + `<nav>` (context) + `<main>` (chat) + `<aside>` (documents). Uses all four body-shell areas.
 - **B:** `<header>` + `<main>` containing inner three-pane grid.
 
 For CRM specifically, **option A is cleaner** because:
+
 - The `<nav>` is genuinely primary navigation (selecting which contact / context to view)
 - The `<aside>` is genuinely tangential (documents associated with the current contact)
 - `<main>` is the dominant content (the chat conversation)
 - Framework chrome paints all four cleanly
 
 Mobile behavior:
+
 - `<nav>` becomes a left-side popover drawer (existing pattern)
 - `<aside>` becomes a right-side popover drawer (existing pattern — Dashboard's actions drawer)
 - `<main>` (chat) fills the viewport between them
@@ -256,6 +273,7 @@ Mobile behavior:
 ### Scoped CSS budget (estimate)
 
 ~200-280 lines (heaviest):
+
 - Context list (draggable card layout, drag-over highlight)
 - Chat message bubbles (sender/recipient alignment, timestamp, read status)
 - Reply composer (sticky bottom, textarea + send button)
@@ -305,6 +323,7 @@ Each ends in a stop-and-review checkpoint before moving to the next.
 ## Self-review checklist
 
 Before declaring an example done:
+
 - [ ] No `.dashboard-*` / `.example-*` class roots that the framework already provides (run grep: `grep -E "padding|margin|inline-size|block-size" app/browser/examples/<Name>Example.vue` and check each is genuinely app-specific)
 - [ ] Body-shell siblings rendered as Vue fragment (not wrapped in a `<div>`)
 - [ ] Sidebar nav uses `<nav>` (not `<aside>`) for primary navigation

@@ -543,14 +543,20 @@ The `input` element represents a typed data field, usually with a form control t
 A `type=url` field wired to a `datalist` for autocomplete suggestions:
 
 ```html
-<input type="url" name="location" list="urls">
+<input type="url" name="location" list="urls" />
 <datalist id="urls">
- <option label="MIME: Format of Internet Message Bodies" value="https://www.rfc-editor.org/rfc/rfc2045">
- <option label="HTML" value="https://html.spec.whatwg.org/">
- <option label="DOM" value="https://dom.spec.whatwg.org/">
- <option label="Fullscreen" value="https://fullscreen.spec.whatwg.org/">
- <option label="Media Session" value="https://mediasession.spec.whatwg.org/">
- <option label="The Single UNIX Specification, Version 3" value="http://www.unix.org/version3/">
+	<option
+		label="MIME: Format of Internet Message Bodies"
+		value="https://www.rfc-editor.org/rfc/rfc2045"
+	></option>
+	<option label="HTML" value="https://html.spec.whatwg.org/"></option>
+	<option label="DOM" value="https://dom.spec.whatwg.org/"></option>
+	<option label="Fullscreen" value="https://fullscreen.spec.whatwg.org/"></option>
+	<option label="Media Session" value="https://mediasession.spec.whatwg.org/"></option>
+	<option
+		label="The Single UNIX Specification, Version 3"
+		value="http://www.unix.org/version3/"
+	></option>
 </datalist>
 ```
 
@@ -558,18 +564,30 @@ Illustrative (the spec page above carries the full per-type example set):
 
 ```html
 <form method="post" action="/subscribe">
- <p><label>Name: <input type="text" name="name" required></label></p>
- <p><label>Email: <input type="email" name="email" required></label></p>
- <p><label>Password: <input type="password" name="pw" minlength="8"></label></p>
- <p><label><input type="checkbox" name="tos" required> I accept the terms</label></p>
- <fieldset>
-  <legend>Plan</legend>
-  <label><input type="radio" name="plan" value="free" checked> Free</label>
-  <label><input type="radio" name="plan" value="pro"> Pro</label>
- </fieldset>
- <p><label>Avatar: <input type="file" name="avatar" accept="image/*"></label></p>
- <p><label>Quantity: <input type="number" name="qty" min="1" max="10" step="1" value="1"></label></p>
- <p><input type="submit" value="Subscribe"></p>
+	<p>
+		<label>Name: <input type="text" name="name" required /></label>
+	</p>
+	<p>
+		<label>Email: <input type="email" name="email" required /></label>
+	</p>
+	<p>
+		<label>Password: <input type="password" name="pw" minlength="8" /></label>
+	</p>
+	<p>
+		<label><input type="checkbox" name="tos" required /> I accept the terms</label>
+	</p>
+	<fieldset>
+		<legend>Plan</legend>
+		<label><input type="radio" name="plan" value="free" checked /> Free</label>
+		<label><input type="radio" name="plan" value="pro" /> Pro</label>
+	</fieldset>
+	<p>
+		<label>Avatar: <input type="file" name="avatar" accept="image/*" /></label>
+	</p>
+	<p>
+		<label>Quantity: <input type="number" name="qty" min="1" max="10" step="1" value="1" /></label>
+	</p>
+	<p><input type="submit" value="Subscribe" /></p>
 </form>
 ```
 
@@ -589,53 +607,35 @@ The `button` element represents a button labeled by its contents. Its behavior i
 The following button is used to fire a script when activated:
 
 ```html
-<button type=button
-        onclick="alert('This 15-20 minute piece was composed by George Gershwin.')">
- Show hint
+<button type="button" onclick="alert('This 15-20 minute piece was composed by George Gershwin.')">
+	Show hint
 </button>
 ```
 
 A button can declaratively invoke a command on another element via `commandfor`/`command` (here, showing and hiding a popover):
 
 ```html
-<button type=button
-        commandfor="the-popover"
-        command="show-popover">
- Show menu
-</button>
-<div popover
-     id="the-popover">
- <button commandfor="the-popover"
-         command="hide-popover">
-  Hide menu
- </button>
+<button type="button" commandfor="the-popover" command="show-popover">Show menu</button>
+<div popover id="the-popover">
+	<button commandfor="the-popover" command="hide-popover">Hide menu</button>
 </div>
 ```
 
 Custom (`--`-prefixed) commands dispatch a `CommandEvent` to the target:
 
 ```html
-<button type=button
-        commandfor="the-image"
-        command="--rotate-landscape">
- Rotate Left
-</button>
-<button type=button
-        commandfor="the-image"
-        command="--rotate-portrait">
- Rotate Right
-</button>
-<img id="the-image"
-     src="photo.jpg">
+<button type="button" commandfor="the-image" command="--rotate-landscape">Rotate Left</button>
+<button type="button" commandfor="the-image" command="--rotate-portrait">Rotate Right</button>
+<img id="the-image" src="photo.jpg" />
 <script>
-  const image = document.getElementById("the-image");
-  image.addEventListener("command", (event) => {
-   if ( event.command == "--rotate-landscape" ) {
-    event.target.style.rotate = "-90deg"
-   } else if ( event.command == "--rotate-portrait" ) {
-    event.target.style.rotate = "0deg"
-   }
-  });
+	const image = document.getElementById('the-image')
+	image.addEventListener('command', (event) => {
+		if (event.command == '--rotate-landscape') {
+			event.target.style.rotate = '-90deg'
+		} else if (event.command == '--rotate-portrait') {
+			event.target.style.rotate = '0deg'
+		}
+	})
 </script>
 ```
 
@@ -645,7 +645,7 @@ Custom (`--`-prefixed) commands dispatch a `CommandEvent` to the target:
 
 - **Categories:** Flow content; Phrasing content; Interactive content; Listed, labelable, submittable, resettable, and autocapitalize-and-autocorrect inheriting form-associated element; Palpable content.
 - **Contexts:** Where phrasing content is expected.
-- **Content model:** Zero or one `button` elements if the `select` is a drop-down box, followed by zero or more *select element inner content elements* (`option`, `optgroup`, `hr`, and script-supporting elements; plus `div`/`noscript` per the inner-content category).
+- **Content model:** Zero or one `button` elements if the `select` is a drop-down box, followed by zero or more _select element inner content elements_ (`option`, `optgroup`, `hr`, and script-supporting elements; plus `div`/`noscript` per the inner-content category).
 - **Tag omission:** Neither tag is omissible.
 - **Content attributes:** Global attributes plus `autocomplete`, `disabled`, `form`, `multiple`, `name`, `required`, `size`.
 - **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-select) · [For implementers](https://w3c.github.io/html-aam/#el-select).
@@ -656,14 +656,14 @@ A basic drop-down with a pre-selected option:
 
 ```html
 <p>
- <label for="unittype">Select unit type:</label>
- <select id="unittype" name="unittype">
-  <option value="1"> Miner </option>
-  <option value="2"> Puffer </option>
-  <option value="3" selected> Snipey </option>
-  <option value="4"> Max </option>
-  <option value="5"> Firebot </option>
- </select>
+	<label for="unittype">Select unit type:</label>
+	<select id="unittype" name="unittype">
+		<option value="1">Miner</option>
+		<option value="2">Puffer</option>
+		<option value="3" selected>Snipey</option>
+		<option value="4">Max</option>
+		<option value="5">Firebot</option>
+	</select>
 </p>
 ```
 
@@ -671,12 +671,12 @@ A `required` drop-down uses a placeholder empty-value option so the user must ma
 
 ```html
 <select name="unittype" required>
- <option value=""> Select unit type </option>
- <option value="1"> Miner </option>
- <option value="2"> Puffer </option>
- <option value="3"> Snipey </option>
- <option value="4"> Max </option>
- <option value="5"> Firebot </option>
+	<option value="">Select unit type</option>
+	<option value="1">Miner</option>
+	<option value="2">Puffer</option>
+	<option value="3">Snipey</option>
+	<option value="4">Max</option>
+	<option value="5">Firebot</option>
 </select>
 ```
 
@@ -684,14 +684,14 @@ A multi-select list box (with `multiple`):
 
 ```html
 <p>
- <label for="allowedunits">Select unit types to enable on this map:</label>
- <select id="allowedunits" name="allowedunits" multiple>
-  <option value="1" selected> Miner </option>
-  <option value="2" selected> Puffer </option>
-  <option value="3" selected> Snipey </option>
-  <option value="4" selected> Max </option>
-  <option value="5" selected> Firebot </option>
- </select>
+	<label for="allowedunits">Select unit types to enable on this map:</label>
+	<select id="allowedunits" name="allowedunits" multiple>
+		<option value="1" selected>Miner</option>
+		<option value="2" selected>Puffer</option>
+		<option value="3" selected>Snipey</option>
+		<option value="4" selected>Max</option>
+		<option value="5" selected>Firebot</option>
+	</select>
 </p>
 ```
 
@@ -699,14 +699,16 @@ An `hr` may be used to visually separate groups of options in a drop-down:
 
 ```html
 <label>
- Select the song to play next:
- <select required name="next">
-  <option value="sr">Random
-  <hr>
-  <option value="s1">It Sucks to Be Me (Reprise)
-  <option value="s2">There is Life Outside Your Apartment
-  ...
- </select>
+	Select the song to play next:
+	<select required name="next">
+		<option value="sr">
+			Random
+			<hr />
+		</option>
+
+		<option value="s1">It Sucks to Be Me (Reprise)</option>
+		<option value="s2">There is Life Outside Your Apartment ...</option>
+	</select>
 </label>
 ```
 
@@ -714,35 +716,35 @@ The customizable-select form: a `button` first child with a `selectedcontent` pl
 
 ```html
 <select>
-  <button>
-    <selectedcontent></selectedcontent>
-  </button>
-  <div class="border">
-    <optgroup>
-      <legend>WHATWG Specifications</legend>
-      <option>
-        <img src="html.jpg" alt="">
-        HTML
-      </option>
-      <option>
-        <img src="dom.jpg" alt="">
-        DOM
-      </option>
-    </optgroup>
-  </div>
-  <div class="border">
-    <optgroup>
-      <legend>W3C Specifications</legend>
-      <option>
-        <img src="forms.jpg" alt="">
-        CSS Form Control Styling
-      </option>
-      <option>
-        <img src="pseudo.jpg" alt="">
-        CSS Pseudo-Elements
-      </option>
-    </optgroup>
-  </div>
+	<button>
+		<selectedcontent></selectedcontent>
+	</button>
+	<div class="border">
+		<optgroup>
+			<legend>WHATWG Specifications</legend>
+			<option>
+				<img src="html.jpg" alt="" />
+				HTML
+			</option>
+			<option>
+				<img src="dom.jpg" alt="" />
+				DOM
+			</option>
+		</optgroup>
+	</div>
+	<div class="border">
+		<optgroup>
+			<legend>W3C Specifications</legend>
+			<option>
+				<img src="forms.jpg" alt="" />
+				CSS Form Control Styling
+			</option>
+			<option>
+				<img src="pseudo.jpg" alt="" />
+				CSS Pseudo-Elements
+			</option>
+		</optgroup>
+	</div>
 </select>
 ```
 
@@ -763,12 +765,12 @@ An `input` offering autocomplete suggestions via a hidden `datalist`:
 
 ```html
 <label>
- Animal:
- <input name=animal list=animals>
- <datalist id=animals>
-  <option value="Cat">
-  <option value="Dog">
- </datalist>
+	Animal:
+	<input name="animal" list="animals" />
+	<datalist id="animals">
+		<option value="Cat"></option>
+		<option value="Dog"></option>
+	</datalist>
 </label>
 ```
 
@@ -776,18 +778,18 @@ A `datalist` providing a graceful-degradation `select` fallback (the phrasing-co
 
 ```html
 <label>
- Animal:
- <input name=animal list=animals>
+	Animal:
+	<input name="animal" list="animals" />
 </label>
-<datalist id=animals>
- <label>
-  or select from the list:
-  <select name=animal>
-   <option value="">
-   <option>Cat
-   <option>Dog
-  </select>
- </label>
+<datalist id="animals">
+	<label>
+		or select from the list:
+		<select name="animal">
+			<option value=""></option>
+			<option>Cat</option>
+			<option>Dog</option>
+		</select>
+	</label>
 </datalist>
 ```
 
@@ -795,9 +797,9 @@ A `datalist` providing a graceful-degradation `select` fallback (the phrasing-co
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/optgroup) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-optgroup-element>
 
-- **Categories:** *select element inner content elements*.
+- **Categories:** _select element inner content elements_.
 - **Contexts:** As a descendant of a `select` element.
-- **Content model:** Zero or one `legend` element, followed by zero or more *optgroup element inner content elements* (`option` and script-supporting elements; plus `div`/`noscript`).
+- **Content model:** Zero or one `legend` element, followed by zero or more _optgroup element inner content elements_ (`option` and script-supporting elements; plus `div`/`noscript`).
 - **Tag omission:** An `optgroup` element's end tag can be omitted if it is immediately followed by another `optgroup` element, if it is immediately followed by an `hr` element, or if there is no more content in the parent element.
 - **Content attributes:** Global attributes plus `disabled`, `label`.
 - **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-optgroup) · [For implementers](https://w3c.github.io/html-aam/#el-optgroup).
@@ -806,24 +808,31 @@ The `optgroup` element represents a group of `option` elements with a common lab
 
 ```html
 <form action="courseselector.dll" method="get">
- <p>Which course would you like to watch today?
- <p><label>Course:
-  <select name="c">
-   <optgroup label="8.01 Physics I: Classical Mechanics">
-    <option value="8.01.1">Lecture 01: Powers of Ten
-    <option value="8.01.2">Lecture 02: 1D Kinematics
-    <option value="8.01.3">Lecture 03: Vectors
-   <optgroup label="8.02 Electricity and Magnetism">
-    <option value="8.02.1">Lecture 01: What holds our world together?
-    <option value="8.02.2">Lecture 02: Electric Field
-    <option value="8.02.3">Lecture 03: Electric Flux
-   <optgroup label="8.03 Physics III: Vibrations and Waves">
-    <option value="8.03.1">Lecture 01: Periodic Phenomenon
-    <option value="8.03.2">Lecture 02: Beats
-    <option value="8.03.3">Lecture 03: Forced Oscillations with Damping
-  </select>
- </label>
- <p><input type=submit value="▶ Play">
+	<p>Which course would you like to watch today?</p>
+	<p>
+		<label
+			>Course:
+			<select name="c">
+				<optgroup label="8.01 Physics I: Classical Mechanics">
+					<option value="8.01.1">Lecture 01: Powers of Ten</option>
+					<option value="8.01.2">Lecture 02: 1D Kinematics</option>
+					<option value="8.01.3">Lecture 03: Vectors</option>
+					<optgroup label="8.02 Electricity and Magnetism">
+						<option value="8.02.1">Lecture 01: What holds our world together?</option>
+						<option value="8.02.2">Lecture 02: Electric Field</option>
+						<option value="8.02.3">Lecture 03: Electric Flux</option>
+						<optgroup label="8.03 Physics III: Vibrations and Waves">
+							<option value="8.03.1">Lecture 01: Periodic Phenomenon</option>
+							<option value="8.03.2">Lecture 02: Beats</option>
+							<option value="8.03.3">Lecture 03: Forced Oscillations with Damping</option>
+						</optgroup>
+					</optgroup>
+				</optgroup>
+			</select>
+		</label>
+	</p>
+
+	<p><input type="submit" value="▶ Play" /></p>
 </form>
 ```
 
@@ -831,9 +840,9 @@ The `optgroup` element represents a group of `option` elements with a common lab
 
 > [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option) · Source: <https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element>
 
-- **Categories:** *select element inner content elements*; *optgroup element inner content elements*.
+- **Categories:** _select element inner content elements_; _optgroup element inner content elements_.
 - **Contexts:** As a descendant of a `select` element; as a descendant of a `datalist` element; as a descendant of an `optgroup` element.
-- **Content model:** If the element has a `label` attribute and a `value` attribute: Nothing. If the element has a `label` attribute but no `value` attribute: Text. If the element has no `label` attribute and is not a descendant of a `datalist` element: zero or more *option element inner content elements*. If the element has no `label` attribute and is a descendant of a `datalist` element: Text.
+- **Content model:** If the element has a `label` attribute and a `value` attribute: Nothing. If the element has a `label` attribute but no `value` attribute: Text. If the element has no `label` attribute and is not a descendant of a `datalist` element: zero or more _option element inner content elements_. If the element has no `label` attribute and is a descendant of a `datalist` element: Text.
 - **Tag omission:** An `option` element's end tag can be omitted if it is immediately followed by another `option` element, if it is immediately followed by an `optgroup` element, if it is immediately followed by an `hr` element, or if there is no more content in the parent element.
 - **Content attributes:** Global attributes plus `disabled`, `label`, `selected`, `value`.
 - **Accessibility:** [For authors](https://w3c.github.io/html-aria/#el-option) · [For implementers](https://w3c.github.io/html-aam/#el-option).
@@ -844,10 +853,10 @@ Illustrative (the canonical `option` examples appear within the `select` / `data
 
 ```html
 <select name="size">
- <option>Small</option>
- <option selected>Medium</option>
- <option value="lg">Large</option>
- <option disabled>Out of stock</option>
+	<option>Small</option>
+	<option selected>Medium</option>
+	<option value="lg">Large</option>
+	<option disabled>Out of stock</option>
 </select>
 ```
 
@@ -868,8 +877,16 @@ Illustrative (canonical example at the spec link above):
 
 ```html
 <label for="bio">Short bio</label>
-<textarea id="bio" name="bio" rows="4" cols="50" maxlength="280"
-          placeholder="Tell us about yourself">Hello!</textarea>
+<textarea
+	id="bio"
+	name="bio"
+	rows="4"
+	cols="50"
+	maxlength="280"
+	placeholder="Tell us about yourself"
+>
+Hello!</textarea
+>
 ```
 
 ## 4.10.12 The `output` element
@@ -889,9 +906,8 @@ Illustrative (canonical calculator example at the spec link above):
 
 ```html
 <form oninput="result.value = (+a.value) + (+b.value)">
- <input type="range" id="a" value="50"> +
- <input type="number" id="b" value="25"> =
- <output name="result" for="a b">75</output>
+	<input type="range" id="a" value="50" /> + <input type="number" id="b" value="25" /> =
+	<output name="result" for="a b">75</output>
 </form>
 ```
 
@@ -931,8 +947,9 @@ The `meter` element represents a scalar measurement within a known range, or a f
 Illustrative (canonical disk-usage example at the spec link above):
 
 ```html
-<p>Disk usage: <meter min="0" max="100" low="20" high="80" optimum="10"
-                       value="75">75% full</meter></p>
+<p>
+	Disk usage: <meter min="0" max="100" low="20" high="80" optimum="10" value="75">75% full</meter>
+</p>
 <p>Rating: <meter value="3" min="0" max="5">3 out of 5</meter></p>
 ```
 
@@ -953,17 +970,25 @@ Illustrative (canonical grouped-form example at the spec link above):
 
 ```html
 <fieldset>
- <legend>Display settings</legend>
- <p><label>Theme:
-  <select name="theme">
-   <option>Light</option>
-   <option>Dark</option>
-  </select></label></p>
- <p><label><input type="checkbox" name="reduce-motion"> Reduce motion</label></p>
+	<legend>Display settings</legend>
+	<p>
+		<label
+			>Theme:
+			<select name="theme">
+				<option>Light</option>
+				<option>Dark</option>
+			</select></label
+		>
+	</p>
+	<p>
+		<label><input type="checkbox" name="reduce-motion" /> Reduce motion</label>
+	</p>
 </fieldset>
 <fieldset disabled>
- <legend>Account details (sign in to edit)</legend>
- <p><label>Email: <input type="email" name="email"></label></p>
+	<legend>Account details (sign in to edit)</legend>
+	<p>
+		<label>Email: <input type="email" name="email" /></label>
+	</p>
 </fieldset>
 ```
 
@@ -984,9 +1009,13 @@ Illustrative (the canonical `legend` examples appear within the `fieldset` / cus
 
 ```html
 <fieldset>
- <legend>Shipping address</legend>
- <p><label>Street: <input name="street"></label></p>
- <p><label>City: <input name="city"></label></p>
+	<legend>Shipping address</legend>
+	<p>
+		<label>Street: <input name="street" /></label>
+	</p>
+	<p>
+		<label>City: <input name="city" /></label>
+	</p>
 </fieldset>
 ```
 

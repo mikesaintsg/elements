@@ -6,23 +6,26 @@
 
 ## Why
 
-The mailbox project ships five "Examples" — Dashboard, Mail, Marketing, Auth, CRM — that demonstrate how its Bootstrap-flavored composables and utility classes compose into recognizable application layouts. Elements has no analogue. Without one, readers can't see what semantic-first authoring looks like at the *application* scale (only at the page / component scale that the existing docs already cover).
+The mailbox project ships five "Examples" — Dashboard, Mail, Marketing, Auth, CRM — that demonstrate how its Bootstrap-flavored composables and utility classes compose into recognizable application layouts. Elements has no analogue. Without one, readers can't see what semantic-first authoring looks like at the _application_ scale (only at the page / component scale that the existing docs already cover).
 
 The port is **not** a literal copy. Mailbox uses chained Bootstrap classes (`.offcanvas-md.offcanvas-start.d-md-flex`); elements is semantic-first ("the HTML element IS the component"). The mailbox examples are the **spec** for layout + content + behavior; the markup gets rewritten in elements' vocabulary.
 
 ## Scope
 
 **In scope (this spec):**
+
 - One new route group, `Examples`, that renders fullscreen (no docs chrome).
 - A reusable `ExamplesShell.vue` wrapper (floating toolbar + view-source dialog), built from elements primitives.
 - A complete Dashboard slice: page + example + shell wiring + tests + visual verification + inspector audit.
 - Test conventions for example pages that play nicely with the existing `parity.test.ts` + `semantics.test.ts` gates.
 
 **Out of scope (this spec — deferred to follow-up sessions):**
+
 - Porting Mail, Marketing, Auth, CRM. The user reviews the Dashboard slice before those land, so the pattern can be refined first.
 
 **Explicit non-goals:**
-- Pixel-perfect parity with mailbox. Examples should *feel like the same app idea* — three-pane dashboard with sidebar + stats + activity — but the markup, modifier vocabulary, and (where needed) the layout follow elements idioms.
+
+- Pixel-perfect parity with mailbox. Examples should _feel like the same app idea_ — three-pane dashboard with sidebar + stats + activity — but the markup, modifier vocabulary, and (where needed) the layout follow elements idioms.
 - Polluting framework SCSS with example-specific helper classes (`.dashboard-sidebar`, `.container-shell-row`). Those become scoped `<style>` blocks in the example file.
 
 ## Architecture
@@ -54,46 +57,48 @@ tests/app/browser/
 
 ```html
 <div class="examples-stage">
-  <slot/>
+	<slot />
 
-  <!-- Floating toolbar — position:fixed via .examples-toolbar in showcase.css -->
-  <menu role="toolbar" class="examples-toolbar" :aria-label="`${title} navigation`">
-    <li><button class="subtle" @click="goDocs" aria-label="Back to docs">…</button></li>
-    <li><button class="subtle" :disabled="!previous" @click="goPrev">…</button></li>
-    <li class="examples-toolbar-label">
-      <button ref="pickerRef" class="subtle dropdown-toggle" popovertarget="examples-picker">
-        <i class="icon" style="--icon: var(--set-icon-window-stack)"/>{{ title }}
-      </button>
-      <menu id="examples-picker" popover="auto" class="dropdown-menu">
-        <li v-for="ex in examples" :key="ex.id">
-          <button :aria-current="ex.id === id ? 'true' : undefined"
-                  @click="chooseExample(ex.id)">
-            <i class="icon" :style="`--icon: var(--set-icon-${ex.icon})`"/> {{ ex.title }}
-          </button>
-        </li>
-      </menu>
-    </li>
-    <li><button class="subtle" :disabled="!next" @click="goNext">…</button></li>
-    <li><button class="subtle" @click="theme.toggle()">…</button></li>
-    <li><button class="primary" popovertarget="examples-source">View source</button></li>
-  </menu>
+	<!-- Floating toolbar — position:fixed via .examples-toolbar in showcase.css -->
+	<menu role="toolbar" class="examples-toolbar" :aria-label="`${title} navigation`">
+		<li><button class="subtle" @click="goDocs" aria-label="Back to docs">…</button></li>
+		<li><button class="subtle" :disabled="!previous" @click="goPrev">…</button></li>
+		<li class="examples-toolbar-label">
+			<button ref="pickerRef" class="subtle dropdown-toggle" popovertarget="examples-picker">
+				<i class="icon" style="--icon: var(--set-icon-window-stack)" />{{ title }}
+			</button>
+			<menu id="examples-picker" popover="auto" class="dropdown-menu">
+				<li v-for="ex in examples" :key="ex.id">
+					<button :aria-current="ex.id === id ? 'true' : undefined" @click="chooseExample(ex.id)">
+						<i class="icon" :style="`--icon: var(--set-icon-${ex.icon})`" /> {{ ex.title }}
+					</button>
+				</li>
+			</menu>
+		</li>
+		<li><button class="subtle" :disabled="!next" @click="goNext">…</button></li>
+		<li><button class="subtle" @click="theme.toggle()">…</button></li>
+		<li><button class="primary" popovertarget="examples-source">View source</button></li>
+	</menu>
 
-  <!-- Source viewer — <dialog> via useDialog -->
-  <Teleport to="body">
-    <dialog id="examples-source" ref="sourceRef" :aria-label="`${title} source`">
-      <header>
-        <h2><i class="icon" style="--icon: var(--set-icon-code-slash)"/> {{ title }} — source</h2>
-        <button class="subtle compact" @click="copy">{{ copied ? 'Copied' : 'Copy' }}</button>
-        <button class="subtle compact" @click="sourceDialog.hide()" aria-label="Close">×</button>
-      </header>
-      <pre class="font-mono small"><code>{{ displaySource }}</code></pre>
-      <footer><small>Imports rewritten to `@elements/browser` for copy-paste portability.</small></footer>
-    </dialog>
-  </Teleport>
+	<!-- Source viewer — <dialog> via useDialog -->
+	<Teleport to="body">
+		<dialog id="examples-source" ref="sourceRef" :aria-label="`${title} source`">
+			<header>
+				<h2><i class="icon" style="--icon: var(--set-icon-code-slash)" /> {{ title }} — source</h2>
+				<button class="subtle compact" @click="copy">{{ copied ? 'Copied' : 'Copy' }}</button>
+				<button class="subtle compact" @click="sourceDialog.hide()" aria-label="Close">×</button>
+			</header>
+			<pre class="font-mono small"><code>{{ displaySource }}</code></pre>
+			<footer>
+				<small>Imports rewritten to `@elements/browser` for copy-paste portability.</small>
+			</footer>
+		</dialog>
+	</Teleport>
 </div>
 ```
 
 Wiring:
+
 - `useDialog(sourceRef)` for the source viewer (Esc dismiss, focus trap, `::backdrop`).
 - `useMenu(pickerRef)` for the example picker dropdown.
 - `useTheme({ initial: 'light' })` for the theme toggle (singleton refs — same instance the docs shell uses, so toggling here affects the docs too).
@@ -101,20 +106,20 @@ Wiring:
 
 ### Translation table (Bootstrap → elements)
 
-| Mailbox idiom | Elements port | Rationale |
-|---|---|---|
-| `.btn`, `.btn-primary` | `<button class="primary">` | Modifier cascade — variant is the element's identity, not a class root |
-| `.btn-group[role=toolbar]` | `<menu role="toolbar">` | Parity test already recognizes this via `ATTR_ROOTED.role-group` |
-| `.dropdown` + `.dropdown-menu` | `useMenu` + `<button popovertarget>` + `<menu popover>` | Native Popover API; no Bootstrap JS |
-| `.modal modal-xl` | `<dialog>` + `useDialog` | Native top-layer + `::backdrop` |
-| `.offcanvas-md offcanvas-start` | `<aside :popover="isMobile ? 'auto' : undefined">` mirroring App.vue | The framework's mobile drawer pattern |
-| `.navbar-row`, `.navbar-expand-md` | `<header>` + Tailwind utilities | Tailwind v4 is the utility layer |
-| `.bi bi-*` | `<i class="icon" style="--icon: var(--set-icon-X)">` | Elements' icon mask system |
-| `.btn-close` | `<button class="subtle compact" aria-label="Close">×</button>` | Modifier cascade — no widget-specific class root |
-| `.fade .show` | drop — `<dialog>` / `<aside popover>` handle transitions natively | UA lifecycle, not JS-managed classes |
-| `.text-primary`, `.fw-semibold`, `.fs-4` | Tailwind v4 utilities (`text-primary`, `font-semibold`, `text-xl`) | Tailwind owns the utility vocabulary |
-| `.stat-delta-up`, `.timeline-marker-*`, `.tag-*` | scoped `<style>` in the example component | Presentation-only, not framework chrome |
-| `.container-shell-row`, `.dashboard-sidebar` | scoped `<style>` | Layout glue specific to one example |
+| Mailbox idiom                                    | Elements port                                                        | Rationale                                                              |
+| ------------------------------------------------ | -------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `.btn`, `.btn-primary`                           | `<button class="primary">`                                           | Modifier cascade — variant is the element's identity, not a class root |
+| `.btn-group[role=toolbar]`                       | `<menu role="toolbar">`                                              | Parity test already recognizes this via `ATTR_ROOTED.role-group`       |
+| `.dropdown` + `.dropdown-menu`                   | `useMenu` + `<button popovertarget>` + `<menu popover>`              | Native Popover API; no Bootstrap JS                                    |
+| `.modal modal-xl`                                | `<dialog>` + `useDialog`                                             | Native top-layer + `::backdrop`                                        |
+| `.offcanvas-md offcanvas-start`                  | `<aside :popover="isMobile ? 'auto' : undefined">` mirroring App.vue | The framework's mobile drawer pattern                                  |
+| `.navbar-row`, `.navbar-expand-md`               | `<header>` + Tailwind utilities                                      | Tailwind v4 is the utility layer                                       |
+| `.bi bi-*`                                       | `<i class="icon" style="--icon: var(--set-icon-X)">`                 | Elements' icon mask system                                             |
+| `.btn-close`                                     | `<button class="subtle compact" aria-label="Close">×</button>`       | Modifier cascade — no widget-specific class root                       |
+| `.fade .show`                                    | drop — `<dialog>` / `<aside popover>` handle transitions natively    | UA lifecycle, not JS-managed classes                                   |
+| `.text-primary`, `.fw-semibold`, `.fs-4`         | Tailwind v4 utilities (`text-primary`, `font-semibold`, `text-xl`)   | Tailwind owns the utility vocabulary                                   |
+| `.stat-delta-up`, `.timeline-marker-*`, `.tag-*` | scoped `<style>` in the example component                            | Presentation-only, not framework chrome                                |
+| `.container-shell-row`, `.dashboard-sidebar`     | scoped `<style>`                                                     | Layout glue specific to one example                                    |
 
 ### App.vue chrome gating
 

@@ -14,9 +14,9 @@ Every guard takes one `unknown`, returns a `boolean` that TypeScript reads as a 
 
 **Guards vs. the contract DSL vs. flat parsers.** Three sibling surfaces, three jobs:
 
-- These **guards** answer "*is* this value a `T`?" — a boolean predicate that narrows in place. They neither coerce nor transform; a `string` field that arrived as a number stays rejected.
+- These **guards** answer "_is_ this value a `T`?" — a boolean predicate that narrows in place. They neither coerce nor transform; a `string` field that arrived as a number stays rejected.
 - The **contract DSL** is shape-driven: declare a `ContractShape` once with the shape builders ([shapers.md](shapers.md)) and the forward compilers ([compilers.md](compilers.md)) derive a JSON Schema, a guard, a parser, and a generator from it. Reach for it when one shape feeds schema + guard + parser + generator.
-- The **flat parsers** ([parsers.md](parsers.md)) answer "give me a `T` *or* `undefined`" — they coerce (`"36"` → `36`) and return the typed value or `undefined`. Reach for those when you want extraction with coercion rather than a yes/no narrowing.
+- The **flat parsers** ([parsers.md](parsers.md)) answer "give me a `T` _or_ `undefined`" — they coerce (`"36"` → `36`) and return the typed value or `undefined`. Reach for those when you want extraction with coercion rather than a yes/no narrowing.
 
 Guards pair naturally with the parsers: `parseJsonAs` and `parseArray` (in [parsers.md](parsers.md)) take a `Guard<T>` to validate after parsing, and a contract's `is` is itself a `Guard<T>`.
 
@@ -24,95 +24,95 @@ Guards pair naturally with the parsers: `parseJsonAs` and `parseArray` (in [pars
 
 `unknown` in, narrowed primitive (or null-ish) out.
 
-| Guard                  | Narrows to            | Behavior                                                                       |
-| ---------------------- | --------------------- | ------------------------------------------------------------------------------ |
-| `isNull()`             | `null`                | Strict `value === null`.                                                        |
-| `isUndefined()`        | `undefined`           | Strict `value === undefined`.                                                   |
-| `isDefined()`          | `T` (non-null)        | True unless `null` *or* `undefined`; `0`, `''`, `false` are defined.            |
-| `isString()`           | `string`              | `typeof === 'string'`.                                                          |
-| `isNumber()`           | `number`              | `typeof === 'number'` — **`NaN` passes** (it is a number).                       |
-| `isFiniteNumber()`     | `number`              | `isNumber` refined by `Number.isFinite` — rejects `NaN` / `±Infinity`. A `whereOf(isNumber, …)` `const`. |
-| `isBoolean()`          | `boolean`             | `typeof === 'boolean'`; `0` / `1` do **not** pass.                              |
-| `isTrue()`             | `true`                | Strict `value === true`.                                                         |
-| `isFalse()`            | `false`               | Strict `value === false`.                                                        |
-| `isBigInt()`           | `bigint`              | `typeof === 'bigint'`.                                                           |
-| `isSymbol()`           | `symbol`              | `typeof === 'symbol'`.                                                           |
-| `isNullableString()`   | `string \| null`      | `nullableOf(isString)`.                                                          |
-| `isNullableNumber()`   | `number \| null`      | `nullableOf(isNumber)`.                                                          |
-| `isNullableBoolean()`  | `boolean \| null`     | `nullableOf(isBoolean)`.                                                         |
+| Guard                 | Narrows to        | Behavior                                                                                                 |
+| --------------------- | ----------------- | -------------------------------------------------------------------------------------------------------- |
+| `isNull()`            | `null`            | Strict `value === null`.                                                                                 |
+| `isUndefined()`       | `undefined`       | Strict `value === undefined`.                                                                            |
+| `isDefined()`         | `T` (non-null)    | True unless `null` _or_ `undefined`; `0`, `''`, `false` are defined.                                     |
+| `isString()`          | `string`          | `typeof === 'string'`.                                                                                   |
+| `isNumber()`          | `number`          | `typeof === 'number'` — **`NaN` passes** (it is a number).                                               |
+| `isFiniteNumber()`    | `number`          | `isNumber` refined by `Number.isFinite` — rejects `NaN` / `±Infinity`. A `whereOf(isNumber, …)` `const`. |
+| `isBoolean()`         | `boolean`         | `typeof === 'boolean'`; `0` / `1` do **not** pass.                                                       |
+| `isTrue()`            | `true`            | Strict `value === true`.                                                                                 |
+| `isFalse()`           | `false`           | Strict `value === false`.                                                                                |
+| `isBigInt()`          | `bigint`          | `typeof === 'bigint'`.                                                                                   |
+| `isSymbol()`          | `symbol`          | `typeof === 'symbol'`.                                                                                   |
+| `isNullableString()`  | `string \| null`  | `nullableOf(isString)`.                                                                                  |
+| `isNullableNumber()`  | `number \| null`  | `nullableOf(isNumber)`.                                                                                  |
+| `isNullableBoolean()` | `boolean \| null` | `nullableOf(isBoolean)`.                                                                                 |
 
 ### Structural & JSON guards
 
-| Guard                  | Narrows to                     | Behavior                                                                                      |
-| ---------------------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
-| `isObject()`           | `object`                       | `typeof === 'object' && !== null` — **arrays and class instances pass**, `null` does not.      |
-| `isRecord()`           | `Record<string, unknown>`      | Plain objects only: rejects arrays / `null`; prototype must be `Object.prototype` or `null` (so `new Date()` / class instances fail). |
-| `isJsonPrimitive()`    | `JsonPrimitive`                | `null`, `string`, `number`, or `boolean`.                                                      |
-| `isJsonValue()`        | `JsonValue`                    | Recursive: a JSON primitive, or an array / plain record whose every entry is itself a `JsonValue` (a `Date` value fails). Cycle-safe (ancestor WeakSet back-edge detection) and depth-capped; returns `false` on cyclic or pathologically deep input, never throws. |
-| `isJsonObject()`       | `JsonObject`                   | A plain record whose every value is a `JsonValue`. Shares the same cycle-safe, depth-capped recursion as `isJsonValue()`. |
-| `isJsonSchemaType()`   | `JsonSchemaType`               | A `string` equal to one of `null`/`boolean`/`object`/`array`/`number`/`integer`/`string`.       |
-| `isJsonSchema()`       | `JsonSchema`                   | `true`/`false` boolean schema, or a record whose schema keywords (`type`, `properties`, `items`, `anyOf`, `enum`, …) are structurally validated per keyword; unrecognized keys receive a scoped JSON-value check. Cycle-safe and depth-capped — returns `false` on cyclic or pathologically deep input, never throws. |
-| `isJsonSchemaObject()` | `JsonSchemaObject`             | `isJsonSchema` plus a record with `type === 'object'`.                                          |
-| `isMap()`              | `ReadonlyMap<K, V>`            | `instanceof Map`.                                                                              |
-| `isSet()`              | `ReadonlySet<T>`               | `instanceof Set`.                                                                              |
-| `isWeakMap()`          | `WeakMap<object, unknown>`     | `instanceof WeakMap`.                                                                          |
-| `isWeakSet()`          | `WeakSet<object>`              | `instanceof WeakSet`.                                                                          |
-| `isDate()`             | `Date`                         | `instanceof Date`.                                                                             |
-| `isRegExp()`           | `RegExp`                       | `instanceof RegExp`.                                                                           |
-| `isError()`            | `Error`                        | `instanceof Error`.                                                                            |
-| `isPromise()`          | `Promise<T>`                   | `instanceof Promise` (native promise only).                                                    |
-| `isPromiseLike()`      | promise-like                   | An object with callable `then`, `catch`, *and* `finally` — a bare `{ then }` thenable fails.    |
-| `isIterable()`         | `Iterable<T>`                  | A `string`, or an object with a callable `Symbol.iterator`.                                     |
-| `isAsyncIterable()`    | `AsyncIterable<T>`             | An object with a callable `Symbol.asyncIterator`.                                               |
-| `isArrayBuffer()`      | `ArrayBuffer`                  | `instanceof ArrayBuffer`.                                                                       |
-| `isSharedArrayBuffer()`| `SharedArrayBuffer`            | `instanceof SharedArrayBuffer` when the global exists.                                          |
+| Guard                   | Narrows to                 | Behavior                                                                                                                                                                                                                                                                                                              |
+| ----------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `isObject()`            | `object`                   | `typeof === 'object' && !== null` — **arrays and class instances pass**, `null` does not.                                                                                                                                                                                                                             |
+| `isRecord()`            | `Record<string, unknown>`  | Plain objects only: rejects arrays / `null`; prototype must be `Object.prototype` or `null` (so `new Date()` / class instances fail).                                                                                                                                                                                 |
+| `isJsonPrimitive()`     | `JsonPrimitive`            | `null`, `string`, `number`, or `boolean`.                                                                                                                                                                                                                                                                             |
+| `isJsonValue()`         | `JsonValue`                | Recursive: a JSON primitive, or an array / plain record whose every entry is itself a `JsonValue` (a `Date` value fails). Cycle-safe (ancestor WeakSet back-edge detection) and depth-capped; returns `false` on cyclic or pathologically deep input, never throws.                                                   |
+| `isJsonObject()`        | `JsonObject`               | A plain record whose every value is a `JsonValue`. Shares the same cycle-safe, depth-capped recursion as `isJsonValue()`.                                                                                                                                                                                             |
+| `isJsonSchemaType()`    | `JsonSchemaType`           | A `string` equal to one of `null`/`boolean`/`object`/`array`/`number`/`integer`/`string`.                                                                                                                                                                                                                             |
+| `isJsonSchema()`        | `JsonSchema`               | `true`/`false` boolean schema, or a record whose schema keywords (`type`, `properties`, `items`, `anyOf`, `enum`, …) are structurally validated per keyword; unrecognized keys receive a scoped JSON-value check. Cycle-safe and depth-capped — returns `false` on cyclic or pathologically deep input, never throws. |
+| `isJsonSchemaObject()`  | `JsonSchemaObject`         | `isJsonSchema` plus a record with `type === 'object'`.                                                                                                                                                                                                                                                                |
+| `isMap()`               | `ReadonlyMap<K, V>`        | `instanceof Map`.                                                                                                                                                                                                                                                                                                     |
+| `isSet()`               | `ReadonlySet<T>`           | `instanceof Set`.                                                                                                                                                                                                                                                                                                     |
+| `isWeakMap()`           | `WeakMap<object, unknown>` | `instanceof WeakMap`.                                                                                                                                                                                                                                                                                                 |
+| `isWeakSet()`           | `WeakSet<object>`          | `instanceof WeakSet`.                                                                                                                                                                                                                                                                                                 |
+| `isDate()`              | `Date`                     | `instanceof Date`.                                                                                                                                                                                                                                                                                                    |
+| `isRegExp()`            | `RegExp`                   | `instanceof RegExp`.                                                                                                                                                                                                                                                                                                  |
+| `isError()`             | `Error`                    | `instanceof Error`.                                                                                                                                                                                                                                                                                                   |
+| `isPromise()`           | `Promise<T>`               | `instanceof Promise` (native promise only).                                                                                                                                                                                                                                                                           |
+| `isPromiseLike()`       | promise-like               | An object with callable `then`, `catch`, _and_ `finally` — a bare `{ then }` thenable fails.                                                                                                                                                                                                                          |
+| `isIterable()`          | `Iterable<T>`              | A `string`, or an object with a callable `Symbol.iterator`.                                                                                                                                                                                                                                                           |
+| `isAsyncIterable()`     | `AsyncIterable<T>`         | An object with a callable `Symbol.asyncIterator`.                                                                                                                                                                                                                                                                     |
+| `isArrayBuffer()`       | `ArrayBuffer`              | `instanceof ArrayBuffer`.                                                                                                                                                                                                                                                                                             |
+| `isSharedArrayBuffer()` | `SharedArrayBuffer`        | `instanceof SharedArrayBuffer` when the global exists.                                                                                                                                                                                                                                                                |
 
 ### Array & typed-array guards
 
-| Guard                   | Narrows to            | Behavior                                                              |
-| ----------------------- | --------------------- | -------------------------------------------------------------------- |
-| `isArray()`             | `readonly T[]`        | `Array.isArray` (no element check — see `arrayOf()` for that).         |
-| `isDataView()`          | `DataView`            | `instanceof DataView`.                                                |
-| `isArrayBufferView()`   | `ArrayBufferView`     | `ArrayBuffer.isView` — true for any typed array *or* `DataView`.       |
-| `isInt8Array()`         | `Int8Array`           | `instanceof Int8Array`.                                               |
-| `isUint8Array()`        | `Uint8Array`          | `instanceof Uint8Array`.                                              |
-| `isUint8ClampedArray()` | `Uint8ClampedArray`   | `instanceof Uint8ClampedArray`.                                       |
-| `isInt16Array()`        | `Int16Array`          | `instanceof Int16Array`.                                              |
-| `isUint16Array()`       | `Uint16Array`         | `instanceof Uint16Array`.                                             |
-| `isInt32Array()`        | `Int32Array`          | `instanceof Int32Array`.                                              |
-| `isUint32Array()`       | `Uint32Array`         | `instanceof Uint32Array`.                                             |
-| `isFloat32Array()`      | `Float32Array`        | `instanceof Float32Array`.                                            |
-| `isFloat64Array()`      | `Float64Array`        | `instanceof Float64Array`.                                            |
-| `isBigInt64Array()`     | `BigInt64Array`       | `instanceof BigInt64Array` when the global exists.                    |
-| `isBigUint64Array()`    | `BigUint64Array`      | `instanceof BigUint64Array` when the global exists.                   |
+| Guard                   | Narrows to          | Behavior                                                         |
+| ----------------------- | ------------------- | ---------------------------------------------------------------- |
+| `isArray()`             | `readonly T[]`      | `Array.isArray` (no element check — see `arrayOf()` for that).   |
+| `isDataView()`          | `DataView`          | `instanceof DataView`.                                           |
+| `isArrayBufferView()`   | `ArrayBufferView`   | `ArrayBuffer.isView` — true for any typed array _or_ `DataView`. |
+| `isInt8Array()`         | `Int8Array`         | `instanceof Int8Array`.                                          |
+| `isUint8Array()`        | `Uint8Array`        | `instanceof Uint8Array`.                                         |
+| `isUint8ClampedArray()` | `Uint8ClampedArray` | `instanceof Uint8ClampedArray`.                                  |
+| `isInt16Array()`        | `Int16Array`        | `instanceof Int16Array`.                                         |
+| `isUint16Array()`       | `Uint16Array`       | `instanceof Uint16Array`.                                        |
+| `isInt32Array()`        | `Int32Array`        | `instanceof Int32Array`.                                         |
+| `isUint32Array()`       | `Uint32Array`       | `instanceof Uint32Array`.                                        |
+| `isFloat32Array()`      | `Float32Array`      | `instanceof Float32Array`.                                       |
+| `isFloat64Array()`      | `Float64Array`      | `instanceof Float64Array`.                                       |
+| `isBigInt64Array()`     | `BigInt64Array`     | `instanceof BigInt64Array` when the global exists.               |
+| `isBigUint64Array()`    | `BigUint64Array`    | `instanceof BigUint64Array` when the global exists.              |
 
 ### Emptiness guards
 
-| Guard                | Narrows to                          | Behavior                                                                  |
-| -------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
-| `isEmptyString()`    | `''`                                | Strict `value === ''`.                                                     |
-| `isEmptyArray()`     | `readonly []`                       | `isArray` with `length === 0`.                                             |
-| `isEmptyObject()`    | `Record<string \| symbol, never>`   | A record with zero string keys *and* zero enumerable symbol keys.          |
-| `isEmptyMap()`       | `ReadonlyMap<never, never>`         | `Map` with `size === 0`.                                                    |
-| `isEmptySet()`       | `ReadonlySet<never>`                | `Set` with `size === 0`.                                                    |
-| `isNonEmptyString()` | `string`                            | `isString` with `length > 0`.                                              |
-| `isNonEmptyArray()`  | `readonly [T, ...T[]]`              | `isArray` with `length > 0`.                                               |
-| `isNonEmptyObject()` | `Record<string \| symbol, unknown>` | A record with at least one string key *or* one enumerable symbol key.       |
-| `isNonEmptyMap()`    | `ReadonlyMap<K, V>`                 | `Map` with `size > 0`.                                                      |
-| `isNonEmptySet()`    | `ReadonlySet<T>`                    | `Set` with `size > 0`.                                                      |
+| Guard                | Narrows to                          | Behavior                                                              |
+| -------------------- | ----------------------------------- | --------------------------------------------------------------------- |
+| `isEmptyString()`    | `''`                                | Strict `value === ''`.                                                |
+| `isEmptyArray()`     | `readonly []`                       | `isArray` with `length === 0`.                                        |
+| `isEmptyObject()`    | `Record<string \| symbol, never>`   | A record with zero string keys _and_ zero enumerable symbol keys.     |
+| `isEmptyMap()`       | `ReadonlyMap<never, never>`         | `Map` with `size === 0`.                                              |
+| `isEmptySet()`       | `ReadonlySet<never>`                | `Set` with `size === 0`.                                              |
+| `isNonEmptyString()` | `string`                            | `isString` with `length > 0`.                                         |
+| `isNonEmptyArray()`  | `readonly [T, ...T[]]`              | `isArray` with `length > 0`.                                          |
+| `isNonEmptyObject()` | `Record<string \| symbol, unknown>` | A record with at least one string key _or_ one enumerable symbol key. |
+| `isNonEmptyMap()`    | `ReadonlyMap<K, V>`                 | `Map` with `size > 0`.                                                |
+| `isNonEmptySet()`    | `ReadonlySet<T>`                    | `Set` with `size > 0`.                                                |
 
 ### Function guards
 
-| Guard                       | Narrows to                          | Behavior                                                                            |
-| --------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------- |
-| `isFunction()`              | `AnyFunction`                       | `typeof === 'function'`.                                                              |
-| `isZeroArg()`               | `ZeroArgFunction`                   | A function whose declared `.length` is `0`.                                           |
-| `isAsyncFunction()`         | `AnyAsyncFunction`                  | `constructor.name === 'AsyncFunction'` — a non-async fn returning a promise fails.    |
-| `isGeneratorFunction()`     | generator function                  | `constructor.name === 'GeneratorFunction'`.                                           |
-| `isAsyncGeneratorFunction()`| async generator function           | `constructor.name === 'AsyncGeneratorFunction'`.                                      |
-| `isZeroArgAsync()`          | `ZeroArgAsyncFunction`             | `isFunction` + `isZeroArg` + `isAsyncFunction`.                                       |
-| `isZeroArgGenerator()`      | zero-arg generator function         | `isFunction` + `isZeroArg` + `isGeneratorFunction`.                                   |
-| `isZeroArgAsyncGenerator()` | zero-arg async generator function   | `isFunction` + `isZeroArg` + `isAsyncGeneratorFunction`.                              |
+| Guard                        | Narrows to                        | Behavior                                                                           |
+| ---------------------------- | --------------------------------- | ---------------------------------------------------------------------------------- |
+| `isFunction()`               | `AnyFunction`                     | `typeof === 'function'`.                                                           |
+| `isZeroArg()`                | `ZeroArgFunction`                 | A function whose declared `.length` is `0`.                                        |
+| `isAsyncFunction()`          | `AnyAsyncFunction`                | `constructor.name === 'AsyncFunction'` — a non-async fn returning a promise fails. |
+| `isGeneratorFunction()`      | generator function                | `constructor.name === 'GeneratorFunction'`.                                        |
+| `isAsyncGeneratorFunction()` | async generator function          | `constructor.name === 'AsyncGeneratorFunction'`.                                   |
+| `isZeroArgAsync()`           | `ZeroArgAsyncFunction`            | `isFunction` + `isZeroArg` + `isAsyncFunction`.                                    |
+| `isZeroArgGenerator()`       | zero-arg generator function       | `isFunction` + `isZeroArg` + `isGeneratorFunction`.                                |
+| `isZeroArgAsyncGenerator()`  | zero-arg async generator function | `isFunction` + `isZeroArg` + `isAsyncGeneratorFunction`.                           |
 
 > The object-emptiness guards (`isEmptyObject`, `isNonEmptyObject`) also count enumerable own-symbol keys, not just string keys, via the shared `enumerableSymbolCount` helper in [src/core/helpers.ts](../src/core/helpers.ts) (documented in [compilers.md](compilers.md) — the shared-helpers home). Prefer the guards at call sites. Likewise the `instanceOf()` compositor below is backed by the `isConstructor` helper (same module) so a non-constructor argument yields a `false`-only guard rather than a throw.
 
@@ -120,30 +120,30 @@ Guards pair naturally with the parsers: `parseJsonAs` and `parseArray` (in [pars
 
 Each compositor returns a fresh `Guard<…>`. They accept any predicate `(value: unknown) => boolean`; passing a typed `Guard<T>` carries the narrowed type through (see the types in [src/core/types.ts](../src/core/types.ts): `GuardType`, `FromGuards`, `OptionalFromGuards`, `TupleFromGuards`, `IntersectionFromGuards`).
 
-| Compositor          | Signature (call form)                                  | Builds a guard that…                                                                                  |
-| ------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `arrayOf()`         | `arrayOf(elementGuard)`                                | accepts an array where **every** element passes `elementGuard`.                                        |
-| `tupleOf()`         | `tupleOf(...guards)`                                   | accepts an array of **exactly** `guards.length` whose element *i* passes `guards[i]`.                  |
-| `setOf()`           | `setOf(elementGuard)`                                  | accepts a `Set` where every entry passes `elementGuard`.                                               |
-| `mapOf()`           | `mapOf(keyGuard, valueGuard)`                          | accepts a `Map` where every key passes `keyGuard` and every value passes `valueGuard`.                 |
-| `iterableOf()`      | `iterableOf(elementGuard)`                             | accepts an iterable whose every yielded entry passes `elementGuard` (consumes the iterable to check).  |
-| `recordOf()`        | `recordOf(shape)` · `recordOf(shape, ['k'])` · `recordOf(shape, true)` | accepts an **exact** record: every shape key present as an **own** property (`Object.hasOwn`; inherited prototype keys like `'toString'` count as absent) unless listed optional / `true` = all optional, and passing its guard, **no extra keys** (enumerable symbol keys are ignored). |
-| `literalOf()`       | `literalOf(...literals)`                               | accepts a value `Object.is`-equal to one of the given string/number/boolean literals.                  |
-| `instanceOf()`      | `instanceOf(ctor)`                                     | accepts an object that is `instanceof ctor` (returns `false` if `ctor` is not a constructor).          |
-| `enumOf()`          | `enumOf(enumeration)`                                  | accepts a `string`/`number` that is one of the enum object's values.                                   |
-| `keyOf()`           | `keyOf(object)`                                        | accepts a `string`/`symbol`/`number` that is an **own** key of the given object (`Object.hasOwn`; inherited prototype keys like `'toString'`/`'__proto__'` are rejected). |
-| `pickOf()`          | `pickOf(shape, keys)`                                  | returns a **new guard shape** keeping only `keys` (for feeding back into `recordOf()`).                |
-| `omitOf()`          | `omitOf(shape, keys)`                                  | returns a **new guard shape** dropping `keys`.                                                         |
-| `andOf()`           | `andOf(left, right)`                                   | passes iff **both** `left` and `right` pass (type `A & B`).                                            |
-| `orOf()`            | `orOf(left, right)`                                    | passes iff **either** passes (type `A \| B`).                                                          |
-| `notOf()`           | `notOf(guard)`                                         | passes iff `guard` fails (`Guard<unknown>`).                                                           |
-| `complementOf()`    | `complementOf(base, excluded)`                         | passes iff `base` passes **and** `excluded` does **not** (`Exclude<TBase, TExcluded>`).                |
-| `unionOf()`         | `unionOf(...guards)`                                   | passes iff **any** guard passes (variadic `orOf`; type is the union of guarded types). `unionOf()` with zero guards always returns `false`. |
-| `intersectionOf()`  | `intersectionOf(...guards)`                            | passes iff **every** guard passes (variadic `andOf`; type is the intersection). `intersectionOf()` with zero guards always returns `true`. |
-| `whereOf()`         | `whereOf(base, predicate)`                             | passes `base`, then refines with `predicate` (keeps `base`'s type — backs `isFiniteNumber`). A throw from `predicate` is contained as a non-match (§13 — guards never throw). |
-| `lazyOf()`          | `lazyOf(thunk)`                                        | defers building the real guard until first call (the thunk runs **per call** — for recursive guards). A throw from `thunk` or its resolved guard is contained as a non-match (§13). |
-| `transformOf()`     | `transformOf(base, project, target)`                   | passes `base`, projects the value, then validates the projection with `target` (returns the original's type). A throw from `project` is contained as a non-match (§13 — guards never throw). |
-| `nullableOf()`      | `nullableOf(guard)`                                    | passes iff the value is `null` **or** `guard` passes (`T \| null`). `undefined` fails — use `orOf(isUndefined, nullableOf(…))` when both absent-forms are needed. |
+| Compositor         | Signature (call form)                                                  | Builds a guard that…                                                                                                                                                                                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `arrayOf()`        | `arrayOf(elementGuard)`                                                | accepts an array where **every** element passes `elementGuard`.                                                                                                                                                                                                                          |
+| `tupleOf()`        | `tupleOf(...guards)`                                                   | accepts an array of **exactly** `guards.length` whose element _i_ passes `guards[i]`.                                                                                                                                                                                                    |
+| `setOf()`          | `setOf(elementGuard)`                                                  | accepts a `Set` where every entry passes `elementGuard`.                                                                                                                                                                                                                                 |
+| `mapOf()`          | `mapOf(keyGuard, valueGuard)`                                          | accepts a `Map` where every key passes `keyGuard` and every value passes `valueGuard`.                                                                                                                                                                                                   |
+| `iterableOf()`     | `iterableOf(elementGuard)`                                             | accepts an iterable whose every yielded entry passes `elementGuard` (consumes the iterable to check).                                                                                                                                                                                    |
+| `recordOf()`       | `recordOf(shape)` · `recordOf(shape, ['k'])` · `recordOf(shape, true)` | accepts an **exact** record: every shape key present as an **own** property (`Object.hasOwn`; inherited prototype keys like `'toString'` count as absent) unless listed optional / `true` = all optional, and passing its guard, **no extra keys** (enumerable symbol keys are ignored). |
+| `literalOf()`      | `literalOf(...literals)`                                               | accepts a value `Object.is`-equal to one of the given string/number/boolean literals.                                                                                                                                                                                                    |
+| `instanceOf()`     | `instanceOf(ctor)`                                                     | accepts an object that is `instanceof ctor` (returns `false` if `ctor` is not a constructor).                                                                                                                                                                                            |
+| `enumOf()`         | `enumOf(enumeration)`                                                  | accepts a `string`/`number` that is one of the enum object's values.                                                                                                                                                                                                                     |
+| `keyOf()`          | `keyOf(object)`                                                        | accepts a `string`/`symbol`/`number` that is an **own** key of the given object (`Object.hasOwn`; inherited prototype keys like `'toString'`/`'__proto__'` are rejected).                                                                                                                |
+| `pickOf()`         | `pickOf(shape, keys)`                                                  | returns a **new guard shape** keeping only `keys` (for feeding back into `recordOf()`).                                                                                                                                                                                                  |
+| `omitOf()`         | `omitOf(shape, keys)`                                                  | returns a **new guard shape** dropping `keys`.                                                                                                                                                                                                                                           |
+| `andOf()`          | `andOf(left, right)`                                                   | passes iff **both** `left` and `right` pass (type `A & B`).                                                                                                                                                                                                                              |
+| `orOf()`           | `orOf(left, right)`                                                    | passes iff **either** passes (type `A \| B`).                                                                                                                                                                                                                                            |
+| `notOf()`          | `notOf(guard)`                                                         | passes iff `guard` fails (`Guard<unknown>`).                                                                                                                                                                                                                                             |
+| `complementOf()`   | `complementOf(base, excluded)`                                         | passes iff `base` passes **and** `excluded` does **not** (`Exclude<TBase, TExcluded>`).                                                                                                                                                                                                  |
+| `unionOf()`        | `unionOf(...guards)`                                                   | passes iff **any** guard passes (variadic `orOf`; type is the union of guarded types). `unionOf()` with zero guards always returns `false`.                                                                                                                                              |
+| `intersectionOf()` | `intersectionOf(...guards)`                                            | passes iff **every** guard passes (variadic `andOf`; type is the intersection). `intersectionOf()` with zero guards always returns `true`.                                                                                                                                               |
+| `whereOf()`        | `whereOf(base, predicate)`                                             | passes `base`, then refines with `predicate` (keeps `base`'s type — backs `isFiniteNumber`). A throw from `predicate` is contained as a non-match (§13 — guards never throw).                                                                                                            |
+| `lazyOf()`         | `lazyOf(thunk)`                                                        | defers building the real guard until first call (the thunk runs **per call** — for recursive guards). A throw from `thunk` or its resolved guard is contained as a non-match (§13).                                                                                                      |
+| `transformOf()`    | `transformOf(base, project, target)`                                   | passes `base`, projects the value, then validates the projection with `target` (returns the original's type). A throw from `project` is contained as a non-match (§13 — guards never throw).                                                                                             |
+| `nullableOf()`     | `nullableOf(guard)`                                                    | passes iff the value is `null` **or** `guard` passes (`T \| null`). `undefined` fails — use `orOf(isUndefined, nullableOf(…))` when both absent-forms are needed.                                                                                                                        |
 
 > JSON-Schema validation has three exported leaf helpers used internally by `isJsonSchema()` — `isJsonSchemaArray()` (an array of schema nodes), `isJsonSchemaMapValue()` (a record of schema nodes, e.g. `properties`), and `isJsonSchemaStringArrayMapValue()` (a record of string arrays, e.g. `dependentRequired`). They are real exports but are implementation detail of `isJsonSchema()`; prefer `isJsonSchema()` / `isJsonSchemaObject()` at call sites.
 
@@ -209,10 +209,18 @@ isId(42) // true
 
 ### Using a guard with `parseJsonAs` / a contract `is`
 
-A guard *is* the `Guard<T>` the flat parsers and contracts expect — hand it straight to `parseJsonAs` or compare against a contract's `is`:
+A guard _is_ the `Guard<T>` the flat parsers and contracts expect — hand it straight to `parseJsonAs` or compare against a contract's `is`:
 
 ```ts
-import { arrayOf, compileContract, isString, objectShape, parseJsonAs, recordOf, stringShape } from '@elements/core'
+import {
+	arrayOf,
+	compileContract,
+	isString,
+	objectShape,
+	parseJsonAs,
+	recordOf,
+	stringShape,
+} from '@elements/core'
 
 const isConfig = recordOf({ host: isString, tags: arrayOf(isString) })
 
@@ -229,7 +237,15 @@ const guard = userContract.is // Guard<{ readonly name: string }>
 ### Refinement, instance, and nullable composition
 
 ```ts
-import { complementOf, instanceOf, isNumber, isString, nullableOf, orOf, whereOf } from '@elements/core'
+import {
+	complementOf,
+	instanceOf,
+	isNumber,
+	isString,
+	nullableOf,
+	orOf,
+	whereOf,
+} from '@elements/core'
 
 // Refine a base guard with an extra predicate (keeps the base's type).
 const isPositive = whereOf(isNumber, (n) => n > 0)
@@ -279,10 +295,7 @@ import { arrayOf, isNumber, lazyOf, orOf } from '@elements/core'
 import type { Guard } from '@elements/core'
 
 // A JSON-number-tree: number, or array of trees.
-const isNumberTree: Guard<unknown> = orOf(
-	isNumber,
-	arrayOf(lazyOf(() => isNumberTree)),
-)
+const isNumberTree: Guard<unknown> = orOf(isNumber, arrayOf(lazyOf(() => isNumberTree)))
 isNumberTree(1) // true
 isNumberTree([1, [2, 3], 4]) // true
 isNumberTree(['x']) // false

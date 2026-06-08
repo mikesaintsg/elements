@@ -8,16 +8,16 @@ Pure DOM operations. Simple lookups delegate to native `querySelector` / `closes
 
 ### Guards & matching
 
-| API | Behavior |
-| --- | --- |
-| `isElement(node)` | `Node \| null` → `node is Element`. |
-| `isHTMLElement(node)` | `Node \| null` → `node is HTMLElement`. |
-| `isTextNode(node)` | `Node \| null` → `node is Text`. |
-| `isTagType(element, tag)` | `Element \| null` → `element is HTMLElementTagNameMap[tag]`. |
-| `matchesTag(element, tagName)` | Case-insensitive tag check. |
-| `hasClass(element, className)` / `hasClasses(element, classNames)` | Single / all-of class check. |
-| `hasId(element, id)` / `hasAttribute(element, name, value?)` | Id / attribute (optional exact value) check. |
-| `createMatcher(criteria)` | Build an `ElementPredicate` from a `MatcherOptions` criteria bag. |
+| API                                                                | Behavior                                                          |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `isElement(node)`                                                  | `Node \| null` → `node is Element`.                               |
+| `isHTMLElement(node)`                                              | `Node \| null` → `node is HTMLElement`.                           |
+| `isTextNode(node)`                                                 | `Node \| null` → `node is Text`.                                  |
+| `isTagType(element, tag)`                                          | `Element \| null` → `element is HTMLElementTagNameMap[tag]`.      |
+| `matchesTag(element, tagName)`                                     | Case-insensitive tag check.                                       |
+| `hasClass(element, className)` / `hasClasses(element, classNames)` | Single / all-of class check.                                      |
+| `hasId(element, id)` / `hasAttribute(element, name, value?)`       | Id / attribute (optional exact value) check.                      |
+| `createMatcher(criteria)`                                          | Build an `ElementPredicate` from a `MatcherOptions` criteria bag. |
 
 ### Ancestor
 

@@ -544,7 +544,7 @@ The user agent resolves the element's assigned access key from the `accesskey` c
 
 **DOM-checkable rules:**
 
-- `contenteditable` is an **enumerated attribute** with keywords `true` (or the empty string), `false`, and `plaintext-only`; its *missing value default* and *invalid value default* are the **inherit** state.
+- `contenteditable` is an **enumerated attribute** with keywords `true` (or the empty string), `false`, and `plaintext-only`; its _missing value default_ and _invalid value default_ are the **inherit** state.
 - An element whose `contenteditable` is in the true / plaintext-only state is an **editing host**; it is a focusable area.
 - An element inside an `[inert]` subtree is **not** editable even when `contenteditable` is true (inert overrides editability) — relevant to the interaction lens.
 
@@ -570,11 +570,11 @@ Non-normative authoring guidance (selection, undo, sanitization). No checkable r
 
 #### 6.8.5 Spelling and grammar checking
 
-`spellcheck` is an **enumerated attribute** (`true`/empty, `false`; default *inherit*). Checkable: value must be one of the keywords if present.
+`spellcheck` is an **enumerated attribute** (`true`/empty, `false`; default _inherit_). Checkable: value must be one of the keywords if present.
 
 #### 6.8.6 Writing suggestions
 
-`writingsuggestions` is an enumerated attribute (`true`/empty, `false`; default *inherit*) controlling UA-offered inline writing suggestions.
+`writingsuggestions` is an enumerated attribute (`true`/empty, `false`; default _inherit_) controlling UA-offered inline writing suggestions.
 
 #### 6.8.7 Autocapitalization
 
@@ -629,8 +629,8 @@ Each close watcher has a close behavior; only one "free" close watcher may be cr
 Illustrative:
 
 ```javascript
-const watcher = new CloseWatcher();
-watcher.onclose = () => sidebar.hidden = true;   // run the close behavior
+const watcher = new CloseWatcher()
+watcher.onclose = () => (sidebar.hidden = true) // run the close behavior
 // Esc / Android Back / a programmatic requestClose() all trigger onclose:
-closeButton.onclick = () => watcher.requestClose();
+closeButton.onclick = () => watcher.requestClose()
 ```

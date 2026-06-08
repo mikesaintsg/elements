@@ -17,23 +17,23 @@
 
 **`@mixin` declarations** (cross-cutting helpers):
 
-| Mixin                                           | Purpose                                                                           |
-| ----------------------------------------------- | --------------------------------------------------------------------------------- |
-| `reduced-motion`                                | Wrap content in `@media (prefers-reduced-motion: reduce)`.                        |
-| `transition($value)`                            | Declare `transition: $value` with a paired `reduced-motion { transition: none }`. |
-| `focus-ring($alpha: 0.35)`                      | Paint the framework's canonical focus signal.                                     |
-| `forced-colors`                                 | Wrap content in `@media (forced-colors: active)` for Windows High Contrast.       |
-| `truncate`                                      | Single-line text ellipsis.                                                        |
-| `size-container($name, $type)`                  | Mark the element as a size-aware `@container` host.                               |
-| `floater-bounds($component, $width-prop)`       | Pair design width against the viewport-clamp budget for floating surfaces.        |
-| `floater-side-insets($component, $padding-var)` | Emit the four `--set-{component}-inset-*` tokens with `env()` safe-area max.      |
-| `floater-edge($edge)`                           | Anchor a fixed-position element to a single viewport edge.                        |
-| `floater-fullscreen`                            | Fill the viewport on both axes with `inset: 0` + dynamic viewport units.          |
-| `palette-each($exclude: ())`                    | `@each` over `$variants` yielding the variant name to a content block.            |
-| `reveal($end: false)`                           | Idle (collapsed) reveal-on-hover grid — label track `0fr`, gap zero, exit timing. |
-| `reveal-revealed($end: false)`                  | Revealed (expanded) reveal grid — label track `1fr`, gap restored, entry timing.  |
+| Mixin                                           | Purpose                                                                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `reduced-motion`                                | Wrap content in `@media (prefers-reduced-motion: reduce)`.                                                   |
+| `transition($value)`                            | Declare `transition: $value` with a paired `reduced-motion { transition: none }`.                            |
+| `focus-ring($alpha: 0.35)`                      | Paint the framework's canonical focus signal.                                                                |
+| `forced-colors`                                 | Wrap content in `@media (forced-colors: active)` for Windows High Contrast.                                  |
+| `truncate`                                      | Single-line text ellipsis.                                                                                   |
+| `size-container($name, $type)`                  | Mark the element as a size-aware `@container` host.                                                          |
+| `floater-bounds($component, $width-prop)`       | Pair design width against the viewport-clamp budget for floating surfaces.                                   |
+| `floater-side-insets($component, $padding-var)` | Emit the four `--set-{component}-inset-*` tokens with `env()` safe-area max.                                 |
+| `floater-edge($edge)`                           | Anchor a fixed-position element to a single viewport edge.                                                   |
+| `floater-fullscreen`                            | Fill the viewport on both axes with `inset: 0` + dynamic viewport units.                                     |
+| `palette-each($exclude: ())`                    | `@each` over `$variants` yielding the variant name to a content block.                                       |
+| `reveal($end: false)`                           | Idle (collapsed) reveal-on-hover grid — label track `0fr`, gap zero, exit timing.                            |
+| `reveal-revealed($end: false)`                  | Revealed (expanded) reveal grid — label track `1fr`, gap restored, entry timing.                             |
 | `reveal-label($end: false)`                     | Idle reveal label slot — `min-inline-size: 0`, clip, fade + slide out from behind the icon (`.end` mirrors). |
-| `reveal-revealed-label`                         | Revealed reveal label slot — fade + slide the label home (`translateX(0)`).       |
+| `reveal-revealed-label`                         | Revealed reveal label slot — fade + slide the label home (`translateX(0)`).                                  |
 
 ---
 

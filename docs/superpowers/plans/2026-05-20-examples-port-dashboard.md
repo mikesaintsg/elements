@@ -45,6 +45,7 @@ Responsibilities are isolated by file: `examples.ts` is pure data (no DOM, no Vu
 ## Task 1: Add `Examples` to `ROUTE_GROUPS`
 
 **Files:**
+
 - Modify: `app/browser/types.ts`
 
 - [ ] **Step 1: Append `'Examples'` to `ROUTE_GROUPS`**
@@ -96,6 +97,7 @@ group. No routes yet reference the group; this is the type-level seam."
 ## Task 2: Examples metadata registry
 
 **Files:**
+
 - Create: `app/browser/examples/examples.ts`
 
 - [ ] **Step 1: Create the file**
@@ -153,6 +155,7 @@ in a follow-up after the Dashboard slice is reviewed."
 ## Task 3: Add `.examples-*` chrome to `showcase.css`
 
 **Files:**
+
 - Modify: `app/browser/styles/showcase.css` (append to end)
 
 The toolbar pins to the bottom-end corner above 600px and bottom-center on mobile (thumb zone). The source `<dialog>` is sized to `--modal-inline-size-xl` (or a generous default). All `.examples-*` selectors live here, not framework SCSS — they're showcase-app glue, mirroring the placement decision the existing `.showcase-*` chrome makes.
@@ -267,6 +270,7 @@ existing .showcase-* rules."
 ## Task 4: ExamplesShell.vue — toolbar + source dialog wrapper
 
 **Files:**
+
 - Create: `app/browser/examples/ExamplesShell.vue`
 
 This component owns the toolbar (prev/next/picker/theme toggle/source button) and the view-source `<dialog>`. It wraps the example via a `<slot>`. Backed by `useDialog` (source viewer) + `useMenu` (picker dropdown) + `useTheme` (toggle).
@@ -368,11 +372,7 @@ const goNext = (): void => {
 
 		<!-- Floating toolbar — `<menu role="toolbar">` is the canonical
 		     elements pattern (parity test recognizes it via ATTR_ROOTED). -->
-		<menu
-			class="examples-toolbar"
-			role="toolbar"
-			:aria-label="`${title} example navigation`"
-		>
+		<menu class="examples-toolbar" role="toolbar" :aria-label="`${title} example navigation`">
 			<li>
 				<button type="button" class="subtle compact" aria-label="Back to docs" @click="goDocs">
 					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-arrow-left)"></i>
@@ -397,11 +397,7 @@ const goNext = (): void => {
 					aria-haspopup="menu"
 					:aria-label="`Choose example: currently ${title}`"
 				>
-					<i
-						class="icon"
-						aria-hidden="true"
-						style="--icon: var(--set-icon-window-stack)"
-					></i>
+					<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-window-stack)"></i>
 					<span class="examples-toolbar-label-text">{{ title }}</span>
 				</button>
 				<menu ref="pickerMenuRef" popover="auto" class="dropdown-menu" role="menu">
@@ -440,11 +436,7 @@ const goNext = (): void => {
 					:aria-label="`Switch theme (currently ${theme.mode.value})`"
 					@click="theme.toggle()"
 				>
-					<i
-						class="icon"
-						aria-hidden="true"
-						:style="`--icon: var(--set-icon-${themeIcon})`"
-					></i>
+					<i class="icon" aria-hidden="true" :style="`--icon: var(--set-icon-${themeIcon})`"></i>
 				</button>
 			</li>
 			<li>
@@ -459,22 +451,14 @@ const goNext = (): void => {
 		     ::backdrop, all native. Teleported to body so it escapes the
 		     example's potentially-transform-clipped containers. -->
 		<Teleport to="body">
-			<dialog
-				ref="sourceRef"
-				:aria-label="`${title} example source`"
-			>
+			<dialog ref="sourceRef" :aria-label="`${title} example source`">
 				<header>
 					<h2>
 						<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-code-slash)"></i>
 						{{ title }} — source
 						<small class="font-mono">{{ lineCount }} lines</small>
 					</h2>
-					<button
-						type="button"
-						class="subtle compact"
-						:class="{ primary: copied }"
-						@click="copy"
-					>
+					<button type="button" class="subtle compact" :class="{ primary: copied }" @click="copy">
 						<i
 							class="icon"
 							aria-hidden="true"
@@ -494,8 +478,8 @@ const goNext = (): void => {
 				<pre class="examples-source font-mono"><code>{{ displaySource }}</code></pre>
 				<footer>
 					<small>
-						Imports rewritten to <code>@elements/browser</code> so the snippet compiles
-						unchanged in any project that installs elements.
+						Imports rewritten to <code>@elements/browser</code> so the snippet compiles unchanged in
+						any project that installs elements.
 					</small>
 				</footer>
 			</dialog>
@@ -533,11 +517,13 @@ no Bootstrap btn-group chrome."
 ## Task 5: DashboardExample.vue — the semantic-first port
 
 **Files:**
+
 - Create: `app/browser/examples/DashboardExample.vue`
 
 This is the heaviest task. The mailbox version uses Bootstrap classes throughout; the elements port rewrites every chunk in semantic vocabulary per the Translation Table in the spec.
 
 Layout plan:
+
 - Outer wrapper: a single `<div class="dashboard-shell">` with `display: grid; grid-template-columns: auto 1fr; height: 100dvh` (scoped CSS).
 - Sidebar: `<aside :popover="isMobile ? 'auto' : undefined">` via `useAside`. Mobile-only popover binding so it's a drawer below 768px and an in-flow column above.
 - Main column: `<div class="dashboard-main">` containing `<header>` (topbar with search + actions menu) + `<main>` (scrolling content area).
@@ -600,11 +586,41 @@ const stats: readonly Stat[] = [
 ]
 
 const activity: readonly ActivityRow[] = [
-	{ when: '2m ago', who: 'Ada Lovelace', action: 'paid invoice', target: 'INV-1042', status: 'paid' },
-	{ when: '14m ago', who: 'Grace Hopper', action: 'submitted form', target: 'Onboarding · Step 3', status: 'pending' },
-	{ when: '38m ago', who: 'Linus Torvalds', action: 'updated billing', target: 'Visa •• 4012', status: 'paid' },
-	{ when: '1h ago', who: 'Margaret Hamilton', action: 'failed checkout', target: 'Cart 8721', status: 'failed' },
-	{ when: '3h ago', who: 'Hedy Lamarr', action: 'cancelled trial', target: 'Pro plan', status: 'pending' },
+	{
+		when: '2m ago',
+		who: 'Ada Lovelace',
+		action: 'paid invoice',
+		target: 'INV-1042',
+		status: 'paid',
+	},
+	{
+		when: '14m ago',
+		who: 'Grace Hopper',
+		action: 'submitted form',
+		target: 'Onboarding · Step 3',
+		status: 'pending',
+	},
+	{
+		when: '38m ago',
+		who: 'Linus Torvalds',
+		action: 'updated billing',
+		target: 'Visa •• 4012',
+		status: 'paid',
+	},
+	{
+		when: '1h ago',
+		who: 'Margaret Hamilton',
+		action: 'failed checkout',
+		target: 'Cart 8721',
+		status: 'failed',
+	},
+	{
+		when: '3h ago',
+		who: 'Hedy Lamarr',
+		action: 'cancelled trial',
+		target: 'Pro plan',
+		status: 'pending',
+	},
 ]
 
 const statusVariant: Record<ActivityRow['status'], string> = {
@@ -764,11 +780,7 @@ onUnmounted(() => {
 						/>
 					</label>
 				</form>
-				<menu
-					role="toolbar"
-					aria-label="Dashboard actions"
-					class="dashboard-actions"
-				>
+				<menu role="toolbar" aria-label="Dashboard actions" class="dashboard-actions">
 					<li>
 						<button type="button" class="primary">
 							<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-plus)"></i>
@@ -806,7 +818,7 @@ onUnmounted(() => {
 						<p>Here's what's happened across your workspace this {{ range }}.</p>
 					</hgroup>
 					<menu role="toolbar" aria-label="Date range" class="dashboard-range">
-						<li v-for="r in (['7d','30d','90d'] as const)" :key="r">
+						<li v-for="r in ['7d', '30d', '90d'] as const" :key="r">
 							<button
 								type="button"
 								class="subtle"
@@ -850,11 +862,19 @@ onUnmounted(() => {
 							</hgroup>
 							<ul class="dashboard-legend">
 								<li>
-									<span class="dashboard-legend-dot" data-series="revenue" aria-hidden="true"></span>
+									<span
+										class="dashboard-legend-dot"
+										data-series="revenue"
+										aria-hidden="true"
+									></span>
 									Revenue
 								</li>
 								<li>
-									<span class="dashboard-legend-dot" data-series="forecast" aria-hidden="true"></span>
+									<span
+										class="dashboard-legend-dot"
+										data-series="forecast"
+										aria-hidden="true"
+									></span>
 									Forecast
 								</li>
 							</ul>
@@ -884,7 +904,11 @@ onUnmounted(() => {
 						<menu>
 							<li>
 								<button type="button" class="subtle">
-									<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-person-plus)"></i>
+									<i
+										class="icon"
+										aria-hidden="true"
+										style="--icon: var(--set-icon-person-plus)"
+									></i>
 									Invite a teammate
 								</button>
 							</li>
@@ -896,19 +920,31 @@ onUnmounted(() => {
 							</li>
 							<li>
 								<button type="button" class="subtle">
-									<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-cloud-upload)"></i>
+									<i
+										class="icon"
+										aria-hidden="true"
+										style="--icon: var(--set-icon-cloud-upload)"
+									></i>
 									Import customers
 								</button>
 							</li>
 							<li>
 								<button type="button" class="subtle">
-									<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-shield-check)"></i>
+									<i
+										class="icon"
+										aria-hidden="true"
+										style="--icon: var(--set-icon-shield-check)"
+									></i>
 									Run a security audit
 								</button>
 							</li>
 							<li>
 								<button type="button" class="subtle">
-									<i class="icon" aria-hidden="true" style="--icon: var(--set-icon-life-preserver)"></i>
+									<i
+										class="icon"
+										aria-hidden="true"
+										style="--icon: var(--set-icon-life-preserver)"
+									></i>
 									Contact support
 								</button>
 							</li>
@@ -927,11 +963,7 @@ onUnmounted(() => {
 						<a href="#">View all</a>
 					</header>
 					<ol class="dashboard-timeline">
-						<li
-							v-for="row in activity"
-							:key="row.target"
-							:data-status="row.status"
-						>
+						<li v-for="row in activity" :key="row.target" :data-status="row.status">
 							<span class="dashboard-timeline-marker" aria-hidden="true"></span>
 							<div class="dashboard-timeline-content">
 								<p>
@@ -1175,10 +1207,19 @@ onUnmounted(() => {
 	font-size: 0.8125rem;
 }
 
-.dashboard-stat-delta[data-trend='up'] { color: var(--color-success, oklch(60% 0.15 145)); }
-.dashboard-stat-delta[data-trend='down'] { color: var(--color-danger, oklch(60% 0.18 25)); }
-.dashboard-stat-delta[data-trend='flat'] { color: var(--color-text-subtle); }
-.dashboard-stat-delta small { color: var(--color-text-subtle); margin-inline-start: 0.25rem; }
+.dashboard-stat-delta[data-trend='up'] {
+	color: var(--color-success, oklch(60% 0.15 145));
+}
+.dashboard-stat-delta[data-trend='down'] {
+	color: var(--color-danger, oklch(60% 0.18 25));
+}
+.dashboard-stat-delta[data-trend='flat'] {
+	color: var(--color-text-subtle);
+}
+.dashboard-stat-delta small {
+	color: var(--color-text-subtle);
+	margin-inline-start: 0.25rem;
+}
 
 /* Chart + Quick actions row ─ */
 
@@ -1239,8 +1280,12 @@ onUnmounted(() => {
 	vertical-align: middle;
 }
 
-.dashboard-legend-dot[data-series='revenue'] { background: var(--color-primary); }
-.dashboard-legend-dot[data-series='forecast'] { background: var(--color-info); }
+.dashboard-legend-dot[data-series='revenue'] {
+	background: var(--color-primary);
+}
+.dashboard-legend-dot[data-series='forecast'] {
+	background: var(--color-info);
+}
 
 .dashboard-actions-card menu {
 	margin: 0;
@@ -1291,9 +1336,15 @@ onUnmounted(() => {
 	color: var(--color-text-subtle);
 }
 
-.dashboard-timeline > li[data-status='paid'] .dashboard-timeline-marker { color: var(--color-success); }
-.dashboard-timeline > li[data-status='pending'] .dashboard-timeline-marker { color: var(--color-warning); }
-.dashboard-timeline > li[data-status='failed'] .dashboard-timeline-marker { color: var(--color-danger); }
+.dashboard-timeline > li[data-status='paid'] .dashboard-timeline-marker {
+	color: var(--color-success);
+}
+.dashboard-timeline > li[data-status='pending'] .dashboard-timeline-marker {
+	color: var(--color-warning);
+}
+.dashboard-timeline > li[data-status='failed'] .dashboard-timeline-marker {
+	color: var(--color-danger);
+}
 
 .dashboard-timeline-content p {
 	margin: 0;
@@ -1353,6 +1404,7 @@ additions."
 ## Task 6: DashboardExamplePage.vue — thin wrapper
 
 **Files:**
+
 - Create: `app/browser/examples/DashboardExamplePage.vue`
 
 - [ ] **Step 1: Create the file**
@@ -1395,6 +1447,7 @@ view-source dialog."
 ## Task 7: Register the route
 
 **Files:**
+
 - Modify: `app/browser/router.ts`
 
 - [ ] **Step 1: Import + route constant + array entry**
@@ -1435,6 +1488,7 @@ preview_eval serverId=… expression="window.location.hash = '#/example-dashboar
 The page renders inside the docs shell with the chrome still painted (Task 9 hasn't run yet). The toolbar should be visible at the bottom-end corner; the sidebar should be a column above 768px.
 
 Take a screenshot to record the current state:
+
 ```
 preview_screenshot serverId=…
 ```
@@ -1454,6 +1508,7 @@ follows in the next commit."
 ## Task 8: Wire the page into the public barrel
 
 **Files:**
+
 - Modify: `app/browser/index.ts`
 
 - [ ] **Step 1: Add the export**
@@ -1468,6 +1523,7 @@ export { default as DashboardExamplePage } from './examples/DashboardExamplePage
 
 Run: `npm run test:app:browser`
 Expected: most tests pass; two failures expected:
+
 1. `pages.test.ts` — the route ↔ barrel ↔ filesystem bijection may complain about the new page (depending on whether it counts files under `examples/`). Note the exact failure for Task 11.
 2. `parity.test.ts` § "DashboardExamplePage resolves to ≥1 registry artifact" — fails until Task 10 adds the bundle entry.
 3. `semantics.test.ts` — runs the Inspector against `DashboardExamplePage`. If our markup is semantic-clean, this passes. If it surfaces `error`-severity findings, read the Inspector's message + path and fix the markup. **Don't add an exemption** — the gate is the spec.
@@ -1490,6 +1546,7 @@ chrome gating land in the next commits."
 ## Task 9: Gate docs chrome off for Examples in `App.vue`
 
 **Files:**
+
 - Modify: `app/browser/App.vue`
 
 The plan: add `const isExample = computed(() => current.value.group === 'Examples')`, then add `v-if="!isExample"` to the four chrome blocks (`<header>`, `<nav id="primary-rail">`, `<aside id="toc-rail">`, `<footer>`). The body grid has named `grid-template-areas`; removing four of five children leaves their `auto`-sized tracks at zero width / height, so `<main>` claims the viewport. No body-class trick needed for this baseline — if visual verification later shows residual gaps, the body-class fallback in the spec's Risks section is the next step.
@@ -1533,6 +1590,7 @@ preview_eval serverId=… expression="location.hash = '#/example-dashboard'; loc
 ```
 
 Take a screenshot:
+
 ```
 preview_screenshot serverId=…
 ```
@@ -1540,6 +1598,7 @@ preview_screenshot serverId=…
 Expected: the dashboard fills the viewport. No docs header, no left sidebar with the showcase filter, no right TOC rail, no footer. The Examples toolbar is pinned to the bottom-end (or bottom-center on mobile widths). The dashboard's own sidebar shows on the left at desktop widths.
 
 Navigate back to `#/home` and screenshot again:
+
 ```
 preview_eval serverId=… expression="location.hash = '#/home'; true"
 preview_screenshot serverId=…
@@ -1564,6 +1623,7 @@ grid's auto tracks collapse to zero when their slots are empty, so
 ## Task 10: Update parity bundle
 
 **Files:**
+
 - Modify: `tests/app/browser/pages/_contract.ts`
 
 The parity test (§4 — every non-exempt page demonstrates ≥1 artifact) needs a bundle entry for `DashboardExamplePage`. The page imports `useAside` and uses framework primitives (`<aside>`, `<header>`, `<main>`, `<menu role=toolbar>`, `<dialog>` via ExamplesShell, `useTheme`, `useDialog`, `useMenu`).
@@ -1587,6 +1647,7 @@ Run: `npm run test:app:browser`
 Expected: parity test passes for `DashboardExamplePage` now that the bundle is in place. The other tests should still pass.
 
 If `semantics.test.ts` is still surfacing `error`-severity findings, switch to fixing the markup in `DashboardExample.vue` or `ExamplesShell.vue` — the gate names the rule + element path, fix the root cause. Common offenders to watch for:
+
 - `<menu>` without an explicit `role` outside the toolbar context (advice-level, non-blocking).
 - An `<aside>` inside `<main>` (the framework treats body > aside vs main aside as different chrome — verify ancestry).
 - A heading-level jump (e.g., `<h1>` skipping to `<h3>`).
@@ -1607,6 +1668,7 @@ ExamplesShell), useMenu (example picker), useTheme (toolbar toggle)."
 ## Task 11: Page-level test — render smoke + landmarks
 
 **Files:**
+
 - Create: `tests/app/browser/pages/DashboardExamplePage.test.ts`
 
 Mirror the shape of `AsidePage.test.ts`: mount the page, assert load-bearing semantic landmarks are present.
@@ -1679,8 +1741,9 @@ describe('DashboardExamplePage — load-bearing landmarks', () => {
 		try {
 			expect(host.querySelector('header.dashboard-topbar')).not.toBeNull()
 			expect(host.querySelector('form[role="search"]')).not.toBeNull()
-			expect(host.querySelector('menu[role="toolbar"][aria-label="Dashboard actions"]'))
-				.not.toBeNull()
+			expect(
+				host.querySelector('menu[role="toolbar"][aria-label="Dashboard actions"]'),
+			).not.toBeNull()
 		} finally {
 			teardown()
 		}
@@ -1734,6 +1797,7 @@ shell), and the view-source <dialog>."
 ## Task 12: Example-specific framework-usage test
 
 **Files:**
+
 - Create: `tests/app/browser/examples/DashboardExample.test.ts`
 
 This file focuses on the framework idioms the Dashboard exercises — separate from page-level smoke so the assertions stay readable.
@@ -1822,8 +1886,12 @@ describe('DashboardExample — framework idioms', () => {
 		try {
 			// The data has 2 paid, 2 pending, 1 failed.
 			expect(host.querySelectorAll('ol.dashboard-timeline > li[data-status="paid"]').length).toBe(2)
-			expect(host.querySelectorAll('ol.dashboard-timeline > li[data-status="pending"]').length).toBe(2)
-			expect(host.querySelectorAll('ol.dashboard-timeline > li[data-status="failed"]').length).toBe(1)
+			expect(
+				host.querySelectorAll('ol.dashboard-timeline > li[data-status="pending"]').length,
+			).toBe(2)
+			expect(host.querySelectorAll('ol.dashboard-timeline > li[data-status="failed"]').length).toBe(
+				1,
+			)
 			expect(host.querySelector('ol.dashboard-timeline .tag.success')).not.toBeNull()
 			expect(host.querySelector('ol.dashboard-timeline .tag.warning')).not.toBeNull()
 			expect(host.querySelector('ol.dashboard-timeline .tag.danger')).not.toBeNull()
@@ -1870,6 +1938,7 @@ Asserts the example's load-bearing framework usage:
 ## Task 13: Full verification ritual
 
 **Files:**
+
 - None (verification only).
 
 - [ ] **Step 1: Lint + type check**
@@ -1881,6 +1950,7 @@ Expected: no errors.
 
 Run: `npm run test:app:browser`
 Expected: all green. Specifically:
+
 - `pages.test.ts` — route ↔ barrel ↔ file bijection: passes.
 - `parity.test.ts` — every requirement satisfied: passes.
 - `semantics.test.ts` — Inspector reports zero `error`-severity findings on `DashboardExamplePage`. **This is the inspector audit you asked for, executed.**
@@ -1951,6 +2021,7 @@ Do **not** start porting Mail / Marketing / Auth / CRM. The plan ends here.
 Tell the user:
 
 > "Dashboard slice complete. All gates green:
+>
 > - `npm run check`: clean
 > - `npm run test:app:browser`: all suites green, including `semantics.test.ts` (Inspector dogfood) and `parity.test.ts` (registry artifact coverage)
 > - Visual: dashboard fills the viewport at desktop + mobile, sidebar drawer opens on the hamburger toggle, side-by-side comparison with mailbox shows the same app idea
@@ -1962,6 +2033,7 @@ Tell the user:
 ## Self-Review
 
 **1. Spec coverage:**
+
 - New `Examples` route group → Task 1 ✓
 - `examples.ts` metadata → Task 2 ✓
 - `ExamplesShell.vue` → Task 4 ✓
@@ -1977,12 +2049,14 @@ Tell the user:
 - Stop-and-review checkpoint before the other four examples → Task 13 Step 6 ✓
 
 **2. Placeholder scan:**
+
 - "TBD" / "TODO" — none.
 - "Add appropriate X" — none.
 - Steps without concrete code — none (every code step has a full block).
 - "Similar to Task N" — none.
 
 **3. Type consistency:**
+
 - `ExamplesShell` exposes `id`, `title`, `source` props — matches the usage in `DashboardExamplePage.vue` (Task 6) and the test selectors (Task 11).
 - `useAside(sidebarRef, { popover: false })` — matches the `useTemplateRef<HTMLElement>('sidebarRef')` declaration. (The `{ popover: false }` option leaves the `popover` attribute under template control, which is what we need for the conditional `:popover` binding.)
 - `useDialog(sourceRef)` — matches `useTemplateRef<HTMLDialogElement>('sourceRef')`.
@@ -1993,4 +2067,5 @@ Tell the user:
 - The `range` ref default is `'30d'`, matching the test assertion for the default `aria-pressed` button in Task 12.
 
 **4. Known gaps surfaced during planning, not gaps in the plan:**
+
 - Icon token names (`--set-icon-window-stack`, `--set-icon-clipboard`, `--set-icon-check`, `--set-icon-arrow-left`, `--set-icon-chevron-left`, etc.) are best-guesses against mailbox's Bootstrap-Icons vocabulary. Task 4 Step 2 and Task 5 Step 2 include explicit grep-and-substitute instructions if any are absent in `src/styles/theme/_tokens.scss`. **This is by design** — the alternative would have been to expand scope into shipping new icon tokens, which is out of scope per the spec.
